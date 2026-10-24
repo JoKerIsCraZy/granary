@@ -248,6 +248,44 @@
     </Style>
 
     <!--
+        Sidebar group label ("LIBRARIES"). WinUI's template takes the text from Content and its own text style,
+        so this copy keeps its pane states (hidden while the pane is closed) with the Silo label style.
+    -->
+    <Style x:Key="SiloNavigationHeaderStyle" TargetType="NavigationViewItemHeader">
+        <Setter Property="IsEnabled" Value="False" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="MinHeight" Value="0" />
+        <Setter Property="AutomationProperties.AccessibilityView" Value="Raw" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="NavigationViewItemHeader">
+                    <Grid>
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup x:Name="PaneStates">
+                                <VisualState x:Name="HeaderTextVisible" />
+                                <VisualState x:Name="HeaderTextCollapsed">
+                                    <VisualState.Setters>
+                                        <Setter Target="HeaderText.Visibility" Value="Collapsed" />
+                                        <Setter Target="InnerHeaderGrid.Height" Value="0" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                            </VisualStateGroup>
+                            <VisualStateGroup x:Name="DisplayModeStates">
+                                <VisualState x:Name="LeftMode" />
+                                <VisualState x:Name="TopMode" />
+                            </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>
+                        <Grid x:Name="InnerHeaderGrid" Height="40" Padding="16,0,0,0" HorizontalAlignment="Left">
+                            <TextBlock x:Name="HeaderText" VerticalAlignment="Bottom" Margin="0,0,0,6" Text="{TemplateBinding Content}"
+                                       Style="{StaticResource SiloSectionLabelTextStyle}" FontSize="10" CharacterSpacing="220" />
+                        </Grid>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--
         A whole card as one button: keyboard focus and Enter work, the pointer gets a subtle ring and the
         artwork lightens. The template draws nothing of its own besides that ring.
     -->

@@ -54,9 +54,7 @@
                         </Border>
                     </Grid>
                 </NavigationViewItem>
-                <NavigationViewItemHeader x:Name="LibrariesHeader">
-                    <TextBlock Text="LIBRARIES" Style="{StaticResource SiloSectionLabelTextStyle}" />
-                </NavigationViewItemHeader>
+                <NavigationViewItemHeader x:Name="LibrariesHeader" Content="LIBRARIES" Style="{StaticResource SiloNavigationHeaderStyle}" />
             </NavigationView.MenuItems>
 
             <NavigationView.FooterMenuItems>
