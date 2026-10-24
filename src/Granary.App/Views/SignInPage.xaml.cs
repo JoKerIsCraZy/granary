@@ -13,6 +13,8 @@ namespace Granary.App.Views;
 /// <summary>Password form beside device (QR) sign-in for one saved server; the parameter is its entry id.</summary>
 public sealed partial class SignInPage : Page
 {
+    private bool _deviceSignInStarted;
+
     public SignInPage()
     {
         ViewModel = App.Services.GetRequiredService<SignInViewModel>();
@@ -31,6 +33,7 @@ public sealed partial class SignInPage : Page
 
     protected override void OnNavigatedFrom(NavigationEventArgs e)
     {
+        _deviceSignInStarted = false;
         DeviceSignIn.Stop();
         base.OnNavigatedFrom(e);
     }
@@ -44,10 +47,13 @@ public sealed partial class SignInPage : Page
     }
 
     // Device sign-in also brings tokens over the connection, so it waits for the same consent as the password form.
+    // Once per visit: both the consent and the end of loading lead here, and a second start would replace the
+    // first run, cancelling its request in flight.
     private void StartWhenAllowed()
     {
-        if (ViewModel.CanUseCredentials && ViewModel.Server is { } server)
+        if (!_deviceSignInStarted && ViewModel.CanUseCredentials && ViewModel.Server is { } server)
         {
+            _deviceSignInStarted = true;
             DeviceSignIn.Start(server);
             UsernameBox.Focus(FocusState.Programmatic);
         }
