@@ -112,7 +112,7 @@ public sealed class LibraryViewModelTests
     }
 
     [Fact]
-    public async Task ProfileChange_ReloadsTheShownLibrary()
+    public async Task ProfileChange_ReloadsTheShownLibraryOnItsTab()
     {
         var library = await _harness.OpenLibraryTabAsync();
         bool changed = false;
@@ -120,10 +120,66 @@ public sealed class LibraryViewModelTests
 
         _harness.Session.ProfileId = "8";
         _harness.Session.RaiseChanged();
-        await Auth.AuthPipeline.Eventually(() => _harness.Count(LibrariesPath) == 2 && library.State == LibraryLoadState.Ready);
+        await Auth.AuthPipeline.Eventually(() => _harness.Count(LibrariesPath) == 2 && library.Browse.Grid.IsReady);
 
         Assert.True(changed);
-        Assert.Equal(LibraryTab.Recommended, library.SelectedTab);
+        Assert.Equal(LibraryTab.Library, library.SelectedTab);
+        Assert.Equal(2, _harness.Count(LibraryHarness.CatalogPath));
+    }
+
+    [Fact]
+    public async Task VisitAfterAnHour_ReloadsTheSameTabForFreshArtwork()
+    {
+        var library = await _harness.OpenLibraryTabAsync();
+        library.Deactivate();
+        _harness.Clock.Advance(TimeSpan.FromMinutes(59));
+        await library.ActivateAsync("1");
+        Assert.Equal(1, _harness.Count(LibrariesPath));
+        library.Deactivate();
+
+        _harness.Clock.Advance(LibraryViewModel.RefreshAfter);
+        await library.ActivateAsync("1");
+
+        Assert.Equal(2, _harness.Count(LibrariesPath));
+        Assert.Equal(LibraryTab.Library, library.SelectedTab);
+        Assert.Equal(2, _harness.Count(LibraryHarness.CatalogPath));
+        Assert.True(library.Browse.Grid.IsReady);
+    }
+
+    [Fact]
+    public async Task NonSiloAnswer_IsWordedAsAnUnreachableServer()
+    {
+        // A captive portal or proxy page: SiloHttp reports it as an invalid response.
+        _harness.Answer(LibrariesPath, "{ not json");
+        var library = _harness.Create();
+
+        await library.ActivateAsync("1");
+
+        Assert.Equal(LibraryLoadState.Error, library.State);
+        Assert.Equal(LibraryErrors.Unreachable, library.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task FailureOfAReplacedLoad_LeavesTheNewLibraryAlone()
+    {
+        var release = new TaskCompletionSource();
+        _harness.Answer(LibrariesPath, async () =>
+        {
+            await release.Task;
+            throw new HttpRequestException("connection reset");
+        }, ScriptedSilo.Json(System.Net.HttpStatusCode.OK, LibraryPayloads.Libraries));
+        _harness.Answer("api/v2/library/2/sections", LibraryPayloads.Sections);
+        _harness.Answer("api/v2/library/2/sections/recently_added/items", LibraryPayloads.RecentlyAddedItems);
+        var library = _harness.Create();
+
+        var replaced = library.ActivateAsync("1");
+        await library.ActivateAsync("2");
+        release.SetResult();
+        await replaced;
+
+        Assert.Equal(LibraryLoadState.Ready, library.State);
+        Assert.Equal("Serien", library.LibraryName);
+        Assert.Equal("", library.ErrorMessage);
     }
 
     [Fact]

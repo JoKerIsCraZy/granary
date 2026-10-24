@@ -391,6 +391,29 @@ public sealed class LibraryBrowseTests
     }
 
     [Fact]
+    public async Task FailedPageOfAReplacedListing_LeavesTheNewOneLoadable()
+    {
+        var release = new TaskCompletionSource();
+        _harness.Answer(CatalogPath, ScriptedSilo.Json(HttpStatusCode.OK, LibraryPayloads.FirstPage), async () =>
+        {
+            await release.Task;
+            throw new HttpRequestException("connection reset");
+        }, ScriptedSilo.Json(HttpStatusCode.OK, LibraryPayloads.FirstPage));
+        var library = await _harness.OpenLibraryTabAsync();
+        var grid = library.Browse.Grid;
+
+        var replaced = grid.LoadMoreCommand.ExecuteAsync(null);
+        await library.Browse.ToggleOrderCommand.ExecuteAsync(null);
+        release.SetResult();
+        await replaced;
+
+        Assert.True(grid.IsReady);
+        Assert.False(grid.HasLoadMoreError);
+        Assert.False(grid.IsLoadingMore);
+        Assert.True(grid.LoadMoreCommand.CanExecute(null));
+    }
+
+    [Fact]
     public async Task ChangeDuringALoad_ShowsOnlyTheNewestListing()
     {
         var release = new TaskCompletionSource();

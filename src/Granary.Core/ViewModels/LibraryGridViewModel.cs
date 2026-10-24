@@ -125,9 +125,11 @@ public sealed partial class LibraryGridViewModel(CatalogApi catalog, ILogger log
 
     private CancellationTokenSource Restart()
     {
-        _run.Cancel();
-        _run.Dispose();
+        // Replaced before it is cancelled: continuations that resume inside Cancel already see the new run.
+        var previous = _run;
         _run = new CancellationTokenSource();
+        previous.Cancel();
+        previous.Dispose();
         _pageLoad = null;
         _nextCursor = null;
         _totalExact = true;
@@ -175,8 +177,13 @@ public sealed partial class LibraryGridViewModel(CatalogApi catalog, ILogger log
             _restartedForCursor = true;
             await BeginAsync(server, query);
         }
-        catch (Exception ex) when (LibraryErrors.IsExpected(ex, cancellationToken))
+        catch (Exception ex) when (LibraryErrors.IsExpected(ex))
         {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                // A newer listing replaced this one; its state is not this one's to set.
+                return;
+            }
             logger.LogWarning(ex, "Could not load a page of a library grid");
             if (cursor is null)
             {
@@ -187,10 +194,6 @@ public sealed partial class LibraryGridViewModel(CatalogApi catalog, ILogger log
             {
                 HasLoadMoreError = true;
             }
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            // A newer listing replaced this one.
         }
     }
 

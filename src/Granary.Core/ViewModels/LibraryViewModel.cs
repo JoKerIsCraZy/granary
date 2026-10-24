@@ -23,12 +23,18 @@ public enum LibraryTab
 /// One library (<see cref="AppRoute.Library"/>, the parameter is its id), laid out like Silo's web client:
 /// "LIBRARY / NAME", Shuffle, and the Recommended, Library and Collections tabs. Each tab loads the first time
 /// it shows. The page keeps its state while the same library, server and profile are shown, so Back returns
-/// to the same tab; another library, server or profile starts over.
+/// to the same tab; another server or profile loads the library again, another library starts on Recommended.
 /// </summary>
 public sealed partial class LibraryViewModel : ObservableObject
 {
     public const string ShuffleNothingPlayable = "Nothing in this library can be played.";
     public const string ShuffleFailed = "Couldn't start a shuffle. Try again.";
+
+    /// <summary>
+    /// How long a visit may show what an earlier one loaded. Artwork URLs are presigned for a few hours
+    /// (docs/api-contract.md, 7.10), so a page kept longer reloads instead of showing expired posters.
+    /// </summary>
+    public static readonly TimeSpan RefreshAfter = TimeSpan.FromHours(1);
 
     // The library types whose movies and episodes a shuffle plays (web: SHUFFLE_LIBRARY_TYPES).
     private static readonly HashSet<string> ShuffleLibraryTypes = new(StringComparer.OrdinalIgnoreCase)
@@ -42,9 +48,11 @@ public sealed partial class LibraryViewModel : ObservableObject
     private readonly ImageParameterCache _images;
     private readonly INavigationService _navigation;
     private readonly IUiDispatcher _dispatcher;
+    private readonly TimeProvider _time;
     private readonly ILogger<LibraryViewModel> _logger;
     private readonly Dictionary<(string ServerId, string? ProfileId), bool> _serverCanShuffle = [];
     private (string? ServerId, string? ProfileId, string? LibraryId)? _loaded;
+    private DateTimeOffset _loadedAt;
     private CancellationTokenSource _run = new();
     private ServerEntry? _server;
     private Library? _library;
@@ -58,6 +66,7 @@ public sealed partial class LibraryViewModel : ObservableObject
         ImageParameterCache images,
         INavigationService navigation,
         IUiDispatcher dispatcher,
+        TimeProvider time,
         ILogger<LibraryViewModel> logger)
     {
         _session = session;
@@ -66,6 +75,7 @@ public sealed partial class LibraryViewModel : ObservableObject
         _images = images;
         _navigation = navigation;
         _dispatcher = dispatcher;
+        _time = time;
         _logger = logger;
         Recommended = new LibraryRowsViewModel(catalog, navigation, logger);
         Browse = new LibraryBrowseViewModel(catalog, images, logger);
@@ -144,7 +154,8 @@ public sealed partial class LibraryViewModel : ObservableObject
 
     /// <summary>
     /// Shows the library with this id: on every visit of the page. A visit of what is already shown changes
-    /// nothing, so Back keeps the tab, the grid and its scroll position.
+    /// nothing, so Back keeps the tab, the grid and its scroll position; after <see cref="RefreshAfter"/> the
+    /// same tab loads again.
     /// </summary>
     public async Task ActivateAsync(string? libraryId)
     {
@@ -153,7 +164,8 @@ public sealed partial class LibraryViewModel : ObservableObject
             _isActive = true;
             _session.Changed += OnSessionChanged;
         }
-        if (_loaded == Key(libraryId) && State is LibraryLoadState.Loading or LibraryLoadState.Ready)
+        bool isFresh = _time.GetUtcNow() - _loadedAt < RefreshAfter;
+        if (_loaded == Key(libraryId) && (State == LibraryLoadState.Loading || (State == LibraryLoadState.Ready && isFresh)))
         {
             return;
         }
@@ -216,18 +228,20 @@ public sealed partial class LibraryViewModel : ObservableObject
                 ShuffleMessage = ShuffleNothingPlayable;
             }
         }
-        catch (SiloApiException ex) when (ex.Status == 409)
+        catch (Exception ex) when (LibraryErrors.IsExpected(ex))
         {
-            ShuffleMessage = ShuffleNothingPlayable;
-        }
-        catch (Exception ex) when (LibraryErrors.IsExpected(ex, token))
-        {
+            if (token.IsCancellationRequested)
+            {
+                // Another library took over.
+                return;
+            }
+            if (ex is SiloApiException { Status: 409 })
+            {
+                ShuffleMessage = ShuffleNothingPlayable;
+                return;
+            }
             _logger.LogWarning(ex, "Could not start a shuffle of a library");
             ShuffleMessage = ShuffleFailed;
-        }
-        catch (OperationCanceledException) when (token.IsCancellationRequested)
-        {
-            // Another library took over.
         }
     }
 
@@ -236,9 +250,11 @@ public sealed partial class LibraryViewModel : ObservableObject
 
     private async Task LoadAsync(string? libraryId)
     {
-        var token = Restart();
+        // A retry, a refresh or another profile keeps the tab; another library starts on Recommended.
+        var token = Restart(libraryId == LibraryId ? SelectedTab : LibraryTab.Recommended);
         LibraryId = libraryId;
         _loaded = Key(libraryId);
+        _loadedAt = _time.GetUtcNow();
         if (_session is not { State: SessionState.Ready, ActiveServer: { } server })
         {
             // The shell leaves the page for sign-in or the profile picker.
@@ -265,15 +281,16 @@ public sealed partial class LibraryViewModel : ObservableObject
             }
             await ShowAsync(server, library, token);
         }
-        catch (Exception ex) when (LibraryErrors.IsExpected(ex, token))
+        catch (Exception ex) when (LibraryErrors.IsExpected(ex))
         {
+            if (token.IsCancellationRequested)
+            {
+                // Another library, server or profile took over.
+                return;
+            }
             _logger.LogWarning(ex, "Could not load the libraries to open one");
             ErrorMessage = LibraryErrors.Describe(ex);
             State = LibraryLoadState.Error;
-        }
-        catch (OperationCanceledException) when (token.IsCancellationRequested)
-        {
-            // Another library, server or profile took over.
         }
     }
 
@@ -282,7 +299,7 @@ public sealed partial class LibraryViewModel : ObservableObject
         _server = server;
         _library = library;
         _sizes = ImageSizes.Default.ScaledBy(DisplayScale > 0 && double.IsFinite(DisplayScale) ? DisplayScale : 1);
-        LibraryName = library.Name;
+        LibraryName = library.Name ?? "";
         Browse.Initialize(server, library, _sizes);
         Collections.Initialize(server, library, _sizes);
         State = LibraryLoadState.Ready;
@@ -307,13 +324,9 @@ public sealed partial class LibraryViewModel : ObservableObject
         {
             images = await _images.GetAsync(server, _sizes, cancellationToken);
         }
-        catch (Exception ex) when (LibraryErrors.IsExpected(ex, cancellationToken))
+        catch (Exception ex) when (LibraryErrors.IsExpected(ex))
         {
             images = ImageParameters.None;
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            return;
         }
         if (!cancellationToken.IsCancellationRequested)
         {
@@ -323,7 +336,7 @@ public sealed partial class LibraryViewModel : ObservableObject
 
     private async Task UpdateShuffleAsync(ServerEntry server, Library library, CancellationToken cancellationToken)
     {
-        if (!ShuffleLibraryTypes.Contains(library.Type.Trim()))
+        if (!ShuffleLibraryTypes.Contains((library.Type ?? "").Trim()))
         {
             return;
         }
@@ -336,10 +349,13 @@ public sealed partial class LibraryViewModel : ObservableObject
                 canShuffle = capability.CanShuffle(LibraryPageApi.LibraryScope);
                 _serverCanShuffle[key] = canShuffle;
             }
-            catch (Exception ex) when (LibraryErrors.IsExpected(ex, cancellationToken))
+            catch (Exception ex) when (LibraryErrors.IsExpected(ex))
             {
                 // Shuffle stays hidden; the next visit asks again.
-                _logger.LogWarning(ex, "Could not read whether the server can shuffle");
+                if (!cancellationToken.IsCancellationRequested)
+                {
+                    _logger.LogWarning(ex, "Could not read whether the server can shuffle");
+                }
                 return;
             }
         }
@@ -349,18 +365,20 @@ public sealed partial class LibraryViewModel : ObservableObject
         }
     }
 
-    private CancellationToken Restart()
+    private CancellationToken Restart(LibraryTab tab)
     {
-        _run.Cancel();
-        _run.Dispose();
+        // Replaced before it is cancelled: continuations that resume inside Cancel already see the new run.
+        var previous = _run;
         _run = new CancellationTokenSource();
+        previous.Cancel();
+        previous.Dispose();
         _server = null;
         _library = null;
         LibraryName = "";
         ErrorMessage = "";
         ShuffleMessage = "";
         CanShuffle = false;
-        SelectedTab = LibraryTab.Recommended;
+        SelectedTab = tab;
         Recommended.Reset();
         Browse.Clear();
         Collections.Clear();

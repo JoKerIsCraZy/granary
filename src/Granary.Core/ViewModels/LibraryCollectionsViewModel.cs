@@ -90,9 +90,10 @@ public sealed partial class LibraryCollectionsViewModel : ObservableObject
     /// <summary>Forgets the library and stops its loads.</summary>
     public void Clear()
     {
-        _run.Cancel();
-        _run.Dispose();
+        var previous = _run;
         _run = new CancellationTokenSource();
+        previous.Cancel();
+        previous.Dispose();
         _server = null;
         _library = null;
         _isStarted = false;
@@ -132,15 +133,16 @@ public sealed partial class LibraryCollectionsViewModel : ObservableObject
             }
             State = Shelves.Count == 0 ? LibraryLoadState.Empty : LibraryLoadState.Ready;
         }
-        catch (Exception ex) when (LibraryErrors.IsExpected(ex, token))
+        catch (Exception ex) when (LibraryErrors.IsExpected(ex))
         {
+            if (token.IsCancellationRequested)
+            {
+                // Another library took over.
+                return;
+            }
             _logger.LogWarning(ex, "Could not load the collections of a library");
             ErrorMessage = LibraryErrors.Describe(ex);
             State = LibraryLoadState.Error;
-        }
-        catch (OperationCanceledException) when (token.IsCancellationRequested)
-        {
-            // Another library took over.
         }
     }
 
@@ -160,13 +162,9 @@ public sealed partial class LibraryCollectionsViewModel : ObservableObject
         {
             images = await _images.GetAsync(server, _sizes, token);
         }
-        catch (Exception ex) when (LibraryErrors.IsExpected(ex, token))
+        catch (Exception ex) when (LibraryErrors.IsExpected(ex))
         {
             images = ImageParameters.None;
-        }
-        catch (OperationCanceledException) when (token.IsCancellationRequested)
-        {
-            return;
         }
         if (token.IsCancellationRequested || OpenCollection != collection)
         {
@@ -211,10 +209,12 @@ public sealed partial class LibraryCollectionsViewModel : ObservableObject
                 .ToList();
             slots.Add((0, null, CatalogSources.LibraryCollection, cards));
         }
+        // A card without an id could not be opened.
         return [.. slots
-            .Where(s => s.Cards.Count > 0)
             .OrderBy(s => s.Order)
-            .Select(s => new LibraryCollectionShelf(s.Title, [.. s.Cards.Select(c => CardOf(c, s.Source, server))], OpenCommand))];
+            .Select(s => (s.Title, Cards: s.Cards.Where(c => !string.IsNullOrWhiteSpace(c.Id)).Select(c => CardOf(c, s.Source, server)).ToList()))
+            .Where(s => s.Cards.Count > 0)
+            .Select(s => new LibraryCollectionShelf(s.Title, s.Cards, OpenCommand))];
     }
 
     private MediaCard CardOf(LibraryCollectionCard collection, string source, Uri server)

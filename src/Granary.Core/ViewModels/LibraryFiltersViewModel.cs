@@ -93,14 +93,15 @@ public sealed partial class LibraryFiltersViewModel(Func<Task> applied, ILogger 
             HasOptionsError = false;
             ShowOptions(filters);
         }
-        catch (Exception ex) when (LibraryErrors.IsExpected(ex, cancellationToken))
+        catch (Exception ex) when (LibraryErrors.IsExpected(ex))
         {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                // Another library took over.
+                return;
+            }
             logger.LogWarning(ex, "Could not load the filter options of a library");
             HasOptionsError = true;
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            // Another library took over.
         }
     }
 

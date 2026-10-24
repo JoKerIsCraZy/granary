@@ -45,6 +45,8 @@ internal sealed class LibraryHarness
 
     public LogSink Logs { get; } = new();
 
+    public ManualTimeProvider Clock { get; } = new();
+
     /// <summary>Answers GET <paramref name="path"/> with the bodies in order, repeating the last.</summary>
     public void Answer(string path, params string[] bodies) =>
         Silo.On(HttpMethod.Get, path, [.. bodies.Select(body => ScriptedSilo.Json(HttpStatusCode.OK, body))]);
@@ -58,6 +60,7 @@ internal sealed class LibraryHarness
         new ImageParameterCache(new ImagesApi(Silo.Http), Logs.For<ImageParameterCache>()),
         Navigation,
         new ImmediateDispatcher(),
+        Clock,
         Logs.For<LibraryViewModel>());
 
     /// <summary>Library 1, shown on its Library tab with the first page loaded.</summary>

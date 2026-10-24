@@ -70,14 +70,19 @@ public sealed partial class AlphabetJumpBar : UserControl
         }
     }
 
+    // The picked entry is red on a raised pill: not told by colour alone.
     private void ShowSelection()
     {
-        var selected = (Brush)Application.Current.Resources["SiloPrimaryBrush"];
-        var normal = (Brush)Application.Current.Resources["SiloMutedBrush"];
+        var resources = Application.Current.Resources;
+        var selectedText = (Brush)resources["SiloPrimaryBrush"];
+        var selectedBackground = (Brush)resources["SiloSurfaceRaisedBrush"];
+        var normalText = (Brush)resources["SiloMutedBrush"];
+        var normalBackground = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
         foreach (var entry in _entries)
         {
             bool isSelected = string.Equals(entry.Tag as string, SelectedLetter, StringComparison.OrdinalIgnoreCase);
-            entry.Foreground = isSelected ? selected : normal;
+            entry.Foreground = isSelected ? selectedText : normalText;
+            entry.Background = isSelected ? selectedBackground : normalBackground;
             AutomationProperties.SetItemStatus(entry, isSelected ? "Selected" : "");
         }
     }

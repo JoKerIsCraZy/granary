@@ -77,8 +77,8 @@
             <Setter Property="FontSize" Value="13" />
         </Style>
 
-        <!-- "Title ▾", "Ascending ▾". -->
-        <Style x:Key="LibraryPillDropDownStyle" TargetType="DropDownButton">
+        <!-- "Title ▾", "Ascending ▾": the dark pill of SiloSecondaryButtonStyle on a drop-down button. -->
+        <Style x:Key="LibraryPillDropDownStyle" TargetType="DropDownButton" BasedOn="{StaticResource DefaultDropDownButtonStyle}">
             <Setter Property="CornerRadius" Value="{StaticResource SiloPillCornerRadius}" />
             <Setter Property="MinHeight" Value="38" />
             <Setter Property="Padding" Value="16,6,12,6" />
@@ -125,7 +125,7 @@
                                      IsChecked="{x:Bind ViewModel.IsRecommendedTab, Mode=OneWay}" Checked="OnTabChecked" />
                         <RadioButton GroupName="LibraryTabs" Tag="Library" Content="Library" Style="{StaticResource LibraryTabStyle}"
                                      IsChecked="{x:Bind ViewModel.IsLibraryTab, Mode=OneWay}" Checked="OnTabChecked" />
-                        <RadioButton GroupName="LibraryTabs" Tag="Collections" Content="Collections" Style="{StaticResource LibraryTabStyle}"
+                        <RadioButton x:Name="CollectionsTabButton" GroupName="LibraryTabs" Tag="Collections" Content="Collections" Style="{StaticResource LibraryTabStyle}"
                                      IsChecked="{x:Bind ViewModel.IsCollectionsTab, Mode=OneWay}" Checked="OnTabChecked" />
                     </StackPanel>
                 </Border>
@@ -187,6 +187,11 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
+                <!-- Before the grid in the tab order, so the letters are not behind every card. -->
+                <controls:AlphabetJumpBar Grid.Column="1" Margin="0,24,20,24" VerticalAlignment="Center"
+                                          SelectedLetter="{x:Bind ViewModel.Browse.NamePrefix, Mode=OneWay}"
+                                          LetterCommand="{x:Bind ViewModel.Browse.SelectLetterCommand}"
+                                          Visibility="{x:Bind ViewModel.Browse.IsLetterBarVisible, Mode=OneWay}" />
                 <ScrollViewer x:Name="LibraryScroller">
                     <StackPanel Padding="48,24,24,40" Spacing="24">
                         <StackPanel Orientation="Horizontal" Spacing="10">
@@ -293,10 +298,6 @@
                         </StackPanel>
                     </StackPanel>
                 </ScrollViewer>
-                <controls:AlphabetJumpBar Grid.Column="1" Margin="0,24,20,24" VerticalAlignment="Center"
-                                          SelectedLetter="{x:Bind ViewModel.Browse.NamePrefix, Mode=OneWay}"
-                                          LetterCommand="{x:Bind ViewModel.Browse.SelectLetterCommand}"
-                                          Visibility="{x:Bind ViewModel.Browse.IsLetterBarVisible, Mode=OneWay}" />
             </Grid>
 
             <!-- Collections: shelves of collections; one opens as a grid of its titles. -->
@@ -330,7 +331,7 @@
 
                     <StackPanel Visibility="{x:Bind ViewModel.Collections.IsCollectionOpen, Mode=OneWay}" Spacing="24">
                         <StackPanel Orientation="Horizontal" Spacing="16">
-                            <Button Style="{StaticResource SiloIconButtonStyle}" Command="{x:Bind ViewModel.Collections.CloseCommand}"
+                            <Button x:Name="BackToCollectionsButton" Style="{StaticResource SiloIconButtonStyle}" Command="{x:Bind ViewModel.Collections.CloseCommand}"
                                     AutomationProperties.Name="Back to collections" ToolTipService.ToolTip="Back to collections">
                                 <FontIcon Glyph="&#xE72B;" FontSize="14" />
                             </Button>

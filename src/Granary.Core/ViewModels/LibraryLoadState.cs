@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Granary.Core.Api;
 
 namespace Granary.Core.ViewModels;
@@ -27,21 +28,20 @@ public static class LibraryErrors
     public const string Gone = "This isn't available any more.";
     public const string Generic = "Something went wrong while loading. Try again.";
 
-    /// <summary>Failures a load reports on the page instead of letting them escape.</summary>
-    public static bool IsExpected(Exception exception, CancellationToken cancellationToken) => exception switch
-    {
-        HttpRequestException or SiloApiException => true,
-        // A timeout of the HTTP client, not a cancellation of ours.
-        OperationCanceledException => !cancellationToken.IsCancellationRequested,
-        _ => false,
-    };
+    /// <summary>
+    /// The failures a load catches instead of letting them escape: transport errors, problem answers, malformed
+    /// answers and cancellations (a newer load's, or a timeout of the HTTP client). The caller drops whatever a
+    /// cancelled load reports, so it never overwrites the state of the load that replaced it.
+    /// </summary>
+    public static bool IsExpected(Exception exception) =>
+        exception is HttpRequestException or SiloApiException or JsonException or OperationCanceledException;
 
     public static string Describe(Exception exception) => exception switch
     {
         SiloApiException { Status: 401 or 403 } => Denied,
         SiloApiException { Status: 404 } => Gone,
         SiloApiException { Status: 429 or 503 } => Busy,
-        SiloApiException => Generic,
+        SiloApiException or JsonException => Generic,
         _ => Unreachable,
     };
 }

@@ -76,10 +76,11 @@ public sealed partial class LibraryBrowseViewModel : ObservableObject
     /// <summary>Forgets the library: no request of it is answered any more.</summary>
     public void Clear()
     {
-        _scope.Cancel();
-        _scope.Dispose();
+        var previous = _scope;
         _scope = new CancellationTokenSource();
         _restarts++;
+        previous.Cancel();
+        previous.Dispose();
         _server = null;
         _library = null;
         _isStarted = false;
@@ -200,16 +201,12 @@ public sealed partial class LibraryBrowseViewModel : ObservableObject
         {
             images = await _images.GetAsync(server, _sizes, token);
         }
-        catch (Exception ex) when (LibraryErrors.IsExpected(ex, token))
+        catch (Exception ex) when (LibraryErrors.IsExpected(ex))
         {
             images = ImageParameters.None;
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested)
-        {
-            return;
-        }
-        // A newer change started its own listing while this one waited.
-        if (restart != _restarts)
+        // A newer change started its own listing while this one waited, or the library was cleared.
+        if (restart != _restarts || token.IsCancellationRequested)
         {
             return;
         }

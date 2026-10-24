@@ -98,6 +98,21 @@ public sealed class LibraryCollectionsTests
     }
 
     [Fact]
+    public async Task CardWithoutAnId_IsLeftOut()
+    {
+        _harness.Answer(CollectionsPath, """
+            { "library_id": "1", "collections": [], "groups": [],
+              "ungrouped": { "sort_order": 0, "collections": [
+                { "id": "", "title": "Broken", "poster_url": "", "item_count": 3, "poster_is_collage": false },
+                { "id": "c1", "title": "Oscar Winners", "poster_url": "", "item_count": 12, "poster_is_collage": false } ] } }
+            """);
+
+        var library = await OpenCollectionsTabAsync();
+
+        Assert.Equal("Oscar Winners", Assert.Single(Assert.Single(library.Collections.Shelves).Cards).Title);
+    }
+
+    [Fact]
     public async Task NoCollections_ShowsTheEmptyState()
     {
         _harness.Answer(CollectionsPath, LibraryPayloads.NoCollections);

@@ -68,21 +68,25 @@ public sealed partial class LibraryRowsViewModel(CatalogApi catalog, INavigation
                 }
             }
             ShowState(stillLoading: empty.Count > 0);
-            await HydrateAsync(server, libraryId, images, empty, token);
-            if (!token.IsCancellationRequested)
+            var failure = await HydrateAsync(server, libraryId, images, empty, token);
+            if (token.IsCancellationRequested)
             {
-                ShowState(stillLoading: false);
+                return;
+            }
+            ShowState(stillLoading: false);
+            if (State == LibraryLoadState.Empty && failure is not null)
+            {
+                // Not an empty library: none of its rows could be read.
+                ShowError(failure);
             }
         }
-        catch (Exception ex) when (LibraryErrors.IsExpected(ex, token))
+        catch (Exception ex) when (LibraryErrors.IsExpected(ex))
         {
-            logger.LogWarning(ex, "Could not load the rows of a library");
-            ErrorMessage = LibraryErrors.Describe(ex);
-            State = LibraryLoadState.Error;
-        }
-        catch (OperationCanceledException) when (token.IsCancellationRequested)
-        {
-            // Another library, or another load of this one, took over.
+            if (!token.IsCancellationRequested)
+            {
+                logger.LogWarning(ex, "Could not load the rows of a library");
+                ShowError(ex);
+            }
         }
     }
 
@@ -113,12 +117,19 @@ public sealed partial class LibraryRowsViewModel(CatalogApi catalog, INavigation
 
     private CancellationToken Restart()
     {
-        _run.Cancel();
-        _run.Dispose();
+        var previous = _run;
         _run = new CancellationTokenSource();
+        previous.Cancel();
+        previous.Dispose();
         Rows.Clear();
         ErrorMessage = "";
         return _run.Token;
+    }
+
+    private void ShowError(Exception failure)
+    {
+        ErrorMessage = LibraryErrors.Describe(failure);
+        State = LibraryLoadState.Error;
     }
 
     private void ShowState(bool stillLoading)
@@ -133,17 +144,19 @@ public sealed partial class LibraryRowsViewModel(CatalogApi catalog, INavigation
         }
     }
 
-    private async Task HydrateAsync(Uri server, string libraryId, ImageParameters images, IReadOnlyList<LibraryRowViewModel> rows, CancellationToken cancellationToken)
+    /// <summary>Fetches the cards of each row; answers the last failure, or null when none failed.</summary>
+    private async Task<Exception?> HydrateAsync(Uri server, string libraryId, ImageParameters images, IReadOnlyList<LibraryRowViewModel> rows, CancellationToken cancellationToken)
     {
         if (rows.Count == 0)
         {
-            return;
+            return null;
         }
         using var gate = new SemaphoreSlim(MaxConcurrentHydrations);
-        await Task.WhenAll(rows.Select(row => HydrateRowAsync(server, libraryId, images, row, gate, cancellationToken)));
+        var failures = await Task.WhenAll(rows.Select(row => HydrateRowAsync(server, libraryId, images, row, gate, cancellationToken)));
+        return failures.LastOrDefault(f => f is not null);
     }
 
-    private async Task HydrateRowAsync(Uri server, string libraryId, ImageParameters images, LibraryRowViewModel row, SemaphoreSlim gate, CancellationToken cancellationToken)
+    private async Task<Exception?> HydrateRowAsync(Uri server, string libraryId, ImageParameters images, LibraryRowViewModel row, SemaphoreSlim gate, CancellationToken cancellationToken)
     {
         await gate.WaitAsync(cancellationToken);
         try
@@ -154,11 +167,17 @@ public sealed partial class LibraryRowsViewModel(CatalogApi catalog, INavigation
                 row.Cards = CardsOf(section, server);
                 ShowState(stillLoading: true);
             }
+            return null;
         }
-        catch (Exception ex) when (LibraryErrors.IsExpected(ex, cancellationToken))
+        catch (Exception ex) when (LibraryErrors.IsExpected(ex))
         {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return null;
+            }
             // The row stays hidden; the others still show.
             logger.LogWarning(ex, "Could not load the cards of a library row");
+            return ex;
         }
         finally
         {

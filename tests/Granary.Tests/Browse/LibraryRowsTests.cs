@@ -111,6 +111,26 @@ public sealed class LibraryRowsTests
     }
 
     [Fact]
+    public async Task EveryRowFetchFailing_IsAnErrorNotAnEmptyLibrary()
+    {
+        const string ItemsPath = "api/v2/library/1/sections/recently_added/items";
+        _harness.Answer(SectionsPath, """{"sections": [{"id": "recently_added", "section_type": "recently_added", "title": "Recently Added", "featured": false, "item_limit": 20, "total_count": 12, "is_custom": false, "customized": false, "items": []}]}""");
+        _harness.Answer(ItemsPath, ScriptedSilo.Problem(503, ProblemCodes.DependencyUnavailable), ScriptedSilo.Json(HttpStatusCode.OK, LibraryPayloads.RecentlyAddedItems));
+        var library = _harness.Create();
+
+        await library.ActivateAsync("1");
+
+        Assert.True(library.Recommended.HasError);
+        Assert.False(library.Recommended.IsEmpty);
+        Assert.Equal(LibraryErrors.Busy, library.Recommended.ErrorMessage);
+
+        await library.Recommended.RetryCommand.ExecuteAsync(null);
+
+        Assert.Equal(LibraryLoadState.Ready, library.Recommended.State);
+        Assert.Equal(2, Assert.Single(library.Recommended.Rows).Cards.Count);
+    }
+
+    [Fact]
     public async Task NoRowsWithTitles_ShowsTheEmptyState()
     {
         _harness.Answer(SectionsPath, """{"sections": [{"id": "watchlist", "section_type": "watchlist", "title": "Your Watchlist", "featured": false, "item_limit": 20, "total_count": 0, "is_custom": false, "customized": false, "items": []}]}""");

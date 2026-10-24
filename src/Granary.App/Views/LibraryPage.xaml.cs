@@ -5,6 +5,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using Windows.Globalization.NumberFormatting;
 
@@ -26,7 +28,11 @@ public sealed partial class LibraryPage : Page
         YearFromBox.NumberFormatter = years;
         YearToBox.NumberFormatter = years;
 
-        ViewModel.LibraryChanged += (_, _) => ScrollToTop(RecommendedScroller, LibraryScroller, CollectionsScroller);
+        ViewModel.LibraryChanged += (_, _) =>
+        {
+            _shelvesOffset = 0;
+            ScrollToTop(RecommendedScroller, LibraryScroller, CollectionsScroller);
+        };
         ViewModel.Browse.Grid.Restarted += (_, _) => ScrollToTop(LibraryScroller);
         ViewModel.Collections.PropertyChanged += OnCollectionsPropertyChanged;
     }
@@ -116,22 +122,48 @@ public sealed partial class LibraryPage : Page
     private void OnFilterActionClick(object sender, RoutedEventArgs e) => FiltersFlyout.Hide();
 
     // Opening a collection starts at the top of its titles; closing it returns to where the shelves were.
+    // The focused card or Back button is hidden by the switch, so the keyboard focus moves along with it.
     private void OnCollectionsPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName != nameof(LibraryCollectionsViewModel.OpenCollection))
         {
             return;
         }
+        var focused = XamlRoot is { } root ? FocusManager.GetFocusedElement(root) as DependencyObject : null;
         if (ViewModel.Collections.IsCollectionOpen)
         {
             _shelvesOffset = CollectionsScroller.VerticalOffset;
             ScrollToTop(CollectionsScroller);
+            if (IsWithin(focused, CollectionsScroller))
+            {
+                DispatcherQueue.TryEnqueue(() => BackToCollectionsButton.Focus(FocusState.Programmatic));
+            }
         }
         else
         {
-            double offset = _shelvesOffset;
-            DispatcherQueue.TryEnqueue(() => CollectionsScroller.ChangeView(null, offset, null, disableAnimation: true));
+            bool moveFocus = ReferenceEquals(focused, BackToCollectionsButton);
+            // Read when it runs: a library change resets the offset after this was queued.
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                CollectionsScroller.ChangeView(null, _shelvesOffset, null, disableAnimation: true);
+                if (moveFocus)
+                {
+                    CollectionsTabButton.Focus(FocusState.Programmatic);
+                }
+            });
         }
+    }
+
+    private static bool IsWithin(DependencyObject? element, DependencyObject ancestor)
+    {
+        for (var current = element; current is not null; current = VisualTreeHelper.GetParent(current))
+        {
+            if (ReferenceEquals(current, ancestor))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static void ScrollToTop(params ScrollViewer[] scrollers)
