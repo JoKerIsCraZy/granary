@@ -1,14 +1,62 @@
+using Granary.Core.Artwork;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml.Media.Imaging;
 
 namespace Granary.App.Controls;
 
-/// <summary>Loads catalog artwork.</summary>
+/// <summary>Loads catalog artwork through the app's artwork cache (<see cref="ArtworkLoader"/>).</summary>
 internal static class Artwork
 {
+    private static ArtworkLoader Loader => field ??= App.Services.GetRequiredService<ArtworkLoader>();
+
+    private static ILogger Logger => field ??= App.Services.GetRequiredService<ILoggerFactory>().CreateLogger(typeof(Artwork));
+
     /// <summary>
-    /// Artwork URLs are presigned and public (docs/api-contract.md, 7.10): BitmapImage fetches them without
-    /// credentials, as the server requires, and decodes only as many pixels as the card shows.
+    /// A bitmap of <paramref name="url"/>, decoded only as wide as the view shows it, filled when the cache has the
+    /// image; it raises ImageOpened then. When the cache cannot get the image, the bitmap loads the URL itself,
+    /// so a broken image still raises ImageFailed. Cancelling (the view moved on to another item) leaves it empty.
     /// </summary>
-    public static BitmapImage? Load(Uri? url, int decodeWidth) =>
-        url is null ? null : new BitmapImage(url) { DecodePixelWidth = decodeWidth, DecodePixelType = DecodePixelType.Logical };
+    public static BitmapImage? Load(Uri? url, int decodeWidth, CancellationToken cancellationToken = default)
+    {
+        if (url is not { IsAbsoluteUri: true })
+        {
+            return null;
+        }
+        var bitmap = new BitmapImage { DecodePixelWidth = decodeWidth, DecodePixelType = DecodePixelType.Logical };
+        Fill(bitmap, url, cancellationToken);
+        return bitmap;
+    }
+
+    private static async void Fill(BitmapImage bitmap, Uri url, CancellationToken cancellationToken)
+    {
+        ArtworkBytes? artwork;
+        try
+        {
+            artwork = await Loader.GetAsync(url, cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return;
+        }
+        if (artwork is not null)
+        {
+            try
+            {
+                using var stream = artwork.OpenRead().AsRandomAccessStream();
+                await bitmap.SetSourceAsync(stream);
+                return;
+            }
+            catch (Exception ex)
+            {
+                // The bytes do not decode: drop them from the cache, and let the bitmap try the URL.
+                Loader.Invalidate(url);
+                Logger.LogWarning("Artwork {Path} could not be decoded: {Failure}", url.AbsolutePath, ex.Message);
+            }
+        }
+        if (!cancellationToken.IsCancellationRequested)
+        {
+            bitmap.UriSource = url;
+        }
+    }
 }

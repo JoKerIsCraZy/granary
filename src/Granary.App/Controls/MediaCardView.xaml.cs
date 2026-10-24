@@ -13,6 +13,9 @@ public sealed partial class MediaCardView : UserControl
     private const int PosterDecodeWidth = 370;
     private const int LandscapeDecodeWidth = 640;
 
+    // Cancelled when the container is recycled for another card, so the old card's artwork stays out.
+    private CancellationTokenSource? _artwork;
+
     public MediaCardView()
     {
         InitializeComponent();
@@ -33,9 +36,11 @@ public sealed partial class MediaCardView : UserControl
     {
         Placeholder.Text = card?.Title ?? "";
         Placeholder.Visibility = Visibility.Visible;
-        ArtImage.Source = card is null
+        _artwork?.Cancel();
+        _artwork = card?.ImageUrl is null ? null : new CancellationTokenSource();
+        ArtImage.Source = card is null || _artwork is null
             ? null
-            : Artwork.Load(card.ImageUrl, card.Shape == MediaCardShape.Poster ? PosterDecodeWidth : LandscapeDecodeWidth);
+            : Artwork.Load(card.ImageUrl, card.Shape == MediaCardShape.Poster ? PosterDecodeWidth : LandscapeDecodeWidth, _artwork.Token);
 
         SetBadge(ResolutionBadge, ResolutionText, card?.ResolutionBadge);
         SetBadge(AudioBadge, AudioText, card?.AudioBadge);

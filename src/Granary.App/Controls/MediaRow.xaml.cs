@@ -9,7 +9,8 @@ namespace Granary.App.Controls;
 
 /// <summary>
 /// A titled row of cards. <see cref="CardInvokedCommand"/> gets the <see cref="MediaCard"/>; "Explore all"
-/// shows only when <see cref="ExploreAllCommand"/> is set.
+/// shows only when <see cref="ExploreAllCommand"/> is set. The cards' artwork is prefetched, so scrolling the
+/// row shows images at once.
 /// </summary>
 public sealed partial class MediaRow : UserControl
 {
@@ -17,7 +18,8 @@ public sealed partial class MediaRow : UserControl
         DependencyProperty.Register(nameof(Title), typeof(string), typeof(MediaRow), new PropertyMetadata(""));
 
     public static readonly DependencyProperty ItemsSourceProperty =
-        DependencyProperty.Register(nameof(ItemsSource), typeof(object), typeof(MediaRow), new PropertyMetadata(null));
+        DependencyProperty.Register(nameof(ItemsSource), typeof(object), typeof(MediaRow),
+            new PropertyMetadata(null, (sender, _) => ((MediaRow)sender).FollowItems()));
 
     public static readonly DependencyProperty CardInvokedCommandProperty =
         DependencyProperty.Register(nameof(CardInvokedCommand), typeof(ICommand), typeof(MediaRow), new PropertyMetadata(null));
@@ -28,11 +30,14 @@ public sealed partial class MediaRow : UserControl
     public const double PosterWidth = 185;
     public const double LandscapeWidth = 314;
 
+    private readonly CardArtworkPrefetch _prefetch = new();
     private bool _isPointerInside;
 
     public MediaRow()
     {
         InitializeComponent();
+        Loaded += (_, _) => FollowItems();
+        Unloaded += (_, _) => _prefetch.Follow(null);
     }
 
     public string Title
@@ -66,6 +71,14 @@ public sealed partial class MediaRow : UserControl
     public Visibility HasCommand(ICommand? command) => command is null ? Visibility.Collapsed : Visibility.Visible;
 
     public string ExploreAllName(string title) => $"Explore all: {title}";
+
+    private void FollowItems()
+    {
+        if (IsLoaded)
+        {
+            _prefetch.Follow(ItemsSource);
+        }
+    }
 
     private void OnCardClick(object sender, RoutedEventArgs e)
     {

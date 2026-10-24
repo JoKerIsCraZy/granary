@@ -7,12 +7,13 @@ namespace Granary.App.Controls;
 
 /// <summary>
 /// Cards in a grid that fills the width. <see cref="LoadMoreCommand"/> runs when a card near the end is
-/// realized, so a paged list grows while the user scrolls.
+/// realized, so a paged list grows while the user scrolls. The cards' artwork is prefetched as they arrive.
 /// </summary>
 public sealed partial class MediaGrid : UserControl
 {
     public static readonly DependencyProperty ItemsSourceProperty =
-        DependencyProperty.Register(nameof(ItemsSource), typeof(object), typeof(MediaGrid), new PropertyMetadata(null));
+        DependencyProperty.Register(nameof(ItemsSource), typeof(object), typeof(MediaGrid),
+            new PropertyMetadata(null, (sender, _) => ((MediaGrid)sender).FollowItems()));
 
     public static readonly DependencyProperty CardShapeProperty =
         DependencyProperty.Register(nameof(CardShape), typeof(MediaCardShape), typeof(MediaGrid),
@@ -24,12 +25,17 @@ public sealed partial class MediaGrid : UserControl
     public static readonly DependencyProperty LoadMoreCommandProperty =
         DependencyProperty.Register(nameof(LoadMoreCommand), typeof(ICommand), typeof(MediaGrid), new PropertyMetadata(null));
 
-    // About two screens of posters ahead of the end.
-    private const int LoadMoreThreshold = 24;
+    // The next page is asked for this many rows before the last realized card (which is about a screen below
+    // the visible ones), so its artwork is prefetched before the user scrolls there.
+    private const int LoadMoreRowsAhead = 4;
+
+    private readonly CardArtworkPrefetch _prefetch = new();
 
     public MediaGrid()
     {
         InitializeComponent();
+        Loaded += (_, _) => FollowItems();
+        Unloaded += (_, _) => _prefetch.Follow(null);
     }
 
     /// <summary>The cards: any list of <see cref="MediaCard"/>; an observable one grows in place.</summary>
@@ -61,10 +67,19 @@ public sealed partial class MediaGrid : UserControl
     private static void OnCardShapeChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e) =>
         ((MediaGrid)sender).GridLayout.MinItemWidth = (MediaCardShape)e.NewValue == MediaCardShape.Landscape ? 280 : 185;
 
+    private void FollowItems()
+    {
+        if (IsLoaded)
+        {
+            _prefetch.Follow(ItemsSource);
+        }
+    }
+
     private void OnElementPrepared(ItemsRepeater sender, ItemsRepeaterElementPreparedEventArgs args)
     {
         int count = sender.ItemsSourceView?.Count ?? 0;
-        if (count > 0 && args.Index >= count - LoadMoreThreshold && LoadMoreCommand is { } command && command.CanExecute(null))
+        int columns = Math.Max(1, (int)((sender.ActualWidth + GridLayout.MinColumnSpacing) / (GridLayout.MinItemWidth + GridLayout.MinColumnSpacing)));
+        if (count > 0 && args.Index >= count - columns * LoadMoreRowsAhead && LoadMoreCommand is { } command && command.CanExecute(null))
         {
             command.Execute(null);
         }
