@@ -25,13 +25,20 @@
     </UserControl.Resources>
 
     <Grid>
-        <Image x:Name="Backdrop" Stretch="UniformToFill" Opacity="0" ImageOpened="OnBackdropOpened"
-               Source="{x:Bind controls:DetailHero.LoadImage(ViewModel.BackdropUrl, 0), Mode=OneWay}"
-               AutomationProperties.AccessibilityView="Raw">
-            <Image.OpacityTransition>
+        <!--
+            A brush, not an Image: an Image would ask for its own height at the hero's width (16:9 of an ultrawide
+            window is taller than the screen) and push the content out of view. A brush only fills the space
+            the minimum height and the content give the hero. Anchored at the top, where faces usually are.
+        -->
+        <Rectangle x:Name="Backdrop" Opacity="0" IsHitTestVisible="False" AutomationProperties.AccessibilityView="Raw">
+            <Rectangle.Fill>
+                <ImageBrush Stretch="UniformToFill" AlignmentY="Top" ImageOpened="OnBackdropOpened"
+                            ImageSource="{x:Bind controls:DetailHero.LoadImage(ViewModel.BackdropUrl, 0), Mode=OneWay}" />
+            </Rectangle.Fill>
+            <Rectangle.OpacityTransition>
                 <ScalarTransition />
-            </Image.OpacityTransition>
-        </Image>
+            </Rectangle.OpacityTransition>
+        </Rectangle>
 
         <!-- Darker toward the left (where the text sits), toward the bottom, and a little under the title bar. -->
         <Rectangle IsHitTestVisible="False">

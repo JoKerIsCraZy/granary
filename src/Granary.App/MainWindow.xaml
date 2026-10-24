@@ -5,7 +5,9 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     Title="Granary">
 
-    <Grid x:Name="Root" Background="{StaticResource SiloBackgroundBrush}" PointerPressed="OnRootPointerPressed">
+    <!-- The window-wide shortcuts must not show their tooltip ("Ctrl+K") wherever the pointer rests. -->
+    <Grid x:Name="Root" Background="{StaticResource SiloBackgroundBrush}" PointerPressed="OnRootPointerPressed"
+          KeyboardAcceleratorPlacementMode="Hidden">
         <Grid.RowDefinitions>
             <RowDefinition Height="40" />
             <RowDefinition Height="*" />
