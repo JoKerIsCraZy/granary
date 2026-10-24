@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A person found by Search: round photo, initials while there is none, the name below. Interaction belongs to the button around it. -->
+<UserControl
+    x:Class="Granary.App.Controls.PersonCard"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="PersonPictureEllipseFillThemeBrush" Color="{StaticResource SiloSurfaceRaisedColor}" />
+        <SolidColorBrush x:Key="PersonPictureForegroundThemeBrush" Color="{StaticResource SiloMutedColor}" />
+    </UserControl.Resources>
+
+    <StackPanel Width="132" Spacing="10">
+        <PersonPicture x:Name="Picture" Width="112" Height="112" HorizontalAlignment="Center"
+                       DisplayName="{x:Bind Person.Name, Mode=OneWay}" Initials="{x:Bind Person.Initials, Mode=OneWay}"
+                       AutomationProperties.AccessibilityView="Raw" />
+        <TextBlock Text="{x:Bind Person.Name, Mode=OneWay}" Style="{StaticResource SiloCardTitleTextStyle}"
+                   HorizontalAlignment="Center" TextAlignment="Center" />
+    </StackPanel>
+</UserControl>

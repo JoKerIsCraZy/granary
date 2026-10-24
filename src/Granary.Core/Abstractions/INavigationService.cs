@@ -34,7 +34,8 @@ public enum AppRoute
 }
 
 /// <summary>Which row an "Explore all" grid lists: a Home row, or a library row when <see cref="LibraryId"/> is set.</summary>
-public sealed record SectionRouteParameter(string SectionId, string Title, string? LibraryId = null);
+/// <param name="SectionType">The row's <c>section_type</c>; Continue Watching and Next Up list landscape cards.</param>
+public sealed record SectionRouteParameter(string SectionId, string Title, string? LibraryId = null, string? SectionType = null);
 
 public interface INavigationService
 {

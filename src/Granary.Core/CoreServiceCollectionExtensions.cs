@@ -67,6 +67,8 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<SidebarViewModel>();
         services.AddTransient<SignInViewModel>();
         services.AddTransient<HomeViewModel>();
+        services.AddTransient<SectionViewModel>();
+        services.AddTransient<SearchViewModel>();
         services.AddTransient<AddServerViewModel>();
         services.AddTransient<PlayerViewModel>();
         return services;
