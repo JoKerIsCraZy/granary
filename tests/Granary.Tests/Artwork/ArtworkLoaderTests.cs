@@ -203,6 +203,8 @@ public sealed class ArtworkLoaderTests : IDisposable
         loader.Prefetch([Poster], stale.Token);
         loader.Prefetch([Still], Token);
         await AuthPipeline.Eventually(() => _server.Requests == 1);
+        // Joins the prefetch, so it is stored before the test removes the cache directory.
+        await loader.GetAsync(Still, Token);
 
         Assert.Equal(Still.AbsolutePath, Assert.Single(_server.Sent).RequestUri!.AbsolutePath);
     }
@@ -215,8 +217,10 @@ public sealed class ArtworkLoaderTests : IDisposable
 
         loader.Prefetch([Poster, Still], Token);
         await AuthPipeline.Eventually(() => _server.Requests == 2);
+        await loader.GetAsync(Still, Token);
 
         Assert.Equal(Still.AbsolutePath, _server.Sent[^1].RequestUri!.AbsolutePath);
+        Assert.Equal(2, _server.Requests);
     }
 
     [Fact]

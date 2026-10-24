@@ -487,14 +487,15 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         ShowSeasonCards();
         if (seasons.Count > 1)
         {
-            await PrefetchEpisodeStillsAsync(item, seasons, server, images, generation, cancellationToken);
+            await PrefetchEpisodeStillsAsync(item, seasons, server, images, generation);
         }
     }
 
     // A season the user opens then shows its stills at once. The lists load one after another, the season to
-    // play first; leaving the page cancels what is left. The season page asks with the same image parameters,
-    // so its stills are the ones cached here.
-    private async Task PrefetchEpisodeStillsAsync(CatalogItemDetail item, IReadOnlyList<Season> seasons, Uri server, ImageParameters images, int generation, CancellationToken cancellationToken)
+    // play first, and the season page asks with the same image parameters, so its stills are the ones cached
+    // here. Opening a season leaves this page: the prefetch is not cancelled with the page's load, so the
+    // other seasons keep coming while the user looks at one; only loading another item stops it.
+    private async Task PrefetchEpisodeStillsAsync(CatalogItemDetail item, IReadOnlyList<Season> seasons, Uri server, ImageParameters images, int generation)
     {
         int budget = MaxPrefetchedStills;
         foreach (var season in seasons.OrderBy(s => s.SeasonNumber == item.PlaySeasonNumber ? 0 : 1))
@@ -507,14 +508,14 @@ public sealed partial class ItemDetailViewModel : ObservableObject
             {
                 continue;
             }
-            var episodes = await TryLoadAsync("episodes to prefetch", () => _catalog.ListSeasonEpisodesAsync(server, season.ContentId, images: images, cancellationToken: cancellationToken), cancellationToken);
+            var episodes = await TryLoadAsync("episodes to prefetch", () => _catalog.ListSeasonEpisodesAsync(server, season.ContentId, images: images), CancellationToken.None);
             if (episodes is null)
             {
                 continue;
             }
             List<Uri> stills = [.. episodes.Items.Select(e => ArtworkUrl.Resolve(server, e.StillUrl)).OfType<Uri>().Take(budget)];
             budget -= stills.Count;
-            _artwork.Prefetch(stills, cancellationToken);
+            _artwork.Prefetch(stills);
         }
     }
 

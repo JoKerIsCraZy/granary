@@ -3,6 +3,7 @@ using Granary.Core.Abstractions;
 using Granary.Core.Api;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Detail;
+using Granary.Tests.Auth;
 using Granary.Tests.Fakes;
 using Granary.Tests.Profiles;
 using Microsoft.Extensions.DependencyInjection;
@@ -222,6 +223,24 @@ public sealed class ItemDetailViewModelTests
         Assert.Equal([Art("/api/v2/artwork/episodes/11/w400.webp?exp=1&sig=s11")], _fixture.Artwork.Urls);
         Assert.Equal(ItemDetailState.Ready, detail.State);
         Assert.Equal(4, detail.Seasons.Count);
+    }
+
+    [Fact]
+    public async Task Series_LeavingThePage_LetsThePrefetchFinish()
+    {
+        // Opening a season leaves the series page; the stills of the other seasons should keep coming.
+        var (held, gate) = Held();
+        _fixture.Series().Get(SeasonItemEpisodesPath("season-96677-1"), held);
+        var detail = _fixture.Create();
+
+        var load = detail.LoadCommand.ExecuteAsync(SeriesId);
+        await AuthPipeline.Eventually(() => _fixture.Silo.SentTo(HttpMethod.Get, SeasonItemEpisodesPath("season-96677-1")).Count == 1);
+        detail.LoadCommand.Cancel();
+        gate.SetResult(await Ok(SeasonOneEpisodes)());
+        await load;
+
+        Assert.Contains(Art("/api/v2/artwork/episodes/11/w400.webp?exp=1&sig=s11"), _fixture.Artwork.Urls);
+        Assert.Single(_fixture.Silo.SentTo(HttpMethod.Get, SeasonItemEpisodesPath("season-96677-0")));
     }
 
     [Fact]
