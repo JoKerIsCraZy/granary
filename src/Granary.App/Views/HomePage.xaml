@@ -35,7 +35,7 @@
                     </ItemsRepeater.Layout>
                     <ItemsRepeater.ItemTemplate>
                         <DataTemplate x:DataType="vm:HomeRowViewModel">
-                            <controls:MediaRow Title="{x:Bind Title}" ItemsSource="{x:Bind Cards}"
+                            <controls:MediaRow DataContext="{x:Bind}" Title="{x:Bind Title}" ItemsSource="{x:Bind Cards}"
                                                CardInvokedCommand="{x:Bind OpenCardCommand}" ExploreAllCommand="{x:Bind ExploreAllCommand}" />
                         </DataTemplate>
                     </ItemsRepeater.ItemTemplate>

@@ -73,7 +73,7 @@
                         </ItemsRepeater.Layout>
                         <ItemsRepeater.ItemTemplate>
                             <DataTemplate x:DataType="vm:SearchPerson">
-                                <Button Style="{StaticResource SiloCardButtonStyle}" HorizontalAlignment="Left" Click="OnPersonClick"
+                                <Button Style="{StaticResource SiloCardButtonStyle}" HorizontalAlignment="Left" Click="OnPersonClick" DataContext="{x:Bind}"
                                         AutomationProperties.Name="{x:Bind Name}" ToolTipService.ToolTip="{x:Bind Name}">
                                     <controls:PersonCard Person="{x:Bind}" />
                                 </Button>

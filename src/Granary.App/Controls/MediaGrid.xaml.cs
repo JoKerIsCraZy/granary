@@ -72,7 +72,8 @@ public sealed partial class MediaGrid : UserControl
 
     private void OnCardClick(object sender, RoutedEventArgs e)
     {
-        if (sender is FrameworkElement { DataContext: MediaCard card } && CardInvokedCommand is { } command && command.CanExecute(card))
+        // The card comes from the button's content: x:Bind templates in an ItemsRepeater set no DataContext.
+        if (sender is Button { Content: MediaCardView { Card: { } card } } && CardInvokedCommand is { } command && command.CanExecute(card))
         {
             command.Execute(card);
         }

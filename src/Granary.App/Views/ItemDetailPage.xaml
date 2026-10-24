@@ -30,7 +30,7 @@
                                 </ItemsRepeater.Layout>
                                 <ItemsRepeater.ItemTemplate>
                                     <DataTemplate x:DataType="cards:MediaCard">
-                                        <Button Width="185" Style="{StaticResource SiloCardButtonStyle}" Click="OnSeasonClick"
+                                        <Button Width="185" Style="{StaticResource SiloCardButtonStyle}" Click="OnSeasonClick" DataContext="{x:Bind}"
                                                 AutomationProperties.Name="{x:Bind local:ItemDetailPage.SeasonName(Title, Caption, IsWatched)}">
                                             <controls:MediaCardView Card="{x:Bind}" />
                                         </Button>
@@ -64,7 +64,7 @@
                             <ItemsRepeater.ItemTemplate>
                                 <DataTemplate x:DataType="detail:DetailEpisode">
                                     <!-- Top-aligned: episodes without an overview are shorter than their row. -->
-                                    <Button VerticalAlignment="Top" Style="{StaticResource SiloCardButtonStyle}" Click="OnEpisodeClick"
+                                    <Button VerticalAlignment="Top" Style="{StaticResource SiloCardButtonStyle}" Click="OnEpisodeClick" DataContext="{x:Bind}"
                                             AutomationProperties.Name="{x:Bind AccessibleName}">
                                         <controls:DetailEpisodeCard Episode="{x:Bind}" />
                                     </Button>
@@ -85,7 +85,7 @@
                                 </ItemsRepeater.Layout>
                                 <ItemsRepeater.ItemTemplate>
                                     <DataTemplate x:DataType="detail:DetailTrailer">
-                                        <Button Style="{StaticResource SiloCardButtonStyle}" Click="OnTrailerClick"
+                                        <Button Style="{StaticResource SiloCardButtonStyle}" Click="OnTrailerClick" DataContext="{x:Bind}"
                                                 AutomationProperties.Name="{x:Bind AccessibleName}" ToolTipService.ToolTip="Opens YouTube in the browser">
                                             <controls:DetailTrailerCard Trailer="{x:Bind}" />
                                         </Button>

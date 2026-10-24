@@ -91,7 +91,7 @@
                             <StackPanel Orientation="Horizontal" Spacing="2">
                                 <FontIcon Glyph="&#xE76C;" FontSize="10" VerticalAlignment="Center" Foreground="{StaticResource DetailCreditSeparatorBrush}"
                                           Visibility="{x:Bind controls:DetailHero.Not(IsFirst)}" AutomationProperties.AccessibilityView="Raw" />
-                                <HyperlinkButton Padding="4,2" Click="OnCrumbClick" Visibility="{x:Bind IsLink}"
+                                <HyperlinkButton Padding="4,2" Click="OnCrumbClick" Visibility="{x:Bind IsLink}" DataContext="{x:Bind}"
                                                  Foreground="{StaticResource SiloMutedBrush}" FontSize="13">
                                     <TextBlock Text="{x:Bind Label}" />
                                 </HyperlinkButton>
