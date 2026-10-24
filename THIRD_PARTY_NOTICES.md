@@ -34,6 +34,7 @@ Licenses as declared in each package's `.nuspec`:
 |---|---|---|---|
 | Microsoft.WindowsAppSDK | 2.5.1 | Microsoft Software License Terms (`license.txt` in the package) | App; its runtime is redistributed because the app is self-contained |
 | CommunityToolkit.Mvvm | 8.4.2 | MIT | Core |
+| QRCoder | 1.8.1 | MIT | App (QR code for device sign-in) |
 | Microsoft.Extensions.DependencyInjection(.Abstractions), .Http, .Logging(.Abstractions) | 10.0.13 | MIT | Core, Player, App |
 | System.Security.Cryptography.ProtectedData | 10.0.13 | MIT | Core |
 | xunit.v3 | 4.0.2 | Apache-2.0 | Tests only |
@@ -43,6 +44,15 @@ Licenses as declared in each package's `.nuspec`:
 Open point: the Windows App SDK runtime is proprietary and not a system library of Windows. Before
 the first release, decide how the AGPL-3.0-or-later licensing handles linking with it (for example an
 additional permission for the Windows App SDK, similar to the App Store permission in silo-apple).
+
+## Plus Jakarta Sans (bundled font)
+
+| | |
+|---|---|
+| Component | Plus Jakarta Sans, the typeface of Silo's web client |
+| Version | 2.7.1, static TTF files: Regular, Italic, Medium, SemiBold, Bold, ExtraBold |
+| Origin | Release archive `PlusJakartaSans-2.7.1.zip` of <https://github.com/tokotype/PlusJakartaSans>, SHA-256 `4bfc5cdf97d750423bb3d1d40ed8e529bc92288924d9c65e18ff486acefac66c` |
+| License | SIL Open Font License 1.1; the license ships next to the fonts (`src/Granary.App/Assets/Fonts/OFL.txt`). The OFL allows bundling the fonts with software under any license. |
 
 ## Silo
 

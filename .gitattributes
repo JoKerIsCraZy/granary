@@ -16,6 +16,7 @@
 
 *.png binary
 *.ico binary
+*.ttf binary
 *.dll binary
 *.mkv binary
 *.mp4 binary
