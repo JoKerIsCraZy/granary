@@ -1,7 +1,9 @@
 using System.Text.Json.Serialization;
 using Granary.Core.Api.Accounts;
 using Granary.Core.Api.Auth;
+using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Discovery;
+using Granary.Core.Api.Images;
 using Granary.Core.Api.Profiles;
 
 namespace Granary.Core.Api;
@@ -37,4 +39,36 @@ namespace Granary.Core.Api;
 [JsonSerializable(typeof(ChangePasswordRequest))]
 [JsonSerializable(typeof(AccountPasswordCapability))]
 [JsonSerializable(typeof(Dictionary<string, string>))]
+[JsonSerializable(typeof(SectionCollection))]
+[JsonSerializable(typeof(Section))]
+[JsonSerializable(typeof(CatalogItem))]
+[JsonSerializable(typeof(CatalogItemUserState))]
+[JsonSerializable(typeof(CatalogItemOverlay))]
+[JsonSerializable(typeof(CatalogItemCollection))]
+[JsonSerializable(typeof(PageInfo))]
+[JsonSerializable(typeof(HomeDismissalRequest))]
+[JsonSerializable(typeof(LibraryCollection))]
+[JsonSerializable(typeof(Library))]
+[JsonSerializable(typeof(CatalogBrowseCollection))]
+[JsonSerializable(typeof(CatalogEffectiveSort))]
+[JsonSerializable(typeof(CatalogFilters))]
+[JsonSerializable(typeof(CatalogTechnicalFilters))]
+[JsonSerializable(typeof(CatalogItemDetail))]
+[JsonSerializable(typeof(CatalogRating))]
+[JsonSerializable(typeof(CastCredit))]
+[JsonSerializable(typeof(CrewCredit))]
+[JsonSerializable(typeof(WatchRollup))]
+[JsonSerializable(typeof(FileVersion))]
+[JsonSerializable(typeof(ItemVideo))]
+[JsonSerializable(typeof(ItemExtra))]
+[JsonSerializable(typeof(SeasonCollection))]
+[JsonSerializable(typeof(Season))]
+[JsonSerializable(typeof(EpisodeCollection))]
+[JsonSerializable(typeof(Episode))]
+[JsonSerializable(typeof(EpisodeFile))]
+[JsonSerializable(typeof(CatalogSearchCapabilities))]
+[JsonSerializable(typeof(PersonCollection))]
+[JsonSerializable(typeof(Person))]
+[JsonSerializable(typeof(ImageCapabilities))]
+[JsonSerializable(typeof(ImageSizeWidths))]
 public sealed partial class SiloJsonContext : JsonSerializerContext;
