@@ -33,6 +33,9 @@ public sealed record ApiProblem(
         string trimmed = path.TrimEnd('/');
         int slash = trimmed.LastIndexOf('/');
         string code = slash >= 0 ? trimmed[(slash + 1)..] : trimmed;
-        return code.Length > 0 ? code : ProblemCodes.Unknown;
+        // Codes are logged; anything but a plain identifier could forge log lines.
+        return code.Length is > 0 and <= 64 && code.All(c => char.IsAsciiLetterOrDigit(c) || c is '_' or '-' or '.')
+            ? code
+            : ProblemCodes.Unknown;
     }
 }

@@ -18,7 +18,13 @@ public sealed record Profile(
     string SubtitleMode);
 
 /// <summary><c>POST /api/v2/profiles/{id}/verify-pin</c> body.</summary>
-public sealed record ProfilePinCheck(string Pin);
+public sealed record ProfilePinCheck(string Pin)
+{
+    public override string ToString() => "ProfilePinCheck { Pin = <redacted> }";
+}
 
 /// <summary>Answer of verify-pin. A wrong PIN is <c>valid: false</c>, not an error.</summary>
-public sealed record ProfileVerification(bool Valid, string? ProfileToken, DateTimeOffset? ExpiresAt);
+public sealed record ProfileVerification(bool Valid, string? ProfileToken, DateTimeOffset? ExpiresAt)
+{
+    public override string ToString() => $"ProfileVerification {{ Valid = {Valid} }}";
+}

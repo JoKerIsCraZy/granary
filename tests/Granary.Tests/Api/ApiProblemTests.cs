@@ -12,6 +12,7 @@ public sealed class ApiProblemTests
     [InlineData("validation_failed", "validation_failed")]
     [InlineData(null, "unknown")]
     [InlineData("", "unknown")]
+    [InlineData("rate_limited\r\nERROR forged log line", "unknown")]
     public void Code_IsTheLastPathSegmentOfType(string? type, string expected)
     {
         var problem = new ApiProblem(type, null, 401, null, null, null);

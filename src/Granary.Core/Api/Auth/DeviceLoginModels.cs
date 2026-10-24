@@ -22,10 +22,16 @@ public sealed record DeviceLoginStart(
     long ExpiresIn,
     long Interval,
     string DeviceName,
-    string DevicePlatform);
+    string DevicePlatform)
+{
+    public override string ToString() => $"DeviceLoginStart {{ ExpiresAt = {ExpiresAt:O}, Interval = {Interval} }}";
+}
 
 /// <summary><c>POST /api/v2/auth/device/poll</c> and <c>/cancel</c> body.</summary>
-public sealed record DeviceCodeRequest(string DeviceCode);
+public sealed record DeviceCodeRequest(string DeviceCode)
+{
+    public override string ToString() => "DeviceCodeRequest { DeviceCode = <redacted> }";
+}
 
 /// <summary><c>POST /api/v2/auth/device/poll</c> answer; <see cref="Tokens"/> only when approved, exactly once.</summary>
 public sealed record DeviceLoginPoll(
@@ -36,7 +42,10 @@ public sealed record DeviceLoginPoll(
     TokenPair? Tokens,
     string ProfileId,
     string ProfileToken,
-    bool Temporary);
+    bool Temporary)
+{
+    public override string ToString() => $"DeviceLoginPoll {{ Status = {Status}, Opened = {Opened}, PollAfter = {PollAfter} }}";
+}
 
 /// <summary><c>POST /api/v2/auth/device/cancel</c> answer.</summary>
 public sealed record DeviceLoginCancel(string Status);

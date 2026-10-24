@@ -12,7 +12,7 @@ namespace Granary.Core.Security;
 /// Stores all secrets in one file encrypted with DPAPI for the current Windows user. The file lives
 /// in local (non-roaming) app data, so tokens never leave this machine and account. A file that can no
 /// longer be decrypted (another Windows user, a reset profile, corruption) is set aside as
-/// <c>.unreadable</c> and the store starts empty, so the user can sign in again.
+/// <c>.unreadable-&lt;time&gt;</c> and the store starts empty, so the user can sign in again.
 /// </summary>
 [SupportedOSPlatform("windows")]
 public sealed class DpapiSecretStore(string filePath, ILogger<DpapiSecretStore>? logger = null) : ISecretStore
@@ -56,7 +56,12 @@ public sealed class DpapiSecretStore(string filePath, ILogger<DpapiSecretStore>?
             CryptographicOperations.ZeroMemory(plain);
             Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(filePath))!);
             string temp = filePath + ".tmp";
-            await File.WriteAllBytesAsync(temp, cipher, cancellationToken).ConfigureAwait(false);
+            await using (var stream = new FileStream(temp, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true))
+            {
+                await stream.WriteAsync(cipher, cancellationToken).ConfigureAwait(false);
+                // On disk before the rename: a torn file would sign every server out.
+                stream.Flush(flushToDisk: true);
+            }
             File.Move(temp, filePath, overwrite: true);
         }
         finally
@@ -100,7 +105,7 @@ public sealed class DpapiSecretStore(string filePath, ILogger<DpapiSecretStore>?
     {
         (logger ?? NullLogger<DpapiSecretStore>.Instance).LogError(
             "The secret store cannot be read ({Reason}); setting it aside, every server needs a new sign-in", reason.GetType().Name);
-        File.Move(filePath, filePath + ".unreadable", overwrite: true);
+        File.Move(filePath, $"{filePath}.unreadable-{DateTime.UtcNow:yyyyMMddHHmmssfff}", overwrite: true);
         return new Dictionary<string, string>(StringComparer.Ordinal);
     }
 }

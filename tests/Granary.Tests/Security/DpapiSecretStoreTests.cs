@@ -62,17 +62,20 @@ public sealed class DpapiSecretStoreTests : IDisposable
         await store.SetAsync("server/a/session", "new", ct);
 
         Assert.Equal("new", await new DpapiSecretStore(_path).GetAsync("server/a/session", ct));
-        Assert.Equal([1, 2, 3, 4], await File.ReadAllBytesAsync(_path + ".unreadable", ct));
+        string setAside = Assert.Single(Directory.GetFiles(Path.GetDirectoryName(_path)!, Path.GetFileName(_path) + ".unreadable-*"));
+        Assert.Equal([1, 2, 3, 4], await File.ReadAllBytesAsync(setAside, ct));
     }
 
     public void Dispose()
     {
-        foreach (string path in new[] { _path, _path + ".unreadable" })
+        string directory = Path.GetDirectoryName(_path)!;
+        if (!Directory.Exists(directory))
         {
-            if (File.Exists(path))
-            {
-                File.Delete(path);
-            }
+            return;
+        }
+        foreach (string path in Directory.GetFiles(directory, Path.GetFileName(_path) + "*"))
+        {
+            File.Delete(path);
         }
     }
 }

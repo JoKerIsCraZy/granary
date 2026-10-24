@@ -13,6 +13,12 @@ public sealed class LogRedactorTests
     [InlineData("GET /api/v2/stream/1?st=signed.jwt.value", "signed.jwt.value")]
     [InlineData("GET /media?token=t-789&x=1", "t-789")]
     [InlineData("device_code=dc-0001", "dc-0001")]
+    [InlineData("TokenPair { AccessToken = a-1, RefreshToken = r-1, ExpiresIn = 28800 }", "a-1")]
+    [InlineData("TokenPair { AccessToken = a-1, RefreshToken = r-1, ExpiresIn = 28800 }", "r-1")]
+    [InlineData("ProfilePinCheck { Pin = 4711 }", "4711")]
+    [InlineData("{\"pin\":\"4711\"}", "4711")]
+    [InlineData("DeviceCodeRequest { DeviceCode = dc-0002 }", "dc-0002")]
+    [InlineData("unexpected value eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.c2ln in answer", "eyJzdWIiOiIxIn0")]
     public void Redact_MasksCredentialValues(string input, string secret)
     {
         string output = LogRedactor.Redact(input);
@@ -25,6 +31,8 @@ public sealed class LogRedactorTests
     [InlineData("Playback started at 12.5 s")]
     [InlineData("token_refresh_required")]
     [InlineData("expires_in=28800")]
+    [InlineData("Selected profile 7 on server 0062ea42a830212a")]
+    [InlineData("pinned item 12")]
     public void Redact_LeavesOrdinaryTextAlone(string input)
     {
         Assert.Equal(input, LogRedactor.Redact(input));

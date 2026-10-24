@@ -13,8 +13,13 @@ public static partial class LogRedactor
     [GeneratedRegex(@"(?i)(bearer\s+)[^\s,""']+")]
     private static partial Regex BearerValue();
 
-    [GeneratedRegex(@"(?i)((?:access_token|refresh_token|profile_token|device_code|x-profile-token|password|\bst|\btoken)""?\s*[:=]\s*""?)[^\s,""&']+")]
+    // JSON and query names (access_token) and record printouts (AccessToken = ...).
+    [GeneratedRegex(@"(?i)((?:access_?token|refresh_?token|profile_?token|device_?code|x-profile-token|password|\bpin|\bst|\btoken)""?\s*[:=]\s*""?)[^\s,""&'}]+")]
     private static partial Regex SecretField();
+
+    // A JWT anywhere, even without a field name next to it.
+    [GeneratedRegex(@"eyJ[A-Za-z0-9_-]{4,}\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]*")]
+    private static partial Regex Jwt();
 
     public static string Redact(string text)
     {
@@ -23,6 +28,7 @@ public static partial class LogRedactor
             return text;
         }
         string masked = BearerValue().Replace(text, "$1" + Mask);
-        return SecretField().Replace(masked, "$1" + Mask);
+        masked = SecretField().Replace(masked, "$1" + Mask);
+        return Jwt().Replace(masked, Mask);
     }
 }

@@ -1,10 +1,16 @@
 namespace Granary.Core.Api.Auth;
 
 /// <summary><c>POST /api/v2/auth/login</c> body. <see cref="Provider"/> stays null (omitted) for password sign-in.</summary>
-public sealed record LoginRequest(string Username, string Password, string? Provider = null);
+public sealed record LoginRequest(string Username, string Password, string? Provider = null)
+{
+    public override string ToString() => "LoginRequest { Password = <redacted> }";
+}
 
 /// <summary>Credentials of a new login session (<c>TokenPair</c>).</summary>
-public sealed record TokenPair(string AccessToken, string RefreshToken, long ExpiresIn, Account User);
+public sealed record TokenPair(string AccessToken, string RefreshToken, long ExpiresIn, Account User)
+{
+    public override string ToString() => $"TokenPair {{ ExpiresIn = {ExpiresIn}, User = {User.Id} }}";
+}
 
 /// <summary>The signed-in login account (<c>Account</c>), not a household profile.</summary>
 public sealed record Account(
@@ -23,10 +29,16 @@ public sealed record Account(
 public sealed record Impersonation(bool Active, string ImpersonatorUserId, string ImpersonatorUsername);
 
 /// <summary><c>POST /api/v2/auth/refresh</c> body.</summary>
-public sealed record RefreshRequest(string RefreshToken);
+public sealed record RefreshRequest(string RefreshToken)
+{
+    public override string ToString() => "RefreshRequest { RefreshToken = <redacted> }";
+}
 
 /// <summary><c>POST /api/v2/auth/refresh</c> answer. Old tokens stay valid until their own expiry.</summary>
-public sealed record RefreshedTokens(string AccessToken, string RefreshToken, long ExpiresIn);
+public sealed record RefreshedTokens(string AccessToken, string RefreshToken, long ExpiresIn)
+{
+    public override string ToString() => $"RefreshedTokens {{ ExpiresIn = {ExpiresIn} }}";
+}
 
 /// <summary><c>GET /api/v2/auth/providers</c>.</summary>
 public sealed record AuthProviderCollection(IReadOnlyList<AuthProvider> Items, bool PasswordLogin);
