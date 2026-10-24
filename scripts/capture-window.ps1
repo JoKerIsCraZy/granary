@@ -1,6 +1,9 @@
 <#
 .SYNOPSIS
-    Saves a PNG of a process's main window as DWM shows it (DirectX content included).
+    Saves a PNG of a process's main window, DirectX content included, even when other windows cover it.
+.DESCRIPTION
+    Uses PrintWindow with PW_RENDERFULLCONTENT, so the window does not have to be in front and the
+    desktop is left alone.
 .EXAMPLE
     ./scripts/capture-window.ps1 -ProcessName Granary -Path shot.png
 #>
@@ -18,6 +21,8 @@ public static class GranaryCapture {
     [StructLayout(LayoutKind.Sequential)] public struct RECT { public int Left, Top, Right, Bottom; }
     [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr hwnd, out RECT rect);
     [DllImport("user32.dll")] public static extern bool SetProcessDPIAware();
+    [DllImport("user32.dll")] public static extern bool PrintWindow(IntPtr hwnd, IntPtr hdc, uint flags);
+    public const uint PW_RENDERFULLCONTENT = 2;
 }
 '@
 [GranaryCapture]::SetProcessDPIAware() | Out-Null
@@ -29,7 +34,15 @@ $width = $rect.Right - $rect.Left
 $height = $rect.Bottom - $rect.Top
 $bitmap = New-Object System.Drawing.Bitmap $width, $height
 $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
-$graphics.CopyFromScreen($rect.Left, $rect.Top, 0, 0, $bitmap.Size)
+$hdc = $graphics.GetHdc()
+try {
+    if (-not [GranaryCapture]::PrintWindow($process.MainWindowHandle, $hdc, [GranaryCapture]::PW_RENDERFULLCONTENT)) {
+        throw "PrintWindow failed for '$ProcessName'."
+    }
+}
+finally {
+    $graphics.ReleaseHdc($hdc)
+}
 $bitmap.Save($Path, [System.Drawing.Imaging.ImageFormat]::Png)
 $graphics.Dispose()
 $bitmap.Dispose()
