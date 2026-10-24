@@ -59,6 +59,20 @@ the display refresh rate itself (Phase 3).
   watches the log and reports `PlaybackEndReason.AuthenticationFailed` instead of `EndOfFile`; the caller
   refreshes the token and reloads at the position.
 
+## Artwork
+
+`ArtworkLoader` (Granary.Core) loads every catalog image the app shows; the controls only decode its
+bytes (`Controls/Artwork.cs`). Requests go out over HTTP/2 without credentials (artwork URLs are presigned)
+and are not logged. One download serves every request for an image; a failed image is not asked for
+again for a minute, and the bitmap then tries the URL itself.
+
+- Memory: the encoded bytes of the most recently used images, 96 MB.
+- Disk: images the server marks `immutable`, in `cache\artwork` under the data directory, 512 MB, the
+  least recently used deleted first. File names are hashes of the URL without its signature.
+- Prefetch: rows and grids queue the artwork of their cards as they arrive (`CardArtworkPrefetch`), and a
+  series page queues the episode stills of every season, the season to play first. Four workers fetch
+  them beside the downloads for images on screen, so a long queue never delays those.
+
 ## Sessions and authentication
 
 API calls pass through two handlers on the `SiloHttp` client:

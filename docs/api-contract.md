@@ -716,6 +716,10 @@ tracks ([8.8.1](#881-initial-track-selection-before-start)) → `POST /api/v2/pl
   library poster, collection image) is replaced in place and gets a new URL every 15-minute bucket:
   keep its full URL as the cache identity and revalidate with its `ETag` (`If-None-Match` → `304`).
   Apple's model: `silo-apple/iosApp/iosApp/Components/Images/ArtworkCacheKey.swift:7-55`.
+  Granary (`Granary.Core.Artwork`) tells the two apart by the response, not the key's shape: an
+  `immutable` answer is cached under the URL without its authorization items, in memory and on disk;
+  any other answer only in memory under its full URL, and is downloaded again (without `ETag`) once
+  the URL changes.
 - Sizes: `image_size=small|medium|large|original` or per-slot pixel widths (`poster_width`,
   `backdrop_width`, `logo_width`, `still_width`, `photo_width`, 1..7680), only when
   `GET /api/v2/images/capabilities` reports `state: available` and lists the slot in
