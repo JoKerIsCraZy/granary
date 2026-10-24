@@ -16,6 +16,7 @@ public sealed partial class MediaCardView : UserControl
     public MediaCardView()
     {
         InitializeComponent();
+        Show(null);
     }
 
     public MediaCard? Card
@@ -24,27 +25,47 @@ public sealed partial class MediaCardView : UserControl
         set => SetValue(CardProperty, value);
     }
 
-    // Instance methods because x:Bind function bindings call them on the control.
-    public Visibility Shows(string? text) => string.IsNullOrEmpty(text) ? Visibility.Collapsed : Visibility.Visible;
-
-    public Visibility HasProgress(double? progress) => progress is > 0 ? Visibility.Visible : Visibility.Collapsed;
-
-    public double ProgressValue(double? progress) => Math.Clamp(progress ?? 0, 0, 1);
-
-    public Style SubtitleStyle(MediaCardShape shape) => (Style)Application.Current.Resources[
-        shape == MediaCardShape.Poster ? "SiloOverlineTextStyle" : "SiloCaptionTextStyle"];
-
     private static void OnCardChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e) =>
-        ((MediaCardView)sender).ShowArtwork((MediaCard?)e.NewValue);
+        ((MediaCardView)sender).Show((MediaCard?)e.NewValue);
 
-    private void ShowArtwork(MediaCard? card)
+    // Every part is set for every card: containers are recycled, so nothing of the previous card may stay.
+    private void Show(MediaCard? card)
     {
-        // Containers are recycled: never let the previous card's artwork show under the new title.
+        Placeholder.Text = card?.Title ?? "";
         Placeholder.Visibility = Visibility.Visible;
         ArtImage.Source = card is null
             ? null
             : Artwork.Load(card.ImageUrl, card.Shape == MediaCardShape.Poster ? PosterDecodeWidth : LandscapeDecodeWidth);
+
+        SetBadge(ResolutionBadge, ResolutionText, card?.ResolutionBadge);
+        SetBadge(AudioBadge, AudioText, card?.AudioBadge);
+        SetBadge(StatusBadge, StatusText, card?.StatusBadge);
+        SetBadge(RatingBadge, RatingText, card?.RatingBadge);
+        WatchedMark.Visibility = card?.IsWatched == true ? Visibility.Visible : Visibility.Collapsed;
+
+        bool hasProgress = card?.Progress is > 0;
+        Progress.Value = hasProgress ? Math.Clamp(card!.Progress!.Value, 0, 1) : 0;
+        Progress.Visibility = hasProgress ? Visibility.Visible : Visibility.Collapsed;
+
+        TitleText.Text = card?.Title ?? "";
+        SubtitleText.Style = (Style)Application.Current.Resources[
+            card?.Shape == MediaCardShape.Landscape ? "SiloCaptionTextStyle" : "SiloOverlineTextStyle"];
+        SetText(SubtitleText, card?.Subtitle);
+        SetText(CaptionText, card?.Caption);
+
         UpdateArtHeight(ActualWidth);
+    }
+
+    private static void SetBadge(Border badge, TextBlock text, string? value)
+    {
+        text.Text = value ?? "";
+        badge.Visibility = string.IsNullOrEmpty(value) ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    private static void SetText(TextBlock text, string? value)
+    {
+        text.Text = value ?? "";
+        text.Visibility = string.IsNullOrEmpty(value) ? Visibility.Collapsed : Visibility.Visible;
     }
 
     private void OnSizeChanged(object sender, SizeChangedEventArgs e) => UpdateArtHeight(e.NewSize.Width);

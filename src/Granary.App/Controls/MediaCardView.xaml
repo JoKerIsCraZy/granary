@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- One catalog card in the Silo look (docs/ui-design.md). Interaction belongs to the button around it. -->
+<!--
+    One catalog card in the Silo look (docs/ui-design.md). Interaction belongs to the button around it.
+    The code-behind fills every part when the card changes: x:Bind function bindings skip null arguments,
+    which would leave a recycled container showing the previous card's badges or progress.
+-->
 <UserControl
     x:Class="Granary.App.Controls.MediaCardView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -16,8 +20,8 @@
               BorderBrush="#0DFFFFFF" BorderThickness="1">
             <!-- Shown until the artwork arrives, and instead of it when there is none. -->
             <TextBlock x:Name="Placeholder" Margin="16" VerticalAlignment="Center" HorizontalAlignment="Center" TextAlignment="Center"
-                       Text="{x:Bind Card.Title, Mode=OneWay}" Style="{StaticResource SiloCaptionTextStyle}" TextWrapping="Wrap"
-                       MaxLines="4" AutomationProperties.AccessibilityView="Raw" />
+                       Style="{StaticResource SiloCaptionTextStyle}" TextWrapping="Wrap" MaxLines="4"
+                       AutomationProperties.AccessibilityView="Raw" />
             <Image x:Name="ArtImage" Stretch="UniformToFill" ImageOpened="OnImageOpened" ImageFailed="OnImageFailed"
                    AutomationProperties.AccessibilityView="Raw" />
 
@@ -27,47 +31,41 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <Border Style="{StaticResource SiloBadgeStyle}" VerticalAlignment="Top"
-                        Visibility="{x:Bind Shows(Card.ResolutionBadge), Mode=OneWay}">
-                    <TextBlock Text="{x:Bind Card.ResolutionBadge, Mode=OneWay}" Style="{StaticResource SiloBadgeTextStyle}" />
+                <Border x:Name="ResolutionBadge" Style="{StaticResource SiloBadgeStyle}" VerticalAlignment="Top">
+                    <TextBlock x:Name="ResolutionText" Style="{StaticResource SiloBadgeTextStyle}" />
                 </Border>
                 <StackPanel Grid.Column="2" Spacing="5" HorizontalAlignment="Right">
-                    <Border Style="{StaticResource SiloBadgeStyle}" HorizontalAlignment="Right"
-                            Visibility="{x:Bind Shows(Card.AudioBadge), Mode=OneWay}">
+                    <Border x:Name="AudioBadge" Style="{StaticResource SiloBadgeStyle}" HorizontalAlignment="Right">
                         <StackPanel Orientation="Horizontal" Spacing="4">
                             <FontIcon Glyph="&#xE767;" FontSize="10" Foreground="White" />
-                            <TextBlock Text="{x:Bind Card.AudioBadge, Mode=OneWay}" Style="{StaticResource SiloBadgeTextStyle}" />
+                            <TextBlock x:Name="AudioText" Style="{StaticResource SiloBadgeTextStyle}" />
                         </StackPanel>
                     </Border>
-                    <Border Style="{StaticResource SiloBadgeStyle}" HorizontalAlignment="Right"
-                            Visibility="{x:Bind Shows(Card.StatusBadge), Mode=OneWay}">
-                        <TextBlock Text="{x:Bind Card.StatusBadge, Mode=OneWay}" Style="{StaticResource SiloBadgeTextStyle}" />
+                    <Border x:Name="StatusBadge" Style="{StaticResource SiloBadgeStyle}" HorizontalAlignment="Right">
+                        <TextBlock x:Name="StatusText" Style="{StaticResource SiloBadgeTextStyle}" />
                     </Border>
                 </StackPanel>
             </Grid>
 
             <Grid Margin="8" VerticalAlignment="Bottom">
-                <Border Style="{StaticResource SiloBadgeStyle}" HorizontalAlignment="Left"
-                        Visibility="{x:Bind Shows(Card.RatingBadge), Mode=OneWay}">
-                    <TextBlock Text="{x:Bind Card.RatingBadge, Mode=OneWay}" Style="{StaticResource SiloBadgeTextStyle}" />
+                <Border x:Name="RatingBadge" Style="{StaticResource SiloBadgeStyle}" HorizontalAlignment="Left">
+                    <TextBlock x:Name="RatingText" Style="{StaticResource SiloBadgeTextStyle}" />
                 </Border>
-                <Border Width="22" Height="22" CornerRadius="11" HorizontalAlignment="Right" Background="{StaticResource SiloPrimaryBrush}"
-                        Visibility="{x:Bind Card.IsWatched, Mode=OneWay}" AutomationProperties.Name="Watched">
+                <Border x:Name="WatchedMark" Width="22" Height="22" CornerRadius="11" HorizontalAlignment="Right"
+                        Background="{StaticResource SiloPrimaryBrush}" AutomationProperties.Name="Watched">
                     <FontIcon Glyph="&#xE73E;" FontSize="11" Foreground="White" />
                 </Border>
             </Grid>
 
-            <ProgressBar Margin="10,0,10,8" VerticalAlignment="Bottom" Height="3" MinHeight="3" CornerRadius="2" Maximum="1"
-                         Value="{x:Bind ProgressValue(Card.Progress), Mode=OneWay}" Visibility="{x:Bind HasProgress(Card.Progress), Mode=OneWay}"
-                         Foreground="{StaticResource SiloPrimaryBrush}" Background="#40FFFFFF" AutomationProperties.Name="Progress" />
+            <ProgressBar x:Name="Progress" Margin="10,0,10,8" VerticalAlignment="Bottom" Height="3" MinHeight="3" CornerRadius="2"
+                         Maximum="1" Foreground="{StaticResource SiloPrimaryBrush}" Background="#40FFFFFF"
+                         AutomationProperties.Name="Progress" />
         </Grid>
 
         <StackPanel Grid.Row="1" Spacing="3" Padding="2,0">
-            <TextBlock Text="{x:Bind Card.Title, Mode=OneWay}" Style="{StaticResource SiloCardTitleTextStyle}" />
-            <TextBlock Text="{x:Bind Card.Subtitle, Mode=OneWay}" Style="{x:Bind SubtitleStyle(Card.Shape), Mode=OneWay}"
-                       Visibility="{x:Bind Shows(Card.Subtitle), Mode=OneWay}" />
-            <TextBlock Text="{x:Bind Card.Caption, Mode=OneWay}" Style="{StaticResource SiloCaptionTextStyle}"
-                       Visibility="{x:Bind Shows(Card.Caption), Mode=OneWay}" />
+            <TextBlock x:Name="TitleText" Style="{StaticResource SiloCardTitleTextStyle}" />
+            <TextBlock x:Name="SubtitleText" />
+            <TextBlock x:Name="CaptionText" Style="{StaticResource SiloCaptionTextStyle}" />
         </StackPanel>
     </Grid>
 </UserControl>

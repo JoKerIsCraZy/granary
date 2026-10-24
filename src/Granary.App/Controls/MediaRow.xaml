@@ -33,7 +33,7 @@
                     </ItemsRepeater.Layout>
                     <ItemsRepeater.ItemTemplate>
                         <DataTemplate x:DataType="cards:MediaCard">
-                            <Button Style="{StaticResource SiloCardButtonStyle}" Width="{x:Bind controls:MediaRow.CardWidth(Shape)}"
+                            <Button Style="{StaticResource SiloCardButtonStyle}" Width="{x:Bind controls:MediaRow.CardWidth(Shape)}" VerticalAlignment="Top"
                                     Click="OnCardClick" AutomationProperties.Name="{x:Bind AccessibleName}">
                                 <controls:MediaCardView Card="{x:Bind}" />
                             </Button>
