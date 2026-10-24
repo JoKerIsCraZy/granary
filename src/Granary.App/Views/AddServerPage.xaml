@@ -7,7 +7,7 @@
     <StackPanel Padding="36,24" Spacing="16" MaxWidth="560" HorizontalAlignment="Left">
         <TextBlock Text="Add a Silo server" Style="{StaticResource TitleTextBlockStyle}"
                    AutomationProperties.HeadingLevel="Level1" />
-        <TextBox x:Name="AddressBox" Header="Server address" PlaceholderText="silo.example.org or 192.168.1.10:8090"
+        <TextBox x:Name="AddressBox" Header="Server address" PlaceholderText="silo.example.org or 192.168.1.10:8090" MinWidth="400"
                  InputScope="Url" IsSpellCheckEnabled="False" KeyDown="OnAddressKeyDown"
                  Text="{x:Bind ViewModel.Address, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
         <StackPanel Orientation="Horizontal" Spacing="12">
