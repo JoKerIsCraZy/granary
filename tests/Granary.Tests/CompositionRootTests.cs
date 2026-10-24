@@ -1,6 +1,7 @@
 using Granary.Core;
 using Granary.Core.Abstractions;
 using Granary.Core.Api;
+using Granary.Core.Auth;
 using Granary.Core.Playback;
 using Granary.Core.Servers;
 using Granary.Core.ViewModels;
@@ -20,6 +21,7 @@ public sealed class CompositionRootTests
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddSingleton<IUiDispatcher, ImmediateDispatcher>();
+        services.AddSingleton<INavigationService, RecordingNavigation>();
         services.AddGranaryCore();
         services.AddGranaryPlayer(new MpvEngineOptions { VideoOutput = VideoOutputKind.None });
 
@@ -28,6 +30,12 @@ public sealed class CompositionRootTests
         Assert.NotNull(provider.GetRequiredService<IServerProbe>());
         Assert.NotNull(provider.GetRequiredService<ISecretStore>());
         Assert.NotNull(provider.GetRequiredService<AddServerViewModel>());
+        Assert.NotNull(provider.GetRequiredService<ServersViewModel>());
+        Assert.NotNull(provider.GetRequiredService<SignInViewModel>());
+        Assert.NotNull(provider.GetRequiredService<HomeViewModel>());
+        Assert.Same(provider.GetRequiredService<ShellViewModel>(), provider.GetRequiredService<ShellViewModel>());
+        Assert.IsType<SessionManager>(provider.GetRequiredService<ISessionManager>());
+        Assert.NotNull(provider.GetRequiredService<SiloHttp>());
         using var player = provider.GetRequiredService<PlayerViewModel>();
         Assert.Same(provider.GetRequiredService<IPlaybackEngine>(), provider.GetRequiredService<ICompositionVideoOutput>());
     }

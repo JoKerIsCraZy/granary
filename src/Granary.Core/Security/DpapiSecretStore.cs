@@ -3,15 +3,19 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using Granary.Core.Abstractions;
 using Granary.Core.Api;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Granary.Core.Security;
 
 /// <summary>
 /// Stores all secrets in one file encrypted with DPAPI for the current Windows user. The file lives
-/// in local (non-roaming) app data, so tokens never leave this machine and account.
+/// in local (non-roaming) app data, so tokens never leave this machine and account. A file that can no
+/// longer be decrypted (another Windows user, a reset profile, corruption) is set aside as
+/// <c>.unreadable</c> and the store starts empty, so the user can sign in again.
 /// </summary>
 [SupportedOSPlatform("windows")]
-public sealed class DpapiSecretStore(string filePath) : ISecretStore
+public sealed class DpapiSecretStore(string filePath, ILogger<DpapiSecretStore>? logger = null) : ISecretStore
 {
     // Binds the ciphertext to this purpose, so other DPAPI blobs of the same user cannot be swapped in.
     private static readonly byte[] Entropy = "Granary.SecretStore.v1"u8.ToArray();
@@ -68,15 +72,35 @@ public sealed class DpapiSecretStore(string filePath) : ISecretStore
             return new Dictionary<string, string>(StringComparer.Ordinal);
         }
         byte[] cipher = await File.ReadAllBytesAsync(filePath, cancellationToken).ConfigureAwait(false);
-        byte[] plain = ProtectedData.Unprotect(cipher, Entropy, DataProtectionScope.CurrentUser);
+        byte[] plain;
+        try
+        {
+            plain = ProtectedData.Unprotect(cipher, Entropy, DataProtectionScope.CurrentUser);
+        }
+        catch (CryptographicException ex)
+        {
+            return SetAside(ex);
+        }
         try
         {
             var secrets = JsonSerializer.Deserialize(plain, SiloJsonContext.Default.DictionaryStringString);
             return new Dictionary<string, string>(secrets ?? [], StringComparer.Ordinal);
         }
+        catch (JsonException ex)
+        {
+            return SetAside(ex);
+        }
         finally
         {
             CryptographicOperations.ZeroMemory(plain);
         }
+    }
+
+    private Dictionary<string, string> SetAside(Exception reason)
+    {
+        (logger ?? NullLogger<DpapiSecretStore>.Instance).LogError(
+            "The secret store cannot be read ({Reason}); setting it aside, every server needs a new sign-in", reason.GetType().Name);
+        File.Move(filePath, filePath + ".unreadable", overwrite: true);
+        return new Dictionary<string, string>(StringComparer.Ordinal);
     }
 }

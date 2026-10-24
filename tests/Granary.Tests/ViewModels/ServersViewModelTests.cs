@@ -14,7 +14,7 @@ public sealed class ServersViewModelTests
 {
     private readonly InMemoryServerRegistry _registry = new();
     private readonly FakeSessionManager _session = new();
-    private readonly ServersRecordingNavigation _navigation = new();
+    private readonly RecordingNavigation _navigation = new();
 
     private async Task<(ServerEntry Nas, ServerEntry Lan)> SaveTwoServersAsync()
     {

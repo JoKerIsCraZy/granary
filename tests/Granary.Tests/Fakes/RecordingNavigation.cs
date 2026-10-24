@@ -2,8 +2,8 @@ using Granary.Core.Abstractions;
 
 namespace Granary.Tests.Fakes;
 
-/// <summary>Records navigation requests of the server management view models.</summary>
-internal sealed class ServersRecordingNavigation : INavigationService
+/// <summary>Records navigation requests.</summary>
+internal sealed class RecordingNavigation : INavigationService
 {
     public List<(AppRoute Route, object? Parameter)> Navigations { get; } = [];
 

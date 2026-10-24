@@ -50,6 +50,7 @@ public sealed class SiloHttp(HttpClient http)
         var request = new HttpRequestMessage(method, BuildUri(server, path));
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         request.SetAuth(auth);
+        request.SetServer(server);
         return request;
     }
 
@@ -82,8 +83,10 @@ public sealed class SiloHttp(HttpClient http)
         }
         try
         {
-            await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-            return await JsonSerializer.DeserializeAsync(stream, SiloJsonContext.Default.ApiProblem, cancellationToken).ConfigureAwait(false);
+            // Bytes, not the content stream: HttpContent hands out one cached stream, and the
+            // authentication handler reads the problem before the caller does.
+            byte[] body = await response.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
+            return JsonSerializer.Deserialize(body, SiloJsonContext.Default.ApiProblem);
         }
         catch (JsonException)
         {

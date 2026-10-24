@@ -50,11 +50,29 @@ public sealed class DpapiSecretStoreTests : IDisposable
         Assert.Null(await new DpapiSecretStore(_path).GetAsync("missing", TestContext.Current.CancellationToken));
     }
 
+    [Fact]
+    public async Task UnreadableFile_IsSetAsideSoSignInWorksAgain()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
+        await File.WriteAllBytesAsync(_path, [1, 2, 3, 4], ct);
+        var store = new DpapiSecretStore(_path);
+
+        Assert.Null(await store.GetAsync("server/a/session", ct));
+        await store.SetAsync("server/a/session", "new", ct);
+
+        Assert.Equal("new", await new DpapiSecretStore(_path).GetAsync("server/a/session", ct));
+        Assert.Equal([1, 2, 3, 4], await File.ReadAllBytesAsync(_path + ".unreadable", ct));
+    }
+
     public void Dispose()
     {
-        if (File.Exists(_path))
+        foreach (string path in new[] { _path, _path + ".unreadable" })
         {
-            File.Delete(_path);
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
         }
     }
 }

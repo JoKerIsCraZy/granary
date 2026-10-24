@@ -11,6 +11,7 @@ public static class ProblemCodes
     public const string PermissionDenied = "permission_denied";
     public const string ProfileVerificationRequired = "profile_verification_required";
     public const string PasswordChangeRequired = "password_change_required";
+    public const string LocalLoginDisabled = "local_login_disabled";
     public const string NotFound = "not_found";
     public const string Conflict = "conflict";
     public const string ValidationFailed = "validation_failed";

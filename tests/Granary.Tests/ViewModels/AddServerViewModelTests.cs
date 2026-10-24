@@ -49,7 +49,7 @@ public sealed class AddServerViewModelTests
 
         public InMemoryServerRegistry Registry { get; } = new();
 
-        public ServersRecordingNavigation Navigation { get; } = new();
+        public RecordingNavigation Navigation { get; } = new();
 
         public AddServerViewModel ViewModel { get; }
 
@@ -248,7 +248,7 @@ public sealed class AddServerViewModelTests
         var probing = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var probe = new HangingProbe(probing);
         var registry = new InMemoryServerRegistry();
-        var navigation = new ServersRecordingNavigation();
+        var navigation = new RecordingNavigation();
         var system = new SystemApi(new SiloHttp(new HttpClient(FakeHttpMessageHandler.Returning(HttpStatusCode.OK, Ready))));
         var viewModel = new AddServerViewModel(probe, system, registry, navigation) { Address = "nas.local" };
 
