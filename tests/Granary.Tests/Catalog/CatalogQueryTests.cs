@@ -102,9 +102,8 @@ public sealed class CatalogQueryTests
         { nameof(CatalogQuery.ContentRatings), Home with { ContentRatings = ["R"] } },
         { nameof(CatalogQuery.Sort), Home with { Sort = CatalogSort.Ascending(CatalogSortFields.Title) } },
         { nameof(CatalogQuery.LibraryId), Home with { LibraryId = "12" } },
-        { nameof(CatalogQuery.CollectionId), Home with { CollectionId = "3" } },
-        { nameof(CatalogQuery.PersonId), CatalogQuery.ForLibrarySection("12", "recent") with { PersonId = "7" } },
         { nameof(CatalogQuery.Genre), CatalogQuery.ForLibrarySection("12", "recent") with { Genre = "Crime" } },
+        { nameof(CatalogQuery.Q), Home with { Source = " Section ", Q = "heat" } },
     };
 
     [Theory]
@@ -121,6 +120,7 @@ public sealed class CatalogQueryTests
     {
         Assert.Equal(nameof(CatalogQuery.SectionId),
             Assert.Throws<ArgumentException>(() => new CatalogQuery { Source = CatalogSources.Section, Scope = CatalogScopes.Home }.ToQueryString()).ParamName);
+        Assert.Equal(nameof(CatalogQuery.SectionId), Assert.Throws<ArgumentException>(() => (Home with { SectionId = " " }).ToQueryString()).ParamName);
         Assert.Equal(nameof(CatalogQuery.LibraryId),
             Assert.Throws<ArgumentException>(() => new CatalogQuery { Source = CatalogSources.Section, SectionId = "recent" }.ToQueryString()).ParamName);
         Assert.Equal(nameof(CatalogQuery.Scope),
@@ -128,15 +128,48 @@ public sealed class CatalogQueryTests
     }
 
     [Fact]
-    public void OtherSources_RefuseAScopeAndNeedTheirIds()
+    public void OtherSources_NeedTheirIds()
     {
-        Assert.Equal(nameof(CatalogQuery.Scope), Assert.Throws<ArgumentException>(() => new CatalogQuery { Scope = CatalogScopes.Home }.ToQueryString()).ParamName);
         Assert.Equal(nameof(CatalogQuery.PersonId),
             Assert.Throws<ArgumentException>(() => new CatalogQuery { Source = CatalogSources.Person }.ToQueryString()).ParamName);
         Assert.Equal(nameof(CatalogQuery.CollectionId),
             Assert.Throws<ArgumentException>(() => new CatalogQuery { Source = CatalogSources.UserCollection }.ToQueryString()).ParamName);
         Assert.Equal("?source=library_collection&collection_id=9",
             new CatalogQuery { Source = CatalogSources.LibraryCollection, CollectionId = "9" }.ToQueryString());
+    }
+
+    [Fact]
+    public void SectionListing_IgnoresIdsOfOtherSourcesLikeTheServer()
+    {
+        Assert.Equal("?source=section&scope=home&section_id=s1&collection_id=3",
+            (CatalogQuery.ForHomeSection("s1") with { CollectionId = "3" }).ToQueryString());
+    }
+
+    [Fact]
+    public void RelevanceOrder_NeedsSearchTextOnTheQuerySource()
+    {
+        var relevance = new CatalogQuery { Sort = CatalogSort.Descending(CatalogSortFields.Relevance) };
+
+        Assert.Equal(nameof(CatalogQuery.Sort), Assert.Throws<ArgumentException>(() => relevance.ToQueryString()).ParamName);
+        Assert.Throws<ArgumentException>(() => (relevance with { Source = CatalogSources.Favorites, Q = "heat" }).ToQueryString());
+        Assert.Equal("?q=heat&sort=-relevance", (relevance with { Q = "heat" }).ToQueryString());
+    }
+
+    [Fact]
+    public void VideoWithEpisodes_IsOnlyForTheQuerySource()
+    {
+        var query = new CatalogQuery { Q = "lumon", Type = MediaScopes.VideoWithEpisodes };
+
+        Assert.Equal("?q=lumon&type=video_with_episodes", query.ToQueryString());
+        Assert.Equal(nameof(CatalogQuery.Type),
+            Assert.Throws<ArgumentException>(() => (query with { Source = CatalogSources.Watchlist }).ToQueryString()).ParamName);
+    }
+
+    [Fact]
+    public void GroupAndYears_AreRefusedOutsideTheirRange()
+    {
+        Assert.Equal(nameof(CatalogQuery.Group), Assert.Throws<ArgumentException>(() => new CatalogQuery { Group = "series" }.ToQueryString()).ParamName);
+        Assert.Equal(nameof(CatalogQuery.YearMax), Assert.Throws<ArgumentOutOfRangeException>(() => new CatalogQuery { YearMax = -1 }.ToQueryString()).ParamName);
     }
 
     [Theory]

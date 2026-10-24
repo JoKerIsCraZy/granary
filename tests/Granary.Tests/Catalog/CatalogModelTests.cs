@@ -195,6 +195,37 @@ public sealed class CatalogModelTests
     }
 
     [Fact]
+    public void ExplicitNulls_BecomeEmptyValues()
+    {
+        const string json = """
+            {
+              "content_id": "movie-1", "type": "movie", "title": null, "status": "matched",
+              "genres": null, "keywords": [], "badges": null, "studios": null,
+              "cast": [], "crew": [], "ratings": null, "versions": [], "subtitles": [], "videos": null
+            }
+            """;
+
+        var item = Read(json, SiloJsonContext.Default.CatalogItemDetail);
+
+        Assert.Equal("", item.Title);
+        Assert.Empty(item.Genres);
+        Assert.Empty(item.Badges);
+        Assert.Empty(item.Studios);
+        Assert.Empty(item.Ratings);
+        Assert.Empty(item.Videos);
+        Assert.Empty(item.Extras);
+    }
+
+    [Fact]
+    public void Browse_WithMoreButNoCursor_HasNoNextPage()
+    {
+        var page = Read("""{ "items": [], "page": { "has_more": true, "next_cursor": "" }, "total": 0, "total_exact": true, "window_cursor": "w" }""",
+            SiloJsonContext.Default.CatalogBrowseCollection);
+
+        Assert.Null(page.NextCursor);
+    }
+
+    [Fact]
     public void Filters_ReadTheFixture()
     {
         var filters = Read(CatalogPayloads.Filters, SiloJsonContext.Default.CatalogFilters);

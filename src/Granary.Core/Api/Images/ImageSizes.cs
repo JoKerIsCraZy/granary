@@ -31,8 +31,8 @@ public sealed record ImageSizes(int? Poster = null, int? Backdrop = null, int? L
     /// <summary>
     /// The query parameters for these sizes on the server that sent <paramref name="capabilities"/>:
     /// only the slots it lists in <c>slot_width_params</c> and a size class it lists, and nothing at all
-    /// unless the document is <c>available</c> (an unadvertised parameter is a 422). Widths are clamped
-    /// to 1..<see cref="MaximumWidth"/>.
+    /// unless the document is <c>available</c> (an unadvertised parameter is a 422). A width of 0 or less
+    /// (not laid out yet) is left out; larger widths are capped at <see cref="MaximumWidth"/>.
     /// </summary>
     public ImageParameters For(ImageCapabilities? capabilities)
     {
@@ -54,9 +54,9 @@ public sealed record ImageSizes(int? Poster = null, int? Backdrop = null, int? L
 
         void AddWidth(string slot, int? width)
         {
-            if (width is { } w && capabilities.SlotWidthParams.TryGetValue(slot, out string? name) && !string.IsNullOrEmpty(name))
+            if (width is > 0 and var w && capabilities.SlotWidthParams.TryGetValue(slot, out string? name) && !string.IsNullOrEmpty(name))
             {
-                parameters.Add(new(name, Math.Clamp(w, 1, MaximumWidth).ToString(CultureInfo.InvariantCulture)));
+                parameters.Add(new(name, Math.Min(w, MaximumWidth).ToString(CultureInfo.InvariantCulture)));
             }
         }
     }
@@ -84,8 +84,9 @@ public sealed class ImageParameters : IEquatable<ImageParameters>
     public override int GetHashCode()
     {
         var hash = new HashCode();
-        foreach (var value in Values)
+        foreach (var (name, value) in Values)
         {
+            hash.Add(name);
             hash.Add(value);
         }
         return hash.ToHashCode();

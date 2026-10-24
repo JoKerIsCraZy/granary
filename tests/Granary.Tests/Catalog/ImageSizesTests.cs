@@ -48,11 +48,11 @@ public sealed class ImageSizesTests
     }
 
     [Fact]
-    public void For_ClampsWidthsToTheServersRange()
+    public void For_CapsWidthsAndLeavesOutUnlaidOnes()
     {
-        var parameters = new ImageSizes(Poster: 0, Backdrop: 10_000).For(Available);
+        var parameters = new ImageSizes(Poster: 0, Backdrop: 10_000, Logo: -5, Still: 1).For(Available);
 
-        Assert.Equal("poster_width=1&backdrop_width=7680", parameters.ToString());
+        Assert.Equal("backdrop_width=7680&still_width=1", parameters.ToString());
     }
 
     [Fact]

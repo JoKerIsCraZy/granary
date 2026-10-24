@@ -175,6 +175,17 @@ public sealed class CatalogApiTests
     }
 
     [Fact]
+    public async Task Filters_OfASectionListing_NameTheSection()
+    {
+        Answer(HttpMethod.Get, "api/v2/catalog/filters", CatalogPayloads.Filters);
+
+        await Api.GetFiltersAsync(Server, CatalogQuery.ForLibrarySection("12", "recent"), cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal("/silo/api/v2/catalog/filters?source=section&scope=library&section_id=recent&library_id=12&skip_technical=true",
+            Only().Uri.PathAndQuery);
+    }
+
+    [Fact]
     public async Task GetItem_EscapesTheIdAndNamesTheLibrary()
     {
         var ct = TestContext.Current.CancellationToken;
@@ -228,6 +239,30 @@ public sealed class CatalogApiTests
 
         Assert.Single(similar.Items);
         Assert.Equal("/silo/api/v2/recommendations/similar/movie%3Aheat-1995?limit=12", Only().Uri.PathAndQuery);
+    }
+
+    [Fact]
+    public async Task Similar_WithoutALimit_LeavesTheServersDefault()
+    {
+        Answer(HttpMethod.Get, "api/v2/recommendations/similar/movie-1", CatalogPayloads.Similar);
+
+        await Api.ListSimilarAsync(Server, "movie-1", cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal("/silo/api/v2/recommendations/similar/movie-1", Only().Uri.PathAndQuery);
+    }
+
+    [Theory]
+    [InlineData("a/b", "a%2Fb")]
+    [InlineData("a?b#c", "a%3Fb%23c")]
+    [InlineData("100%", "100%25")]
+    [InlineData("local-9f3a", "local-9f3a")]
+    public async Task Ids_AreEscapedAsOneSegment(string id, string segment)
+    {
+        Answer(HttpMethod.Get, "api/v2/catalog/items/" + segment, CatalogPayloads.ItemFixture);
+
+        await Api.GetItemAsync(Server, id, cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal("/silo/api/v2/catalog/items/" + segment, Only().Uri.AbsolutePath);
     }
 
     [Fact]
@@ -306,6 +341,9 @@ public sealed class CatalogApiTests
         var ct = TestContext.Current.CancellationToken;
 
         await Assert.ThrowsAsync<ArgumentException>(() => Api.GetItemAsync(Server, " ", cancellationToken: ct));
+        await Assert.ThrowsAsync<ArgumentException>(() => Api.GetItemAsync(Server, "..", cancellationToken: ct));
+        await Assert.ThrowsAsync<ArgumentException>(() => Api.GetHomeSectionItemsAsync(Server, ".", cancellationToken: ct));
+        await Assert.ThrowsAsync<ArgumentException>(() => Api.SetWatchedAsync(Server, "..", true, ct));
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => Api.ListEpisodesAsync(Server, "series-1", -1, cancellationToken: ct));
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => Api.ListSimilarAsync(Server, "movie-1", 51, cancellationToken: ct));
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => Api.SearchPeopleAsync(Server, "al", 0, cancellationToken: ct));

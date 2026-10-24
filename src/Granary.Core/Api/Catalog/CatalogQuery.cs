@@ -15,7 +15,7 @@ public sealed record CatalogQuery
     /// <summary>What to page, see <see cref="CatalogSources"/>; the server's default is the whole catalog (<c>query</c>).</summary>
     public string? Source { get; init; }
 
-    /// <summary>For the section source only: <see cref="CatalogScopes"/>; the server's default is <c>library</c>.</summary>
+    /// <summary>For the section source (ignored by the others): <see cref="CatalogScopes"/>; the server's default is <c>library</c>.</summary>
     public string? Scope { get; init; }
 
     public string? LibraryId { get; init; }
@@ -80,7 +80,7 @@ public sealed record CatalogQuery
     public static CatalogQuery ForLibrary(Library library)
     {
         ArgumentNullException.ThrowIfNull(library);
-        string? type = library.Type.Trim().ToLowerInvariant() switch
+        string? type = (library.Type ?? "").Trim().ToLowerInvariant() switch
         {
             "movies" or "movie" => MediaScopes.Movie,
             "series" or "show" or "shows" or "tv" => MediaScopes.Series,
@@ -141,29 +141,43 @@ public sealed record CatalogQuery
         {
             throw new ArgumentOutOfRangeException(nameof(Limit), Limit, $"The page size must be between 1 and {MaximumLimit}.");
         }
+        if (YearMin < 0 || YearMax < 0)
+        {
+            throw new ArgumentOutOfRangeException(YearMin < 0 ? nameof(YearMin) : nameof(YearMax), "A year cannot be negative.");
+        }
+        if (IsSet(Group) && !Is(Group, "work"))
+        {
+            throw new ArgumentException($"Unknown grouping '{Group}'.", nameof(Group));
+        }
         Sort?.Validate();
-        if (Source == CatalogSources.Section)
+        // The server trims and lower-cases the source; an absent one is the whole catalog.
+        bool isQuery = !IsSet(Source) || Is(Source, CatalogSources.Query);
+        if (Is(Source, CatalogSources.Section))
         {
             ValidateSectionListing();
-            return;
         }
-        if (IsSet(Scope))
-        {
-            throw new ArgumentException("A scope applies only to a section listing (source=section).", nameof(Scope));
-        }
-        if (Source == CatalogSources.Person && !IsSet(PersonId))
+        else if (Is(Source, CatalogSources.Person) && !IsSet(PersonId))
         {
             throw new ArgumentException("A person listing needs a person id.", nameof(PersonId));
         }
-        if (Source is CatalogSources.LibraryCollection or CatalogSources.UserCollection && !IsSet(CollectionId))
+        else if ((Is(Source, CatalogSources.LibraryCollection) || Is(Source, CatalogSources.UserCollection)) && !IsSet(CollectionId))
         {
             throw new ArgumentException("A collection listing needs a collection id.", nameof(CollectionId));
+        }
+        if (Is(Type, MediaScopes.VideoWithEpisodes) && !isQuery)
+        {
+            throw new ArgumentException("video_with_episodes applies only to the query source.", nameof(Type));
+        }
+        if (Sort is { } sort && Is(sort.Field, CatalogSortFields.Relevance) && !(isQuery && IsSet(Q)))
+        {
+            throw new ArgumentException("Relevance order needs search text on the query source.", nameof(Sort));
         }
     }
 
     /// <summary>
     /// A section listing keeps the row's order and takes only limit, cursor, skip_total, group and image
-    /// parameters besides its ids; the server answers anything else with 422 (docs/api-contract.md, 7.1).
+    /// parameters besides its ids (docs/api-contract.md, 7.1): the server answers search text, filters,
+    /// a sort, and a library id on a Home row with 422.
     /// </summary>
     private void ValidateSectionListing()
     {
@@ -171,11 +185,11 @@ public sealed record CatalogQuery
         {
             throw new ArgumentException("A section listing needs a section id.", nameof(SectionId));
         }
-        if (IsSet(Scope) && Scope is not (CatalogScopes.Library or CatalogScopes.Home))
+        if (IsSet(Scope) && !Is(Scope, CatalogScopes.Library) && !Is(Scope, CatalogScopes.Home))
         {
             throw new ArgumentException($"Unknown section scope '{Scope}'.", nameof(Scope));
         }
-        bool isHome = Scope == CatalogScopes.Home;
+        bool isHome = Is(Scope, CatalogScopes.Home);
         if (!isHome && !IsSet(LibraryId))
         {
             throw new ArgumentException("A library section listing needs a library id.", nameof(LibraryId));
@@ -183,8 +197,6 @@ public sealed record CatalogQuery
         (string Name, bool Given)[] refused =
         [
             (nameof(LibraryId), isHome && IsSet(LibraryId)),
-            (nameof(CollectionId), IsSet(CollectionId)),
-            (nameof(PersonId), IsSet(PersonId)),
             (nameof(Q), IsSet(Q)),
             (nameof(NamePrefix), IsSet(NamePrefix)),
             (nameof(Type), IsSet(Type)),
@@ -204,7 +216,9 @@ public sealed record CatalogQuery
         }
     }
 
-    private static bool IsSet(string? value) => !string.IsNullOrEmpty(value);
+    private static bool IsSet(string? value) => !string.IsNullOrWhiteSpace(value);
+
+    private static bool Is(string? value, string expected) => string.Equals(value?.Trim(), expected, StringComparison.OrdinalIgnoreCase);
 }
 
 /// <summary>One sort term, sent as <c>field</c> (ascending) or <c>-field</c> (descending).</summary>

@@ -142,10 +142,17 @@ public sealed class CatalogApi(SiloHttp http)
     private static string Query(ImageParameters? images, string? libraryId = null) =>
         new QueryBuilder().Add("library_id", libraryId).Add(images).ToString();
 
-    /// <summary>An id as one escaped path segment; content ids such as <c>movie:heat-1995</c> need escaping.</summary>
+    /// <summary>
+    /// An id as one escaped path segment; content ids such as <c>movie:heat-1995</c> need escaping. "." and
+    /// ".." stay unescaped and would be removed as dot segments, addressing another route.
+    /// </summary>
     private static string Segment(string value, [CallerArgumentExpression(nameof(value))] string? name = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(value, name);
+        if (value is "." or "..")
+        {
+            throw new ArgumentException($"'{value}' is not an id.", name);
+        }
         return SiloHttp.Escape(value);
     }
 
