@@ -17,7 +17,7 @@ public sealed record DetailTrailer(string Title, string KindLabel, bool IsOffici
 
     /// <summary>The playable videos in the server's order (trailers first), each YouTube key once.</summary>
     public static IReadOnlyList<DetailTrailer> From(IEnumerable<ItemVideo> videos) =>
-        [.. videos.Select(From).OfType<DetailTrailer>().DistinctBy(t => t.WatchUrl)];
+        [.. videos.OfType<ItemVideo>().Select(From).OfType<DetailTrailer>().DistinctBy(t => t.WatchUrl)];
 
     /// <summary>The trailer for a YouTube video, or null for another site or a key that is not a YouTube id.</summary>
     public static DetailTrailer? From(ItemVideo video)

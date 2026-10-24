@@ -57,11 +57,11 @@ public static class DetailCredits
         {
             var (leadJob, lead) = Lead(item);
             AddCrew(lead, leadJob ?? Director, leadJob == Creator ? int.MaxValue : DirectorCards);
-            AddCrew([.. item.Crew.Where(c => IsWriter(c) && !shown.Contains(Key(c)))], "Writer", WriterCards);
+            AddCrew([.. item.Crew.Where(c => c is not null && IsWriter(c) && !shown.Contains(Key(c)))], "Writer", WriterCards);
         }
         int castLimit = item.Type is CatalogItemTypes.Movie or CatalogItemTypes.Series ? 12 : 20;
         people.AddRange(item.Cast
-            .Where(c => !string.IsNullOrWhiteSpace(c.Name))
+            .Where(c => c is not null && !string.IsNullOrWhiteSpace(c.Name))
             .OrderBy(c => c.Order)
             .Take(castLimit)
             .Select(c => new DetailPerson(c.Name.Trim(), Blank(c.Character), ArtworkUrl.Resolve(serverBase, c.PhotoUrl), c.PersonId)));
@@ -92,16 +92,17 @@ public static class DetailCredits
     private static (string? Job, IReadOnlyList<CrewCredit> Members) Lead(CatalogItemDetail item)
     {
         string[] jobs = item.Type == CatalogItemTypes.Series ? [Creator, Director] : [Director];
-        string? job = jobs.FirstOrDefault(j => item.Crew.Any(c => c.Job == j));
-        return (job, job is null ? [] : [.. item.Crew.Where(c => c.Job == job)]);
+        string? job = jobs.FirstOrDefault(j => item.Crew.Any(c => c?.Job == j));
+        return (job, job is null ? [] : [.. item.Crew.Where(c => c?.Job == job)]);
     }
 
-    private static bool IsWriter(CrewCredit credit) => credit.Job is "Writer" or "Screenplay";
+    private static bool IsWriter(CrewCredit? credit) => credit?.Job is "Writer" or "Screenplay";
 
     private static string[] Names(IEnumerable<CrewCredit> credits, int max) =>
-        [.. credits.Select(c => c.Name?.Trim()).OfType<string>().Where(n => n.Length > 0).Distinct(StringComparer.Ordinal).Take(max)];
+        [.. credits.Select(c => c?.Name?.Trim()).OfType<string>().Where(n => n.Length > 0).Distinct(StringComparer.Ordinal).Take(max)];
 
-    private static string Key(CrewCredit credit) => credit.PersonId is { Length: > 0 } id ? id : credit.Name.Trim();
+    // Names and ids may be missing however the schema reads: nothing here may throw on them.
+    private static string Key(CrewCredit credit) => credit.PersonId is { Length: > 0 } id ? id : credit.Name?.Trim() ?? "";
 
     private static string? Blank(string? text) => string.IsNullOrWhiteSpace(text) ? null : text.Trim();
 }

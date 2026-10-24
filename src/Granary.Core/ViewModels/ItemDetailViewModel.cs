@@ -5,6 +5,7 @@ using Granary.Core.Api;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
 using Granary.Core.Auth;
+using Granary.Core.Servers;
 using Granary.Core.ViewModels.Cards;
 using Granary.Core.ViewModels.Detail;
 using Microsoft.Extensions.Logging;
@@ -50,6 +51,9 @@ public sealed partial class ItemDetailViewModel : ObservableObject
     // A newer load makes the answers of older calls stale.
     private int _generation;
     private CatalogItemDetail? _item;
+
+    // The item's content id for the calls about it: the server's, or the requested one if the answer had none.
+    private string _contentId = "";
     private Uri? _serverBase;
     private WatchRollup? _watch;
     private IReadOnlyList<Season> _seasons = [];
@@ -109,14 +113,19 @@ public sealed partial class ItemDetailViewModel : ObservableObject
     [ObservableProperty]
     public partial string DisplayTitle { get; private set; } = "";
 
+    // Texts the hero may leave out are empty rather than null: x:Bind skips a function binding whose
+    // argument is null, so a null would never hide its line.
+
+    /// <summary>"MOVIE · AMAZON MGM STUDIOS"; empty for seasons and episodes, which show breadcrumbs.</summary>
     [ObservableProperty]
-    public partial string? Overline { get; private set; }
+    public partial string Overline { get; private set; } = "";
 
     [ObservableProperty]
-    public partial string? Tagline { get; private set; }
+    public partial string Tagline { get; private set; } = "";
 
+    /// <summary>A season's own name under the series title ("Staffel 3"), or empty.</summary>
     [ObservableProperty]
-    public partial string? Subtitle { get; private set; }
+    public partial string Subtitle { get; private set; } = "";
 
     [ObservableProperty]
     public partial Uri? BackdropUrl { get; private set; }
@@ -254,7 +263,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
     [ObservableProperty]
     public partial string EpisodesTotalText { get; private set; } = "";
 
-    /// <summary>The other episodes of an episode's season.</summary>
+    /// <summary>The other episodes of an episode's season (the episode itself left out).</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasMoreEpisodes))]
     public partial IReadOnlyList<MediaCard> MoreEpisodes { get; private set; } = [];
@@ -311,8 +320,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         }
         try
         {
-            double scale = double.IsFinite(DisplayScale) && DisplayScale > 0 ? DisplayScale : 1;
-            var images = await _images.GetAsync(server, ImageSizes.Default.ScaledBy(scale), cancellationToken);
+            var images = await ImageParametersAsync(server, cancellationToken);
             var item = await _catalog.GetItemAsync(server.BaseUri, id, images: images, cancellationToken: cancellationToken);
             if (generation != _generation)
             {
@@ -346,6 +354,21 @@ public sealed partial class ItemDetailViewModel : ObservableObject
     [RelayCommand]
     private Task RetryAsync() => LoadCommand.ExecuteAsync(ItemId);
 
+    // Unreadable image capabilities only cost the sizing: the server's default sizes still work.
+    private async Task<ImageParameters> ImageParametersAsync(ServerEntry server, CancellationToken cancellationToken)
+    {
+        double scale = double.IsFinite(DisplayScale) && DisplayScale > 0 ? DisplayScale : 1;
+        try
+        {
+            return await _images.GetAsync(server, ImageSizes.Default.ScaledBy(scale), cancellationToken);
+        }
+        catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex, cancellationToken))
+        {
+            _logger.LogWarning("Reading the image sizes failed, using the server's defaults: {Failure}", ApiFailureText.Describe(ex));
+            return ImageParameters.None;
+        }
+    }
+
     [RelayCommand]
     private void ToggleOverview() => IsOverviewExpanded = !IsOverviewExpanded;
 
@@ -353,6 +376,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
     {
         ItemId = id ?? "";
         _item = null;
+        _contentId = "";
         _serverBase = null;
         _watch = null;
         _seasons = [];
@@ -381,15 +405,16 @@ public sealed partial class ItemDetailViewModel : ObservableObject
     private void Show(CatalogItemDetail item, Uri server)
     {
         _item = item;
+        _contentId = string.IsNullOrWhiteSpace(item.ContentId) ? ItemId.Trim() : item.ContentId;
         _serverBase = server;
         _watch = item.UserData;
         bool isEpisode = item.Type == CatalogItemTypes.Episode;
         Type = item.Type;
         Title = item.Title;
         DisplayTitle = DetailFacts.DisplayTitle(item);
-        Overline = DetailFacts.Overline(item);
-        Tagline = string.IsNullOrWhiteSpace(item.Tagline) ? null : item.Tagline.Trim();
-        Subtitle = DetailFacts.Subtitle(item);
+        Overline = DetailFacts.Overline(item) ?? "";
+        Tagline = item.Tagline?.Trim() ?? "";
+        Subtitle = DetailFacts.Subtitle(item) ?? "";
         BackdropUrl = ArtworkUrl.Resolve(server, item.BackdropUrl) ?? (isEpisode ? ArtworkUrl.Resolve(server, item.PosterUrl) : null);
         PosterUrl = ArtworkUrl.Resolve(server, item.PosterUrl);
         ShowsPoster = !isEpisode;
@@ -428,14 +453,14 @@ public sealed partial class ItemDetailViewModel : ObservableObject
 
     private async Task LoadSeasonsAsync(CatalogItemDetail item, Uri server, ImageParameters images, int generation, CancellationToken cancellationToken)
     {
-        var collection = await TryLoadAsync("seasons", () => _catalog.ListSeasonsAsync(server, item.ContentId, images: images, cancellationToken: cancellationToken), cancellationToken);
+        var collection = await TryLoadAsync("seasons", () => _catalog.ListSeasonsAsync(server, _contentId, images: images, cancellationToken: cancellationToken), cancellationToken);
         if (collection is null || generation != _generation)
         {
             return;
         }
         var seasons = OrderSeasons(collection.Items);
         Chips = DetailFacts.Chips(item, seasons);
-        if (seasons.Count == 1)
+        if (seasons is [{ ContentId.Length: > 0 }])
         {
             // A single-season show lists its episodes right here, as on the web.
             var only = seasons[0];
@@ -457,7 +482,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
 
     private async Task LoadSeasonEpisodesAsync(CatalogItemDetail item, Uri server, ImageParameters images, int generation, CancellationToken cancellationToken)
     {
-        var collection = await TryLoadAsync("episodes", () => _catalog.ListSeasonEpisodesAsync(server, item.ContentId, images: images, cancellationToken: cancellationToken), cancellationToken);
+        var collection = await TryLoadAsync("episodes", () => _catalog.ListSeasonEpisodesAsync(server, _contentId, images: images, cancellationToken: cancellationToken), cancellationToken);
         if (collection is null || generation != _generation)
         {
             return;
@@ -483,18 +508,18 @@ public sealed partial class ItemDetailViewModel : ObservableObject
             Breadcrumbs = DetailFacts.Breadcrumbs(item, season);
         }
         var episodes = await episodesLoad;
-        if (generation == _generation && episodes is { Items.Count: > 1 })
+        if (generation == _generation && episodes is not null)
         {
-            MoreEpisodes = [.. episodes.Items.Select(e => MediaCardFactory.Episode(e, server))];
+            MoreEpisodes = [.. episodes.Items.Where(e => e.ContentId.Length > 0 && e.ContentId != _contentId).Select(e => MediaCardFactory.Episode(e, server))];
         }
     }
 
     private async Task LoadSimilarAsync(CatalogItemDetail item, Uri server, ImageParameters images, int generation, CancellationToken cancellationToken)
     {
-        var similar = await TryLoadAsync("similar titles", () => _catalog.ListSimilarAsync(server, item.ContentId, SimilarLimit, images, cancellationToken), cancellationToken);
+        var similar = await TryLoadAsync("similar titles", () => _catalog.ListSimilarAsync(server, _contentId, SimilarLimit, images, cancellationToken), cancellationToken);
         if (similar is not null && generation == _generation)
         {
-            Similar = [.. similar.Items.Where(i => i.ContentId.Length > 0 && i.ContentId != item.ContentId).Select(i => MediaCardFactory.Poster(i, server))];
+            Similar = [.. similar.Items.Where(i => i.ContentId.Length > 0 && i.ContentId != _contentId).Select(i => MediaCardFactory.Poster(i, server))];
         }
     }
 
@@ -505,7 +530,8 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         {
             return await load();
         }
-        catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex, cancellationToken))
+        // ArgumentException: the server named an id the client refuses to put in a path ("", "..").
+        catch (Exception ex) when (ex is ArgumentException || ApiFailureText.IsRequestFailure(ex, cancellationToken))
         {
             _logger.LogWarning("Loading the {Section} of item {ItemId} failed: {Failure}", section, ItemId, ApiFailureText.Describe(ex));
             return null;

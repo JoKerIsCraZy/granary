@@ -11,8 +11,7 @@
 
     <StackPanel Spacing="6">
         <controls:MediaCardView Card="{x:Bind Episode.Card, Mode=OneWay}" />
-        <TextBlock Text="{x:Bind Episode.Overview, Mode=OneWay}" Style="{StaticResource SiloCaptionTextStyle}" FontFamily="{StaticResource SiloFontRegular}"
-                   FontWeight="Normal" LineHeight="18" TextWrapping="Wrap" MaxLines="3" Padding="2,0"
-                   Visibility="{x:Bind Shows(Episode.Overview), Mode=OneWay}" />
+        <TextBlock x:Name="OverviewText" Text="{x:Bind Episode.Overview, Mode=OneWay}" Style="{StaticResource SiloCaptionTextStyle}"
+                   FontFamily="{StaticResource SiloFontRegular}" FontWeight="Normal" LineHeight="18" TextWrapping="Wrap" MaxLines="3" Padding="2,0" />
     </StackPanel>
 </UserControl>

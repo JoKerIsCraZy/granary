@@ -31,7 +31,7 @@
                                 <ItemsRepeater.ItemTemplate>
                                     <DataTemplate x:DataType="cards:MediaCard">
                                         <Button Width="185" Style="{StaticResource SiloCardButtonStyle}" Click="OnSeasonClick"
-                                                AutomationProperties.Name="{x:Bind local:ItemDetailPage.SeasonName(Title, Caption)}">
+                                                AutomationProperties.Name="{x:Bind local:ItemDetailPage.SeasonName(Title, Caption, IsWatched)}">
                                             <controls:MediaCardView Card="{x:Bind}" />
                                         </Button>
                                     </DataTemplate>
@@ -63,7 +63,8 @@
                             </ItemsRepeater.Layout>
                             <ItemsRepeater.ItemTemplate>
                                 <DataTemplate x:DataType="detail:DetailEpisode">
-                                    <Button Style="{StaticResource SiloCardButtonStyle}" Click="OnEpisodeClick"
+                                    <!-- Top-aligned: episodes without an overview are shorter than their row. -->
+                                    <Button VerticalAlignment="Top" Style="{StaticResource SiloCardButtonStyle}" Click="OnEpisodeClick"
                                             AutomationProperties.Name="{x:Bind AccessibleName}">
                                         <controls:DetailEpisodeCard Episode="{x:Bind}" />
                                     </Button>

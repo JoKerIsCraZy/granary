@@ -31,7 +31,7 @@ public sealed partial class ItemDetailPage : Page
     public ItemDetailViewModel ViewModel { get; }
 
     // Static because x:Bind function bindings in item templates call them without the page.
-    public static string SeasonName(string title, string? caption) => string.IsNullOrEmpty(caption) ? title : $"{title}, {caption}";
+    public static string SeasonName(string title, string caption, bool isWatched) => isWatched ? $"{title}, {caption}, watched" : $"{title}, {caption}";
 
     protected override void OnNavigatedTo(NavigationEventArgs e)
     {

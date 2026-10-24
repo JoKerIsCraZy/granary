@@ -232,7 +232,7 @@ public sealed class ItemDetailViewModelTests
 
         Assert.Equal("Lupin", detail.DisplayTitle);
         Assert.Equal("Staffel 3", detail.Subtitle);
-        Assert.Null(detail.Overline);
+        Assert.Equal("", detail.Overline);
         Assert.True(detail.ShowsTitleText);
         Assert.True(detail.IsCompactHero);
         Assert.Equal([new DetailCrumb("Lupin", SeriesId, true), new DetailCrumb("Season 3", null, false)], detail.Breadcrumbs);
@@ -323,7 +323,8 @@ public sealed class ItemDetailViewModelTests
         Assert.Equal(
             [new DetailCrumb("Lupin", SeriesId, true), new DetailCrumb("Staffel 3", Season3Id, false), new DetailCrumb("Episode 1", null, false)],
             detail.Breadcrumbs);
-        Assert.Equal(["S03E01 · Chapter 1", "S03E02 · Chapter 2"], detail.MoreEpisodes.Select(c => c.Title));
+        // The episode itself is left out.
+        Assert.Equal(["S03E02 · Chapter 2"], detail.MoreEpisodes.Select(c => c.Title));
     }
 
     [Fact]
@@ -336,6 +337,18 @@ public sealed class ItemDetailViewModelTests
         Assert.True(detail.IsReady);
         Assert.Equal(new DetailCrumb("Season 3", null, false), detail.Breadcrumbs[1]);
         Assert.False(detail.HasMoreEpisodes);
+    }
+
+    [Fact]
+    public async Task UnreadableImageSizes_StillShowTheTitleAtDefaultSizes()
+    {
+        _fixture.Movie().Get("api/v2/images/capabilities", Ok("not json"));
+
+        var detail = await _fixture.LoadAsync(MovieId);
+
+        Assert.True(detail.IsReady);
+        var item = _fixture.Silo.Sent.Single(r => r.Uri.AbsolutePath.EndsWith("/catalog/items/" + MovieId, StringComparison.Ordinal));
+        Assert.Equal("", item.Uri.Query);
     }
 
     [Fact]
@@ -440,7 +453,7 @@ public sealed class ItemDetailViewModelTests
         var detail = await _fixture.Episode().LoadAsync(EpisodeId);
 
         detail.OpenCardCommand.Execute(detail.MoreEpisodes[0]);
-        detail.OpenCardCommand.Execute(detail.MoreEpisodes[1]);
+        detail.OpenCrumbCommand.Execute(new DetailCrumb("Episode 1", EpisodeId, false));
         detail.OpenCrumbCommand.Execute(detail.Breadcrumbs[1]);
 
         Assert.Equal(new (AppRoute, object?)[] { (AppRoute.Item, Episode2Id), (AppRoute.Item, Season3Id) }, _fixture.Navigation.Navigations);

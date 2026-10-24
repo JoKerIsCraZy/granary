@@ -17,8 +17,7 @@
         </Grid>
         <StackPanel Spacing="2" Padding="2,0">
             <TextBlock Text="{x:Bind Person.Name, Mode=OneWay}" Style="{StaticResource SiloCardTitleTextStyle}" FontSize="13" />
-            <TextBlock Text="{x:Bind Person.Role, Mode=OneWay}" Style="{StaticResource SiloCaptionTextStyle}" FontSize="11"
-                       Visibility="{x:Bind Shows(Person.Role), Mode=OneWay}" />
+            <TextBlock x:Name="RoleText" Text="{x:Bind Person.Role, Mode=OneWay}" Style="{StaticResource SiloCaptionTextStyle}" FontSize="11" />
         </StackPanel>
     </StackPanel>
 </UserControl>

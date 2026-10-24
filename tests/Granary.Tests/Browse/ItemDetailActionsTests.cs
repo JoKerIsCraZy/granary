@@ -49,6 +49,57 @@ public sealed class ItemDetailActionsTests
     }
 
     [Fact]
+    public async Task SecondClickWhileMarking_IsIgnoredAndTheButtonStaysEnabled()
+    {
+        var (held, gate) = Held();
+        _fixture.Movie().Silo.On(HttpMethod.Post, Watched(MovieId), held);
+        var detail = await _fixture.LoadAsync(MovieId);
+
+        var first = detail.ToggleWatchedCommand.ExecuteAsync(null);
+        Assert.True(detail.ToggleWatchedCommand.CanExecute(null));
+        await detail.ToggleWatchedCommand.ExecuteAsync(null);
+        gate.SetResult(NoContentResponse());
+        await first;
+
+        Assert.True(detail.IsWatched);
+        Assert.Single(_fixture.Silo.SentTo(HttpMethod.Post, Watched(MovieId)));
+    }
+
+    [Fact]
+    public async Task FailedMark_KeepsEpisodesThatArrivedMeanwhile()
+    {
+        var (episodesHeld, episodesGate) = Held();
+        var (markHeld, markGate) = Held();
+        _fixture.Season().Get(SeasonItemEpisodesPath(Season3Id), episodesHeld).Silo.On(HttpMethod.Post, Watched(Season3Id), markHeld);
+        var detail = _fixture.Create();
+        var load = detail.LoadCommand.ExecuteAsync(Season3Id);
+        await Auth.AuthPipeline.Eventually(() => detail.IsReady);
+
+        var marking = detail.ToggleWatchedCommand.ExecuteAsync(null);
+        episodesGate.SetResult(await Ok(SeasonEpisodes)());
+        await load;
+        markGate.SetResult(new HttpResponseMessage(System.Net.HttpStatusCode.InternalServerError));
+        await marking;
+
+        Assert.False(detail.IsWatched);
+        Assert.Equal([true, false], detail.Episodes.Select(e => e.Card.IsWatched));
+    }
+
+    [Fact]
+    public async Task AnswerWithoutContentId_ActsOnTheRequestedId()
+    {
+        _fixture.Movie()
+            .Get(ItemPath(MovieId), Ok(Movie.Replace("\"content_id\": \"movie-tmdb-1001\",", "", StringComparison.Ordinal)))
+            .Silo.On(HttpMethod.Post, Watched(MovieId), ScriptedSilo.NoContent());
+        var detail = await _fixture.LoadAsync(MovieId);
+
+        await detail.ToggleWatchedCommand.ExecuteAsync(null);
+
+        Assert.True(detail.IsWatched);
+        Assert.Single(_fixture.Silo.SentTo(HttpMethod.Post, Watched(MovieId)));
+    }
+
+    [Fact]
     public async Task MarkUnwatched_DeletesTheWatchedState()
     {
         _fixture.Episode().Silo.On(HttpMethod.Delete, Watched(EpisodeId), ScriptedSilo.NoContent());

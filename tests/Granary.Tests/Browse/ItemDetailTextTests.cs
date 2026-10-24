@@ -141,6 +141,25 @@ public sealed class ItemDetailTextTests
     }
 
     [Fact]
+    public void CreditsWithMissingNames_AreLeftOut()
+    {
+        var movie = Item(CatalogItemTypes.Movie, crew =>
+        {
+            crew.Add(new CrewCredit(null!, "Writer", null, null, null));
+            crew.Add(new CrewCredit("Ann Lee", "Director", null, null, null));
+            crew.Add(new CrewCredit(" ", "Writer", null, null, null));
+        }) with
+        {
+            Cast = [new CastCredit(null!, "Nobody", 0, null, null, null)],
+            Ratings = [new CatalogRating(null!, null!, 0, "5.0"), new CatalogRating("imdb", "IMDb", 50, "5.0")],
+        };
+
+        Assert.Equal(["Ann Lee"], DetailCredits.People(movie, Server).Select(p => p.Name));
+        Assert.Equal("Directed by Ann Lee · Drama · Mystery", string.Join(" · ", DetailCredits.Line(movie)));
+        Assert.Equal(["IMDb 5.0"], DetailFacts.Ratings(movie).Select(r => r.AccessibleName));
+    }
+
+    [Fact]
     public void OnlyCast_IsTitledCast()
     {
         var item = Item(CatalogItemTypes.Movie) with { Cast = [new CastCredit("Omar Sy", "Assane", 0, null, "/api/v2/artwork/p.webp?sig=x", null)] };

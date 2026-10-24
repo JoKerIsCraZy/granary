@@ -8,9 +8,15 @@ using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.ViewModels;
 
-// Navigation and the watched, favourite and watchlist actions of the detail page.
+// Navigation and the watched, favourite and watchlist actions of the detail page. The toggles allow
+// concurrent executions so their buttons never disable themselves (a keyboard user's focus would drop);
+// a change already on its way makes further clicks no-ops instead.
 public sealed partial class ItemDetailViewModel
 {
+    private bool _isChangingWatched;
+    private bool _isChangingFavorite;
+    private bool _isChangingWatchlist;
+
     [RelayCommand]
     private void OpenCard(MediaCard? card) => Open(card?.Id);
 
@@ -24,95 +30,113 @@ public sealed partial class ItemDetailViewModel
     private void GoBack() => _navigation.GoBack();
 
     /// <summary>Marks the item watched or unwatched; a series or season covers its episodes, and both clear the resume point.</summary>
-    [RelayCommand]
+    [RelayCommand(AllowConcurrentExecutions = true)]
     private async Task ToggleWatchedAsync()
     {
-        if (_item is not { } item || _serverBase is not { } server || !ShowsWatchedAction)
+        if (_item is not { } item || _serverBase is not { } server || !ShowsWatchedAction || _isChangingWatched)
         {
             return;
         }
+        _isChangingWatched = true;
         int generation = _generation;
         bool watched = !IsWatched;
-        var before = (_watch, IsWatched, _seasons, _episodes, MoreEpisodes);
+        var before = (Watch: _watch, IsWatched, Seasons: _seasons, Episodes: _episodes);
         ActionError = "";
         _watch = Marked(_watch, watched, item.Type is CatalogItemTypes.Movie or CatalogItemTypes.Episode);
         IsWatched = watched;
         _seasons = [.. _seasons.Select(s => Marked(s, watched))];
         _episodes = [.. _episodes.Select(e => Marked(e, watched))];
-        MoreEpisodes = [.. MoreEpisodes.Select(c => c.Id == item.ContentId ? c with { IsWatched = watched, Progress = null } : c)];
+        var marked = (Seasons: _seasons, Episodes: _episodes);
         ShowWatchState();
         try
         {
-            await _catalog.SetWatchedAsync(server, item.ContentId, watched);
+            await _catalog.SetWatchedAsync(server, _contentId, watched);
         }
         catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex))
         {
-            _logger.LogWarning("Marking item {ItemId} {Change} failed: {Failure}", item.ContentId, watched ? "watched" : "unwatched", ApiFailureText.Describe(ex));
-            if (generation != _generation)
+            _logger.LogWarning("Marking item {ItemId} {Change} failed: {Failure}", _contentId, watched ? "watched" : "unwatched", ApiFailureText.Describe(ex));
+            if (generation == _generation)
             {
-                return;
+                _watch = before.Watch;
+                IsWatched = before.IsWatched;
+                // A list that arrived while the change was on its way already shows the server's state.
+                _seasons = ReferenceEquals(_seasons, marked.Seasons) ? before.Seasons : _seasons;
+                _episodes = ReferenceEquals(_episodes, marked.Episodes) ? before.Episodes : _episodes;
+                ShowWatchState();
+                ActionError = DescribeActionFailure(watched ? "mark this as watched" : "mark this as unwatched", ex);
             }
-            (_watch, IsWatched, _seasons, _episodes, MoreEpisodes) = before;
-            ShowWatchState();
-            ActionError = DescribeActionFailure(watched ? "mark this as watched" : "mark this as unwatched", ex);
+        }
+        finally
+        {
+            _isChangingWatched = false;
         }
     }
 
-    [RelayCommand]
+    [RelayCommand(AllowConcurrentExecutions = true)]
     private async Task ToggleFavoriteAsync()
     {
-        if (_item is not { } item || _serverBase is not { } server || !CanFavorite)
+        if (_serverBase is not { } server || !CanFavorite || _isChangingFavorite)
         {
             return;
         }
+        _isChangingFavorite = true;
         int generation = _generation;
         bool favorite = !IsFavorite;
         ActionError = "";
         IsFavorite = favorite;
         try
         {
-            await _catalog.SetFavoriteAsync(server, item.ContentId, favorite);
+            await _catalog.SetFavoriteAsync(server, _contentId, favorite);
         }
         catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex))
         {
-            _logger.LogWarning("Changing favorite {ItemId} failed: {Failure}", item.ContentId, ApiFailureText.Describe(ex));
+            _logger.LogWarning("Changing favorite {ItemId} failed: {Failure}", _contentId, ApiFailureText.Describe(ex));
             if (generation == _generation)
             {
                 IsFavorite = !favorite;
                 ActionError = DescribeActionFailure(favorite ? "add this to your favorites" : "remove this from your favorites", ex);
             }
         }
+        finally
+        {
+            _isChangingFavorite = false;
+        }
     }
 
-    [RelayCommand]
+    [RelayCommand(AllowConcurrentExecutions = true)]
     private async Task ToggleWatchlistAsync()
     {
-        if (_item is not { } item || _serverBase is not { } server || !CanFavorite)
+        if (_serverBase is not { } server || !CanFavorite || _isChangingWatchlist)
         {
             return;
         }
+        _isChangingWatchlist = true;
         int generation = _generation;
         bool add = !IsInWatchlist;
         ActionError = "";
         IsInWatchlist = add;
         try
         {
-            await _catalog.SetWatchlistAsync(server, item.ContentId, add);
+            await _catalog.SetWatchlistAsync(server, _contentId, add);
         }
         catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex))
         {
-            _logger.LogWarning("Changing watchlist {ItemId} failed: {Failure}", item.ContentId, ApiFailureText.Describe(ex));
+            _logger.LogWarning("Changing watchlist {ItemId} failed: {Failure}", _contentId, ApiFailureText.Describe(ex));
             if (generation == _generation)
             {
                 IsInWatchlist = !add;
                 ActionError = DescribeActionFailure(add ? "add this to your watchlist" : "remove this from your watchlist", ex);
             }
         }
+        finally
+        {
+            _isChangingWatchlist = false;
+        }
     }
 
     private void Open(string? id)
     {
-        if (!string.IsNullOrWhiteSpace(id) && id != ItemId)
+        if (!string.IsNullOrWhiteSpace(id) && id != ItemId && id != _contentId)
         {
             _navigation.NavigateTo(AppRoute.Item, id);
         }

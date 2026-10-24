@@ -7,7 +7,7 @@ namespace Granary.App.Controls;
 public sealed partial class DetailEpisodeCard : UserControl
 {
     public static readonly DependencyProperty EpisodeProperty =
-        DependencyProperty.Register(nameof(Episode), typeof(DetailEpisode), typeof(DetailEpisodeCard), new PropertyMetadata(null));
+        DependencyProperty.Register(nameof(Episode), typeof(DetailEpisode), typeof(DetailEpisodeCard), new PropertyMetadata(null, OnEpisodeChanged));
 
     public DetailEpisodeCard()
     {
@@ -20,6 +20,8 @@ public sealed partial class DetailEpisodeCard : UserControl
         set => SetValue(EpisodeProperty, value);
     }
 
-    // Instance method because x:Bind function bindings call it on the control.
-    public Visibility Shows(string? text) => string.IsNullOrEmpty(text) ? Visibility.Collapsed : Visibility.Visible;
+    // Set here, not by an x:Bind function: those are skipped when their argument is null, and containers are recycled.
+    private static void OnEpisodeChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e) =>
+        ((DetailEpisodeCard)sender).OverviewText.Visibility =
+            string.IsNullOrEmpty(((DetailEpisode?)e.NewValue)?.Overview) ? Visibility.Collapsed : Visibility.Visible;
 }

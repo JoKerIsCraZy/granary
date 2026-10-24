@@ -141,9 +141,9 @@ public static class DetailFacts
     {
         ArgumentNullException.ThrowIfNull(item);
         return [.. item.Ratings
-            .Where(r => !string.IsNullOrWhiteSpace(r.Display))
+            .Where(r => r is not null && !string.IsNullOrWhiteSpace(r.Display) && !(string.IsNullOrWhiteSpace(r.Name) && string.IsNullOrWhiteSpace(r.Source)))
             .Take(MaximumRatings)
-            .Select(r => new DetailRating(string.IsNullOrWhiteSpace(r.Name) ? r.Source.ToUpperInvariant() : r.Name.Trim(), r.Display.Trim()))];
+            .Select(r => new DetailRating(string.IsNullOrWhiteSpace(r.Name) ? r.Source.Trim().ToUpperInvariant() : r.Name.Trim(), r.Display.Trim()))];
     }
 
     /// <summary>

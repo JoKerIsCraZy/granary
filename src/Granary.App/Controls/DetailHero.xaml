@@ -62,13 +62,14 @@
             </Rectangle.Fill>
         </Rectangle>
 
-        <Grid Padding="48,96,48,36" VerticalAlignment="Bottom" ColumnSpacing="40">
+        <Grid Padding="48,96,48,36" VerticalAlignment="Bottom">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <Grid Width="220" Height="330" VerticalAlignment="Bottom" CornerRadius="{StaticResource SiloCardCornerRadius}"
+            <!-- The gap is the poster's margin, so an episode (no poster) lines up with the rows below. -->
+            <Grid Width="220" Height="330" Margin="0,0,40,0" VerticalAlignment="Bottom" CornerRadius="{StaticResource SiloCardCornerRadius}"
                   Background="{StaticResource SiloSurfaceBrush}" BorderBrush="#33FFFFFF" BorderThickness="1"
                   Visibility="{x:Bind ViewModel.ShowsPoster, Mode=OneWay}">
                 <!-- Shown until the poster arrives, and instead of it when there is none. -->
@@ -181,6 +182,12 @@
                         <Button Style="{StaticResource SiloPrimaryButtonStyle}" IsEnabled="{x:Bind ViewModel.IsPlayAvailable}"
                                 AutomationProperties.Name="{x:Bind ViewModel.PlayLabel, Mode=OneWay}"
                                 AutomationProperties.HelpText="{x:Bind PlayUnavailableText}">
+                            <!-- Until playback arrives the pill stays red, only dimmed, so it still reads as the primary action. -->
+                            <Button.Resources>
+                                <SolidColorBrush x:Key="AccentButtonBackgroundDisabled" Color="#73EF4444" />
+                                <SolidColorBrush x:Key="AccentButtonBorderBrushDisabled" Color="Transparent" />
+                                <SolidColorBrush x:Key="AccentButtonForegroundDisabled" Color="#B3FFFFFF" />
+                            </Button.Resources>
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <FontIcon Glyph="&#xE768;" FontSize="14" />
                                 <TextBlock Text="{x:Bind ViewModel.PlayLabel, Mode=OneWay}" />
@@ -188,7 +195,8 @@
                         </Button>
                     </Grid>
                     <Button Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.ToggleWatchedCommand}"
-                            Visibility="{x:Bind ViewModel.ShowsWatchedAction, Mode=OneWay}">
+                            Visibility="{x:Bind ViewModel.ShowsWatchedAction, Mode=OneWay}"
+                            AutomationProperties.Name="{x:Bind ViewModel.WatchedLabel, Mode=OneWay}">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <FontIcon Glyph="&#xE73E;" FontSize="14" Foreground="{x:Bind controls:DetailHero.ActiveForeground(ViewModel.IsWatched), Mode=OneWay}" />
                             <TextBlock Text="{x:Bind ViewModel.WatchedLabel, Mode=OneWay}" />
