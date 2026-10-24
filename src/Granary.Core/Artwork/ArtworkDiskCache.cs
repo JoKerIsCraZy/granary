@@ -43,6 +43,12 @@ public sealed class ArtworkDiskCache
     public async Task<byte[]?> ReadAsync(string key, CancellationToken cancellationToken)
     {
         string path = PathFor(key);
+        // Misses are the rule on a cold cache: asking first spares an exception per image, which a
+        // debugger reports and which costs time. The catch below still covers a file deleted in between.
+        if (!File.Exists(path))
+        {
+            return null;
+        }
         try
         {
             var data = await File.ReadAllBytesAsync(path, cancellationToken);

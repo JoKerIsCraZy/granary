@@ -30,12 +30,10 @@ internal static class Artwork
 
     private static async void Fill(BitmapImage bitmap, Uri url, CancellationToken cancellationToken)
     {
-        ArtworkBytes? artwork;
-        try
-        {
-            artwork = await Loader.GetAsync(url, cancellationToken);
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        // The wait is not cancelled but checked afterwards: a recycled card would otherwise throw an exception
+        // per image while the user scrolls, and the download goes on for the cache anyway.
+        var artwork = await Loader.GetAsync(url, CancellationToken.None);
+        if (cancellationToken.IsCancellationRequested)
         {
             return;
         }

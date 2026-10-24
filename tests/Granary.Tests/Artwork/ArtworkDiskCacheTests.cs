@@ -1,3 +1,4 @@
+using System.Runtime.ExceptionServices;
 using Granary.Core.Artwork;
 using Granary.Tests.Fakes;
 
@@ -32,6 +33,34 @@ public sealed class ArtworkDiskCacheTests : IDisposable
     {
         Assert.Null(await Create().ReadAsync("missing", TestContext.Current.CancellationToken));
         Assert.False(Create().Contains("missing"));
+    }
+
+    [Fact]
+    public async Task Read_OfAnUnknownImage_ThrowsNothingOnTheWay()
+    {
+        // A miss is the common case on a cold cache; a debugger reports every exception thrown, caught or not.
+        var cache = Create();
+        int thrown = 0;
+        EventHandler<FirstChanceExceptionEventArgs> count = (_, e) =>
+        {
+            if (e.Exception is IOException && e.Exception.Message.Contains(_directory, StringComparison.OrdinalIgnoreCase))
+            {
+                Interlocked.Increment(ref thrown);
+            }
+        };
+        AppDomain.CurrentDomain.FirstChanceException += count;
+        try
+        {
+            await cache.ReadAsync("missing", TestContext.Current.CancellationToken);
+            await cache.WriteAsync("other", [1], TestContext.Current.CancellationToken);
+            await cache.ReadAsync("missing", TestContext.Current.CancellationToken);
+        }
+        finally
+        {
+            AppDomain.CurrentDomain.FirstChanceException -= count;
+        }
+
+        Assert.Equal(0, thrown);
     }
 
     [Fact]
