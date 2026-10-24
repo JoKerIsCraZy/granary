@@ -3,6 +3,7 @@ using Granary.App.Services;
 using Granary.Core;
 using Granary.Core.Abstractions;
 using Granary.Core.Diagnostics;
+using Granary.Core.ViewModels;
 using Granary.Player;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -52,9 +53,20 @@ public partial class App : Application
         // Developer shortcut until server playback exists: Granary.exe --play <file or URL>
         string[] arguments = Environment.GetCommandLineArgs();
         int play = Array.IndexOf(arguments, "--play");
-        if (play >= 0 && play + 1 < arguments.Length)
+        bool playFile = play >= 0 && play + 1 < arguments.Length;
+        StartShell(_window.Shell, playFile ? AppRoute.Player : null, playFile ? arguments[play + 1] : null);
+    }
+
+    private async void StartShell(ShellViewModel shell, AppRoute? initialRoute, string? parameter)
+    {
+        try
         {
-            Services.GetRequiredService<INavigationService>().NavigateTo(AppRoute.Player, arguments[play + 1]);
+            await shell.StartAsync(initialRoute, parameter);
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogCritical(ex, "The shell failed to start");
+            throw;
         }
     }
 

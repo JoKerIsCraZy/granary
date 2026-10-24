@@ -1,5 +1,6 @@
 using Granary.App.Services;
 using Granary.Core.Abstractions;
+using Granary.Core.ViewModels;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
@@ -10,9 +11,10 @@ public sealed partial class MainWindow : Window
 {
     private readonly NavigationService _navigation;
 
-    public MainWindow(NavigationService navigation)
+    public MainWindow(NavigationService navigation, ShellViewModel shell)
     {
         _navigation = navigation;
+        Shell = shell;
         InitializeComponent();
         SystemBackdrop = new MicaBackdrop();
         ExtendsContentIntoTitleBar = true;
@@ -21,8 +23,10 @@ public sealed partial class MainWindow : Window
 
         _navigation.Attach(ContentFrame);
         _navigation.Navigated += (_, route) => SelectItem(route);
-        _navigation.NavigateTo(AppRoute.Home);
     }
+
+    /// <summary>Routes by session state; the app starts it once the window is up.</summary>
+    public ShellViewModel Shell { get; }
 
     private void OnNavigationSelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
     {

@@ -20,6 +20,7 @@
             Grid.Row="1"
             IsBackButtonVisible="Collapsed"
             IsSettingsVisible="False"
+            IsPaneVisible="{x:Bind Shell.IsSignedIn, Mode=OneWay}"
             PaneDisplayMode="Left"
             SelectionChanged="OnNavigationSelectionChanged">
             <NavigationView.MenuItems>

@@ -4,9 +4,26 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <StackPanel Padding="36,24" Spacing="12">
-        <TextBlock Text="Home" Style="{StaticResource TitleTextBlockStyle}" />
-        <TextBlock TextWrapping="Wrap" Style="{StaticResource BodyTextBlockStyle}"
-                   Text="Continue Watching and Recently Added appear here once a Silo server is connected." />
+    <StackPanel Padding="36,24" Spacing="24">
+        <Grid ColumnSpacing="16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <PersonPicture Width="56" Height="56" DisplayName="{x:Bind ViewModel.ProfileName, Mode=OneWay}"
+                           AutomationProperties.Name="{x:Bind ViewModel.ProfileName, Mode=OneWay}" />
+            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                <TextBlock Text="{x:Bind Greeting(ViewModel.ProfileName), Mode=OneWay}" Style="{StaticResource SubtitleTextBlockStyle}" />
+                <TextBlock Text="{x:Bind Signature(ViewModel.UserName, ViewModel.ServerName), Mode=OneWay}"
+                           Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            </StackPanel>
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                <Button Content="Switch profile" Command="{x:Bind ViewModel.SwitchProfileCommand}" />
+                <Button Content="Sign out" Command="{x:Bind ViewModel.SignOutCommand}" />
+            </StackPanel>
+        </Grid>
+        <TextBlock TextWrapping="Wrap" Style="{StaticResource BodyTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                   Text="Continue Watching and Recently Added will appear here." />
     </StackPanel>
 </Page>
