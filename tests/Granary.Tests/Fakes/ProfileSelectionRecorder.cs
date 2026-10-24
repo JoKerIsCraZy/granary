@@ -39,10 +39,17 @@ internal sealed class ProfileSelectionRecorder(FakeSessionManager inner) : ISess
     public Task SignInWithTokensAsync(ServerEntry server, TokenPair tokens, CancellationToken cancellationToken = default) =>
         Inner.SignInWithTokensAsync(server, tokens, cancellationToken);
 
-    public Task SelectProfileAsync(string profileId, string? profileToken, CancellationToken cancellationToken = default)
+    /// <summary>When set, <see cref="SelectProfileAsync"/> waits for it, so a test can act while a selection runs.</summary>
+    public Task? SelectGate { get; set; }
+
+    public async Task SelectProfileAsync(string profileId, string? profileToken, CancellationToken cancellationToken = default)
     {
         ProfileTokens.Add(profileToken);
-        return Inner.SelectProfileAsync(profileId, profileToken, cancellationToken);
+        if (SelectGate is { } gate)
+        {
+            await gate.WaitAsync(cancellationToken);
+        }
+        await Inner.SelectProfileAsync(profileId, profileToken, cancellationToken);
     }
 
     public Task ClearProfileAsync(CancellationToken cancellationToken = default) => Inner.ClearProfileAsync(cancellationToken);

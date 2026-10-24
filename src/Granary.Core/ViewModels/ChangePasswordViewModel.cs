@@ -12,7 +12,8 @@ namespace Granary.Core.ViewModels;
 /// <summary>
 /// Replaces the account password, typically a temporary one that blocks every other call
 /// (docs/api-contract.md, 4.1). The limits come from the server's password capability; after the change
-/// the session refreshes its tokens to lift the restriction. Passwords are never logged.
+/// the session refreshes its tokens to lift the restriction. Passwords are never logged. The commands take
+/// no cancellation token: a cancellable toolkit command would cancel its running call when executed again.
 /// </summary>
 public sealed partial class ChangePasswordViewModel(AccountApi account, ISessionManager session, ILogger<ChangePasswordViewModel> logger)
     : ObservableObject
@@ -60,7 +61,7 @@ public sealed partial class ChangePasswordViewModel(AccountApi account, ISession
     public partial bool IsBusy { get; private set; }
 
     [RelayCommand]
-    private async Task LoadAsync(CancellationToken cancellationToken)
+    private async Task LoadAsync()
     {
         Explanation = session.Account?.PasswordChangeRequired == true
             ? "Your account has a temporary password. Choose a new password to continue."
@@ -76,9 +77,9 @@ public sealed partial class ChangePasswordViewModel(AccountApi account, ISession
 
         try
         {
-            ApplyCapability(await account.GetPasswordCapabilityAsync(server.BaseUri, cancellationToken));
+            ApplyCapability(await account.GetPasswordCapabilityAsync(server.BaseUri));
         }
-        catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex, cancellationToken))
+        catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex))
         {
             logger.LogWarning("Reading the password capability failed: {Failure}", ApiFailureText.Describe(ex));
             HasLoadError = true;
@@ -87,7 +88,7 @@ public sealed partial class ChangePasswordViewModel(AccountApi account, ISession
     }
 
     [RelayCommand(CanExecute = nameof(CanSubmit))]
-    private async Task SubmitAsync(CancellationToken cancellationToken)
+    private async Task SubmitAsync()
     {
         if (!IsReady || IsBusy || session.ActiveServer is not { } server)
         {
@@ -108,9 +109,9 @@ public sealed partial class ChangePasswordViewModel(AccountApi account, ISession
         SetStatus("Changing the password…", isError: false);
         try
         {
-            if (await TryChangeAsync(server, current, replacement, cancellationToken))
+            if (await TryChangeAsync(server, current, replacement))
             {
-                await RenewSessionAsync(cancellationToken);
+                await RenewSessionAsync();
             }
         }
         finally
@@ -121,6 +122,21 @@ public sealed partial class ChangePasswordViewModel(AccountApi account, ISession
 
     private bool CanSubmit() =>
         IsReady && !IsBusy && CurrentPassword.Length > 0 && NewPassword.Length > 0 && ConfirmPassword.Length > 0;
+
+    /// <summary>The way out when the password cannot be changed now; the shell routes on the session change.</summary>
+    [RelayCommand]
+    private async Task SignOutAsync()
+    {
+        try
+        {
+            await session.SignOutAsync();
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning("Signing out failed: {Failure}", ApiFailureText.Describe(ex));
+            SetStatus("Could not sign out. Try again.", isError: true);
+        }
+    }
 
     private void ApplyCapability(AccountPasswordCapability capability)
     {
@@ -171,16 +187,16 @@ public sealed partial class ChangePasswordViewModel(AccountApi account, ISession
         return null;
     }
 
-    private async Task<bool> TryChangeAsync(ServerEntry server, string current, string replacement, CancellationToken cancellationToken)
+    private async Task<bool> TryChangeAsync(ServerEntry server, string current, string replacement)
     {
         try
         {
-            await account.ChangePasswordAsync(server.BaseUri, current, replacement, cancellationToken);
+            await account.ChangePasswordAsync(server.BaseUri, current, replacement);
             logger.LogInformation("Account password changed");
             SetStatus("Your password has been changed.", isError: false);
             return true;
         }
-        catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex, cancellationToken))
+        catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex))
         {
             logger.LogWarning("Changing the password failed: {Failure}", ApiFailureText.Describe(ex));
             SetStatus(DescribeChangeFailure(ex), isError: true);
@@ -189,13 +205,13 @@ public sealed partial class ChangePasswordViewModel(AccountApi account, ISession
     }
 
     // New tokens drop the temporary-password restriction; the shell routes on the session change.
-    private async Task RenewSessionAsync(CancellationToken cancellationToken)
+    private async Task RenewSessionAsync()
     {
         try
         {
-            await session.RefreshAccountAsync(cancellationToken);
+            await session.RefreshAccountAsync();
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (Exception ex)
         {
             logger.LogWarning("Renewing the session after the password change failed: {Failure}", ApiFailureText.Describe(ex));
             SetStatus("Your password has been changed, but the session could not be renewed. Sign in again with the new password.",

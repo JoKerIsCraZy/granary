@@ -1,7 +1,7 @@
 using System.ComponentModel;
-using System.Runtime.InteropServices;
 using Granary.Core.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
@@ -15,10 +15,12 @@ namespace Granary.App.Views;
 
 public sealed partial class ProfilePickerPage : Page
 {
-    private const string LockGlyph = "";
+    private const string LockGlyph = "\uE72E";
     private const int AvatarDecodeSize = 120;
 
     private bool _isPinDialogShown;
+    private bool _hasFocusedFirstTile;
+    private ProfileItemViewModel? _promptedProfile;
 
     public ProfilePickerPage()
     {
@@ -48,18 +50,26 @@ public sealed partial class ProfilePickerPage : Page
 
     private void OnProfileClick(object sender, ItemClickEventArgs e)
     {
-        if (e.ClickedItem is ProfileItemViewModel profile)
+        if (e.ClickedItem is ProfileItemViewModel profile && ViewModel.SelectCommand.CanExecute(profile))
         {
             ViewModel.SelectCommand.Execute(profile);
         }
     }
 
-    // Items are announced by their container: give it the profile's name and PIN state.
+    // Items are announced by their container: give it the profile's name and PIN state. The first tile
+    // takes the focus once, so a keyboard user can pick a profile right away.
     private void OnProfileContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
     {
-        if (args.Item is ProfileItemViewModel profile)
+        if (args.Item is not ProfileItemViewModel profile)
         {
-            AutomationProperties.SetName(args.ItemContainer, profile.AccessibleName);
+            return;
+        }
+        AutomationProperties.SetName(args.ItemContainer, profile.AccessibleName);
+        if (args.ItemIndex == 0 && !args.InRecycleQueue && !_hasFocusedFirstTile)
+        {
+            _hasFocusedFirstTile = true;
+            var tile = args.ItemContainer;
+            DispatcherQueue.TryEnqueue(() => tile.Focus(FocusState.Programmatic));
         }
     }
 
@@ -87,6 +97,7 @@ public sealed partial class ProfilePickerPage : Page
             return;
         }
         _isPinDialogShown = true;
+        _promptedProfile = ViewModel.PinProfile;
         PinBox.Password = "";
         UpdateUnlockButton();
         PinDialog.XamlRoot = XamlRoot;
@@ -94,9 +105,10 @@ public sealed partial class ProfilePickerPage : Page
         {
             await PinDialog.ShowAsync();
         }
-        catch (COMException)
+        catch (Exception ex)
         {
-            // Another dialog is open; the prompt cannot be shown now.
+            // For example another dialog is open (COMException) or the page has left the tree.
+            App.Services.GetRequiredService<ILogger<ProfilePickerPage>>().LogWarning("The PIN dialog could not be shown: {Error}", ex.GetType().Name);
             ViewModel.CancelPinCommand.Execute(null);
         }
         finally
@@ -115,6 +127,12 @@ public sealed partial class ProfilePickerPage : Page
         {
             ViewModel.CancelPinCommand.Execute(null);
         }
+        // Keyboard users continue from the tile they opened the prompt on.
+        if (_promptedProfile is not null && ProfileGrid.ContainerFromItem(_promptedProfile) is Control tile)
+        {
+            tile.Focus(FocusState.Programmatic);
+        }
+        _promptedProfile = null;
     }
 
     private void OnPinDialogPrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)

@@ -222,6 +222,60 @@ public sealed class ChangePasswordViewModelTests
         Assert.True(harness.ViewModel.HasError);
     }
 
+    [Fact]
+    public async Task Load_ServerWithoutPasswordChanges_DisablesSubmit()
+    {
+        var harness = new Harness(CapabilityJson.Replace("\"available\"", "\"not_configured\"", StringComparison.Ordinal));
+
+        await harness.LoadAndFillAsync();
+
+        Assert.False(harness.ViewModel.IsReady);
+        Assert.Contains("does not offer password changes", harness.ViewModel.Status, StringComparison.Ordinal);
+        Assert.False(harness.ViewModel.SubmitCommand.CanExecute(null));
+    }
+
+    [Theory]
+    [InlineData(403, "permission_denied", "The password of this account cannot be changed from this session.")]
+    [InlineData(409, "conflict", "This account does not sign in with a password on this server.")]
+    [InlineData(503, "dependency_unavailable", "The server is busy, try again.")]
+    [InlineData(500, "internal_error", "The password could not be changed (error 500).")]
+    public async Task Submit_Refused_ExplainsWhy(int status, string code, string expected)
+    {
+        var harness = new Harness();
+        harness.Silo.On(HttpMethod.Post, PasswordPath, ScriptedSilo.Problem(status, code));
+        await harness.LoadAndFillAsync();
+
+        await harness.ViewModel.SubmitCommand.ExecuteAsync(null);
+
+        Assert.Single(harness.Silo.SentTo(HttpMethod.Post, PasswordPath));
+        Assert.Equal(expected, harness.ViewModel.Status);
+        Assert.True(harness.ViewModel.HasError);
+        Assert.Empty(harness.Session.Calls);
+    }
+
+    [Fact]
+    public async Task SignOut_EndsTheSessionOfTheActiveServer()
+    {
+        var harness = new Harness();
+
+        await harness.ViewModel.SignOutCommand.ExecuteAsync(null);
+
+        Assert.Equal(["sign-out:active"], harness.Session.Calls);
+        Assert.Equal("", harness.ViewModel.Status);
+    }
+
+    [Fact]
+    public async Task SignOut_Failure_ShowsAStatus()
+    {
+        var harness = new Harness();
+        harness.Session.FailWith = new HttpRequestException("offline");
+
+        await harness.ViewModel.SignOutCommand.ExecuteAsync(null);
+
+        Assert.Equal("Could not sign out. Try again.", harness.ViewModel.Status);
+        Assert.True(harness.ViewModel.HasError);
+    }
+
     private static void AssertFieldsCleared(ChangePasswordViewModel viewModel)
     {
         Assert.Equal("", viewModel.CurrentPassword);

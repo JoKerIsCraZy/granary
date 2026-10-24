@@ -17,6 +17,11 @@ namespace Granary.Core.ViewModels;
 /// profile first (docs/api-contract.md, 6.1-6.3). The shell navigates once the session has a profile.
 /// The PIN is only a command parameter: it is never stored or logged.
 /// </summary>
+/// <remarks>
+/// The commands take no cancellation token on purpose: a cancellable toolkit command cancels its running
+/// invocation when it is executed again (a double click, a reopened prompt). Stale answers are dropped
+/// through the load and PIN generations instead.
+/// </remarks>
 public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposable
 {
     // verify-pin accepts 1..72 bytes; a longer PIN cannot be right and must not cost an attempt.
@@ -33,7 +38,8 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
     private int _loadGeneration;
     private int _pinGeneration;
 
-    // The server the last load asked, and the server the shown list came from.
+    // The server the last load asked (null: none was active), and the server the shown list came from.
+    private bool _hasLoaded;
     private string? _requestedServerId;
     private string? _listServerId;
     private bool _disposed;
@@ -80,14 +86,14 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
     public string PinPromptTitle => PinProfile is { } profile ? $"Enter the PIN for {profile.Name}" : "Enter the PIN";
 
     [RelayCommand]
-    private Task LoadAsync(CancellationToken cancellationToken) => LoadProfilesAsync(cancellationToken);
+    private Task LoadAsync() => LoadProfilesAsync();
 
     [RelayCommand]
-    private Task RetryAsync(CancellationToken cancellationToken) => LoadProfilesAsync(cancellationToken);
+    private Task RetryAsync() => LoadProfilesAsync();
 
     /// <summary>Selects a profile without a PIN, or opens the PIN prompt for a protected one.</summary>
     [RelayCommand]
-    private async Task SelectAsync(ProfileItemViewModel? profile, CancellationToken cancellationToken)
+    private async Task SelectAsync(ProfileItemViewModel? profile)
     {
         // A click can arrive after a reload replaced the list it came from.
         if (profile is null || IsSelecting || !Profiles.Any(p => p.Id == profile.Id))
@@ -106,7 +112,7 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
             IsPinPromptOpen = true;
             return;
         }
-        await CommitAsync(profile.Id, null, cancellationToken);
+        await CommitAsync(profile.Id, null);
     }
 
     /// <summary>
@@ -114,7 +120,7 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
     /// so a failure is reported and never retried automatically.
     /// </summary>
     [RelayCommand]
-    private async Task SubmitPinAsync(string? pin, CancellationToken cancellationToken)
+    private async Task SubmitPinAsync(string? pin)
     {
         if (PinProfile is not { } profile || !IsPinPromptOpen || IsVerifyingPin)
         {
@@ -143,7 +149,7 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
         PinOutcome outcome;
         try
         {
-            outcome = await VerifyPinAsync(server, profile.Id, pin, cancellationToken);
+            outcome = await VerifyPinAsync(server, profile.Id, pin);
         }
         finally
         {
@@ -157,18 +163,24 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
             // The prompt was cancelled or replaced while the server checked the PIN.
             return;
         }
+        if (_session.ActiveServer?.Id != server.Id)
+        {
+            // Another server became active meanwhile: this token must not be applied to it.
+            ClosePinPrompt();
+            return;
+        }
 
         if (outcome.ProfileToken is { } token)
         {
             ClosePinPrompt();
-            await CommitAsync(profile.Id, token, cancellationToken);
+            await CommitAsync(profile.Id, token);
         }
         else if (outcome.ProfileChanged)
         {
             // The profile lost its PIN or is gone: show the current list.
             ClosePinPrompt();
-            await LoadProfilesAsync(cancellationToken);
-            if (!HasLoadError)
+            await LoadProfilesAsync();
+            if (!HasLoadError && Profiles.Count > 0)
             {
                 Status = "That profile has changed. Choose it again.";
             }
@@ -182,13 +194,15 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
     [RelayCommand]
     private void CancelPin() => ClosePinPrompt();
 
-    private async Task LoadProfilesAsync(CancellationToken cancellationToken)
+    private async Task LoadProfilesAsync()
     {
         int generation = ++_loadGeneration;
         var server = _session.ActiveServer;
+        _hasLoaded = true;
         _requestedServerId = server?.Id;
         if (server is null)
         {
+            IsLoading = false;
             ShowList([], null);
             SetStatus("No server is selected.", isLoadError: false);
             return;
@@ -198,7 +212,7 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
         SetStatus("", isLoadError: false);
         try
         {
-            var collection = await _profiles.ListAsync(server.BaseUri, cancellationToken);
+            var collection = await _profiles.ListAsync(server.BaseUri);
             if (generation != _loadGeneration)
             {
                 return;
@@ -209,7 +223,7 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
                 SetStatus("This account has no profiles yet.", isLoadError: false);
             }
         }
-        catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex, cancellationToken))
+        catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex))
         {
             if (generation != _loadGeneration)
             {
@@ -231,11 +245,11 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
         }
     }
 
-    private async Task<PinOutcome> VerifyPinAsync(ServerEntry server, string profileId, string pin, CancellationToken cancellationToken)
+    private async Task<PinOutcome> VerifyPinAsync(ServerEntry server, string profileId, string pin)
     {
         try
         {
-            var verification = await _profiles.VerifyPinAsync(server.BaseUri, profileId, pin, cancellationToken);
+            var verification = await _profiles.VerifyPinAsync(server.BaseUri, profileId, pin);
             if (!verification.Valid)
             {
                 return new PinOutcome(null, WrongPin, false);
@@ -247,7 +261,7 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
             }
             return new PinOutcome(verification.ProfileToken, null, false);
         }
-        catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex, cancellationToken))
+        catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex))
         {
             _logger.LogWarning("PIN check for profile {ProfileId} failed: {Failure}", profileId, ApiFailureText.Describe(ex));
             return ex is SiloApiException { Status: 404 }
@@ -256,14 +270,14 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
         }
     }
 
-    private async Task CommitAsync(string profileId, string? profileToken, CancellationToken cancellationToken)
+    private async Task CommitAsync(string profileId, string? profileToken)
     {
         IsSelecting = true;
         try
         {
-            await _session.SelectProfileAsync(profileId, profileToken, cancellationToken);
+            await _session.SelectProfileAsync(profileId, profileToken);
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (Exception ex)
         {
             _logger.LogWarning("Selecting profile {ProfileId} failed: {Failure}", profileId, ApiFailureText.Describe(ex));
             SetStatus("Could not open the profile. Try again.", isLoadError: false);
@@ -302,16 +316,20 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
         PinProfile = null;
     }
 
-    // Another server became active (or none): the shown list and an open prompt belong to the old one.
+    // Another server became active (or none): the shown list, a pending load and an open prompt belong
+    // to the old one.
     private void OnSessionChanged(object? sender, EventArgs e) => _dispatcher.Post(() =>
     {
-        if (_disposed || _requestedServerId is null || _session.ActiveServer?.Id == _requestedServerId)
+        if (_disposed || !_hasLoaded || _session.ActiveServer?.Id == _requestedServerId)
         {
             return;
         }
+        _loadGeneration++;
+        IsLoading = false;
         ClosePinPrompt();
         ShowList([], null);
-        _requestedServerId = null;
+        SetStatus("", isLoadError: false);
+        _requestedServerId = _session.ActiveServer?.Id;
         if (_session.State == SessionState.ProfileRequired)
         {
             LoadCommand.Execute(null);
@@ -365,7 +383,7 @@ internal static class ApiFailureText
     /// The failures an API call reports to the user instead of crashing: an error answer, a network
     /// failure, an unreadable answer, or a timeout (a cancellation the caller did not ask for).
     /// </summary>
-    public static bool IsRequestFailure(Exception ex, CancellationToken cancellationToken) =>
+    public static bool IsRequestFailure(Exception ex, CancellationToken cancellationToken = default) =>
         ex is SiloApiException or HttpRequestException or JsonException
         || (ex is OperationCanceledException && !cancellationToken.IsCancellationRequested);
 

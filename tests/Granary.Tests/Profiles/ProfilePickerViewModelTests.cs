@@ -1,4 +1,5 @@
 using System.Net;
+using Granary.Core.Abstractions;
 using Granary.Core.Api;
 using Granary.Core.Api.Profiles;
 using Granary.Core.Auth;
@@ -38,12 +39,30 @@ public sealed class ProfilePickerViewModelTests
     private const string ValidPinJson = """{"valid": true, "profile_token": "pvt_kid", "expires_at": null}""";
     private const string WrongPinJson = """{"valid": false, "expires_at": null}""";
 
+    /// <summary>Holds posted work until the test runs it, like a busy UI thread.</summary>
+    private sealed class QueuedDispatcher : IUiDispatcher
+    {
+        private readonly Queue<Action> _queue = new();
+
+        public bool HasThreadAccess => true;
+
+        public void Post(Action action) => _queue.Enqueue(action);
+
+        public void RunPending()
+        {
+            while (_queue.TryDequeue(out var action))
+            {
+                action();
+            }
+        }
+    }
+
     private sealed class Harness : IDisposable
     {
-        public Harness()
+        public Harness(IUiDispatcher? dispatcher = null)
         {
             Recorder = new ProfileSelectionRecorder(Session);
-            ViewModel = new ProfilePickerViewModel(new ProfilesApi(Silo.Http), Recorder, new ImmediateDispatcher(), Logger);
+            ViewModel = new ProfilePickerViewModel(new ProfilesApi(Silo.Http), Recorder, dispatcher ?? new ImmediateDispatcher(), Logger);
             Silo.On(HttpMethod.Get, ProfilesPath, ScriptedSilo.Json(HttpStatusCode.OK, ProfilesJson));
         }
 
@@ -362,5 +381,99 @@ public sealed class ProfilePickerViewModelTests
 
         Assert.Single(harness.Silo.Sent);
         Assert.Equal(3, harness.ViewModel.Profiles.Count);
+    }
+
+    [Fact]
+    public async Task Select_DoubleClick_KeepsTheRunningSelection()
+    {
+        using var harness = new Harness();
+        await harness.ViewModel.LoadCommand.ExecuteAsync(null);
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        harness.Recorder.SelectGate = gate.Task;
+        var owner = harness.Profile("p-owner");
+
+        var first = harness.ViewModel.SelectCommand.ExecuteAsync(owner);
+        var second = harness.ViewModel.SelectCommand.ExecuteAsync(owner);
+        gate.SetResult();
+        await Task.WhenAll(first, second);
+
+        Assert.Equal(["profile:p-owner:no-token"], harness.Session.Calls);
+        Assert.Equal("", harness.ViewModel.Status);
+    }
+
+    [Fact]
+    public async Task SubmitPin_AfterCancelAndReopen_IgnoresTheEarlierCheck()
+    {
+        using var harness = new Harness();
+        var firstAnswer = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        harness.Silo.On(HttpMethod.Post, KidPinPath, () => firstAnswer.Task, ScriptedSilo.Json(HttpStatusCode.OK, ValidPinJson));
+        await harness.OpenKidPromptAsync();
+
+        var first = harness.ViewModel.SubmitPinCommand.ExecuteAsync("1111");
+        harness.ViewModel.CancelPinCommand.Execute(null);
+        await harness.ViewModel.SelectCommand.ExecuteAsync(harness.Profile("p-kid"));
+        await harness.ViewModel.SubmitPinCommand.ExecuteAsync(Pin);
+        firstAnswer.SetResult(await ScriptedSilo.Json(HttpStatusCode.OK, WrongPinJson)());
+        await first;
+
+        Assert.Equal(2, harness.Silo.SentTo(HttpMethod.Post, KidPinPath).Count);
+        Assert.Equal(["pvt_kid"], harness.Recorder.ProfileTokens);
+        Assert.Equal("", harness.ViewModel.PinError);
+    }
+
+    [Fact]
+    public async Task SubmitPin_ServerChangedDuringTheCheck_DoesNotApplyTheToken()
+    {
+        var dispatcher = new QueuedDispatcher();
+        using var harness = new Harness(dispatcher);
+        var answer = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        harness.Silo.On(HttpMethod.Post, KidPinPath, () => answer.Task);
+        await harness.OpenKidPromptAsync();
+
+        var submit = harness.ViewModel.SubmitPinCommand.ExecuteAsync(Pin);
+        harness.Session.ActiveServer = ScriptedSilo.Entry("srv2", new Uri("https://other.example"));
+        harness.Session.RaiseChanged();
+        answer.SetResult(await ScriptedSilo.Json(HttpStatusCode.OK, ValidPinJson)());
+        await submit;
+
+        Assert.Empty(harness.Recorder.ProfileTokens);
+        Assert.Empty(harness.Session.Calls);
+        Assert.False(harness.ViewModel.IsPinPromptOpen);
+    }
+
+    [Fact]
+    public async Task ServerRemovedDuringALoad_StopsLoadingAndDropsTheAnswer()
+    {
+        using var harness = new Harness();
+        var answer = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        harness.Silo.On(HttpMethod.Get, ProfilesPath, () => answer.Task);
+
+        var load = harness.ViewModel.LoadCommand.ExecuteAsync(null);
+        Assert.True(harness.ViewModel.IsLoading);
+        harness.Session.ActiveServer = null;
+        harness.Session.State = SessionState.NoServer;
+        harness.Session.RaiseChanged();
+        answer.SetResult(await ScriptedSilo.Json(HttpStatusCode.OK, ProfilesJson)());
+        await load;
+
+        Assert.False(harness.ViewModel.IsLoading);
+        Assert.Empty(harness.ViewModel.Profiles);
+    }
+
+    [Fact]
+    public async Task ServerBecomesActive_AfterALoadWithoutServer_LoadsTheProfiles()
+    {
+        using var harness = new Harness();
+        harness.Session.ActiveServer = null;
+        await harness.ViewModel.LoadCommand.ExecuteAsync(null);
+        Assert.Equal("No server is selected.", harness.ViewModel.Status);
+        Assert.False(harness.ViewModel.IsLoading);
+
+        harness.Session.ActiveServer = ScriptedSilo.Server;
+        harness.Session.RaiseChanged();
+        await (harness.ViewModel.LoadCommand.ExecutionTask ?? Task.CompletedTask);
+
+        Assert.Equal(3, harness.ViewModel.Profiles.Count);
+        Assert.Equal("", harness.ViewModel.Status);
     }
 }
