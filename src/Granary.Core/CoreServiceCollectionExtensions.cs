@@ -69,6 +69,7 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<HomeViewModel>();
         services.AddTransient<AddServerViewModel>();
         services.AddTransient<PlayerViewModel>();
+        services.AddTransient<ItemDetailViewModel>();
         return services;
     }
 

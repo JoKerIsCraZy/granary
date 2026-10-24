@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A YouTube trailer: 16:9 thumbnail with a play mark, its name and kind. The button around it opens the browser. -->
+<UserControl
+    x:Class="Granary.App.Controls.DetailTrailerCard"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Width="280">
+
+    <StackPanel Spacing="10">
+        <Grid Height="158" CornerRadius="{StaticResource SiloCardCornerRadius}" Background="{StaticResource SiloSurfaceBrush}"
+              BorderBrush="#0DFFFFFF" BorderThickness="1">
+            <Image x:Name="Thumbnail" Stretch="UniformToFill" ImageFailed="OnThumbnailFailed" AutomationProperties.AccessibilityView="Raw" />
+            <Border Width="44" Height="44" CornerRadius="22" Background="#99000000" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <FontIcon Glyph="&#xE768;" FontSize="16" Foreground="White" Margin="2,0,0,0" />
+            </Border>
+        </Grid>
+        <StackPanel Spacing="3" Padding="2,0">
+            <TextBlock Text="{x:Bind Trailer.Title, Mode=OneWay}" Style="{StaticResource SiloCardTitleTextStyle}" FontSize="13" />
+            <TextBlock Text="{x:Bind Trailer.Caption, Mode=OneWay}" Style="{StaticResource SiloCaptionTextStyle}" FontSize="11" />
+        </StackPanel>
+    </StackPanel>
+</UserControl>
