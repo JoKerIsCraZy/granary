@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Granary.App/Granary.App.csproj" />
+    <Project Path="src/Granary.Core/Granary.Core.csproj" />
+    <Project Path="src/Granary.Player/Granary.Player.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Granary.Tests/Granary.Tests.csproj" />
+  </Folder>
+</Solution>

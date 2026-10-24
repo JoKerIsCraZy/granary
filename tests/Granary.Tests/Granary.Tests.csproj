@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Granary.Tests</RootNamespace>
+    <PlatformTarget>x64</PlatformTarget>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Granary.Core\Granary.Core.csproj" />
+    <ProjectReference Include="..\..\src\Granary.Player\Granary.Player.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
+    <PackageReference Include="Vortice.Direct3D11" />
+    <PackageReference Include="xunit.v3" />
+  </ItemGroup>
+
+  <!-- libmpv integration tests skip themselves when the DLL has not been fetched. -->
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)..\..\native\libmpv\libmpv-2.dll" Link="libmpv-2.dll" CopyToOutputDirectory="PreserveNewest" Condition="Exists('$(MSBuildThisFileDirectory)..\..\native\libmpv\libmpv-2.dll')" />
+  </ItemGroup>
+
+</Project>
