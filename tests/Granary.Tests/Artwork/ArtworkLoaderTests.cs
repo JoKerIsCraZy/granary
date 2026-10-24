@@ -139,6 +139,65 @@ public sealed class ArtworkLoaderTests : IDisposable
     }
 
     [Fact]
+    public async Task AFailedUrl_DoesNotHoldBackItsRenewedUrl()
+    {
+        // An expired signature answers 404; the card then brings a fresh URL for the same image.
+        _server.Status = HttpStatusCode.NotFound;
+        var loader = Create();
+        Assert.Null(await loader.GetAsync(Poster, Token));
+
+        _server.Status = HttpStatusCode.OK;
+
+        Assert.NotNull(await loader.GetAsync(RenewedPoster, Token));
+        Assert.Equal(2, _server.Requests);
+    }
+
+    [Fact]
+    public async Task TransportFailures_AreLoggedWithoutTheSignature()
+    {
+        _server.Failure = new HttpRequestException("connection reset");
+        var loader = Create();
+
+        Assert.Null(await loader.GetAsync(Poster, Token));
+
+        Assert.Contains(_logs.Lines, l => l.Contains(Poster.AbsolutePath, StringComparison.Ordinal) && l.Contains("connection reset", StringComparison.Ordinal));
+        Assert.DoesNotContain("sig=", _logs.All, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AStalledDownload_GivesUpAfterTheTimeout()
+    {
+        // Headers arrived, then nothing: a NAS that rebooted mid-answer. HttpClient's own timeout has ended by then.
+        _server.StallsBody = true;
+        var loader = Create(new ArtworkLoaderOptions { DownloadTimeout = TimeSpan.FromSeconds(30) });
+
+        var load = loader.GetAsync(Poster, Token);
+        await _time.WaitForTimerAsync(Token);
+        _time.Advance(TimeSpan.FromSeconds(30));
+
+        Assert.Null(await load.WaitAsync(TimeSpan.FromSeconds(5), Token));
+    }
+
+    [Fact]
+    public async Task Get_DoesNotNeedTheCallersThread()
+    {
+        // The UI thread calls GetAsync; disk and network work must not queue up on it.
+        Task<ArtworkBytes?> load;
+        var previous = SynchronizationContext.Current;
+        SynchronizationContext.SetSynchronizationContext(new NeverRunsContext());
+        try
+        {
+            load = Create().GetAsync(Poster, Token);
+        }
+        finally
+        {
+            SynchronizationContext.SetSynchronizationContext(previous);
+        }
+
+        Assert.NotNull(await load.WaitAsync(TimeSpan.FromSeconds(5), Token));
+    }
+
+    [Fact]
     public async Task AnswersThatAreNoImage_AreRefused()
     {
         _server.ContentType = "text/html";
@@ -210,7 +269,7 @@ public sealed class ArtworkLoaderTests : IDisposable
     }
 
     [Fact]
-    public async Task Prefetch_SkipsImagesThatAreAlreadyStored()
+    public async Task Prefetch_DoesNotDownloadImagesThatAreAlreadyStored()
     {
         await Create().GetAsync(Poster, Token);
         var loader = Create(new ArtworkLoaderOptions { PrefetchWorkers = 1 });
@@ -280,6 +339,12 @@ public sealed class ArtworkLoaderTests : IDisposable
 
         public bool SendsLength { get; set; } = true;
 
+        /// <summary>Sends the headers, then never a byte of the body.</summary>
+        public bool StallsBody { get; set; }
+
+        /// <summary>Thrown instead of answering.</summary>
+        public Exception? Failure { get; set; }
+
         public int Requests
         {
             get
@@ -315,12 +380,41 @@ public sealed class ArtworkLoaderTests : IDisposable
             {
                 await hold.Task.WaitAsync(cancellationToken);
             }
-            HttpContent content = SendsLength ? new ByteArrayContent(PosterBytes) : new StreamContent(new UnknownLengthStream(PosterBytes));
+            if (Failure is { } failure)
+            {
+                throw failure;
+            }
+            HttpContent content = StallsBody ? new StreamContent(new StalledStream())
+                : SendsLength ? new ByteArrayContent(PosterBytes)
+                : new StreamContent(new UnknownLengthStream(PosterBytes));
             content.Headers.ContentType = new MediaTypeHeaderValue(ContentType);
             var response = new HttpResponseMessage(Status) { Content = content, Version = request.Version };
             response.Headers.CacheControl = CacheControlHeaderValue.Parse(CacheControl);
             return response;
         }
+    }
+
+    /// <summary>A body that never arrives: reads wait until they are cancelled.</summary>
+    private sealed class StalledStream : MemoryStream
+    {
+        public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+        {
+            await Task.Delay(Timeout.Infinite, cancellationToken);
+            return 0;
+        }
+
+        public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) =>
+            ReadAsync(buffer.AsMemory(offset, count), cancellationToken).AsTask();
+    }
+
+    /// <summary>Runs nothing that is posted to it, like a UI thread that is busy.</summary>
+    private sealed class NeverRunsContext : SynchronizationContext
+    {
+        public override void Post(SendOrPostCallback d, object? state)
+        {
+        }
+
+        public override void Send(SendOrPostCallback d, object? state) => throw new NotSupportedException();
     }
 
     /// <summary>A stream that cannot tell its length, like a chunked answer.</summary>

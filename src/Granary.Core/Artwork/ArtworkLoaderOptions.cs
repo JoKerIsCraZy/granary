@@ -11,6 +11,12 @@ public sealed record ArtworkLoaderOptions
     /// <summary>Downloads for prefetched images at the same time, beside those for images on screen.</summary>
     public int PrefetchWorkers { get; init; } = 4;
 
+    /// <summary>
+    /// How long one download may take, body included. HttpClient's own timeout ends with the headers, so a
+    /// server that stops sending mid-body would otherwise hold a download slot for good.
+    /// </summary>
+    public TimeSpan DownloadTimeout { get; init; } = TimeSpan.FromSeconds(30);
+
     /// <summary>A larger answer is refused: no artwork variant comes near it.</summary>
     public long MaxImageBytes { get; init; } = 16L * 1024 * 1024;
 

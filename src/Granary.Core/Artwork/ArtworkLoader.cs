@@ -7,7 +7,8 @@ namespace Granary.Core.Artwork;
 /// <summary>
 /// Loads artwork for display: from memory, then disk, then the network. Artwork URLs are presigned and public
 /// (docs/api-contract.md, 7.10), so requests carry no credentials. Requests for one image share one download,
-/// and a failed image is not asked for again for <see cref="ArtworkLoaderOptions.FailureHold"/>.
+/// and a failed URL is not asked for again for <see cref="ArtworkLoaderOptions.FailureHold"/>. The work runs on
+/// the thread pool, never on the thread of the caller (the UI thread).
 /// </summary>
 /// <remarks>
 /// An image the server marks <c>immutable</c> is kept under its <see cref="ArtworkCacheKey"/>, in memory and on
@@ -23,6 +24,9 @@ public sealed class ArtworkLoader : IArtworkPrefetcher, IDisposable
     public const string HttpClientName = "Granary.Artwork";
 
     private const int ReadChunkBytes = 64 * 1024;
+
+    // Failed URLs are forgotten once their hold is over, when this many have piled up.
+    private const int FailuresBeforePruning = 256;
 
     private readonly IHttpClientFactory _http;
     private readonly ArtworkDiskCache _disk;
@@ -103,18 +107,24 @@ public sealed class ArtworkLoader : IArtworkPrefetcher, IDisposable
             {
                 return running;
             }
-            if (_failedUntil.TryGetValue(key, out var until))
+            // A load that finished since the caller looked keeps its image in memory.
+            if (_memory.TryGet(key, out var cached) || _memory.TryGet(url.AbsoluteUri, out cached))
+            {
+                return Task.FromResult<ArtworkBytes?>(cached);
+            }
+            // Held per URL: an expired signature fails, and the renewed URL for the same image must not wait.
+            if (_failedUntil.TryGetValue(url.AbsoluteUri, out var until))
             {
                 if (_time.GetUtcNow() < until)
                 {
                     return Task.FromResult<ArtworkBytes?>(null);
                 }
-                _failedUntil.Remove(key);
+                _failedUntil.Remove(url.AbsoluteUri);
             }
             load = new TaskCompletionSource<ArtworkBytes?>(TaskCreationOptions.RunContinuationsAsynchronously);
             _loads[key] = load.Task;
         }
-        _ = RunAsync(url, key, onScreen, load);
+        _ = Task.Run(() => RunAsync(url, key, onScreen, load));
         return load.Task;
     }
 
@@ -124,7 +134,7 @@ public sealed class ArtworkLoader : IArtworkPrefetcher, IDisposable
         ArtworkBytes? result = null;
         try
         {
-            result = await LoadAsync(url, key, onScreen, _lifetime.Token);
+            result = await LoadAsync(url, key, onScreen, _lifetime.Token).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
         {
@@ -141,28 +151,42 @@ public sealed class ArtworkLoader : IArtworkPrefetcher, IDisposable
                 _loads.Remove(key);
                 if (result is null && !_lifetime.IsCancellationRequested)
                 {
-                    _failedUntil[key] = _time.GetUtcNow() + _options.FailureHold;
+                    HoldFailed(url.AbsoluteUri);
                 }
             }
             load.SetResult(result);
         }
     }
 
+    // Called under the lock.
+    private void HoldFailed(string url)
+    {
+        var now = _time.GetUtcNow();
+        if (_failedUntil.Count >= FailuresBeforePruning)
+        {
+            foreach (var (expired, _) in _failedUntil.Where(f => f.Value <= now).ToList())
+            {
+                _failedUntil.Remove(expired);
+            }
+        }
+        _failedUntil[url] = now + _options.FailureHold;
+    }
+
     private async Task<ArtworkBytes?> LoadAsync(Uri url, string key, bool onScreen, CancellationToken cancellationToken)
     {
         // Only immutable images are on disk.
-        if (await _disk.ReadAsync(key, cancellationToken) is { } stored)
+        if (await _disk.ReadAsync(key, cancellationToken).ConfigureAwait(false) is { } stored)
         {
             return Remember(key, stored);
         }
         Download? download;
         if (onScreen)
         {
-            await _downloads.WaitAsync(cancellationToken);
+            await _downloads.WaitAsync(cancellationToken).ConfigureAwait(false);
         }
         try
         {
-            download = await DownloadAsync(url, cancellationToken);
+            download = await DownloadWithinTimeoutAsync(url, cancellationToken).ConfigureAwait(false);
         }
         finally
         {
@@ -179,7 +203,7 @@ public sealed class ArtworkLoader : IArtworkPrefetcher, IDisposable
         {
             return Remember(url.AbsoluteUri, download.Data);
         }
-        await _disk.WriteAsync(key, download.Data, cancellationToken);
+        await _disk.WriteAsync(key, download.Data, cancellationToken).ConfigureAwait(false);
         return Remember(key, download.Data);
     }
 
@@ -190,6 +214,21 @@ public sealed class ArtworkLoader : IArtworkPrefetcher, IDisposable
         return bytes;
     }
 
+    private async Task<Download?> DownloadWithinTimeoutAsync(Uri url, CancellationToken cancellationToken)
+    {
+        using var timeout = new CancellationTokenSource(_options.DownloadTimeout, _time);
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeout.Token);
+        try
+        {
+            return await DownloadAsync(url, linked.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (timeout.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
+        {
+            _logger.LogWarning("Artwork {Path} did not arrive within {Timeout}", url.AbsolutePath, _options.DownloadTimeout);
+            return null;
+        }
+    }
+
     private async Task<Download?> DownloadAsync(Uri url, CancellationToken cancellationToken)
     {
         using var client = _http.CreateClient(HttpClientName);
@@ -198,7 +237,7 @@ public sealed class ArtworkLoader : IArtworkPrefetcher, IDisposable
             Version = HttpVersion.Version20,
             VersionPolicy = HttpVersionPolicy.RequestVersionOrLower,
         };
-        using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
         string? refusal = response switch
         {
             { IsSuccessStatusCode: false } => $"status {(int)response.StatusCode}",
@@ -206,7 +245,7 @@ public sealed class ArtworkLoader : IArtworkPrefetcher, IDisposable
             _ when response.Content.Headers.ContentLength > _options.MaxImageBytes => "the image is too large",
             _ => null,
         };
-        var data = refusal is null ? await ReadAtMostAsync(response.Content, _options.MaxImageBytes, cancellationToken) : null;
+        var data = refusal is null ? await ReadAtMostAsync(response.Content, _options.MaxImageBytes, cancellationToken).ConfigureAwait(false) : null;
         if (data is null)
         {
             _logger.LogDebug("Artwork {Path} was refused: {Reason}", url.AbsolutePath, refusal ?? "the image is too large");
@@ -224,13 +263,14 @@ public sealed class ArtworkLoader : IArtworkPrefetcher, IDisposable
         || mediaType.Equals("binary/octet-stream", StringComparison.OrdinalIgnoreCase);
 
     // Null when the body is longer than maxBytes, which a missing or wrong Content-Length does not reveal.
+    // A stated length sizes the buffer up front, so a correct one costs no growing and no copy.
     private static async Task<byte[]?> ReadAtMostAsync(HttpContent content, long maxBytes, CancellationToken cancellationToken)
     {
-        await using var stream = await content.ReadAsStreamAsync(cancellationToken);
-        using var buffer = new MemoryStream();
+        await using var stream = await content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+        using var buffer = new MemoryStream(content.Headers.ContentLength is { } length and > 0 && length <= maxBytes ? (int)length : 0);
         var chunk = new byte[ReadChunkBytes];
         int read;
-        while ((read = await stream.ReadAsync(chunk, cancellationToken)) > 0)
+        while ((read = await stream.ReadAsync(chunk, cancellationToken).ConfigureAwait(false)) > 0)
         {
             if (buffer.Length + read > maxBytes)
             {
@@ -238,7 +278,7 @@ public sealed class ArtworkLoader : IArtworkPrefetcher, IDisposable
             }
             buffer.Write(chunk, 0, read);
         }
-        return buffer.ToArray();
+        return buffer.Length == buffer.Capacity ? buffer.GetBuffer() : buffer.ToArray();
     }
 
     private void StartPrefetching()
@@ -261,7 +301,7 @@ public sealed class ArtworkLoader : IArtworkPrefetcher, IDisposable
     {
         try
         {
-            await foreach (var request in _prefetches.Reader.ReadAllAsync(_lifetime.Token))
+            await foreach (var request in _prefetches.Reader.ReadAllAsync(_lifetime.Token).ConfigureAwait(false))
             {
                 if (request.CancellationToken.IsCancellationRequested)
                 {
@@ -270,7 +310,7 @@ public sealed class ArtworkLoader : IArtworkPrefetcher, IDisposable
                 string key = ArtworkCacheKey.From(request.Url);
                 if (!_memory.Contains(key) && !_memory.Contains(request.Url.AbsoluteUri) && !_disk.Contains(key))
                 {
-                    await StartOrJoin(request.Url, key, onScreen: false);
+                    await StartOrJoin(request.Url, key, onScreen: false).ConfigureAwait(false);
                 }
             }
         }

@@ -73,10 +73,47 @@ public sealed class ArtworkDiskCacheTests : IDisposable
         File.SetLastWriteTimeUtc(cache.PathFor("newer"), _time.GetUtcNow().UtcDateTime.AddDays(-2));
 
         await cache.WriteAsync("newest", new byte[40], TestContext.Current.CancellationToken);
+        await cache.WhenTrimmed;
 
         Assert.False(cache.Contains("old"));
         Assert.True(cache.Contains("newer"));
         Assert.True(cache.Contains("newest"));
+    }
+
+    [Fact]
+    public async Task Write_CountsTheImagesOfEarlierStarts()
+    {
+        var earlier = Create(capacityBytes: 1024);
+        await earlier.WriteAsync("earlier-1", new byte[40], TestContext.Current.CancellationToken);
+        await earlier.WriteAsync("earlier-2", new byte[40], TestContext.Current.CancellationToken);
+        File.SetLastWriteTimeUtc(earlier.PathFor("earlier-1"), _time.GetUtcNow().UtcDateTime.AddDays(-3));
+        File.SetLastWriteTimeUtc(earlier.PathFor("earlier-2"), _time.GetUtcNow().UtcDateTime.AddDays(-2));
+        var cache = Create(capacityBytes: 100);
+
+        await cache.WriteAsync("now", new byte[40], TestContext.Current.CancellationToken);
+        await cache.WhenTrimmed;
+
+        Assert.False(cache.Contains("earlier-1"));
+        Assert.True(cache.Contains("earlier-2"));
+        Assert.True(cache.Contains("now"));
+    }
+
+    [Fact]
+    public async Task Write_SweepsTemporaryFilesThatAWriteLeftBehind()
+    {
+        // A write the app did not finish (it was closed or crashed) leaves its temporary file.
+        Directory.CreateDirectory(_directory);
+        string abandoned = Path.Combine(_directory, "abandoned.0123.tmp");
+        string inProgress = Path.Combine(_directory, "in-progress.4567.tmp");
+        await File.WriteAllBytesAsync(abandoned, new byte[10], TestContext.Current.CancellationToken);
+        await File.WriteAllBytesAsync(inProgress, new byte[10], TestContext.Current.CancellationToken);
+        File.SetLastWriteTimeUtc(abandoned, _time.GetUtcNow().UtcDateTime.AddHours(-2));
+        File.SetLastWriteTimeUtc(inProgress, _time.GetUtcNow().UtcDateTime);
+
+        await Create().WriteAsync("a", [1], TestContext.Current.CancellationToken);
+
+        Assert.False(File.Exists(abandoned));
+        Assert.True(File.Exists(inProgress));
     }
 
     [Fact]
@@ -90,6 +127,7 @@ public sealed class ArtworkDiskCacheTests : IDisposable
 
         await cache.ReadAsync("read", TestContext.Current.CancellationToken);
         await cache.WriteAsync("newest", new byte[40], TestContext.Current.CancellationToken);
+        await cache.WhenTrimmed;
 
         Assert.True(cache.Contains("read"));
         Assert.False(cache.Contains("unread"));

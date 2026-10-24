@@ -83,11 +83,15 @@ public static class CoreServiceCollectionExtensions
     // share one connection, and their requests stay out of the log, where a page would add hundreds.
     private static void AddArtwork(IServiceCollection services)
     {
-        services.AddHttpClient(ArtworkLoader.HttpClientName, client => client.Timeout = TimeSpan.FromSeconds(30))
+        // The loader times each download itself, body included (ArtworkLoaderOptions.DownloadTimeout). HTTP/2
+        // pings notice a connection that died silently, as a NAS restart leaves it.
+        services.AddHttpClient(ArtworkLoader.HttpClientName, client => client.Timeout = Timeout.InfiniteTimeSpan)
             .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
             {
                 PooledConnectionLifetime = TimeSpan.FromMinutes(5),
                 EnableMultipleHttp2Connections = true,
+                KeepAlivePingDelay = TimeSpan.FromSeconds(20),
+                KeepAlivePingTimeout = TimeSpan.FromSeconds(10),
                 MaxAutomaticRedirections = 3,
             })
             .RemoveAllLoggers();

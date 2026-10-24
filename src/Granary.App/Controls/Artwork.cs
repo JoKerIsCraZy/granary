@@ -28,7 +28,21 @@ internal static class Artwork
         return bitmap;
     }
 
+    // async void: whatever escapes would end the app over one image.
     private static async void Fill(BitmapImage bitmap, Uri url, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await FillAsync(bitmap, url, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Artwork {Path} could not be shown", url.AbsolutePath);
+        }
+    }
+
+    // Runs on the UI thread, which a bitmap needs: only the loader's own work leaves it.
+    private static async Task FillAsync(BitmapImage bitmap, Uri url, CancellationToken cancellationToken)
     {
         // The wait is not cancelled but checked afterwards: a recycled card would otherwise throw an exception
         // per image while the user scrolls, and the download goes on for the cache anyway.
