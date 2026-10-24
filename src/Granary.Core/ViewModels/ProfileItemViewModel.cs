@@ -1,5 +1,5 @@
 using System.Globalization;
-using Granary.Core.Api;
+using Granary.Core.Api.Images;
 using Granary.Core.Api.Profiles;
 
 namespace Granary.Core.ViewModels;
@@ -19,24 +19,8 @@ public sealed record ProfileItemViewModel(string Id, string Name, Uri? AvatarUrl
     public static ProfileItemViewModel From(Profile profile, Uri serverBase) =>
         new(profile.Id, profile.Name, ResolveAvatarUrl(profile.AvatarUrl, serverBase), profile.HasPin, profile.IsPrimary, profile.IsChild);
 
-    /// <summary>
-    /// Makes <c>avatar_url</c> absolute. A root-relative URL is appended to the server base, keeping a
-    /// reverse-proxy path prefix (docs/api-contract.md, 7.10 and 9.2); anything but http(s) is dropped.
-    /// </summary>
-    internal static Uri? ResolveAvatarUrl(string? avatarUrl, Uri serverBase)
-    {
-        if (string.IsNullOrWhiteSpace(avatarUrl))
-        {
-            return null;
-        }
-        if (avatarUrl.StartsWith('/') && !avatarUrl.StartsWith("//", StringComparison.Ordinal))
-        {
-            return SiloHttp.BuildUri(serverBase, avatarUrl);
-        }
-        return Uri.TryCreate(avatarUrl, UriKind.Absolute, out var absolute) && absolute.Scheme is "https" or "http"
-            ? absolute
-            : null;
-    }
+    /// <summary>Makes <c>avatar_url</c> absolute like every other image member (<see cref="ArtworkUrl.Resolve"/>).</summary>
+    internal static Uri? ResolveAvatarUrl(string? avatarUrl, Uri serverBase) => ArtworkUrl.Resolve(serverBase, avatarUrl);
 
     internal static string InitialsOf(string? name)
     {
