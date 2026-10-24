@@ -6,13 +6,17 @@ namespace Granary.Core.Artwork;
 
 /// <summary>
 /// Loads artwork for display: from memory, then disk, then the network. Artwork URLs are presigned and public
-/// (docs/api-contract.md, 7.10), so requests carry no credentials. Images the server marks <c>immutable</c>
-/// stay on disk across starts; the others only in memory for the session. Requests for one image share one
-/// download, and a failed image is not asked for again for <see cref="ArtworkLoaderOptions.FailureHold"/>.
+/// (docs/api-contract.md, 7.10), so requests carry no credentials. Requests for one image share one download,
+/// and a failed image is not asked for again for <see cref="ArtworkLoaderOptions.FailureHold"/>.
 /// </summary>
 /// <remarks>
+/// An image the server marks <c>immutable</c> is kept under its <see cref="ArtworkCacheKey"/>, in memory and on
+/// disk across starts, so a renewed signature finds it. Any other image can be replaced in place: it stays in
+/// memory only, under its full URL, which the server renews every 15 minutes.
+/// <para>
 /// Images on screen and prefetched images download side by side, each with their own limit, so a long
 /// prefetch queue never delays what the user is looking at.
+/// </para>
 /// </remarks>
 public sealed class ArtworkLoader : IArtworkPrefetcher, IDisposable
 {
@@ -56,7 +60,7 @@ public sealed class ArtworkLoader : IArtworkPrefetcher, IDisposable
     {
         ArgumentNullException.ThrowIfNull(url);
         string key = ArtworkCacheKey.From(url);
-        return _memory.TryGet(key, out var cached)
+        return _memory.TryGet(key, out var cached) || _memory.TryGet(url.AbsoluteUri, out cached)
             ? Task.FromResult<ArtworkBytes?>(cached)
             : StartOrJoin(url, key, onScreen: true).WaitAsync(cancellationToken);
     }
@@ -80,6 +84,7 @@ public sealed class ArtworkLoader : IArtworkPrefetcher, IDisposable
         ArgumentNullException.ThrowIfNull(url);
         string key = ArtworkCacheKey.From(url);
         _memory.Remove(key);
+        _memory.Remove(url.AbsoluteUri);
         _disk.Remove(key);
     }
 
@@ -145,6 +150,7 @@ public sealed class ArtworkLoader : IArtworkPrefetcher, IDisposable
 
     private async Task<ArtworkBytes?> LoadAsync(Uri url, string key, bool onScreen, CancellationToken cancellationToken)
     {
+        // Only immutable images are on disk.
         if (await _disk.ReadAsync(key, cancellationToken) is { } stored)
         {
             return Remember(key, stored);
@@ -169,17 +175,18 @@ public sealed class ArtworkLoader : IArtworkPrefetcher, IDisposable
         {
             return null;
         }
-        if (download.IsImmutable)
+        if (!download.IsImmutable)
         {
-            await _disk.WriteAsync(key, download.Data, cancellationToken);
+            return Remember(url.AbsoluteUri, download.Data);
         }
+        await _disk.WriteAsync(key, download.Data, cancellationToken);
         return Remember(key, download.Data);
     }
 
-    private ArtworkBytes Remember(string key, byte[] data)
+    private ArtworkBytes Remember(string identity, byte[] data)
     {
         var bytes = new ArtworkBytes(data);
-        _memory.Add(key, bytes);
+        _memory.Add(identity, bytes);
         return bytes;
     }
 
@@ -261,7 +268,7 @@ public sealed class ArtworkLoader : IArtworkPrefetcher, IDisposable
                     continue;
                 }
                 string key = ArtworkCacheKey.From(request.Url);
-                if (!_memory.Contains(key) && !_disk.Contains(key))
+                if (!_memory.Contains(key) && !_memory.Contains(request.Url.AbsoluteUri) && !_disk.Contains(key))
                 {
                     await StartOrJoin(request.Url, key, onScreen: false);
                 }

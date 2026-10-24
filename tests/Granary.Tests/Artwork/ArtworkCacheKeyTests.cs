@@ -19,8 +19,18 @@ public sealed class ArtworkCacheKeyTests
     {
         string first = ArtworkCacheKey.From(new Uri("https://cdn.example/posters/heat.webp?X-Amz-Date=1&X-Amz-Signature=a%2Bb"));
         string renewed = ArtworkCacheKey.From(new Uri("https://cdn.example/posters/heat.webp?X-Amz-Date=2&X-Amz-Signature=c"));
+        string token = ArtworkCacheKey.From(new Uri("https://cdn.example/posters/heat.webp?verify=1-abc"));
 
         Assert.Equal(first, renewed);
+        Assert.Equal("https://cdn.example/posters/heat.webp", token);
+    }
+
+    [Fact]
+    public void From_IgnoresTheOrderOfTheKeptParameters()
+    {
+        Assert.Equal(
+            ArtworkCacheKey.From(new Uri("https://images.example/p.jpg?w=342&variant=card&sig=a")),
+            ArtworkCacheKey.From(new Uri("https://images.example/p.jpg?sig=b&variant=card&w=342")));
     }
 
     [Fact]

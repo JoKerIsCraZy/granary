@@ -1,16 +1,17 @@
 namespace Granary.Core.Artwork;
 
 /// <summary>
-/// The cache identity of an artwork URL: the URL without its signature. Silo renews <c>exp</c> and <c>sig</c>
-/// while the image stays the same (docs/api-contract.md, 7.10), and object storage does the same with its
-/// <c>X-Amz-*</c> parameters. Any other query parameter may name a different image and stays in the key.
+/// An artwork URL without the query parameters that only authorize it: Silo's <c>exp</c> and <c>sig</c>, a
+/// Cloudflare token's <c>verify</c> and S3's <c>X-Amz-*</c> (docs/api-contract.md, 7.10). The server renews them
+/// while the image stays the same. Any other parameter may choose the image and stays, sorted.
 /// </summary>
+/// <remarks>
+/// The key names the same bytes across renewals only for an immutable image; one that can be replaced in
+/// place keeps its full URL as its identity (<see cref="ArtworkLoader"/>).
+/// </remarks>
 public static class ArtworkCacheKey
 {
-    private static readonly HashSet<string> SignatureParameters = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "exp", "sig", "Expires", "Signature", "Key-Pair-Id", "Policy",
-    };
+    private static readonly HashSet<string> SignatureParameters = new(StringComparer.OrdinalIgnoreCase) { "exp", "sig", "verify" };
 
     public static string From(Uri url)
     {
@@ -23,6 +24,7 @@ public static class ArtworkCacheKey
         var kept = url.Query.TrimStart('?')
             .Split('&', StringSplitOptions.RemoveEmptyEntries)
             .Where(pair => !IsSignature(pair))
+            .Order(StringComparer.Ordinal)
             .ToList();
         return kept.Count == 0 ? path : path + "?" + string.Join('&', kept);
     }

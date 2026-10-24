@@ -106,6 +106,21 @@ public sealed class ArtworkLoaderTests : IDisposable
     }
 
     [Fact]
+    public async Task ImagesThatMayChange_AreAskedForAgain_UnderARenewedSignature()
+    {
+        // Replaced in place, such an image gets a new URL every 15 minutes (docs/api-contract.md, 7.10).
+        _server.CacheControl = "private, no-cache";
+        var loader = Create();
+
+        await loader.GetAsync(Poster, Token);
+        await loader.GetAsync(Poster, Token);
+        Assert.Equal(1, _server.Requests);
+
+        await loader.GetAsync(RenewedPoster, Token);
+        Assert.Equal(2, _server.Requests);
+    }
+
+    [Fact]
     public async Task AFailedImage_IsNotAskedForAgainForAMinute()
     {
         _server.Status = HttpStatusCode.NotFound;
