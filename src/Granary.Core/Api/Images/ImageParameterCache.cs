@@ -7,7 +7,7 @@ namespace Granary.Core.Api.Images;
 /// <summary>
 /// Reads a server's image capabilities once and turns sizes into the query parameters it understands
 /// (docs/api-contract.md, 7.10). A failed read falls back to the server's default sizes and is retried
-/// on the next request.
+/// on the next request; only a successful read is kept.
 /// </summary>
 public sealed class ImageParameterCache(ImagesApi images, ILogger<ImageParameterCache> logger)
 {
@@ -24,13 +24,14 @@ public sealed class ImageParameterCache(ImagesApi images, ILogger<ImageParameter
         return sizes.For(capabilities);
     }
 
+    // Never faults, so a cached task is either a result or null (which is not kept).
     private async Task<ImageCapabilities?> ReadAsync(ServerEntry server)
     {
         try
         {
             return await images.GetCapabilitiesAsync(server.BaseUri).ConfigureAwait(false);
         }
-        catch (Exception ex) when (ex is HttpRequestException or SiloApiException)
+        catch (Exception ex) when (ex is HttpRequestException or SiloApiException or OperationCanceledException)
         {
             logger.LogWarning(ex, "Could not read the image capabilities of server {ServerEntryId}; using default sizes", server.Id);
             return null;
