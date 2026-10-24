@@ -3,7 +3,9 @@ using Granary.Core.Abstractions;
 using Granary.Core.Api;
 using Granary.Core.Api.Accounts;
 using Granary.Core.Api.Auth;
+using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Discovery;
+using Granary.Core.Api.Images;
 using Granary.Core.Api.Profiles;
 using Granary.Core.Auth;
 using Granary.Core.Http;
@@ -42,6 +44,8 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<ProfilesApi>();
         services.AddTransient<SystemApi>();
         services.AddTransient<AccountApi>();
+        services.AddTransient<CatalogApi>();
+        services.AddTransient<ImagesApi>();
 
         services.AddSingleton(_ => ClientIdentity.Load(ClientIdentity.DefaultDeviceIdFile));
 
