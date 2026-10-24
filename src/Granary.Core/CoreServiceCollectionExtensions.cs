@@ -45,6 +45,7 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<SystemApi>();
         services.AddTransient<AccountApi>();
         services.AddTransient<CatalogApi>();
+        services.AddTransient<LibraryPageApi>();
         services.AddTransient<ImagesApi>();
         services.AddSingleton<ImageParameterCache>();
 
@@ -67,6 +68,7 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<SidebarViewModel>();
         services.AddTransient<SignInViewModel>();
         services.AddTransient<HomeViewModel>();
+        services.AddTransient<LibraryViewModel>();
         services.AddTransient<AddServerViewModel>();
         services.AddTransient<PlayerViewModel>();
         return services;

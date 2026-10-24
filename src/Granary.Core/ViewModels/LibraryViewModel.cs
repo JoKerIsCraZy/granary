@@ -1,0 +1,389 @@
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using Granary.Core.Abstractions;
+using Granary.Core.Api;
+using Granary.Core.Api.Catalog;
+using Granary.Core.Api.Images;
+using Granary.Core.Auth;
+using Granary.Core.Servers;
+using Granary.Core.ViewModels.Cards;
+using Microsoft.Extensions.Logging;
+
+namespace Granary.Core.ViewModels;
+
+/// <summary>The views of a library page, as on the web: its rows, all its titles, its collections.</summary>
+public enum LibraryTab
+{
+    Recommended,
+    Library,
+    Collections,
+}
+
+/// <summary>
+/// One library (<see cref="AppRoute.Library"/>, the parameter is its id), laid out like Silo's web client:
+/// "LIBRARY / NAME", Shuffle, and the Recommended, Library and Collections tabs. Each tab loads the first time
+/// it shows. The page keeps its state while the same library, server and profile are shown, so Back returns
+/// to the same tab; another library, server or profile starts over.
+/// </summary>
+public sealed partial class LibraryViewModel : ObservableObject
+{
+    public const string ShuffleNothingPlayable = "Nothing in this library can be played.";
+    public const string ShuffleFailed = "Couldn't start a shuffle. Try again.";
+
+    // The library types whose movies and episodes a shuffle plays (web: SHUFFLE_LIBRARY_TYPES).
+    private static readonly HashSet<string> ShuffleLibraryTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "movie", "movies", "series", "tv", "show", "shows", "tvshows", "mixed",
+    };
+
+    private readonly ISessionManager _session;
+    private readonly CatalogApi _catalog;
+    private readonly LibraryPageApi _pages;
+    private readonly ImageParameterCache _images;
+    private readonly INavigationService _navigation;
+    private readonly IUiDispatcher _dispatcher;
+    private readonly ILogger<LibraryViewModel> _logger;
+    private readonly Dictionary<(string ServerId, string? ProfileId), bool> _serverCanShuffle = [];
+    private (string? ServerId, string? ProfileId, string? LibraryId)? _loaded;
+    private CancellationTokenSource _run = new();
+    private ServerEntry? _server;
+    private Library? _library;
+    private ImageSizes _sizes = ImageSizes.Default;
+    private bool _isActive;
+
+    public LibraryViewModel(
+        ISessionManager session,
+        CatalogApi catalog,
+        LibraryPageApi pages,
+        ImageParameterCache images,
+        INavigationService navigation,
+        IUiDispatcher dispatcher,
+        ILogger<LibraryViewModel> logger)
+    {
+        _session = session;
+        _catalog = catalog;
+        _pages = pages;
+        _images = images;
+        _navigation = navigation;
+        _dispatcher = dispatcher;
+        _logger = logger;
+        Recommended = new LibraryRowsViewModel(catalog, navigation, logger);
+        Browse = new LibraryBrowseViewModel(catalog, images, logger);
+        Collections = new LibraryCollectionsViewModel(pages, catalog, images, logger);
+    }
+
+    public LibraryRowsViewModel Recommended { get; }
+
+    public LibraryBrowseViewModel Browse { get; }
+
+    public LibraryCollectionsViewModel Collections { get; }
+
+    /// <summary>Loading, Ready, Unavailable (unknown or hidden id) or Error; Idle without a usable session.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsLoading), nameof(IsReady), nameof(IsUnavailable), nameof(HasError))]
+    public partial LibraryLoadState State { get; private set; }
+
+    [ObservableProperty]
+    public partial string ErrorMessage { get; private set; } = "";
+
+    /// <summary>The id the page was opened with.</summary>
+    [ObservableProperty]
+    public partial string? LibraryId { get; private set; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Breadcrumb))]
+    public partial string LibraryName { get; private set; } = "";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsRecommendedTab), nameof(IsLibraryTab), nameof(IsCollectionsTab))]
+    public partial LibraryTab SelectedTab { get; private set; }
+
+    /// <summary>Shuffle shows only for movie, series and mixed libraries on a server that can shuffle them.</summary>
+    [ObservableProperty]
+    public partial bool CanShuffle { get; private set; }
+
+    /// <summary>Why a shuffle did not start; shown until dismissed.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasShuffleMessage))]
+    public partial string ShuffleMessage { get; set; } = "";
+
+    /// <summary>The display scale artwork is requested for (1.5 at 150 %); set before <see cref="ActivateAsync"/>.</summary>
+    public double DisplayScale { get; set; } = 1;
+
+    /// <summary>"LIBRARY / FILME", as the web's eyebrow.</summary>
+    public string Breadcrumb => LibraryName.Length > 0 ? $"LIBRARY / {LibraryName.ToUpperInvariant()}" : "LIBRARY";
+
+    public bool IsLoading => State == LibraryLoadState.Loading;
+
+    public bool IsReady => State == LibraryLoadState.Ready;
+
+    public bool IsUnavailable => State == LibraryLoadState.Unavailable;
+
+    public bool HasError => State == LibraryLoadState.Error;
+
+    public bool IsRecommendedTab => SelectedTab == LibraryTab.Recommended;
+
+    public bool IsLibraryTab => SelectedTab == LibraryTab.Library;
+
+    public bool IsCollectionsTab => SelectedTab == LibraryTab.Collections;
+
+    public bool HasShuffleMessage
+    {
+        get => ShuffleMessage.Length > 0;
+        set
+        {
+            if (!value)
+            {
+                ShuffleMessage = "";
+            }
+        }
+    }
+
+    /// <summary>Raised when another library (or the same one for another session) starts loading.</summary>
+    public event EventHandler? LibraryChanged;
+
+    /// <summary>
+    /// Shows the library with this id: on every visit of the page. A visit of what is already shown changes
+    /// nothing, so Back keeps the tab, the grid and its scroll position.
+    /// </summary>
+    public async Task ActivateAsync(string? libraryId)
+    {
+        if (!_isActive)
+        {
+            _isActive = true;
+            _session.Changed += OnSessionChanged;
+        }
+        if (_loaded == Key(libraryId) && State is LibraryLoadState.Loading or LibraryLoadState.Ready)
+        {
+            return;
+        }
+        await LoadAsync(libraryId);
+    }
+
+    /// <summary>The page left: stop following the session until the next visit.</summary>
+    public void Deactivate()
+    {
+        if (_isActive)
+        {
+            _isActive = false;
+            _session.Changed -= OnSessionChanged;
+        }
+    }
+
+    [RelayCommand(AllowConcurrentExecutions = true)]
+    private Task SelectTabAsync(LibraryTab tab)
+    {
+        SelectedTab = tab;
+        return State == LibraryLoadState.Ready ? StartTabAsync(tab, _run.Token) : Task.CompletedTask;
+    }
+
+    [RelayCommand]
+    private Task RetryAsync() => LoadAsync(LibraryId);
+
+    /// <summary>Opens a title of a grid; takes its <see cref="MediaCard"/>.</summary>
+    [RelayCommand]
+    private void OpenItem(MediaCard? card)
+    {
+        if (card is not null)
+        {
+            _navigation.NavigateTo(AppRoute.Item, card.Id);
+        }
+    }
+
+    /// <summary>Opens a random movie or episode of the library (the first pick of a server-side shuffle).</summary>
+    [RelayCommand]
+    private async Task ShuffleAsync()
+    {
+        if (_server is not { } server || _library is not { } library)
+        {
+            return;
+        }
+        ShuffleMessage = "";
+        var token = _run.Token;
+        try
+        {
+            var shuffle = await _pages.StartLibraryShuffleAsync(server.BaseUri, library.Id, token);
+            if (token.IsCancellationRequested || !_isActive)
+            {
+                return;
+            }
+            if (shuffle.Current is { ContentId.Length: > 0 } pick)
+            {
+                _navigation.NavigateTo(AppRoute.Item, pick.ContentId);
+            }
+            else
+            {
+                ShuffleMessage = ShuffleNothingPlayable;
+            }
+        }
+        catch (SiloApiException ex) when (ex.Status == 409)
+        {
+            ShuffleMessage = ShuffleNothingPlayable;
+        }
+        catch (Exception ex) when (LibraryErrors.IsExpected(ex, token))
+        {
+            _logger.LogWarning(ex, "Could not start a shuffle of a library");
+            ShuffleMessage = ShuffleFailed;
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            // Another library took over.
+        }
+    }
+
+    private (string? ServerId, string? ProfileId, string? LibraryId) Key(string? libraryId) =>
+        (_session.ActiveServer?.Id, _session.ProfileId, libraryId);
+
+    private async Task LoadAsync(string? libraryId)
+    {
+        var token = Restart();
+        LibraryId = libraryId;
+        _loaded = Key(libraryId);
+        if (_session is not { State: SessionState.Ready, ActiveServer: { } server })
+        {
+            // The shell leaves the page for sign-in or the profile picker.
+            State = LibraryLoadState.Idle;
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(libraryId))
+        {
+            State = LibraryLoadState.Unavailable;
+            return;
+        }
+        State = LibraryLoadState.Loading;
+        try
+        {
+            var libraries = await _catalog.ListLibrariesAsync(server.BaseUri, token);
+            if (token.IsCancellationRequested)
+            {
+                return;
+            }
+            if (libraries.Items.FirstOrDefault(l => l.Id == libraryId) is not { } library)
+            {
+                State = LibraryLoadState.Unavailable;
+                return;
+            }
+            await ShowAsync(server, library, token);
+        }
+        catch (Exception ex) when (LibraryErrors.IsExpected(ex, token))
+        {
+            _logger.LogWarning(ex, "Could not load the libraries to open one");
+            ErrorMessage = LibraryErrors.Describe(ex);
+            State = LibraryLoadState.Error;
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            // Another library, server or profile took over.
+        }
+    }
+
+    private async Task ShowAsync(ServerEntry server, Library library, CancellationToken cancellationToken)
+    {
+        _server = server;
+        _library = library;
+        _sizes = ImageSizes.Default.ScaledBy(DisplayScale > 0 && double.IsFinite(DisplayScale) ? DisplayScale : 1);
+        LibraryName = library.Name;
+        Browse.Initialize(server, library, _sizes);
+        Collections.Initialize(server, library, _sizes);
+        State = LibraryLoadState.Ready;
+        await Task.WhenAll(StartTabAsync(SelectedTab, cancellationToken), UpdateShuffleAsync(server, library, cancellationToken));
+    }
+
+    private Task StartTabAsync(LibraryTab tab, CancellationToken cancellationToken) => tab switch
+    {
+        LibraryTab.Library => Browse.EnsureStartedAsync(),
+        LibraryTab.Collections => Collections.EnsureStartedAsync(),
+        _ => Recommended.State == LibraryLoadState.Idle ? LoadRowsAsync(cancellationToken) : Task.CompletedTask,
+    };
+
+    private async Task LoadRowsAsync(CancellationToken cancellationToken)
+    {
+        if (_server is not { } server || _library is not { } library)
+        {
+            return;
+        }
+        ImageParameters images;
+        try
+        {
+            images = await _images.GetAsync(server, _sizes, cancellationToken);
+        }
+        catch (Exception ex) when (LibraryErrors.IsExpected(ex, cancellationToken))
+        {
+            images = ImageParameters.None;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return;
+        }
+        if (!cancellationToken.IsCancellationRequested)
+        {
+            await Recommended.LoadAsync(server.BaseUri, library.Id, images);
+        }
+    }
+
+    private async Task UpdateShuffleAsync(ServerEntry server, Library library, CancellationToken cancellationToken)
+    {
+        if (!ShuffleLibraryTypes.Contains(library.Type.Trim()))
+        {
+            return;
+        }
+        var key = (server.Id, _session.ProfileId);
+        if (!_serverCanShuffle.TryGetValue(key, out bool canShuffle))
+        {
+            try
+            {
+                var capability = await _pages.GetShuffleCapabilityAsync(server.BaseUri, cancellationToken);
+                canShuffle = capability.CanShuffle(LibraryPageApi.LibraryScope);
+                _serverCanShuffle[key] = canShuffle;
+            }
+            catch (Exception ex) when (LibraryErrors.IsExpected(ex, cancellationToken))
+            {
+                // Shuffle stays hidden; the next visit asks again.
+                _logger.LogWarning(ex, "Could not read whether the server can shuffle");
+                return;
+            }
+        }
+        if (!cancellationToken.IsCancellationRequested)
+        {
+            CanShuffle = canShuffle;
+        }
+    }
+
+    private CancellationToken Restart()
+    {
+        _run.Cancel();
+        _run.Dispose();
+        _run = new CancellationTokenSource();
+        _server = null;
+        _library = null;
+        LibraryName = "";
+        ErrorMessage = "";
+        ShuffleMessage = "";
+        CanShuffle = false;
+        SelectedTab = LibraryTab.Recommended;
+        Recommended.Reset();
+        Browse.Clear();
+        Collections.Clear();
+        LibraryChanged?.Invoke(this, EventArgs.Empty);
+        return _run.Token;
+    }
+
+    private void OnSessionChanged(object? sender, EventArgs e) => _dispatcher.Post(() => _ = ReloadForSessionAsync());
+
+    // Account updates also raise Changed; only another server or profile reloads.
+    private async Task ReloadForSessionAsync()
+    {
+        if (!_isActive || _loaded is not { } loaded || loaded == Key(loaded.LibraryId))
+        {
+            return;
+        }
+        try
+        {
+            await LoadAsync(loaded.LibraryId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Could not reload a library after the session changed");
+        }
+    }
+}
