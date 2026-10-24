@@ -46,6 +46,7 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<AccountApi>();
         services.AddTransient<CatalogApi>();
         services.AddTransient<ImagesApi>();
+        services.AddSingleton<ImageParameterCache>();
 
         services.AddSingleton(_ => ClientIdentity.Load(ClientIdentity.DefaultDeviceIdFile));
 

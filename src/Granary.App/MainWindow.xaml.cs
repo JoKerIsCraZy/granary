@@ -30,6 +30,8 @@ public sealed partial class MainWindow : Window
 
         _navigation.Attach(ContentFrame);
         _navigation.Navigated += OnNavigated;
+        Sidebar.Libraries.CollectionChanged += (_, _) => ShowLibraries();
+        ShowLibraries();
     }
 
     /// <summary>Routes by session state; the app starts it once the window is up.</summary>
@@ -39,6 +41,43 @@ public sealed partial class MainWindow : Window
 
     // Instance method because x:Bind function bindings call it on the window.
     public string ProfileMenuName(string profileName) => $"Profile menu: {profileName}";
+
+    // The library entries follow the header; NavigationView has no item template for mixed static and bound items.
+    private void ShowLibraries()
+    {
+        var items = Navigation.MenuItems;
+        foreach (var stale in items.OfType<NavigationViewItem>().Where(IsLibraryItem).ToList())
+        {
+            items.Remove(stale);
+        }
+        int index = items.IndexOf(LibrariesHeader) + 1;
+        foreach (var library in Sidebar.Libraries)
+        {
+            items.Insert(index++, new NavigationViewItem
+            {
+                Content = library.Name,
+                Tag = LibraryTagPrefix + library.Id,
+                Icon = new FontIcon { Glyph = LibraryGlyph(library.Type) },
+            });
+        }
+        LibrariesHeader.Visibility = Sidebar.Libraries.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        if (_navigation.Current is { } route)
+        {
+            SelectItem(route, _navigation.CurrentParameter);
+        }
+    }
+
+    private static bool IsLibraryItem(NavigationViewItem item) =>
+        item.Tag is string tag && tag.StartsWith(LibraryTagPrefix, StringComparison.Ordinal);
+
+    // Library types are free text (docs/api-contract.md, 7.3).
+    private static string LibraryGlyph(string type) => type.ToLowerInvariant() switch
+    {
+        "movies" or "movie" or "films" => "",
+        "series" or "tv" or "shows" or "tvshows" => "",
+        "music" => "",
+        _ => "",
+    };
 
     private void StyleCaptionButtons()
     {
