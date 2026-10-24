@@ -141,6 +141,7 @@ public sealed partial class HomeViewModel : ObservableObject
         {
             return;
         }
+        var shownFor = _shownFor;
         Notice = "";
         try
         {
@@ -152,13 +153,14 @@ public sealed partial class HomeViewModel : ObservableObject
             Notice = $"{card.Title} could not be removed. Try again.";
             return;
         }
-        if (_session.ActiveServer?.Id != server.Id)
+        if (_shownFor != shownFor)
         {
+            // Another server or profile took over meanwhile: its rows are not this card's.
             return;
         }
         string? series = item.Type == CatalogItemTypes.Series ? item.ContentId : item.SeriesId;
         bool SameTitle(CatalogItem other) =>
-            other.ContentId == item.ContentId || (series is not null && (other.SeriesId == series || other.ContentId == series));
+            other.ContentId == item.ContentId || (!string.IsNullOrEmpty(series) && (other.SeriesId == series || other.ContentId == series));
         foreach (var row in Rows.Where(r => r.CanRemoveCards))
         {
             row.RemoveWhere(SameTitle);
@@ -217,7 +219,7 @@ public sealed partial class HomeViewModel : ObservableObject
         }
         try
         {
-            var images = await _images.GetAsync(server, ImageSizes.Default.ScaledBy(Scale()), cancellationToken);
+            var images = await BrowseArtwork.ParametersAsync(_images, server, DisplayScale, _logger, cancellationToken);
             var collection = await _catalog.ListHomeSectionsAsync(server.BaseUri, images, cancellationToken);
             var (sections, isComplete) = await HydrateAsync(server.BaseUri, collection.Sections, images, cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
@@ -226,12 +228,13 @@ public sealed partial class HomeViewModel : ObservableObject
             _loadedAt = isComplete ? _time.GetUtcNow() : null;
             ShowLoaded();
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex))
         {
-            // A newer load replaced this one.
-        }
-        catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex, cancellationToken))
-        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                // A newer load replaced this one; its answer, or its failure, is stale.
+                return;
+            }
             _logger.LogWarning("Loading Home failed: {Failure}", ApiFailureText.Describe(ex));
             _loadedAt = null;
             if (Rows.Count == 0)
@@ -259,7 +262,7 @@ public sealed partial class HomeViewModel : ObservableObject
     {
         using var gate = new SemaphoreSlim(MaxConcurrentRowRequests);
         var fetches = sections
-            .Select(section => section.Items.Count == 0 && section.TotalCount > 0
+            .Select(section => section.Items.Count == 0 && section.TotalCount > 0 && section.Id.Length > 0
                 ? FetchRowAsync(server, section, images, gate, cancellationToken)
                 : Task.FromResult<Section?>(section))
             .ToArray();
@@ -296,7 +299,7 @@ public sealed partial class HomeViewModel : ObservableObject
         foreach (var section in sections.Where(s => s.TotalCount > 0))
         {
             var cards = section.Items
-                .Where(item => HomeRowRules.Shows(section.SectionType, item))
+                .Where(item => item.ContentId.Length > 0 && HomeRowRules.Shows(section.SectionType, item))
                 .Select(item => (MediaCardFactory.ForSection(section, item, server), item))
                 .ToList();
             if (cards.Count == 0)
@@ -304,7 +307,7 @@ public sealed partial class HomeViewModel : ObservableObject
                 continue;
             }
             // "Explore all" only when the server has more than the row holds.
-            var exploreAll = section.TotalCount > section.Items.Count
+            var exploreAll = section.TotalCount > section.Items.Count && section.Id.Length > 0
                 ? new RelayCommand(() => _navigation.NavigateTo(AppRoute.Section,
                     new SectionRouteParameter(section.Id, section.Title, SectionType: section.SectionType)))
                 : null;
@@ -325,8 +328,6 @@ public sealed partial class HomeViewModel : ObservableObject
         IsEmpty = isEmpty;
         StatusText = status;
     }
-
-    private double Scale() => double.IsFinite(DisplayScale) && DisplayScale > 0 ? DisplayScale : 1;
 
     private (bool IsReady, string? ServerId, string? ProfileId) SessionKey() =>
         (_session.State == SessionState.Ready, _session.ActiveServer?.Id, _session.ProfileId);

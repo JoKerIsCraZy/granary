@@ -146,6 +146,37 @@ public sealed class SearchViewModelTests
     }
 
     [Fact]
+    public async Task FailedPeopleSearch_IsAskedAgainNextTime()
+    {
+        _silo.Map(PeoplePath, _ => BrowseFakeSilo.Problem(500, "internal_error"));
+        var search = Create();
+        await search.ActivateAsync("al");
+        Assert.Empty(search.People);
+
+        _silo.Map(PeoplePath, People(("7", "Al Pacino"), ("", "Nobody")));
+        search.Scope = SearchScope.Movies;
+        await search.Searching;
+
+        Assert.Equal(2, _silo.To(PeoplePath).Count);
+        Assert.Equal("Al Pacino", Assert.Single(search.People).Name);
+    }
+
+    [Fact]
+    public async Task ImageSizesThatTimeOut_StillSearchAtTheServerDefaultSizes()
+    {
+        _silo.Map("api/v2/images/capabilities", (_, _) => Task.FromException<HttpResponseMessage>(new TaskCanceledException("timeout")));
+        var search = Create();
+        await search.ActivateAsync();
+        search.Query = "heat";
+
+        await search.SearchNowCommand.ExecuteAsync(null);
+
+        Assert.Equal(["for-heat"], search.Cards.Select(c => c.Id));
+        Assert.Null(Assert.Single(_silo.To(CatalogPath)).Query("poster_width"));
+        Assert.False(search.HasError);
+    }
+
+    [Fact]
     public async Task Capabilities_AreReadOncePerSession()
     {
         var search = Create();

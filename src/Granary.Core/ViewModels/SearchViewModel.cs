@@ -280,16 +280,17 @@ public sealed partial class SearchViewModel : ObservableObject
                 return;
             }
             SetSearchingTitles(true);
-            var images = await _images.GetAsync(server, ImageSizes.Default.ScaledBy(Scale()), cancellationToken);
-            var query = new CatalogQuery { Q = text, Type = TypeOf(scope), Limit = PageSize, Images = images };
-            var titles = new BrowseCardPager(_catalog, server.BaseUri, query, item => MediaCardFactory.Poster(item, server.BaseUri));
             var people = FindPeopleAsync(server, text, cancellationToken);
+            BrowseCardPager? titles = null;
             Exception? failure = null;
             try
             {
+                var images = await BrowseArtwork.ParametersAsync(_images, server, DisplayScale, _logger, cancellationToken);
+                var query = new CatalogQuery { Q = text, Type = TypeOf(scope), Limit = PageSize, Images = images };
+                titles = new BrowseCardPager(_catalog, server.BaseUri, query, item => CardFor(item, server.BaseUri));
                 await titles.LoadFirstPageAsync(cancellationToken);
             }
-            catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex, cancellationToken))
+            catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex) && !cancellationToken.IsCancellationRequested)
             {
                 failure = ex;
             }
@@ -297,9 +298,9 @@ public sealed partial class SearchViewModel : ObservableObject
             cancellationToken.ThrowIfCancellationRequested();
             ShowResults(text, titles, found, failure);
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        catch (Exception ex) when (cancellationToken.IsCancellationRequested && ApiFailureText.IsRequestFailure(ex))
         {
-            // A newer text or an opened person replaced this search.
+            // A newer text or an opened person replaced this search; its answer, or its failure, is stale.
         }
         finally
         {
@@ -310,28 +311,35 @@ public sealed partial class SearchViewModel : ObservableObject
         }
     }
 
-    /// <summary>People whose names match, or none when the server cannot search them or the lookup fails.</summary>
-    private async Task<IReadOnlyList<SearchPerson>> FindPeopleAsync(ServerEntry server, string text, CancellationToken cancellationToken)
+    /// <summary>
+    /// People whose names match; none when the server cannot search them, and null when the lookup or the
+    /// capabilities read failed (shown as none, but not remembered).
+    /// </summary>
+    private async Task<IReadOnlyList<SearchPerson>?> FindPeopleAsync(ServerEntry server, string text, CancellationToken cancellationToken)
     {
-        // A scope switch searches the same people again.
+        // A type switch finds the same people.
         if (_peopleFound is { } found && found.Text == text)
         {
             return found.People;
         }
         var capabilities = await GetCapabilitiesAsync(server, cancellationToken);
-        if (capabilities is not { PeopleMediaScope: true })
+        if (capabilities is null)
+        {
+            return null;
+        }
+        if (!capabilities.PeopleMediaScope)
         {
             return [];
         }
         try
         {
             var people = await _catalog.SearchPeopleAsync(server.BaseUri, text, PeopleLimit, MediaScopes.Video, cancellationToken);
-            return [.. people.Items.Select(person => SearchPerson.From(person, server.BaseUri))];
+            return [.. people.Items.Where(person => person.Id.Length > 0).Select(person => SearchPerson.From(person, server.BaseUri))];
         }
         catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex, cancellationToken))
         {
             _logger.LogWarning("Searching people failed: {Failure}", ApiFailureText.Describe(ex));
-            return [];
+            return null;
         }
     }
 
@@ -360,16 +368,16 @@ public sealed partial class SearchViewModel : ObservableObject
         }
     }
 
-    private void ShowResults(string text, BrowseCardPager titles, IReadOnlyList<SearchPerson> people, Exception? failure)
+    private void ShowResults(string text, BrowseCardPager? titles, IReadOnlyList<SearchPerson>? people, Exception? failure)
     {
         _titles = titles;
-        _peopleFound = (text, people);
+        _peopleFound = people is null ? null : (text, people);
         ResultsQuery = text;
-        People = people;
-        if (failure is not null)
+        People = people ?? [];
+        if (failure is not null || titles is null)
         {
-            _logger.LogWarning("Searching titles failed: {Failure}", ApiFailureText.Describe(failure));
-            _resultsState = (Describe(failure), true);
+            _logger.LogWarning("Searching titles failed: {Failure}", failure is null ? "no answer" : ApiFailureText.Describe(failure));
+            _resultsState = (failure is null ? "Search failed. Try again." : Describe(failure), true);
         }
         else
         {
@@ -378,7 +386,7 @@ public sealed partial class SearchViewModel : ObservableObject
         // A person opened from the previous results keeps the page until Back to results.
         if (Person is null)
         {
-            Cards = titles.Cards;
+            Cards = titles is null ? [] : titles.Cards;
             (StatusText, HasError) = _resultsState;
         }
     }
@@ -404,22 +412,23 @@ public sealed partial class SearchViewModel : ObservableObject
         StatusText = $"Loading titles with {person.Name}";
         try
         {
-            var images = await _images.GetAsync(server, ImageSizes.Default.ScaledBy(Scale()), cancellationToken);
+            var images = await BrowseArtwork.ParametersAsync(_images, server, DisplayScale, _logger, cancellationToken);
             var query = CatalogQuery.ForPerson(person.Id) with { Limit = PageSize, Images = images };
-            var filmography = new BrowseCardPager(_catalog, server.BaseUri, query, item => MediaCardFactory.Poster(item, server.BaseUri));
+            var filmography = new BrowseCardPager(_catalog, server.BaseUri, query, item => CardFor(item, server.BaseUri));
             _filmography = filmography;
             Cards = filmography.Cards;
             await filmography.LoadFirstPageAsync(cancellationToken);
             StatusText = filmography.Cards.Count == 0 ? $"No titles with {person.Name}" : "";
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex))
         {
-        }
-        catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex, cancellationToken))
-        {
-            _logger.LogWarning("Loading a person's titles failed: {Failure}", ApiFailureText.Describe(ex));
-            HasError = true;
-            StatusText = Describe(ex);
+            // Back to results or another person replaced this load; its failure is stale.
+            if (!cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogWarning("Loading a person's titles failed: {Failure}", ApiFailureText.Describe(ex));
+                HasError = true;
+                StatusText = Describe(ex);
+            }
         }
         finally
         {
@@ -449,14 +458,11 @@ public sealed partial class SearchViewModel : ObservableObject
                 StatusText = "";
             }
         }
-        catch (OperationCanceledException) when (run.IsCancellationRequested)
+        catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex))
         {
-        }
-        catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex, run.Token))
-        {
-            _logger.LogWarning("Loading more search results failed: {Failure}", ApiFailureText.Describe(ex));
-            if (IsShown())
+            if (!run.IsCancellationRequested && IsShown())
             {
+                _logger.LogWarning("Loading more search results failed: {Failure}", ApiFailureText.Describe(ex));
                 HasError = true;
                 StatusText = Describe(ex);
             }
@@ -508,7 +514,8 @@ public sealed partial class SearchViewModel : ObservableObject
         _ => MediaScopes.Video,
     };
 
-    private double Scale() => double.IsFinite(DisplayScale) && DisplayScale > 0 ? DisplayScale : 1;
+    // An item without an id could not be opened.
+    private static MediaCard? CardFor(CatalogItem item, Uri server) => item.ContentId.Length > 0 ? MediaCardFactory.Poster(item, server) : null;
 
     private (bool IsReady, string? ServerId, string? ProfileId) SessionKey() =>
         (_session.State == SessionState.Ready, _session.ActiveServer?.Id, _session.ProfileId);

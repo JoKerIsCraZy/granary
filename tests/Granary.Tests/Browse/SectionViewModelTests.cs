@@ -158,6 +158,18 @@ public sealed class SectionViewModelTests
     }
 
     [Fact]
+    public async Task RowWithoutAnId_SaysItIsGoneWithoutAsking()
+    {
+        var section = Create();
+
+        await section.OpenAsync(new SectionRouteParameter("", "Broken"));
+
+        Assert.True(section.HasError);
+        Assert.Equal("This row is no longer available.", section.StatusText);
+        Assert.Empty(_silo.To(CatalogPath));
+    }
+
+    [Fact]
     public async Task EmptyRow_ShowsNothingHereYet()
     {
         Pages((null, Page(null)));

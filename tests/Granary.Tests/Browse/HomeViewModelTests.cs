@@ -335,6 +335,63 @@ public sealed class HomeViewModelTests
     }
 
     [Fact]
+    public async Task Remove_WithAnEmptySeriesId_RemovesOnlyThatCard()
+    {
+        _silo.Map(SectionsPath, Sections(Section("cw", "continue_watching", 2,
+            Item("movie-1", seriesId: "", progressUpdatedAt: "2026-01-02T00:00:00.000Z"),
+            Item("movie-2", seriesId: "", progressUpdatedAt: "2026-01-03T00:00:00.000Z"))));
+        _silo.Map("api/v2/home/dismissals/continue_watching/movie-1", _ => BrowseFakeSilo.NoContent());
+        var home = Create();
+        await home.ActivateAsync();
+
+        await home.RemoveCommand.ExecuteAsync(home.Rows[0].Cards[0]);
+
+        Assert.Equal(["movie-2"], home.Rows[0].Cards.Select(c => c.Id));
+    }
+
+    [Fact]
+    public async Task SupersededLoad_LeavesItsFailureOut()
+    {
+        var firstAnswer = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        int calls = 0;
+        _silo.Map(SectionsPath, async (_, _) =>
+        {
+            if (Interlocked.Increment(ref calls) == 1)
+            {
+                await firstAnswer.Task;
+                throw new HttpRequestException(HttpRequestError.ConnectionError, "connection reset");
+            }
+            return BrowseFakeSilo.Json(Sections(Section("r", "genre", 1, Item("m1"))));
+        });
+        var home = Create();
+        var first = home.ActivateAsync();
+
+        _session.ProfileId = "8";
+        _session.RaiseChanged();
+        await home.Loading;
+        firstAnswer.SetResult();
+        await first;
+
+        Assert.False(home.HasError);
+        Assert.Equal("m1", Assert.Single(home.Rows).Cards[0].Id);
+        Assert.Equal("", home.StatusText);
+    }
+
+    [Fact]
+    public async Task RowWithoutAnId_IsNeitherFetchedNorExplored()
+    {
+        _silo.Map(SectionsPath, Sections(Section("", "genre", 5), Section("r", "genre", 9, Item("m1"), Item(""))));
+        var home = Create();
+
+        await home.ActivateAsync();
+
+        var row = Assert.Single(home.Rows);
+        Assert.Equal(["m1"], row.Cards.Select(c => c.Id));
+        Assert.NotNull(row.ExploreAllCommand);
+        Assert.False(home.HasError);
+    }
+
+    [Fact]
     public async Task NextUpCard_IsDismissedFromNextUp()
     {
         _silo.Map(SectionsPath, Sections(Section("next", "next_up", 1, Item("episode-2", "episode", "series-1"))));

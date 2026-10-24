@@ -104,12 +104,9 @@ public sealed partial class SectionViewModel(
                 ShowLoaded(listing);
             }
         }
-        catch (OperationCanceledException) when (run.IsCancellationRequested)
+        catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex))
         {
-        }
-        catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex, run.Token))
-        {
-            if (listing == _listing)
+            if (!run.IsCancellationRequested && listing == _listing)
             {
                 ShowFailure(ex);
             }
@@ -159,29 +156,36 @@ public sealed partial class SectionViewModel(
             ShowState(hasError: false, isEmpty: false, "");
             return;
         }
+        if (string.IsNullOrWhiteSpace(section.SectionId) || (section.LibraryId is { } library && string.IsNullOrWhiteSpace(library)))
+        {
+            IsLoading = false;
+            ShowState(hasError: true, isEmpty: false, GoneText);
+            return;
+        }
 
         IsLoading = true;
         ShowState(hasError: false, isEmpty: false, $"Loading {section.Title}");
         try
         {
-            var imageParameters = await images.GetAsync(server, ImageSizes.Default.ScaledBy(Scale()), cancellationToken);
-            var query = section.LibraryId is { Length: > 0 } libraryId
+            var imageParameters = await BrowseArtwork.ParametersAsync(images, server, DisplayScale, logger, cancellationToken);
+            var query = section.LibraryId is { } libraryId
                 ? CatalogQuery.ForLibrarySection(libraryId, section.SectionId)
                 : CatalogQuery.ForHomeSection(section.SectionId);
             var shape = CardShape;
             var listing = new BrowseCardPager(catalog, server.BaseUri, query with { Limit = PageSize, Images = imageParameters },
-                item => HomeRowRules.Shows(section.SectionType, item) ? CardFor(item, shape, server.BaseUri) : null);
+                item => item.ContentId.Length > 0 && HomeRowRules.Shows(section.SectionType, item) ? CardFor(item, shape, server.BaseUri) : null);
             _listing = listing;
             Cards = listing.Cards;
             await listing.LoadFirstPageAsync(cancellationToken);
             ShowLoaded(listing);
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex))
         {
-        }
-        catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex, cancellationToken))
-        {
-            ShowFailure(ex);
+            // A newer load replaced this one; its failure is stale.
+            if (!cancellationToken.IsCancellationRequested)
+            {
+                ShowFailure(ex);
+            }
         }
         finally
         {
@@ -213,8 +217,6 @@ public sealed partial class SectionViewModel(
         IsEmpty = isEmpty;
         StatusText = status;
     }
-
-    private double Scale() => double.IsFinite(DisplayScale) && DisplayScale > 0 ? DisplayScale : 1;
 
     private (string? ServerId, string? ProfileId) SessionKey() => (session.ActiveServer?.Id, session.ProfileId);
 }
