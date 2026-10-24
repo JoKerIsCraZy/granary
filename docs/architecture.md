@@ -129,3 +129,15 @@ dotnet run --project src/Granary.App -- --play native/testmedia/sdr.mkv
 Tests run on Microsoft Testing Platform (`global.json`). libmpv integration tests skip themselves when
 `libmpv-2.dll` is missing. Coverage: `dotnet test --solution Granary.slnx --coverage
 --coverage-settings tests/coverage.config` (generated code excluded).
+
+Running the app for a test or a second instance: set `GRANARY_DATA_DIR` to an empty folder, so servers,
+secrets, device id and logs stay out of the user's own `%LOCALAPPDATA%\Granary`.
+
+Two scripts help with checks the unit tests cannot make:
+
+- `scripts/capture-window.ps1` saves a screenshot of the app window, even when it is covered.
+- `scripts/capture-debug-output.ps1` records `OutputDebugString`. A `XamlParseException` at runtime
+  carries no detail; WinUI names the failing resource or element there.
+
+XAML that compiles can still fail when a page is created (for example a `StaticResource` that only
+exists inside WinUI's own templates), so every new page is opened once in the running app.

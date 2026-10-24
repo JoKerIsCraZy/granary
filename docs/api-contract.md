@@ -583,6 +583,13 @@ series/season card), `user_state { played, is_favorite, in_watchlist, not_intere
   `GET /api/v2/library/{id}/sections/{section_id}/items` → `Section`.
 - All items of a library: `GET /api/v2/catalog?source=query&library_id=<id>[&type=movie|series]`.
   Android maps the library type to `type` (movies → `movie`, series/tv → `series`, mixed → none).
+- Collections of a library: `GET /api/v2/library/{id}/collections` (groups plus ungrouped
+  collections); a collection's titles are `GET /api/v2/catalog?source=library_collection&library_id=<id>&collection_id=<id>`,
+  personal ones `source=user_collection` without a library id (as the web client does).
+- Shuffle: there is no random sort (the OpenAPI text lists `random`, but the server's allowlist in
+  `catalog/query_definition.go` does not, so `sort=random` is `422`). `POST /api/v2/shuffles` with
+  `{ "scope": { "kind": "library", "id": "<id>" } }` returns `current`, a random playable movie or
+  episode; `409` when the library has nothing playable. Check the shuffle capability for the scope first.
 
 ### 7.4 Browse: `GET /api/v2/catalog`
 
@@ -592,7 +599,7 @@ series/season card), `user_state { played, is_favorite, in_watchlist, not_intere
 | `scope` | `home` \| `library` (only with `source=section`) |
 | `library_id`, `section_id`, `collection_id`, `person_id` | scope ids |
 | `q` | text search (see 7.5) |
-| `name_prefix` | A–Z jump (matches the sort title) |
+| `name_prefix` | A–Z jump: a literal prefix of the sort title (`LIKE 'x%'`), so there is no "#" bucket; the web's "#" (digits, symbols, other scripts) needs `POST /api/v2/catalog/letters` with `seek` |
 | `type` | `movie`, `series`, `episode`, `video` (movies + series), `audiobook`, `ebook`, `manga`; unknown values are silently ignored |
 | `genre`, `status`, `year_min`, `year_max`, `content_rating` | simple filters |
 | `sort` | one term: `title`, `added_at`, `release_date`, `year`, `runtime`, `rating_imdb`, `rating_tmdb`, `resolution`, `progress`, `date_viewed`, `plays`, … (`-` prefix = descending; no prefix = ascending). `relevance` only with `q`. |
@@ -693,7 +700,10 @@ tracks ([8.8.1](#881-initial-track-selection-before-start)) → `POST /api/v2/pl
 - Image members (`poster_url`, `backdrop_url`, `logo_url`, `still_url`, `photo_url`,
   `thumbnail_url`, …) are presigned, short-lived URLs, either root-relative
   (`/api/v2/artwork/<key>?exp=<unix>&sig=<sig>`) or absolute (S3/CDN). Resolve root-relative values
-  against the origin of the response that supplied them. Empty or absent → placeholder.
+  against the origin of the response that supplied them. Empty or absent → placeholder. Granary
+  deviates on purpose: it appends root-relative values to the saved base URL. The server has no
+  base-path setting and mints them from its own root (`internal/artworkurl/artworkurl.go`), so behind a
+  path-prefix proxy the base URL is the right root; without a prefix both give the same URL.
 - `GET|HEAD /api/v2/artwork/{key}` is **public**: the signature authorizes. Send **no**
   `Authorization` header to artwork URLs (absolute presigned URLs may reject a second auth
   mechanism). An expired or wrong signature answers `404` like a missing object: on a `404` for a

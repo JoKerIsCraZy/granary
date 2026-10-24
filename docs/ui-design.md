@@ -54,6 +54,13 @@ Chips: `SiloChipStyle` (year, rating, runtime), `SiloAccentChipStyle` (1080P, EA
   in the page's own `ScrollViewer`; `LoadMoreCommand` runs near the end for cursor paging.
 - Cards are buttons (`SiloCardButtonStyle`): Tab and Enter work, screen readers read
   `MediaCard.AccessibleName`. Card commands take the `MediaCard` as parameter.
+- Page-specific pieces: `PersonCard` (search people), `AlphabetJumpBar` (library A–Z),
+  `DetailHero`, `DetailShelf`, `DetailEpisodeCard`, `DetailTrailerCard`, `PersonCreditCard`
+  (detail pages).
+- `ItemsRepeater` sets no `DataContext` on elements of `x:Bind` templates: a click handler reads its item
+  from the control it shows (`MediaCardView.Card`) or from `DataContext="{x:Bind}"` set on the element.
+- `x:Bind` function bindings skip null arguments, so a recycled element would keep stale values:
+  controls that show optional parts set them in code when their item changes (`MediaCardView`).
 
 View models build `MediaCard`s with the texts already worded; the controls only lay them out.
 
