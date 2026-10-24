@@ -67,22 +67,23 @@ public sealed partial class ShellViewModel(
         }
         _routed = key;
         logger.LogDebug("Routing for session state {State}", key.State);
+        // A new state starts a new history: Back never returns to sign-in, nor to another profile's pages.
         switch (key.State)
         {
             case SessionState.NoServer:
-                navigation.NavigateTo(AppRoute.AddServer);
+                navigation.ResetTo(AppRoute.AddServer);
                 break;
             case SessionState.SignedOut:
-                navigation.NavigateTo(AppRoute.SignIn, key.ServerId);
+                navigation.ResetTo(AppRoute.SignIn, key.ServerId);
                 break;
             case SessionState.PasswordChangeRequired:
-                navigation.NavigateTo(AppRoute.ChangePassword);
+                navigation.ResetTo(AppRoute.ChangePassword);
                 break;
             case SessionState.ProfileRequired:
-                navigation.NavigateTo(AppRoute.ProfilePicker);
+                navigation.ResetTo(AppRoute.ProfilePicker);
                 break;
             case SessionState.Ready:
-                navigation.NavigateTo(AppRoute.Home);
+                navigation.ResetTo(AppRoute.Home);
                 break;
         }
     }

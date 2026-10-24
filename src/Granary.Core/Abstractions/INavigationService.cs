@@ -19,11 +19,33 @@ public enum AppRoute
     ChangePassword,
 
     Player,
+
+    /// <summary>Search; the parameter is an optional query text.</summary>
+    Search,
+
+    /// <summary>One library; the parameter is the library id.</summary>
+    Library,
+
+    /// <summary>A movie, series, season or episode; the parameter is its catalog content id.</summary>
+    Item,
+
+    /// <summary>"Explore all" of a Home or library row; the parameter is a <see cref="SectionRouteParameter"/>.</summary>
+    Section,
 }
+
+/// <summary>Which row an "Explore all" grid lists: a Home row, or a library row when <see cref="LibraryId"/> is set.</summary>
+public sealed record SectionRouteParameter(string SectionId, string Title, string? LibraryId = null);
 
 public interface INavigationService
 {
     AppRoute? Current { get; }
 
+    bool CanGoBack { get; }
+
     void NavigateTo(AppRoute route, object? parameter = null);
+
+    /// <summary>Navigates and forgets the history, for example after sign-in, so Back cannot return to it.</summary>
+    void ResetTo(AppRoute route, object? parameter = null);
+
+    void GoBack();
 }

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="Granary.App.Views.SearchPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <StackPanel Padding="48,32" Spacing="12">
+        <TextBlock Text="Search" Style="{StaticResource SiloPageTitleTextStyle}" />
+    </StackPanel>
+</Page>

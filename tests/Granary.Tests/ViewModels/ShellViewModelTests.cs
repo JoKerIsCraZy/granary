@@ -73,6 +73,19 @@ public sealed class ShellViewModelTests
         Become(SessionState.Ready, "8");
 
         Assert.Equal(new[] { AppRoute.AddServer, AppRoute.Home, AppRoute.ProfilePicker, AppRoute.Home }, _navigation.Navigations.Select(r => r.Route));
+        Assert.Equal(_navigation.Navigations.Select(r => r.Route), _navigation.Resets);
+    }
+
+    [Fact]
+    public async Task SignedInAgain_LeavesNoWayBackToSignIn()
+    {
+        await Create().StartAsync(cancellationToken: TestContext.Current.CancellationToken);
+        Become(SessionState.SignedOut);
+
+        Become(SessionState.Ready, "7");
+
+        Assert.Equal(AppRoute.Home, _navigation.Current);
+        Assert.False(_navigation.CanGoBack);
     }
 
     [Fact]

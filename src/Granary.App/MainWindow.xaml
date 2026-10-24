@@ -5,33 +5,90 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     Title="Granary">
 
-    <Grid>
+    <Grid x:Name="Root" Background="{StaticResource SiloBackgroundBrush}" PointerPressed="OnRootPointerPressed">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
+            <RowDefinition Height="40" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
+        <Grid.KeyboardAccelerators>
+            <KeyboardAccelerator Modifiers="Control" Key="K" Invoked="OnSearchAccelerator" />
+            <KeyboardAccelerator Modifiers="Control" Key="F" Invoked="OnSearchAccelerator" />
+            <KeyboardAccelerator Modifiers="Menu" Key="Left" Invoked="OnBackAccelerator" />
+        </Grid.KeyboardAccelerators>
 
-        <Grid x:Name="AppTitleBar" Height="48" Padding="16,0,0,0">
-            <TextBlock Text="Granary" VerticalAlignment="Center" Style="{StaticResource CaptionTextBlockStyle}" />
+        <Grid x:Name="AppTitleBar" Padding="16,0,0,0">
+            <TextBlock Text="Granary" VerticalAlignment="Center" Style="{StaticResource SiloCaptionTextStyle}" />
         </Grid>
 
+        <!-- Silo's sidebar: server name, Home, Search, libraries; servers and the profile at the bottom. -->
         <NavigationView
             x:Name="Navigation"
             Grid.Row="1"
-            IsBackButtonVisible="Collapsed"
-            IsSettingsVisible="False"
-            IsPaneVisible="{x:Bind Shell.IsSignedIn, Mode=OneWay}"
             PaneDisplayMode="Left"
-            SelectionChanged="OnNavigationSelectionChanged">
+            OpenPaneLength="260"
+            IsPaneToggleButtonVisible="False"
+            IsSettingsVisible="False"
+            IsBackButtonVisible="Auto"
+            IsTitleBarAutoPaddingEnabled="False"
+            IsPaneVisible="{x:Bind Shell.IsSignedIn, Mode=OneWay}"
+            ItemInvoked="OnItemInvoked"
+            BackRequested="OnBackRequested">
+            <NavigationView.PaneHeader>
+                <TextBlock Margin="20,4,12,12" Text="{x:Bind Sidebar.ServerName, Mode=OneWay}" TextTrimming="CharacterEllipsis"
+                           FontFamily="{StaticResource SiloFontExtraBold}" FontWeight="ExtraBold" FontSize="22" CharacterSpacing="-30"
+                           Foreground="{StaticResource SiloForegroundBrush}" />
+            </NavigationView.PaneHeader>
+
             <NavigationView.MenuItems>
                 <NavigationViewItem Content="Home" Tag="Home" Icon="Home" />
+                <NavigationViewItem Tag="Search" Icon="Find" AutomationProperties.Name="Search" ToolTipService.ToolTip="Search (Ctrl+K)">
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Search" VerticalAlignment="Center" />
+                        <Border Grid.Column="1" Margin="0,0,8,0" Padding="6,1" CornerRadius="5" BorderThickness="1"
+                                BorderBrush="{StaticResource SiloBorderBrush}" VerticalAlignment="Center">
+                            <TextBlock Text="Ctrl K" FontSize="10" Foreground="{StaticResource SiloMutedBrush}" />
+                        </Border>
+                    </Grid>
+                </NavigationViewItem>
+                <NavigationViewItemHeader x:Name="LibrariesHeader">
+                    <TextBlock Text="LIBRARIES" Style="{StaticResource SiloSectionLabelTextStyle}" />
+                </NavigationViewItemHeader>
+            </NavigationView.MenuItems>
+
+            <NavigationView.FooterMenuItems>
                 <NavigationViewItem Content="Servers" Tag="Servers">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE968;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem Content="Player" Tag="Player" Icon="Play" />
-            </NavigationView.MenuItems>
+                <NavigationViewItem x:Name="ProfileItem" Tag="Profile" SelectsOnInvoked="False"
+                                    Content="{x:Bind Sidebar.ProfileName, Mode=OneWay}"
+                                    AutomationProperties.Name="{x:Bind ProfileMenuName(Sidebar.ProfileName), Mode=OneWay}">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE77B;" />
+                    </NavigationViewItem.Icon>
+                    <FlyoutBase.AttachedFlyout>
+                        <MenuFlyout Placement="TopEdgeAlignedLeft">
+                            <MenuFlyoutItem Text="Switch profile" Command="{x:Bind Sidebar.SwitchProfileCommand}">
+                                <MenuFlyoutItem.Icon>
+                                    <FontIcon Glyph="&#xE748;" />
+                                </MenuFlyoutItem.Icon>
+                            </MenuFlyoutItem>
+                            <MenuFlyoutSeparator />
+                            <MenuFlyoutItem Text="Sign out" Command="{x:Bind Sidebar.SignOutCommand}">
+                                <MenuFlyoutItem.Icon>
+                                    <FontIcon Glyph="&#xF3B1;" />
+                                </MenuFlyoutItem.Icon>
+                            </MenuFlyoutItem>
+                        </MenuFlyout>
+                    </FlyoutBase.AttachedFlyout>
+                </NavigationViewItem>
+            </NavigationView.FooterMenuItems>
+
             <Frame x:Name="ContentFrame" />
         </NavigationView>
     </Grid>

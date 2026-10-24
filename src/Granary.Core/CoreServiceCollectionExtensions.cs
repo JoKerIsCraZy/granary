@@ -59,6 +59,7 @@ public static class CoreServiceCollectionExtensions
         services.AddProfiles();
 
         services.AddSingleton<ShellViewModel>();
+        services.AddSingleton<SidebarViewModel>();
         services.AddTransient<SignInViewModel>();
         services.AddTransient<HomeViewModel>();
         services.AddTransient<AddServerViewModel>();
