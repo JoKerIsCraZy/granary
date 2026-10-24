@@ -1,0 +1,83 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build",
+      "detail": "Build the whole solution (Debug, x64)",
+      "type": "process",
+      "command": "dotnet",
+      "args": ["build", "${workspaceFolder}/Granary.slnx", "-nologo", "/property:GenerateFullPaths=true", "/consoleloggerparameters:NoSummary"],
+      "problemMatcher": "$msCompile",
+      "group": { "kind": "build", "isDefault": true }
+    },
+    {
+      "label": "test",
+      "detail": "Run all tests (Microsoft Testing Platform)",
+      "type": "process",
+      "command": "dotnet",
+      "args": ["test", "--solution", "${workspaceFolder}/Granary.slnx"],
+      "problemMatcher": "$msCompile",
+      "group": { "kind": "test", "isDefault": true }
+    },
+    {
+      "label": "test: coverage",
+      "detail": "Run all tests and write TestResults/coverage.cobertura.xml (hand-written code only)",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "test", "--solution", "${workspaceFolder}/Granary.slnx",
+        "--coverage", "--coverage-output-format", "cobertura", "--coverage-output", "coverage.cobertura.xml",
+        "--coverage-settings", "${workspaceFolder}/tests/coverage.config"
+      ],
+      "problemMatcher": "$msCompile",
+      "group": "test"
+    },
+    {
+      "label": "run app",
+      "detail": "Build and start Granary",
+      "type": "process",
+      "command": "dotnet",
+      "args": ["run", "--project", "${workspaceFolder}/src/Granary.App"],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "run app: play a video",
+      "detail": "Start Granary with --play <file or URL>",
+      "type": "process",
+      "command": "dotnet",
+      "args": ["run", "--project", "${workspaceFolder}/src/Granary.App", "--", "--play", "${input:videoPath}"],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "fetch native",
+      "detail": "Download and verify the pinned libmpv into native/libmpv",
+      "type": "process",
+      "command": "powershell",
+      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/scripts/fetch-native.ps1"],
+      "problemMatcher": []
+    },
+    {
+      "label": "format",
+      "detail": "Apply .editorconfig formatting and analyzer fixes",
+      "type": "process",
+      "command": "dotnet",
+      "args": ["format", "${workspaceFolder}/Granary.slnx"],
+      "problemMatcher": []
+    },
+    {
+      "label": "clean",
+      "type": "process",
+      "command": "dotnet",
+      "args": ["clean", "${workspaceFolder}/Granary.slnx", "-nologo"],
+      "problemMatcher": "$msCompile"
+    }
+  ],
+  "inputs": [
+    {
+      "id": "videoPath",
+      "type": "promptString",
+      "description": "Path or URL of a video",
+      "default": "${workspaceFolder}/native/testmedia/sdr.mkv"
+    }
+  ]
+}

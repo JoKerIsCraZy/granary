@@ -12,9 +12,13 @@ BundleArtifacts/
 *.appx
 *.appxbundle
 
-# IDE and tooling state
+# IDE and tooling state (shared VS Code workspace files are committed)
 .vs/
-.vscode/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
 .idea/
 *.user
 *.suo

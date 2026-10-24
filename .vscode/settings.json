@@ -1,0 +1,46 @@
+{
+  "dotnet.defaultSolution": "Granary.slnx",
+  "dotnet.testWindow.useTestingPlatformProtocol": true,
+
+  "files.associations": {
+    "*.xaml": "xml",
+    "*.slnx": "xml",
+    "*.props": "xml",
+    "*.targets": "xml",
+    "*.manifest": "xml"
+  },
+  "files.exclude": {
+    "**/bin": true,
+    "**/obj": true
+  },
+  "files.watcherExclude": {
+    "**/.ref/**": true,
+    "**/native/**": true,
+    "**/bin/**": true,
+    "**/obj/**": true,
+    "**/TestResults/**": true
+  },
+  "search.exclude": {
+    ".ref/**": true,
+    "native/**": true,
+    "**/bin": true,
+    "**/obj": true,
+    "TestResults/**": true
+  },
+
+  "editor.formatOnSave": true,
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true,
+  "[csharp]": {
+    "editor.defaultFormatter": "ms-dotnettools.csharp",
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit"
+    }
+  },
+  "[xml]": {
+    "editor.tabSize": 4
+  },
+  "[markdown]": {
+    "files.trimTrailingWhitespace": false
+  }
+}
