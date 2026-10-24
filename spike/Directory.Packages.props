@@ -1,0 +1,6 @@
+<Project>
+  <!-- The Phase 1 spike pins its own package versions. -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+</Project>
