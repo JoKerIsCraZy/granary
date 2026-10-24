@@ -163,6 +163,25 @@ internal static class ItemDetailPayloads
         }
         """;
 
+    /// <summary>Season 1's episodes, which the series page prefetches; one has a still.</summary>
+    public const string SeasonOneEpisodes = """
+        {
+          "items": [
+            {
+              "content_id": "episode-tmdb-96677-1-1",
+              "season_number": 1,
+              "episode_number": 1,
+              "title": "Pilot",
+              "still_url": "/api/v2/artwork/episodes/11/w400.webp?exp=1&sig=s11",
+              "files": [{ "file_id": "911", "resolution": "1080p", "hdr": false, "file_size": 1 }]
+            },
+            { "content_id": "episode-tmdb-96677-1-2", "season_number": 1, "episode_number": 2, "title": "Second" }
+          ]
+        }
+        """;
+
+    public const string NoEpisodes = """{ "items": [] }""";
+
     public const string SingleSeason = """
         {
           "items": [

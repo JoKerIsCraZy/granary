@@ -34,6 +34,8 @@ internal sealed class ItemDetailFixture
 
     public LogSink Logs { get; } = new();
 
+    public RecordingArtworkPrefetcher Artwork { get; } = new();
+
     public static string ItemPath(string id) => $"api/v2/catalog/items/{id}";
 
     public static string SeasonsPath(string seriesId) => $"api/v2/catalog/series/{seriesId}/seasons";
@@ -60,7 +62,15 @@ internal sealed class ItemDetailFixture
     public ItemDetailFixture Series(string seasons = ItemDetailPayloads.SeriesSeasons) =>
         Get(ItemPath(ItemDetailPayloads.SeriesId), Ok(ItemDetailPayloads.Series))
         .Get(SeasonsPath(ItemDetailPayloads.SeriesId), Ok(seasons))
-        .Get(SimilarPath(ItemDetailPayloads.SeriesId), Ok(ItemDetailPayloads.SeriesSimilar));
+        .Get(SimilarPath(ItemDetailPayloads.SeriesId), Ok(ItemDetailPayloads.SeriesSimilar))
+        .EpisodeLists();
+
+    /// <summary>The episode lists of <see cref="ItemDetailPayloads.SeriesSeasons"/>, which the series page prefetches.</summary>
+    public ItemDetailFixture EpisodeLists() =>
+        Get(SeasonItemEpisodesPath("season-96677-0"), Ok(ItemDetailPayloads.NoEpisodes))
+        .Get(SeasonItemEpisodesPath("season-96677-1"), Ok(ItemDetailPayloads.SeasonOneEpisodes))
+        .Get(SeasonItemEpisodesPath("season-96677-2"), Ok(ItemDetailPayloads.NoEpisodes))
+        .Get(SeasonItemEpisodesPath(ItemDetailPayloads.Season3Id), Ok(ItemDetailPayloads.SeasonEpisodes));
 
     public ItemDetailFixture Season() => Get(ItemPath(ItemDetailPayloads.Season3Id), Ok(ItemDetailPayloads.Season))
         .Get(SeasonItemEpisodesPath(ItemDetailPayloads.Season3Id), Ok(ItemDetailPayloads.SeasonEpisodes));
@@ -74,6 +84,7 @@ internal sealed class ItemDetailFixture
         new CatalogApi(Silo.Http),
         new ImageParameterCache(new ImagesApi(Silo.Http), Logs.For<ImageParameterCache>()),
         Navigation,
+        Artwork,
         Logs.For<ItemDetailViewModel>());
 
     public async Task<ItemDetailViewModel> LoadAsync(string id)

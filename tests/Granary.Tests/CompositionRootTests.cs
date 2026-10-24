@@ -1,6 +1,7 @@
 using Granary.Core;
 using Granary.Core.Abstractions;
 using Granary.Core.Api;
+using Granary.Core.Artwork;
 using Granary.Core.Auth;
 using Granary.Core.Playback;
 using Granary.Core.Servers;
@@ -36,6 +37,8 @@ public sealed class CompositionRootTests
         Assert.Same(provider.GetRequiredService<ShellViewModel>(), provider.GetRequiredService<ShellViewModel>());
         Assert.IsType<SessionManager>(provider.GetRequiredService<ISessionManager>());
         Assert.NotNull(provider.GetRequiredService<SiloHttp>());
+        Assert.Same(provider.GetRequiredService<ArtworkLoader>(), provider.GetRequiredService<IArtworkPrefetcher>());
+        Assert.NotNull(provider.GetRequiredService<ItemDetailViewModel>());
         using var player = provider.GetRequiredService<PlayerViewModel>();
         Assert.Same(provider.GetRequiredService<IPlaybackEngine>(), provider.GetRequiredService<ICompositionVideoOutput>());
     }

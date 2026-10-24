@@ -4,6 +4,7 @@ using Granary.Core.Abstractions;
 using Granary.Core.Api;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
+using Granary.Core.Artwork;
 using Granary.Core.Auth;
 using Granary.Core.Servers;
 using Granary.Core.ViewModels.Cards;
@@ -42,10 +43,14 @@ public sealed partial class ItemDetailViewModel : ObservableObject
 
     private const int SimilarLimit = 12;
 
+    // Twenty seasons or so of a long-running show; any further season loads its stills when it is opened.
+    private const int MaxPrefetchedStills = 400;
+
     private readonly ISessionManager _session;
     private readonly CatalogApi _catalog;
     private readonly ImageParameterCache _images;
     private readonly INavigationService _navigation;
+    private readonly IArtworkPrefetcher _artwork;
     private readonly ILogger<ItemDetailViewModel> _logger;
 
     // A newer load makes the answers of older calls stale.
@@ -68,12 +73,14 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         CatalogApi catalog,
         ImageParameterCache images,
         INavigationService navigation,
+        IArtworkPrefetcher artwork,
         ILogger<ItemDetailViewModel> logger)
     {
         _session = session;
         _catalog = catalog;
         _images = images;
         _navigation = navigation;
+        _artwork = artwork;
         _logger = logger;
     }
 
@@ -478,6 +485,37 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         }
         _seasons = seasons;
         ShowSeasonCards();
+        if (seasons.Count > 1)
+        {
+            await PrefetchEpisodeStillsAsync(item, seasons, server, images, generation, cancellationToken);
+        }
+    }
+
+    // A season the user opens then shows its stills at once. The lists load one after another, the season to
+    // play first; leaving the page cancels what is left. The season page asks with the same image parameters,
+    // so its stills are the ones cached here.
+    private async Task PrefetchEpisodeStillsAsync(CatalogItemDetail item, IReadOnlyList<Season> seasons, Uri server, ImageParameters images, int generation, CancellationToken cancellationToken)
+    {
+        int budget = MaxPrefetchedStills;
+        foreach (var season in seasons.OrderBy(s => s.SeasonNumber == item.PlaySeasonNumber ? 0 : 1))
+        {
+            if (budget <= 0 || generation != _generation)
+            {
+                return;
+            }
+            if (season.ContentId.Length == 0)
+            {
+                continue;
+            }
+            var episodes = await TryLoadAsync("episodes to prefetch", () => _catalog.ListSeasonEpisodesAsync(server, season.ContentId, images: images, cancellationToken: cancellationToken), cancellationToken);
+            if (episodes is null)
+            {
+                continue;
+            }
+            List<Uri> stills = [.. episodes.Items.Select(e => ArtworkUrl.Resolve(server, e.StillUrl)).OfType<Uri>().Take(budget)];
+            budget -= stills.Count;
+            _artwork.Prefetch(stills, cancellationToken);
+        }
     }
 
     private async Task LoadSeasonEpisodesAsync(CatalogItemDetail item, Uri server, ImageParameters images, int generation, CancellationToken cancellationToken)

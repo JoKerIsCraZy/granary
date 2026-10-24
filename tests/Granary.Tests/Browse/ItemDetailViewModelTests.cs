@@ -163,7 +163,8 @@ public sealed class ItemDetailViewModelTests
             {
                 similarAsked.TrySetResult();
                 return Ok(SeriesSimilar)();
-            });
+            })
+            .EpisodeLists();
 
         var detail = await _fixture.LoadAsync(SeriesId);
 
@@ -198,6 +199,40 @@ public sealed class ItemDetailViewModelTests
         Assert.True(detail.IsReady);
         Assert.False(detail.HasSimilar);
         Assert.Equal(4, detail.Seasons.Count);
+    }
+
+    [Fact]
+    public async Task Series_PrefetchesTheStillsOfEverySeason_TheSeasonToPlayFirst()
+    {
+        await _fixture.Series().LoadAsync(SeriesId);
+
+        // Season 3 holds the episode to resume; seasons 1, 2 and the specials follow.
+        Assert.Equal(
+            [Art("/api/v2/artwork/episodes/1/w400.webp?exp=1&sig=e1"), Art("/api/v2/artwork/episodes/11/w400.webp?exp=1&sig=s11")],
+            _fixture.Artwork.Urls);
+        Assert.Single(_fixture.Silo.SentTo(HttpMethod.Get, SeasonItemEpisodesPath("season-96677-0")));
+        Assert.Single(_fixture.Silo.SentTo(HttpMethod.Get, SeasonItemEpisodesPath("season-96677-2")));
+    }
+
+    [Fact]
+    public async Task Series_AFailedEpisodeList_SkipsOnlyThatSeasonsStills()
+    {
+        var detail = await _fixture.Series().Get(SeasonItemEpisodesPath(Season3Id), Busy()).LoadAsync(SeriesId);
+
+        Assert.Equal([Art("/api/v2/artwork/episodes/11/w400.webp?exp=1&sig=s11")], _fixture.Artwork.Urls);
+        Assert.Equal(ItemDetailState.Ready, detail.State);
+        Assert.Equal(4, detail.Seasons.Count);
+    }
+
+    [Fact]
+    public async Task SingleSeasonSeries_PrefetchesNothing_ItsEpisodesAreOnThePage()
+    {
+        _fixture.Series(SingleSeason).Get(SeasonItemEpisodesPath("season-96677-1"), Ok(SeasonEpisodes));
+
+        await _fixture.LoadAsync(SeriesId);
+
+        Assert.Empty(_fixture.Artwork.Urls);
+        Assert.Single(_fixture.Silo.SentTo(HttpMethod.Get, SeasonItemEpisodesPath("season-96677-1")));
     }
 
     [Fact]

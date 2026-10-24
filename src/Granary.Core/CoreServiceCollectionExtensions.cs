@@ -7,6 +7,7 @@ using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Discovery;
 using Granary.Core.Api.Images;
 using Granary.Core.Api.Profiles;
+using Granary.Core.Artwork;
 using Granary.Core.Auth;
 using Granary.Core.Http;
 using Granary.Core.Security;
@@ -48,6 +49,7 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<LibraryPageApi>();
         services.AddTransient<ImagesApi>();
         services.AddSingleton<ImageParameterCache>();
+        AddArtwork(services);
 
         services.AddSingleton(_ => ClientIdentity.Load(ClientIdentity.DefaultDeviceIdFile));
 
@@ -75,6 +77,27 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<PlayerViewModel>();
         services.AddTransient<ItemDetailViewModel>();
         return services;
+    }
+
+    // Artwork URLs are presigned and public: no credentials, no identity headers. HTTP/2 lets a page's images
+    // share one connection, and their requests stay out of the log, where a page would add hundreds.
+    private static void AddArtwork(IServiceCollection services)
+    {
+        services.AddHttpClient(ArtworkLoader.HttpClientName, client => client.Timeout = TimeSpan.FromSeconds(30))
+            .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
+            {
+                PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+                EnableMultipleHttp2Connections = true,
+                MaxAutomaticRedirections = 3,
+            })
+            .RemoveAllLoggers();
+        services.AddSingleton(sp => new ArtworkDiskCache(
+            ArtworkDiskCache.DefaultDirectory,
+            ArtworkDiskCache.DefaultCapacityBytes,
+            sp.GetRequiredService<ILogger<ArtworkDiskCache>>(),
+            sp.GetRequiredService<TimeProvider>()));
+        services.AddSingleton<ArtworkLoader>();
+        services.AddSingleton<IArtworkPrefetcher>(sp => sp.GetRequiredService<ArtworkLoader>());
     }
 
     // Long-lived services keep their typed clients, so connections are recycled to follow DNS changes.
