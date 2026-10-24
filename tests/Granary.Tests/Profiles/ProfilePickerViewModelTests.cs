@@ -255,8 +255,11 @@ public sealed class ProfilePickerViewModelTests
 
     [Theory]
     [InlineData("")]
-    [InlineData("1234567890123456789012345678901234567890123456789012345678901234567890123")]
-    public async Task SubmitPin_EmptyOrOverlongPin_DoesNotCallTheServer(string pin)
+    [InlineData("123")]
+    [InlineData("12345")]
+    [InlineData("12a4")]
+    [InlineData("１２３４")]
+    public async Task SubmitPin_NotFourDigits_DoesNotCostAnAttempt(string pin)
     {
         using var harness = new Harness();
         await harness.OpenKidPromptAsync();
@@ -264,9 +267,19 @@ public sealed class ProfilePickerViewModelTests
         await harness.ViewModel.SubmitPinCommand.ExecuteAsync(pin);
 
         Assert.Empty(harness.Silo.SentTo(HttpMethod.Post, KidPinPath));
-        Assert.NotEqual("", harness.ViewModel.PinError);
+        Assert.Equal("Enter all 4 digits of the PIN.", harness.ViewModel.PinError);
         Assert.True(harness.ViewModel.IsPinPromptOpen);
     }
+
+    [Theory]
+    [InlineData("0000", true)]
+    [InlineData("4321", true)]
+    [InlineData("432", false)]
+    [InlineData("43210", false)]
+    [InlineData("43 1", false)]
+    [InlineData(null, false)]
+    public void IsCompletePin_MeansExactlyFourAsciiDigits(string? pin, bool expected) =>
+        Assert.Equal(expected, ProfilePickerViewModel.IsCompletePin(pin));
 
     [Fact]
     public async Task CancelPin_WhileTheServerChecks_DiscardsTheAnswer()
@@ -297,12 +310,12 @@ public sealed class ProfilePickerViewModelTests
             ScriptedSilo.Json(HttpStatusCode.OK, ValidPinJson));
         await harness.OpenKidPromptAsync();
 
-        await harness.ViewModel.SubmitPinCommand.ExecuteAsync("97531");
-        await harness.ViewModel.SubmitPinCommand.ExecuteAsync("97531");
+        await harness.ViewModel.SubmitPinCommand.ExecuteAsync("9753");
+        await harness.ViewModel.SubmitPinCommand.ExecuteAsync("9753");
 
         Assert.Equal(2, harness.Silo.SentTo(HttpMethod.Post, KidPinPath).Count);
         Assert.NotEmpty(harness.Logger.Lines);
-        Assert.DoesNotContain(harness.Logger.Lines, line => line.Contains("97531", StringComparison.Ordinal));
+        Assert.DoesNotContain(harness.Logger.Lines, line => line.Contains("9753", StringComparison.Ordinal));
         Assert.Equal(["profile:p-kid:token"], harness.Session.Calls);
     }
 

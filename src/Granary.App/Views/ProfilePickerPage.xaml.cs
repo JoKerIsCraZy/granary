@@ -85,7 +85,8 @@ public sealed partial class ProfilePickerPage : Page
                 PinDialog.Hide();
                 break;
             case nameof(ProfilePickerViewModel.IsVerifyingPin):
-                UpdateUnlockButton();
+                // Digits typed during the check would otherwise start the next attempt.
+                PinBox.IsEnabled = !ViewModel.IsVerifyingPin;
                 break;
         }
     }
@@ -99,7 +100,7 @@ public sealed partial class ProfilePickerPage : Page
         _isPinDialogShown = true;
         _promptedProfile = ViewModel.PinProfile;
         PinBox.Password = "";
-        UpdateUnlockButton();
+        PinBox.IsEnabled = true;
         PinDialog.XamlRoot = XamlRoot;
         try
         {
@@ -135,13 +136,6 @@ public sealed partial class ProfilePickerPage : Page
         _promptedProfile = null;
     }
 
-    private void OnPinDialogPrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
-    {
-        // Stay open: the view model closes the prompt once the PIN is accepted.
-        args.Cancel = true;
-        SubmitPin();
-    }
-
     private void OnPinBoxKeyDown(object sender, KeyRoutedEventArgs e)
     {
         if (e.Key == VirtualKey.Enter)
@@ -151,7 +145,21 @@ public sealed partial class ProfilePickerPage : Page
         }
     }
 
-    private void OnPinBoxPasswordChanged(object sender, RoutedEventArgs e) => UpdateUnlockButton();
+    private void OnPinBoxPasswordChanged(object sender, RoutedEventArgs e)
+    {
+        string pin = PinBox.Password;
+        string digits = new(pin.Where(char.IsAsciiDigit).ToArray());
+        if (digits != pin)
+        {
+            // Raises PasswordChanged again with the digits only.
+            PinBox.Password = digits;
+            return;
+        }
+        if (ProfilePickerViewModel.IsCompletePin(pin))
+        {
+            SubmitPin();
+        }
+    }
 
     private async void SubmitPin()
     {
@@ -168,9 +176,6 @@ public sealed partial class ProfilePickerPage : Page
             PinBox.Focus(FocusState.Programmatic);
         }
     }
-
-    private void UpdateUnlockButton() =>
-        PinDialog.IsPrimaryButtonEnabled = PinBox.Password.Length > 0 && !ViewModel.IsVerifyingPin;
 
     // Static because x:Bind function bindings in the item template call them without the page.
     // The avatar URL is presigned: BitmapImage fetches it without credentials, as the server requires.

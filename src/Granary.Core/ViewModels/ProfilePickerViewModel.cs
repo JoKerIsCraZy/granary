@@ -1,5 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using System.Text;
 using System.Text.Json;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -24,8 +23,11 @@ namespace Granary.Core.ViewModels;
 /// </remarks>
 public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposable
 {
-    // verify-pin accepts 1..72 bytes; a longer PIN cannot be right and must not cost an attempt.
-    internal const int MaximumPinBytes = 72;
+    /// <summary>
+    /// Silo PINs are four digits: the web, Android and Apple clients only ever set such PINs and enter them
+    /// on a four-digit pad. Anything else cannot be right and must not cost one of the five attempts.
+    /// </summary>
+    public const int PinLength = 4;
 
     internal const string WrongPin = "That PIN is not right.";
 
@@ -85,6 +87,8 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
 
     public string PinPromptTitle => PinProfile is { } profile ? $"Enter the PIN for {profile.Name}" : "Enter the PIN";
 
+    public static bool IsCompletePin([NotNullWhen(true)] string? pin) => pin is { Length: PinLength } && pin.All(char.IsAsciiDigit);
+
     [RelayCommand]
     private Task LoadAsync() => LoadProfilesAsync();
 
@@ -126,14 +130,9 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
         {
             return;
         }
-        if (string.IsNullOrEmpty(pin))
+        if (!IsCompletePin(pin))
         {
-            PinError = "Enter the PIN.";
-            return;
-        }
-        if (Encoding.UTF8.GetByteCount(pin) > MaximumPinBytes)
-        {
-            PinError = WrongPin;
+            PinError = $"Enter all {PinLength} digits of the PIN.";
             return;
         }
         if (!ListBelongsToActiveServer(out var server))

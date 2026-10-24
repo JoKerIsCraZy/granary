@@ -79,24 +79,21 @@
             </GridView.ItemTemplate>
         </GridView>
 
+        <!-- No Unlock button: like the Apple client, the fourth digit sends the PIN. -->
         <ContentDialog
             x:Name="PinDialog"
             Title="{x:Bind ViewModel.PinPromptTitle, Mode=OneWay}"
             CloseButtonText="Cancel"
             Closed="OnPinDialogClosed"
-            DefaultButton="Primary"
-            IsPrimaryButtonEnabled="False"
-            Opened="OnPinDialogOpened"
-            PrimaryButtonClick="OnPinDialogPrimaryButtonClick"
-            PrimaryButtonText="Unlock">
+            Opened="OnPinDialogOpened">
             <StackPanel MinWidth="320" Spacing="12">
-                <TextBlock Text="This profile is protected by a PIN." TextWrapping="Wrap" />
+                <TextBlock Text="This profile is protected by a 4-digit PIN." TextWrapping="Wrap" />
                 <PasswordBox
                     x:Name="PinBox"
                     Header="PIN"
                     InputScope="NumericPin"
                     KeyDown="OnPinBoxKeyDown"
-                    MaxLength="72"
+                    MaxLength="4"
                     PasswordChanged="OnPinBoxPasswordChanged" />
                 <ProgressBar
                     IsIndeterminate="True"
