@@ -71,6 +71,7 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<SearchViewModel>();
         services.AddTransient<AddServerViewModel>();
         services.AddTransient<PlayerViewModel>();
+        services.AddTransient<ItemDetailViewModel>();
         return services;
     }
 
