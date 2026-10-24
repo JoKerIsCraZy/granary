@@ -389,7 +389,7 @@ Improvements the Windows client adopts:
 ### 5.3 Storage on Windows
 
 Store per server: access token, refresh token, absolute access expiry, token lifetime, selected
-profile id and profile token. Use a DPAPI-protected file (`ProtectedData`, `CurrentUser` scope) in
+profile id and profile token. Decided: use a DPAPI-protected file (`ProtectedData`, `CurrentUser` scope) in
 local, non-roaming app data with one record per server. The Credential Locker (`PasswordVault`)
 roams credentials with the Microsoft account and is capped per app, which does not suit
 installation-bound session tokens. Never log tokens, `Authorization` headers, profile tokens or
@@ -1487,7 +1487,8 @@ Sources: `silo-server/internal/apiv2/playback.go:206-212,413-426`,
   session progress persists nothing for them (10.1). Resume must then be reported item-absolute
   through `POST /api/v2/sync/progress` (`items[{ media_item_id, position_ms, duration_ms }]`); an
   omitted `start_position` maps the stored absolute resume onto the right part
-  (`silo-server/internal/api/handlers/playback_v3.go:3680-3756`). See 13.4 for the MVP decision.
+  (`silo-server/internal/api/handlers/playback_v3.go:3680-3756`). No reference client does this for
+  video; the MVP follows them (13.4).
 
 ### 10.6 Completion and "next up"
 
@@ -1736,9 +1737,13 @@ signup, invitations, setup wizard, downloads, audiobooks, ebooks, watch together
 5. Token expiry mid-playback: does reloading with new headers at the current position work
    seamlessly enough, or is a loopback proxy needed?
 6. Which FFmpeg version does the libmpv build bundle (redirect handling, HLS features)?
-7. **Decision needed (not a spike item)**: multi-part items (10.5) persist resume only through
-   `/sync/progress`. Either support that one call for multi-part items in the MVP, or play them
-   without saving resume and say so in the UI.
+7. **Decided**: multi-part items (10.5) behave as in every reference client. None of them saves
+   resume for multi-part video: Android never calls `/sync/progress`; Apple and the web player use it
+   only for offline progress and audiobooks. The MVP plays the parts in sequence (start at the first
+   part; then the lowest-numbered later part of the same presentation and edition, preferring the
+   same resolution, as in
+   `silo-android/shared/src/commonMain/kotlin/org/siloserver/silo/playback/PlaybackParts.kt`) and
+   does not save resume for them.
 
 ### 13.5 System media controls and input
 
