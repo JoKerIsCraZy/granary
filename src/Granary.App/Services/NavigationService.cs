@@ -10,7 +10,11 @@ public sealed class NavigationService : INavigationService
     private static readonly Dictionary<AppRoute, Type> Pages = new()
     {
         [AppRoute.Home] = typeof(HomePage),
+        [AppRoute.Servers] = typeof(ServersPage),
         [AppRoute.AddServer] = typeof(AddServerPage),
+        [AppRoute.SignIn] = typeof(SignInPage),
+        [AppRoute.ProfilePicker] = typeof(ProfilePickerPage),
+        [AppRoute.ChangePassword] = typeof(ChangePasswordPage),
         [AppRoute.Player] = typeof(PlayerPage),
     };
 
@@ -24,7 +28,7 @@ public sealed class NavigationService : INavigationService
 
     public void NavigateTo(AppRoute route, object? parameter = null)
     {
-        if (_frame is null || route == Current)
+        if (_frame is null || (route == Current && parameter is null))
         {
             return;
         }

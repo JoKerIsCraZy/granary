@@ -26,6 +26,7 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
     <PackageReference Include="Microsoft.WindowsAppSDK" />
+    <PackageReference Include="QRCoder" />
   </ItemGroup>
 
   <!-- libmpv comes from native/ (scripts/fetch-native.ps1), it is not committed. -->

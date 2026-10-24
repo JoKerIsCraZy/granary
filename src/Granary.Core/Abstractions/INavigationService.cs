@@ -4,7 +4,20 @@ namespace Granary.Core.Abstractions;
 public enum AppRoute
 {
     Home,
+
+    /// <summary>Saved servers: switch, sign out, remove.</summary>
+    Servers,
+
     AddServer,
+
+    /// <summary>Sign-in for a saved server; the parameter is the <c>ServerEntry.Id</c>.</summary>
+    SignIn,
+
+    ProfilePicker,
+
+    /// <summary>Change a temporary password before the account can be used.</summary>
+    ChangePassword,
+
     Player,
 }
 

@@ -24,9 +24,9 @@
             SelectionChanged="OnNavigationSelectionChanged">
             <NavigationView.MenuItems>
                 <NavigationViewItem Content="Home" Tag="Home" Icon="Home" />
-                <NavigationViewItem Content="Add server" Tag="AddServer">
+                <NavigationViewItem Content="Servers" Tag="Servers">
                     <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE710;" />
+                        <FontIcon Glyph="&#xE968;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
                 <NavigationViewItem Content="Player" Tag="Player" Icon="Play" />
