@@ -119,7 +119,7 @@ public static class MediaCardFactory
         StatusBadge = ShowStatusText(item.ShowStatus) ?? (item.Badges.Contains("new") ? "NEW" : null),
         RatingBadge = RatingText(item.RatingImdb),
         Progress = ProgressOf(item.PositionSeconds, item.DurationSeconds, item.UserState?.Played == true),
-        IsWatched = item.UserState?.Played == true,
+        // Like the web, rows and grids mark no watched titles; season and episode cards do.
         PlayContentId = item.PlayContentId,
     };
 

@@ -121,13 +121,13 @@ public sealed class MediaCardFactoryTests
     }
 
     [Fact]
-    public void WatchedItem_HasNoProgressButAMark()
+    public void WatchedTitle_HasNeitherProgressNorAMark()
     {
         var movie = Movie() with { PositionSeconds = 100, DurationSeconds = 200, UserState = new CatalogItemUserState(true, false, false, false) };
 
         var card = MediaCardFactory.Poster(movie, Server);
 
-        Assert.True(card.IsWatched);
+        Assert.False(card.IsWatched);
         Assert.Null(card.Progress);
     }
 
