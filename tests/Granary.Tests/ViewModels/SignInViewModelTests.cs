@@ -143,6 +143,47 @@ public sealed class SignInViewModelTests
     }
 
     [Fact]
+    public async Task UnencryptedServer_NeedsConsentBeforeCredentialsAreSent()
+    {
+        var server = await _registry.AddOrUpdateAsync(new Uri("http://nas.local:8090"), "NAS", null, TestContext.Current.CancellationToken);
+        var viewModel = Create();
+        await viewModel.LoadAsync(server.Id, TestContext.Current.CancellationToken);
+        viewModel.Username = "alex";
+        viewModel.Password = "pw";
+
+        Assert.True(viewModel.IsUnencrypted);
+        Assert.False(viewModel.CanUseCredentials);
+        Assert.False(viewModel.SignInCommand.CanExecute(null));
+
+        viewModel.AcceptUnencryptedCommand.Execute(null);
+
+        Assert.True(viewModel.CanUseCredentials);
+        Assert.True(viewModel.SignInCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public async Task EncryptedServer_NeedsNoConsent()
+    {
+        var (viewModel, _) = await LoadedAsync();
+
+        Assert.False(viewModel.IsUnencrypted);
+        Assert.True(viewModel.CanUseCredentials);
+    }
+
+    [Fact]
+    public async Task SignIn_UnusableAnswer_PointsAtTheAddress()
+    {
+        var (viewModel, _) = await LoadedAsync();
+        viewModel.Username = "alex";
+        viewModel.Password = "pw";
+        _session.FailWith = new HttpRequestException(HttpRequestError.InvalidResponse, "not Silo");
+
+        await viewModel.SignInCommand.ExecuteAsync(null);
+
+        Assert.Equal("Living room answered in a way Granary does not understand. Check the server address.", viewModel.Status);
+    }
+
+    [Fact]
     public void UseAnotherServer_OpensTheServerList()
     {
         Create().UseAnotherServerCommand.Execute(null);

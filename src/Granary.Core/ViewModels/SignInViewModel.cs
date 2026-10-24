@@ -22,7 +22,22 @@ public sealed partial class SignInViewModel(
 {
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(SignInCommand))]
+    [NotifyPropertyChangedFor(nameof(IsUnencrypted), nameof(CanUseCredentials))]
     public partial ServerEntry? Server { get; private set; }
+
+    /// <summary>
+    /// A plain http:// server: passwords and tokens would travel readable by anyone on the network, so
+    /// neither form works until the user agrees (docs/api-contract.md, 3.2).
+    /// </summary>
+    public bool IsUnencrypted => Server?.BaseUri.Scheme == Uri.UriSchemeHttp;
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(SignInCommand))]
+    [NotifyPropertyChangedFor(nameof(CanUseCredentials))]
+    public partial bool IsUnencryptedAccepted { get; private set; }
+
+    /// <summary>True when sign-in may send credentials: the connection is encrypted, or the user accepted that it is not.</summary>
+    public bool CanUseCredentials => Server is not null && (!IsUnencrypted || IsUnencryptedAccepted);
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(SignInCommand))]
@@ -76,6 +91,11 @@ public sealed partial class SignInViewModel(
                 IsPasswordSignInAvailable = false;
             }
         }
+        catch (HttpRequestException ex) when (ex.HttpRequestError == HttpRequestError.InvalidResponse)
+        {
+            logger.LogWarning(ex, "Password sign-in to server {ServerEntryId} got an answer it cannot use", Server!.Id);
+            Status = $"{Server.Name} answered in a way Granary does not understand. Check the server address.";
+        }
         catch (HttpRequestException ex)
         {
             logger.LogWarning(ex, "Password sign-in to server {ServerEntryId} could not reach the server", Server!.Id);
@@ -90,7 +110,14 @@ public sealed partial class SignInViewModel(
     [RelayCommand]
     private void UseAnotherServer() => navigation.NavigateTo(AppRoute.Servers);
 
-    private bool CanSignIn() => Server is not null && !string.IsNullOrWhiteSpace(Username) && Password.Length > 0;
+    [RelayCommand]
+    private void AcceptUnencrypted()
+    {
+        logger.LogInformation("The user accepted unencrypted sign-in to server {ServerEntryId}", Server?.Id);
+        IsUnencryptedAccepted = true;
+    }
+
+    private bool CanSignIn() => CanUseCredentials && !string.IsNullOrWhiteSpace(Username) && Password.Length > 0;
 
     internal static string Describe(SiloApiException error) => error switch
     {

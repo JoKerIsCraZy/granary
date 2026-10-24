@@ -51,7 +51,7 @@ the display refresh rate itself (Phase 3).
   on write, unknown members ignored on read. Errors are RFC 9457 Problem Details (`ApiProblem`,
   `SiloApiException`); code branches on the problem code, never on `detail`.
 - Secrets live in one DPAPI-protected file per Windows user (`DpapiSecretStore`) in local app data. A file
-  that can no longer be decrypted is set aside as `.unreadable`; the user signs in again.
+  that can no longer be decrypted is set aside as `.unreadable-<time>`; the user signs in again.
 - Logs go to `%LOCALAPPDATA%\Granary\logs`. Every line passes `LogRedactor`; mpv log lines that mention an
   `Authorization` header are dropped whole. Tokens never reach a log.
 - Media requests carry their headers through mpv's `http-header-fields`. mpv keeps the headers of an
@@ -79,8 +79,16 @@ SiloHttp ─▶ ClientIdentityHandler ─▶ AuthenticationHandler ─▶ Socket
   (with `Retry-After`) to the caller instead of the `401`, and clears the profile on
   `profile_verification_required`.
 - `TokenRefresher` makes the refresh single-flight per server: a caller whose token was already replaced
-  gets the new one without a network call. The refresh runs on its own client (identity handler only) and
-  is not cancelled by the caller, so new tokens are always stored.
+  gets the new one without a network call, and a failed refresh answers everyone waiting until its
+  `Retry-After` passes. The refresh runs on its own client (identity handler only); a caller can stop
+  waiting, but the refresh itself completes, so new tokens are always stored.
+- Every login has a local `SessionId`. Refresh results, sign-outs and profile resets caused by a response
+  apply only to the login the request was sent with, so a late answer never touches a newer login to the
+  same server. A replay keeps the original profile headers and swaps only the bearer token.
+- Tokens, profile ids and profile tokens must be visible ASCII before they are stored, since they go back
+  out as headers. Records that carry secrets print without them (`ToString`), and `LogRedactor` also masks
+  record printouts and bare JWTs.
+- Plain `http://` servers need the user's consent on the sign-in page before any credentials are sent.
 - `SessionManager` derives the state (`NoServer`, `SignedOut`, `PasswordChangeRequired`,
   `ProfileRequired`, `Ready`) from the registry's active server and its credentials, and follows both
   through their `Changed` events. A sign-out caused by the handler therefore reaches the UI on the same
