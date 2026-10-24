@@ -77,17 +77,6 @@
             <Setter Property="FontSize" Value="13" />
         </Style>
 
-        <!-- "Title ▾", "Ascending ▾": the dark pill of SiloSecondaryButtonStyle on a drop-down button. -->
-        <Style x:Key="LibraryPillDropDownStyle" TargetType="DropDownButton" BasedOn="{StaticResource DefaultDropDownButtonStyle}">
-            <Setter Property="CornerRadius" Value="{StaticResource SiloPillCornerRadius}" />
-            <Setter Property="MinHeight" Value="38" />
-            <Setter Property="Padding" Value="16,6,12,6" />
-            <Setter Property="FontFamily" Value="{StaticResource SiloFontSemiBold}" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="FontSize" Value="13" />
-            <Setter Property="Background" Value="#CC1C1C20" />
-            <Setter Property="BorderBrush" Value="{StaticResource SiloBorderBrush}" />
-        </Style>
     </Page.Resources>
 
     <Grid>
@@ -194,14 +183,22 @@
                                           Visibility="{x:Bind ViewModel.Browse.IsLetterBarVisible, Mode=OneWay}" />
                 <ScrollViewer x:Name="LibraryScroller">
                     <StackPanel Padding="48,24,24,40" Spacing="24">
+                        <!--
+                            "Title ▾", "Ascending ▾" get the dark pill look directly: WinUI's DefaultDropDownButtonStyle
+                            cannot be a BasedOn at runtime, and a style without it would drop the drop-down template.
+                        -->
                         <StackPanel Orientation="Horizontal" Spacing="10">
-                            <DropDownButton Style="{StaticResource LibraryPillDropDownStyle}" Content="{x:Bind ViewModel.Browse.SortLabel, Mode=OneWay}"
+                            <DropDownButton CornerRadius="{StaticResource SiloPillCornerRadius}" MinHeight="38" Padding="16,6,12,6"
+                                            FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="13"
+                                            Background="#CC1C1C20" BorderBrush="{StaticResource SiloBorderBrush}" Content="{x:Bind ViewModel.Browse.SortLabel, Mode=OneWay}"
                                             AutomationProperties.Name="{x:Bind SortName(ViewModel.Browse.SortLabel), Mode=OneWay}">
                                 <DropDownButton.Flyout>
                                     <MenuFlyout x:Name="SortMenu" Placement="BottomEdgeAlignedLeft" Opening="OnSortMenuOpening" />
                                 </DropDownButton.Flyout>
                             </DropDownButton>
-                            <DropDownButton Style="{StaticResource LibraryPillDropDownStyle}" Content="{x:Bind ViewModel.Browse.OrderLabel, Mode=OneWay}"
+                            <DropDownButton CornerRadius="{StaticResource SiloPillCornerRadius}" MinHeight="38" Padding="16,6,12,6"
+                                            FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="13"
+                                            Background="#CC1C1C20" BorderBrush="{StaticResource SiloBorderBrush}" Content="{x:Bind ViewModel.Browse.OrderLabel, Mode=OneWay}"
                                             AutomationProperties.Name="{x:Bind OrderName(ViewModel.Browse.OrderLabel), Mode=OneWay}">
                                 <DropDownButton.Flyout>
                                     <MenuFlyout Placement="BottomEdgeAlignedLeft">
