@@ -5,10 +5,20 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <StackPanel Padding="36,24" Spacing="16" MaxWidth="560" HorizontalAlignment="Left">
-        <TextBlock Text="Add a Silo server" Style="{StaticResource TitleTextBlockStyle}" />
-        <TextBox Header="Server address" PlaceholderText="silo.example.org or 192.168.1.10:8090"
+        <TextBlock Text="Add a Silo server" Style="{StaticResource TitleTextBlockStyle}"
+                   AutomationProperties.HeadingLevel="Level1" />
+        <TextBox x:Name="AddressBox" Header="Server address" PlaceholderText="silo.example.org or 192.168.1.10:8090"
+                 InputScope="Url" IsSpellCheckEnabled="False" KeyDown="OnAddressKeyDown"
                  Text="{x:Bind ViewModel.Address, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-        <Button Content="Connect" Style="{StaticResource AccentButtonStyle}" Command="{x:Bind ViewModel.ConnectCommand}" />
-        <TextBlock Text="{x:Bind ViewModel.Status, Mode=OneWay}" TextWrapping="Wrap" />
+        <StackPanel Orientation="Horizontal" Spacing="12">
+            <Button Content="Connect" Style="{StaticResource AccentButtonStyle}" Command="{x:Bind ViewModel.ConnectCommand}" />
+            <Button Content="Cancel" Command="{x:Bind ViewModel.ConnectCancelCommand}"
+                    Visibility="{x:Bind ViewModel.ConnectCommand.IsRunning, Mode=OneWay}" />
+            <ProgressRing IsActive="{x:Bind ViewModel.ConnectCommand.IsRunning, Mode=OneWay}"
+                          Visibility="{x:Bind ViewModel.ConnectCommand.IsRunning, Mode=OneWay}" Width="20" Height="20"
+                          AutomationProperties.Name="Connecting" />
+        </StackPanel>
+        <TextBlock Text="{x:Bind ViewModel.Status, Mode=OneWay}" TextWrapping="Wrap"
+                   AutomationProperties.LiveSetting="Polite" />
     </StackPanel>
 </Page>

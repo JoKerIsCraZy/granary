@@ -2,9 +2,113 @@
 <Page
     x:Class="Granary.App.Views.ServersPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="using:Granary.Core.ViewModels">
 
-    <StackPanel Padding="36,24" Spacing="12">
-        <TextBlock Text="Servers" Style="{StaticResource TitleTextBlockStyle}" />
-    </StackPanel>
+    <ScrollViewer>
+        <Grid Padding="36,24">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" MaxWidth="880" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Spacing="16">
+                <Grid ColumnSpacing="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Servers" Style="{StaticResource TitleTextBlockStyle}"
+                               AutomationProperties.HeadingLevel="Level1" />
+                    <Button Grid.Column="1" Style="{StaticResource AccentButtonStyle}"
+                            Command="{x:Bind ViewModel.AddServerCommand}" AutomationProperties.Name="Add server">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon Glyph="&#xE710;" FontSize="14" />
+                            <TextBlock Text="Add server" />
+                        </StackPanel>
+                    </Button>
+                </Grid>
+
+                <TextBlock Visibility="{x:Bind ViewModel.HasNoServers, Mode=OneWay}" TextWrapping="Wrap"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                           Text="No servers yet. Add a Silo server to get started." />
+
+                <ItemsRepeater ItemsSource="{x:Bind ViewModel.Servers, Mode=OneWay}">
+                    <ItemsRepeater.Layout>
+                        <StackLayout Spacing="4" />
+                    </ItemsRepeater.Layout>
+                    <ItemsRepeater.ItemTemplate>
+                        <DataTemplate x:DataType="vm:ServerItemViewModel">
+                            <Grid Padding="16,12" ColumnSpacing="16" MinHeight="68"
+                                  Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                  BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
+                                  CornerRadius="{StaticResource OverlayCornerRadius}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <FontIcon Glyph="&#xE968;" FontSize="20" VerticalAlignment="Center"
+                                          AutomationProperties.AccessibilityView="Raw" />
+
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                    <TextBlock Text="{x:Bind Name}" Style="{StaticResource BodyStrongTextBlockStyle}"
+                                               TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Text="{x:Bind Url}" Style="{StaticResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                               TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Text="{x:Bind AccountText}" Visibility="{x:Bind HasAccount}"
+                                               Style="{StaticResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                </StackPanel>
+
+                                <Border Grid.Column="2" Visibility="{x:Bind IsActive}" VerticalAlignment="Center"
+                                        Padding="8,2" CornerRadius="10"
+                                        Background="{ThemeResource AccentFillColorDefaultBrush}">
+                                    <TextBlock Text="Active" Style="{StaticResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" />
+                                </Border>
+
+                                <Button Grid.Column="3" Content="Switch" VerticalAlignment="Center"
+                                        Visibility="{x:Bind CanSwitch}" Tag="{x:Bind}" Click="OnSwitchClick"
+                                        AutomationProperties.Name="{x:Bind SwitchLabel}" />
+
+                                <Button Grid.Column="4" VerticalAlignment="Center"
+                                        ToolTipService.ToolTip="More options"
+                                        AutomationProperties.Name="{x:Bind MoreOptionsLabel}">
+                                    <FontIcon Glyph="&#xE712;" FontSize="16" />
+                                    <Button.Flyout>
+                                        <MenuFlyout Placement="BottomEdgeAlignedRight">
+                                            <MenuFlyoutItem Text="Sign out" Tag="{x:Bind}" Click="OnSignOutClick" />
+                                            <MenuFlyoutSeparator />
+                                            <MenuFlyoutItem Text="Remove…" Tag="{x:Bind}" Click="OnRemoveClick">
+                                                <MenuFlyoutItem.Icon>
+                                                    <SymbolIcon Symbol="Delete" />
+                                                </MenuFlyoutItem.Icon>
+                                            </MenuFlyoutItem>
+                                        </MenuFlyout>
+                                    </Button.Flyout>
+                                </Button>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsRepeater.ItemTemplate>
+                </ItemsRepeater>
+
+                <Grid ColumnSpacing="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <ProgressRing IsActive="{x:Bind ViewModel.IsBusy, Mode=OneWay}"
+                                  Visibility="{x:Bind ViewModel.IsBusy, Mode=OneWay}" Width="20" Height="20"
+                                  AutomationProperties.Name="Working" />
+                    <TextBlock Grid.Column="1" Text="{x:Bind ViewModel.Status, Mode=OneWay}" TextWrapping="Wrap"
+                               VerticalAlignment="Center" AutomationProperties.LiveSetting="Polite" />
+                </Grid>
+            </StackPanel>
+        </Grid>
+    </ScrollViewer>
 </Page>
