@@ -55,9 +55,14 @@ public sealed partial class MainWindow : Window
 
     private void OnNavigated(object? sender, AppRoute route)
     {
+        // A disabled arrow on pages without history is only noise.
         Navigation.IsBackEnabled = _navigation.CanGoBack;
-        // Detail pages get the full width, as on the web: the sidebar shrinks to its icons.
-        Navigation.IsPaneOpen = route is not (AppRoute.Item or AppRoute.Player);
+        Navigation.IsBackButtonVisible = _navigation.CanGoBack
+            ? NavigationViewBackButtonVisible.Visible
+            : NavigationViewBackButtonVisible.Collapsed;
+        // Detail pages get the full width, as on the web: the sidebar shrinks to its icons. While the pane is
+        // hidden (sign-in pages) it must stay closed: an open hidden pane still takes its width, empty.
+        Navigation.IsPaneOpen = Shell.IsSignedIn && route is not (AppRoute.Item or AppRoute.Player);
         SelectItem(route, _navigation.CurrentParameter);
     }
 

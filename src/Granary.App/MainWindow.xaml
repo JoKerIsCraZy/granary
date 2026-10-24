@@ -28,7 +28,7 @@
             OpenPaneLength="260"
             IsPaneToggleButtonVisible="False"
             IsSettingsVisible="False"
-            IsBackButtonVisible="Auto"
+            IsBackButtonVisible="Collapsed"
             IsTitleBarAutoPaddingEnabled="False"
             IsPaneVisible="{x:Bind Shell.IsSignedIn, Mode=OneWay}"
             ItemInvoked="OnItemInvoked"
