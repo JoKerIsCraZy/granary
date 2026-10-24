@@ -22,7 +22,7 @@ public sealed class DpapiSecretStore(string filePath, ILogger<DpapiSecretStore>?
     private readonly SemaphoreSlim _gate = new(1, 1);
 
     public static string DefaultPath =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Granary", "secrets.bin");
+        Path.Combine(AppPaths.DataDirectory, "secrets.bin");
 
     public async Task<string?> GetAsync(string key, CancellationToken cancellationToken = default)
     {

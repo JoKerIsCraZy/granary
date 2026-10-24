@@ -34,7 +34,7 @@ public sealed class JsonServerRegistry : IServerRegistry
     }
 
     public static string DefaultPath =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Granary", "servers.json");
+        Path.Combine(AppPaths.DataDirectory, "servers.json");
 
     public IReadOnlyList<ServerEntry> Servers => _state.Servers;
 

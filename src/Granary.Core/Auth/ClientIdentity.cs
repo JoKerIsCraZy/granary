@@ -37,7 +37,7 @@ public sealed partial record ClientIdentity(
     }
 
     public static string DefaultDeviceIdFile =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Granary", "device-id");
+        Path.Combine(AppPaths.DataDirectory, "device-id");
 
     private static string ReadOrCreateDeviceId(string path)
     {

@@ -1,6 +1,7 @@
 using System.Globalization;
 using Granary.Core.Diagnostics;
 using Microsoft.Extensions.Logging;
+using Granary.Core;
 
 namespace Granary.App.Logging;
 
@@ -15,7 +16,7 @@ internal sealed class FileLoggerProvider(string directory) : ILoggerProvider
     private DateOnly _day;
 
     public static string DefaultDirectory =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Granary", "logs");
+        Path.Combine(AppPaths.DataDirectory, "logs");
 
     public ILogger CreateLogger(string categoryName) => new FileLogger(this, categoryName);
 

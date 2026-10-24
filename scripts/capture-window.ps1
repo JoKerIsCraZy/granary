@@ -6,9 +6,12 @@
     desktop is left alone.
 .EXAMPLE
     ./scripts/capture-window.ps1 -ProcessName Granary -Path shot.png
+.EXAMPLE
+    ./scripts/capture-window.ps1 -ProcessId 1234 -Path shot.png
 #>
 param(
-    [Parameter(Mandatory)] [string]$ProcessName,
+    [string]$ProcessName,
+    [int]$ProcessId,
     [Parameter(Mandatory)] [string]$Path
 )
 
@@ -26,8 +29,9 @@ public static class GranaryCapture {
 }
 '@
 [GranaryCapture]::SetProcessDPIAware() | Out-Null
-$process = Get-Process -Name $ProcessName | Where-Object { $_.MainWindowHandle -ne 0 } | Select-Object -First 1
-if (-not $process) { throw "No window found for process '$ProcessName'." }
+$candidates = if ($ProcessId) { Get-Process -Id $ProcessId } else { Get-Process -Name $ProcessName }
+$process = $candidates | Where-Object { $_.MainWindowHandle -ne 0 } | Select-Object -First 1
+if (-not $process) { throw "No window found for process '$ProcessName$ProcessId'." }
 $rect = New-Object GranaryCapture+RECT
 [GranaryCapture]::GetWindowRect($process.MainWindowHandle, [ref]$rect) | Out-Null
 $width = $rect.Right - $rect.Left
@@ -37,7 +41,7 @@ $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
 $hdc = $graphics.GetHdc()
 try {
     if (-not [GranaryCapture]::PrintWindow($process.MainWindowHandle, $hdc, [GranaryCapture]::PW_RENDERFULLCONTENT)) {
-        throw "PrintWindow failed for '$ProcessName'."
+        throw "PrintWindow failed for '$ProcessName$ProcessId'."
     }
 }
 finally {
