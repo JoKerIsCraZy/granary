@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- WinUI 3 shell. Unpackaged and self-contained Windows App SDK, so it runs without an installer. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.22621.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.19041.0</TargetPlatformMinVersion>
+    <RootNamespace>Granary.App</RootNamespace>
+    <AssemblyName>Granary</AssemblyName>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <UseWinUI>true</UseWinUI>
+    <WindowsPackageType>None</WindowsPackageType>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Granary.Core\Granary.Core.csproj" />
+    <ProjectReference Include="..\Granary.Player\Granary.Player.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" />
+  </ItemGroup>
+
+  <!-- libmpv comes from native/ (scripts/fetch-native.ps1), it is not committed. -->
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)..\..\native\libmpv\libmpv-2.dll" Link="libmpv-2.dll" CopyToOutputDirectory="PreserveNewest" Condition="Exists('$(MSBuildThisFileDirectory)..\..\native\libmpv\libmpv-2.dll')" />
+  </ItemGroup>
+
+  <Target Name="WarnMissingLibmpv" BeforeTargets="Build" Condition="!Exists('$(MSBuildThisFileDirectory)..\..\native\libmpv\libmpv-2.dll')">
+    <Warning Text="native/libmpv/libmpv-2.dll is missing. Run scripts/fetch-native.ps1, otherwise playback fails at runtime." />
+  </Target>
+
+</Project>
