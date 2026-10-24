@@ -4,37 +4,47 @@ Granary is licensed under `AGPL-3.0-or-later`. This file lists the third-party c
 or distributes, their licenses, and where their source code is available. It is updated whenever a
 dependency changes.
 
-Status: Phase 1 spike. The libmpv build for releases is chosen in Phase 2; this entry then gets the
-exact release artifact and its checksum.
-
 ## libmpv (bundled native library)
 
 | | |
 |---|---|
 | Component | libmpv (`libmpv-2.dll`), part of mpv |
-| Version used | `v0.41.0-dev-ga39482e7a` (mpv commit `a39482e7a`), FFmpeg `git-2026-10-24-1d83e71` |
-| Origin | Official mpv CI build, release `git-release` of `mpv-player/mpv`, asset `libmpv-v0.41.0-dev-ga39482e7a-40099161509-x86_64-w64-mingw32-gpl.zip` (SHA-256 `7876f7af31738f570e41ee1406ec39ddc8ea1ca061f34158340eac9acb5449af`) |
-| Build | `ci/build-mingw64-full.sh` in the BtbN `win64-gpl` FFmpeg build container; `-Dgpl=true -Dlibmpv=true`, statically linked dependencies |
-| License | mpv: GPL-2.0-or-later (`-Dgpl=true`). FFmpeg in the BtbN GPL variant is built with `--enable-gpl --enable-version3`, so it is GPL-3.0-or-later. The combined library is distributed under **GPL-3.0-or-later**. |
-| Statically included | FFmpeg with the libraries of the BtbN `win64-gpl` recipe, plus the mpv dependencies enabled in the build configuration (`mpv-configuration`): LuaJIT, MuJS, lcms2, libbluray, libcurl, shaderc, SPIRV-Cross, Vulkan, zimg, Rubber Band, libdvdnav, VapourSynth, AMF, libsixel, libass, libplacebo. The complete per-library license list is generated from the BtbN recipe in Phase 2. |
-| Source | mpv: <https://github.com/mpv-player/mpv> (commit `a39482e7a`). FFmpeg: <https://git.ffmpeg.org/ffmpeg.git> (commit `1d83e71`). Build recipe and dependency versions: <https://github.com/BtbN/FFmpeg-Builds> |
+| Version | `v0.41.0-dev-ga39482e7a` (mpv commit `a39482e7a`), FFmpeg `git-2026-10-24-1d83e71` |
+| Variant | **LGPL** (`-Dgpl=false`) |
+| Origin | Official mpv CI build, release `git-release` of `mpv-player/mpv`, asset `libmpv-v0.41.0-dev-ga39482e7a-40099161509-x86_64-w64-mingw32-lgpl.zip`, SHA-256 `9a084eab0b0b04e82f5f4b3cdd314fcc91eddae4ca1756d3ce24aa3718e1fb72` (pinned in `native.lock.json`) |
+| Build | `ci/build-mingw64-full.sh` in the BtbN `win64-lgpl` FFmpeg build container; `-Dlibmpv=true -Dgpl=false`, dependencies linked statically |
+| License | mpv: LGPL-2.1-or-later (`-Dgpl=false`); FFmpeg and its libraries in the BtbN LGPL variant are LGPL or more permissive. The library ships with its `LICENSE.LGPL`. |
+| Enabled mpv dependencies | From `mpv-configuration`: LuaJIT, MuJS, lcms2, libbluray, libcurl, shaderc, SPIRV-Cross, Vulkan, zimg, VapourSynth, AMF, libsixel, plus libass and libplacebo. The complete per-library list follows the BtbN `win64-lgpl` recipe and is generated before the first release. |
+| Source | mpv: <https://github.com/mpv-player/mpv> (commit `a39482e7a`). FFmpeg: <https://git.ffmpeg.org/ffmpeg.git> (commit `1d83e71`). Build recipe: <https://github.com/BtbN/FFmpeg-Builds> |
 
-Compatibility: GPL-3.0 section 13 and AGPL-3.0 section 13 explicitly allow combining GPLv3 and
-AGPLv3 code, so the GPL-3.0-or-later library can be distributed with the AGPL-3.0-or-later app.
-Distributing builds requires offering the corresponding source of the bundled library, which the
-links above provide; a release must pin and mirror the exact sources it ships.
+Granary loads the library dynamically (`libmpv-2.dll` next to the executable), so users can replace it
+as the LGPL requires. Distributing builds requires offering the corresponding source; a release must
+pin and mirror the exact archive and sources it ships, because the upstream asset is replaced on every
+mpv master update.
 
-An LGPL variant of the same build exists (`…-lgpl.zip`, `-Dgpl=false`). It is not needed for
-licensing reasons because Granary is AGPL anyway; Phase 2 compares size and features.
+The Phase 1 spike also ran the GPL variant of the same build (GPL-3.0-or-later, compatible with
+AGPL-3.0-or-later via GPLv3/AGPLv3 section 13). Granary ships the LGPL variant: it is 30 MB smaller
+and passed the same tests.
 
 ## .NET packages
 
-| Package | Version | License | Source |
+Licenses as declared in each package's `.nuspec`:
+
+| Package | Version | License | Used by |
 |---|---|---|---|
-| Microsoft.WindowsAppSDK | 2.5.1 | MIT | <https://github.com/microsoft/WindowsAppSDK> |
-| Vortice.Direct3D11, Vortice.DXGI (spike only) | 3.8.3 | MIT | <https://github.com/amerkoleci/Vortice.Windows> |
+| Microsoft.WindowsAppSDK | 2.5.1 | Microsoft Software License Terms (`license.txt` in the package) | App; its runtime is redistributed because the app is self-contained |
+| CommunityToolkit.Mvvm | 8.4.2 | MIT | Core |
+| Microsoft.Extensions.DependencyInjection(.Abstractions), .Http, .Logging(.Abstractions) | 10.0.13 | MIT | Core, Player, App |
+| System.Security.Cryptography.ProtectedData | 10.0.13 | MIT | Core |
+| xunit.v3 | 4.0.2 | Apache-2.0 | Tests only |
+| Microsoft.Testing.Extensions.CodeCoverage | 18.12.0 | Microsoft .NET Library License (`License.txt`) | Tests only, not distributed |
+| Vortice.Direct3D11, Vortice.DXGI | 3.8.3 | MIT | Tests and spike only, not distributed |
+
+Open point: the Windows App SDK runtime is proprietary and not a system library of Windows. Before
+the first release, decide how the AGPL-3.0-or-later licensing handles linking with it (for example an
+additional permission for the Windows App SDK, similar to the App Store permission in silo-apple).
 
 ## Silo
 
-Granary talks to Silo Server over its native API. It contains no Silo code. "Silo" is a trademark
-of Silo Media L.L.C.; Granary is an independent client and not an official Silo product.
+Granary talks to Silo Server over its native API and contains no Silo code. "Silo" is a trademark of
+Silo Media L.L.C.; Granary is an independent client and not an official Silo product.
