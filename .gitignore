@@ -24,6 +24,8 @@ BundleArtifacts/
 *.suo
 *.userprefs
 *.DotSettings.user
+# Claude Code agent worktrees
+.claude/worktrees/
 
 # Test results and coverage
 TestResults/

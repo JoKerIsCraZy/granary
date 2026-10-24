@@ -50,13 +50,43 @@ the display refresh rate itself (Phase 3).
 - JSON uses System.Text.Json source generation (`SiloJsonContext`): snake_case, optional members omitted
   on write, unknown members ignored on read. Errors are RFC 9457 Problem Details (`ApiProblem`,
   `SiloApiException`); code branches on the problem code, never on `detail`.
-- Secrets live in one DPAPI-protected file per Windows user (`DpapiSecretStore`) in local app data.
+- Secrets live in one DPAPI-protected file per Windows user (`DpapiSecretStore`) in local app data. A file
+  that can no longer be decrypted is set aside as `.unreadable`; the user signs in again.
 - Logs go to `%LOCALAPPDATA%\Granary\logs`. Every line passes `LogRedactor`; mpv log lines that mention an
   `Authorization` header are dropped whole. Tokens never reach a log.
 - Media requests carry their headers through mpv's `http-header-fields`. mpv keeps the headers of an
   open stream, and reports a mid-stream `401` only in its log (as end of file). The engine therefore
   watches the log and reports `PlaybackEndReason.AuthenticationFailed` instead of `EndOfFile`; the caller
   refreshes the token and reloads at the position.
+
+## Sessions and authentication
+
+API calls pass through two handlers on the `SiloHttp` client:
+
+```
+SiloHttp ─▶ ClientIdentityHandler ─▶ AuthenticationHandler ─▶ SocketsHttpHandler (no redirects)
+```
+
+- `SiloHttp` marks each request with its `SiloAuth` level and the server base URL it was built under.
+  Both handlers act only when the request URL lies beneath that base, so neither identity headers nor
+  credentials reach another origin.
+- `ClientIdentityHandler` adds the `X-Silo-Device-*` / `X-Silo-Client*` headers, also on the public
+  sign-in calls.
+- `AuthenticationHandler` looks up the saved server for that base URL and its `SessionCredentials`
+  (token pair, expiry, profile id and token, last known account), stored per server through
+  `ICredentialStore` in the secret store. It refreshes a minute before expiry, refreshes once on a `401`
+  and replays the request, signs out on `session_expired` or a rejected refresh, passes a refresh `503`
+  (with `Retry-After`) to the caller instead of the `401`, and clears the profile on
+  `profile_verification_required`.
+- `TokenRefresher` makes the refresh single-flight per server: a caller whose token was already replaced
+  gets the new one without a network call. The refresh runs on its own client (identity handler only) and
+  is not cancelled by the caller, so new tokens are always stored.
+- `SessionManager` derives the state (`NoServer`, `SignedOut`, `PasswordChangeRequired`,
+  `ProfileRequired`, `Ready`) from the registry's active server and its credentials, and follows both
+  through their `Changed` events. A sign-out caused by the handler therefore reaches the UI on the same
+  path as one the user started.
+- `ShellViewModel` navigates on state changes. Pages change the session; they do not navigate after
+  sign-in themselves.
 
 ## Native dependency
 
@@ -75,6 +105,7 @@ Licensing is in [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).
 | LGPL libmpv build | 30 MB smaller than the GPL build and passed the same spike tests; Granary needs no GPL-only mpv feature. |
 | Header-authenticated media (`header_authenticated_media_v1`) | No tokens in URLs or logs; same mode as the Apple client. |
 | DPAPI file for tokens | The Credential Locker roams with the Microsoft account and is capped per app. |
+| Session state derived from registry and credentials | One source of truth; handler-initiated sign-outs and user actions take the same path to the UI. |
 | xUnit v3 with built-in asserts, no mocking library | FluentAssertions 8 is commercially licensed; fakes are small hand-written classes. |
 | Central package management, warnings as errors | One place for versions; analyzers (including AOT/trim and platform checks) are enforced. |
 
