@@ -70,23 +70,34 @@ public sealed class SessionManager : ISessionManager, IDisposable
 
     public async Task<Account> SignInWithPasswordAsync(ServerEntry server, string username, string password, CancellationToken cancellationToken = default)
     {
-        EnsureSaved(server);
-        var tokens = await _auth.LoginAsync(server.BaseUri, username, password, cancellationToken).ConfigureAwait(false);
-        await SignInWithTokensAsync(server, tokens, cancellationToken).ConfigureAwait(false);
+        var saved = Saved(server);
+        var tokens = await _auth.LoginAsync(saved.BaseUri, username, password, cancellationToken).ConfigureAwait(false);
+        await SignInWithTokensAsync(saved, tokens, cancellationToken).ConfigureAwait(false);
         return tokens.User;
     }
 
     public async Task SignInWithTokensAsync(ServerEntry server, TokenPair tokens, CancellationToken cancellationToken = default)
     {
-        EnsureSaved(server);
-        // Stored before anything can be cancelled: the server has already created the session.
-        await _credentials.SetAsync(server.Id, SessionCredentials.Create(tokens, _time.GetUtcNow()), CancellationToken.None).ConfigureAwait(false);
-        _logger.LogInformation("Signed in to server {ServerEntryId}", server.Id);
-        await ActivateCoreAsync(server.Id, CancellationToken.None).ConfigureAwait(false);
+        var saved = Saved(server);
+        var credentials = SessionCredentials.Create(tokens, _time.GetUtcNow());
+        // Nothing below is cancelled: the server has already created the session.
+        if (await _credentials.GetAsync(saved.Id, CancellationToken.None).ConfigureAwait(false) is not null)
+        {
+            // Signing in again replaces a login; end the old one on the server instead of leaving it behind.
+            await LogoutAsync(saved, CancellationToken.None).ConfigureAwait(false);
+        }
+        await _credentials.SetAsync(saved.Id, credentials, CancellationToken.None).ConfigureAwait(false);
+        _logger.LogInformation("Signed in to server {ServerEntryId}", saved.Id);
+        await ActivateCoreAsync(saved.Id, CancellationToken.None).ConfigureAwait(false);
     }
 
     public async Task SelectProfileAsync(string profileId, string? profileToken, CancellationToken cancellationToken = default)
     {
+        // Both come from the server and go back to it as headers.
+        if (!SessionCredentials.IsHeaderSafe(profileId) || (profileToken is not null && !SessionCredentials.IsHeaderSafe(profileToken)))
+        {
+            throw new HttpRequestException(HttpRequestError.InvalidResponse, "The server sent a profile id or token that cannot be sent back.");
+        }
         var server = RequireActiveServer();
         var updated = await _credentials.UpdateAsync(server.Id,
             c => c with { ProfileId = profileId, ProfileToken = profileToken }, cancellationToken).ConfigureAwait(false)
@@ -116,17 +127,17 @@ public sealed class SessionManager : ISessionManager, IDisposable
         if (session.Account?.PasswordChangeRequired == true)
         {
             // The restriction is part of the old tokens; new ones drop it once the password was changed.
-            var result = await _refresher.RefreshAsync(server, session.AccessToken, cancellationToken).ConfigureAwait(false);
+            var result = await _refresher.RefreshAsync(server, session, cancellationToken).ConfigureAwait(false);
             switch (result)
             {
-                case { Status: RefreshStatus.SignedOut }:
+                case { Status: RefreshStatus.SignedOut or RefreshStatus.Superseded }:
                     return;
                 case { Status: RefreshStatus.Failed, Error: { } error }:
                     throw error;
             }
         }
         var me = await _account.GetMeAsync(server.BaseUri, cancellationToken).ConfigureAwait(false);
-        await _credentials.UpdateAsync(server.Id, c => c with { Account = me }, CancellationToken.None).ConfigureAwait(false);
+        await _credentials.UpdateAsync(server.Id, session.SessionId, c => c with { Account = me }, CancellationToken.None).ConfigureAwait(false);
         await SyncAsync(CancellationToken.None).ConfigureAwait(false);
     }
 
@@ -137,14 +148,20 @@ public sealed class SessionManager : ISessionManager, IDisposable
         {
             return;
         }
-        if (_registry.Find(id) is { } server && await _credentials.GetAsync(id, cancellationToken).ConfigureAwait(false) is not null)
+        try
         {
-            await LogoutAsync(server, cancellationToken).ConfigureAwait(false);
+            if (_registry.Find(id) is { } server && await _credentials.GetAsync(id, cancellationToken).ConfigureAwait(false) is not null)
+            {
+                await LogoutAsync(server, cancellationToken).ConfigureAwait(false);
+            }
         }
-        // Local credentials go even when the server could not be told.
-        await _credentials.RemoveAsync(id, CancellationToken.None).ConfigureAwait(false);
-        _logger.LogInformation("Signed out of server {ServerEntryId}", id);
-        await SyncAsync(CancellationToken.None).ConfigureAwait(false);
+        finally
+        {
+            // Local credentials go even when the server could not be told, or the caller gave up waiting.
+            await _credentials.RemoveAsync(id, CancellationToken.None).ConfigureAwait(false);
+            _logger.LogInformation("Signed out of server {ServerEntryId}", id);
+            await SyncAsync(CancellationToken.None).ConfigureAwait(false);
+        }
     }
 
     public void Dispose()
@@ -178,13 +195,9 @@ public sealed class SessionManager : ISessionManager, IDisposable
         await SyncAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    private void EnsureSaved(ServerEntry server)
-    {
-        if (_registry.Find(server.Id) is null)
-        {
-            throw new InvalidOperationException("Sign-in needs a saved server.");
-        }
-    }
+    // The registry's entry, not the caller's copy, decides where credentials go.
+    private ServerEntry Saved(ServerEntry server) =>
+        _registry.Find(server.Id) ?? throw new InvalidOperationException("Sign-in needs a saved server.");
 
     private ServerEntry RequireActiveServer() =>
         _snapshot.Server ?? throw new InvalidOperationException("No server is active.");

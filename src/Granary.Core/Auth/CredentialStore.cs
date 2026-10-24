@@ -43,7 +43,19 @@ public sealed class CredentialStore(ISecretStore secrets, ILogger<CredentialStor
         Changed?.Invoke(this, serverEntryId);
     }
 
-    public async Task<SessionCredentials?> UpdateAsync(string serverEntryId, Func<SessionCredentials, SessionCredentials> update, CancellationToken cancellationToken = default)
+    public Task<SessionCredentials?> UpdateAsync(string serverEntryId, Func<SessionCredentials, SessionCredentials> update, CancellationToken cancellationToken = default) =>
+        UpdateCoreAsync(serverEntryId, null, update, cancellationToken);
+
+    public Task<SessionCredentials?> UpdateAsync(string serverEntryId, string sessionId, Func<SessionCredentials, SessionCredentials> update, CancellationToken cancellationToken = default) =>
+        UpdateCoreAsync(serverEntryId, sessionId, update, cancellationToken);
+
+    public Task RemoveAsync(string serverEntryId, CancellationToken cancellationToken = default) =>
+        RemoveCoreAsync(serverEntryId, null, cancellationToken);
+
+    public Task RemoveAsync(string serverEntryId, string sessionId, CancellationToken cancellationToken = default) =>
+        RemoveCoreAsync(serverEntryId, sessionId, cancellationToken);
+
+    private async Task<SessionCredentials?> UpdateCoreAsync(string serverEntryId, string? sessionId, Func<SessionCredentials, SessionCredentials> update, CancellationToken cancellationToken)
     {
         SessionCredentials? current;
         SessionCredentials? next;
@@ -51,11 +63,11 @@ public sealed class CredentialStore(ISecretStore secrets, ILogger<CredentialStor
         try
         {
             current = await LoadAsync(serverEntryId, cancellationToken).ConfigureAwait(false);
-            if (current is null)
+            if (current is null || (sessionId is not null && current.SessionId != sessionId))
             {
                 return null;
             }
-            next = update(current);
+            next = update(current) with { SessionId = current.SessionId };
             if (next == current)
             {
                 return current;
@@ -70,11 +82,15 @@ public sealed class CredentialStore(ISecretStore secrets, ILogger<CredentialStor
         return next;
     }
 
-    public async Task RemoveAsync(string serverEntryId, CancellationToken cancellationToken = default)
+    private async Task RemoveCoreAsync(string serverEntryId, string? sessionId, CancellationToken cancellationToken)
     {
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
+            if (sessionId is not null && (await LoadAsync(serverEntryId, cancellationToken).ConfigureAwait(false))?.SessionId != sessionId)
+            {
+                return;
+            }
             await secrets.RemoveAsync(Key(serverEntryId), cancellationToken).ConfigureAwait(false);
             _cache[serverEntryId] = null;
         }
@@ -104,6 +120,10 @@ public sealed class CredentialStore(ISecretStore secrets, ILogger<CredentialStor
                 // Never log the record itself: it holds the tokens.
                 logger.LogWarning("Stored credentials for server {ServerEntryId} are unreadable; treating it as signed out", serverEntryId);
             }
+        }
+        if (credentials is not null && string.IsNullOrEmpty(credentials.SessionId))
+        {
+            credentials = credentials with { SessionId = SessionCredentials.NewSessionId() };
         }
         _cache[serverEntryId] = credentials;
         return credentials;

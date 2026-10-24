@@ -44,16 +44,46 @@ internal sealed class AuthPipeline
         Registry.AddOrUpdateAsync(new Uri(url), "Test server", "server-1");
 
     /// <summary>Stores the server's current tokens, as if signed in at <see cref="Clock"/>.</summary>
-    public Task SignInAsync(ServerEntry server, string? profileId = null, string? profileToken = null, TimeSpan? expiresIn = null)
+    public async Task<SessionCredentials> SignInAsync(ServerEntry server, string? profileId = null, string? profileToken = null, TimeSpan? expiresIn = null)
     {
         var lifetime = expiresIn ?? TimeSpan.FromHours(8);
         var account = new Account("1", "alex", "", "user", [], true, false, null);
-        return Credentials.SetAsync(server.Id, new SessionCredentials(Server.AccessToken, Server.RefreshToken, Clock.Now + lifetime,
-            (long)lifetime.TotalSeconds, profileId, profileToken, account));
+        var credentials = new SessionCredentials(SessionCredentials.NewSessionId(), Server.AccessToken, Server.RefreshToken, Clock.Now + lifetime,
+            (long)lifetime.TotalSeconds, profileId, profileToken, account);
+        await Credentials.SetAsync(server.Id, credentials);
+        return credentials;
+    }
+
+    /// <summary>A different login to the same server, as after signing out and in again (possibly as someone else).</summary>
+    public async Task<SessionCredentials> SignInAsSomeoneElseAsync(ServerEntry server)
+    {
+        var credentials = new SessionCredentials(SessionCredentials.NewSessionId(), "bob-access", "bob-refresh", Clock.Now.AddHours(8), 28800,
+            "9", null, new Account("2", "bob", "", "user", [], true, false, null));
+        await Credentials.SetAsync(server.Id, credentials);
+        return credentials;
     }
 
     public SessionManager CreateSessionManager() =>
         new(Registry, Credentials, Refresher, new AuthApi(Http), new AccountApi(Http), Clock, Logs.For<SessionManager>());
+
+    /// <summary>Waits up to two seconds for work that finishes on another thread.</summary>
+    public static async Task Eventually(Func<bool> condition)
+    {
+        for (int i = 0; i < 200 && !condition(); i++)
+        {
+            await Task.Delay(10, TestContext.Current.CancellationToken);
+        }
+        Assert.True(condition(), "The condition was not met within two seconds.");
+    }
+
+    public static async Task Eventually(Func<Task<bool>> condition)
+    {
+        for (int i = 0; i < 200 && !await condition(); i++)
+        {
+            await Task.Delay(10, TestContext.Current.CancellationToken);
+        }
+        Assert.True(await condition(), "The condition was not met within two seconds.");
+    }
 
     /// <summary>Every token the fake server has issued so far; none of them may appear in a log line.</summary>
     public IEnumerable<string> IssuedSecrets(int generations = 10) =>

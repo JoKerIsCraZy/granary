@@ -387,7 +387,8 @@ internal static class ApiFailureText
         ex is SiloApiException or HttpRequestException or JsonException
         || (ex is OperationCanceledException && !cancellationToken.IsCancellationRequested);
 
-    public static string ForTransport(Exception ex) => ex is JsonException ? Unexpected : Unreachable;
+    public static string ForTransport(Exception ex) =>
+        ex is JsonException or HttpRequestException { HttpRequestError: HttpRequestError.InvalidResponse } ? Unexpected : Unreachable;
 
     /// <summary>Status and problem code, or the kind of failure; never a message that could echo input.</summary>
     public static string Describe(Exception ex) => ex switch

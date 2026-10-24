@@ -11,7 +11,7 @@ public sealed class CredentialStoreTests
     private readonly LogSink _logs = new();
 
     private static SessionCredentials Sample(string profileId = "7") =>
-        new("access-secret", "refresh-secret", Now.AddHours(8), 28800, profileId, "pin-token",
+        new("session-1", "access-secret", "refresh-secret", Now.AddHours(8), 28800, profileId, "pin-token",
             new Account("1", "alex", "alex@example.org", "admin", ["library.manage"], true, false, null));
 
     private CredentialStore CreateStore() => new(_secrets, _logs.For<CredentialStore>());
@@ -121,7 +121,7 @@ public sealed class CredentialStoreTests
     [InlineData(0, 0, true)]
     public void ShouldRefresh_UsesAMarginOfAMinuteCappedAtHalfTheLifetime(long lifetime, int secondsLater, bool expected)
     {
-        var credentials = new SessionCredentials("a", "r", Now.AddSeconds(lifetime), lifetime, null, null, null);
+        var credentials = new SessionCredentials("s", "a", "r", Now.AddSeconds(lifetime), lifetime, null, null, null);
 
         Assert.Equal(expected, credentials.ShouldRefresh(Now.AddSeconds(secondsLater)));
     }

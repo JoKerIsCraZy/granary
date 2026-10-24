@@ -12,10 +12,18 @@ public interface ICredentialStore
 
     /// <summary>
     /// Atomically replaces the stored credentials with <paramref name="update"/> applied to them, so
-    /// concurrent writers (a token refresh, a profile switch) never undo each other. Returns null when the
-    /// server has no credentials.
+    /// concurrent writers never undo each other. Returns null when the server has no credentials.
     /// </summary>
     Task<SessionCredentials?> UpdateAsync(string serverEntryId, Func<SessionCredentials, SessionCredentials> update, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// As <see cref="UpdateAsync(string, Func{SessionCredentials, SessionCredentials}, CancellationToken)"/>, but only
+    /// while the stored credentials still belong to <paramref name="sessionId"/>; null otherwise.
+    /// </summary>
+    Task<SessionCredentials?> UpdateAsync(string serverEntryId, string sessionId, Func<SessionCredentials, SessionCredentials> update, CancellationToken cancellationToken = default);
+
     Task RemoveAsync(string serverEntryId, CancellationToken cancellationToken = default);
+
+    /// <summary>Removes the credentials only while they still belong to <paramref name="sessionId"/>.</summary>
+    Task RemoveAsync(string serverEntryId, string sessionId, CancellationToken cancellationToken = default);
 }

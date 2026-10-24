@@ -99,9 +99,10 @@ public sealed partial class ServersViewModel : ObservableObject, IDisposable
     /// <summary>A failure the user can understand; never the exception text, which is not meant for people.</summary>
     internal static string Describe(Exception error, string serverName) => error switch
     {
+        JsonException or HttpRequestException { HttpRequestError: HttpRequestError.InvalidResponse } =>
+            $"{serverName} sent an answer Granary does not understand. Check the server address.",
         HttpRequestException => $"Could not reach {serverName}. Check the connection and try again.",
         TaskCanceledException => $"{serverName} did not answer in time. Try again.",
-        JsonException => $"{serverName} sent an answer Granary does not understand. Check the server address.",
         SiloApiException { Status: 429 } => $"{serverName} is busy. Wait a moment and try again.",
         SiloApiException { Status: >= 500 } => $"{serverName} has a problem right now. Try again later.",
         SiloApiException api => $"{serverName} refused the request ({api.Code}).",

@@ -59,8 +59,16 @@ public sealed class SiloHttp(HttpClient http)
         using var response = await http.SendAsync(request, cancellationToken).ConfigureAwait(false);
         await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
         await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-        return await JsonSerializer.DeserializeAsync(stream, responseType, cancellationToken).ConfigureAwait(false)
-            ?? throw new SiloApiException((int)response.StatusCode, ApiProblem.FromStatus((int)response.StatusCode));
+        try
+        {
+            return await JsonSerializer.DeserializeAsync(stream, responseType, cancellationToken).ConfigureAwait(false)
+                ?? throw new SiloApiException((int)response.StatusCode, ApiProblem.FromStatus((int)response.StatusCode));
+        }
+        catch (JsonException ex)
+        {
+            // A captive portal or proxy page, not a Silo answer: to callers that is an unreachable server.
+            throw new HttpRequestException(HttpRequestError.InvalidResponse, "The server did not answer like a Silo server.", ex);
+        }
     }
 
     internal static async Task EnsureSuccessAsync(HttpResponseMessage response, CancellationToken cancellationToken)

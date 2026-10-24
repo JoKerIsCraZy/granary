@@ -9,15 +9,6 @@ public sealed class SessionManagerTests
 {
     private readonly AuthPipeline _pipeline = new();
 
-    private static async Task Eventually(Func<bool> condition)
-    {
-        for (int i = 0; i < 200 && !condition(); i++)
-        {
-            await Task.Delay(10, TestContext.Current.CancellationToken);
-        }
-        Assert.True(condition(), "The condition was not met within two seconds.");
-    }
-
     [Fact]
     public async Task Initialize_WithoutServers_IsNoServer()
     {
@@ -45,7 +36,7 @@ public sealed class SessionManagerTests
         Assert.Equal(server.Id, session.ActiveServer!.Id);
         Assert.Equal(server.Id, _pipeline.Registry.ActiveServerId);
         // Changed may come from the background sync that saw the new credentials first.
-        await Eventually(() => Volatile.Read(ref changes) > 0);
+        await AuthPipeline.Eventually(() => Volatile.Read(ref changes) > 0);
         var stored = await _pipeline.Credentials.GetAsync(server.Id, ct);
         Assert.Equal("access-1", stored!.AccessToken);
         Assert.Equal(_pipeline.Clock.Now.AddHours(8), stored.AccessTokenExpiresAt);
@@ -209,7 +200,7 @@ public sealed class SessionManagerTests
         await Assert.ThrowsAsync<SiloApiException>(() =>
             _pipeline.Http.GetAsync(server.BaseUri, "api/v2/home", SiloAuth.Profile, SiloJsonContext.Default.DictionaryStringString, ct));
 
-        await Eventually(() => session.State == SessionState.ProfileRequired);
+        await AuthPipeline.Eventually(() => session.State == SessionState.ProfileRequired);
     }
 
     [Fact]
@@ -265,7 +256,7 @@ public sealed class SessionManagerTests
         await session.SignOutAsync(home.Id, ct);
         await _pipeline.Registry.RemoveAsync(home.Id, ct);
 
-        await Eventually(() => session.ActiveServer?.Id == cabin.Id);
+        await AuthPipeline.Eventually(() => session.ActiveServer?.Id == cabin.Id);
         Assert.Equal(SessionState.ProfileRequired, session.State);
     }
 
