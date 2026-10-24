@@ -4,7 +4,46 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <StackPanel Padding="36,24" Spacing="12">
-        <TextBlock Text="Sign in with a code" Style="{StaticResource TitleTextBlockStyle}" />
-    </StackPanel>
+    <Grid Padding="24" ColumnSpacing="24" CornerRadius="8" BorderThickness="1"
+          Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+          BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="200" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- Scanners need dark modules on a light background, so the code sits on white in both themes. -->
+        <Grid Width="200" Height="200" VerticalAlignment="Top">
+            <Border CornerRadius="8" Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" />
+            <Border CornerRadius="8" Background="White"
+                    Visibility="{x:Bind ViewModel.HasCode, Mode=OneWay}"
+                    Opacity="{x:Bind QrOpacity(ViewModel.IsOpened), Mode=OneWay}">
+                <Image x:Name="QrImage" Stretch="Uniform"
+                       AutomationProperties.Name="QR code to sign in. Scan it with your phone's camera." />
+            </Border>
+        </Grid>
+
+        <StackPanel Grid.Column="1" Spacing="12" VerticalAlignment="Top">
+            <TextBlock Text="Sign in with your phone" Style="{StaticResource SubtitleTextBlockStyle}" />
+
+            <StackPanel Spacing="8" Visibility="{x:Bind ViewModel.HasCode, Mode=OneWay}">
+                <!-- One line, so the spaces come only from the Run texts. -->
+                <TextBlock TextWrapping="Wrap" Style="{StaticResource BodyTextBlockStyle}"><Run Text="Open " /><Run Text="{x:Bind ViewModel.VerificationText, Mode=OneWay}" FontWeight="SemiBold" /><Run Text=" on your phone or computer and enter the code" /></TextBlock>
+                <TextBlock Text="{x:Bind ViewModel.UserCode, Mode=OneWay}" IsTextSelectionEnabled="True"
+                           FontFamily="Cascadia Mono, Consolas" FontSize="40" FontWeight="SemiBold" CharacterSpacing="100"
+                           AutomationProperties.HelpText="Sign-in code" />
+                <TextBlock Text="{x:Bind ViewModel.ExpiryText, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <ProgressRing Width="16" Height="16" IsActive="{x:Bind ViewModel.IsWaiting, Mode=OneWay}" />
+                <TextBlock Text="{x:Bind ViewModel.StatusText, Mode=OneWay}" TextWrapping="Wrap" VerticalAlignment="Center"
+                           AutomationProperties.LiveSetting="Polite" />
+            </StackPanel>
+
+            <Button Content="Get a new code" Command="{x:Bind ViewModel.RetryCommand}"
+                    Visibility="{x:Bind ViewModel.CanRetry, Mode=OneWay}" />
+        </StackPanel>
+    </Grid>
 </UserControl>
