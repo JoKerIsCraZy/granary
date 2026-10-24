@@ -278,7 +278,11 @@ Temporary password: when `user.password_change_required` is true, the session ma
 `GET /api/v2/account/me`, `GET /api/v2/account/password/capability` (length limits for the new
 password), `POST /api/v2/account/password` (`{ current_password, new_password }` → `204`) and
 `POST /api/v2/auth/logout`; everything else is `403 password_change_required`. After the
-change, refresh the tokens to drop the restriction. (Android ignores this flag; the Windows client
+change, refresh the tokens to drop the restriction. Change-password errors
+(`silo-server/internal/apiv2/account.go`, `internal/api/handlers/auth_password.go`): `422` at
+`body.current_password` (wrong current password; not a `401`, so the auth handler never replays it),
+`422` at `body.new_password` (too short, too long, or the temporary password again), `403
+permission_denied`, `409 conflict` (password sign-in disabled), `429` and `503`. (Android ignores this flag; the Windows client
 should show a change-password screen.)
 
 If `GET /api/v2/auth/providers` reports `password_login: false`, the server is OAuth-only: offer
