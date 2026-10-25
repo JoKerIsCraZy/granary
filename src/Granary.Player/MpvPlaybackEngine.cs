@@ -137,7 +137,10 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
         }
         // The file before is still loaded until mpv replaces it: nothing of it may read as the new one's start.
         Update(s => s with { LoadId = loadId, IsLoaded = false, HasStarted = false, IsAtEnd = false }, force: true);
-        _logger.LogInformation("Loading {Target} with {HeaderCount} header(s), {Options}", Describe(source.Url), source.Headers.Count, perFileOptions);
+        // The values, not the option string: whatever is added to it later never reaches the log by accident.
+        _logger.LogInformation("Loading {Target} with {HeaderCount} header(s) at {Start} s, audio stream {Audio}, subtitle stream {Subtitle}",
+            Describe(source.Url), source.Headers.Count, source.Start?.TotalSeconds ?? 0, source.AudioStream?.ToString(CultureInfo.InvariantCulture) ?? "auto",
+            source.SubtitleStream?.ToString(CultureInfo.InvariantCulture) ?? "auto");
         _mpv.Command("loadfile", target, "replace", "-1", perFileOptions);
         return loadId;
     }
