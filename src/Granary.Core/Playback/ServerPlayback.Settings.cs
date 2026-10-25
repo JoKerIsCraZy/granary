@@ -44,6 +44,12 @@ public sealed partial class ServerPlayback
 
     public double Speed => _speed;
 
+    public PlaybackStreamInfo? StreamInfo => _plan is { } plan && _streamUrl is { } url && _context is { } context
+        ? new PlaybackStreamInfo(plan, url, PlayingVersion,
+            plan.RequestedMediaFileId is { Length: > 0 } requested ? context.Watch.Versions.FirstOrDefault(v => v.FileId == requested) : context.Version,
+            AudioTrack)
+        : null;
+
     public void SelectQuality(string preference)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(preference);

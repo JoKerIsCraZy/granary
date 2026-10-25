@@ -66,7 +66,7 @@ public sealed partial class PlayerPage
         ShowControls();
         // On the Playing Next screen too, as long as the episode plays on in its corner; after its end Space presses
         // the focused button.
-        if (e.Key == VirtualKey.Space && AcceptsShortcut() && !(ViewModel.IsNextUpScreenShown && ViewModel.Phase == PlayerPhase.Ended))
+        if (e.Key == VirtualKey.Space && AcceptsShortcut() && !(ShowsNextUpScreen && ViewModel.Phase == PlayerPhase.Ended))
         {
             e.Handled = true;
             if (!e.KeyStatus.WasKeyDown)
@@ -85,7 +85,7 @@ public sealed partial class PlayerPage
             return;
         }
         bool isRepeat = e.KeyStatus.WasKeyDown;
-        if (ViewModel.IsNextUpScreenShown)
+        if (ShowsNextUpScreen)
         {
             // The Playing Next screen's keys, as on the web: Esc closes, Enter plays the next episode.
             if (e.Key == VirtualKey.Escape && !isRepeat)
@@ -108,6 +108,9 @@ public sealed partial class PlayerPage
             case VirtualKey.F when !isRepeat:
                 ToggleFullScreen();
                 break;
+            case VirtualKey.P when !isRepeat:
+                SetMiniView(!IsMiniViewNow);
+                break;
             case VirtualKey.M when !isRepeat:
                 ViewModel.ToggleMuteCommand.Execute(null);
                 break;
@@ -120,6 +123,10 @@ public sealed partial class PlayerPage
                 if (IsFullScreenNow)
                 {
                     SetFullScreen(false);
+                }
+                else if (IsMiniViewNow)
+                {
+                    SetMiniView(false);
                 }
                 else
                 {

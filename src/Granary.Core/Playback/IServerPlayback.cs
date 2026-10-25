@@ -107,6 +107,9 @@ public interface IServerPlayback : IAsyncDisposable
     /// <summary>The chapters of the file that plays, in source seconds (11.3); empty without.</summary>
     IReadOnlyList<PlaybackChapter> Chapters { get; }
 
+    /// <summary>The stream that plays, for the playback info; null before the first plan.</summary>
+    PlaybackStreamInfo? StreamInfo { get; }
+
     /// <summary>The plan's quality menu, without the source; empty when there is nothing to choose (8.11).</summary>
     IReadOnlyList<AvailableQuality> Qualities { get; }
 

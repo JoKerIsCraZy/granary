@@ -15,6 +15,13 @@ public sealed record MediaSource(
     public static MediaSource Local(string path, TimeSpan? start = null) => new(new Uri(Path.GetFullPath(path)), [], start);
 }
 
+/// <summary>What the player measures of the picture it shows, for the playback info; 0 and -1 where it cannot say.</summary>
+/// <param name="HardwareDecoder">mpv's <c>hwdec-current</c>: <c>d3d11va</c>, or <c>no</c> while decoding in software.</param>
+public sealed record PlaybackStats(int VideoWidth, int VideoHeight, long DroppedFrames, long DecoderDroppedFrames, string? HardwareDecoder)
+{
+    public static PlaybackStats None { get; } = new(0, 0, -1, -1, null);
+}
+
 /// <summary>A consistent view of the player state at one moment.</summary>
 /// <param name="HasStarted">Playback began after the last load: the first frame is out (or the first audio for audio only).</param>
 /// <param name="IsBuffering">Paused by the player itself until enough data arrived.</param>
@@ -87,6 +94,15 @@ public interface IPlaybackEngine : IDisposable
 
     /// <summary>Plays at <paramref name="speed"/> times the normal rate, keeping the pitch; it holds across loads.</summary>
     void SetSpeed(double speed);
+
+    /// <summary>
+    /// Fills the picture's area, cutting off what does not fit, instead of showing the whole picture with bars (the
+    /// web player's Fill screen); it holds across loads.
+    /// </summary>
+    void SetFill(bool fill);
+
+    /// <summary>Reads what the player measures now; safe from any thread.</summary>
+    PlaybackStats ReadStats();
 
     /// <summary>
     /// Switches what plays to its audio stream <paramref name="stream"/>, counted from 1 in the file's order. False

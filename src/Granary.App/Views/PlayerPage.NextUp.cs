@@ -21,10 +21,13 @@ public sealed partial class PlayerPage
 
     private static readonly SolidColorBrush MiniPlayerEdge = new(Color.FromArgb(0x1A, 0xFF, 0xFF, 0xFF));
 
+    // The screen is not for the mini view: there the picture stays whole, and the countdown runs on behind it.
+    private bool ShowsNextUpScreen => ViewModel.IsNextUpScreenShown && !IsMiniView;
+
     private void InitializeNextUp() =>
         RegisterPropertyChangedCallback(IsFullScreenProperty, (_, _) =>
         {
-            if (ViewModel.IsNextUpScreenShown)
+            if (ShowsNextUpScreen)
             {
                 VideoFrame.Margin = CornerInset(IsFullScreen, 24);
             }
@@ -32,7 +35,7 @@ public sealed partial class PlayerPage
 
     private void ShowNextUpScreen()
     {
-        if (ViewModel.IsNextUpScreenShown)
+        if (ShowsNextUpScreen)
         {
             VideoFrame.Width = MiniPlayerWidth;
             VideoFrame.Height = MiniPlayerWidth * 9 / 16;
@@ -63,11 +66,11 @@ public sealed partial class PlayerPage
     }
 
     private void FadeMiniPlayer() =>
-        VideoFrame.Opacity = ViewModel.IsNextUpScreenShown && ViewModel.Phase == PlayerPhase.Ended ? 0 : 1;
+        VideoFrame.Opacity = ShowsNextUpScreen && ViewModel.Phase == PlayerPhase.Ended ? 0 : 1;
 
     private void SizeNextUpStill()
     {
-        if (!ViewModel.IsNextUpScreenShown || ActualWidth <= 0)
+        if (!ShowsNextUpScreen || ActualWidth <= 0)
         {
             return;
         }
@@ -93,8 +96,8 @@ public sealed partial class PlayerPage
     // A corner's distance, and below the title bar's drag area in a window.
     public Thickness CornerInset(bool isFullScreen, double inset) => new(inset, isFullScreen ? inset : TitleBarHeight + 8, inset, 0);
 
-    public Visibility ShowsMiniPlayer(bool isScreenShown, PlayerPhase phase) =>
-        isScreenShown && phase != PlayerPhase.Ended ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility ShowsMiniPlayer(bool isScreenShown, PlayerPhase phase, bool isMiniView) =>
+        isScreenShown && phase != PlayerPhase.Ended && !isMiniView ? Visibility.Visible : Visibility.Collapsed;
 
     public Visibility Not(bool value) => value ? Visibility.Collapsed : Visibility.Visible;
 }

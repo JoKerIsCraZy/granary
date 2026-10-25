@@ -94,6 +94,8 @@ internal sealed class FakeServerPlayback : IServerPlayback
 
     public IReadOnlyList<PlaybackChapter> Chapters { get; set; } = [];
 
+    public PlaybackStreamInfo? StreamInfo { get; set; }
+
     /// <summary>Plays a file with <paramref name="chapters"/>, as a newly taken plan does.</summary>
     public void RaiseChapters(IReadOnlyList<PlaybackChapter> chapters)
     {

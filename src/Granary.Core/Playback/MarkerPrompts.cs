@@ -49,6 +49,13 @@ public sealed record PlaybackMarker(string Kind, double StartSeconds, double End
     }
 }
 
+/// <summary>The stream that plays as the playback info shows it: the plan, where it comes from, and the files.</summary>
+/// <param name="Url">The stream's address on the server (or a node), not the player's loopback.</param>
+/// <param name="Requested">The file asked for; another than <paramref name="Playing"/> after an edition fallback.</param>
+/// <param name="AudioOrdinal">The audio track that plays, as an ordinal into the file's tracks.</param>
+public sealed record PlaybackStreamInfo(
+    Api.Playback.PlaybackPlan Plan, Uri Url, Api.Playback.WatchFileVersion? Playing, Api.Playback.WatchFileVersion? Requested, int? AudioOrdinal);
+
 /// <summary>A chapter of the playing file, in source seconds, with its picture when the server has one.</summary>
 public sealed record PlaybackChapter(string Title, double StartSeconds, double EndSeconds, Uri? ThumbnailUrl)
 {

@@ -115,7 +115,8 @@ unmodified to refer to Silo, as its trademark policy allows; it is not Granary's
   time left; in the middle skip back, the white play/pause disc and skip forward (glass discs showing the
   profile's intervals), for an episode with a previous or next one flanked by previous and next episode discs (both
   slots kept while one has an episode, so Play stays in the middle; a movie has none); on the right mute, the volume
-  slider, audio, chapters, subtitles, settings and full screen. Previous and next start that episode from where the
+  slider, audio, chapters, subtitles, settings, playback info, mini view, fill screen and full screen. A utility
+  button that is on (playback info, fill screen) turns white with the web's amber dot under it. Previous and next start that episode from where the
   profile left it, as the web player does for the viewer; previous stays within the season and steps over episodes
   without a readable file.
 - **Audio menu** (`AudioTrackOption`, wording in `TrackText` after the web's `AudioTrackMenu`): the button shows
@@ -145,6 +146,21 @@ unmodified to refer to Silo, as its trademark policy allows; it is not Granary's
   plays that file from where the viewer is. QUALITY when the plan offers rungs: Auto ("Auto · limited after buffering"
   under a learned limit), then the rungs with their bitrate muted at the right ("12 Mbps") and a white check on the
   one the plan delivers; a pick asks for a new plan. A pick of a file or quality closes the menu.
+- **Playback info** (the web's PlaybackInfoOverlay): 320 px, black at 85 %, radius 8, under Exit; "Playback Info" with a
+  close button, then PLAYER (mpv, the play method: Direct Play, Direct Streaming or Transcode, the stream's protocol and
+  type, and the file asked for when the server fell back to another), VIDEO INFO (the picture's area and the video in
+  pixels, hardware or software decoding, frames dropped by the output and by the decoder), PLAYBACK STREAM INFO (the
+  codecs the plan delivers: direct, copy or transcoded, as its transformations say) and CURRENT SOURCE FILE (container,
+  size in GiB, bitrates, codec and profile, range type, colour range, the playing audio track's codec, channels and
+  sample rate). Labels white 60 %, values white 90 % on the right; read again every second while it shows; it stays
+  while the controls fade, until closed.
+- **Fill screen** (the web's video fit): the picture fills the page and is cut where it does not fit (mpv `panscan`);
+  a new title shows its whole picture again.
+- **Mini view** (the web's Picture in Picture, P): the window becomes small (480 by 270), stays above the others
+  (CompactOverlay) and shows only the picture, with play/pause in the middle and the way back top left, fading as the
+  controls do; the pills, the playback info and the Playing Next screen wait for the full window, the countdown runs
+  on. Esc or P returns to the window as it was; full screen goes there from the mini view, and leaving the page
+  returns first.
 - **Subtitle look**: text subtitles follow the profile's `playback.subtitle_appearance` as the Android and Apple
   clients draw it (size at 1080 lines, font, colour and opacity, box, shadow or outline in the outline colour,
   bottom, lower third or top), mapped to mpv's `sub-*` options; styled ASS and image subtitles keep their own.
@@ -184,7 +200,7 @@ unmodified to refer to Silo, as its trademark policy allows; it is not Granary's
 - **Mouse**: a click on the picture plays or pauses (after 250 ms, so a double click does not), a double
   click toggles full screen. On touch a tap shows or hides the controls.
 - **Keyboard** (the web player's map, docs/api-contract.md 13.5): Space and K play/pause, F full screen,
-  Esc turns away an intro pill, else leaves full screen, else closes, M mute, Left/Right skip, Up/Down volume ±5. Space wins over
+  P the mini view, Esc turns away an intro pill, else leaves full screen or the mini view, else closes, M mute, Left/Right skip, Up/Down volume ±5. Space wins over
   a focused button; arrows go to a focused slider first. Nothing applies while a text field or an open menu
   has focus, or with Ctrl, Alt, Shift or Windows held. The keys are handled on the page, not as keyboard
   accelerators, so no accelerator tooltip appears; the buttons announce them through

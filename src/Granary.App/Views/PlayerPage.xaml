@@ -20,7 +20,7 @@
             <Border.OpacityTransition>
                 <ScalarTransition Duration="0:0:0.7" />
             </Border.OpacityTransition>
-            <controls:MpvVideoHost x:Name="VideoHost" />
+            <controls:MpvVideoHost x:Name="VideoHost" SizeChanged="OnVideoHostSizeChanged" />
         </Border>
 
         <!-- The picture: a click plays or pauses, a double click toggles full screen. -->
@@ -51,7 +51,7 @@
         </Grid>
 
         <!-- Top bar: Exit. In a window it starts below the title bar's drag area. -->
-        <Grid x:Name="TopChrome" VerticalAlignment="Top" Visibility="{x:Bind Not(ViewModel.IsNextUpScreenShown), Mode=OneWay}">
+        <Grid x:Name="TopChrome" VerticalAlignment="Top" Visibility="{x:Bind ShowsTopChrome(ViewModel.IsNextUpScreenShown, IsMiniView), Mode=OneWay}">
             <Grid.OpacityTransition>
                 <ScalarTransition Duration="0:0:0.3" />
             </Grid.OpacityTransition>
@@ -72,7 +72,8 @@
         </Grid>
 
         <!-- Bottom bar: the seek bar, then the title with the times, the transport, and volume and full screen. -->
-        <Grid x:Name="BottomChrome" VerticalAlignment="Bottom" Visibility="{x:Bind ShowsTransport(ViewModel.Phase, ViewModel.IsNextUpScreenShown), Mode=OneWay}">
+        <Grid x:Name="BottomChrome" VerticalAlignment="Bottom"
+              Visibility="{x:Bind ShowsTransport(ViewModel.Phase, ViewModel.IsNextUpScreenShown, IsMiniView), Mode=OneWay}">
             <Grid.OpacityTransition>
                 <ScalarTransition Duration="0:0:0.3" />
             </Grid.OpacityTransition>
@@ -462,6 +463,29 @@
                                 </Flyout>
                             </Button.Flyout>
                         </Button>
+                        <!-- Playback info, the mini view (the web's Picture in Picture) and Fill screen, as on the web. -->
+                        <Grid>
+                            <Button x:Name="PlaybackInfoButton" Style="{StaticResource SiloPlayerIconButtonStyle}" Command="{x:Bind ViewModel.TogglePlaybackInfoCommand}"
+                                    Foreground="{x:Bind UtilityForeground(ViewModel.IsPlaybackInfoShown), Mode=OneWay}"
+                                    AutomationProperties.Name="Playback info" AutomationProperties.ItemStatus="{x:Bind OnStatus(ViewModel.IsPlaybackInfoShown), Mode=OneWay}"
+                                    ToolTipService.ToolTip="Playback info">
+                                <FontIcon Glyph="&#xE946;" FontSize="18" />
+                            </Button>
+                            <Ellipse Style="{StaticResource SiloPlayerActiveDotStyle}" Visibility="{x:Bind ViewModel.IsPlaybackInfoShown, Mode=OneWay}" />
+                        </Grid>
+                        <Button x:Name="MiniViewButton" Style="{StaticResource SiloPlayerIconButtonStyle}" Click="OnMiniViewClick"
+                                AutomationProperties.Name="Mini view" AutomationProperties.AcceleratorKey="P" ToolTipService.ToolTip="Mini view (P)">
+                            <FontIcon Glyph="&#xE93A;" FontSize="18" />
+                        </Button>
+                        <Grid>
+                            <Button x:Name="FillButton" Style="{StaticResource SiloPlayerIconButtonStyle}" Command="{x:Bind ViewModel.ToggleFillCommand}"
+                                    Foreground="{x:Bind UtilityForeground(ViewModel.IsFillingScreen), Mode=OneWay}"
+                                    AutomationProperties.Name="Fill screen" AutomationProperties.ItemStatus="{x:Bind OnStatus(ViewModel.IsFillingScreen), Mode=OneWay}"
+                                    ToolTipService.ToolTip="Fill screen">
+                                <FontIcon Glyph="&#xE9A6;" FontSize="18" />
+                            </Button>
+                            <Ellipse Style="{StaticResource SiloPlayerActiveDotStyle}" Visibility="{x:Bind ViewModel.IsFillingScreen, Mode=OneWay}" />
+                        </Grid>
                         <Button x:Name="FullScreenButton" Style="{StaticResource SiloPlayerIconButtonStyle}" Click="OnFullScreenClick"
                                 AutomationProperties.Name="{x:Bind FullScreenName(IsFullScreen), Mode=OneWay}" AutomationProperties.AcceleratorKey="F"
                                 ToolTipService.ToolTip="{x:Bind FullScreenToolTip(IsFullScreen), Mode=OneWay}">
@@ -476,8 +500,81 @@
             The skip pill of Silo's web player: bottom right, above the controls while they show (PlaceSkipPrompt). An intro
             pill fills from the left with its 5 s; above an automatic skip's pill, "Intro skipped" confirms it.
         -->
+        <!--
+            The web player's Playback info: under Exit, 320 px wide, scrolling above the bottom bar; it stays while the
+            controls fade, until it is closed.
+        -->
+        <Border x:Name="PlaybackInfoPanel" Width="320" HorizontalAlignment="Left" VerticalAlignment="Top" CornerRadius="8" Background="#D9000000"
+                Margin="{x:Bind PlaybackInfoMargin(IsFullScreen), Mode=OneWay}"
+                Visibility="{x:Bind ShowsInWindow(ViewModel.IsPlaybackInfoShown, IsMiniView), Mode=OneWay}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <Grid Padding="16,12,10,4">
+                    <TextBlock Text="Playback Info" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium" FontSize="14" Foreground="#E6FFFFFF"
+                               VerticalAlignment="Center" AutomationProperties.HeadingLevel="Level1" />
+                    <Button Width="24" Height="24" HorizontalAlignment="Right" Style="{StaticResource SiloPlayerIconButtonStyle}" CornerRadius="4"
+                            Command="{x:Bind ViewModel.TogglePlaybackInfoCommand}" AutomationProperties.Name="Close playback info">
+                        <FontIcon Glyph="&#xE711;" FontSize="12" />
+                    </Button>
+                </Grid>
+                <ScrollViewer Grid.Row="1" Padding="16,4,16,12" HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled">
+                    <ItemsControl ItemsSource="{x:Bind ViewModel.PlaybackInfoSections, Mode=OneWay}" IsTabStop="False">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="player:PlaybackInfoSection">
+                                <StackPanel Margin="0,8,0,0">
+                                    <TextBlock Text="{x:Bind controls:PlayerMenus.Upper(Title)}" Margin="0,0,0,4" FontFamily="{StaticResource SiloFontSemiBold}"
+                                               FontWeight="SemiBold" FontSize="12" CharacterSpacing="75" Foreground="#80FFFFFF"
+                                               AutomationProperties.Name="{x:Bind Title}" AutomationProperties.HeadingLevel="Level2" />
+                                    <ItemsControl ItemsSource="{x:Bind Rows}" IsTabStop="False">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="player:PlaybackInfoRow">
+                                                <Grid Padding="0,2" ColumnSpacing="16">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="{x:Bind Label}" FontSize="14" Foreground="#99FFFFFF" />
+                                                    <TextBlock Grid.Column="1" Text="{x:Bind Value}" FontSize="14" Foreground="#E6FFFFFF" TextAlignment="Right"
+                                                               TextTrimming="CharacterEllipsis" Typography.NumeralAlignment="Tabular" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Grid>
+        </Border>
+
+        <!--
+            The mini view: the window floats above the others, small, with only the picture; play or pause in the middle
+            and the way back top left, under the title bar's drag area. They fade as the full controls do.
+        -->
+        <Grid x:Name="MiniChrome" Visibility="{x:Bind IsMiniView, Mode=OneWay}">
+            <Grid.OpacityTransition>
+                <ScalarTransition Duration="0:0:0.3" />
+            </Grid.OpacityTransition>
+            <Border Background="#4D000000" IsHitTestVisible="False" />
+            <Button x:Name="MiniPlayPauseButton" Style="{StaticResource SiloPlayerPlayButtonStyle}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Command="{x:Bind ViewModel.TogglePauseCommand}" AutomationProperties.Name="{x:Bind PlayPauseName(ViewModel.IsPaused), Mode=OneWay}"
+                    ToolTipService.ToolTip="{x:Bind PlayPauseToolTip(ViewModel.IsPaused), Mode=OneWay}">
+                <FontIcon Glyph="{x:Bind PlayPauseGlyph(ViewModel.IsPaused), Mode=OneWay}" FontSize="24"
+                          Margin="{x:Bind PlayPauseGlyphMargin(ViewModel.IsPaused), Mode=OneWay}" />
+            </Button>
+            <Button x:Name="LeaveMiniViewButton" Style="{StaticResource SiloPlayerDiscButtonStyle}" Width="36" Height="36" Margin="12,44,0,0"
+                    HorizontalAlignment="Left" VerticalAlignment="Top" Click="OnMiniViewClick"
+                    AutomationProperties.Name="Back to the full window" ToolTipService.ToolTip="Back to the full window (P or Esc)">
+                <FontIcon Glyph="&#xE944;" FontSize="14" />
+            </Button>
+        </Grid>
+
         <StackPanel x:Name="SkipPrompt" Margin="0,0,28,28" Spacing="6" HorizontalAlignment="Right" VerticalAlignment="Bottom"
-                    Visibility="{x:Bind ViewModel.HasSkipPrompt, Mode=OneWay}">
+                    Visibility="{x:Bind ShowsInWindow(ViewModel.HasSkipPrompt, IsMiniView), Mode=OneWay}">
             <StackPanel.TranslationTransition>
                 <Vector3Transition Duration="0:0:0.3" />
             </StackPanel.TranslationTransition>
@@ -505,7 +602,7 @@
 
         <!-- The web's NextEpisodeOverlay at the credits: where the skip pill sits, and above the bar with it. -->
         <Border x:Name="NextUpCard" Margin="0,0,28,28" MinWidth="260" Padding="16" CornerRadius="8" Background="#CC000000"
-                HorizontalAlignment="Right" VerticalAlignment="Bottom" Visibility="{x:Bind ViewModel.IsNextUpCardShown, Mode=OneWay}">
+                HorizontalAlignment="Right" VerticalAlignment="Bottom" Visibility="{x:Bind ShowsInWindow(ViewModel.IsNextUpCardShown, IsMiniView), Mode=OneWay}">
             <Border.TranslationTransition>
                 <Vector3Transition Duration="0:0:0.3" />
             </Border.TranslationTransition>
@@ -531,7 +628,7 @@
             darkened, blurred copy of its still; Play Now with the countdown ring once the episode has ended; the
             auto-play switch; On Deck along the bottom. The video plays on small in the top left corner, above this.
         -->
-        <Grid x:Name="NextUpScreen" Canvas.ZIndex="1" Background="Black" Visibility="{x:Bind ViewModel.IsNextUpScreenShown, Mode=OneWay}">
+        <Grid x:Name="NextUpScreen" Canvas.ZIndex="1" Background="Black" Visibility="{x:Bind ShowsInWindow(ViewModel.IsNextUpScreenShown, IsMiniView), Mode=OneWay}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
@@ -626,7 +723,7 @@
         <Button x:Name="MiniPlayerButton" Canvas.ZIndex="3" Style="{StaticResource SiloPlayerCardOutlineButtonStyle}" Padding="0" BorderThickness="0"
                 CornerRadius="16" HorizontalAlignment="Left" VerticalAlignment="Top" Width="320" Height="180"
                 Margin="{x:Bind CornerInset(IsFullScreen, 24), Mode=OneWay}"
-                Visibility="{x:Bind ShowsMiniPlayer(ViewModel.IsNextUpScreenShown, ViewModel.Phase), Mode=OneWay}"
+                Visibility="{x:Bind ShowsMiniPlayer(ViewModel.IsNextUpScreenShown, ViewModel.Phase, IsMiniView), Mode=OneWay}"
                 Command="{x:Bind ViewModel.KeepWatchingCommand}" AutomationProperties.Name="Keep watching" ToolTipService.ToolTip="Keep watching" />
     </Grid>
 </Page>

@@ -197,6 +197,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         CanRetry = false;
         Phase = PlayerPhase.Preparing;
         LeavePlayback();
+        ResetFill();
         if (request.DirectSource is { } direct)
         {
             StartDirect(direct);
@@ -488,6 +489,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     {
         Leave();
         ResetNextUp();
+        StopPlaybackInfo();
         _engine.StateChanged -= OnStateChanged;
         _engine.Ended -= OnEnded;
     }

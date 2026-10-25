@@ -27,11 +27,17 @@ public sealed partial class PlayerPage : Page
     public static readonly DependencyProperty IsFullScreenProperty =
         DependencyProperty.Register(nameof(IsFullScreen), typeof(bool), typeof(PlayerPage), new PropertyMetadata(false));
 
+    public static readonly DependencyProperty IsMiniViewProperty =
+        DependencyProperty.Register(nameof(IsMiniView), typeof(bool), typeof(PlayerPage), new PropertyMetadata(false));
+
     public static readonly DependencyProperty ShowsRemainingProperty =
         DependencyProperty.Register(nameof(ShowsRemaining), typeof(bool), typeof(PlayerPage), new PropertyMetadata(false));
 
     // MainWindow's title bar row. In a window the top bar starts below it: that strip is the drag area.
     private const double TitleBarHeight = 40;
+
+    // The mini view's width in view pixels.
+    private const double MiniViewWidth = 480;
 
     private AppWindow? _appWindow;
     private AppWindowPresenter? _windowedPresenter;
@@ -47,6 +53,11 @@ public sealed partial class PlayerPage : Page
         InitializeAutoHide();
         InitializeSkipPrompt();
         InitializeNextUp();
+        RegisterPropertyChangedCallback(IsMiniViewProperty, (_, _) =>
+        {
+            ShowNextUpScreen();
+            ShowControls();
+        });
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
         LostFocus += (_, _) => KeepFocusInPage();
@@ -59,6 +70,13 @@ public sealed partial class PlayerPage : Page
     {
         get => (bool)GetValue(IsFullScreenProperty);
         private set => SetValue(IsFullScreenProperty, value);
+    }
+
+    /// <summary>The window shows the compact overlay presenter: small and above the others.</summary>
+    public bool IsMiniView
+    {
+        get => (bool)GetValue(IsMiniViewProperty);
+        private set => SetValue(IsMiniViewProperty, value);
     }
 
     /// <summary>The end of the seek bar shows the time left instead of the duration.</summary>
@@ -83,6 +101,7 @@ public sealed partial class PlayerPage : Page
     {
         base.OnNavigatedFrom(e);
         SetFullScreen(false);
+        SetMiniView(false);
         // Close stops playback, but Alt+Left, the mouse back button, Ctrl+K or a session change leave without it, and
         // the sound must not go on behind another page nor the server session stay open.
         ViewModel.Leave();
@@ -93,6 +112,7 @@ public sealed partial class PlayerPage : Page
         _appWindow = AppWindow.GetFromWindowId(XamlRoot.ContentIslandEnvironment.AppWindowId);
         _appWindow.Changed += OnAppWindowChanged;
         IsFullScreen = _appWindow.Presenter.Kind == AppWindowPresenterKind.FullScreen;
+        IsMiniView = _appWindow.Presenter.Kind == AppWindowPresenterKind.CompactOverlay;
         ViewModel.PropertyChanged += OnViewModelPropertyChanged;
         ShowSkipIntervals();
         Focus(FocusState.Programmatic);
@@ -210,6 +230,15 @@ public sealed partial class PlayerPage : Page
 
     private void OnFullScreenClick(object sender, RoutedEventArgs e) => ToggleFullScreen();
 
+    private void OnMiniViewClick(object sender, RoutedEventArgs e) => SetMiniView(!IsMiniViewNow);
+
+    // In pixels: the playback info shows the area the picture is drawn into.
+    private void OnVideoHostSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        double scale = XamlRoot?.RasterizationScale ?? 1;
+        ViewModel.SetPictureSize((int)Math.Round(e.NewSize.Width * scale), (int)Math.Round(e.NewSize.Height * scale));
+    }
+
     private void OnSpeedPicked(SpeedTrack sender, double speed) => ViewModel.SetSpeed(speed);
 
     // A quality or a file is a choice made: the menu closes, as the web player's does.
@@ -293,6 +322,8 @@ public sealed partial class PlayerPage : Page
 
     private void ToggleFullScreen() => SetFullScreen(!IsFullScreenNow);
 
+    private bool IsMiniViewNow => _appWindow?.Presenter.Kind == AppWindowPresenterKind.CompactOverlay;
+
     private void SetFullScreen(bool fullScreen)
     {
         if (_appWindow is not { } window || fullScreen == IsFullScreenNow)
@@ -301,13 +332,47 @@ public sealed partial class PlayerPage : Page
         }
         if (fullScreen)
         {
-            // Kept to return to: a new overlapped presenter would forget that the window was maximized, and
-            // the old one alone puts a restored window back a little off its place.
-            _windowedPresenter = window.Presenter;
-            _windowedBounds = new RectInt32(window.Position.X, window.Position.Y, window.Size.Width, window.Size.Height);
+            // From the mini view to full screen, and back from there to the window it came from.
+            SetMiniView(false);
+            KeepWindowed(window);
             window.SetPresenter(AppWindowPresenterKind.FullScreen);
             return;
         }
+        RestoreWindowed(window);
+    }
+
+    // The web player's Picture in Picture: the window itself, small and above the others (CompactOverlay).
+    private void SetMiniView(bool mini)
+    {
+        if (_appWindow is not { } window || mini == IsMiniViewNow)
+        {
+            return;
+        }
+        if (mini)
+        {
+            SetFullScreen(false);
+            KeepWindowed(window);
+            var presenter = CompactOverlayPresenter.Create();
+            presenter.InitialSize = CompactOverlaySize.Medium;
+            window.SetPresenter(presenter);
+            // 16:9, as the web's picture-in-picture window starts; the medium size alone keeps the window's shape.
+            double scale = XamlRoot?.RasterizationScale ?? 1;
+            window.Resize(new SizeInt32((int)Math.Round(MiniViewWidth * scale), (int)Math.Round(MiniViewWidth * 9 / 16 * scale)));
+            return;
+        }
+        RestoreWindowed(window);
+    }
+
+    // Kept to return to: a new overlapped presenter would forget that the window was maximized, and the old one
+    // alone puts a restored window back a little off its place.
+    private void KeepWindowed(AppWindow window)
+    {
+        _windowedPresenter = window.Presenter;
+        _windowedBounds = new RectInt32(window.Position.X, window.Position.Y, window.Size.Width, window.Size.Height);
+    }
+
+    private void RestoreWindowed(AppWindow window)
+    {
         if (_windowedPresenter is { } presenter)
         {
             window.SetPresenter(presenter);
@@ -327,6 +392,7 @@ public sealed partial class PlayerPage : Page
         if (args.DidPresenterChange)
         {
             IsFullScreen = sender.Presenter.Kind == AppWindowPresenterKind.FullScreen;
+            IsMiniView = sender.Presenter.Kind == AppWindowPresenterKind.CompactOverlay;
         }
     }
 
@@ -362,6 +428,19 @@ public sealed partial class PlayerPage : Page
 
     public Thickness TopBarPadding(bool isFullScreen) => new(24, isFullScreen ? 24 : TitleBarHeight + 8, 24, 40);
 
+    // Under Exit, and clear of the bottom bar, where it scrolls.
+    public Thickness PlaybackInfoMargin(bool isFullScreen) => new(16, (isFullScreen ? 24 : TitleBarHeight + 8) + 48, 0, 160);
+
+    // A utility button that is on is white; off, the rail's 78 %.
+    public Brush UtilityForeground(bool isOn) => new SolidColorBrush(isOn ? Microsoft.UI.Colors.White : Windows.UI.Color.FromArgb(0xC7, 0xFF, 0xFF, 0xFF));
+
+    public string OnStatus(bool isOn) => isOn ? "On" : "";
+
+    // What the mini view leaves out: the full controls, the pills, the playback info and the Playing Next screen.
+    public Visibility ShowsInWindow(bool shows, bool isMiniView) => shows && !isMiniView ? Visibility.Visible : Visibility.Collapsed;
+
+    public Visibility ShowsTopChrome(bool isNextUpScreenShown, bool isMiniView) => ShowsInWindow(!isNextUpScreenShown, isMiniView);
+
     // "31:55 / 48:41", or "31:55 / -16:46" with the time left.
     public string TimesText(double position, double duration, bool showsRemaining) =>
         PlayerTime.Format(position, duration) + " / "
@@ -373,8 +452,8 @@ public sealed partial class PlayerPage : Page
     // Named for what it does; screen readers hear the times from the seek bar ("4 minutes of 1 hour 30 minutes").
     public string EndTimeName(bool showsRemaining) => showsRemaining ? "Show the duration" : "Show the time left";
 
-    public Visibility ShowsTransport(PlayerPhase phase, bool isNextUpScreenShown) =>
-        phase is PlayerPhase.Playing or PlayerPhase.Ended && !isNextUpScreenShown ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility ShowsTransport(PlayerPhase phase, bool isNextUpScreenShown, bool isMiniView) =>
+        ShowsInWindow(phase is PlayerPhase.Playing or PlayerPhase.Ended && !isNextUpScreenShown, isMiniView);
 
     public bool ShowsSpinner(PlayerPhase phase, bool isBuffering) =>
         phase == PlayerPhase.Preparing || (phase == PlayerPhase.Playing && isBuffering);

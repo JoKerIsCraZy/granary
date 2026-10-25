@@ -187,6 +187,17 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
     public void SetSpeed(double speed) =>
         _mpv.SetProperty("speed", Math.Clamp(speed, 0.25, 4).ToString("0.##", CultureInfo.InvariantCulture));
 
+    // panscan 1 scales the picture up until it fills the area on both sides, as object-fit: cover does on the web.
+    public void SetFill(bool fill) => _mpv.SetProperty("panscan", fill ? "1" : "0");
+
+    // width and height are the picture as decoded, the drops counted since the file was loaded.
+    public PlaybackStats ReadStats() => new(
+        (int)(_mpv.GetInt64("width") ?? 0),
+        (int)(_mpv.GetInt64("height") ?? 0),
+        _mpv.GetInt64("frame-drop-count") ?? -1,
+        _mpv.GetInt64("decoder-frame-drop-count") ?? -1,
+        _mpv.GetString("hwdec-current"));
+
     // mpv takes any id and plays on without sound when the file lacks it: the switch took once that stream plays,
     // and one that did not puts the track before back.
     public bool SetAudioStream(int stream)

@@ -49,6 +49,14 @@ internal sealed class FakePlaybackEngine : IPlaybackEngine
 
     public void SetSpeed(double speed) => Speed = speed;
 
+    public bool Fill { get; private set; }
+
+    public void SetFill(bool fill) => Fill = fill;
+
+    public PlaybackStats Stats { get; set; } = PlaybackStats.None;
+
+    public PlaybackStats ReadStats() => Stats;
+
     /// <summary>Every audio switch asked for, in order.</summary>
     public List<int> AudioSwitches { get; } = [];
 

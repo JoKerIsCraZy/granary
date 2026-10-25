@@ -628,6 +628,16 @@
         <Setter Property="UseSystemFocusVisuals" Value="True" />
         <Setter Property="Template" Value="{StaticResource SiloPlayerButtonTemplate}" />
     </Style>
+    <!-- Under a utility button that is on (Playback info, Fill screen): the web's warm amber dot. -->
+    <Style x:Key="SiloPlayerActiveDotStyle" TargetType="Ellipse">
+        <Setter Property="Width" Value="4.5" />
+        <Setter Property="Height" Value="4.5" />
+        <Setter Property="Fill" Value="#E8B86E" />
+        <Setter Property="Margin" Value="0,0,0,3.5" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Bottom" />
+        <Setter Property="IsHitTestVisible" Value="False" />
+    </Style>
     <!-- Glass disc around play: skip back and forward. -->
     <Style x:Key="SiloPlayerDiscButtonStyle" TargetType="Button" BasedOn="{StaticResource SiloPlayerIconButtonStyle}">
         <Setter Property="Width" Value="44" />
