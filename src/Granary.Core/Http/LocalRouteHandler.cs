@@ -6,20 +6,20 @@ namespace Granary.Core.Http;
 
 /// <summary>
 /// Sends a saved server's requests over its local route while one is verified (docs/api-contract.md, 9.7): the same
-/// request, headers and all, to the private address, over TLS that accepts only the pinned key. A route that does
-/// not connect is dropped, and the request goes to the saved address after all. Only a request that can be sent twice
-/// takes the route, since a connection that breaks may have delivered it already: reads, PUT and DELETE, and a POST
-/// marked <see cref="SiloRequestOptions.Repeatable"/>. The server keys what a device reports by the connection it came
-/// over, so those must come the way the reads that show them go. Other POSTs (progress, start) go to the saved
-/// address. It sits after the authentication handler, which decides by the saved address, and in front of the media
-/// proxy's way upstream.
+/// request, headers and all, to the private address, over TLS that accepts only the pinned key. As Android does, every
+/// request takes it but sign-in, token refresh and sign-out (<c>/api/v2/auth/</c>): the server keys what it knows of a
+/// device's connection (where a start plays from, speed readings, learned limits) by the path a request came over, so
+/// writes must come the way the media goes. A route that does not connect is dropped, and the request goes to the saved
+/// address after all; that is only repeated when no connection was made, so it cannot have reached the server. It sits
+/// after the authentication handler, which decides by the saved address, and in front of the media proxy's way
+/// upstream.
 /// </summary>
 public sealed class LocalRouteHandler(LocalRoutes routes, ILogger<LocalRouteHandler> logger) : DelegatingHandler
 {
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
         if (request.RequestUri is not { } saved
-            || !CanBeSentTwice(request)
+            || IsSignIn(saved)
             || (request.Options.TryGetValue(SiloRequestOptions.SavedAddressOnly, out bool savedOnly) && savedOnly)
             || routes.Find(saved) is not { } route)
         {
@@ -44,10 +44,8 @@ public sealed class LocalRouteHandler(LocalRoutes routes, ILogger<LocalRouteHand
         return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
     }
 
-    private static bool CanBeSentTwice(HttpRequestMessage request) =>
-        request.Method == HttpMethod.Get || request.Method == HttpMethod.Head || request.Method == HttpMethod.Put
-        || request.Method == HttpMethod.Delete
-        || (request.Options.TryGetValue(SiloRequestOptions.Repeatable, out bool repeatable) && repeatable);
+    // A route only qualifies for a saved address without a path prefix, so the API sits at the root.
+    private static bool IsSignIn(Uri uri) => uri.IsAbsoluteUri && uri.AbsolutePath.StartsWith("/api/v2/auth/", StringComparison.OrdinalIgnoreCase);
 
     // The route is not there for this request: no connection, a key other than the pinned one, a connect that timed out,
     // or a route replaced meanwhile. Repeating it on the saved address is harmless either way.

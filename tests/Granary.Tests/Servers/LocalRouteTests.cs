@@ -109,15 +109,34 @@ public sealed class LocalRouteTests : IDisposable
         Assert.Null(_routes.Find(Saved));
     }
 
-    [Fact]
-    public async Task APost_GoesToTheSavedAddress()
+    [Theory]
+    [InlineData("POST")]
+    [InlineData("PUT")]
+    [InlineData("DELETE")]
+    public async Task Writes_TakeTheRoute(string method)
     {
-        // A connection that breaks may have delivered it already, and the saved address would get it twice.
+        // The server keys what it knows of a device's connection (where a start plays from, a speed test's result) by
+        // the path a request came over: writes must come the way the media goes, as Android sends them.
         _routes.Use(Route());
-        using var request = new HttpRequestMessage(HttpMethod.Post, "https://silo.example/api/v2/playback/s1/progress")
+        using var request = new HttpRequestMessage(new HttpMethod(method), "https://silo.example/api/v2/playback/start")
         {
-            Content = new StringContent("""{"sequence":1}""", Encoding.UTF8, "application/json"),
+            Content = new StringContent("""{"file_id":"1"}""", Encoding.UTF8, "application/json"),
         };
+
+        (await Send(request)).Dispose();
+
+        Assert.Equal("https://192.168.1.20:8080/api/v2/playback/start", Assert.Single(_localUris));
+        Assert.Empty(_saved);
+    }
+
+    [Theory]
+    [InlineData("POST", "/api/v2/auth/login")]
+    [InlineData("POST", "/api/v2/auth/refresh")]
+    [InlineData("GET", "/api/v2/auth/providers")]
+    public async Task SignIn_GoesToTheSavedAddress(string method, string path)
+    {
+        _routes.Use(Route());
+        using var request = new HttpRequestMessage(new HttpMethod(method), "https://silo.example" + path);
 
         (await Send(request)).Dispose();
 
@@ -125,27 +144,36 @@ public sealed class LocalRouteTests : IDisposable
         Assert.Single(_saved);
     }
 
-    [Theory]
-    [InlineData("PUT", false)]
-    [InlineData("DELETE", false)]
-    [InlineData("POST", true)]
-    public async Task AWriteThatCanBeSentTwice_TakesTheRoute(string method, bool marked)
+    [Fact]
+    public async Task AWriteWhoseRouteDidNotConnect_GoesToTheSavedAddress_WithItsBody()
     {
-        // The server keys what a device sends by the connection it came over (a speed test's result, a learned limit's
-        // reset): it must come the way the reads that show it go.
+        // No connection was made: the server cannot have it, so sending it again does it once.
+        _lan = _ => throw new HttpRequestException(HttpRequestError.ConnectionError, "unreachable");
         _routes.Use(Route());
-        using var request = new HttpRequestMessage(new HttpMethod(method), "https://silo.example/api/v2/playback/bandwidth-probe/results")
+        using var request = new HttpRequestMessage(HttpMethod.Post, "https://silo.example/api/v2/playback/s1/progress")
         {
-            Content = new StringContent("""{"kbps":1}""", Encoding.UTF8, "application/json"),
+            Content = new StringContent("""{"sequence":1}""", Encoding.UTF8, "application/json"),
         };
-        if (marked)
+
+        using var response = await Send(request);
+
+        Assert.Equal("saved", await response.Content.ReadAsStringAsync(Cancellation));
+        Assert.Equal("""{"sequence":1}""", await Assert.Single(_saved).Content!.ReadAsStringAsync(Cancellation));
+    }
+
+    [Fact]
+    public async Task AWriteThatFailedAfterConnecting_IsNotRepeated()
+    {
+        // It may have reached the server: a second one could start a session twice.
+        _lan = _ => throw new HttpRequestException(HttpRequestError.ResponseEnded, "ended");
+        _routes.Use(Route());
+        using var request = new HttpRequestMessage(HttpMethod.Post, "https://silo.example/api/v2/playback/start")
         {
-            request.Options.Set(SiloRequestOptions.Repeatable, true);
-        }
+            Content = new StringContent("""{"file_id":"1"}""", Encoding.UTF8, "application/json"),
+        };
 
-        (await Send(request)).Dispose();
+        await Assert.ThrowsAsync<HttpRequestException>(() => Send(request));
 
-        Assert.Single(_local);
         Assert.Empty(_saved);
     }
 

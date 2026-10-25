@@ -23,12 +23,6 @@ public static class SiloRequestOptions
     /// <summary>The request must go to the saved address itself, never over a local route (the key it vouches for).</summary>
     public static readonly HttpRequestOptionsKey<bool> SavedAddressOnly = new("granary.saved-address-only");
 
-    /// <summary>
-    /// A POST the server may get twice without harm (it keeps the latest), so it may take a local route as reads and
-    /// idempotent writes do.
-    /// </summary>
-    public static readonly HttpRequestOptionsKey<bool> Repeatable = new("granary.repeatable");
-
     public static SiloAuth GetAuth(this HttpRequestMessage request) =>
         request.Options.TryGetValue(Auth, out var auth) ? auth : SiloAuth.Anonymous;
 

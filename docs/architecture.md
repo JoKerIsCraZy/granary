@@ -64,13 +64,13 @@ the display refresh rate itself (Phase 3).
   `system/identity` with the same server id (`LocalRouteProbe`, 3 s). It checks at start, when the session
   or the network changes, and every 15 minutes; only a saved HTTPS address without a path prefix
   qualifies, and at most 4 candidates within 15 s are tried. `LocalRouteHandler` then sends that
-  address's requests that can be sent twice over the route (GET, HEAD, PUT, DELETE, and a POST marked
-  `SiloRequestOptions.Repeatable`, as a speed test's result), after the authentication handler decided the
-  credentials by the saved address: the API calls of `SiloHttp` and the media proxy's requests (never a proxy
-  node's). The server keys what a device reports by the connection it came over (a speed test's result, a learned
-  limit's reset), so those must come the way the reads that show them go. Other POSTs (start, progress) go to the
-  saved address: a connection that breaks may have delivered one already. A route that does not connect, or presents
-  another key, is dropped and the same request goes to the saved address; a dropped or replaced route closes its connections after 5
+  address's requests over the route, as Android does, all but sign-in, token refresh and sign-out
+  (`/api/v2/auth/`), after the authentication handler decided the credentials by the saved address: the API calls of
+  `SiloHttp` and the media proxy's requests (never a proxy node's). The server keys what it knows of a device's
+  connection by the path a request came over (a start on the LAN plans as a local one; speed readings and learned
+  limits are the connection's), so writes come the way the media goes. A route that does not connect, or presents
+  another key, is dropped and the same request goes to the saved address, which is safe for a write too: no
+  connection was made, so it cannot have reached the server; a failure after connecting is not repeated; a dropped or replaced route closes its connections after 5
   minutes, so a stream on its way is not cut. An unreachable saved address keeps a route verified before.
 - Proxy-node URLs are checked as they will be sent: written without dot segments or anything encoded
   that would become one, taken in canonical form, and never on this machine or a link-local address.
