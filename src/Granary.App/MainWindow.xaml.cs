@@ -77,7 +77,7 @@ public sealed partial class MainWindow : Window
                 Icon = new FontIcon { Glyph = LibraryGlyph(library.Type) },
             });
         }
-        LibrariesHeader.Visibility = Sidebar.Libraries.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        ShowLibrariesHeader();
         if (_navigation.Current is { } route)
         {
             SelectItem(route, _navigation.CurrentParameter);
@@ -123,17 +123,26 @@ public sealed partial class MainWindow : Window
     // The sidebar is there for a signed-in profile. Detail pages get the full width, as on the web: the sidebar
     // shrinks to its icons. The player owns the whole window: no sidebar at all, and the page reaches under the
     // title bar, where the caption buttons float over the video. While the pane is hidden it must stay closed:
-    // an open hidden pane still takes its width, empty.
+    // an open hidden pane still takes its width, empty. The player also puts the pane in minimal mode, where a
+    // closed pane takes no width: hidden alone, a pane still closing when the player opened (played right after a
+    // detail page came up from the home page) ended its animation as a 48 px strip beside the video.
     private void ShowChrome(AppRoute? route)
     {
         bool isPlayer = route == AppRoute.Player;
+        Navigation.PaneDisplayMode = isPlayer ? NavigationViewPaneDisplayMode.LeftMinimal : NavigationViewPaneDisplayMode.Left;
         // Visibility first: a pane that becomes visible opens again, whatever IsPaneOpen said before.
         Navigation.IsPaneVisible = Shell.IsSignedIn && !isPlayer;
         Navigation.IsPaneOpen = Shell.IsSignedIn && route is not (AppRoute.Item or AppRoute.Player);
         Grid.SetRow(Navigation, isPlayer ? 0 : 1);
         Grid.SetRowSpan(Navigation, isPlayer ? 2 : 1);
         AppTitle.Visibility = isPlayer ? Visibility.Collapsed : Visibility.Visible;
+        ShowLibrariesHeader();
     }
+
+    // "LIBRARIES" only in the open pane. NavigationView hides the header's text in the icon-only pane itself, but not
+    // after the player's minimal mode: back in Left mode with the pane closed it showed again, cut off.
+    private void ShowLibrariesHeader() =>
+        LibrariesHeader.Visibility = Sidebar.Libraries.Count > 0 && Navigation.IsPaneOpen ? Visibility.Visible : Visibility.Collapsed;
 
     // The process ends with the window, and the player's stop carries where the viewer left off: the window goes
     // out of sight at once but closes only once the stop is through, or after a few seconds.
