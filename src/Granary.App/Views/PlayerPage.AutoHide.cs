@@ -1,0 +1,183 @@
+using System.Numerics;
+using Microsoft.UI;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
+using Windows.Foundation;
+using DispatcherQueueTimer = Microsoft.UI.Dispatching.DispatcherQueueTimer;
+
+namespace Granary.App.Views;
+
+// The controls and the cursor fade out after a few seconds of playback without pointer movement, and stay
+// while there is something to read or do in them.
+public sealed partial class PlayerPage
+{
+    private static readonly TimeSpan HideDelay = TimeSpan.FromSeconds(3);
+
+    // Moves this small are jitter, or the framework testing a still pointer again while the controls fade.
+    private const double PointerMoveThreshold = 2;
+
+    private const float ChromeSlide = 8;
+
+    private DispatcherQueueTimer _hideTimer = null!;
+    private Point? _lastPointer;
+    private bool _areControlsVisible = true;
+    private bool _isCursorHidden;
+
+    private void InitializeAutoHide()
+    {
+        _hideTimer = DispatcherQueue.CreateTimer();
+        _hideTimer.Interval = HideDelay;
+        _hideTimer.IsRepeating = false;
+        _hideTimer.Tick += (_, _) => HideControlsWhenIdle();
+        PointerMoved += OnPagePointerMoved;
+        PointerExited += OnPagePointerExited;
+    }
+
+    private void StopAutoHide()
+    {
+        _hideTimer.Stop();
+        ShowCursor();
+    }
+
+    /// <summary>Shows the controls and starts the idle countdown again.</summary>
+    private void ShowControls()
+    {
+        SetControlsVisible(true);
+        ShowCursor();
+        _hideTimer.Stop();
+        _hideTimer.Start();
+    }
+
+    private void ToggleControls()
+    {
+        if (_areControlsVisible && !KeepsControls())
+        {
+            _hideTimer.Stop();
+            SetControlsVisible(false);
+        }
+        else
+        {
+            ShowControls();
+        }
+    }
+
+    private void HideControlsWhenIdle()
+    {
+        if (KeepsControls())
+        {
+            // Asked again a little later, until nothing holds them any more.
+            _hideTimer.Start();
+            return;
+        }
+        SetControlsVisible(false);
+        if (PointerInPage() is not null)
+        {
+            HideCursor();
+        }
+    }
+
+    private bool KeepsControls() =>
+        !ViewModel.IsPlaying || ViewModel.IsPaused || ViewModel.IsBuffering
+        || SeekBar.IsDragging || IsPointerOverControls() || HasOpenMenu() || HasKeyboardFocusInControls();
+
+    private bool IsPointerOverControls() =>
+        PointerInPage() is { } point && (Contains(BottomBar, point) || Contains(BackButton, point) || Contains(TitlePanel, point));
+
+    private bool Contains(FrameworkElement element, Point point) =>
+        element.ActualWidth > 0
+        && element.TransformToVisual(this).TransformBounds(new Rect(0, 0, element.ActualWidth, element.ActualHeight)).Contains(point);
+
+    private bool HasKeyboardFocusInControls() =>
+        FocusManager.GetFocusedElement(XamlRoot) is Control { FocusState: FocusState.Keyboard } control
+        && (IsWithin(control, TopChrome) || IsWithin(control, BottomChrome));
+
+    private static bool IsWithin(DependencyObject element, DependencyObject container)
+    {
+        for (DependencyObject? current = element; current is not null; current = VisualTreeHelper.GetParent(current))
+        {
+            if (ReferenceEquals(current, container))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Hidden controls take no clicks, so a click there reaches the picture.
+    private void SetControlsVisible(bool visible)
+    {
+        _areControlsVisible = visible;
+        TopChrome.Opacity = BottomChrome.Opacity = visible ? 1 : 0;
+        TopChrome.IsHitTestVisible = BottomChrome.IsHitTestVisible = visible;
+        TopChrome.Translation = visible ? Vector3.Zero : new Vector3(0, -ChromeSlide, 0);
+        BottomChrome.Translation = visible ? Vector3.Zero : new Vector3(0, ChromeSlide, 0);
+    }
+
+    private void OnPagePointerMoved(object sender, PointerRoutedEventArgs e)
+    {
+        var position = e.GetCurrentPoint(this).Position;
+        if (_lastPointer is { } last
+            && Math.Abs(position.X - last.X) < PointerMoveThreshold
+            && Math.Abs(position.Y - last.Y) < PointerMoveThreshold)
+        {
+            return;
+        }
+        _lastPointer = position;
+        ShowControls();
+    }
+
+    // Exits of the elements inside bubble up here too; only one that really left the page shows the cursor.
+    private void OnPagePointerExited(object sender, PointerRoutedEventArgs e)
+    {
+        if (PointerInPage() is null)
+        {
+            _lastPointer = null;
+            ShowCursor();
+        }
+    }
+
+    /// <summary>
+    /// The pointer in page coordinates while it is over the picture, else null. Asked from Windows rather than
+    /// followed through XAML's enter and exit events: those bubble up from the elements inside, and the title
+    /// bar's drag area, where Windows draws the cursor itself, sends none.
+    /// </summary>
+    private Point? PointerInPage()
+    {
+        if (_appWindow is null || XamlRoot is not { } root || !GetCursorPos(out var cursor))
+        {
+            return null;
+        }
+        nint window = Win32Interop.GetWindowFromWindowId(_appWindow.Id);
+        if (GetAncestor(WindowFromPoint(cursor), GaRoot) != window || !ScreenToClient(window, ref cursor))
+        {
+            return null;
+        }
+        var origin = TransformToVisual(null).TransformPoint(default);
+        var point = new Point(cursor.X / root.RasterizationScale - origin.X, cursor.Y / root.RasterizationScale - origin.Y);
+        bool inPage = point.X >= 0 && point.Y >= 0 && point.X < ActualWidth && point.Y < ActualHeight;
+        bool inDragArea = !IsFullScreen && point.Y < TitleBarHeight;
+        return inPage && !inDragArea ? point : null;
+    }
+
+    // XAML has no hidden cursor (a custom one needs a cursor resource in the executable), so this uses the
+    // thread's cursor display count, balanced by _isCursorHidden.
+    private void HideCursor()
+    {
+        if (!_isCursorHidden)
+        {
+            _isCursorHidden = true;
+            _ = NativeShowCursor(false);
+        }
+    }
+
+    private void ShowCursor()
+    {
+        if (_isCursorHidden)
+        {
+            _isCursorHidden = false;
+            _ = NativeShowCursor(true);
+        }
+    }
+}
