@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Windows.Foundation;
@@ -86,7 +87,7 @@ public sealed partial class MediaCardView : UserControl
         var state = card is null ? new MediaCardState(false, false, false) : _actions.StateOf(card);
 
         WatchedMark.Visibility = card?.ShowsWatchedMark == true && state.IsWatched ? Visibility.Visible : Visibility.Collapsed;
-        bool hasProgress = card?.Progress is > 0;
+        bool hasProgress = card?.Progress is > 0 && !state.IsProgressCleared;
         Progress.Value = hasProgress ? Math.Clamp(card!.Progress!.Value, 0, 1) : 0;
         Progress.Visibility = hasProgress ? Visibility.Visible : Visibility.Collapsed;
         Progress.Foreground = Brush(state.IsWatched || Progress.Value >= 1 ? "SiloCompleteBrush" : "SiloPrimaryBrush");
@@ -118,7 +119,34 @@ public sealed partial class MediaCardView : UserControl
         MenuFavorite.Visibility = Visible(canCollect);
         MenuWatchlist.Text = state.InWatchlist ? "Remove from Watchlist" : "Add to Watchlist";
         MenuWatchlist.Visibility = Visible(canCollect);
-        MoreButton.Visibility = Visible(canWatch || canCollect);
+
+        bool fromBeginning = card is not null && MediaCardActions.CanPlayFromBeginning(card, state);
+        bool resetProgress = card is not null && MediaCardActions.CanResetProgress(card, state);
+        bool notInterested = card is not null && MediaCardActions.CanMarkNotInterested(card);
+        MenuPlayFromBeginning.Visibility = Visible(fromBeginning);
+        MenuResetProgress.Visibility = Visible(resetProgress);
+        MenuNotInterested.Text = state.IsNotInterested ? "Show in Recommendations" : "Not Interested";
+        MenuNotInterested.Visibility = Visible(notInterested);
+        var row = card is null ? null : RowOf(this);
+        bool canRemove = card is not null && row?.CardRemoveCommand is { } remove && remove.CanExecute(card);
+        MenuRemove.Text = row?.CardRemoveLabel ?? "";
+        MenuRemove.Visibility = Visible(canRemove);
+        bool others = canWatch || canCollect || fromBeginning || resetProgress || notInterested;
+        MenuRemoveSeparator.Visibility = Visible(canRemove && others);
+        MoreButton.Visibility = Visible(others || canRemove);
+    }
+
+    // The row a card sits in offers the cards' removal (Continue Watching, Next Up).
+    private static MediaRow? RowOf(DependencyObject element)
+    {
+        for (var parent = VisualTreeHelper.GetParent(element); parent is not null; parent = VisualTreeHelper.GetParent(parent))
+        {
+            if (parent is MediaRow row)
+            {
+                return row;
+            }
+        }
+        return null;
     }
 
     private static Visibility Visible(bool visible) => visible ? Visibility.Visible : Visibility.Collapsed;
@@ -217,6 +245,55 @@ public sealed partial class MediaCardView : UserControl
         {
             await _actions.ToggleFavoriteAsync(card);
         }
+    }
+
+    private void OnPlayFromBeginningClick(object sender, RoutedEventArgs e)
+    {
+        if (Card is { } card)
+        {
+            _actions.PlayFromBeginning(card);
+        }
+    }
+
+    private async void OnResetProgressClick(object sender, RoutedEventArgs e)
+    {
+        if (Card is { } card)
+        {
+            await _actions.ResetProgressAsync(card);
+        }
+    }
+
+    private async void OnNotInterestedClick(object sender, RoutedEventArgs e)
+    {
+        if (Card is { } card)
+        {
+            await _actions.ToggleNotInterestedAsync(card);
+        }
+    }
+
+    private void OnRemoveClick(object sender, RoutedEventArgs e)
+    {
+        if (Card is { } card && RowOf(this)?.CardRemoveCommand is { } remove && remove.CanExecute(card))
+        {
+            remove.Execute(card);
+        }
+    }
+
+    // Right-click, Shift+F10 or the menu key open the same menu as the card's ⋮, where the pointer is.
+    private void OnContextRequested(UIElement sender, ContextRequestedEventArgs args)
+    {
+        ShowState();
+        if (Card is null || MoreButton.Visibility != Visibility.Visible)
+        {
+            return;
+        }
+        args.Handled = true;
+        var options = new FlyoutShowOptions();
+        if (args.TryGetPosition(this, out var point))
+        {
+            options.Position = point;
+        }
+        MoreMenu.ShowAt(this, options);
     }
 
     private async void OnWatchlistClick(object sender, RoutedEventArgs e)

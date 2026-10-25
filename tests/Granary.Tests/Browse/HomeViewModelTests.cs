@@ -539,4 +539,22 @@ public sealed class HomeViewModelTests
         Assert.NotEqual(cardA, row.Cards[2]);
         Assert.Equal(row.Cards[2], Assert.Single(home.Rows).Cards.Last());
     }
+
+    [Fact]
+    public async Task WatchingRows_OfferTheirCardsRemoval_ByTheSurfacesName()
+    {
+        _silo.Map(SectionsPath, Sections(
+            Section("cw", "continue_watching", 1, Item("m1", progressUpdatedAt: "2026-10-25T10:00:00Z")),
+            Section("next", "next_up", 1, Item("e2", "episode", "s1")),
+            Section("recent", "recently_added", 1, Item("r1"))));
+        var home = Create();
+
+        await home.ActivateAsync();
+
+        Assert.Equal("Remove from Continue Watching", home.Rows[0].RemoveLabel);
+        Assert.True(home.Rows[0].RemoveCardCommand!.CanExecute(home.Rows[0].Cards[0]));
+        Assert.Equal("Remove from Next Up", home.Rows[1].RemoveLabel);
+        Assert.Null(home.Rows[2].RemoveCardCommand);
+        Assert.False(home.RemoveCommand.CanExecute(home.Rows[2].Cards[0]));
+    }
 }

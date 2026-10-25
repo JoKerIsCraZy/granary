@@ -126,6 +126,7 @@ public static class MediaCardFactory
         IsWatched = item.UserState?.Played == true,
         IsFavorite = item.UserState?.IsFavorite == true,
         InWatchlist = item.UserState?.InWatchlist == true,
+        IsNotInterested = item.UserState?.NotInterested == true,
         PlayContentId = item.PlayContentId,
     };
 

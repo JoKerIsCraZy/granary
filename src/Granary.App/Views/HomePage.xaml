@@ -12,31 +12,21 @@
     NavigationCacheMode="Enabled"
     AutomationProperties.Name="Home">
 
-    <Page.Resources>
-        <!-- Continue Watching and Next Up cards: right-click, Shift+F10 or the menu key. -->
-        <MenuFlyout x:Name="CardMenu">
-            <MenuFlyoutItem x:Name="RemoveItem" Text="Remove from Continue Watching" Click="OnRemoveClick">
-                <MenuFlyoutItem.Icon>
-                    <FontIcon Glyph="&#xE738;" />
-                </MenuFlyoutItem.Icon>
-            </MenuFlyoutItem>
-        </MenuFlyout>
-    </Page.Resources>
-
     <Grid>
         <ScrollViewer x:Name="Scroller" XYFocusKeyboardNavigation="Enabled">
             <StackPanel Padding="48,32,48,48" Spacing="16">
                 <TextBlock Text="{x:Bind ViewModel.Notice, Mode=OneWay}" Visibility="{x:Bind HasText(ViewModel.Notice), Mode=OneWay}"
                            Style="{StaticResource SiloCaptionTextStyle}" Foreground="{StaticResource SiloPrimaryBrush}" TextWrapping="Wrap"
                            AutomationProperties.LiveSetting="Polite" />
-                <ItemsRepeater ItemsSource="{x:Bind ViewModel.Rows, Mode=OneWay}" ContextRequested="OnRowsContextRequested">
+                <ItemsRepeater ItemsSource="{x:Bind ViewModel.Rows, Mode=OneWay}">
                     <ItemsRepeater.Layout>
                         <StackLayout Spacing="40" />
                     </ItemsRepeater.Layout>
                     <ItemsRepeater.ItemTemplate>
                         <DataTemplate x:DataType="vm:HomeRowViewModel">
                             <controls:MediaRow DataContext="{x:Bind}" Title="{x:Bind Title}" ItemsSource="{x:Bind Cards}"
-                                               CardInvokedCommand="{x:Bind OpenCardCommand}" ExploreAllCommand="{x:Bind ExploreAllCommand}" />
+                                               CardInvokedCommand="{x:Bind OpenCardCommand}" ExploreAllCommand="{x:Bind ExploreAllCommand}"
+                                               CardRemoveCommand="{x:Bind RemoveCardCommand}" CardRemoveLabel="{x:Bind RemoveLabel}" />
                         </DataTemplate>
                     </ItemsRepeater.ItemTemplate>
                 </ItemsRepeater>

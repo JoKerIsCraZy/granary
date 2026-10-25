@@ -10,13 +10,17 @@ public sealed class HomeRowViewModel
 {
     private readonly Dictionary<MediaCard, CatalogItem> _items = [];
 
-    internal HomeRowViewModel(Section section, IEnumerable<(MediaCard Card, CatalogItem Item)> cards, ICommand openCard, ICommand? exploreAll)
+    internal HomeRowViewModel(Section section, IEnumerable<(MediaCard Card, CatalogItem Item)> cards, ICommand openCard, ICommand? exploreAll,
+        ICommand? removeCard = null)
     {
         SectionId = section.Id;
         SectionType = section.SectionType;
         Title = section.Title;
         OpenCardCommand = openCard;
         ExploreAllCommand = exploreAll;
+        RemoveCardCommand = CanRemoveCards ? removeCard : null;
+        // As the web words it, by the surface rather than the row's own title.
+        RemoveLabel = SectionType == SectionTypes.NextUp ? "Remove from Next Up" : "Remove from Continue Watching";
         foreach (var (card, item) in cards)
         {
             if (_items.TryAdd(card, item))
@@ -39,6 +43,12 @@ public sealed class HomeRowViewModel
 
     /// <summary>Null when the row already shows every card it has.</summary>
     public ICommand? ExploreAllCommand { get; }
+
+    /// <summary>Takes a card (the parameter) off Continue Watching or Next Up; null in other rows.</summary>
+    public ICommand? RemoveCardCommand { get; }
+
+    /// <summary>"Remove from Continue Watching", "Remove from Next Up".</summary>
+    public string RemoveLabel { get; }
 
     /// <summary>Continue Watching and Next Up cards can be removed from Home.</summary>
     public bool CanRemoveCards => HomeRowRules.IsWatchingRow(SectionType);

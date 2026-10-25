@@ -66,7 +66,12 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
   far out of view, so `MediaCardView` sizes its artwork at measure time: a card that only learns its
   height after arrange shrinks every row and throws the scroll position off.
 - Cards are buttons (`SiloCardButtonStyle`): Tab and Enter work, screen readers read
-  `MediaCard.AccessibleName`. Card commands take the `MediaCard` as parameter.
+  `MediaCard.AccessibleName`. Card commands take the `MediaCard` as parameter. A card's ⋮ menu is the web's
+  (`MediaItemMenu.buildMediaItemMenuModel`), in its order: Play from Beginning (a movie or episode with a resume
+  point, or watched), Mark Watched/Unwatched, Reset Progress (`DELETE /api/v2/progress/{id}/position`), Favorites,
+  Watchlist, Not Interested (`PUT`/`DELETE /api/v2/not-interested/{id}`, movies and series), then "Remove from
+  Continue Watching" / "Next Up" when its `MediaRow` offers removal. Right-click, Shift+F10 and the menu key open the
+  same menu. The web's admin entries (play history, metadata) are not there yet.
 - Page-specific pieces: `PersonCard` (search people), `AlphabetJumpBar` (library A–Z: "#" and A–Z on a
   26 px round panel, letters without titles at 35 %, the top row's letter red with dark text; a letter
   scrolls the grid to its first title, as the web's `LetterBar`),

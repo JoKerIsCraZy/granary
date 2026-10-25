@@ -90,7 +90,7 @@ public sealed class MediaCardActionsTests
         await actions.ToggleFavoriteAsync(favourite);
         await actions.ToggleWatchlistAsync(favourite);
 
-        Assert.Equal(new MediaCardState(false, false, true), actions.StateOf(favourite));
+        Assert.Equal(new MediaCardState(false, false, true, false), actions.StateOf(favourite));
         // The same title on another card, a row further down or a recycled container, shows the change too.
         Assert.Equal(new MediaCardState(false, false, true), actions.StateOf(Lupin with { Title = "Lupin (2021)" }));
     }
@@ -118,5 +118,64 @@ public sealed class MediaCardActionsTests
 
         Assert.Equal(watched, MediaCardActions.CanMarkWatched(card));
         Assert.Equal(collect, MediaCardActions.CanCollect(card));
+    }
+
+    private static readonly MediaCard Heat = new("movie-heat", CatalogItemTypes.Movie, "Heat") { Progress = 0.4, PlayContentId = "movie-heat" };
+
+    [Fact]
+    public void PlayFromBeginning_StartsAtZero_NotWhereTheViewerLeftOff()
+    {
+        var actions = Create();
+
+        actions.PlayFromBeginning(Heat);
+
+        Assert.Equal((AppRoute.Player, (object?)PlayRequest.FromStart("movie-heat")), Assert.Single(_navigation.Navigations));
+    }
+
+    [Fact]
+    public void TheWebsMenuRules_AreTheCardsToo()
+    {
+        var actions = Create();
+        var fresh = Heat with { Progress = null };
+
+        Assert.True(MediaCardActions.CanPlayFromBeginning(Heat, actions.StateOf(Heat)));
+        Assert.True(MediaCardActions.CanResetProgress(Heat, actions.StateOf(Heat)));
+        Assert.False(MediaCardActions.CanPlayFromBeginning(fresh, actions.StateOf(fresh)));
+        Assert.True(MediaCardActions.CanPlayFromBeginning(fresh with { IsWatched = true }, actions.StateOf(fresh with { IsWatched = true })));
+        Assert.False(MediaCardActions.CanResetProgress(fresh, actions.StateOf(fresh)));
+        // A series plays its next episode; Not interested takes movies and series, never episodes.
+        Assert.False(MediaCardActions.CanPlayFromBeginning(Lupin with { Progress = 0.5 }, actions.StateOf(Lupin)));
+        Assert.True(MediaCardActions.CanMarkNotInterested(Lupin));
+        Assert.False(MediaCardActions.CanMarkNotInterested(new MediaCard("e1", CatalogItemTypes.Episode, "Pilot")));
+    }
+
+    [Fact]
+    public async Task ResetProgress_ClearsTheResumePoint_AndTheBarGoes()
+    {
+        _silo.On(HttpMethod.Delete, "api/v2/progress/movie-heat/position", ScriptedSilo.NoContent());
+        var actions = Create();
+
+        Assert.True(await actions.ResetProgressAsync(Heat));
+
+        Assert.Single(_silo.SentTo(HttpMethod.Delete, "api/v2/progress/movie-heat/position"));
+        Assert.True(actions.StateOf(Heat).IsProgressCleared);
+        Assert.False(MediaCardActions.CanResetProgress(Heat, actions.StateOf(Heat)));
+        Assert.Equal(1, _viewerState.Version);
+    }
+
+    [Fact]
+    public async Task NotInterested_MarksAndUnmarks()
+    {
+        _silo.On(HttpMethod.Put, "api/v2/not-interested/series-tvdb-375921", ScriptedSilo.NoContent());
+        _silo.On(HttpMethod.Delete, "api/v2/not-interested/series-tvdb-375921", ScriptedSilo.NoContent());
+        var actions = Create();
+
+        await actions.ToggleNotInterestedAsync(Lupin);
+        Assert.True(actions.StateOf(Lupin).IsNotInterested);
+        await actions.ToggleNotInterestedAsync(Lupin);
+
+        Assert.False(actions.StateOf(Lupin).IsNotInterested);
+        Assert.Single(_silo.SentTo(HttpMethod.Put, "api/v2/not-interested/series-tvdb-375921"));
+        Assert.Single(_silo.SentTo(HttpMethod.Delete, "api/v2/not-interested/series-tvdb-375921"));
     }
 }

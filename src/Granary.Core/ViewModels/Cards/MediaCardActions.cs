@@ -8,12 +8,15 @@ using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.ViewModels.Cards;
 
-/// <summary>The viewer's own state of a card: watched, favourite, on the watchlist.</summary>
-public sealed record MediaCardState(bool IsWatched, bool IsFavorite, bool InWatchlist);
+/// <summary>
+/// The viewer's own state of a card: watched, favourite, on the watchlist, not interested, and whether this session
+/// cleared where the viewer left off.
+/// </summary>
+public sealed record MediaCardState(bool IsWatched, bool IsFavorite, bool InWatchlist, bool IsNotInterested = false, bool IsProgressCleared = false);
 
 /// <summary>
-/// What a card's own buttons do, as on Silo's web cards: play, mark watched, favourite and watchlist. Changes show at
-/// once and go back when the server refuses them. Cards are records of what the server said, and a scrolled list
+/// What a card's own buttons and its menu do, as Silo's web card menu: play, play from the beginning, mark watched,
+/// reset progress, favourite, watchlist and Not interested. Changes show at once and go back when the server refuses them. Cards are records of what the server said, and a scrolled list
 /// shows them again in recycled containers, so the changes of this session are kept here by content id until the
 /// session or profile changes.
 /// </summary>
@@ -44,12 +47,28 @@ public sealed class MediaCardActions
     public MediaCardState StateOf(MediaCard card)
     {
         ArgumentNullException.ThrowIfNull(card);
-        return _changed.TryGetValue(card.Id, out var state) ? state : new MediaCardState(card.IsWatched, card.IsFavorite, card.InWatchlist);
+        return _changed.TryGetValue(card.Id, out var state)
+            ? state
+            : new MediaCardState(card.IsWatched, card.IsFavorite, card.InWatchlist, card.IsNotInterested);
     }
 
     public static bool CanPlay(MediaCard card) => card.PlayContentId is { Length: > 0 };
 
     public static bool CanMarkWatched(MediaCard card) => DetailFacts.IsVideo(card.Type);
+
+    /// <summary>A movie or episode with a resume point or watched: the web offers "Play from Beginning".</summary>
+    public static bool CanPlayFromBeginning(MediaCard card, MediaCardState state) =>
+        IsPlayable(card) && (HasResumePoint(card, state) || state.IsWatched);
+
+    /// <summary>A movie or episode the viewer stopped in: "Reset Progress" clears the resume point.</summary>
+    public static bool CanResetProgress(MediaCard card, MediaCardState state) => IsPlayable(card) && HasResumePoint(card, state);
+
+    /// <summary>Not interested takes movies and series; the server refuses seasons and episodes.</summary>
+    public static bool CanMarkNotInterested(MediaCard card) => card.Type is CatalogItemTypes.Movie or CatalogItemTypes.Series;
+
+    private static bool IsPlayable(MediaCard card) => card.Type is CatalogItemTypes.Movie or CatalogItemTypes.Episode;
+
+    private static bool HasResumePoint(MediaCard card, MediaCardState state) => card.Progress is > 0 and < 1 && !state.IsProgressCleared;
 
     /// <summary>Favourites and the watchlist hold movies and series, as on the detail page.</summary>
     public static bool CanCollect(MediaCard card) => card.Type is CatalogItemTypes.Movie or CatalogItemTypes.Series;
@@ -62,6 +81,24 @@ public sealed class MediaCardActions
             _navigation.NavigateTo(AppRoute.Player, PlayRequest.Resume(contentId));
         }
     }
+
+    /// <summary>Starts the movie or episode at its beginning, not where the viewer left off.</summary>
+    public void PlayFromBeginning(MediaCard card)
+    {
+        ArgumentNullException.ThrowIfNull(card);
+        if (IsPlayable(card))
+        {
+            _navigation.NavigateTo(AppRoute.Player, PlayRequest.FromStart(card.Id));
+        }
+    }
+
+    public Task<bool> ResetProgressAsync(MediaCard card) =>
+        ChangeAsync(card, state => state with { IsProgressCleared = true },
+            (server, _) => _catalog.ClearResumePositionAsync(server, card.Id));
+
+    public Task<bool> ToggleNotInterestedAsync(MediaCard card) =>
+        ChangeAsync(card, state => state with { IsNotInterested = !state.IsNotInterested },
+            (server, state) => _catalog.SetNotInterestedAsync(server, card.Id, state.IsNotInterested));
 
     public Task<bool> ToggleWatchedAsync(MediaCard card) =>
         ChangeAsync(card, state => state with { IsWatched = !state.IsWatched },

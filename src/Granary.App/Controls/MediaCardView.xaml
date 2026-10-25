@@ -15,7 +15,8 @@
     PointerExited="OnPointerExited"
     PointerCanceled="OnPointerExited"
     Loaded="OnLoaded"
-    Unloaded="OnUnloaded">
+    Unloaded="OnUnloaded"
+    ContextRequested="OnContextRequested">
 
     <Grid RowSpacing="11">
         <Grid.RowDefinitions>
@@ -108,10 +109,16 @@
                         </FontIcon.RenderTransform>
                     </FontIcon>
                     <Button.Flyout>
+                        <!-- Silo's web card menu, in its order; also on right-click, Shift+F10 or the menu key. -->
                         <MenuFlyout x:Name="MoreMenu" Placement="BottomEdgeAlignedRight" Opening="OnMoreOpening">
+                            <MenuFlyoutItem x:Name="MenuPlayFromBeginning" Text="Play from Beginning" Click="OnPlayFromBeginningClick" />
                             <MenuFlyoutItem x:Name="MenuWatched" Click="OnWatchedClick" />
+                            <MenuFlyoutItem x:Name="MenuResetProgress" Text="Reset Progress" Click="OnResetProgressClick" />
                             <MenuFlyoutItem x:Name="MenuFavorite" Click="OnFavoriteClick" />
                             <MenuFlyoutItem x:Name="MenuWatchlist" Click="OnWatchlistClick" />
+                            <MenuFlyoutItem x:Name="MenuNotInterested" Click="OnNotInterestedClick" />
+                            <MenuFlyoutSeparator x:Name="MenuRemoveSeparator" />
+                            <MenuFlyoutItem x:Name="MenuRemove" Click="OnRemoveClick" />
                         </MenuFlyout>
                     </Button.Flyout>
                 </Button>

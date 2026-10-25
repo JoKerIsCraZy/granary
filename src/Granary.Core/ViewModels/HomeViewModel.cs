@@ -143,7 +143,7 @@ public sealed partial class HomeViewModel : ObservableObject
     /// Removes the card's title from Continue Watching and Next Up. The server drops the whole show from
     /// both rows, so every card of that series goes locally too.
     /// </summary>
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanRemove))]
     private async Task RemoveAsync(MediaCard? card)
     {
         if (card is null || FindRemovable(card) is not { } item || HomeDismissal.For(item) is not { } dismissal
@@ -349,7 +349,7 @@ public sealed partial class HomeViewModel : ObservableObject
                 ? new RelayCommand(() => _navigation.NavigateTo(AppRoute.Section,
                     new SectionRouteParameter(section.Id, section.Title, SectionType: section.SectionType)))
                 : null;
-            rows.Add(new HomeRowViewModel(section, cards, OpenCardCommand, exploreAll));
+            rows.Add(new HomeRowViewModel(section, cards, OpenCardCommand, exploreAll, RemoveCommand));
         }
         return rows;
     }

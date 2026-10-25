@@ -31,6 +31,12 @@ public sealed partial class MediaRow : UserControl
     public static readonly DependencyProperty ExploreAllCommandProperty =
         DependencyProperty.Register(nameof(ExploreAllCommand), typeof(ICommand), typeof(MediaRow), new PropertyMetadata(null));
 
+    public static readonly DependencyProperty CardRemoveCommandProperty =
+        DependencyProperty.Register(nameof(CardRemoveCommand), typeof(ICommand), typeof(MediaRow), new PropertyMetadata(null));
+
+    public static readonly DependencyProperty CardRemoveLabelProperty =
+        DependencyProperty.Register(nameof(CardRemoveLabel), typeof(string), typeof(MediaRow), new PropertyMetadata(""));
+
     public const double PosterWidth = 185;
     public const double LandscapeWidth = 314;
 
@@ -74,6 +80,20 @@ public sealed partial class MediaRow : UserControl
     {
         get => (ICommand?)GetValue(ExploreAllCommandProperty);
         set => SetValue(ExploreAllCommandProperty, value);
+    }
+
+    /// <summary>Takes a card (the parameter) off the row, for Continue Watching and Next Up; the cards' menus offer it.</summary>
+    public ICommand? CardRemoveCommand
+    {
+        get => (ICommand?)GetValue(CardRemoveCommandProperty);
+        set => SetValue(CardRemoveCommandProperty, value);
+    }
+
+    /// <summary>The menu entry for <see cref="CardRemoveCommand"/>: "Remove from Continue Watching".</summary>
+    public string CardRemoveLabel
+    {
+        get => (string)GetValue(CardRemoveLabelProperty);
+        set => SetValue(CardRemoveLabelProperty, value);
     }
 
     // Static and instance helpers because x:Bind function bindings call them.

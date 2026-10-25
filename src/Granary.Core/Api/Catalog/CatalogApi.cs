@@ -139,6 +139,21 @@ public sealed class CatalogApi(SiloHttp http)
         http.SendAsync(inWatchlist ? HttpMethod.Put : HttpMethod.Delete, server, $"api/v2/watchlist/{Segment(itemId)}", SiloAuth.Profile, cancellationToken);
 
     /// <summary>
+    /// Marks a movie or series Not interested (PUT) or clears the mark (DELETE); idempotent. Recommendation and
+    /// discovery rows leave a marked title out; browsing, search and the lists are unchanged. Episodes and seasons are 422.
+    /// </summary>
+    public Task SetNotInterestedAsync(Uri server, string itemId, bool notInterested, CancellationToken cancellationToken = default) =>
+        http.SendAsync(notInterested ? HttpMethod.Put : HttpMethod.Delete, server, $"api/v2/not-interested/{Segment(itemId)}", SiloAuth.Profile,
+            cancellationToken);
+
+    /// <summary>
+    /// Clears where the profile left off in a movie or episode ("Reset Progress"), keeping its watched state and history;
+    /// a title without one is a no-op. It leaves Continue Watching with it.
+    /// </summary>
+    public Task ClearResumePositionAsync(Uri server, string itemId, CancellationToken cancellationToken = default) =>
+        http.SendAsync(HttpMethod.Delete, server, $"api/v2/progress/{Segment(itemId)}/position", SiloAuth.Profile, cancellationToken);
+
+    /// <summary>
     /// Marks a movie, episode, season or series watched (POST) or unwatched (DELETE); a season or series
     /// covers every episode, and unwatching also clears the resume position. Non-retryable.
     /// </summary>

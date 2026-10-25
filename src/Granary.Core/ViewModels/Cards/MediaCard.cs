@@ -56,6 +56,9 @@ public sealed record MediaCard(string Id, string Type, string Title)
 
     public bool InWatchlist { get; init; }
 
+    /// <summary>The viewer marked it Not interested: recommendations leave it out.</summary>
+    public bool IsNotInterested { get; init; }
+
     /// <summary>What Play starts for this card (the next episode of a series), when the server says.</summary>
     public string? PlayContentId { get; init; }
 
