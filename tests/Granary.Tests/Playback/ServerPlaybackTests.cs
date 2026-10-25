@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text.RegularExpressions;
 using Granary.Core.Playback;
 using Granary.Tests.Profiles;
 using static Granary.Tests.Playback.ServerPlaybackFixture;
@@ -29,6 +30,33 @@ public sealed class ServerPlaybackTests
         Assert.Equal(ServerPlaybackPhase.Preparing, playback.Status.Phase);
         Assert.Equal("Heat", playback.Title);
         Assert.Equal("1995", playback.Subtitle);
+    }
+
+    [Theory]
+    [InlineData("{ \"id\": \"file:42:audio:0\", \"index\": 0 }", 1)]
+    [InlineData("{ \"id\": \"file:42:audio:1\", \"index\": 1 }", 2)]
+    [InlineData("{ \"id\": \"file:42:audio:1\" }", 2)]
+    public async Task ADirectPlay_PlaysTheAudioThePlanSelected(string audio, int stream)
+    {
+        // The file holds every audio track, and mpv on its own plays the one the file marks as default.
+        // The first "audio" object is selected_tracks.audio; the claims have one too.
+        string decision = new Regex(@"(""audio"":\s*)\{[^}]*\}").Replace(PlaybackPayloads.StartOpaqueIds, "$1" + audio, 1);
+        Assert.Contains(audio, decision, StringComparison.Ordinal);
+        _fixture.Silo.On(HttpMethod.Post, StartPath, Created(decision));
+
+        await _fixture.StartAsync();
+
+        Assert.Equal(stream, Assert.Single(_fixture.Engine.Loaded).AudioStream);
+    }
+
+    [Fact]
+    public async Task AStreamTheServerMade_CarriesItsAudioAlready()
+    {
+        _fixture.Silo.On(HttpMethod.Post, StartPath, Created(PlaybackPayloads.TranscodeDecision));
+
+        await _fixture.StartAsync();
+
+        Assert.Null(Assert.Single(_fixture.Engine.Loaded).AudioStream);
     }
 
     [Fact]

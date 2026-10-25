@@ -119,9 +119,7 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
 
         // Plan URLs are replayed byte for byte (docs/api-contract.md, 9.2): the string as given, not as Uri re-escapes it.
         string target = source.Url.IsFile ? source.Url.LocalPath : source.Url.OriginalString;
-        string perFileOptions = source.Start is { } start
-            ? $"start={start.TotalSeconds.ToString("0.###", CultureInfo.InvariantCulture)}"
-            : "";
+        string perFileOptions = string.Join(",", PerFileOptions(source));
         long loadId;
         lock (_gate)
         {
@@ -134,6 +132,19 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
         _logger.LogInformation("Loading {Target} with {HeaderCount} header(s)", Describe(source.Url), source.Headers.Count);
         _mpv.Command("loadfile", target, "replace", "-1", perFileOptions);
         return loadId;
+    }
+
+    // Options for this file only: the next load starts from mpv's defaults again.
+    private static IEnumerable<string> PerFileOptions(MediaSource source)
+    {
+        if (source.Start is { } start)
+        {
+            yield return "start=" + start.TotalSeconds.ToString("0.###", CultureInfo.InvariantCulture);
+        }
+        if (source.AudioStream is { } audio)
+        {
+            yield return "aid=" + audio.ToString(CultureInfo.InvariantCulture);
+        }
     }
 
     /// <summary>

@@ -88,7 +88,9 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
 - **The plan**: its stream URL must lie beneath the saved server (`PlaybackUrl`). `MediaAuthorization` gives the
   load the bearer and profile headers with a token that has at least half its lifetime ahead; mpv keeps them
   for every request of the load. The plan starts at its own `player_start_seconds`; positions shown, reported
-  and sent are source time (`player + timeline_offset_seconds`).
+  and sent are source time (`player + timeline_offset_seconds`). A direct play (`original_http`) is the file
+  with all its audio tracks, so the load selects the plan's audio track (mpv `aid`, the ordinal plus 1);
+  otherwise mpv would play the one the file marks as default. Streams the server makes carry only that track.
 - **While playing**: progress every 10 s, and once a pause has held for a second (`PlaybackProgress`: one
   sequence per sample, retried with the identical body). Leaving the page by any way stops the session with
   its final position and stops the engine (`PlayerViewModel.Leave`); before the session's first frame the stop

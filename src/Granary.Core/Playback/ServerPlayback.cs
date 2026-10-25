@@ -334,10 +334,25 @@ public sealed partial class ServerPlayback : IServerPlayback
         // Until its first frame the viewer is at the load's start, in this plan's time.
         _playerPosition = Math.Max(0, playerStart);
         _loadedAt = _time.GetTimestamp();
-        _logger.LogInformation("Loading the {Delivery} plan at {Start:F1} s (offset {Offset:F1} s)",
-            _plan.Delivery, _playerPosition, _plan.Timeline.TimelineOffsetSeconds);
-        _loadId = _engine.Load(new MediaSource(_streamUrl!, media.Headers, TimeSpan.FromSeconds(_playerPosition)));
+        int? audio = AudioStream(_plan);
+        _logger.LogInformation("Loading the {Delivery} plan at {Start:F1} s (offset {Offset:F1} s, audio stream {Audio})",
+            _plan.Delivery, _playerPosition, _plan.Timeline.TimelineOffsetSeconds, audio?.ToString(CultureInfo.InvariantCulture) ?? "as delivered");
+        _loadId = _engine.Load(new MediaSource(_streamUrl!, media.Headers, TimeSpan.FromSeconds(_playerPosition), audio));
         WatchFirstFrame(_loadId);
+    }
+
+    // A direct play is the file itself, with every audio track, and the player would take the one the file marks as
+    // default: it must play the one the plan selected (8.8). A stream the server made carries only that one.
+    private static int? AudioStream(PlaybackPlan plan)
+    {
+        if (plan.Delivery != PlaybackDeliveries.OriginalHttp || plan.SelectedTracks.Audio is not { } audio)
+        {
+            return null;
+        }
+        // The ordinal is the track's place among the file's audio streams (file:{id}:audio:{ordinal}).
+        int? ordinal = audio.Index ?? (int.TryParse(audio.Id.AsSpan(audio.Id.LastIndexOf(':') + 1), NumberStyles.None,
+            CultureInfo.InvariantCulture, out int parsed) ? parsed : null);
+        return ordinal is >= 0 ? ordinal + 1 : null;
     }
 
     private void OnEngineStateChanged(object? sender, PlaybackSnapshot state) => _dispatcher.Post(() => ShowEngineState(state));

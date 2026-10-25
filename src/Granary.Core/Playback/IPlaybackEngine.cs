@@ -1,7 +1,8 @@
 namespace Granary.Core.Playback;
 
 /// <summary>What to play: a URL plus the HTTP headers every request for it must carry.</summary>
-public sealed record MediaSource(Uri Url, IReadOnlyList<KeyValuePair<string, string>> Headers, TimeSpan? Start = null)
+/// <param name="AudioStream">The audio stream to play, counted from 1 in the file's order; null leaves it to the player.</param>
+public sealed record MediaSource(Uri Url, IReadOnlyList<KeyValuePair<string, string>> Headers, TimeSpan? Start = null, int? AudioStream = null)
 {
     public static MediaSource Local(string path, TimeSpan? start = null) => new(new Uri(Path.GetFullPath(path)), [], start);
 }
