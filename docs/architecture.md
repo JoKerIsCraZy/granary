@@ -85,9 +85,9 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   start position (the resume point minus 7 s from 30 s on, 0 to start over, sent explicitly), the profile's
   quality and bitrate cap (`PlaybackPreferencesReader`), the server's capabilities, and the device report:
   `MpvDeviceProbe` reads the GPU's D3D11VA decoder profiles; HEVC, VP9 and AV1 count only with hardware.
-- **The plan**: its stream URL must lie beneath the saved server (`PlaybackUrl`). `MediaAuthorization` gives the
-  load the bearer and profile headers with a token that has at least half its lifetime ahead; mpv keeps them
-  for every request of the load. The plan starts at its own `player_start_seconds`; positions shown, reported
+- **The plan**: its stream URL must lie beneath the saved server (`PlaybackUrl`). `MediaAuthorization` checks
+  the login and profile before the load and hands out the bearer and profile headers. mpv plays through the
+  media proxy (below) and gets no credential. The plan starts at its own `player_start_seconds`; positions shown, reported
   and sent are source time (`player + timeline_offset_seconds`). A direct play (`original_http`) is the file
   with all its audio tracks, so the load selects the plan's audio track (mpv `aid`, the ordinal plus 1);
   otherwise mpv would play the one the file marks as default. Streams the server makes carry only that track.
@@ -99,7 +99,8 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   sends 0, which the server never stores, so a quick look does not move the resume point. Closing the window
   waits up to 4 s for stops still on their way (`PlaybackStops`). An end within 30 s of the title's end
   finishes it; an earlier end is a stream that broke off.
-- **Recovery**: refused headers (401 mid-stream) → fresh token, same plan reloaded where the viewer was; a plan
+- **Recovery**: headers the server refuses even after the proxy renewed them → the same plan reloaded where the
+  viewer was, with a fresh token; a plan
   that never played (or showed no picture within 90 s) → `failure_recovery` replan with every key tried (at
   most 8); a connection lost after the plan's first frame → no-op `track_change` replans for about 2.5 minutes,
   the schedule going on while reloads break again; a session the server forgot (404), or one that refuses to go
@@ -114,11 +115,16 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
 - After a refused request mpv runs to the end of what it had read and pauses there before it reports the end.
   The engine keeps the last real position and pause from the refusal until the next load, so the end of that
   data is never taken for the viewer's position.
-- mpv keeps the media headers for every request of a load and would forward them on a redirect or to an
-  absolute URL in an HLS manifest. v2 media routes do not redirect and their manifests are relative, so only a
-  server or proxy that already sees the tokens could send them elsewhere. A loopback proxy that adds the headers
-  per request and only towards the saved server (the Apple client's design) would close this for good and would
-  also make the reload after a token refresh unnecessary.
+- **Media proxy** (`MediaProxy`, the Apple client's design): an `HttpListener` on 127.0.0.1 between mpv and the
+  server. Each load opens a route (`IMediaRoute`); mpv gets `http://127.0.0.1:{port}/{secret}/{route}/{the plan
+  URL's path and query, byte for byte}`. The route forwards GET and HEAD with the range headers to its own stream
+  only (a progressive stream: its exact URL; HLS: the playlist and what lies beside it, no dot segments), adds
+  the headers per request, renews a token within 60 s of its end, and on a 401 renews it once and repeats the
+  request, so mpv never sees an expiry. Redirects are not followed, cookies and the upstream's other headers
+  stay behind, and a body that breaks off aborts the response so mpv sees a lost connection, not an end. The
+  secret keeps other programs on the machine out; the log redactor masks it. A new load, the stop and a failure
+  close the route and its requests. Before the proxy, mpv kept the headers for the whole load and would have
+  sent them wherever a redirect or a playlist pointed.
 - `--play <file or URL>` plays without the server and `--play-item <content id>` plays a title of the
   signed-in server, for development.
 

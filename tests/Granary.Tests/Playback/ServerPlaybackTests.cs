@@ -19,13 +19,17 @@ public sealed class ServerPlaybackTests
     // Start
 
     [Fact]
-    public async Task Start_LoadsThePlanWithTheMediaHeaders_AtThePlansStart()
+    public async Task Start_LoadsThePlanThroughTheProxy_AtThePlansStart()
     {
         var playback = await _fixture.StartAsync();
 
         var load = Assert.Single(_fixture.Engine.Loaded);
-        Assert.Equal(StreamUrl(), load.Url);
-        Assert.Equal([new("Authorization", "Bearer token"), new("X-Profile-Id", "7")], load.Headers);
+        var route = _fixture.RouteOf(load);
+        Assert.Equal(StreamUrl(), route.Upstream);
+        Assert.Equal(MediaRouteScope.File, route.Scope);
+        // mpv gets no credential; the proxy adds them, starting with the ones the load checked.
+        Assert.Empty(load.Headers);
+        Assert.Equal([new("Authorization", "Bearer token"), new("X-Profile-Id", "7")], route.Initial!.Headers);
         Assert.Equal(TimeSpan.FromSeconds(12.5), load.Start);
         Assert.Equal(ServerPlaybackPhase.Preparing, playback.Status.Phase);
         Assert.Equal("Heat", playback.Title);
@@ -95,6 +99,43 @@ public sealed class ServerPlaybackTests
         await _fixture.StartAsync();
 
         Assert.Null(Assert.Single(_fixture.Engine.Loaded).AudioStream);
+    }
+
+    [Fact]
+    public async Task TheProxy_AsksForHeadersOfTheServer_FreshOnesAfterARefusal()
+    {
+        await _fixture.StartAsync();
+        var route = Assert.Single(_fixture.Proxy.Routes);
+
+        var renewed = await route.Credentials(true, Cancellation);
+
+        Assert.Equal([false, true], _fixture.Auth.Requests);
+        Assert.Contains(new KeyValuePair<string, string>("Authorization", "Bearer fresh"), renewed.Headers);
+    }
+
+    [Fact]
+    public async Task ANewLoad_ClosesTheRouteOfTheOneBefore()
+    {
+        var playback = await _fixture.PlayingAsync();
+
+        _fixture.Engine.RaiseEnded(new PlaybackEnded(PlaybackEndReason.AuthenticationFailed, null));
+        await playback.Recovery;
+
+        Assert.Equal([true, false], _fixture.Proxy.Routes.Select(r => r.Disposed));
+    }
+
+    [Fact]
+    public async Task TheStop_AndAFailure_CloseTheRoute()
+    {
+        var stopped = await _fixture.PlayingAsync();
+        await stopped.StopAsync();
+        Assert.True(_fixture.Proxy.Routes[^1].Disposed);
+
+        _fixture.Silo.On(HttpMethod.Post, ProgressPath, ScriptedSilo.Problem(410, "playback_session_ended"));
+        var failed = await _fixture.PlayingAsync();
+        await _fixture.AdvanceAsync(TimeSpan.FromSeconds(10));
+        await Until(() => failed.Status.Phase == ServerPlaybackPhase.Failed, "the session ends");
+        Assert.True(_fixture.Proxy.Routes[^1].Disposed);
     }
 
     [Fact]
@@ -285,7 +326,7 @@ public sealed class ServerPlaybackTests
         Assert.Equal(300, restart.GetProperty("start_position").GetDouble());
         Assert.NotEqual(_fixture.Body(HttpMethod.Post, StartPath).GetProperty("playback_attempt_id").GetString(),
             restart.GetProperty("playback_attempt_id").GetString());
-        Assert.Equal(StreamUrl(OtherSession), _fixture.Engine.Loaded[^1].Url);
+        Assert.Equal(StreamUrl(OtherSession), _fixture.LastUpstream);
     }
 
     // Stop and the end
@@ -388,9 +429,9 @@ public sealed class ServerPlaybackTests
 
         Assert.Equal([false, true], _fixture.Auth.Requests);
         var reload = _fixture.Engine.Loaded[^1];
-        Assert.Equal(StreamUrl(), reload.Url);
+        Assert.Equal(StreamUrl(), _fixture.LastUpstream);
         Assert.Equal(TimeSpan.FromSeconds(400), reload.Start);
-        Assert.Contains(new KeyValuePair<string, string>("Authorization", "Bearer fresh"), reload.Headers);
+        Assert.Contains(new KeyValuePair<string, string>("Authorization", "Bearer fresh"), _fixture.RouteOf(reload).Initial!.Headers);
         Assert.Empty(_fixture.Silo.SentTo(HttpMethod.Post, ReplanPath));
         Assert.NotEqual(ServerPlaybackPhase.Failed, playback.Status.Phase);
     }
@@ -470,11 +511,13 @@ public sealed class ServerPlaybackTests
         Assert.False(string.IsNullOrEmpty(replan.GetProperty("failure").GetProperty("classification").GetString()));
         // The transcode plays from player time 2 s; its stream starts at source 598 s.
         var load = _fixture.Engine.Loaded[^1];
-        Assert.EndsWith("/master.m3u8", load.Url.AbsolutePath, StringComparison.Ordinal);
+        var route = _fixture.RouteOf(load);
+        Assert.EndsWith("/master.m3u8", route.Upstream.AbsolutePath, StringComparison.Ordinal);
+        Assert.Equal(MediaRouteScope.Directory, route.Scope);
         Assert.Equal(TimeSpan.FromSeconds(2), load.Start);
         Assert.Equal(598, playback.TimelineOffsetSeconds);
         // The plan's own headers (X-Test here) are not sent: the client sends only the media headers it knows.
-        Assert.DoesNotContain(load.Headers, h => h.Key == "X-Test");
+        Assert.DoesNotContain(route.Initial!.Headers, h => h.Key == "X-Test");
     }
 
     [Fact]
@@ -585,7 +628,7 @@ public sealed class ServerPlaybackTests
         await playback.Recovery;
         await Until(() => _fixture.Silo.SentTo(HttpMethod.Delete, StopPath).Count == 1, "the old session is stopped");
 
-        Assert.Equal(StreamUrl(OtherSession), _fixture.Engine.Loaded[^1].Url);
+        Assert.Equal(StreamUrl(OtherSession), _fixture.LastUpstream);
         Assert.Equal(700, _fixture.Body(HttpMethod.Delete, StopPath).GetProperty("position").GetDouble());
     }
 
@@ -601,7 +644,7 @@ public sealed class ServerPlaybackTests
         await _fixture.AdvanceAsync(TimeSpan.FromSeconds(1));
 
         Assert.Equal(700, _fixture.Body(HttpMethod.Post, StartPath, 1).GetProperty("start_position").GetDouble());
-        Assert.Equal(StreamUrl(OtherSession), _fixture.Engine.Loaded[^1].Url);
+        Assert.Equal(StreamUrl(OtherSession), _fixture.LastUpstream);
     }
 
     [Fact]

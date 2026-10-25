@@ -47,6 +47,8 @@ internal sealed class ServerPlaybackFixture
 
     public FakeMediaAuthorization Auth { get; } = new();
 
+    public FakeMediaProxy Proxy { get; } = new();
+
     public ManualTimeProvider Time { get; } = new();
 
     public LogSink Logs { get; } = new();
@@ -82,6 +84,7 @@ internal sealed class ServerPlaybackFixture
             starter,
             new PlaybackApi(Silo.Http),
             Auth,
+            Proxy,
             Engine,
             new ImmediateDispatcher(),
             Time,
@@ -108,6 +111,12 @@ internal sealed class ServerPlaybackFixture
 
     public static PlaybackSnapshot Frame(double playerSeconds, bool paused = false) =>
         new(true, paused, TimeSpan.FromSeconds(playerSeconds), TimeSpan.FromSeconds(10200), "d3d11va", HasStarted: true);
+
+    /// <summary>The proxy route a load opened: what it serves, and how.</summary>
+    public FakeMediaRoute RouteOf(MediaSource load) => Proxy.Routes.Single(r => r.LocalUrl == load.Url);
+
+    /// <summary>The server URL the latest load plays through the proxy.</summary>
+    public Uri LastUpstream => RouteOf(Engine.Loaded[^1]).Upstream;
 
     public JsonElement Body(HttpMethod method, string path, int index = 0) =>
         JsonDocument.Parse(Silo.SentTo(method, path)[index].Body!).RootElement;
@@ -143,6 +152,27 @@ internal sealed class ServerPlaybackFixture
         await gate;
         return await respond();
     };
+}
+
+/// <summary>Records the routes a playback opens; each gets its own loopback-looking URL.</summary>
+internal sealed class FakeMediaProxy : IMediaProxy
+{
+    public List<FakeMediaRoute> Routes { get; } = [];
+
+    public IMediaRoute Open(Uri upstream, MediaRouteScope scope, MediaCredentialSource credentials, MediaCredentials? initial = null)
+    {
+        var route = new FakeMediaRoute(new Uri($"http://127.0.0.1:1/route{Routes.Count + 1}/stream"), upstream, scope, credentials, initial);
+        Routes.Add(route);
+        return route;
+    }
+}
+
+internal sealed record FakeMediaRoute(Uri LocalUrl, Uri Upstream, MediaRouteScope Scope, MediaCredentialSource Credentials, MediaCredentials? Initial)
+    : IMediaRoute
+{
+    public bool Disposed { get; private set; }
+
+    public void Dispose() => Disposed = true;
 }
 
 /// <summary>Fixed media headers; records whether each request asked for fresh ones.</summary>

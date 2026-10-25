@@ -42,6 +42,7 @@ public sealed partial class ServerPlayback : IServerPlayback
     private readonly PlaybackStarter _starter;
     private readonly PlaybackApi _api;
     private readonly IMediaAuthorization _auth;
+    private readonly IMediaProxy _proxy;
     private readonly IPlaybackEngine _engine;
     private readonly IUiDispatcher _dispatcher;
     private readonly TimeProvider _time;
@@ -55,6 +56,7 @@ public sealed partial class ServerPlayback : IServerPlayback
     private string _planAttemptId = "";
     private PlaybackProgress? _progress;
     private Uri? _streamUrl;
+    private IMediaRoute? _route;
     private ITimer? _progressTimer;
     private ITimer? _pauseReport;
     private ITimer? _firstFrameWatch;
@@ -84,6 +86,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         PlaybackStarter starter,
         PlaybackApi api,
         IMediaAuthorization auth,
+        IMediaProxy proxy,
         IPlaybackEngine engine,
         IUiDispatcher dispatcher,
         TimeProvider time,
@@ -93,6 +96,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         _starter = starter;
         _api = api;
         _auth = auth;
+        _proxy = proxy;
         _engine = engine;
         _dispatcher = dispatcher;
         _time = time;
@@ -171,6 +175,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         StopTimers();
         // Read now: the engine stops right after this call, and its idle state would read as position 0.
         _stop = StopSessionsAsync(StopPosition, _paused);
+        CloseRoute();
         return _stop;
     }
 
@@ -179,6 +184,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         _engine.StateChanged -= OnEngineStateChanged;
         _engine.Ended -= OnEngineEnded;
         StopTimers();
+        CloseRoute();
         await _stop.ConfigureAwait(false);
         await _retired.ConfigureAwait(false);
     }
@@ -344,9 +350,22 @@ public sealed partial class ServerPlayback : IServerPlayback
         int? audio = AudioStream(_plan);
         _logger.LogInformation("Loading the {Delivery} plan at {Start:F1} s (offset {Offset:F1} s, audio stream {Audio})",
             _plan.Delivery, _playerPosition, _plan.Timeline.TimelineOffsetSeconds, audio?.ToString(CultureInfo.InvariantCulture) ?? "as delivered");
+        // mpv gets the loopback and no credential: the proxy adds the headers to each request of this stream alone,
+        // renewing a token the server refuses. A playlist's variants and segments lie beside it.
+        var server = _context!.Server;
+        CloseRoute();
+        _route = _proxy.Open(_streamUrl!, _plan.Stream.Protocol == StreamProtocols.Hls ? MediaRouteScope.Directory : MediaRouteScope.File,
+            (refused, cancellationToken) => _auth.GetAsync(server, refused, cancellationToken), media);
         // Subtitles are the plan's to choose; left to itself, mpv would show one the file marks as default.
-        _loadId = _engine.Load(new MediaSource(_streamUrl!, media.Headers, TimeSpan.FromSeconds(_playerPosition), audio, SubtitleStream: 0));
+        _loadId = _engine.Load(new MediaSource(_route.LocalUrl, [], TimeSpan.FromSeconds(_playerPosition), audio, SubtitleStream: 0));
         WatchFirstFrame(_loadId);
+    }
+
+    // Ends the requests of the stream before; a new load has its own route.
+    private void CloseRoute()
+    {
+        _route?.Dispose();
+        _route = null;
     }
 
     // Only the version's own file is known here: after an edition fallback the plan plays another one.
@@ -626,6 +645,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         _loadId = 0;
         _started = false;
         _engine.Stop();
+        CloseRoute();
         SetStatus(new ServerPlaybackStatus(ServerPlaybackPhase.Failed, message, canRetry));
     }
 

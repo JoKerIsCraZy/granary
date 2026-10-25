@@ -95,6 +95,9 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<IMediaAuthorization, MediaAuthorization>();
         services.AddTransient<PlaybackStarter>();
         services.AddSingleton<PlaybackStops>();
+        services.AddSingleton<MediaProxy>(sp => new MediaProxy(CreateMediaHandler(), sp.GetRequiredService<TimeProvider>(),
+            sp.GetRequiredService<ILogger<MediaProxy>>()));
+        services.AddSingleton<IMediaProxy>(sp => sp.GetRequiredService<MediaProxy>());
         services.AddSingleton<Func<IServerPlayback>>(sp => () => ActivatorUtilities.CreateInstance<ServerPlayback>(sp));
     }
 
@@ -122,6 +125,17 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<ArtworkLoader>();
         services.AddSingleton<IArtworkPrefetcher>(sp => sp.GetRequiredService<ArtworkLoader>());
     }
+
+    // The media proxy's way upstream: a stream can run for hours, so no timeout but the player's own, which ends the
+    // request when it gives up. No redirects, cookies or decompression: the bytes go to mpv as the server sent them.
+    private static SocketsHttpHandler CreateMediaHandler() => new()
+    {
+        AllowAutoRedirect = false,
+        UseCookies = false,
+        AutomaticDecompression = System.Net.DecompressionMethods.None,
+        ConnectTimeout = TimeSpan.FromSeconds(15),
+        PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+    };
 
     // Long-lived services keep their typed clients, so connections are recycled to follow DNS changes.
     private static SocketsHttpHandler CreateSocketsHandler() =>
