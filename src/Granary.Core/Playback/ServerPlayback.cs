@@ -316,6 +316,13 @@ public sealed partial class ServerPlayback : IServerPlayback
             Fail("The server sent a stream address this app does not trust.", canRetry: true);
             return;
         }
+        if (plan.Stream.Protocol == StreamProtocols.Hls && !IsSessionPlaylist(url, _progress.SessionId))
+        {
+            // Its route reaches everything beside the playlist with the viewer's headers: that must be this session's
+            // own folder (…/{session}/master.m3u8, 9.2), never a shallow one where other routes of the server lie.
+            Fail("The server sent a stream address this app does not trust.", canRetry: true);
+            return;
+        }
         _streamUrl = url;
         if (AudioStream(plan) is { } stream && !FileHasAudioStream(plan, stream))
         {
@@ -499,6 +506,9 @@ public sealed partial class ServerPlayback : IServerPlayback
             Recover(() => RecoverFromFailureAsync(classification, ended.Detail));
         }
     }
+
+    private static bool IsSessionPlaylist(Uri playlist, string sessionId) =>
+        playlist.AbsolutePath.EndsWith("/" + Uri.EscapeDataString(sessionId) + "/master.m3u8", StringComparison.Ordinal);
 
     private bool IsFromNode(Uri? stream) => stream is not null && _context is { } context && !SiloRequestOptions.IsBeneath(stream, context.Server.BaseUri);
 

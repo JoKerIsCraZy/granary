@@ -33,24 +33,38 @@ internal sealed class MediaRoute : IMediaRoute
     // Renewed ahead of its end, as Apple's client does: a request must not start with a token that expires on the way.
     private static readonly TimeSpan RenewAhead = TimeSpan.FromSeconds(60);
 
+    // A renewal ahead of the end that brought no new token is not tried again for this long: the server may be
+    // unable to refresh for now, and every segment request would otherwise wait for another failing refresh.
+    private static readonly TimeSpan RenewalPause = TimeSpan.FromSeconds(5);
+
+    // mpv opens a few connections at a time (a seek, the next segments); more than this is not a player.
+    private const int MaxConcurrentRequests = 16;
+
+    // Sent exactly as written: no unescaping (%41 stays %41) and no resolving of dot segments, which IsPlainRelative
+    // has already refused. Plan URLs are replayed byte for byte (docs/api-contract.md, 9.2).
+    private static readonly UriCreationOptions Verbatim = new() { DangerousDisablePathAndQueryCanonicalization = true };
+
     // Request headers a range or segment request needs; everything else stays with the player.
     private static readonly string[] ForwardedRequestHeaders = ["Range", "If-Range", "If-None-Match", "If-Modified-Since", "Accept", "User-Agent"];
 
     // Response headers the player needs; cookies and anything about the upstream connection stay behind.
+    // Content-Encoding too: the proxy does not decompress, so mpv must know what it gets.
     private static readonly HashSet<string> ForwardedResponseHeaders = new(StringComparer.OrdinalIgnoreCase)
     {
-        "Content-Type", "Content-Range", "Accept-Ranges", "ETag", "Last-Modified", "Cache-Control", "Retry-After",
+        "Content-Type", "Content-Encoding", "Content-Range", "Accept-Ranges", "ETag", "Last-Modified", "Cache-Control", "Retry-After",
     };
 
     private readonly MediaProxy _proxy;
     private readonly MediaCredentialSource _source;
     private readonly TimeProvider _time;
     private readonly SemaphoreSlim _renewing = new(1, 1);
+    private readonly SemaphoreSlim _requests = new(MaxConcurrentRequests, MaxConcurrentRequests);
     private readonly CancellationTokenSource _closing = new();
     private readonly string _origin;
     private readonly string _pathAndQuery;
     private readonly string _allowedPrefix;
     private MediaCredentials? _current;
+    private long? _renewedAt;
     private int _disposed;
 
     public MediaRoute(MediaProxy proxy, string id, string localRoot, Uri upstream, MediaRouteScope scope, MediaCredentialSource source,
@@ -70,7 +84,7 @@ internal sealed class MediaRoute : IMediaRoute
         _pathAndQuery = path < 0 ? "/" : text[path..];
         string pathOnly = _pathAndQuery.Split('?', 2)[0];
         _allowedPrefix = scope == MediaRouteScope.File ? _pathAndQuery : pathOnly[..(pathOnly.LastIndexOf('/') + 1)];
-        LocalUrl = new Uri(localRoot + _pathAndQuery);
+        LocalUrl = new Uri(localRoot + _pathAndQuery, Verbatim);
     }
 
     public string Id { get; }
@@ -88,17 +102,34 @@ internal sealed class MediaRoute : IMediaRoute
     {
         if (Scope == MediaRouteScope.File)
         {
-            return pathAndQuery == _pathAndQuery ? Upstream : null;
+            return pathAndQuery == _pathAndQuery ? new Uri(_origin + _pathAndQuery, Verbatim) : null;
         }
         string path = pathAndQuery.Split('?', 2)[0];
         return path.StartsWith(_allowedPrefix, StringComparison.Ordinal) && IsPlainRelative(path[_allowedPrefix.Length..])
-            ? new Uri(_origin + pathAndQuery)
+            ? new Uri(_origin + pathAndQuery, Verbatim)
             : null;
     }
 
     internal async Task ForwardAsync(HttpListenerContext context, Uri upstream, HttpMessageInvoker client, ILogger logger)
     {
         var token = _closing.Token;
+        if (!await _requests.WaitAsync(0, token).ConfigureAwait(false))
+        {
+            context.Response.StatusCode = (int)HttpStatusCode.ServiceUnavailable;
+            return;
+        }
+        try
+        {
+            await ForwardOnceAsync(context, upstream, client, logger, token).ConfigureAwait(false);
+        }
+        finally
+        {
+            _requests.Release();
+        }
+    }
+
+    private async Task ForwardOnceAsync(HttpListenerContext context, Uri upstream, HttpMessageInvoker client, ILogger logger, CancellationToken token)
+    {
         bool head = context.Request.HttpMethod == "HEAD";
         MediaCredentials? refused = null;
         while (true)
@@ -110,8 +141,11 @@ internal sealed class MediaRoute : IMediaRoute
             }
             catch (MediaAuthorizationException ex)
             {
+                // No token for now is a busy server, not a refusal; mpv then reports a lost connection, not a 401.
                 logger.LogInformation("No media headers for {Path}: {Failure}", upstream.AbsolutePath, ex.Failure);
-                context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
+                context.Response.StatusCode = ex.Failure == MediaAuthorizationFailure.Unavailable
+                    ? (int)HttpStatusCode.ServiceUnavailable
+                    : (int)HttpStatusCode.Unauthorized;
                 return;
             }
             using var request = new HttpRequestMessage(head ? HttpMethod.Head : HttpMethod.Get, upstream);
@@ -146,8 +180,8 @@ internal sealed class MediaRoute : IMediaRoute
             return;
         }
         _proxy.Remove(this);
+        // Cancelled, not disposed: a request between lookup and forwarding still reads the token.
         _closing.Cancel();
-        _closing.Dispose();
     }
 
     // Beside the stream, never above it: no dot segments, no backslashes, nothing encoded that would become one.
@@ -165,8 +199,11 @@ internal sealed class MediaRoute : IMediaRoute
         try
         {
             bool rejected = refused is not null && ReferenceEquals(refused, _current);
-            if (_current is null || rejected || _current.ExpiresAt - _time.GetUtcNow() < RenewAhead)
+            bool ending = _current is not null && _current.ExpiresAt - _time.GetUtcNow() < RenewAhead
+                && (_renewedAt is not { } renewed || _time.GetElapsedTime(renewed) >= RenewalPause);
+            if (_current is null || rejected || ending)
             {
+                _renewedAt = _time.GetTimestamp();
                 _current = await _source(rejected, cancellationToken).ConfigureAwait(false);
             }
             return _current;
@@ -204,7 +241,7 @@ internal sealed class MediaRoute : IMediaRoute
             }
         }
         long? length = upstream.Content.Headers.ContentLength;
-        if (head || status == (int)HttpStatusCode.NotModified)
+        if (head || status is (int)HttpStatusCode.NotModified or (int)HttpStatusCode.NoContent or < 200)
         {
             if (length is { } announced)
             {

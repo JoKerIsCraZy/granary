@@ -86,6 +86,10 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
         _mpv.SetOption("rebase-start-time", "yes");
         // Granary drives System Media Transport Controls itself.
         _mpv.SetOption("media-controls", "no");
+        // The server keeps the position. mpv must not read or write watch-later files, which would store the URLs,
+        // the media proxy's secret among them.
+        _mpv.SetOption("resume-playback", "no");
+        _mpv.SetOption("save-position-on-quit", "no");
 
         switch (_options.VideoOutput)
         {

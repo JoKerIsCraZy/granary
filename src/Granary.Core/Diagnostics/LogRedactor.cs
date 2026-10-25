@@ -22,8 +22,9 @@ public static partial class LogRedactor
     [GeneratedRegex(@"eyJ[A-Za-z0-9_-]{4,}\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]*")]
     private static partial Regex Jwt();
 
-    // MediaProxy URLs: /{secret}/{route}/..., which reach the server as the viewer while the route lives.
-    [GeneratedRegex(@"/[0-9a-f]{64}/[0-9a-f]{32}/")]
+    // MediaProxy URLs, http://127.0.0.1:{port}/{secret}/{route}/..., reach the server as the viewer while the route
+    // lives; also cut off after the secret.
+    [GeneratedRegex(@"(127\.0\.0\.1:\d+/)[0-9a-f]{64}(?:/[0-9a-f]{32})?")]
     private static partial Regex ProxySecret();
 
     public static string Redact(string text)
@@ -34,7 +35,7 @@ public static partial class LogRedactor
         }
         string masked = BearerValue().Replace(text, "$1" + Mask);
         masked = SecretField().Replace(masked, "$1" + Mask);
-        masked = ProxySecret().Replace(masked, "/" + Mask + "/");
+        masked = ProxySecret().Replace(masked, "$1" + Mask);
         return Jwt().Replace(masked, Mask);
     }
 }

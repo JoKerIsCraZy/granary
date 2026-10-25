@@ -128,11 +128,31 @@ public sealed class MediaProxy : IMediaProxy, IDisposable
             {
                 context = await listener.GetContextAsync().ConfigureAwait(false);
             }
+            catch (HttpListenerException ex) when (listener.IsListening)
+            {
+                // One connection that went wrong (reset, aborted): the listener goes on.
+                _logger.LogDebug("A connection to the media proxy failed: {Code}", ex.ErrorCode);
+                continue;
+            }
             catch (Exception ex) when (ex is HttpListenerException or ObjectDisposedException or InvalidOperationException)
             {
+                Stopped(listener);
                 return;
             }
             _ = ServeAsync(context);
+        }
+    }
+
+    // The listener ended without being disposed: the next route starts a new one.
+    private void Stopped(HttpListener listener)
+    {
+        lock (_gate)
+        {
+            if (!_disposed && ReferenceEquals(_listener, listener))
+            {
+                _logger.LogWarning("The media proxy stopped listening; it starts again with the next stream");
+                _listener = null;
+            }
         }
     }
 
@@ -160,8 +180,10 @@ public sealed class MediaProxy : IMediaProxy, IDisposable
         }
         catch (Exception ex) when (ex is OperationCanceledException or HttpListenerException or IOException or ObjectDisposedException)
         {
-            // The player went away (a seek, a new load), the route closed, or the upstream body broke off.
+            // The player went away (a seek, a new load), the route closed, or the upstream broke off. Aborted, so an
+            // answer that never came cannot pass for an empty file.
             _logger.LogDebug("A media request ended early: {Kind}", ex.GetType().Name);
+            response.Abort();
         }
         catch (Exception ex)
         {

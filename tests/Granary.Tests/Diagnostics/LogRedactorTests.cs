@@ -21,6 +21,8 @@ public sealed class LogRedactorTests
     [InlineData("unexpected value eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.c2ln in answer", "eyJzdWIiOiIxIn0")]
     [InlineData("Loading http://127.0.0.1:17518/b2e4d22b4c656e0cf43a911f368006f78b16878727f29579361ad502c6aaf475/c005de8ccfe012b89a72087cb8fda99c/api/v2/stream/1",
         "b2e4d22b4c656e0cf43a911f368006f78b16878727f29579361ad502c6aaf475")]
+    [InlineData("Failed to open http://127.0.0.1:17518/b2e4d22b4c656e0cf43a911f368006f78b16878727f29579361ad502c6aaf475",
+        "b2e4d22b4c656e0cf43a911f368006f78b16878727f29579361ad502c6aaf475")]
     public void Redact_MasksCredentialValues(string input, string secret)
     {
         string output = LogRedactor.Redact(input);

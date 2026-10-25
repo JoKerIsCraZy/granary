@@ -47,7 +47,7 @@ public sealed class MediaProxyTests : IDisposable
         Assert.Equal("data", await response.Content.ReadAsStringAsync(Cancellation));
         Assert.Equal("bytes 100-103/5000", response.Content.Headers.ContentRange!.ToString());
         var sent = Assert.Single(_sent);
-        Assert.Equal(Stream, sent.RequestUri);
+        Assert.Equal(Stream.OriginalString, sent.RequestUri!.OriginalString);
         Assert.Equal("Bearer t1", sent.Headers.Authorization!.ToString());
         Assert.Equal("7", Assert.Single(sent.Headers.GetValues("X-Profile-Id")));
         Assert.Equal("bytes=100-", sent.Headers.Range!.ToString());
@@ -155,6 +155,62 @@ public sealed class MediaProxyTests : IDisposable
         Assert.Equal(HttpStatusCode.OK, own.StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, changed.StatusCode);
         Assert.Equal("https://nas.example/silo/api/v2/stream/s1?seek=600", Assert.Single(_sent).RequestUri!.OriginalString);
+    }
+
+    [Fact]
+    public async Task APathGoesUpstreamAsWritten()
+    {
+        // Byte for byte (9.2): %41 must not become "A", nor %7E "~".
+        using var route = Open(Playlist, MediaRouteScope.Directory);
+        string local = route.LocalUrl.OriginalString;
+        var beside = new Uri(local[..(local.LastIndexOf('/') + 1)] + "segment/%41b%7E.ts?x=%2B",
+            new UriCreationOptions { DangerousDisablePathAndQueryCanonicalization = true });
+
+        using var response = await _player.GetAsync(beside, Cancellation);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("/silo/api/v2/playback/transcode/s1/segment/%41b%7E.ts?x=%2B", Assert.Single(_sent).RequestUri!.PathAndQuery);
+    }
+
+    [Fact]
+    public async Task ARenewalThatBringsNothingNew_WaitsBeforeTheNextTry()
+    {
+        // The server cannot refresh for now and the old token still plays: segments must not each wait for a refresh.
+        int renewals = 0;
+        var ending = Headers("t0", _time.GetUtcNow().AddSeconds(30));
+        using var route = Proxy.Open(Stream, MediaRouteScope.File, (_, _) =>
+        {
+            renewals++;
+            return Task.FromResult(ending);
+        }, ending);
+
+        await _player.GetStringAsync(route.LocalUrl, Cancellation);
+        await _player.GetStringAsync(route.LocalUrl, Cancellation);
+        _time.Advance(TimeSpan.FromSeconds(5));
+        await _player.GetStringAsync(route.LocalUrl, Cancellation);
+
+        Assert.Equal(2, renewals);
+    }
+
+    [Fact]
+    public async Task NoTokenForNow_IsABusyServer_NotARefusal()
+    {
+        using var route = Proxy.Open(Stream, MediaRouteScope.File,
+            (_, _) => throw new MediaAuthorizationException(MediaAuthorizationFailure.Unavailable, "Try again in a moment."));
+
+        using var response = await _player.GetAsync(route.LocalUrl, Cancellation);
+
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task AServerThatDoesNotAnswer_LeavesAnAbortedRequest_NotAnEmptyFile()
+    {
+        _server = _ => throw new IOException("connection reset");
+        using var route = Open(Stream);
+
+        // An empty 200 would read as a 0-byte file; the player must see the request fail.
+        await Assert.ThrowsAnyAsync<HttpRequestException>(() => _player.GetAsync(route.LocalUrl, Cancellation));
     }
 
     [Fact]

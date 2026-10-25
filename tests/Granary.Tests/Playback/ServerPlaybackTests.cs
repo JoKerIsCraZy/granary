@@ -154,6 +154,19 @@ public sealed class ServerPlaybackTests
     }
 
     [Fact]
+    public async Task APlaylistOutsideTheSessionsFolder_IsNotTrusted()
+    {
+        // Its route would reach everything beside it with the viewer's headers: /api/v2/ holds the whole API.
+        _fixture.Silo.On(HttpMethod.Post, StartPath, Created(PlaybackPayloads.TranscodeDecision.Replace(
+            "/api/v2/playback/transcode/" + OtherSession + "/master.m3u8", "/api/v2/master.m3u8", StringComparison.Ordinal)));
+
+        var playback = await _fixture.StartAsync();
+
+        Assert.Equal(ServerPlaybackPhase.Failed, playback.Status.Phase);
+        Assert.Empty(_fixture.Proxy.Routes);
+    }
+
+    [Fact]
     public async Task ProxyNodes_AreOfferedOnlyWhereTheServerOffersThem()
     {
         await _fixture.StartAsync();
