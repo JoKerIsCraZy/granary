@@ -1,5 +1,7 @@
 using System.Globalization;
 using Granary.Core.ViewModels.Player;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -90,29 +92,55 @@ public sealed partial class AddSubtitlesPanel : UserControl
         }
     }
 
+    // The handlers are async void: whatever the picker or a drop throws stays here, said in the dialog.
     private async void OnBrowseClick(object sender, RoutedEventArgs e)
     {
-        var picker = new FileOpenPicker(XamlRoot.ContentIslandEnvironment.AppWindowId)
+        try
         {
-            SuggestedStartLocation = PickerLocationId.Downloads,
-        };
-        foreach (string extension in Extensions)
-        {
-            picker.FileTypeFilter.Add(extension);
+            var picker = new FileOpenPicker(XamlRoot.ContentIslandEnvironment.AppWindowId)
+            {
+                SuggestedStartLocation = PickerLocationId.Downloads,
+            };
+            foreach (string extension in Extensions)
+            {
+                picker.FileTypeFilter.Add(extension);
+            }
+            if (await picker.PickSingleFileAsync() is { } picked && _viewModel is { } viewModel)
+            {
+                await viewModel.SelectFileAsync(picked.Path);
+            }
         }
-        if (await picker.PickSingleFileAsync() is { } picked && _viewModel is { } viewModel)
+        catch (Exception ex)
         {
-            await viewModel.SelectFileAsync(picked.Path);
+            Failed(ex);
         }
     }
 
     private async void OnResultClick(object sender, RoutedEventArgs e)
     {
-        if (sender is FrameworkElement { DataContext: SubtitleSearchRow row } && _viewModel is { } viewModel)
+        if (sender is not FrameworkElement { DataContext: SubtitleSearchRow row } || _viewModel is not { } viewModel)
+        {
+            return;
+        }
+        try
         {
             await viewModel.DownloadAsync(row);
         }
+        catch (Exception ex)
+        {
+            Log(ex);
+        }
     }
+
+    private void Failed(Exception ex)
+    {
+        Log(ex);
+        _viewModel?.FileCouldNotBeOpened();
+    }
+
+    // The type only: a message could carry a path.
+    private static void Log(Exception ex) =>
+        App.Services.GetRequiredService<ILogger<AddSubtitlesPanel>>().LogError("Add Subtitles failed: {Failure}", ex.GetType().Name);
 
     private void OnDropZoneDragEnter(object sender, DragEventArgs e)
     {
@@ -140,10 +168,17 @@ public sealed partial class AddSubtitlesPanel : UserControl
         {
             return;
         }
-        var items = await e.DataView.GetStorageItemsAsync();
-        if (items.FirstOrDefault() is StorageFile { Path.Length: > 0 } file && _viewModel is { } viewModel)
+        try
         {
-            await viewModel.SelectFileAsync(file.Path);
+            var items = await e.DataView.GetStorageItemsAsync();
+            if (items.FirstOrDefault() is StorageFile { Path.Length: > 0 } file && _viewModel is { } viewModel)
+            {
+                await viewModel.SelectFileAsync(file.Path);
+            }
+        }
+        catch (Exception ex)
+        {
+            Failed(ex);
         }
     }
 

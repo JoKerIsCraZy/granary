@@ -61,8 +61,15 @@ public sealed partial class PlayerPage
 
     private void OnAddSubtitlesCloseRequested(object? sender, EventArgs e) => CloseAddSubtitles();
 
-    // The new subtitle shows once a plan lists it; the stream reloads where the viewer is.
-    private void OnSubtitleAdded(object? sender, StoredSubtitle subtitle) => ViewModel.ShowAddedSubtitle(subtitle.Id);
+    // The new subtitle shows once a plan lists it; the stream reloads where the viewer is. One stored for a file that no
+    // longer plays (another version started meanwhile) is in that file's menu when it plays.
+    private void OnSubtitleAdded(object? sender, StoredSubtitle subtitle)
+    {
+        if (subtitle.MediaFileId.Length == 0 || subtitle.MediaFileId == ViewModel.SubtitleFileId)
+        {
+            ViewModel.ShowAddedSubtitle(subtitle.Id);
+        }
+    }
 
     private void CloseAddSubtitles()
     {

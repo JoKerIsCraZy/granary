@@ -24,6 +24,10 @@ public sealed partial class PlayerViewModel
     private SubtitleAppearance? _lookToSave;
     private bool _lookOnDevice;
 
+    // The look on screen is one the server does not have: its save or a reset failed. A read does not take it back;
+    // the next change saves it.
+    private bool _lookUnsaved;
+
     // Bumped by each opening and change: a read that comes back after one does not put an older look up.
     private int _lookGeneration;
 
@@ -75,9 +79,12 @@ public sealed partial class PlayerViewModel
         {
             if (!reset)
             {
+                // A change it pushed aside is still on screen, unsaved.
+                _lookUnsaved = true;
                 AppearanceStatus = "Couldn't reset the look. Try again.";
                 return;
             }
+            _lookUnsaved = false;
             // A change made meanwhile stays, and is saved after this.
             if (generation == _lookGeneration)
             {
@@ -116,6 +123,7 @@ public sealed partial class PlayerViewModel
             {
                 _lookToSave = null;
                 // Best effort, as on the web: the look stays on screen, and the next change saves it with the rest.
+                _lookUnsaved = !saved;
                 AppearanceStatus = saved ? AppearanceSavedText : "Couldn't save. The next change tries again.";
             }
         });
@@ -130,7 +138,9 @@ public sealed partial class PlayerViewModel
         try
         {
             var values = await settings.ReadAsync([SettingKeys.SubtitleAppearance], CancellationToken.None);
-            if (generation != _lookGeneration || !values.TryGetValue(SettingKeys.SubtitleAppearance, out var value))
+            // A look still on its way to the server, or one it did not take, is newer than what it answers.
+            if (generation != _lookGeneration || _lookToSave is not null || _lookUnsaved
+                || !values.TryGetValue(SettingKeys.SubtitleAppearance, out var value))
             {
                 return;
             }
@@ -172,6 +182,7 @@ public sealed partial class PlayerViewModel
     {
         _look = null;
         _lookOnDevice = false;
+        _lookUnsaved = false;
         IsAppearanceOpen = false;
     }
 }

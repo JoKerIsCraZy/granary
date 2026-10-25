@@ -232,8 +232,18 @@ public sealed partial class PlayerPage : Page
     // transport moves left, rather than the buttons being cut off.
     private void OnRightControlsLayoutUpdated(object? sender, object e)
     {
-        var shown = RightControls.Children.OfType<FrameworkElement>().Where(child => child.Visibility == Visibility.Visible).ToList();
-        double width = shown.Sum(child => child.DesiredSize.Width) + Math.Max(0, shown.Count - 1) * RightControls.Spacing;
+        // Every layout pass of the window comes here: no allocations.
+        double width = 0;
+        int shown = 0;
+        foreach (var child in RightControls.Children)
+        {
+            if (child.Visibility == Visibility.Visible)
+            {
+                width += child.DesiredSize.Width;
+                shown++;
+            }
+        }
+        width += Math.Max(0, shown - 1) * RightControls.Spacing;
         if (Math.Abs(RightColumn.MinWidth - width) > 0.5)
         {
             RightColumn.MinWidth = width;

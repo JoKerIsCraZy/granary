@@ -156,6 +156,9 @@ public sealed partial class AddSubtitlesViewModel(SubtitlesApi api, ISessionMana
         _ = ReadProvidersAsync(_generation);
     }
 
+    /// <summary>The file picker or a drop did not hand over a readable file.</summary>
+    public void FileCouldNotBeOpened() => UploadError = "The file could not be read.";
+
     [RelayCommand]
     private void Close()
     {
@@ -184,10 +187,11 @@ public sealed partial class AddSubtitlesViewModel(SubtitlesApi api, ISessionMana
             }
             content = await File.ReadAllBytesAsync(path);
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException
+            or System.Security.SecurityException)
         {
             logger.LogInformation("A subtitle file could not be read: {Failure}", ex.GetType().Name);
-            UploadError = "The file could not be read.";
+            FileCouldNotBeOpened();
             return;
         }
         if (generation != _generation)
@@ -327,7 +331,11 @@ public sealed partial class AddSubtitlesViewModel(SubtitlesApi api, ISessionMana
     {
         _generation++;
         CloseRequested?.Invoke(this, EventArgs.Empty);
-        Added?.Invoke(this, stored);
+        // Stored either way; one without an id cannot be named to the player.
+        if (stored.Id.Length > 0)
+        {
+            Added?.Invoke(this, stored);
+        }
     }
 
     // Fails open, as the web does: only an explicit "not enabled" hides the search; an older server or a failed read keeps it.

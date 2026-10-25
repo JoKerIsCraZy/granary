@@ -349,4 +349,38 @@ public sealed class ServerPlaybackSubtitleTests
         Assert.Equal(before, playback.SubtitleTrack);
         Assert.Empty(_fixture.Silo.SentTo(HttpMethod.Put, SubtitlePrefsPath));
     }
+
+    [Fact]
+    public async Task APickMadeWhileTheAddedSubtitleWaits_Wins()
+    {
+        var answer = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _fixture.Silo.On(HttpMethod.Post, ReplanPath, () => answer.Task);
+        var playback = await _fixture.PlayingAsync();
+
+        playback.ShowAddedSubtitle("77");
+        playback.SelectSubtitle(null);
+        answer.SetResult(await Ok(ListingStored("\"sync_key\": \"stored-77\","))());
+        await playback.Recovery;
+        _fixture.Engine.RaiseState(Frame(30));
+
+        Assert.Null(playback.SubtitleTrack);
+        Assert.DoesNotContain(_fixture.Silo.SentTo(HttpMethod.Put, SubtitlePrefsPath), sent => sent.Body!.Contains("\"spa\"", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ASecondSubtitleAddedWhileTheFirstsPlanIsOnItsWay_IsAskedForAfterIt()
+    {
+        var first = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _fixture.Silo.On(HttpMethod.Post, ReplanPath, () => first.Task, Ok(ListingStored("\"sync_key\": \"stored-78\",")));
+        var playback = await _fixture.PlayingAsync();
+
+        playback.ShowAddedSubtitle("77");
+        playback.ShowAddedSubtitle("78");
+        first.SetResult(await Ok(PlaybackPayloads.StartOpaqueIds)());
+        await Until(() => _fixture.Silo.SentTo(HttpMethod.Post, ReplanPath).Count == 2, "the second subtitle is asked for");
+        await playback.Recovery;
+        _fixture.Engine.RaiseState(Frame(30));
+
+        Assert.Equal("file:42:subtitle:4", playback.SubtitleTrack);
+    }
 }

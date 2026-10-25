@@ -212,4 +212,30 @@ public sealed class AddSubtitlesViewModelTests : IDisposable
         Assert.Empty(dialog.Results);
         Assert.False(dialog.IsSearching);
     }
+
+    [Fact]
+    public async Task AStoredSubtitleWithoutAnId_ClosesTheDialog_ButNamesNothing()
+    {
+        _silo.On(HttpMethod.Post, "api/v2/subtitles/search", ScriptedSilo.Json(HttpStatusCode.OK,
+            """{ "results": [ { "id": "1", "provider": "opensubtitles", "language": "de", "release_name": "A", "format": "srt", "score": 92, "downloads": 1, "hearing_impaired": false } ], "warnings": [] }"""));
+        _silo.On(HttpMethod.Post, "api/v2/subtitles/download", ScriptedSilo.Json(HttpStatusCode.OK, """{ "subtitle": { "media_file_id": "42" } }"""));
+        var dialog = Open();
+        await dialog.SearchCommand.ExecuteAsync(null);
+
+        await dialog.DownloadAsync(dialog.Results[0]);
+
+        Assert.Equal(1, _closes);
+        Assert.Empty(_added);
+    }
+
+    [Fact]
+    public async Task APathThatIsNoFile_SaysTheFileCouldNotBeRead()
+    {
+        var dialog = Open();
+
+        await dialog.SelectFileAsync(Path.Combine(_folder, "missing.srt"));
+
+        Assert.Equal("The file could not be read.", dialog.UploadError);
+        Assert.False(dialog.HasFile);
+    }
 }

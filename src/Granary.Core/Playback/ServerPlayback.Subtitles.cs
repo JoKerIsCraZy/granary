@@ -95,7 +95,13 @@ public sealed partial class ServerPlayback
 
     public void SelectSubtitle(string? trackId)
     {
-        if (!CanChangeTracks || trackId == RequestedSubtitle)
+        if (!CanChangeTracks)
+        {
+            return;
+        }
+        // A pick made while an added subtitle waits for its plan is the newer wish.
+        _addedSubtitle = null;
+        if (trackId == RequestedSubtitle)
         {
             return;
         }
@@ -141,11 +147,16 @@ public sealed partial class ServerPlayback
 
     private async Task RefreshSubtitlesAsync()
     {
+        string? asked = _addedSubtitle;
         ResetPlanChain();
         double position = SourcePosition;
         _logger.LogInformation("Asking for a plan that lists the added subtitle at {Position:F1} s", position);
-        var decision = await ReplanAsync(ReplanOperations.TrackChange, position, [],
-            refused: refusal => _logger.LogWarning("The server did not plan again ({Failure}); playing on", ApiFailureText.Describe(refusal)));
+        bool refused = false;
+        var decision = await ReplanAsync(ReplanOperations.TrackChange, position, [], refused: refusal =>
+        {
+            refused = true;
+            _logger.LogWarning("The server did not plan again ({Failure}); the added subtitle shows with a later plan", ApiFailureText.Describe(refusal));
+        });
         if (decision is { IsPlayable: true })
         {
             await AdoptAsync(decision, newSession: false, restorePosition: position);
@@ -154,9 +165,10 @@ public sealed partial class ServerPlayback
         {
             _logger.LogWarning("The server has no stream for the tracks that play ({Reason}); playing on", decision.Terminal?.Reason);
         }
-        if (_addedSubtitle is not null && !_stopping)
+        // Asked once: a plan that does not list it will not show it. One added meanwhile is asked for after this; one
+        // the server would not plan for may still come with a later plan.
+        if (!refused && !_stopping && _addedSubtitle is not null && _addedSubtitle == asked)
         {
-            // Asked once: a plan that still does not list it will not show it.
             _logger.LogWarning("The plan does not list the added subtitle");
             _addedSubtitle = null;
         }

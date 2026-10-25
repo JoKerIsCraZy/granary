@@ -180,6 +180,23 @@ public sealed class PlayerViewModelSubtitleTests
     }
 
     [Fact]
+    public async Task ALookTheServerDidNotTake_StaysWhenThePanelOpensAgain()
+    {
+        var viewModel = await PlayingAsync();
+        _settings.Set(SettingKeys.SubtitleAppearance, Json(SubtitleAppearance.Default));
+        viewModel.OpenAppearanceCommand.Execute(null);
+        _settings.Refuses = true;
+        viewModel.Look.PickFontColor("#22c55e");
+        await Until(() => viewModel.AppearanceStatus != PlayerViewModel.AppearanceSavedText);
+
+        viewModel.CloseAppearanceCommand.Execute(null);
+        viewModel.OpenAppearanceCommand.Execute(null);
+
+        Assert.Equal("#22c55e", viewModel.Look.Appearance.FontColor);
+        Assert.Equal("#22c55e", _engine.SubtitleLook?.FontColor);
+    }
+
+    [Fact]
     public async Task UseFallbackStyle_ClearsTheStoredLooks_AndShowsTheServersDefault()
     {
         var viewModel = await PlayingAsync();
