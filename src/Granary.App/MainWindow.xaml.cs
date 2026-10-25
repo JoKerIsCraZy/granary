@@ -147,7 +147,9 @@ public sealed partial class MainWindow : Window
     private void ShowLibrariesHeader()
     {
         LibrariesHeader.Visibility = Sidebar.Libraries.Count > 0 && Navigation.IsPaneOpen ? Visibility.Visible : Visibility.Collapsed;
-        YourStuffHeader.Visibility = Navigation.IsPaneOpen ? Visibility.Visible : Visibility.Collapsed;
+        var open = Navigation.IsPaneOpen ? Visibility.Visible : Visibility.Collapsed;
+        DiscoverHeader.Visibility = open;
+        YourStuffHeader.Visibility = open;
     }
 
     // The process ends with the window, and the player's stop carries where the viewer left off: the window goes
@@ -189,7 +191,7 @@ public sealed partial class MainWindow : Window
             case string tag when tag.StartsWith(ListTagPrefix, StringComparison.Ordinal):
                 _navigation.ShowSection(AppRoute.List, tag[ListTagPrefix.Length..]);
                 break;
-            case string tag when Enum.TryParse<AppRoute>(tag, out var route) && route is AppRoute.Home or AppRoute.Search or AppRoute.Collections:
+            case string tag when Enum.TryParse<AppRoute>(tag, out var route) && route is AppRoute.Home or AppRoute.Search or AppRoute.Collections or AppRoute.ForYou:
                 _navigation.ShowSection(route);
                 break;
             // Settings and Servers open over the page they were opened from, and go back to it.
@@ -207,6 +209,7 @@ public sealed partial class MainWindow : Window
             AppRoute.List => ListTagPrefix + parameter,
             // A collection opens from the Collections page, which stays picked.
             AppRoute.Collection => nameof(AppRoute.Collections),
+            AppRoute.RecommendationSection => nameof(AppRoute.ForYou),
             _ => route.ToString(),
         };
         var item = Navigation.MenuItems.Concat(Navigation.FooterMenuItems).OfType<NavigationViewItem>()

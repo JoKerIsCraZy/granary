@@ -26,6 +26,8 @@ public sealed class NavigationService : INavigationService
         [AppRoute.Collections] = typeof(CollectionsPage),
         // A collection's titles show as a list does.
         [AppRoute.Collection] = typeof(PersonalListPage),
+        [AppRoute.ForYou] = typeof(ForYouPage),
+        [AppRoute.RecommendationSection] = typeof(RecommendationSectionPage),
     };
 
     private static readonly Dictionary<Type, AppRoute> Routes = Pages.Where(p => p.Key != AppRoute.Collection).ToDictionary(p => p.Value, p => p.Key);

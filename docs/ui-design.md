@@ -89,9 +89,9 @@ View models build `MediaCard`s with the texts already worded; the controls only 
 
 ## Layout
 
-- Sidebar (260 px): server name, Home, Search (`Ctrl+K`), "LIBRARIES" with the server's libraries, "YOUR STUFF"
-  (Favorites, Watchlist, Collections, History; the web's Watch Party to come); Servers and the profile menu at the
-  bottom. Favorites, Watchlist and History are one page (`PersonalListPage`, the web's `pages/Catalog.tsx` for those
+- Sidebar (260 px): server name, Home, Search (`Ctrl+K`), "LIBRARIES" with the server's libraries, "DISCOVER" (For
+  You; the web's Requests, Calendar and Notifications to come), "YOUR STUFF" (Favorites, Watchlist, Collections,
+  History; the web's Watch Party to come); Servers and the profile menu at the bottom. Favorites, Watchlist and History are one page (`PersonalListPage`, the web's `pages/Catalog.tsx` for those
   sources): the list's name, what it holds and its count, the media menu (All Media, Movies & Series, Movies, Series,
   Episodes), the list's own order ("List Order", History's "Watch History") or a sort, and the posters by window. The
   web's watchlist tab "Not in your library yet" comes with Requests, History's select-and-remove later. Detail pages shrink it to icons; the player hides it.
@@ -100,6 +100,10 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   collections" with a pill per library (All first) and Load more, which the end of the grid presses by itself. A
   collection opens on the list page with its name and "Collection Order"; the sidebar keeps Collections picked.
   Making, editing, sharing and reordering collections come later.
+- For You (`ForYouPage`, the web's `pages/Recommendations.tsx`): the title, "Personalized picks…" only when a row comes
+  from the profile's history, the taste profile card on the right (top genres filled, favourite directors outlined),
+  then a row per recommendation. A row's Explore all opens it in full (`RecommendationSectionPage`: name, "60 titles",
+  the posters); the sidebar keeps For You picked. The sidebar reads the rows again behind the ones shown.
 - Pages: 48 px side margins, 32 px top; rows 40 px apart.
 - Detail pages: full-bleed backdrop fading into the background, logo (or display title), chips,
   ratings, overview with "More", red Play/Resume pill, secondary actions, then rows (seasons, episodes,

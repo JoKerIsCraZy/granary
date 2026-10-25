@@ -43,6 +43,12 @@ public enum AppRoute
 
     /// <summary>One collection's titles; the parameter is a <see cref="CollectionRouteParameter"/>.</summary>
     Collection,
+
+    /// <summary>The profile's recommendation rows.</summary>
+    ForYou,
+
+    /// <summary>A For You row in full; the parameter is a <see cref="RecommendationSectionRouteParameter"/>.</summary>
+    RecommendationSection,
 }
 
 /// <summary>Which row an "Explore all" grid lists: a Home row, or a library row when <see cref="LibraryId"/> is set.</summary>
@@ -53,6 +59,11 @@ public sealed record SectionRouteParameter(string SectionId, string Title, strin
 /// <param name="Source"><c>user_collection</c> for a personal collection, <c>library_collection</c> for a server one.</param>
 /// <param name="LibraryId">The library a server collection opens in; null opens it across every library that has it.</param>
 public sealed record CollectionRouteParameter(string Source, string CollectionId, string Title, string? LibraryId = null);
+
+/// <summary>Which For You row a grid lists in full.</summary>
+/// <param name="Kind">One of <c>RecommendationSectionKinds</c>.</param>
+/// <param name="Key">A cluster's index or a genre's name, when the kind needs one.</param>
+public sealed record RecommendationSectionRouteParameter(string Kind, string? Key, string Title);
 
 public interface INavigationService
 {

@@ -764,6 +764,17 @@ tracks ([8.8.1](#881-initial-track-selection-before-start)) → `POST /api/v2/pl
   entry-or-404 `GET /api/v2/favorites/{item_id}`: bursts of 404s can trip intrusion detection.
 - `POST` / `DELETE /api/v2/watched/{id}` → `204` (movie, episode, season or series; non-retryable).
 
+### 7.12 Recommendations (For You)
+
+- `GET /api/v2/recommendations/discover` (image size parameters) → `{ "items": [{ "type", "title", "kind"?, "key"?,
+  "items": CatalogItem[] }] }`. Rows of `type` `cluster` or `similar_users_liked` come from the profile's own
+  history (the web then calls the page personal). `kind` names the section that lists the row in full.
+- `GET /api/v2/recommendations/section/{kind}[?key=…]` → one such row, up to 60 cards (the default and maximum of `limit`). `kind` is one of
+  `for-you-main`, `cluster`, `similar-users`, `popular`, `recently-added`, `top-rated`, `genre`; `key` is a cluster's
+  index or a genre's name.
+- `GET /api/v2/recommendations/taste-profile` → `{ "top_genres", "favorite_directors", "signal_counts", "updated_at"? }`.
+- "More like this": `GET /api/v2/recommendations/similar/{item_id}?limit=` → `{ "items": CatalogItem[] }`.
+
 ## 8. Playback protocol v3
 
 The server decides **how** a file is delivered; the client reports honestly what it can play and
