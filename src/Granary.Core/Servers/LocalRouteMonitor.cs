@@ -23,6 +23,10 @@ public sealed class LocalRouteMonitor : IDisposable
     // A network change comes in bursts (an adapter going down, another coming up).
     private static readonly TimeSpan NetworkSettle = TimeSpan.FromSeconds(2);
 
+    // The server names the local address: a check stays small whatever it resolves to.
+    private const int MaxCandidates = 4;
+    private static readonly TimeSpan CheckBudget = TimeSpan.FromSeconds(15);
+
     private readonly SystemApi _system;
     private readonly ISessionManager _session;
     private readonly LocalRoutes _routes;
@@ -31,10 +35,13 @@ public sealed class LocalRouteMonitor : IDisposable
     private readonly TimeProvider _time;
     private readonly ILogger<LocalRouteMonitor> _logger;
     private readonly SemaphoreSlim _checking = new(1, 1);
+    private readonly Lock _gate = new();
     private ITimer? _recheck;
     private ITimer? _settle;
     private Uri? _server;
     private int _started;
+    private int _queued;
+    private volatile bool _disposed;
 
     public LocalRouteMonitor(SystemApi system, ISessionManager session, LocalRoutes routes, ILocalRouteProbe probe, ILocalNetwork network,
         TimeProvider time, ILogger<LocalRouteMonitor> logger)
@@ -64,9 +71,16 @@ public sealed class LocalRouteMonitor : IDisposable
     public async Task CheckAsync(CancellationToken cancellationToken)
     {
         await _checking.WaitAsync(cancellationToken).ConfigureAwait(false);
+        Interlocked.Exchange(ref _queued, 0);
+        using var budget = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        budget.CancelAfter(CheckBudget);
         try
         {
-            await CheckOnceAsync(cancellationToken).ConfigureAwait(false);
+            await CheckOnceAsync(budget.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            _logger.LogInformation("Checking the local route took too long; trying again later");
         }
         catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex, cancellationToken))
         {
@@ -82,10 +96,14 @@ public sealed class LocalRouteMonitor : IDisposable
 
     public void Dispose()
     {
+        _disposed = true;
         _session.Changed -= OnSessionChanged;
         _network.Changed -= OnNetworkChanged;
         _recheck?.Dispose();
-        _settle?.Dispose();
+        lock (_gate)
+        {
+            _settle?.Dispose();
+        }
     }
 
     /// <summary>The private IPv4 addresses behind <paramref name="localUrl"/>, as HTTPS origins on its port.</summary>
@@ -112,7 +130,8 @@ public sealed class LocalRouteMonitor : IDisposable
                 return [];
             }
         }
-        return [.. addresses.Where(IsPrivateIPv4).Distinct().Select(address => new Uri($"https://{address}:{url.Port}/"))];
+        // HTTPS on the local address's own port, whatever scheme it names (server-identity.md, rule 1).
+        return [.. addresses.Where(IsPrivateIPv4).Distinct().Take(MaxCandidates).Select(address => new Uri($"https://{address}:{url.Port}/"))];
     }
 
     // RFC 1918: no public certificate authority certifies these, so the pin is the only trust that applies.
@@ -163,6 +182,11 @@ public sealed class LocalRouteMonitor : IDisposable
             }
             if (await _probe.ProbeAsync(server.BaseUri, candidate, local.SpkiSha256, connections.ServerId, cancellationToken).ConfigureAwait(false) is { } route)
             {
+                if (_disposed)
+                {
+                    route.Dispose();
+                    return;
+                }
                 _logger.LogInformation("Using the local route to the server at {Address}", candidate.Authority);
                 _routes.Use(route);
                 return;
@@ -175,23 +199,34 @@ public sealed class LocalRouteMonitor : IDisposable
         _routes.Drop(server.BaseUri);
     }
 
-    private void Check() => _ = Task.Run(async () =>
+    // One check waits at most behind the one running: events in a burst share it.
+    private void Check()
     {
-        try
+        if (_disposed || Interlocked.Exchange(ref _queued, 1) == 1)
         {
-            await CheckAsync(CancellationToken.None).ConfigureAwait(false);
+            return;
         }
-        catch (Exception ex)
+        _ = Task.Run(async () =>
         {
-            _logger.LogError(ex, "Checking the local route failed unexpectedly");
-        }
-    });
+            try
+            {
+                await CheckAsync(CancellationToken.None).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Checking the local route failed unexpectedly");
+            }
+        });
+    }
 
     private void OnSessionChanged(object? sender, EventArgs e) => Check();
 
     private void OnNetworkChanged(object? sender, EventArgs e)
     {
-        _settle?.Dispose();
-        _settle = _time.CreateTimer(_ => Check(), null, NetworkSettle, Timeout.InfiniteTimeSpan);
+        lock (_gate)
+        {
+            _settle?.Dispose();
+            _settle = _time.CreateTimer(_ => Check(), null, NetworkSettle, Timeout.InfiniteTimeSpan);
+        }
     }
 }

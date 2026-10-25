@@ -26,6 +26,7 @@ public sealed class LocalRouteProbe(ILogger<LocalRouteProbe> logger) : ILocalRou
     public async Task<LocalRoute?> ProbeAsync(Uri savedOrigin, Uri candidate, string pin, string serverId, CancellationToken cancellationToken)
     {
         var client = new HttpMessageInvoker(LocalRoute.PinnedHandler(pin, Timeout));
+        LocalRoute? route = null;
         try
         {
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -38,16 +39,24 @@ public sealed class LocalRouteProbe(ILogger<LocalRouteProbe> logger) : ILocalRou
                 : null;
             if (identity?.ServerId == serverId)
             {
-                return new LocalRoute(savedOrigin, candidate, pin, client);
+                route = new LocalRoute(savedOrigin, candidate, pin, client);
+                return route;
             }
             logger.LogInformation("{Candidate} presents the key but does not answer as the saved server", candidate.Host);
         }
-        catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException or JsonException && !cancellationToken.IsCancellationRequested)
+        catch (Exception ex) when ((ex is HttpRequestException or OperationCanceledException or JsonException or NotSupportedException)
+            && !cancellationToken.IsCancellationRequested)
         {
             logger.LogDebug("No local route at {Candidate}: {Failure}", candidate.Host,
                 ex is HttpRequestException http ? http.HttpRequestError.ToString() : ex.GetType().Name);
         }
-        client.Dispose();
+        finally
+        {
+            if (route is null)
+            {
+                client.Dispose();
+            }
+        }
         return null;
     }
 }
@@ -62,24 +71,31 @@ public interface ILocalNetwork
 
 public sealed class LocalNetwork : ILocalNetwork, IDisposable
 {
+    private readonly Lock _gate = new();
     private EventHandler? _changed;
 
     public event EventHandler? Changed
     {
         add
         {
-            if (_changed is null)
+            lock (_gate)
             {
-                NetworkChange.NetworkAddressChanged += OnAddressChanged;
+                if (_changed is null)
+                {
+                    NetworkChange.NetworkAddressChanged += OnAddressChanged;
+                }
+                _changed += value;
             }
-            _changed += value;
         }
         remove
         {
-            _changed -= value;
-            if (_changed is null)
+            lock (_gate)
             {
-                NetworkChange.NetworkAddressChanged -= OnAddressChanged;
+                _changed -= value;
+                if (_changed is null)
+                {
+                    NetworkChange.NetworkAddressChanged -= OnAddressChanged;
+                }
             }
         }
     }

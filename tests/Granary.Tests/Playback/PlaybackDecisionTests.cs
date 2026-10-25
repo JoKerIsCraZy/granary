@@ -334,12 +334,37 @@ public sealed class PlaybackDecisionTests
     [InlineData("https://node.example/stream/v3/s1?seek=600&token=x")]
     [InlineData("https://node.example/stream/v3/s1#x")]
     [InlineData("https://node.example/api/v2/stream/s1")]
+    [InlineData("https://node.example/x/../stream/v3/s1")]
+    [InlineData("https://node.example/stream/v3/s1/%2e%2e/master.m3u8")]
+    [InlineData("https://node.example/stream\\v3/s1")]
+    [InlineData("https://localhost/stream/v3/s1")]
+    [InlineData("https://127.0.0.1/stream/v3/s1")]
+    [InlineData("https://[::1]/stream/v3/s1")]
+    [InlineData("https://169.254.169.254/stream/v3/s1")]
+    [InlineData("https://0.0.0.0/stream/v3/s1")]
     public void AnythingElseOnAProxyNode_IsRefused(string value)
     {
-        // Plain HTTP while the server is HTTPS, user info, another session, other paths or queries (Apple checks the same).
+        // Plain HTTP while the server is HTTPS, user info, another session, other paths or queries (Apple checks the
+        // same); also what reads as the right path only once normalized, and this machine or link-local addresses.
         Assert.Null(PlaybackUrl.ResolveStream(ScriptedSilo.Base, value, "s1", mediaOrigins: true));
-        Assert.True(PlaybackUrl.IsElsewhere(ScriptedSilo.Base, value));
     }
+
+    [Theory]
+    [InlineData("https://NODE.example/stream/v3/s1?seek=12", "https://node.example/stream/v3/s1?seek=12")]
+    [InlineData("https://node.example/stream/v3/%73%31", "https://node.example/stream/v3/s1")]
+    public void ANodeUrl_IsSentAsItWasChecked(string value, string sent)
+    {
+        // The canonical form is both what the check saw and what goes out, so the two cannot differ.
+        var node = PlaybackUrl.ResolveStream(ScriptedSilo.Base, value, "s1", mediaOrigins: true)!;
+
+        Assert.Equal(sent, node.OriginalString);
+    }
+
+    [Theory]
+    [InlineData("/api/v2/stream/%2e%2e/s1")]
+    [InlineData("/api/v2/stream/../users/s1")]
+    public void AServerStreamUrl_WithHiddenDotSegments_IsRefused(string value) =>
+        Assert.Null(PlaybackUrl.ResolveStream(ScriptedSilo.Base, value, "s1", mediaOrigins: false));
 
     [Fact]
     public void TheServersOwnStream_StaysWhatItWas() =>

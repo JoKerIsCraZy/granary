@@ -100,17 +100,40 @@ public sealed class LocalRouteTests : IDisposable
         // SecureConnectionError: the key is not the pinned one (rotated, or another machine at that address).
         _lan = _ => throw new HttpRequestException(error, "unreachable");
         _routes.Use(Route());
-        using var request = new HttpRequestMessage(HttpMethod.Post, "https://silo.example/api/v2/playback/s1/progress")
-        {
-            Content = new StringContent("""{"sequence":1}""", Encoding.UTF8, "application/json"),
-        };
+        using var request = new HttpRequestMessage(HttpMethod.Get, "https://silo.example/api/v2/stream/s1");
 
         using var response = await Send(request);
 
         Assert.Equal("saved", await response.Content.ReadAsStringAsync(Cancellation));
-        Assert.Equal("https://silo.example/api/v2/playback/s1/progress", Assert.Single(_saved).RequestUri!.OriginalString);
-        Assert.Equal("""{"sequence":1}""", await _saved[0].Content!.ReadAsStringAsync(Cancellation));
+        Assert.Equal("https://silo.example/api/v2/stream/s1", Assert.Single(_saved).RequestUri!.OriginalString);
         Assert.Null(_routes.Find(Saved));
+    }
+
+    [Theory]
+    [InlineData("POST")]
+    [InlineData("DELETE")]
+    [InlineData("PUT")]
+    public async Task Writes_GoToTheSavedAddress(string method)
+    {
+        // A connection that breaks may have delivered a write already; only a read can be sent twice safely.
+        _routes.Use(Route());
+        using var request = new HttpRequestMessage(new HttpMethod(method), "https://silo.example/api/v2/playback/s1/progress")
+        {
+            Content = new StringContent("""{"sequence":1}""", Encoding.UTF8, "application/json"),
+        };
+
+        (await Send(request)).Dispose();
+
+        Assert.Empty(_local);
+        Assert.Single(_saved);
+    }
+
+    [Fact]
+    public void ARewrite_OfAQueryWithoutAPath_KeepsTheQuery()
+    {
+        using var route = Route();
+
+        Assert.Equal("https://192.168.1.20:8080/?x=/a", route.Rewrite(new Uri("https://silo.example?x=/a")).OriginalString);
     }
 
     [Fact]

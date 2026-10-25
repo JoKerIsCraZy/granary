@@ -39,8 +39,9 @@ public sealed class LocalRoute : IDisposable
     public Uri Rewrite(Uri uri)
     {
         string text = uri.OriginalString;
-        int path = text.IndexOf('/', text.IndexOf("//", StringComparison.Ordinal) + 2);
-        return new Uri(Origin.GetLeftPart(UriPartial.Authority) + (path < 0 ? "/" : text[path..]), Verbatim);
+        int rest = text.IndexOfAny(['/', '?', '#'], text.IndexOf("//", StringComparison.Ordinal) + 2);
+        string tail = rest < 0 ? "/" : text[rest] == '/' ? text[rest..] : "/" + text[rest..];
+        return new Uri(Origin.GetLeftPart(UriPartial.Authority) + tail, Verbatim);
     }
 
     /// <summary>
@@ -51,6 +52,8 @@ public sealed class LocalRoute : IDisposable
     {
         AllowAutoRedirect = false,
         UseCookies = false,
+        // Straight to the address on this network, never through a configured proxy.
+        UseProxy = false,
         ConnectTimeout = connectTimeout,
         PooledConnectionLifetime = TimeSpan.FromMinutes(5),
         SslOptions = new SslClientAuthenticationOptions
@@ -80,6 +83,9 @@ public sealed class LocalRoute : IDisposable
 /// <summary>The local routes in use, by the origin of the saved address they stand in for.</summary>
 public sealed class LocalRoutes : IDisposable
 {
+    // A route replaced or dropped may still carry a stream on its way; its connections close after this.
+    private static readonly TimeSpan RetireAfter = TimeSpan.FromMinutes(5);
+
     private readonly ConcurrentDictionary<string, LocalRoute> _routes = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>The route that takes requests for <paramref name="uri"/>, if one is verified.</summary>
@@ -94,7 +100,7 @@ public sealed class LocalRoutes : IDisposable
         _routes[key] = route;
         if (before is not null && !ReferenceEquals(before, route))
         {
-            before.Dispose();
+            Retire(before);
         }
     }
 
@@ -103,7 +109,7 @@ public sealed class LocalRoutes : IDisposable
     {
         if (_routes.TryRemove(new KeyValuePair<string, LocalRoute>(route.SavedOrigin.GetLeftPart(UriPartial.Authority), route)))
         {
-            route.Dispose();
+            Retire(route);
         }
     }
 
@@ -112,9 +118,12 @@ public sealed class LocalRoutes : IDisposable
     {
         if (_routes.TryRemove(saved.GetLeftPart(UriPartial.Authority), out var route))
         {
-            route.Dispose();
+            Retire(route);
         }
     }
+
+    private static void Retire(LocalRoute route) =>
+        _ = Task.Delay(RetireAfter).ContinueWith(_ => route.Dispose(), CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Default);
 
     public void Dispose()
     {

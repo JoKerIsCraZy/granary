@@ -55,6 +55,20 @@ public sealed class LocalRouteMonitorTests : IDisposable
         Assert.Equal(["https://10.0.0.5:8080/", "https://172.20.1.2:8080/"], _probe.Tried);
     }
 
+    [Fact]
+    public async Task ANameWithManyAddresses_IsTriedAtFourOfThem()
+    {
+        // The server names the local address; a check stays small whatever it resolves to.
+        Answer("http://nas.lan:8080");
+        _network.Addresses["nas.lan"] = [.. Enumerable.Range(1, 10).Select(i => IPAddress.Parse($"10.0.0.{i}"))];
+        _probe.Reachable = false;
+        var monitor = Create();
+
+        await monitor.CheckAsync(Cancellation);
+
+        Assert.Equal(4, _probe.Tried.Count);
+    }
+
     [Theory]
     [InlineData("10.255.0.1", true)]
     [InlineData("172.16.0.1", true)]

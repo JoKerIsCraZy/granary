@@ -63,11 +63,15 @@ the display refresh rate itself (Phase 3).
   addresses and keeps the first that presents the pinned key over HTTPS on the same port and answers
   `system/identity` with the same server id (`LocalRouteProbe`, 3 s). It checks at start, when the session
   or the network changes, and every 15 minutes; only a saved HTTPS address without a path prefix
-  qualifies. `LocalRouteHandler` then sends that address's requests over the route, after the
-  authentication handler decided the credentials by the saved address: the API calls of `SiloHttp` and
-  the media proxy's requests (never a proxy node's). A route that does not connect, or presents another
-  key, is dropped and the same request goes to the saved address. An unreachable saved address keeps a
-  route verified before.
+  qualifies, and at most 4 candidates within 15 s are tried. `LocalRouteHandler` then sends that
+  address's reads (GET, HEAD) over the route, after the authentication handler decided the credentials
+  by the saved address: the API reads of `SiloHttp` and the media proxy's requests (never a proxy
+  node's). Writes go to the saved address: a connection that breaks may have delivered one already, and
+  only a read can be sent twice. A route that does not connect, or presents another key, is dropped and
+  the same read goes to the saved address; a dropped or replaced route closes its connections after 5
+  minutes, so a stream on its way is not cut. An unreachable saved address keeps a route verified before.
+- Proxy-node URLs are checked as they will be sent: written without dot segments or anything encoded
+  that would become one, taken in canonical form, and never on this machine or a link-local address.
 
 ## Artwork
 
