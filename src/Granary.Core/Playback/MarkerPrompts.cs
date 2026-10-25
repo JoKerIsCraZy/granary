@@ -49,6 +49,12 @@ public sealed record PlaybackMarker(string Kind, double StartSeconds, double End
     }
 }
 
+/// <summary>A chapter of the playing file, in source seconds, with its picture when the server has one.</summary>
+public sealed record PlaybackChapter(string Title, double StartSeconds, double EndSeconds, Uri? ThumbnailUrl)
+{
+    public bool Contains(double seconds) => seconds >= StartSeconds && seconds < EndSeconds;
+}
+
 /// <summary>The profile's settings for marked parts and what follows the title (docs/api-contract.md, 10.7 and 11.2).</summary>
 /// <param name="IntroSkipMode"><c>never</c>, <c>ask</c> or <c>always</c>.</param>
 /// <param name="NextUpPromptSeconds">Without a credits marker, the next episode is offered this long before the end; 0 only at the end.</param>

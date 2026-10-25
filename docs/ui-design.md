@@ -113,12 +113,21 @@ unmodified to refer to Silo, as its trademark policy allows; it is not Granary's
   over a stronger scrim: the `SeekBar` across the width; below it on the left the title and the upper-case
   line "S1 · E1 — EPISODE · 31:55 / 48:41" (a movie shows its year), whose end time a click turns into the
   time left; in the middle skip back, the white play/pause disc and skip forward (glass discs showing the
-  profile's intervals); on the right mute, the volume slider, audio, subtitles and full screen.
+  profile's intervals), for an episode with a previous or next one flanked by previous and next episode discs (both
+  slots kept while one has an episode, so Play stays in the middle; a movie has none); on the right mute, the volume
+  slider, audio, chapters, subtitles, settings and full screen. Previous and next start that episode from where the
+  profile left it, as the web player does for the viewer; previous stays within the season and steps over episodes
+  without a readable file.
 - **Audio menu** (`AudioTrackOption`, wording in `TrackText` after the web's `AudioTrackMenu`): the button shows
   once the file has a track and opens with two or more. Above it, 280 to 360 px wide: "AUDIO", then a row per
   track with its name (its title, else the embedded title, else language, codec and channels), chips for the
   codec family ("DD+ ATMOS", "TRUEHD", "EAC3") and channels, an outlined DEFAULT, and the language and details
   under it. The playing row is blue with a check and has the focus when the menu opens; a pick closes it.
+- **Chapters menu** (`ChapterOption`, after the web's `ChaptersMenu`): shown when the playing file has chapters;
+  280 px and up, scrolling past 560 px. "CHAPTERS", then a row per chapter: its picture (80 by 48, radius 4, a
+  placeholder without one), the title (14 px; "Chapter 2" when it has none) and its start (12 px, white 45 %). The
+  chapter that plays has a faint light behind it and white text, the others are white 70 %; it has the focus when the
+  menu opens. A row seeks to the chapter's start and closes the menu.
 - **Subtitle menu** (`SubtitleTrackOption`, after the web's `SubtitleMenu`): shown once the plan lists a track;
   220 to 420 px wide, scrolling past 560 px. "Off" first, then the tracks embedded, external, downloaded: the
   language's name (14 px), chips on the right for the format (SRT, ASS, VTT, PGS, DVD, DVB) and the source
@@ -141,8 +150,9 @@ unmodified to refer to Silo, as its trademark policy allows; it is not Granary's
   bottom, lower third or top), mapped to mpv's `sub-*` options; styled ASS and image subtitles keep their own.
   While the controls show, subtitles at the bottom move up by the bar's height (`sub-pos`) and back when they fade.
 - **Seek bar**: 3 px track, the played part white as on the web, over the marked parts tinted sky (intro), violet
-  (recap), amber (credits) and emerald (preview). Under the pointer the track grows, a thumb appears and a bubble
-  shows the time there, and above it the part it lies in ("● Intro 0:03-0:12"). It seeks on click and when a drag is released, never while dragging or when the
+  (recap), amber (credits) and emerald (preview), and a 10 px tick (white 55 %) where each chapter after the first
+  starts. Under the pointer the track grows, a thumb appears and a bubble shows the time there, above it the part it
+  lies in ("● Intro 0:03-0:12") and under it the chapter (11 px, white 50 %). It seeks on click and when a drag is released, never while dragging or when the
   position moves on, and keeps the target until playback has caught up, so the bar does not jump back. Keys:
   Left and Right by the skip intervals, Shift for 5 s, Home, End. Screen readers get a slider whose value
   is the position in words.

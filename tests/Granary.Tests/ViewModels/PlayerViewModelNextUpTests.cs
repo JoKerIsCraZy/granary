@@ -63,6 +63,41 @@ public sealed class PlayerViewModelNextUpTests
     }
 
     [Fact]
+    public async Task AnEpisode_HasPreviousAndNextButtons_ThatStartThemFromWhereTheProfileLeftThem()
+    {
+        _source.Previous = Next with { ContentId = "episode-1-2", EpisodeNumber = 2 };
+        var viewModel = await PlayingAsync(Ted);
+
+        Assert.True(viewModel.ShowsEpisodeSlots);
+        Assert.True(viewModel.HasPreviousEpisode);
+        Assert.True(viewModel.HasNextEpisode);
+
+        await viewModel.PlayPreviousEpisodeCommand.ExecuteAsync(null);
+        Assert.Equal(PlayRequest.Resume("episode-1-2"), Playback.Started);
+        Assert.Equal(1, _playbacks[0].Stops);
+    }
+
+    [Fact]
+    public async Task TheSeasonsFirstEpisode_KeepsBothSlots_WithOnlyNext()
+    {
+        var viewModel = await PlayingAsync(Ted);
+
+        Assert.True(viewModel.ShowsEpisodeSlots);
+        Assert.False(viewModel.HasPreviousEpisode);
+
+        await viewModel.PlayNextEpisodeCommand.ExecuteAsync(null);
+        Assert.Equal(PlayRequest.Resume("episode-1-4"), Playback.Started);
+    }
+
+    [Fact]
+    public async Task AMovie_HasNoEpisodeSlots()
+    {
+        var viewModel = await PlayingAsync(null);
+
+        Assert.False(viewModel.ShowsEpisodeSlots);
+    }
+
+    [Fact]
     public async Task TheCredits_BringTheCard_AndPlayNowStartsTheNextEpisodeFromItsStart()
     {
         var viewModel = await PlayingAsync(Ted);
@@ -200,6 +235,11 @@ public sealed class PlayerViewModelNextUpTests
 
         public Task<NextEpisode?> NextEpisodeAsync(PlayingEpisode current, CancellationToken cancellationToken) =>
             Task.FromResult<NextEpisode?>(current == Ted ? Next : null);
+
+        public NextEpisode? Previous { get; set; }
+
+        public Task<NextEpisode?> PreviousEpisodeAsync(PlayingEpisode current, CancellationToken cancellationToken) =>
+            Task.FromResult(Previous);
 
         public Task<IReadOnlyList<MediaCard>> OnDeckAsync(string? exceptSeriesId, CancellationToken cancellationToken)
         {

@@ -129,6 +129,22 @@ public sealed class ServerPlaybackTests
     }
 
     [Fact]
+    public async Task TheTitle_Plays_ThoughTheOneBeforeWasLeftPaused_AndAReloadKeepsAPause()
+    {
+        // mpv pauses itself at a file's end, where the next episode starts from.
+        _fixture.Engine.Current = _fixture.Engine.Current with { IsPaused = true };
+        var playback = await _fixture.PlayingAsync();
+        Assert.False(_fixture.Engine.Current.IsPaused);
+
+        _fixture.Engine.SetPaused(true);
+        _fixture.Engine.RaiseEnded(new PlaybackEnded(PlaybackEndReason.AuthenticationFailed, null));
+        await playback.Recovery;
+
+        Assert.Equal(2, _fixture.Engine.Loaded.Count);
+        Assert.True(_fixture.Engine.Current.IsPaused);
+    }
+
+    [Fact]
     public async Task ANewLoad_ClosesTheRouteOfTheOneBefore()
     {
         var playback = await _fixture.PlayingAsync();

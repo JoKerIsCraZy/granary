@@ -345,6 +345,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         AudioTracks = [];
         SubtitleTracks = [];
         ResetMarkers();
+        ResetChapters();
         _stops.Track(EndAsync(playback));
 
         static async Task EndAsync(IServerPlayback playback)
@@ -375,6 +376,8 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         Title = Path.GetFileName(source.Url.IsFile ? source.Url.LocalPath : source.Url.AbsolutePath);
         Subtitle = "";
         _engine.Load(source);
+        // mpv keeps a pause across files: a file opened plays.
+        _engine.SetPaused(false);
     }
 
     private void Fail(string message, bool canRetry)
@@ -423,6 +426,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
             AudioTracks = AudioTrackOption.For(playback.AudioTracks, playback.AudioTrack);
             SubtitleTracks = playback.SubtitleTracks.Count == 0 ? [] : SubtitleTrackOption.For(playback.SubtitleTracks, playback.SubtitleTrack);
             TakeMarkers(playback);
+            TakeChapters(playback);
             ShowSettings();
         }
     }
@@ -455,6 +459,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         Volume = state.Volume;
         CanSeek = state.IsLoaded && state.HasStarted && (_playback is null || _playback.Status.Phase == ServerPlaybackPhase.Playing);
         FollowMarkers(state);
+        FollowChapters();
         FollowNextUp();
     }
 

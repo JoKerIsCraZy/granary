@@ -43,6 +43,29 @@ public sealed class PlayerViewModelMarkerTests
     }
 
     [Fact]
+    public async Task TheChapters_FollowThePosition_AndARowSeeksToItsStart()
+    {
+        var viewModel = await PlayingAsync();
+        Assert.False(viewModel.HasChapters);
+
+        Playback.RaiseChapters([new PlaybackChapter("Opening", 0, 600, null), new PlaybackChapter("Heist", 600, 2700, null)]);
+        At(30);
+
+        Assert.True(viewModel.HasChapters);
+        Assert.Equal(2, viewModel.ChapterMarks.Count);
+        Assert.Equal([true, false], viewModel.Chapters.Select(c => c.IsCurrent));
+        var rows = viewModel.Chapters;
+        At(31);
+        Assert.Same(rows, viewModel.Chapters);
+
+        At(601);
+        Assert.Equal([false, true], viewModel.Chapters.Select(c => c.IsCurrent));
+
+        viewModel.SeekToChapter(0);
+        Assert.Equal([0], Playback.Seeks);
+    }
+
+    [Fact]
     public async Task InTheIntro_ThePillOffersToSkipIt_AndSkippingSeeksToItsEnd()
     {
         var viewModel = await PlayingAsync();

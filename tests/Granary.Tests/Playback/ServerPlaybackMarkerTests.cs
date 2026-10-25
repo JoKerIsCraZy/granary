@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+using Granary.Core.Api.Images;
 using Granary.Core.Api.Playback;
 using Granary.Core.Playback;
 using Granary.Tests.Profiles;
@@ -20,6 +22,29 @@ public sealed class ServerPlaybackMarkerTests
         StringComparison.Ordinal);
 
     private readonly ServerPlaybackFixture _fixture = new();
+
+    [Fact]
+    public async Task TheChapters_AreThePlayingFilesInOrder_WithTheirPicturesOnTheServer()
+    {
+        string chapters = Regex.Replace(PlaybackPayloads.WatchStateOk, @"""chapters"": \[[^\]]*\]", """
+            "chapters": [
+              { "index": 2, "title": "Heist", "start_seconds": 300, "end_seconds": 900, "thumbnail_url": "/api/v2/chapters/2.webp" },
+              { "index": 1, "title": "Opening", "start_seconds": 0, "end_seconds": 300 },
+              { "index": 3, "title": "Nothing", "start_seconds": 900, "end_seconds": 900 }
+            ]
+            """);
+        Assert.Contains("Heist", chapters, StringComparison.Ordinal);
+        _fixture.Silo.On(HttpMethod.Get, WatchPath, Ok(chapters));
+
+        var playback = await _fixture.StartAsync();
+
+        Assert.Equal(
+            [
+                new PlaybackChapter("Opening", 0, 300, null),
+                new PlaybackChapter("Heist", 300, 900, ArtworkUrl.Resolve(ScriptedSilo.Base, "/api/v2/chapters/2.webp")),
+            ],
+            playback.Chapters);
+    }
 
     [Fact]
     public async Task TheMarkers_AreTheWatchDetails_UntilTheFileIsReadAgainOnceItPlays()

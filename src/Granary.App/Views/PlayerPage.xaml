@@ -96,6 +96,7 @@
                                   Position="{x:Bind ViewModel.PositionSeconds, Mode=OneWay}"
                                   Duration="{x:Bind ViewModel.DurationSeconds, Mode=OneWay}"
                                   Markers="{x:Bind ViewModel.Markers, Mode=OneWay}"
+                                  Chapters="{x:Bind ViewModel.ChapterMarks, Mode=OneWay}"
                                   IsEnabled="{x:Bind ViewModel.CanSeek, Mode=OneWay}"
                                   SeekRequested="OnSeekRequested" />
 
@@ -133,7 +134,18 @@
                         </Grid>
                     </StackPanel>
 
+                    <!--
+                        Previous and next episode either side of the skips, as on the web: both slots stay while one has an
+                        episode, so Play keeps the middle.
+                    -->
                     <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="20" VerticalAlignment="Center">
+                        <Grid Width="44" Visibility="{x:Bind ViewModel.ShowsEpisodeSlots, Mode=OneWay}">
+                            <Button x:Name="PreviousEpisodeButton" Style="{StaticResource SiloPlayerDiscButtonStyle}"
+                                    Command="{x:Bind ViewModel.PlayPreviousEpisodeCommand}" Visibility="{x:Bind ViewModel.HasPreviousEpisode, Mode=OneWay}"
+                                    AutomationProperties.Name="Previous episode" ToolTipService.ToolTip="Previous episode">
+                                <FontIcon Glyph="&#xE892;" FontSize="16" />
+                            </Button>
+                        </Grid>
                         <Button x:Name="SkipBackButton" Style="{StaticResource SiloPlayerDiscButtonStyle}" Command="{x:Bind ViewModel.SkipBackCommand}"
                                 IsEnabled="{x:Bind ViewModel.CanSeek, Mode=OneWay}" AutomationProperties.AcceleratorKey="Left">
                             <Grid>
@@ -161,6 +173,13 @@
                                            FontFamily="{StaticResource SiloFontBold}" FontWeight="Bold" FontSize="9" />
                             </Grid>
                         </Button>
+                        <Grid Width="44" Visibility="{x:Bind ViewModel.ShowsEpisodeSlots, Mode=OneWay}">
+                            <Button x:Name="NextEpisodeButton" Style="{StaticResource SiloPlayerDiscButtonStyle}"
+                                    Command="{x:Bind ViewModel.PlayNextEpisodeCommand}" Visibility="{x:Bind ViewModel.HasNextEpisode, Mode=OneWay}"
+                                    AutomationProperties.Name="Next episode" ToolTipService.ToolTip="Next episode">
+                                <FontIcon Glyph="&#xE893;" FontSize="16" />
+                            </Button>
+                        </Grid>
                     </StackPanel>
 
                     <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" HorizontalAlignment="Right" VerticalAlignment="Center">
@@ -229,6 +248,49 @@
                                                                 </StackPanel>
                                                                 <TextBlock Text="{x:Bind Meta}" FontSize="11" Foreground="#8CFFFFFF" TextTrimming="CharacterEllipsis"
                                                                            Visibility="{x:Bind controls:PlayerMenus.Shows(Meta)}" />
+                                                            </StackPanel>
+                                                        </Grid>
+                                                    </Button>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </Flyout>
+                            </Button.Flyout>
+                        </Button>
+                        <!-- The web player's Chapters menu: a picture, the title and its start; a row seeks there and closes. -->
+                        <Button x:Name="ChaptersButton" Style="{StaticResource SiloPlayerIconButtonStyle}"
+                                Visibility="{x:Bind ViewModel.HasChapters, Mode=OneWay}"
+                                AutomationProperties.Name="Chapters" ToolTipService.ToolTip="Chapters">
+                            <FontIcon Glyph="&#xE8FD;" FontSize="18" />
+                            <Button.Flyout>
+                                <Flyout x:Name="ChaptersMenu" Placement="TopEdgeAlignedRight" FlyoutPresenterStyle="{StaticResource SiloPlayerWideMenuStyle}"
+                                        Opened="OnChaptersMenuOpened">
+                                    <StackPanel MinWidth="280" XYFocusKeyboardNavigation="Enabled">
+                                        <TextBlock Text="CHAPTERS" Style="{StaticResource SiloPlayerMenuHeaderTextStyle}" AutomationProperties.Name="Chapters" />
+                                        <ItemsControl x:Name="ChapterRows" ItemsSource="{x:Bind ViewModel.Chapters, Mode=OneWay}" IsTabStop="False">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="player:ChapterOption">
+                                                    <Button Style="{StaticResource SiloPlayerMenuItemStyle}" Click="OnChapterClick"
+                                                            Background="{x:Bind controls:PlayerMenus.SubtitleRowBackground(IsCurrent)}"
+                                                            Foreground="{x:Bind controls:PlayerMenus.SubtitleRowForeground(IsCurrent)}"
+                                                            AutomationProperties.Name="{x:Bind controls:PlayerMenus.ChapterName(Title, StartSeconds)}"
+                                                            AutomationProperties.ItemStatus="{x:Bind controls:PlayerMenus.ChapterStatus(IsCurrent)}">
+                                                        <Grid ColumnSpacing="12">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="80" />
+                                                                <ColumnDefinition Width="*" />
+                                                            </Grid.ColumnDefinitions>
+                                                            <Border Width="80" Height="48" CornerRadius="4" Background="#0FFFFFFF">
+                                                                <Grid>
+                                                                    <FontIcon Glyph="&#xE714;" FontSize="16" Foreground="#33FFFFFF" />
+                                                                    <Image Source="{x:Bind controls:PlayerMenus.ChapterThumbnail(Thumbnail)}" Stretch="UniformToFill" />
+                                                                </Grid>
+                                                            </Border>
+                                                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                                                <TextBlock Text="{x:Bind Title}" FontSize="14" TextTrimming="CharacterEllipsis" />
+                                                                <TextBlock Text="{x:Bind controls:PlayerMenus.ChapterStart(StartSeconds)}" FontSize="12" Foreground="#73FFFFFF"
+                                                                           Typography.NumeralAlignment="Tabular" />
                                                             </StackPanel>
                                                         </Grid>
                                                     </Button>

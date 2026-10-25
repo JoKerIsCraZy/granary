@@ -104,6 +104,9 @@ public interface IServerPlayback : IAsyncDisposable
     /// <summary>Raised on the UI thread when the server named markers of the playing file it had not named before.</summary>
     event EventHandler? MarkersChanged;
 
+    /// <summary>The chapters of the file that plays, in source seconds (11.3); empty without.</summary>
+    IReadOnlyList<PlaybackChapter> Chapters { get; }
+
     /// <summary>The plan's quality menu, without the source; empty when there is nothing to choose (8.11).</summary>
     IReadOnlyList<AvailableQuality> Qualities { get; }
 

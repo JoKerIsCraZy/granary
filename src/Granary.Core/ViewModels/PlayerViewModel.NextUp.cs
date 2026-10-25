@@ -148,6 +148,7 @@ public sealed partial class PlayerViewModel
         _nextUpLoad?.Dispose();
         _nextUpLoad = null;
         _nextUp = new NextUpFlow();
+        ResetPreviousEpisode();
         _nextUpStarted = false;
         _onDeckRequested = false;
         OnDeck = [];
@@ -172,6 +173,7 @@ public sealed partial class PlayerViewModel
         }
         _nextUpLoad = new CancellationTokenSource();
         _ = ResolveNextAsync(_upNext, episode, _nextUpLoad.Token);
+        _ = ResolvePreviousAsync(_upNext, episode, _nextUpLoad.Token);
     }
 
     private async Task ResolveNextAsync(IUpNextSource source, PlayingEpisode episode, CancellationToken cancellationToken)

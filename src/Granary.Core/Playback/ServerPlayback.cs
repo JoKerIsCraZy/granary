@@ -82,6 +82,9 @@ public sealed partial class ServerPlayback : IServerPlayback
     // The load showed its first frame.
     private bool _started;
 
+    // The title was handed to the engine once: a later load (a replan, a reconnect) keeps whether it is paused.
+    private bool _titleLoaded;
+
     // The plan showed a first frame in one of its loads: a later failure is a lost connection, not a failed route.
     private bool _planPlayed;
 
@@ -422,6 +425,13 @@ public sealed partial class ServerPlayback : IServerPlayback
             (refused, cancellationToken) => _auth.GetAsync(server, refused, cancellationToken), media);
         // Subtitles are the plan's to choose; left to itself, mpv would show one the file marks as default.
         _loadId = _engine.Load(new MediaSource(_route.LocalUrl, [], TimeSpan.FromSeconds(_playerPosition), audio, SubtitleStream: 0));
+        if (!_titleLoaded)
+        {
+            // The title plays, however the one before was left: mpv keeps a pause across files, and pauses itself
+            // at a file's end (keep-open), which is where the next episode starts from.
+            _titleLoaded = true;
+            _engine.SetPaused(false);
+        }
         WatchFirstFrame(_loadId);
     }
 

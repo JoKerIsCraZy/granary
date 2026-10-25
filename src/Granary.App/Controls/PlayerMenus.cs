@@ -30,4 +30,14 @@ public static class PlayerMenus
 
     public static Brush SubtitleRowForeground(bool isSelected) =>
         new SolidColorBrush(isSelected ? Microsoft.UI.Colors.White : Windows.UI.Color.FromArgb(0xB3, 0xFF, 0xFF, 0xFF));
+
+    // A chapter row: "Opening, 4 minutes 5 seconds", and where it starts as the web writes it ("4:05").
+    public static string ChapterName(string title, double startSeconds) => $"{title}, {PlayerTime.Spoken(startSeconds)}";
+
+    public static string ChapterStart(double startSeconds) => PlayerTime.Format(startSeconds);
+
+    public static string ChapterStatus(bool isCurrent) => isCurrent ? "Playing" : "";
+
+    // 80 by 48 on the row; a chapter without a picture keeps the placeholder.
+    public static ImageSource? ChapterThumbnail(Uri? url) => Artwork.Load(url, 80);
 }

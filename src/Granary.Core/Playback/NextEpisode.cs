@@ -28,4 +28,30 @@ public sealed record NextEpisode(string ContentId, int SeasonNumber, int Episode
             .OrderBy(e => e.SeasonNumber).ThenBy(e => e.EpisodeNumber)
             .FirstOrDefault();
     }
+
+    /// <summary>
+    /// The largest (season, episode) strictly before <paramref name="season"/>/<paramref name="episode"/> that has a
+    /// file the server can read, as the web player steps back over the others; null at the start.
+    /// </summary>
+    public static Episode? Before(IEnumerable<Episode> pool, int season, int episode)
+    {
+        ArgumentNullException.ThrowIfNull(pool);
+        return pool.Where(e => (e.SeasonNumber < season || (e.SeasonNumber == season && e.EpisodeNumber < episode))
+                && e.Files.Any(f => !f.Unreadable))
+            .OrderByDescending(e => e.SeasonNumber).ThenByDescending(e => e.EpisodeNumber)
+            .FirstOrDefault();
+    }
+
+    /// <summary>A catalog episode as the player shows it, its still resolved against <paramref name="server"/>.</summary>
+    public static NextEpisode Of(Episode episode, Uri server)
+    {
+        ArgumentNullException.ThrowIfNull(episode);
+        return new NextEpisode(episode.ContentId, episode.SeasonNumber, episode.EpisodeNumber, episode.Title)
+        {
+            Overview = episode.Overview,
+            AirDate = episode.AirDate,
+            RuntimeMinutes = episode.Runtime,
+            StillUrl = Api.Images.ArtworkUrl.Resolve(server, episode.StillUrl),
+        };
+    }
 }

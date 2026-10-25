@@ -30,6 +30,33 @@ public sealed class UpNextSourceTests
         "{ \"items\": [" + string.Join(",", numbers.Select(n =>
             $$"""{ "content_id": "ted-{{season}}-{{n}}", "season_number": {{season}}, "episode_number": {{n}}, "title": "Episode {{n}}", "runtime": 37, "still_url": "/s/{{n}}.jpg" }""")) + "] }";
 
+    // Episodes with a file each; the server could not read the files of those in unreadable.
+    private static string EpisodesWithFiles(int season, int[] numbers, params int[] unreadable) =>
+        "{ \"items\": [" + string.Join(",", numbers.Select(n =>
+            $$"""{ "content_id": "ted-{{season}}-{{n}}", "season_number": {{season}}, "episode_number": {{n}}, "title": "Episode {{n}}", "files": [ { "file_id": "f{{n}}", "unreadable": {{(unreadable.Contains(n) ? "true" : "false")}} } ] }""")) + "] }";
+
+    [Fact]
+    public async Task ThePreviousEpisode_IsTheOneBeforeInTheSeason_PastThoseThatCannotPlay()
+    {
+        _silo.On(HttpMethod.Get, Season1, ScriptedSilo.Json(HttpStatusCode.OK, EpisodesWithFiles(1, [4, 1, 3, 2], unreadable: 3)));
+
+        var previous = await Create().PreviousEpisodeAsync(LastOfSeason1 with { EpisodeNumber = 4, ContentId = "ted-1-4" }, Token);
+
+        Assert.Equal("ted-1-2", previous?.ContentId);
+        Assert.Single(_silo.Sent);
+    }
+
+    [Fact]
+    public async Task TheSeasonsFirstEpisode_HasNoPreviousOne_AsOnTheWeb()
+    {
+        _silo.On(HttpMethod.Get, Season2, ScriptedSilo.Json(HttpStatusCode.OK, EpisodesWithFiles(2, [1, 2])));
+
+        var previous = await Create().PreviousEpisodeAsync(new PlayingEpisode("ted-2-1", "ted", "ted", 2, 1), Token);
+
+        Assert.Null(previous);
+        Assert.Single(_silo.Sent);
+    }
+
     [Fact]
     public async Task TheNextEpisode_OfTheSameSeason_NeedsOneRead()
     {

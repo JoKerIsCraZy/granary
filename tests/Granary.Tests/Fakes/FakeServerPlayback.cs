@@ -92,6 +92,15 @@ internal sealed class FakeServerPlayback : IServerPlayback
         TracksChanged?.Invoke(this, EventArgs.Empty);
     }
 
+    public IReadOnlyList<PlaybackChapter> Chapters { get; set; } = [];
+
+    /// <summary>Plays a file with <paramref name="chapters"/>, as a newly taken plan does.</summary>
+    public void RaiseChapters(IReadOnlyList<PlaybackChapter> chapters)
+    {
+        Chapters = chapters;
+        TracksChanged?.Invoke(this, EventArgs.Empty);
+    }
+
     public IReadOnlyList<AvailableQuality> Qualities { get; set; } = [];
 
     public string QualityPreference { get; set; } = "auto";

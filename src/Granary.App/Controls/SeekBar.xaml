@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     The player's seek bar as Silo's web player draws it: a thin track with the played part in white over the tinted
-    marked parts (intro, recap, credits, preview). Under the pointer the track thickens, a thumb appears and a bubble
-    above it shows the time there, and the part it lies in. The whole row is the hit area.
+    marked parts (intro, recap, credits, preview), a tick where each chapter starts. Under the pointer the track
+    thickens, a thumb appears and a bubble above it shows the time there, the part and the chapter it lies in. The
+    whole row is the hit area.
 -->
 <UserControl
     x:Class="Granary.App.Controls.SeekBar"
@@ -24,6 +25,8 @@
             <Border x:Name="Progress" Width="0" HorizontalAlignment="Left" CornerRadius="1.5"
                     Background="{StaticResource SiloPlayerForegroundBrush}" />
         </Grid>
+        <!-- Outside the track, which clips to its rounded ends: the ticks stand out above and below it. -->
+        <Grid x:Name="ChapterTicks" Height="10" VerticalAlignment="Center" IsHitTestVisible="False" />
 
         <Ellipse x:Name="Thumb" Width="14" Height="14" HorizontalAlignment="Left" VerticalAlignment="Center"
                  Fill="{StaticResource SiloPlayerForegroundBrush}" Opacity="0">
@@ -50,6 +53,8 @@
                     <TextBlock x:Name="TipText" Typography.NumeralAlignment="Tabular"
                                FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="12"
                                Foreground="{StaticResource SiloPlayerForegroundBrush}" />
+                    <TextBlock x:Name="TipChapter" MaxWidth="200" FontSize="11" TextTrimming="CharacterEllipsis" Foreground="#80FFFFFF"
+                               Visibility="Collapsed" />
                 </StackPanel>
             </Border>
         </Canvas>

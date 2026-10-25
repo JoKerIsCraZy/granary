@@ -12,6 +12,12 @@ public sealed partial class ServerPlayback
 
     public event EventHandler? MarkersChanged;
 
+    // The server's list: mpv reads none through remux or transcode routes (11.3).
+    public IReadOnlyList<PlaybackChapter> Chapters => PlayingVersion is { } version && _context is { } context
+        ? [.. version.Chapters.Where(c => c.EndSeconds > c.StartSeconds).OrderBy(c => c.StartSeconds)
+            .Select(c => new PlaybackChapter(c.Title, c.StartSeconds, c.EndSeconds, Api.Images.ArtworkUrl.Resolve(context.Server.BaseUri, c.ThumbnailUrl)))]
+        : [];
+
     public IReadOnlyList<PlaybackMarker> Markers => PlayingVersion is not { } version
         ? []
         : _readMarkers is { } read && read.FileId == version.FileId ? read.Markers : PlaybackMarker.Of(version);

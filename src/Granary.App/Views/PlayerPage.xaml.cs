@@ -241,6 +241,18 @@ public sealed partial class PlayerPage : Page
     private void OnSubtitleMenuOpened(object? sender, object e) =>
         FocusRow(SubtitleRows, ViewModel.SubtitleTracks.ToList().FindIndex(option => option.IsSelected));
 
+    private void OnChaptersMenuOpened(object? sender, object e) =>
+        FocusRow(ChapterRows, Math.Max(0, ViewModel.Chapters.ToList().FindIndex(option => option.IsCurrent)));
+
+    private void OnChapterClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { DataContext: ChapterOption option })
+        {
+            ChaptersMenu.Hide();
+            ViewModel.SeekToChapter(option.StartSeconds);
+        }
+    }
+
     private static void FocusRow(ItemsControl rows, int index)
     {
         if (index >= 0 && rows.ContainerFromIndex(index) is ContentPresenter { Content: not null } row

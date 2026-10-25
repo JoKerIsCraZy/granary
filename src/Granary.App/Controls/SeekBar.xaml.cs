@@ -309,6 +309,7 @@ public sealed partial class SeekBar : UserControl
         }
         TipText.Text = PlayerTime.Format(seconds, Duration);
         ShowTipRegion(seconds);
+        ShowTipChapter(seconds);
         Tip.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
         double width = Tip.DesiredSize.Width;
         Canvas.SetLeft(Tip, Math.Clamp(x - width / 2, 0, Math.Max(0, Track.ActualWidth - width)));
@@ -329,5 +330,6 @@ public sealed partial class SeekBar : UserControl
         Track.Scale = isActive ? ActiveTrackScale : Vector3.One;
         Track.Opacity = IsEnabled ? 1 : 0.5;
         PlaceRegions(width);
+        PlaceChapterTicks(width);
     }
 }
