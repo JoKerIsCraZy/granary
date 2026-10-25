@@ -43,6 +43,18 @@ public sealed class SiloHttp(HttpClient http)
         await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// For operations that take a JSON body and answer JSON whatever their method: stopping playback is a
+    /// <c>DELETE</c> with both (docs/api-contract.md, 10.3).
+    /// </summary>
+    public async Task<TResponse> SendAsync<TRequest, TResponse>(HttpMethod method, Uri server, string path, SiloAuth auth, TRequest body,
+        JsonTypeInfo<TRequest> requestType, JsonTypeInfo<TResponse> responseType, CancellationToken cancellationToken)
+    {
+        using var request = Create(method, server, path, auth);
+        request.Content = JsonContent.Create(body, requestType);
+        return await SendAsync(request, responseType, cancellationToken).ConfigureAwait(false);
+    }
+
     public static Uri BuildUri(Uri server, string path) => new(server.AbsoluteUri.TrimEnd('/') + "/" + path.TrimStart('/'));
 
     private static HttpRequestMessage Create(HttpMethod method, Uri server, string path, SiloAuth auth)
@@ -118,6 +130,21 @@ public sealed class SiloHttp(HttpClient http)
     }
 
     internal static string Escape(string segment) => Uri.EscapeDataString(segment);
+
+    /// <summary>
+    /// An id as one escaped path segment. "." and ".." stay unescaped and would be removed as dot segments,
+    /// addressing another route.
+    /// </summary>
+    /// <exception cref="ArgumentException">The value is blank, "." or "..".</exception>
+    internal static string PathSegment(string value, string paramName)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(value, paramName);
+        if (value is "." or "..")
+        {
+            throw new ArgumentException($"'{value}' is not an id.", paramName);
+        }
+        return Escape(value);
+    }
 
     internal static string Invariant(FormattableString value) => value.ToString(CultureInfo.InvariantCulture);
 }
