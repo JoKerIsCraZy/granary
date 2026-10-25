@@ -135,8 +135,11 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
 - **Quality, file and speed** (8.7, 8.11): the plan's `available_qualities` (an older server's `original` rung left
   out) and `active_quality` make the menu; a pick replans with `quality_change` from where the viewer is, and later
   replans and attempts ask with it too; it is not saved, as on the web. Another file of the title starts a new
-  attempt (and session) at the position, with its own automatic subtitle choice. The speed is mpv's `speed`, read from
-  and saved to this device's `player.playback_speed`, as the apps keep it.
+  attempt (and session) at the position, with its own automatic subtitle choice. A quality or a file the server refuses
+  leaves the stream that plays, and the one asked for before stays the one later attempts ask for; a pick made while
+  the stream is being replaced goes out once that is done, as an audio pick does. The speed is mpv's `speed`, read
+  from this device's `player.playback_speed` and saved there once it settles for a second (a drag passes several
+  stops), or at the stop.
 - **Markers** (11.1, 11.2): the playing file's intro (its single projection, as Android takes it), recaps, credits
   and previews come from the watch detail, then from a second read that names the file once its first frame
   shows (`file_id`, which makes the server fill markers it finds on demand); a failed read changes nothing.

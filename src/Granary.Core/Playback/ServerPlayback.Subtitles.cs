@@ -59,7 +59,8 @@ public sealed partial class ServerPlayback
         _subtitleDelaySave.Dispose();
         _subtitleDelaySave = null;
         var context = _context!;
-        var value = JsonDocument.Parse(_subtitleDelayMs.ToString(CultureInfo.InvariantCulture)).RootElement.Clone();
+        using var document = JsonDocument.Parse(_subtitleDelayMs.ToString(CultureInfo.InvariantCulture));
+        var value = document.RootElement.Clone();
         bool clearDevice = context.Preferences.SubtitleDelayOnDevice && !_deviceDelayCleared;
         _deviceDelayCleared |= clearDevice;
         SaveChoice("subtitle delay", async cancellationToken =>

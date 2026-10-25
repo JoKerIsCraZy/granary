@@ -207,8 +207,9 @@ public sealed partial class ServerPlayback : IServerPlayback
         }
         _stopping = true;
         _generation++;
-        // A delay the viewer just set is saved now, not when its wait would have ended.
+        // A delay or a speed the viewer just set is saved now, not when its wait would have ended.
         SaveSubtitleDelayNow();
+        SaveSpeedNow();
         StopTimers();
         // Read now: the engine stops right after this call, and its idle state would read as position 0. Closing the
         // app waits for the stop, and for a pick still being saved.

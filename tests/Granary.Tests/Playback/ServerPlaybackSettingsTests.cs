@@ -50,14 +50,49 @@ public sealed class ServerPlaybackSettingsTests
     }
 
     [Fact]
+    public async Task AQualityTheServerRefuses_PlaysOn_AndCanBePickedAgain()
+    {
+        _fixture.Silo.On(HttpMethod.Post, StartPath, Created(Transcode("720p-medium")));
+        _fixture.Silo.On(HttpMethod.Post, ReplanPath, ScriptedSilo.Problem(422, "validation_failed"), Ok(Transcode("1080p-high")));
+        var playback = await _fixture.StartAsync();
+        _fixture.Engine.RaiseState(Frame(30));
+
+        playback.SelectQuality("1080p-high");
+        await playback.Recovery;
+
+        Assert.Equal(ServerPlaybackPhase.Playing, playback.Status.Phase);
+        Assert.Equal(0, _fixture.Engine.Stops);
+        Assert.Equal("auto", playback.QualityPreference);
+
+        playback.SelectQuality("1080p-high");
+        await Until(() => playback.ActiveQuality == "1080p-high", "the pick made again is taken");
+        Assert.Equal("1080p-high", _fixture.Body(HttpMethod.Post, ReplanPath, 1).GetProperty("quality_preference").GetString());
+    }
+
+    [Fact]
+    public async Task AQualityPickedWhileTheServerPlansAnother_IsAskedForOnceThatPlays()
+    {
+        var first = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _fixture.Silo.On(HttpMethod.Post, StartPath, Created(Transcode("720p-medium")));
+        _fixture.Silo.On(HttpMethod.Post, ReplanPath, () => first.Task, Ok(Transcode("720p-medium")));
+        var playback = await _fixture.StartAsync();
+        _fixture.Engine.RaiseState(Frame(30));
+
+        playback.SelectQuality("1080p-high");
+        playback.SelectQuality("auto");
+        Assert.Equal("auto", playback.QualityPreference);
+        first.SetResult(await ScriptedSilo.Json(HttpStatusCode.OK, Transcode("1080p-high"))());
+        await playback.Recovery;
+        _fixture.Engine.RaiseState(Frame(2));
+        await Until(() => _fixture.Silo.SentTo(HttpMethod.Post, ReplanPath).Count == 2, "the later pick is asked for");
+
+        Assert.Equal("auto", _fixture.Body(HttpMethod.Post, ReplanPath, 1).GetProperty("quality_preference").GetString());
+    }
+
+    [Fact]
     public async Task AnotherFile_StartsANewSessionAtThePosition_AndEndsTheOld()
     {
-        // A second file after the one played last.
-        string twoFiles = Regex.Replace(PlaybackPayloads.WatchStateOk, @"\}(\s*\],\s*""playback_variants"")",
-            "}, { \"file_id\": \"43\", \"resolution\": \"2160p\", \"codec_video\": \"hevc\", \"codec_audio\": \"eac3\", \"hdr\": true, "
-            + "\"container\": \"mkv\", \"file_size\": 2048, \"duration_seconds\": 10200, \"bitrate\": 16000000 }$1", RegexOptions.None);
-        Assert.Contains("\"43\"", twoFiles, StringComparison.Ordinal);
-        _fixture.Silo.On(HttpMethod.Get, "api/v2/watch/" + MovieId, Ok(twoFiles));
+        _fixture.Silo.On(HttpMethod.Get, "api/v2/watch/" + MovieId, Ok(TwoFiles));
         _fixture.Silo.On(HttpMethod.Post, StartPath, Created(PlaybackPayloads.StartOpaqueIds), Created(StartedAgain));
         _fixture.Silo.On(HttpMethod.Delete, StopPath, Ok(PlaybackPayloads.StopCompleted));
         var playback = await _fixture.PlayingAsync();
@@ -74,6 +109,30 @@ public sealed class ServerPlaybackSettingsTests
     }
 
     [Fact]
+    public async Task AFileTheServerDoesNotStart_LeavesTheOneThatPlays_ForLaterAttemptsToo()
+    {
+        _fixture.Silo.On(HttpMethod.Get, "api/v2/watch/" + MovieId, Ok(TwoFiles));
+        _fixture.Silo.On(HttpMethod.Post, ProgressPath, ScriptedSilo.Problem(404, "not_found"));
+        _fixture.Silo.On(HttpMethod.Post, StartPath, Created(PlaybackPayloads.StartOpaqueIds), ScriptedSilo.Problem(422, "validation_failed"),
+            Created(StartedAgain));
+        var playback = await _fixture.PlayingAsync();
+        _fixture.Engine.RaiseState(Frame(600));
+
+        playback.SelectVersion("43");
+        await playback.Recovery;
+
+        Assert.Equal(ServerPlaybackPhase.Playing, playback.Status.Phase);
+        Assert.Equal(0, _fixture.Engine.Stops);
+        Assert.Empty(_fixture.Silo.SentTo(HttpMethod.Delete, StopPath));
+        Assert.Equal("42", playback.RequestedFileId);
+
+        // The session is lost: the new attempt asks for the file that played, not the one refused.
+        await _fixture.AdvanceAsync(TimeSpan.FromSeconds(10));
+        await Until(() => _fixture.Silo.SentTo(HttpMethod.Post, StartPath).Count == 3, "a new attempt starts");
+        Assert.Equal("42", _fixture.Body(HttpMethod.Post, StartPath, 2).GetProperty("file_id").GetString());
+    }
+
+    [Fact]
     public async Task TheSpeed_IsThisDevicesSetting_AndAChangeIsSavedForIt()
     {
         _fixture.Silo.On(HttpMethod.Get, "api/v2/settings/values/effective", Ok("""
@@ -84,12 +143,43 @@ public sealed class ServerPlaybackSettingsTests
         Assert.Equal(1.25, playback.Speed);
         Assert.Equal(1.25, _fixture.Engine.Speed);
 
+        playback.SetSpeed(1.5);
+        playback.SetSpeed(1.75);
         playback.SetSpeed(2);
-        await Until(() => _fixture.Silo.SentTo(HttpMethod.Put, SpeedPath).Count == 1, "the speed is saved");
+        await _fixture.AdvanceAsync(TimeSpan.FromSeconds(1));
+        await Until(() => _fixture.Silo.SentTo(HttpMethod.Put, SpeedPath).Count == 1, "the speed is saved once it settles");
 
         Assert.Equal(2, _fixture.Engine.Speed);
         var saved = _fixture.Silo.SentTo(HttpMethod.Put, SpeedPath)[0];
         Assert.Equal("?scope=profile_device", saved.Uri.Query);
         Assert.Equal(2, _fixture.Body(HttpMethod.Put, SpeedPath).GetProperty("value").GetDouble());
+        await _fixture.AdvanceAsync(TimeSpan.FromSeconds(5));
+        Assert.Single(_fixture.Silo.SentTo(HttpMethod.Put, SpeedPath));
+    }
+
+    [Fact]
+    public async Task ASpeedSetJustBeforeTheStop_IsSavedWithIt()
+    {
+        _fixture.Silo.On(HttpMethod.Put, SpeedPath, ScriptedSilo.NoContent());
+        _fixture.Silo.On(HttpMethod.Delete, StopPath, Ok(PlaybackPayloads.StopCompleted));
+        var playback = await _fixture.PlayingAsync();
+
+        playback.SetSpeed(1.5);
+        await playback.StopAsync();
+
+        Assert.Equal(1.5, _fixture.Body(HttpMethod.Put, SpeedPath).GetProperty("value").GetDouble());
+    }
+
+    // A second file after the one played last.
+    private static string TwoFiles
+    {
+        get
+        {
+            string twoFiles = Regex.Replace(PlaybackPayloads.WatchStateOk, @"\}(\s*\],\s*""playback_variants"")",
+                "}, { \"file_id\": \"43\", \"resolution\": \"2160p\", \"codec_video\": \"hevc\", \"codec_audio\": \"eac3\", \"hdr\": true, "
+                + "\"container\": \"mkv\", \"file_size\": 2048, \"duration_seconds\": 10200, \"bitrate\": 16000000 }$1", RegexOptions.None);
+            Assert.Contains("\"43\"", twoFiles, StringComparison.Ordinal);
+            return twoFiles;
+        }
     }
 }

@@ -66,6 +66,11 @@ public sealed partial class ServerPlayback
             {
                 _recovering = false;
             }
+            if (_started && !_stopping)
+            {
+                // The stream plays on (a refusal, a pick already played): picks made meanwhile go to it now.
+                ApplyPendingTracks();
+            }
         });
     }
 

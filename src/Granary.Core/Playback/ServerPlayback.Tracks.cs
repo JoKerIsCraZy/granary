@@ -82,8 +82,11 @@ public sealed partial class ServerPlayback
     }
 
     // Once a stream plays: picks made meanwhile apply to it, unless it plays them already or they are another file's.
+    // Another file first, since the other picks are that file's; each that replans leaves the rest for the next stream.
     private void ApplyPendingTracks()
     {
+        ApplyPendingVersion();
+        ApplyPendingQuality();
         ApplyPendingAudio();
         ApplyPendingSubtitle();
     }

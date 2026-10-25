@@ -97,8 +97,9 @@ public sealed partial class SpeedTrack : UserControl
     {
         int? stop = e.Key switch
         {
-            VirtualKey.Left or VirtualKey.Down => Stop - 1,
-            VirtualKey.Right or VirtualKey.Up => Stop + 1,
+            // Up and Down are the menu's: they move to the rows above and below.
+            VirtualKey.Left => Stop - 1,
+            VirtualKey.Right => Stop + 1,
             VirtualKey.Home => 0,
             VirtualKey.End => PlaybackSpeeds.Stops.Count - 1,
             _ => null,
