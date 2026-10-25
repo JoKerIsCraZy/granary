@@ -5,6 +5,7 @@ using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Discovery;
 using Granary.Core.Api.Images;
 using Granary.Core.Api.Profiles;
+using Granary.Core.Api.Settings;
 
 namespace Granary.Core.Api;
 
@@ -17,6 +18,7 @@ namespace Granary.Core.Api;
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     PropertyNameCaseInsensitive = false)]
 [JsonSerializable(typeof(ApiProblem))]
+[JsonSerializable(typeof(EffectiveSettings))]
 [JsonSerializable(typeof(SystemInfo))]
 [JsonSerializable(typeof(ServerIdentity))]
 [JsonSerializable(typeof(SetupStatus))]
