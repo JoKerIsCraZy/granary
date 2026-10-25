@@ -117,8 +117,8 @@ public sealed partial class MainWindow : Window
     private void ShowChrome(AppRoute? route)
     {
         bool isPlayer = route == AppRoute.Player;
-        Navigation.IsPaneVisible = Shell.IsSignedIn && !isPlayer;
         Navigation.IsPaneOpen = Shell.IsSignedIn && route is not (AppRoute.Item or AppRoute.Player);
+        Navigation.IsPaneVisible = Shell.IsSignedIn && !isPlayer;
         Grid.SetRow(Navigation, isPlayer ? 0 : 1);
         Grid.SetRowSpan(Navigation, isPlayer ? 2 : 1);
         AppTitle.Visibility = isPlayer ? Visibility.Collapsed : Visibility.Visible;

@@ -18,9 +18,14 @@ public sealed partial class PlayerPage
     // Moves this small are jitter, or the framework testing a still pointer again while the controls fade.
     private const double PointerMoveThreshold = 2;
 
+    // While the cursor is hidden, how often to look whether the pointer left the picture without moving over it
+    // (into the title bar's drag area, or another window): XAML reports neither.
+    private static readonly TimeSpan CursorCheckInterval = TimeSpan.FromMilliseconds(200);
+
     private const float ChromeSlide = 8;
 
     private DispatcherQueueTimer _hideTimer = null!;
+    private DispatcherQueueTimer _cursorTimer = null!;
     private Point? _lastPointer;
     private bool _areControlsVisible = true;
     private bool _isCursorHidden;
@@ -31,8 +36,16 @@ public sealed partial class PlayerPage
         _hideTimer.Interval = HideDelay;
         _hideTimer.IsRepeating = false;
         _hideTimer.Tick += (_, _) => HideControlsWhenIdle();
+        _cursorTimer = DispatcherQueue.CreateTimer();
+        _cursorTimer.Interval = CursorCheckInterval;
+        _cursorTimer.Tick += (_, _) =>
+        {
+            if (PointerInPage() is null)
+            {
+                ShowCursor();
+            }
+        };
         PointerMoved += OnPagePointerMoved;
-        PointerExited += OnPagePointerExited;
     }
 
     private void StopAutoHide()
@@ -128,16 +141,6 @@ public sealed partial class PlayerPage
         ShowControls();
     }
 
-    // Exits of the elements inside bubble up here too; only one that really left the page shows the cursor.
-    private void OnPagePointerExited(object sender, PointerRoutedEventArgs e)
-    {
-        if (PointerInPage() is null)
-        {
-            _lastPointer = null;
-            ShowCursor();
-        }
-    }
-
     /// <summary>
     /// The pointer in page coordinates while it is over the picture, else null. Asked from Windows rather than
     /// followed through XAML's enter and exit events: those bubble up from the elements inside, and the title
@@ -162,13 +165,15 @@ public sealed partial class PlayerPage
     }
 
     // XAML has no hidden cursor (a custom one needs a cursor resource in the executable), so this uses the
-    // thread's cursor display count, balanced by _isCursorHidden.
+    // thread's cursor display count, balanced by _isCursorHidden. The count also applies to the title bar, so
+    // the cursor comes back as soon as the pointer is off the picture.
     private void HideCursor()
     {
         if (!_isCursorHidden)
         {
             _isCursorHidden = true;
             _ = NativeShowCursor(false);
+            _cursorTimer.Start();
         }
     }
 
@@ -178,6 +183,7 @@ public sealed partial class PlayerPage
         {
             _isCursorHidden = false;
             _ = NativeShowCursor(true);
+            _cursorTimer.Stop();
         }
     }
 }

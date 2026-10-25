@@ -7,6 +7,7 @@ using Microsoft.UI.Xaml.Input;
 using Windows.Foundation;
 using Windows.System;
 using Windows.UI.Core;
+using DispatcherQueueTimer = Microsoft.UI.Dispatching.DispatcherQueueTimer;
 
 namespace Granary.App.Controls;
 
@@ -37,6 +38,7 @@ public sealed partial class SeekBar : UserControl
 
     private static readonly Vector3 ActiveTrackScale = new(1, 5f / 3, 1);
 
+    private readonly DispatcherQueueTimer _pendingTimer;
     private bool _isPointerOver;
     private double? _dragSeconds;
     private double? _pendingSeconds;
@@ -45,6 +47,13 @@ public sealed partial class SeekBar : UserControl
     public SeekBar()
     {
         InitializeComponent();
+        // Shows the position again once a held target expires, also when the position does not move (paused,
+        // or the seek was refused).
+        _pendingTimer = DispatcherQueue.CreateTimer();
+        _pendingTimer.Interval = TimeSpan.FromMilliseconds(PendingHoldMilliseconds + 50);
+        _pendingTimer.IsRepeating = false;
+        _pendingTimer.Tick += (_, _) => OnTimelineChanged();
+        Unloaded += (_, _) => _pendingTimer.Stop();
         SizeChanged += (_, _) => Render();
         IsEnabledChanged += (_, _) =>
         {
@@ -106,6 +115,8 @@ public sealed partial class SeekBar : UserControl
         double target = Math.Clamp(seconds, 0, Duration);
         _pendingSeconds = target;
         _pendingSince = Environment.TickCount64;
+        _pendingTimer.Stop();
+        _pendingTimer.Start();
         Render();
         SeekRequested?.Invoke(this, target);
         (FrameworkElementAutomationPeer.FromElement(this) as SeekBarAutomationPeer)?.RaiseValueChanged(previous, target);
@@ -165,12 +176,15 @@ public sealed partial class SeekBar : UserControl
     protected override void OnPointerReleased(PointerRoutedEventArgs e)
     {
         base.OnPointerReleased(e);
-        if (_dragSeconds is null)
+        var point = e.GetCurrentPoint(Track);
+        // Another mouse button let go during the drag does not end it.
+        if (_dragSeconds is null || point.Properties.PointerUpdateKind is PointerUpdateKind.RightButtonReleased
+            or PointerUpdateKind.MiddleButtonReleased or PointerUpdateKind.XButton1Released or PointerUpdateKind.XButton2Released)
         {
             return;
         }
         e.Handled = true;
-        double seconds = SecondsAt(e.GetCurrentPoint(Track).Position.X);
+        double seconds = SecondsAt(point.Position.X);
         // Cleared first: releasing the capture raises PointerCaptureLost, which cancels a drag.
         _dragSeconds = null;
         ReleasePointerCapture(e.Pointer);
@@ -196,6 +210,13 @@ public sealed partial class SeekBar : UserControl
 
     protected override void OnKeyDown(KeyRoutedEventArgs e)
     {
+        // Esc during a drag drops the drag rather than reaching the page, which would close the player.
+        if (e.Key == VirtualKey.Escape && IsDragging)
+        {
+            e.Handled = true;
+            CancelDrag();
+            return;
+        }
         // Ctrl and Alt combinations stay with the app (Alt+Left is Back).
         if (CanSeek && !IsDown(VirtualKey.Control) && !IsDown(VirtualKey.Menu))
         {
@@ -269,7 +290,9 @@ public sealed partial class SeekBar : UserControl
         {
             return;
         }
+        // Cleared before the release, which raises PointerCaptureLost and so comes back here.
         _dragSeconds = null;
+        ReleasePointerCaptures();
         if (!_isPointerOver)
         {
             HideTip();

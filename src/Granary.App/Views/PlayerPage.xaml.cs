@@ -10,6 +10,8 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Automation.Peers;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using Windows.Graphics;
 
@@ -43,6 +45,7 @@ public sealed partial class PlayerPage : Page
         InitializeAutoHide();
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
+        LostFocus += (_, _) => KeepFocusInPage();
     }
 
     public PlayerViewModel ViewModel { get; }
@@ -90,6 +93,11 @@ public sealed partial class PlayerPage : Page
         ShowSkipIntervals();
         Focus(FocusState.Programmatic);
         ShowControls();
+        // StartAsync runs on navigation, before this: it can have failed already.
+        if (ViewModel.IsFailed)
+        {
+            OnFailed();
+        }
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
@@ -115,6 +123,10 @@ public sealed partial class PlayerPage : Page
                 {
                     OnFailed();
                 }
+                else
+                {
+                    KeepFocusInPage();
+                }
                 break;
             case nameof(PlayerViewModel.IsPaused) when ViewModel.IsPaused:
                 ShowControls();
@@ -129,6 +141,32 @@ public sealed partial class PlayerPage : Page
         target.Focus(FocusState.Programmatic);
         FrameworkElementAutomationPeer.FromElement(ErrorText)?.RaiseAutomationEvent(AutomationEvents.LiveRegionChanged);
     });
+
+    // The keyboard map lives on the page, so focus must stay in it. It can still drop out, for one when a focused
+    // button collapses with its panel (Retry, the transport); the page takes it back, unless a menu has it.
+    private void KeepFocusInPage() => DispatcherQueue.TryEnqueue(() =>
+    {
+        if (!IsLoaded || XamlRoot is not { } root || HasOpenMenu())
+        {
+            return;
+        }
+        if (FocusManager.GetFocusedElement(root) is not DependencyObject focused || !IsWithin(focused, this) || !IsShown(focused))
+        {
+            Focus(FocusState.Programmatic);
+        }
+    });
+
+    private static bool IsShown(DependencyObject element)
+    {
+        for (DependencyObject? current = element; current is not null; current = VisualTreeHelper.GetParent(current))
+        {
+            if (current is UIElement { Visibility: Visibility.Collapsed })
+            {
+                return false;
+            }
+        }
+        return true;
+    }
 
     // The intervals come from the profile and raise no change notification, so they are read again whenever
     // the phase changes, which happens once a title has started.
@@ -150,11 +188,16 @@ public sealed partial class PlayerPage : Page
 
     private void OnEndTimeClick(object sender, RoutedEventArgs e) => ShowsRemaining = !ShowsRemaining;
 
-    private void OnFullScreenClick(object sender, RoutedEventArgs e) => SetFullScreen(!IsFullScreen);
+    private void OnFullScreenClick(object sender, RoutedEventArgs e) => ToggleFullScreen();
+
+    // Read from the window, not from IsFullScreen, which follows the window's Changed event a moment later.
+    private bool IsFullScreenNow => _appWindow?.Presenter.Kind == AppWindowPresenterKind.FullScreen;
+
+    private void ToggleFullScreen() => SetFullScreen(!IsFullScreenNow);
 
     private void SetFullScreen(bool fullScreen)
     {
-        if (_appWindow is not { } window || fullScreen == (window.Presenter.Kind == AppWindowPresenterKind.FullScreen))
+        if (_appWindow is not { } window || fullScreen == IsFullScreenNow)
         {
             return;
         }

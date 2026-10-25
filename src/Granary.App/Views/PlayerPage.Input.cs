@@ -33,6 +33,19 @@ public sealed partial class PlayerPage
         };
         PreviewKeyDown += OnPagePreviewKeyDown;
         KeyDown += OnPageKeyDown;
+        PointerPressed += OnPagePointerPressed;
+    }
+
+    // A press on the picture, or anything else that does not take focus, would bubble up to the window's root
+    // scroll viewer, which then takes the focus, and the page's keys with it. The page takes it instead. Other
+    // buttons than the left one pass on: the mouse back button belongs to the window.
+    private void OnPagePointerPressed(object sender, PointerRoutedEventArgs e)
+    {
+        if (!e.Handled && e.GetCurrentPoint(this).Properties.PointerUpdateKind == PointerUpdateKind.LeftButtonPressed)
+        {
+            e.Handled = true;
+            Focus(FocusState.Pointer);
+        }
     }
 
     private void StopInput() => _clickTimer.Stop();
@@ -44,8 +57,6 @@ public sealed partial class PlayerPage
             ViewModel.TogglePauseCommand.Execute(null);
         }
     }
-
-    private void ToggleFullScreen() => SetFullScreen(!IsFullScreen);
 
     // Any key shows the controls. Space is taken here, before a focused button would press itself with it:
     // on the player Space always plays or pauses, as on the web.
@@ -83,7 +94,7 @@ public sealed partial class PlayerPage
                 ViewModel.ToggleMuteCommand.Execute(null);
                 break;
             case VirtualKey.Escape when !isRepeat:
-                if (IsFullScreen)
+                if (IsFullScreenNow)
                 {
                     SetFullScreen(false);
                 }
@@ -130,8 +141,6 @@ public sealed partial class PlayerPage
 
     private void OnSurfaceTapped(object sender, TappedRoutedEventArgs e)
     {
-        // Keys go to the player again, not to a button clicked earlier.
-        Focus(FocusState.Pointer);
         if (e.PointerDeviceType == PointerDeviceType.Touch)
         {
             // On touch a tap shows or hides the controls, as in the web player; the buttons play and pause.
