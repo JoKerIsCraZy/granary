@@ -70,6 +70,22 @@ public sealed class PlayerViewModelServerTests
     }
 
     [Fact]
+    public async Task TheSubtitleMenu_FollowsThePlaybacksInventory_AndPicksGoToIt()
+    {
+        var viewModel = CreateViewModel();
+        await viewModel.StartAsync(PlayRequest.Resume("movie-1"));
+        Playback.RaiseSubtitles([], selected: null);
+        Assert.False(viewModel.HasSubtitleTracks);
+
+        Playback.RaiseSubtitles([new SubtitleInventoryItem { TrackId = "file:1:subtitle:0", Source = "embedded", Language = "eng" }], "file:1:subtitle:0");
+        viewModel.SelectSubtitle(null);
+
+        Assert.True(viewModel.HasSubtitleTracks);
+        Assert.Equal([false, true], viewModel.SubtitleTracks.Select(row => row.IsSelected));
+        Assert.Equal([null], Playback.SubtitlePicks);
+    }
+
+    [Fact]
     public async Task AnAudioPick_GoesToThePlayback()
     {
         var viewModel = CreateViewModel();

@@ -64,6 +64,18 @@ public interface IServerPlayback : IAsyncDisposable
     /// </summary>
     void SelectAudio(int ordinal);
 
+    /// <summary>The plan's subtitle inventory: external, then embedded, then downloaded tracks; empty until a plan is taken.</summary>
+    IReadOnlyList<SubtitleInventoryItem> SubtitleTracks { get; }
+
+    /// <summary>The inventory <c>track_id</c> of the subtitle that shows; null for none.</summary>
+    string? SubtitleTrack { get; }
+
+    /// <summary>
+    /// The viewer's pick: shows inventory track <paramref name="trackId"/>, or none for null, in the player where it can
+    /// and with a new plan otherwise, and saves it for the series (docs/api-contract.md, 8.8).
+    /// </summary>
+    void SelectSubtitle(string? trackId);
+
     Task StartAsync(PlayRequest request, CancellationToken cancellationToken);
 
     /// <summary>Moves to <paramref name="sourceSeconds"/>, asking the server for a new plan when the stream cannot get there itself.</summary>

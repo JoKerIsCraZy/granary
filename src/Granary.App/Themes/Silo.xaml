@@ -582,6 +582,14 @@
         <Setter Property="ScrollViewer.HorizontalScrollMode" Value="Disabled" />
         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
     </Style>
+    <!-- The subtitle menu is wider and scrolls past 60 % of the window, as on the web. -->
+    <Style x:Key="SiloPlayerWideMenuStyle" TargetType="FlyoutPresenter" BasedOn="{StaticResource SiloPlayerMenuStyle}">
+        <Setter Property="MinWidth" Value="220" />
+        <Setter Property="MaxWidth" Value="420" />
+        <Setter Property="MaxHeight" Value="560" />
+        <Setter Property="ScrollViewer.VerticalScrollMode" Value="Auto" />
+        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
+    </Style>
     <Style x:Key="SiloPlayerMenuHeaderTextStyle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource SiloFontMedium}" />
         <Setter Property="FontWeight" Value="Medium" />

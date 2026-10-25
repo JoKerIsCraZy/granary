@@ -91,5 +91,21 @@ public interface IPlaybackEngine : IDisposable
     /// </summary>
     bool SetAudioStream(int stream);
 
+    /// <summary>
+    /// Reads the subtitle file at <paramref name="url"/> into load <paramref name="loadId"/> without showing it. Answers
+    /// its subtitle stream for <see cref="SetSubtitleStream"/>, or null when it could not be read or another load plays
+    /// by now. Reading may take a while (the server can extract the track first), so it runs off the caller's thread.
+    /// </summary>
+    Task<int?> AddSubtitleAsync(Uri url, long loadId);
+
+    /// <summary>The subtitle stream that is the file's FFmpeg stream <paramref name="ffmpegIndex"/>; null when there is none.</summary>
+    int? SubtitleStreamOf(int ffmpegIndex);
+
+    /// <summary>Shows subtitle stream <paramref name="stream"/>, counted from 1; 0 shows none. False when it did not take.</summary>
+    bool SetSubtitleStream(int stream);
+
+    /// <summary>Shows subtitles this much later (negative: earlier) than their own times say.</summary>
+    void SetSubtitleDelay(double seconds);
+
     void Stop();
 }

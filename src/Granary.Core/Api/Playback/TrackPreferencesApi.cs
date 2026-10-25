@@ -83,6 +83,71 @@ public sealed partial record AudioPreference
     private static partial Regex LanguageTagPattern();
 }
 
+/// <summary>
+/// How the server and every client recognize a chosen subtitle track in the series' other files: the same members as
+/// the server's SubtitleTrackSignature, which the web, Apple and Android clients send.
+/// </summary>
+public sealed record SubtitleTrackSignature
+{
+    /// <summary><see cref="SubtitleSources"/>.</summary>
+    public string? Source { get; init; }
+
+    public string? Language { get; init; }
+
+    public string? Codec { get; init; }
+
+    public string? Label { get; init; }
+
+    public bool Forced { get; init; }
+
+    public bool HearingImpaired { get; init; }
+}
+
+/// <summary>
+/// The body of <c>PUT /api/v2/subtitle-prefs/{key}</c> (docs/api-contract.md, 8.8): the viewer's subtitle pick, or
+/// subtitles off. <c>show_forced_subtitles</c> is left out on purpose, as Android leaves it out: sending it would pin
+/// the profile's forced-subtitle setting on this series, so a later change to that setting would never reach it.
+/// </summary>
+public sealed record SubtitleChoice
+{
+    /// <summary>The track's language as the server takes it; empty for off or a track without one.</summary>
+    public string SubtitleLanguage { get; init => field = value ?? ""; } = "";
+
+    /// <summary>The inventory's combined ordinal; -1 for off.</summary>
+    public int SubtitleTrackIndex { get; init; }
+
+    /// <summary><c>always</c> for a track, <c>off</c> for none.</summary>
+    public string SubtitleMode { get; init => field = value ?? ""; } = "";
+
+    public SubtitleTrackSignature? TrackSignature { get; init; }
+
+    /// <summary>Subtitles off for the series, as the web and Apple spell it.</summary>
+    public static SubtitleChoice Off { get; } = new() { SubtitleTrackIndex = -1, SubtitleMode = SubtitlePreferenceModes.Off };
+
+    /// <summary>The pick of an inventory entry; <paramref name="hearingImpaired"/> includes what its label says.</summary>
+    public static SubtitleChoice Of(SubtitleInventoryItem track, bool hearingImpaired)
+    {
+        ArgumentNullException.ThrowIfNull(track);
+        return new SubtitleChoice
+        {
+            SubtitleLanguage = AudioPreference.LanguageTag(track.Language) ?? "",
+            SubtitleTrackIndex = Math.Max(-1, track.CombinedIndex),
+            SubtitleMode = SubtitlePreferenceModes.Always,
+            TrackSignature = new SubtitleTrackSignature
+            {
+                Source = Clean(track.Source),
+                Language = Clean(track.Language),
+                Codec = Clean(track.Codec),
+                Label = Clean(track.Label),
+                Forced = track.Forced,
+                HearingImpaired = hearingImpaired,
+            },
+        };
+    }
+
+    private static string? Clean(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+}
+
 /// <summary>The profile's track choices kept on the server (docs/api-contract.md, 8.8). They need <c>X-Profile-Id</c>.</summary>
 public sealed class TrackPreferencesApi(SiloHttp http)
 {
@@ -92,6 +157,14 @@ public sealed class TrackPreferencesApi(SiloHttp http)
         ArgumentNullException.ThrowIfNull(preference);
         return http.SendAsync(HttpMethod.Put, server, "api/v2/audio-prefs/" + SiloHttp.PathSegment(key, nameof(key)), SiloAuth.Profile,
             preference, PlaybackJsonContext.Default.AudioPreference, cancellationToken);
+    }
+
+    /// <summary>Saves the viewer's subtitle pick, or off, under <paramref name="key"/> (see <see cref="KeyFor"/>); the server answers 204.</summary>
+    public Task SaveSubtitleAsync(Uri server, string key, SubtitleChoice choice, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(choice);
+        return http.SendAsync(HttpMethod.Put, server, "api/v2/subtitle-prefs/" + SiloHttp.PathSegment(key, nameof(key)), SiloAuth.Profile,
+            choice, PlaybackJsonContext.Default.SubtitleChoice, cancellationToken);
     }
 
     /// <summary>Where a title's picks are kept: under its series for an episode, else under the title itself.</summary>

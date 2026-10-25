@@ -71,11 +71,24 @@ public sealed partial class ServerPlayback
             TracksChanged?.Invoke(this, EventArgs.Empty);
             return;
         }
-        Recover(() => ChangeTracksAsync(tracks, (version.FileId, ordinal)));
+        var requested = _pendingAudio;
+        Recover(() => ChangeTracksAsync(tracks, () =>
+        {
+            if (_pendingAudio == requested)
+            {
+                _pendingAudio = null;
+            }
+        }));
     }
 
-    // Once a stream plays: a pick made meanwhile applies to it, unless it plays that track already or is another file's.
+    // Once a stream plays: picks made meanwhile apply to it, unless it plays them already or they are another file's.
     private void ApplyPendingTracks()
+    {
+        ApplyPendingAudio();
+        ApplyPendingSubtitle();
+    }
+
+    private void ApplyPendingAudio()
     {
         if (_pendingAudio is not { } pending)
         {
@@ -91,19 +104,16 @@ public sealed partial class ServerPlayback
     }
 
     // A track the stream does not carry: the session plans one that does, from where the viewer is (8.7). The stream
-    // that plays is fine, so a refusal leaves it playing rather than failing playback.
-    private async Task ChangeTracksAsync(SelectedTracks tracks, (string FileId, int Ordinal) requested)
+    // that plays is fine, so a refusal leaves it playing rather than failing playback. Answered, the pick that asked is
+    // done with; one made during the replan stays for the next stream.
+    private async Task ChangeTracksAsync(SelectedTracks tracks, Action answered)
     {
         ResetPlanChain();
         double position = SourcePosition;
         _logger.LogInformation("Asking for a stream with the chosen tracks at {Position:F1} s", position);
         var decision = await ReplanAsync(ReplanOperations.TrackChange, position, [], tracks: tracks,
             refused: refusal => _logger.LogWarning("The server did not change the tracks ({Failure}); playing on", ApiFailureText.Describe(refusal)));
-        if (_pendingAudio == requested)
-        {
-            // Answered: whatever plays now is the server's answer. A pick made during the replan stays for the next stream.
-            _pendingAudio = null;
-        }
+        answered();
         if (decision is null)
         {
             return;
@@ -116,13 +126,18 @@ public sealed partial class ServerPlayback
         await AdoptAsync(decision, newSession: false, restorePosition: position);
     }
 
-    // Saved in the order the viewer picked, whatever happens to playback meanwhile. Only the viewer's own picks are
-    // saved, never what the server or a fallback chose: that would turn an automatic outcome into a preference.
     private void SaveAudioChoice(WatchFileVersion version, int ordinal)
     {
         var context = _context!;
         string key = TrackPreferencesApi.KeyFor(context.Watch);
         var preference = AudioPreference.Of(version.AudioTracks[ordinal], ordinal);
+        SaveChoice("audio", cancellationToken => _preferences.SaveAudioAsync(context.Server.BaseUri, key, preference, cancellationToken));
+    }
+
+    // Saved in the order the viewer picked, whatever happens to playback meanwhile. Only the viewer's own picks are
+    // saved, never what the server or a fallback chose: that would turn an automatic outcome into a preference.
+    private void SaveChoice(string kind, Func<CancellationToken, Task> save)
+    {
         var previous = _trackSaves;
         _trackSaves = SaveAsync();
 
@@ -132,25 +147,30 @@ public sealed partial class ServerPlayback
             using var timeout = new CancellationTokenSource(SaveTimeout, _time);
             try
             {
-                await _preferences.SaveAudioAsync(context.Server.BaseUri, key, preference, timeout.Token);
+                await save(timeout.Token);
             }
             catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex))
             {
-                _logger.LogWarning("Saving the audio choice failed: {Failure}", ApiFailureText.Describe(ex));
+                _logger.LogWarning("Saving the {Kind} choice failed: {Failure}", kind, ApiFailureText.Describe(ex));
             }
             catch (Exception ex)
             {
                 // A preference, not playback: whatever went wrong, the title plays on and the stop goes out.
-                _logger.LogError(ex, "Saving the audio choice failed unexpectedly");
+                _logger.LogError(ex, "Saving the {Kind} choice failed unexpectedly", kind);
             }
         }
     }
 
     // The tracks of a plan; a direct play then plays the selected audio stream, not the file's default. A direct play
-    // of the same file that names no audio keeps the one that played: the player chooses it there, not the server.
+    // of the same file that names no audio keeps the one that played: the player chooses it there, not the server. A
+    // plan whose subtitle mode is off shows none, whatever it lists.
     private void TakeTracks(PlaybackPlan plan)
     {
         var tracks = plan.SelectedTracks;
+        if (plan.Subtitle.Mode == SubtitleModes.Off)
+        {
+            tracks = tracks with { Subtitle = null };
+        }
         if (tracks.Audio is null && plan.Delivery == PlaybackDeliveries.OriginalHttp && _tracks.Audio is { } playing
             && playing.Id.StartsWith($"file:{plan.EffectiveMediaFileId}:audio:", StringComparison.Ordinal))
         {

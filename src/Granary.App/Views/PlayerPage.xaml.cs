@@ -194,14 +194,28 @@ public sealed partial class PlayerPage : Page
 
     private void OnFullScreenClick(object sender, RoutedEventArgs e) => ToggleFullScreen();
 
-    // The menu opens on the track that plays, so the keyboard starts from there.
-    private void OnAudioMenuOpened(object? sender, object e)
+    // A menu opens on the track that plays, so the keyboard starts from there.
+    private void OnAudioMenuOpened(object? sender, object e) =>
+        FocusRow(AudioRows, ViewModel.AudioTracks.ToList().FindIndex(option => option.IsSelected));
+
+    private void OnSubtitleMenuOpened(object? sender, object e) =>
+        FocusRow(SubtitleRows, ViewModel.SubtitleTracks.ToList().FindIndex(option => option.IsSelected));
+
+    private static void FocusRow(ItemsControl rows, int index)
     {
-        int selected = ViewModel.AudioTracks.ToList().FindIndex(option => option.IsSelected);
-        if (selected >= 0 && AudioRows.ContainerFromIndex(selected) is ContentPresenter { Content: not null } row
+        if (index >= 0 && rows.ContainerFromIndex(index) is ContentPresenter { Content: not null } row
             && VisualTreeHelper.GetChildrenCount(row) > 0 && VisualTreeHelper.GetChild(row, 0) is Button button)
         {
             button.Focus(FocusState.Programmatic);
+        }
+    }
+
+    private void OnSubtitleTrackClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { DataContext: SubtitleTrackOption option })
+        {
+            SubtitleMenu.Hide();
+            ViewModel.SelectSubtitle(option.TrackId);
         }
     }
 

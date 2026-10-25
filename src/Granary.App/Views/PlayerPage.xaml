@@ -232,6 +232,58 @@
                                 </Flyout>
                             </Button.Flyout>
                         </Button>
+                        <Button x:Name="SubtitleButton" Style="{StaticResource SiloPlayerIconButtonStyle}"
+                                Visibility="{x:Bind ViewModel.HasSubtitleTracks, Mode=OneWay}"
+                                AutomationProperties.Name="Subtitles" ToolTipService.ToolTip="Subtitles">
+                            <FontIcon Glyph="&#xE7F0;" FontSize="18" />
+                            <Button.Flyout>
+                                <Flyout x:Name="SubtitleMenu" Placement="TopEdgeAlignedRight" FlyoutPresenterStyle="{StaticResource SiloPlayerWideMenuStyle}"
+                                        Opened="OnSubtitleMenuOpened">
+                                    <ItemsControl x:Name="SubtitleRows" ItemsSource="{x:Bind ViewModel.SubtitleTracks, Mode=OneWay}" IsTabStop="False"
+                                                  XYFocusKeyboardNavigation="Enabled">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="player:SubtitleTrackOption">
+                                                <Button Style="{StaticResource SiloPlayerMenuItemStyle}" Click="OnSubtitleTrackClick"
+                                                        Background="{x:Bind controls:PlayerMenus.SubtitleRowBackground(IsSelected)}"
+                                                        Foreground="{x:Bind controls:PlayerMenus.SubtitleRowForeground(IsSelected)}"
+                                                        AutomationProperties.Name="{x:Bind AccessibleName}"
+                                                        AutomationProperties.ItemStatus="{x:Bind controls:PlayerMenus.Status(IsSelected)}">
+                                                    <Grid ColumnSpacing="8">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="16" />
+                                                            <ColumnDefinition Width="*" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Text="&#x2713;" FontSize="12" Margin="0,2,0,0" HorizontalAlignment="Center"
+                                                                   Visibility="{x:Bind IsSelected}" />
+                                                        <StackPanel Grid.Column="1" Spacing="2">
+                                                            <Grid ColumnSpacing="12">
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*" />
+                                                                    <ColumnDefinition Width="Auto" />
+                                                                </Grid.ColumnDefinitions>
+                                                                <TextBlock Text="{x:Bind Title}" FontSize="14" TextTrimming="CharacterEllipsis" />
+                                                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                                                    <Border Style="{StaticResource SiloPlayerMenuChipStyle}" Visibility="{x:Bind controls:PlayerMenus.Shows(Format)}">
+                                                                        <TextBlock Text="{x:Bind Format}" Style="{StaticResource SiloPlayerMenuChipTextStyle}"
+                                                                                   FontSize="10" FontFamily="{StaticResource SiloFontRegular}" FontWeight="Normal" Foreground="#80FFFFFF" />
+                                                                    </Border>
+                                                                    <Border Style="{StaticResource SiloPlayerMenuChipStyle}" Visibility="{x:Bind controls:PlayerMenus.Shows(Source)}">
+                                                                        <TextBlock Text="{x:Bind controls:PlayerMenus.Upper(Source)}" Style="{StaticResource SiloPlayerMenuChipTextStyle}"
+                                                                                   FontSize="10" FontFamily="{StaticResource SiloFontRegular}" FontWeight="Normal" Foreground="#80FFFFFF" />
+                                                                    </Border>
+                                                                </StackPanel>
+                                                            </Grid>
+                                                            <TextBlock Text="{x:Bind Detail}" FontSize="12" Foreground="#66FFFFFF" TextTrimming="CharacterEllipsis"
+                                                                       Visibility="{x:Bind controls:PlayerMenus.Shows(Detail)}" />
+                                                        </StackPanel>
+                                                    </Grid>
+                                                </Button>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </Flyout>
+                            </Button.Flyout>
+                        </Button>
                         <Button x:Name="FullScreenButton" Style="{StaticResource SiloPlayerIconButtonStyle}" Click="OnFullScreenClick"
                                 AutomationProperties.Name="{x:Bind FullScreenName(IsFullScreen), Mode=OneWay}" AutomationProperties.AcceleratorKey="F"
                                 ToolTipService.ToolTip="{x:Bind FullScreenToolTip(IsFullScreen), Mode=OneWay}">

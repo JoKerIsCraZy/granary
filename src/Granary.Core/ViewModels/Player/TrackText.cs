@@ -1,7 +1,7 @@
-using System.Collections.Frozen;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using Granary.Core.Api.Playback;
+using Granary.Core.Playback;
 
 namespace Granary.Core.ViewModels.Player;
 
@@ -14,20 +14,6 @@ public static partial class TrackText
     // Codec families that cannot carry Atmos: a compatibility track of one of them is often titled after its source
     // ("AC3 5.1 (from TrueHD Atmos)"), so its titles say nothing. E-AC-3 contains "ac-3" and is checked first.
     private static readonly string[] NonAtmosCodecs = ["aac", "ac3", "ac-3", "dts", "flac", "mp3", "opus", "vorbis", "pcm", "alac"];
-
-    // ISO 639-2/B codes older scans carry, to the 639-2/T codes .NET knows.
-    private static readonly FrozenDictionary<string, string> Bibliographic = new Dictionary<string, string>
-    {
-        ["alb"] = "sqi", ["arm"] = "hye", ["baq"] = "eus", ["bur"] = "mya", ["chi"] = "zho", ["cze"] = "ces", ["dut"] = "nld",
-        ["fre"] = "fra", ["geo"] = "kat", ["ger"] = "deu", ["gre"] = "ell", ["ice"] = "isl", ["mac"] = "mkd", ["mao"] = "mri",
-        ["may"] = "msa", ["per"] = "fas", ["rum"] = "ron", ["slo"] = "slk", ["tib"] = "bod", ["wel"] = "cym",
-    }.ToFrozenDictionary();
-
-    private static readonly Lazy<FrozenDictionary<string, CultureInfo>> ThreeLetterCultures = new(() =>
-        CultureInfo.GetCultures(CultureTypes.NeutralCultures)
-            .Where(c => c.ThreeLetterISOLanguageName.Length == 3 && c.Name.Length > 0)
-            .GroupBy(c => c.ThreeLetterISOLanguageName, StringComparer.OrdinalIgnoreCase)
-            .ToFrozenDictionary(g => g.Key, g => g.OrderBy(c => c.Name.Length).First(), StringComparer.OrdinalIgnoreCase));
 
     /// <summary>
     /// The row title of an audio track: its own title, else the embedded one, else language, codec and channels as
@@ -87,6 +73,45 @@ public static partial class TrackText
             : codec.ToUpperInvariant();
     }
 
+    /// <summary>A subtitle row's title: its language's name, "Unknown" without one (web: getLanguageName).</summary>
+    public static string SubtitleLanguage(string? language) =>
+        string.IsNullOrWhiteSpace(language) ? "Unknown" : LanguageName(language);
+
+    /// <summary>"ASS", "SRT", "VTT", "PGS", "DVD", "DVB"; empty for any other codec (web: getSubtitleFormatLabel).</summary>
+    public static string SubtitleFormat(string? codec) => codec?.Trim().ToLowerInvariant() switch
+    {
+        "ass" or "ssa" => "ASS",
+        "srt" or "subrip" => "SRT",
+        "vtt" or "webvtt" => "VTT",
+        "pgs" or "hdmv_pgs_subtitle" => "PGS",
+        "dvd_subtitle" => "DVD",
+        "dvb_subtitle" => "DVB",
+        _ => "",
+    };
+
+    /// <summary>"External", "Downloaded", else "Embedded".</summary>
+    public static string SubtitleSource(string? source) => source switch
+    {
+        SubtitleSources.External => "External",
+        SubtitleSources.Downloaded => "Downloaded",
+        _ => "Embedded",
+    };
+
+    /// <summary>A track's own label under its row, unless it only repeats the language or the format; empty then.</summary>
+    public static string SubtitleDetail(string? label, string? language, string languageName, string? codec)
+    {
+        string text = label?.Trim() ?? "";
+        if (text.Length == 0 || text == language || text == languageName)
+        {
+            return "";
+        }
+        string plain = FormatName(text);
+        return plain.Length > 0 && (plain == FormatName(codec) || plain == FormatName(SubtitleFormat(codec))) ? "" : text;
+    }
+
+    private static string FormatName(string? value) =>
+        new((value ?? "").ToLowerInvariant().Where(char.IsAsciiLetterOrDigit).ToArray());
+
     /// <summary>"7.1", "5.1", "stereo", "3 ch"; empty when unknown (web: formatChannels).</summary>
     public static string Channels(int channels) => channels switch
     {
@@ -129,7 +154,7 @@ public static partial class TrackText
         {
             return "Unknown language";
         }
-        if (LanguageOf(primary) is not { } language)
+        if (TrackLanguages.Culture(primary) is not { } language)
         {
             return null;
         }
@@ -146,26 +171,6 @@ public static partial class TrackText
             }
         }
         return language.EnglishName;
-    }
-
-    private static CultureInfo? LanguageOf(string primary)
-    {
-        if (primary.Length == 3)
-        {
-            return ThreeLetterCultures.Value.GetValueOrDefault(Bibliographic.GetValueOrDefault(primary, primary));
-        }
-        if (primary.Length != 2)
-        {
-            return null;
-        }
-        try
-        {
-            return CultureInfo.GetCultureInfo(primary, predefinedOnly: true);
-        }
-        catch (CultureNotFoundException)
-        {
-            return null;
-        }
     }
 
     // The profile and the titles can name Atmos too; some releases only say so in the title.

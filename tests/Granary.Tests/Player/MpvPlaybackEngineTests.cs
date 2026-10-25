@@ -106,6 +106,33 @@ public sealed class MpvPlaybackEngineTests : IDisposable
     }
 
     [Fact]
+    public async Task ASubtitleFile_IsReadIn_ThenShownAndHidden()
+    {
+        using var engine = CreateEngine();
+        var playing = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        engine.StateChanged += (_, s) =>
+        {
+            if (s is { IsLoaded: true, HasStarted: true })
+            {
+                playing.TrySetResult();
+            }
+        };
+        long load = engine.Load(MediaSource.Local(TempWav(6.0)) with { SubtitleStream = 0 });
+        await playing.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken);
+        string srt = Path.Combine(Path.GetTempPath(), $"granary-{Guid.NewGuid():N}.srt");
+        _files.Add(srt);
+        await File.WriteAllTextAsync(srt, "1\n00:00:00,000 --> 00:00:05,000\nHello\n", TestContext.Current.CancellationToken);
+
+        int? stream = await engine.AddSubtitleAsync(new Uri(srt), load);
+
+        Assert.NotNull(stream);
+        Assert.True(engine.SetSubtitleStream(stream.Value));
+        Assert.True(engine.SetSubtitleStream(0));
+        // Read in for an earlier load, a file is left out.
+        Assert.Null(await engine.AddSubtitleAsync(new Uri(srt), load - 1));
+    }
+
+    [Fact]
     public async Task Loads_AreCounted_AndTheirStatesSayWhichOne()
     {
         using var engine = CreateEngine();

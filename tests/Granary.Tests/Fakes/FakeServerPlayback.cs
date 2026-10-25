@@ -50,6 +50,23 @@ internal sealed class FakeServerPlayback : IServerPlayback
 
     public void SelectAudio(int ordinal) => AudioPicks.Add(ordinal);
 
+    public IReadOnlyList<SubtitleInventoryItem> SubtitleTracks { get; set; } = [];
+
+    public string? SubtitleTrack { get; set; }
+
+    /// <summary>Every subtitle pick the player passed on, in order; null is off.</summary>
+    public List<string?> SubtitlePicks { get; } = [];
+
+    public void SelectSubtitle(string? trackId) => SubtitlePicks.Add(trackId);
+
+    /// <summary>Lists <paramref name="tracks"/> with <paramref name="selected"/> showing, as a newly taken plan does.</summary>
+    public void RaiseSubtitles(IReadOnlyList<SubtitleInventoryItem> tracks, string? selected)
+    {
+        SubtitleTracks = tracks;
+        SubtitleTrack = selected;
+        TracksChanged?.Invoke(this, EventArgs.Empty);
+    }
+
     /// <summary>Plays <paramref name="tracks"/> with <paramref name="selected"/>, as a newly taken plan does.</summary>
     public void RaiseTracks(IReadOnlyList<WatchAudioTrack> tracks, int? selected)
     {

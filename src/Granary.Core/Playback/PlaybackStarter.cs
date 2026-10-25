@@ -15,6 +15,10 @@ public sealed class PlaybackUnavailableException(string message, bool canRetry) 
 
 /// <summary>What every start and replan of one playback needs, gathered before the first start.</summary>
 /// <param name="InstallationId">From the server's playback capabilities; replaced when the server was reinstalled.</param>
+/// <param name="SubtitlePick">
+/// The viewer's subtitle pick during this playback, as a combined ordinal (-1 for off), which a new attempt starts
+/// with instead of the automatic choice; null without one.
+/// </param>
 public sealed record PlaybackContext(
     ServerEntry Server,
     string ProfileId,
@@ -22,7 +26,8 @@ public sealed record PlaybackContext(
     WatchFileVersion Version,
     PlaybackPreferences Preferences,
     string InstallationId,
-    PlaybackClientReport Report);
+    PlaybackClientReport Report,
+    int? SubtitlePick = null);
 
 /// <summary>
 /// The part of a playback before the plan (docs/api-contract.md, 7.8, 8.3, 8.4, 10.5): the watch detail, the file
@@ -94,6 +99,10 @@ public sealed class PlaybackStarter(
             StartPosition = startPosition,
             // Always explicit: an omitted index is resolved from another device header (docs/api-contract.md, 8.8.1).
             AudioTrackIndex = context.Version.EffectiveAudioTrackIndex,
+            // The start applies no saved subtitle preference, and leaving the track out means none: the client resolves it.
+            SubtitleTrackIndex = context.SubtitlePick is { } pick
+                ? (pick >= 0 ? pick : null)
+                : SubtitleAutoSelection.ForStart(context.Watch, context.Version),
             BandwidthCapKbps = context.Preferences.MaxBitrateKbps,
             ClientCapabilities = context.Report.ClientCapabilities,
             ClientPlaybackContext = context.Report.ClientPlaybackContext,

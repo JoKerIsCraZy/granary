@@ -22,4 +22,5 @@ namespace Granary.Core.Api.Playback;
 [JsonSerializable(typeof(PlaybackRouteEvent))]
 [JsonSerializable(typeof(PlaybackRouteEventReceipt))]
 [JsonSerializable(typeof(AudioPreference))]
+[JsonSerializable(typeof(SubtitleChoice))]
 internal sealed partial class PlaybackJsonContext : JsonSerializerContext;

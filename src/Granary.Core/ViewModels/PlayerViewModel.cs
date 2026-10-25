@@ -130,6 +130,14 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
 
     public bool CanChooseAudio => AudioTracks.Count > 1;
 
+    /// <summary>The rows of the subtitle menu, Off first, the one that shows checked; empty without a server title.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasSubtitleTracks))]
+    public partial IReadOnlyList<SubtitleTrackOption> SubtitleTracks { get; private set; } = [];
+
+    /// <summary>The subtitle button shows once the plan lists a track.</summary>
+    public bool HasSubtitleTracks => SubtitleTracks.Count > 1;
+
     /// <summary>Starts <paramref name="request"/>; the page calls it once when it is shown, Retry again.</summary>
     public async Task StartAsync(PlayRequest request)
     {
@@ -154,6 +162,9 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
 
     /// <summary>The viewer's pick in the audio menu: it plays at once and is saved for the series.</summary>
     public void SelectAudio(int ordinal) => _playback?.SelectAudio(ordinal);
+
+    /// <summary>The viewer's pick in the subtitle menu, null for Off: it shows at once and is saved for the series.</summary>
+    public void SelectSubtitle(string? trackId) => _playback?.SelectSubtitle(trackId);
 
     /// <summary>Moves to <paramref name="seconds"/> of the title (the seek bar), within its length.</summary>
     public void SeekTo(double seconds)
@@ -259,6 +270,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         playback.StatusChanged -= OnPlaybackStatusChanged;
         playback.TracksChanged -= OnTracksChanged;
         AudioTracks = [];
+        SubtitleTracks = [];
         _stops.Track(EndAsync(playback));
 
         static async Task EndAsync(IServerPlayback playback)
@@ -331,6 +343,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         if (sender == _playback && _playback is { } playback)
         {
             AudioTracks = AudioTrackOption.For(playback.AudioTracks, playback.AudioTrack);
+            SubtitleTracks = playback.SubtitleTracks.Count == 0 ? [] : SubtitleTrackOption.For(playback.SubtitleTracks, playback.SubtitleTrack);
         }
     }
 

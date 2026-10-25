@@ -393,11 +393,12 @@ public sealed partial class ServerPlayback : IServerPlayback
         WatchFirstFrame(_loadId);
     }
 
-    // Ends the requests of the stream before; a new load has its own route.
+    // Ends the requests of the stream before, its subtitles' too; a new load has its own routes.
     private void CloseRoute()
     {
         _route?.Dispose();
         _route = null;
+        CloseSubtitleRoutes();
     }
 
     // A file the watch detail does not list, or lists without tracks, cannot be checked.
@@ -470,6 +471,7 @@ public sealed partial class ServerPlayback : IServerPlayback
             _pendingSeek = null;
             Seek(target);
         }
+        _ = ShowSubtitlesAsync(_loadId);
         ApplyPendingTracks();
     }
 

@@ -57,6 +57,36 @@ internal sealed class FakePlaybackEngine : IPlaybackEngine
         return AudioSwitchTakes;
     }
 
+    /// <summary>Every subtitle file read in, with the load it was for.</summary>
+    public List<(Uri Url, long LoadId)> SubtitleFiles { get; } = [];
+
+    /// <summary>What <see cref="AddSubtitleAsync"/> answers; a pending task keeps the file on its way.</summary>
+    public Func<Uri, Task<int?>> ReadSubtitle { get; set; } = _ => Task.FromResult<int?>(3);
+
+    /// <summary>The file's subtitle streams by FFmpeg index, as mpv numbers them.</summary>
+    public Dictionary<int, int> EmbeddedSubtitles { get; } = [];
+
+    /// <summary>Every subtitle stream shown, in order; 0 is none.</summary>
+    public List<int> SubtitleStreams { get; } = [];
+
+    public double SubtitleDelay { get; private set; }
+
+    public Task<int?> AddSubtitleAsync(Uri url, long loadId)
+    {
+        SubtitleFiles.Add((url, loadId));
+        return ReadSubtitle(url);
+    }
+
+    public int? SubtitleStreamOf(int ffmpegIndex) => EmbeddedSubtitles.TryGetValue(ffmpegIndex, out int stream) ? stream : null;
+
+    public bool SetSubtitleStream(int stream)
+    {
+        SubtitleStreams.Add(stream);
+        return true;
+    }
+
+    public void SetSubtitleDelay(double seconds) => SubtitleDelay = seconds;
+
     public int Stops { get; private set; }
 
     public void Stop() => Stops++;

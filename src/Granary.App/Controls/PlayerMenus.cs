@@ -20,4 +20,11 @@ public static class PlayerMenus
         (Brush)Application.Current.Resources[isSelected ? "SiloPlayerMenuChosenBrush" : "SiloPlayerMenuRowBrush"];
 
     public static string Status(bool isSelected) => isSelected ? "Selected" : "";
+
+    // The subtitle menu marks its chosen row as the web does: a faint light behind it and white text, the others dimmed.
+    public static Brush SubtitleRowBackground(bool isSelected) =>
+        new SolidColorBrush(isSelected ? Windows.UI.Color.FromArgb(0x0D, 0xFF, 0xFF, 0xFF) : Microsoft.UI.Colors.Transparent);
+
+    public static Brush SubtitleRowForeground(bool isSelected) =>
+        new SolidColorBrush(isSelected ? Microsoft.UI.Colors.White : Windows.UI.Color.FromArgb(0xB3, 0xFF, 0xFF, 0xFF));
 }

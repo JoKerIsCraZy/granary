@@ -51,6 +51,16 @@ public static class PlaybackUrl
         return valid ? new Uri(node.AbsoluteUri) : null;
     }
 
+    /// <summary>
+    /// A subtitle sidecar (an inventory entry's or the plan's artifact <c>url</c>, 9.6): on the saved server as
+    /// <see cref="Resolve"/> takes it, and written as it will be sent, since the media proxy sends it unchanged.
+    /// </summary>
+    public static Uri? ResolveSidecar(Uri server, string? value)
+    {
+        ArgumentNullException.ThrowIfNull(server);
+        return Resolve(server, value) is { } sidecar && IsPlain(sidecar.OriginalString) ? sidecar : null;
+    }
+
     /// <summary>An absolute HTTP URL that is not on the saved server: a proxy node's, or one the client refuses.</summary>
     public static bool IsElsewhere(Uri server, string? value) =>
         Uri.TryCreate(value, UriKind.Absolute, out var absolute)

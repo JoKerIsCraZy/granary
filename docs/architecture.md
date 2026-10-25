@@ -108,8 +108,8 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   and sent are source time (`player + timeline_offset_seconds`). A direct play (`original_http`) is the file
   with all its audio tracks, so the load selects the plan's audio track (mpv `aid`, the ordinal plus 1);
   otherwise mpv would play the one the file marks as default. Streams the server makes carry only that track.
-  Subtitles are the plan's alone (`sid=no` until the subtitle routes are built): mpv would otherwise show a
-  track the file marks as default, a second authority the Android client switches off as well.
+  Each load starts with no subtitle (`sid=no`): mpv would otherwise show a track the file marks as default, a
+  second authority the Android client switches off as well. The plan's track follows once the stream plays.
 - **Audio tracks** (Apple's and Android's behaviour, 8.8): the menu lists the playing file's tracks with the
   one that plays checked. In a direct play the pick switches in mpv (`aid`), checked by reading back the track
   that plays (a switch that did not take puts the track before back); otherwise, or when mpv refuses, a
@@ -120,6 +120,18 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   fallback changed the file meanwhile. Only the viewer's picks are
   saved (`PUT /api/v2/audio-prefs/{series or title}` with the ordinal, the language when it is a tag the server
   takes, and the catalog's signature of the track), in order, and closing the app waits for them with the stop.
+- **Subtitles** (8.8, 8.8.1, 9.6): the start sends the track `SubtitleAutoSelection` resolves from the watch
+  detail's effective fields, Android's AutoSubtitleResolver ported (a saved series signature first, then
+  language, forced and SDH rules; embedded before external before downloaded; burn-ins last), as a combined
+  ordinal; leaving it out means none. Once a load's stream plays, its track shows: an embedded one of a direct
+  play from the file itself (mpv's track with that FFmpeg index), anything else from its sidecar, opened as a
+  media-proxy route of its own and read with `sub-add` off the UI thread, at a delay of
+  `-timeline_offset_seconds` (cues are source time). A burn-in shows nothing in mpv. A pick switches in the
+  player where Apple's client does (off, any sidecar, an embedded track of a direct play), and is replanned with
+  `track_change` otherwise, for one to leave a burn-in; it goes with later replans, a new attempt starts with it,
+  and it is saved to `/api/v2/subtitle-prefs` (never with `show_forced_subtitles`, which would pin the profile's
+  forced setting on the series). A sidecar that arrives after another load or pick is not shown, and a new load
+  closes the sidecar routes of the one before.
 - **While playing**: progress every 10 s, and once a pause has held for a second (`PlaybackProgress`: one
   sequence per sample, retried with the identical body). Leaving the page by any way stops the session with
   its final position and stops the engine (`PlayerViewModel.Leave`); before the session's first frame the stop

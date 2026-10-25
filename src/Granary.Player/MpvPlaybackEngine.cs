@@ -198,6 +198,66 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
     /// <summary>The audio stream that plays, counted from 1; null without one.</summary>
     internal string? PlayingAudioStream => _mpv.GetString("current-tracks/audio/id");
 
+    // sub-add reads the whole file before it returns; "auto" adds it without selecting it, so a file that arrives after
+    // another load cannot take over that one's subtitles. Its stream number is read back from the track list.
+    public Task<int?> AddSubtitleAsync(Uri url, long loadId)
+    {
+        ArgumentNullException.ThrowIfNull(url);
+        string target = url.IsFile ? url.LocalPath : url.OriginalString;
+        return Task.Run(() =>
+        {
+            if (!IsCurrentLoad(loadId) || _mpv.Command("sub-add", target, "auto") < 0 || !IsCurrentLoad(loadId))
+            {
+                return null;
+            }
+            int? stream = null;
+            long count = _mpv.GetInt64("track-list/count") ?? 0;
+            for (long i = 0; i < count; i++)
+            {
+                if (_mpv.GetString($"track-list/{i}/type") == "sub" && _mpv.GetString($"track-list/{i}/external-filename") == target)
+                {
+                    stream = (int?)_mpv.GetInt64($"track-list/{i}/id");
+                }
+            }
+            return stream;
+        });
+    }
+
+    public int? SubtitleStreamOf(int ffmpegIndex)
+    {
+        long count = _mpv.GetInt64("track-list/count") ?? 0;
+        for (long i = 0; i < count; i++)
+        {
+            if (_mpv.GetString($"track-list/{i}/type") == "sub" && _mpv.GetInt64($"track-list/{i}/ff-index") == ffmpegIndex
+                && _mpv.GetString($"track-list/{i}/external") != "yes")
+            {
+                return (int?)_mpv.GetInt64($"track-list/{i}/id");
+            }
+        }
+        return null;
+    }
+
+    public bool SetSubtitleStream(int stream)
+    {
+        if (stream <= 0)
+        {
+            return _mpv.SetProperty("sid", "no") >= 0;
+        }
+        string id = stream.ToString(CultureInfo.InvariantCulture);
+        return _mpv.SetProperty("sid", id) >= 0 && _mpv.GetString("current-tracks/sub/id") == id;
+    }
+
+    public void SetSubtitleDelay(double seconds) =>
+        _mpv.SetProperty("sub-delay", seconds.ToString("0.###", CultureInfo.InvariantCulture));
+
+    private bool IsCurrentLoad(long loadId)
+    {
+        lock (_gate)
+        {
+            return _loads == loadId;
+        }
+    }
+
     public void Stop() => _mpv.Command("stop");
 
     public void Resize(int widthPixels, int heightPixels)
