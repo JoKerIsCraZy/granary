@@ -1,6 +1,7 @@
 using Granary.App.Views;
 using Granary.Core.Abstractions;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Navigation;
 
 namespace Granary.App.Services;
 
@@ -46,6 +47,30 @@ public sealed class NavigationService : INavigationService
             return;
         }
         _frame.Navigate(Pages[route], parameter);
+        Arrived(route, parameter);
+    }
+
+    /// <summary>
+    /// A sidebar section (Home, Search, a library), as the apps' tabs: it does not stack on the pages visited before.
+    /// Only Home stays under it, so Back from a section goes Home and from Home nowhere; pages opened within a section
+    /// stack on it as before. A section picked again goes back to its own page.
+    /// </summary>
+    public void ShowSection(AppRoute route, object? parameter = null)
+    {
+        if (_frame is null)
+        {
+            return;
+        }
+        if (route != Current || !Equals(parameter, CurrentParameter))
+        {
+            _frame.Navigate(Pages[route], parameter);
+        }
+        var home = _frame.BackStack.FirstOrDefault(e => e.SourcePageType == typeof(HomePage));
+        _frame.BackStack.Clear();
+        if (route != AppRoute.Home)
+        {
+            _frame.BackStack.Add(home ?? new PageStackEntry(typeof(HomePage), null, null));
+        }
         Arrived(route, parameter);
     }
 

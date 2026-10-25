@@ -180,8 +180,12 @@ public sealed partial class MainWindow : Window
         switch (args.InvokedItemContainer?.Tag)
         {
             case string tag when tag.StartsWith(LibraryTagPrefix, StringComparison.Ordinal):
-                _navigation.NavigateTo(AppRoute.Library, tag[LibraryTagPrefix.Length..]);
+                _navigation.ShowSection(AppRoute.Library, tag[LibraryTagPrefix.Length..]);
                 break;
+            case string tag when Enum.TryParse<AppRoute>(tag, out var route) && route is AppRoute.Home or AppRoute.Search:
+                _navigation.ShowSection(route);
+                break;
+            // Settings and Servers open over the page they were opened from, and go back to it.
             case string tag when Enum.TryParse<AppRoute>(tag, out var route):
                 _navigation.NavigateTo(route);
                 break;
@@ -222,7 +226,7 @@ public sealed partial class MainWindow : Window
         if (Shell.IsSignedIn)
         {
             args.Handled = true;
-            _navigation.NavigateTo(AppRoute.Search);
+            _navigation.ShowSection(AppRoute.Search);
         }
     }
 }

@@ -87,7 +87,10 @@ View models build `MediaCard`s with the texts already worded; the controls only 
 - Detail pages: full-bleed backdrop fading into the background, logo (or display title), chips,
   ratings, overview with "More", red Play/Resume pill, secondary actions, then rows (seasons, episodes,
   cast, more like this).
-- Back: the navigation view's back arrow, `Alt+Left`, and the mouse back button.
+- Back: the navigation view's back arrow, `Alt+Left`, and the mouse back button. The sidebar's sections (Home,
+  Search, each library) are the apps' tabs: picking one does not stack on the pages visited before, only Home stays
+  under it, so Back walks the pages opened within a section and then goes Home (Android's tab switch pops to the
+  anchor tab). Settings and Servers open over the page they came from and go back to it.
 
 ## Signed-out screens
 
