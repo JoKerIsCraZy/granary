@@ -172,6 +172,18 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   it; a reset clears both. "No limit" and "No preference" are resets, not stored values. Playback reads
   `playback.auto_play_next_preview` in a batch of its own; with it the next episode is offered from the preview teaser
   that runs into the credits (`MarkerSettings.AutoplayStart`, the web's resolveAutoplayMarker).
+- **Test speed** (`connection_speed_v1`; the server's buffering-quality design, Connection speed test):
+  `ConnectionSpeedTest` runs the accurate test only, never the automatic quick one, and sends no estimate on starts.
+  It asks the advertised `bandwidth_probe_url` (resolved against the server) for `size=1000000000` through `SiloHttp`,
+  so the bearer goes only beneath the server and a verified local route is taken, as media is. A redirect is
+  followed once, by hand, through a client of its own with no credentials, no identity headers and no logging: the
+  address carries a token. `BandwidthProbe` times the body: the clock starts at the first byte (abandoned when none
+  comes within 10 s of asking), a ticker closes 500 ms windows on the clock so silence counts, and `SpeedTestMeter`
+  (Android's, checked against the design's `probe_cases`) settles the rate over the last six windows of 10 s, or the
+  whole transfer on a link too fast for one. The result goes to `bandwidth-probe/results` with `manual: true` and the
+  link's transport from Windows (`INetworkLink`: Wi-Fi, mobile broadband, Ethernet by adapter type, else other); a
+  cellular or metered link is not tested. A 429 holds the button's message for its `Retry-After` (30 s without one).
+  A second press joins the test that runs; leaving Settings stops it, since that is the way to playback.
 - **A new title plays**: mpv keeps `pause` across files and sets it itself at a file's end (`keep-open`), where the
   countdown starts the next episode from; the first load of a playback therefore unpauses, while its reloads (a
   replan, a reconnect) keep what the viewer chose.

@@ -93,6 +93,7 @@ public partial class App : Application
         services.AddSingleton<IUiDispatcher>(new UiDispatcher(dispatcherQueue));
         services.AddSingleton<NavigationService>();
         services.AddSingleton<INavigationService>(sp => sp.GetRequiredService<NavigationService>());
+        services.AddSingleton<INetworkLink, WindowsNetworkLink>();
         services.AddGranaryCore();
         services.AddGranaryPlayer();
         services.AddSingleton<MainWindow>();

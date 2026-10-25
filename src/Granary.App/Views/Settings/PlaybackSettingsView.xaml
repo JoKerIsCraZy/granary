@@ -45,7 +45,14 @@
         <controls:SettingsGroup Title="Connection" Visibility="{x:Bind ViewModel.ShowsConnection, Mode=OneWay}">
             <StackPanel Spacing="16">
                 <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Connection speed"
-                                      Description="{x:Bind ViewModel.ConnectionSpeedText, Mode=OneWay}" />
+                                      Description="{x:Bind ViewModel.ConnectionSpeedText, Mode=OneWay}">
+                    <Button Content="{x:Bind ViewModel.TestSpeedText, Mode=OneWay}" Style="{StaticResource SiloSettingsOutlineButtonStyle}"
+                            Command="{x:Bind ViewModel.TestSpeedCommand}" Visibility="{x:Bind ViewModel.ShowsTestSpeed, Mode=OneWay}"
+                            AutomationProperties.Name="Test speed" />
+                </controls:SettingsRow>
+                <TextBlock Text="{x:Bind ViewModel.SpeedTestMessage, Mode=OneWay}" Style="{StaticResource SiloSettingsMutedTextStyle}"
+                           Visibility="{x:Bind controls:SettingsText.Shows(ViewModel.SpeedTestMessage), Mode=OneWay}"
+                           AutomationProperties.LiveSetting="Polite" />
                 <TextBlock Text="{x:Bind ViewModel.BudgetText, Mode=OneWay}" Style="{StaticResource SiloSettingsMutedTextStyle}"
                            Visibility="{x:Bind controls:SettingsText.Shows(ViewModel.BudgetText), Mode=OneWay}" />
             </StackPanel>

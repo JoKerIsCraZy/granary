@@ -64,6 +64,20 @@ public sealed class SiloHttp(HttpClient http)
         return await SendAsync(request, responseType, cancellationToken).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// For a download read as it arrives: the answer once its headers are in, whatever its status, for the caller to
+    /// read and dispose. <paramref name="url"/> is absolute; credentials still go only beneath <paramref name="server"/>.
+    /// </summary>
+    public async Task<HttpResponseMessage> OpenAsync(Uri server, Uri url, SiloAuth auth, string accept, CancellationToken cancellationToken)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(accept));
+        request.Headers.CacheControl = new CacheControlHeaderValue { NoStore = true };
+        request.SetAuth(auth);
+        request.SetServer(server);
+        return await http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+    }
+
     public static Uri BuildUri(Uri server, string path) => new(server.AbsoluteUri.TrimEnd('/') + "/" + path.TrimStart('/'));
 
     private static HttpRequestMessage Create(HttpMethod method, Uri server, string path, SiloAuth auth)

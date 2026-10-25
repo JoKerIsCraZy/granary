@@ -14,6 +14,7 @@ namespace Granary.Core.Api.Playback;
 [JsonSerializable(typeof(WatchDetail))]
 [JsonSerializable(typeof(TrickplayManifest))]
 [JsonSerializable(typeof(PlaybackConnectionState))]
+[JsonSerializable(typeof(BandwidthProbeReport))]
 [JsonSerializable(typeof(PlaybackCapabilities))]
 [JsonSerializable(typeof(PlaybackStartRequest))]
 [JsonSerializable(typeof(PlaybackReplanRequest))]

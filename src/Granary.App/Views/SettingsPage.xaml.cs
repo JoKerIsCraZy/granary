@@ -29,6 +29,16 @@ public sealed partial class SettingsPage : Page
         Pages.SelectedItem = Pages.Items.OfType<ListViewItem>().FirstOrDefault(i => i.Tag as string == page) ?? Pages.Items[0];
     }
 
+    // A speed test left running would split the link with whatever plays next.
+    protected override void OnNavigatedFrom(NavigationEventArgs e)
+    {
+        base.OnNavigatedFrom(e);
+        foreach (var view in _views.Values.OfType<PlaybackSettingsView>())
+        {
+            view.ViewModel.StopSpeedTest();
+        }
+    }
+
     private void OnPageSelected(object sender, SelectionChangedEventArgs e)
     {
         if (Pages.SelectedItem is not ListViewItem { Tag: string page })

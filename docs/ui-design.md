@@ -115,7 +115,15 @@ says why above the sections.
 - **Playback**: Quality (preferred quality, maximum bitrate with "No limit", lower quality when buffering, and this
   connection's learned limit with Reset), Connection (the latest speed reading and what Auto plays without
   converting), Skipping (skip intros, auto-skip recaps and credits), Next episode (start next at preview, auto-play),
-  Seek controls (rewind and fast-forward intervals). No speed test yet.
+  Seek controls (rewind and fast-forward intervals).
+- **Connection** (with `connection_speed_v1`): "Connection speed" with the reading as its description ("400 Mbps ·
+  measured just now on Ethernet", "Not measured yet") and **Test speed** as an outline button on the right, "Testing…"
+  and disabled while it runs (about 10 s). Under the row, in 13 px muted text, what went wrong, in the web's words:
+  "Try again in 12 seconds" (a rate limit; it hides itself after those seconds), "Couldn't save the speed test. Try
+  again.", "Couldn't measure the connection speed. Try again.". On a cellular or metered link (Windows' metered
+  connection) there is no button: the description says "Speed tests are skipped on cellular, and the Cellular quality
+  settings apply." or "Speed tests are skipped on metered networks.", and the Auto budget line goes. Leaving Settings
+  stops a test that still runs.
 - **Language & Subtitles**: spoken and subtitle language ("No preference" / "None" clear the value), subtitle behaviour,
   forced subtitles; a 16:9 preview of the look, edited as a draft with Save Appearance and Discard Changes, Reset back to
   the default; Text (size, family, colour swatches, opacity, outline and its colour), Background & Position (style,
