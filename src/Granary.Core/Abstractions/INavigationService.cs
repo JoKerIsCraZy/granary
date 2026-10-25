@@ -49,6 +49,9 @@ public enum AppRoute
 
     /// <summary>A For You row in full; the parameter is a <see cref="RecommendationSectionRouteParameter"/>.</summary>
     RecommendationSection,
+
+    /// <summary>A week of airings.</summary>
+    Calendar,
 }
 
 /// <summary>Which row an "Explore all" grid lists: a Home row, or a library row when <see cref="LibraryId"/> is set.</summary>

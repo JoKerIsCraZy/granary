@@ -78,6 +78,7 @@ namespace Granary.Core.Api;
 [JsonSerializable(typeof(RecommendationRowCollection))]
 [JsonSerializable(typeof(RecommendationRow))]
 [JsonSerializable(typeof(TasteProfile))]
+[JsonSerializable(typeof(CalendarWeek))]
 [JsonSerializable(typeof(Person))]
 [JsonSerializable(typeof(ImageCapabilities))]
 [JsonSerializable(typeof(ImageSizeWidths))]

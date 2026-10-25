@@ -72,6 +72,7 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<LibraryPageApi>();
         services.AddTransient<CollectionsApi>();
         services.AddTransient<RecommendationsApi>();
+        services.AddTransient<CalendarApi>();
         services.AddTransient<ImagesApi>();
         services.AddSingleton<ImageParameterCache>();
         AddArtwork(services);
@@ -104,6 +105,7 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<CollectionsViewModel>();
         services.AddTransient<ForYouViewModel>();
         services.AddTransient<RecommendationSectionViewModel>();
+        services.AddTransient<CalendarViewModel>();
         services.AddTransient<AddServerViewModel>();
         services.AddTransient<PlayerViewModel>();
         services.AddTransient<Granary.Core.ViewModels.Player.AddSubtitlesViewModel>();

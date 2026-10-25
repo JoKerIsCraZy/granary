@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    The web's PillGroup: one choice of a few, as round pills; the chosen one white with dark text, the others faint,
-    lighter under the pointer. Arrow keys move between them.
+    The web's PillGroup: one choice of a few, as round pills; the chosen one white with dark text (red with white text
+    when IsAccent), the others faint, lighter under the pointer. Arrow keys move between them.
 -->
 <UserControl
     x:Class="Granary.App.Controls.PillChoices"
@@ -11,6 +11,9 @@
     IsTabStop="False">
 
     <UserControl.Resources>
+        <!-- The chosen pill's colours, looked up per pill so an accented group can override them. -->
+        <SolidColorBrush x:Key="PillChosenBackgroundBrush" Color="White" />
+        <SolidColorBrush x:Key="PillChosenForegroundBrush" Color="Black" />
         <Style x:Key="PillStyle" TargetType="RadioButton">
             <Setter Property="Foreground" Value="#BFFFFFFF" />
             <Setter Property="FontFamily" Value="{StaticResource SiloFontMedium}" />
@@ -49,7 +52,7 @@
                                     <VisualState x:Name="Checked">
                                         <VisualState.Setters>
                                             <Setter Target="Chosen.Opacity" Value="1" />
-                                            <Setter Target="Content.Foreground" Value="Black" />
+                                            <Setter Target="Content.Foreground" Value="{ThemeResource PillChosenForegroundBrush}" />
                                         </VisualState.Setters>
                                     </VisualState>
                                     <VisualState x:Name="Unchecked" />
@@ -58,7 +61,7 @@
                             </VisualStateManager.VisualStateGroups>
                             <Border Background="#0FFFFFFF" />
                             <Border x:Name="Hover" Background="#0FFFFFFF" Opacity="0" />
-                            <Border x:Name="Chosen" Background="White" Opacity="0" />
+                            <Border x:Name="Chosen" Background="{ThemeResource PillChosenBackgroundBrush}" Opacity="0" />
                             <ContentPresenter x:Name="Content" Padding="{TemplateBinding Padding}" HorizontalAlignment="Center"
                                               VerticalAlignment="Center" Content="{TemplateBinding Content}"
                                               Foreground="{TemplateBinding Foreground}" AutomationProperties.AccessibilityView="Raw" />

@@ -28,6 +28,7 @@ public sealed class NavigationService : INavigationService
         [AppRoute.Collection] = typeof(PersonalListPage),
         [AppRoute.ForYou] = typeof(ForYouPage),
         [AppRoute.RecommendationSection] = typeof(RecommendationSectionPage),
+        [AppRoute.Calendar] = typeof(CalendarPage),
     };
 
     private static readonly Dictionary<Type, AppRoute> Routes = Pages.Where(p => p.Key != AppRoute.Collection).ToDictionary(p => p.Value, p => p.Key);

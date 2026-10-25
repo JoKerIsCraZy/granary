@@ -191,7 +191,7 @@ public sealed partial class MainWindow : Window
             case string tag when tag.StartsWith(ListTagPrefix, StringComparison.Ordinal):
                 _navigation.ShowSection(AppRoute.List, tag[ListTagPrefix.Length..]);
                 break;
-            case string tag when Enum.TryParse<AppRoute>(tag, out var route) && route is AppRoute.Home or AppRoute.Search or AppRoute.Collections or AppRoute.ForYou:
+            case string tag when Enum.TryParse<AppRoute>(tag, out var route) && route is AppRoute.Home or AppRoute.Search or AppRoute.Collections or AppRoute.ForYou or AppRoute.Calendar:
                 _navigation.ShowSection(route);
                 break;
             // Settings and Servers open over the page they were opened from, and go back to it.

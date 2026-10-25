@@ -37,6 +37,9 @@ public sealed partial class MediaRow : UserControl
     public static readonly DependencyProperty CardRemoveLabelProperty =
         DependencyProperty.Register(nameof(CardRemoveLabel), typeof(string), typeof(MediaRow), new PropertyMetadata(""));
 
+    public static readonly DependencyProperty TitleBadgeProperty =
+        DependencyProperty.Register(nameof(TitleBadge), typeof(string), typeof(MediaRow), new PropertyMetadata(""));
+
     public const double PosterWidth = 185;
     public const double LandscapeWidth = 314;
 
@@ -96,12 +99,21 @@ public sealed partial class MediaRow : UserControl
         set => SetValue(CardRemoveLabelProperty, value);
     }
 
+    /// <summary>A red pill beside the title ("TODAY" on the calendar); empty for none.</summary>
+    public string TitleBadge
+    {
+        get => (string)GetValue(TitleBadgeProperty);
+        set => SetValue(TitleBadgeProperty, value);
+    }
+
     // Static and instance helpers because x:Bind function bindings call them.
     public static double CardWidth(MediaCardShape shape) => shape == MediaCardShape.Landscape ? LandscapeWidth : PosterWidth;
 
     public Visibility HasCommand(ICommand? command) => command is null ? Visibility.Collapsed : Visibility.Visible;
 
     public string ExploreAllName(string title) => $"Explore all: {title}";
+
+    public Visibility HasText(string? text) => string.IsNullOrEmpty(text) ? Visibility.Collapsed : Visibility.Visible;
 
     private void FollowItems()
     {

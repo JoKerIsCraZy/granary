@@ -90,7 +90,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
 ## Layout
 
 - Sidebar (260 px): server name, Home, Search (`Ctrl+K`), "LIBRARIES" with the server's libraries, "DISCOVER" (For
-  You; the web's Requests, Calendar and Notifications to come), "YOUR STUFF" (Favorites, Watchlist, Collections,
+  You, Calendar; the web's Requests and Notifications to come), "YOUR STUFF" (Favorites, Watchlist, Collections,
   History; the web's Watch Party to come); Servers and the profile menu at the bottom. Favorites, Watchlist and History are one page (`PersonalListPage`, the web's `pages/Catalog.tsx` for those
   sources): the list's name, what it holds and its count, the media menu (All Media, Movies & Series, Movies, Series,
   Episodes), the list's own order ("List Order", History's "Watch History") or a sort, and the posters by window. The
@@ -104,6 +104,13 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   from the profile's history, the taste profile card on the right (top genres filled, favourite directors outlined),
   then a row per recommendation. A row's Explore all opens it in full (`RecommendationSectionPage`: name, "60 titles",
   the posters); the sidebar keeps For You picked. The sidebar reads the rows again behind the ones shown.
+- Calendar (`CalendarPage`, the web's `pages/Calendar.tsx`): the title with the presets Following, Trending, All (the
+  chosen one red) and "All Libraries" when there are several; the week strip pinned above the days (arrows, "Oct 19 –
+  25, 2026", Today, a button per day with a dot on days with airings, today tinted red, the picked day filled red,
+  which scrolls to its row or says "Nothing scheduled for …"); then a row per day ("Monday, October 19th", TODAY on
+  today's) of airings: "S2 · E1 - TITLE", the air time on the viewer's clock, SERIES PREMIERE / SEASON PREMIERE / FINALE,
+  watched ones marked. An airing opens its series (a movie itself); airings have no card menu. An empty week names the
+  other presets. The preset is kept while the app runs (the web keeps it in the browser).
 - Pages: 48 px side margins, 32 px top; rows 40 px apart.
 - Detail pages: full-bleed backdrop fading into the background, logo (or display title), chips,
   ratings, overview with "More", red Play/Resume pill, secondary actions, then rows (seasons, episodes,

@@ -67,6 +67,11 @@
                         <FontIcon Glyph="&#xE734;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
+                <NavigationViewItem Content="Calendar" Tag="Calendar">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE787;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
                 <NavigationViewItemHeader x:Name="YourStuffHeader" Content="YOUR STUFF" Style="{StaticResource SiloNavigationHeaderStyle}" />
                 <NavigationViewItem Content="Favorites" Tag="List:favorites">
                     <NavigationViewItem.Icon>

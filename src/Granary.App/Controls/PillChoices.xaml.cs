@@ -1,7 +1,9 @@
 using Granary.Core.ViewModels.Settings;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
+using Microsoft.UI;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 
 namespace Granary.App.Controls;
 
@@ -32,6 +34,9 @@ public sealed partial class PillChoices : UserControl
         set => SetValue(SelectedItemProperty, value);
     }
 
+    /// <summary>The chosen pill in the accent red with white text, as the web's calendar presets; set before the items.</summary>
+    public bool IsAccent { get; set; }
+
     private void Build()
     {
         Pills.Children.Clear();
@@ -44,6 +49,11 @@ public sealed partial class PillChoices : UserControl
                 GroupName = _group,
                 Style = (Style)Resources["PillStyle"],
             };
+            if (IsAccent)
+            {
+                pill.Resources["PillChosenBackgroundBrush"] = Application.Current.Resources["SiloPrimaryBrush"];
+                pill.Resources["PillChosenForegroundBrush"] = new SolidColorBrush(Colors.White);
+            }
             AutomationProperties.SetName(pill, choice.Label);
             pill.Checked += (_, _) =>
             {

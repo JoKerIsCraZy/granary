@@ -775,6 +775,17 @@ tracks ([8.8.1](#881-initial-track-selection-before-start)) → `POST /api/v2/pl
 - `GET /api/v2/recommendations/taste-profile` → `{ "top_genres", "favorite_directors", "signal_counts", "updated_at"? }`.
 - "More like this": `GET /api/v2/recommendations/similar/{item_id}?limit=` → `{ "items": CatalogItem[] }`.
 
+### 7.13 Calendar
+
+- `GET /api/v2/calendar?start=YYYY-MM-DD&end=YYYY-MM-DD[&filter=][&timezone=][&library_id=]` → `{ "events": [{ "date",
+  "items": CalendarEvent[] }] }`, only days with airings. `end` is at most 30 days after `start`; `timezone` is an IANA
+  zone the days are reckoned in (absent is UTC; Windows ids need converting); `filter` is `following`, `trending`,
+  `everything` (also `popular`, and the legacy `all`, `favorites`, `watchlist`).
+- `CalendarEvent`: `content_id`, `type` (`movie`, `episode`, `season_premiere`), `title` (the movie's or series'),
+  `series_id`, `season_number`, `episode_number`, `episode_title`, `air_at` (instant, when known) or `air_time` (HH:MM in
+  the network's zone), `badges` (`series_premiere`, `season_premiere`, `finale`), `poster_url`, `watched`. The episode
+  may not be in a library yet: the web opens the series, not the episode.
+
 ## 8. Playback protocol v3
 
 The server decides **how** a file is delivered; the client reports honestly what it can play and
