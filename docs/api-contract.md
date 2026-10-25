@@ -1398,8 +1398,12 @@ the pin every 15 minutes; its API calls and media both move, media only when it 
 (`LocalRouteController.kt:62-82`, `LocalRouteInterceptor.kt:21-117`).
 
 The Windows client follows Apple without Bonjour so far (`local_route.url` only): `LocalRouteMonitor`
-checks, `LocalRouteHandler` moves the API calls and, behind the media proxy (9.4), the media; FFmpeg
-never sees the pinned connection.
+checks, `LocalRouteHandler` moves the API calls that can be sent twice (reads, PUT, DELETE, a speed test's
+result) and, behind the media proxy (9.4), the media; FFmpeg never sees the pinned connection. Other POSTs
+(start, progress) still go to the saved address, where Android moves them too and repeats one only when the route
+did not connect. The server keys connection state (`playback/connection`, learned limits, probe results) by the
+path a request came over (`local` for a private client address, else a keyed hash of it), and it builds absolute
+URLs such as `bandwidth_probe_url` from the address it was reached at.
 
 ## 10. Progress, resume, and completion
 

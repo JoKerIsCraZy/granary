@@ -50,9 +50,13 @@ public sealed class BandwidthProbeApi(SiloHttp http, IHttpClientFactory clients)
         return Answer(hop);
     }
 
-    /// <summary>Keeps a result for this device on the connection it uses now (204). <c>manual</c> marks <b>Test speed</b>.</summary>
+    /// <summary>
+    /// Keeps a result for this device on the connection it uses now (204). <c>manual</c> marks <b>Test speed</b>. The
+    /// server keys it by the connection it arrives over, so it goes the way the probe and the connection's reads go:
+    /// over a verified local route. Sent twice, the server keeps the latest.
+    /// </summary>
     public Task ReportAsync(Uri server, BandwidthProbeReport report, CancellationToken cancellationToken = default) =>
-        http.SendAsync(HttpMethod.Post, server, "api/v2/playback/bandwidth-probe/results", SiloAuth.Profile, report,
+        http.PostRepeatableAsync(server, "api/v2/playback/bandwidth-probe/results", SiloAuth.Profile, report,
             PlaybackJsonContext.Default.BandwidthProbeReport, cancellationToken);
 
     private static bool IsRedirect(HttpStatusCode status) => (int)status is 301 or 302 or 303 or 307 or 308;

@@ -53,6 +53,20 @@ public sealed class SiloHttp(HttpClient http)
         await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// For a POST that answers 204 and that the server may get twice without harm: like a read, it takes a verified
+    /// local route, so it reaches the server over the connection the reads that show it come over.
+    /// </summary>
+    public async Task PostRepeatableAsync<TRequest>(Uri server, string path, SiloAuth auth, TRequest body, JsonTypeInfo<TRequest> requestType,
+        CancellationToken cancellationToken)
+    {
+        using var request = Create(HttpMethod.Post, server, path, auth);
+        request.Content = JsonContent.Create(body, requestType);
+        request.Options.Set(SiloRequestOptions.Repeatable, true);
+        using var response = await http.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
+    }
+
     /// <summary>For bodiless operations that answer 204 No Content.</summary>
     public async Task SendAsync(HttpMethod method, Uri server, string path, SiloAuth auth, CancellationToken cancellationToken)
     {

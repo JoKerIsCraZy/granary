@@ -109,15 +109,12 @@ public sealed class LocalRouteTests : IDisposable
         Assert.Null(_routes.Find(Saved));
     }
 
-    [Theory]
-    [InlineData("POST")]
-    [InlineData("DELETE")]
-    [InlineData("PUT")]
-    public async Task Writes_GoToTheSavedAddress(string method)
+    [Fact]
+    public async Task APost_GoesToTheSavedAddress()
     {
-        // A connection that breaks may have delivered a write already; only a read can be sent twice safely.
+        // A connection that breaks may have delivered it already, and the saved address would get it twice.
         _routes.Use(Route());
-        using var request = new HttpRequestMessage(new HttpMethod(method), "https://silo.example/api/v2/playback/s1/progress")
+        using var request = new HttpRequestMessage(HttpMethod.Post, "https://silo.example/api/v2/playback/s1/progress")
         {
             Content = new StringContent("""{"sequence":1}""", Encoding.UTF8, "application/json"),
         };
@@ -126,6 +123,30 @@ public sealed class LocalRouteTests : IDisposable
 
         Assert.Empty(_local);
         Assert.Single(_saved);
+    }
+
+    [Theory]
+    [InlineData("PUT", false)]
+    [InlineData("DELETE", false)]
+    [InlineData("POST", true)]
+    public async Task AWriteThatCanBeSentTwice_TakesTheRoute(string method, bool marked)
+    {
+        // The server keys what a device sends by the connection it came over (a speed test's result, a learned limit's
+        // reset): it must come the way the reads that show it go.
+        _routes.Use(Route());
+        using var request = new HttpRequestMessage(new HttpMethod(method), "https://silo.example/api/v2/playback/bandwidth-probe/results")
+        {
+            Content = new StringContent("""{"kbps":1}""", Encoding.UTF8, "application/json"),
+        };
+        if (marked)
+        {
+            request.Options.Set(SiloRequestOptions.Repeatable, true);
+        }
+
+        (await Send(request)).Dispose();
+
+        Assert.Single(_local);
+        Assert.Empty(_saved);
     }
 
     [Fact]
