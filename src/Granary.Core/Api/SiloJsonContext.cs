@@ -19,6 +19,7 @@ namespace Granary.Core.Api;
     PropertyNameCaseInsensitive = false)]
 [JsonSerializable(typeof(ApiProblem))]
 [JsonSerializable(typeof(EffectiveSettings))]
+[JsonSerializable(typeof(SettingValueRequest))]
 [JsonSerializable(typeof(SystemInfo))]
 [JsonSerializable(typeof(ServerIdentity))]
 [JsonSerializable(typeof(ServerConnections))]

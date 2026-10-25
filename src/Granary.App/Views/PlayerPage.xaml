@@ -239,8 +239,8 @@
                             <Button.Flyout>
                                 <Flyout x:Name="SubtitleMenu" Placement="TopEdgeAlignedRight" FlyoutPresenterStyle="{StaticResource SiloPlayerWideMenuStyle}"
                                         Opened="OnSubtitleMenuOpened">
-                                    <ItemsControl x:Name="SubtitleRows" ItemsSource="{x:Bind ViewModel.SubtitleTracks, Mode=OneWay}" IsTabStop="False"
-                                                  XYFocusKeyboardNavigation="Enabled">
+                                    <StackPanel XYFocusKeyboardNavigation="Enabled">
+                                    <ItemsControl x:Name="SubtitleRows" ItemsSource="{x:Bind ViewModel.SubtitleTracks, Mode=OneWay}" IsTabStop="False">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate x:DataType="player:SubtitleTrackOption">
                                                 <Button Style="{StaticResource SiloPlayerMenuItemStyle}" Click="OnSubtitleTrackClick"
@@ -281,6 +281,37 @@
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
+                                    <!-- Silo's web: DELAY, then earlier, the value, later, and Reset; steps of 100 ms up to 10 s. -->
+                                    <Grid Margin="0,6,0,0" Padding="12,8" BorderBrush="#1AFFFFFF" BorderThickness="0,1,0,0" ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="DELAY" FontSize="12" CharacterSpacing="25" Foreground="#80FFFFFF" VerticalAlignment="Center"
+                                                   AutomationProperties.AccessibilityView="Raw" />
+                                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                            <Button Style="{StaticResource SiloPlayerMenuStepButtonStyle}" Click="OnSubtitleEarlierClick"
+                                                    IsEnabled="{x:Bind ViewModel.CanDelayEarlier, Mode=OneWay}"
+                                                    AutomationProperties.Name="Subtitles 100 ms earlier">
+                                                <FontIcon Glyph="&#xE738;" FontSize="12" />
+                                            </Button>
+                                            <TextBlock MinWidth="72" Text="{x:Bind ViewModel.SubtitleDelayText, Mode=OneWay}" FontFamily="Consolas" FontSize="12"
+                                                       Foreground="#CCFFFFFF" TextAlignment="Center" VerticalAlignment="Center"
+                                                       AutomationProperties.LiveSetting="Polite" AutomationProperties.Name="{x:Bind controls:PlayerMenus.DelayName(ViewModel.SubtitleDelayText), Mode=OneWay}" />
+                                            <Button Style="{StaticResource SiloPlayerMenuStepButtonStyle}" Click="OnSubtitleLaterClick"
+                                                    IsEnabled="{x:Bind ViewModel.CanDelayLater, Mode=OneWay}"
+                                                    AutomationProperties.Name="Subtitles 100 ms later">
+                                                <FontIcon Glyph="&#xE710;" FontSize="12" />
+                                            </Button>
+                                            <Button Style="{StaticResource SiloPlayerMenuStepButtonStyle}" Width="Auto" Padding="8,0" Margin="4,0,0,0"
+                                                    Foreground="#99FFFFFF" Click="OnSubtitleDelayResetClick"
+                                                    IsEnabled="{x:Bind ViewModel.CanResetSubtitleDelay, Mode=OneWay}"
+                                                    AutomationProperties.Name="Reset subtitle delay">
+                                                <TextBlock Text="Reset" FontSize="12" />
+                                            </Button>
+                                        </StackPanel>
+                                    </Grid>
+                                    </StackPanel>
                                 </Flyout>
                             </Button.Flyout>
                         </Button>

@@ -210,6 +210,14 @@ public sealed partial class PlayerPage : Page
         }
     }
 
+    private const int SubtitleDelayStepMs = 100;
+
+    private void OnSubtitleEarlierClick(object sender, RoutedEventArgs e) => ViewModel.ChangeSubtitleDelay(-SubtitleDelayStepMs);
+
+    private void OnSubtitleLaterClick(object sender, RoutedEventArgs e) => ViewModel.ChangeSubtitleDelay(SubtitleDelayStepMs);
+
+    private void OnSubtitleDelayResetClick(object sender, RoutedEventArgs e) => ViewModel.ResetSubtitleDelay();
+
     private void OnSubtitleTrackClick(object sender, RoutedEventArgs e)
     {
         if (sender is FrameworkElement { DataContext: SubtitleTrackOption option })

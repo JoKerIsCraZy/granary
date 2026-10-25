@@ -59,6 +59,10 @@ internal sealed class FakeServerPlayback : IServerPlayback
 
     public void SelectSubtitle(string? trackId) => SubtitlePicks.Add(trackId);
 
+    public int SubtitleDelayMs { get; set; }
+
+    public void SetSubtitleDelay(int milliseconds) => SubtitleDelayMs = Math.Clamp(milliseconds, -10_000, 10_000);
+
     /// <summary>Lists <paramref name="tracks"/> with <paramref name="selected"/> showing, as a newly taken plan does.</summary>
     public void RaiseSubtitles(IReadOnlyList<SubtitleInventoryItem> tracks, string? selected)
     {

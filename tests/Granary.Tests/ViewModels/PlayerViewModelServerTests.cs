@@ -85,6 +85,37 @@ public sealed class PlayerViewModelServerTests
         Assert.Equal([null], Playback.SubtitlePicks);
     }
 
+    [Theory]
+    [InlineData(0, "0 ms", true)]
+    [InlineData(300, "+300 ms", true)]
+    [InlineData(-1200, "−1200 ms", true)]
+    [InlineData(10_000, "+10000 ms", false)]
+    public async Task TheSubtitleDelay_IsWrittenAsOnTheWeb(int delay, string text, bool canDelayLater)
+    {
+        var viewModel = CreateViewModel();
+        await viewModel.StartAsync(PlayRequest.Resume("movie-1"));
+
+        viewModel.ChangeSubtitleDelay(delay);
+
+        Assert.Equal(delay, Playback.SubtitleDelayMs);
+        Assert.Equal(text, viewModel.SubtitleDelayText);
+        Assert.Equal(canDelayLater, viewModel.CanDelayLater);
+        Assert.Equal(delay != 0, viewModel.CanResetSubtitleDelay);
+    }
+
+    [Fact]
+    public async Task ResettingTheSubtitleDelay_TakesItBackToZero()
+    {
+        var viewModel = CreateViewModel();
+        await viewModel.StartAsync(PlayRequest.Resume("movie-1"));
+        viewModel.ChangeSubtitleDelay(-300);
+
+        viewModel.ResetSubtitleDelay();
+
+        Assert.Equal(0, Playback.SubtitleDelayMs);
+        Assert.Equal("0 ms", viewModel.SubtitleDelayText);
+    }
+
     [Fact]
     public async Task AnAudioPick_GoesToThePlayback()
     {

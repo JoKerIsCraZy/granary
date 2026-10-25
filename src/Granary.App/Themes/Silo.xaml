@@ -618,7 +618,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Grid x:Name="Root" Background="{TemplateBinding Background}">
+                    <Grid x:Name="Root" Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}">
                         <VisualStateManager.VisualStateGroups>
                             <VisualStateGroup x:Name="CommonStates">
                                 <VisualState x:Name="Normal" />
@@ -642,6 +642,7 @@
                         <ContentPresenter
                             Padding="{TemplateBinding Padding}"
                             HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
                             AutomationProperties.AccessibilityView="Raw"
                             Content="{TemplateBinding Content}"
                             ContentTemplate="{TemplateBinding ContentTemplate}"
@@ -650,6 +651,17 @@
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+    </Style>
+    <!-- The small square buttons of a menu row: the subtitle delay's earlier, later and Reset. -->
+    <Style x:Key="SiloPlayerMenuStepButtonStyle" TargetType="Button" BasedOn="{StaticResource SiloPlayerMenuItemStyle}">
+        <Setter Property="Width" Value="28" />
+        <Setter Property="Height" Value="28" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Foreground" Value="#CCFFFFFF" />
     </Style>
     <!-- A track's facts beside its name: codec and channels filled, the file's default outlined. -->
     <Style x:Key="SiloPlayerMenuChipStyle" TargetType="Border">

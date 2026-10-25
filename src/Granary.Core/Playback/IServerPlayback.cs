@@ -76,6 +76,15 @@ public interface IServerPlayback : IAsyncDisposable
     /// </summary>
     void SelectSubtitle(string? trackId);
 
+    /// <summary>The profile's subtitle delay in milliseconds, positive later; the setting's value until changed here.</summary>
+    int SubtitleDelayMs { get; }
+
+    /// <summary>
+    /// Moves subtitles by <paramref name="milliseconds"/> (within ±10 s) at once, and saves it as the profile's
+    /// <c>player.subtitle_sync_ms</c> once the changes settle, as Silo's web player does.
+    /// </summary>
+    void SetSubtitleDelay(int milliseconds);
+
     Task StartAsync(PlayRequest request, CancellationToken cancellationToken);
 
     /// <summary>Moves to <paramref name="sourceSeconds"/>, asking the server for a new plan when the stream cannot get there itself.</summary>

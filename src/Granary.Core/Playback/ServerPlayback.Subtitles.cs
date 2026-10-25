@@ -1,4 +1,8 @@
+using System.Globalization;
+using System.Text.Json;
+using Granary.Core.Api;
 using Granary.Core.Api.Playback;
+using Granary.Core.Api.Settings;
 using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.Playback;
@@ -16,6 +20,64 @@ public sealed partial class ServerPlayback
 
     // The viewer's latest subtitle pick until a stream shows it (Off is a pick too); it names the plan's file.
     private (string FileId, string? TrackId)? _pendingSubtitle;
+
+    // Nudges come in runs: the delay is saved once they settle, as the web player does.
+    private static readonly TimeSpan SubtitleDelaySettle = TimeSpan.FromSeconds(1);
+    private const string SubtitleDelayKey = "player.subtitle_sync_ms";
+
+    // Where the shown track's cues sit against the player's clock (sidecars: -timeline offset), and the viewer's delay.
+    private double _subtitleBaseSeconds;
+    private int _subtitleDelayMs;
+    private ITimer? _subtitleDelaySave;
+    private bool _deviceDelayCleared;
+
+    public int SubtitleDelayMs => _subtitleDelayMs;
+
+    public void SetSubtitleDelay(int milliseconds)
+    {
+        int delay = Math.Clamp(milliseconds, -PlaybackPreferencesReader.MaxSubtitleDelayMs, PlaybackPreferencesReader.MaxSubtitleDelayMs);
+        if (_context is null || _stopping || delay == _subtitleDelayMs)
+        {
+            return;
+        }
+        _subtitleDelayMs = delay;
+        ApplySubtitleDelay();
+        _subtitleDelaySave?.Dispose();
+        _subtitleDelaySave = _time.CreateTimer(_ => _dispatcher.Post(SaveSubtitleDelayNow), null, SubtitleDelaySettle, Timeout.InfiniteTimeSpan);
+    }
+
+    private void ApplySubtitleDelay() => _engine.SetSubtitleDelay(_subtitleBaseSeconds + _subtitleDelayMs / 1000.0);
+
+    // The profile's value, which follows the profile to every device, as the web writes it. A value this device kept
+    // for itself would outrank it, so that one is cleared, once.
+    private void SaveSubtitleDelayNow()
+    {
+        if (_subtitleDelaySave is null)
+        {
+            return;
+        }
+        _subtitleDelaySave.Dispose();
+        _subtitleDelaySave = null;
+        var context = _context!;
+        var value = JsonDocument.Parse(_subtitleDelayMs.ToString(CultureInfo.InvariantCulture)).RootElement.Clone();
+        bool clearDevice = context.Preferences.SubtitleDelayOnDevice && !_deviceDelayCleared;
+        _deviceDelayCleared |= clearDevice;
+        SaveChoice("subtitle delay", async cancellationToken =>
+        {
+            await _settings.SetValueAsync(context.Server.BaseUri, SubtitleDelayKey, value, SettingScopes.Profile, cancellationToken);
+            if (clearDevice)
+            {
+                try
+                {
+                    await _settings.ClearValueAsync(context.Server.BaseUri, SubtitleDelayKey, SettingScopes.ProfileDevice, cancellationToken);
+                }
+                catch (SiloApiException ex) when (ex.Status == 404)
+                {
+                    // Nothing to clear is what this asked for.
+                }
+            }
+        });
+    }
 
     public IReadOnlyList<SubtitleInventoryItem> SubtitleTracks => _plan?.Subtitle.Inventory ?? [];
 
@@ -127,7 +189,8 @@ public sealed partial class ServerPlayback
         }
         if (EmbeddedStream(plan, selected) is { } ffmpeg && _engine.SubtitleStreamOf(ffmpeg) is { } inFile)
         {
-            _engine.SetSubtitleDelay(0);
+            _subtitleBaseSeconds = 0;
+            ApplySubtitleDelay();
             _engine.SetSubtitleStream(inFile);
             return;
         }
@@ -162,7 +225,8 @@ public sealed partial class ServerPlayback
             return;
         }
         // Sidecar cues are source time; the player counts from the stream's own start (9.6).
-        _engine.SetSubtitleDelay(-plan.Timeline.TimelineOffsetSeconds);
+        _subtitleBaseSeconds = -plan.Timeline.TimelineOffsetSeconds;
+        ApplySubtitleDelay();
         _engine.SetSubtitleStream(stream);
     }
 

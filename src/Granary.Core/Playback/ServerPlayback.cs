@@ -2,6 +2,7 @@ using System.Globalization;
 using Granary.Core.Abstractions;
 using Granary.Core.Api;
 using Granary.Core.Api.Playback;
+using Granary.Core.Api.Settings;
 using Granary.Core.ViewModels;
 using Microsoft.Extensions.Logging;
 
@@ -42,6 +43,7 @@ public sealed partial class ServerPlayback : IServerPlayback
     private readonly PlaybackStarter _starter;
     private readonly PlaybackApi _api;
     private readonly TrackPreferencesApi _preferences;
+    private readonly SettingsApi _settings;
     private readonly IMediaAuthorization _auth;
     private readonly IMediaProxy _proxy;
     private readonly IPlaybackEngine _engine;
@@ -94,6 +96,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         PlaybackStarter starter,
         PlaybackApi api,
         TrackPreferencesApi preferences,
+        SettingsApi settings,
         IMediaAuthorization auth,
         IMediaProxy proxy,
         IPlaybackEngine engine,
@@ -105,6 +108,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         _starter = starter;
         _api = api;
         _preferences = preferences;
+        _settings = settings;
         _auth = auth;
         _proxy = proxy;
         _engine = engine;
@@ -182,6 +186,8 @@ public sealed partial class ServerPlayback : IServerPlayback
         }
         _stopping = true;
         _generation++;
+        // A delay the viewer just set is saved now, not when its wait would have ended.
+        SaveSubtitleDelayNow();
         StopTimers();
         // Read now: the engine stops right after this call, and its idle state would read as position 0. Closing the
         // app waits for the stop, and for a pick still being saved.
@@ -218,6 +224,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         }
         (Title, Subtitle) = PlaybackStarter.Titles(_context.Watch);
         _engine.SetSubtitleLook(_context.Preferences.Subtitles);
+        _subtitleDelayMs = _context.Preferences.SubtitleDelayMs;
         SetStatus(Status);
         await StartAttemptAsync(PlaybackStarter.StartPosition(_context.Watch, fromBeginning), cancellationToken);
     }

@@ -138,6 +138,34 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     /// <summary>The subtitle button shows once the plan lists a track.</summary>
     public bool HasSubtitleTracks => SubtitleTracks.Count > 1;
 
+    /// <summary>The subtitle delay in milliseconds, positive later.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SubtitleDelayText), nameof(CanDelayEarlier), nameof(CanDelayLater), nameof(CanResetSubtitleDelay))]
+    public partial int SubtitleDelayMs { get; private set; }
+
+    /// <summary>"0 ms", "+300 ms", "−1200 ms" (web: formatDelay).</summary>
+    public string SubtitleDelayText => SubtitleDelayMs == 0
+        ? "0 ms"
+        : (SubtitleDelayMs > 0 ? "+" : "\u2212") + Math.Abs(SubtitleDelayMs).ToString(System.Globalization.CultureInfo.InvariantCulture) + " ms";
+
+    public bool CanDelayEarlier => SubtitleDelayMs > -PlaybackPreferencesReader.MaxSubtitleDelayMs;
+
+    public bool CanDelayLater => SubtitleDelayMs < PlaybackPreferencesReader.MaxSubtitleDelayMs;
+
+    public bool CanResetSubtitleDelay => SubtitleDelayMs != 0;
+
+    /// <summary>Moves subtitles by <paramref name="deltaMs"/>; the menu steps by 100 ms.</summary>
+    public void ChangeSubtitleDelay(int deltaMs)
+    {
+        if (_playback is { } playback)
+        {
+            playback.SetSubtitleDelay(SubtitleDelayMs + deltaMs);
+            SubtitleDelayMs = playback.SubtitleDelayMs;
+        }
+    }
+
+    public void ResetSubtitleDelay() => ChangeSubtitleDelay(-SubtitleDelayMs);
+
     /// <summary>Starts <paramref name="request"/>; the page calls it once when it is shown, Retry again.</summary>
     public async Task StartAsync(PlayRequest request)
     {
@@ -324,6 +352,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         }
         Title = playback.Title;
         Subtitle = playback.Subtitle;
+        SubtitleDelayMs = playback.SubtitleDelayMs;
         SkipBackSeconds = playback.Preferences.SkipBackSeconds;
         SkipForwardSeconds = playback.Preferences.SkipForwardSeconds;
         switch (status.Phase)

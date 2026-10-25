@@ -105,7 +105,10 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   language's name (14 px), chips on the right for the format (SRT, ASS, VTT, PGS, DVD, DVB) and the source
   (EMBEDDED, EXTERNAL, DOWNLOADED; 10 px, white 50 % on white 10 %), and the track's own label under it (12 px,
   white 40 %) unless it only repeats the language or the format. The chosen row has a faint light behind it,
-  white text and a check; the others are white 70 %. Still to come: the delay row.
+  white text and a check; the others are white 70 %. Under a line, DELAY with earlier and later (100 ms steps,
+  up to 10 s either way), the value ("+300 ms") and Reset: subtitles move at once, and the profile's
+  `player.subtitle_sync_ms` is saved once the nudges settle for a second, or at the stop; a value this device kept
+  for itself is cleared, so the profile's counts, as the web does.
 - **Subtitle look**: text subtitles follow the profile's `playback.subtitle_appearance` as the Android and Apple
   clients draw it (size at 1080 lines, font, colour and opacity, box, shadow or outline in the outline colour,
   bottom, lower third or top), mapped to mpv's `sub-*` options; styled ASS and image subtitles keep their own.
