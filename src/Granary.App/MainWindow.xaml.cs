@@ -29,7 +29,7 @@ public sealed partial class MainWindow : Window
     private bool _closeAfterStops;
 
     public MainWindow(NavigationService navigation, ShellViewModel shell, SidebarViewModel sidebar, NotificationBadge notifications,
-        PlaybackStops stops, ILogger<MainWindow> logger)
+        RequestsFeature requests, PlaybackStops stops, ILogger<MainWindow> logger)
     {
         _navigation = navigation;
         _stops = stops;
@@ -37,6 +37,7 @@ public sealed partial class MainWindow : Window
         Shell = shell;
         Sidebar = sidebar;
         Notifications = notifications;
+        Requests = requests;
         InitializeComponent();
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
@@ -64,6 +65,9 @@ public sealed partial class MainWindow : Window
 
     /// <summary>The sidebar's Notifications entry and its unread count.</summary>
     public NotificationBadge Notifications { get; }
+
+    /// <summary>Whether the sidebar shows Requests.</summary>
+    public RequestsFeature Requests { get; }
 
     // Instance method because x:Bind function bindings call it on the window.
     public string ProfileMenuName(string profileName) => $"Profile menu: {profileName}";
@@ -132,12 +136,13 @@ public sealed partial class MainWindow : Window
         RefreshNotifications();
     }
 
-    // The unread count is read again on the way through the app, at most every half minute, as the web's sidebar does.
+    // The unread count is read again on the way through the app, at most every half minute, as the web's sidebar does;
+    // whether the server takes requests once per profile.
     private async void RefreshNotifications()
     {
         try
         {
-            await Notifications.RefreshAsync();
+            await Task.WhenAll(Notifications.RefreshAsync(), Requests.RefreshAsync());
         }
         catch (Exception ex)
         {
@@ -217,7 +222,8 @@ public sealed partial class MainWindow : Window
                 _navigation.ShowSection(AppRoute.List, tag[ListTagPrefix.Length..]);
                 break;
             case string tag when Enum.TryParse<AppRoute>(tag, out var route)
-                && route is AppRoute.Home or AppRoute.Search or AppRoute.Collections or AppRoute.ForYou or AppRoute.Calendar or AppRoute.Notifications:
+                && route is AppRoute.Home or AppRoute.Search or AppRoute.Collections or AppRoute.ForYou or AppRoute.Calendar or AppRoute.Notifications
+                    or AppRoute.Requests:
                 _navigation.ShowSection(route);
                 break;
             // Settings and Servers open over the page they were opened from, and go back to it.

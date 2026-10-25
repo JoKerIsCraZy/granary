@@ -55,6 +55,9 @@ public enum AppRoute
 
     /// <summary>The profile's notification inbox.</summary>
     Notifications,
+
+    /// <summary>The Requests hub: titles to request, and the account's requests.</summary>
+    Requests,
 }
 
 /// <summary>Which row an "Explore all" grid lists: a Home row, or a library row when <see cref="LibraryId"/> is set.</summary>

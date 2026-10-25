@@ -802,6 +802,25 @@ tracks ([8.8.1](#881-initial-track-selection-before-start)) → `POST /api/v2/pl
   `notify_watchlist`, `notify_continue_watching`, `notify_next_up`; `PUT` takes only the switches that change.
 - The Series view (`GET /api/v2/notifications/series`, `PUT`/`DELETE …/series/{series_id}/mute`) is not built yet.
 
+### 7.15 Requests
+
+- `GET /api/v2/requests/status` → `{ "requests_enabled", "download_progress_supported", "follow_supported",
+  "season_requests_supported", "watchlist_requests", … }`; the web shows Requests only while `requests_enabled`.
+- `GET /api/v2/requests/mine?limit=1..50[&cursor=]` → `{ "items": MediaRequest[], "page" }`, newest first; the web walks
+  pages up to 100. `MediaRequest`: `id`, `media_type` (`movie`, `series`), `tmdb_id`, `title`, `year`, `poster_path` (a
+  TMDB path: `https://image.tmdb.org/t/p/{w154|w342}{path}`), `status`, `outcome`, `state` (the derived one the pages
+  show: `pending`, `approved`, `processing`, `partially_available`, `available`, `declined`, `cancelled`, `failed`),
+  `outcome_reason`, `last_error`, `library_content_id`, `seasons`, `season_progress`, `download` (`phase`, `percent`,
+  `estimated_completion_at`, `updated_at`), `targets`, `created_at`, `updated_at`.
+- `POST /api/v2/requests/{id}/cancel` with `{ "reason"? }` → the request; the owner can withdraw it while `outcome` is
+  `active` and `status` is `pending`, or `approved` with no `targets` yet.
+- `GET /api/v2/requests/discover` → `{ "items": [{ "key", "title", "page", "total_pages", "results": RequestMediaResult[] }] }`.
+  `RequestMediaResult`: `tmdb_id`, `media_type`, `title`, `year`, `poster_path`, `availability` (`available` when the
+  library has it), `library_content_id`, `in_watchlist`, `request` (`requestable`, `reason`, `status`, `state`,
+  `following`, `requested_by_viewer`).
+- Not built yet: a title's page (`GET /api/v2/requests/detail/{media_type}/{tmdb_id}`), making a request
+  (`POST /api/v2/requests`), follows, a Discover row in full, studios, networks and genres, search.
+
 ## 8. Playback protocol v3
 
 The server decides **how** a file is delivered; the client reports honestly what it can play and

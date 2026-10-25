@@ -7,6 +7,7 @@ using Granary.Core.Api.Discovery;
 using Granary.Core.Api.Images;
 using Granary.Core.Api.Notifications;
 using Granary.Core.Api.Profiles;
+using Granary.Core.Api.Requests;
 using Granary.Core.Api.Settings;
 
 namespace Granary.Core.Api;
@@ -86,6 +87,11 @@ namespace Granary.Core.Api;
 [JsonSerializable(typeof(NotificationPreferences))]
 [JsonSerializable(typeof(NotificationPreferencesChange))]
 [JsonSerializable(typeof(NotificationReadAll))]
+[JsonSerializable(typeof(RequestFeatureStatus))]
+[JsonSerializable(typeof(MediaRequestPage))]
+[JsonSerializable(typeof(MediaRequest))]
+[JsonSerializable(typeof(RequestCancel))]
+[JsonSerializable(typeof(DiscoverSectionCollection))]
 [JsonSerializable(typeof(Person))]
 [JsonSerializable(typeof(ImageCapabilities))]
 [JsonSerializable(typeof(ImageSizeWidths))]

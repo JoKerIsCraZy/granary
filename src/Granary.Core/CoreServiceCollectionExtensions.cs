@@ -11,6 +11,7 @@ using Granary.Core.Api.Playback;
 using Granary.Core.Settings;
 using Granary.Core.ViewModels.Settings;
 using Granary.Core.Api.Profiles;
+using Granary.Core.Api.Requests;
 using Granary.Core.Api.Settings;
 using Granary.Core.Api.Subtitles;
 using Granary.Core.Artwork;
@@ -75,6 +76,7 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<RecommendationsApi>();
         services.AddTransient<CalendarApi>();
         services.AddTransient<NotificationsApi>();
+        services.AddTransient<RequestsApi>();
         services.AddTransient<ImagesApi>();
         services.AddSingleton<ImageParameterCache>();
         AddArtwork(services);
@@ -110,6 +112,8 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<CalendarViewModel>();
         services.AddSingleton<NotificationBadge>();
         services.AddTransient<NotificationsViewModel>();
+        services.AddSingleton<RequestsFeature>();
+        services.AddTransient<RequestsViewModel>();
         services.AddTransient<AddServerViewModel>();
         services.AddTransient<PlayerViewModel>();
         services.AddTransient<Granary.Core.ViewModels.Player.AddSubtitlesViewModel>();

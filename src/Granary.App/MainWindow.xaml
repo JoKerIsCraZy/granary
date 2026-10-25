@@ -67,6 +67,12 @@
                         <FontIcon Glyph="&#xE734;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
+                <!-- Only while the server takes requests from the profile. -->
+                <NavigationViewItem Content="Requests" Tag="Requests" Visibility="{x:Bind Requests.IsEnabled, Mode=OneWay}">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE724;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
                 <NavigationViewItem Content="Calendar" Tag="Calendar">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE787;" />

@@ -90,7 +90,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
 ## Layout
 
 - Sidebar (260 px): server name, Home, Search (`Ctrl+K`), "LIBRARIES" with the server's libraries, "DISCOVER" (For
-  You, Calendar, Notifications with the unread count in red; the web's Requests to come), "YOUR STUFF" (Favorites, Watchlist, Collections,
+  You, Requests while the server takes them, Calendar, Notifications with the unread count in red), "YOUR STUFF" (Favorites, Watchlist, Collections,
   History; the web's Watch Party to come); Servers and the profile menu at the bottom. Favorites, Watchlist and History are one page (`PersonalListPage`, the web's `pages/Catalog.tsx` for those
   sources): the list's name, what it holds and its count, the media menu (All Media, Movies & Series, Movies, Series,
   Episodes), the list's own order ("List Order", History's "Watch History") or a sort, and the posters by window. The
@@ -118,6 +118,15 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   ("S4E2 — Blind Rooster"), the reasons as pills, a check button to mark it read; 25 at a time with Load more. An entry
   opens its episode or series and is read from then. The sidebar hides the entry when the server has no inbox and
   reads the count again on the way through the app, at most every half minute. The web's Series view comes later.
+- Requests (`RequestsPage`, the web's `pages/Requests.tsx`): the title and what the page is for, Discover and "Yours 2"
+  as line tabs (the picked one white with a white bar under it). Discover: rows of TMDB posters with their state
+  (AVAILABLE, APPROVED, …, or why they cannot be requested); a title in the library opens there. Yours, up to the web's
+  1024 px: "What the statuses mean", then Needs attention, On the way, In your library, Cancelled with their counts,
+  each request a row with its poster, title and state badge (the web's variants: Available red, Failed destructive,
+  approved and on their way filled, Pending outlined, closed ones outlined and muted), "Series · 2022 · Seasons 1–3",
+  the download's bar and "Downloading · 43% · about 12 min left", when it was requested and changed, the error in red
+  or the admin's reason, Open in library, and Cancel request behind the web's confirmation. A title's own page, making
+  a request, studios, networks, genres and search come next.
 - Pages: 48 px side margins, 32 px top; rows 40 px apart.
 - Detail pages: full-bleed backdrop fading into the background, logo (or display title), chips,
   ratings, overview with "More", red Play/Resume pill, secondary actions, then rows (seasons, episodes,
