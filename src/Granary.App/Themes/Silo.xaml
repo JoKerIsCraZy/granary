@@ -208,13 +208,13 @@
         <Setter Property="CornerRadius" Value="{StaticResource SiloPillCornerRadius}" />
         <Setter Property="Padding" Value="9,3" />
     </Style>
-    <!-- Metadata chips on detail pages: "2026", "R", "1H 49M". -->
+    <!-- Metadata chips on detail pages: "2026", "R", "1H 49M" (the web's metadata-badge). -->
     <Style x:Key="SiloChipStyle" TargetType="Border">
-        <Setter Property="Background" Value="#1AFFFFFF" />
-        <Setter Property="BorderBrush" Value="#33FFFFFF" />
+        <Setter Property="Background" Value="#14E8E8EC" />
+        <Setter Property="BorderBrush" Value="#8C28282E" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CornerRadius" Value="{StaticResource SiloPillCornerRadius}" />
-        <Setter Property="Padding" Value="10,3" />
+        <Setter Property="Padding" Value="10,4" />
     </Style>
     <!-- Technical chips in the accent colour: "1080P", "EAC3". -->
     <Style x:Key="SiloAccentChipStyle" TargetType="Border" BasedOn="{StaticResource SiloChipStyle}">
@@ -222,24 +222,121 @@
         <Setter Property="BorderBrush" Value="#99EF4444" />
     </Style>
 
-    <!-- Pill buttons: red primary (Play), dark secondary (Mark watched), round icon buttons. -->
-    <Style x:Key="SiloPrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource AccentButtonStyle}">
+    <!--
+        Pill buttons as on Silo's web: the red primary (Play) with dark bold text, the dark secondary (Mark watched)
+        with a faint light along its top edge, and round icon buttons of the secondary kind.
+    -->
+    <Style x:Key="SiloPrimaryButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="{StaticResource SiloPrimaryBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource SiloBackgroundBrush}" />
         <Setter Property="CornerRadius" Value="{StaticResource SiloPillCornerRadius}" />
-        <Setter Property="Padding" Value="20,10" />
+        <Setter Property="Padding" Value="16,8" />
         <Setter Property="MinHeight" Value="44" />
-        <Setter Property="FontFamily" Value="{StaticResource SiloFontSemiBold}" />
-        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontFamily" Value="{StaticResource SiloFontBold}" />
+        <Setter Property="FontWeight" Value="Bold" />
         <Setter Property="FontSize" Value="15" />
+        <Setter Property="CharacterSpacing" Value="25" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="UseSystemFocusVisuals" Value="True" />
+        <Setter Property="FocusVisualMargin" Value="-3" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid x:Name="Root" Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}">
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup x:Name="CommonStates">
+                                <VisualState x:Name="Normal" />
+                                <VisualState x:Name="PointerOver">
+                                    <VisualState.Setters>
+                                        <Setter Target="Root.Background" Value="#FFF25858" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Pressed">
+                                    <VisualState.Setters>
+                                        <Setter Target="Root.Background" Value="#FFDC2F2F" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Disabled">
+                                    <VisualState.Setters>
+                                        <Setter Target="Root.Opacity" Value="0.5" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                            </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>
+                        <ContentPresenter
+                            Padding="{TemplateBinding Padding}"
+                            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                            Foreground="{TemplateBinding Foreground}"
+                            FontFamily="{TemplateBinding FontFamily}"
+                            FontWeight="{TemplateBinding FontWeight}"
+                            FontSize="{TemplateBinding FontSize}"
+                            CharacterSpacing="{TemplateBinding CharacterSpacing}"
+                            AutomationProperties.AccessibilityView="Raw"
+                            Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}" />
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
-    <Style x:Key="SiloSecondaryButtonStyle" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
+    <Style x:Key="SiloSecondaryButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="#FF1B1B1E" />
+        <Setter Property="Foreground" Value="{StaticResource SiloForegroundBrush}" />
+        <Setter Property="BorderBrush" Value="#4D28282E" />
+        <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CornerRadius" Value="{StaticResource SiloPillCornerRadius}" />
-        <Setter Property="Padding" Value="18,10" />
+        <Setter Property="Padding" Value="16,8" />
         <Setter Property="MinHeight" Value="44" />
         <Setter Property="FontFamily" Value="{StaticResource SiloFontSemiBold}" />
         <Setter Property="FontWeight" Value="SemiBold" />
-        <Setter Property="FontSize" Value="15" />
-        <Setter Property="Background" Value="#CC1C1C20" />
-        <Setter Property="BorderBrush" Value="{StaticResource SiloBorderBrush}" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="UseSystemFocusVisuals" Value="True" />
+        <Setter Property="FocusVisualMargin" Value="-3" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid x:Name="Root" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                          BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{TemplateBinding CornerRadius}">
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup x:Name="CommonStates">
+                                <VisualState x:Name="Normal" />
+                                <VisualState x:Name="PointerOver">
+                                    <VisualState.Setters>
+                                        <Setter Target="Root.Background" Value="#FF25252A" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Pressed">
+                                    <VisualState.Setters>
+                                        <Setter Target="Root.Background" Value="#FF161619" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Disabled">
+                                    <VisualState.Setters>
+                                        <Setter Target="Root.Opacity" Value="0.5" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                            </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>
+                        <Border BorderBrush="#0DFFFFFF" BorderThickness="0,1,0,0" CornerRadius="{TemplateBinding CornerRadius}" IsHitTestVisible="False" />
+                        <ContentPresenter
+                            Padding="{TemplateBinding Padding}"
+                            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                            Foreground="{TemplateBinding Foreground}"
+                            FontFamily="{TemplateBinding FontFamily}"
+                            FontWeight="{TemplateBinding FontWeight}"
+                            FontSize="{TemplateBinding FontSize}"
+                            AutomationProperties.AccessibilityView="Raw"
+                            Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}" />
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
     <Style x:Key="SiloIconButtonStyle" TargetType="Button" BasedOn="{StaticResource SiloSecondaryButtonStyle}">
         <Setter Property="Padding" Value="0" />

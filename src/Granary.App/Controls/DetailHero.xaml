@@ -19,8 +19,8 @@
         <Style x:Key="DetailChipTextStyle" TargetType="TextBlock">
             <Setter Property="FontFamily" Value="{StaticResource SiloFontSemiBold}" />
             <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="FontSize" Value="12" />
-            <Setter Property="CharacterSpacing" Value="60" />
+            <Setter Property="FontSize" Value="11.2" />
+            <Setter Property="CharacterSpacing" Value="40" />
         </Style>
     </UserControl.Resources>
 
@@ -186,8 +186,8 @@
                 <StackPanel Margin="0,26,0,0" Orientation="Horizontal" Spacing="12">
                     <Button Style="{StaticResource SiloPrimaryButtonStyle}" Command="{x:Bind ViewModel.PlayCommand}"
                             AutomationProperties.Name="{x:Bind ViewModel.PlayLabel, Mode=OneWay}">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <FontIcon Glyph="&#xE768;" FontSize="14" />
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <FontIcon Glyph="&#xF5B0;" FontSize="16" />
                             <TextBlock Text="{x:Bind ViewModel.PlayLabel, Mode=OneWay}" />
                         </StackPanel>
                     </Button>
@@ -200,7 +200,7 @@
                             Visibility="{x:Bind ViewModel.ShowsWatchedAction, Mode=OneWay}"
                             AutomationProperties.Name="{x:Bind ViewModel.WatchedLabel, Mode=OneWay}">
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <FontIcon Glyph="&#xE73E;" FontSize="14" Foreground="{x:Bind controls:DetailHero.ActiveForeground(ViewModel.IsWatched), Mode=OneWay}" />
+                            <FontIcon Glyph="&#xE73E;" FontSize="16" Foreground="{x:Bind controls:DetailHero.ActiveForeground(ViewModel.IsWatched), Mode=OneWay}" />
                             <TextBlock Text="{x:Bind ViewModel.WatchedLabel, Mode=OneWay}" />
                         </StackPanel>
                     </Button>
