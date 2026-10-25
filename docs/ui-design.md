@@ -132,11 +132,17 @@ unmodified to refer to Silo, as its trademark policy allows; it is not Granary's
   clients draw it (size at 1080 lines, font, colour and opacity, box, shadow or outline in the outline colour,
   bottom, lower third or top), mapped to mpv's `sub-*` options; styled ASS and image subtitles keep their own.
   While the controls show, subtitles at the bottom move up by the bar's height (`sub-pos`) and back when they fade.
-- **Seek bar**: 3 px track, red progress. Under the pointer the track grows, a thumb appears and a bubble
-  shows the time there. It seeks on click and when a drag is released, never while dragging or when the
+- **Seek bar**: 3 px track, the played part white as on the web, over the marked parts tinted sky (intro), violet
+  (recap), amber (credits) and emerald (preview). Under the pointer the track grows, a thumb appears and a bubble
+  shows the time there, and above it the part it lies in ("● Intro 0:03-0:12"). It seeks on click and when a drag is released, never while dragging or when the
   position moves on, and keeps the target until playback has caught up, so the bar does not jump back. Keys:
   Left and Right by the skip intervals, Shift for 5 s, Home, End. Screen readers get a slider whose value
   is the position in words.
+- **Skip pill** (the web's `IntroSkipButton`): bottom right, 28 px off the corner and above the bar while the
+  controls show; 44 px high, black at 75 % with a white 20 % edge, 14 px semibold. "Skip Intro" fills from the left
+  in white 15 % over its 5 s; after an automatic skip "Watch Intro" with "Intro skipped" above it (12 px, white
+  75 %, shaded so it reads on a bright picture, and read out). "Skip Recap", "Skip Credits" and "Skip Preview"
+  stay while inside their part. Esc turns an intro pill away before it does anything else.
 - **States**: preparing shows Exit and a spinner, no transport. Buffering puts a spinner on a dark
   disc over the picture. Failed shows the message, Retry when it can help and Back; keyboard focus moves
   to them. Ended keeps the controls up.
@@ -148,7 +154,7 @@ unmodified to refer to Silo, as its trademark policy allows; it is not Granary's
 - **Mouse**: a click on the picture plays or pauses (after 250 ms, so a double click does not), a double
   click toggles full screen. On touch a tap shows or hides the controls.
 - **Keyboard** (the web player's map, docs/api-contract.md 13.5): Space and K play/pause, F full screen,
-  Esc leaves full screen and otherwise closes, M mute, Left/Right skip, Up/Down volume ±5. Space wins over
+  Esc turns away an intro pill, else leaves full screen, else closes, M mute, Left/Right skip, Up/Down volume ±5. Space wins over
   a focused button; arrows go to a focused slider first. Nothing applies while a text field or an open menu
   has focus, or with Ctrl, Alt, Shift or Windows held. The keys are handled on the page, not as keyboard
   accelerators, so no accelerator tooltip appears; the buttons announce them through

@@ -45,6 +45,7 @@ public sealed partial class PlayerPage : Page
         VideoHost.VideoOutput = App.Services.GetRequiredService<ICompositionVideoOutput>();
         InitializeInput();
         InitializeAutoHide();
+        InitializeSkipPrompt();
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
         LostFocus += (_, _) => KeepFocusInPage();
@@ -135,6 +136,13 @@ public sealed partial class PlayerPage : Page
                 break;
             case nameof(PlayerViewModel.SkipBackSeconds) or nameof(PlayerViewModel.SkipForwardSeconds):
                 ShowSkipIntervals();
+                break;
+            case nameof(PlayerViewModel.HasSkipPrompt) when ViewModel.HasSkipPrompt:
+                AnnounceSkipCaption();
+                break;
+            case nameof(PlayerViewModel.HasSkipPrompt):
+                // A pill that had the keyboard is gone.
+                KeepFocusInPage();
                 break;
         }
     }

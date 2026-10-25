@@ -1,0 +1,72 @@
+using Granary.Core.Api.Playback;
+using Granary.Core.Playback;
+using Granary.Tests.Profiles;
+using static Granary.Tests.Playback.ServerPlaybackFixture;
+
+namespace Granary.Tests.Playback;
+
+/// <summary>The marked parts of the playing file (docs/api-contract.md, 11.1), read again with the file named once it plays.</summary>
+public sealed class ServerPlaybackMarkerTests
+{
+    private const string WatchPath = "api/v2/watch/" + MovieId;
+
+    private static readonly PlaybackMarker Intro = new(WatchMarkerKinds.Intro, 0, 90);
+    private static readonly PlaybackMarker Credits = new(WatchMarkerKinds.Credits, 6000, 6100);
+
+    // The same answer with a credits segment the server found on demand for the named file.
+    private static readonly string WithCredits = PlaybackPayloads.WatchStateOk.Replace(
+        "\"marker_segments\": [",
+        "\"marker_segments\": [ { \"kind\": \"credits\", \"start_seconds\": 6000, \"end_seconds\": 6100 },",
+        StringComparison.Ordinal);
+
+    private readonly ServerPlaybackFixture _fixture = new();
+
+    [Fact]
+    public async Task TheMarkers_AreTheWatchDetails_UntilTheFileIsReadAgainOnceItPlays()
+    {
+        var reread = new TaskCompletionSource();
+        _fixture.Silo.On(HttpMethod.Get, WatchPath, Ok(PlaybackPayloads.WatchStateOk), After(reread.Task, Ok(WithCredits)));
+        var playback = await _fixture.StartAsync();
+        int changes = 0;
+        playback.MarkersChanged += (_, _) => changes++;
+
+        Assert.Equal([Intro], playback.Markers);
+        Assert.Single(_fixture.Silo.SentTo(HttpMethod.Get, WatchPath));
+
+        _fixture.Engine.RaiseState(Frame(12.5));
+        reread.SetResult();
+        await Until(() => changes == 1, "the read markers are taken");
+
+        Assert.Equal([Intro, Credits], playback.Markers);
+        Assert.Equal("?file_id=42", _fixture.Silo.SentTo(HttpMethod.Get, WatchPath)[^1].Uri.Query);
+    }
+
+    [Fact]
+    public async Task TheFile_IsReadAgainOnce_AndAnAnswerWithNothingNewChangesNothing()
+    {
+        var playback = await _fixture.PlayingAsync();
+        int changes = 0;
+        playback.MarkersChanged += (_, _) => changes++;
+        await Until(() => _fixture.Silo.SentTo(HttpMethod.Get, WatchPath).Count == 2, "the file is read again");
+
+        _fixture.Engine.RaiseState(Frame(30, paused: true));
+        _fixture.Engine.RaiseState(Frame(30));
+        await Task.Delay(50, TestContext.Current.CancellationToken);
+
+        Assert.Equal(2, _fixture.Silo.SentTo(HttpMethod.Get, WatchPath).Count);
+        Assert.Equal(0, changes);
+        Assert.Equal([Intro], playback.Markers);
+    }
+
+    [Fact]
+    public async Task AFailedRead_KeepsTheWatchDetailsMarkers()
+    {
+        _fixture.Silo.On(HttpMethod.Get, WatchPath, Ok(PlaybackPayloads.WatchStateOk), ScriptedSilo.NetworkError());
+
+        var playback = await _fixture.PlayingAsync();
+        await Until(() => _fixture.Logs.Lines.Any(l => l.Contains("markers", StringComparison.Ordinal)), "the failed read is logged");
+
+        Assert.Equal([Intro], playback.Markers);
+        Assert.Equal(ServerPlaybackPhase.Playing, playback.Status.Phase);
+    }
+}

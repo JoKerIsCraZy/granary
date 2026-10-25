@@ -10,6 +10,8 @@ internal sealed class FakeServerPlayback : IServerPlayback
 
     public event EventHandler? TracksChanged;
 
+    public event EventHandler? MarkersChanged;
+
     public ServerPlaybackStatus Status { get; private set; } = new(ServerPlaybackPhase.Preparing);
 
     public string Title { get; set; } = "";
@@ -77,6 +79,15 @@ internal sealed class FakeServerPlayback : IServerPlayback
         AudioTracks = tracks;
         AudioTrack = selected;
         TracksChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    public IReadOnlyList<PlaybackMarker> Markers { get; set; } = [];
+
+    /// <summary>Names <paramref name="markers"/> for the playing file, as a read that found more does.</summary>
+    public void RaiseMarkers(IReadOnlyList<PlaybackMarker> markers)
+    {
+        Markers = markers;
+        MarkersChanged?.Invoke(this, EventArgs.Empty);
     }
 
     public Task StopAsync()

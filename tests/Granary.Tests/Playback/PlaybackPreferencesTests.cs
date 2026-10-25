@@ -27,6 +27,8 @@ public sealed class PlaybackPreferencesTests
 
         Assert.Equal(
             [
+                "?keys=playback.intro_skip_mode&keys=playback.auto_skip_credits&keys=playback.auto_skip_recap&keys=playback.auto_play_next"
+                    + "&keys=playback.next_up_prompt_seconds",
                 "?keys=playback.preferred_quality&keys=playback.max_bitrate_kbps&keys=player.video_skip_back_seconds&keys=player.video_skip_forward_seconds",
                 "?keys=playback.subtitle_appearance&keys=player.subtitle_sync_ms",
             ],
@@ -115,6 +117,55 @@ public sealed class PlaybackPreferencesTests
             preferences.Subtitles);
         Assert.Equal(-250, preferences.SubtitleDelayMs);
         Assert.True(preferences.SubtitleDelayOnDevice);
+    }
+
+    [Fact]
+    public async Task Read_TakesTheMarkerSettings()
+    {
+        _silo.On(HttpMethod.Get, EffectivePath, ScriptedSilo.Json(HttpStatusCode.OK, """
+            {
+              "items": [
+                { "key": "playback.intro_skip_mode", "value": "always", "source": "profile_device" },
+                { "key": "playback.auto_skip_credits", "value": true, "source": "profile" },
+                { "key": "playback.auto_skip_recap", "value": true, "source": "profile" },
+                { "key": "playback.auto_play_next", "value": false, "source": "profile" },
+                { "key": "playback.next_up_prompt_seconds", "value": 45, "source": "profile" }
+              ],
+              "revision": 7
+            }
+            """));
+
+        var preferences = await Create().ReadAsync(ScriptedSilo.Base, Token);
+
+        Assert.Equal(new MarkerSettings(MarkerSettings.Always, true, true, false, 45), preferences.Markers);
+    }
+
+    [Fact]
+    public async Task Read_AnUnknownIntroMode_NeitherPromptsNorSkips_AndOddValuesKeepTheDefaults()
+    {
+        // Silo's web player treats a mode it does not know as off.
+        _silo.On(HttpMethod.Get, EffectivePath, ScriptedSilo.Json(HttpStatusCode.OK, """
+            {
+              "items": [
+                { "key": "playback.intro_skip_mode", "value": "sometimes" },
+                { "key": "playback.auto_skip_credits", "value": "yes" },
+                { "key": "playback.next_up_prompt_seconds", "value": 500 }
+              ],
+              "revision": 7
+            }
+            """));
+
+        var preferences = await Create().ReadAsync(ScriptedSilo.Base, Token);
+
+        Assert.Equal(MarkerSettings.Default with { IntroSkipMode = MarkerSettings.Never }, preferences.Markers);
+    }
+
+    [Fact]
+    public async Task Read_ServerWithoutTheMarkerSettings_AsksAndOffersTheNextEpisode()
+    {
+        _silo.On(HttpMethod.Get, EffectivePath, ScriptedSilo.Json(HttpStatusCode.OK, """{ "items": [], "revision": 1 }"""));
+
+        Assert.Equal(MarkerSettings.Default, (await Create().ReadAsync(ScriptedSilo.Base, Token)).Markers);
     }
 
     [Fact]

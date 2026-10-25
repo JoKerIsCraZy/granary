@@ -132,6 +132,14 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   and it is saved to `/api/v2/subtitle-prefs` (never with `show_forced_subtitles`, which would pin the profile's
   forced setting on the series). A sidecar that arrives after another load or pick is not shown, and a new load
   closes the sidecar routes of the one before.
+- **Markers** (11.1, 11.2): the playing file's intro (its single projection, as Android takes it), recaps, credits
+  and previews come from the watch detail, then from a second read that names the file once its first frame
+  shows (`file_id`, which makes the server fill markers it finds on demand); a failed read changes nothing.
+  `MarkerPrompts` follows the position: with `playback.intro_skip_mode` `ask` the intro offers "Skip Intro" for 5 s
+  of playing time (a pause stops the clock, a stall only after 1.5 s), `always` skips it and offers "Watch Intro";
+  a picked, turned away (Esc) or settled intro is not offered again in that playback. Recap, credits and preview
+  get a pill that stays, and skip themselves once where `playback.auto_skip_recap` or `auto_skip_credits` say so,
+  as Apple's client does. The settings are read as their own batch; an unknown mode neither prompts nor skips.
 - **While playing**: progress every 10 s, and once a pause has held for a second (`PlaybackProgress`: one
   sequence per sample, retried with the identical body). Leaving the page by any way stops the session with
   its final position and stops the engine (`PlayerViewModel.Leave`); before the session's first frame the stop

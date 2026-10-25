@@ -89,6 +89,7 @@
                 <controls:SeekBar x:Name="SeekBar" AutomationProperties.Name="Seek"
                                   Position="{x:Bind ViewModel.PositionSeconds, Mode=OneWay}"
                                   Duration="{x:Bind ViewModel.DurationSeconds, Mode=OneWay}"
+                                  Markers="{x:Bind ViewModel.Markers, Mode=OneWay}"
                                   IsEnabled="{x:Bind ViewModel.CanSeek, Mode=OneWay}"
                                   SeekRequested="OnSeekRequested" />
 
@@ -324,5 +325,36 @@
                 </Grid>
             </Grid>
         </Grid>
+
+        <!--
+            The skip pill of Silo's web player: bottom right, above the controls while they show (PlaceSkipPrompt). An intro
+            pill fills from the left with its 5 s; above an automatic skip's pill, "Intro skipped" confirms it.
+        -->
+        <StackPanel x:Name="SkipPrompt" Margin="0,0,28,28" Spacing="6" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                    Visibility="{x:Bind ViewModel.HasSkipPrompt, Mode=OneWay}">
+            <StackPanel.TranslationTransition>
+                <Vector3Transition Duration="0:0:0.3" />
+            </StackPanel.TranslationTransition>
+            <Grid Margin="0,0,12,0" HorizontalAlignment="Right" Visibility="{x:Bind Shows(ViewModel.SkipCaption), Mode=OneWay}">
+                <Canvas x:Name="SkipCaptionShade" IsHitTestVisible="False" />
+                <TextBlock x:Name="SkipCaptionText" Text="{x:Bind ViewModel.SkipCaption, Mode=OneWay}" FontFamily="{StaticResource SiloFontMedium}"
+                           FontWeight="Medium" FontSize="12" Foreground="#BFFFFFFF" />
+            </Grid>
+            <Button x:Name="SkipButton" Style="{StaticResource SiloPlayerSkipButtonStyle}" HorizontalAlignment="Right"
+                    Command="{x:Bind ViewModel.SkipCommand}" AutomationProperties.Name="{x:Bind ViewModel.SkipLabel, Mode=OneWay}">
+                <Grid>
+                    <Border controls:Pill.IsEnabled="True" CornerRadius="{StaticResource SiloPillCornerRadius}">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5">
+                                <GradientStop Offset="0" Color="#26FFFFFF" />
+                                <GradientStop Offset="{x:Bind ViewModel.SkipProgress, Mode=OneWay}" Color="#26FFFFFF" />
+                                <GradientStop Offset="{x:Bind ViewModel.SkipProgress, Mode=OneWay}" Color="#00FFFFFF" />
+                            </LinearGradientBrush>
+                        </Border.Background>
+                    </Border>
+                    <TextBlock Margin="20,10" VerticalAlignment="Center" Text="{x:Bind ViewModel.SkipLabel, Mode=OneWay}" />
+                </Grid>
+            </Button>
+        </StackPanel>
     </Grid>
 </Page>

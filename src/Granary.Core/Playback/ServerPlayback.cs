@@ -461,6 +461,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         _reconnectTries = 0;
         _planPlayed = true;
         _sessionPlayed = true;
+        ReadMarkers();
         if (!_firstFrameReported)
         {
             _firstFrameReported = true;

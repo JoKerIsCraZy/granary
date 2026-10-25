@@ -94,6 +94,11 @@ public sealed partial class PlayerPage
                 ViewModel.ToggleMuteCommand.Execute(null);
                 break;
             case VirtualKey.Escape when !isRepeat:
+                // As on the web player, Esc first turns an intro pill away.
+                if (ViewModel.DismissSkipPrompt())
+                {
+                    break;
+                }
                 if (IsFullScreenNow)
                 {
                     SetFullScreen(false);

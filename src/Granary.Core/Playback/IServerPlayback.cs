@@ -85,6 +85,16 @@ public interface IServerPlayback : IAsyncDisposable
     /// </summary>
     void SetSubtitleDelay(int milliseconds);
 
+    /// <summary>
+    /// The marked parts (intro, recap, credits, preview) of the file that plays, in source seconds and start order; empty
+    /// until a plan is taken. They change with the file (<see cref="TracksChanged"/>) and when the server has found more
+    /// (<see cref="MarkersChanged"/>).
+    /// </summary>
+    IReadOnlyList<PlaybackMarker> Markers { get; }
+
+    /// <summary>Raised on the UI thread when the server named markers of the playing file it had not named before.</summary>
+    event EventHandler? MarkersChanged;
+
     Task StartAsync(PlayRequest request, CancellationToken cancellationToken);
 
     /// <summary>Moves to <paramref name="sourceSeconds"/>, asking the server for a new plan when the stream cannot get there itself.</summary>

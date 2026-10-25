@@ -32,6 +32,8 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     private readonly INavigationService _navigation;
     private readonly Func<IServerPlayback> _serverPlaybacks;
     private readonly PlaybackStops _stops;
+    private readonly TimeProvider _time;
+    private readonly long _created;
     // A seek's target counts as the position for this long, until the engine reports it: quick skips add up.
     private const long SeekTargetMilliseconds = 3000;
 
@@ -47,13 +49,16 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         IUiDispatcher dispatcher,
         INavigationService navigation,
         Func<IServerPlayback> serverPlaybacks,
-        PlaybackStops stops)
+        PlaybackStops stops,
+        TimeProvider? time = null)
     {
         _engine = engine;
         _dispatcher = dispatcher;
         _navigation = navigation;
         _serverPlaybacks = serverPlaybacks;
         _stops = stops;
+        _time = time ?? TimeProvider.System;
+        _created = _time.GetTimestamp();
         _engine.StateChanged += OnStateChanged;
         _engine.Ended += OnEnded;
     }
@@ -172,6 +177,8 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         ArgumentNullException.ThrowIfNull(request);
         _request = request;
         _left = false;
+        // A seek on its way belongs to the title before.
+        _seekTarget = null;
         ErrorMessage = "";
         CanRetry = false;
         Phase = PlayerPhase.Preparing;
@@ -185,6 +192,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         _playback = playback;
         playback.StatusChanged += OnPlaybackStatusChanged;
         playback.TracksChanged += OnTracksChanged;
+        playback.MarkersChanged += OnMarkersChanged;
         await playback.StartAsync(request, CancellationToken.None);
     }
 
@@ -303,8 +311,10 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         _playback = null;
         playback.StatusChanged -= OnPlaybackStatusChanged;
         playback.TracksChanged -= OnTracksChanged;
+        playback.MarkersChanged -= OnMarkersChanged;
         AudioTracks = [];
         SubtitleTracks = [];
+        ResetMarkers();
         _stops.Track(EndAsync(playback));
 
         static async Task EndAsync(IServerPlayback playback)
@@ -379,6 +389,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         {
             AudioTracks = AudioTrackOption.For(playback.AudioTracks, playback.AudioTrack);
             SubtitleTracks = playback.SubtitleTracks.Count == 0 ? [] : SubtitleTrackOption.For(playback.SubtitleTracks, playback.SubtitleTrack);
+            TakeMarkers(playback);
         }
     }
 
@@ -409,6 +420,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         IsMuted = state.IsMuted;
         Volume = state.Volume;
         CanSeek = state.IsLoaded && state.HasStarted && (_playback is null || _playback.Status.Phase == ServerPlaybackPhase.Playing);
+        FollowMarkers(state);
     }
 
     private void OnEnded(object? sender, PlaybackEnded ended) => _dispatcher.Post(() =>

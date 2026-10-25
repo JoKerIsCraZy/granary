@@ -27,7 +27,11 @@ public sealed record PlaybackContext(
     PlaybackPreferences Preferences,
     string InstallationId,
     PlaybackClientReport Report,
-    int? SubtitlePick = null);
+    int? SubtitlePick = null)
+{
+    /// <summary>The id the title was asked for by, which the watch detail may spell differently in its <c>content_id</c>.</summary>
+    public string ContentId { get; init; } = "";
+}
 
 /// <summary>
 /// The part of a playback before the plan (docs/api-contract.md, 7.8, 8.3, 8.4, 10.5): the watch detail, the file
@@ -68,7 +72,22 @@ public sealed class PlaybackStarter(
         }
         var version = ChooseVersion(detail) ?? throw new PlaybackUnavailableException("This title has no file to play.", canRetry: false);
         var capabilities = await CapabilitiesAsync(server, cancellationToken).ConfigureAwait(false);
-        return new PlaybackContext(server, profileId, detail, version, await settings.ConfigureAwait(false), capabilities.InstallationId!, Report(capabilities));
+        return new PlaybackContext(server, profileId, detail, version, await settings.ConfigureAwait(false), capabilities.InstallationId!, Report(capabilities))
+        {
+            ContentId = contentId,
+        };
+    }
+
+    /// <summary>
+    /// The marked parts of file <paramref name="fileId"/>, read again with the file named so that the server fills the
+    /// markers it finds on demand (docs/api-contract.md, 11.1); null when the answer does not list the file.
+    /// </summary>
+    public async Task<IReadOnlyList<PlaybackMarker>?> ReadMarkersAsync(PlaybackContext context, string fileId, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        string contentId = context.ContentId.Length > 0 ? context.ContentId : context.Watch.ContentId;
+        var detail = await watch.GetWatchAsync(context.Server.BaseUri, contentId, fileId, cancellationToken: cancellationToken).ConfigureAwait(false);
+        return detail.Versions.FirstOrDefault(v => v.FileId == fileId) is { } version ? PlaybackMarker.Of(version) : null;
     }
 
     /// <summary>The same context with the installation id the server has now (after 409 <c>installation_changed</c>).</summary>

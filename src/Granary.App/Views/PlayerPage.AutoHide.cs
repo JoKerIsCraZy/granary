@@ -24,6 +24,9 @@ public sealed partial class PlayerPage
 
     private const float ChromeSlide = 8;
 
+    // Between the skip pill and the seek bar's row, while the controls show.
+    private const double SkipPromptGap = 12;
+
     private DispatcherQueueTimer _hideTimer = null!;
     private DispatcherQueueTimer _cursorTimer = null!;
     private Point? _lastPointer;
@@ -33,7 +36,11 @@ public sealed partial class PlayerPage
     private void InitializeAutoHide()
     {
         // The bar changes height with the window, and the lift with it.
-        BottomBar.SizeChanged += (_, _) => LiftSubtitles();
+        BottomBar.SizeChanged += (_, _) =>
+        {
+            LiftSubtitles();
+            PlaceSkipPrompt();
+        };
         SizeChanged += (_, _) => LiftSubtitles();
         _hideTimer = DispatcherQueue.CreateTimer();
         _hideTimer.Interval = HideDelay;
@@ -130,6 +137,14 @@ public sealed partial class PlayerPage
         TopChrome.Translation = visible ? Vector3.Zero : new Vector3(0, -ChromeSlide, 0);
         BottomChrome.Translation = visible ? Vector3.Zero : new Vector3(0, ChromeSlide, 0);
         LiftSubtitles();
+        PlaceSkipPrompt();
+    }
+
+    // The skip pill sits 28 px off the corner, and above the bar while it shows, as on the web player.
+    private void PlaceSkipPrompt()
+    {
+        double above = _areControlsVisible && BottomBar.ActualHeight > 0 ? BottomBar.ActualHeight + SkipPromptGap - SkipPrompt.Margin.Bottom : 0;
+        SkipPrompt.Translation = new Vector3(0, -(float)Math.Max(0, above), 0);
     }
 
     // Subtitles at the bottom move above the controls while they show, and back down when they fade.

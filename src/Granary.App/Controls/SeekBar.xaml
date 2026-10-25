@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    The player's seek bar in the Silo look: a thin track with the red progress. Under the pointer the track
-    thickens, a thumb appears and a bubble above it shows the time there. The whole row is the hit area.
+    The player's seek bar as Silo's web player draws it: a thin track with the played part in white over the tinted
+    marked parts (intro, recap, credits, preview). Under the pointer the track thickens, a thumb appears and a bubble
+    above it shows the time there, and the part it lies in. The whole row is the hit area.
 -->
 <UserControl
     x:Class="Granary.App.Controls.SeekBar"
@@ -19,8 +20,9 @@
             <Grid.ScaleTransition>
                 <Vector3Transition Duration="0:0:0.15" />
             </Grid.ScaleTransition>
+            <Grid x:Name="Regions" />
             <Border x:Name="Progress" Width="0" HorizontalAlignment="Left" CornerRadius="1.5"
-                    Background="{StaticResource SiloPrimaryBrush}" />
+                    Background="{StaticResource SiloPlayerForegroundBrush}" />
         </Grid>
 
         <Ellipse x:Name="Thumb" Width="14" Height="14" HorizontalAlignment="Left" VerticalAlignment="Center"
@@ -32,14 +34,23 @@
 
         <!-- A canvas does not clip, so the bubble can sit above the bar's own row. -->
         <Canvas VerticalAlignment="Center" HorizontalAlignment="Left" IsHitTestVisible="False">
-            <Border x:Name="Tip" Height="28" Padding="10,0" CornerRadius="8" BorderThickness="1" Opacity="0"
+            <Border x:Name="Tip" MinHeight="28" Padding="10,5" CornerRadius="8" BorderThickness="1" Opacity="0"
                     Background="{StaticResource SiloPlayerPopupBrush}" BorderBrush="{StaticResource SiloPlayerPopupBorderBrush}">
                 <Border.OpacityTransition>
                     <ScalarTransition Duration="0:0:0.1" />
                 </Border.OpacityTransition>
-                <TextBlock x:Name="TipText" VerticalAlignment="Center" Typography.NumeralAlignment="Tabular"
-                           FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="12"
-                           Foreground="{StaticResource SiloPlayerForegroundBrush}" />
+                <StackPanel VerticalAlignment="Center" Spacing="2">
+                    <!-- The marked part under the pointer: a dot in its colour, its name and its range. -->
+                    <StackPanel x:Name="TipRegion" Orientation="Horizontal" Spacing="6" Visibility="Collapsed">
+                        <Ellipse x:Name="TipRegionDot" Width="6" Height="6" VerticalAlignment="Center" />
+                        <TextBlock x:Name="TipRegionName" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="11"
+                                   Foreground="{StaticResource SiloPlayerForegroundBrush}" />
+                        <TextBlock x:Name="TipRegionRange" FontSize="11" Typography.NumeralAlignment="Tabular" Foreground="#73FFFFFF" />
+                    </StackPanel>
+                    <TextBlock x:Name="TipText" Typography.NumeralAlignment="Tabular"
+                               FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="12"
+                               Foreground="{StaticResource SiloPlayerForegroundBrush}" />
+                </StackPanel>
             </Border>
         </Canvas>
     </Grid>

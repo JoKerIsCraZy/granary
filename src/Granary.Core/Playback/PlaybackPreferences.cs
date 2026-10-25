@@ -22,6 +22,9 @@ public sealed record PlaybackPreferences(string Quality, int? MaxBitrateKbps, do
 
     /// <summary>The delay is this device's own value, which outranks the profile's until it is cleared.</summary>
     public bool SubtitleDelayOnDevice { get; init; }
+
+    /// <summary>What the player does with intros, recaps and credits, and when it offers the next episode.</summary>
+    public MarkerSettings Markers { get; init; } = MarkerSettings.Default;
 }
 
 /// <summary>Reads <see cref="PlaybackPreferences"/>; playback starts with the defaults when the server cannot say.</summary>
@@ -39,6 +42,18 @@ public sealed class PlaybackPreferencesReader(SettingsApi settings, ILogger<Play
     // quality and skip settings.
     internal static readonly string[] SubtitleKeys = ["playback.subtitle_appearance", "player.subtitle_sync_ms"];
 
+    // The same for the marker settings (docs/api-contract.md, 11.2); they need the device header, which every call sends.
+    internal static readonly string[] MarkerKeys =
+    [
+        "playback.intro_skip_mode",
+        "playback.auto_skip_credits",
+        "playback.auto_skip_recap",
+        "playback.auto_play_next",
+        "playback.next_up_prompt_seconds",
+    ];
+
+    private const int MaxNextUpPromptSeconds = 120;
+
     /// <summary>The web player's limit for the subtitle delay.</summary>
     public const int MaxSubtitleDelayMs = 10_000;
 
@@ -49,33 +64,59 @@ public sealed class PlaybackPreferencesReader(SettingsApi settings, ILogger<Play
 
     public async Task<PlaybackPreferences> ReadAsync(Uri server, CancellationToken cancellationToken)
     {
-        var subtitles = ReadSubtitlesAsync(server, cancellationToken);
+        var subtitles = ReadBatchAsync(server, SubtitleKeys, "Subtitle", cancellationToken);
+        var markers = ReadBatchAsync(server, MarkerKeys, "Marker", cancellationToken);
         var preferences = await ReadMainAsync(server, cancellationToken).ConfigureAwait(false);
-        var subtitleValues = await subtitles.ConfigureAwait(false);
-        if (subtitleValues is null)
+        if (await subtitles.ConfigureAwait(false) is { } subtitleValues)
         {
-            return preferences;
+            int delay = Number(subtitleValues.Find(SubtitleKeys[1])) is { } ms ? (int)Math.Clamp(Math.Round(ms), -MaxSubtitleDelayMs, MaxSubtitleDelayMs) : 0;
+            preferences = preferences with
+            {
+                Subtitles = SubtitleAppearance.From(subtitleValues.Find(SubtitleKeys[0])),
+                SubtitleDelayMs = delay,
+                SubtitleDelayOnDevice = subtitleValues.Items.FirstOrDefault(i => i.Key == SubtitleKeys[1])?.Source == "profile_device",
+            };
         }
-        int delay = Number(subtitleValues.Find(SubtitleKeys[1])) is { } ms ? (int)Math.Clamp(Math.Round(ms), -MaxSubtitleDelayMs, MaxSubtitleDelayMs) : 0;
-        return preferences with
+        if (await markers.ConfigureAwait(false) is { } markerValues)
         {
-            Subtitles = SubtitleAppearance.From(subtitleValues.Find(SubtitleKeys[0])),
-            SubtitleDelayMs = delay,
-            SubtitleDelayOnDevice = subtitleValues.Items.FirstOrDefault(i => i.Key == SubtitleKeys[1])?.Source == "profile_device",
-        };
+            preferences = preferences with { Markers = Markers(markerValues) };
+        }
+        return preferences;
     }
 
-    private async Task<EffectiveSettings?> ReadSubtitlesAsync(Uri server, CancellationToken cancellationToken)
+    private async Task<EffectiveSettings?> ReadBatchAsync(Uri server, string[] keys, string name, CancellationToken cancellationToken)
     {
         try
         {
-            return await settings.GetEffectiveAsync(server, SubtitleKeys, cancellationToken).ConfigureAwait(false);
+            return await settings.GetEffectiveAsync(server, keys, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex, cancellationToken))
         {
-            logger.LogInformation("Subtitle settings are not available ({Failure}); using the defaults", ApiFailureText.Describe(ex));
+            logger.LogInformation("{Batch} settings are not available ({Failure}); using the defaults", name, ApiFailureText.Describe(ex));
             return null;
         }
+    }
+
+    // A mode the client does not know neither prompts nor skips, as on Silo's web player; a missing one is the default.
+    private static MarkerSettings Markers(EffectiveSettings values)
+    {
+        var defaults = MarkerSettings.Default;
+        string mode = Text(values.Find(MarkerKeys[0]))?.ToLowerInvariant() switch
+        {
+            null => defaults.IntroSkipMode,
+            MarkerSettings.Never => MarkerSettings.Never,
+            MarkerSettings.Ask => MarkerSettings.Ask,
+            MarkerSettings.Always => MarkerSettings.Always,
+            _ => MarkerSettings.Never,
+        };
+        return new MarkerSettings(
+            mode,
+            Bool(values.Find(MarkerKeys[1])) ?? defaults.AutoSkipCredits,
+            Bool(values.Find(MarkerKeys[2])) ?? defaults.AutoSkipRecap,
+            Bool(values.Find(MarkerKeys[3])) ?? defaults.AutoPlayNext,
+            Number(values.Find(MarkerKeys[4])) is { } seconds && seconds is >= 0 and <= MaxNextUpPromptSeconds
+                ? (int)Math.Round(seconds)
+                : defaults.NextUpPromptSeconds);
     }
 
     private async Task<PlaybackPreferences> ReadMainAsync(Uri server, CancellationToken cancellationToken)
@@ -101,6 +142,13 @@ public sealed class PlaybackPreferencesReader(SettingsApi settings, ILogger<Play
 
     private static string? Text(JsonElement? value) =>
         value is { ValueKind: JsonValueKind.String } text && text.GetString() is { Length: > 0 } s ? s.Trim() : null;
+
+    private static bool? Bool(JsonElement? value) => value?.ValueKind switch
+    {
+        JsonValueKind.True => true,
+        JsonValueKind.False => false,
+        _ => null,
+    };
 
     private static double? Number(JsonElement? value) =>
         value is { ValueKind: JsonValueKind.Number } number && number.TryGetDouble(out double d) && double.IsFinite(d) ? d : null;
