@@ -286,6 +286,116 @@
     </Style>
 
     <!--
+        The player (docs/ui-design.md, Player). Its controls sit on the picture, not on the Silo surfaces: white
+        text and icons, glass buttons, and scrims that darken the top and bottom just enough to keep them legible.
+    -->
+    <LinearGradientBrush x:Key="SiloPlayerTopScrimBrush" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Offset="0" Color="#8C000000" />
+        <GradientStop Offset="0.5" Color="#2E000000" />
+        <GradientStop Offset="1" Color="#00000000" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="SiloPlayerBottomScrimBrush" StartPoint="0,1" EndPoint="0,0">
+        <GradientStop Offset="0" Color="#D1000000" />
+        <GradientStop Offset="0.55" Color="#8F000000" />
+        <GradientStop Offset="1" Color="#00000000" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="SiloPlayerForegroundBrush" Color="#FFFFFFFF" />
+    <SolidColorBrush x:Key="SiloPlayerMutedBrush" Color="#B3FFFFFF" />
+    <SolidColorBrush x:Key="SiloPlayerTrackBrush" Color="#38FFFFFF" />
+    <SolidColorBrush x:Key="SiloPlayerPopupBrush" Color="#F2161618" />
+    <SolidColorBrush x:Key="SiloPlayerPopupBorderBrush" Color="#1AFFFFFF" />
+
+    <!-- Position and duration beside the seek bar. -->
+    <Style x:Key="SiloPlayerTimeTextStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource SiloFontMedium}" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Foreground" Value="#D9FFFFFF" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <!--
+        One template for the player's own buttons: a white highlight fades in under the pointer, so a glass disc
+        and a bare icon both lighten by the same step. Focus is the system ring.
+    -->
+    <ControlTemplate x:Key="SiloPlayerButtonTemplate" TargetType="Button">
+        <Grid x:Name="Root" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+              BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{TemplateBinding CornerRadius}">
+            <VisualStateManager.VisualStateGroups>
+                <VisualStateGroup x:Name="CommonStates">
+                    <VisualState x:Name="Normal" />
+                    <VisualState x:Name="PointerOver">
+                        <VisualState.Setters>
+                            <Setter Target="Highlight.Opacity" Value="0.09" />
+                            <Setter Target="Content.Foreground" Value="{StaticResource SiloPlayerForegroundBrush}" />
+                        </VisualState.Setters>
+                    </VisualState>
+                    <VisualState x:Name="Pressed">
+                        <VisualState.Setters>
+                            <Setter Target="Highlight.Opacity" Value="0.05" />
+                            <Setter Target="Content.Foreground" Value="{StaticResource SiloPlayerForegroundBrush}" />
+                        </VisualState.Setters>
+                    </VisualState>
+                    <VisualState x:Name="Disabled">
+                        <VisualState.Setters>
+                            <Setter Target="Root.Opacity" Value="0.4" />
+                        </VisualState.Setters>
+                    </VisualState>
+                </VisualStateGroup>
+            </VisualStateManager.VisualStateGroups>
+            <Border x:Name="Highlight" Background="White" Opacity="0" CornerRadius="{TemplateBinding CornerRadius}">
+                <Border.OpacityTransition>
+                    <ScalarTransition Duration="0:0:0.1" />
+                </Border.OpacityTransition>
+            </Border>
+            <ContentPresenter
+                x:Name="Content"
+                Padding="{TemplateBinding Padding}"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                AutomationProperties.AccessibilityView="Raw"
+                Content="{TemplateBinding Content}"
+                ContentTemplate="{TemplateBinding ContentTemplate}"
+                Foreground="{TemplateBinding Foreground}" />
+        </Grid>
+    </ControlTemplate>
+    <!-- Bare icon in the bottom rail: mute, full screen. -->
+    <Style x:Key="SiloPlayerIconButtonStyle" TargetType="Button">
+        <Setter Property="Width" Value="40" />
+        <Setter Property="Height" Value="40" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Foreground" Value="#C7FFFFFF" />
+        <Setter Property="CornerRadius" Value="{StaticResource SiloPillCornerRadius}" />
+        <Setter Property="UseSystemFocusVisuals" Value="True" />
+        <Setter Property="Template" Value="{StaticResource SiloPlayerButtonTemplate}" />
+    </Style>
+    <!-- Glass disc: back, skip back and forward. -->
+    <Style x:Key="SiloPlayerDiscButtonStyle" TargetType="Button" BasedOn="{StaticResource SiloPlayerIconButtonStyle}">
+        <Setter Property="Width" Value="48" />
+        <Setter Property="Height" Value="48" />
+        <Setter Property="Background" Value="#0FFFFFFF" />
+        <Setter Property="BorderBrush" Value="#1FFFFFFF" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Foreground" Value="#EBFFFFFF" />
+    </Style>
+    <!-- A time that is also a toggle: the end of the seek bar switches between duration and remaining time. -->
+    <Style x:Key="SiloPlayerTextButtonStyle" TargetType="Button" BasedOn="{StaticResource SiloPlayerIconButtonStyle}">
+        <Setter Property="Width" Value="Auto" />
+        <Setter Property="Height" Value="32" />
+        <Setter Property="Padding" Value="8,0" />
+        <Setter Property="Foreground" Value="#D9FFFFFF" />
+    </Style>
+    <!-- Play and pause: the red Silo disc, the one prominent control. -->
+    <Style x:Key="SiloPlayerPlayButtonStyle" TargetType="Button" BasedOn="{StaticResource SiloPrimaryButtonStyle}">
+        <Setter Property="Width" Value="56" />
+        <Setter Property="Height" Value="56" />
+        <Setter Property="MinHeight" Value="0" />
+        <Setter Property="Padding" Value="0" />
+    </Style>
+
+    <!--
         A whole card as one button: keyboard focus and Enter work, the pointer gets a subtle ring and the
         artwork lightens. The template draws nothing of its own besides that ring.
     -->
