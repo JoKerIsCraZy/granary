@@ -1,5 +1,6 @@
 using Granary.Core.Playback;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Granary.Player;
 
@@ -12,6 +13,10 @@ public static class PlayerServiceCollectionExtensions
         services.AddSingleton<MpvPlaybackEngine>();
         services.AddSingleton<IPlaybackEngine>(sp => sp.GetRequiredService<MpvPlaybackEngine>());
         services.AddSingleton<ICompositionVideoOutput>(sp => sp.GetRequiredService<MpvPlaybackEngine>());
+        if (OperatingSystem.IsWindows())
+        {
+            services.TryAddSingleton<IPlaybackDeviceProbe, MpvDeviceProbe>();
+        }
         return services;
     }
 }

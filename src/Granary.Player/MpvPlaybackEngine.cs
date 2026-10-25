@@ -115,7 +115,8 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
         string headers = string.Join(",", source.Headers.Select(h => $"{h.Key}: {h.Value}"));
         _mpv.SetProperty("http-header-fields", headers);
 
-        string target = source.Url.IsFile ? source.Url.LocalPath : source.Url.AbsoluteUri;
+        // Plan URLs are replayed byte for byte (docs/api-contract.md, 9.2): the string as given, not as Uri re-escapes it.
+        string target = source.Url.IsFile ? source.Url.LocalPath : source.Url.OriginalString;
         string perFileOptions = source.Start is { } start
             ? $"start={start.TotalSeconds.ToString("0.###", CultureInfo.InvariantCulture)}"
             : "";

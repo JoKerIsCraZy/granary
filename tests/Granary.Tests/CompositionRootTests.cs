@@ -39,6 +39,8 @@ public sealed class CompositionRootTests
         Assert.NotNull(provider.GetRequiredService<SiloHttp>());
         Assert.Same(provider.GetRequiredService<ArtworkLoader>(), provider.GetRequiredService<IArtworkPrefetcher>());
         Assert.NotNull(provider.GetRequiredService<ItemDetailViewModel>());
+        Assert.IsType<MpvDeviceProbe>(provider.GetRequiredService<IPlaybackDeviceProbe>());
+        Assert.IsType<ServerPlayback>(provider.GetRequiredService<Func<IServerPlayback>>()());
         using var player = provider.GetRequiredService<PlayerViewModel>();
         Assert.Same(provider.GetRequiredService<IPlaybackEngine>(), provider.GetRequiredService<ICompositionVideoOutput>());
     }

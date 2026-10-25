@@ -8,9 +8,11 @@ using Granary.Core.Api.Discovery;
 using Granary.Core.Api.Images;
 using Granary.Core.Api.Playback;
 using Granary.Core.Api.Profiles;
+using Granary.Core.Api.Settings;
 using Granary.Core.Artwork;
 using Granary.Core.Auth;
 using Granary.Core.Http;
+using Granary.Core.Playback;
 using Granary.Core.Security;
 using Granary.Core.Servers;
 using Granary.Core.ViewModels;
@@ -49,12 +51,14 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<CatalogApi>();
         services.AddTransient<WatchApi>();
         services.AddTransient<PlaybackApi>();
+        services.AddTransient<SettingsApi>();
         services.AddTransient<LibraryPageApi>();
         services.AddTransient<ImagesApi>();
         services.AddSingleton<ImageParameterCache>();
         AddArtwork(services);
 
         services.AddSingleton(_ => ClientIdentity.Load(ClientIdentity.DefaultDeviceIdFile));
+        AddPlayback(services);
 
         if (OperatingSystem.IsWindows())
         {
@@ -80,6 +84,17 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<PlayerViewModel>();
         services.AddTransient<ItemDetailViewModel>();
         return services;
+    }
+
+    // A server playback per start of the player; the device probe (IPlaybackDeviceProbe) comes from the player layer.
+    // The player disposes its playbacks itself: made outside the container, they are not kept alive until the app
+    // exits, as transient disposables resolved from the root provider would be.
+    private static void AddPlayback(IServiceCollection services)
+    {
+        services.AddTransient<PlaybackPreferencesReader>();
+        services.AddSingleton<IMediaAuthorization, MediaAuthorization>();
+        services.AddTransient<PlaybackStarter>();
+        services.AddSingleton<Func<IServerPlayback>>(sp => () => ActivatorUtilities.CreateInstance<ServerPlayback>(sp));
     }
 
     // Artwork URLs are presigned and public: no credentials, no identity headers. HTTP/2 lets a page's images

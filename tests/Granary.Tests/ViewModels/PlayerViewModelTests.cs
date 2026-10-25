@@ -9,7 +9,8 @@ public sealed class PlayerViewModelTests
     private readonly FakePlaybackEngine _engine = new();
     private readonly RecordingNavigation _navigation = new();
 
-    private PlayerViewModel CreateViewModel() => new(_engine, new ImmediateDispatcher(), _navigation);
+    private PlayerViewModel CreateViewModel() =>
+        new(_engine, new ImmediateDispatcher(), _navigation, () => throw new InvalidOperationException("A direct source needs no server."));
 
     [Fact]
     public async Task Direct_LoadsAnHttpUrlAsIs()
