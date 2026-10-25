@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Collections, as Silo's web shows them: the profile's own, the ones other profiles share with it, and the server's
+    with a pill per library. A poster opens the collection's titles. The page is cached: Back keeps its place.
+-->
+<Page
+    x:Class="Granary.App.Views.CollectionsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Granary.App.Controls"
+    xmlns:vm="using:Granary.Core.ViewModels"
+    NavigationCacheMode="Enabled">
+
+    <Page.Resources>
+        <!-- A section's heading, as the web's text-2xl. -->
+        <Style x:Key="SectionTitleStyle" TargetType="TextBlock" BasedOn="{StaticResource SiloRowTitleTextStyle}">
+            <Setter Property="FontSize" Value="24" />
+            <Setter Property="LineHeight" Value="32" />
+        </Style>
+        <Style x:Key="SectionNoteStyle" TargetType="TextBlock" BasedOn="{StaticResource SiloCaptionTextStyle}">
+            <Setter Property="Foreground" Value="{StaticResource SiloMutedBrush}" />
+            <Setter Property="VerticalAlignment" Value="Bottom" />
+            <Setter Property="Margin" Value="0,0,0,4" />
+        </Style>
+    </Page.Resources>
+
+    <ScrollViewer x:Name="Scroller" XYFocusKeyboardNavigation="Enabled">
+        <StackPanel Padding="48,32,48,48" Spacing="40">
+            <StackPanel Spacing="6">
+                <TextBlock Text="Collections" Style="{StaticResource SiloDisplayTextStyle}" AutomationProperties.HeadingLevel="Level1" />
+                <TextBlock Text="{x:Bind ViewModel.Subtitle, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}"
+                           Foreground="{StaticResource SiloMutedBrush}" TextWrapping="Wrap" />
+            </StackPanel>
+
+            <ProgressRing IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay}"
+                          Width="32" Height="32" Margin="0,48" HorizontalAlignment="Center" AutomationProperties.Name="Loading collections" />
+            <StackPanel Visibility="{x:Bind ViewModel.HasError, Mode=OneWay}" Spacing="16" Margin="0,48" HorizontalAlignment="Center">
+                <TextBlock Text="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}" TextAlignment="Center" />
+                <Button Content="Retry" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
+                        Command="{x:Bind ViewModel.LoadCommand}" />
+            </StackPanel>
+
+            <StackPanel Visibility="{x:Bind ViewModel.IsReady, Mode=OneWay}" Spacing="48">
+                <!-- Your collections 3                                   Only you can change these -->
+                <StackPanel Spacing="16">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="Your collections" Style="{StaticResource SectionTitleStyle}" AutomationProperties.HeadingLevel="Level2" />
+                            <TextBlock Text="{x:Bind ViewModel.OwnCountText, Mode=OneWay}" Style="{StaticResource SectionNoteStyle}" />
+                        </StackPanel>
+                        <TextBlock Grid.Column="1" Text="Only you can change these" Style="{StaticResource SectionNoteStyle}"
+                                   Visibility="{x:Bind ViewModel.HasOwn, Mode=OneWay}" />
+                    </Grid>
+                    <TextBlock Text="You haven't made any collections yet." Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
+                               Visibility="{x:Bind ViewModel.IsOwnEmpty, Mode=OneWay}" />
+                    <StackPanel Orientation="Horizontal" Spacing="12" Visibility="{x:Bind ViewModel.HasOwnError, Mode=OneWay}">
+                        <TextBlock Text="{x:Bind ViewModel.OwnErrorMessage, Mode=OneWay}" Style="{StaticResource SiloCaptionTextStyle}" VerticalAlignment="Center" />
+                        <Button Content="Retry" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.LoadCommand}" />
+                    </StackPanel>
+                    <controls:MediaGrid ItemsSource="{x:Bind ViewModel.Own}" CardInvokedCommand="{x:Bind ViewModel.OpenCommand}"
+                                        Visibility="{x:Bind ViewModel.HasOwn, Mode=OneWay}" />
+                </StackPanel>
+
+                <!-- Shared with me: each owner's collections under "by Name". -->
+                <StackPanel Spacing="16" Visibility="{x:Bind ViewModel.HasShared, Mode=OneWay}">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="Shared with me" Style="{StaticResource SectionTitleStyle}" AutomationProperties.HeadingLevel="Level2" />
+                            <TextBlock Text="{x:Bind ViewModel.SharedCountText, Mode=OneWay}" Style="{StaticResource SectionNoteStyle}" />
+                        </StackPanel>
+                        <TextBlock Grid.Column="1" Text="Read-only. Other profiles on this account made these." Style="{StaticResource SectionNoteStyle}" />
+                    </Grid>
+                    <ItemsRepeater ItemsSource="{x:Bind ViewModel.Shared}">
+                        <ItemsRepeater.ItemTemplate>
+                            <DataTemplate x:DataType="vm:SharedCollectionShelf">
+                                <StackPanel Spacing="12" Margin="0,0,0,24">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <!-- The owner's initial in a primary-tinted circle. -->
+                                        <Border Width="20" Height="20" CornerRadius="10" VerticalAlignment="Center" AutomationProperties.AccessibilityView="Raw">
+                                            <Border.Background>
+                                                <SolidColorBrush Color="{StaticResource SiloPrimaryColor}" Opacity="0.2" />
+                                            </Border.Background>
+                                            <TextBlock Text="{x:Bind Initial}" FontSize="11" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
+                                                       Foreground="{StaticResource SiloPrimaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Border>
+                                        <TextBlock Text="{x:Bind Heading}" Style="{StaticResource SiloBodyTextStyle}" VerticalAlignment="Center"
+                                                   AutomationProperties.HeadingLevel="Level3" />
+                                    </StackPanel>
+                                    <controls:MediaGrid ItemsSource="{x:Bind Cards}" CardInvokedCommand="{x:Bind OpenCommand}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsRepeater.ItemTemplate>
+                    </ItemsRepeater>
+                </StackPanel>
+
+                <!-- Server collections: All | Filme | Serien, then every collection of the picked library. -->
+                <StackPanel Spacing="16" Visibility="{x:Bind ServerSectionShown(ViewModel.Server.IsShown, ViewModel.HasServerError), Mode=OneWay}">
+                    <TextBlock Text="Server collections" Style="{StaticResource SectionTitleStyle}" AutomationProperties.HeadingLevel="Level2" />
+                    <StackPanel Orientation="Horizontal" Spacing="12" Visibility="{x:Bind ViewModel.HasServerError, Mode=OneWay}">
+                        <TextBlock Text="{x:Bind ViewModel.ServerErrorMessage, Mode=OneWay}" Style="{StaticResource SiloCaptionTextStyle}" VerticalAlignment="Center" />
+                        <Button Content="Retry" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.LoadCommand}" />
+                    </StackPanel>
+                    <controls:PillChoices ItemsSource="{x:Bind ViewModel.Server.LibraryChoices, Mode=OneWay}"
+                                          SelectedItem="{x:Bind ViewModel.Server.SelectedLibrary, Mode=TwoWay}"
+                                          Visibility="{x:Bind HasPills(ViewModel.Server.LibraryChoices), Mode=OneWay}"
+                                          AutomationProperties.Name="Library" />
+                    <controls:MediaGrid ItemsSource="{x:Bind ViewModel.Server.Cards}" CardInvokedCommand="{x:Bind ViewModel.Server.OpenCommand}"
+                                        ViewportCommand="{x:Bind ViewModel.Server.ShowViewportCommand}" />
+                    <ProgressRing IsActive="{x:Bind ViewModel.Server.IsLoadingMore, Mode=OneWay}" Visibility="{x:Bind ViewModel.Server.IsLoadingMore, Mode=OneWay}"
+                                  Width="24" Height="24" HorizontalAlignment="Center" AutomationProperties.Name="Loading more collections" />
+                    <!-- Scrolling to the end presses it; it stays for the keyboard. -->
+                    <Button Content="Load more" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
+                            Command="{x:Bind ViewModel.Server.LoadMoreCommand}"
+                            Visibility="{x:Bind ViewModel.Server.CanLoadMore, Mode=OneWay}" />
+                    <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Center" Visibility="{x:Bind ViewModel.Server.HasFailure, Mode=OneWay}">
+                        <TextBlock Text="{x:Bind ViewModel.Server.FailureText, Mode=OneWay}" Style="{StaticResource SiloCaptionTextStyle}" VerticalAlignment="Center" />
+                        <Button Content="Retry" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.Server.RetryCommand}" />
+                    </StackPanel>
+                </StackPanel>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

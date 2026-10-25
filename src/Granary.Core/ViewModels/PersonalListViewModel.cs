@@ -25,10 +25,11 @@ public sealed record ListMediaScope(string? Type, string Label)
 }
 
 /// <summary>
-/// Favorites, Watchlist or History: the profile's own list in a poster grid, as Silo's web catalog page shows it for
-/// those sources (<c>pages/Catalog.tsx</c>). The list's own order comes first ("List Order", History's "Watch History");
-/// the other sorts and a media scope narrow it. The grid loads by window. A visit after the viewer's state changed
-/// (<see cref="ViewerStateChanges"/>: a favourite, a watched mark, playback) loads it again.
+/// Favorites, Watchlist, History or a collection: a list in a poster grid, as Silo's web catalog page shows it for
+/// those sources (<c>pages/Catalog.tsx</c>). The list's own order comes first ("List Order", History's "Watch History",
+/// a collection's "Collection Order"); the other sorts and a media scope narrow it. The grid loads by window. A visit
+/// after the viewer's state changed (<see cref="ViewerStateChanges"/>: a favourite, a watched mark, playback) loads it
+/// again.
 /// </summary>
 public sealed partial class PersonalListViewModel : ObservableObject
 {
@@ -41,12 +42,17 @@ public sealed partial class PersonalListViewModel : ObservableObject
         [CatalogSources.History] = ("History", "Everything you've recently watched.", "Watch History"),
     };
 
+    // The web's catalog page says the same over every other source.
+    private const string CollectionDescription = "Refine the archive by type, era, rating, or genre.";
+    private const string CollectionOrder = "Collection Order";
+
     private readonly ISessionManager _session;
     private readonly ImageParameterCache _images;
     private readonly INavigationService _navigation;
     private readonly ILogger<PersonalListViewModel> _logger;
     private readonly ViewerStateChanges? _changes;
-    private (string? ServerId, string? ProfileId, string Source)? _loadedFor;
+    private (string? ServerId, string? ProfileId, string Source, CollectionRouteParameter? Collection)? _loadedFor;
+    private CollectionRouteParameter? _collection;
     private long _loadedVersion;
     private int _starts;
 
@@ -63,7 +69,10 @@ public sealed partial class PersonalListViewModel : ObservableObject
 
     public LibraryGridViewModel Grid { get; }
 
-    /// <summary><see cref="CatalogSources.Favorites"/>, <see cref="CatalogSources.Watchlist"/> or <see cref="CatalogSources.History"/>.</summary>
+    /// <summary>
+    /// <see cref="CatalogSources.Favorites"/>, <see cref="CatalogSources.Watchlist"/>, <see cref="CatalogSources.History"/>,
+    /// or a collection's <see cref="CatalogSources.UserCollection"/> or <see cref="CatalogSources.LibraryCollection"/>.
+    /// </summary>
     [ObservableProperty]
     public partial string Source { get; private set; } = "";
 
@@ -93,8 +102,9 @@ public sealed partial class PersonalListViewModel : ObservableObject
 
     public IReadOnlyList<LibrarySortOption> SortOptions => LibrarySortOption.All;
 
-    /// <summary>"List Order", or "Watch History" for History: the list's own order.</summary>
-    public string SourceOrderLabel => Lists.TryGetValue(Source, out var list) ? list.OrderLabel : "List Order";
+    /// <summary>"List Order", "Watch History" for History, or "Collection Order": the list's own order.</summary>
+    public string SourceOrderLabel => _collection is not null ? CollectionOrder
+        : Lists.TryGetValue(Source, out var list) ? list.OrderLabel : "List Order";
 
     public string ScopeLabel => Scope.Label;
 
@@ -115,17 +125,41 @@ public sealed partial class PersonalListViewModel : ObservableObject
         {
             return Task.CompletedTask;
         }
-        if (source != Source)
+        if (source != Source || _collection is not null)
         {
-            Source = source;
-            Title = list.Title;
-            Description = list.Description;
-            Scope = ListMediaScope.All[0];
-            Sort = null;
-            IsDescending = false;
-            OnPropertyChanged(nameof(SourceOrderLabel));
-            OnPropertyChanged(nameof(SortLabel));
+            Show(source, list.Title, list.Description, collection: null);
         }
+        return LoadUnlessCurrentAsync();
+    }
+
+    /// <summary>Shows a collection's titles, as <see cref="ActivateAsync"/> a list's.</summary>
+    public Task ShowCollectionAsync(CollectionRouteParameter collection)
+    {
+        ArgumentNullException.ThrowIfNull(collection);
+        if (collection != _collection)
+        {
+            Show(collection.Source, collection.Title, CollectionDescription, collection);
+        }
+        return LoadUnlessCurrentAsync();
+    }
+
+    private void Show(string source, string title, string description, CollectionRouteParameter? collection)
+    {
+        _collection = collection;
+        Source = source;
+        Title = title;
+        Description = description;
+        Scope = ListMediaScope.All[0];
+        Sort = null;
+        IsDescending = false;
+        OnPropertyChanged(nameof(SourceOrderLabel));
+        OnPropertyChanged(nameof(SortLabel));
+        // The other list's cards must not show under this one's name while its first page is on its way.
+        Grid.Reset();
+    }
+
+    private Task LoadUnlessCurrentAsync()
+    {
         bool current = _loadedFor == Key() && _loadedVersion == (_changes?.Version ?? 0)
             && Grid.State is LibraryLoadState.Ready or LibraryLoadState.Empty or LibraryLoadState.Loading;
         return current ? Task.CompletedTask : StartAsync();
@@ -200,6 +234,8 @@ public sealed partial class PersonalListViewModel : ObservableObject
         await Grid.StartAsync(server.BaseUri, new CatalogQuery
         {
             Source = Source,
+            CollectionId = _collection?.CollectionId,
+            LibraryId = _collection?.LibraryId,
             Type = Scope.Type,
             Sort = Sort is { } sort ? new CatalogSort(sort.Field, IsDescending) : null,
             Limit = PageSize,
@@ -207,5 +243,6 @@ public sealed partial class PersonalListViewModel : ObservableObject
         });
     }
 
-    private (string? ServerId, string? ProfileId, string Source) Key() => (_session.ActiveServer?.Id, _session.ProfileId, Source);
+    private (string? ServerId, string? ProfileId, string Source, CollectionRouteParameter? Collection) Key() =>
+        (_session.ActiveServer?.Id, _session.ProfileId, Source, _collection);
 }

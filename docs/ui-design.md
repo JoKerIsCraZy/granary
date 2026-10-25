@@ -90,11 +90,16 @@ View models build `MediaCard`s with the texts already worded; the controls only 
 ## Layout
 
 - Sidebar (260 px): server name, Home, Search (`Ctrl+K`), "LIBRARIES" with the server's libraries, "YOUR STUFF"
-  (Favorites, Watchlist, History; the web's Watch Party and Collections to come); Servers and the profile menu at the
+  (Favorites, Watchlist, Collections, History; the web's Watch Party to come); Servers and the profile menu at the
   bottom. Favorites, Watchlist and History are one page (`PersonalListPage`, the web's `pages/Catalog.tsx` for those
   sources): the list's name, what it holds and its count, the media menu (All Media, Movies & Series, Movies, Series,
   Episodes), the list's own order ("List Order", History's "Watch History") or a sort, and the posters by window. The
   web's watchlist tab "Not in your library yet" comes with Requests, History's select-and-remove later. Detail pages shrink it to icons; the player hides it.
+- Collections (`CollectionsPage`, the web's `pages/Collections.tsx`): "Your collections" with its count ("Manual ·
+  4 titles", a SHARED badge on one other profiles see), "Shared with me" by owner ("by Mara"), and "Server
+  collections" with a pill per library (All first) and Load more, which the end of the grid presses by itself. A
+  collection opens on the list page with its name and "Collection Order"; the sidebar keeps Collections picked.
+  Making, editing, sharing and reordering collections come later.
 - Pages: 48 px side margins, 32 px top; rows 40 px apart.
 - Detail pages: full-bleed backdrop fading into the background, logo (or display title), chips,
   ratings, overview with "More", red Play/Resume pill, secondary actions, then rows (seasons, episodes,

@@ -10,7 +10,7 @@ using Granary.Tests.Profiles;
 
 namespace Granary.Tests.Browse;
 
-/// <summary>Favorites, Watchlist and History, as Silo's web catalog page lists them.</summary>
+/// <summary>Favorites, Watchlist, History and collections, as Silo's web catalog page lists them.</summary>
 public sealed class PersonalListViewModelTests
 {
     private const string CatalogPath = LibraryHarness.CatalogPath;
@@ -93,6 +93,50 @@ public sealed class PersonalListViewModelTests
         _changes.Report();
         await list.ActivateAsync("watchlist");
         Assert.Equal(2, _harness.Queries(CatalogPath).Count);
+    }
+
+    [Fact]
+    public async Task ACollection_ShowsItsTitlesInItsOwnOrder()
+    {
+        var list = Create();
+
+        await list.ShowCollectionAsync(new CollectionRouteParameter(CatalogSources.LibraryCollection, "s1", "Oscar Winners", "1"));
+
+        Assert.Equal("Oscar Winners", list.Title);
+        Assert.Equal("Refine the archive by type, era, rating, or genre.", list.Description);
+        Assert.Equal("Collection Order", list.SortLabel);
+        Assert.StartsWith("source=library_collection&library_id=1&collection_id=s1&limit=60&", LastQuery, StringComparison.Ordinal);
+
+        await list.SetSortCommand.ExecuteAsync(LibrarySortOption.Title);
+        Assert.StartsWith("source=library_collection&library_id=1&collection_id=s1&sort=title&limit=60&", LastQuery, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task APersonalCollection_IsNotBoundToALibrary()
+    {
+        var list = Create();
+
+        await list.ShowCollectionAsync(new CollectionRouteParameter(CatalogSources.UserCollection, "u1", "Rainy days"));
+
+        Assert.StartsWith("source=user_collection&collection_id=u1&limit=60&", LastQuery, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task TheSameCollectionAgain_KeepsItsPlace_AndAListAfterItStartsAfresh()
+    {
+        var list = Create();
+        var collection = new CollectionRouteParameter(CatalogSources.UserCollection, "u1", "Rainy days");
+        await list.ShowCollectionAsync(collection);
+        await list.SetScopeCommand.ExecuteAsync(list.Scopes.Single(s => s.Label == "Movies"));
+
+        await list.ShowCollectionAsync(collection with { });
+        Assert.Equal(2, _harness.Queries(CatalogPath).Count);
+        Assert.Equal("Movies", list.ScopeLabel);
+
+        await list.ActivateAsync("favorites");
+        Assert.Equal("Favorites", list.Title);
+        Assert.Equal("List Order", list.SortLabel);
+        Assert.StartsWith("source=favorites&limit=60&", LastQuery, StringComparison.Ordinal);
     }
 
     [Fact]

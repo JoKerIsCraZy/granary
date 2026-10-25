@@ -37,11 +37,22 @@ public enum AppRoute
 
     /// <summary>Favorites, Watchlist or History; the parameter is the list's source (<c>favorites</c>, <c>watchlist</c>, <c>history</c>).</summary>
     List,
+
+    /// <summary>The profile's own collections, the ones other profiles share with it, and the server's.</summary>
+    Collections,
+
+    /// <summary>One collection's titles; the parameter is a <see cref="CollectionRouteParameter"/>.</summary>
+    Collection,
 }
 
 /// <summary>Which row an "Explore all" grid lists: a Home row, or a library row when <see cref="LibraryId"/> is set.</summary>
 /// <param name="SectionType">The row's <c>section_type</c>; Continue Watching and Next Up list landscape cards.</param>
 public sealed record SectionRouteParameter(string SectionId, string Title, string? LibraryId = null, string? SectionType = null);
+
+/// <summary>A collection whose titles a list shows in the collection's own order.</summary>
+/// <param name="Source"><c>user_collection</c> for a personal collection, <c>library_collection</c> for a server one.</param>
+/// <param name="LibraryId">The library a server collection opens in; null opens it across every library that has it.</param>
+public sealed record CollectionRouteParameter(string Source, string CollectionId, string Title, string? LibraryId = null);
 
 public interface INavigationService
 {

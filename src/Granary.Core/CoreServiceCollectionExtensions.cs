@@ -70,6 +70,7 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<AccountPermissions>();
         services.AddTransient<SettingsApi>();
         services.AddTransient<LibraryPageApi>();
+        services.AddTransient<CollectionsApi>();
         services.AddTransient<ImagesApi>();
         services.AddSingleton<ImageParameterCache>();
         AddArtwork(services);
@@ -99,6 +100,7 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<SearchViewModel>();
         services.AddTransient<LibraryViewModel>();
         services.AddTransient<PersonalListViewModel>();
+        services.AddTransient<CollectionsViewModel>();
         services.AddTransient<AddServerViewModel>();
         services.AddTransient<PlayerViewModel>();
         services.AddTransient<Granary.Core.ViewModels.Player.AddSubtitlesViewModel>();

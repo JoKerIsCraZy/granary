@@ -1,4 +1,5 @@
 using System.Globalization;
+using Granary.Core.Abstractions;
 using Granary.Core.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -8,7 +9,10 @@ using Microsoft.UI.Xaml.Navigation;
 
 namespace Granary.App.Views;
 
-/// <summary>Favorites, Watchlist or History; the parameter is the list's source (<c>favorites</c>, <c>watchlist</c>, <c>history</c>).</summary>
+/// <summary>
+/// Favorites, Watchlist or History, the parameter being the list's source (<c>favorites</c>, <c>watchlist</c>, <c>history</c>);
+/// or a collection's titles, the parameter being a <see cref="CollectionRouteParameter"/>.
+/// </summary>
 public sealed partial class PersonalListPage : Page
 {
     private readonly Dictionary<ListMediaScope, RadioMenuFlyoutItem> _scopeItems = [];
@@ -30,7 +34,9 @@ public sealed partial class PersonalListPage : Page
         ViewModel.DisplayScale = XamlRoot?.RasterizationScale ?? 1;
         try
         {
-            await ViewModel.ActivateAsync(e.Parameter as string);
+            await (e.Parameter is CollectionRouteParameter collection
+                ? ViewModel.ShowCollectionAsync(collection)
+                : ViewModel.ActivateAsync(e.Parameter as string));
         }
         catch (Exception ex)
         {

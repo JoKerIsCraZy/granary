@@ -586,6 +586,13 @@ series/season card), `user_state { played, is_favorite, in_watchlist, not_intere
 - Collections of a library: `GET /api/v2/library/{id}/collections` (groups plus ungrouped
   collections); a collection's titles are `GET /api/v2/catalog?source=library_collection&library_id=<id>&collection_id=<id>`,
   personal ones `source=user_collection` without a library id (as the web client does).
+- The Collections page: `GET /api/v2/collections` → `{ "items": PersonalCollection[] }`, the profile's own in its
+  order, then the ones other profiles on the login share, by creator (`creator_profile_id`; split own from shared
+  against the acting profile; `collection_type` `manual`, `smart` or an import source, a synced list). Server
+  collections: `GET /api/v2/collections/server` → `{ "libraries": [{ "library_id", "library_name", "total_count",
+  "collections": LibraryCollectionCard[] }] }`, each library cut to its first few; the rest come from that library's
+  `GET /api/v2/library/{id}/collections` (`collections`, same order). A collection in several libraries opens without
+  a library id, across all of them.
 - Shuffle: there is no random sort (the OpenAPI text lists `random`, but the server's allowlist in
   `catalog/query_definition.go` does not, so `sort=random` is `422`). `POST /api/v2/shuffles` with
   `{ "scope": { "kind": "library", "id": "<id>" } }` returns `current`, a random playable movie or

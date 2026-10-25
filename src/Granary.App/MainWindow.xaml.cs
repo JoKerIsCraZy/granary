@@ -189,7 +189,7 @@ public sealed partial class MainWindow : Window
             case string tag when tag.StartsWith(ListTagPrefix, StringComparison.Ordinal):
                 _navigation.ShowSection(AppRoute.List, tag[ListTagPrefix.Length..]);
                 break;
-            case string tag when Enum.TryParse<AppRoute>(tag, out var route) && route is AppRoute.Home or AppRoute.Search:
+            case string tag when Enum.TryParse<AppRoute>(tag, out var route) && route is AppRoute.Home or AppRoute.Search or AppRoute.Collections:
                 _navigation.ShowSection(route);
                 break;
             // Settings and Servers open over the page they were opened from, and go back to it.
@@ -205,6 +205,8 @@ public sealed partial class MainWindow : Window
         {
             AppRoute.Library => LibraryTagPrefix + parameter,
             AppRoute.List => ListTagPrefix + parameter,
+            // A collection opens from the Collections page, which stays picked.
+            AppRoute.Collection => nameof(AppRoute.Collections),
             _ => route.ToString(),
         };
         var item = Navigation.MenuItems.Concat(Navigation.FooterMenuItems).OfType<NavigationViewItem>()

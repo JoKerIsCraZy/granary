@@ -23,9 +23,12 @@ public sealed class NavigationService : INavigationService
         [AppRoute.Section] = typeof(SectionPage),
         [AppRoute.Settings] = typeof(SettingsPage),
         [AppRoute.List] = typeof(PersonalListPage),
+        [AppRoute.Collections] = typeof(CollectionsPage),
+        // A collection's titles show as a list does.
+        [AppRoute.Collection] = typeof(PersonalListPage),
     };
 
-    private static readonly Dictionary<Type, AppRoute> Routes = Pages.ToDictionary(p => p.Value, p => p.Key);
+    private static readonly Dictionary<Type, AppRoute> Routes = Pages.Where(p => p.Key != AppRoute.Collection).ToDictionary(p => p.Value, p => p.Key);
 
     private Frame? _frame;
 
@@ -96,7 +99,7 @@ public sealed class NavigationService : INavigationService
         frame.GoBack();
         if (Routes.TryGetValue(entry.SourcePageType, out var route))
         {
-            Arrived(route, entry.Parameter);
+            Arrived(route == AppRoute.List && entry.Parameter is CollectionRouteParameter ? AppRoute.Collection : route, entry.Parameter);
         }
     }
 

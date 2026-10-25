@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Favorites, Watchlist or History, as Silo's web catalog page shows them: the list's name and what it holds, the count
-    on the right, the media and sort menus, and the posters. The page is cached: Back keeps the list and its place.
+    Favorites, Watchlist, History or a collection, as Silo's web catalog page shows them: the list's name and what it
+    holds, the count on the right, the media and sort menus, and the posters. The page is cached: Back keeps the list and
+    its place.
 -->
 <Page
     x:Class="Granary.App.Views.PersonalListPage"
