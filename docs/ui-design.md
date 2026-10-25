@@ -81,6 +81,25 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   cast, more like this).
 - Back: the navigation view's back arrow, `Alt+Left`, and the mouse back button.
 
+## Signed-out screens
+
+Adding a server and signing in look like Silo's web login (measured 2026-10-25). `SiloAuthShellStyle` centres a
+448 px card (the surface, radius 12, 28 + 24 px inside) on the background with a red glow at the top left and a
+light one at the top right, and puts Silo's white wordmark above it. The wordmark (`Assets/Brand`) is shown
+unmodified to refer to Silo, as its trademark policy allows; it is not Granary's logo (see the NOTICE there).
+
+- In the card: the title (`SiloAuthTitleTextStyle`, 30 / ExtraBold) over a muted lead, labelled 36 px fields
+  (`SiloAuthTextBoxStyle`, `SiloAuthPasswordBoxStyle`), full-width buttons rounded 10 (`SiloAuthButtonStyle` red,
+  `SiloAuthOutlineButtonStyle`), refusals in a red box (`SiloAuthErrorStyle`) and the consent to an unencrypted
+  connection in an amber one (`SiloAuthWarningStyle`).
+- The pages merge `Themes/SiloAuth.xaml`, which gives WinUI's text boxes the web's field: the page background, a
+  faint outline, a red one when focused (instead of Fluent's accent underline), the placeholder muted.
+- Add server: "Connect to your server" and "Type the address you use for Silo." as in the apps; progress and
+  refusals below the button.
+- Sign in: the server's name, a refusal, the password form, then "Use your phone instead". As on the web, the QR code
+  shows on "Show QR code" (at once when the server has no password sign-in), framed, with the address and the code
+  below it; the page scrolls to it.
+
 ## Player
 
 `Views/PlayerPage` on `PlayerViewModel`, drawn as the server's web player (`web/src/player`, measured below).

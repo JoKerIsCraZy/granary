@@ -1,0 +1,15 @@
+SILO BRAND ASSETS - NOTICE
+==========================
+
+silo-wordmark-white.png is the official Silo wordmark for dark surfaces:
+
+    Copyright (c) 2026 Silo Media L.L.C. All rights reserved.
+
+It is a trademark of Silo Media L.L.C. and is NOT licensed under the GNU Affero
+General Public License that covers Granary's source code, nor under any other
+open-source license. Granary includes it unmodified only to refer to Silo, on
+the screens where a Silo server is added and signed in to, as Silo's
+Trademark & Brand Policy permits ("Showing the Silo logo or icon in a project
+that works with Silo"). It is not Granary's logo or app icon, and it must not
+be altered. A fork or redistribution that cannot make the same referential use
+must remove it. See https://github.com/Silo-Server/silo-server/blob/main/TRADEMARK.md.

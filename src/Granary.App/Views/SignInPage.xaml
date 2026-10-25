@@ -5,47 +5,64 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:Granary.App.Controls">
 
-    <ScrollViewer>
-        <StackPanel Padding="36,24" Spacing="24" MaxWidth="1040" HorizontalAlignment="Left">
-            <StackPanel Spacing="4">
-                <TextBlock Text="{x:Bind Heading(ViewModel.Server), Mode=OneWay}" Style="{StaticResource TitleTextBlockStyle}" />
-                <HyperlinkButton Content="Use another server" Padding="0" Command="{x:Bind ViewModel.UseAnotherServerCommand}" />
+    <Page.Resources>
+        <ResourceDictionary Source="ms-appx:///Themes/SiloAuth.xaml" />
+    </Page.Resources>
+
+    <!--
+        Silo's web login: the server's name, a refusal, the password form, then "Use your phone instead" with the
+        code on request (at once when the server has no password sign-in).
+    -->
+    <ContentControl Style="{StaticResource SiloAuthShellStyle}">
+        <StackPanel Spacing="24">
+            <StackPanel Spacing="8">
+                <TextBlock Text="{x:Bind ServerName(ViewModel.Server), Mode=OneWay, FallbackValue='Sign in'}" Style="{StaticResource SiloAuthTitleTextStyle}"
+                           AutomationProperties.HeadingLevel="Level1"
+                           AutomationProperties.Name="{x:Bind Heading(ViewModel.Server), Mode=OneWay, FallbackValue='Sign in'}" />
+                <TextBlock Text="Sign in with an existing account." Style="{StaticResource SiloAuthLeadTextStyle}" />
             </StackPanel>
 
-            <InfoBar Severity="Warning" IsClosable="False" Title="This connection is not encrypted"
-                     Message="The server address starts with http://. Your password and sign-in would be readable by others on the network."
-                     IsOpen="{x:Bind NeedsConsent(ViewModel.IsUnencrypted, ViewModel.IsUnencryptedAccepted), Mode=OneWay}">
-                <InfoBar.ActionButton>
-                    <Button Content="Sign in anyway" Command="{x:Bind ViewModel.AcceptUnencryptedCommand}" />
-                </InfoBar.ActionButton>
-            </InfoBar>
-
-            <Grid ColumnSpacing="40" Visibility="{x:Bind ViewModel.CanUseCredentials, Mode=OneWay}">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-
-                <StackPanel Width="340" Spacing="16" Visibility="{x:Bind ViewModel.IsPasswordSignInAvailable, Mode=OneWay}">
-                    <TextBlock Text="With your password" Style="{StaticResource SubtitleTextBlockStyle}" />
-                    <TextBox x:Name="UsernameBox" Header="Username" IsSpellCheckEnabled="False" AutomationProperties.AutomationId="Username"
-                             Text="{x:Bind ViewModel.Username, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                    <PasswordBox Header="Password" AutomationProperties.AutomationId="Password" KeyDown="OnPasswordKeyDown"
-                                 Password="{x:Bind ViewModel.Password, Mode=TwoWay}" />
-                    <StackPanel Orientation="Horizontal" Spacing="12">
-                        <Button Content="Sign in" Style="{StaticResource AccentButtonStyle}" Command="{x:Bind ViewModel.SignInCommand}" />
-                        <ProgressRing Width="20" Height="20" IsActive="{x:Bind ViewModel.SignInCommand.IsRunning, Mode=OneWay}" />
+            <Border Style="{StaticResource SiloAuthWarningStyle}"
+                    Visibility="{x:Bind NeedsConsent(ViewModel.IsUnencrypted, ViewModel.IsUnencryptedAccepted), Mode=OneWay}">
+                <StackPanel Spacing="12">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="This connection is not encrypted" Style="{StaticResource SiloAuthHeadingTextStyle}" Foreground="#FFFBBF24"
+                                   AutomationProperties.HeadingLevel="Level2" />
+                        <TextBlock Style="{StaticResource SiloAuthTextStyle}"
+                                   Text="The server address starts with http://. Your password and sign-in would be readable by others on the network." />
                     </StackPanel>
-                    <InfoBar Severity="Error" IsClosable="False"
-                             IsOpen="{x:Bind HasText(ViewModel.Status), Mode=OneWay}" Message="{x:Bind ViewModel.Status, Mode=OneWay}" />
+                    <Button Content="Sign in anyway" Style="{StaticResource SiloAuthOutlineButtonStyle}" Command="{x:Bind ViewModel.AcceptUnencryptedCommand}" />
                 </StackPanel>
+            </Border>
 
-                <Border Grid.Column="1" Width="1" Background="{ThemeResource DividerStrokeColorDefaultBrush}"
-                        Visibility="{x:Bind ViewModel.IsPasswordSignInAvailable, Mode=OneWay}" />
+            <Border Style="{StaticResource SiloAuthErrorStyle}" Visibility="{x:Bind HasText(ViewModel.Status), Mode=OneWay}">
+                <TextBlock Text="{x:Bind ViewModel.Status, Mode=OneWay}" Style="{StaticResource SiloAuthTextStyle}" Foreground="#FFF87171" />
+            </Border>
 
-                <controls:DeviceSignInPanel x:Name="DeviceSignIn" Grid.Column="2" />
-            </Grid>
+            <StackPanel Spacing="16" Visibility="{x:Bind ShowsPasswordForm(ViewModel.CanUseCredentials, ViewModel.IsPasswordSignInAvailable), Mode=OneWay}">
+                <TextBox x:Name="UsernameBox" Header="Username" Style="{StaticResource SiloAuthTextBoxStyle}" AutomationProperties.AutomationId="Username"
+                         Text="{x:Bind ViewModel.Username, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                <PasswordBox Header="Password" Style="{StaticResource SiloAuthPasswordBoxStyle}" AutomationProperties.AutomationId="Password"
+                             KeyDown="OnPasswordKeyDown" Password="{x:Bind ViewModel.Password, Mode=TwoWay}" />
+                <Button Style="{StaticResource SiloAuthButtonStyle}" Command="{x:Bind ViewModel.SignInCommand}"
+                        Content="{x:Bind SignInLabel(ViewModel.SignInCommand.IsRunning), Mode=OneWay}" />
+            </StackPanel>
+
+            <StackPanel Spacing="16" Visibility="{x:Bind ViewModel.CanUseCredentials, Mode=OneWay}">
+                <Border Height="1" Background="#FF28282E" Visibility="{x:Bind ViewModel.IsPasswordSignInAvailable, Mode=OneWay}" />
+                <StackPanel Spacing="12">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="{x:Bind DeviceHeading(ViewModel.IsPasswordSignInAvailable), Mode=OneWay}"
+                                   Style="{StaticResource SiloAuthHeadingTextStyle}" AutomationProperties.HeadingLevel="Level2" />
+                        <TextBlock Text="Scan a code, sign in there, and approve this device." Style="{StaticResource SiloAuthTextStyle}" />
+                    </StackPanel>
+                    <Button x:Name="ShowCodeButton" Content="Show QR code" Style="{StaticResource SiloAuthOutlineButtonStyle}" Click="OnShowCodeClick" />
+                    <controls:DeviceSignInPanel x:Name="DeviceSignIn" Visibility="Collapsed" />
+                </StackPanel>
+            </StackPanel>
+
+            <HyperlinkButton Content="Use another server" HorizontalAlignment="Center" Padding="4,2" FontSize="14"
+                             Foreground="{StaticResource SiloMutedBrush}" Command="{x:Bind ViewModel.UseAnotherServerCommand}" />
         </StackPanel>
-    </ScrollViewer>
+    </ContentControl>
 </Page>

@@ -12,7 +12,7 @@ using Windows.Storage.Streams;
 namespace Granary.App.Controls;
 
 /// <summary>
-/// Device (QR code) sign-in. The sign-in page calls <see cref="Start"/> with the server and
+/// Device (QR code) sign-in, framed for the sign-in card. The sign-in page calls <see cref="Start"/> with the server and
 /// <see cref="Stop"/> when the user leaves the code; the panel also stops when it is unloaded, so a
 /// page that is shown again must call <see cref="Start"/> again.
 /// </summary>
