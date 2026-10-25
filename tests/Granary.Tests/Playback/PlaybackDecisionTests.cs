@@ -275,6 +275,18 @@ public sealed class PlaybackDecisionTests
     }
 
     [Fact]
+    public void Plan_PositionalMembersReadMissingStringsAsEmpty()
+    {
+        var plan = Decision("""
+            { "outcome": "playable", "playback_plan": { "selected_tracks": { "audio": { "index": 2 }, "subtitle": { "id": null } }, "degradation_warnings": [ { "code": "x" } ] } }
+            """).PlaybackPlan!;
+
+        Assert.Equal(new TrackIdentity("", 2), plan.SelectedTracks.Audio);
+        Assert.Equal("", plan.SelectedTracks.Subtitle!.Id);
+        Assert.Equal(new DegradationWarning("x", ""), Assert.Single(plan.DegradationWarnings));
+    }
+
+    [Fact]
     public void Plan_ClientSideWorkMustBeRejected()
     {
         var clientTransform = Decision("""

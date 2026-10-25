@@ -219,9 +219,13 @@ public static class ReplanOperations
     /// <summary>The display or audio output changed.</summary>
     public const string OutputChange = "output_change";
 
-    /// <summary>The operations that carry a <see cref="PlaybackReplanRequest.Failure"/>; every other one must not.</summary>
+    internal static bool IsKnown(string operation) =>
+        operation is FailureRecovery or SeekFailureRecovery or SeekReanchor or TrackChange or QualityChange or OutputChange;
+
+    /// <summary>The operations that need a <see cref="PlaybackReplanRequest.Failure"/>.</summary>
     internal static bool NeedsFailure(string operation) => operation is FailureRecovery or SeekFailureRecovery;
 
+    /// <summary>The intent operations, which must not carry a failure. <c>seek_reanchor</c> may carry one or not.</summary>
     internal static bool ForbidsFailure(string operation) => operation is TrackChange or QualityChange or OutputChange;
 }
 

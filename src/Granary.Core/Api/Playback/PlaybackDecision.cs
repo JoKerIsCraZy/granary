@@ -199,7 +199,13 @@ public sealed record SelectedTracks
 
 /// <param name="Id"><c>file:{media_file_id}:{audio|subtitle}:{ordinal}</c>; for subtitles echo an inventory <c>track_id</c>.</param>
 /// <param name="Index">The same ordinal; for subtitles the inventory's <c>combined_index</c>.</param>
-public sealed record TrackIdentity(string Id, int? Index = null);
+public sealed record TrackIdentity(string Id, int? Index = null)
+{
+    public string Id { get; init => field = value ?? ""; } = Id ?? "";
+
+    // Declared, not synthesized, so it is written after the id.
+    public int? Index { get; init; } = Index;
+}
 
 /// <summary>What the delivered stream contains.</summary>
 public sealed record EffectiveRecipe
@@ -312,7 +318,12 @@ public sealed record AvailableQuality
 }
 
 /// <param name="Code">An open registry, for example <c>audio_track_unavailable</c> or <c>subtitle_track_unavailable</c>.</param>
-public sealed record DegradationWarning(string Code, string Message);
+public sealed record DegradationWarning(string Code, string Message)
+{
+    public string Code { get; init => field = value ?? ""; } = Code ?? "";
+
+    public string Message { get; init => field = value ?? ""; } = Message ?? "";
+}
 
 /// <summary>The source file as the server probed it.</summary>
 public sealed record PlaybackSource

@@ -17,30 +17,35 @@ public sealed class PlaybackApi(SiloHttp http)
     private const int MaxAttemptedPlanKeys = 16;
     private const int MaxDiagnostics = 32;
 
+    /// <summary>The largest start and replan position the server accepts (a year in seconds).</summary>
+    private const double MaxRequestedPosition = 31_536_000;
+
     /// <summary>The installation id, features and deliveries; gate on <see cref="PlaybackCapabilities.IsUsable"/>.</summary>
     public Task<PlaybackCapabilities> GetCapabilitiesAsync(Uri server, CancellationToken cancellationToken = default) =>
         http.GetAsync(server, "api/v2/playback/capabilities", SiloAuth.Profile, PlaybackJsonContext.Default.PlaybackCapabilities, cancellationToken);
 
     /// <summary>
-    /// Starts an attempt; the answer (201) is a plan or a terminal decision. Replaying an identical start returns
-    /// the stored decision; the same attempt id with another body is 409 <c>idempotency_conflict</c>.
+    /// Starts an attempt; the answer (201) is a plan or a terminal decision: check <see cref="PlaybackDecision.IsCompatible"/>,
+    /// then <see cref="PlaybackDecision.IsPlayable"/>. Replaying an identical start returns the stored decision; the same
+    /// attempt id with another body is 409 <c>idempotency_conflict</c>.
     /// </summary>
     public Task<PlaybackDecision> StartAsync(Uri server, PlaybackStartRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
         if (request.StartPosition is { } start)
         {
-            RequireSourceSeconds(start, nameof(request.StartPosition));
+            RequireSourceSeconds(start, MaxRequestedPosition, nameof(request));
         }
         return http.PostAsync(server, "api/v2/playback/start", SiloAuth.Profile, request,
             PlaybackJsonContext.Default.PlaybackStartRequest, PlaybackJsonContext.Default.PlaybackDecision, cancellationToken);
     }
 
     /// <summary>
-    /// Asks for a replacement plan. 409 <c>conflict</c> covers a replan still in flight, a stale <c>failed_plan_id</c>
-    /// and a reused <c>replan_request_id</c> alike: branch on the status only.
+    /// Asks for a replacement plan; check the decision as after <see cref="StartAsync"/>. 409 <c>conflict</c> covers a
+    /// replan still in flight, a stale <c>failed_plan_id</c> and a reused <c>replan_request_id</c> alike: branch on the
+    /// status only.
     /// </summary>
-    /// <exception cref="ArgumentException">The operation's failure rule, the attempt count or the key list is broken.</exception>
+    /// <exception cref="ArgumentException">The operation is unknown, its failure rule is broken, or a count or position is out of range.</exception>
     public Task<PlaybackDecision> ReplanAsync(Uri server, string sessionId, PlaybackReplanRequest request, CancellationToken cancellationToken = default)
     {
         string path = SessionPath(sessionId) + "/replan";
@@ -58,7 +63,7 @@ public sealed class PlaybackApi(SiloHttp http)
     {
         string path = SessionPath(sessionId) + "/progress";
         ArgumentNullException.ThrowIfNull(request);
-        Validate(new PlaybackSample(request.Sequence, request.Position, request.IsPaused));
+        ValidateSample(request.Sequence, request.Position, nameof(request));
         return http.PostAsync(server, path, SiloAuth.Profile, request,
             PlaybackJsonContext.Default.PlaybackProgressRequest, PlaybackJsonContext.Default.PlaybackMutation, cancellationToken);
     }
@@ -67,22 +72,26 @@ public sealed class PlaybackApi(SiloHttp http)
     /// Stops the session: a <c>DELETE</c> with a JSON body and a JSON receipt. Every later stop, with any stop id,
     /// answers <c>replayed</c> with the stored receipt; 404 means the session row is unknown or expired.
     /// </summary>
+    /// <exception cref="ArgumentException">The stop id is not a canonical UUID, or the final sample is out of range.</exception>
     public Task<PlaybackMutation> StopAsync(Uri server, string sessionId, PlaybackStopRequest request, CancellationToken cancellationToken = default)
     {
         string path = SessionPath(sessionId);
         ArgumentNullException.ThrowIfNull(request);
+        RequireCanonicalUuid(request.StopId, nameof(request));
         if (request.FinalSample is { } sample)
         {
-            Validate(sample);
+            ValidateSample(sample.Sequence, sample.Position, nameof(request));
         }
         return http.SendAsync(HttpMethod.Delete, server, path, SiloAuth.Profile, request,
             PlaybackJsonContext.Default.PlaybackStopRequest, PlaybackJsonContext.Default.PlaybackMutation, cancellationToken);
     }
 
     /// <summary>Records one diagnostic route event (202). Non-retryable: on 429 or 403 drop it.</summary>
+    /// <exception cref="ArgumentException">The event id is not a canonical UUID, or there are more than 32 diagnostics.</exception>
     public Task<PlaybackRouteEventReceipt> SendRouteEventAsync(Uri server, PlaybackRouteEvent routeEvent, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(routeEvent);
+        RequireCanonicalUuid(routeEvent.EventId, nameof(routeEvent));
         if (routeEvent.Diagnostics.Count > MaxDiagnostics)
         {
             throw new ArgumentException($"The server takes at most {MaxDiagnostics} diagnostics.", nameof(routeEvent));
@@ -95,8 +104,11 @@ public sealed class PlaybackApi(SiloHttp http)
 
     private static void Validate(PlaybackReplanRequest request)
     {
-        // A blank operation would fail the server's enum, and the server would read an absent one as failure_recovery.
-        ArgumentException.ThrowIfNullOrWhiteSpace(request.Operation, nameof(request));
+        // Anything else fails the server's enum; an absent operation it would read as failure_recovery.
+        if (request.Operation is null || !ReplanOperations.IsKnown(request.Operation))
+        {
+            throw new ArgumentException($"'{request.Operation}' is not a replan operation.", nameof(request));
+        }
         if (request.Operation == ReplanOperations.QualityChange && string.IsNullOrWhiteSpace(request.QualityPreference))
         {
             throw new ArgumentException("A quality_change replan needs the picked quality preference.", nameof(request));
@@ -117,24 +129,35 @@ public sealed class PlaybackApi(SiloHttp http)
         {
             throw new ArgumentException($"The server takes at most {MaxAttemptedPlanKeys} attempted plan keys.", nameof(request));
         }
-        RequireSourceSeconds(request.PositionSeconds, nameof(request.PositionSeconds));
+        RequireSourceSeconds(request.PositionSeconds, MaxRequestedPosition, nameof(request));
     }
 
-    private static void Validate(PlaybackSample sample)
+    private static void ValidateSample(long sequence, double position, string paramName)
     {
-        if (sample.Sequence < 1)
+        if (sequence < 1)
         {
-            throw new ArgumentOutOfRangeException(nameof(sample), sample.Sequence, "A sample's sequence starts at 1.");
+            throw new ArgumentOutOfRangeException(paramName, sequence, "A sample's sequence starts at 1.");
         }
-        RequireSourceSeconds(sample.Position, nameof(sample.Position));
+        RequireSourceSeconds(position, double.MaxValue, paramName);
     }
 
-    // Source seconds are finite and not negative; JSON has no NaN, and the server refuses negative positions.
-    private static void RequireSourceSeconds(double seconds, string name)
+    // Source seconds are finite and not negative: JSON has no NaN, and the server refuses negative positions.
+    private static void RequireSourceSeconds(double seconds, double max, string paramName)
     {
-        if (!double.IsFinite(seconds) || seconds < 0)
+        if (!double.IsFinite(seconds) || seconds < 0 || seconds > max)
         {
-            throw new ArgumentOutOfRangeException(name, seconds, "A position must be a finite, non-negative number of seconds.");
+            string range = max < double.MaxValue ? SiloHttp.Invariant($"from 0 to {max}") : "of at least 0";
+            throw new ArgumentOutOfRangeException(paramName, seconds, $"A position must be a finite number of seconds {range}.");
+        }
+    }
+
+    // The server compares the id with its own canonical rendering, so "N" format, braces, upper case and the nil
+    // UUID are all 422.
+    private static void RequireCanonicalUuid(string? value, string paramName)
+    {
+        if (!Guid.TryParseExact(value, "D", out var id) || id == Guid.Empty || id.ToString("D") != value)
+        {
+            throw new ArgumentException($"'{value}' is not a canonical lower-case UUID; mint one with Guid.NewGuid().ToString().", paramName);
         }
     }
 }

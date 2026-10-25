@@ -78,6 +78,16 @@ public sealed class PlaybackApiTests
         Assert.Equal("body", Assert.Single(error.Problem.Errors!).Location);
     }
 
+    [Theory]
+    [InlineData(-0.5)]
+    [InlineData(31_536_001.0)]
+    [InlineData(double.NaN)]
+    public async Task Start_RefusesAStartPositionOutsideTheServersRange(double position)
+    {
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => Api.StartAsync(ScriptedSilo.Base, PlaybackRequests.Start() with { StartPosition = position }, Ct));
+        Assert.Empty(_silo.Sent);
+    }
+
     [Fact]
     public async Task Replan_PostsUnderTheSession()
     {
@@ -198,6 +208,20 @@ public sealed class PlaybackApiTests
         Assert.Equal(PlaybackMutationOutcomes.Replayed, receipt.Outcome);
     }
 
+    [Theory]
+    [InlineData("44444444444444448444444444444444")]
+    [InlineData("44444444-4444-4444-8444-44444444444A")]
+    [InlineData("{44444444-4444-4444-8444-444444444444}")]
+    [InlineData("00000000-0000-0000-0000-000000000000")]
+    [InlineData("stop-1")]
+    public async Task ClientMintedIds_MustBeCanonicalUuids(string id)
+    {
+        await Assert.ThrowsAsync<ArgumentException>(() => Api.StopAsync(ScriptedSilo.Base, Session,
+            new PlaybackStopRequest { InstallationId = PlaybackPayloads.InstallationId, StopId = id }, Ct));
+        await Assert.ThrowsAsync<ArgumentException>(() => Api.SendRouteEventAsync(ScriptedSilo.Base, PlaybackRequests.FirstFrame() with { EventId = id }, Ct));
+        Assert.Empty(_silo.Sent);
+    }
+
     [Fact]
     public async Task Stop_UnknownSessionIsNotFound()
     {
@@ -264,6 +288,8 @@ public sealed class PlaybackApiTests
         await Assert.ThrowsAsync<ArgumentException>(() => Api.ReplanAsync(ScriptedSilo.Base, Session,
             valid with { Operation = ReplanOperations.TrackChange }, Ct));
         await Assert.ThrowsAsync<ArgumentException>(() => Api.ReplanAsync(ScriptedSilo.Base, Session, valid with { Operation = " " }, Ct));
+        await Assert.ThrowsAsync<ArgumentException>(() => Api.ReplanAsync(ScriptedSilo.Base, Session, valid with { Operation = "seek" }, Ct));
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => Api.ReplanAsync(ScriptedSilo.Base, Session, valid with { PositionSeconds = 31_536_001 }, Ct));
         await Assert.ThrowsAsync<ArgumentException>(() => Api.ReplanAsync(ScriptedSilo.Base, Session,
             valid with { Operation = ReplanOperations.QualityChange, Failure = null, QualityPreference = " " }, Ct));
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => Api.ReplanAsync(ScriptedSilo.Base, Session, valid with { AttemptCount = 9 }, Ct));

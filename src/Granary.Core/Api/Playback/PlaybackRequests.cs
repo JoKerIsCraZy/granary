@@ -128,7 +128,10 @@ public sealed record PlaybackReplanRequest
     /// <summary>The tracks the new plan should play; written as <c>{}</c> when empty. An omitted subtitle means off.</summary>
     public SelectedTracks SelectedTracks { get; init => field = value ?? new(); } = new();
 
-    /// <summary>Required for <c>failure_recovery</c> and <c>seek_failure_recovery</c>; forbidden for the intent operations.</summary>
+    /// <summary>
+    /// Required for <c>failure_recovery</c> and <c>seek_failure_recovery</c>; forbidden for <c>track_change</c>,
+    /// <c>quality_change</c> and <c>output_change</c>; optional (and without effect) for <c>seek_reanchor</c>.
+    /// </summary>
     public PlaybackFailure? Failure { get; init; }
 
     public required ClientCapabilities ClientCapabilities { get; init; }
