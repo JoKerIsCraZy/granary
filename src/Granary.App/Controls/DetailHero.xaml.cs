@@ -27,8 +27,6 @@ public sealed partial class DetailHero : UserControl
         set => SetValue(ViewModelProperty, value);
     }
 
-    public string PlayUnavailableText => ItemDetailViewModel.PlayUnavailableText;
-
     // Static and instance helpers because x:Bind function bindings call them.
     public static ImageSource? LoadImage(Uri? url, int decodeWidth) => Artwork.Load(url, decodeWidth);
 

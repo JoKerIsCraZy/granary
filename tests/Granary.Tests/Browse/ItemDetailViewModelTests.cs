@@ -1,6 +1,7 @@
 using Granary.Core;
 using Granary.Core.Abstractions;
 using Granary.Core.Api;
+using Granary.Core.Playback;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Detail;
 using Granary.Tests.Auth;
@@ -46,14 +47,14 @@ public sealed class ItemDetailViewModelTests
     }
 
     [Fact]
-    public async Task Movie_InProgress_OffersResumeButNoPlaybackYet()
+    public async Task Movie_InProgress_OffersResumeAndStartOver()
     {
         var detail = await _fixture.Movie().LoadAsync(MovieId);
 
         Assert.Equal("Resume", detail.PlayLabel);
         Assert.Equal(MovieId, detail.PlayTargetId);
-        Assert.False(detail.IsPlayAvailable);
-        Assert.Equal("Playback comes in the next update", ItemDetailViewModel.PlayUnavailableText);
+        Assert.True(detail.PlayCommand.CanExecute(null));
+        Assert.True(detail.CanStartOver);
         Assert.Equal("Mark Watched", detail.WatchedLabel);
         Assert.True(detail.ShowsWatchedAction);
         Assert.True(detail.CanFavorite);
@@ -101,6 +102,49 @@ public sealed class ItemDetailViewModelTests
         Assert.Contains("logo_width=750", query, StringComparison.Ordinal);
         Assert.Contains("poster_width=513", query, StringComparison.Ordinal);
         Assert.Contains("photo_width=278", query, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Play_OpensThePlayerAtTheResumePoint()
+    {
+        var detail = await _fixture.Movie().LoadAsync(MovieId);
+
+        detail.PlayCommand.Execute(null);
+
+        Assert.Equal((AppRoute.Player, (object?)PlayRequest.Resume(MovieId)), _fixture.Navigation.Navigations[^1]);
+    }
+
+    [Fact]
+    public async Task StartOver_OpensThePlayerAtTheBeginning()
+    {
+        var detail = await _fixture.Movie().LoadAsync(MovieId);
+
+        detail.StartOverCommand.Execute(null);
+
+        Assert.Equal((AppRoute.Player, (object?)PlayRequest.FromStart(MovieId)), _fixture.Navigation.Navigations[^1]);
+    }
+
+    [Fact]
+    public async Task Series_Play_PlaysTheEpisodeToResume()
+    {
+        var detail = await _fixture.Series().LoadAsync(SeriesId);
+
+        detail.PlayCommand.Execute(null);
+
+        Assert.Equal((AppRoute.Player, (object?)PlayRequest.Resume(EpisodeId)), _fixture.Navigation.Navigations[^1]);
+    }
+
+    [Fact]
+    public async Task AWatchedMovie_PlaysFromTheStart_WithoutAStartOverChoice()
+    {
+        _fixture.Movie().Silo.On(HttpMethod.Post, "api/v2/watched/" + MovieId, ScriptedSilo.NoContent());
+        var detail = await _fixture.LoadAsync(MovieId);
+
+        await detail.ToggleWatchedCommand.ExecuteAsync(null);
+
+        Assert.Equal("Play", detail.PlayLabel);
+        Assert.False(detail.CanStartOver);
+        Assert.False(detail.StartOverCommand.CanExecute(null));
     }
 
     [Fact]

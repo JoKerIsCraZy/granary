@@ -6,6 +6,7 @@ using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
 using Granary.Core.Artwork;
 using Granary.Core.Auth;
+using Granary.Core.Playback;
 using Granary.Core.Servers;
 using Granary.Core.ViewModels.Cards;
 using Granary.Core.ViewModels.Detail;
@@ -36,7 +37,6 @@ public enum ItemDetailState
 /// </remarks>
 public sealed partial class ItemDetailViewModel : ObservableObject
 {
-    public const string PlayUnavailableText = "Playback comes in the next update";
     public const string NotFoundTitle = "This title is no longer available";
     public const string NotFoundHint = "It may have been removed, or you may not have access to it. Use Back to return.";
     public const string NoEpisodesText = "No episodes are available for this season yet.";
@@ -201,14 +201,17 @@ public sealed partial class ItemDetailViewModel : ObservableObject
     // Actions
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanStartOver))]
     public partial string PlayLabel { get; private set; } = "Play";
 
-    /// <summary>What Play will start once server playback exists (Phase 3c): the item, or the next episode.</summary>
+    /// <summary>What Play starts: the item itself, or for a series or season the episode to resume or play next.</summary>
     [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(PlayCommand), nameof(StartOverCommand))]
+    [NotifyPropertyChangedFor(nameof(CanStartOver))]
     public partial string? PlayTargetId { get; private set; }
 
-    /// <summary>Always false until server playback arrives; the button shows <see cref="PlayUnavailableText"/>.</summary>
-    public bool IsPlayAvailable => false;
+    /// <summary>Play resumes a title in progress; "Start over" plays it from the beginning instead.</summary>
+    public bool CanStartOver => PlayTargetId is not null && PlayLabel == DetailFacts.ResumeLabel;
 
     [ObservableProperty]
     public partial bool ShowsWatchedAction { get; private set; }
@@ -378,6 +381,26 @@ public sealed partial class ItemDetailViewModel : ObservableObject
 
     [RelayCommand]
     private void ToggleOverview() => IsOverviewExpanded = !IsOverviewExpanded;
+
+    [RelayCommand(CanExecute = nameof(CanPlay))]
+    private void Play()
+    {
+        if (PlayTargetId is { } target)
+        {
+            _navigation.NavigateTo(AppRoute.Player, PlayRequest.Resume(target));
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanStartOver))]
+    private void StartOver()
+    {
+        if (PlayTargetId is { } target)
+        {
+            _navigation.NavigateTo(AppRoute.Player, PlayRequest.FromStart(target));
+        }
+    }
+
+    private bool CanPlay() => PlayTargetId is not null;
 
     private void Reset(string? id)
     {

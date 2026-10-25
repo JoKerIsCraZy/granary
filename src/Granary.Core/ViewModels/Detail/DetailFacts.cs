@@ -198,6 +198,8 @@ public static class DetailFacts
         return crumbs;
     }
 
+    public const string ResumeLabel = "Resume";
+
     /// <summary>
     /// The primary button. A movie or episode resumes when it has a resume point. A series or season resumes
     /// an episode in progress, plays the next one when partly watched, and otherwise starts at the beginning
@@ -211,7 +213,7 @@ public static class DetailFacts
             string? next = Blank(item.PlayContentId);
             if (next is not null && (watch is { InProgressCount: > 0 } || watch?.IsInProgress == true))
             {
-                return new DetailPlayAction("Resume", next);
+                return new DetailPlayAction(ResumeLabel, next);
             }
             if (next is not null && watch is { WatchedCount: > 0, Played: false })
             {
@@ -223,7 +225,7 @@ public static class DetailFacts
         }
         // Watched items store position 0, so any position is a live resume point, a rewatch included.
         bool resume = watch?.IsInProgress == true || watch?.PositionSeconds > 0;
-        return new DetailPlayAction(resume ? "Resume" : "Play", Blank(item.PlayContentId) ?? item.ContentId);
+        return new DetailPlayAction(resume ? ResumeLabel : "Play", Blank(item.PlayContentId) ?? item.ContentId);
     }
 
     /// <summary>The web's getWatchedActionLabel.</summary>
