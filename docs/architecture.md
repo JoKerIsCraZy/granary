@@ -54,10 +54,20 @@ the display refresh rate itself (Phase 3).
   that can no longer be decrypted is set aside as `.unreadable-<time>`; the user signs in again.
 - Logs go to `%LOCALAPPDATA%\Granary\logs`. Every line passes `LogRedactor`; mpv log lines that mention an
   `Authorization` header are dropped whole. Tokens never reach a log.
-- Media requests carry their headers through mpv's `http-header-fields`. mpv keeps the headers of an
-  open stream, and reports a mid-stream `401` only in its log (as end of file). The engine therefore
-  watches the log and reports `PlaybackEndReason.AuthenticationFailed` instead of `EndOfFile`; the caller
-  refreshes the token and reloads at the position.
+- Media requests of server playback go through the loopback media proxy (see Server playback), which adds
+  the headers per request; mpv itself gets none. mpv reports a refused request only in its log (as end of
+  file), so the engine watches the log and reports `PlaybackEndReason.AuthenticationFailed` instead of
+  `EndOfFile`; the playback then reloads with a fresh token, which the proxy makes rare.
+- **Local route** (docs/api-contract.md, 9.7): `LocalRouteMonitor` reads `system/connections` through the
+  saved address (`SiloRequestOptions.SavedAddressOnly`), reduces `local_route.url` to private IPv4
+  addresses and keeps the first that presents the pinned key over HTTPS on the same port and answers
+  `system/identity` with the same server id (`LocalRouteProbe`, 3 s). It checks at start, when the session
+  or the network changes, and every 15 minutes; only a saved HTTPS address without a path prefix
+  qualifies. `LocalRouteHandler` then sends that address's requests over the route, after the
+  authentication handler decided the credentials by the saved address: the API calls of `SiloHttp` and
+  the media proxy's requests (never a proxy node's). A route that does not connect, or presents another
+  key, is dropped and the same request goes to the saved address. An unreachable saved address keeps a
+  route verified before.
 
 ## Artwork
 

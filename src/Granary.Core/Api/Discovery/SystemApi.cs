@@ -11,4 +11,11 @@ public sealed class SystemApi(SiloHttp http)
 
     public Task<Branding> GetBrandingAsync(Uri server, CancellationToken cancellationToken = default) =>
         http.GetAsync(server, "api/v2/theme/branding", SiloAuth.Anonymous, SiloJsonContext.Default.Branding, cancellationToken);
+
+    /// <summary>
+    /// The local route's key and address. Read only through the saved address, which a public certificate
+    /// authenticates: only that can vouch for the key (docs/api-contract.md, 9.7).
+    /// </summary>
+    public Task<ServerConnections> GetConnectionsAsync(Uri server, CancellationToken cancellationToken = default) =>
+        http.GetFromSavedAddressAsync(server, "api/v2/system/connections", SiloAuth.Account, SiloJsonContext.Default.ServerConnections, cancellationToken);
 }

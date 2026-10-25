@@ -8,6 +8,16 @@ public sealed record SystemInfoLinks(string? Capabilities, string? Identity, str
 /// <summary><c>GET /api/v2/system/identity</c>: the deployment's stable, self-asserted id.</summary>
 public sealed record ServerIdentity(string ServerId);
 
+/// <summary>
+/// <c>GET /api/v2/system/connections</c>: how a signed-in client may reach the server (docs/api-contract.md, 9.7).
+/// <paramref name="LocalRoute"/> is absent when the API port does not answer TLS.
+/// </summary>
+public sealed record ServerConnections(string ServerId, ServerLocalRoute? LocalRoute);
+
+/// <param name="SpkiSha256">Base64 SHA-256 of the SubjectPublicKeyInfo the API port presents over TLS.</param>
+/// <param name="Url">The administrator's <c>server.local_url</c>; tried as HTTPS on its host and port, whatever its scheme.</param>
+public sealed record ServerLocalRoute(string SpkiSha256, string? Url);
+
 /// <summary><c>GET /api/v2/system/setup</c>.</summary>
 public sealed record SetupStatus(bool NeedsSetup, bool WizardCompleted);
 

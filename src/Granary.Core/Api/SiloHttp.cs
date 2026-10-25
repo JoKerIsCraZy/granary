@@ -19,6 +19,15 @@ public sealed class SiloHttp(HttpClient http)
         return await SendAsync(request, responseType, cancellationToken).ConfigureAwait(false);
     }
 
+    /// <summary>As <see cref="GetAsync{TResponse}"/>, but always through the saved address, never a local route.</summary>
+    public async Task<TResponse> GetFromSavedAddressAsync<TResponse>(Uri server, string path, SiloAuth auth, JsonTypeInfo<TResponse> responseType,
+        CancellationToken cancellationToken)
+    {
+        using var request = Create(HttpMethod.Get, server, path, auth);
+        request.Options.Set(SiloRequestOptions.SavedAddressOnly, true);
+        return await SendAsync(request, responseType, cancellationToken).ConfigureAwait(false);
+    }
+
     public async Task<TResponse> PostAsync<TRequest, TResponse>(Uri server, string path, SiloAuth auth, TRequest body, JsonTypeInfo<TRequest> requestType, JsonTypeInfo<TResponse> responseType, CancellationToken cancellationToken)
     {
         using var request = Create(HttpMethod.Post, server, path, auth);

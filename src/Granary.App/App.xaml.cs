@@ -4,6 +4,7 @@ using Granary.Core;
 using Granary.Core.Abstractions;
 using Granary.Core.Diagnostics;
 using Granary.Core.Playback;
+using Granary.Core.Servers;
 using Granary.Core.ViewModels;
 using Granary.Player;
 using Microsoft.Extensions.DependencyInjection;
@@ -50,6 +51,8 @@ public partial class App : Application
         _logger.LogInformation("Granary {Version} starting", typeof(App).Assembly.GetName().Version);
         _window = Services.GetRequiredService<MainWindow>();
         _window.Activate();
+        // A server on this network is reached directly, once its key is verified (docs/api-contract.md, 9.7).
+        Services.GetRequiredService<LocalRouteMonitor>().Start();
 
         // Developer shortcuts: --play <file or URL> plays it without the server; --play-item <content id> plays a
         // title of the signed-in server.

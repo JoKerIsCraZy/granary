@@ -1380,8 +1380,26 @@ bundle for sidecar ASS. Sources: `silo-server/internal/playback/subtitle_invento
 
 A LAN route to the same server is HTTPS with a pinned self-signed key (SPKI SHA-256 from
 `GET /api/v2/system/connections`; `silo-server/docs/architecture/server-identity.md:119-142`).
-FFmpeg's TLS cannot pin, so the MVP plays only from the saved address; using the local route for
-media needs a pinning layer (for example the loopback proxy from 9.4).
+The server never tells a client it is on the LAN: the client finds out itself.
+
+`GET /api/v2/system/connections` (account bearer, no profile) answers `server_id`, `current`,
+`endpoints[]` and `local_route { spki_sha256, url? }`; `url` is the administrator's `server.local_url`,
+and `local_route` is absent when the API port does not answer TLS
+(`silo-server/internal/apiv2/system_identity.go:134-150,210-232`). The key is derived from
+`SECRET_KEY`, so rotating that key changes the pin; the certificate is made per process for no name.
+Client rules (`server-identity.md:126-147`): learn the pin only over a saved HTTPS address without
+following redirects; reduce each candidate (`local_route.url`, `_silo._tcp` adverts with a matching
+TXT `id`) to private IPv4 (RFC 1918) addresses and try `https://ip:same-port`; accept only the pinned
+key; `GET /api/v2/system/identity` there must answer the saved server's id; keep the saved address
+as the credential owner, move back as soon as the route fails to connect, check again when the network
+changes. Apple implements all of it, Bonjour included, with a 3 s probe, never on cellular, and re-reads
+the pin every 15 minutes; its API calls and media both move, media only when it is on the saved origin
+(`LocalRouteController.swift:41-56,237-333,488-525`). Android does the same without Bonjour
+(`LocalRouteController.kt:62-82`, `LocalRouteInterceptor.kt:21-117`).
+
+The Windows client follows Apple without Bonjour so far (`local_route.url` only): `LocalRouteMonitor`
+checks, `LocalRouteHandler` moves the API calls and, behind the media proxy (9.4), the media; FFmpeg
+never sees the pinned connection.
 
 ## 10. Progress, resume, and completion
 

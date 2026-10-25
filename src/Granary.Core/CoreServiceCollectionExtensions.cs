@@ -33,13 +33,20 @@ public static class CoreServiceCollectionExtensions
         services.AddHttpClient<IServerProbe, ServerProbe>()
             .ConfigurePrimaryHttpMessageHandler(CreateSocketsHandler);
 
-        // All Silo API calls. Credentials must never follow a redirect to another origin.
+        // All Silo API calls. Credentials must never follow a redirect to another origin. The local route, when one
+        // is verified, takes them after the credentials were decided by the saved address.
         services.AddTransient<ClientIdentityHandler>();
         services.AddTransient<AuthenticationHandler>();
+        services.AddTransient<LocalRouteHandler>();
         services.AddHttpClient<SiloHttp>()
             .ConfigurePrimaryHttpMessageHandler(CreateSocketsHandler)
             .AddHttpMessageHandler<ClientIdentityHandler>()
-            .AddHttpMessageHandler<AuthenticationHandler>();
+            .AddHttpMessageHandler<AuthenticationHandler>()
+            .AddHttpMessageHandler<LocalRouteHandler>();
+        services.AddSingleton<LocalRoutes>();
+        services.AddSingleton<ILocalNetwork, LocalNetwork>();
+        services.AddSingleton<ILocalRouteProbe, LocalRouteProbe>();
+        services.AddSingleton<LocalRouteMonitor>();
         services.AddHttpClient(TokenRefresher.HttpClientName)
             .ConfigurePrimaryHttpMessageHandler(CreateSocketsHandler)
             .AddHttpMessageHandler<ClientIdentityHandler>();
@@ -95,7 +102,10 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<IMediaAuthorization, MediaAuthorization>();
         services.AddTransient<PlaybackStarter>();
         services.AddSingleton<PlaybackStops>();
-        services.AddSingleton<MediaProxy>(sp => new MediaProxy(CreateMediaHandler(), sp.GetRequiredService<TimeProvider>(),
+        // Media of the saved address takes its local route too.
+        services.AddSingleton<MediaProxy>(sp => new MediaProxy(
+            new LocalRouteHandler(sp.GetRequiredService<LocalRoutes>(), sp.GetRequiredService<ILogger<LocalRouteHandler>>()) { InnerHandler = CreateMediaHandler() },
+            sp.GetRequiredService<TimeProvider>(),
             sp.GetRequiredService<ILogger<MediaProxy>>()));
         services.AddSingleton<IMediaProxy>(sp => sp.GetRequiredService<MediaProxy>());
         services.AddSingleton<Func<IServerPlayback>>(sp => () => ActivatorUtilities.CreateInstance<ServerPlayback>(sp));

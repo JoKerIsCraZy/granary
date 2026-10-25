@@ -20,6 +20,9 @@ public static class SiloRequestOptions
     /// <summary>The server base URL the request was built under. Handlers send credentials only beneath it.</summary>
     public static readonly HttpRequestOptionsKey<Uri> Server = new("granary.server");
 
+    /// <summary>The request must go to the saved address itself, never over a local route (the key it vouches for).</summary>
+    public static readonly HttpRequestOptionsKey<bool> SavedAddressOnly = new("granary.saved-address-only");
+
     public static SiloAuth GetAuth(this HttpRequestMessage request) =>
         request.Options.TryGetValue(Auth, out var auth) ? auth : SiloAuth.Anonymous;
 

@@ -21,6 +21,7 @@ namespace Granary.Core.Api;
 [JsonSerializable(typeof(EffectiveSettings))]
 [JsonSerializable(typeof(SystemInfo))]
 [JsonSerializable(typeof(ServerIdentity))]
+[JsonSerializable(typeof(ServerConnections))]
 [JsonSerializable(typeof(SetupStatus))]
 [JsonSerializable(typeof(Branding))]
 [JsonSerializable(typeof(LoginRequest))]
