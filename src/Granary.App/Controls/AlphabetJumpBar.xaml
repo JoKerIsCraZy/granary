@@ -6,7 +6,8 @@
 <UserControl
     x:Class="Granary.App.Controls.AlphabetJumpBar"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Granary.App.Controls">
 
     <UserControl.Resources>
         <Style x:Key="AlphabetLetterButtonStyle" TargetType="Button">
@@ -24,7 +25,8 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Grid x:Name="Root" Background="{TemplateBinding Background}" CornerRadius="{StaticResource SiloPillCornerRadius}">
+                        <Grid x:Name="Root" Background="{TemplateBinding Background}" CornerRadius="{StaticResource SiloPillCornerRadius}"
+                              local:Pill.IsEnabled="True">
                             <VisualStateManager.VisualStateGroups>
                                 <VisualStateGroup x:Name="CommonStates">
                                     <VisualState x:Name="Normal" />

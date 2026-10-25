@@ -62,7 +62,8 @@ public sealed class ItemDetailTextTests
     [InlineData(CatalogItemTypes.Episode, null, false, null, true, "Play")]
     [InlineData(CatalogItemTypes.Series, null, null, 1, false, "Resume")]
     [InlineData(CatalogItemTypes.Series, null, null, 0, false, "Play Next")]
-    [InlineData(CatalogItemTypes.Series, null, null, 0, true, "Play")]
+    [InlineData(CatalogItemTypes.Series, null, null, 0, true, "Start From Episode 1")]
+    [InlineData(CatalogItemTypes.Series, null, null, null, false, "Start From Episode 1")]
     [InlineData(CatalogItemTypes.Season, null, null, 2, false, "Resume")]
     [InlineData(CatalogItemTypes.Season, null, null, 0, true, "Play First Episode")]
     public void PlayAction_ResumesWhatIsInProgress(string type, double? position, bool? isInProgress, int? inProgressCount, bool played, string expected)
@@ -84,7 +85,8 @@ public sealed class ItemDetailTextTests
     public void PlayAction_TargetsTheItemOrTheEpisodeTheServerNames()
     {
         Assert.Equal(new DetailPlayAction("Play", "item-1"), DetailFacts.PlayAction(Item(CatalogItemTypes.Movie), null));
-        Assert.Equal(new DetailPlayAction("Play", null), DetailFacts.PlayAction(Item(CatalogItemTypes.Series), null));
+        // Nothing to play in a series: the web's "Browse Series", with no target.
+        Assert.Equal(new DetailPlayAction("Browse Series", null), DetailFacts.PlayAction(Item(CatalogItemTypes.Series), null));
         var season = Item(CatalogItemTypes.Season) with { PlayContentId = "episode-5" };
         Assert.Equal(new DetailPlayAction("Play First Episode", "episode-1"), DetailFacts.PlayAction(season, null, "episode-1"));
         Assert.Equal(new DetailPlayAction("Play First Episode", "episode-5"), DetailFacts.PlayAction(season, null));

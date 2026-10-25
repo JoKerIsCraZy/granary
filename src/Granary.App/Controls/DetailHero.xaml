@@ -14,7 +14,7 @@
     <UserControl.Resources>
         <SolidColorBrush x:Key="DetailSoftTextBrush" Color="#B8E8E8EC" />
         <SolidColorBrush x:Key="DetailCreditNameBrush" Color="#CCE8E8EC" />
-        <SolidColorBrush x:Key="DetailCreditLabelBrush" Color="#FF8A8A94" />
+        <SolidColorBrush x:Key="DetailCreditLabelBrush" Color="#99A4A4AE" />
         <SolidColorBrush x:Key="DetailCreditSeparatorBrush" Color="#FF5C5C66" />
         <Style x:Key="DetailChipTextStyle" TargetType="TextBlock">
             <Setter Property="FontFamily" Value="{StaticResource SiloFontSemiBold}" />
@@ -110,6 +110,7 @@
                 </ItemsRepeater>
 
                 <TextBlock Margin="0,0,0,12" Text="{x:Bind ViewModel.Overline, Mode=OneWay}" Style="{StaticResource SiloSectionLabelTextStyle}"
+                           FontSize="12" CharacterSpacing="160"
                            Visibility="{x:Bind controls:DetailHero.Shows(ViewModel.Overline), Mode=OneWay}" />
 
                 <!-- The logo stands in for the title; screen readers still get the title as the page heading. -->
@@ -125,7 +126,7 @@
                            FontWeight="Medium" FontSize="16" Foreground="{StaticResource SiloMutedBrush}"
                            Visibility="{x:Bind controls:DetailHero.Shows(ViewModel.Subtitle), Mode=OneWay}" />
                 <TextBlock Margin="0,0,0,14" Text="{x:Bind ViewModel.Tagline, Mode=OneWay}" FontFamily="{StaticResource SiloFontItalic}"
-                           FontStyle="Italic" FontSize="14" Foreground="{StaticResource DetailSoftTextBrush}" TextWrapping="Wrap"
+                           FontStyle="Italic" FontSize="13" Foreground="{StaticResource SiloMutedBrush}" TextWrapping="Wrap"
                            Visibility="{x:Bind controls:DetailHero.Shows(ViewModel.Tagline), Mode=OneWay}" />
 
                 <ItemsRepeater Margin="0,0,0,14" ItemsSource="{x:Bind ViewModel.Chips, Mode=OneWay}">
@@ -150,7 +151,8 @@
                     <ItemsRepeater.ItemTemplate>
                         <DataTemplate x:DataType="detail:DetailRating">
                             <TextBlock Foreground="{StaticResource SiloPrimaryBrush}" AutomationProperties.Name="{x:Bind AccessibleName}">
-                                <Run Text="{x:Bind Name}" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="13" />
+                                <Run Text="{x:Bind Name}" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="13"
+                                     Foreground="#BFEF4444" CharacterSpacing="-25" />
                                 <Run Text="{x:Bind Display}" FontFamily="{StaticResource SiloFontBold}" FontWeight="Bold" FontSize="15" />
                             </TextBlock>
                         </DataTemplate>
@@ -158,7 +160,7 @@
                 </ItemsRepeater>
 
                 <TextBlock x:Name="OverviewText" Text="{x:Bind ViewModel.Overview, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}"
-                           Foreground="{StaticResource DetailSoftTextBrush}" TextTrimming="CharacterEllipsis"
+                           Foreground="{StaticResource SiloMutedBrush}" TextTrimming="CharacterEllipsis"
                            MaxLines="{x:Bind controls:DetailHero.OverviewLines(ViewModel.IsOverviewExpanded), Mode=OneWay}"
                            IsTextTrimmedChanged="OnOverviewTrimmedChanged" Visibility="{x:Bind ViewModel.HasOverview, Mode=OneWay}" />
                 <HyperlinkButton x:Name="OverviewToggle" Margin="-4,2,0,0" Padding="4,2" Visibility="Collapsed"
@@ -187,7 +189,7 @@
                     <Button Style="{StaticResource SiloPrimaryButtonStyle}" Command="{x:Bind ViewModel.PlayCommand}"
                             AutomationProperties.Name="{x:Bind ViewModel.PlayLabel, Mode=OneWay}">
                         <StackPanel Orientation="Horizontal" Spacing="10">
-                            <FontIcon Glyph="&#xF5B0;" FontSize="16" />
+                            <FontIcon Glyph="&#xF5B0;" FontSize="18" />
                             <TextBlock Text="{x:Bind ViewModel.PlayLabel, Mode=OneWay}" />
                         </StackPanel>
                     </Button>
@@ -200,7 +202,7 @@
                             Visibility="{x:Bind ViewModel.ShowsWatchedAction, Mode=OneWay}"
                             AutomationProperties.Name="{x:Bind ViewModel.WatchedLabel, Mode=OneWay}">
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <FontIcon Glyph="&#xE73E;" FontSize="16" Foreground="{x:Bind controls:DetailHero.ActiveForeground(ViewModel.IsWatched), Mode=OneWay}" />
+                            <FontIcon Glyph="&#xE73E;" FontSize="18" />
                             <TextBlock Text="{x:Bind ViewModel.WatchedLabel, Mode=OneWay}" />
                         </StackPanel>
                     </Button>
@@ -208,7 +210,7 @@
                             Visibility="{x:Bind ViewModel.CanFavorite, Mode=OneWay}"
                             AutomationProperties.Name="{x:Bind ViewModel.FavoriteLabel, Mode=OneWay}"
                             ToolTipService.ToolTip="{x:Bind ViewModel.FavoriteLabel, Mode=OneWay}">
-                        <FontIcon Glyph="{x:Bind controls:DetailHero.HeartGlyph(ViewModel.IsFavorite), Mode=OneWay}" FontSize="16"
+                        <FontIcon Glyph="{x:Bind controls:DetailHero.HeartGlyph(ViewModel.IsFavorite), Mode=OneWay}" FontSize="18"
                                   Foreground="{x:Bind controls:DetailHero.ActiveForeground(ViewModel.IsFavorite), Mode=OneWay}" />
                     </Button>
                     <Button Style="{StaticResource SiloIconButtonStyle}" Visibility="{x:Bind ViewModel.CanFavorite, Mode=OneWay}"

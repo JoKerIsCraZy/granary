@@ -158,6 +158,13 @@ apps decide how the player behaves (track choice, switching, saving picks); the 
 - **Settings**: SPEED with a value ("1x") and a slider from 0.5x to 3x with ticks; QUALITY with "Auto" (a filled
   check) and the plan's qualities, the bitrate right-aligned and muted ("1080p Medium 6 Mbps" … "360p 300 kbps").
 
+### Pills
+
+Silo's web rounds pills with `rounded-full`: the radius is clamped to half the height, so the ends are half
+circles and the sides straight. WinUI does not clamp a radius: 999 on a 44 px high button draws an oval.
+`controls:Pill.IsEnabled` sets the radius to half the shorter side whenever the element is sized; every style that
+uses `SiloPillCornerRadius` sets it, and so must any element that uses the radius directly.
+
 ## Accounts and permissions
 
 The web client was inspected with an admin account, which shows more (file paths under "Media

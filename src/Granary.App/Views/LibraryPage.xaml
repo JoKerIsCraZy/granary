@@ -25,7 +25,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="RadioButton">
-                        <Grid x:Name="Root" Background="Transparent" CornerRadius="{StaticResource SiloPillCornerRadius}">
+                        <Grid x:Name="Root" Background="Transparent" CornerRadius="{StaticResource SiloPillCornerRadius}" controls:Pill.IsEnabled="True">
                             <VisualStateManager.VisualStateGroups>
                                 <VisualStateGroup x:Name="CommonStates">
                                     <VisualState x:Name="Normal" />
@@ -107,7 +107,7 @@
                     </StackPanel>
                 </Button>
                 <Border Background="{StaticResource SiloSurfaceBrush}" BorderBrush="{StaticResource SiloBorderBrush}" BorderThickness="1"
-                        CornerRadius="{StaticResource SiloPillCornerRadius}" Padding="4">
+                        CornerRadius="{StaticResource SiloPillCornerRadius}" controls:Pill.IsEnabled="True" Padding="4">
                     <StackPanel Orientation="Horizontal" Spacing="2" XYFocusKeyboardNavigation="Enabled"
                                 AutomationProperties.Name="Library view">
                         <RadioButton GroupName="LibraryTabs" Tag="Recommended" Content="Recommended" Style="{StaticResource LibraryTabStyle}"
@@ -188,7 +188,7 @@
                             cannot be a BasedOn at runtime, and a style without it would drop the drop-down template.
                         -->
                         <StackPanel Orientation="Horizontal" Spacing="10">
-                            <DropDownButton CornerRadius="{StaticResource SiloPillCornerRadius}" MinHeight="38" Padding="16,6,12,6"
+                            <DropDownButton CornerRadius="{StaticResource SiloPillCornerRadius}" controls:Pill.IsEnabled="True" MinHeight="38" Padding="16,6,12,6"
                                             FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="13"
                                             Background="#CC1C1C20" BorderBrush="{StaticResource SiloBorderBrush}" Content="{x:Bind ViewModel.Browse.SortLabel, Mode=OneWay}"
                                             AutomationProperties.Name="{x:Bind SortName(ViewModel.Browse.SortLabel), Mode=OneWay}">
@@ -196,7 +196,7 @@
                                     <MenuFlyout x:Name="SortMenu" Placement="BottomEdgeAlignedLeft" Opening="OnSortMenuOpening" />
                                 </DropDownButton.Flyout>
                             </DropDownButton>
-                            <DropDownButton CornerRadius="{StaticResource SiloPillCornerRadius}" MinHeight="38" Padding="16,6,12,6"
+                            <DropDownButton CornerRadius="{StaticResource SiloPillCornerRadius}" controls:Pill.IsEnabled="True" MinHeight="38" Padding="16,6,12,6"
                                             FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="13"
                                             Background="#CC1C1C20" BorderBrush="{StaticResource SiloBorderBrush}" Content="{x:Bind ViewModel.Browse.OrderLabel, Mode=OneWay}"
                                             AutomationProperties.Name="{x:Bind OrderName(ViewModel.Browse.OrderLabel), Mode=OneWay}">
@@ -215,7 +215,7 @@
                                     <FontIcon Glyph="&#xE71C;" FontSize="14" />
                                     <TextBlock Text="Filters" />
                                     <Border Visibility="{x:Bind ViewModel.Browse.Filters.HasActiveFilters, Mode=OneWay}" Background="{StaticResource SiloPrimaryBrush}"
-                                            CornerRadius="{StaticResource SiloPillCornerRadius}" MinWidth="20" Height="20" Padding="6,0">
+                                            CornerRadius="{StaticResource SiloPillCornerRadius}" controls:Pill.IsEnabled="True" MinWidth="20" Height="20" Padding="6,0">
                                         <TextBlock Text="{x:Bind CountText(ViewModel.Browse.Filters.ActiveCount), Mode=OneWay}" Style="{StaticResource SiloBadgeTextStyle}"
                                                    FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                     </Border>
@@ -235,7 +235,7 @@
                                                     <ItemsRepeater.ItemTemplate>
                                                         <DataTemplate x:DataType="vm:LibraryFilterToggle">
                                                             <ToggleButton Content="{x:Bind Value}" IsChecked="{x:Bind IsSelected, Mode=TwoWay}" HorizontalAlignment="Stretch"
-                                                                          CornerRadius="{StaticResource SiloPillCornerRadius}" />
+                                                                          CornerRadius="{StaticResource SiloPillCornerRadius}" controls:Pill.IsEnabled="True" />
                                                         </DataTemplate>
                                                     </ItemsRepeater.ItemTemplate>
                                                 </ItemsRepeater>

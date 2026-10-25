@@ -5,7 +5,8 @@
 -->
 <ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Granary.App.Controls">
 
     <ResourceDictionary.ThemeDictionaries>
         <!-- The app always runs dark (App.xaml); Light and Default point to the same values. -->
@@ -124,6 +125,7 @@
     <CornerRadius x:Key="ControlCornerRadius">10</CornerRadius>
     <CornerRadius x:Key="OverlayCornerRadius">16</CornerRadius>
     <CornerRadius x:Key="SiloCardCornerRadius">16</CornerRadius>
+    <!-- Pills: with controls:Pill.IsEnabled the radius becomes half the height once laid out; WinUI would draw 999 as an oval. -->
     <CornerRadius x:Key="SiloPillCornerRadius">999</CornerRadius>
 
     <!-- Text. Upper-case overlines come upper-cased from the view model: XAML has no text-transform. -->
@@ -206,6 +208,7 @@
         <Setter Property="BorderBrush" Value="{StaticResource SiloBadgeBorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CornerRadius" Value="{StaticResource SiloPillCornerRadius}" />
+        <Setter Property="controls:Pill.IsEnabled" Value="True" />
         <Setter Property="Padding" Value="9,3" />
     </Style>
     <!-- Metadata chips on detail pages: "2026", "R", "1H 49M" (the web's metadata-badge). -->
@@ -214,6 +217,7 @@
         <Setter Property="BorderBrush" Value="#8C28282E" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CornerRadius" Value="{StaticResource SiloPillCornerRadius}" />
+        <Setter Property="controls:Pill.IsEnabled" Value="True" />
         <Setter Property="Padding" Value="10,4" />
     </Style>
     <!-- Technical chips in the accent colour: "1080P", "EAC3". -->
@@ -230,7 +234,8 @@
         <Setter Property="Background" Value="{StaticResource SiloPrimaryBrush}" />
         <Setter Property="Foreground" Value="{StaticResource SiloBackgroundBrush}" />
         <Setter Property="CornerRadius" Value="{StaticResource SiloPillCornerRadius}" />
-        <Setter Property="Padding" Value="16,8" />
+        <Setter Property="controls:Pill.IsEnabled" Value="True" />
+        <Setter Property="Padding" Value="12,8,14,8" />
         <Setter Property="MinHeight" Value="44" />
         <Setter Property="FontFamily" Value="{StaticResource SiloFontBold}" />
         <Setter Property="FontWeight" Value="Bold" />
@@ -287,7 +292,8 @@
         <Setter Property="BorderBrush" Value="#4D28282E" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CornerRadius" Value="{StaticResource SiloPillCornerRadius}" />
-        <Setter Property="Padding" Value="16,8" />
+        <Setter Property="controls:Pill.IsEnabled" Value="True" />
+        <Setter Property="Padding" Value="12,8,14,8" />
         <Setter Property="MinHeight" Value="44" />
         <Setter Property="FontFamily" Value="{StaticResource SiloFontSemiBold}" />
         <Setter Property="FontWeight" Value="SemiBold" />
@@ -485,6 +491,7 @@
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Foreground" Value="#C7FFFFFF" />
         <Setter Property="CornerRadius" Value="{StaticResource SiloPillCornerRadius}" />
+        <Setter Property="controls:Pill.IsEnabled" Value="True" />
         <Setter Property="UseSystemFocusVisuals" Value="True" />
         <Setter Property="Template" Value="{StaticResource SiloPlayerButtonTemplate}" />
     </Style>
@@ -513,6 +520,7 @@
         <Setter Property="Width" Value="Auto" />
         <Setter Property="Height" Value="Auto" />
         <Setter Property="Padding" Value="4,2" />
+        <Setter Property="controls:Pill.IsEnabled" Value="False" />
         <Setter Property="CornerRadius" Value="4" />
         <Setter Property="Foreground" Value="#8CFFFFFF" />
     </Style>
@@ -524,6 +532,7 @@
         <Setter Property="Background" Value="#FFFFFFFF" />
         <Setter Property="Foreground" Value="{StaticResource SiloBackgroundBrush}" />
         <Setter Property="CornerRadius" Value="{StaticResource SiloPillCornerRadius}" />
+        <Setter Property="controls:Pill.IsEnabled" Value="True" />
         <Setter Property="UseSystemFocusVisuals" Value="True" />
         <Setter Property="FocusVisualMargin" Value="-3" />
         <Setter Property="Template">

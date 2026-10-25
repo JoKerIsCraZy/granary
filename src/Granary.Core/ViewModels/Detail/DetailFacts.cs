@@ -203,7 +203,8 @@ public static class DetailFacts
     /// <summary>
     /// The primary button. A movie or episode resumes when it has a resume point. A series or season resumes
     /// an episode in progress, plays the next one when partly watched, and otherwise starts at the beginning
-    /// (web: resolveLeafPrimaryAction, resolveSeriesPrimaryAction; the season's "Play First Episode").
+    /// (web: resolveLeafPrimaryAction, resolveSeriesPrimaryAction: "Start From Episode 1", or "Browse Series"
+    /// with nothing to play; the season's "Play First Episode").
     /// </summary>
     public static DetailPlayAction PlayAction(CatalogItemDetail item, WatchRollup? watch, string? firstEpisodeId = null)
     {
@@ -219,9 +220,11 @@ public static class DetailFacts
             {
                 return new DetailPlayAction("Play Next", next);
             }
-            return item.Type == CatalogItemTypes.Season
-                ? new DetailPlayAction("Play First Episode", Blank(firstEpisodeId) ?? next)
-                : new DetailPlayAction("Play", next);
+            if (item.Type == CatalogItemTypes.Season)
+            {
+                return new DetailPlayAction("Play First Episode", Blank(firstEpisodeId) ?? next);
+            }
+            return next is null ? new DetailPlayAction("Browse Series", null) : new DetailPlayAction("Start From Episode 1", next);
         }
         // Watched items store position 0, so any position is a live resume point, a rewatch included.
         bool resume = watch?.IsInProgress == true || watch?.PositionSeconds > 0;
