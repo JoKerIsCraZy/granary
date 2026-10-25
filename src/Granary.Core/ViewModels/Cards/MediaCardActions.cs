@@ -23,14 +23,17 @@ public sealed class MediaCardActions
     private readonly ISessionManager _session;
     private readonly INavigationService _navigation;
     private readonly ILogger<MediaCardActions> _logger;
+    private readonly ViewerStateChanges? _changes;
     private readonly ConcurrentDictionary<string, MediaCardState> _changed = new(StringComparer.Ordinal);
 
-    public MediaCardActions(CatalogApi catalog, ISessionManager session, INavigationService navigation, ILogger<MediaCardActions> logger)
+    public MediaCardActions(CatalogApi catalog, ISessionManager session, INavigationService navigation, ILogger<MediaCardActions> logger,
+        ViewerStateChanges? changes = null)
     {
         _catalog = catalog;
         _session = session;
         _navigation = navigation;
         _logger = logger;
+        _changes = changes;
         // Another profile has its own state; the next pages show it as the server knows it.
         _session.Changed += (_, _) => _changed.Clear();
     }
@@ -85,6 +88,7 @@ public sealed class MediaCardActions
         try
         {
             await send(server.BaseUri, after);
+            _changes?.Report();
             return true;
         }
         catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex))

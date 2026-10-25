@@ -157,4 +157,41 @@ public sealed class LibraryRowsTests
         Assert.Equal(LibraryLoadState.Ready, library.Recommended.State);
         Assert.Equal(2, library.Recommended.Rows.Count);
     }
+
+    [Fact]
+    public async Task AVisitAfterAViewerStateChange_LoadsTheRowsAgain_AndLeavesTheGrid()
+    {
+        // Continue Watching here knows a movie started elsewhere; the Library tab keeps its place.
+        var library = _harness.Create();
+        await library.ActivateAsync("1");
+        await library.SelectTabCommand.ExecuteAsync(LibraryTab.Library);
+        await library.SelectTabCommand.ExecuteAsync(LibraryTab.Recommended);
+        library.Deactivate();
+
+        _harness.ViewerState.Report();
+        await library.ActivateAsync("1");
+
+        Assert.Equal(2, _harness.Count("api/v2/library/1/sections"));
+        Assert.Single(_harness.Queries(LibraryHarness.CatalogPath));
+        Assert.True(library.Recommended.Rows.Count > 0);
+
+        library.Deactivate();
+        await library.ActivateAsync("1");
+        Assert.Equal(2, _harness.Count("api/v2/library/1/sections"));
+    }
+
+    [Fact]
+    public async Task AChangeWhileOnTheLibraryTab_LoadsTheRowsWhenTheirTabShows()
+    {
+        var library = await _harness.OpenLibraryTabAsync();
+        int rowsBefore = _harness.Count("api/v2/library/1/sections");
+        library.Deactivate();
+
+        _harness.ViewerState.Report();
+        await library.ActivateAsync("1");
+        Assert.Equal(rowsBefore, _harness.Count("api/v2/library/1/sections"));
+
+        await library.SelectTabCommand.ExecuteAsync(LibraryTab.Recommended);
+        Assert.Equal(rowsBefore + 1, _harness.Count("api/v2/library/1/sections"));
+    }
 }

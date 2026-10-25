@@ -3,6 +3,7 @@ using Granary.Core.Api.Auth;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
 using Granary.Core.Auth;
+using Granary.Core.Playback;
 using Granary.Core.ViewModels;
 using Granary.Tests.Catalog;
 using Granary.Tests.Fakes;
@@ -50,6 +51,8 @@ internal sealed class LibraryHarness
 
     public ManualTimeProvider Clock { get; } = new();
 
+    public ViewerStateChanges ViewerState { get; } = new(new PlaybackStops());
+
     /// <summary>Answers GET <paramref name="path"/> with the bodies in order, repeating the last.</summary>
     public void Answer(string path, params string[] bodies) =>
         Silo.On(HttpMethod.Get, path, [.. bodies.Select(body => ScriptedSilo.Json(HttpStatusCode.OK, body))]);
@@ -70,7 +73,8 @@ internal sealed class LibraryHarness
         Navigation,
         new ImmediateDispatcher(),
         Clock,
-        Logs.For<LibraryViewModel>());
+        Logs.For<LibraryViewModel>(),
+        ViewerState);
 
     /// <summary>Library 1, shown on its Library tab with the first page loaded.</summary>
     public async Task<LibraryViewModel> OpenLibraryTabAsync(string libraryId = "1")

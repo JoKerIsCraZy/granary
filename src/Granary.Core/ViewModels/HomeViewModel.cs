@@ -5,6 +5,7 @@ using Granary.Core.Api;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
 using Granary.Core.Auth;
+using Granary.Core.Playback;
 using Granary.Core.ViewModels.Cards;
 using Microsoft.Extensions.Logging;
 
@@ -15,7 +16,9 @@ namespace Granary.Core.ViewModels;
 /// back empty but count cards are fetched again, at most four at a time as Android does; rows without
 /// cards are hidden, and Continue Watching keeps only video cards. The page calls
 /// <see cref="ActivateAsync"/> when it is shown and <see cref="Deactivate"/> when it leaves: another
-/// server or profile reloads at once, a return reloads only rows older than <see cref="StaleAfter"/>.
+/// server or profile reloads at once, a return reloads only rows older than <see cref="StaleAfter"/>, or rows from
+/// before a change of the viewer's state (<see cref="ViewerStateChanges"/>: playback, a watched mark, …). Such a
+/// change while Home is shown reloads it at once, quietly, the rows keeping where they were scrolled to.
 /// </summary>
 /// <remarks>
 /// The commands take no cancellation token on purpose: a cancellable toolkit command cancels its running
@@ -37,11 +40,14 @@ public sealed partial class HomeViewModel : ObservableObject
     private readonly IUiDispatcher _dispatcher;
     private readonly TimeProvider _time;
     private readonly ILogger<HomeViewModel> _logger;
+    private readonly ViewerStateChanges? _changes;
 
     private CancellationTokenSource? _run;
     private (bool IsReady, string? ServerId, string? ProfileId)? _shownFor;
     private DateTimeOffset? _loadedAt;
+    private long _loadedVersion;
     private bool _isActive;
+    private bool _isReportingOwnChange;
 
     public HomeViewModel(
         ISessionManager session,
@@ -50,7 +56,8 @@ public sealed partial class HomeViewModel : ObservableObject
         INavigationService navigation,
         IUiDispatcher dispatcher,
         TimeProvider time,
-        ILogger<HomeViewModel> logger)
+        ILogger<HomeViewModel> logger,
+        ViewerStateChanges? changes = null)
     {
         _session = session;
         _catalog = catalog;
@@ -59,6 +66,7 @@ public sealed partial class HomeViewModel : ObservableObject
         _dispatcher = dispatcher;
         _time = time;
         _logger = logger;
+        _changes = changes;
     }
 
     [ObservableProperty]
@@ -100,6 +108,7 @@ public sealed partial class HomeViewModel : ObservableObject
         {
             _isActive = true;
             _session.Changed += OnSessionChanged;
+            _changes?.Changed += OnViewerStateChanged;
         }
         return RefreshIfNeededAsync();
     }
@@ -111,6 +120,7 @@ public sealed partial class HomeViewModel : ObservableObject
         {
             _isActive = false;
             _session.Changed -= OnSessionChanged;
+            _changes?.Changed -= OnViewerStateChanged;
         }
     }
 
@@ -146,6 +156,7 @@ public sealed partial class HomeViewModel : ObservableObject
         try
         {
             await _catalog.DismissHomeItemAsync(server.BaseUri, dismissal);
+            ReportOwnChange();
         }
         catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex))
         {
@@ -172,6 +183,29 @@ public sealed partial class HomeViewModel : ObservableObject
         }
     }
 
+    // Other pages' rows change with a removal; these are changed in place below, and a reload of their own would only
+    // move them under the pointer.
+    private void ReportOwnChange()
+    {
+        if (_changes is null)
+        {
+            return;
+        }
+        _isReportingOwnChange = true;
+        try
+        {
+            _changes.Report();
+        }
+        finally
+        {
+            _isReportingOwnChange = false;
+        }
+        if (Loading.IsCompleted)
+        {
+            _loadedVersion = _changes.Version;
+        }
+    }
+
     private CatalogItem? FindRemovable(MediaCard card) =>
         Rows.Where(r => r.CanRemoveCards).Select(r => r.ItemOf(card)).FirstOrDefault(i => i is not null);
 
@@ -185,7 +219,8 @@ public sealed partial class HomeViewModel : ObservableObject
         {
             return Loading;
         }
-        bool isStale = _loadedAt is not { } loadedAt || _time.GetUtcNow() - loadedAt >= StaleAfter;
+        bool isStale = _loadedAt is not { } loadedAt || _time.GetUtcNow() - loadedAt >= StaleAfter
+            || _loadedVersion != (_changes?.Version ?? 0);
         return isStale ? Loading = LoadAsync(quietly: !HasError && Rows.Count > 0) : Task.CompletedTask;
     }
 
@@ -197,6 +232,8 @@ public sealed partial class HomeViewModel : ObservableObject
         _run = run;
         var cancellationToken = run.Token;
         _shownFor = SessionKey();
+        // Read before asking: a change while the answer is on its way leaves these rows stale.
+        long version = _changes?.Version ?? 0;
         Notice = "";
         if (!quietly)
         {
@@ -223,9 +260,10 @@ public sealed partial class HomeViewModel : ObservableObject
             var collection = await _catalog.ListHomeSectionsAsync(server.BaseUri, images, cancellationToken);
             var (sections, isComplete) = await HydrateAsync(server.BaseUri, collection.Sections, images, cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
-            Rows = BuildRows(sections, server.BaseUri);
+            ShowRows(BuildRows(sections, server.BaseUri));
             // A row that could not be fetched is tried again on the next visit.
             _loadedAt = isComplete ? _time.GetUtcNow() : null;
+            _loadedVersion = version;
             ShowLoaded();
         }
         catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex))
@@ -316,6 +354,25 @@ public sealed partial class HomeViewModel : ObservableObject
         return rows;
     }
 
+    // A quiet reload keeps the rows that are still there and takes their new cards in place, so each keeps where it was
+    // scrolled to; another set of rows replaces them.
+    private void ShowRows(IReadOnlyList<HomeRowViewModel> fresh)
+    {
+        var shown = Rows;
+        bool sameRows = shown.Count == fresh.Count && shown.Zip(fresh).All(pair =>
+            pair.First.SectionId == pair.Second.SectionId && pair.First.Title == pair.Second.Title
+            && (pair.First.ExploreAllCommand is null) == (pair.Second.ExploreAllCommand is null));
+        if (!sameRows)
+        {
+            Rows = fresh;
+            return;
+        }
+        foreach (var (row, next) in shown.Zip(fresh))
+        {
+            row.Take(next);
+        }
+    }
+
     private void ShowLoaded()
     {
         bool isEmpty = Rows.Count == 0;
@@ -342,6 +399,27 @@ public sealed partial class HomeViewModel : ObservableObject
         else
         {
             _dispatcher.Post(ReloadForNewSession);
+        }
+    }
+
+    // Raised on whichever thread made the change.
+    private void OnViewerStateChanged(object? sender, EventArgs e)
+    {
+        if (_dispatcher.HasThreadAccess)
+        {
+            ReloadForViewerState();
+        }
+        else
+        {
+            _dispatcher.Post(ReloadForViewerState);
+        }
+    }
+
+    private void ReloadForViewerState()
+    {
+        if (_isActive && !_isReportingOwnChange && _shownFor == SessionKey())
+        {
+            Loading = LoadAsync(quietly: !HasError && Rows.Count > 0);
         }
     }
 

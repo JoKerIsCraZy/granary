@@ -9,16 +9,26 @@ public sealed class PlaybackStops
     private readonly Lock _gate = new();
     private readonly HashSet<Task> _pending = [];
 
+    /// <summary>Raised when a tracked stop ended, however it ended, on the thread that ended it.</summary>
+    public event EventHandler? Stopped;
+
     public void Track(Task stop)
     {
         ArgumentNullException.ThrowIfNull(stop);
+        bool ended;
         lock (_gate)
         {
-            if (stop.IsCompleted)
+            ended = stop.IsCompleted;
+            if (!ended)
             {
-                return;
+                _pending.Add(stop);
             }
-            _pending.Add(stop);
+        }
+        if (ended)
+        {
+            _ = stop.Exception;
+            Stopped?.Invoke(this, EventArgs.Empty);
+            return;
         }
         _ = stop.ContinueWith(
             done =>
@@ -29,6 +39,7 @@ public sealed class PlaybackStops
                 {
                     _pending.Remove(done);
                 }
+                Stopped?.Invoke(this, EventArgs.Empty);
             },
             CancellationToken.None,
             TaskContinuationOptions.ExecuteSynchronously,

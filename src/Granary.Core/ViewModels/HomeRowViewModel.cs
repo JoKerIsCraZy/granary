@@ -45,6 +45,61 @@ public sealed class HomeRowViewModel
 
     internal CatalogItem? ItemOf(MediaCard card) => _items.GetValueOrDefault(card);
 
+    /// <summary>
+    /// Takes the cards of <paramref name="fresh"/>, the same row loaded again, in place: a card of a title already shown
+    /// is replaced where it is, the others come and go, so the row keeps where it was scrolled to.
+    /// </summary>
+    internal void Take(HomeRowViewModel fresh)
+    {
+        var next = fresh.Cards;
+        var ids = next.Select(c => c.Id).ToHashSet(StringComparer.Ordinal);
+        for (int i = Cards.Count - 1; i >= 0; i--)
+        {
+            if (!ids.Contains(Cards[i].Id))
+            {
+                Cards.RemoveAt(i);
+            }
+        }
+        for (int i = 0; i < next.Count; i++)
+        {
+            int at = IndexOf(next[i].Id, i);
+            if (at < 0)
+            {
+                Cards.Insert(i, next[i]);
+                continue;
+            }
+            if (at != i)
+            {
+                Cards.Move(at, i);
+            }
+            if (!Equals(Cards[i], next[i]))
+            {
+                Cards[i] = next[i];
+            }
+        }
+        while (Cards.Count > next.Count)
+        {
+            Cards.RemoveAt(Cards.Count - 1);
+        }
+        _items.Clear();
+        foreach (var (card, item) in fresh._items)
+        {
+            _items[card] = item;
+        }
+    }
+
+    private int IndexOf(string id, int from)
+    {
+        for (int i = from; i < Cards.Count; i++)
+        {
+            if (Cards[i].Id == id)
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
     /// <summary>Removes the cards whose item <paramref name="matches"/>; returns whether any went.</summary>
     internal bool RemoveWhere(Func<CatalogItem, bool> matches)
     {

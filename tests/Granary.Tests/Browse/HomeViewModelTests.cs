@@ -2,6 +2,7 @@ using System.Net;
 using Granary.Core.Abstractions;
 using Granary.Core.Api;
 using Granary.Core.Auth;
+using Granary.Core.Playback;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Cards;
 using Granary.Tests.Fakes;
@@ -17,9 +18,90 @@ public sealed class HomeViewModelTests
     private readonly FakeSessionManager _session = BrowseFakeSilo.ReadySession();
     private readonly RecordingNavigation _navigation = new();
     private readonly TestClock _clock = new(ManualTimeProvider.DefaultStart);
+    private readonly ViewerStateChanges _changes = new(new PlaybackStops());
 
     private HomeViewModel Create() =>
-        new(_session, _silo.Catalog, _silo.Images, _navigation, new ImmediateDispatcher(), _clock, _silo.Logs.For<HomeViewModel>());
+        new(_session, _silo.Catalog, _silo.Images, _navigation, new ImmediateDispatcher(), _clock, _silo.Logs.For<HomeViewModel>(), _changes);
+
+    [Fact]
+    public async Task ViewerStateChangedWhileAway_ReloadsOnTheNextVisit()
+    {
+        // A movie started from a detail page: Continue Watching has it when Home shows again, not five minutes later.
+        int calls = 0;
+        _silo.Map(SectionsPath, _ => BrowseFakeSilo.Json(Sections(Section("cw", "continue_watching", 1, Item("m" + Interlocked.Increment(ref calls))))));
+        var home = Create();
+        await home.ActivateAsync();
+        home.Deactivate();
+
+        _changes.Report();
+
+        Assert.Single(_silo.To(SectionsPath));
+        await home.ActivateAsync();
+        Assert.Equal(2, _silo.To(SectionsPath).Count);
+        Assert.Equal("m2", home.Rows[0].Cards[0].Id);
+
+        home.Deactivate();
+        await home.ActivateAsync();
+        Assert.Equal(2, _silo.To(SectionsPath).Count);
+    }
+
+    [Fact]
+    public async Task ViewerStateChangedWhileShown_ReloadsAtOnce_KeepingTheRowsInPlace()
+    {
+        _silo.Map(SectionsPath, Sections(
+            Section("cw", "continue_watching", 1, Item("m1", progressUpdatedAt: "2026-10-25T10:00:00Z")),
+            Section("recent", "recently_added", 3, Item("r1"), Item("r2"), Item("r3"))));
+        var home = Create();
+        await home.ActivateAsync();
+        var continueWatching = home.Rows[0];
+        var recent = home.Rows[1];
+        var r2 = recent.Cards[1];
+        _silo.Map(SectionsPath, Sections(
+            Section("cw", "continue_watching", 2, Item("m2", progressUpdatedAt: "2026-10-25T11:00:00Z"), Item("m1", progressUpdatedAt: "2026-10-25T10:00:00Z")),
+            Section("recent", "recently_added", 3, Item("r1"), Item("r2"), Item("r3"))));
+
+        _changes.Report();
+        await home.Loading;
+
+        Assert.Same(continueWatching, home.Rows[0]);
+        Assert.Same(recent, home.Rows[1]);
+        Assert.Equal(["m2", "m1"], continueWatching.Cards.Select(c => c.Id));
+        Assert.Same(r2, recent.Cards[1]);
+    }
+
+    [Fact]
+    public async Task ViewerStateChanged_WithAnotherSetOfRows_ShowsTheNewRows()
+    {
+        _silo.Map(SectionsPath, Sections(Section("recent", "recently_added", 1, Item("r1"))));
+        var home = Create();
+        await home.ActivateAsync();
+        _silo.Map(SectionsPath, Sections(
+            Section("cw", "continue_watching", 1, Item("m1", progressUpdatedAt: "2026-10-25T10:00:00Z")),
+            Section("recent", "recently_added", 1, Item("r1"))));
+
+        _changes.Report();
+        await home.Loading;
+
+        Assert.Equal(["cw", "recent"], home.Rows.Select(r => r.SectionId));
+    }
+
+    [Fact]
+    public async Task RemovingACard_IsAViewerStateChange()
+    {
+        _silo.Map(SectionsPath, Sections(Section("cw", "continue_watching", 1, Item("m1", progressUpdatedAt: "2026-10-25T10:00:00Z"))));
+        _silo.Map("api/v2/home/dismissals/continue_watching/m1", _ => BrowseFakeSilo.NoContent());
+        var home = Create();
+        await home.ActivateAsync();
+
+        await home.RemoveCommand.ExecuteAsync(home.Rows[0].Cards[0]);
+
+        // Other pages' rows are stale now; Home took the card off itself and does not load again.
+        Assert.Equal(1, _changes.Version);
+        Assert.Single(_silo.To(SectionsPath));
+        home.Deactivate();
+        await home.ActivateAsync();
+        Assert.Single(_silo.To(SectionsPath));
+    }
 
     [Fact]
     public async Task Load_HidesRowsWithoutCardsAndRefetchesRowsThatCameBackEmpty()
@@ -437,5 +519,24 @@ public sealed class HomeViewModelTests
         while (value > (current = Volatile.Read(ref target)) && Interlocked.CompareExchange(ref target, value, current) != current)
         {
         }
+    }
+
+    [Fact]
+    public async Task AReloadedRow_TakesItsNewOrder_ReplacingChangedCardsWhereTheyAre()
+    {
+        _silo.Map(SectionsPath, Sections(Section("r", "genre", 3, Item("a"), Item("b"), Item("c"))));
+        var home = Create();
+        await home.ActivateAsync();
+        var row = home.Rows[0];
+        var cardA = row.Cards[0];
+        _silo.Map(SectionsPath, Sections(Section("r", "genre", 3, Item("c"), Item("d"), Item("a", progressUpdatedAt: "2026-10-25T10:00:00Z"))));
+
+        _changes.Report();
+        await home.Loading;
+
+        Assert.Same(row, home.Rows[0]);
+        Assert.Equal(["c", "d", "a"], row.Cards.Select(c => c.Id));
+        Assert.NotEqual(cardA, row.Cards[2]);
+        Assert.Equal(row.Cards[2], Assert.Single(home.Rows).Cards.Last());
     }
 }

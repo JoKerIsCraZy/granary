@@ -51,6 +51,7 @@ public sealed partial class ItemDetailViewModel
         try
         {
             await _catalog.SetWatchedAsync(server, _contentId, watched);
+            _changes?.Report();
         }
         catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex))
         {
@@ -87,6 +88,7 @@ public sealed partial class ItemDetailViewModel
         try
         {
             await _catalog.SetFavoriteAsync(server, _contentId, favorite);
+            _changes?.Report();
         }
         catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex))
         {
@@ -118,6 +120,7 @@ public sealed partial class ItemDetailViewModel
         try
         {
             await _catalog.SetWatchlistAsync(server, _contentId, add);
+            _changes?.Report();
         }
         catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex))
         {

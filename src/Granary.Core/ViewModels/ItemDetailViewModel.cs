@@ -52,6 +52,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
     private readonly INavigationService _navigation;
     private readonly IArtworkPrefetcher _artwork;
     private readonly ILogger<ItemDetailViewModel> _logger;
+    private readonly ViewerStateChanges? _changes;
 
     // A newer load makes the answers of older calls stale.
     private int _generation;
@@ -74,7 +75,8 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         ImageParameterCache images,
         INavigationService navigation,
         IArtworkPrefetcher artwork,
-        ILogger<ItemDetailViewModel> logger)
+        ILogger<ItemDetailViewModel> logger,
+        ViewerStateChanges? changes = null)
     {
         _session = session;
         _catalog = catalog;
@@ -82,6 +84,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         _navigation = navigation;
         _artwork = artwork;
         _logger = logger;
+        _changes = changes;
     }
 
     /// <summary>The display scale artwork is requested for (1.5 at 150 %); set it before loading.</summary>

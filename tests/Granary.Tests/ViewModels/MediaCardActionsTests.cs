@@ -19,10 +19,11 @@ public sealed class MediaCardActionsTests
     private readonly LogSink _logs = new();
     private readonly FakeSessionManager _session = new() { State = SessionState.Ready, ActiveServer = ScriptedSilo.Server, ProfileId = "7" };
     private readonly List<string> _changed = [];
+    private readonly ViewerStateChanges _viewerState = new(new PlaybackStops());
 
     private MediaCardActions Create()
     {
-        var actions = new MediaCardActions(new CatalogApi(_silo.Http), _session, _navigation, _logs.For<MediaCardActions>());
+        var actions = new MediaCardActions(new CatalogApi(_silo.Http), _session, _navigation, _logs.For<MediaCardActions>(), _viewerState);
         actions.Changed += (_, id) => _changed.Add(id);
         return actions;
     }
@@ -61,6 +62,8 @@ public sealed class MediaCardActionsTests
         Assert.True(actions.StateOf(Lupin).IsWatched);
         Assert.Equal(["series-tvdb-375921"], _changed);
         Assert.Single(_silo.SentTo(HttpMethod.Post, "api/v2/watched/series-tvdb-375921"));
+        // Home's Continue Watching and Next Up are stale after it.
+        Assert.Equal(1, _viewerState.Version);
     }
 
     [Fact]
@@ -73,6 +76,7 @@ public sealed class MediaCardActionsTests
 
         Assert.False(actions.StateOf(Lupin).IsFavorite);
         Assert.Equal(2, _changed.Count);
+        Assert.Equal(0, _viewerState.Version);
     }
 
     [Fact]

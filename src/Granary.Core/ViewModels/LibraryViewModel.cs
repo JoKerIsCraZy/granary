@@ -5,6 +5,7 @@ using Granary.Core.Api;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
 using Granary.Core.Auth;
+using Granary.Core.Playback;
 using Granary.Core.Servers;
 using Granary.Core.ViewModels.Cards;
 using Microsoft.Extensions.Logging;
@@ -50,9 +51,11 @@ public sealed partial class LibraryViewModel : ObservableObject
     private readonly IUiDispatcher _dispatcher;
     private readonly TimeProvider _time;
     private readonly ILogger<LibraryViewModel> _logger;
+    private readonly ViewerStateChanges? _changes;
     private readonly Dictionary<(string ServerId, string? ProfileId), bool> _serverCanShuffle = [];
     private (string? ServerId, string? ProfileId, string? LibraryId)? _loaded;
     private DateTimeOffset _loadedAt;
+    private long _rowsVersion;
     private CancellationTokenSource _run = new();
     private ServerEntry? _server;
     private Library? _library;
@@ -67,7 +70,8 @@ public sealed partial class LibraryViewModel : ObservableObject
         INavigationService navigation,
         IUiDispatcher dispatcher,
         TimeProvider time,
-        ILogger<LibraryViewModel> logger)
+        ILogger<LibraryViewModel> logger,
+        ViewerStateChanges? changes = null)
     {
         _session = session;
         _catalog = catalog;
@@ -77,6 +81,7 @@ public sealed partial class LibraryViewModel : ObservableObject
         _dispatcher = dispatcher;
         _time = time;
         _logger = logger;
+        _changes = changes;
         Recommended = new LibraryRowsViewModel(catalog, navigation, logger);
         Browse = new LibraryBrowseViewModel(catalog, images, logger);
         Collections = new LibraryCollectionsViewModel(pages, catalog, images, logger);
@@ -167,6 +172,7 @@ public sealed partial class LibraryViewModel : ObservableObject
         bool isFresh = _time.GetUtcNow() - _loadedAt < RefreshAfter;
         if (_loaded == Key(libraryId) && (State == LibraryLoadState.Loading || (State == LibraryLoadState.Ready && isFresh)))
         {
+            await RefreshRowsIfStaleAsync();
             return;
         }
         await LoadAsync(libraryId);
@@ -314,12 +320,25 @@ public sealed partial class LibraryViewModel : ObservableObject
         _ => Recommended.State == LibraryLoadState.Idle ? LoadRowsAsync(cancellationToken) : Task.CompletedTask,
     };
 
+    // The rows (Continue Watching, Recently Watched, …) follow the viewer's state: after a change made since they loaded,
+    // a visit loads them again. The grid and the collections keep their place.
+    private Task RefreshRowsIfStaleAsync()
+    {
+        if (State != LibraryLoadState.Ready || Recommended.State == LibraryLoadState.Idle || _rowsVersion == (_changes?.Version ?? 0))
+        {
+            return Task.CompletedTask;
+        }
+        Recommended.Reset();
+        return SelectedTab == LibraryTab.Recommended ? LoadRowsAsync(_run.Token) : Task.CompletedTask;
+    }
+
     private async Task LoadRowsAsync(CancellationToken cancellationToken)
     {
         if (_server is not { } server || _library is not { } library)
         {
             return;
         }
+        _rowsVersion = _changes?.Version ?? 0;
         ImageParameters images;
         try
         {

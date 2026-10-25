@@ -117,6 +117,7 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<IMediaAuthorization, MediaAuthorization>();
         services.AddTransient<PlaybackStarter>();
         services.AddSingleton<PlaybackStops>();
+        services.AddSingleton<ViewerStateChanges>();
         // Media of the saved address takes its local route too.
         services.AddSingleton<MediaProxy>(sp => new MediaProxy(
             new LocalRouteHandler(sp.GetRequiredService<LocalRoutes>(), sp.GetRequiredService<ILogger<LocalRouteHandler>>()) { InnerHandler = CreateMediaHandler() },
