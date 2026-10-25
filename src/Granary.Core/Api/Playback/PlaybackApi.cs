@@ -25,6 +25,15 @@ public sealed class PlaybackApi(SiloHttp http)
         http.GetAsync(server, "api/v2/playback/capabilities", SiloAuth.Profile, PlaybackJsonContext.Default.PlaybackCapabilities, cancellationToken);
 
     /// <summary>
+    /// As <see cref="GetCapabilitiesAsync"/>, from the saved address itself: the server builds the URLs it names
+    /// (<c>bandwidth_probe_url</c>) from the address it was reached at, and over a local route that is the private
+    /// address, whose key this app trusts only through the route.
+    /// </summary>
+    public Task<PlaybackCapabilities> GetCapabilitiesFromSavedAddressAsync(Uri server, CancellationToken cancellationToken = default) =>
+        http.GetFromSavedAddressAsync(server, "api/v2/playback/capabilities", SiloAuth.Profile, PlaybackJsonContext.Default.PlaybackCapabilities,
+            cancellationToken);
+
+    /// <summary>
     /// Starts an attempt; the answer (201) is a plan or a terminal decision: check <see cref="PlaybackDecision.IsCompatible"/>,
     /// then <see cref="PlaybackDecision.IsPlayable"/>. Replaying an identical start returns the stored decision; the same
     /// attempt id with another body is 409 <c>idempotency_conflict</c>.

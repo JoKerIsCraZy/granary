@@ -93,7 +93,9 @@ public sealed class ConnectionSpeedTest(
         PlaybackCapabilities capabilities;
         try
         {
-            capabilities = await playback.GetCapabilitiesAsync(server, cancellationToken).ConfigureAwait(false);
+            // Read from the saved address, the probe is named beneath it: it carries the credentials, and still takes the
+            // local route as media does.
+            capabilities = await playback.GetCapabilitiesFromSavedAddressAsync(server, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex, cancellationToken))
         {

@@ -52,6 +52,22 @@ public sealed class ConnectionSpeedTestTests
     }
 
     [Fact]
+    public async Task TheCapabilities_AreReadFromTheSavedAddress()
+    {
+        // The server names the probe by the address it was reached at. Over a local route that is the private address,
+        // whose key this app trusts only through the route; read from the saved address, the probe is beneath it and
+        // still takes the route.
+        Capabilities(_silo);
+        _silo.On(HttpMethod.Get, ProbePath, ProbeAnswers.Body(TimedProbeStream.Steady(_time, 50_000, 11_000)));
+        _silo.On(HttpMethod.Post, ResultsPath, ScriptedSilo.NoContent());
+
+        await RunAsync();
+
+        Assert.True(Assert.Single(_silo.SentTo(HttpMethod.Get, "api/v2/playback/capabilities")).SavedAddressOnly);
+        Assert.False(Assert.Single(_silo.SentTo(HttpMethod.Get, ProbePath)).SavedAddressOnly);
+    }
+
+    [Fact]
     public async Task TheTransport_IsTheLinksOwn()
     {
         _network.Current = new NetworkLink(NetworkTransports.Wifi, false);
