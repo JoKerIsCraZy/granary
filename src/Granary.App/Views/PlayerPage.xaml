@@ -1,40 +1,190 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    The player (docs/ui-design.md, Player): the video fills the window, the controls float over it in two bars
+    and fade out during playback. The page itself takes focus, so the keyboard map works without a control
+    being focused; it has no focus visual of its own.
+-->
 <Page
     x:Class="Granary.App.Views.PlayerPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:controls="using:Granary.App.Controls">
+    xmlns:controls="using:Granary.App.Controls"
+    IsTabStop="True"
+    AutomationProperties.Name="Player">
 
-    <Grid Background="Black">
-        <Grid.KeyboardAccelerators>
-            <KeyboardAccelerator Key="Space" Invoked="OnPlayPauseInvoked" />
-        </Grid.KeyboardAccelerators>
-
+    <Grid x:Name="Root" Background="Black">
         <controls:MpvVideoHost x:Name="VideoHost" />
 
-        <!-- Interim transport bar; the player controls in the Silo look replace it. -->
-        <Grid VerticalAlignment="Bottom" Margin="24" Padding="16,10" CornerRadius="8" ColumnSpacing="12"
-              Background="{ThemeResource AcrylicInAppFillColorDefaultBrush}">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
+        <!-- The picture: a click plays or pauses, a double click toggles full screen. -->
+        <Grid x:Name="Surface" Background="Transparent" Tapped="OnSurfaceTapped" DoubleTapped="OnSurfaceDoubleTapped" />
+
+        <!-- Preparing, and waiting for data later on; the dark disc keeps the white ring visible on a bright picture. -->
+        <Grid HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False"
+              Visibility="{x:Bind SpinnerVisibility(ViewModel.Phase, ViewModel.IsBuffering), Mode=OneWay}">
+            <Ellipse Width="72" Height="72" Fill="#73000000" />
+            <ProgressRing Width="44" Height="44" Foreground="{StaticResource SiloPlayerForegroundBrush}" Background="#33FFFFFF"
+                          IsActive="{x:Bind ShowsSpinner(ViewModel.Phase, ViewModel.IsBuffering), Mode=OneWay}"
+                          AutomationProperties.Name="{x:Bind SpinnerName(ViewModel.Phase), Mode=OneWay}" />
+        </Grid>
+
+        <!-- Failed: what went wrong, Retry when it can help, and Back. -->
+        <Grid Background="#B3000000" Visibility="{x:Bind ViewModel.IsFailed, Mode=OneWay}">
+            <StackPanel MaxWidth="560" Margin="32" Spacing="20" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <FontIcon Glyph="&#xE7BA;" FontSize="36" Foreground="{StaticResource SiloPrimaryBrush}" />
+                <TextBlock x:Name="ErrorText" Text="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}" Style="{StaticResource SiloRowTitleTextStyle}"
+                           TextWrapping="Wrap" TextAlignment="Center" AutomationProperties.LiveSetting="Assertive" />
+                <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Center">
+                    <Button x:Name="RetryButton" Content="Retry" Style="{StaticResource SiloPrimaryButtonStyle}"
+                            Command="{x:Bind ViewModel.RetryCommand}" Visibility="{x:Bind ViewModel.CanRetry, Mode=OneWay}" />
+                    <Button x:Name="FailedBackButton" Content="Back" Style="{StaticResource SiloSecondaryButtonStyle}"
+                            Command="{x:Bind ViewModel.CloseCommand}" />
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+
+        <!-- Top bar: back, title and subtitle. In a window it starts below the title bar's drag area. -->
+        <Grid x:Name="TopChrome" VerticalAlignment="Top">
+            <Grid.OpacityTransition>
+                <ScalarTransition Duration="0:0:0.3" />
+            </Grid.OpacityTransition>
+            <Grid.TranslationTransition>
+                <Vector3Transition Duration="0:0:0.3" />
+            </Grid.TranslationTransition>
+            <Border Background="{StaticResource SiloPlayerTopScrimBrush}" IsHitTestVisible="False" />
+            <Grid x:Name="TopBar" Padding="{x:Bind TopBarPadding(IsFullScreen), Mode=OneWay}" ColumnSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Button x:Name="BackButton" Width="44" Height="44" Style="{StaticResource SiloPlayerDiscButtonStyle}"
+                        Command="{x:Bind ViewModel.CloseCommand}" AutomationProperties.Name="Back"
+                        AutomationProperties.AcceleratorKey="Escape" ToolTipService.ToolTip="Back (Esc)">
+                    <FontIcon Glyph="&#xE72B;" FontSize="16" />
+                </Button>
+                <StackPanel x:Name="TitlePanel" Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Center" Spacing="2">
+                    <TextBlock Text="{x:Bind ViewModel.Title, Mode=OneWay}" Style="{StaticResource SiloRowTitleTextStyle}"
+                               Foreground="{StaticResource SiloPlayerForegroundBrush}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
+                    <TextBlock Text="{x:Bind ViewModel.Subtitle, Mode=OneWay}" Visibility="{x:Bind Shows(ViewModel.Subtitle), Mode=OneWay}"
+                               Style="{StaticResource SiloCaptionTextStyle}" FontSize="13" Foreground="{StaticResource SiloPlayerMutedBrush}" />
+                </StackPanel>
+            </Grid>
+        </Grid>
+
+        <!-- Bottom bar: the seek bar with the times, then volume, transport and full screen. -->
+        <Grid x:Name="BottomChrome" VerticalAlignment="Bottom" Visibility="{x:Bind ShowsTransport(ViewModel.Phase), Mode=OneWay}">
+            <Grid.OpacityTransition>
+                <ScalarTransition Duration="0:0:0.3" />
+            </Grid.OpacityTransition>
+            <Grid.TranslationTransition>
+                <Vector3Transition Duration="0:0:0.3" />
+            </Grid.TranslationTransition>
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
+                <RowDefinition Height="80" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
-            <Button Command="{x:Bind ViewModel.TogglePauseCommand}" Width="44" AutomationProperties.Name="Play or pause">
-                <FontIcon Glyph="{x:Bind PlayPauseGlyph(ViewModel.IsPaused), Mode=OneWay}" />
-            </Button>
-            <Slider x:Name="SeekBar" Grid.Column="1" VerticalAlignment="Center" StepFrequency="0.1"
-                    Minimum="0" Maximum="{x:Bind ViewModel.DurationSeconds, Mode=OneWay}"
-                    Value="{x:Bind ViewModel.PositionSeconds, Mode=OneWay}"
-                    ValueChanged="OnSeekBarValueChanged" AutomationProperties.Name="Position" />
-            <TextBlock Grid.Column="2" VerticalAlignment="Center" FontFamily="Consolas"
-                       Text="{x:Bind TimeText(ViewModel.PositionSeconds, ViewModel.DurationSeconds), Mode=OneWay}" />
-            <TextBlock Grid.Row="1" Grid.ColumnSpan="3" Style="{StaticResource CaptionTextBlockStyle}"
-                       Text="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}" />
+            <Border Grid.RowSpan="2" Background="{StaticResource SiloPlayerBottomScrimBrush}" IsHitTestVisible="False" />
+
+            <!-- Transparent, so a click that misses a button does not reach the picture. -->
+            <Grid x:Name="BottomBar" Grid.Row="1" Padding="32,0,32,24" RowSpacing="6" Background="Transparent">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <Grid ColumnSpacing="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Style="{StaticResource SiloPlayerTimeTextStyle}" Typography.NumeralAlignment="Tabular"
+                               Text="{x:Bind controls:PlayerTime.Format(ViewModel.PositionSeconds, ViewModel.DurationSeconds), Mode=OneWay}" />
+                    <controls:SeekBar x:Name="SeekBar" Grid.Column="1" AutomationProperties.Name="Seek"
+                                      Position="{x:Bind ViewModel.PositionSeconds, Mode=OneWay}"
+                                      Duration="{x:Bind ViewModel.DurationSeconds, Mode=OneWay}"
+                                      IsEnabled="{x:Bind ViewModel.CanSeek, Mode=OneWay}"
+                                      SeekRequested="OnSeekRequested" />
+                    <Button Grid.Column="2" Style="{StaticResource SiloPlayerTextButtonStyle}" Click="OnEndTimeClick"
+                            AutomationProperties.Name="{x:Bind EndTimeName(ShowsRemaining), Mode=OneWay}">
+                        <TextBlock Typography.NumeralAlignment="Tabular" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium" FontSize="13"
+                                   Text="{x:Bind EndTimeText(ViewModel.PositionSeconds, ViewModel.DurationSeconds, ShowsRemaining), Mode=OneWay}" />
+                    </Button>
+                </Grid>
+
+                <Grid Grid.Row="1" ColumnSpacing="16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                        <Button x:Name="MuteButton" Style="{StaticResource SiloPlayerIconButtonStyle}" Command="{x:Bind ViewModel.ToggleMuteCommand}"
+                                AutomationProperties.Name="{x:Bind MuteName(ViewModel.IsMuted), Mode=OneWay}" AutomationProperties.AcceleratorKey="M"
+                                ToolTipService.ToolTip="{x:Bind MuteToolTip(ViewModel.IsMuted), Mode=OneWay}">
+                            <FontIcon Glyph="{x:Bind VolumeGlyph(ViewModel.IsMuted, ViewModel.Volume), Mode=OneWay}" FontSize="18" />
+                        </Button>
+                        <!-- Muted, the slider keeps the level to come back to and only dims. -->
+                        <Slider x:Name="VolumeSlider" Width="104" VerticalAlignment="Center" Minimum="0" Maximum="100"
+                                StepFrequency="1" SmallChange="5" LargeChange="10" IsThumbToolTipEnabled="False"
+                                Value="{x:Bind ViewModel.Volume, Mode=TwoWay}" Opacity="{x:Bind VolumeOpacity(ViewModel.IsMuted), Mode=OneWay}"
+                                AutomationProperties.Name="Volume">
+                            <Slider.Resources>
+                                <x:Double x:Key="SliderTrackThemeHeight">3</x:Double>
+                                <SolidColorBrush x:Key="SliderTrackFill" Color="#38FFFFFF" />
+                                <SolidColorBrush x:Key="SliderTrackFillPointerOver" Color="#4DFFFFFF" />
+                                <SolidColorBrush x:Key="SliderTrackFillPressed" Color="#4DFFFFFF" />
+                                <SolidColorBrush x:Key="SliderTrackValueFill" Color="#EBFFFFFF" />
+                                <SolidColorBrush x:Key="SliderTrackValueFillPointerOver" Color="#FFFFFFFF" />
+                                <SolidColorBrush x:Key="SliderTrackValueFillPressed" Color="#FFFFFFFF" />
+                                <SolidColorBrush x:Key="SliderThumbBackground" Color="#FFFFFFFF" />
+                                <SolidColorBrush x:Key="SliderThumbBackgroundPointerOver" Color="#FFFFFFFF" />
+                                <SolidColorBrush x:Key="SliderThumbBackgroundPressed" Color="#FFFFFFFF" />
+                                <SolidColorBrush x:Key="SliderOuterThumbBackground" Color="#FFFFFFFF" />
+                                <SolidColorBrush x:Key="SliderThumbBorderBrush" Color="Transparent" />
+                            </Slider.Resources>
+                        </Slider>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
+                        <Button x:Name="SkipBackButton" Style="{StaticResource SiloPlayerDiscButtonStyle}" Command="{x:Bind ViewModel.SkipBackCommand}"
+                                IsEnabled="{x:Bind ViewModel.CanSeek, Mode=OneWay}" AutomationProperties.AcceleratorKey="Left">
+                            <Grid>
+                                <!-- Segoe's refresh arrow, mirrored: a loop turning back, with the interval inside. -->
+                                <FontIcon Glyph="&#xE72C;" FontSize="26" RenderTransformOrigin="0.5,0.5">
+                                    <FontIcon.RenderTransform>
+                                        <ScaleTransform ScaleX="-1" />
+                                    </FontIcon.RenderTransform>
+                                </FontIcon>
+                                <TextBlock x:Name="SkipBackText" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           FontFamily="{StaticResource SiloFontBold}" FontWeight="Bold" FontSize="9" />
+                            </Grid>
+                        </Button>
+                        <Button x:Name="PlayPauseButton" Style="{StaticResource SiloPlayerPlayButtonStyle}" Command="{x:Bind ViewModel.TogglePauseCommand}"
+                                AutomationProperties.Name="{x:Bind PlayPauseName(ViewModel.IsPaused), Mode=OneWay}" AutomationProperties.AcceleratorKey="Space"
+                                ToolTipService.ToolTip="{x:Bind PlayPauseToolTip(ViewModel.IsPaused), Mode=OneWay}">
+                            <FontIcon Glyph="{x:Bind PlayPauseGlyph(ViewModel.IsPaused), Mode=OneWay}" FontSize="22"
+                                      Margin="{x:Bind PlayPauseGlyphMargin(ViewModel.IsPaused), Mode=OneWay}" />
+                        </Button>
+                        <Button x:Name="SkipForwardButton" Style="{StaticResource SiloPlayerDiscButtonStyle}" Command="{x:Bind ViewModel.SkipForwardCommand}"
+                                IsEnabled="{x:Bind ViewModel.CanSeek, Mode=OneWay}" AutomationProperties.AcceleratorKey="Right">
+                            <Grid>
+                                <FontIcon Glyph="&#xE72C;" FontSize="26" />
+                                <TextBlock x:Name="SkipForwardText" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           FontFamily="{StaticResource SiloFontBold}" FontWeight="Bold" FontSize="9" />
+                            </Grid>
+                        </Button>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <Button x:Name="FullScreenButton" Style="{StaticResource SiloPlayerIconButtonStyle}" Click="OnFullScreenClick"
+                                AutomationProperties.Name="{x:Bind FullScreenName(IsFullScreen), Mode=OneWay}" AutomationProperties.AcceleratorKey="F"
+                                ToolTipService.ToolTip="{x:Bind FullScreenToolTip(IsFullScreen), Mode=OneWay}">
+                            <FontIcon Glyph="{x:Bind FullScreenGlyph(IsFullScreen), Mode=OneWay}" FontSize="16" />
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Grid>
         </Grid>
     </Grid>
 </Page>

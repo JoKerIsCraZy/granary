@@ -19,10 +19,13 @@
         </Grid.KeyboardAccelerators>
 
         <Grid x:Name="AppTitleBar" Padding="16,0,0,0">
-            <TextBlock Text="Granary" VerticalAlignment="Center" Style="{StaticResource SiloCaptionTextStyle}" />
+            <TextBlock x:Name="AppTitle" Text="Granary" VerticalAlignment="Center" Style="{StaticResource SiloCaptionTextStyle}" />
         </Grid>
 
-        <!-- Silo's sidebar: server name, Home, Search, libraries; servers and the profile at the bottom. -->
+        <!--
+            Silo's sidebar: server name, Home, Search, libraries; servers and the profile at the bottom.
+            The pane's visibility and the view's rows follow the route (MainWindow.ShowChrome).
+        -->
         <NavigationView
             x:Name="Navigation"
             Grid.Row="1"
@@ -32,7 +35,7 @@
             IsSettingsVisible="False"
             IsBackButtonVisible="Collapsed"
             IsTitleBarAutoPaddingEnabled="False"
-            IsPaneVisible="{x:Bind Shell.IsSignedIn, Mode=OneWay}"
+            IsPaneVisible="False"
             ItemInvoked="OnItemInvoked"
             BackRequested="OnBackRequested">
             <NavigationView.PaneHeader>

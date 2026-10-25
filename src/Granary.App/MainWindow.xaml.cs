@@ -30,6 +30,13 @@ public sealed partial class MainWindow : Window
 
         _navigation.Attach(ContentFrame);
         _navigation.Navigated += OnNavigated;
+        Shell.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(ShellViewModel.IsSignedIn))
+            {
+                ShowChrome(_navigation.Current);
+            }
+        };
         Sidebar.Libraries.CollectionChanged += (_, _) => ShowLibraries();
         ShowLibraries();
     }
@@ -94,15 +101,27 @@ public sealed partial class MainWindow : Window
 
     private void OnNavigated(object? sender, AppRoute route)
     {
-        // A disabled arrow on pages without history is only noise.
+        // A disabled arrow on pages without history is only noise; the player has its own back button.
         Navigation.IsBackEnabled = _navigation.CanGoBack;
-        Navigation.IsBackButtonVisible = _navigation.CanGoBack
+        Navigation.IsBackButtonVisible = _navigation.CanGoBack && route != AppRoute.Player
             ? NavigationViewBackButtonVisible.Visible
             : NavigationViewBackButtonVisible.Collapsed;
-        // Detail pages get the full width, as on the web: the sidebar shrinks to its icons. While the pane is
-        // hidden (sign-in pages) it must stay closed: an open hidden pane still takes its width, empty.
-        Navigation.IsPaneOpen = Shell.IsSignedIn && route is not (AppRoute.Item or AppRoute.Player);
+        ShowChrome(route);
         SelectItem(route, _navigation.CurrentParameter);
+    }
+
+    // The sidebar is there for a signed-in profile. Detail pages get the full width, as on the web: the sidebar
+    // shrinks to its icons. The player owns the whole window: no sidebar at all, and the page reaches under the
+    // title bar, where the caption buttons float over the video. While the pane is hidden it must stay closed:
+    // an open hidden pane still takes its width, empty.
+    private void ShowChrome(AppRoute? route)
+    {
+        bool isPlayer = route == AppRoute.Player;
+        Navigation.IsPaneOpen = Shell.IsSignedIn && route is not (AppRoute.Item or AppRoute.Player);
+        Navigation.IsPaneVisible = Shell.IsSignedIn && !isPlayer;
+        Grid.SetRow(Navigation, isPlayer ? 0 : 1);
+        Grid.SetRowSpan(Navigation, isPlayer ? 2 : 1);
+        AppTitle.Visibility = isPlayer ? Visibility.Collapsed : Visibility.Visible;
     }
 
     private void OnItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
