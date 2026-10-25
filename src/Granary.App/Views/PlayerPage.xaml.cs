@@ -1,3 +1,4 @@
+using Granary.Core.Playback;
 using Granary.Core.ViewModels;
 using Granary.Player;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,10 +27,9 @@ public sealed partial class PlayerPage : Page
     protected override void OnNavigatedTo(NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
-        if (e.Parameter is string source && source.Length > 0)
+        if (e.Parameter is PlayRequest request)
         {
-            ViewModel.Source = source;
-            ViewModel.OpenCommand.Execute(null);
+            _ = ViewModel.StartAsync(request);
         }
     }
 
@@ -43,11 +43,8 @@ public sealed partial class PlayerPage : Page
 
     private void OnPlayPauseInvoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
     {
-        if (FocusManager.GetFocusedElement(XamlRoot) is not TextBox)
-        {
-            ViewModel.TogglePauseCommand.Execute(null);
-            args.Handled = true;
-        }
+        ViewModel.TogglePauseCommand.Execute(null);
+        args.Handled = true;
     }
 
     // Instance methods because x:Bind function bindings call them on the page.

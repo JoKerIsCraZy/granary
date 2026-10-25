@@ -25,9 +25,13 @@ internal sealed class FakePlaybackEngine : IPlaybackEngine
 
     public void Seek(TimeSpan position) => Seeks.Add(position);
 
-    public void Stop()
-    {
-    }
+    public void SetVolume(double percent) => Current = Current with { Volume = Math.Clamp(percent, 0, 100) };
+
+    public void SetMuted(bool muted) => Current = Current with { IsMuted = muted };
+
+    public int Stops { get; private set; }
+
+    public void Stop() => Stops++;
 
     public void RaiseState(PlaybackSnapshot state)
     {

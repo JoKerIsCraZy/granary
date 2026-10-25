@@ -74,6 +74,72 @@ public sealed class MpvPlaybackEngineTests : IDisposable
     }
 
     [Fact]
+    public async Task Playback_ReportsThatItStartedAfterTheLoad()
+    {
+        using var engine = CreateEngine();
+        var started = new TaskCompletionSource<PlaybackSnapshot>(TaskCreationOptions.RunContinuationsAsynchronously);
+        engine.StateChanged += (_, s) =>
+        {
+            if (s.HasStarted)
+            {
+                started.TrySetResult(s);
+            }
+        };
+
+        engine.Load(MediaSource.Local(TempWav(3.0)));
+
+        var state = await started.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken);
+        Assert.True(state.IsLoaded);
+    }
+
+    [Fact]
+    public async Task VolumeAndMute_AreSetAndReported()
+    {
+        using var engine = CreateEngine();
+        var changed = new TaskCompletionSource<PlaybackSnapshot>(TaskCreationOptions.RunContinuationsAsynchronously);
+        engine.StateChanged += (_, s) =>
+        {
+            if (s is { Volume: 40, IsMuted: true })
+            {
+                changed.TrySetResult(s);
+            }
+        };
+
+        engine.SetVolume(40);
+        engine.SetMuted(true);
+
+        await changed.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken);
+    }
+
+    [Theory]
+    [InlineData(-5, 0)]
+    [InlineData(250, 100)]
+    public async Task SetVolume_KeepsToZeroToHundred(double requested, double expected)
+    {
+        using var engine = CreateEngine();
+        // mpv reports a property only when it differs from what it reported last: start from 50 first.
+        var atFifty = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var changed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        engine.StateChanged += (_, s) =>
+        {
+            if (s.Volume == 50)
+            {
+                atFifty.TrySetResult();
+            }
+            else if (atFifty.Task.IsCompleted && s.Volume == expected)
+            {
+                changed.TrySetResult();
+            }
+        };
+        engine.SetVolume(50);
+        await atFifty.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken);
+
+        engine.SetVolume(requested);
+
+        await changed.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
     public async Task HttpSource_SendsTheConfiguredHeaders()
     {
         using var engine = CreateEngine();

@@ -43,6 +43,9 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
             ("pause", LibMpv.FormatFlag),
             ("eof-reached", LibMpv.FormatFlag),
             ("hwdec-current", LibMpv.FormatString),
+            ("paused-for-cache", LibMpv.FormatFlag),
+            ("volume", LibMpv.FormatDouble),
+            ("mute", LibMpv.FormatFlag),
         ]);
         _logger.LogInformation("libmpv {Version} initialized ({Output})", _mpv.GetString("mpv-version"), options.VideoOutput);
         RefreshSwapChain();
@@ -121,6 +124,7 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
             _lastAuthFailureTick = long.MinValue;
             _lastReportedPosition = null;
         }
+        Update(s => s with { HasStarted = false }, force: true);
         _logger.LogInformation("Loading {Target} with {HeaderCount} header(s)", Describe(source.Url), source.Headers.Count);
         _mpv.Command("loadfile", target, "replace", "-1", perFileOptions);
     }
@@ -129,6 +133,11 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
 
     public void Seek(TimeSpan position) =>
         _mpv.Command("seek", position.TotalSeconds.ToString("0.###", CultureInfo.InvariantCulture), "absolute");
+
+    public void SetVolume(double percent) =>
+        _mpv.SetProperty("volume", Math.Clamp(percent, 0, 100).ToString("0.##", CultureInfo.InvariantCulture));
+
+    public void SetMuted(bool muted) => _mpv.SetProperty("mute", muted ? "yes" : "no");
 
     public void Stop() => _mpv.Command("stop");
 
@@ -173,6 +182,11 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
         {
             Update(s => s with { IsLoaded = true }, force: true);
         }
+        // mpv restarts playback after the load and after every seek; the first one is the start.
+        if (eventId == LibMpv.EventPlaybackRestart && !Current.HasStarted)
+        {
+            Update(s => s with { HasStarted = true }, force: true);
+        }
     }
 
     private void OnPropertyChanged(string name, object? value)
@@ -191,6 +205,15 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
             case "hwdec-current":
                 Update(s => s with { HardwareDecoder = value as string }, force: true);
                 break;
+            case "paused-for-cache":
+                Update(s => s with { IsBuffering = value as bool? ?? false }, force: true);
+                break;
+            case "volume" when value is double volume:
+                Update(s => s with { Volume = volume }, force: true);
+                break;
+            case "mute":
+                Update(s => s with { IsMuted = value as bool? ?? false }, force: true);
+                break;
             case "eof-reached" when value is true:
                 // keep-open=yes pauses at the end instead of ending the file.
                 Ended?.Invoke(this, new PlaybackEnded(
@@ -201,7 +224,7 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
 
     private void OnFileEnded(int reason, int error)
     {
-        Update(_ => PlaybackSnapshot.Idle, force: true);
+        Update(s => PlaybackSnapshot.Idle with { Volume = s.Volume, IsMuted = s.IsMuted }, force: true);
         var ended = reason switch
         {
             LibMpv.EndFileError when RecentAuthFailure() => new PlaybackEnded(PlaybackEndReason.AuthenticationFailed, LibMpv.Error(error)),

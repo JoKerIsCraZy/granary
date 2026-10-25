@@ -16,6 +16,8 @@ internal sealed class RecordingNavigation : INavigationService
 
     public bool CanGoBack => _history.Count > 0;
 
+    public int BackCount { get; private set; }
+
     public void NavigateTo(AppRoute route, object? parameter = null)
     {
         if (Current is { } current)
@@ -36,6 +38,7 @@ internal sealed class RecordingNavigation : INavigationService
 
     public void GoBack()
     {
+        BackCount++;
         if (_history.TryPop(out var previous))
         {
             Current = previous.Route;

@@ -3,6 +3,7 @@ using Granary.App.Services;
 using Granary.Core;
 using Granary.Core.Abstractions;
 using Granary.Core.Diagnostics;
+using Granary.Core.Playback;
 using Granary.Core.ViewModels;
 using Granary.Player;
 using Microsoft.Extensions.DependencyInjection;
@@ -50,14 +51,14 @@ public partial class App : Application
         _window = Services.GetRequiredService<MainWindow>();
         _window.Activate();
 
-        // Developer shortcut until server playback exists: Granary.exe --play <file or URL>
+        // Developer shortcut: Granary.exe --play <file or URL> plays it without the server.
         string[] arguments = Environment.GetCommandLineArgs();
         int play = Array.IndexOf(arguments, "--play");
         bool playFile = play >= 0 && play + 1 < arguments.Length;
-        StartShell(_window.Shell, playFile ? AppRoute.Player : null, playFile ? arguments[play + 1] : null);
+        StartShell(_window.Shell, playFile ? AppRoute.Player : null, playFile ? PlayRequest.Direct(arguments[play + 1]) : null);
     }
 
-    private async void StartShell(ShellViewModel shell, AppRoute? initialRoute, string? parameter)
+    private async void StartShell(ShellViewModel shell, AppRoute? initialRoute, object? parameter)
     {
         try
         {

@@ -7,12 +7,19 @@ public sealed record MediaSource(Uri Url, IReadOnlyList<KeyValuePair<string, str
 }
 
 /// <summary>A consistent view of the player state at one moment.</summary>
+/// <param name="HasStarted">Playback began after the last load: the first frame is out (or the first audio for audio only).</param>
+/// <param name="IsBuffering">Paused by the player itself until enough data arrived.</param>
+/// <param name="Volume">0 to 100; kept across loads.</param>
 public sealed record PlaybackSnapshot(
     bool IsLoaded,
     bool IsPaused,
     TimeSpan Position,
     TimeSpan? Duration,
-    string? HardwareDecoder)
+    string? HardwareDecoder,
+    bool HasStarted = false,
+    bool IsBuffering = false,
+    double Volume = 100,
+    bool IsMuted = false)
 {
     public static PlaybackSnapshot Idle { get; } = new(false, false, TimeSpan.Zero, null, null);
 }
@@ -51,6 +58,11 @@ public interface IPlaybackEngine : IDisposable
     void SetPaused(bool paused);
 
     void Seek(TimeSpan position);
+
+    /// <summary>Sets the volume in percent; values outside 0 to 100 are clamped.</summary>
+    void SetVolume(double percent);
+
+    void SetMuted(bool muted);
 
     void Stop();
 }

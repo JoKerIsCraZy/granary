@@ -12,18 +12,7 @@
 
         <controls:MpvVideoHost x:Name="VideoHost" />
 
-        <!-- Phase 2 dev controls: open a local file or URL. Phase 3 replaces this with the server plan. -->
-        <Grid VerticalAlignment="Top" Margin="24" Padding="12" CornerRadius="8" ColumnSpacing="8"
-              Background="{ThemeResource AcrylicInAppFillColorDefaultBrush}">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-            <TextBox PlaceholderText="Path or URL of a video"
-                     Text="{x:Bind ViewModel.Source, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-            <Button Grid.Column="1" Content="Open" Command="{x:Bind ViewModel.OpenCommand}" />
-        </Grid>
-
+        <!-- Interim transport bar; the player controls in the Silo look replace it. -->
         <Grid VerticalAlignment="Bottom" Margin="24" Padding="16,10" CornerRadius="8" ColumnSpacing="12"
               Background="{ThemeResource AcrylicInAppFillColorDefaultBrush}">
             <Grid.ColumnDefinitions>
@@ -45,7 +34,7 @@
             <TextBlock Grid.Column="2" VerticalAlignment="Center" FontFamily="Consolas"
                        Text="{x:Bind TimeText(ViewModel.PositionSeconds, ViewModel.DurationSeconds), Mode=OneWay}" />
             <TextBlock Grid.Row="1" Grid.ColumnSpan="3" Style="{StaticResource CaptionTextBlockStyle}"
-                       Text="{x:Bind ViewModel.Status, Mode=OneWay}" />
+                       Text="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}" />
         </Grid>
     </Grid>
 </Page>
