@@ -36,6 +36,9 @@ public sealed partial class ServerPlayback
     private bool _recovering;
     private double? _pendingSeek;
 
+    // The end of a load while a recovery ran: the recovery replaces the stream, or plays on with it and then takes this.
+    private (PlaybackEnded Ended, bool Played)? _endedDuringRecovery;
+
     /// <summary>The latest recovery; tests wait for it instead of for time.</summary>
     internal Task Recovery { get; private set; } = Task.CompletedTask;
 
@@ -48,7 +51,8 @@ public sealed partial class ServerPlayback
     private bool Superseded(int generation) => _stopping || generation != _generation;
 
     // One recovery at a time: the server refuses a second replan of the session while one is open (8.7). What
-    // happens meanwhile belongs to the stream being replaced, or happens again once the new one plays; a seek waits.
+    // happens meanwhile belongs to the stream being replaced, or happens again once the new one plays; a seek and the
+    // viewer's picks wait. A recovery that leaves the stream playing (a refusal) hands them to it when it is done.
     private void Recover(Func<Task> recovery)
     {
         if (_recovering || _stopping || Status.Phase == ServerPlaybackPhase.Failed)
@@ -66,12 +70,40 @@ public sealed partial class ServerPlayback
             {
                 _recovering = false;
             }
-            if (_started && !_stopping)
+            var before = Recovery;
+            TakeWhatWaited();
+            if (!ReferenceEquals(Recovery, before))
             {
-                // The stream plays on (a refusal, a pick already played): picks made meanwhile go to it now.
-                ApplyPendingTracks();
+                // Whoever waits for this recovery waits for the one it started too.
+                await Recovery;
             }
         });
+    }
+
+    private void TakeWhatWaited()
+    {
+        var ended = _endedDuringRecovery;
+        _endedDuringRecovery = null;
+        if (_stopping || Status.Phase is ServerPlaybackPhase.Failed or ServerPlaybackPhase.Ended)
+        {
+            return;
+        }
+        if (_loadId == 0 && ended is { } missed)
+        {
+            // The stream ended while the recovery ran and nothing replaced it.
+            TakeLoadEnd(missed.Ended, missed.Played);
+            return;
+        }
+        if (!_started)
+        {
+            return;
+        }
+        if (_pendingSeek is { } target)
+        {
+            _pendingSeek = null;
+            Seek(target);
+        }
+        ApplyPendingTracks();
     }
 
     // The headers expired or were revoked mid-stream: the same plan plays on with fresh ones from where it was (9.4).

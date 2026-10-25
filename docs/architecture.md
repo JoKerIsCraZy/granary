@@ -137,7 +137,8 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   replans and attempts ask with it too; it is not saved, as on the web. Another file of the title starts a new
   attempt (and session) at the position, with its own automatic subtitle choice. A quality or a file the server refuses
   leaves the stream that plays, and the one asked for before stays the one later attempts ask for; a pick made while
-  the stream is being replaced goes out once that is done, as an audio pick does. The speed is mpv's `speed`, read
+  the stream is being replaced goes out once that is done, as an audio pick does; so does a seek, and a stream that
+  broke off meanwhile reconnects once the refusal is in. The speed is mpv's `speed`, read
   from this device's `player.playback_speed` and saved there once it settles for a second (a drag passes several
   stops), or at the stop.
 - **Markers** (11.1, 11.2): the playing file's intro (its single projection, as Android takes it), recaps, credits

@@ -47,6 +47,27 @@ public sealed class UpNextSourceTests
     }
 
     [Fact]
+    public async Task TheNextAndThePreviousEpisode_AskedForTogether_ReadTheSeasonOnce()
+    {
+        var answer = new TaskCompletionSource();
+        _silo.On(HttpMethod.Get, Season1, async () =>
+        {
+            await answer.Task;
+            return await ScriptedSilo.Json(HttpStatusCode.OK, EpisodesWithFiles(1, [1, 2, 3]))();
+        });
+        var source = Create();
+        var current = LastOfSeason1 with { ContentId = "ted-1-2" };
+
+        var next = source.NextEpisodeAsync(current, Token);
+        var previous = source.PreviousEpisodeAsync(current, Token);
+        answer.SetResult();
+
+        Assert.Equal("ted-1-3", (await next)?.ContentId);
+        Assert.Equal("ted-1-1", (await previous)?.ContentId);
+        Assert.Single(_silo.Sent);
+    }
+
+    [Fact]
     public async Task TheSeasonsFirstEpisode_HasNoPreviousOne_AsOnTheWeb()
     {
         _silo.On(HttpMethod.Get, Season2, ScriptedSilo.Json(HttpStatusCode.OK, EpisodesWithFiles(2, [1, 2])));

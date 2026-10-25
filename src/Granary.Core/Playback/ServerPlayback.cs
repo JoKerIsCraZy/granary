@@ -226,6 +226,9 @@ public sealed partial class ServerPlayback : IServerPlayback
         _engine.StateChanged -= OnEngineStateChanged;
         _engine.Ended -= OnEngineEnded;
         StopTimers();
+        // Saves still waiting go with the stop; without one there is nobody left to save for.
+        _speedSave?.Dispose();
+        _subtitleDelaySave?.Dispose();
         CloseRoute();
         await _stop.ConfigureAwait(false);
         await _retired.ConfigureAwait(false);
@@ -411,6 +414,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         }
         _generation++;
         _started = false;
+        _endedDuringRecovery = null;
         // Until its first frame the viewer is at the load's start, in this plan's time.
         _playerPosition = Math.Max(0, playerStart);
         _loadedAt = _time.GetTimestamp();
@@ -534,6 +538,16 @@ public sealed partial class ServerPlayback : IServerPlayback
         _loadId = 0;
         _started = false;
         StopFirstFrameWatch();
+        if (_recovering)
+        {
+            _endedDuringRecovery = (ended, played);
+            return;
+        }
+        TakeLoadEnd(ended, played);
+    }
+
+    private void TakeLoadEnd(PlaybackEnded ended, bool played)
+    {
         if (ended.Reason == PlaybackEndReason.AuthenticationFailed)
         {
             Recover(ReloadAfterRejectionAsync);

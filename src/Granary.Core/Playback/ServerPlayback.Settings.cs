@@ -181,15 +181,27 @@ public sealed partial class ServerPlayback
         int generation = _generation;
         string attemptId = Guid.NewGuid().ToString();
         PlaybackDecision decision;
-        try
+        for (int tries = 0; ; tries++)
         {
-            decision = await _starter.StartAsync(_context!, attemptId, position, CancellationToken.None);
-        }
-        catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex))
-        {
-            _logger.LogWarning("The server did not start the other file ({Failure}); playing on", ApiFailureText.Describe(ex));
-            KeepVersion(previous, generation);
-            return;
+            try
+            {
+                decision = await _starter.StartAsync(_context!, attemptId, position, CancellationToken.None);
+                break;
+            }
+            catch (SiloApiException ex) when (ex is { Status: 409, Code: ProblemCodes.InstallationChanged } && tries == 0)
+            {
+                // The server was reinstalled: as for any start, its new installation once, then the file again.
+                if (!await RefreshCapabilitiesAsync())
+                {
+                    return;
+                }
+            }
+            catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex))
+            {
+                _logger.LogWarning("The server did not start the other file ({Failure}); playing on", ApiFailureText.Describe(ex));
+                KeepVersion(previous, generation);
+                return;
+            }
         }
         if (Superseded(generation) || !decision.IsPlayable)
         {

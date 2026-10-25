@@ -70,6 +70,41 @@ public sealed class ServerPlaybackSettingsTests
     }
 
     [Fact]
+    public async Task ASeekWhileTheServerRefusesAQuality_GoesToTheStreamThatPlaysOn()
+    {
+        var refusal = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _fixture.Silo.On(HttpMethod.Post, StartPath, Created(Transcode("720p-medium")));
+        _fixture.Silo.On(HttpMethod.Post, ReplanPath, () => refusal.Task);
+        var playback = await _fixture.StartAsync();
+        _fixture.Engine.RaiseState(Frame(30));
+
+        playback.SelectQuality("1080p-high");
+        // Within what the stream holds (it starts at 598 s, and the viewer is at 628 s).
+        playback.Seek(620);
+        Assert.Empty(_fixture.Engine.Seeks);
+        refusal.SetResult(await ScriptedSilo.Problem(422, "validation_failed")());
+        await playback.Recovery;
+
+        Assert.Equal([TimeSpan.FromSeconds(22)], _fixture.Engine.Seeks);
+        Assert.Single(_fixture.Engine.Loaded);
+    }
+
+    [Fact]
+    public async Task AStreamThatBreaksOffWhileTheServerRefusesAQuality_IsReconnected()
+    {
+        var refusal = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _fixture.Silo.On(HttpMethod.Post, StartPath, Created(Transcode("720p-medium")));
+        _fixture.Silo.On(HttpMethod.Post, ReplanPath, () => refusal.Task);
+        var playback = await _fixture.StartAsync();
+        _fixture.Engine.RaiseState(Frame(30));
+
+        playback.SelectQuality("1080p-high");
+        _fixture.Engine.RaiseEnded(new PlaybackEnded(PlaybackEndReason.Error, "connection reset"));
+        refusal.SetResult(await ScriptedSilo.Problem(422, "validation_failed")());
+        await Until(() => playback.Status.Phase == ServerPlaybackPhase.Reconnecting, "the playback reconnects");
+    }
+
+    [Fact]
     public async Task AQualityPickedWhileTheServerPlansAnother_IsAskedForOnceThatPlays()
     {
         var first = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -106,6 +141,24 @@ public sealed class ServerPlaybackSettingsTests
         Assert.Equal("43", start.GetProperty("file_id").GetString());
         Assert.Equal(600, start.GetProperty("start_position").GetDouble(), 1);
         await Until(() => _fixture.Silo.SentTo(HttpMethod.Delete, StopPath).Count == 1, "the old session ends");
+    }
+
+    [Fact]
+    public async Task AFileStartedAfterTheServerWasReinstalled_IsStartedAgainWithItsNewInstallation()
+    {
+        _fixture.Silo.On(HttpMethod.Get, "api/v2/watch/" + MovieId, Ok(TwoFiles));
+        _fixture.Silo.On(HttpMethod.Post, StartPath, Created(PlaybackPayloads.StartOpaqueIds), ScriptedSilo.Problem(409, "installation_changed"),
+            Created(StartedAgain));
+        var playback = await _fixture.PlayingAsync();
+        _fixture.Engine.RaiseState(Frame(600));
+        int capabilityReads = _fixture.Silo.SentTo(HttpMethod.Get, "api/v2/playback/capabilities").Count;
+
+        playback.SelectVersion("43");
+        await playback.Recovery;
+
+        Assert.Equal(capabilityReads + 1, _fixture.Silo.SentTo(HttpMethod.Get, "api/v2/playback/capabilities").Count);
+        Assert.Equal("43", _fixture.Body(HttpMethod.Post, StartPath, 2).GetProperty("file_id").GetString());
+        Assert.Equal(2, _fixture.Engine.Loaded.Count);
     }
 
     [Fact]

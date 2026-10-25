@@ -27,6 +27,9 @@ public interface IUpNextSource
 /// </summary>
 public sealed class UpNextSource(CatalogApi catalog, ISessionManager session, ILogger<UpNextSource> logger) : IUpNextSource
 {
+    // The season's episodes while a read of them is on its way: the next and the previous episode are asked for
+    // together, and need the same list.
+    private (string Key, Task<EpisodeCollection> Read)? _seasonRead;
     public async Task<NextEpisode?> NextEpisodeAsync(PlayingEpisode current, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(current);
@@ -36,8 +39,7 @@ public sealed class UpNextSource(CatalogApi catalog, ISessionManager session, IL
         }
         try
         {
-            var season = await catalog.ListEpisodesAsync(server, current.SeriesId, current.SeasonNumber, cancellationToken: cancellationToken)
-                .ConfigureAwait(false);
+            var season = await ReadSeasonAsync(server, current, cancellationToken).ConfigureAwait(false);
             var next = NextEpisode.After(season.Items, current.SeasonNumber, current.EpisodeNumber);
             if (next is null)
             {
@@ -75,8 +77,7 @@ public sealed class UpNextSource(CatalogApi catalog, ISessionManager session, IL
         }
         try
         {
-            var season = await catalog.ListEpisodesAsync(server, current.SeriesId, current.SeasonNumber, cancellationToken: cancellationToken)
-                .ConfigureAwait(false);
+            var season = await ReadSeasonAsync(server, current, cancellationToken).ConfigureAwait(false);
             var previous = NextEpisode.Before(season.Items, current.SeasonNumber, current.EpisodeNumber);
             return previous is null ? null : NextEpisode.Of(previous, server);
         }
@@ -90,6 +91,18 @@ public sealed class UpNextSource(CatalogApi catalog, ISessionManager session, IL
             logger.LogError(ex, "Reading the previous episode failed unexpectedly");
             return null;
         }
+    }
+
+    private Task<EpisodeCollection> ReadSeasonAsync(Uri server, PlayingEpisode current, CancellationToken cancellationToken)
+    {
+        string key = string.Join('|', server.AbsoluteUri, current.SeriesId, current.SeasonNumber.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        if (_seasonRead is { } pending && pending.Key == key && !pending.Read.IsCompleted)
+        {
+            return pending.Read;
+        }
+        var read = catalog.ListEpisodesAsync(server, current.SeriesId, current.SeasonNumber, cancellationToken: cancellationToken);
+        _seasonRead = (key, read);
+        return read;
     }
 
     public async Task<IReadOnlyList<MediaCard>> OnDeckAsync(string? exceptSeriesId, CancellationToken cancellationToken)
