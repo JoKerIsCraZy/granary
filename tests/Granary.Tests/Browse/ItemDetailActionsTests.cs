@@ -151,7 +151,8 @@ public sealed class ItemDetailActionsTests
 
         Assert.All(detail.Seasons, s => Assert.True(s.IsWatched));
         Assert.Equal("8 episodes", detail.Seasons[2].Caption);
-        Assert.Null(detail.Seasons[2].Progress);
+        // A season watched to the end keeps a full bar (green on the card), as on the web.
+        Assert.Equal(1, detail.Seasons[2].Progress);
         Assert.Equal("Play", detail.PlayLabel);
 
         gate.SetResult(new HttpResponseMessage(System.Net.HttpStatusCode.ServiceUnavailable));

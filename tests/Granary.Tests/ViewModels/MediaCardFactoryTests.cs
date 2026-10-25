@@ -121,14 +121,18 @@ public sealed class MediaCardFactoryTests
     }
 
     [Fact]
-    public void WatchedTitle_HasNeitherProgressNorAMark()
+    public void WatchedTitle_HasNeitherProgressNorAMark_ButKnowsItsState()
     {
-        var movie = Movie() with { PositionSeconds = 100, DurationSeconds = 200, UserState = new CatalogItemUserState(true, false, false, false) };
+        // The web shows it on hover only (the watched button turns green).
+        var movie = Movie() with { PositionSeconds = 100, DurationSeconds = 200, UserState = new CatalogItemUserState(true, true, true, false) };
 
         var card = MediaCardFactory.Poster(movie, Server);
 
-        Assert.False(card.IsWatched);
+        Assert.False(card.ShowsWatchedMark);
         Assert.Null(card.Progress);
+        Assert.True(card.IsWatched);
+        Assert.True(card.IsFavorite);
+        Assert.True(card.InWatchlist);
     }
 
     [Fact]
@@ -164,6 +168,7 @@ public sealed class MediaCardFactoryTests
         Assert.Equal("23 Oct 2026 · 52m", card.Subtitle);
         Assert.Equal("Assane devises a plan.", card.Caption);
         Assert.True(card.IsWatched);
+        Assert.True(card.ShowsWatchedMark);
         Assert.Equal("ep-5", card.PlayContentId);
     }
 }

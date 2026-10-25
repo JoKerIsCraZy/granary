@@ -40,7 +40,15 @@ public sealed record MediaCard(string Id, string Type, string Title)
     /// <summary>Watched share between 0 and 1, or null without progress.</summary>
     public double? Progress { get; init; }
 
+    /// <summary>The viewer watched it; a series or season all of it.</summary>
     public bool IsWatched { get; init; }
+
+    /// <summary>Whether the artwork carries a watched mark: Silo's web marks season and episode cards only.</summary>
+    public bool ShowsWatchedMark { get; init; }
+
+    public bool IsFavorite { get; init; }
+
+    public bool InWatchlist { get; init; }
 
     /// <summary>What Play starts for this card (the next episode of a series), when the server says.</summary>
     public string? PlayContentId { get; init; }

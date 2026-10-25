@@ -51,8 +51,10 @@ public static class MediaCardFactory
                 ? $"{watched} of {season.EpisodeCount} episodes"
                 : $"{season.EpisodeCount} {(season.EpisodeCount == 1 ? "episode" : "episodes")}",
             ImageUrl = ArtworkUrl.Resolve(serverBase, season.PosterUrl),
-            Progress = season.EpisodeCount > 0 && watched > 0 && watched < season.EpisodeCount ? (double)watched / season.EpisodeCount : null,
+            // A season watched to the end keeps a full bar, green, as on the web.
+            Progress = season.EpisodeCount > 0 && watched > 0 ? Math.Min(1, (double)watched / season.EpisodeCount) : null,
             IsWatched = season.UserData?.Played == true,
+            ShowsWatchedMark = true,
             PlayContentId = season.PlayContentId,
         };
     }
@@ -72,6 +74,7 @@ public static class MediaCardFactory
             AudioBadge = AudioText(episode.OverlaySummary),
             Progress = ProgressOf(episode.UserData?.PositionSeconds, episode.UserData?.DurationSeconds, episode.UserData?.Played == true),
             IsWatched = episode.UserData?.Played == true,
+            ShowsWatchedMark = true,
             PlayContentId = episode.ContentId,
         };
     }
@@ -119,7 +122,10 @@ public static class MediaCardFactory
         StatusBadge = ShowStatusText(item.ShowStatus) ?? (item.Badges.Contains("new") ? "NEW" : null),
         RatingBadge = RatingText(item.RatingImdb),
         Progress = ProgressOf(item.PositionSeconds, item.DurationSeconds, item.UserState?.Played == true),
-        // Like the web, rows and grids mark no watched titles; season and episode cards do.
+        // Like the web, rows and grids mark no watched titles (season and episode cards do); the state shows on hover.
+        IsWatched = item.UserState?.Played == true,
+        IsFavorite = item.UserState?.IsFavorite == true,
+        InWatchlist = item.UserState?.InWatchlist == true,
         PlayContentId = item.PlayContentId,
     };
 

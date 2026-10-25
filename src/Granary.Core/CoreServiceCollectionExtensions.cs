@@ -16,6 +16,7 @@ using Granary.Core.Playback;
 using Granary.Core.Security;
 using Granary.Core.Servers;
 using Granary.Core.ViewModels;
+using Granary.Core.ViewModels.Cards;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
@@ -83,6 +84,7 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<ShellViewModel>();
         services.AddSingleton<SidebarViewModel>();
         services.AddTransient<SignInViewModel>();
+        services.AddSingleton<MediaCardActions>();
         services.AddTransient<HomeViewModel>();
         services.AddTransient<SectionViewModel>();
         services.AddTransient<SearchViewModel>();

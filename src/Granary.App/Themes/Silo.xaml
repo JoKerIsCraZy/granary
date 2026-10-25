@@ -89,6 +89,11 @@
     <Color x:Key="SiloPrimaryPressedColor">#FFDC2F2F</Color>
     <Color x:Key="SiloBadgeBackgroundColor">#B314141E</Color>
     <Color x:Key="SiloBadgeBorderColor">#26FFFFFF</Color>
+    <!-- The IMDb badge's gold, Tailwind's green-500 of a watched mark, emerald-400 of a watched button. -->
+    <Color x:Key="SiloRatingBadgeColor">#C24F421C</Color>
+    <Color x:Key="SiloWatchedColor">#E622C55E</Color>
+    <Color x:Key="SiloWatchedButtonColor">#FF34D399</Color>
+    <Color x:Key="SiloCompleteColor">#FF4CAF50</Color>
 
     <SolidColorBrush x:Key="SiloBackgroundBrush" Color="{StaticResource SiloBackgroundColor}" />
     <SolidColorBrush x:Key="SiloSurfaceBrush" Color="{StaticResource SiloSurfaceColor}" />
@@ -99,6 +104,10 @@
     <SolidColorBrush x:Key="SiloPrimaryBrush" Color="{StaticResource SiloPrimaryColor}" />
     <SolidColorBrush x:Key="SiloBadgeBackgroundBrush" Color="{StaticResource SiloBadgeBackgroundColor}" />
     <SolidColorBrush x:Key="SiloBadgeBorderBrush" Color="{StaticResource SiloBadgeBorderColor}" />
+    <SolidColorBrush x:Key="SiloRatingBadgeBrush" Color="{StaticResource SiloRatingBadgeColor}" />
+    <SolidColorBrush x:Key="SiloWatchedBrush" Color="{StaticResource SiloWatchedColor}" />
+    <SolidColorBrush x:Key="SiloWatchedButtonBrush" Color="{StaticResource SiloWatchedButtonColor}" />
+    <SolidColorBrush x:Key="SiloCompleteBrush" Color="{StaticResource SiloCompleteColor}" />
 
     <!-- Plus Jakarta Sans, one file per weight: XAML loads only the face of the file it names. -->
     <FontFamily x:Key="SiloFontRegular">ms-appx:///Assets/Fonts/PlusJakartaSans-Regular.ttf#Plus Jakarta Sans</FontFamily>
@@ -154,7 +163,7 @@
         <Setter Property="FontFamily" Value="{StaticResource SiloFontSemiBold}" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="FontSize" Value="14" />
-        <Setter Property="CharacterSpacing" Value="-10" />
+        <Setter Property="CharacterSpacing" Value="-25" />
         <Setter Property="Foreground" Value="{StaticResource SiloForegroundBrush}" />
         <Setter Property="TextTrimming" Value="CharacterEllipsis" />
         <Setter Property="TextWrapping" Value="NoWrap" />
@@ -396,8 +405,86 @@
     </Style>
 
     <!--
-        A whole card as one button: keyboard focus and Enter work, the pointer gets a subtle ring and the
-        artwork lightens. The template draws nothing of its own besides that ring.
+        The buttons a card shows under the pointer (Silo's web: media-card-action-trigger): a dark 32 px tile with a
+        faint edge, the icon in the foreground colour.
+    -->
+    <Style x:Key="SiloCardActionButtonStyle" TargetType="Button">
+        <Setter Property="Width" Value="32" />
+        <Setter Property="Height" Value="32" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="Foreground" Value="{StaticResource SiloForegroundBrush}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Tile" Background="#CC141417" BorderBrush="#3328282E" BorderThickness="1" CornerRadius="10">
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup x:Name="CommonStates">
+                                <VisualState x:Name="Normal" />
+                                <VisualState x:Name="PointerOver">
+                                    <VisualState.Setters>
+                                        <Setter Target="Tile.Background" Value="#E6141417" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Pressed">
+                                    <VisualState.Setters>
+                                        <Setter Target="Tile.Background" Value="#F2141417" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Disabled" />
+                            </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Content="{TemplateBinding Content}"
+                                          Foreground="{TemplateBinding Foreground}" />
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- The red play disc in the middle of a card under the pointer; it grows a little under the pointer itself. -->
+    <Style x:Key="SiloCardPlayButtonStyle" TargetType="Button">
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="Foreground" Value="{StaticResource SiloBackgroundBrush}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid x:Name="Disc" RenderTransformOrigin="0.5,0.5">
+                        <Grid.RenderTransform>
+                            <ScaleTransform x:Name="DiscScale" />
+                        </Grid.RenderTransform>
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup x:Name="CommonStates">
+                                <VisualState x:Name="Normal" />
+                                <VisualState x:Name="PointerOver">
+                                    <VisualState.Setters>
+                                        <Setter Target="Fill.Fill" Value="#FFF25858" />
+                                        <Setter Target="DiscScale.ScaleX" Value="1.1" />
+                                        <Setter Target="DiscScale.ScaleY" Value="1.1" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Pressed">
+                                    <VisualState.Setters>
+                                        <Setter Target="Fill.Fill" Value="#FFDC2F2F" />
+                                        <Setter Target="DiscScale.ScaleX" Value="0.95" />
+                                        <Setter Target="DiscScale.ScaleY" Value="0.95" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Disabled" />
+                            </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>
+                        <Ellipse x:Name="Fill" Fill="{StaticResource SiloPrimaryBrush}" />
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Content="{TemplateBinding Content}"
+                                          Foreground="{TemplateBinding Foreground}" />
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--
+        A whole card as one button: keyboard focus and Enter work, and the system focus ring shows. Under the pointer
+        the card itself reacts (MediaCardView: the artwork grows, its buttons appear), as on Silo's web.
     -->
     <Style x:Key="SiloCardButtonStyle" TargetType="Button">
         <Setter Property="Background" Value="Transparent" />
@@ -414,14 +501,10 @@
                         <VisualStateManager.VisualStateGroups>
                             <VisualStateGroup x:Name="CommonStates">
                                 <VisualState x:Name="Normal" />
-                                <VisualState x:Name="PointerOver">
-                                    <VisualState.Setters>
-                                        <Setter Target="Content.Opacity" Value="0.92" />
-                                    </VisualState.Setters>
-                                </VisualState>
+                                <VisualState x:Name="PointerOver" />
                                 <VisualState x:Name="Pressed">
                                     <VisualState.Setters>
-                                        <Setter Target="Content.Opacity" Value="0.8" />
+                                        <Setter Target="Content.Opacity" Value="0.85" />
                                     </VisualState.Setters>
                                 </VisualState>
                                 <VisualState x:Name="Disabled">
