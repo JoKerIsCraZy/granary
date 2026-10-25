@@ -16,7 +16,7 @@
         </Grid.RowDefinitions>
 
         <Grid>
-            <TextBlock Text="{x:Bind Title, Mode=OneWay}" Style="{StaticResource SiloRowTitleTextStyle}" VerticalAlignment="Center"
+            <TextBlock x:Name="TitleText" Text="{x:Bind Title, Mode=OneWay}" Style="{StaticResource SiloRowTitleTextStyle}" VerticalAlignment="Center"
                        AutomationProperties.HeadingLevel="Level2" />
             <HyperlinkButton HorizontalAlignment="Right" VerticalAlignment="Center" Style="{StaticResource SiloLinkButtonStyle}"
                              Content="EXPLORE ALL" Command="{x:Bind ExploreAllCommand, Mode=OneWay}"

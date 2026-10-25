@@ -15,7 +15,13 @@
     AutomationProperties.Name="Player">
 
     <Grid x:Name="Root" Background="Black">
-        <controls:MpvVideoHost x:Name="VideoHost" />
+        <!-- The picture; on the Playing Next screen it plays on small in the top left corner (PlayerPage.NextUp.cs). -->
+        <Border x:Name="VideoFrame">
+            <Border.OpacityTransition>
+                <ScalarTransition Duration="0:0:0.7" />
+            </Border.OpacityTransition>
+            <controls:MpvVideoHost x:Name="VideoHost" />
+        </Border>
 
         <!-- The picture: a click plays or pauses, a double click toggles full screen. -->
         <Grid x:Name="Surface" Background="Transparent" Tapped="OnSurfaceTapped" DoubleTapped="OnSurfaceDoubleTapped" />
@@ -45,7 +51,7 @@
         </Grid>
 
         <!-- Top bar: Exit. In a window it starts below the title bar's drag area. -->
-        <Grid x:Name="TopChrome" VerticalAlignment="Top">
+        <Grid x:Name="TopChrome" VerticalAlignment="Top" Visibility="{x:Bind Not(ViewModel.IsNextUpScreenShown), Mode=OneWay}">
             <Grid.OpacityTransition>
                 <ScalarTransition Duration="0:0:0.3" />
             </Grid.OpacityTransition>
@@ -66,7 +72,7 @@
         </Grid>
 
         <!-- Bottom bar: the seek bar, then the title with the times, the transport, and volume and full screen. -->
-        <Grid x:Name="BottomChrome" VerticalAlignment="Bottom" Visibility="{x:Bind ShowsTransport(ViewModel.Phase), Mode=OneWay}">
+        <Grid x:Name="BottomChrome" VerticalAlignment="Bottom" Visibility="{x:Bind ShowsTransport(ViewModel.Phase, ViewModel.IsNextUpScreenShown), Mode=OneWay}">
             <Grid.OpacityTransition>
                 <ScalarTransition Duration="0:0:0.3" />
             </Grid.OpacityTransition>
@@ -356,5 +362,131 @@
                 </Grid>
             </Button>
         </StackPanel>
+
+        <!-- The web's NextEpisodeOverlay at the credits: where the skip pill sits, and above the bar with it. -->
+        <Border x:Name="NextUpCard" Margin="0,0,28,28" MinWidth="260" Padding="16" CornerRadius="8" Background="#CC000000"
+                HorizontalAlignment="Right" VerticalAlignment="Bottom" Visibility="{x:Bind ViewModel.IsNextUpCardShown, Mode=OneWay}">
+            <Border.TranslationTransition>
+                <Vector3Transition Duration="0:0:0.3" />
+            </Border.TranslationTransition>
+            <StackPanel Spacing="8">
+                <TextBlock Text="{x:Bind ViewModel.NextUpCardHeading, Mode=OneWay}" FontSize="12" CharacterSpacing="50" Foreground="#99FFFFFF" />
+                <TextBlock Text="{x:Bind ViewModel.NextUpEpisodeText, Mode=OneWay}" MaxWidth="320" TextWrapping="Wrap" FontFamily="{StaticResource SiloFontMedium}"
+                           FontWeight="Medium" FontSize="14" Foreground="{StaticResource SiloPlayerForegroundBrush}" />
+                <Grid Margin="0,4,0,0" ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Button Content="Play Now" Style="{StaticResource SiloPlayerCardButtonStyle}" HorizontalAlignment="Stretch"
+                            Command="{x:Bind ViewModel.PlayNextNowCommand}" />
+                    <Button Grid.Column="1" Content="Cancel" Style="{StaticResource SiloPlayerCardOutlineButtonStyle}"
+                            Command="{x:Bind ViewModel.CancelNextUpCommand}" />
+                </Grid>
+            </StackPanel>
+        </Border>
+
+        <!--
+            Playing Next (the web's PlayingNextScreen): 30 s before the end and at it. The next episode in the middle on a
+            darkened, blurred copy of its still; Play Now with the countdown ring once the episode has ended; the
+            auto-play switch; On Deck along the bottom. The video plays on small in the top left corner, above this.
+        -->
+        <Grid x:Name="NextUpScreen" Canvas.ZIndex="1" Background="Black" Visibility="{x:Bind ViewModel.IsNextUpScreenShown, Mode=OneWay}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <!-- A still decoded 48 px wide and stretched over the page blurs itself. -->
+            <Image x:Name="NextUpBackdrop" Grid.RowSpan="2" Stretch="UniformToFill" Opacity="0.35" IsHitTestVisible="False" />
+            <Border Grid.RowSpan="2" Background="#B3000000" IsHitTestVisible="False" />
+
+            <ScrollViewer x:Name="NextUpScroller" VerticalScrollBarVisibility="Auto">
+                <StackPanel x:Name="NextUpColumn" MaxWidth="820" Padding="32,24" VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <TextBlock Text="{x:Bind NextUpLabel(ViewModel.HasNextEpisode), Mode=OneWay}" HorizontalAlignment="Center" Margin="0,0,0,12"
+                               FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="11" CharacterSpacing="250"
+                               Foreground="#66FFFFFF" />
+
+                    <StackPanel Visibility="{x:Bind ViewModel.HasNextEpisode, Mode=OneWay}" HorizontalAlignment="Center">
+                        <Border x:Name="NextUpStillFrame" CornerRadius="16" BorderThickness="1" BorderBrush="#14FFFFFF" Background="#0DFFFFFF"
+                                Margin="0,0,0,20" HorizontalAlignment="Center">
+                            <Image x:Name="NextUpStillImage" Stretch="UniformToFill" AutomationProperties.Name="{x:Bind ViewModel.NextUpTitle, Mode=OneWay}" />
+                        </Border>
+                        <StackPanel Spacing="4" HorizontalAlignment="Center">
+                            <TextBlock Text="{x:Bind ViewModel.NextUpSeriesTitle, Mode=OneWay}" HorizontalAlignment="Center" FontFamily="{StaticResource SiloFontBold}"
+                                       FontWeight="Bold" FontSize="18" Foreground="{StaticResource SiloPlayerForegroundBrush}"
+                                       AutomationProperties.HeadingLevel="Level1" />
+                            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                                <TextBlock Text="{x:Bind ViewModel.NextUpCode, Mode=OneWay}" VerticalAlignment="Center" FontFamily="{StaticResource SiloFontMedium}"
+                                           FontWeight="Medium" FontSize="14" Foreground="#99FFFFFF" />
+                                <TextBlock Text="—" VerticalAlignment="Center" FontSize="14" Foreground="#40FFFFFF" AutomationProperties.AccessibilityView="Raw" />
+                                <TextBlock Text="{x:Bind ViewModel.NextUpTitle, Mode=OneWay}" VerticalAlignment="Center" FontFamily="{StaticResource SiloFontSemiBold}"
+                                           FontWeight="SemiBold" FontSize="16" Foreground="{StaticResource SiloPlayerForegroundBrush}" />
+                            </StackPanel>
+                            <TextBlock Text="{x:Bind ViewModel.NextUpMeta, Mode=OneWay}" HorizontalAlignment="Center" FontSize="12" Foreground="#66FFFFFF" />
+                            <TextBlock Text="{x:Bind ViewModel.NextUpOverview, Mode=OneWay}" MaxWidth="576" Margin="0,4,0,0" HorizontalAlignment="Center"
+                                       TextAlignment="Center" TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis" FontSize="14" LineHeight="22"
+                                       Foreground="#80FFFFFF" Visibility="{x:Bind Shows(ViewModel.NextUpOverview), Mode=OneWay}" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Spacing="16" Margin="0,16,0,0" HorizontalAlignment="Center">
+                            <Button x:Name="PlayNowButton" Style="{StaticResource SiloNextUpPlayButtonStyle}" Command="{x:Bind ViewModel.PlayNextNowCommand}"
+                                    AutomationProperties.Name="Play Now" AutomationProperties.AcceleratorKey="Enter">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <FontIcon Glyph="&#xF5B0;" FontSize="14" />
+                                    <TextBlock Text="Play Now" />
+                                </StackPanel>
+                            </Button>
+                            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center"
+                                        Visibility="{x:Bind ViewModel.IsNextUpCountingDown, Mode=OneWay}">
+                                <!-- The web's ring: 20 px radius, 3 px stroke, emptying with the countdown from the top. -->
+                                <Grid Width="43" Height="43">
+                                    <Ellipse Stroke="#14FFFFFF" StrokeThickness="3" />
+                                    <Ellipse Stroke="{StaticResource SiloPrimaryBrush}" StrokeThickness="3" StrokeDashArray="41.89 41.89"
+                                             StrokeDashCap="Round" StrokeDashOffset="{x:Bind RingOffset(ViewModel.NextUpCountdownLeft), Mode=OneWay}"
+                                             RenderTransformOrigin="0.5,0.5">
+                                        <Ellipse.RenderTransform>
+                                            <RotateTransform Angle="-90" />
+                                        </Ellipse.RenderTransform>
+                                    </Ellipse>
+                                </Grid>
+                                <TextBlock Text="{x:Bind ViewModel.NextUpSecondsText, Mode=OneWay}" VerticalAlignment="Center" FontSize="14"
+                                           Typography.NumeralAlignment="Tabular" Foreground="#80FFFFFF" AutomationProperties.LiveSetting="Polite" />
+                            </StackPanel>
+                        </StackPanel>
+                        <Button Content="{x:Bind ViewModel.AutoPlayText, Mode=OneWay}" Style="{StaticResource SiloNextUpTextButtonStyle}" Margin="0,10,0,0"
+                                HorizontalAlignment="Center" Command="{x:Bind ViewModel.ToggleAutoPlayCommand}" />
+                    </StackPanel>
+
+                    <!-- No episode follows. -->
+                    <StackPanel Spacing="8" HorizontalAlignment="Center" Visibility="{x:Bind Not(ViewModel.HasNextEpisode), Mode=OneWay}">
+                        <TextBlock Text="{x:Bind ViewModel.NextUpFinishedHeading, Mode=OneWay}" HorizontalAlignment="Center" TextAlignment="Center"
+                                   TextWrapping="Wrap" FontFamily="{StaticResource SiloFontBold}" FontWeight="Bold" FontSize="24"
+                                   Foreground="{StaticResource SiloPlayerForegroundBrush}" AutomationProperties.HeadingLevel="Level1" />
+                        <TextBlock Text="There are no more episodes available. Pick something else from On Deck below." MaxWidth="448"
+                                   HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" FontSize="14" Foreground="#80FFFFFF" />
+                        <Button x:Name="FinishedBackButton" Content="Back" Style="{StaticResource SiloPlayerPillButtonStyle}" Height="44" Padding="28,0"
+                                Background="#1AFFFFFF" Margin="0,12,0,0" HorizontalAlignment="Center" Command="{x:Bind ViewModel.CloseCommand}" />
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+
+            <controls:MediaRow Grid.Row="1" Margin="32,0,32,16" Title="ON DECK" TitleStyle="{StaticResource SiloSectionLabelTextStyle}"
+                               ItemsSource="{x:Bind ViewModel.OnDeck, Mode=OneWay}" CardInvokedCommand="{x:Bind ViewModel.PlayOnDeckCommand}"
+                               Visibility="{x:Bind HasCards(ViewModel.OnDeck), Mode=OneWay}" />
+
+            <Button x:Name="NextUpCloseButton" Style="{StaticResource SiloPlayerDiscButtonStyle}" Width="40" Height="40" Background="#1AFFFFFF"
+                    HorizontalAlignment="Right" VerticalAlignment="Top" Margin="{x:Bind CornerInset(IsFullScreen, 20), Mode=OneWay}"
+                    Command="{x:Bind ViewModel.CloseCommand}" AutomationProperties.Name="Close" AutomationProperties.AcceleratorKey="Escape"
+                    ToolTipService.ToolTip="Close (Esc)">
+                <FontIcon Glyph="&#xE711;" FontSize="14" />
+            </Button>
+        </Grid>
+
+        <!-- The small video: a click returns to it, until the episode has ended. -->
+        <Button x:Name="MiniPlayerButton" Canvas.ZIndex="3" Style="{StaticResource SiloPlayerCardOutlineButtonStyle}" Padding="0" BorderThickness="0"
+                CornerRadius="16" HorizontalAlignment="Left" VerticalAlignment="Top" Width="320" Height="180"
+                Margin="{x:Bind CornerInset(IsFullScreen, 24), Mode=OneWay}"
+                Visibility="{x:Bind ShowsMiniPlayer(ViewModel.IsNextUpScreenShown, ViewModel.Phase), Mode=OneWay}"
+                Command="{x:Bind ViewModel.KeepWatchingCommand}" AutomationProperties.Name="Keep watching" ToolTipService.ToolTip="Keep watching" />
     </Grid>
 </Page>

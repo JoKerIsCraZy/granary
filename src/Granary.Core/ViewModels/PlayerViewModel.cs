@@ -34,6 +34,8 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     private readonly PlaybackStops _stops;
     private readonly TimeProvider _time;
     private readonly long _created;
+    private readonly IUpNextSource? _upNext;
+    private readonly AutoPlayStreak _streak;
     // A seek's target counts as the position for this long, until the engine reports it: quick skips add up.
     private const long SeekTargetMilliseconds = 3000;
 
@@ -50,7 +52,9 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         INavigationService navigation,
         Func<IServerPlayback> serverPlaybacks,
         PlaybackStops stops,
-        TimeProvider? time = null)
+        TimeProvider? time = null,
+        IUpNextSource? upNext = null,
+        AutoPlayStreak? streak = null)
     {
         _engine = engine;
         _dispatcher = dispatcher;
@@ -59,6 +63,8 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         _stops = stops;
         _time = time ?? TimeProvider.System;
         _created = _time.GetTimestamp();
+        _upNext = upNext;
+        _streak = streak ?? new AutoPlayStreak();
         _engine.StateChanged += OnStateChanged;
         _engine.Ended += OnEnded;
     }
@@ -172,9 +178,17 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     public void ResetSubtitleDelay() => ChangeSubtitleDelay(-SubtitleDelayMs);
 
     /// <summary>Starts <paramref name="request"/>; the page calls it once when it is shown, Retry again.</summary>
-    public async Task StartAsync(PlayRequest request)
+    public Task StartAsync(PlayRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
+        // A title the viewer started (or retried) is the viewer's doing: the pass-out gate opens again.
+        _streak.Reset();
+        return PlayAsync(request);
+    }
+
+    // A start of the player's own: the next episode after a countdown.
+    private async Task PlayAsync(PlayRequest request)
+    {
         _request = request;
         _left = false;
         // A seek on its way belongs to the title before.
@@ -208,8 +222,17 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     /// <summary>The viewer's pick in the subtitle menu, null for Off: it shows at once and is saved for the series.</summary>
     public void SelectSubtitle(string? trackId) => _playback?.SelectSubtitle(trackId);
 
-    /// <summary>Moves to <paramref name="seconds"/> of the title (the seek bar), within its length.</summary>
+    /// <summary>The viewer moves to <paramref name="seconds"/> of the title (the seek bar, the skips), within its length.</summary>
     public void SeekTo(double seconds)
+    {
+        _streak.Reset();
+        _nextUp.Sought(Now);
+        ShowNextUp();
+        Seek(seconds);
+    }
+
+    // A seek of the player's own, as when a marked part skips itself.
+    private void Seek(double seconds)
     {
         double target = Math.Max(0, seconds);
         if (DurationSeconds > 0)
@@ -252,6 +275,12 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     {
         if (IsPlaying)
         {
+            _streak.Reset();
+            if (!_engine.Current.IsPaused)
+            {
+                _nextUp.Paused(Now);
+                ShowNextUp();
+            }
             _engine.SetPaused(!_engine.Current.IsPaused);
         }
     }
@@ -304,6 +333,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     // waits for it (PlaybackStops), leaving the page does not.
     private void LeavePlayback()
     {
+        ResetNextUp();
         if (_playback is not { } playback)
         {
             return;
@@ -372,12 +402,14 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
                 break;
             case ServerPlaybackPhase.Playing or ServerPlaybackPhase.Reconnecting:
                 Phase = PlayerPhase.Playing;
+                BeginNextUp(playback);
                 break;
             case ServerPlaybackPhase.Failed:
                 Fail(status.Message, status.CanRetry);
                 break;
             case ServerPlaybackPhase.Ended:
                 Phase = PlayerPhase.Ended;
+                EndNextUp();
                 break;
         }
         ShowEngineState();
@@ -421,6 +453,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         Volume = state.Volume;
         CanSeek = state.IsLoaded && state.HasStarted && (_playback is null || _playback.Status.Phase == ServerPlaybackPhase.Playing);
         FollowMarkers(state);
+        FollowNextUp();
     }
 
     private void OnEnded(object? sender, PlaybackEnded ended) => _dispatcher.Post(() =>
@@ -447,6 +480,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     public void Dispose()
     {
         Leave();
+        ResetNextUp();
         _engine.StateChanged -= OnStateChanged;
         _engine.Ended -= OnEnded;
     }

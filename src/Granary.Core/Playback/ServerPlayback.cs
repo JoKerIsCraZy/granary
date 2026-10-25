@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json;
 using Granary.Core.Abstractions;
 using Granary.Core.Api;
 using Granary.Core.Api.Playback;
@@ -39,6 +40,8 @@ public sealed partial class ServerPlayback : IServerPlayback
     // mpv reports a stream that broke off as its end: an end earlier than this before the title's end is a lost
     // connection, not the end of the title.
     private const double EndTolerance = 30;
+
+    private const string AutoPlayNextKey = "playback.auto_play_next";
 
     private readonly PlaybackStarter _starter;
     private readonly PlaybackApi _api;
@@ -135,6 +138,24 @@ public sealed partial class ServerPlayback : IServerPlayback
         _plan?.Source.DurationSeconds ?? (_context?.Version.DurationSeconds is > 0 and var seconds ? seconds : null);
 
     public PlaybackPreferences Preferences => _context?.Preferences ?? PlaybackPreferences.Default;
+
+    public PlayingEpisode? Episode => _context?.Watch is { Type: WatchItemTypes.Episode, SeriesId: { Length: > 0 } series,
+        SeasonNumber: { } season, EpisodeNumber: { } episode } watch
+        ? new PlayingEpisode(_context.ContentId.Length > 0 ? _context.ContentId : watch.ContentId, series, watch.SeriesTitle ?? "", season, episode)
+        : null;
+
+    public void SetAutoPlayNext(bool enabled)
+    {
+        if (_context is not { } context || context.Preferences.Markers.AutoPlayNext == enabled)
+        {
+            return;
+        }
+        var preferences = context.Preferences;
+        _context = context with { Preferences = preferences with { Markers = preferences.Markers with { AutoPlayNext = enabled } } };
+        var value = JsonDocument.Parse(enabled ? "true" : "false").RootElement.Clone();
+        SaveChoice("auto-play", cancellationToken =>
+            _settings.SetValueAsync(context.Server.BaseUri, AutoPlayNextKey, value, SettingScopes.Profile, cancellationToken));
+    }
 
     // Where the viewer is in the title.
     private double SourcePosition => _plan?.Timeline.ToSource(_playerPosition) ?? _playerPosition;

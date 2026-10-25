@@ -143,6 +143,18 @@ unmodified to refer to Silo, as its trademark policy allows; it is not Granary's
   in white 15 % over its 5 s; after an automatic skip "Watch Intro" with "Intro skipped" above it (12 px, white
   75 %, shaded so it reads on a bright picture, and read out). "Skip Recap", "Skip Credits" and "Skip Preview"
   stay while inside their part. Esc turns an intro pill away before it does anything else.
+- **Next episode** (the web's NextEpisodeOverlay and PlayingNextScreen):
+  - At the credits a card replaces the skip pill: black at 80 %, radius 8, "UP NEXT IN 34S" (12 px, white 60 %),
+    "S1:E4 — Title" (14 px medium), Play Now (white, black text) and Cancel (outlined), both rounded 4. It counts the
+    playback left, as the apps do.
+  - 30 s before the end of an episode the "Playing Next" screen takes the page: its still blurred and darkened behind,
+    "PLAYING NEXT" (11 px, wide spacing, white 40 %), the still (16:9, radius 16, up to 38 % of the page high), the
+    series (18 px bold), "S1:E4 — Title", the air date and runtime, two lines of overview, the red Play Now pill, and
+    once the episode has ended a 10 s ring in red with the seconds; "Auto-play is on" switches the profile's
+    `playback.auto_play_next`. On Deck (Continue Watching without this series) runs along the bottom; Close (Esc) top
+    right. The video plays on in a 320 px window top left (radius 16), a click on it returns to it; it fades out at
+    the end. Enter plays the next episode.
+  - Without a next episode the screen says "You've finished {series}" with Back. A movie's end goes back.
 - **States**: preparing shows Exit and a spinner, no transport. Buffering puts a spinner on a dark
   disc over the picture. Failed shows the message, Retry when it can help and Back; keyboard focus moves
   to them. Ended keeps the controls up.

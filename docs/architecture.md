@@ -140,6 +140,14 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   a picked, turned away (Esc) or settled intro is not offered again in that playback. Recap, credits and preview
   get a pill that stays, and skip themselves once where `playback.auto_skip_recap` or `auto_skip_credits` say so,
   as Apple's client does. The settings are read as their own batch; an unknown mode neither prompts nor skips.
+- **Next episode** (10.7): the playback names its episode (series, season, number); `UpNextSource` reads the
+  current season's episodes, and when none is later, those of the lowest later season that is not specials, and the
+  smallest (season, episode) after this one plays next. `NextUpFlow` decides what shows: the card when playback
+  crosses the credits' start (else the length less `playback.next_up_prompt_seconds`), the screen 30 s before the
+  end (the web's post-roll), and at the end a 10 s countdown, when `playback.auto_play_next` is on, the viewer did
+  not turn the prompt away (Cancel, Keep watching, a pause or seek during the card), and fewer than three episodes in
+  a row started by themselves (`AutoPlayStreak`, Android's pass-out gate). The next episode starts as a new playback
+  from 0; the saved track preferences carry the picks over.
 - **While playing**: progress every 10 s, and once a pause has held for a second (`PlaybackProgress`: one
   sequence per sample, retried with the identical body). Leaving the page by any way stops the session with
   its final position and stops the engine (`PlayerViewModel.Leave`); before the session's first frame the stop

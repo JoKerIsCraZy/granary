@@ -46,6 +46,7 @@ public sealed partial class PlayerPage : Page
         InitializeInput();
         InitializeAutoHide();
         InitializeSkipPrompt();
+        InitializeNextUp();
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
         LostFocus += (_, _) => KeepFocusInPage();
@@ -122,6 +123,7 @@ public sealed partial class PlayerPage : Page
             case nameof(PlayerViewModel.Phase):
                 ShowSkipIntervals();
                 ShowControls();
+                FadeMiniPlayer();
                 if (ViewModel.IsFailed)
                 {
                     OnFailed();
@@ -136,6 +138,12 @@ public sealed partial class PlayerPage : Page
                 break;
             case nameof(PlayerViewModel.SkipBackSeconds) or nameof(PlayerViewModel.SkipForwardSeconds):
                 ShowSkipIntervals();
+                break;
+            case nameof(PlayerViewModel.IsNextUpScreenShown):
+                ShowNextUpScreen();
+                break;
+            case nameof(PlayerViewModel.NextUpStill):
+                ShowNextUpStill();
                 break;
             case nameof(PlayerViewModel.HasSkipPrompt) when ViewModel.HasSkipPrompt:
                 AnnounceSkipCaption();
@@ -329,8 +337,8 @@ public sealed partial class PlayerPage : Page
     // Named for what it does; screen readers hear the times from the seek bar ("4 minutes of 1 hour 30 minutes").
     public string EndTimeName(bool showsRemaining) => showsRemaining ? "Show the duration" : "Show the time left";
 
-    public Visibility ShowsTransport(PlayerPhase phase) =>
-        phase is PlayerPhase.Playing or PlayerPhase.Ended ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility ShowsTransport(PlayerPhase phase, bool isNextUpScreenShown) =>
+        phase is PlayerPhase.Playing or PlayerPhase.Ended && !isNextUpScreenShown ? Visibility.Visible : Visibility.Collapsed;
 
     public bool ShowsSpinner(PlayerPhase phase, bool isBuffering) =>
         phase == PlayerPhase.Preparing || (phase == PlayerPhase.Playing && isBuffering);

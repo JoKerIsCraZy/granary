@@ -77,6 +77,7 @@ public sealed partial class PlayerViewModel
         }
         Markers = markers;
         _markerPrompts.Reset(markers, playback.Preferences.Markers);
+        TakeCredits(markers);
         ShowSkipPrompt();
     }
 
@@ -94,15 +95,15 @@ public sealed partial class PlayerViewModel
         var activity = state.IsPaused ? MarkerActivity.Paused : IsBuffering ? MarkerActivity.Stalled : MarkerActivity.Playing;
         if (_markerPrompts.Update(SkipOrigin, activity, now) is { } target)
         {
-            SeekTo(target);
+            Seek(target);
         }
         ShowSkipPrompt();
     }
 
-    // The texts first: whoever sees the pill appear reads them.
+    // The texts first: whoever sees the pill appear reads them. The card and the screen of the next episode take its place.
     private void ShowSkipPrompt()
     {
-        if (_markerPrompts.Prompt is not { } prompt)
+        if (_markerPrompts.Prompt is not { } prompt || _nextUp.View != NextUpView.None)
         {
             HasSkipPrompt = false;
             return;

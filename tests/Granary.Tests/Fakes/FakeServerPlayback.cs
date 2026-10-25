@@ -24,6 +24,17 @@ internal sealed class FakeServerPlayback : IServerPlayback
 
     public PlaybackPreferences Preferences { get; set; } = PlaybackPreferences.Default;
 
+    public PlayingEpisode? Episode { get; set; }
+
+    /// <summary>Every auto-play switch the player passed on, in order.</summary>
+    public List<bool> AutoPlaySwitches { get; } = [];
+
+    public void SetAutoPlayNext(bool enabled)
+    {
+        AutoPlaySwitches.Add(enabled);
+        Preferences = Preferences with { Markers = Preferences.Markers with { AutoPlayNext = enabled } };
+    }
+
     public IReadOnlyList<WatchAudioTrack> AudioTracks { get; set; } = [];
 
     public int? AudioTrack { get; set; }

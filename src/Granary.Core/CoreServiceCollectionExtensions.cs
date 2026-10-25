@@ -112,6 +112,9 @@ public static class CoreServiceCollectionExtensions
             sp.GetRequiredService<ILogger<MediaProxy>>()));
         services.AddSingleton<IMediaProxy>(sp => sp.GetRequiredService<MediaProxy>());
         services.AddSingleton<Func<IServerPlayback>>(sp => () => ActivatorUtilities.CreateInstance<ServerPlayback>(sp));
+        services.AddTransient<IUpNextSource, UpNextSource>();
+        // The episodes that started by themselves count across player pages, as long as the app runs.
+        services.AddSingleton<AutoPlayStreak>();
     }
 
     // Artwork URLs are presigned and public: no credentials, no identity headers. HTTP/2 lets a page's images

@@ -41,7 +41,11 @@ public sealed partial class PlayerPage
             LiftSubtitles();
             PlaceSkipPrompt();
         };
-        SizeChanged += (_, _) => LiftSubtitles();
+        SizeChanged += (_, _) =>
+        {
+            LiftSubtitles();
+            SizeNextUpStill();
+        };
         _hideTimer = DispatcherQueue.CreateTimer();
         _hideTimer.Interval = HideDelay;
         _hideTimer.IsRepeating = false;
@@ -140,11 +144,11 @@ public sealed partial class PlayerPage
         PlaceSkipPrompt();
     }
 
-    // The skip pill sits 28 px off the corner, and above the bar while it shows, as on the web player.
+    // The skip pill and the next episode's card sit 28 px off the corner, and above the bar while it shows.
     private void PlaceSkipPrompt()
     {
         double above = _areControlsVisible && BottomBar.ActualHeight > 0 ? BottomBar.ActualHeight + SkipPromptGap - SkipPrompt.Margin.Bottom : 0;
-        SkipPrompt.Translation = new Vector3(0, -(float)Math.Max(0, above), 0);
+        SkipPrompt.Translation = NextUpCard.Translation = new Vector3(0, -(float)Math.Max(0, above), 0);
     }
 
     // Subtitles at the bottom move above the controls while they show, and back down when they fade.

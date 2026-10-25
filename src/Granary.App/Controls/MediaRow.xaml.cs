@@ -24,6 +24,10 @@ public sealed partial class MediaRow : UserControl
     public static readonly DependencyProperty CardInvokedCommandProperty =
         DependencyProperty.Register(nameof(CardInvokedCommand), typeof(ICommand), typeof(MediaRow), new PropertyMetadata(null));
 
+    public static readonly DependencyProperty TitleStyleProperty =
+        DependencyProperty.Register(nameof(TitleStyle), typeof(Style), typeof(MediaRow),
+            new PropertyMetadata(null, (sender, e) => ((MediaRow)sender).TitleText.Style = e.NewValue as Style ?? (Style)Application.Current.Resources["SiloRowTitleTextStyle"]));
+
     public static readonly DependencyProperty ExploreAllCommandProperty =
         DependencyProperty.Register(nameof(ExploreAllCommand), typeof(ICommand), typeof(MediaRow), new PropertyMetadata(null));
 
@@ -44,6 +48,13 @@ public sealed partial class MediaRow : UserControl
     {
         get => (string)GetValue(TitleProperty);
         set => SetValue(TitleProperty, value);
+    }
+
+    /// <summary>The title's text style; the row title's (20 px semibold) when none is set.</summary>
+    public Style? TitleStyle
+    {
+        get => (Style?)GetValue(TitleStyleProperty);
+        set => SetValue(TitleStyleProperty, value);
     }
 
     /// <summary>The cards: any enumerable of <see cref="MediaCard"/>.</summary>

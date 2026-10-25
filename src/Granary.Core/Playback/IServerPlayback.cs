@@ -48,6 +48,15 @@ public interface IServerPlayback : IAsyncDisposable
     /// <summary>The profile's playback settings; the defaults until they are read.</summary>
     PlaybackPreferences Preferences { get; }
 
+    /// <summary>The episode that plays, with its series, season and number; null for a movie and until the title is known.</summary>
+    PlayingEpisode? Episode { get; }
+
+    /// <summary>
+    /// The viewer's "Auto-play is on/off": taken into <see cref="Preferences"/> at once and saved as the profile's
+    /// <c>playback.auto_play_next</c>, which the web's switch and its settings page edit too.
+    /// </summary>
+    void SetAutoPlayNext(bool enabled);
+
     /// <summary>Raised on the UI thread when the file that plays or its selected tracks change.</summary>
     event EventHandler? TracksChanged;
 

@@ -1,3 +1,4 @@
+using Granary.Core.ViewModels;
 using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -63,7 +64,9 @@ public sealed partial class PlayerPage
     private void OnPagePreviewKeyDown(object sender, KeyRoutedEventArgs e)
     {
         ShowControls();
-        if (e.Key == VirtualKey.Space && AcceptsShortcut())
+        // On the Playing Next screen too, as long as the episode plays on in its corner; after its end Space presses
+        // the focused button.
+        if (e.Key == VirtualKey.Space && AcceptsShortcut() && !(ViewModel.IsNextUpScreenShown && ViewModel.Phase == PlayerPhase.Ended))
         {
             e.Handled = true;
             if (!e.KeyStatus.WasKeyDown)
@@ -82,6 +85,21 @@ public sealed partial class PlayerPage
             return;
         }
         bool isRepeat = e.KeyStatus.WasKeyDown;
+        if (ViewModel.IsNextUpScreenShown)
+        {
+            // The Playing Next screen's keys, as on the web: Esc closes, Enter plays the next episode.
+            if (e.Key == VirtualKey.Escape && !isRepeat)
+            {
+                e.Handled = true;
+                ViewModel.CloseCommand.Execute(null);
+            }
+            else if (e.Key == VirtualKey.Enter && !isRepeat && ViewModel.HasNextEpisode)
+            {
+                e.Handled = true;
+                ViewModel.PlayNextNowCommand.Execute(null);
+            }
+            return;
+        }
         switch (e.Key)
         {
             case VirtualKey.K when !isRepeat:

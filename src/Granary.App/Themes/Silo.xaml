@@ -706,6 +706,86 @@
         </Setter>
     </Style>
     <!--
+        The next episode's card (the web's NextEpisodeOverlay): Play Now white with black text, Cancel outlined; both
+        rounded 4, 14 px medium.
+    -->
+    <Style x:Key="SiloPlayerCardButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="#FFFFFFFF" />
+        <Setter Property="Foreground" Value="#FF000000" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="12,6" />
+        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="FontFamily" Value="{StaticResource SiloFontMedium}" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="UseSystemFocusVisuals" Value="True" />
+        <Setter Property="FocusVisualMargin" Value="-3" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid x:Name="Root" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                          BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{TemplateBinding CornerRadius}">
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup x:Name="CommonStates">
+                                <VisualState x:Name="Normal" />
+                                <VisualState x:Name="PointerOver">
+                                    <VisualState.Setters>
+                                        <Setter Target="Root.Opacity" Value="0.9" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Pressed">
+                                    <VisualState.Setters>
+                                        <Setter Target="Root.Opacity" Value="0.8" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                            </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>
+                        <Border x:Name="Hover" Background="#1AFFFFFF" Opacity="0" IsHitTestVisible="False" />
+                        <ContentPresenter
+                            Padding="{TemplateBinding Padding}"
+                            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalContentAlignment="Center"
+                            AutomationProperties.AccessibilityView="Raw"
+                            Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            Foreground="{TemplateBinding Foreground}"
+                            FontFamily="{TemplateBinding FontFamily}"
+                            FontWeight="{TemplateBinding FontWeight}"
+                            FontSize="{TemplateBinding FontSize}" />
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style x:Key="SiloPlayerCardOutlineButtonStyle" TargetType="Button" BasedOn="{StaticResource SiloPlayerCardButtonStyle}">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{StaticResource SiloPlayerForegroundBrush}" />
+        <Setter Property="BorderBrush" Value="#4DFFFFFF" />
+        <Setter Property="FontFamily" Value="{StaticResource SiloFontRegular}" />
+        <Setter Property="FontWeight" Value="Normal" />
+    </Style>
+    <!-- "Play Now" on the Playing Next screen: the red pill with white text. -->
+    <Style x:Key="SiloNextUpPlayButtonStyle" TargetType="Button" BasedOn="{StaticResource SiloPrimaryButtonStyle}">
+        <Setter Property="Foreground" Value="#FFFFFFFF" />
+        <Setter Property="Padding" Value="24,0,28,0" />
+        <Setter Property="FontFamily" Value="{StaticResource SiloFontSemiBold}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="CharacterSpacing" Value="0" />
+    </Style>
+    <!-- "Auto-play is on", under Play Now: a quiet line that switches it. -->
+    <Style x:Key="SiloNextUpTextButtonStyle" TargetType="Button" BasedOn="{StaticResource SiloPlayerCardButtonStyle}">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="#4DFFFFFF" />
+        <Setter Property="Padding" Value="4,2" />
+        <Setter Property="FontFamily" Value="{StaticResource SiloFontRegular}" />
+        <Setter Property="FontWeight" Value="Normal" />
+        <Setter Property="FontSize" Value="12" />
+    </Style>
+
+    <!--
         "Skip Intro", "Skip Credits": the web player's pill over the picture, black at 75 % with a faint white edge. The
         content fills the whole pill, so the page can lay the intro's running time under the label.
     -->
