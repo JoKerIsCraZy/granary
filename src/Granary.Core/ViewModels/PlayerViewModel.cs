@@ -60,7 +60,8 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         IUpNextSource? upNext = null,
         AutoPlayStreak? streak = null,
         IProfileSettings? settings = null,
-        ILogger<PlayerViewModel>? logger = null)
+        ILogger<PlayerViewModel>? logger = null,
+        Auth.AccountPermissions? permissions = null)
     {
         _engine = engine;
         _dispatcher = dispatcher;
@@ -73,7 +74,9 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         _streak = streak ?? new AutoPlayStreak();
         _settings = settings;
         _logger = logger ?? (ILogger)NullLogger.Instance;
+        _permissions = permissions;
         Look.Edited += OnLookEdited;
+        InitializeMarkerEdit();
         _engine.StateChanged += OnStateChanged;
         _engine.Ended += OnEnded;
     }
@@ -213,6 +216,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         var playback = _serverPlaybacks();
         _playback = playback;
         HasSubtitleMenu = true;
+        ReadMarkerPermission();
         playback.StatusChanged += OnPlaybackStatusChanged;
         playback.TracksChanged += OnTracksChanged;
         playback.MarkersChanged += OnMarkersChanged;
@@ -356,6 +360,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         AudioTracks = [];
         HasSubtitleMenu = false;
         ResetSubtitles();
+        ResetMarkerEdit();
         ResetMarkers();
         ResetChapters();
         _stops.Track(EndAsync(playback));
@@ -437,6 +442,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         {
             AudioTracks = AudioTrackOption.For(playback.AudioTracks, playback.AudioTrack);
             TakeSubtitles(playback);
+            ShowMarkerEdit();
             TakeMarkers(playback);
             TakeChapters(playback);
             ShowSettings();
@@ -471,6 +477,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         Volume = state.Volume;
         CanSeek = state.IsLoaded && state.HasStarted && (_playback is null || _playback.Status.Phase == ServerPlaybackPhase.Playing);
         FollowMarkers(state);
+        ShowMarkerEdit();
         FollowChapters();
         FollowNextUp();
     }

@@ -110,6 +110,13 @@ public interface IServerPlayback : IAsyncDisposable
     /// <summary>Raised on the UI thread when the server named markers of the playing file it had not named before.</summary>
     event EventHandler? MarkersChanged;
 
+    /// <summary>
+    /// Stores the viewer's marker edits for the file that plays (<c>marker_edit</c>): a kind with a range sets it, with
+    /// null clears it; kinds left out keep theirs. <see cref="Markers"/> are the server's answer once it is done. A
+    /// refusal throws as the API does.
+    /// </summary>
+    Task SaveMarkersAsync(IReadOnlyDictionary<string, WatchMarker?> changes, CancellationToken cancellationToken = default);
+
     /// <summary>The chapters of the file that plays, in source seconds (11.3); empty without.</summary>
     IReadOnlyList<PlaybackChapter> Chapters { get; }
 

@@ -47,6 +47,7 @@ public sealed partial class SeekBar : UserControl
     public SeekBar()
     {
         InitializeComponent();
+        InitializeEditing();
         // Shows the position again once a held target expires, also when the position does not move (paused,
         // or the seek was refused).
         _pendingTimer = DispatcherQueue.CreateTimer();
@@ -128,6 +129,10 @@ public sealed partial class SeekBar : UserControl
     {
         base.OnPointerEntered(e);
         _isPointerOver = true;
+        if (_edgeDrag is not null)
+        {
+            return;
+        }
         double x = e.GetCurrentPoint(Track).Position.X;
         ShowTip(_dragSeconds ?? SecondsAt(x), x);
         Render();
@@ -136,6 +141,10 @@ public sealed partial class SeekBar : UserControl
     protected override void OnPointerMoved(PointerRoutedEventArgs e)
     {
         base.OnPointerMoved(e);
+        if (_edgeDrag is not null)
+        {
+            return;
+        }
         double x = e.GetCurrentPoint(Track).Position.X;
         double seconds = SecondsAt(x);
         if (_dragSeconds is not null)
@@ -150,7 +159,7 @@ public sealed partial class SeekBar : UserControl
     {
         base.OnPointerExited(e);
         _isPointerOver = false;
-        if (_dragSeconds is null)
+        if (_dragSeconds is null && _edgeDrag is null)
         {
             HideTip();
         }
@@ -161,8 +170,8 @@ public sealed partial class SeekBar : UserControl
     {
         base.OnPointerPressed(e);
         var point = e.GetCurrentPoint(Track);
-        // Touch and pen contacts report as the left button.
-        if (!CanSeek || !point.Properties.IsLeftButtonPressed || !CapturePointer(e.Pointer))
+        // Touch and pen contacts report as the left button. A marker handle has a drag of its own.
+        if (IsHandle(e.OriginalSource) || _edgeDrag is not null || !CanSeek || !point.Properties.IsLeftButtonPressed || !CapturePointer(e.Pointer))
         {
             return;
         }
@@ -315,6 +324,11 @@ public sealed partial class SeekBar : UserControl
         TipLines.HorizontalAlignment = hasPicture ? HorizontalAlignment.Stretch : HorizontalAlignment.Center;
         Tip.Width = hasPicture ? PictureWidth + 2 : double.NaN;
         ShowRegionHighlight(_dragSeconds is null ? marker : null);
+        PlaceTip(x);
+    }
+
+    private void PlaceTip(double x)
+    {
         Tip.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
         double width = Tip.DesiredSize.Width;
         double left = Math.Clamp(x - width / 2, 0, Math.Max(0, Track.ActualWidth - width));
@@ -343,6 +357,7 @@ public sealed partial class SeekBar : UserControl
         Track.Scale = isActive ? ActiveTrackScale : Vector3.One;
         Track.Opacity = IsEnabled ? 1 : 0.5;
         PlaceRegions(width);
+        PlaceEditRegions(width);
         PlaceChapterTicks(width);
     }
 }

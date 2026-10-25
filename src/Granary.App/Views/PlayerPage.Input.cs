@@ -118,9 +118,14 @@ public sealed partial class PlayerPage
                 ViewModel.ToggleSubtitles();
                 break;
             case VirtualKey.Escape when !isRepeat:
-                // As on the web player, Esc first turns an intro pill away.
+                // As on the web player, Esc first turns an intro pill away; the marker panel closes before the player.
                 if (ViewModel.DismissSkipPrompt())
                 {
+                    break;
+                }
+                if (ViewModel.MarkerEditor.IsEditing)
+                {
+                    ViewModel.MarkerEditor.Cancel();
                     break;
                 }
                 if (IsFullScreenNow)

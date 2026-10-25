@@ -133,4 +133,40 @@ public sealed class ServerPlaybackMarkerTests
         Assert.Equal([Intro], playback.Markers);
         Assert.Equal(ServerPlaybackPhase.Playing, playback.Status.Phase);
     }
+
+    [Fact]
+    public async Task SavedMarkers_AreTheServersAnswer_AtOnce()
+    {
+        const string MarkersPath = "api/v2/markers/files/42";
+        _fixture.Silo.On(HttpMethod.Put, MarkersPath, Ok("""
+            { "file_id": "42", "intro": { "start_seconds": 5, "end_seconds": 80, "source": "manual" }, "credits": {}, "recap": {}, "preview": {},
+              "marker_segments": [ { "kind": "intro", "start_seconds": 5, "end_seconds": 80 } ] }
+            """));
+        var playback = await _fixture.PlayingAsync();
+        int changes = 0;
+        playback.MarkersChanged += (_, _) => changes++;
+
+        await playback.SaveMarkersAsync(new Dictionary<string, WatchMarker?>
+        {
+            [WatchMarkerKinds.Intro] = new WatchMarker(5, 80),
+            [WatchMarkerKinds.Credits] = null,
+        }, TestContext.Current.CancellationToken);
+
+        Assert.Equal("""{"intro":{"start_seconds":5,"end_seconds":80},"credits":null}""", _fixture.Silo.SentTo(HttpMethod.Put, MarkersPath).Single().Body);
+        Assert.Equal([new PlaybackMarker(WatchMarkerKinds.Intro, 5, 80)], playback.Markers);
+        Assert.Equal(1, changes);
+    }
+
+    [Fact]
+    public async Task ARefusedSave_Throws_AndKeepsTheMarkers()
+    {
+        _fixture.Silo.On(HttpMethod.Put, "api/v2/markers/files/42", ScriptedSilo.Problem(403, "forbidden"));
+        var playback = await _fixture.PlayingAsync();
+        var before = playback.Markers;
+
+        await Assert.ThrowsAsync<Granary.Core.Api.SiloApiException>(() => playback.SaveMarkersAsync(
+            new Dictionary<string, WatchMarker?> { [WatchMarkerKinds.Intro] = new WatchMarker(5, 80) }, TestContext.Current.CancellationToken));
+
+        Assert.Equal(before, playback.Markers);
+    }
 }

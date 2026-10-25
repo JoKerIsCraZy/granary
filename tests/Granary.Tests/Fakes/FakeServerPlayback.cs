@@ -77,6 +77,18 @@ internal sealed class FakeServerPlayback : IServerPlayback
 
     public void ShowAddedSubtitle(string storedSubtitleId) => AddedSubtitles.Add(storedSubtitleId);
 
+    /// <summary>Every marker save the player asked for, in order.</summary>
+    public List<IReadOnlyDictionary<string, WatchMarker?>> MarkerSaves { get; } = [];
+
+    /// <summary>What a marker save does: a pending task keeps it on its way, a faulted one refuses it.</summary>
+    public Func<IReadOnlyDictionary<string, WatchMarker?>, Task> SaveMarkers { get; set; } = _ => Task.CompletedTask;
+
+    public Task SaveMarkersAsync(IReadOnlyDictionary<string, WatchMarker?> changes, CancellationToken cancellationToken = default)
+    {
+        MarkerSaves.Add(changes);
+        return SaveMarkers(changes);
+    }
+
     public int SubtitleDelayMs { get; set; }
 
     public void SetSubtitleDelay(int milliseconds) => SubtitleDelayMs = Math.Clamp(milliseconds, -10_000, 10_000);

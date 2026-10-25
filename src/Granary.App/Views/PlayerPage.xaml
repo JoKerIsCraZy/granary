@@ -96,7 +96,9 @@
                 <controls:SeekBar x:Name="SeekBar" AutomationProperties.Name="Seek"
                                   Position="{x:Bind ViewModel.PositionSeconds, Mode=OneWay}"
                                   Duration="{x:Bind ViewModel.DurationSeconds, Mode=OneWay}"
-                                  Markers="{x:Bind ViewModel.Markers, Mode=OneWay}"
+                                  Markers="{x:Bind ViewModel.SeekBarMarkers, Mode=OneWay}"
+                                  EditKind="{x:Bind EditKindOf(ViewModel.MarkerEditor.IsEditing, ViewModel.MarkerEditor.ActiveKind), Mode=OneWay}"
+                                  MarkerEdgeDragged="OnMarkerEdgeDragged"
                                   Chapters="{x:Bind ViewModel.ChapterMarks, Mode=OneWay}"
                                   Trickplay="{x:Bind ViewModel.Trickplay, Mode=OneWay}"
                                   IsEnabled="{x:Bind ViewModel.CanSeek, Mode=OneWay}"
@@ -491,6 +493,16 @@
                                 </Flyout>
                             </Button.Flyout>
                         </Button>
+                        <!-- Edit markers, for an account that may: the web's tag button, white with the dot while the panel is open. -->
+                        <Grid Visibility="{x:Bind ViewModel.CanEditMarkers, Mode=OneWay}">
+                            <Button x:Name="EditMarkersButton" Style="{StaticResource SiloPlayerIconButtonStyle}" Command="{x:Bind ViewModel.ToggleMarkerEditCommand}"
+                                    Foreground="{x:Bind UtilityForeground(ViewModel.MarkerEditor.IsEditing), Mode=OneWay}"
+                                    AutomationProperties.Name="Edit markers" AutomationProperties.ItemStatus="{x:Bind OnStatus(ViewModel.MarkerEditor.IsEditing), Mode=OneWay}"
+                                    ToolTipService.ToolTip="Edit markers">
+                                <FontIcon Glyph="&#xE8EC;" FontSize="18" />
+                            </Button>
+                            <Ellipse Style="{StaticResource SiloPlayerActiveDotStyle}" Visibility="{x:Bind ViewModel.MarkerEditor.IsEditing, Mode=OneWay}" />
+                        </Grid>
                         <!-- Playback info, the mini view (the web's Picture in Picture) and Fill screen, as on the web. -->
                         <Grid>
                             <Button x:Name="PlaybackInfoButton" Style="{StaticResource SiloPlayerIconButtonStyle}" Command="{x:Bind ViewModel.TogglePlaybackInfoCommand}"
@@ -746,6 +758,10 @@
                 <FontIcon Glyph="&#xE711;" FontSize="14" />
             </Button>
         </Grid>
+
+        <!-- The marker panel, bottom left above the controls; it can be moved by its header. -->
+        <controls:MarkerEditPanel x:Name="MarkerPanel" Canvas.ZIndex="2" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="24,0,0,176"
+                                  Visibility="{x:Bind ShowsInWindow(ViewModel.MarkerEditor.IsEditing, IsMiniView), Mode=OneWay}" />
 
         <!-- Add Subtitles and Subtitle appearance: over everything, as the web's dialogs (PlayerPage.Subtitles.cs). -->
         <controls:AddSubtitlesPanel x:Name="AddSubtitlesPanel" Canvas.ZIndex="5" Visibility="Collapsed" />

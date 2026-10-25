@@ -228,6 +228,11 @@ public sealed partial class PlayerPage : Page
 
     private void OnSeekRequested(SeekBar sender, double seconds) => ViewModel.SeekTo(seconds);
 
+    private void OnMarkerEdgeDragged(SeekBar sender, MarkerEdgeChange change) => ViewModel.MarkerEditor.SetEdge(change.Kind, change.Edge, change.Seconds);
+
+    // The seek bar's handles while the markers are edited: the chosen kind's.
+    public string? EditKindOf(bool isEditing, string activeKind) => isEditing ? activeKind : null;
+
     // As the web's 1fr auto 1fr row: the right column is never narrower than its buttons. In a narrow window the
     // transport moves left, rather than the buttons being cut off.
     private void OnRightControlsLayoutUpdated(object? sender, object e)

@@ -47,6 +47,7 @@ public sealed partial class ServerPlayback : IServerPlayback
     private readonly PlaybackApi _api;
     private readonly TrackPreferencesApi _preferences;
     private readonly SettingsApi _settings;
+    private readonly MarkersApi _markers;
     private readonly IMediaAuthorization _auth;
     private readonly IMediaProxy _proxy;
     private readonly IPlaybackEngine _engine;
@@ -103,6 +104,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         PlaybackApi api,
         TrackPreferencesApi preferences,
         SettingsApi settings,
+        MarkersApi markers,
         IMediaAuthorization auth,
         IMediaProxy proxy,
         IPlaybackEngine engine,
@@ -115,6 +117,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         _api = api;
         _preferences = preferences;
         _settings = settings;
+        _markers = markers;
         _auth = auth;
         _proxy = proxy;
         _engine = engine;

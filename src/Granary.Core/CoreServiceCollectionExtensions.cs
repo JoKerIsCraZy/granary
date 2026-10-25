@@ -66,6 +66,8 @@ public static class CoreServiceCollectionExtensions
         AddSpeedTest(services);
         services.AddTransient<TrackPreferencesApi>();
         services.AddTransient<SubtitlesApi>();
+        services.AddTransient<MarkersApi>();
+        services.AddTransient<AccountPermissions>();
         services.AddTransient<SettingsApi>();
         services.AddTransient<LibraryPageApi>();
         services.AddTransient<ImagesApi>();

@@ -30,6 +30,8 @@
         <Grid x:Name="ChapterTicks" Height="10" VerticalAlignment="Center" IsHitTestVisible="False" />
         <Border x:Name="RegionHighlight" Height="8" VerticalAlignment="Center" HorizontalAlignment="Left" CornerRadius="4"
                 BorderThickness="1" BorderBrush="#CCFFFFFF" IsHitTestVisible="False" Visibility="Collapsed" />
+        <!-- While markers are edited: the draft's parts, past the track (SeekBar.Editing.cs). -->
+        <Grid x:Name="EditRegions" Height="10" VerticalAlignment="Center" IsHitTestVisible="False" />
 
         <Ellipse x:Name="Thumb" Width="14" Height="14" HorizontalAlignment="Left" VerticalAlignment="Center"
                  Fill="{StaticResource SiloPlayerForegroundBrush}" Opacity="0">
@@ -37,6 +39,8 @@
                 <ScalarTransition Duration="0:0:0.15" />
             </Ellipse.OpacityTransition>
         </Ellipse>
+        <!-- The chosen part's handles, above the thumb. -->
+        <Canvas x:Name="EditHandles" VerticalAlignment="Center" HorizontalAlignment="Left" />
 
         <!-- A canvas does not clip, so the bubble can sit above the bar's own row. -->
         <Canvas VerticalAlignment="Center" HorizontalAlignment="Left" IsHitTestVisible="False">

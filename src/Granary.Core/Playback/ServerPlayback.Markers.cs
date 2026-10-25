@@ -1,3 +1,4 @@
+using Granary.Core.Api.Playback;
 using Granary.Core.ViewModels;
 using Microsoft.Extensions.Logging;
 
@@ -10,6 +11,9 @@ public sealed partial class ServerPlayback
     private (string FileId, IReadOnlyList<PlaybackMarker> Markers)? _readMarkers;
     private readonly HashSet<string> _markersAsked = [];
 
+    // Counts the viewer's saves: a read that was on its way before one names the markers as they were.
+    private int _markerSaves;
+
     public event EventHandler? MarkersChanged;
 
     // The server's list: mpv reads none through remux or transcode routes (11.3).
@@ -17,6 +21,30 @@ public sealed partial class ServerPlayback
         ? [.. version.Chapters.Where(c => c.EndSeconds > c.StartSeconds).OrderBy(c => c.StartSeconds)
             .Select(c => new PlaybackChapter(c.Title, c.StartSeconds, c.EndSeconds, Api.Images.ArtworkUrl.Resolve(context.Server.BaseUri, c.ThumbnailUrl)))]
         : [];
+
+    public async Task SaveMarkersAsync(IReadOnlyDictionary<string, WatchMarker?> changes, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(changes);
+        if (_context is not { } context || PlayingVersion is not { } version)
+        {
+            throw new InvalidOperationException("No file plays.");
+        }
+        string fileId = version.FileId;
+        var saved = await _markers.SetAsync(context.Server.BaseUri, fileId, changes, cancellationToken);
+        if (_stopping || PlayingVersion?.FileId != fileId)
+        {
+            return;
+        }
+        // The answer is the file's markers as they are now: the skip pills and the seek bar take them at once.
+        var before = Markers;
+        _markerSaves++;
+        _readMarkers = (fileId, PlaybackMarker.Of(saved.AsVersion(fileId), context.Server.BaseUri));
+        _logger.LogInformation("Saved {Count} marker change(s) for the playing file", changes.Count);
+        if (!before.SequenceEqual(Markers))
+        {
+            MarkersChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
 
     public IReadOnlyList<PlaybackMarker> Markers => PlayingVersion is not { } version
         ? []
@@ -34,6 +62,7 @@ public sealed partial class ServerPlayback
 
         async Task ReadAsync(string fileId)
         {
+            int saves = _markerSaves;
             IReadOnlyList<PlaybackMarker>? markers;
             try
             {
@@ -56,7 +85,7 @@ public sealed partial class ServerPlayback
             }
             _dispatcher.Post(() =>
             {
-                if (_stopping)
+                if (_stopping || saves != _markerSaves)
                 {
                     return;
                 }

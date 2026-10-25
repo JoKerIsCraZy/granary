@@ -141,6 +141,11 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   `stored-{id}`, an older server's `downloaded_subtitle_id` in the URL) is picked as the viewer's, as Android selects
   a download. A replan already on its way may list it; if it does not, one more is asked for after it, then it is
   given up.
+- **Marker edits** (`marker_edit`): `AccountPermissions` offers the button as Silo's web does (the permission, or
+  an admin acting on the primary profile, read from the profile list once per page). Save sends only the kinds that
+  changed to `PUT /api/v2/markers/files/{file_id}` (`MarkersApi`; a cleared kind as null, so a scanned marker is not
+  rewritten as manual), through `ServerPlayback.SaveMarkersAsync`, which takes the server's answer as the playing
+  file's markers at once: the skip pills and the seek bar follow; a marker read still on its way is dropped.
 - **Subtitle look in the player**: the Appearance panel edits a `SubtitleAppearanceEditor` (shared with Settings);
   each change goes to mpv at once and is saved through `IProfileSettings` as the profile's, one save after another
   and only the latest of those waiting, clearing this device's row once when it has one. "Use fallback style"

@@ -85,6 +85,7 @@ internal sealed class ServerPlaybackFixture
             new PlaybackApi(Silo.Http),
             new TrackPreferencesApi(Silo.Http),
             new SettingsApi(Silo.Http),
+            new MarkersApi(Silo.Http),
             Auth,
             Proxy,
             Engine,

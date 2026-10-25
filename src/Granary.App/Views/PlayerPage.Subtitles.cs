@@ -19,12 +19,15 @@ public sealed partial class PlayerPage
     private void InitializeSubtitlePanels()
     {
         AppearancePanel.ViewModel = ViewModel;
+        MarkerPanel.ViewModel = ViewModel;
         ViewModel.PropertyChanged += OnSubtitlePanelsPropertyChanged;
+        ViewModel.MarkerEditor.PropertyChanged += OnMarkerEditorPropertyChanged;
     }
 
     private void StopSubtitlePanels()
     {
         ViewModel.PropertyChanged -= OnSubtitlePanelsPropertyChanged;
+        ViewModel.MarkerEditor.PropertyChanged -= OnMarkerEditorPropertyChanged;
         if (_addSubtitles is { } addSubtitles)
         {
             addSubtitles.CloseRequested -= OnAddSubtitlesCloseRequested;
@@ -79,6 +82,16 @@ public sealed partial class PlayerPage
         }
         AddSubtitlesPanel.Visibility = Visibility.Collapsed;
         KeepFocusInPage();
+    }
+
+    // The marker panel opens where the web puts it each time, and a button it had the keyboard on is gone with it.
+    private void OnMarkerEditorPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(MarkerEditorViewModel.IsEditing) && !ViewModel.MarkerEditor.IsEditing)
+        {
+            MarkerPanel.ResetPosition();
+            KeepFocusInPage();
+        }
     }
 
     private void OnSubtitlePanelsPropertyChanged(object? sender, PropertyChangedEventArgs e)

@@ -192,6 +192,18 @@ says why above the sections.
   and "CHANGES SAVED AUTOMATICALLY" (or what went wrong). A change shows at once and is saved as the profile's
   `playback.subtitle_appearance`, the latest only while a save is on its way, clearing this device's look as the web
   does; fallback clears both and shows the server's default.
+- **Edit markers** (`MarkerEditPanel`, `MarkerEditorViewModel`, the web's `MarkerEditPanel` and `useMarkerEditor`): a tag
+  button left of Playback info for an account with `marker_edit`, or an admin acting on the primary profile (or with
+  none selected), white with the amber dot while the panel is open. The panel: 352 px, bottom left above the controls
+  (neutral 900 at 95 %, radius 16), moved by its header and kept inside the player; "Edit markers" and "Drag the
+  timeline handles, or set points to the playhead."; a row per kind (Intro, Recap, Credits / Outro, Preview) with its
+  dot (sky, violet, amber, emerald), name and range in mono ("0:03 – 0:12", "Not set"). The open row (white 6 %, a white
+  10 % ring; the first kind that has a range at the start) has Set start and Set end at the playhead, Reset to saved
+  and Clear. At the bottom the playhead's time, Reset all (while something changed), Cancel and Save (white, a ring
+  while it saves). While it is open the controls stay, the seek bar shows the draft (every kind, brighter, 8 px, the
+  open one 10 px with a white ring) with a white 6 by 16 px handle at each end of the open kind; dragging one moves that
+  end, never past the other (0.5 s apart), with "Intro end 0:50" above it. A new part gets a minute on the other side.
+  Esc closes the panel first; another title closes it.
 - **Settings menu** (the web's QualityMenu): a gear pill (white 8 %) that names the quality ("Auto", "720p Medium")
   and, at a speed other than 1×, a white badge with it ("1.5×"). SPEED: the value at the right, the speeds 0.5× to 3×
   (0.25 apart up to 2×, then 2.5× and 3×) as stops on a track drawn like the seek bar, the fill from 1× to the
@@ -257,7 +269,8 @@ says why above the sections.
 - **Mouse**: a click on the picture plays or pauses (after 250 ms, so a double click does not), a double
   click toggles full screen. On touch a tap shows or hides the controls.
 - **Keyboard** (the web player's map, docs/api-contract.md 13.5): Space and K play/pause, F full screen,
-  P the mini view, Esc turns away an intro pill, else leaves full screen or the mini view, else closes, M mute, C
+  P the mini view, Esc turns away an intro pill, else closes the marker panel, else leaves full screen or the mini
+  view, else closes, M mute, C
   subtitles off and on, Left/Right skip, Up/Down volume ±5. Space wins over a focused button; arrows go to a focused
   slider first. Nothing applies while a text field, an open menu or the Add Subtitles or appearance panel has focus
   (Esc closes the panel), or with Ctrl, Alt, Shift or Windows held. The keys are handled on the page, not as keyboard
