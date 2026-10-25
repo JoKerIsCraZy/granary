@@ -39,14 +39,43 @@ public sealed class ServerPlaybackTests
     public async Task ADirectPlay_PlaysTheAudioThePlanSelected(string audio, int stream)
     {
         // The file holds every audio track, and mpv on its own plays the one the file marks as default.
-        // The first "audio" object is selected_tracks.audio; the claims have one too.
-        string decision = new Regex(@"(""audio"":\s*)\{[^}]*\}").Replace(PlaybackPayloads.StartOpaqueIds, "$1" + audio, 1);
-        Assert.Contains(audio, decision, StringComparison.Ordinal);
-        _fixture.Silo.On(HttpMethod.Post, StartPath, Created(decision));
+        _fixture.Silo.On(HttpMethod.Get, "api/v2/watch/" + MovieId, Ok(WithASecondAudioTrack(PlaybackPayloads.WatchStateOk)));
+        _fixture.Silo.On(HttpMethod.Post, StartPath, Created(SelectingAudio(audio)));
 
         await _fixture.StartAsync();
 
         Assert.Equal(stream, Assert.Single(_fixture.Engine.Loaded).AudioStream);
+    }
+
+    [Fact]
+    public async Task AnAudioTrackTheFileLacks_IsReportedForAnotherRoute()
+    {
+        // The claim says the ordinal maps onto the file; mpv would play an absent stream silent.
+        _fixture.Silo.On(HttpMethod.Post, StartPath, Created(SelectingAudio("{ \"id\": \"file:42:audio:3\", \"index\": 3 }")));
+        _fixture.Silo.On(HttpMethod.Post, ReplanPath, Ok(TranscodeInThisSession));
+        var playback = await _fixture.StartAsync();
+        await playback.Recovery;
+
+        var replan = _fixture.Body(HttpMethod.Post, ReplanPath);
+        Assert.Equal("failure_recovery", replan.GetProperty("operation").GetString());
+        Assert.Equal("audio_track_unavailable", replan.GetProperty("failure").GetProperty("classification").GetString());
+        Assert.Null(Assert.Single(_fixture.Engine.Loaded).AudioStream);
+    }
+
+    // The first "audio" object of the decision is selected_tracks.audio; the claims have one too.
+    private static string SelectingAudio(string audio)
+    {
+        string decision = new Regex(@"(""audio"":\s*)\{[^}]*\}").Replace(PlaybackPayloads.StartOpaqueIds, "$1" + audio, 1);
+        Assert.Contains(audio, decision, StringComparison.Ordinal);
+        return decision;
+    }
+
+    private static string WithASecondAudioTrack(string watch)
+    {
+        string twoTracks = new Regex(@"(""audio_tracks"":\s*\[\s*\{[^}]*\})")
+            .Replace(watch, "$1, { \"language\": \"ger\", \"codec\": \"eac3\", \"channels\": 6, \"default\": false }", 1);
+        Assert.Contains("\"ger\"", twoTracks, StringComparison.Ordinal);
+        return twoTracks;
     }
 
     [Fact]

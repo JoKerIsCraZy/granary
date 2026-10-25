@@ -295,6 +295,13 @@ public sealed partial class ServerPlayback : IServerPlayback
             return;
         }
         _streamUrl = url;
+        if (AudioStream(plan) is { } stream && !FileHasAudioStream(plan, stream))
+        {
+            // client_selected_audio_track_v1 promises the ordinal maps onto the file; a stream it lacks would play
+            // silent, so the server is asked for a route that packages the track instead (8.8).
+            await RecoverFromFailureAsync("audio_track_unavailable", $"The file has no audio stream {stream}.");
+            return;
+        }
         SendRouteEvent(RouteEvents.PlanSelected);
         var timeline = plan.Timeline;
         double start = restorePosition is { } position && timeline.SeekRestoration == SeekRestorations.PlayerPosition
@@ -340,6 +347,12 @@ public sealed partial class ServerPlayback : IServerPlayback
         _loadId = _engine.Load(new MediaSource(_streamUrl!, media.Headers, TimeSpan.FromSeconds(_playerPosition), audio));
         WatchFirstFrame(_loadId);
     }
+
+    // Only the version's own file is known here: after an edition fallback the plan plays another one.
+    private bool FileHasAudioStream(PlaybackPlan plan, int stream) =>
+        plan.EffectiveMediaFileId != _context!.Version.FileId
+        || _context.Version.AudioTracks.Count == 0
+        || stream <= _context.Version.AudioTracks.Count;
 
     // A direct play is the file itself, with every audio track, and the player would take the one the file marks as
     // default: it must play the one the plan selected (8.8). A stream the server made carries only that one.
