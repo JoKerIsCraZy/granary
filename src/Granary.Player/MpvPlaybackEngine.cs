@@ -21,6 +21,9 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
     private TimeSpan? _lastReportedPosition;
     private long _loads;
 
+    // The audio stream the latest load asked for; checked once mpv opened the file.
+    private int? _loadAudio;
+
     // Set once the server refused a request of the current load. mpv then runs to the end of what it had read and
     // pauses there (keep-open), well before it says the file ended: positions and pauses from then on are not the
     // viewer's, so the snapshot keeps the last real ones until the next load, and the end is the refusal's.
@@ -128,12 +131,13 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
         lock (_gate)
         {
             loadId = ++_loads;
+            _loadAudio = source.AudioStream;
             _lastReportedPosition = null;
             _rejected = false;
         }
         // The file before is still loaded until mpv replaces it: nothing of it may read as the new one's start.
         Update(s => s with { LoadId = loadId, IsLoaded = false, HasStarted = false, IsAtEnd = false }, force: true);
-        _logger.LogInformation("Loading {Target} with {HeaderCount} header(s)", Describe(source.Url), source.Headers.Count);
+        _logger.LogInformation("Loading {Target} with {HeaderCount} header(s), {Options}", Describe(source.Url), source.Headers.Count, perFileOptions);
         _mpv.Command("loadfile", target, "replace", "-1", perFileOptions);
         return loadId;
     }
@@ -235,12 +239,36 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
         }
         if (eventId == LibMpv.EventFileLoaded)
         {
+            KeepLoadedAudio();
             Update(s => s with { IsLoaded = true }, force: true);
         }
         // mpv restarts playback after the load and after every seek; the first one is the start.
         if (eventId == LibMpv.EventPlaybackRestart && !Current.HasStarted)
         {
             Update(s => s with { HasStarted = true }, force: true);
+        }
+    }
+
+    // mpv was seen to play a server stream's default audio track although the load named another one (aid), now and
+    // then after other playbacks in the same run; it could not be reproduced here. The track is checked once the file
+    // is open, before the first sound, and selected again if needed.
+    private void KeepLoadedAudio()
+    {
+        int? wanted;
+        lock (_gate)
+        {
+            wanted = _loadAudio;
+        }
+        if (wanted is not { } stream)
+        {
+            return;
+        }
+        string id = stream.ToString(CultureInfo.InvariantCulture);
+        string? playing = _mpv.GetString("current-tracks/audio/id");
+        if (playing != id)
+        {
+            _logger.LogWarning("mpv opened the file with audio stream {Playing} instead of {Wanted}; selecting it", playing ?? "none", id);
+            _mpv.SetProperty("aid", id);
         }
     }
 
