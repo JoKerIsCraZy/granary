@@ -26,7 +26,8 @@
 
         <Grid Grid.Row="1">
             <ScrollViewer x:Name="Scroller" HorizontalScrollMode="Enabled" HorizontalScrollBarVisibility="Hidden"
-                          VerticalScrollMode="Disabled" VerticalScrollBarVisibility="Disabled" ViewChanged="OnViewChanged">
+                          VerticalScrollMode="Disabled" VerticalScrollBarVisibility="Disabled" ViewChanged="OnViewChanged"
+                          controls:WheelScrollsPage.IsEnabled="True">
                 <ItemsRepeater x:Name="Items" ItemsSource="{x:Bind ItemsSource, Mode=OneWay}">
                     <ItemsRepeater.Layout>
                         <StackLayout Orientation="Horizontal" Spacing="20" />

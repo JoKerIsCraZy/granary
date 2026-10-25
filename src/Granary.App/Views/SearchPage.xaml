@@ -66,7 +66,8 @@
             <StackPanel Spacing="14" Visibility="{x:Bind ViewModel.ShowsPeople, Mode=OneWay}">
                 <TextBlock Text="People" Style="{StaticResource SiloRowTitleTextStyle}" AutomationProperties.HeadingLevel="Level2" />
                 <ScrollViewer HorizontalScrollMode="Enabled" HorizontalScrollBarVisibility="Auto"
-                              VerticalScrollMode="Disabled" VerticalScrollBarVisibility="Disabled">
+                              VerticalScrollMode="Disabled" VerticalScrollBarVisibility="Disabled"
+                              controls:WheelScrollsPage.IsEnabled="True">
                     <ItemsRepeater ItemsSource="{x:Bind ViewModel.People, Mode=OneWay}" Margin="0,0,0,12">
                         <ItemsRepeater.Layout>
                             <StackLayout Orientation="Horizontal" Spacing="20" />
