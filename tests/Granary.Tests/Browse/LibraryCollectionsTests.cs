@@ -52,12 +52,9 @@ public sealed class LibraryCollectionsTests
             Assert.Single(_harness.Queries(LibraryHarness.CatalogPath)));
         Assert.Equal(2, collections.Items.Cards.Count);
 
-        await collections.Items.LoadMoreCommand.ExecuteAsync(null);
+        library.OpenItemCommand.Execute(collections.Items.Cards[1]);
 
-        Assert.Equal($"source=library_collection&library_id=1&collection_id=c1&limit=60&cursor=c2&{LibraryHarness.ImageQuery}",
-            _harness.Queries(LibraryHarness.CatalogPath)[^1]);
-        library.OpenItemCommand.Execute(collections.Items.Cards[2]);
-        Assert.Equal((AppRoute.Item, (object?)"movie:se7en-1995"), _harness.Navigation.Navigations[^1]);
+        Assert.Equal((AppRoute.Item, (object?)"movie:heat-1995"), _harness.Navigation.Navigations[^1]);
     }
 
     [Fact]

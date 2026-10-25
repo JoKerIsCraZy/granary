@@ -235,4 +235,22 @@ public sealed class CatalogModelTests
         Assert.Equal(["2160p"], filters.Technical?.Resolutions);
         Assert.Equal(["en"], filters.Technical?.SubtitleLanguages);
     }
+
+    [Fact]
+    public void LetterAt_IsTheLetterOfTheRunAPositionIsIn()
+    {
+        // Under a C collation accented initials sort after Z: "E" has a second run there.
+        var letters = new CatalogLetters
+        {
+            Total = 10,
+            Runs = [new("#", 0), new("A", 2), new("E", 5), new("Z", 7), new("E", 9)],
+        };
+
+        Assert.Equal("#", letters.LetterAt(1));
+        Assert.Equal("A", letters.LetterAt(2));
+        Assert.Equal("Z", letters.LetterAt(8));
+        Assert.Equal("E", letters.LetterAt(9));
+        Assert.Equal("E", letters.LetterAt(500));
+        Assert.Null(new CatalogLetters().LetterAt(3));
+    }
 }

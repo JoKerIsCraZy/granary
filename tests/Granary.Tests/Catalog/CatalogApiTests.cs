@@ -151,6 +151,32 @@ public sealed class CatalogApiTests
     }
 
     [Fact]
+    public async Task Letters_IndexTheQuerysScopeFiltersAndOrder()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        Answer(HttpMethod.Post, "api/v2/catalog/letters", """
+            { "total": 12, "letters": [ { "letter": "#", "count": 2, "position": 0 }, { "letter": "H", "count": 10, "position": 2 } ],
+              "runs": [ { "letter": "#", "position": 0 }, { "letter": "H", "position": 2 } ] }
+            """);
+        var query = new CatalogQuery
+        {
+            LibraryId = "12", Type = MediaScopes.Movie, Genre = " Crime ", YearMax = 1999, Sort = CatalogSort.Descending(CatalogSortFields.Title),
+            Limit = 60, Cursor = "c", Images = Images,
+        };
+
+        var letters = await Api.GetLettersAsync(Server, query, ct);
+
+        var sent = Only();
+        Assert.Equal("/silo/api/v2/catalog/letters", sent.Uri.PathAndQuery);
+        Assert.Equal("""
+            {"library_id":"12","type":"movie","groups":[{"match":"all","rules":[{"field":"genre","op":"contains","value":"Crime"},{"field":"year","op":"lte","value":1999}]}],"order":"desc"}
+            """, sent.Body);
+        Assert.Equal(12, letters.Total);
+        Assert.Equal(new CatalogLetter("H", 10, 2), letters.Letters[1]);
+        Assert.Equal("H", letters.LetterAt(5));
+    }
+
+    [Fact]
     public async Task Browse_RefusesARefusedQueryBeforeSending()
     {
         await Assert.ThrowsAsync<ArgumentException>(() =>

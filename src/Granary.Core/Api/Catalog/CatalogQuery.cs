@@ -5,12 +5,16 @@ namespace Granary.Core.Api.Catalog;
 /// <summary>
 /// The parameters of <c>GET /api/v2/catalog</c> (docs/api-contract.md, 7.4). Unset members are left out
 /// of the request. The next page is the same query with the page's cursor (<see cref="WithCursor"/>):
-/// cursors are bound to every other parameter, including <see cref="Images"/>.
+/// cursors are bound to every other parameter, including <see cref="Images"/>. A page further on is the first
+/// page's window cursor with a <see cref="Seek"/> (<see cref="AtPosition"/>).
 /// </summary>
 public sealed record CatalogQuery
 {
     /// <summary>Page size 1..200; the server's default is 50.</summary>
     public const int MaximumLimit = 200;
+
+    /// <summary>The furthest list position a <see cref="Seek"/> may name.</summary>
+    public const int MaximumSeek = 10_000_000;
 
     /// <summary>What to page, see <see cref="CatalogSources"/>; the server's default is the whole catalog (<c>query</c>).</summary>
     public string? Source { get; init; }
@@ -59,6 +63,12 @@ public sealed record CatalogQuery
 
     public string? Cursor { get; init; }
 
+    /// <summary>
+    /// Zero-based list position the page starts at, with the first page's window cursor as <see cref="Cursor"/>: the
+    /// server finds it without returning the titles before it.
+    /// </summary>
+    public int? Seek { get; init; }
+
     /// <summary>Skips the exact count; <see cref="CatalogBrowseCollection.Total"/> is then an estimate.</summary>
     public bool SkipTotal { get; init; }
 
@@ -94,7 +104,17 @@ public sealed record CatalogQuery
         new() { Source = CatalogSources.Person, PersonId = personId, Sort = CatalogSort.Descending(CatalogSortFields.Year) };
 
     /// <summary>The same query for the page after <paramref name="cursor"/>; null starts from page one.</summary>
-    public CatalogQuery WithCursor(string? cursor) => this with { Cursor = cursor };
+    public CatalogQuery WithCursor(string? cursor) => this with { Cursor = cursor, Seek = null };
+
+    /// <summary>
+    /// The same query for the page at list position <paramref name="position"/> of the listing whose first page gave
+    /// <paramref name="windowCursor"/>, without counting the total again.
+    /// </summary>
+    public CatalogQuery AtPosition(string windowCursor, int position)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(windowCursor);
+        return this with { Cursor = windowCursor, Seek = position, SkipTotal = true };
+    }
 
     /// <summary>The query string with its leading <c>?</c> (or empty).</summary>
     /// <exception cref="ArgumentException">The combination is one the server refuses with 422.</exception>
@@ -120,6 +140,7 @@ public sealed record CatalogQuery
             .Add("group", Group)
             .Add("limit", Limit)
             .Add("cursor", Cursor)
+            .Add("seek", Seek)
             .AddFlag("skip_total", SkipTotal)
             .Add(Images)
             .ToString();
@@ -140,6 +161,10 @@ public sealed record CatalogQuery
         if (Limit is < 1 or > MaximumLimit)
         {
             throw new ArgumentOutOfRangeException(nameof(Limit), Limit, $"The page size must be between 1 and {MaximumLimit}.");
+        }
+        if (Seek is < 0 or > MaximumSeek)
+        {
+            throw new ArgumentOutOfRangeException(nameof(Seek), Seek, $"A list position must be between 0 and {MaximumSeek}.");
         }
         if (YearMin < 0 || YearMax < 0)
         {

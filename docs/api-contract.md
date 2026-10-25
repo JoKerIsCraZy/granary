@@ -599,16 +599,39 @@ series/season card), `user_state { played, is_favorite, in_watchlist, not_intere
 | `scope` | `home` \| `library` (only with `source=section`) |
 | `library_id`, `section_id`, `collection_id`, `person_id` | scope ids |
 | `q` | text search (see 7.5) |
-| `name_prefix` | A–Z jump: a literal prefix of the sort title (`LIKE 'x%'`), so there is no "#" bucket; the web's "#" (digits, symbols, other scripts) needs `POST /api/v2/catalog/letters` with `seek` |
+| `name_prefix` | a literal prefix of the sort title (`LIKE 'x%'`) that narrows the listing; the web's A–Z bar does not use it (see the letter index below) |
 | `type` | `movie`, `series`, `episode`, `video` (movies + series), `audiobook`, `ebook`, `manga`; unknown values are silently ignored |
 | `genre`, `status`, `year_min`, `year_max`, `content_rating` | simple filters |
 | `sort` | one term: `title`, `added_at`, `release_date`, `year`, `runtime`, `rating_imdb`, `rating_tmdb`, `resolution`, `progress`, `date_viewed`, `plays`, … (`-` prefix = descending; no prefix = ascending). `relevance` only with `q`. |
 | `limit`, `cursor` | 1..200 (default 50), opaque cursor |
+| `seek` | 0..10,000,000: zero-based list position a page starts at, with the first page's `window_cursor` as `cursor` |
 | `skip_total` | `true` → `total` is an estimate |
 
 Response `CatalogBrowseCollection`: `items`, `page { has_more, next_cursor? }`, `total`,
 `total_exact`, `window_cursor`, `effective_sort?`. Next page: same parameters plus
-`cursor=<next_cursor>`. Default sort without `q` is `title` ascending.
+`cursor=<next_cursor>`. Default sort without `q` is `title` ascending. Cursors are bound to every
+parameter but `skip_total` (`limit` and the image parameters included); a page may come back short with
+more to follow.
+
+**Windowed paging** (the web's `useCatalogWindow`, Granary's `LibraryGridViewModel`): the first page
+(with its total) sizes the grid to every title; page `p` of size `n` is the same parameters with
+`cursor=<window_cursor>&seek=p·n&skip_total=true`, so a scroll or jump far down loads only the pages
+around the view (the web keeps one page either side), without the titles before them. Right after a
+full page the next one can continue from that page's `next_cursor` instead, which is cheaper on title
+order. A page whose `page.has_more` is false ends the listing there.
+
+**Letter index**: `POST /api/v2/catalog/letters` with `{ library_id?, type?, match?, groups?, order? }`
+(`asc` | `desc`, the title order counted) answers `{ total, letters: [{ letter, count, position }], runs:
+[{ letter, position }] }` for a title-ordered query-source listing: letters are `A`–`Z` and `#` (digits,
+symbols, other scripts; a sort title such as "Hobbit, The" files under H, accented Latin initials fold to
+their base letter), `position` is the letter's first title, a `seek`. A collation can sort some of a
+letter's titles apart (accented initials after Z under C), so the letter at a list position comes from
+`runs`: the last run starting at or before it. The body takes rule groups only: the simple filters of
+`GET /api/v2/catalog` become the groups the server makes of them (genre `contains`, status `is` and the
+years `between` / `gte` / `lte` in one `"all"` group; one rating as an `"all"` group, several as an
+`"any"` group). `search/capabilities.letter_index` tells whether the server has it. The web's bar jumps
+by scrolling the windowed grid to `position` and marks the letter of the top row
+(`web/src/components/catalog/LetterBar.tsx`, `pages/LibraryBrowse.tsx`).
 
 Rule-based filters use `POST /api/v2/catalog/query` with a JSON body of `source`, `scope`,
 `section_id`, `library_id`, `collection_id`, `person_id`, `q`, `name_prefix`, `type`, `match`,

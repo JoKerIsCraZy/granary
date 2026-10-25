@@ -55,6 +55,18 @@ public sealed class CatalogApi(SiloHttp http)
     }
 
     /// <summary>
+    /// The letter index of <paramref name="query"/> in title order: each letter's count and the list position of its
+    /// first title, to <see cref="CatalogQuery.Seek"/> to. Only the scope (library, type), the filters and the order
+    /// of the query count; it indexes the query source only, never a collection or a search.
+    /// </summary>
+    public Task<CatalogLetters> GetLettersAsync(Uri server, CatalogQuery query, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+        return http.PostAsync(server, "api/v2/catalog/letters", SiloAuth.Profile, CatalogLettersBody.For(query),
+            SiloJsonContext.Default.JsonElement, SiloJsonContext.Default.CatalogLetters, cancellationToken);
+    }
+
+    /// <summary>
     /// The facet values (genres, ratings, …) of the scope of <paramref name="scope"/>: its source, scope ids
     /// and type; its filters, sort and paging are not sent. File-derived facets only with
     /// <paramref name="includeTechnical"/>.

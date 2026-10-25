@@ -1,6 +1,7 @@
 using System.Net;
 using Granary.Core.Api;
 using Granary.Core.ViewModels;
+using Granary.Core.ViewModels.Cards;
 using Granary.Tests.Profiles;
 
 namespace Granary.Tests.Browse;
@@ -10,6 +11,7 @@ public sealed class LibraryBrowseTests
     private const string CatalogPath = LibraryHarness.CatalogPath;
     private const string Images = LibraryHarness.ImageQuery;
     private const string FirstQuery = "library_id=1&type=movie&sort=title&limit=60&" + Images;
+    private const string AllTitlesLetters = """{"library_id":"1","type":"movie","groups":[],"order":"asc"}""";
 
     private readonly LibraryHarness _harness = new();
 
@@ -22,11 +24,10 @@ public sealed class LibraryBrowseTests
         Assert.Equal("library_id=1&type=movie&skip_technical=true", Assert.Single(_harness.Queries("api/v2/catalog/filters")));
         var browse = library.Browse;
         Assert.Equal(new[] { "Alien", "Heat" }, browse.Grid.Cards.Select(c => c.Title));
-        Assert.Equal("1,234 titles", browse.Grid.TotalText);
+        Assert.Equal("2 titles", browse.Grid.TotalText);
         Assert.Equal("Title", browse.SortLabel);
         Assert.Equal("Ascending", browse.OrderLabel);
         Assert.True(browse.IsLetterBarVisible);
-        Assert.True(browse.Grid.HasMore);
     }
 
     [Fact]
@@ -38,49 +39,13 @@ public sealed class LibraryBrowseTests
         await _harness.OpenLibraryTabAsync("2");
 
         Assert.StartsWith("library_id=2&type=series&sort=title&", Assert.Single(_harness.Queries(CatalogPath)), StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public async Task Paging_FollowsTheCursorUntilTheLastPage()
-    {
-        var library = await _harness.OpenLibraryTabAsync();
-        var grid = library.Browse.Grid;
-
-        await grid.LoadMoreCommand.ExecuteAsync(null);
-        await grid.LoadMoreCommand.ExecuteAsync(null);
-
-        var queries = _harness.Queries(CatalogPath);
-        Assert.Equal(2, queries.Count);
-        Assert.Equal($"library_id=1&type=movie&sort=title&limit=60&cursor=c2&{Images}", queries[1]);
-        Assert.Equal(new[] { "Alien", "Heat", "Se7en" }, grid.Cards.Select(c => c.Title));
-        Assert.False(grid.HasMore);
-        Assert.False(grid.LoadMoreCommand.CanExecute(null));
-    }
-
-    [Fact]
-    public async Task LoadMore_WhileAPageLoads_AsksOnlyOnce()
-    {
-        var release = new TaskCompletionSource();
-        _harness.Answer(CatalogPath, ScriptedSilo.Json(HttpStatusCode.OK, LibraryPayloads.FirstPage), LibraryHarness.Held(release, LibraryPayloads.LastPage));
-        var library = await _harness.OpenLibraryTabAsync();
-        var grid = library.Browse.Grid;
-
-        var first = grid.LoadMoreCommand.ExecuteAsync(null);
-        var second = grid.LoadMoreCommand.ExecuteAsync(null);
-        grid.LoadMoreCommand.Execute(null);
-        Assert.True(grid.IsLoadingMore);
-        Assert.False(grid.LoadMoreCommand.CanExecute(null));
-        release.SetResult();
-        await Task.WhenAll(first, second);
-
-        Assert.Equal(2, _harness.Count(CatalogPath));
-        Assert.Equal(3, grid.Cards.Count);
-        Assert.False(grid.IsLoadingMore);
+        Assert.Equal("""{"library_id":"2","type":"series","groups":[],"order":"asc"}""", Assert.Single(_harness.LetterBodies()));
     }
 
     [Fact]
     public async Task Sort_StartsOverInTheFieldsOwnOrder()
     {
+        _harness.Answer(CatalogPath, LibraryPayloads.OnlyPage, LibraryPayloads.LastPage);
         var library = await _harness.OpenLibraryTabAsync();
         var browse = library.Browse;
         var dateAdded = browse.SortOptions.Single(o => o.Label == "Date added");
@@ -125,6 +90,7 @@ public sealed class LibraryBrowseTests
 
         Assert.Equal(2, _harness.Count(CatalogPath));
         Assert.Equal($"library_id=1&type=movie&sort=-title&limit=60&{Images}", _harness.Queries(CatalogPath)[^1]);
+        Assert.Equal("""{"library_id":"1","type":"movie","groups":[],"order":"desc"}""", _harness.LetterBodies()[^1]);
     }
 
     [Fact]
@@ -153,6 +119,29 @@ public sealed class LibraryBrowseTests
     }
 
     [Fact]
+    public async Task Filters_AreTheLetterIndexsRuleGroups_AsTheServerMakesThem()
+    {
+        // GET /catalog turns genre and years into one group that must all match, and several ratings into one of
+        // which any may: the index counts the same titles the pages list.
+        var library = await _harness.OpenLibraryTabAsync();
+        var filters = library.Browse.Filters;
+        filters.BeginEdit();
+        filters.DraftGenreIndex = 2;
+        foreach (var rating in filters.RatingOptions)
+        {
+            rating.IsSelected = true;
+        }
+        filters.DraftYearFrom = 1990;
+        filters.DraftYearTo = 1999;
+
+        await filters.ApplyCommand.ExecuteAsync(null);
+
+        Assert.Equal("""
+            {"library_id":"1","type":"movie","groups":[{"match":"all","rules":[{"field":"genre","op":"contains","value":"Drama"},{"field":"year","op":"between","value":[1990,1999]}]},{"match":"any","rules":[{"field":"content_rating","op":"is","value":"PG-13"},{"field":"content_rating","op":"is","value":"R"}]}],"order":"asc"}
+            """, _harness.LetterBodies()[^1]);
+    }
+
+    [Fact]
     public async Task Filters_OnlyAYearFrom_CountsOnce()
     {
         var library = await _harness.OpenLibraryTabAsync();
@@ -160,10 +149,14 @@ public sealed class LibraryBrowseTests
 
         filters.BeginEdit();
         filters.DraftYearFrom = 2000;
+        filters.RatingOptions[1].IsSelected = true;
         await filters.ApplyCommand.ExecuteAsync(null);
 
-        Assert.Equal(1, filters.ActiveCount);
-        Assert.Equal($"library_id=1&type=movie&year_min=2000&sort=title&limit=60&{Images}", _harness.Queries(CatalogPath)[^1]);
+        Assert.Equal(2, filters.ActiveCount);
+        Assert.Equal($"library_id=1&type=movie&year_min=2000&content_rating=R&sort=title&limit=60&{Images}", _harness.Queries(CatalogPath)[^1]);
+        Assert.Equal("""
+            {"library_id":"1","type":"movie","groups":[{"match":"all","rules":[{"field":"year","op":"gte","value":2000}]},{"match":"all","rules":[{"field":"content_rating","op":"is","value":"R"}]}],"order":"asc"}
+            """, _harness.LetterBodies()[^1]);
     }
 
     [Fact]
@@ -180,6 +173,7 @@ public sealed class LibraryBrowseTests
         Assert.Equal(0, filters.ActiveCount);
         Assert.Equal(0, filters.DraftGenreIndex);
         Assert.Equal(FirstQuery, _harness.Queries(CatalogPath)[^1]);
+        Assert.Equal(AllTitlesLetters, _harness.LetterBodies()[^1]);
     }
 
     [Fact]
@@ -241,80 +235,156 @@ public sealed class LibraryBrowseTests
     }
 
     [Fact]
-    public async Task Letter_NarrowsByNamePrefixAndThePickedLetterAgainClearsIt()
+    public async Task LetterIndex_MarksTheLetterOfTheTopRow()
     {
         var library = await _harness.OpenLibraryTabAsync();
         var browse = library.Browse;
+        Assert.Equal(AllTitlesLetters, Assert.Single(_harness.LetterBodies()));
+        Assert.Equal(new[] { "A", "H" }, browse.Letters!.Letters.Select(l => l.Letter));
+        Assert.Equal("A", browse.ActiveLetter);
 
-        await browse.SelectLetterCommand.ExecuteAsync("b");
+        browse.ShowViewportCommand.Execute(new GridViewport(0, 1, TopRowEnd: 1, IsAtEnd: false));
 
-        Assert.Equal("B", browse.NamePrefix);
-        Assert.Equal($"library_id=1&name_prefix=B&type=movie&sort=title&limit=60&{Images}", _harness.Queries(CatalogPath)[^1]);
-        Assert.True(browse.IsNarrowed);
+        Assert.Equal("H", browse.ActiveLetter);
+    }
 
-        await browse.SelectLetterCommand.ExecuteAsync("B");
+    [Fact]
+    public async Task Letter_ScrollsToItsFirstTitle_InsteadOfNarrowingTheListing()
+    {
+        var library = await _harness.OpenLibraryTabAsync();
+        var browse = library.Browse;
+        var jumps = new List<int>();
+        browse.JumpRequested += (_, position) => jumps.Add(position);
 
-        Assert.Null(browse.NamePrefix);
-        Assert.Equal(FirstQuery, _harness.Queries(CatalogPath)[^1]);
+        browse.JumpToLetterCommand.Execute("H");
+
+        Assert.Equal([1], jumps);
+        Assert.Equal("H", browse.ActiveLetter);
+        Assert.Equal(1, _harness.Count(CatalogPath));
+        Assert.False(browse.IsNarrowed);
     }
 
     [Theory]
+    [InlineData("Q")]
     [InlineData("#")]
     [InlineData(null)]
-    [InlineData("")]
-    public async Task HashOrNoLetter_ShowsEveryTitle(string? letter)
-    {
-        var library = await _harness.OpenLibraryTabAsync();
-        await library.Browse.SelectLetterCommand.ExecuteAsync("M");
-
-        await library.Browse.SelectLetterCommand.ExecuteAsync(letter);
-
-        Assert.Null(library.Browse.NamePrefix);
-        Assert.DoesNotContain("name_prefix", _harness.Queries(CatalogPath)[^1], StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public async Task Letter_IsIgnoredOutsideTitleOrderAndClearedWhenTheOrderChanges()
+    public async Task Letter_WithoutTitles_DoesNothing(string? letter)
     {
         var library = await _harness.OpenLibraryTabAsync();
         var browse = library.Browse;
-        await browse.SelectLetterCommand.ExecuteAsync("K");
+        var jumps = new List<int>();
+        browse.JumpRequested += (_, position) => jumps.Add(position);
 
-        await browse.SetSortCommand.ExecuteAsync(browse.SortOptions.Single(o => o.Label == "Year"));
-        int requests = _harness.Count(CatalogPath);
-        await browse.SelectLetterCommand.ExecuteAsync("C");
+        browse.JumpToLetterCommand.Execute(letter);
 
-        Assert.Null(browse.NamePrefix);
-        Assert.False(browse.IsLetterBarVisible);
-        Assert.Equal(requests, _harness.Count(CatalogPath));
-        Assert.DoesNotContain("name_prefix", _harness.Queries(CatalogPath)[^1], StringComparison.Ordinal);
+        Assert.Empty(jumps);
+        Assert.Equal("A", browse.ActiveLetter);
     }
 
     [Fact]
-    public async Task Letter_OtherThanALetter_IsIgnored()
+    public async Task JumpedLetter_StaysMarkedAtTheEnd_UntilTheGridScrollsAway()
+    {
+        // The last letters cannot scroll to the top: the top row there is still an earlier letter's.
+        var library = await _harness.OpenLibraryTabAsync();
+        var browse = library.Browse;
+        browse.JumpToLetterCommand.Execute("A");
+
+        browse.ShowViewportCommand.Execute(new GridViewport(0, 1, TopRowEnd: 1, IsAtEnd: true));
+
+        Assert.Equal("A", browse.ActiveLetter);
+
+        browse.ShowViewportCommand.Execute(new GridViewport(0, 1, TopRowEnd: 1, IsAtEnd: false));
+
+        Assert.Equal("H", browse.ActiveLetter);
+    }
+
+    [Fact]
+    public async Task OtherOrders_HaveNoLetterIndex()
     {
         var library = await _harness.OpenLibraryTabAsync();
+        var browse = library.Browse;
+        var jumps = new List<int>();
+        browse.JumpRequested += (_, position) => jumps.Add(position);
 
-        await library.Browse.SelectLetterCommand.ExecuteAsync("Ab");
-        await library.Browse.SelectLetterCommand.ExecuteAsync("7");
+        await browse.SetSortCommand.ExecuteAsync(browse.SortOptions.Single(o => o.Label == "Year"));
+        browse.JumpToLetterCommand.Execute("H");
 
-        Assert.Equal(1, _harness.Count(CatalogPath));
+        Assert.Single(_harness.LetterBodies());
+        Assert.Null(browse.Letters);
+        Assert.Null(browse.ActiveLetter);
+        Assert.False(browse.IsLetterBarVisible);
+        Assert.Empty(jumps);
+    }
+
+    [Fact]
+    public async Task FailedLetterIndex_SetsTheBarAside_AndLeavesTheGrid()
+    {
+        _harness.AnswerLetters(ScriptedSilo.Problem(404, ProblemCodes.NotFound));
+
+        var library = await _harness.OpenLibraryTabAsync();
+
+        Assert.True(library.Browse.HasLettersError);
+        Assert.False(library.Browse.IsLetterBarVisible);
+        Assert.True(library.Browse.Grid.IsReady);
+        Assert.Contains(_harness.Logs.Lines, l => l.StartsWith("Warning LibraryViewModel: Could not load the letter index", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task LetterIndexOfAReplacedListing_IsDropped()
+    {
+        var release = new TaskCompletionSource();
+        const string Descending = """
+            { "total": 2, "letters": [ { "letter": "H", "count": 1, "position": 0 }, { "letter": "A", "count": 1, "position": 1 } ],
+              "runs": [ { "letter": "H", "position": 0 }, { "letter": "A", "position": 1 } ] }
+            """;
+        _harness.AnswerLetters(LibraryHarness.Held(release, LibraryPayloads.Letters), ScriptedSilo.Json(HttpStatusCode.OK, Descending));
+        var library = _harness.Create();
+        await library.ActivateAsync("1");
+        var first = library.SelectTabCommand.ExecuteAsync(LibraryTab.Library);
+        await Auth.AuthPipeline.Eventually(() => library.Browse.Grid.IsReady);
+
+        await library.Browse.ToggleOrderCommand.ExecuteAsync(null);
+        release.SetResult();
+        await first;
+
+        Assert.Equal("H", library.Browse.Letters!.Letters[0].Letter);
+        Assert.Equal("H", library.Browse.ActiveLetter);
+    }
+
+    [Fact]
+    public async Task ListingChangedUnderTheCursor_ReloadsTheLetterIndex()
+    {
+        // A full first page, then the next one refused: titles came or went, so the letters moved.
+        string fullPage = """{ "window_cursor": "w1", "items": [""" + string.Join(", ", Enumerable.Range(0, 60).Select(i =>
+            $$"""{ "content_id": "movie:m{{i}}", "type": "movie", "title": "M{{i}}", "genres": [], "keywords": [], "status": "matched" }"""))
+            + """], "page": { "next_cursor": "c2", "has_more": true }, "total": 1234, "total_exact": true }""";
+        _harness.Answer(CatalogPath, ScriptedSilo.Json(HttpStatusCode.OK, fullPage), ScriptedSilo.Problem(400, ProblemCodes.InvalidCursor),
+            ScriptedSilo.Json(HttpStatusCode.OK, LibraryPayloads.OnlyPage));
+        const string Moved = """
+            { "total": 2, "letters": [ { "letter": "A", "count": 2, "position": 0 } ], "runs": [ { "letter": "A", "position": 0 } ] }
+            """;
+        _harness.AnswerLetters(ScriptedSilo.Json(HttpStatusCode.OK, LibraryPayloads.Letters), ScriptedSilo.Json(HttpStatusCode.OK, Moved));
+
+        var library = await _harness.OpenLibraryTabAsync();
+        await Auth.AuthPipeline.Eventually(() => library.Browse.Letters is { Letters.Count: 1 } && library.Browse.Grid.Cards.Count == 2);
+
+        Assert.Equal(2, _harness.LetterBodies().Count);
+        Assert.Equal("A", library.Browse.ActiveLetter);
     }
 
     [Fact]
     public async Task EmptyResultWithFilters_OffersToClearThem()
     {
-        _harness.Answer(CatalogPath, LibraryPayloads.FirstPage, LibraryPayloads.EmptyPage, LibraryPayloads.FirstPage);
         var library = await _harness.OpenLibraryTabAsync();
         var browse = library.Browse;
-        await browse.SelectLetterCommand.ExecuteAsync("Q");
         browse.Filters.BeginEdit();
         browse.Filters.DraftGenreIndex = 1;
-        _harness.Answer(CatalogPath, LibraryPayloads.EmptyPage, LibraryPayloads.FirstPage);
+        _harness.Answer(CatalogPath, LibraryPayloads.EmptyPage, LibraryPayloads.OnlyPage);
         await browse.Filters.ApplyCommand.ExecuteAsync(null);
 
         Assert.True(browse.Grid.IsEmpty);
         Assert.True(browse.IsNarrowed);
+        Assert.False(browse.IsLetterBarVisible);
         Assert.Equal("0 titles", browse.Grid.TotalText);
 
         await browse.ClearFiltersCommand.ExecuteAsync(null);
@@ -323,6 +393,7 @@ public sealed class LibraryBrowseTests
         Assert.Equal(0, browse.Filters.ActiveCount);
         Assert.Equal(FirstQuery, _harness.Queries(CatalogPath)[^1]);
         Assert.True(browse.Grid.IsReady);
+        Assert.True(browse.IsLetterBarVisible);
     }
 
     [Fact]
@@ -339,12 +410,12 @@ public sealed class LibraryBrowseTests
     [Fact]
     public async Task FailedFirstPage_ShowsAFriendlyTextAndRetryRecovers()
     {
-        _harness.Answer(CatalogPath, ScriptedSilo.Problem(429, ProblemCodes.RateLimited), ScriptedSilo.Json(HttpStatusCode.OK, LibraryPayloads.FirstPage));
+        _harness.Answer(CatalogPath, ScriptedSilo.Problem(429, ProblemCodes.RateLimited), ScriptedSilo.Json(HttpStatusCode.OK, LibraryPayloads.OnlyPage));
         var library = await _harness.OpenLibraryTabAsync();
         var grid = library.Browse.Grid;
         Assert.True(grid.HasError);
         Assert.Equal(LibraryErrors.Busy, grid.ErrorMessage);
-        Assert.False(grid.LoadMoreCommand.CanExecute(null));
+        Assert.False(library.Browse.IsLetterBarVisible);
 
         await grid.RetryCommand.ExecuteAsync(null);
 
@@ -354,80 +425,20 @@ public sealed class LibraryBrowseTests
     }
 
     [Fact]
-    public async Task FailedLaterPage_KeepsTheCardsUntilRetried()
-    {
-        _harness.Answer(CatalogPath, ScriptedSilo.Json(HttpStatusCode.OK, LibraryPayloads.FirstPage), ScriptedSilo.NetworkError(),
-            ScriptedSilo.Json(HttpStatusCode.OK, LibraryPayloads.LastPage));
-        var library = await _harness.OpenLibraryTabAsync();
-        var grid = library.Browse.Grid;
-
-        await grid.LoadMoreCommand.ExecuteAsync(null);
-
-        Assert.True(grid.HasLoadMoreError);
-        Assert.True(grid.IsReady);
-        Assert.Equal(2, grid.Cards.Count);
-        Assert.False(grid.LoadMoreCommand.CanExecute(null));
-
-        await grid.RetryLoadMoreCommand.ExecuteAsync(null);
-
-        Assert.False(grid.HasLoadMoreError);
-        Assert.Equal(3, grid.Cards.Count);
-    }
-
-    [Fact]
-    public async Task RefusedCursor_StartsTheListingOver()
-    {
-        _harness.Answer(CatalogPath, ScriptedSilo.Json(HttpStatusCode.OK, LibraryPayloads.FirstPage), ScriptedSilo.Problem(400, ProblemCodes.InvalidCursor),
-            ScriptedSilo.Json(HttpStatusCode.OK, LibraryPayloads.FirstPage));
-        var library = await _harness.OpenLibraryTabAsync();
-
-        await library.Browse.Grid.LoadMoreCommand.ExecuteAsync(null);
-
-        var queries = _harness.Queries(CatalogPath);
-        Assert.Equal(3, queries.Count);
-        Assert.Equal(FirstQuery, queries[2]);
-        Assert.Equal(2, library.Browse.Grid.Cards.Count);
-        Assert.False(library.Browse.Grid.HasLoadMoreError);
-    }
-
-    [Fact]
-    public async Task FailedPageOfAReplacedListing_LeavesTheNewOneLoadable()
-    {
-        var release = new TaskCompletionSource();
-        _harness.Answer(CatalogPath, ScriptedSilo.Json(HttpStatusCode.OK, LibraryPayloads.FirstPage), async () =>
-        {
-            await release.Task;
-            throw new HttpRequestException("connection reset");
-        }, ScriptedSilo.Json(HttpStatusCode.OK, LibraryPayloads.FirstPage));
-        var library = await _harness.OpenLibraryTabAsync();
-        var grid = library.Browse.Grid;
-
-        var replaced = grid.LoadMoreCommand.ExecuteAsync(null);
-        await library.Browse.ToggleOrderCommand.ExecuteAsync(null);
-        release.SetResult();
-        await replaced;
-
-        Assert.True(grid.IsReady);
-        Assert.False(grid.HasLoadMoreError);
-        Assert.False(grid.IsLoadingMore);
-        Assert.True(grid.LoadMoreCommand.CanExecute(null));
-    }
-
-    [Fact]
     public async Task ChangeDuringALoad_ShowsOnlyTheNewestListing()
     {
         var release = new TaskCompletionSource();
-        _harness.Answer(CatalogPath, ScriptedSilo.Json(HttpStatusCode.OK, LibraryPayloads.FirstPage), LibraryHarness.Held(release, LibraryPayloads.FirstPage),
+        _harness.Answer(CatalogPath, ScriptedSilo.Json(HttpStatusCode.OK, LibraryPayloads.OnlyPage), LibraryHarness.Held(release, LibraryPayloads.OnlyPage),
             ScriptedSilo.Json(HttpStatusCode.OK, LibraryPayloads.LastPage));
         var library = await _harness.OpenLibraryTabAsync();
         var browse = library.Browse;
 
-        var stale = browse.SelectLetterCommand.ExecuteAsync("A");
-        await browse.SelectLetterCommand.ExecuteAsync("H");
+        var stale = browse.SetSortCommand.ExecuteAsync(browse.SortOptions.Single(o => o.Label == "Year"));
+        await browse.SetSortCommand.ExecuteAsync(browse.SortOptions.Single(o => o.Label == "Runtime"));
         release.SetResult();
         await stale;
 
-        Assert.Equal("H", browse.NamePrefix);
+        Assert.Equal("Runtime", browse.SortLabel);
         Assert.Equal(new[] { "Se7en" }, browse.Grid.Cards.Select(c => c.Title));
     }
 }

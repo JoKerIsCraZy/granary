@@ -21,6 +21,8 @@ internal sealed class LibraryHarness
 
     public const string CatalogPath = "api/v2/catalog";
 
+    public const string LettersPath = "api/v2/catalog/letters";
+
     public LibraryHarness()
     {
         Session.State = SessionState.Ready;
@@ -34,7 +36,8 @@ internal sealed class LibraryHarness
         Answer("api/v2/library/1/sections/recently_added/items", LibraryPayloads.RecentlyAddedItems);
         Answer("api/v2/library/1/collections", LibraryPayloads.Collections);
         Answer("api/v2/catalog/filters", LibraryPayloads.Filters);
-        Answer(CatalogPath, LibraryPayloads.FirstPage, LibraryPayloads.LastPage);
+        Answer(CatalogPath, LibraryPayloads.OnlyPage);
+        AnswerLetters(ScriptedSilo.Json(HttpStatusCode.OK, LibraryPayloads.Letters));
     }
 
     public ScriptedSilo Silo { get; } = new();
@@ -52,6 +55,12 @@ internal sealed class LibraryHarness
         Silo.On(HttpMethod.Get, path, [.. bodies.Select(body => ScriptedSilo.Json(HttpStatusCode.OK, body))]);
 
     public void Answer(string path, params Func<Task<HttpResponseMessage>>[] responders) => Silo.On(HttpMethod.Get, path, responders);
+
+    /// <summary>Answers the letter index (a POST) in order, repeating the last.</summary>
+    public void AnswerLetters(params Func<Task<HttpResponseMessage>>[] responders) => Silo.On(HttpMethod.Post, LettersPath, responders);
+
+    /// <summary>The bodies sent to the letter index, oldest first.</summary>
+    public List<string> LetterBodies() => [.. Silo.SentTo(HttpMethod.Post, LettersPath).Select(r => r.Body ?? "")];
 
     public LibraryViewModel Create() => new(
         Session,

@@ -15,6 +15,12 @@ public enum MediaCardShape
 /// <param name="Type">The catalog item type (movie, series, season, episode, …).</param>
 public sealed record MediaCard(string Id, string Type, string Title)
 {
+    /// <summary>A place in a paged grid whose title has not arrived yet; the grid draws it as a skeleton card.</summary>
+    public static MediaCard Placeholder { get; } = new("", "", "") { IsPlaceholder = true };
+
+    /// <summary>Whether this is <see cref="Placeholder"/>: nothing to open or show.</summary>
+    public bool IsPlaceholder { get; private init; }
+
     public MediaCardShape Shape { get; init; } = MediaCardShape.Poster;
 
     /// <summary>Poster cards: "2021 · SERIES". Landscape cards: "S1 E5 · Episode title".</summary>

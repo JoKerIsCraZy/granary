@@ -1,13 +1,18 @@
 using System.Windows.Input;
 using Granary.Core.ViewModels.Cards;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
+using Windows.Foundation;
 
 namespace Granary.App.Controls;
 
 /// <summary>
 /// Cards in a grid that fills the width. <see cref="LoadMoreCommand"/> runs when a card near the end is
-/// realized, so a paged list grows while the user scrolls. The cards' artwork is prefetched as they arrive.
+/// realized, so a paged list grows while the user scrolls. A list loaded by window instead gets what is in view
+/// through <see cref="ViewportCommand"/> (a <see cref="GridViewport"/>), and <see cref="ScrollToIndex"/> brings a
+/// card's row to the top. The cards' artwork is prefetched as they arrive.
 /// </summary>
 public sealed partial class MediaGrid : UserControl
 {
@@ -25,17 +30,39 @@ public sealed partial class MediaGrid : UserControl
     public static readonly DependencyProperty LoadMoreCommandProperty =
         DependencyProperty.Register(nameof(LoadMoreCommand), typeof(ICommand), typeof(MediaGrid), new PropertyMetadata(null));
 
+    public static readonly DependencyProperty ViewportCommandProperty =
+        DependencyProperty.Register(nameof(ViewportCommand), typeof(ICommand), typeof(MediaGrid), new PropertyMetadata(null));
+
     // The next page is asked for this many rows before the last realized card (which is about a screen below
     // the visible ones), so its artwork is prefetched before the user scrolls there.
     private const int LoadMoreRowsAhead = 4;
 
+    // What is in view is told at most this often while the grid scrolls, and once more when it stops.
+    private static readonly TimeSpan ViewportInterval = TimeSpan.FromMilliseconds(50);
+
     private readonly CardArtworkPrefetch _prefetch = new();
+    private readonly DispatcherQueueTimer _viewportTimer;
+    private ScrollViewer? _scroller;
+    private Rect _effectiveViewport;
+    private GridViewport? _toldViewport;
 
     public MediaGrid()
     {
         InitializeComponent();
-        Loaded += (_, _) => FollowItems();
-        Unloaded += (_, _) => _prefetch.Follow(null);
+        _viewportTimer = DispatcherQueue.CreateTimer();
+        _viewportTimer.Interval = ViewportInterval;
+        _viewportTimer.IsRepeating = false;
+        _viewportTimer.Tick += (_, _) => TellViewport();
+        Loaded += (_, _) =>
+        {
+            FollowItems();
+            _scroller = FindScroller();
+        };
+        Unloaded += (_, _) =>
+        {
+            _prefetch.Follow(null);
+            _viewportTimer.Stop();
+        };
     }
 
     /// <summary>The cards: any list of <see cref="MediaCard"/>; an observable one grows in place.</summary>
@@ -64,6 +91,31 @@ public sealed partial class MediaGrid : UserControl
         set => SetValue(LoadMoreCommandProperty, value);
     }
 
+    /// <summary>Gets a <see cref="GridViewport"/> whenever what the grid shows of its list changes.</summary>
+    public ICommand? ViewportCommand
+    {
+        get => (ICommand?)GetValue(ViewportCommandProperty);
+        set => SetValue(ViewportCommandProperty, value);
+    }
+
+    /// <summary>Scrolls the page so the row holding the card at <paramref name="index"/> is at the top, without waiting for it.</summary>
+    public void ScrollToIndex(int index)
+    {
+        if (_scroller?.Content is not UIElement content)
+        {
+            return;
+        }
+        // The rows as the list is now: a page that grew or trimmed it may not have been laid out yet.
+        Items.UpdateLayout();
+        if (Measure() is not { } grid)
+        {
+            return;
+        }
+        int row = Math.Clamp(index, 0, grid.Count - 1) / grid.Columns;
+        double top = Items.TransformToVisual(content).TransformPoint(default).Y;
+        _scroller.ChangeView(null, top + row * grid.Pitch, null, disableAnimation: true);
+    }
+
     private static void OnCardShapeChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e) =>
         ((MediaGrid)sender).GridLayout.MinItemWidth = (MediaCardShape)e.NewValue == MediaCardShape.Landscape ? 280 : 185;
 
@@ -75,14 +127,80 @@ public sealed partial class MediaGrid : UserControl
         }
     }
 
+    private ScrollViewer? FindScroller()
+    {
+        for (var parent = VisualTreeHelper.GetParent(this); parent is not null; parent = VisualTreeHelper.GetParent(parent))
+        {
+            if (parent is ScrollViewer scroller)
+            {
+                return scroller;
+            }
+        }
+        return null;
+    }
+
     private void OnElementPrepared(ItemsRepeater sender, ItemsRepeaterElementPreparedEventArgs args)
     {
         int count = sender.ItemsSourceView?.Count ?? 0;
-        int columns = Math.Max(1, (int)((sender.ActualWidth + GridLayout.MinColumnSpacing) / (GridLayout.MinItemWidth + GridLayout.MinColumnSpacing)));
-        if (count > 0 && args.Index >= count - columns * LoadMoreRowsAhead && LoadMoreCommand is { } command && command.CanExecute(null))
+        if (count > 0 && args.Index >= count - Columns() * LoadMoreRowsAhead && LoadMoreCommand is { } command && command.CanExecute(null))
         {
             command.Execute(null);
         }
+    }
+
+    private void OnEffectiveViewportChanged(FrameworkElement sender, EffectiveViewportChangedEventArgs args)
+    {
+        _effectiveViewport = args.EffectiveViewport;
+        QueueViewport();
+    }
+
+    // A new list or another window width moves the rows under the same viewport.
+    private void OnItemsSizeChanged(object sender, SizeChangedEventArgs e) => QueueViewport();
+
+    private void QueueViewport()
+    {
+        if (ViewportCommand is not null && !_viewportTimer.IsRunning)
+        {
+            _viewportTimer.Start();
+        }
+    }
+
+    private void TellViewport()
+    {
+        if (ViewportCommand is not { } command || Measure() is not { } grid || _effectiveViewport.Height <= 0)
+        {
+            return;
+        }
+        int lastRow = (grid.Count - 1) / grid.Columns;
+        int RowAt(double y) => Math.Clamp((int)Math.Floor(y / grid.Pitch), 0, lastRow);
+        int firstRow = RowAt(_effectiveViewport.Top);
+        int bottomRow = RowAt(_effectiveViewport.Bottom - 1);
+        // The top row is the first at least half in view.
+        int topRow = Math.Clamp((int)Math.Round(Math.Max(0, _effectiveViewport.Top) / grid.Pitch, MidpointRounding.AwayFromZero), 0, lastRow);
+        bool atEnd = _scroller is { } scroller && scroller.VerticalOffset >= scroller.ScrollableHeight - 2;
+        int LastOf(int row) => Math.Min(grid.Count - 1, (row + 1) * grid.Columns - 1);
+        var viewport = new GridViewport(firstRow * grid.Columns, LastOf(bottomRow), LastOf(topRow), atEnd);
+        if (viewport != _toldViewport && command.CanExecute(viewport))
+        {
+            _toldViewport = viewport;
+            command.Execute(viewport);
+        }
+    }
+
+    private int Columns() =>
+        Math.Max(1, (int)((Items.ActualWidth + GridLayout.MinColumnSpacing) / (GridLayout.MinItemWidth + GridLayout.MinColumnSpacing)));
+
+    // Every row of a uniform grid is as tall as the others, so the grid's height gives the pitch of its rows.
+    private (int Count, int Columns, double Pitch)? Measure()
+    {
+        int count = Items.ItemsSourceView?.Count ?? 0;
+        if (count == 0 || Items.ActualHeight <= 0)
+        {
+            return null;
+        }
+        int columns = Columns();
+        int rows = (count + columns - 1) / columns;
+        return (count, columns, (Items.ActualHeight + GridLayout.MinRowSpacing) / rows);
     }
 
     private void OnCardClick(object sender, RoutedEventArgs e)

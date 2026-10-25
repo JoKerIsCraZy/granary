@@ -55,10 +55,18 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
 - `MediaRow`: row title, optional "EXPLORE ALL", horizontally scrolling cards (posters 185 px,
   landscape 314 px, 20 px apart), arrows for mouse users.
 - `MediaGrid`: cards filling the width (posters at least 185 px, landscape at least 280 px), meant to sit
-  in the page's own `ScrollViewer`; `LoadMoreCommand` runs near the end for cursor paging.
+  in the page's own `ScrollViewer`; `LoadMoreCommand` runs near the end for cursor paging. A list loaded by
+  window instead (the library and collection grids) holds `MediaCard.Placeholder` for titles not loaded
+  yet, drawn as the web's pulsing skeleton (`MediaCardSkeleton`); the grid tells what it shows through
+  `ViewportCommand` (a `GridViewport`, at most every 50 ms while it scrolls) and `ScrollToIndex` puts a
+  card's row at the top. A uniform grid sizes every row by one freshly made first card when that one is
+  far out of view, so `MediaCardView` sizes its artwork at measure time: a card that only learns its
+  height after arrange shrinks every row and throws the scroll position off.
 - Cards are buttons (`SiloCardButtonStyle`): Tab and Enter work, screen readers read
   `MediaCard.AccessibleName`. Card commands take the `MediaCard` as parameter.
-- Page-specific pieces: `PersonCard` (search people), `AlphabetJumpBar` (library A–Z),
+- Page-specific pieces: `PersonCard` (search people), `AlphabetJumpBar` (library A–Z: "#" and A–Z on a
+  26 px round panel, letters without titles at 35 %, the top row's letter red with dark text; a letter
+  scrolls the grid to its first title, as the web's `LetterBar`),
   `DetailHero`, `DetailShelf`, `DetailEpisodeCard`, `DetailTrailerCard`, `PersonCreditCard`
   (detail pages), `SeekBar` and `MpvVideoHost` (player).
 - `ItemsRepeater` sets no `DataContext` on elements of `x:Bind` templates: a click handler reads its item

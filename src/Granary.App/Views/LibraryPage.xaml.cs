@@ -34,6 +34,7 @@ public sealed partial class LibraryPage : Page
             ScrollToTop(RecommendedScroller, LibraryScroller, CollectionsScroller);
         };
         ViewModel.Browse.Grid.Restarted += (_, _) => ScrollToTop(LibraryScroller);
+        ViewModel.Browse.JumpRequested += (_, position) => BrowseGrid.ScrollToIndex(position);
         ViewModel.Collections.PropertyChanged += OnCollectionsPropertyChanged;
     }
 

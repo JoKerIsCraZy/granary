@@ -13,13 +13,17 @@
     NavigationCacheMode="Enabled">
 
     <Page.Resources>
-        <!-- A segment of the tab switch: muted text, the picked one on a raised pill. -->
+        <!--
+            A segment of the tab switch, as the web's marquee tabs: faint text, lighter under the pointer; the picked one
+            in the page's white on a light pill. The picked colour sits on the outer presenter and the pointer's on the
+            inner one, so leaving a picked tab keeps it white: two state groups setting one property undo each other.
+        -->
         <Style x:Key="LibraryTabStyle" TargetType="RadioButton">
-            <Setter Property="Foreground" Value="{StaticResource SiloMutedBrush}" />
+            <Setter Property="Foreground" Value="#9EE8E8EC" />
             <Setter Property="FontFamily" Value="{StaticResource SiloFontSemiBold}" />
             <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="FontSize" Value="13" />
-            <Setter Property="Padding" Value="16,7" />
+            <Setter Property="FontSize" Value="12.5" />
+            <Setter Property="Padding" Value="16,8" />
             <Setter Property="MinWidth" Value="0" />
             <Setter Property="UseSystemFocusVisuals" Value="True" />
             <Setter Property="Template">
@@ -36,6 +40,7 @@
                                     </VisualState>
                                     <VisualState x:Name="Pressed">
                                         <VisualState.Setters>
+                                            <Setter Target="Text.Foreground" Value="{StaticResource SiloForegroundBrush}" />
                                             <Setter Target="Root.Opacity" Value="0.8" />
                                         </VisualState.Setters>
                                     </VisualState>
@@ -48,8 +53,8 @@
                                 <VisualStateGroup x:Name="CheckStates">
                                     <VisualState x:Name="Checked">
                                         <VisualState.Setters>
-                                            <Setter Target="Root.Background" Value="{StaticResource SiloSurfaceRaisedBrush}" />
-                                            <Setter Target="Text.Foreground" Value="{StaticResource SiloForegroundBrush}" />
+                                            <Setter Target="Root.Background" Value="#1FE8E8EC" />
+                                            <Setter Target="Shade.Foreground" Value="{StaticResource SiloForegroundBrush}" />
                                         </VisualState.Setters>
                                     </VisualState>
                                     <VisualState x:Name="Unchecked" />
@@ -57,17 +62,30 @@
                                 </VisualStateGroup>
                             </VisualStateManager.VisualStateGroups>
                             <ContentPresenter
-                                x:Name="Text"
+                                x:Name="Shade"
                                 Padding="{TemplateBinding Padding}"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 AutomationProperties.AccessibilityView="Raw"
-                                Content="{TemplateBinding Content}"
-                                Foreground="{TemplateBinding Foreground}" />
+                                Foreground="{TemplateBinding Foreground}">
+                                <ContentPresenter x:Name="Text" Content="{TemplateBinding Content}" AutomationProperties.AccessibilityView="Raw" />
+                            </ContentPresenter>
                         </Grid>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+        </Style>
+
+        <!-- A page of titles that failed: a strip at the foot of the tab, over the grid. -->
+        <Style x:Key="LibraryPageErrorStyle" TargetType="Border">
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Bottom" />
+            <Setter Property="Margin" Value="0,0,0,24" />
+            <Setter Property="Padding" Value="20,8,8,8" />
+            <Setter Property="Background" Value="{StaticResource SiloSurfaceRaisedBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource SiloBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="27" />
         </Style>
 
         <!-- Shuffle, Filters: smaller dark pills than the detail page's buttons. -->
@@ -106,7 +124,7 @@
                         <TextBlock Text="Shuffle" />
                     </StackPanel>
                 </Button>
-                <Border Background="{StaticResource SiloSurfaceBrush}" BorderBrush="{StaticResource SiloBorderBrush}" BorderThickness="1"
+                <Border Background="#0FE8E8EC" BorderBrush="#9928282E" BorderThickness="1"
                         CornerRadius="{StaticResource SiloPillCornerRadius}" controls:Pill.IsEnabled="True" Padding="4">
                     <StackPanel Orientation="Horizontal" Spacing="2" XYFocusKeyboardNavigation="Enabled"
                                 AutomationProperties.Name="Library view">
@@ -178,8 +196,9 @@
                 </Grid.ColumnDefinitions>
                 <!-- Before the grid in the tab order, so the letters are not behind every card. -->
                 <controls:AlphabetJumpBar Grid.Column="1" Margin="0,24,20,24" VerticalAlignment="Center"
-                                          SelectedLetter="{x:Bind ViewModel.Browse.NamePrefix, Mode=OneWay}"
-                                          LetterCommand="{x:Bind ViewModel.Browse.SelectLetterCommand}"
+                                          Index="{x:Bind ViewModel.Browse.Letters, Mode=OneWay}"
+                                          ActiveLetter="{x:Bind ViewModel.Browse.ActiveLetter, Mode=OneWay}"
+                                          LetterCommand="{x:Bind ViewModel.Browse.JumpToLetterCommand}"
                                           Visibility="{x:Bind ViewModel.Browse.IsLetterBarVisible, Mode=OneWay}" />
                 <ScrollViewer x:Name="LibraryScroller">
                     <StackPanel Padding="48,24,24,40" Spacing="24">
@@ -284,17 +303,19 @@
                                    Margin="0,48" HorizontalAlignment="Center" Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
                                    Text="This library has no titles yet." />
 
-                        <controls:MediaGrid ItemsSource="{x:Bind ViewModel.Browse.Grid.Cards}" CardInvokedCommand="{x:Bind ViewModel.OpenItemCommand}"
-                                            LoadMoreCommand="{x:Bind ViewModel.Browse.Grid.LoadMoreCommand}"
+                        <controls:MediaGrid x:Name="BrowseGrid" ItemsSource="{x:Bind ViewModel.Browse.Grid.Cards, Mode=OneWay}"
+                                            CardInvokedCommand="{x:Bind ViewModel.OpenItemCommand}"
+                                            ViewportCommand="{x:Bind ViewModel.Browse.ShowViewportCommand}"
                                             Visibility="{x:Bind ViewModel.Browse.Grid.IsReady, Mode=OneWay}" />
-                        <ProgressRing IsActive="{x:Bind ViewModel.Browse.Grid.IsLoadingMore, Mode=OneWay}" Visibility="{x:Bind ViewModel.Browse.Grid.IsLoadingMore, Mode=OneWay}"
-                                      Width="24" Height="24" HorizontalAlignment="Center" AutomationProperties.Name="Loading more titles" />
-                        <StackPanel Visibility="{x:Bind ViewModel.Browse.Grid.HasLoadMoreError, Mode=OneWay}" Orientation="Horizontal" Spacing="12" HorizontalAlignment="Center">
-                            <TextBlock Text="Couldn't load more titles." Style="{StaticResource SiloCaptionTextStyle}" VerticalAlignment="Center" />
-                            <Button Content="Retry" Style="{StaticResource LibraryPillButtonStyle}" Command="{x:Bind ViewModel.Browse.Grid.RetryLoadMoreCommand}" />
-                        </StackPanel>
                     </StackPanel>
                 </ScrollViewer>
+                <!-- Over the grid, not under it: a page that failed is wherever the user scrolled to. -->
+                <Border Visibility="{x:Bind ViewModel.Browse.Grid.HasPageError, Mode=OneWay}" Style="{StaticResource LibraryPageErrorStyle}">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <TextBlock Text="Couldn't load some titles." Style="{StaticResource SiloCaptionTextStyle}" VerticalAlignment="Center" />
+                        <Button Content="Retry" Style="{StaticResource LibraryPillButtonStyle}" Command="{x:Bind ViewModel.Browse.Grid.RetryPagesCommand}" />
+                    </StackPanel>
+                </Border>
             </Grid>
 
             <!-- Collections: shelves of collections; one opens as a grid of its titles. -->
@@ -347,21 +368,19 @@
                         <TextBlock Visibility="{x:Bind ViewModel.Collections.Items.IsEmpty, Mode=OneWay}" Margin="0,48" HorizontalAlignment="Center"
                                    Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
                                    Text="This collection has no titles this profile can see." />
-                        <controls:MediaGrid ItemsSource="{x:Bind ViewModel.Collections.Items.Cards}" CardInvokedCommand="{x:Bind ViewModel.OpenItemCommand}"
-                                            LoadMoreCommand="{x:Bind ViewModel.Collections.Items.LoadMoreCommand}"
+                        <controls:MediaGrid ItemsSource="{x:Bind ViewModel.Collections.Items.Cards, Mode=OneWay}" CardInvokedCommand="{x:Bind ViewModel.OpenItemCommand}"
+                                            ViewportCommand="{x:Bind ViewModel.Collections.Items.ShowViewportCommand}"
                                             Visibility="{x:Bind ViewModel.Collections.Items.IsReady, Mode=OneWay}" />
-                        <ProgressRing IsActive="{x:Bind ViewModel.Collections.Items.IsLoadingMore, Mode=OneWay}"
-                                      Visibility="{x:Bind ViewModel.Collections.Items.IsLoadingMore, Mode=OneWay}"
-                                      Width="24" Height="24" HorizontalAlignment="Center" AutomationProperties.Name="Loading more titles" />
-                        <StackPanel Visibility="{x:Bind ViewModel.Collections.Items.HasLoadMoreError, Mode=OneWay}" Orientation="Horizontal" Spacing="12"
-                                    HorizontalAlignment="Center">
-                            <TextBlock Text="Couldn't load more titles." Style="{StaticResource SiloCaptionTextStyle}" VerticalAlignment="Center" />
-                            <Button Content="Retry" Style="{StaticResource LibraryPillButtonStyle}"
-                                    Command="{x:Bind ViewModel.Collections.Items.RetryLoadMoreCommand}" />
-                        </StackPanel>
                     </StackPanel>
                 </StackPanel>
             </ScrollViewer>
+            <Border Visibility="{x:Bind ShowTab(ViewModel.Collections.Items.HasPageError, ViewModel.IsCollectionsTab), Mode=OneWay}"
+                    Style="{StaticResource LibraryPageErrorStyle}">
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <TextBlock Text="Couldn't load some titles." Style="{StaticResource SiloCaptionTextStyle}" VerticalAlignment="Center" />
+                    <Button Content="Retry" Style="{StaticResource LibraryPillButtonStyle}" Command="{x:Bind ViewModel.Collections.Items.RetryPagesCommand}" />
+                </StackPanel>
+            </Border>
         </Grid>
     </Grid>
 </Page>

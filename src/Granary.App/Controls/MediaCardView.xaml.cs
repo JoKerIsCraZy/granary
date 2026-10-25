@@ -7,6 +7,7 @@ using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Windows.Foundation;
 
 namespace Granary.App.Controls;
 
@@ -29,6 +30,7 @@ public sealed partial class MediaCardView : UserControl
 
     // Cancelled when the container is recycled for another card, so the old card's artwork stays out.
     private CancellationTokenSource? _artwork;
+    private bool _sizedByMeasure;
 
     public MediaCardView()
     {
@@ -141,7 +143,27 @@ public sealed partial class MediaCardView : UserControl
         text.Visibility = string.IsNullOrEmpty(value) ? Visibility.Collapsed : Visibility.Visible;
     }
 
-    private void OnSizeChanged(object sender, SizeChangedEventArgs e) => UpdateSize(e.NewSize.Width);
+    // The artwork's height follows the width the card is measured at, so its first measure already gives its real
+    // height: a grid sizes all its rows by one freshly made card when its first one is scrolled far away, and a card
+    // without its artwork's height would shrink every row, and the scroll position with them.
+    protected override Size MeasureOverride(Size availableSize)
+    {
+        _sizedByMeasure = double.IsFinite(availableSize.Width) && availableSize.Width > 0;
+        if (_sizedByMeasure)
+        {
+            UpdateSize(availableSize.Width);
+        }
+        return base.MeasureOverride(availableSize);
+    }
+
+    // Only a card measured without a width follows its arranged one: following both would ping-pong between them.
+    private void OnSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (!_sizedByMeasure)
+        {
+            UpdateSize(e.NewSize.Width);
+        }
+    }
 
     private void UpdateSize(double width)
     {

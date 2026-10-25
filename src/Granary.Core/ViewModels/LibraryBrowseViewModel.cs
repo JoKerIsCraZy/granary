@@ -3,13 +3,16 @@ using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
 using Granary.Core.Servers;
+using Granary.Core.ViewModels.Cards;
 using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.ViewModels;
 
 /// <summary>
 /// The Library tab: every title of the library in a poster grid, with sort, order, filters and the A–Z bar.
-/// Each change starts the listing over with fresh image parameters, so the new cursors are bound to them.
+/// Each change starts the listing over with fresh image parameters, so the new cursors are bound to them. In title
+/// order the letter index tells where each letter starts: a letter scrolls the grid there, as on Silo's web client,
+/// and the bar marks the letter of the top row.
 /// </summary>
 public sealed partial class LibraryBrowseViewModel : ObservableObject
 {
@@ -18,18 +21,31 @@ public sealed partial class LibraryBrowseViewModel : ObservableObject
 
     private readonly CatalogApi _catalog;
     private readonly ImageParameterCache _images;
+    private readonly ILogger _logger;
     private ServerEntry? _server;
     private Library? _library;
     private ImageSizes _sizes = ImageSizes.Default;
     private bool _isStarted;
     private int _restarts;
+    private string? _jumpedLetter;
+    private int _topRowEnd;
+    private (Uri Server, CatalogQuery Query)? _indexed;
     private CancellationTokenSource _scope = new();
 
     public LibraryBrowseViewModel(CatalogApi catalog, ImageParameterCache images, ILogger logger)
     {
         _catalog = catalog;
         _images = images;
+        _logger = logger;
         Grid = new LibraryGridViewModel(catalog, logger);
+        Grid.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(LibraryGridViewModel.State))
+            {
+                OnPropertyChanged(nameof(IsLetterBarVisible));
+            }
+        };
+        Grid.ListingChanged += (_, _) => _ = ReloadLettersAsync();
         Filters = new LibraryFiltersViewModel(RestartAsync, logger);
     }
 
@@ -47,19 +63,34 @@ public sealed partial class LibraryBrowseViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(OrderLabel))]
     public partial bool IsDescending { get; private set; }
 
-    /// <summary>The letter picked on the A–Z bar, or null for every title.</summary>
+    /// <summary>The letter index of the listing in title order; null while it loads, in other orders, or when it failed.</summary>
     [ObservableProperty]
-    public partial string? NamePrefix { get; private set; }
+    public partial CatalogLetters? Letters { get; private set; }
+
+    /// <summary>The letter the top row of the grid is under, or the one just jumped to while the grid is at its end.</summary>
+    [ObservableProperty]
+    public partial string? ActiveLetter { get; private set; }
+
+    /// <summary>The letter index could not be read: the bar steps aside.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsLetterBarVisible))]
+    public partial bool HasLettersError { get; private set; }
 
     public string SortLabel => Sort.Label;
 
     public string OrderLabel => IsDescending ? "Descending" : "Ascending";
 
-    /// <summary>The A–Z bar shows only while titles are in title order.</summary>
-    public bool IsLetterBarVisible => Sort.IsTitle;
+    /// <summary>
+    /// The A–Z bar holds its place while titles are in title order, its letters greyed until the index arrives; it steps
+    /// aside when nothing is listed or the index cannot be read.
+    /// </summary>
+    public bool IsLetterBarVisible => Sort.IsTitle && !HasLettersError && !Grid.IsEmpty && !Grid.HasError;
 
-    /// <summary>Filters or a letter narrow the listing; an empty result then offers to clear them.</summary>
-    public bool IsNarrowed => Filters.HasActiveFilters || NamePrefix is not null;
+    /// <summary>Filters narrow the listing; an empty result then offers to clear them.</summary>
+    public bool IsNarrowed => Filters.HasActiveFilters;
+
+    /// <summary>Asks the view to scroll the grid so the title at this list position is in the top row.</summary>
+    public event EventHandler<int>? JumpRequested;
 
     /// <summary>Points the tab at a library in the default order (title, A to Z) without loading anything.</summary>
     public void Initialize(ServerEntry server, Library library, ImageSizes sizes)
@@ -86,7 +117,8 @@ public sealed partial class LibraryBrowseViewModel : ObservableObject
         _isStarted = false;
         Sort = LibrarySortOption.Title;
         IsDescending = false;
-        NamePrefix = null;
+        ClearLetters();
+        _indexed = null;
         Filters.Reset();
         Grid.Reset();
         OnPropertyChanged(nameof(IsNarrowed));
@@ -113,11 +145,6 @@ public sealed partial class LibraryBrowseViewModel : ObservableObject
         }
         Sort = option;
         IsDescending = option.StartsDescending;
-        if (!option.IsTitle)
-        {
-            // The bar is hidden in other orders; a letter it no longer shows must not narrow the grid.
-            NamePrefix = null;
-        }
         return RestartAsync();
     }
 
@@ -131,48 +158,47 @@ public sealed partial class LibraryBrowseViewModel : ObservableObject
     private Task ToggleOrderAsync() => SetOrderAsync(!IsDescending);
 
     /// <summary>
-    /// Shows the titles whose sort title starts with <paramref name="letter"/> (A–Z); null, "" or "#" shows every
-    /// title, and so does the picked letter again. The server matches <c>name_prefix</c> literally and has no
-    /// bucket for digits and symbols, so "#" cannot narrow the grid.
+    /// Scrolls the grid to the first title under <paramref name="letter"/> ("A" … "Z" or "#"), which becomes the
+    /// marked letter; a letter without titles, or one picked before the index arrived, does nothing.
     /// </summary>
-    [RelayCommand(AllowConcurrentExecutions = true)]
-    private Task SelectLetterAsync(string? letter)
+    [RelayCommand]
+    private void JumpToLetter(string? letter)
     {
-        if (!Sort.IsTitle)
+        if (!Sort.IsTitle || Letters is not { } letters || letters.Letters.FirstOrDefault(l => l.Letter == letter) is not { } target)
         {
-            return Task.CompletedTask;
+            return;
         }
-        string? prefix;
-        if (string.IsNullOrWhiteSpace(letter) || letter.Trim() == "#")
-        {
-            prefix = null;
-        }
-        else if (letter.Trim() is [var single] && char.IsAsciiLetter(single))
-        {
-            prefix = char.ToUpperInvariant(single).ToString();
-        }
-        else
-        {
-            return Task.CompletedTask;
-        }
-        if (prefix is not null && prefix == NamePrefix)
-        {
-            prefix = null;
-        }
-        if (prefix == NamePrefix)
-        {
-            return Task.CompletedTask;
-        }
-        NamePrefix = prefix;
-        return RestartAsync();
+        _jumpedLetter = target.Letter;
+        ActiveLetter = target.Letter;
+        JumpRequested?.Invoke(this, target.Position);
     }
 
-    /// <summary>Clears the filters and the letter together, from the empty state.</summary>
+    /// <summary>
+    /// Loads the titles in view and marks the letter of the top row. A letter near the end cannot scroll to the top, so
+    /// one just jumped to stays marked while the grid is at its end; any scroll away hands back to the top row.
+    /// </summary>
+    [RelayCommand]
+    private void ShowViewport(GridViewport? viewport)
+    {
+        if (viewport is null)
+        {
+            return;
+        }
+        Grid.ShowViewport(viewport);
+        if (_jumpedLetter is not null && viewport.IsAtEnd)
+        {
+            return;
+        }
+        _jumpedLetter = null;
+        _topRowEnd = viewport.TopRowEnd;
+        ActiveLetter = Letters?.LetterAt(_topRowEnd);
+    }
+
+    /// <summary>Clears the filters, from the empty state.</summary>
     [RelayCommand(AllowConcurrentExecutions = true)]
     private Task ClearFiltersAsync()
     {
         Filters.ClearSilently();
-        NamePrefix = null;
         return RestartAsync();
     }
 
@@ -195,6 +221,7 @@ public sealed partial class LibraryBrowseViewModel : ObservableObject
         _isStarted = true;
         int restart = ++_restarts;
         OnPropertyChanged(nameof(IsNarrowed));
+        ClearLetters();
         var token = _scope.Token;
         ImageParameters images;
         try
@@ -210,14 +237,59 @@ public sealed partial class LibraryBrowseViewModel : ObservableObject
         {
             return;
         }
-        await Grid.StartAsync(server.BaseUri, BuildQuery(library, images));
+        var query = BuildQuery(library, images);
+        _indexed = Sort.IsTitle ? (server.BaseUri, query) : null;
+        var letters = _indexed is { } indexed ? LoadLettersAsync(indexed.Server, indexed.Query, restart, token) : Task.CompletedTask;
+        await Task.WhenAll(Grid.StartAsync(server.BaseUri, query), letters);
+    }
+
+    // The listing changed under the grid's cursor and the grid started over: the letters' positions changed with it.
+    private Task ReloadLettersAsync()
+    {
+        if (_indexed is not { } indexed)
+        {
+            return Task.CompletedTask;
+        }
+        ClearLetters();
+        return LoadLettersAsync(indexed.Server, indexed.Query, _restarts, _scope.Token);
+    }
+
+    private async Task LoadLettersAsync(Uri server, CatalogQuery query, int restart, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var letters = await _catalog.GetLettersAsync(server, query, cancellationToken);
+            if (restart == _restarts && !cancellationToken.IsCancellationRequested)
+            {
+                Letters = letters;
+                ActiveLetter ??= letters.LetterAt(_topRowEnd);
+            }
+        }
+        catch (Exception ex)
+        {
+            // Also when reloaded unawaited: nothing it throws may go unobserved.
+            if (restart == _restarts && !cancellationToken.IsCancellationRequested)
+            {
+                _logger.Log(LibraryErrors.IsExpected(ex) ? LogLevel.Warning : LogLevel.Error, ex, "Could not load the letter index of a library");
+                HasLettersError = true;
+            }
+        }
+    }
+
+    // A new listing starts at its top.
+    private void ClearLetters()
+    {
+        _jumpedLetter = null;
+        _topRowEnd = 0;
+        Letters = null;
+        ActiveLetter = null;
+        HasLettersError = false;
     }
 
     private CatalogQuery BuildQuery(Library library, ImageParameters images) =>
         Filters.ApplyTo(CatalogQuery.ForLibrary(library)) with
         {
             Sort = new CatalogSort(Sort.Field, IsDescending),
-            NamePrefix = Sort.IsTitle ? NamePrefix : null,
             Limit = PageSize,
             Images = images,
         };

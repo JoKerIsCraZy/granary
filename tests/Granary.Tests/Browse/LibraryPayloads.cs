@@ -60,6 +60,29 @@ internal static class LibraryPayloads
         }
         """;
 
+    /// <summary>A whole listing on one page: two titles.</summary>
+    public const string OnlyPage = """
+        {
+          "window_cursor": "w1",
+          "items": [
+            { "content_id": "movie:alien-1979", "type": "movie", "title": "Alien", "year": 1979, "genres": ["Horror"], "keywords": [], "status": "matched" },
+            { "content_id": "movie:heat-1995", "type": "movie", "title": "Heat", "year": 1995, "genres": ["Crime"], "keywords": [], "status": "matched" }
+          ],
+          "page": { "has_more": false },
+          "total": 2,
+          "total_exact": true
+        }
+        """;
+
+    /// <summary>The letter index of <see cref="OnlyPage"/>.</summary>
+    public const string Letters = """
+        {
+          "total": 2,
+          "letters": [ { "letter": "A", "count": 1, "position": 0 }, { "letter": "H", "count": 1, "position": 1 } ],
+          "runs": [ { "letter": "A", "position": 0 }, { "letter": "H", "position": 1 } ]
+        }
+        """;
+
     /// <summary>The first browse page: two titles and a cursor to the next.</summary>
     public const string FirstPage = """
         {

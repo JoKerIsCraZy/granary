@@ -2,6 +2,7 @@
 <!--
     A wrapping grid of cards for library, "Explore all" and search pages. It has no scroller of its own:
     put it in the page's ScrollViewer, under the page's title and filters, and it virtualizes against that.
+    A placeholder card (a title not loaded yet) is drawn as a skeleton.
 -->
 <UserControl
     x:Class="Granary.App.Controls.MediaGrid"
@@ -10,17 +11,23 @@
     xmlns:controls="using:Granary.App.Controls"
     xmlns:cards="using:Granary.Core.ViewModels.Cards">
 
-    <ItemsRepeater x:Name="Items" ItemsSource="{x:Bind ItemsSource, Mode=OneWay}" ElementPrepared="OnElementPrepared">
+    <UserControl.Resources>
+        <DataTemplate x:Key="CardTemplate" x:DataType="cards:MediaCard">
+            <Button Style="{StaticResource SiloCardButtonStyle}" VerticalAlignment="Top" DataContext="{x:Bind}" Click="OnCardClick" AutomationProperties.Name="{x:Bind AccessibleName}">
+                <controls:MediaCardView Card="{x:Bind}" />
+            </Button>
+        </DataTemplate>
+        <DataTemplate x:Key="SkeletonTemplate">
+            <controls:MediaCardSkeleton />
+        </DataTemplate>
+        <controls:MediaCardTemplateSelector x:Key="CardTemplateSelector" Card="{StaticResource CardTemplate}" Skeleton="{StaticResource SkeletonTemplate}" />
+    </UserControl.Resources>
+
+    <ItemsRepeater x:Name="Items" ItemsSource="{x:Bind ItemsSource, Mode=OneWay}" ItemTemplate="{StaticResource CardTemplateSelector}"
+                   ElementPrepared="OnElementPrepared" EffectiveViewportChanged="OnEffectiveViewportChanged" SizeChanged="OnItemsSizeChanged">
         <ItemsRepeater.Layout>
             <UniformGridLayout x:Name="GridLayout" MinItemWidth="185" MinColumnSpacing="20" MinRowSpacing="28"
                                ItemsStretch="Fill" ItemsJustification="Start" />
         </ItemsRepeater.Layout>
-        <ItemsRepeater.ItemTemplate>
-            <DataTemplate x:DataType="cards:MediaCard">
-                <Button Style="{StaticResource SiloCardButtonStyle}" VerticalAlignment="Top" DataContext="{x:Bind}" Click="OnCardClick" AutomationProperties.Name="{x:Bind AccessibleName}">
-                    <controls:MediaCardView Card="{x:Bind}" />
-                </Button>
-            </DataTemplate>
-        </ItemsRepeater.ItemTemplate>
     </ItemsRepeater>
 </UserControl>

@@ -74,6 +74,28 @@ public sealed class CatalogQueryTests
     }
 
     [Fact]
+    public void AtPosition_SeeksFromTheWindowCursor_WithoutCountingAgain()
+    {
+        var first = new CatalogQuery { LibraryId = "12", Sort = CatalogSort.Ascending(CatalogSortFields.Title), Limit = 60, Images = PosterOnly };
+
+        var page = first.AtPosition("w1", 540);
+
+        Assert.Equal("?library_id=12&sort=title&limit=60&cursor=w1&seek=540&skip_total=true&poster_width=342", page.ToQueryString());
+        Assert.Equal("?library_id=12&sort=title&limit=60&cursor=n2&skip_total=true&poster_width=342", page.WithCursor("n2").ToQueryString());
+        Assert.Throws<ArgumentException>(() => first.AtPosition("", 60));
+    }
+
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(CatalogQuery.MaximumSeek + 1)]
+    public void Seek_OutsideTheServersRange_IsRefused(int seek)
+    {
+        var refused = Assert.Throws<ArgumentOutOfRangeException>(() => new CatalogQuery { Cursor = "w1", Seek = seek }.ToQueryString());
+
+        Assert.Equal(nameof(CatalogQuery.Seek), refused.ParamName);
+    }
+
+    [Fact]
     public void HomeSectionListing_TakesPagingAndImages()
     {
         var query = CatalogQuery.ForHomeSection("default-continue-watching") with { Limit = 50, Cursor = "c1", SkipTotal = true, Group = "work", Images = PosterOnly };

@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    The A–Z bar on the right edge of a title-ordered grid: "ALL" and the letters A to Z. One tab stop; the arrow
-    keys move between letters and Enter picks one. It shrinks to fit short windows.
+    The A–Z bar on the right edge of a title-ordered grid, as on Silo's web client: "#" and the letters A to Z on a
+    round panel, the letter of the top row red. Letters without titles are greyed. One tab stop: the arrow keys move
+    between letters, typing a letter goes to it, and Enter jumps. It shrinks to fit short windows.
 -->
 <UserControl
     x:Class="Granary.App.Controls.AlphabetJumpBar"
@@ -16,40 +17,71 @@
             <Setter Property="FontFamily" Value="{StaticResource SiloFontSemiBold}" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="FontSize" Value="11" />
-            <Setter Property="Padding" Value="6,0" />
-            <Setter Property="MinWidth" Value="32" />
+            <Setter Property="Padding" Value="0" />
             <!-- The 24 px minimum target size (WCAG 2.5.8); the bar shrinks only when the window is shorter. -->
+            <Setter Property="Width" Value="24" />
             <Setter Property="Height" Value="24" />
             <Setter Property="HorizontalAlignment" Value="Center" />
             <Setter Property="UseSystemFocusVisuals" Value="True" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Grid x:Name="Root" Background="{TemplateBinding Background}" CornerRadius="{StaticResource SiloPillCornerRadius}"
-                              local:Pill.IsEnabled="True">
+                        <Grid x:Name="Root" Background="{TemplateBinding Background}" CornerRadius="12">
                             <VisualStateManager.VisualStateGroups>
                                 <VisualStateGroup x:Name="CommonStates">
                                     <VisualState x:Name="Normal" />
                                     <VisualState x:Name="PointerOver">
                                         <VisualState.Setters>
-                                            <Setter Target="Root.Background" Value="{StaticResource SiloSurfaceRaisedBrush}" />
+                                            <Setter Target="Text.Foreground" Value="{StaticResource SiloForegroundBrush}" />
                                         </VisualState.Setters>
                                     </VisualState>
                                     <VisualState x:Name="Pressed">
                                         <VisualState.Setters>
-                                            <Setter Target="Root.Background" Value="{StaticResource SiloSurfaceRaisedBrush}" />
+                                            <Setter Target="Text.Foreground" Value="{StaticResource SiloForegroundBrush}" />
                                             <Setter Target="Root.Opacity" Value="0.8" />
                                         </VisualState.Setters>
                                     </VisualState>
                                     <VisualState x:Name="Disabled">
                                         <VisualState.Setters>
-                                            <Setter Target="Root.Opacity" Value="0.4" />
+                                            <Setter Target="Root.Opacity" Value="0.35" />
                                         </VisualState.Setters>
                                     </VisualState>
                                 </VisualStateGroup>
                             </VisualStateManager.VisualStateGroups>
                             <ContentPresenter
-                                Padding="{TemplateBinding Padding}"
+                                x:Name="Text"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                AutomationProperties.AccessibilityView="Raw"
+                                Content="{TemplateBinding Content}"
+                                Foreground="{TemplateBinding Foreground}" />
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- The current letter: red with the page's dark text, and no hover. -->
+        <Style x:Key="AlphabetCurrentLetterButtonStyle" TargetType="Button" BasedOn="{StaticResource AlphabetLetterButtonStyle}">
+            <Setter Property="Background" Value="{StaticResource SiloPrimaryBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource SiloBackgroundBrush}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid x:Name="Root" Background="{TemplateBinding Background}" CornerRadius="12">
+                            <VisualStateManager.VisualStateGroups>
+                                <VisualStateGroup x:Name="CommonStates">
+                                    <VisualState x:Name="Normal" />
+                                    <VisualState x:Name="PointerOver" />
+                                    <VisualState x:Name="Pressed">
+                                        <VisualState.Setters>
+                                            <Setter Target="Root.Opacity" Value="0.8" />
+                                        </VisualState.Setters>
+                                    </VisualState>
+                                    <VisualState x:Name="Disabled" />
+                                </VisualStateGroup>
+                            </VisualStateManager.VisualStateGroups>
+                            <ContentPresenter
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 AutomationProperties.AccessibilityView="Raw"
@@ -63,7 +95,9 @@
     </UserControl.Resources>
 
     <Viewbox StretchDirection="DownOnly" VerticalAlignment="Center">
-        <StackPanel x:Name="Letters" TabFocusNavigation="Once" XYFocusKeyboardNavigation="Enabled"
-                    AutomationProperties.Name="Jump to letter" />
+        <Border Background="#E61C1C20" BorderBrush="#B828282E" BorderThickness="1" CornerRadius="13" Padding="0,6" Width="26">
+            <StackPanel x:Name="Letters" TabFocusNavigation="Once" XYFocusKeyboardNavigation="Enabled" KeyDown="OnLettersKeyDown"
+                        AutomationProperties.Name="Jump to letter" />
+        </Border>
     </Viewbox>
 </UserControl>

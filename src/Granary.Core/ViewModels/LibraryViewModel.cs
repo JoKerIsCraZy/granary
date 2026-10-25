@@ -196,7 +196,8 @@ public sealed partial class LibraryViewModel : ObservableObject
     [RelayCommand]
     private void OpenItem(MediaCard? card)
     {
-        if (card is not null)
+        // A placeholder is a title not loaded yet: there is nothing to open.
+        if (card is { IsPlaceholder: false })
         {
             _navigation.NavigateTo(AppRoute.Item, card.Id);
         }

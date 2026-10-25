@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Granary.Core.Api.Accounts;
 using Granary.Core.Api.Auth;
@@ -55,6 +56,8 @@ namespace Granary.Core.Api;
 [JsonSerializable(typeof(Library))]
 [JsonSerializable(typeof(CatalogBrowseCollection))]
 [JsonSerializable(typeof(CatalogEffectiveSort))]
+[JsonSerializable(typeof(CatalogLetters))]
+[JsonSerializable(typeof(JsonElement))]
 [JsonSerializable(typeof(CatalogFilters))]
 [JsonSerializable(typeof(CatalogTechnicalFilters))]
 [JsonSerializable(typeof(CatalogItemDetail))]
