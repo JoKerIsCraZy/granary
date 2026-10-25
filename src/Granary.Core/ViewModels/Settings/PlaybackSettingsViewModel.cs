@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Api.Playback;
 using Granary.Core.Api.Settings;
 using Granary.Core.Auth;
+using Granary.Core.Playback;
 using Granary.Core.Settings;
 using Microsoft.Extensions.Logging;
 
@@ -34,6 +35,8 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject
     private readonly IProfileSettings _settings;
     private readonly PlaybackApi _playback;
     private readonly PlaybackConnectionApi _connectionApi;
+    private readonly ConnectionSpeedTest _speedTest;
+    private readonly INetworkLink _network;
     private readonly ISessionManager _session;
     private readonly TimeProvider _time;
     private readonly ILogger<PlaybackSettingsViewModel> _logger;
@@ -45,12 +48,14 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject
     private bool _applying;
 
     public PlaybackSettingsViewModel(
-        IProfileSettings settings, PlaybackApi playback, PlaybackConnectionApi connection, ISessionManager session, TimeProvider time,
-        ILogger<PlaybackSettingsViewModel> logger)
+        IProfileSettings settings, PlaybackApi playback, PlaybackConnectionApi connection, ConnectionSpeedTest speedTest, INetworkLink network,
+        ISessionManager session, TimeProvider time, ILogger<PlaybackSettingsViewModel> logger)
     {
         _settings = settings;
         _playback = playback;
         _connectionApi = connection;
+        _speedTest = speedTest;
+        _network = network;
         _session = session;
         _time = time;
         _logger = logger;
@@ -114,6 +119,21 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject
     [ObservableProperty]
     public partial string BudgetText { get; private set; } = "";
 
+    /// <summary>Test speed is offered: not on a cellular or metered link, where the description says why instead.</summary>
+    [ObservableProperty]
+    public partial bool ShowsTestSpeed { get; private set; } = true;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(TestSpeedText))]
+    [NotifyCanExecuteChangedFor(nameof(TestSpeedCommand))]
+    public partial bool IsTestingSpeed { get; private set; }
+
+    public string TestSpeedText => IsTestingSpeed ? "Testing…" : "Test speed";
+
+    /// <summary>Why the last test did not measure, as the web says it; empty otherwise. Some messages hide themselves again.</summary>
+    [ObservableProperty]
+    public partial string SpeedTestMessage { get; private set; } = "";
+
     [ObservableProperty]
     public partial bool ShowsIntroSkip { get; private set; } = true;
 
@@ -139,6 +159,11 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject
     public partial SettingChoice? SelectedFastForward { get; set; }
 
     private PlaybackConnectionState? _connection;
+
+    // Replaces the speed on a link that is not tested.
+    private string? _meteredNote;
+    private CancellationTokenSource? _speedTestStop;
+    private int _messageVersion;
 
     public async Task LoadAsync(CancellationToken cancellationToken = default)
     {
@@ -180,6 +205,100 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject
             ErrorMessage = "Couldn't reset the limit. Try again.";
         }
     }
+
+    /// <summary>
+    /// The accurate test (Settings → Test speed): the server keeps its result as this connection's reading, and the row
+    /// shows it. A press while one runs joins it.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanTestSpeed))]
+    private async Task TestSpeedAsync()
+    {
+        if (_session.ActiveServer?.BaseUri is not { } server)
+        {
+            return;
+        }
+        IsTestingSpeed = true;
+        Say("");
+        _speedTestStop?.Dispose();
+        _speedTestStop = new CancellationTokenSource();
+        try
+        {
+            var outcome = await _speedTest.RunAsync(server, _speedTestStop.Token);
+            switch (outcome.Status)
+            {
+                case SpeedTestStatus.Measured:
+                    await ReadConnectionAgainAsync(server);
+                    break;
+                case SpeedTestStatus.Metered:
+                    // The link turned metered: the row says why instead.
+                    _meteredNote = MeteredNote(_network.Current) ?? MeteredText;
+                    ShowConnection();
+                    break;
+                case SpeedTestStatus.RateLimited:
+                    int seconds = outcome.RetryAfterSeconds;
+                    Say(string.Create(CultureInfo.InvariantCulture, $"Try again in {seconds} {(seconds == 1 ? "second" : "seconds")}"),
+                        TimeSpan.FromSeconds(seconds));
+                    break;
+                case SpeedTestStatus.NotSaved:
+                    Say("Couldn't save the speed test. Try again.");
+                    break;
+                case SpeedTestStatus.Failed:
+                    Say("Couldn't measure the connection speed. Try again.");
+                    break;
+            }
+        }
+        finally
+        {
+            IsTestingSpeed = false;
+        }
+    }
+
+    private bool CanTestSpeed() => !IsTestingSpeed;
+
+    /// <summary>Stops a test this page started: leaving Settings is the way to playback, which a test would slow.</summary>
+    public void StopSpeedTest() => _speedTestStop?.Cancel();
+
+    private async Task ReadConnectionAgainAsync(Uri server)
+    {
+        try
+        {
+            _connection = await _connectionApi.GetAsync(server);
+        }
+        catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex))
+        {
+            // The server kept the result; the next look shows it.
+            _logger.LogInformation("This connection's playback state could not be read again: {Failure}", ApiFailureText.Describe(ex));
+        }
+        ShowConnection();
+    }
+
+    // "Try again in N seconds" is only true for those N seconds.
+    private void Say(string text, TimeSpan? forTime = null)
+    {
+        int version = ++_messageVersion;
+        SpeedTestMessage = text;
+        if (forTime is { } delay)
+        {
+            _ = HideMessageAsync(version, delay);
+        }
+    }
+
+    private async Task HideMessageAsync(int version, TimeSpan delay)
+    {
+        await Task.Delay(delay, _time);
+        if (version == _messageVersion)
+        {
+            SpeedTestMessage = "";
+        }
+    }
+
+    private const string MeteredText = "Speed tests are skipped on metered networks.";
+
+    // A link paid for by the byte is not tested, and a reading taken on another link does not describe it.
+    private static string? MeteredNote(NetworkLink link) =>
+        link.Transport == NetworkTransports.Cellular ? "Speed tests are skipped on cellular, and the Cellular quality settings apply."
+        : link.IsMetered ? MeteredText
+        : null;
 
     private void Apply(IReadOnlyDictionary<string, EffectiveSetting> values)
     {
@@ -255,11 +374,12 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject
         {
             return;
         }
+        _meteredNote = MeteredNote(_network.Current);
         try
         {
             var capabilities = await _playback.GetCapabilitiesAsync(server, cancellationToken);
-            bool learns = capabilities.HasFeature("buffering_quality_v1");
-            ShowsConnection = capabilities.HasFeature("connection_speed_v1");
+            bool learns = capabilities.HasFeature(PlaybackFeatures.BufferingQualityV1);
+            ShowsConnection = capabilities.HasFeature(PlaybackFeatures.ConnectionSpeedV1);
             _connection = learns ? await _connectionApi.GetAsync(server, cancellationToken) : null;
         }
         catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex, cancellationToken))
@@ -281,9 +401,10 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject
         LearnedLimitText = limit is null
             ? ""
             : $"Limited to {ConnectionRate(limit.Kbps)} after buffering on {limit.ObservedAt.ToLocalTime().ToString("MMM d", CultureInfo.InvariantCulture)}";
-        ConnectionSpeedText = SpeedText(_connection);
+        ConnectionSpeedText = _meteredNote ?? SpeedText(_connection);
+        ShowsTestSpeed = _meteredNote is null;
         long? budget = ignoresLimit && limit is not null ? null : _connection?.AutoBudgetKbps;
-        BudgetText = budget is { } kbps ? $"Auto plays videos up to {ConnectionRate(kbps)} without converting them." : "";
+        BudgetText = budget is { } kbps && _meteredNote is null ? $"Auto plays videos up to {ConnectionRate(kbps)} without converting them." : "";
     }
 
     // The highest reading kept for this connection: a test, or else the best playback throughput, a lower bound.

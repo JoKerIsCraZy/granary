@@ -63,6 +63,7 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<WatchApi>();
         services.AddTransient<PlaybackApi>();
         services.AddTransient<PlaybackConnectionApi>();
+        AddSpeedTest(services);
         services.AddTransient<TrackPreferencesApi>();
         services.AddTransient<SubtitlesApi>();
         services.AddTransient<SettingsApi>();
@@ -124,6 +125,20 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<IUpNextSource, UpNextSource>();
         // The episodes that started by themselves count across player pages, as long as the app runs.
         services.AddSingleton<AutoPlayStreak>();
+    }
+
+    // Settings → Test speed. A run outlives the page that started it, so a second press joins it. The probe may redirect
+    // to a short-lived proxy address with a token of its own: that hop goes without credentials and stays out of the log.
+    private static void AddSpeedTest(IServiceCollection services)
+    {
+        services.AddHttpClient(BandwidthProbeApi.HopClientName)
+            .ConfigurePrimaryHttpMessageHandler(CreateSocketsHandler)
+            .RemoveAllLoggers();
+        services.AddTransient<BandwidthProbeApi>();
+        services.AddTransient<BandwidthProbe>();
+        services.AddSingleton<ConnectionSpeedTest>();
+        // The app puts the system's view of the network in first.
+        services.TryAddSingleton<INetworkLink, UnknownNetworkLink>();
     }
 
     // Artwork URLs are presigned and public: no credentials, no identity headers. HTTP/2 lets a page's images

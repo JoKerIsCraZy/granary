@@ -8,6 +8,7 @@ using Granary.Core.Playback;
 using Granary.Core.Settings;
 using Granary.Core.ViewModels.Settings;
 using Granary.Tests.Fakes;
+using Granary.Tests.Playback;
 using Granary.Tests.Profiles;
 
 namespace Granary.Tests.Settings;
@@ -55,8 +56,10 @@ public sealed class SettingsViewModelTests
     private readonly FakeProfileSettings _settings = new();
     private readonly ScriptedSilo _silo = new();
     private readonly ManualTimeProvider _time = new();
+    private readonly FakeNetworkLink _network = new();
 
     private PlaybackSettingsViewModel Playback() => new(_settings, new PlaybackApi(_silo.Http), new PlaybackConnectionApi(_silo.Http),
+        ConnectionSpeedTestTests.SpeedTest(_silo, _time, _network), _network,
         new FakeSessionManager { State = SessionState.Ready, ActiveServer = ScriptedSilo.Server, ProfileId = "7" }, _time,
         new LogSink().For<PlaybackSettingsViewModel>());
 
@@ -193,6 +196,132 @@ public sealed class SettingsViewModelTests
         Assert.Same(page.SelectedSpokenLanguage, page.SpokenLanguageChoices.Single(c => c.Value == "pt-AO"));
         Assert.Equal("No preference", page.SpokenLanguageChoices[0].Label);
         Assert.Empty(_settings.Writes);
+    }
+
+    private const string ProbePath = "api/v2/playback/bandwidth-probe";
+
+    private static string ConnectionWithProbe(string? probe) =>
+        $$"""{ "connection": "c1", "auto_budget_kbps": 26500, "learned_limit": null, "probe": {{probe ?? "null"}} }""";
+
+    private async Task<PlaybackSettingsViewModel> ConnectionPageAsync(params Func<Task<HttpResponseMessage>>[] probeAnswers)
+    {
+        ConnectionSpeedTestTests.Capabilities(_silo);
+        _silo.On(HttpMethod.Get, "api/v2/playback/connection",
+            ScriptedSilo.Json(HttpStatusCode.OK, ConnectionWithProbe(null)),
+            ScriptedSilo.Json(HttpStatusCode.OK, ConnectionWithProbe(
+                """{ "kbps": 400000, "lower_bound": false, "measured_at": "2026-10-01T12:00:10.000Z", "transport": "ethernet" }""")));
+        if (probeAnswers.Length > 0)
+        {
+            _silo.On(HttpMethod.Get, ProbePath, probeAnswers);
+        }
+        var page = Playback();
+        await page.LoadAsync(TestContext.Current.CancellationToken);
+        return page;
+    }
+
+    [Fact]
+    public async Task TestSpeed_ShowsTheNewReading()
+    {
+        var page = await ConnectionPageAsync(ProbeAnswers.Body(TimedProbeStream.Steady(_time, 400_000, 11_000)));
+        _silo.On(HttpMethod.Post, "api/v2/playback/bandwidth-probe/results", ScriptedSilo.NoContent());
+        Assert.Equal("Not measured yet", page.ConnectionSpeedText);
+        Assert.True(page.ShowsTestSpeed);
+        Assert.Equal("Test speed", page.TestSpeedText);
+
+        var running = page.TestSpeedCommand.ExecuteAsync(null);
+        await running;
+
+        Assert.Equal("400 Mbps · measured just now on Ethernet", page.ConnectionSpeedText);
+        Assert.Equal("", page.SpeedTestMessage);
+        Assert.False(page.IsTestingSpeed);
+        Assert.Contains("\"manual\":true", Assert.Single(_silo.SentTo(HttpMethod.Post, "api/v2/playback/bandwidth-probe/results")).Body,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task TestSpeed_SaysTesting_AndCannotBePressedAgainMeanwhile()
+    {
+        var answer = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var page = await ConnectionPageAsync(() => answer.Task);
+
+        var running = page.TestSpeedCommand.ExecuteAsync(null);
+
+        Assert.True(page.IsTestingSpeed);
+        Assert.Equal("Testing…", page.TestSpeedText);
+        Assert.False(page.TestSpeedCommand.CanExecute(null));
+        answer.SetResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
+        await running;
+        Assert.Equal("Test speed", page.TestSpeedText);
+        Assert.Equal("Couldn't measure the connection speed. Try again.", page.SpeedTestMessage);
+    }
+
+    [Fact]
+    public async Task ARateLimitedTest_SaysWhen_ForThatLong()
+    {
+        var page = await ConnectionPageAsync(ProbeAnswers.RateLimited(TimeSpan.FromSeconds(12)));
+
+        await page.TestSpeedCommand.ExecuteAsync(null);
+        Assert.Equal("Try again in 12 seconds", page.SpeedTestMessage);
+
+        _time.Advance(TimeSpan.FromSeconds(11));
+        Assert.Equal("Try again in 12 seconds", page.SpeedTestMessage);
+        _time.Advance(TimeSpan.FromSeconds(1));
+        await Until(() => page.SpeedTestMessage.Length == 0);
+    }
+
+    [Fact]
+    public async Task AResultTheServerDidNotKeep_SaysSo()
+    {
+        var page = await ConnectionPageAsync(ProbeAnswers.Body(TimedProbeStream.Steady(_time, 50_000, 11_000)));
+        _silo.On(HttpMethod.Post, "api/v2/playback/bandwidth-probe/results", ScriptedSilo.Problem(500, "internal"));
+
+        await page.TestSpeedCommand.ExecuteAsync(null);
+
+        Assert.Equal("Couldn't save the speed test. Try again.", page.SpeedTestMessage);
+        Assert.Equal("Not measured yet", page.ConnectionSpeedText);
+    }
+
+    [Theory]
+    [InlineData(NetworkTransports.Cellular, false, "Speed tests are skipped on cellular, and the Cellular quality settings apply.")]
+    [InlineData(NetworkTransports.Wifi, true, "Speed tests are skipped on metered networks.")]
+    public async Task OnACellularOrMeteredLink_TheRowSaysWhyThereIsNoTest(string transport, bool metered, string note)
+    {
+        _network.Current = new NetworkLink(transport, metered);
+
+        var page = await ConnectionPageAsync();
+
+        Assert.Equal(note, page.ConnectionSpeedText);
+        Assert.False(page.ShowsTestSpeed);
+        Assert.Equal("", page.BudgetText);
+    }
+
+    [Fact]
+    public async Task ALinkThatTurnedMetered_HidesTheTest()
+    {
+        var page = await ConnectionPageAsync();
+        _network.Current = new NetworkLink(NetworkTransports.Ethernet, true);
+
+        await page.TestSpeedCommand.ExecuteAsync(null);
+
+        Assert.Equal("Speed tests are skipped on metered networks.", page.ConnectionSpeedText);
+        Assert.False(page.ShowsTestSpeed);
+        Assert.Empty(_silo.SentTo(HttpMethod.Get, ProbePath));
+    }
+
+    [Fact]
+    public async Task LeavingSettings_StopsTheTest_WithoutAMessage()
+    {
+        var answer = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var page = await ConnectionPageAsync(() => answer.Task);
+
+        var running = page.TestSpeedCommand.ExecuteAsync(null);
+        page.StopSpeedTest();
+        answer.SetResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StreamContent(TimedProbeStream.Steady(_time, 50_000, 11_000)) });
+        await running;
+
+        Assert.Equal("", page.SpeedTestMessage);
+        Assert.False(page.IsTestingSpeed);
+        Assert.Empty(_silo.SentTo(HttpMethod.Post, "api/v2/playback/bandwidth-probe/results"));
     }
 
     [Theory]

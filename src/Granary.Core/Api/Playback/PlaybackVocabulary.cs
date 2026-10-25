@@ -59,6 +59,9 @@ public static class PlaybackFeatures
     /// <summary>An absent <c>active_quality</c> means the plan delivers no menu entry.</summary>
     public const string PlanActiveQualityV1 = "plan_active_quality_v1";
 
+    /// <summary>A server-side feature: the server keeps speed test readings per connection and advertises its probe.</summary>
+    public const string ConnectionSpeedV1 = "connection_speed_v1";
+
     // Features with client-side duties the client does not take on; named so code can say what it leaves out.
     public const string SoftwareVideoDecodeV1 = "software_video_decode_v1";
     public const string PlanInvalidatedV1 = "plan_invalidated_v1";
