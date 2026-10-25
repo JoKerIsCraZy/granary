@@ -6,6 +6,7 @@ using Granary.Core.Api.Auth;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Discovery;
 using Granary.Core.Api.Images;
+using Granary.Core.Api.Notifications;
 using Granary.Core.Api.Playback;
 using Granary.Core.Settings;
 using Granary.Core.ViewModels.Settings;
@@ -73,6 +74,7 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<CollectionsApi>();
         services.AddTransient<RecommendationsApi>();
         services.AddTransient<CalendarApi>();
+        services.AddTransient<NotificationsApi>();
         services.AddTransient<ImagesApi>();
         services.AddSingleton<ImageParameterCache>();
         AddArtwork(services);
@@ -106,6 +108,8 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<ForYouViewModel>();
         services.AddTransient<RecommendationSectionViewModel>();
         services.AddTransient<CalendarViewModel>();
+        services.AddSingleton<NotificationBadge>();
+        services.AddTransient<NotificationsViewModel>();
         services.AddTransient<AddServerViewModel>();
         services.AddTransient<PlayerViewModel>();
         services.AddTransient<Granary.Core.ViewModels.Player.AddSubtitlesViewModel>();

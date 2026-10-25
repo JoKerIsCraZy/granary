@@ -5,6 +5,7 @@ using Granary.Core.Api.Auth;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Discovery;
 using Granary.Core.Api.Images;
+using Granary.Core.Api.Notifications;
 using Granary.Core.Api.Profiles;
 using Granary.Core.Api.Settings;
 
@@ -79,6 +80,12 @@ namespace Granary.Core.Api;
 [JsonSerializable(typeof(RecommendationRow))]
 [JsonSerializable(typeof(TasteProfile))]
 [JsonSerializable(typeof(CalendarWeek))]
+[JsonSerializable(typeof(NotificationPage))]
+[JsonSerializable(typeof(NotificationUnreadCount))]
+[JsonSerializable(typeof(NotificationCapabilities))]
+[JsonSerializable(typeof(NotificationPreferences))]
+[JsonSerializable(typeof(NotificationPreferencesChange))]
+[JsonSerializable(typeof(NotificationReadAll))]
 [JsonSerializable(typeof(Person))]
 [JsonSerializable(typeof(ImageCapabilities))]
 [JsonSerializable(typeof(ImageSizeWidths))]

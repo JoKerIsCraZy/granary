@@ -19,8 +19,9 @@ public sealed partial class WrapLayout : NonVirtualizingLayout
         return Place(context, availableSize.Width, arrange: false);
     }
 
+    // The whole width given: a narrower answer would set the items apart from the start of their line.
     protected override Size ArrangeOverride(NonVirtualizingLayoutContext context, Size finalSize) =>
-        Place(context, finalSize.Width, arrange: true);
+        new(finalSize.Width, Place(context, finalSize.Width, arrange: true).Height);
 
     private Size Place(NonVirtualizingLayoutContext context, double width, bool arrange)
     {

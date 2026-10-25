@@ -72,6 +72,17 @@
                         <FontIcon Glyph="&#xE787;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
+                <!-- Hidden when the server has no inbox for the profile; the unread count in red beside it. -->
+                <NavigationViewItem Content="Notifications" Tag="Notifications" Visibility="{x:Bind Notifications.IsAvailable, Mode=OneWay}"
+                                    AutomationProperties.Name="{x:Bind NotificationsName(Notifications.UnreadCount), Mode=OneWay}">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xEA8F;" />
+                    </NavigationViewItem.Icon>
+                    <NavigationViewItem.InfoBadge>
+                        <InfoBadge Value="{x:Bind Notifications.UnreadCount, Mode=OneWay}" Visibility="{x:Bind Notifications.HasUnread, Mode=OneWay}"
+                                   Background="{StaticResource SiloPrimaryBrush}" />
+                    </NavigationViewItem.InfoBadge>
+                </NavigationViewItem>
                 <NavigationViewItemHeader x:Name="YourStuffHeader" Content="YOUR STUFF" Style="{StaticResource SiloNavigationHeaderStyle}" />
                 <NavigationViewItem Content="Favorites" Tag="List:favorites">
                     <NavigationViewItem.Icon>

@@ -52,6 +52,9 @@ public enum AppRoute
 
     /// <summary>A week of airings.</summary>
     Calendar,
+
+    /// <summary>The profile's notification inbox.</summary>
+    Notifications,
 }
 
 /// <summary>Which row an "Explore all" grid lists: a Home row, or a library row when <see cref="LibraryId"/> is set.</summary>

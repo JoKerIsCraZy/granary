@@ -3,6 +3,7 @@ using Granary.App.Views;
 using Granary.Core.Abstractions;
 using Granary.Core.Playback;
 using Granary.Core.ViewModels;
+using Microsoft.Extensions.Logging;
 using Microsoft.UI;
 using Microsoft.UI.Input;
 using Microsoft.UI.Windowing;
@@ -24,14 +25,18 @@ public sealed partial class MainWindow : Window
 
     private readonly NavigationService _navigation;
     private readonly PlaybackStops _stops;
+    private readonly ILogger<MainWindow> _logger;
     private bool _closeAfterStops;
 
-    public MainWindow(NavigationService navigation, ShellViewModel shell, SidebarViewModel sidebar, PlaybackStops stops)
+    public MainWindow(NavigationService navigation, ShellViewModel shell, SidebarViewModel sidebar, NotificationBadge notifications,
+        PlaybackStops stops, ILogger<MainWindow> logger)
     {
         _navigation = navigation;
         _stops = stops;
+        _logger = logger;
         Shell = shell;
         Sidebar = sidebar;
+        Notifications = notifications;
         InitializeComponent();
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
@@ -57,8 +62,13 @@ public sealed partial class MainWindow : Window
 
     public SidebarViewModel Sidebar { get; }
 
+    /// <summary>The sidebar's Notifications entry and its unread count.</summary>
+    public NotificationBadge Notifications { get; }
+
     // Instance method because x:Bind function bindings call it on the window.
     public string ProfileMenuName(string profileName) => $"Profile menu: {profileName}";
+
+    public string NotificationsName(int unread) => unread > 0 ? $"Notifications, {unread} unread" : "Notifications";
 
     // The library entries follow the header; NavigationView has no item template for mixed static and bound items.
     private void ShowLibraries()
@@ -119,6 +129,21 @@ public sealed partial class MainWindow : Window
             : NavigationViewBackButtonVisible.Collapsed;
         ShowChrome(route);
         SelectItem(route, _navigation.CurrentParameter);
+        RefreshNotifications();
+    }
+
+    // The unread count is read again on the way through the app, at most every half minute, as the web's sidebar does.
+    private async void RefreshNotifications()
+    {
+        try
+        {
+            await Notifications.RefreshAsync();
+        }
+        catch (Exception ex)
+        {
+            // async void: nothing may escape. Failed reads are already logged; this is anything else.
+            _logger.LogError(ex, "The unread notification count could not be shown");
+        }
     }
 
     // The sidebar is there for a signed-in profile. Detail pages get the full width, as on the web: the sidebar
@@ -191,7 +216,8 @@ public sealed partial class MainWindow : Window
             case string tag when tag.StartsWith(ListTagPrefix, StringComparison.Ordinal):
                 _navigation.ShowSection(AppRoute.List, tag[ListTagPrefix.Length..]);
                 break;
-            case string tag when Enum.TryParse<AppRoute>(tag, out var route) && route is AppRoute.Home or AppRoute.Search or AppRoute.Collections or AppRoute.ForYou or AppRoute.Calendar:
+            case string tag when Enum.TryParse<AppRoute>(tag, out var route)
+                && route is AppRoute.Home or AppRoute.Search or AppRoute.Collections or AppRoute.ForYou or AppRoute.Calendar or AppRoute.Notifications:
                 _navigation.ShowSection(route);
                 break;
             // Settings and Servers open over the page they were opened from, and go back to it.

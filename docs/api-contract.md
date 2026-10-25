@@ -786,6 +786,22 @@ tracks ([8.8.1](#881-initial-track-selection-before-start)) → `POST /api/v2/pl
   the network's zone), `badges` (`series_premiere`, `season_premiere`, `finale`), `poster_url`, `watched`. The episode
   may not be in a library yet: the web opens the series, not the episode.
 
+### 7.14 Notifications
+
+- `GET /api/v2/notifications/capabilities` → `{ "in_app": { "enabled" }, "series": { "available", "mute" }, … }`; the
+  web shows its inbox unless `in_app.enabled` is false or the call fails.
+- `GET /api/v2/notifications?status=all|unread&limit=25[&cursor=]` → `{ "items": NotificationItem[], "page": { "has_more",
+  "next_cursor" }, "read_cutoff" }`, newest first. `NotificationItem`: `id`, `type` (`episode.available`,
+  `request.fulfilled`, `request.approved`, `request.declined`; open set), `created_at`, `read_at` (null while unread),
+  `series_id`, `series_title`, `episode_id`, `season_number`, `episode_number`, `episode_title`, `poster_url`,
+  `reason_flags` (per type: `favorite`, `watchlist`, `continue_watching`, `next_up`, `follower`; requests carry
+  `media_type`, `title`, `reason`, `tmdb_id`; ignore other keys).
+- `GET /api/v2/notifications/unread-count` → `{ "count" }`. `POST /api/v2/notifications/{id}/read` → `204`;
+  `POST /api/v2/notifications/read-all` with `{ "through": read_cutoff }` marks what that listing saw, nothing newer.
+- `GET` and `PUT /api/v2/notifications/preferences`: `enabled` (the master switch), `notify_favorites`,
+  `notify_watchlist`, `notify_continue_watching`, `notify_next_up`; `PUT` takes only the switches that change.
+- The Series view (`GET /api/v2/notifications/series`, `PUT`/`DELETE …/series/{series_id}/mute`) is not built yet.
+
 ## 8. Playback protocol v3
 
 The server decides **how** a file is delivered; the client reports honestly what it can play and

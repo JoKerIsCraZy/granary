@@ -90,7 +90,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
 ## Layout
 
 - Sidebar (260 px): server name, Home, Search (`Ctrl+K`), "LIBRARIES" with the server's libraries, "DISCOVER" (For
-  You, Calendar; the web's Requests and Notifications to come), "YOUR STUFF" (Favorites, Watchlist, Collections,
+  You, Calendar, Notifications with the unread count in red; the web's Requests to come), "YOUR STUFF" (Favorites, Watchlist, Collections,
   History; the web's Watch Party to come); Servers and the profile menu at the bottom. Favorites, Watchlist and History are one page (`PersonalListPage`, the web's `pages/Catalog.tsx` for those
   sources): the list's name, what it holds and its count, the media menu (All Media, Movies & Series, Movies, Series,
   Episodes), the list's own order ("List Order", History's "Watch History") or a sort, and the posters by window. The
@@ -111,6 +111,13 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   today's) of airings: "S2 · E1 - TITLE", the air time on the viewer's clock, SERIES PREMIERE / SEASON PREMIERE / FINALE,
   watched ones marked. An airing opens its series (a movie itself); airings have no card menu. An empty week names the
   other presets. The preset is kept while the app runs (the web keeps it in the browser).
+- Notifications (`NotificationsPage`, the web's `pages/Notifications.tsx`): one centred column of the web's width with
+  the bell and title, Mark all read while anything is unread, Preferences (a flyout with the master switch and
+  Favorites, Watchlist, Continue Watching, Next Up, read each time it opens and saved at once), All and "Unread (3)",
+  then the entries: poster, a red dot and a lighter background while unread, title, "5m ago", what happened
+  ("S4E2 — Blind Rooster"), the reasons as pills, a check button to mark it read; 25 at a time with Load more. An entry
+  opens its episode or series and is read from then. The sidebar hides the entry when the server has no inbox and
+  reads the count again on the way through the app, at most every half minute. The web's Series view comes later.
 - Pages: 48 px side margins, 32 px top; rows 40 px apart.
 - Detail pages: full-bleed backdrop fading into the background, logo (or display title), chips,
   ratings, overview with "More", red Play/Resume pill, secondary actions, then rows (seasons, episodes,
