@@ -91,6 +91,8 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   and sent are source time (`player + timeline_offset_seconds`). A direct play (`original_http`) is the file
   with all its audio tracks, so the load selects the plan's audio track (mpv `aid`, the ordinal plus 1);
   otherwise mpv would play the one the file marks as default. Streams the server makes carry only that track.
+  Subtitles are the plan's alone (`sid=no` until the subtitle routes are built): mpv would otherwise show a
+  track the file marks as default, a second authority the Android client switches off as well.
 - **While playing**: progress every 10 s, and once a pause has held for a second (`PlaybackProgress`: one
   sequence per sample, retried with the identical body). Leaving the page by any way stops the session with
   its final position and stops the engine (`PlayerViewModel.Leave`); before the session's first frame the stop

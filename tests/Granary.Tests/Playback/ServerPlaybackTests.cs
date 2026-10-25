@@ -79,6 +79,15 @@ public sealed class ServerPlaybackTests
     }
 
     [Fact]
+    public async Task Subtitles_AreOnlyThePlans()
+    {
+        // The plan selects none here; mpv on its own would show a track the file marks as default.
+        await _fixture.StartAsync();
+
+        Assert.Equal(0, Assert.Single(_fixture.Engine.Loaded).SubtitleStream);
+    }
+
+    [Fact]
     public async Task AStreamTheServerMade_CarriesItsAudioAlready()
     {
         _fixture.Silo.On(HttpMethod.Post, StartPath, Created(PlaybackPayloads.TranscodeDecision));

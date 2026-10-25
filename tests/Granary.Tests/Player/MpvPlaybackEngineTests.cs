@@ -75,6 +75,16 @@ public sealed class MpvPlaybackEngineTests : IDisposable
     }
 
     [Fact]
+    public void PerFileOptions_CarryTheStartAndTheTracks()
+    {
+        var source = new MediaSource(new Uri("https://nas.example/stream"), [], TimeSpan.FromSeconds(12.5), AudioStream: 2, SubtitleStream: 0);
+
+        Assert.Equal(["start=12.5", "aid=2", "sid=no"], MpvPlaybackEngine.PerFileOptions(source));
+        Assert.Equal(["sid=3"], MpvPlaybackEngine.PerFileOptions(source with { Start = null, AudioStream = null, SubtitleStream = 3 }));
+        Assert.Empty(MpvPlaybackEngine.PerFileOptions(MediaSource.Local(@"C:\clip.mkv")));
+    }
+
+    [Fact]
     public async Task Loads_AreCounted_AndTheirStatesSayWhichOne()
     {
         using var engine = CreateEngine();

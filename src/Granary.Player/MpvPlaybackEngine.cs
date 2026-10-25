@@ -135,7 +135,7 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
     }
 
     // Options for this file only: the next load starts from mpv's defaults again.
-    private static IEnumerable<string> PerFileOptions(MediaSource source)
+    internal static IEnumerable<string> PerFileOptions(MediaSource source)
     {
         if (source.Start is { } start)
         {
@@ -144,6 +144,10 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
         if (source.AudioStream is { } audio)
         {
             yield return "aid=" + audio.ToString(CultureInfo.InvariantCulture);
+        }
+        if (source.SubtitleStream is { } subtitle)
+        {
+            yield return "sid=" + (subtitle > 0 ? subtitle.ToString(CultureInfo.InvariantCulture) : "no");
         }
     }
 

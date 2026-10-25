@@ -2,7 +2,15 @@ namespace Granary.Core.Playback;
 
 /// <summary>What to play: a URL plus the HTTP headers every request for it must carry.</summary>
 /// <param name="AudioStream">The audio stream to play, counted from 1 in the file's order; null leaves it to the player.</param>
-public sealed record MediaSource(Uri Url, IReadOnlyList<KeyValuePair<string, string>> Headers, TimeSpan? Start = null, int? AudioStream = null)
+/// <param name="SubtitleStream">
+/// The subtitle stream to show, counted from 1 in the file's order; 0 shows none, null leaves it to the player.
+/// </param>
+public sealed record MediaSource(
+    Uri Url,
+    IReadOnlyList<KeyValuePair<string, string>> Headers,
+    TimeSpan? Start = null,
+    int? AudioStream = null,
+    int? SubtitleStream = null)
 {
     public static MediaSource Local(string path, TimeSpan? start = null) => new(new Uri(Path.GetFullPath(path)), [], start);
 }

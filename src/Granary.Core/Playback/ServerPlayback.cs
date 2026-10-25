@@ -344,7 +344,8 @@ public sealed partial class ServerPlayback : IServerPlayback
         int? audio = AudioStream(_plan);
         _logger.LogInformation("Loading the {Delivery} plan at {Start:F1} s (offset {Offset:F1} s, audio stream {Audio})",
             _plan.Delivery, _playerPosition, _plan.Timeline.TimelineOffsetSeconds, audio?.ToString(CultureInfo.InvariantCulture) ?? "as delivered");
-        _loadId = _engine.Load(new MediaSource(_streamUrl!, media.Headers, TimeSpan.FromSeconds(_playerPosition), audio));
+        // Subtitles are the plan's to choose; left to itself, mpv would show one the file marks as default.
+        _loadId = _engine.Load(new MediaSource(_streamUrl!, media.Headers, TimeSpan.FromSeconds(_playerPosition), audio, SubtitleStream: 0));
         WatchFirstFrame(_loadId);
     }
 
