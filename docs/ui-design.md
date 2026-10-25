@@ -117,6 +117,32 @@ accent where the web player is white.
   accelerators, so no accelerator tooltip appears; the buttons announce them through
   `AutomationProperties.AcceleratorKey`.
 
+### The web player, measured (reference for phase 3d)
+
+Read from the server's web player (`/watch/{id}`, computed styles at 1920x889, 2026-10-25). The Apple and Android
+apps decide how the player behaves (track choice, switching, saving picks); the web decides how it looks.
+
+- **Layout**: top left a 44 px "Minimize" disc and an "Exit" pill (`✕ Exit`, 84x36), both black at 60 %. The seek
+  bar spans the width above the controls, with marker ticks and the credits as a gold stretch at the end. Bottom
+  left the title (16 px semibold, white) and under it "S1 · E1 — SCHULANFANG · 31:55 / 48:41" (10 px, upper case,
+  2.2 px tracking, white 55 %). In the middle back 10, play, forward 30 and next episode: 44 px glass discs
+  (white 6 %, 1 px white 10 % edge, white 92 % icons of 28 px, 18 px for next) around a 56 px white disc with a
+  dark 24 px icon. On the right bare 40 px icons (white 78 %, 18 px): mute and a volume slider, audio tracks,
+  chapters, captions, a settings pill with the quality ("⚙ Auto", white 8 %), markers, info, fill screen,
+  full screen.
+- **Menus** open above their button: black at 90 % with an 8 px blur behind, 12 px corners, white text. A section
+  label is 12 px medium, upper case, 0.3 px tracking, white 50 %. Rows are 8x12 px padded, 14 px medium, white
+  85 %; the chosen row is blue-400 (`#60A5FA`) with a leading ✓ (in the captions menu: a white 5 % row instead).
+- **Audio** (280 px): a row per track: its name, chips for codec and layout (9.5 px semibold, white 75 % on white
+  10 %, 4 px corners) and an outlined DEFAULT chip (1 px white 25 %); under it "German · 5.1(side) · 640 kbps ·
+  48.000 Hz" (11 px, white 55 %).
+- **Captions** (420 px): "Off" first; a row per subtitle with its language, chips on the right for format and
+  source ("SRT", "EMBEDDED" / "EXTERNAL", 10 px, white 50 % on white 10 %), and a second line for SDH or the
+  file name and "Synced +8.7 s". Then a DELAY row (− 0 ms + and Reset, 12 px), "Add Subtitles…" and
+  "Appearance…".
+- **Settings**: SPEED with a value ("1x") and a slider from 0.5x to 3x with ticks; QUALITY with "Auto" (a filled
+  check) and the plan's qualities, the bitrate right-aligned and muted ("1080p Medium 6 Mbps" … "360p 300 kbps").
+
 ## Accounts and permissions
 
 The web client was inspected with an admin account, which shows more (file paths under "Media
