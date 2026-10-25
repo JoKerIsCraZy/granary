@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using Granary.Core.Api.Playback;
 using Granary.Core.Playback;
@@ -23,9 +24,22 @@ public sealed class MpvDeviceProbe : IPlaybackDeviceProbe
     private static PlaybackDeviceFacts Probe() => new()
     {
         Platform = "windows",
-        HardwareVideoCodecs = VideoDecoderProbe.HardwareCodecs(),
+        HardwareVideoCodecs = HardwareCodecs(),
         SoftwareVideoCodecs = LightSoftwareCodecs,
         OsVersion = Environment.OSVersion.Version.ToString(),
         FormFactor = PlaybackDeviceFacts.Desktop,
     };
+
+    // Lazy keeps what the probe threw for good: a machine whose driver will not answer plays in software instead.
+    private static IReadOnlyList<string> HardwareCodecs()
+    {
+        try
+        {
+            return VideoDecoderProbe.HardwareCodecs();
+        }
+        catch (Exception ex) when (ex is ExternalException or DllNotFoundException or EntryPointNotFoundException)
+        {
+            return [];
+        }
+    }
 }

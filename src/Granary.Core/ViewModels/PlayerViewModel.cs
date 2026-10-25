@@ -30,6 +30,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     private readonly IUiDispatcher _dispatcher;
     private readonly INavigationService _navigation;
     private readonly Func<IServerPlayback> _serverPlaybacks;
+    private readonly PlaybackStops _stops;
     // A seek's target counts as the position for this long, until the engine reports it: quick skips add up.
     private const long SeekTargetMilliseconds = 3000;
 
@@ -40,12 +41,18 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     private long _seekTargetAt;
     private bool _left;
 
-    public PlayerViewModel(IPlaybackEngine engine, IUiDispatcher dispatcher, INavigationService navigation, Func<IServerPlayback> serverPlaybacks)
+    public PlayerViewModel(
+        IPlaybackEngine engine,
+        IUiDispatcher dispatcher,
+        INavigationService navigation,
+        Func<IServerPlayback> serverPlaybacks,
+        PlaybackStops stops)
     {
         _engine = engine;
         _dispatcher = dispatcher;
         _navigation = navigation;
         _serverPlaybacks = serverPlaybacks;
+        _stops = stops;
         _engine.StateChanged += OnStateChanged;
         _engine.Ended += OnEnded;
     }
@@ -171,8 +178,15 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     /// <summary>Raises or lowers the volume by <paramref name="delta"/> percentage points (Up and Down keys).</summary>
     public void ChangeVolume(double delta) => Volume = Math.Clamp(Volume + delta, 0, 100);
 
+    // Only what plays pauses: a pause set while preparing or after a failure would hold the next load at its start.
     [RelayCommand]
-    private void TogglePause() => _engine.SetPaused(!_engine.Current.IsPaused);
+    private void TogglePause()
+    {
+        if (IsPlaying)
+        {
+            _engine.SetPaused(!_engine.Current.IsPaused);
+        }
+    }
 
     [RelayCommand]
     private void SkipBack() => SeekTo(SkipOrigin - SkipBackSeconds);
@@ -218,7 +232,8 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         }
     }
 
-    // Ends the server playback, if any. Its stop reads the final position before the engine stops.
+    // Ends the server playback, if any. Its stop reads the final position before the engine stops; closing the app
+    // waits for it (PlaybackStops), leaving the page does not.
     private void LeavePlayback()
     {
         if (_playback is not { } playback)
@@ -227,7 +242,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         }
         _playback = null;
         playback.StatusChanged -= OnPlaybackStatusChanged;
-        _ = EndAsync(playback);
+        _stops.Track(EndAsync(playback));
 
         static async Task EndAsync(IServerPlayback playback)
         {

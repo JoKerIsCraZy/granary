@@ -26,6 +26,8 @@ internal sealed class ServerPlaybackFixture
     public const string ProgressPath = "api/v2/playback/" + Session + "/progress";
     public const string StopPath = "api/v2/playback/" + Session;
     public const string ReplanPath = "api/v2/playback/" + Session + "/replan";
+    public const string OtherReplanPath = "api/v2/playback/" + OtherSession + "/replan";
+    public const string OtherStopPath = "api/v2/playback/" + OtherSession;
     public const string RouteEventsPath = "api/v2/playback/route-events";
 
     public ServerPlaybackFixture()
@@ -120,6 +122,27 @@ internal sealed class ServerPlaybackFixture
         // Timer callbacks post asynchronous work; give it a moment to reach the scripted server.
         await Task.Delay(50, TestContext.Current.CancellationToken);
     }
+
+    /// <summary>Waits until <paramref name="condition"/> holds: work started by an event or a timer runs on its own.</summary>
+    public static async Task Until(Func<bool> condition, string what)
+    {
+        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(5);
+        while (!condition())
+        {
+            if (DateTime.UtcNow > deadline)
+            {
+                Assert.Fail("Timed out waiting until " + what);
+            }
+            await Task.Delay(5, TestContext.Current.CancellationToken);
+        }
+    }
+
+    /// <summary>Answers with <paramref name="respond"/> once <paramref name="gate"/> completes: a request on its way.</summary>
+    public static Func<Task<HttpResponseMessage>> After(Task gate, Func<Task<HttpResponseMessage>> respond) => async () =>
+    {
+        await gate;
+        return await respond();
+    };
 }
 
 /// <summary>Fixed media headers; records whether each request asked for fresh ones.</summary>

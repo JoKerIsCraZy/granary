@@ -11,6 +11,7 @@ public sealed class PlayerViewModelServerTests
     private readonly FakePlaybackEngine _engine = new();
     private readonly RecordingNavigation _navigation = new();
     private readonly List<FakeServerPlayback> _playbacks = [];
+    private readonly PlaybackStops _stops = new();
 
     private FakeServerPlayback Playback => _playbacks[^1];
 
@@ -19,7 +20,7 @@ public sealed class PlayerViewModelServerTests
         var playback = new FakeServerPlayback();
         _playbacks.Add(playback);
         return playback;
-    });
+    }, _stops);
 
     [Fact]
     public async Task Start_HandsTheRequestToAServerPlayback()
@@ -172,6 +173,22 @@ public sealed class PlayerViewModelServerTests
         Assert.Equal(1, Playback.Stops);
         Assert.Equal(1, _engine.Stops);
         Assert.Equal(0, _navigation.BackCount);
+    }
+
+    [Fact]
+    public async Task Leave_LetsClosingTheAppWaitForTheStop()
+    {
+        var viewModel = CreateViewModel();
+        await viewModel.StartAsync(PlayRequest.Resume("movie-1"));
+        var stop = new TaskCompletionSource();
+        Playback.StopResult = stop.Task;
+
+        viewModel.Leave();
+        var closing = _stops.WhenStoppedAsync(TimeSpan.FromSeconds(30));
+
+        Assert.False(closing.IsCompleted);
+        stop.SetResult();
+        Assert.True(await closing.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
     }
 
     [Fact]

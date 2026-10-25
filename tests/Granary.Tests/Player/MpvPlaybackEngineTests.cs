@@ -75,6 +75,28 @@ public sealed class MpvPlaybackEngineTests : IDisposable
     }
 
     [Fact]
+    public async Task Loads_AreCounted_AndTheirStatesSayWhichOne()
+    {
+        using var engine = CreateEngine();
+        var second = new TaskCompletionSource<PlaybackSnapshot>(TaskCreationOptions.RunContinuationsAsynchronously);
+        engine.StateChanged += (_, s) =>
+        {
+            if (s is { LoadId: 2, HasStarted: true })
+            {
+                second.TrySetResult(s);
+            }
+        };
+
+        long first = engine.Load(MediaSource.Local(TempWav(3.0)));
+        long next = engine.Load(MediaSource.Local(TempWav(3.0)));
+
+        Assert.Equal(1, first);
+        Assert.Equal(2, next);
+        var state = await second.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken);
+        Assert.True(state.IsLoaded);
+    }
+
+    [Fact]
     public async Task Playback_ReportsThatItStartedAfterTheLoad()
     {
         using var engine = CreateEngine();

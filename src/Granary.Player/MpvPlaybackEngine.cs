@@ -11,8 +11,6 @@ namespace Granary.Player;
 /// </summary>
 public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
 {
-    // A 401 this close to an end of file or load error explains it (spike: mid-stream 401 = EOF).
-    private static readonly TimeSpan AuthFailureWindow = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan PositionThrottle = TimeSpan.FromMilliseconds(250);
 
     private readonly MpvClient _mpv;
@@ -21,11 +19,11 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
     private readonly object _gate = new();
     private PlaybackSnapshot _current = PlaybackSnapshot.Idle;
     private TimeSpan? _lastReportedPosition;
-    private long _lastAuthFailureTick = long.MinValue;
+    private long _loads;
 
     // Set once the server refused a request of the current load. mpv then runs to the end of what it had read and
     // pauses there (keep-open), well before it says the file ended: positions and pauses from then on are not the
-    // viewer's, so the snapshot keeps the last real ones until the next load.
+    // viewer's, so the snapshot keeps the last real ones until the next load, and the end is the refusal's.
     private bool _rejected;
     private (int Width, int Height) _outputSize;
     private nint _swapChain;
@@ -106,7 +104,7 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
         }
     }
 
-    public void Load(MediaSource source)
+    public long Load(MediaSource source)
     {
         ArgumentNullException.ThrowIfNull(source);
         foreach (var (name, value) in source.Headers)
@@ -124,15 +122,18 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
         string perFileOptions = source.Start is { } start
             ? $"start={start.TotalSeconds.ToString("0.###", CultureInfo.InvariantCulture)}"
             : "";
+        long loadId;
         lock (_gate)
         {
-            _lastAuthFailureTick = long.MinValue;
+            loadId = ++_loads;
             _lastReportedPosition = null;
             _rejected = false;
         }
-        Update(s => s with { HasStarted = false, IsAtEnd = false }, force: true);
+        // The file before is still loaded until mpv replaces it: nothing of it may read as the new one's start.
+        Update(s => s with { LoadId = loadId, IsLoaded = false, HasStarted = false, IsAtEnd = false }, force: true);
         _logger.LogInformation("Loading {Target} with {HeaderCount} header(s)", Describe(source.Url), source.Headers.Count);
         _mpv.Command("loadfile", target, "replace", "-1", perFileOptions);
+        return loadId;
     }
 
     /// <summary>
@@ -232,9 +233,9 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
                 break;
             case "eof-reached" when value is true:
                 // keep-open=yes pauses at the end instead of ending the file.
-                Update(s => s with { IsAtEnd = true }, force: true);
+                var atEnd = Update(s => s with { IsAtEnd = true }, force: true);
                 Ended?.Invoke(this, new PlaybackEnded(
-                    RecentAuthFailure() ? PlaybackEndReason.AuthenticationFailed : PlaybackEndReason.EndOfFile, null));
+                    IsRejected ? PlaybackEndReason.AuthenticationFailed : PlaybackEndReason.EndOfFile, null, atEnd.LoadId));
                 break;
             case "eof-reached":
                 Update(s => s with { IsAtEnd = false }, force: true);
@@ -244,15 +245,15 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
 
     private void OnFileEnded(int reason, int error)
     {
-        Update(s => PlaybackSnapshot.Idle with { Volume = s.Volume, IsMuted = s.IsMuted }, force: true);
+        var idle = Update(s => PlaybackSnapshot.Idle with { Volume = s.Volume, IsMuted = s.IsMuted, LoadId = s.LoadId }, force: true);
         var ended = reason switch
         {
-            LibMpv.EndFileError when RecentAuthFailure() => new PlaybackEnded(PlaybackEndReason.AuthenticationFailed, LibMpv.Error(error)),
+            LibMpv.EndFileError when IsRejected => new PlaybackEnded(PlaybackEndReason.AuthenticationFailed, LibMpv.Error(error)),
             LibMpv.EndFileError => new PlaybackEnded(PlaybackEndReason.Error, LibMpv.Error(error)),
             LibMpv.EndFileEof => new PlaybackEnded(PlaybackEndReason.EndOfFile, null),
             _ => new PlaybackEnded(PlaybackEndReason.Stopped, null),
         };
-        Ended?.Invoke(this, ended);
+        Ended?.Invoke(this, ended with { LoadId = idle.LoadId });
     }
 
     private void OnLogMessage(string prefix, string level, string text)
@@ -262,7 +263,6 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
         {
             lock (_gate)
             {
-                _lastAuthFailureTick = Environment.TickCount64;
                 _rejected = true;
             }
         }
@@ -295,16 +295,7 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
         }
     }
 
-    private bool RecentAuthFailure()
-    {
-        lock (_gate)
-        {
-            return _lastAuthFailureTick != long.MinValue
-                && Environment.TickCount64 - _lastAuthFailureTick <= (long)AuthFailureWindow.TotalMilliseconds;
-        }
-    }
-
-    private void Update(Func<PlaybackSnapshot, PlaybackSnapshot> change, bool force)
+    private PlaybackSnapshot Update(Func<PlaybackSnapshot, PlaybackSnapshot> change, bool force)
     {
         PlaybackSnapshot next;
         lock (_gate)
@@ -313,11 +304,12 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
             _current = next;
             if (!force && _lastReportedPosition is { } last && (next.Position - last).Duration() < PositionThrottle)
             {
-                return;
+                return next;
             }
             _lastReportedPosition = next.Position;
         }
         StateChanged?.Invoke(this, next);
+        return next;
     }
 
     private static string SizeText((int Width, int Height) size) =>

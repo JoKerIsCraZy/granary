@@ -145,6 +145,18 @@ public sealed class PlaybackProgressTests
     }
 
     [Fact]
+    public async Task Stop_OnAReinstalledServer_IsOver()
+    {
+        _silo.On(HttpMethod.Delete, StopPath, ScriptedSilo.Problem(409, "installation_changed"));
+        var progress = Create();
+
+        await progress.StopAsync(55.5, isPaused: false);
+
+        Assert.Single(_silo.SentTo(HttpMethod.Delete, StopPath));
+        Assert.True(progress.IsStopped);
+    }
+
+    [Fact]
     public async Task Stop_HappensOnce_AndEndsTheReports()
     {
         _silo.On(HttpMethod.Delete, StopPath, ScriptedSilo.Json(HttpStatusCode.OK, PlaybackPayloads.StopCompleted));

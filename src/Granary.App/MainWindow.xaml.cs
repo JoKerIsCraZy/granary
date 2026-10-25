@@ -1,8 +1,11 @@
 using Granary.App.Services;
+using Granary.App.Views;
 using Granary.Core.Abstractions;
+using Granary.Core.Playback;
 using Granary.Core.ViewModels;
 using Microsoft.UI;
 using Microsoft.UI.Input;
+using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
@@ -15,11 +18,17 @@ public sealed partial class MainWindow : Window
 {
     private const string LibraryTagPrefix = "Library:";
 
-    private readonly NavigationService _navigation;
+    // How long a closing window waits for the player's stop; the stop itself keeps trying for longer.
+    private static readonly TimeSpan StopBudget = TimeSpan.FromSeconds(4);
 
-    public MainWindow(NavigationService navigation, ShellViewModel shell, SidebarViewModel sidebar)
+    private readonly NavigationService _navigation;
+    private readonly PlaybackStops _stops;
+    private bool _closeAfterStops;
+
+    public MainWindow(NavigationService navigation, ShellViewModel shell, SidebarViewModel sidebar, PlaybackStops stops)
     {
         _navigation = navigation;
+        _stops = stops;
         Shell = shell;
         Sidebar = sidebar;
         InitializeComponent();
@@ -27,6 +36,7 @@ public sealed partial class MainWindow : Window
         SetTitleBar(AppTitleBar);
         StyleCaptionButtons();
         AppWindow.Resize(new Windows.Graphics.SizeInt32(1440, 900));
+        AppWindow.Closing += OnClosing;
 
         _navigation.Attach(ContentFrame);
         _navigation.Navigated += OnNavigated;
@@ -123,6 +133,30 @@ public sealed partial class MainWindow : Window
         Grid.SetRow(Navigation, isPlayer ? 0 : 1);
         Grid.SetRowSpan(Navigation, isPlayer ? 2 : 1);
         AppTitle.Visibility = isPlayer ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    // The process ends with the window, and the player's stop carries where the viewer left off: the window goes
+    // out of sight at once but closes only once the stop is through, or after a few seconds.
+    private async void OnClosing(AppWindow sender, AppWindowClosingEventArgs args)
+    {
+        if (_closeAfterStops)
+        {
+            return;
+        }
+        if (ContentFrame.Content is PlayerPage player)
+        {
+            player.ViewModel.Leave();
+        }
+        var stopped = _stops.WhenStoppedAsync(StopBudget);
+        if (stopped.IsCompleted)
+        {
+            return;
+        }
+        args.Cancel = true;
+        _closeAfterStops = true;
+        sender.Hide();
+        await stopped;
+        Close();
     }
 
     private void OnItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)

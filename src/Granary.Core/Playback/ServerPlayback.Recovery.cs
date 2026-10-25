@@ -16,18 +16,50 @@ public sealed partial class ServerPlayback
     private const int MaxAuthReloads = 2;
 
     // After a lost connection: 1, 2, 4, 8 s, then every 15 s, for about two and a half minutes (protocol 6.2;
-    // Silo's web player waits the same way).
+    // Silo's web player waits the same way). The count goes on while reloads fail again, until a frame shows.
     private static readonly TimeSpan[] ReconnectDelays =
     [
         .. new[] { 1, 2, 4, 8 }.Select(s => TimeSpan.FromSeconds(s)),
         .. Enumerable.Repeat(TimeSpan.FromSeconds(15), 8),
     ];
 
+    // A replan that met a busy or unreachable server goes again, unchanged, after these (Android: 1, 2, 4, 8 s).
+    private static readonly TimeSpan[] ReplanRetryDelays = [.. new[] { 1, 2, 4, 8 }.Select(s => TimeSpan.FromSeconds(s))];
+
     private readonly List<string> _failedPlanKeys = [];
     private int _authReloads;
-    private bool _reconnecting;
+    private int _reconnectTries;
+    private bool _recovering;
+    private double? _pendingSeek;
+
+    /// <summary>The latest recovery; tests wait for it instead of for time.</summary>
+    internal Task Recovery { get; private set; } = Task.CompletedTask;
 
     private void ResetPlanChain() => _failedPlanKeys.Clear();
+
+    private bool Superseded(int generation) => _stopping || generation != _generation;
+
+    // One recovery at a time: the server refuses a second replan of the session while one is open (8.7). What
+    // happens meanwhile belongs to the stream being replaced, or happens again once the new one plays; a seek waits.
+    private void Recover(Func<Task> recovery)
+    {
+        if (_recovering || _stopping || Status.Phase == ServerPlaybackPhase.Failed)
+        {
+            return;
+        }
+        _recovering = true;
+        Recovery = Guarded(async () =>
+        {
+            try
+            {
+                await recovery();
+            }
+            finally
+            {
+                _recovering = false;
+            }
+        });
+    }
 
     // The headers expired or were revoked mid-stream: the same plan plays on with fresh ones from where it was (9.4).
     private async Task ReloadAfterRejectionAsync()
@@ -38,8 +70,8 @@ public sealed partial class ServerPlayback
             return;
         }
         _logger.LogInformation("The server rejected the media headers; reloading with fresh ones");
-        double position = _started ? _playerPosition : _plan!.Timeline.PlayerStartSeconds;
-        await LoadAsync(position, rejected: true);
+        // The last frame shown, a seek's target, or the start of a load that never played.
+        await LoadAsync(_playerPosition, rejected: true);
     }
 
     // The plan never played (a route or decoder failure): ask for another one, with every key tried so far.
@@ -74,7 +106,6 @@ public sealed partial class ServerPlayback
         var decision = await ReplanAsync(ReplanOperations.SeekReanchor, sourceSeconds, []);
         if (decision is not null)
         {
-            _playerPosition = _plan!.Timeline.ToPlayer(sourceSeconds);
             await AdoptAsync(decision, newSession: false, restorePosition: sourceSeconds);
         }
     }
@@ -83,32 +114,23 @@ public sealed partial class ServerPlayback
     // the session for a plan again, a no-op track change, until the server answers.
     private async Task ReconnectAsync()
     {
-        if (_reconnecting)
-        {
-            return;
-        }
-        _reconnecting = true;
-        int generation = ++_generation;
+        int generation = _generation;
         double position = SourcePosition;
         _logger.LogInformation("The stream broke off at {Position:F1} s; reconnecting", position);
         SetStatus(new ServerPlaybackStatus(ServerPlaybackPhase.Reconnecting));
-        foreach (var delay in ReconnectDelays)
+        // One request, sent again unchanged until the server answers it (8.7).
+        var request = PlaybackStarter.Replan(_context!, _attemptId, _plan!, _planAttemptId, ReplanOperations.TrackChange, position, []);
+        while (_reconnectTries < ReconnectDelays.Length)
         {
-            await Task.Delay(delay, _time);
-            if (_stopping || generation != _generation)
+            await Task.Delay(ReconnectDelays[_reconnectTries++], _time);
+            if (Superseded(generation))
             {
                 return;
             }
             PlaybackDecision decision;
             try
             {
-                var request = PlaybackStarter.Replan(_context!, _attemptId, _plan!, _planAttemptId, ReplanOperations.TrackChange, position, []);
                 decision = await _api.ReplanAsync(_context!.Server.BaseUri, _progress!.SessionId, request);
-            }
-            catch (SiloApiException ex) when (ex.Status == 410)
-            {
-                EndedByServer();
-                return;
             }
             catch (Exception ex) when (PlaybackProgress.IsTransient(ex))
             {
@@ -117,16 +139,21 @@ public sealed partial class ServerPlayback
             }
             catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex))
             {
+                if (Superseded(generation))
+                {
+                    return;
+                }
+                if (ex is SiloApiException { Status: 410 })
+                {
+                    EndedByServer();
+                    return;
+                }
                 // Any other answer: the session did not survive (404 after a server restart, 409, 403, 422).
                 _logger.LogInformation("The session did not survive the outage ({Failure}); starting again", ApiFailureText.Describe(ex));
-                if (ex is SiloApiException { Code: ProblemCodes.InstallationChanged })
-                {
-                    _context = await _starter.WithFreshCapabilitiesAsync(_context!, CancellationToken.None);
-                }
-                await RestartAsync(position);
+                await RestartAfterAsync(ex, position);
                 return;
             }
-            if (_stopping || generation != _generation)
+            if (Superseded(generation))
             {
                 return;
             }
@@ -139,7 +166,6 @@ public sealed partial class ServerPlayback
             await AdoptAsync(decision, newSession: false, restorePosition: position);
             return;
         }
-        _reconnecting = false;
         Fail("The connection to the server was lost.", canRetry: true);
     }
 
@@ -148,43 +174,77 @@ public sealed partial class ServerPlayback
     {
         double at = position ?? SourcePosition;
         _logger.LogInformation("Starting a new attempt at {Position:F1} s", at);
-        StopProgressTimer();
-        _reconnecting = false;
-        await StartAttemptAsync(at);
+        StopTimers();
+        _starting = Guarded(() => StartAttemptAsync(at));
+        await _starting;
+    }
+
+    // A new attempt after the session refused to go on, with fresh capabilities if the server was reinstalled.
+    private async Task RestartAfterAsync(Exception refusal, double position)
+    {
+        if (refusal is SiloApiException { Code: ProblemCodes.InstallationChanged } && !await RefreshCapabilitiesAsync())
+        {
+            return;
+        }
+        await RestartAsync(position);
     }
 
     // An administrator ended the session: leave, do not start again (10.1).
-    private void EndedByServer()
-    {
-        _engine.Stop();
-        Fail("This playback was ended on the server.", canRetry: false);
-    }
+    private void EndedByServer() => Fail("This playback was ended on the server.", canRetry: false);
 
     // Asks the session for a new plan; null when it cannot give one (and the playback says why or starts anew).
     private async Task<PlaybackDecision?> ReplanAsync(string operation, double position, IReadOnlyList<string> attemptedKeys, PlaybackFailure? failure = null)
     {
         int generation = _generation;
         var request = PlaybackStarter.Replan(_context!, _attemptId, _plan!, _planAttemptId, operation, position, attemptedKeys, failure);
-        try
+        for (int retry = 0; ; retry++)
         {
-            var decision = await _api.ReplanAsync(_context!.Server.BaseUri, _progress!.SessionId, request);
-            return _stopping || generation != _generation ? null : decision;
-        }
-        catch (SiloApiException ex) when (ex.Status == 410)
-        {
-            EndedByServer();
-        }
-        catch (SiloApiException ex) when (ex.Status == 404)
-        {
-            await RestartAsync(position);
-        }
-        catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex))
-        {
-            _logger.LogWarning("Replan ({Operation}) failed: {Failure}", operation, ApiFailureText.Describe(ex));
-            var described = PlaybackStarter.Describe(ex);
+            Exception refusal;
+            try
+            {
+                var decision = await _api.ReplanAsync(_context!.Server.BaseUri, _progress!.SessionId, request);
+                return Superseded(generation) ? null : decision;
+            }
+            catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex))
+            {
+                refusal = ex;
+            }
+            if (Superseded(generation))
+            {
+                return null;
+            }
+            switch (refusal)
+            {
+                case SiloApiException { Status: 410 }:
+                    EndedByServer();
+                    return null;
+                case SiloApiException { Status: 404 } or SiloApiException { Status: 409, Code: ProblemCodes.InstallationChanged }:
+                    await RestartAfterAsync(refusal, position);
+                    return null;
+            }
+            // 409 is also an identical replan still in flight: like a busy server, it gets the same body again.
+            bool conflict = refusal is SiloApiException { Status: 409 };
+            if ((conflict || PlaybackProgress.IsTransient(refusal)) && retry < ReplanRetryDelays.Length)
+            {
+                _logger.LogInformation("Replan ({Operation}) was not answered ({Failure}); sending it again", operation, ApiFailureText.Describe(refusal));
+                await Task.Delay(ReplanRetryDelays[retry], _time);
+                if (Superseded(generation))
+                {
+                    return null;
+                }
+                continue;
+            }
+            _logger.LogWarning("Replan ({Operation}) failed: {Failure}", operation, ApiFailureText.Describe(refusal));
+            if (conflict)
+            {
+                // Still refused: the session's plan is not the one this playback knows. Start over where the viewer is.
+                await RestartAsync(position);
+                return null;
+            }
+            var described = PlaybackStarter.Describe(refusal);
             Fail(described.Message, described.CanRetry);
+            return null;
         }
-        return null;
     }
 
     // Within the produced window, or with an open window, between its start and where the viewer is.

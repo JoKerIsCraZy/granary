@@ -10,7 +10,7 @@ public sealed class PlayerViewModelTests
     private readonly RecordingNavigation _navigation = new();
 
     private PlayerViewModel CreateViewModel() =>
-        new(_engine, new ImmediateDispatcher(), _navigation, () => throw new InvalidOperationException("A direct source needs no server."));
+        new(_engine, new ImmediateDispatcher(), _navigation, () => throw new InvalidOperationException("A direct source needs no server."), new PlaybackStops());
 
     [Fact]
     public async Task Direct_LoadsAnHttpUrlAsIs()
@@ -119,6 +119,17 @@ public sealed class PlayerViewModelTests
 
         Assert.True(_engine.Current.IsPaused);
         Assert.Equal([TimeSpan.FromSeconds(20), TimeSpan.Zero, TimeSpan.FromSeconds(30)], _engine.Seeks);
+    }
+
+    [Fact]
+    public void Pause_WaitsForSomethingToPlay()
+    {
+        // A pause set while preparing would hold the coming load at its first frame.
+        var viewModel = CreateViewModel();
+
+        viewModel.TogglePauseCommand.Execute(null);
+
+        Assert.False(_engine.Current.IsPaused);
     }
 
     [Fact]

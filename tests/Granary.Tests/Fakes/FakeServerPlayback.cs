@@ -25,6 +25,9 @@ internal sealed class FakeServerPlayback : IServerPlayback
 
     public int Stops { get; private set; }
 
+    /// <summary>What <see cref="StopAsync"/> returns: a pending task keeps the stop on its way.</summary>
+    public Task StopResult { get; set; } = Task.CompletedTask;
+
     public bool Disposed { get; private set; }
 
     public Task StartAsync(PlayRequest request, CancellationToken cancellationToken)
@@ -38,7 +41,7 @@ internal sealed class FakeServerPlayback : IServerPlayback
     public Task StopAsync()
     {
         Stops++;
-        return Task.CompletedTask;
+        return StopResult;
     }
 
     public void Raise(ServerPlaybackStatus status)

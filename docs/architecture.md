@@ -91,13 +91,22 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   and sent are source time (`player + timeline_offset_seconds`).
 - **While playing**: progress every 10 s, and once a pause has held for a second (`PlaybackProgress`: one
   sequence per sample, retried with the identical body). Leaving the page by any way stops the session with
-  its final position and stops the engine (`PlayerViewModel.Leave`). An end within 30 s of the title's end
+  its final position and stops the engine (`PlayerViewModel.Leave`); before the session's first frame the stop
+  sends 0, which the server never stores, so a quick look does not move the resume point. Closing the window
+  waits up to 4 s for stops still on their way (`PlaybackStops`). An end within 30 s of the title's end
   finishes it; an earlier end is a stream that broke off.
 - **Recovery**: refused headers (401 mid-stream) → fresh token, same plan reloaded where the viewer was; a plan
-  that never played → `failure_recovery` replan with every key tried (at most 8); a connection lost after the
-  first frame → no-op `track_change` replans for about 2.5 minutes; a session the server forgot (404) → a new
-  attempt at the position; an administrator's stop (410) → leave; a seek outside a remux or transcode window
-  → `seek_reanchor`.
+  that never played (or showed no picture within 90 s) → `failure_recovery` replan with every key tried (at
+  most 8); a connection lost after the plan's first frame → no-op `track_change` replans for about 2.5 minutes,
+  the schedule going on while reloads break again; a session the server forgot (404), or one that refuses to go
+  on → a new attempt at the position, and the old session is stopped; an administrator's stop (410) → leave; a
+  seek outside a remux or transcode window → `seek_reanchor`. Replans that meet a busy or unreachable server
+  are resent unchanged (1, 2, 4, 8 s). A start answered after the stop has its new session stopped at once.
+- **One recovery at a time**: the server refuses a second replan while one is open, so what happens meanwhile
+  (the replaced stream's end, a progress answer) is dropped or comes up again once the new stream plays, and a
+  seek waits for that stream. Engine states and ends carry the id of their load (`PlaybackSnapshot.LoadId`):
+  one raised before a reload can arrive after it and is ignored. A failure stops the engine; after the stop the
+  playback leaves the engine alone, which may already play the next title.
 - After a refused request mpv runs to the end of what it had read and pauses there before it reports the end.
   The engine keeps the last real position and pause from the refusal until the next load, so the end of that
   data is never taken for the viewer's position.

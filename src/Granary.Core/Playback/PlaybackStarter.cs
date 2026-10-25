@@ -49,6 +49,9 @@ public sealed class PlaybackStarter(
         var server = session.ActiveServer ?? throw new PlaybackUnavailableException("Choose a server to play from.", canRetry: false);
         string profileId = session.ProfileId ?? throw new PlaybackUnavailableException("Choose a profile to play from this server.", canRetry: false);
         var settings = preferences.ReadAsync(server.BaseUri, cancellationToken);
+        // Read alongside the watch detail; when that fails first, nobody waits for the settings any more.
+        _ = settings.ContinueWith(static read => _ = read.Exception, CancellationToken.None,
+            TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
         WatchDetail detail;
         try
         {

@@ -10,6 +10,11 @@ public sealed class ServerPlaybackTests
 {
     private readonly ServerPlaybackFixture _fixture = new();
 
+    // The transcode, as the answer to a replan of the first session.
+    private static string TranscodeInThisSession => PlaybackPayloads.TranscodeDecision.Replace(OtherSession, Session, StringComparison.Ordinal);
+
+    private static CancellationToken Cancellation => TestContext.Current.CancellationToken;
+
     // Start
 
     [Fact]
@@ -110,6 +115,17 @@ public sealed class ServerPlaybackTests
         Assert.Equal(2, _fixture.Silo.SentTo(HttpMethod.Get, "api/v2/playback/capabilities").Count);
         Assert.Equal(2, _fixture.Silo.SentTo(HttpMethod.Post, StartPath).Count);
         Assert.Single(_fixture.Engine.Loaded);
+    }
+
+    [Fact]
+    public async Task AnEngineThatRefusesTheLoad_EndsInAFailure()
+    {
+        _fixture.Engine.FailNextLoad = new ArgumentException("Header 'X-Bad' cannot be passed to mpv safely.");
+
+        var playback = await _fixture.StartAsync();
+
+        Assert.Equal(ServerPlaybackPhase.Failed, playback.Status.Phase);
+        Assert.True(playback.Status.CanRetry);
     }
 
     [Fact]
@@ -224,6 +240,35 @@ public sealed class ServerPlaybackTests
     }
 
     [Fact]
+    public async Task AStopBeforeTheFirstFrame_LeavesTheResumePointAlone()
+    {
+        // The load starts at 12.5 s, but the viewer saw nothing: 0 is never stored, so the resume point stays.
+        var playback = await _fixture.StartAsync();
+
+        await playback.StopAsync();
+
+        Assert.Equal(0, _fixture.Body(HttpMethod.Delete, StopPath).GetProperty("position").GetDouble());
+    }
+
+    [Fact]
+    public async Task AStopWhileTheServerStarts_EndsTheSessionItMakes()
+    {
+        var answer = new TaskCompletionSource();
+        _fixture.Silo.On(HttpMethod.Post, StartPath, After(answer.Task, Created(PlaybackPayloads.StartOpaqueIds)));
+        var playback = _fixture.Create();
+        var starting = playback.StartAsync(PlayRequest.Resume(MovieId), Cancellation);
+        await Until(() => _fixture.Silo.SentTo(HttpMethod.Post, StartPath).Count == 1, "the start is sent");
+
+        var stop = playback.StopAsync();
+        answer.SetResult();
+        await starting;
+        await stop;
+
+        Assert.Empty(_fixture.Engine.Loaded);
+        Assert.Equal(0, _fixture.Body(HttpMethod.Delete, StopPath).GetProperty("position").GetDouble());
+    }
+
+    [Fact]
     public async Task AfterTheStop_NothingIsReportedAnyMore()
     {
         var playback = await _fixture.PlayingAsync();
@@ -235,6 +280,21 @@ public sealed class ServerPlaybackTests
         Assert.Empty(_fixture.Silo.SentTo(HttpMethod.Post, ProgressPath));
         Assert.Empty(_fixture.Silo.SentTo(HttpMethod.Post, ReplanPath));
         Assert.Single(_fixture.Engine.Loaded);
+    }
+
+    [Fact]
+    public async Task TheEnd_ShowsBeforeTheStopIsThrough()
+    {
+        var answer = new TaskCompletionSource();
+        _fixture.Silo.On(HttpMethod.Delete, StopPath, After(answer.Task, Ok(PlaybackPayloads.StopCompleted)));
+        var playback = await _fixture.PlayingAsync();
+        _fixture.Engine.RaiseState(Frame(10195));
+
+        _fixture.Engine.RaiseEnded(new PlaybackEnded(PlaybackEndReason.EndOfFile, null));
+
+        await Until(() => playback.Status.Phase == ServerPlaybackPhase.Ended, "the end is shown");
+        answer.SetResult();
+        await playback.StopAsync();
     }
 
     [Fact]
@@ -286,6 +346,36 @@ public sealed class ServerPlaybackTests
     }
 
     [Fact]
+    public async Task ASecondRejection_ReloadsWhereTheFirstReloadStarted()
+    {
+        await _fixture.PlayingAsync();
+        _fixture.Engine.RaiseState(Frame(400));
+        _fixture.Engine.RaiseEnded(new PlaybackEnded(PlaybackEndReason.AuthenticationFailed, null));
+        await Until(() => _fixture.Engine.Loaded.Count == 2, "the first reload");
+
+        // Refused again before its first frame: the viewer is still at 400 s, not at the plan's start.
+        _fixture.Engine.RaiseEnded(new PlaybackEnded(PlaybackEndReason.AuthenticationFailed, null));
+
+        await Until(() => _fixture.Engine.Loaded.Count == 3, "the second reload");
+        Assert.Equal(TimeSpan.FromSeconds(400), _fixture.Engine.Loaded[^1].Start);
+    }
+
+    [Fact]
+    public async Task AStateFromTheLoadBefore_IsNoFirstFrame()
+    {
+        var playback = await _fixture.PlayingAsync();
+        _fixture.Engine.RaiseState(Frame(400));
+        _fixture.Engine.RaiseEnded(new PlaybackEnded(PlaybackEndReason.AuthenticationFailed, null));
+        await playback.Recovery;
+
+        // Raised by the first load before the reload, it arrives after it.
+        _fixture.Engine.RaiseState(Frame(500) with { LoadId = 1 });
+        await _fixture.AdvanceAsync(TimeSpan.FromSeconds(10));
+
+        Assert.Empty(_fixture.Silo.SentTo(HttpMethod.Post, ProgressPath));
+    }
+
+    [Fact]
     public async Task AReloadDuringASeek_StartsAtTheSeeksTarget()
     {
         var playback = await _fixture.PlayingAsync();
@@ -323,6 +413,37 @@ public sealed class ServerPlaybackTests
     }
 
     [Fact]
+    public async Task AReplanThatMeetsABusyServer_IsSentAgainUnchanged()
+    {
+        _fixture.Silo.On(HttpMethod.Post, ReplanPath, ScriptedSilo.Problem(503, "dependency_unavailable"), Ok(TranscodeInThisSession));
+        var playback = await _fixture.StartAsync();
+
+        _fixture.Engine.RaiseEnded(new PlaybackEnded(PlaybackEndReason.Error, "loading failed"));
+        await _fixture.Time.FireNextTimerAsync(Cancellation);
+        await playback.Recovery;
+
+        var first = _fixture.Body(HttpMethod.Post, ReplanPath);
+        var again = _fixture.Body(HttpMethod.Post, ReplanPath, 1);
+        Assert.Equal(first.GetProperty("replan_request_id").GetString(), again.GetProperty("replan_request_id").GetString());
+        Assert.Equal(2, _fixture.Engine.Loaded.Count);
+        Assert.NotEqual(ServerPlaybackPhase.Failed, playback.Status.Phase);
+    }
+
+    [Fact]
+    public async Task ALoadThatShowsNoPicture_IsGivenUp_AndReplanned()
+    {
+        _fixture.Silo.On(HttpMethod.Post, ReplanPath, Ok(TranscodeInThisSession));
+        var playback = await _fixture.StartAsync();
+
+        await _fixture.AdvanceAsync(TimeSpan.FromSeconds(90));
+        await playback.Recovery;
+
+        Assert.Equal(1, _fixture.Engine.Stops);
+        Assert.Equal("failure_recovery", _fixture.Body(HttpMethod.Post, ReplanPath).GetProperty("operation").GetString());
+        Assert.Equal(2, _fixture.Engine.Loaded.Count);
+    }
+
+    [Fact]
     public async Task ALostConnection_IsWaitedFor_AndTheStreamComesBackWhereItWas()
     {
         _fixture.Silo.On(HttpMethod.Post, ReplanPath, ScriptedSilo.NetworkError(), Ok(PlaybackPayloads.StartOpaqueIds));
@@ -345,6 +466,62 @@ public sealed class ServerPlaybackTests
         Assert.Equal(TimeSpan.FromSeconds(700), _fixture.Engine.Loaded[^1].Start);
         _fixture.Engine.RaiseState(Frame(700));
         Assert.Equal(ServerPlaybackPhase.Playing, playback.Status.Phase);
+    }
+
+    [Fact]
+    public async Task AReloadThatBreaksAfterAReconnect_KeepsReconnecting()
+    {
+        _fixture.Silo.On(HttpMethod.Post, ReplanPath, Ok(PlaybackPayloads.StartOpaqueIds));
+        var playback = await _fixture.PlayingAsync();
+        _fixture.Engine.RaiseState(Frame(700));
+        _fixture.Engine.RaiseEnded(new PlaybackEnded(PlaybackEndReason.Error, "connection reset"));
+        await _fixture.AdvanceAsync(TimeSpan.FromSeconds(1));
+        await playback.Recovery;
+        Assert.Equal(2, _fixture.Engine.Loaded.Count);
+
+        // The stream the server gave back breaks off before its first frame: the network is not back yet.
+        _fixture.Engine.RaiseEnded(new PlaybackEnded(PlaybackEndReason.Error, "connection reset"));
+        await _fixture.AdvanceAsync(TimeSpan.FromSeconds(2));
+        await playback.Recovery;
+
+        Assert.Equal(3, _fixture.Engine.Loaded.Count);
+        Assert.Equal(TimeSpan.FromSeconds(700), _fixture.Engine.Loaded[^1].Start);
+        Assert.Equal(ServerPlaybackPhase.Reconnecting, playback.Status.Phase);
+        Assert.All(_fixture.Silo.SentTo(HttpMethod.Post, ReplanPath),
+            r => Assert.Contains("\"operation\":\"track_change\"", r.Body, StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task AnEndAfterAFailure_ChangesNothing()
+    {
+        _fixture.Silo.On(HttpMethod.Post, ProgressPath, ScriptedSilo.Problem(410, "playback_session_ended"));
+        var playback = await _fixture.PlayingAsync();
+        await _fixture.AdvanceAsync(TimeSpan.FromSeconds(10));
+        await Until(() => playback.Status.Phase == ServerPlaybackPhase.Failed, "the session ends");
+
+        _fixture.Engine.RaiseEnded(new PlaybackEnded(PlaybackEndReason.Error, "stream closed"));
+        await _fixture.AdvanceAsync(TimeSpan.FromSeconds(1));
+
+        Assert.Equal(ServerPlaybackPhase.Failed, playback.Status.Phase);
+        Assert.Empty(_fixture.Silo.SentTo(HttpMethod.Post, ReplanPath));
+    }
+
+    [Fact]
+    public async Task ARestart_StopsTheSessionItLeaves()
+    {
+        // After the outage the session refuses to go on (409): a new attempt, and the old session ends at 700 s.
+        _fixture.Silo.On(HttpMethod.Post, ReplanPath, ScriptedSilo.Problem(409, "conflict"));
+        _fixture.Silo.On(HttpMethod.Post, StartPath, Created(PlaybackPayloads.StartOpaqueIds), Created(StartedAgain));
+        var playback = await _fixture.PlayingAsync();
+        _fixture.Engine.RaiseState(Frame(700));
+
+        _fixture.Engine.RaiseEnded(new PlaybackEnded(PlaybackEndReason.Error, "connection reset"));
+        await _fixture.AdvanceAsync(TimeSpan.FromSeconds(1));
+        await playback.Recovery;
+        await Until(() => _fixture.Silo.SentTo(HttpMethod.Delete, StopPath).Count == 1, "the old session is stopped");
+
+        Assert.Equal(StreamUrl(OtherSession), _fixture.Engine.Loaded[^1].Url);
+        Assert.Equal(700, _fixture.Body(HttpMethod.Delete, StopPath).GetProperty("position").GetDouble());
     }
 
     [Fact]
@@ -406,6 +583,43 @@ public sealed class ServerPlaybackTests
         Assert.Equal(100, replan.GetProperty("position_seconds").GetDouble());
         Assert.Empty(_fixture.Engine.Seeks);
         Assert.Equal(2, _fixture.Engine.Loaded.Count);
+    }
+
+    [Fact]
+    public async Task AfterAReanchor_TheViewerIsAtTheNewStreamsStart_InItsOwnTime()
+    {
+        _fixture.Silo.On(HttpMethod.Post, StartPath, Created(PlaybackPayloads.TranscodeDecision));
+        _fixture.Silo.On(HttpMethod.Post, OtherReplanPath, Ok(StartedAgain));
+        _fixture.Silo.On(HttpMethod.Delete, OtherStopPath, Ok(PlaybackPayloads.StopCompleted));
+        var playback = await _fixture.StartAsync();
+        _fixture.Engine.RaiseState(Frame(2));
+        playback.Seek(100);
+        await playback.Recovery;
+
+        // Left before the new stream's first frame: 100 s, not the old stream's player time in the new plan's.
+        await playback.StopAsync();
+
+        Assert.Equal(100, _fixture.Body(HttpMethod.Delete, OtherStopPath).GetProperty("position").GetDouble());
+    }
+
+    [Fact]
+    public async Task SeeksDuringAReanchor_WaitForItsStream()
+    {
+        var answer = new TaskCompletionSource();
+        _fixture.Silo.On(HttpMethod.Post, StartPath, Created(PlaybackPayloads.TranscodeDecision));
+        _fixture.Silo.On(HttpMethod.Post, OtherReplanPath, After(answer.Task, Ok(StartedAgain)));
+        var playback = await _fixture.StartAsync();
+        _fixture.Engine.RaiseState(Frame(2));
+
+        playback.Seek(100);
+        playback.Seek(200);
+        answer.SetResult();
+        await playback.Recovery;
+        _fixture.Engine.RaiseState(Frame(100));
+
+        // One replan of the session at a time (8.7); the later seek goes where the new stream can take it.
+        Assert.Single(_fixture.Silo.SentTo(HttpMethod.Post, OtherReplanPath));
+        Assert.Equal([TimeSpan.FromSeconds(200)], _fixture.Engine.Seeks);
     }
 
     [Fact]

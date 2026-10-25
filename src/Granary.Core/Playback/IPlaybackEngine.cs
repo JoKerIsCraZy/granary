@@ -14,6 +14,10 @@ public sealed record MediaSource(Uri Url, IReadOnlyList<KeyValuePair<string, str
 /// The player reached the end of what it could read and holds there, paused. A stream that broke off (a 401 mid-stream
 /// among others) ends this way too, so its position then is the end of the data, not necessarily the viewer's.
 /// </param>
+/// <param name="LoadId">
+/// The load this state belongs to, as <see cref="IPlaybackEngine.Load"/> returned it; 0 before the first. Events reach
+/// their consumers on another thread, so one raised just before a load can arrive after it.
+/// </param>
 public sealed record PlaybackSnapshot(
     bool IsLoaded,
     bool IsPaused,
@@ -24,7 +28,8 @@ public sealed record PlaybackSnapshot(
     bool IsBuffering = false,
     double Volume = 100,
     bool IsMuted = false,
-    bool IsAtEnd = false)
+    bool IsAtEnd = false,
+    long LoadId = 0)
 {
     public static PlaybackSnapshot Idle { get; } = new(false, false, TimeSpan.Zero, null, null);
 }
@@ -44,7 +49,8 @@ public enum PlaybackEndReason
     Error,
 }
 
-public sealed record PlaybackEnded(PlaybackEndReason Reason, string? Detail);
+/// <param name="LoadId">The load that ended, as in <see cref="PlaybackSnapshot.LoadId"/>.</param>
+public sealed record PlaybackEnded(PlaybackEndReason Reason, string? Detail, long LoadId = 0);
 
 /// <summary>
 /// The playback engine as the view models see it. Events are raised on a background thread;
@@ -58,7 +64,8 @@ public interface IPlaybackEngine : IDisposable
 
     event EventHandler<PlaybackEnded>? Ended;
 
-    void Load(MediaSource source);
+    /// <summary>Replaces what plays with <paramref name="source"/>; returns the new load's id (1, 2, ...).</summary>
+    long Load(MediaSource source);
 
     void SetPaused(bool paused);
 

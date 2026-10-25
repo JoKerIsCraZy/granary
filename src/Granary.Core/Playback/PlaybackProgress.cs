@@ -153,9 +153,9 @@ public sealed class PlaybackProgress(
                     await api.StopAsync(server, sessionId, request).ConfigureAwait(false);
                     break;
                 }
-                catch (SiloApiException ex) when (ex.Status == 404)
+                catch (SiloApiException ex) when (ex is { Status: 404 } or { Status: 409, Code: ProblemCodes.InstallationChanged })
                 {
-                    // Expired or never durable: there is nothing left to stop.
+                    // Expired, never durable, or on a reinstalled server that no longer knows it: nothing left to stop.
                     break;
                 }
                 catch (Exception ex) when (IsTransient(ex) && DateTime.UtcNow < deadline)

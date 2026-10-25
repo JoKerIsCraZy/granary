@@ -94,6 +94,7 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<PlaybackPreferencesReader>();
         services.AddSingleton<IMediaAuthorization, MediaAuthorization>();
         services.AddTransient<PlaybackStarter>();
+        services.AddSingleton<PlaybackStops>();
         services.AddSingleton<Func<IServerPlayback>>(sp => () => ActivatorUtilities.CreateInstance<ServerPlayback>(sp));
     }
 

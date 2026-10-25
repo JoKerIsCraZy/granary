@@ -19,7 +19,23 @@ internal sealed class FakePlaybackEngine : IPlaybackEngine
 
     public bool HasSubscribers => StateChanged is not null || Ended is not null;
 
-    public void Load(MediaSource source) => Loaded.Add(source);
+    /// <summary>Thrown by the next <see cref="Load"/>, as mpv's engine refuses headers it cannot pass on.</summary>
+    public Exception? FailNextLoad { get; set; }
+
+    /// <summary>The id of the latest load; 0 before the first.</summary>
+    public long LoadId { get; private set; }
+
+    public long Load(MediaSource source)
+    {
+        if (FailNextLoad is { } failure)
+        {
+            FailNextLoad = null;
+            throw failure;
+        }
+        Loaded.Add(source);
+        Current = Current with { LoadId = ++LoadId, IsLoaded = false, HasStarted = false, IsAtEnd = false };
+        return LoadId;
+    }
 
     public void SetPaused(bool paused) => Current = Current with { IsPaused = paused };
 
@@ -33,13 +49,15 @@ internal sealed class FakePlaybackEngine : IPlaybackEngine
 
     public void Stop() => Stops++;
 
+    /// <summary>Raises <paramref name="state"/>; without a load id of its own it belongs to the latest load.</summary>
     public void RaiseState(PlaybackSnapshot state)
     {
-        Current = state;
-        StateChanged?.Invoke(this, state);
+        Current = state.LoadId == 0 ? state with { LoadId = LoadId } : state;
+        StateChanged?.Invoke(this, Current);
     }
 
-    public void RaiseEnded(PlaybackEnded ended) => Ended?.Invoke(this, ended);
+    /// <summary>Raises <paramref name="ended"/>; without a load id of its own it ends the latest load.</summary>
+    public void RaiseEnded(PlaybackEnded ended) => Ended?.Invoke(this, ended.LoadId == 0 ? ended with { LoadId = LoadId } : ended);
 
     public void Dispose() => Disposed = true;
 }
