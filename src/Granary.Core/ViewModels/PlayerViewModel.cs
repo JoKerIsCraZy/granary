@@ -30,9 +30,15 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     private readonly IUiDispatcher _dispatcher;
     private readonly INavigationService _navigation;
     private readonly Func<IServerPlayback> _serverPlaybacks;
+    // A seek's target counts as the position for this long, until the engine reports it: quick skips add up.
+    private const long SeekTargetMilliseconds = 3000;
+
     private PlayRequest? _request;
     private IServerPlayback? _playback;
     private PlaybackSnapshot _engineState = PlaybackSnapshot.Idle;
+    private double? _seekTarget;
+    private long _seekTargetAt;
+    private bool _left;
 
     public PlayerViewModel(IPlaybackEngine engine, IUiDispatcher dispatcher, INavigationService navigation, Func<IServerPlayback> serverPlaybacks)
     {
@@ -111,6 +117,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     {
         ArgumentNullException.ThrowIfNull(request);
         _request = request;
+        _left = false;
         ErrorMessage = "";
         CanRetry = false;
         Phase = PlayerPhase.Preparing;
@@ -134,6 +141,8 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         {
             target = Math.Min(target, DurationSeconds);
         }
+        _seekTarget = target;
+        _seekTargetAt = Environment.TickCount64;
         if (_playback is { } playback)
         {
             playback.Seek(target);
@@ -144,6 +153,21 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         }
     }
 
+    /// <summary>
+    /// Ends playback without navigating: the server session gets its final position and the engine stops. The page
+    /// calls it when it is left by any way (Back, Alt+Left, the mouse's back button, a shortcut); safe to repeat.
+    /// </summary>
+    public void Leave()
+    {
+        if (_left)
+        {
+            return;
+        }
+        _left = true;
+        LeavePlayback();
+        _engine.Stop();
+    }
+
     /// <summary>Raises or lowers the volume by <paramref name="delta"/> percentage points (Up and Down keys).</summary>
     public void ChangeVolume(double delta) => Volume = Math.Clamp(Volume + delta, 0, 100);
 
@@ -151,10 +175,14 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     private void TogglePause() => _engine.SetPaused(!_engine.Current.IsPaused);
 
     [RelayCommand]
-    private void SkipBack() => SeekTo(PositionSeconds - SkipBackSeconds);
+    private void SkipBack() => SeekTo(SkipOrigin - SkipBackSeconds);
 
     [RelayCommand]
-    private void SkipForward() => SeekTo(PositionSeconds + SkipForwardSeconds);
+    private void SkipForward() => SeekTo(SkipOrigin + SkipForwardSeconds);
+
+    // Where a skip goes from: a seek on its way, else the position.
+    private double SkipOrigin =>
+        _seekTarget is { } target && Environment.TickCount64 - _seekTargetAt < SeekTargetMilliseconds ? target : PositionSeconds;
 
     [RelayCommand]
     private void ToggleMute() => _engine.SetMuted(!IsMuted);
@@ -166,8 +194,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void Close()
     {
-        LeavePlayback();
-        _engine.Stop();
+        Leave();
         if (_navigation.CanGoBack)
         {
             _navigation.GoBack();
@@ -178,10 +205,15 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         }
     }
 
+    // A value the engine does not have yet is the viewer's change: it also ends a mute, as on the web player.
     partial void OnVolumeChanged(double value)
     {
         if (Math.Abs(_engine.Current.Volume - value) > 0.01)
         {
+            if (_engine.Current.IsMuted)
+            {
+                _engine.SetMuted(false);
+            }
             _engine.SetVolume(value);
         }
     }
@@ -275,6 +307,10 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         IsPaused = state.IsPaused;
         IsBuffering = state.IsBuffering || _playback?.Status.Phase == ServerPlaybackPhase.Reconnecting;
         PositionSeconds = state.Position.TotalSeconds + offset;
+        if (_seekTarget is { } target && Math.Abs(PositionSeconds - target) < 1.5)
+        {
+            _seekTarget = null;
+        }
         DurationSeconds = _playback?.DurationSeconds ?? (state.Duration is { } duration ? duration.TotalSeconds + offset : 0);
         IsMuted = state.IsMuted;
         Volume = state.Volume;
@@ -304,7 +340,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
 
     public void Dispose()
     {
-        LeavePlayback();
+        Leave();
         _engine.StateChanged -= OnStateChanged;
         _engine.Ended -= OnEnded;
     }

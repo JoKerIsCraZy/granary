@@ -138,6 +138,18 @@ public sealed class PlayerViewModelTests
     }
 
     [Fact]
+    public void ChangingTheVolume_Unmutes()
+    {
+        var viewModel = CreateViewModel();
+        _engine.RaiseState(Loaded() with { IsMuted = true, Volume = 40 });
+
+        viewModel.ChangeVolume(+5);
+
+        Assert.False(_engine.Current.IsMuted);
+        Assert.Equal(45, _engine.Current.Volume);
+    }
+
+    [Fact]
     public async Task Close_StopsAndGoesBack()
     {
         _navigation.NavigateTo(Granary.Core.Abstractions.AppRoute.Item, "movie-1");

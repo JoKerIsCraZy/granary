@@ -38,7 +38,8 @@ public sealed partial class PlayerPage : Page
 
     public PlayerPage()
     {
-        ViewModel = App.Services.GetRequiredService<PlayerViewModel>();
+        // Made outside the container: a disposable transient from the root provider would be kept until the app exits.
+        ViewModel = ActivatorUtilities.CreateInstance<PlayerViewModel>(App.Services);
         InitializeComponent();
         VideoHost.VideoOutput = App.Services.GetRequiredService<ICompositionVideoOutput>();
         InitializeInput();
@@ -79,9 +80,9 @@ public sealed partial class PlayerPage : Page
     {
         base.OnNavigatedFrom(e);
         SetFullScreen(false);
-        // Close stops playback, but Alt+Left, the mouse back button, Ctrl+K or a session change leave without it;
-        // the view model has no stop of its own, and the sound must not go on behind another page.
-        App.Services.GetRequiredService<IPlaybackEngine>().Stop();
+        // Close stops playback, but Alt+Left, the mouse back button, Ctrl+K or a session change leave without it, and
+        // the sound must not go on behind another page nor the server session stay open.
+        ViewModel.Leave();
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
@@ -131,6 +132,9 @@ public sealed partial class PlayerPage : Page
             case nameof(PlayerViewModel.IsPaused) when ViewModel.IsPaused:
                 ShowControls();
                 break;
+            case nameof(PlayerViewModel.SkipBackSeconds) or nameof(PlayerViewModel.SkipForwardSeconds):
+                ShowSkipIntervals();
+                break;
         }
     }
 
@@ -168,8 +172,7 @@ public sealed partial class PlayerPage : Page
         return true;
     }
 
-    // The intervals come from the profile and raise no change notification, so they are read again whenever
-    // the phase changes, which happens once a title has started.
+    // The intervals come from the profile's settings, which arrive with the title.
     private void ShowSkipIntervals()
     {
         string back = ViewModel.SkipBackSeconds.ToString("0", CultureInfo.InvariantCulture);

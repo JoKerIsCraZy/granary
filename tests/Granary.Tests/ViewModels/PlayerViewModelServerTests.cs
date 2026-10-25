@@ -93,7 +93,8 @@ public sealed class PlayerViewModelServerTests
         viewModel.SeekTo(600);
         viewModel.SkipForwardCommand.Execute(null);
 
-        Assert.Equal([600, 130], Playback.Seeks);
+        // The skip goes on from the seek's target, which the engine has not reported yet.
+        Assert.Equal([600, 630], Playback.Seeks);
         Assert.Empty(_engine.Seeks);
     }
 
@@ -156,6 +157,39 @@ public sealed class PlayerViewModelServerTests
         Assert.Equal(1, Playback.Stops);
         Assert.Equal(1, _engine.Stops);
         Assert.Equal(1, _navigation.BackCount);
+    }
+
+    [Fact]
+    public async Task Leave_StopsTheServerSessionAndTheEngine_Once()
+    {
+        var viewModel = CreateViewModel();
+        await viewModel.StartAsync(PlayRequest.Resume("movie-1"));
+
+        viewModel.Leave();
+        viewModel.Leave();
+        viewModel.Dispose();
+
+        Assert.Equal(1, Playback.Stops);
+        Assert.Equal(1, _engine.Stops);
+        Assert.Equal(0, _navigation.BackCount);
+    }
+
+    [Fact]
+    public async Task QuickSkips_AddUp()
+    {
+        // The engine's position lags behind a seek; a second press goes on from the first one's target.
+        var viewModel = CreateViewModel();
+        await viewModel.StartAsync(PlayRequest.Resume("movie-1"));
+        Playback.DurationSeconds = 5400;
+        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));
+        _engine.RaiseState(new PlaybackSnapshot(true, false, TimeSpan.FromSeconds(100), null, null, HasStarted: true));
+
+        viewModel.SkipForwardCommand.Execute(null);
+        viewModel.SkipForwardCommand.Execute(null);
+        _engine.RaiseState(new PlaybackSnapshot(true, false, TimeSpan.FromSeconds(160), null, null, HasStarted: true));
+        viewModel.SkipBackCommand.Execute(null);
+
+        Assert.Equal([130, 160, 150], Playback.Seeks);
     }
 
     [Fact]
