@@ -95,6 +95,12 @@ public sealed class PlaybackApi(SiloHttp http)
 
     private static void Validate(PlaybackReplanRequest request)
     {
+        // A blank operation would fail the server's enum, and the server would read an absent one as failure_recovery.
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.Operation, nameof(request));
+        if (request.Operation == ReplanOperations.QualityChange && string.IsNullOrWhiteSpace(request.QualityPreference))
+        {
+            throw new ArgumentException("A quality_change replan needs the picked quality preference.", nameof(request));
+        }
         if (ReplanOperations.NeedsFailure(request.Operation) && string.IsNullOrWhiteSpace(request.Failure?.Classification))
         {
             throw new ArgumentException($"A {request.Operation} replan needs a failure classification.", nameof(request));

@@ -263,6 +263,9 @@ public sealed class PlaybackApiTests
         await Assert.ThrowsAsync<ArgumentException>(() => Api.ReplanAsync(ScriptedSilo.Base, Session, valid with { Failure = null }, Ct));
         await Assert.ThrowsAsync<ArgumentException>(() => Api.ReplanAsync(ScriptedSilo.Base, Session,
             valid with { Operation = ReplanOperations.TrackChange }, Ct));
+        await Assert.ThrowsAsync<ArgumentException>(() => Api.ReplanAsync(ScriptedSilo.Base, Session, valid with { Operation = " " }, Ct));
+        await Assert.ThrowsAsync<ArgumentException>(() => Api.ReplanAsync(ScriptedSilo.Base, Session,
+            valid with { Operation = ReplanOperations.QualityChange, Failure = null, QualityPreference = " " }, Ct));
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => Api.ReplanAsync(ScriptedSilo.Base, Session, valid with { AttemptCount = 9 }, Ct));
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => Api.ReplanAsync(ScriptedSilo.Base, Session, valid with { AttemptCount = 0 }, Ct));
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => Api.ReplanAsync(ScriptedSilo.Base, Session, valid with { PositionSeconds = -1 }, Ct));
