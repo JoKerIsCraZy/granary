@@ -42,6 +42,10 @@ Buttons: `SiloPrimaryButtonStyle` (red pill: Play, Resume), `SiloSecondaryButton
 Mark watched), `SiloIconButtonStyle` (round: favourite, more), `SiloLinkButtonStyle` ("EXPLORE ALL").
 Chips: `SiloChipStyle` (year, rating, runtime), `SiloAccentChipStyle` (1080P, EAC3).
 
+The player draws on the picture, not on these surfaces: `SiloPlayer*` brushes (white text, scrims, the
+seek track), `SiloPlayerPlayButtonStyle` (red disc), `SiloPlayerDiscButtonStyle` (glass disc: back,
+skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlayerTextButtonStyle`.
+
 ## Components (`src/Granary.App/Controls`)
 
 - `MediaCardView` draws one `MediaCard` (`Granary.Core.ViewModels.Cards`): 2:3 poster or 16:9
@@ -56,7 +60,7 @@ Chips: `SiloChipStyle` (year, rating, runtime), `SiloAccentChipStyle` (1080P, EA
   `MediaCard.AccessibleName`. Card commands take the `MediaCard` as parameter.
 - Page-specific pieces: `PersonCard` (search people), `AlphabetJumpBar` (library A–Z),
   `DetailHero`, `DetailShelf`, `DetailEpisodeCard`, `DetailTrailerCard`, `PersonCreditCard`
-  (detail pages).
+  (detail pages), `SeekBar` and `MpvVideoHost` (player).
 - `ItemsRepeater` sets no `DataContext` on elements of `x:Bind` templates: a click handler reads its item
   from the control it shows (`MediaCardView.Card`) or from `DataContext="{x:Bind}"` set on the element.
 - `x:Bind` function bindings skip null arguments, so a recycled element would keep stale values:
@@ -70,12 +74,48 @@ View models build `MediaCard`s with the texts already worded; the controls only 
 ## Layout
 
 - Sidebar (260 px): server name, Home, Search (`Ctrl+K`), "LIBRARIES" with the server's libraries;
-  Servers and the profile menu at the bottom. Detail pages shrink it to icons.
+  Servers and the profile menu at the bottom. Detail pages shrink it to icons; the player hides it.
 - Pages: 48 px side margins, 32 px top; rows 40 px apart.
 - Detail pages: full-bleed backdrop fading into the background, logo (or display title), chips,
   ratings, overview with "More", red Play/Resume pill, secondary actions, then rows (seasons, episodes,
   cast, more like this).
 - Back: the navigation view's back arrow, `Alt+Left`, and the mouse back button.
+
+## Player
+
+`Views/PlayerPage` on `PlayerViewModel`, after the server's web player (`web/src/player`), with red as the
+accent where the web player is white.
+
+- **Window**: the player owns it. The sidebar is hidden completely (not just shrunk), the page reaches under
+  the title bar and the caption buttons float over the video; the top 40 px stay the drag area, so the top
+  bar starts below them. Full screen (`AppWindow`'s full-screen presenter) shows nothing but the player and
+  returns to the window as it was, maximized or not. Leaving the page leaves full screen and stops playback,
+  whichever way it is left (Back, `Alt+Left`, `Ctrl+K`, a session change).
+- **Layout**: black, the video filling the page. Top bar over a soft scrim: back (glass disc), title,
+  subtitle. Bottom bar over a stronger scrim: position, `SeekBar`, then the duration, which a click turns into
+  the time left; below, volume (mute and slider) on the left, skip back, the red play/pause disc and skip
+  forward in the middle (the skip discs show the profile's intervals), full screen on the right.
+- **Seek bar**: 3 px track, red progress. Under the pointer the track grows, a thumb appears and a bubble
+  shows the time there. It seeks on click and when a drag is released, never while dragging or when the
+  position moves on, and keeps the target until playback has caught up, so the bar does not jump back. Keys:
+  Left and Right by the skip intervals, Shift for 5 s, Home, End. Screen readers get a slider whose value
+  is the position in words.
+- **States**: preparing shows the top bar and a spinner, no transport. Buffering puts a spinner on a dark
+  disc over the picture. Failed shows the message, Retry when it can help and Back; keyboard focus moves
+  to them. Ended keeps the controls up.
+- **Auto-hide**: during playback the controls fade (and slide a few pixels) after 3 s without pointer
+  movement, and the cursor goes with them while it is over the picture. They stay while paused, preparing,
+  buffering, failed or ended, while the pointer rests on them, during a seek drag, while a flyout is open or
+  a control in them has keyboard focus. Any pointer movement or key brings them back. Hidden controls take no
+  clicks.
+- **Mouse**: a click on the picture plays or pauses (after 250 ms, so a double click does not), a double
+  click toggles full screen. On touch a tap shows or hides the controls.
+- **Keyboard** (the web player's map, docs/api-contract.md 13.5): Space and K play/pause, F full screen,
+  Esc leaves full screen and otherwise closes, M mute, Left/Right skip, Up/Down volume ±5. Space wins over
+  a focused button; arrows go to a focused slider first. Nothing applies while a text field or an open menu
+  has focus, or with Ctrl, Alt, Shift or Windows held. The keys are handled on the page, not as keyboard
+  accelerators, so no accelerator tooltip appears; the buttons announce them through
+  `AutomationProperties.AcceleratorKey`.
 
 ## Accounts and permissions
 
