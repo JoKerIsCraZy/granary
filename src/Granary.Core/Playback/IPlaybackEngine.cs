@@ -85,6 +85,9 @@ public interface IPlaybackEngine : IDisposable
 
     void SetMuted(bool muted);
 
+    /// <summary>Plays at <paramref name="speed"/> times the normal rate, keeping the pitch; it holds across loads.</summary>
+    void SetSpeed(double speed);
+
     /// <summary>
     /// Switches what plays to its audio stream <paramref name="stream"/>, counted from 1 in the file's order. False
     /// when the switch did not take, for one when the file has no such stream.

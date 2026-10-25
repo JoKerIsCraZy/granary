@@ -128,6 +128,14 @@ unmodified to refer to Silo, as its trademark policy allows; it is not Granary's
   up to 10 s either way), the value ("+300 ms") and Reset: subtitles move at once, and the profile's
   `player.subtitle_sync_ms` is saved once the nudges settle for a second, or at the stop; a value this device kept
   for itself is cleared, so the profile's counts, as the web does.
+- **Settings menu** (the web's QualityMenu): a gear pill (white 8 %) that names the quality ("Auto", "720p Medium")
+  and, at a speed other than 1×, a white badge with it ("1.5×"). SPEED: the value at the right, the speeds 0.5× to 3×
+  (0.25 apart up to 2×, then 2.5× and 3×) as stops on a track drawn like the seek bar, the fill from 1× to the
+  chosen speed, 0.5×, 1×, 2× and 3× named under it (`SpeedTrack`); it applies at once and is saved as this device's
+  `player.playback_speed`. VERSION with more than one file ("2160p HEVC HDR", "Playing" / "Requested" chips): a pick
+  plays that file from where the viewer is. QUALITY when the plan offers rungs: Auto ("Auto · limited after buffering"
+  under a learned limit), then the rungs with their bitrate muted at the right ("12 Mbps") and a white check on the
+  one the plan delivers; a pick asks for a new plan. A pick of a file or quality closes the menu.
 - **Subtitle look**: text subtitles follow the profile's `playback.subtitle_appearance` as the Android and Apple
   clients draw it (size at 1080 lines, font, colour and opacity, box, shadow or outline in the outline colour,
   bottom, lower third or top), mapped to mpv's `sub-*` options; styled ASS and image subtitles keep their own.

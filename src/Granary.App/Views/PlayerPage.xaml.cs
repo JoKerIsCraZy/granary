@@ -210,6 +210,30 @@ public sealed partial class PlayerPage : Page
 
     private void OnFullScreenClick(object sender, RoutedEventArgs e) => ToggleFullScreen();
 
+    private void OnSpeedPicked(SpeedTrack sender, double speed) => ViewModel.SetSpeed(speed);
+
+    // A quality or a file is a choice made: the menu closes, as the web player's does.
+    private void OnQualityClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { Tag: string preference })
+        {
+            SettingsMenu.Hide();
+            ViewModel.SelectQuality(preference);
+        }
+    }
+
+    private void OnVersionClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { Tag: string fileId })
+        {
+            SettingsMenu.Hide();
+            ViewModel.SelectVersion(fileId);
+        }
+    }
+
+    // "Playback settings, 1.5×" while the speed is not 1×.
+    public string SettingsName(string speedBadge) => speedBadge.Length > 0 ? $"Playback settings, {speedBadge}" : "Playback settings";
+
     // A menu opens on the track that plays, so the keyboard starts from there.
     private void OnAudioMenuOpened(object? sender, object e) =>
         FocusRow(AudioRows, ViewModel.AudioTracks.ToList().FindIndex(option => option.IsSelected));

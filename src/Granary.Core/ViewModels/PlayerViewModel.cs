@@ -395,6 +395,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         SubtitleDelayMs = playback.SubtitleDelayMs;
         SkipBackSeconds = playback.Preferences.SkipBackSeconds;
         SkipForwardSeconds = playback.Preferences.SkipForwardSeconds;
+        ShowSettings();
         switch (status.Phase)
         {
             case ServerPlaybackPhase.Preparing:
@@ -422,6 +423,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
             AudioTracks = AudioTrackOption.For(playback.AudioTracks, playback.AudioTrack);
             SubtitleTracks = playback.SubtitleTracks.Count == 0 ? [] : SubtitleTrackOption.For(playback.SubtitleTracks, playback.SubtitleTrack);
             TakeMarkers(playback);
+            ShowSettings();
         }
     }
 

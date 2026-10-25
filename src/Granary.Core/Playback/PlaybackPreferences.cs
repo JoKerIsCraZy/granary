@@ -25,6 +25,9 @@ public sealed record PlaybackPreferences(string Quality, int? MaxBitrateKbps, do
 
     /// <summary>What the player does with intros, recaps and credits, and when it offers the next episode.</summary>
     public MarkerSettings Markers { get; init; } = MarkerSettings.Default;
+
+    /// <summary>This device's playback speed (<c>player.playback_speed</c>).</summary>
+    public double Speed { get; init; } = 1;
 }
 
 /// <summary>Reads <see cref="PlaybackPreferences"/>; playback starts with the defaults when the server cannot say.</summary>
@@ -36,7 +39,13 @@ public sealed class PlaybackPreferencesReader(SettingsApi settings, ILogger<Play
         "playback.max_bitrate_kbps",
         "player.video_skip_back_seconds",
         "player.video_skip_forward_seconds",
+        "player.playback_speed",
     ];
+
+    /// <summary>The setting's range (settings contract): the apps and the server keep to it.</summary>
+    public const double MinSpeed = 0.25;
+
+    public const double MaxSpeed = 3;
 
     // Read on their own: a server that does not know one of them refuses its whole batch, which must not cost the
     // quality and skip settings.
@@ -137,7 +146,10 @@ public sealed class PlaybackPreferencesReader(SettingsApi settings, ILogger<Play
             Text(values.Find(Keys[0]))?.ToLowerInvariant() ?? defaults.Quality,
             Number(values.Find(Keys[1])) is { } bitrate && bitrate is >= MinBitrateKbps and <= MaxBitrateKbps ? (int)bitrate : defaults.MaxBitrateKbps,
             Number(values.Find(Keys[2])) is { } back && back is > 0 and <= MaxSkipSeconds ? back : defaults.SkipBackSeconds,
-            Number(values.Find(Keys[3])) is { } forward && forward is > 0 and <= MaxSkipSeconds ? forward : defaults.SkipForwardSeconds);
+            Number(values.Find(Keys[3])) is { } forward && forward is > 0 and <= MaxSkipSeconds ? forward : defaults.SkipForwardSeconds)
+        {
+            Speed = Number(values.Find(Keys[4])) is { } speed && speed is >= MinSpeed and <= MaxSpeed ? speed : defaults.Speed,
+        };
     }
 
     private static string? Text(JsonElement? value) =>

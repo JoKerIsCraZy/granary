@@ -322,6 +322,84 @@
                                 </Flyout>
                             </Button.Flyout>
                         </Button>
+                        <!--
+                            The web player's settings (QualityMenu): the gear names the quality, and a speed other than 1x shows
+                            beside it. SPEED always; VERSION with more than one file; QUALITY when the plan offers rungs.
+                        -->
+                        <Button x:Name="SettingsButton" Style="{StaticResource SiloPlayerIconButtonStyle}" Width="Auto" Padding="10,0,12,0"
+                                Background="#14FFFFFF" AutomationProperties.Name="{x:Bind SettingsName(ViewModel.SpeedBadge), Mode=OneWay}"
+                                ToolTipService.ToolTip="Playback settings">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <FontIcon Glyph="&#xE713;" FontSize="16" />
+                                <TextBlock Text="{x:Bind ViewModel.SettingsLabel, Mode=OneWay}" VerticalAlignment="Center" FontFamily="{StaticResource SiloFontMedium}"
+                                           FontWeight="Medium" FontSize="11" CharacterSpacing="25" Visibility="{x:Bind Shows(ViewModel.SettingsLabel), Mode=OneWay}" />
+                                <Border Background="White" CornerRadius="7" Padding="5,0" Height="14" VerticalAlignment="Center"
+                                        Visibility="{x:Bind Shows(ViewModel.SpeedBadge), Mode=OneWay}">
+                                    <TextBlock Text="{x:Bind ViewModel.SpeedBadge, Mode=OneWay}" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
+                                               FontSize="9" Foreground="Black" VerticalAlignment="Center" Typography.NumeralAlignment="Tabular" />
+                                </Border>
+                            </StackPanel>
+                            <Button.Flyout>
+                                <Flyout x:Name="SettingsMenu" Placement="TopEdgeAlignedRight" FlyoutPresenterStyle="{StaticResource SiloPlayerMenuStyle}">
+                                    <StackPanel MinWidth="240" XYFocusKeyboardNavigation="Enabled">
+                                        <controls:SpeedTrack x:Name="SpeedTrack" Speed="{x:Bind ViewModel.Speed, Mode=OneWay}" SpeedPicked="OnSpeedPicked"
+                                                             AutomationProperties.Name="Playback speed" />
+
+                                        <StackPanel Visibility="{x:Bind ViewModel.HasVersionOptions, Mode=OneWay}">
+                                            <Border Height="1" Margin="0,4" Background="#1AFFFFFF" />
+                                            <TextBlock Text="VERSION" Style="{StaticResource SiloPlayerMenuHeaderTextStyle}" AutomationProperties.Name="Version" />
+                                            <ItemsControl ItemsSource="{x:Bind ViewModel.VersionOptions, Mode=OneWay}" IsTabStop="False">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate x:DataType="player:VersionOption">
+                                                        <Button Style="{StaticResource SiloPlayerMenuItemStyle}" Click="OnVersionClick" Tag="{x:Bind FileId}"
+                                                                AutomationProperties.Name="{x:Bind AccessibleName}"
+                                                                AutomationProperties.ItemStatus="{x:Bind controls:PlayerMenus.Status(IsPlaying)}">
+                                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                                <TextBlock Text="{x:Bind Label}" FontSize="14" VerticalAlignment="Center"
+                                                                           Foreground="{x:Bind controls:PlayerMenus.SubtitleRowForeground(IsPlaying)}" />
+                                                                <Border Padding="6,2" CornerRadius="4" BorderThickness="1" BorderBrush="#26FFFFFF" Background="#1AFFFFFF"
+                                                                        VerticalAlignment="Center" Visibility="{x:Bind controls:PlayerMenus.Shows(Status)}">
+                                                                    <TextBlock Text="{x:Bind Status}" FontSize="10" Foreground="#B3FFFFFF" />
+                                                                </Border>
+                                                            </StackPanel>
+                                                        </Button>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+
+                                        <StackPanel Visibility="{x:Bind ViewModel.HasQualityOptions, Mode=OneWay}">
+                                            <Border Height="1" Margin="0,4" Background="#1AFFFFFF" />
+                                            <TextBlock Text="QUALITY" Style="{StaticResource SiloPlayerMenuHeaderTextStyle}" AutomationProperties.Name="Quality" />
+                                            <ItemsControl x:Name="QualityRows" ItemsSource="{x:Bind ViewModel.QualityOptions, Mode=OneWay}" IsTabStop="False">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate x:DataType="player:QualityOption">
+                                                        <Button Style="{StaticResource SiloPlayerMenuItemStyle}" Click="OnQualityClick" Tag="{x:Bind Preference}"
+                                                                AutomationProperties.Name="{x:Bind AccessibleName}"
+                                                                AutomationProperties.ItemStatus="{x:Bind controls:PlayerMenus.Status(IsSelected)}">
+                                                            <Grid ColumnSpacing="16">
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*" />
+                                                                    <ColumnDefinition Width="Auto" />
+                                                                </Grid.ColumnDefinitions>
+                                                                <TextBlock Text="{x:Bind Label}" FontSize="14" VerticalAlignment="Center"
+                                                                           Foreground="{x:Bind controls:PlayerMenus.SubtitleRowForeground(IsSelected)}" />
+                                                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                                                    <TextBlock Text="{x:Bind Bitrate}" FontSize="12" Foreground="#66FFFFFF" VerticalAlignment="Center" />
+                                                                    <Border Width="16" Height="16" CornerRadius="8" Background="White" Visibility="{x:Bind IsSelected}">
+                                                                        <FontIcon Glyph="&#xE73E;" FontSize="10" Foreground="Black" />
+                                                                    </Border>
+                                                                </StackPanel>
+                                                            </Grid>
+                                                        </Button>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Flyout>
+                            </Button.Flyout>
+                        </Button>
                         <Button x:Name="FullScreenButton" Style="{StaticResource SiloPlayerIconButtonStyle}" Click="OnFullScreenClick"
                                 AutomationProperties.Name="{x:Bind FullScreenName(IsFullScreen), Mode=OneWay}" AutomationProperties.AcceleratorKey="F"
                                 ToolTipService.ToolTip="{x:Bind FullScreenToolTip(IsFullScreen), Mode=OneWay}">

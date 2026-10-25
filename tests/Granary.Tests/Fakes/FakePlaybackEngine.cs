@@ -45,6 +45,10 @@ internal sealed class FakePlaybackEngine : IPlaybackEngine
 
     public void SetMuted(bool muted) => Current = Current with { IsMuted = muted };
 
+    public double Speed { get; private set; } = 1;
+
+    public void SetSpeed(double speed) => Speed = speed;
+
     /// <summary>Every audio switch asked for, in order.</summary>
     public List<int> AudioSwitches { get; } = [];
 

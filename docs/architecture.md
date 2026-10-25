@@ -132,6 +132,11 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   and it is saved to `/api/v2/subtitle-prefs` (never with `show_forced_subtitles`, which would pin the profile's
   forced setting on the series). A sidecar that arrives after another load or pick is not shown, and a new load
   closes the sidecar routes of the one before.
+- **Quality, file and speed** (8.7, 8.11): the plan's `available_qualities` (an older server's `original` rung left
+  out) and `active_quality` make the menu; a pick replans with `quality_change` from where the viewer is, and later
+  replans and attempts ask with it too; it is not saved, as on the web. Another file of the title starts a new
+  attempt (and session) at the position, with its own automatic subtitle choice. The speed is mpv's `speed`, read from
+  and saved to this device's `player.playback_speed`, as the apps keep it.
 - **Markers** (11.1, 11.2): the playing file's intro (its single projection, as Android takes it), recaps, credits
   and previews come from the watch detail, then from a second read that names the file once its first frame
   shows (`file_id`, which makes the server fill markers it finds on demand); a failed read changes nothing.

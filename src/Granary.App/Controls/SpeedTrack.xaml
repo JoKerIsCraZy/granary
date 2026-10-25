@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    SPEED in the player's settings menu, as Silo's web player draws it (PlaybackSpeedTrack): the value at the right, the
+    speeds as stops on a track drawn like the seek bar, the fill running from 1x to the chosen speed, the 1x stop marked
+    taller, and 0.5x, 1x, 2x and 3x named under it. A press or a drag picks the nearest stop; the arrows step.
+-->
+<UserControl
+    x:Class="Granary.App.Controls.SpeedTrack"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    IsTabStop="True"
+    UseSystemFocusVisuals="True"
+    CornerRadius="6">
+
+    <StackPanel Padding="12,4,12,8">
+        <Grid Padding="0,4">
+            <TextBlock Text="SPEED" FontSize="12" CharacterSpacing="100" Foreground="#66FFFFFF" VerticalAlignment="Bottom" />
+            <TextBlock x:Name="ValueText" HorizontalAlignment="Right" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium" FontSize="14"
+                       Typography.NumeralAlignment="Tabular" Foreground="{StaticResource SiloPlayerForegroundBrush}" />
+        </Grid>
+        <Grid x:Name="Track" Height="32" Margin="6,0" Background="Transparent">
+            <Border Height="3" CornerRadius="1.5" Background="#33FFFFFF" VerticalAlignment="Center" />
+            <Canvas x:Name="Marks" IsHitTestVisible="False" />
+        </Grid>
+        <Canvas x:Name="Labels" Height="12" Margin="6,0" IsHitTestVisible="False" />
+    </StackPanel>
+</UserControl>

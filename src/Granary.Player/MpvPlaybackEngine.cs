@@ -183,6 +183,10 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
 
     public void SetMuted(bool muted) => _mpv.SetProperty("mute", muted ? "yes" : "no");
 
+    // A global option: it stays for the next file. mpv keeps the pitch (audio-pitch-correction).
+    public void SetSpeed(double speed) =>
+        _mpv.SetProperty("speed", Math.Clamp(speed, 0.25, 4).ToString("0.##", CultureInfo.InvariantCulture));
+
     // mpv takes any id and plays on without sound when the file lacks it: the switch took once that stream plays,
     // and one that did not puts the track before back.
     public bool SetAudioStream(int stream)

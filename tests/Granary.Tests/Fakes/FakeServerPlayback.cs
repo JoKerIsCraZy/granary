@@ -92,6 +92,43 @@ internal sealed class FakeServerPlayback : IServerPlayback
         TracksChanged?.Invoke(this, EventArgs.Empty);
     }
 
+    public IReadOnlyList<AvailableQuality> Qualities { get; set; } = [];
+
+    public string QualityPreference { get; set; } = "auto";
+
+    public string? ActiveQuality { get; set; }
+
+    public bool IsBandwidthLimited { get; set; }
+
+    /// <summary>Every quality the player asked for, in order.</summary>
+    public List<string> QualityPicks { get; } = [];
+
+    public void SelectQuality(string preference) => QualityPicks.Add(preference);
+
+    public IReadOnlyList<WatchFileVersion> Versions { get; set; } = [];
+
+    public string? PlayingFileId { get; set; }
+
+    public string? RequestedFileId { get; set; }
+
+    /// <summary>Every file the player switched to, in order.</summary>
+    public List<string> VersionPicks { get; } = [];
+
+    public void SelectVersion(string fileId) => VersionPicks.Add(fileId);
+
+    public double Speed { get; set; } = 1;
+
+    public void SetSpeed(double speed) => Speed = speed;
+
+    /// <summary>Takes a new plan's menu, as TracksChanged reports it.</summary>
+    public void RaisePlan(IReadOnlyList<AvailableQuality> qualities, string preference, string? active)
+    {
+        Qualities = qualities;
+        QualityPreference = preference;
+        ActiveQuality = active;
+        TracksChanged?.Invoke(this, EventArgs.Empty);
+    }
+
     public IReadOnlyList<PlaybackMarker> Markers { get; set; } = [];
 
     /// <summary>Names <paramref name="markers"/> for the playing file, as a read that found more does.</summary>

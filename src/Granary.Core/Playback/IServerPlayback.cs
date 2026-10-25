@@ -104,6 +104,38 @@ public interface IServerPlayback : IAsyncDisposable
     /// <summary>Raised on the UI thread when the server named markers of the playing file it had not named before.</summary>
     event EventHandler? MarkersChanged;
 
+    /// <summary>The plan's quality menu, without the source; empty when there is nothing to choose (8.11).</summary>
+    IReadOnlyList<AvailableQuality> Qualities { get; }
+
+    /// <summary><c>auto</c> or a rung's label: the <c>quality_preference</c> the plans are asked with.</summary>
+    string QualityPreference { get; }
+
+    /// <summary>The rung the plan delivers (<c>active_quality</c>), when it names one.</summary>
+    string? ActiveQuality { get; }
+
+    /// <summary>The server holds Auto below what it would pick, after rebuffering (<c>bandwidth_limit</c>).</summary>
+    bool IsBandwidthLimited { get; }
+
+    /// <summary>The viewer's quality: a new plan of it from where the viewer is (<c>quality_change</c>).</summary>
+    void SelectQuality(string preference);
+
+    /// <summary>The title's files; with more than one, the viewer may switch.</summary>
+    IReadOnlyList<WatchFileVersion> Versions { get; }
+
+    /// <summary>The file that plays, and the one asked for: they differ after the server fell back to another.</summary>
+    string? PlayingFileId { get; }
+
+    string? RequestedFileId { get; }
+
+    /// <summary>Plays file <paramref name="fileId"/> of the title from where the viewer is, in a new session.</summary>
+    void SelectVersion(string fileId);
+
+    /// <summary>The playback speed; this device's <c>player.playback_speed</c> until changed.</summary>
+    double Speed { get; }
+
+    /// <summary>Plays at <paramref name="speed"/> (0.25 to 3, in steps of 0.05) and saves it for this device, as the apps do.</summary>
+    void SetSpeed(double speed);
+
     Task StartAsync(PlayRequest request, CancellationToken cancellationToken);
 
     /// <summary>Moves to <paramref name="sourceSeconds"/>, asking the server for a new plan when the stream cannot get there itself.</summary>

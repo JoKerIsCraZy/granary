@@ -246,6 +246,8 @@ public sealed partial class ServerPlayback : IServerPlayback
         (Title, Subtitle) = PlaybackStarter.Titles(_context.Watch);
         _engine.SetSubtitleLook(_context.Preferences.Subtitles);
         _subtitleDelayMs = _context.Preferences.SubtitleDelayMs;
+        _speed = _context.Preferences.Speed;
+        _engine.SetSpeed(_speed);
         SetStatus(Status);
         await StartAttemptAsync(PlaybackStarter.StartPosition(_context.Watch, fromBeginning), cancellationToken);
     }
