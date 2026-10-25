@@ -28,6 +28,15 @@ public sealed record MediaCredentials(IReadOnlyList<KeyValuePair<string, string>
     public override string ToString() => $"MediaCredentials {{ ExpiresAt = {ExpiresAt:O} }}";
 }
 
+/// <summary>The headers for a playback's media requests; see <see cref="MediaAuthorization"/>.</summary>
+public interface IMediaAuthorization
+{
+    /// <summary>The headers for a load from <paramref name="server"/>.</summary>
+    /// <param name="rejected">The server refused the previous headers (HTTP 401): refresh whatever their age.</param>
+    /// <exception cref="MediaAuthorizationException">There is no usable login or profile, or no fresh token when one is needed.</exception>
+    Task<MediaCredentials> GetAsync(ServerEntry server, bool rejected, CancellationToken cancellationToken);
+}
+
 /// <summary>
 /// The headers every media request of a playback carries (docs/api-contract.md, 9.3 and 9.4): the bearer
 /// token and the acting profile, sent only to the server the media comes from. The player freezes them at
@@ -39,11 +48,8 @@ public sealed class MediaAuthorization(
     ICredentialStore credentials,
     TokenRefresher refresher,
     TimeProvider time,
-    ILogger<MediaAuthorization> logger)
+    ILogger<MediaAuthorization> logger) : IMediaAuthorization
 {
-    /// <summary>The headers for a load from <paramref name="server"/>.</summary>
-    /// <param name="rejected">The server refused the previous headers (HTTP 401): refresh whatever their age.</param>
-    /// <exception cref="MediaAuthorizationException">There is no usable login or profile, or no fresh token when one is needed.</exception>
     public async Task<MediaCredentials> GetAsync(ServerEntry server, bool rejected, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(server);
