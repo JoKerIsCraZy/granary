@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
 using Granary.Core.Playback;
+using Granary.Core.ViewModels.Player;
 
 namespace Granary.Core.ViewModels;
 
@@ -119,6 +120,16 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     public partial double SkipForwardSeconds { get; private set; } = PlaybackPreferences.Default.SkipForwardSeconds;
 
+    /// <summary>The rows of the audio menu, the one that plays checked; empty without a server title.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasAudioTracks), nameof(CanChooseAudio))]
+    public partial IReadOnlyList<AudioTrackOption> AudioTracks { get; private set; } = [];
+
+    /// <summary>The audio button shows once there is a track; as on the web player, it opens with two or more.</summary>
+    public bool HasAudioTracks => AudioTracks.Count > 0;
+
+    public bool CanChooseAudio => AudioTracks.Count > 1;
+
     /// <summary>Starts <paramref name="request"/>; the page calls it once when it is shown, Retry again.</summary>
     public async Task StartAsync(PlayRequest request)
     {
@@ -137,8 +148,12 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         var playback = _serverPlaybacks();
         _playback = playback;
         playback.StatusChanged += OnPlaybackStatusChanged;
+        playback.TracksChanged += OnTracksChanged;
         await playback.StartAsync(request, CancellationToken.None);
     }
+
+    /// <summary>The viewer's pick in the audio menu: it plays at once and is saved for the series.</summary>
+    public void SelectAudio(int ordinal) => _playback?.SelectAudio(ordinal);
 
     /// <summary>Moves to <paramref name="seconds"/> of the title (the seek bar), within its length.</summary>
     public void SeekTo(double seconds)
@@ -242,6 +257,8 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         }
         _playback = null;
         playback.StatusChanged -= OnPlaybackStatusChanged;
+        playback.TracksChanged -= OnTracksChanged;
+        AudioTracks = [];
         _stops.Track(EndAsync(playback));
 
         static async Task EndAsync(IServerPlayback playback)
@@ -307,6 +324,14 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
                 break;
         }
         ShowEngineState();
+    }
+
+    private void OnTracksChanged(object? sender, EventArgs e)
+    {
+        if (sender == _playback && _playback is { } playback)
+        {
+            AudioTracks = AudioTrackOption.For(playback.AudioTracks, playback.AudioTrack);
+        }
     }
 
     private void OnStateChanged(object? sender, PlaybackSnapshot state) => _dispatcher.Post(() =>

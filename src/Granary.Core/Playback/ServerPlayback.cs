@@ -41,6 +41,7 @@ public sealed partial class ServerPlayback : IServerPlayback
 
     private readonly PlaybackStarter _starter;
     private readonly PlaybackApi _api;
+    private readonly TrackPreferencesApi _preferences;
     private readonly IMediaAuthorization _auth;
     private readonly IMediaProxy _proxy;
     private readonly IPlaybackEngine _engine;
@@ -53,6 +54,9 @@ public sealed partial class ServerPlayback : IServerPlayback
     private PlaybackContext? _context;
     private string _attemptId = "";
     private PlaybackPlan? _plan;
+
+    // The tracks that play: the plan's, or a pick switched in the player since. Replans carry them on.
+    private SelectedTracks _tracks = new();
     private string _planAttemptId = "";
     private PlaybackProgress? _progress;
     private Uri? _streamUrl;
@@ -89,6 +93,7 @@ public sealed partial class ServerPlayback : IServerPlayback
     public ServerPlayback(
         PlaybackStarter starter,
         PlaybackApi api,
+        TrackPreferencesApi preferences,
         IMediaAuthorization auth,
         IMediaProxy proxy,
         IPlaybackEngine engine,
@@ -99,6 +104,7 @@ public sealed partial class ServerPlayback : IServerPlayback
     {
         _starter = starter;
         _api = api;
+        _preferences = preferences;
         _auth = auth;
         _proxy = proxy;
         _engine = engine;
@@ -177,8 +183,9 @@ public sealed partial class ServerPlayback : IServerPlayback
         _stopping = true;
         _generation++;
         StopTimers();
-        // Read now: the engine stops right after this call, and its idle state would read as position 0.
-        _stop = StopSessionsAsync(StopPosition, _paused);
+        // Read now: the engine stops right after this call, and its idle state would read as position 0. Closing the
+        // app waits for the stop, and for a pick still being saved.
+        _stop = Task.WhenAll(StopSessionsAsync(StopPosition, _paused), _trackSaves);
         CloseRoute();
         return _stop;
     }
@@ -191,6 +198,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         CloseRoute();
         await _stop.ConfigureAwait(false);
         await _retired.ConfigureAwait(false);
+        await _trackSaves.ConfigureAwait(false);
     }
 
     private async Task PrepareAndStartAsync(string contentId, bool fromBeginning, CancellationToken cancellationToken)
@@ -296,6 +304,7 @@ public sealed partial class ServerPlayback : IServerPlayback
             _planPlayed = false;
         }
         _plan = plan;
+        TakeTracks(plan);
         _planAttemptId = Guid.NewGuid().ToString();
         _firstFrameReported = false;
         if (plan.RequiresClientExecution)
@@ -324,7 +333,7 @@ public sealed partial class ServerPlayback : IServerPlayback
             return;
         }
         _streamUrl = url;
-        if (AudioStream(plan) is { } stream && !FileHasAudioStream(plan, stream))
+        if (AudioStream(plan, _tracks) is { } stream && !FileHasAudioStream(stream))
         {
             // client_selected_audio_track_v1 promises the ordinal maps onto the file; a stream it lacks would play
             // silent, so the server is asked for a route that packages the track instead (8.8).
@@ -370,7 +379,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         // Until its first frame the viewer is at the load's start, in this plan's time.
         _playerPosition = Math.Max(0, playerStart);
         _loadedAt = _time.GetTimestamp();
-        int? audio = AudioStream(_plan);
+        int? audio = AudioStream(_plan, _tracks);
         _logger.LogInformation("Loading the {Delivery} plan at {Start:F1} s (offset {Offset:F1} s, audio stream {Audio})",
             _plan.Delivery, _playerPosition, _plan.Timeline.TimelineOffsetSeconds, audio?.ToString(CultureInfo.InvariantCulture) ?? "as delivered");
         // mpv gets the loopback and no credential: the proxy adds the headers to each request of this stream alone,
@@ -391,25 +400,17 @@ public sealed partial class ServerPlayback : IServerPlayback
         _route = null;
     }
 
-    // Only the version's own file is known here: after an edition fallback the plan plays another one.
-    private bool FileHasAudioStream(PlaybackPlan plan, int stream) =>
-        plan.EffectiveMediaFileId != _context!.Version.FileId
-        || _context.Version.AudioTracks.Count == 0
-        || stream <= _context.Version.AudioTracks.Count;
+    // A file the watch detail does not list, or lists without tracks, cannot be checked.
+    private bool FileHasAudioStream(int stream) =>
+        PlayingVersion is not { } version || version.AudioTracks.Count == 0 || stream <= version.AudioTracks.Count;
 
     // A direct play is the file itself, with every audio track, and the player would take the one the file marks as
-    // default: it must play the one the plan selected (8.8). A stream the server made carries only that one.
-    private static int? AudioStream(PlaybackPlan plan)
-    {
-        if (plan.Delivery != PlaybackDeliveries.OriginalHttp || plan.SelectedTracks.Audio is not { } audio)
-        {
-            return null;
-        }
-        // The ordinal is the track's place among the file's audio streams (file:{id}:audio:{ordinal}).
-        int? ordinal = audio.Index ?? (int.TryParse(audio.Id.AsSpan(audio.Id.LastIndexOf(':') + 1), NumberStyles.None,
-            CultureInfo.InvariantCulture, out int parsed) ? parsed : null);
-        return ordinal is >= 0 ? ordinal + 1 : null;
-    }
+    // default: it must play the one selected (8.8). A stream the server made carries only that one. The ordinal is the
+    // track's place among the file's audio streams (file:{id}:audio:{ordinal}); mpv counts them from 1.
+    private static int? AudioStream(PlaybackPlan plan, SelectedTracks tracks) =>
+        plan.Delivery == PlaybackDeliveries.OriginalHttp && tracks.Audio is { } audio && Ordinal(audio) is { } ordinal
+            ? ordinal + 1
+            : null;
 
     private void OnEngineStateChanged(object? sender, PlaybackSnapshot state) => _dispatcher.Post(() => ShowEngineState(state));
 
@@ -469,6 +470,7 @@ public sealed partial class ServerPlayback : IServerPlayback
             _pendingSeek = null;
             Seek(target);
         }
+        ApplyPendingTracks();
     }
 
     private void OnEngineEnded(object? sender, PlaybackEnded ended) => _dispatcher.Post(() =>

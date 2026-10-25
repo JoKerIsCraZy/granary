@@ -110,6 +110,16 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   otherwise mpv would play the one the file marks as default. Streams the server makes carry only that track.
   Subtitles are the plan's alone (`sid=no` until the subtitle routes are built): mpv would otherwise show a
   track the file marks as default, a second authority the Android client switches off as well.
+- **Audio tracks** (Apple's and Android's behaviour, 8.8): the menu lists the playing file's tracks with the
+  one that plays checked. In a direct play the pick switches in mpv (`aid`), checked by reading back the track
+  that plays (a switch that did not take puts the track before back); otherwise, or when mpv refuses, a
+  `track_change` replan asks for a stream with that track, from where the viewer is. A refused track change
+  leaves the stream that plays alone. The pick then goes with every later replan and reload, a new attempt starts with it, and
+  every load names its audio stream (`aid=auto` without one), so a switch never carries over to the next file.
+  A pick made while the stream is being replaced or replanned applies once the new one plays, unless an edition
+  fallback changed the file meanwhile. Only the viewer's picks are
+  saved (`PUT /api/v2/audio-prefs/{series or title}` with the ordinal, the language when it is a tag the server
+  takes, and the catalog's signature of the track), in order, and closing the app waits for them with the stop.
 - **While playing**: progress every 10 s, and once a pause has held for a second (`PlaybackProgress`: one
   sequence per sample, retried with the identical body). Leaving the page by any way stops the session with
   its final position and stops the engine (`PlayerViewModel.Leave`); before the session's first frame the stop

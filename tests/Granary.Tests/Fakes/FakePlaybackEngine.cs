@@ -45,6 +45,18 @@ internal sealed class FakePlaybackEngine : IPlaybackEngine
 
     public void SetMuted(bool muted) => Current = Current with { IsMuted = muted };
 
+    /// <summary>Every audio switch asked for, in order.</summary>
+    public List<int> AudioSwitches { get; } = [];
+
+    /// <summary>What <see cref="SetAudioStream"/> answers: mpv refuses a stream the file lacks.</summary>
+    public bool AudioSwitchTakes { get; set; } = true;
+
+    public bool SetAudioStream(int stream)
+    {
+        AudioSwitches.Add(stream);
+        return AudioSwitchTakes;
+    }
+
     public int Stops { get; private set; }
 
     public void Stop() => Stops++;

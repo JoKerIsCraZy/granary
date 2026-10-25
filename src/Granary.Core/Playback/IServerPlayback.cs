@@ -1,3 +1,5 @@
+using Granary.Core.Api.Playback;
+
 namespace Granary.Core.Playback;
 
 public enum ServerPlaybackPhase
@@ -45,6 +47,22 @@ public interface IServerPlayback : IAsyncDisposable
 
     /// <summary>The profile's playback settings; the defaults until they are read.</summary>
     PlaybackPreferences Preferences { get; }
+
+    /// <summary>Raised on the UI thread when the file that plays or its selected tracks change.</summary>
+    event EventHandler? TracksChanged;
+
+    /// <summary>The audio tracks of the file that plays, in the file's order; empty until a plan is taken.</summary>
+    IReadOnlyList<WatchAudioTrack> AudioTracks { get; }
+
+    /// <summary>The audio track that plays, as an ordinal into <see cref="AudioTracks"/>; null when the plan names none.</summary>
+    int? AudioTrack { get; }
+
+    /// <summary>
+    /// The viewer's pick: plays audio track <paramref name="ordinal"/> of <see cref="AudioTracks"/>, switching in the
+    /// player when the stream holds it and asking the server for a stream that does otherwise, and saves it for the
+    /// series (docs/api-contract.md, 8.8).
+    /// </summary>
+    void SelectAudio(int ordinal);
 
     Task StartAsync(PlayRequest request, CancellationToken cancellationToken);
 

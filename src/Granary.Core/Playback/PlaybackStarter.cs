@@ -101,7 +101,10 @@ public sealed class PlaybackStarter(
         return playback.StartAsync(context.Server.BaseUri, request, cancellationToken);
     }
 
-    /// <summary>A replan of <paramref name="plan"/> keeping its tracks; the chain's keys and count come from the caller.</summary>
+    /// <summary>
+    /// A replan of <paramref name="plan"/> with <paramref name="tracks"/>, by default the plan's own; the chain's keys and
+    /// count come from the caller.
+    /// </summary>
     public static PlaybackReplanRequest Replan(
         PlaybackContext context,
         string attemptId,
@@ -110,7 +113,8 @@ public sealed class PlaybackStarter(
         string operation,
         double sourcePosition,
         IReadOnlyList<string> attemptedPlanKeys,
-        PlaybackFailure? failure = null)
+        PlaybackFailure? failure = null,
+        SelectedTracks? tracks = null)
     {
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(plan);
@@ -129,7 +133,7 @@ public sealed class PlaybackStarter(
             QualityPreference = context.Preferences.Quality,
             PositionSeconds = Math.Max(0, sourcePosition),
             BandwidthCapKbps = context.Preferences.MaxBitrateKbps,
-            SelectedTracks = plan.SelectedTracks,
+            SelectedTracks = tracks ?? plan.SelectedTracks,
             Failure = failure,
             ClientCapabilities = context.Report.ClientCapabilities,
             ClientPlaybackContext = context.Report.ClientPlaybackContext,

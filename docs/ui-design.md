@@ -94,7 +94,12 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   over a stronger scrim: the `SeekBar` across the width; below it on the left the title and the upper-case
   line "S1 · E1 — EPISODE · 31:55 / 48:41" (a movie shows its year), whose end time a click turns into the
   time left; in the middle skip back, the white play/pause disc and skip forward (glass discs showing the
-  profile's intervals); on the right mute, the volume slider and full screen.
+  profile's intervals); on the right mute, the volume slider, audio and full screen.
+- **Audio menu** (`AudioTrackOption`, wording in `TrackText` after the web's `AudioTrackMenu`): the button shows
+  once the file has a track and opens with two or more. Above it, 280 to 360 px wide: "AUDIO", then a row per
+  track with its name (its title, else the embedded title, else language, codec and channels), chips for the
+  codec family ("DD+ ATMOS", "TRUEHD", "EAC3") and channels, an outlined DEFAULT, and the language and details
+  under it. The playing row is blue with a check and has the focus when the menu opens; a pick closes it.
 - **Seek bar**: 3 px track, red progress. Under the pointer the track grows, a thumb appears and a bubble
   shows the time there. It seeks on click and when a drag is released, never while dragging or when the
   position moves on, and keeps the target until playback has caught up, so the bar does not jump back. Keys:

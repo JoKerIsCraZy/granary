@@ -83,6 +83,7 @@ internal sealed class ServerPlaybackFixture
         var playback = new ServerPlayback(
             starter,
             new PlaybackApi(Silo.Http),
+            new TrackPreferencesApi(Silo.Http),
             Auth,
             Proxy,
             Engine,

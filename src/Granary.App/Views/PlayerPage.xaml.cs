@@ -3,6 +3,7 @@ using System.Globalization;
 using Granary.App.Controls;
 using Granary.Core.Playback;
 using Granary.Core.ViewModels;
+using Granary.Core.ViewModels.Player;
 using Granary.Player;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Windowing;
@@ -192,6 +193,26 @@ public sealed partial class PlayerPage : Page
     private void OnEndTimeClick(object sender, RoutedEventArgs e) => ShowsRemaining = !ShowsRemaining;
 
     private void OnFullScreenClick(object sender, RoutedEventArgs e) => ToggleFullScreen();
+
+    // The menu opens on the track that plays, so the keyboard starts from there.
+    private void OnAudioMenuOpened(object? sender, object e)
+    {
+        int selected = ViewModel.AudioTracks.ToList().FindIndex(option => option.IsSelected);
+        if (selected >= 0 && AudioRows.ContainerFromIndex(selected) is ContentPresenter { Content: not null } row
+            && VisualTreeHelper.GetChildrenCount(row) > 0 && VisualTreeHelper.GetChild(row, 0) is Button button)
+        {
+            button.Focus(FocusState.Programmatic);
+        }
+    }
+
+    private void OnAudioTrackClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { DataContext: AudioTrackOption option })
+        {
+            AudioMenu.Hide();
+            ViewModel.SelectAudio(option.Ordinal);
+        }
+    }
 
     // Read from the window, not from IsFullScreen, which follows the window's Changed event a moment later.
     private bool IsFullScreenNow => _appWindow?.Presenter.Kind == AppWindowPresenterKind.FullScreen;

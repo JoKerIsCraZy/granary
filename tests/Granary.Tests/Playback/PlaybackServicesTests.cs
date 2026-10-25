@@ -9,6 +9,7 @@ public sealed class PlaybackServicesTests
     [Theory]
     [InlineData(typeof(WatchApi))]
     [InlineData(typeof(PlaybackApi))]
+    [InlineData(typeof(TrackPreferencesApi))]
     public void AddGranaryCore_RegistersTheApiAsTransient(Type api)
     {
         var services = new ServiceCollection().AddGranaryCore();

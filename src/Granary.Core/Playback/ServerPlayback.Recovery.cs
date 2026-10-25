@@ -139,7 +139,8 @@ public sealed partial class ServerPlayback
         _logger.LogInformation("The stream broke off at {Position:F1} s; reconnecting", position);
         SetStatus(new ServerPlaybackStatus(ServerPlaybackPhase.Reconnecting));
         // One request, sent again unchanged until the server answers it (8.7).
-        var request = PlaybackStarter.Replan(_context!, _attemptId, _plan!, _planAttemptId, ReplanOperations.TrackChange, position, []);
+        var request = PlaybackStarter.Replan(_context!, _attemptId, _plan!, _planAttemptId, ReplanOperations.TrackChange, position, [],
+            tracks: _tracks);
         while (_reconnectTries < ReconnectDelays.Length)
         {
             await Task.Delay(ReconnectDelays[_reconnectTries++], _time);
@@ -213,10 +214,15 @@ public sealed partial class ServerPlayback
     private void EndedByServer() => Fail("This playback was ended on the server.", canRetry: false);
 
     // Asks the session for a new plan; null when it cannot give one (and the playback says why or starts anew).
-    private async Task<PlaybackDecision?> ReplanAsync(string operation, double position, IReadOnlyList<string> attemptedKeys, PlaybackFailure? failure = null)
+    // The tracks are the ones that play, unless the replan asks for others. A refusal fails playback, or with
+    // refused, when the stream that plays can go on, is only reported to it; a lost or ended session still counts.
+    private async Task<PlaybackDecision?> ReplanAsync(
+        string operation, double position, IReadOnlyList<string> attemptedKeys, PlaybackFailure? failure = null,
+        SelectedTracks? tracks = null, Action<Exception>? refused = null)
     {
         int generation = _generation;
-        var request = PlaybackStarter.Replan(_context!, _attemptId, _plan!, _planAttemptId, operation, position, attemptedKeys, failure);
+        var request = PlaybackStarter.Replan(_context!, _attemptId, _plan!, _planAttemptId, operation, position, attemptedKeys, failure,
+            tracks ?? _tracks);
         for (int retry = 0; ; retry++)
         {
             Exception refusal;
@@ -255,6 +261,11 @@ public sealed partial class ServerPlayback
                 continue;
             }
             _logger.LogWarning("Replan ({Operation}) failed: {Failure}", operation, ApiFailureText.Describe(refusal));
+            if (refused is not null)
+            {
+                refused(refusal);
+                return null;
+            }
             if (conflict)
             {
                 // Still refused: the session's plan is not the one this playback knows. Start over where the viewer is.

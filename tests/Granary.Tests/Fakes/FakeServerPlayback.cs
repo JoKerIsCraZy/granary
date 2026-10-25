@@ -1,3 +1,4 @@
+using Granary.Core.Api.Playback;
 using Granary.Core.Playback;
 
 namespace Granary.Tests.Fakes;
@@ -6,6 +7,8 @@ namespace Granary.Tests.Fakes;
 internal sealed class FakeServerPlayback : IServerPlayback
 {
     public event EventHandler<ServerPlaybackStatus>? StatusChanged;
+
+    public event EventHandler? TracksChanged;
 
     public ServerPlaybackStatus Status { get; private set; } = new(ServerPlaybackPhase.Preparing);
 
@@ -18,6 +21,13 @@ internal sealed class FakeServerPlayback : IServerPlayback
     public double? DurationSeconds { get; set; }
 
     public PlaybackPreferences Preferences { get; set; } = PlaybackPreferences.Default;
+
+    public IReadOnlyList<WatchAudioTrack> AudioTracks { get; set; } = [];
+
+    public int? AudioTrack { get; set; }
+
+    /// <summary>Every audio pick the player passed on, in order.</summary>
+    public List<int> AudioPicks { get; } = [];
 
     public PlayRequest? Started { get; private set; }
 
@@ -37,6 +47,16 @@ internal sealed class FakeServerPlayback : IServerPlayback
     }
 
     public void Seek(double sourceSeconds) => Seeks.Add(sourceSeconds);
+
+    public void SelectAudio(int ordinal) => AudioPicks.Add(ordinal);
+
+    /// <summary>Plays <paramref name="tracks"/> with <paramref name="selected"/>, as a newly taken plan does.</summary>
+    public void RaiseTracks(IReadOnlyList<WatchAudioTrack> tracks, int? selected)
+    {
+        AudioTracks = tracks;
+        AudioTrack = selected;
+        TracksChanged?.Invoke(this, EventArgs.Empty);
+    }
 
     public Task StopAsync()
     {

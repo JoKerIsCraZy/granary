@@ -565,6 +565,97 @@
     </Style>
 
     <!--
+        The player's menus (audio, captions, settings), as Silo's web player draws them: black at 90 % above their
+        button, 12 px corners, a muted upper-case label, rows that lighten under the pointer, the chosen one in blue
+        with a check.
+    -->
+    <SolidColorBrush x:Key="SiloPlayerMenuChosenBrush" Color="#FF60A5FA" />
+    <SolidColorBrush x:Key="SiloPlayerMenuRowBrush" Color="#D9FFFFFF" />
+    <Style x:Key="SiloPlayerMenuStyle" TargetType="FlyoutPresenter">
+        <Setter Property="Background" Value="#E6000000" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="Padding" Value="0,6" />
+        <Setter Property="MinWidth" Value="280" />
+        <Setter Property="MaxWidth" Value="360" />
+        <Setter Property="RequestedTheme" Value="Dark" />
+        <Setter Property="ScrollViewer.HorizontalScrollMode" Value="Disabled" />
+        <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+    </Style>
+    <Style x:Key="SiloPlayerMenuHeaderTextStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource SiloFontMedium}" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="CharacterSpacing" Value="25" />
+        <Setter Property="Foreground" Value="#80FFFFFF" />
+        <Setter Property="Margin" Value="12,6" />
+    </Style>
+    <Style x:Key="SiloPlayerMenuItemStyle" TargetType="Button">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{StaticResource SiloPlayerMenuRowBrush}" />
+        <Setter Property="Padding" Value="12,8" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="UseSystemFocusVisuals" Value="True" />
+        <Setter Property="FocusVisualMargin" Value="0" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid x:Name="Root" Background="{TemplateBinding Background}">
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup x:Name="CommonStates">
+                                <VisualState x:Name="Normal" />
+                                <VisualState x:Name="PointerOver">
+                                    <VisualState.Setters>
+                                        <Setter Target="Root.Background" Value="#1AFFFFFF" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Pressed">
+                                    <VisualState.Setters>
+                                        <Setter Target="Root.Background" Value="#0DFFFFFF" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Disabled">
+                                    <VisualState.Setters>
+                                        <Setter Target="Root.Opacity" Value="0.4" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                            </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>
+                        <ContentPresenter
+                            Padding="{TemplateBinding Padding}"
+                            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            AutomationProperties.AccessibilityView="Raw"
+                            Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            Foreground="{TemplateBinding Foreground}" />
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <!-- A track's facts beside its name: codec and channels filled, the file's default outlined. -->
+    <Style x:Key="SiloPlayerMenuChipStyle" TargetType="Border">
+        <Setter Property="Background" Value="#1AFFFFFF" />
+        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="Padding" Value="6,2,6,3" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style x:Key="SiloPlayerMenuOutlineChipStyle" TargetType="Border" BasedOn="{StaticResource SiloPlayerMenuChipStyle}">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="#40FFFFFF" />
+        <Setter Property="BorderThickness" Value="1" />
+    </Style>
+    <Style x:Key="SiloPlayerMenuChipTextStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource SiloFontSemiBold}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontSize" Value="9.5" />
+        <Setter Property="CharacterSpacing" Value="25" />
+        <Setter Property="TextLineBounds" Value="Tight" />
+        <Setter Property="Foreground" Value="#BFFFFFFF" />
+    </Style>
+
+    <!--
         The buttons a card shows under the pointer (Silo's web: media-card-action-trigger): a dark 32 px tile with a
         faint edge, the icon in the foreground colour.
     -->

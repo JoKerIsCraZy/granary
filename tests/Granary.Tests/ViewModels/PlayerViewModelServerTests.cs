@@ -1,4 +1,5 @@
 using Granary.Core.Abstractions;
+using Granary.Core.Api.Playback;
 using Granary.Core.Playback;
 using Granary.Core.ViewModels;
 using Granary.Tests.Fakes;
@@ -50,6 +51,47 @@ public sealed class PlayerViewModelServerTests
         Assert.True(viewModel.IsPlaying);
         Assert.Equal(15, viewModel.SkipBackSeconds);
         Assert.Equal(45, viewModel.SkipForwardSeconds);
+    }
+
+    [Fact]
+    public async Task TheAudioMenu_FollowsThePlaybacksTracks()
+    {
+        var viewModel = CreateViewModel();
+        await viewModel.StartAsync(PlayRequest.Resume("movie-1"));
+        Assert.False(viewModel.HasAudioTracks);
+
+        Playback.RaiseTracks([new WatchAudioTrack { Language = "eng" }], selected: 0);
+        Assert.True(viewModel.HasAudioTracks);
+        Assert.False(viewModel.CanChooseAudio);
+
+        Playback.RaiseTracks([new WatchAudioTrack { Language = "eng" }, new WatchAudioTrack { Language = "ger" }], selected: 1);
+        Assert.True(viewModel.CanChooseAudio);
+        Assert.Equal([false, true], viewModel.AudioTracks.Select(row => row.IsSelected));
+    }
+
+    [Fact]
+    public async Task AnAudioPick_GoesToThePlayback()
+    {
+        var viewModel = CreateViewModel();
+        await viewModel.StartAsync(PlayRequest.Resume("movie-1"));
+
+        viewModel.SelectAudio(1);
+
+        Assert.Equal([1], Playback.AudioPicks);
+    }
+
+    [Fact]
+    public async Task Leaving_EmptiesTheAudioMenu_AndStopsListening()
+    {
+        var viewModel = CreateViewModel();
+        await viewModel.StartAsync(PlayRequest.Resume("movie-1"));
+        var playback = Playback;
+        playback.RaiseTracks([new WatchAudioTrack(), new WatchAudioTrack()], selected: 0);
+
+        viewModel.Leave();
+        playback.RaiseTracks([new WatchAudioTrack(), new WatchAudioTrack()], selected: 1);
+
+        Assert.Empty(viewModel.AudioTracks);
     }
 
     [Fact]

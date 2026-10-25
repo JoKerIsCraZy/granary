@@ -80,8 +80,29 @@ public sealed class MpvPlaybackEngineTests : IDisposable
         var source = new MediaSource(new Uri("https://nas.example/stream"), [], TimeSpan.FromSeconds(12.5), AudioStream: 2, SubtitleStream: 0);
 
         Assert.Equal(["start=12.5", "aid=2", "sid=no"], MpvPlaybackEngine.PerFileOptions(source));
-        Assert.Equal(["sid=3"], MpvPlaybackEngine.PerFileOptions(source with { Start = null, AudioStream = null, SubtitleStream = 3 }));
-        Assert.Empty(MpvPlaybackEngine.PerFileOptions(MediaSource.Local(@"C:\clip.mkv")));
+        Assert.Equal(["aid=auto", "sid=3"], MpvPlaybackEngine.PerFileOptions(source with { Start = null, AudioStream = null, SubtitleStream = 3 }));
+        Assert.Equal(["aid=auto"], MpvPlaybackEngine.PerFileOptions(MediaSource.Local(@"C:\clip.mkv")));
+    }
+
+    [Fact]
+    public async Task AnAudioSwitch_TakesOnlyAStreamTheFileHas()
+    {
+        using var engine = CreateEngine();
+        var playing = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        engine.StateChanged += (_, s) =>
+        {
+            if (s is { IsLoaded: true, HasStarted: true })
+            {
+                playing.TrySetResult();
+            }
+        };
+        engine.Load(MediaSource.Local(TempWav(6.0)));
+        await playing.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken);
+
+        // The WAV has one audio stream: mpv would take the second and play on silent, so the first comes back.
+        Assert.False(engine.SetAudioStream(2));
+        Assert.Equal("1", engine.PlayingAudioStream);
+        Assert.True(engine.SetAudioStream(1));
     }
 
     [Fact]

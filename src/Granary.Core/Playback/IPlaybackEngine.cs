@@ -85,5 +85,11 @@ public interface IPlaybackEngine : IDisposable
 
     void SetMuted(bool muted);
 
+    /// <summary>
+    /// Switches what plays to its audio stream <paramref name="stream"/>, counted from 1 in the file's order. False
+    /// when the switch did not take, for one when the file has no such stream.
+    /// </summary>
+    bool SetAudioStream(int stream);
+
     void Stop();
 }

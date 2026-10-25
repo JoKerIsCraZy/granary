@@ -138,17 +138,15 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
         return loadId;
     }
 
-    // Options for this file only: the next load starts from mpv's defaults again.
+    // Options for this file only: the next load starts from mpv's defaults again. The audio stream is always named:
+    // a switch during a file set without one (SetAudioStream) would otherwise carry over to the next.
     internal static IEnumerable<string> PerFileOptions(MediaSource source)
     {
         if (source.Start is { } start)
         {
             yield return "start=" + start.TotalSeconds.ToString("0.###", CultureInfo.InvariantCulture);
         }
-        if (source.AudioStream is { } audio)
-        {
-            yield return "aid=" + audio.ToString(CultureInfo.InvariantCulture);
-        }
+        yield return "aid=" + (source.AudioStream is { } audio ? audio.ToString(CultureInfo.InvariantCulture) : "auto");
         if (source.SubtitleStream is { } subtitle)
         {
             yield return "sid=" + (subtitle > 0 ? subtitle.ToString(CultureInfo.InvariantCulture) : "no");
@@ -174,6 +172,27 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
         _mpv.SetProperty("volume", Math.Clamp(percent, 0, 100).ToString("0.##", CultureInfo.InvariantCulture));
 
     public void SetMuted(bool muted) => _mpv.SetProperty("mute", muted ? "yes" : "no");
+
+    // mpv takes any id and plays on without sound when the file lacks it: the switch took once that stream plays,
+    // and one that did not puts the track before back.
+    public bool SetAudioStream(int stream)
+    {
+        if (stream <= 0)
+        {
+            return false;
+        }
+        string id = stream.ToString(CultureInfo.InvariantCulture);
+        string previous = _mpv.GetString("aid") ?? "auto";
+        if (_mpv.SetProperty("aid", id) >= 0 && _mpv.GetString("current-tracks/audio/id") == id)
+        {
+            return true;
+        }
+        _mpv.SetProperty("aid", previous);
+        return false;
+    }
+
+    /// <summary>The audio stream that plays, counted from 1; null without one.</summary>
+    internal string? PlayingAudioStream => _mpv.GetString("current-tracks/audio/id");
 
     public void Stop() => _mpv.Command("stop");
 
