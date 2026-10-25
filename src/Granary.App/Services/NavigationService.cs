@@ -22,6 +22,7 @@ public sealed class NavigationService : INavigationService
         [AppRoute.Item] = typeof(ItemDetailPage),
         [AppRoute.Section] = typeof(SectionPage),
         [AppRoute.Settings] = typeof(SettingsPage),
+        [AppRoute.List] = typeof(PersonalListPage),
     };
 
     private static readonly Dictionary<Type, AppRoute> Routes = Pages.ToDictionary(p => p.Value, p => p.Key);

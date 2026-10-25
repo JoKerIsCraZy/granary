@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Favorites, Watchlist or History, as Silo's web catalog page shows them: the list's name and what it holds, the count
+    on the right, the media and sort menus, and the posters. The page is cached: Back keeps the list and its place.
+-->
+<Page
+    x:Class="Granary.App.Views.PersonalListPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Granary.App.Controls"
+    NavigationCacheMode="Enabled">
+
+    <ScrollViewer x:Name="Scroller" XYFocusKeyboardNavigation="Enabled">
+        <StackPanel Padding="48,32,48,48" Spacing="24">
+            <Grid ColumnSpacing="24">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Spacing="6">
+                    <TextBlock Text="{x:Bind ViewModel.Title, Mode=OneWay}" Style="{StaticResource SiloDisplayTextStyle}"
+                               AutomationProperties.HeadingLevel="Level1" />
+                    <TextBlock Text="{x:Bind ViewModel.Description, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}"
+                               Foreground="{StaticResource SiloMutedBrush}" TextWrapping="Wrap" />
+                </StackPanel>
+                <!-- "18 RESULTS" behind a hairline, as on the web. -->
+                <Border Grid.Column="1" VerticalAlignment="Bottom" BorderBrush="{StaticResource SiloBorderBrush}" BorderThickness="1,0,0,0"
+                        Padding="14,0,0,0" Visibility="{x:Bind ViewModel.Grid.IsReady, Mode=OneWay}">
+                    <StackPanel Orientation="Horizontal" Spacing="8" AutomationProperties.Name="{x:Bind CountName(ViewModel.Grid.Total), Mode=OneWay}">
+                        <TextBlock Text="{x:Bind CountText(ViewModel.Grid.Total), Mode=OneWay}" FontSize="30" FontWeight="Light"
+                                   Foreground="{StaticResource SiloForegroundBrush}" AutomationProperties.AccessibilityView="Raw" />
+                        <TextBlock Text="{x:Bind CountLabel(ViewModel.Grid.Total), Mode=OneWay}" Style="{StaticResource SiloOverlineTextStyle}"
+                                   VerticalAlignment="Bottom" Margin="0,0,0,6" AutomationProperties.AccessibilityView="Raw" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- "All Media ▾", "List Order ▾": dark pills, as the library's sort and order. -->
+            <StackPanel Orientation="Horizontal" Spacing="10">
+                <DropDownButton CornerRadius="{StaticResource SiloPillCornerRadius}" controls:Pill.IsEnabled="True" MinHeight="38" Padding="16,6,12,6"
+                                FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="13"
+                                Background="#CC1C1C20" BorderBrush="{StaticResource SiloBorderBrush}" Content="{x:Bind ViewModel.ScopeLabel, Mode=OneWay}"
+                                AutomationProperties.Name="{x:Bind ScopeName(ViewModel.ScopeLabel), Mode=OneWay}">
+                    <DropDownButton.Flyout>
+                        <MenuFlyout x:Name="ScopeMenu" Placement="BottomEdgeAlignedLeft" Opening="OnScopeMenuOpening" />
+                    </DropDownButton.Flyout>
+                </DropDownButton>
+                <DropDownButton CornerRadius="{StaticResource SiloPillCornerRadius}" controls:Pill.IsEnabled="True" MinHeight="38" Padding="16,6,12,6"
+                                FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="13"
+                                Background="#CC1C1C20" BorderBrush="{StaticResource SiloBorderBrush}" Content="{x:Bind ViewModel.SortLabel, Mode=OneWay}"
+                                AutomationProperties.Name="{x:Bind SortName(ViewModel.SortLabel), Mode=OneWay}">
+                    <DropDownButton.Flyout>
+                        <MenuFlyout x:Name="SortMenu" Placement="BottomEdgeAlignedLeft" Opening="OnSortMenuOpening" />
+                    </DropDownButton.Flyout>
+                </DropDownButton>
+                <DropDownButton CornerRadius="{StaticResource SiloPillCornerRadius}" controls:Pill.IsEnabled="True" MinHeight="38" Padding="16,6,12,6"
+                                FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="13"
+                                Background="#CC1C1C20" BorderBrush="{StaticResource SiloBorderBrush}" Content="{x:Bind ViewModel.OrderLabel, Mode=OneWay}"
+                                Visibility="{x:Bind ViewModel.IsOrderShown, Mode=OneWay}"
+                                AutomationProperties.Name="{x:Bind OrderName(ViewModel.OrderLabel), Mode=OneWay}">
+                    <DropDownButton.Flyout>
+                        <MenuFlyout Placement="BottomEdgeAlignedLeft">
+                            <RadioMenuFlyoutItem Text="Ascending" GroupName="ListOrder" Command="{x:Bind ViewModel.SortAscendingCommand}"
+                                                 IsChecked="{x:Bind Not(ViewModel.IsDescending), Mode=OneWay}" />
+                            <RadioMenuFlyoutItem Text="Descending" GroupName="ListOrder" Command="{x:Bind ViewModel.SortDescendingCommand}"
+                                                 IsChecked="{x:Bind ViewModel.IsDescending, Mode=OneWay}" />
+                        </MenuFlyout>
+                    </DropDownButton.Flyout>
+                </DropDownButton>
+            </StackPanel>
+
+            <ProgressRing IsActive="{x:Bind ViewModel.Grid.IsLoading, Mode=OneWay}" Visibility="{x:Bind ViewModel.Grid.IsLoading, Mode=OneWay}"
+                          Width="32" Height="32" Margin="0,48" HorizontalAlignment="Center" AutomationProperties.Name="Loading titles" />
+            <StackPanel Visibility="{x:Bind ViewModel.Grid.HasError, Mode=OneWay}" Spacing="16" Margin="0,48" HorizontalAlignment="Center">
+                <TextBlock Text="{x:Bind ViewModel.Grid.ErrorMessage, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}" TextAlignment="Center" />
+                <Button Content="Retry" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
+                        Command="{x:Bind ViewModel.Grid.RetryCommand}" />
+            </StackPanel>
+            <TextBlock Visibility="{x:Bind ViewModel.Grid.IsEmpty, Mode=OneWay}" Margin="0,48" HorizontalAlignment="Center"
+                       Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}" Text="Nothing here yet." />
+
+            <controls:MediaGrid x:Name="ListGrid" ItemsSource="{x:Bind ViewModel.Grid.Cards, Mode=OneWay}"
+                                CardInvokedCommand="{x:Bind ViewModel.OpenItemCommand}"
+                                ViewportCommand="{x:Bind ViewModel.Grid.ShowViewportCommand}"
+                                Visibility="{x:Bind ViewModel.Grid.IsReady, Mode=OneWay}" />
+
+            <StackPanel Visibility="{x:Bind ViewModel.Grid.HasPageError, Mode=OneWay}" Orientation="Horizontal" Spacing="12" HorizontalAlignment="Center">
+                <TextBlock Text="Couldn't load some titles." Style="{StaticResource SiloCaptionTextStyle}" VerticalAlignment="Center" />
+                <Button Content="Retry" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.Grid.RetryPagesCommand}" />
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

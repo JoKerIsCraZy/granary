@@ -60,6 +60,23 @@
                     </Grid>
                 </NavigationViewItem>
                 <NavigationViewItemHeader x:Name="LibrariesHeader" Content="LIBRARIES" Style="{StaticResource SiloNavigationHeaderStyle}" />
+                <!-- The libraries go between the two headers. -->
+                <NavigationViewItemHeader x:Name="YourStuffHeader" Content="YOUR STUFF" Style="{StaticResource SiloNavigationHeaderStyle}" />
+                <NavigationViewItem Content="Favorites" Tag="List:favorites">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xEB51;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem Content="Watchlist" Tag="List:watchlist">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE8FD;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem Content="History" Tag="List:history">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE81C;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
             </NavigationView.MenuItems>
 
             <NavigationView.FooterMenuItems>

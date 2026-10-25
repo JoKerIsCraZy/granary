@@ -1,0 +1,211 @@
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using Granary.Core.Abstractions;
+using Granary.Core.Api.Catalog;
+using Granary.Core.Api.Images;
+using Granary.Core.Auth;
+using Granary.Core.Playback;
+using Granary.Core.ViewModels.Cards;
+using Microsoft.Extensions.Logging;
+
+namespace Granary.Core.ViewModels;
+
+/// <summary>A media scope the personal lists narrow to, as the web's media menu (<c>CatalogFilterBar</c>).</summary>
+/// <param name="Type">The browse <c>type</c>; null for every kind.</param>
+public sealed record ListMediaScope(string? Type, string Label)
+{
+    public static IReadOnlyList<ListMediaScope> All { get; } =
+    [
+        new(null, "All Media"),
+        new(MediaScopes.Video, "Movies & Series"),
+        new(MediaScopes.Movie, "Movies"),
+        new(MediaScopes.Series, "Series"),
+        new(MediaScopes.Episode, "Episodes"),
+    ];
+}
+
+/// <summary>
+/// Favorites, Watchlist or History: the profile's own list in a poster grid, as Silo's web catalog page shows it for
+/// those sources (<c>pages/Catalog.tsx</c>). The list's own order comes first ("List Order", History's "Watch History");
+/// the other sorts and a media scope narrow it. The grid loads by window. A visit after the viewer's state changed
+/// (<see cref="ViewerStateChanges"/>: a favourite, a watched mark, playback) loads it again.
+/// </summary>
+public sealed partial class PersonalListViewModel : ObservableObject
+{
+    public const int PageSize = 60;
+
+    private static readonly Dictionary<string, (string Title, string Description, string OrderLabel)> Lists = new(StringComparer.Ordinal)
+    {
+        [CatalogSources.Favorites] = ("Favorites", "Movies and shows you've marked as favorites.", "List Order"),
+        [CatalogSources.Watchlist] = ("Watchlist", "Things you've saved to watch later.", "List Order"),
+        [CatalogSources.History] = ("History", "Everything you've recently watched.", "Watch History"),
+    };
+
+    private readonly ISessionManager _session;
+    private readonly ImageParameterCache _images;
+    private readonly INavigationService _navigation;
+    private readonly ILogger<PersonalListViewModel> _logger;
+    private readonly ViewerStateChanges? _changes;
+    private (string? ServerId, string? ProfileId, string Source)? _loadedFor;
+    private long _loadedVersion;
+    private int _starts;
+
+    public PersonalListViewModel(ISessionManager session, CatalogApi catalog, ImageParameterCache images, INavigationService navigation,
+        ILogger<PersonalListViewModel> logger, ViewerStateChanges? changes = null)
+    {
+        _session = session;
+        _images = images;
+        _navigation = navigation;
+        _logger = logger;
+        _changes = changes;
+        Grid = new LibraryGridViewModel(catalog, logger);
+    }
+
+    public LibraryGridViewModel Grid { get; }
+
+    /// <summary><see cref="CatalogSources.Favorites"/>, <see cref="CatalogSources.Watchlist"/> or <see cref="CatalogSources.History"/>.</summary>
+    [ObservableProperty]
+    public partial string Source { get; private set; } = "";
+
+    [ObservableProperty]
+    public partial string Title { get; private set; } = "";
+
+    [ObservableProperty]
+    public partial string Description { get; private set; } = "";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ScopeLabel))]
+    public partial ListMediaScope Scope { get; private set; } = ListMediaScope.All[0];
+
+    /// <summary>The picked sort; null for the list's own order.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SortLabel), nameof(IsOrderShown))]
+    public partial LibrarySortOption? Sort { get; private set; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(OrderLabel))]
+    public partial bool IsDescending { get; private set; }
+
+    /// <summary>The display's scale (1.5 at 150 %), so artwork is asked for at the pixels it is drawn at.</summary>
+    public double DisplayScale { get; set; } = 1;
+
+    public IReadOnlyList<ListMediaScope> Scopes => ListMediaScope.All;
+
+    public IReadOnlyList<LibrarySortOption> SortOptions => LibrarySortOption.All;
+
+    /// <summary>"List Order", or "Watch History" for History: the list's own order.</summary>
+    public string SourceOrderLabel => Lists.TryGetValue(Source, out var list) ? list.OrderLabel : "List Order";
+
+    public string ScopeLabel => Scope.Label;
+
+    public string SortLabel => Sort?.Label ?? SourceOrderLabel;
+
+    public string OrderLabel => IsDescending ? "Descending" : "Ascending";
+
+    /// <summary>The list's own order has no direction to pick.</summary>
+    public bool IsOrderShown => Sort is not null;
+
+    /// <summary>
+    /// Shows the list named by <paramref name="source"/>: on every visit of the page. The same list again keeps its grid and
+    /// place, unless another profile shows or the viewer's state changed since it loaded.
+    /// </summary>
+    public Task ActivateAsync(string? source)
+    {
+        if (source is null || !Lists.TryGetValue(source, out var list))
+        {
+            return Task.CompletedTask;
+        }
+        if (source != Source)
+        {
+            Source = source;
+            Title = list.Title;
+            Description = list.Description;
+            Scope = ListMediaScope.All[0];
+            Sort = null;
+            IsDescending = false;
+            OnPropertyChanged(nameof(SourceOrderLabel));
+            OnPropertyChanged(nameof(SortLabel));
+        }
+        bool current = _loadedFor == Key() && _loadedVersion == (_changes?.Version ?? 0)
+            && Grid.State is LibraryLoadState.Ready or LibraryLoadState.Empty or LibraryLoadState.Loading;
+        return current ? Task.CompletedTask : StartAsync();
+    }
+
+    [RelayCommand]
+    private Task SetScopeAsync(ListMediaScope? scope)
+    {
+        if (scope is null || scope == Scope)
+        {
+            return Task.CompletedTask;
+        }
+        Scope = scope;
+        return StartAsync();
+    }
+
+    /// <summary>Sorts by <paramref name="option"/>, in the order it starts in; null goes back to the list's own order.</summary>
+    [RelayCommand]
+    private Task SetSortAsync(LibrarySortOption? option)
+    {
+        if (option == Sort)
+        {
+            return Task.CompletedTask;
+        }
+        Sort = option;
+        IsDescending = option?.StartsDescending ?? false;
+        return StartAsync();
+    }
+
+    [RelayCommand]
+    private Task SortAscendingAsync() => SetOrderAsync(descending: false);
+
+    [RelayCommand]
+    private Task SortDescendingAsync() => SetOrderAsync(descending: true);
+
+    [RelayCommand]
+    private void OpenItem(MediaCard? card)
+    {
+        if (card is { IsPlaceholder: false })
+        {
+            _navigation.NavigateTo(AppRoute.Item, card.Id);
+        }
+    }
+
+    private Task SetOrderAsync(bool descending)
+    {
+        if (Sort is null || descending == IsDescending)
+        {
+            return Task.CompletedTask;
+        }
+        IsDescending = descending;
+        return StartAsync();
+    }
+
+    private async Task StartAsync()
+    {
+        if (_session is not { State: SessionState.Ready, ActiveServer: { } server } || Source.Length == 0)
+        {
+            Grid.Reset();
+            return;
+        }
+        int start = ++_starts;
+        _loadedFor = Key();
+        // Read before asking: a change while the answer is on its way leaves this list stale.
+        _loadedVersion = _changes?.Version ?? 0;
+        var images = await BrowseArtwork.ParametersAsync(_images, server, DisplayScale, _logger, CancellationToken.None);
+        if (start != _starts)
+        {
+            // Another scope or sort was picked meanwhile; its own start shows it.
+            return;
+        }
+        await Grid.StartAsync(server.BaseUri, new CatalogQuery
+        {
+            Source = Source,
+            Type = Scope.Type,
+            Sort = Sort is { } sort ? new CatalogSort(sort.Field, IsDescending) : null,
+            Limit = PageSize,
+            Images = images,
+        });
+    }
+
+    private (string? ServerId, string? ProfileId, string Source) Key() => (_session.ActiveServer?.Id, _session.ProfileId, Source);
+}

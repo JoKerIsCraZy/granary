@@ -98,6 +98,7 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<SectionViewModel>();
         services.AddTransient<SearchViewModel>();
         services.AddTransient<LibraryViewModel>();
+        services.AddTransient<PersonalListViewModel>();
         services.AddTransient<AddServerViewModel>();
         services.AddTransient<PlayerViewModel>();
         services.AddTransient<Granary.Core.ViewModels.Player.AddSubtitlesViewModel>();

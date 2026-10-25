@@ -17,6 +17,7 @@ namespace Granary.App;
 public sealed partial class MainWindow : Window
 {
     private const string LibraryTagPrefix = "Library:";
+    private const string ListTagPrefix = "List:";
 
     // How long a closing window waits for the player's stop; the stop itself keeps trying for longer.
     private static readonly TimeSpan StopBudget = TimeSpan.FromSeconds(4);
@@ -143,8 +144,11 @@ public sealed partial class MainWindow : Window
 
     // "LIBRARIES" only in the open pane. NavigationView hides the header's text in the icon-only pane itself, but not
     // after the player's minimal mode: back in Left mode with the pane closed it showed again, cut off.
-    private void ShowLibrariesHeader() =>
+    private void ShowLibrariesHeader()
+    {
         LibrariesHeader.Visibility = Sidebar.Libraries.Count > 0 && Navigation.IsPaneOpen ? Visibility.Visible : Visibility.Collapsed;
+        YourStuffHeader.Visibility = Navigation.IsPaneOpen ? Visibility.Visible : Visibility.Collapsed;
+    }
 
     // The process ends with the window, and the player's stop carries where the viewer left off: the window goes
     // out of sight at once but closes only once the stop is through, or after a few seconds.
@@ -182,6 +186,9 @@ public sealed partial class MainWindow : Window
             case string tag when tag.StartsWith(LibraryTagPrefix, StringComparison.Ordinal):
                 _navigation.ShowSection(AppRoute.Library, tag[LibraryTagPrefix.Length..]);
                 break;
+            case string tag when tag.StartsWith(ListTagPrefix, StringComparison.Ordinal):
+                _navigation.ShowSection(AppRoute.List, tag[ListTagPrefix.Length..]);
+                break;
             case string tag when Enum.TryParse<AppRoute>(tag, out var route) && route is AppRoute.Home or AppRoute.Search:
                 _navigation.ShowSection(route);
                 break;
@@ -194,7 +201,12 @@ public sealed partial class MainWindow : Window
 
     private void SelectItem(AppRoute route, object? parameter)
     {
-        string tag = route == AppRoute.Library ? LibraryTagPrefix + parameter : route.ToString();
+        string tag = route switch
+        {
+            AppRoute.Library => LibraryTagPrefix + parameter,
+            AppRoute.List => ListTagPrefix + parameter,
+            _ => route.ToString(),
+        };
         var item = Navigation.MenuItems.Concat(Navigation.FooterMenuItems).OfType<NavigationViewItem>()
             .FirstOrDefault(i => i.Tag as string == tag);
         // Pages without a sidebar entry (details, "Explore all") select nothing.

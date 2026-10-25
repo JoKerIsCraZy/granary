@@ -34,6 +34,9 @@ public enum AppRoute
 
     /// <summary>The profile's settings; the parameter is an optional page ("playback", "subtitles").</summary>
     Settings,
+
+    /// <summary>Favorites, Watchlist or History; the parameter is the list's source (<c>favorites</c>, <c>watchlist</c>, <c>history</c>).</summary>
+    List,
 }
 
 /// <summary>Which row an "Explore all" grid lists: a Home row, or a library row when <see cref="LibraryId"/> is set.</summary>
