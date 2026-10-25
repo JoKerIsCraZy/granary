@@ -27,6 +27,9 @@ public sealed partial class ServerPlayback : IServerPlayback
 {
     private static readonly TimeSpan ProgressInterval = TimeSpan.FromSeconds(10);
 
+    // mpv pauses a moment before it reports that a stream broke off: a pause is reported once it has held this long.
+    private static readonly TimeSpan PauseSettle = TimeSpan.FromSeconds(1);
+
     // mpv reports a stream that broke off as its end: an end earlier than this before the title's end is a lost
     // connection, not the end of the title.
     private const double EndTolerance = 30;
@@ -48,6 +51,7 @@ public sealed partial class ServerPlayback : IServerPlayback
     private PlaybackProgress? _progress;
     private Uri? _streamUrl;
     private ITimer? _progressTimer;
+    private ITimer? _pauseReport;
     private double _playerPosition;
     private bool _paused;
     private bool _started;
@@ -129,7 +133,9 @@ public sealed partial class ServerPlayback : IServerPlayback
         var timeline = plan.Timeline;
         if (timeline.CanSeekAnywhere || IsInsideStream(timeline, sourceSeconds))
         {
-            _engine.Seek(TimeSpan.FromSeconds(Math.Max(0, timeline.ToPlayer(sourceSeconds))));
+            // The target is where the viewer is from now on, also for a reload before the engine gets there.
+            _playerPosition = Math.Max(0, timeline.ToPlayer(sourceSeconds));
+            _engine.Seek(TimeSpan.FromSeconds(_playerPosition));
             return;
         }
         _ = Guarded(() => ReanchorAsync(sourceSeconds));
@@ -281,7 +287,12 @@ public sealed partial class ServerPlayback : IServerPlayback
         {
             return;
         }
-        // An idle engine (between loads) reads as position 0; only a playing stream says where the viewer is.
+        // An idle engine (between loads) reads as position 0, and one held at the end of a stream that broke off reads
+        // as the end of the data, paused: only a stream that plays on says where the viewer is.
+        if (state.IsAtEnd)
+        {
+            return;
+        }
         if (state is { IsLoaded: true, HasStarted: true })
         {
             _playerPosition = state.Position.TotalSeconds;
@@ -296,7 +307,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         if (pauseChanged)
         {
             // The server learns about a pause only from a sample, and a paused session lives 30 minutes, not 45 s.
-            _ = Guarded(ReportProgressAsync);
+            SchedulePauseReport();
         }
     }
 
@@ -438,10 +449,26 @@ public sealed partial class ServerPlayback : IServerPlayback
         StatusChanged?.Invoke(this, status);
     }
 
+    private void SchedulePauseReport()
+    {
+        _pauseReport?.Dispose();
+        int generation = _generation;
+        bool paused = _paused;
+        _pauseReport = _time.CreateTimer(_ => _dispatcher.Post(() =>
+        {
+            if (!_stopping && generation == _generation && paused == _paused)
+            {
+                _ = Guarded(ReportProgressAsync);
+            }
+        }), null, PauseSettle, Timeout.InfiniteTimeSpan);
+    }
+
     private void StopProgressTimer()
     {
         _progressTimer?.Dispose();
         _progressTimer = null;
+        _pauseReport?.Dispose();
+        _pauseReport = null;
     }
 
     // Work started from an event or a timer has no caller to report to: log what it did not expect.

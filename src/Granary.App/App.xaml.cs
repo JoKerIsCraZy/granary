@@ -51,11 +51,21 @@ public partial class App : Application
         _window = Services.GetRequiredService<MainWindow>();
         _window.Activate();
 
-        // Developer shortcut: Granary.exe --play <file or URL> plays it without the server.
+        // Developer shortcuts: --play <file or URL> plays it without the server; --play-item <content id> plays a
+        // title of the signed-in server.
+        StartShell(_window.Shell, DeveloperPlayRequest() is null ? null : AppRoute.Player, DeveloperPlayRequest());
+    }
+
+    private static PlayRequest? DeveloperPlayRequest()
+    {
         string[] arguments = Environment.GetCommandLineArgs();
-        int play = Array.IndexOf(arguments, "--play");
-        bool playFile = play >= 0 && play + 1 < arguments.Length;
-        StartShell(_window.Shell, playFile ? AppRoute.Player : null, playFile ? PlayRequest.Direct(arguments[play + 1]) : null);
+        int file = Array.IndexOf(arguments, "--play");
+        if (file >= 0 && file + 1 < arguments.Length)
+        {
+            return PlayRequest.Direct(arguments[file + 1]);
+        }
+        int item = Array.IndexOf(arguments, "--play-item");
+        return item >= 0 && item + 1 < arguments.Length ? PlayRequest.Resume(arguments[item + 1]) : null;
     }
 
     private async void StartShell(ShellViewModel shell, AppRoute? initialRoute, object? parameter)

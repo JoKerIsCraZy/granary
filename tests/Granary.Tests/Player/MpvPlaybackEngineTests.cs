@@ -46,6 +46,7 @@ public sealed class MpvPlaybackEngineTests : IDisposable
         Assert.InRange(state.Duration!.Value.TotalSeconds, 0.9, 1.1);
         var end = await ended.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken);
         Assert.Equal(PlaybackEndReason.EndOfFile, end.Reason);
+        Assert.True(engine.Current.IsAtEnd);
     }
 
     [Fact]

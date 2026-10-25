@@ -10,6 +10,10 @@ public sealed record MediaSource(Uri Url, IReadOnlyList<KeyValuePair<string, str
 /// <param name="HasStarted">Playback began after the last load: the first frame is out (or the first audio for audio only).</param>
 /// <param name="IsBuffering">Paused by the player itself until enough data arrived.</param>
 /// <param name="Volume">0 to 100; kept across loads.</param>
+/// <param name="IsAtEnd">
+/// The player reached the end of what it could read and holds there, paused. A stream that broke off (a 401 mid-stream
+/// among others) ends this way too, so its position then is the end of the data, not necessarily the viewer's.
+/// </param>
 public sealed record PlaybackSnapshot(
     bool IsLoaded,
     bool IsPaused,
@@ -19,7 +23,8 @@ public sealed record PlaybackSnapshot(
     bool HasStarted = false,
     bool IsBuffering = false,
     double Volume = 100,
-    bool IsMuted = false)
+    bool IsMuted = false,
+    bool IsAtEnd = false)
 {
     public static PlaybackSnapshot Idle { get; } = new(false, false, TimeSpan.Zero, null, null);
 }

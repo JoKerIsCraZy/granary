@@ -151,14 +151,29 @@ public sealed class ServerPlaybackTests
     }
 
     [Fact]
-    public async Task APause_IsReportedAtOnce()
+    public async Task APause_IsReportedOnceItHolds()
     {
         await _fixture.PlayingAsync();
 
         _fixture.Engine.RaiseState(Frame(20, paused: true));
-        await Task.Delay(50, TestContext.Current.CancellationToken);
+        await _fixture.AdvanceAsync(TimeSpan.FromSeconds(1));
 
         Assert.True(_fixture.Body(HttpMethod.Post, ProgressPath).GetProperty("is_paused").GetBoolean());
+    }
+
+    [Fact]
+    public async Task ThePauseOfAStreamThatBrokeOff_IsNoPause()
+    {
+        // mpv pauses a moment before it says the stream ended (keep-open); the viewer paused nothing.
+        await _fixture.PlayingAsync();
+        _fixture.Engine.RaiseState(Frame(400));
+
+        _fixture.Engine.RaiseState(Frame(400, paused: true));
+        _fixture.Engine.RaiseState(Frame(7200, paused: true) with { IsAtEnd = true });
+        _fixture.Engine.RaiseEnded(new PlaybackEnded(PlaybackEndReason.AuthenticationFailed, null));
+        await _fixture.AdvanceAsync(TimeSpan.FromSeconds(1));
+
+        Assert.Empty(_fixture.Silo.SentTo(HttpMethod.Post, ProgressPath));
     }
 
     [Fact]
@@ -253,6 +268,34 @@ public sealed class ServerPlaybackTests
         Assert.Contains(new KeyValuePair<string, string>("Authorization", "Bearer fresh"), reload.Headers);
         Assert.Empty(_fixture.Silo.SentTo(HttpMethod.Post, ReplanPath));
         Assert.NotEqual(ServerPlaybackPhase.Failed, playback.Status.Phase);
+    }
+
+    [Fact]
+    public async Task TheEndOfARejectedStream_IsNotWhereTheViewerIs()
+    {
+        // mpv takes a 401 mid-stream for the end of the file: it jumps to the end and pauses (keep-open).
+        await _fixture.PlayingAsync();
+        _fixture.Engine.RaiseState(Frame(400));
+
+        _fixture.Engine.RaiseState(Frame(7200, paused: true) with { IsAtEnd = true });
+        _fixture.Engine.RaiseEnded(new PlaybackEnded(PlaybackEndReason.AuthenticationFailed, null));
+        await Task.Delay(50, TestContext.Current.CancellationToken);
+
+        Assert.Equal(TimeSpan.FromSeconds(400), _fixture.Engine.Loaded[^1].Start);
+        Assert.Empty(_fixture.Silo.SentTo(HttpMethod.Post, ProgressPath));
+    }
+
+    [Fact]
+    public async Task AReloadDuringASeek_StartsAtTheSeeksTarget()
+    {
+        var playback = await _fixture.PlayingAsync();
+        _fixture.Engine.RaiseState(Frame(400));
+
+        playback.Seek(3000);
+        _fixture.Engine.RaiseEnded(new PlaybackEnded(PlaybackEndReason.AuthenticationFailed, null));
+        await Task.Delay(50, TestContext.Current.CancellationToken);
+
+        Assert.Equal(TimeSpan.FromSeconds(3000), _fixture.Engine.Loaded[^1].Start);
     }
 
     [Fact]

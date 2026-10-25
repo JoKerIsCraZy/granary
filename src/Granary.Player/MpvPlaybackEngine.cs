@@ -22,6 +22,11 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
     private PlaybackSnapshot _current = PlaybackSnapshot.Idle;
     private TimeSpan? _lastReportedPosition;
     private long _lastAuthFailureTick = long.MinValue;
+
+    // Set once the server refused a request of the current load. mpv then runs to the end of what it had read and
+    // pauses there (keep-open), well before it says the file ended: positions and pauses from then on are not the
+    // viewer's, so the snapshot keeps the last real ones until the next load.
+    private bool _rejected;
     private (int Width, int Height) _outputSize;
     private nint _swapChain;
 
@@ -124,8 +129,9 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
         {
             _lastAuthFailureTick = long.MinValue;
             _lastReportedPosition = null;
+            _rejected = false;
         }
-        Update(s => s with { HasStarted = false }, force: true);
+        Update(s => s with { HasStarted = false, IsAtEnd = false }, force: true);
         _logger.LogInformation("Loading {Target} with {HeaderCount} header(s)", Describe(source.Url), source.Headers.Count);
         _mpv.Command("loadfile", target, "replace", "-1", perFileOptions);
     }
@@ -194,13 +200,13 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
     {
         switch (name)
         {
-            case "time-pos":
+            case "time-pos" when !IsRejected:
                 Update(s => s with { Position = TimeSpan.FromSeconds(value as double? ?? 0) }, force: false);
                 break;
             case "duration":
                 Update(s => s with { Duration = value is double d ? TimeSpan.FromSeconds(d) : null }, force: true);
                 break;
-            case "pause":
+            case "pause" when !IsRejected:
                 Update(s => s with { IsPaused = value as bool? ?? false }, force: true);
                 break;
             case "hwdec-current":
@@ -217,8 +223,12 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
                 break;
             case "eof-reached" when value is true:
                 // keep-open=yes pauses at the end instead of ending the file.
+                Update(s => s with { IsAtEnd = true }, force: true);
                 Ended?.Invoke(this, new PlaybackEnded(
                     RecentAuthFailure() ? PlaybackEndReason.AuthenticationFailed : PlaybackEndReason.EndOfFile, null));
+                break;
+            case "eof-reached":
+                Update(s => s with { IsAtEnd = false }, force: true);
                 break;
         }
     }
@@ -244,6 +254,7 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
             lock (_gate)
             {
                 _lastAuthFailureTick = Environment.TickCount64;
+                _rejected = true;
             }
         }
         string safe = MpvLogClassifier.Redact(text);
@@ -263,6 +274,17 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
         _options.VideoOutput == VideoOutputKind.D3D11Composition
         && prefix.EndsWith("/d3d11", StringComparison.Ordinal)
         && text.StartsWith("Failed to query swap chain's output information", StringComparison.Ordinal);
+
+    private bool IsRejected
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _rejected;
+            }
+        }
+    }
 
     private bool RecentAuthFailure()
     {
