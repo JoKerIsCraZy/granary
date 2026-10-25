@@ -61,6 +61,9 @@ public sealed class PlaybackPreferencesReader(SettingsApi settings, ILogger<Play
         "playback.next_up_prompt_seconds",
     ];
 
+    // Asked on its own: a server from before it refuses a batch with it, and the marker settings must not go with it.
+    internal static readonly string[] PreviewKeys = ["playback.auto_play_next_preview"];
+
     private const int MaxNextUpPromptSeconds = 120;
 
     /// <summary>The web player's limit for the subtitle delay.</summary>
@@ -75,6 +78,7 @@ public sealed class PlaybackPreferencesReader(SettingsApi settings, ILogger<Play
     {
         var subtitles = ReadBatchAsync(server, SubtitleKeys, "Subtitle", cancellationToken);
         var markers = ReadBatchAsync(server, MarkerKeys, "Marker", cancellationToken);
+        var preview = ReadBatchAsync(server, PreviewKeys, "Next episode preview", cancellationToken);
         var preferences = await ReadMainAsync(server, cancellationToken).ConfigureAwait(false);
         if (await subtitles.ConfigureAwait(false) is { } subtitleValues)
         {
@@ -89,6 +93,10 @@ public sealed class PlaybackPreferencesReader(SettingsApi settings, ILogger<Play
         if (await markers.ConfigureAwait(false) is { } markerValues)
         {
             preferences = preferences with { Markers = Markers(markerValues) };
+        }
+        if (await preview.ConfigureAwait(false) is { } previewValues && Bool(previewValues.Find(PreviewKeys[0])) is { } fromPreview)
+        {
+            preferences = preferences with { Markers = preferences.Markers with { AutoPlayNextPreview = fromPreview } };
         }
         return preferences;
     }

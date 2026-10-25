@@ -100,6 +100,64 @@ public sealed record SubtitleAppearance(
             });
     }
 
+    /// <summary>"small" to "xxlarge", the name a size has in the setting.</summary>
+    public static string SizeName(double fontSize) => fontSize switch
+    {
+        <= 36 => "small",
+        <= 44 => "medium",
+        <= 56 => "large",
+        <= 68 => "xlarge",
+        _ => "xxlarge",
+    };
+
+    /// <summary>The size at 1080 lines for a size's name; large for one it does not know.</summary>
+    public static double SizeOf(string name) => name switch
+    {
+        "small" => 36,
+        "medium" => 44,
+        "xlarge" => 68,
+        "xxlarge" => 82,
+        _ => 56,
+    };
+
+    public static string BackgroundName(SubtitleBackground background) => background switch
+    {
+        SubtitleBackground.Box => "box",
+        SubtitleBackground.Outline => "outline",
+        SubtitleBackground.None => "none",
+        _ => "shadow",
+    };
+
+    public static string PositionName(SubtitlePosition position) => position switch
+    {
+        SubtitlePosition.LowerThird => "lower-third",
+        SubtitlePosition.Top => "top",
+        _ => "bottom",
+    };
+
+    /// <summary>The style as the setting's value, in the names the web and the apps write.</summary>
+    public JsonElement ToJson()
+    {
+        using var buffer = new MemoryStream();
+        using (var writer = new Utf8JsonWriter(buffer))
+        {
+            writer.WriteStartObject();
+            writer.WriteString("fontSize", SizeName(FontSize));
+            writer.WriteString("fontFamily", FontFamily);
+            writer.WriteString("fontColor", FontColor);
+            writer.WriteNumber("textOpacity", TextOpacity);
+            writer.WriteString("backgroundColor", BackgroundColor);
+            writer.WriteString("backgroundStyle", BackgroundName(Background));
+            writer.WriteNumber("backgroundOpacity", BackgroundOpacity);
+            writer.WriteBoolean("textOutline", TextOutline);
+            writer.WriteString("textOutlineColor", TextOutlineColor);
+            writer.WriteString("position", PositionName(Position));
+            writer.WriteEndObject();
+        }
+        using var document = JsonDocument.Parse(buffer.ToArray());
+        return document.RootElement.Clone();
+    }
+
     private static string? Text(JsonElement style, string name) =>
         style.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString()?.Trim() : null;
 

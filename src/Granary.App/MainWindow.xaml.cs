@@ -113,7 +113,7 @@ public sealed partial class MainWindow : Window
     {
         // A disabled arrow on pages without history is only noise; the player has its own back button.
         Navigation.IsBackEnabled = _navigation.CanGoBack;
-        Navigation.IsBackButtonVisible = _navigation.CanGoBack && route != AppRoute.Player
+        Navigation.IsBackButtonVisible = _navigation.CanGoBack && route is not (AppRoute.Player or AppRoute.Settings)
             ? NavigationViewBackButtonVisible.Visible
             : NavigationViewBackButtonVisible.Collapsed;
         ShowChrome(route);
@@ -129,9 +129,11 @@ public sealed partial class MainWindow : Window
     private void ShowChrome(AppRoute? route)
     {
         bool isPlayer = route == AppRoute.Player;
-        Navigation.PaneDisplayMode = isPlayer ? NavigationViewPaneDisplayMode.LeftMinimal : NavigationViewPaneDisplayMode.Left;
+        // The settings bring their own sidebar, as on the web.
+        bool hidesPane = isPlayer || route == AppRoute.Settings;
+        Navigation.PaneDisplayMode = hidesPane ? NavigationViewPaneDisplayMode.LeftMinimal : NavigationViewPaneDisplayMode.Left;
         // Visibility first: a pane that becomes visible opens again, whatever IsPaneOpen said before.
-        Navigation.IsPaneVisible = Shell.IsSignedIn && !isPlayer;
+        Navigation.IsPaneVisible = Shell.IsSignedIn && !hidesPane;
         Navigation.IsPaneOpen = Shell.IsSignedIn && route is not (AppRoute.Item or AppRoute.Player);
         Grid.SetRow(Navigation, isPlayer ? 0 : 1);
         Grid.SetRowSpan(Navigation, isPlayer ? 2 : 1);

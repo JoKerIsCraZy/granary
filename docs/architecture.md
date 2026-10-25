@@ -166,6 +166,12 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   again 5 minutes before its sheets expire (a minute after a transient failure; a 404 means none). Thumbnail `i` of
   `interval_ms` sits on sheet `i / (cols·rows)`; the seek bar keeps three sheets decoded at the bubble's width and
   loads the next one ahead. Markers carry their segment's picture for the bubble; it plays no part in their equality.
+- **Settings pages** (6.6): `ProfileSettings` reads the page's keys in one batch, key by key when an older server
+  refuses one it does not know (422), and leaves those out. A save writes the profile's value and, when the value
+  shown came from this device's row (`source: profile_device`), clears that row, which would otherwise keep shadowing
+  it; a reset clears both. "No limit" and "No preference" are resets, not stored values. Playback reads
+  `playback.auto_play_next_preview` in a batch of its own; with it the next episode is offered from the preview teaser
+  that runs into the credits (`MarkerSettings.AutoplayStart`, the web's resolveAutoplayMarker).
 - **A new title plays**: mpv keeps `pause` across files and sets it itself at a file's end (`keep-open`), where the
   countdown starts the next episode from; the first load of a playback therefore unpauses, while its reloads (a
   replan, a reconnect) keep what the viewer chose.

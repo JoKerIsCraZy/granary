@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The settings pages in the look of Silo's web (pages/settings): sections between hairlines with a title column, rows
+    with a label and a description, 36 px selects with a faint outline, red switches. A settings page merges this into
+    its resources, so its combo boxes, switches and number boxes take these brushes instead of the Fluent ones.
+-->
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Granary.App.Controls">
+
+    <SolidColorBrush x:Key="SiloSettingsHairlineBrush" Color="#14FFFFFF" />
+
+    <!-- Selects: the web's 36 px trigger on the page, a faint outline that brightens under the pointer. -->
+    <SolidColorBrush x:Key="ComboBoxBackground" Color="#FF141417" />
+    <SolidColorBrush x:Key="ComboBoxBackgroundPointerOver" Color="#FF1A1A1E" />
+    <SolidColorBrush x:Key="ComboBoxBackgroundPressed" Color="#FF1A1A1E" />
+    <SolidColorBrush x:Key="ComboBoxBackgroundFocused" Color="#FF141417" />
+    <SolidColorBrush x:Key="ComboBoxBackgroundUnfocused" Color="#FF141417" />
+    <SolidColorBrush x:Key="ComboBoxBackgroundDisabled" Color="#FF141417" />
+    <SolidColorBrush x:Key="ComboBoxBorderBrush" Color="#FF28282E" />
+    <SolidColorBrush x:Key="ComboBoxBorderBrushPointerOver" Color="#FF3A3A42" />
+    <SolidColorBrush x:Key="ComboBoxBorderBrushPressed" Color="#FF3A3A42" />
+    <SolidColorBrush x:Key="ComboBoxBorderBrushFocused" Color="#FFEF4444" />
+    <SolidColorBrush x:Key="ComboBoxBorderBrushUnfocused" Color="#FF28282E" />
+    <SolidColorBrush x:Key="ComboBoxBorderBrushDisabled" Color="#FF202024" />
+    <SolidColorBrush x:Key="ComboBoxForeground" Color="#FFE8E8EC" />
+    <SolidColorBrush x:Key="ComboBoxForegroundFocused" Color="#FFE8E8EC" />
+    <SolidColorBrush x:Key="ComboBoxForegroundDisabled" Color="#66E8E8EC" />
+    <SolidColorBrush x:Key="ComboBoxDropDownGlyphForeground" Color="#FFA4A4AE" />
+    <SolidColorBrush x:Key="ComboBoxDropDownBackground" Color="#FF1C1C20" />
+    <SolidColorBrush x:Key="ComboBoxDropDownBorderBrush" Color="#FF2A2A2F" />
+
+    <!-- Switches: red when on, a dark track with a light knob when off, as the web's Switch. -->
+    <!-- Without text beside it, the switch is only its track, right-aligned in its row. -->
+    <x:Double x:Key="ToggleSwitchThemeMinWidth">0</x:Double>
+    <Thickness x:Key="ToggleSwitchTopHeaderMargin">0</Thickness>
+    <SolidColorBrush x:Key="ToggleSwitchFillOn" Color="#FFEF4444" />
+    <SolidColorBrush x:Key="ToggleSwitchFillOnPointerOver" Color="#FFF25858" />
+    <SolidColorBrush x:Key="ToggleSwitchFillOnPressed" Color="#FFDC2F2F" />
+    <SolidColorBrush x:Key="ToggleSwitchFillOff" Color="#FF3A3A42" />
+    <SolidColorBrush x:Key="ToggleSwitchFillOffPointerOver" Color="#FF45454E" />
+    <SolidColorBrush x:Key="ToggleSwitchFillOffPressed" Color="#FF45454E" />
+    <SolidColorBrush x:Key="ToggleSwitchStrokeOff" Color="Transparent" />
+    <SolidColorBrush x:Key="ToggleSwitchStrokeOffPointerOver" Color="Transparent" />
+    <SolidColorBrush x:Key="ToggleSwitchStrokeOffPressed" Color="Transparent" />
+    <SolidColorBrush x:Key="ToggleSwitchStrokeOn" Color="Transparent" />
+    <SolidColorBrush x:Key="ToggleSwitchKnobFillOff" Color="#FFE8E8EC" />
+    <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPointerOver" Color="#FFFFFFFF" />
+    <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPressed" Color="#FFFFFFFF" />
+    <SolidColorBrush x:Key="ToggleSwitchKnobFillOn" Color="#FFFFFFFF" />
+    <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPointerOver" Color="#FFFFFFFF" />
+    <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPressed" Color="#FFFFFFFF" />
+
+    <!-- Number fields (opacity): the select's look. -->
+    <SolidColorBrush x:Key="TextControlBackground" Color="#FF141417" />
+    <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="#FF141417" />
+    <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="#FF141417" />
+    <SolidColorBrush x:Key="TextControlBorderBrush" Color="#FF28282E" />
+    <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="#FF3A3A42" />
+    <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="#FFEF4444" />
+    <SolidColorBrush x:Key="TextControlForeground" Color="#FFE8E8EC" />
+    <SolidColorBrush x:Key="TextControlForegroundPointerOver" Color="#FFE8E8EC" />
+    <SolidColorBrush x:Key="TextControlForegroundFocused" Color="#FFE8E8EC" />
+
+    <!-- The settings' own sidebar: the page open is white 6 % with red text and a red mark, as on the web. -->
+    <!-- A disabled button (Reset with nothing to reset) keeps the page's background. -->
+    <SolidColorBrush x:Key="ButtonBackgroundDisabled" Color="Transparent" />
+    <SolidColorBrush x:Key="ButtonBorderBrushDisabled" Color="#FF202024" />
+
+    <SolidColorBrush x:Key="ListViewItemBackgroundPointerOver" Color="#0AFFFFFF" />
+    <SolidColorBrush x:Key="ListViewItemBackgroundSelected" Color="#0FFFFFFF" />
+    <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPointerOver" Color="#14FFFFFF" />
+    <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPressed" Color="#14FFFFFF" />
+    <SolidColorBrush x:Key="ListViewItemForeground" Color="#FFE8E8EC" />
+    <SolidColorBrush x:Key="ListViewItemForegroundSelected" Color="#FFEF4444" />
+    <SolidColorBrush x:Key="ListViewItemForegroundSelectedPointerOver" Color="#FFEF4444" />
+    <SolidColorBrush x:Key="ListViewItemSelectionIndicatorBrush" Color="#FFEF4444" />
+    <SolidColorBrush x:Key="ListViewItemSelectionIndicatorPointerOverBrush" Color="#FFEF4444" />
+
+    <Style x:Key="SiloSettingsBackButtonStyle" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Foreground" Value="{StaticResource SiloMutedBrush}" />
+        <Setter Property="FontFamily" Value="{StaticResource SiloFontMedium}" />
+    </Style>
+
+    <Style x:Key="SiloSettingsComboBoxStyle" TargetType="ComboBox">
+        <Setter Property="Width" Value="220" />
+        <Setter Property="MinHeight" Value="36" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="FontSize" Value="14" />
+    </Style>
+
+    <!-- Only the 40 px track: no On/Off text, and none of the room WinUI keeps for it. -->
+    <Style x:Key="SiloSettingsSwitchStyle" TargetType="ToggleSwitch" BasedOn="{StaticResource DefaultToggleSwitchStyle}">
+        <Setter Property="OnContent" Value="" />
+        <Setter Property="OffContent" Value="" />
+        <Setter Property="MinWidth" Value="0" />
+        <Setter Property="Width" Value="40" />
+        <Setter Property="HorizontalAlignment" Value="Right" />
+    </Style>
+
+    <Style x:Key="SiloSettingsOutlineButtonStyle" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
+        <Setter Property="MinHeight" Value="36" />
+        <Setter Property="Padding" Value="16,0" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="#FF28282E" />
+        <Setter Property="FontFamily" Value="{StaticResource SiloFontMedium}" />
+        <Setter Property="FontSize" Value="14" />
+    </Style>
+
+    <Style x:Key="SiloSettingsPageTitleStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource SiloFontBold}" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="FontSize" Value="32" />
+        <Setter Property="Foreground" Value="{StaticResource SiloForegroundBrush}" />
+    </Style>
+
+    <Style x:Key="SiloSettingsMutedTextStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="LineHeight" Value="21" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="Foreground" Value="{StaticResource SiloMutedBrush}" />
+    </Style>
+
+    <Style TargetType="controls:SettingsGroup">
+        <Setter Property="Padding" Value="0,32" />
+        <Setter Property="BorderThickness" Value="0,1,0,0" />
+        <Setter Property="BorderBrush" Value="{StaticResource SiloSettingsHairlineBrush}" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="controls:SettingsGroup">
+                    <Border Padding="{TemplateBinding Padding}" BorderThickness="{TemplateBinding BorderThickness}"
+                            BorderBrush="{TemplateBinding BorderBrush}">
+                        <Grid ColumnSpacing="48">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="256" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="{TemplateBinding Title}" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
+                                           FontSize="15" Foreground="{StaticResource SiloForegroundBrush}" AutomationProperties.HeadingLevel="Level2" />
+                                <TextBlock Text="{TemplateBinding Description}" Style="{StaticResource SiloSettingsMutedTextStyle}"
+                                           Visibility="{TemplateBinding DescriptionVisibility}" />
+                            </StackPanel>
+                            <ContentPresenter Grid.Column="1" Content="{TemplateBinding Content}" HorizontalContentAlignment="Stretch" />
+                        </Grid>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="SiloSettingsRowStyle" TargetType="controls:SettingsRow">
+        <Setter Property="Margin" Value="0,16,0,0" />
+        <Setter Property="Padding" Value="0,16,0,0" />
+        <Setter Property="BorderThickness" Value="0,1,0,0" />
+        <Setter Property="BorderBrush" Value="{StaticResource SiloSettingsHairlineBrush}" />
+        <Setter Property="HorizontalContentAlignment" Value="Right" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="controls:SettingsRow">
+                    <Border Padding="{TemplateBinding Padding}" BorderThickness="{TemplateBinding BorderThickness}"
+                            BorderBrush="{TemplateBinding BorderBrush}">
+                        <Grid ColumnSpacing="24">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel VerticalAlignment="Center" Spacing="4">
+                                <TextBlock Text="{TemplateBinding Label}" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium" FontSize="14"
+                                           TextWrapping="Wrap" Foreground="{StaticResource SiloForegroundBrush}" />
+                                <TextBlock Text="{TemplateBinding Description}" Style="{StaticResource SiloSettingsMutedTextStyle}"
+                                           Visibility="{TemplateBinding DescriptionVisibility}" />
+                            </StackPanel>
+                            <ContentPresenter Grid.Column="1" Content="{TemplateBinding Content}"
+                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                        </Grid>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="controls:SettingsRow" BasedOn="{StaticResource SiloSettingsRowStyle}" />
+
+    <Style x:Key="SiloSettingsFirstRowStyle" TargetType="controls:SettingsRow" BasedOn="{StaticResource SiloSettingsRowStyle}">
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="BorderThickness" Value="0" />
+    </Style>
+</ResourceDictionary>

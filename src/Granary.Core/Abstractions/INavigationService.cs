@@ -31,6 +31,9 @@ public enum AppRoute
 
     /// <summary>"Explore all" of a Home or library row; the parameter is a <see cref="SectionRouteParameter"/>.</summary>
     Section,
+
+    /// <summary>The profile's settings; the parameter is an optional page ("playback", "subtitles").</summary>
+    Settings,
 }
 
 /// <summary>Which row an "Explore all" grid lists: a Home row, or a library row when <see cref="LibraryId"/> is set.</summary>

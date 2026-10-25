@@ -88,6 +88,35 @@ public sealed record MarkerSettings(string IntroSkipMode, bool AutoSkipCredits, 
     public const string Always = "always";
 
     public static MarkerSettings Default { get; } = new(Ask, false, false, true, 30);
+
+    /// <summary><c>playback.auto_play_next_preview</c>: the next episode is offered from the preview teaser on, not the credits.</summary>
+    public bool AutoPlayNextPreview { get; init; }
+
+    /// <summary>
+    /// Where the next episode is offered, as Silo's web player finds it (resolveAutoplayMarker): from the end back, the
+    /// credits, and with <see cref="AutoPlayNextPreview"/> the preview, that run on to the end, taken together; null
+    /// when none ends the title. Without a length, the last credits' start.
+    /// </summary>
+    public double? AutoplayStart(IReadOnlyList<PlaybackMarker> markers, double durationSeconds)
+    {
+        ArgumentNullException.ThrowIfNull(markers);
+        if (durationSeconds <= 0)
+        {
+            return markers.LastOrDefault(m => m.Kind == Api.Playback.WatchMarkerKinds.Credits)?.StartSeconds;
+        }
+        double start = durationSeconds;
+        foreach (var marker in markers.OrderBy(m => m.StartSeconds).Reverse())
+        {
+            bool ends = marker.Kind == Api.Playback.WatchMarkerKinds.Credits
+                || (AutoPlayNextPreview && marker.Kind == Api.Playback.WatchMarkerKinds.Preview);
+            // A second of rounding at the end, but never across a gap of story.
+            if (ends && marker.EndSeconds >= start - 1)
+            {
+                start = Math.Min(start, marker.StartSeconds);
+            }
+        }
+        return start < durationSeconds ? start : null;
+    }
 }
 
 /// <summary>The pill the player shows over the picture: its label, a confirmation above it, and how far its time has run.</summary>

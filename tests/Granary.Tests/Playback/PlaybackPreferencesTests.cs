@@ -27,6 +27,7 @@ public sealed class PlaybackPreferencesTests
 
         Assert.Equal(
             [
+                "?keys=playback.auto_play_next_preview",
                 "?keys=playback.intro_skip_mode&keys=playback.auto_skip_credits&keys=playback.auto_skip_recap&keys=playback.auto_play_next"
                     + "&keys=playback.next_up_prompt_seconds",
                 "?keys=playback.preferred_quality&keys=playback.max_bitrate_kbps&keys=player.video_skip_back_seconds&keys=player.video_skip_forward_seconds"

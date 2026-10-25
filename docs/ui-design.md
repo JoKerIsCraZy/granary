@@ -100,6 +100,27 @@ unmodified to refer to Silo, as its trademark policy allows; it is not Granary's
   shows on "Show QR code" (at once when the server has no password sign-in), framed, with the address and the code
   below it; the page scrolls to it.
 
+## Settings
+
+Opened from the sidebar's Settings; as on Silo's web the app's sidebar gives way to the settings' own (260 px, a shade
+darker, a hairline at its edge): "← Back to App", "Settings", the current profile (its initial in a 32 px disc), then
+the pages by group. The page open is white 6 % with red text and a red mark. Pages scroll on the right, 1120 px at
+most, padded 50 px: the title (32 px bold) and its line, then sections between hairlines (`SettingsGroup`), their title
+(15 px semibold) and description (13 px muted) in a 256 px column and their rows (`SettingsRow`: label 14 px medium,
+description 13 px muted, the control on the right, hairlines between rows). Selects are 220 px and 36 px high on the
+page background with a faint outline, red when focused; switches are only their 40 px track, red when on
+(Themes/SiloSettings.xaml). Every value is the profile's and saves at once; a refused save puts the control back and
+says why above the sections.
+
+- **Playback**: Quality (preferred quality, maximum bitrate with "No limit", lower quality when buffering, and this
+  connection's learned limit with Reset), Connection (the latest speed reading and what Auto plays without
+  converting), Skipping (skip intros, auto-skip recaps and credits), Next episode (start next at preview, auto-play),
+  Seek controls (rewind and fast-forward intervals). No speed test yet.
+- **Language & Subtitles**: spoken and subtitle language ("No preference" / "None" clear the value), subtitle behaviour,
+  forced subtitles; a 16:9 preview of the look, edited as a draft with Save Appearance and Discard Changes, Reset back to
+  the default; Text (size, family, colour swatches, opacity, outline and its colour), Background & Position (style,
+  opacity and colour for the box, position); Timing (the profile's subtitle offset in 100 ms steps, Reset).
+
 ## Player
 
 `Views/PlayerPage` on `PlayerViewModel`, drawn as the server's web player (`web/src/player`, measured below).

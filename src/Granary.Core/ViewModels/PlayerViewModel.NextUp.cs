@@ -198,7 +198,7 @@ public sealed partial class PlayerViewModel
     }
 
     private void TakeCredits(IReadOnlyList<PlaybackMarker> markers) =>
-        _nextUp.TakeCredits(markers.LastOrDefault(m => m.Kind == Api.Playback.WatchMarkerKinds.Credits)?.StartSeconds);
+        _nextUp.TakeCredits((_playback?.Preferences.Markers ?? MarkerSettings.Default).AutoplayStart(markers, _playback?.DurationSeconds ?? 0));
 
     private void FollowNextUp()
     {

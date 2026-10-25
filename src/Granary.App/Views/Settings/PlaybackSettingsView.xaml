@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Settings → Playback, as on Silo's web (pages/settings/PlaybackSettings.tsx). -->
+<UserControl
+    x:Class="Granary.App.Views.Settings.PlaybackSettingsView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Granary.App.Controls">
+
+    <!-- Its own copy: the view is made before it joins the page, whose resources it cannot see then. -->
+    <UserControl.Resources>
+        <ResourceDictionary Source="ms-appx:///Themes/SiloSettings.xaml" />
+    </UserControl.Resources>
+
+    <StackPanel>
+        <TextBlock Text="Playback" Style="{StaticResource SiloSettingsPageTitleStyle}" AutomationProperties.HeadingLevel="Level1" />
+        <TextBlock Margin="0,8,0,32" Style="{StaticResource SiloSettingsMutedTextStyle}" FontSize="14"
+                   Text="The defaults this profile starts playback with. A library, a series, or one of your devices can override some of them." />
+        <InfoBar IsOpen="{x:Bind controls:SettingsText.Has(ViewModel.ErrorMessage), Mode=OneWay}" Severity="Error" IsClosable="False"
+                 Message="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}" Margin="0,0,0,16" />
+
+        <controls:SettingsGroup Title="Quality" Description="Each of your devices can override these, and a household manager can cap them for this profile.">
+            <StackPanel>
+                <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Preferred quality"
+                                      Description="{x:Bind ViewModel.QualityDescription, Mode=OneWay}">
+                    <ComboBox Style="{StaticResource SiloSettingsComboBoxStyle}" ItemsSource="{x:Bind ViewModel.QualityChoices}"
+                              SelectedItem="{x:Bind ViewModel.SelectedQuality, Mode=TwoWay}" IsEnabled="{x:Bind controls:SettingsText.Not(ViewModel.IsLoading), Mode=OneWay}" />
+                </controls:SettingsRow>
+                <controls:SettingsRow Label="Maximum bitrate"
+                                      Description="Cap how much bandwidth playback may use. No limit means Silo picks for the chosen resolution.">
+                    <ComboBox Style="{StaticResource SiloSettingsComboBoxStyle}" ItemsSource="{x:Bind ViewModel.BitrateChoices, Mode=OneWay}"
+                              SelectedItem="{x:Bind ViewModel.SelectedBitrate, Mode=TwoWay}" IsEnabled="{x:Bind controls:SettingsText.Not(ViewModel.IsLoading), Mode=OneWay}" />
+                </controls:SettingsRow>
+                <controls:SettingsRow Label="Lower quality when buffering" Visibility="{x:Bind ViewModel.ShowsBuffering, Mode=OneWay}"
+                                      Description="What Silo does on Auto when playback keeps buffering. Silo always asks before lowering a quality you picked.">
+                    <ComboBox Style="{StaticResource SiloSettingsComboBoxStyle}" ItemsSource="{x:Bind ViewModel.BufferingChoices}"
+                              SelectedItem="{x:Bind ViewModel.SelectedBuffering, Mode=TwoWay}" />
+                </controls:SettingsRow>
+                <controls:SettingsRow Label="{x:Bind ViewModel.LearnedLimitText, Mode=OneWay}" Visibility="{x:Bind ViewModel.ShowsLearnedLimit, Mode=OneWay}">
+                    <Button Content="Reset" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Command="{x:Bind ViewModel.ResetLearnedLimitCommand}"
+                            AutomationProperties.Name="Reset the learned limit" />
+                </controls:SettingsRow>
+            </StackPanel>
+        </controls:SettingsGroup>
+
+        <controls:SettingsGroup Title="Connection" Visibility="{x:Bind ViewModel.ShowsConnection, Mode=OneWay}">
+            <StackPanel Spacing="16">
+                <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Connection speed"
+                                      Description="{x:Bind ViewModel.ConnectionSpeedText, Mode=OneWay}" />
+                <TextBlock Text="{x:Bind ViewModel.BudgetText, Mode=OneWay}" Style="{StaticResource SiloSettingsMutedTextStyle}"
+                           Visibility="{x:Bind controls:SettingsText.Shows(ViewModel.BudgetText), Mode=OneWay}" />
+            </StackPanel>
+        </controls:SettingsGroup>
+
+        <controls:SettingsGroup Title="Skipping">
+            <StackPanel>
+                <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Skip intros"
+                                      Description="Leave intros alone, offer a Skip Intro button, or skip automatically with an undo.">
+                    <ComboBox Style="{StaticResource SiloSettingsComboBoxStyle}" ItemsSource="{x:Bind ViewModel.IntroSkipChoices}"
+                              SelectedItem="{x:Bind ViewModel.SelectedIntroSkip, Mode=TwoWay}" IsEnabled="{x:Bind ViewModel.ShowsIntroSkip, Mode=OneWay}" />
+                </controls:SettingsRow>
+                <controls:SettingsRow Label="Auto-skip recaps" Description="Skip 'previously on…' recaps automatically when Silo can detect them.">
+                    <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.AutoSkipRecaps, Mode=TwoWay}" />
+                </controls:SettingsRow>
+                <controls:SettingsRow Label="Auto-skip credits" Description="Move through end credits automatically when a skip is available.">
+                    <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.AutoSkipCredits, Mode=TwoWay}" />
+                </controls:SettingsRow>
+            </StackPanel>
+        </controls:SettingsGroup>
+
+        <controls:SettingsGroup Title="Next episode">
+            <StackPanel>
+                <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Start next at preview"
+                                      Description="Begin the next episode when the current one reaches its next-episode preview teaser, rather than waiting for the end credits.">
+                    <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.StartNextAtPreview, Mode=TwoWay}" />
+                </controls:SettingsRow>
+                <controls:SettingsRow Label="Auto-play next episode" Description="Start the next episode automatically after the current one ends.">
+                    <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.AutoPlayNext, Mode=TwoWay}" />
+                </controls:SettingsRow>
+            </StackPanel>
+        </controls:SettingsGroup>
+
+        <StackPanel Padding="0,32,0,16" BorderThickness="0,1,0,0" BorderBrush="{StaticResource SiloSettingsHairlineBrush}" Spacing="8">
+            <TextBlock Text="Seek controls" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="16"
+                       Foreground="{StaticResource SiloForegroundBrush}" AutomationProperties.HeadingLevel="Level2" />
+            <TextBlock Style="{StaticResource SiloSettingsMutedTextStyle}" MaxWidth="660" HorizontalAlignment="Left"
+                       Text="How far rewind and fast-forward jump. These belong to the active profile and follow it across supported Silo apps." />
+        </StackPanel>
+        <controls:SettingsGroup Title="Video" Description="Applies to the transport buttons, double-tap gestures, arrow keys, and system media controls.">
+            <StackPanel>
+                <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Rewind interval" Description="How far video jumps when you rewind.">
+                    <ComboBox Style="{StaticResource SiloSettingsComboBoxStyle}" ItemsSource="{x:Bind ViewModel.SkipChoices}"
+                              SelectedItem="{x:Bind ViewModel.SelectedRewind, Mode=TwoWay}" />
+                </controls:SettingsRow>
+                <controls:SettingsRow Label="Fast-forward interval" Description="How far video jumps when you fast-forward.">
+                    <ComboBox Style="{StaticResource SiloSettingsComboBoxStyle}" ItemsSource="{x:Bind ViewModel.SkipChoices}"
+                              SelectedItem="{x:Bind ViewModel.SelectedFastForward, Mode=TwoWay}" />
+                </controls:SettingsRow>
+            </StackPanel>
+        </controls:SettingsGroup>
+    </StackPanel>
+</UserControl>

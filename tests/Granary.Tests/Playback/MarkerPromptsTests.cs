@@ -254,4 +254,26 @@ public sealed class MarkerPromptsTests
 
         Assert.Equal([Recap, Credits], PlaybackMarker.Of(version));
     }
+
+    [Theory]
+    [InlineData(false, 2600.0)]
+    [InlineData(true, 2560.0)]
+    public void TheNextEpisode_IsOfferedFromTheCreditsThatEndTheTitle_OrFromItsPreview(bool fromPreview, double expected)
+    {
+        PlaybackMarker[] markers =
+        [
+            new(WatchMarkerKinds.Credits, 1200, 1300),
+            new(WatchMarkerKinds.Preview, 2560, 2600),
+            new(WatchMarkerKinds.Credits, 2600, 2699.5),
+        ];
+
+        Assert.Equal(expected, (MarkerSettings.Default with { AutoPlayNextPreview = fromPreview }).AutoplayStart(markers, 2700));
+    }
+
+    [Fact]
+    public void CreditsThatDoNotEndTheTitle_OfferNoNextEpisode()
+    {
+        Assert.Null(MarkerSettings.Default.AutoplayStart([new PlaybackMarker(WatchMarkerKinds.Credits, 1200, 1300)], 2700));
+        Assert.Equal(1200, MarkerSettings.Default.AutoplayStart([new PlaybackMarker(WatchMarkerKinds.Credits, 1200, 1300)], 0));
+    }
 }

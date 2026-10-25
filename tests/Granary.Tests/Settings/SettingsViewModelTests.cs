@@ -1,0 +1,237 @@
+using System.Net;
+using System.Text.Json;
+using Granary.Core.Api;
+using Granary.Core.Api.Playback;
+using Granary.Core.Api.Settings;
+using Granary.Core.Auth;
+using Granary.Core.Playback;
+using Granary.Core.Settings;
+using Granary.Core.ViewModels.Settings;
+using Granary.Tests.Fakes;
+using Granary.Tests.Profiles;
+
+namespace Granary.Tests.Settings;
+
+/// <summary>The profile's values as the settings pages read them; writes are recorded, and can be refused.</summary>
+internal sealed class FakeProfileSettings : IProfileSettings
+{
+    public Dictionary<string, EffectiveSetting> Values { get; } = [];
+
+    public List<string> Writes { get; } = [];
+
+    public bool Refuses { get; set; }
+
+    public void Set(string key, string json, string source = "profile") =>
+        Values[key] = new EffectiveSetting(key, JsonDocument.Parse(json).RootElement.Clone(), source);
+
+    public Task<IReadOnlyDictionary<string, EffectiveSetting>> ReadAsync(IReadOnlyList<string> keys, CancellationToken cancellationToken) =>
+        Task.FromResult<IReadOnlyDictionary<string, EffectiveSetting>>(keys.Where(Values.ContainsKey).ToDictionary(k => k, k => Values[k]));
+
+    public Task SaveAsync(string key, JsonElement value, bool clearDevice, CancellationToken cancellationToken) =>
+        Write($"save {key} {value.GetRawText()}{(clearDevice ? " clearing the device" : "")}");
+
+    public Task ResetAsync(string key, CancellationToken cancellationToken) => Write($"reset {key}");
+
+    private Task Write(string write)
+    {
+        Writes.Add(write);
+        return Refuses ? Task.FromException(new SiloApiException(422, new ApiProblem(ApiProblem.TypeOrigin + "validation_failed", "validation_failed", 422, null, null, null))) : Task.CompletedTask;
+    }
+}
+
+/// <summary>Settings → Playback and Language &amp; Subtitles.</summary>
+public sealed class SettingsViewModelTests
+{
+    private readonly FakeProfileSettings _settings = new();
+    private readonly ScriptedSilo _silo = new();
+    private readonly ManualTimeProvider _time = new();
+
+    private PlaybackSettingsViewModel Playback() => new(_settings, new PlaybackApi(_silo.Http), new PlaybackConnectionApi(_silo.Http),
+        new FakeSessionManager { State = SessionState.Ready, ActiveServer = ScriptedSilo.Server, ProfileId = "7" }, _time,
+        new LogSink().For<PlaybackSettingsViewModel>());
+
+    private LanguageSettingsViewModel Language() => new(_settings, new LogSink().For<LanguageSettingsViewModel>());
+
+    private void Capabilities(params string[] features) =>
+        _silo.On(HttpMethod.Get, "api/v2/playback/capabilities", ScriptedSilo.Json(HttpStatusCode.OK,
+            $$"""{ "revision": "1", "state": "available", "allowed": true, "installation_id": "i", "protocol_versions": [3], "features": [{{string.Join(",", features.Select(f => $"\"{f}\""))}}] }"""));
+
+    [Fact]
+    public async Task ThePlaybackPage_ShowsTheProfilesValues()
+    {
+        _settings.Set(SettingKeys.PreferredQuality, "\"original\"");
+        _settings.Set(SettingKeys.MaxBitrateKbps, "8000");
+        _settings.Set(SettingKeys.IntroSkipMode, "\"always\"");
+        _settings.Set(SettingKeys.AutoSkipCredits, "true", "profile_device");
+        _settings.Set(SettingKeys.SkipBackSeconds, "15");
+        Capabilities();
+        var page = Playback();
+
+        await page.LoadAsync(TestContext.Current.CancellationToken);
+
+        // A stored "original" is Auto; a bitrate off the ladder reads as itself.
+        Assert.Equal("auto", page.SelectedQuality?.Value);
+        Assert.Equal(PlaybackSettingsViewModel.AutoQualityDescription, page.QualityDescription);
+        Assert.Equal("8 Mbps", page.SelectedBitrate?.Label);
+        Assert.Contains(page.BitrateChoices, c => c.Label == "No limit");
+        Assert.Equal("Skip automatically", page.SelectedIntroSkip?.Label);
+        Assert.True(page.AutoSkipCredits);
+        Assert.True(page.AutoPlayNext);
+        Assert.Equal("15 seconds", page.SelectedRewind?.Label);
+        Assert.Equal("30 seconds", page.SelectedFastForward?.Label);
+        Assert.False(page.ShowsBuffering);
+        Assert.Empty(_settings.Writes);
+    }
+
+    [Fact]
+    public async Task AChange_IsSavedAtOnce_ClearingADeviceValueThatShadowedIt()
+    {
+        _settings.Set(SettingKeys.AutoSkipCredits, "true", "profile_device");
+        _settings.Set(SettingKeys.AutoSkipRecap, "false", "default");
+        _settings.Set(SettingKeys.MaxBitrateKbps, "8000");
+        Capabilities();
+        var page = Playback();
+        await page.LoadAsync(TestContext.Current.CancellationToken);
+
+        page.AutoSkipCredits = false;
+        page.AutoSkipRecaps = true;
+        page.SelectedBitrate = page.BitrateChoices.First(c => c.Label == "No limit");
+        page.SelectedBitrate = page.BitrateChoices.First(c => c.Label == "20 Mbps");
+
+        Assert.Equal(
+            [
+                "save playback.auto_skip_credits false clearing the device",
+                "save playback.auto_skip_recap true",
+                "reset playback.max_bitrate_kbps",
+                "save playback.max_bitrate_kbps 20000",
+            ],
+            _settings.Writes);
+    }
+
+    [Fact]
+    public async Task ASaveTheServerRefuses_PutsTheControlBack_AndSaysSo()
+    {
+        _settings.Set(SettingKeys.IntroSkipMode, "\"ask\"");
+        Capabilities();
+        var page = Playback();
+        await page.LoadAsync(TestContext.Current.CancellationToken);
+        _settings.Refuses = true;
+
+        page.SelectedIntroSkip = page.IntroSkipChoices[0];
+        await Until(() => page.ErrorMessage.Length > 0);
+
+        Assert.Equal("ask", page.SelectedIntroSkip?.Value);
+        Assert.Equal("Failed to save playback setting", page.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task ThisConnection_ShowsItsLearnedLimitAndSpeed_AndTheLimitCanBeReset()
+    {
+        _settings.Set(SettingKeys.BufferingQualityMode, "\"always\"");
+        Capabilities("buffering_quality_v1", "connection_speed_v1");
+        string connection(string limit) => $$"""
+            { "connection": "c1", "auto_budget_kbps": 26500, "learned_limit": {{limit}},
+              "probe": { "kbps": 33800, "lower_bound": true, "measured_at": "2026-10-01T10:00:00.000Z", "transport": "wifi" } }
+            """;
+        _silo.On(HttpMethod.Get, "api/v2/playback/connection",
+            ScriptedSilo.Json(HttpStatusCode.OK, connection("""{ "kbps": 44900, "observed_at": "2026-09-17T12:00:00.000Z", "expires_at": "2026-10-17T12:00:00.000Z" }""")),
+            ScriptedSilo.Json(HttpStatusCode.OK, connection("null")));
+        _silo.On(HttpMethod.Delete, "api/v2/playback/connection/learned-limit", ScriptedSilo.NoContent());
+        var page = Playback();
+
+        await page.LoadAsync(TestContext.Current.CancellationToken);
+
+        Assert.True(page.ShowsBuffering);
+        Assert.True(page.ShowsLearnedLimit);
+        Assert.Equal("Limited to 44 Mbps after buffering on Sep 17", page.LearnedLimitText);
+        Assert.Equal("Faster than 33 Mbps · measured 2 hours ago on Wi-Fi", page.ConnectionSpeedText);
+        Assert.Equal("Auto plays videos up to 26 Mbps without converting them.", page.BudgetText);
+
+        await page.ResetLearnedLimitCommand.ExecuteAsync(null);
+        Assert.False(page.ShowsLearnedLimit);
+    }
+
+    [Theory]
+    [InlineData(800, "800 kbps")]
+    [InlineData(4590, "4.5 Mbps")]
+    [InlineData(26999, "26 Mbps")]
+    public void ConnectionRates_AreRoundedDown(long kbps, string expected) =>
+        Assert.Equal(expected, PlaybackSettingsViewModel.ConnectionRate(kbps));
+
+    [Fact]
+    public async Task TheSubtitlesPage_EditsTheLookAsADraft_AndSavesItWhole()
+    {
+        _settings.Set(SettingKeys.AudioLanguage, "\"de\"");
+        _settings.Set(SettingKeys.SubtitleMode, "\"always\"");
+        _settings.Set(SettingKeys.SubtitleAppearance, """{ "fontSize": "small", "fontColor": "#ffffff", "backgroundStyle": "box" }""", "profile_device");
+        _settings.Set(SettingKeys.SubtitleSyncMs, "300");
+        var page = Language();
+        await page.LoadAsync(TestContext.Current.CancellationToken);
+        Assert.Equal("de", page.SelectedSpokenLanguage?.Value);
+        Assert.Equal("None", page.SelectedSubtitleLanguage?.Label);
+        Assert.Equal("Always on", page.SelectedSubtitleMode?.Label);
+        Assert.Equal("Small", page.SelectedFontSize?.Label);
+        Assert.True(page.IsBox);
+        Assert.Equal("+300 ms", page.OffsetText);
+        Assert.False(page.IsAppearanceChanged);
+
+        page.PickFontColor("#facc15");
+        page.SelectedPosition = page.PositionChoices[2];
+        Assert.True(page.IsAppearanceChanged);
+        Assert.Single(page.FontColorSwatches, s => s.IsSelected && s.Label == "Yellow");
+        Assert.Empty(_settings.Writes);
+
+        await page.SaveAppearanceCommand.ExecuteAsync(null);
+
+        var saved = Assert.Single(_settings.Writes);
+        Assert.StartsWith("save playback.subtitle_appearance {\"fontSize\":\"small\"", saved, StringComparison.Ordinal);
+        Assert.Contains("\"fontColor\":\"#facc15\"", saved, StringComparison.Ordinal);
+        Assert.Contains("\"position\":\"top\"", saved, StringComparison.Ordinal);
+        Assert.EndsWith("clearing the device", saved, StringComparison.Ordinal);
+        Assert.False(page.IsAppearanceChanged);
+    }
+
+    [Fact]
+    public async Task DiscardAndReset_BringBackTheSavedLook_AndTheDefault()
+    {
+        _settings.Set(SettingKeys.SubtitleAppearance, """{ "fontSize": "xxlarge", "backgroundStyle": "none" }""");
+        var page = Language();
+        await page.LoadAsync(TestContext.Current.CancellationToken);
+        Assert.True(page.IsAppearanceCustomized);
+
+        page.SelectedFontSize = page.FontSizeChoices[0];
+        page.DiscardAppearanceCommand.Execute(null);
+        Assert.Equal("XX-Large", page.SelectedFontSize?.Label);
+
+        await page.ResetAppearanceCommand.ExecuteAsync(null);
+        Assert.Equal(["reset playback.subtitle_appearance"], _settings.Writes);
+        Assert.Equal("Large", page.SelectedFontSize?.Label);
+        Assert.Equal("Box", page.SelectedBackgroundStyle?.Label);
+        Assert.False(page.IsAppearanceCustomized);
+    }
+
+    [Fact]
+    public async Task TheOffset_StepsBy100Ms_AndNoneClearsTheSubtitleLanguage()
+    {
+        _settings.Set(SettingKeys.SubtitleLanguage, "\"en\"");
+        var page = Language();
+        await page.LoadAsync(TestContext.Current.CancellationToken);
+
+        await page.OffsetEarlierCommand.ExecuteAsync(null);
+        await page.OffsetEarlierCommand.ExecuteAsync(null);
+        page.SelectedSubtitleLanguage = page.SubtitleLanguageChoices[0];
+
+        Assert.Equal("−200 ms", page.OffsetText);
+        Assert.Equal(["save player.subtitle_sync_ms -100", "save player.subtitle_sync_ms -200", "reset playback.subtitle_language"], _settings.Writes);
+    }
+
+    private static async Task Until(Func<bool> condition)
+    {
+        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(5);
+        while (!condition())
+        {
+            Assert.True(DateTime.UtcNow < deadline, "Timed out");
+            await Task.Delay(5, TestContext.Current.CancellationToken);
+        }
+    }
+}

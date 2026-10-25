@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Settings → Language & Subtitles, as on Silo's web (pages/settings/SubtitleAppearanceSettings.tsx). -->
+<UserControl
+    x:Class="Granary.App.Views.Settings.LanguageSettingsView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Granary.App.Controls"
+    xmlns:settings="using:Granary.Core.ViewModels.Settings">
+
+    <!-- Its own copy of the settings look: the view is made before it joins the page, whose resources it cannot see then. -->
+    <UserControl.Resources>
+        <ResourceDictionary>
+        <ResourceDictionary.MergedDictionaries>
+            <ResourceDictionary Source="ms-appx:///Themes/SiloSettings.xaml" />
+        </ResourceDictionary.MergedDictionaries>
+        <!-- A 28 px colour; the chosen one has a white ring around it, as the web's swatches. -->
+        <DataTemplate x:Key="SwatchTemplate" x:DataType="settings:ColorSwatch">
+            <Button Width="32" Height="32" Padding="0" CornerRadius="16" Background="Transparent" Tag="{x:Bind Hex}"
+                    BorderThickness="2" BorderBrush="{x:Bind controls:SettingsSwatches.Ring(IsSelected)}" Click="OnSwatchClick"
+                    AutomationProperties.Name="{x:Bind Label}" AutomationProperties.ItemStatus="{x:Bind controls:SettingsSwatches.Status(IsSelected)}"
+                    ToolTipService.ToolTip="{x:Bind Label}">
+                <Ellipse Width="24" Height="24" Fill="{x:Bind controls:SettingsSwatches.Fill(Hex)}" Stroke="#33FFFFFF" StrokeThickness="1" />
+            </Button>
+        </DataTemplate>
+        <ItemsPanelTemplate x:Key="SwatchPanel">
+            <StackPanel Orientation="Horizontal" Spacing="4" />
+        </ItemsPanelTemplate>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <StackPanel>
+        <TextBlock Text="Language &amp; Subtitles" Style="{StaticResource SiloSettingsPageTitleStyle}" AutomationProperties.HeadingLevel="Level1" />
+        <TextBlock Margin="0,8,0,32" Style="{StaticResource SiloSettingsMutedTextStyle}" FontSize="14"
+                   Text="The languages this profile prefers, when subtitles appear, and how they look." />
+        <InfoBar IsOpen="{x:Bind controls:SettingsText.Has(ViewModel.ErrorMessage), Mode=OneWay}" Severity="Error" IsClosable="False"
+                 Message="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}" Margin="0,0,0,16" />
+
+        <controls:SettingsGroup Title="Language">
+            <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Spoken language"
+                                  Description="Prefer a spoken language for this profile when multiple tracks are available.">
+                <ComboBox Style="{StaticResource SiloSettingsComboBoxStyle}" ItemsSource="{x:Bind ViewModel.SpokenLanguageChoices}"
+                          SelectedItem="{x:Bind ViewModel.SelectedSpokenLanguage, Mode=TwoWay}" MaxDropDownHeight="420" />
+            </controls:SettingsRow>
+        </controls:SettingsGroup>
+
+        <controls:SettingsGroup Title="Subtitles" Description="Which subtitles Silo picks for this profile.">
+            <StackPanel>
+                <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Subtitle language"
+                                      Description="Pick a subtitle language or leave subtitles off by default.">
+                    <ComboBox Style="{StaticResource SiloSettingsComboBoxStyle}" ItemsSource="{x:Bind ViewModel.SubtitleLanguageChoices}"
+                              SelectedItem="{x:Bind ViewModel.SelectedSubtitleLanguage, Mode=TwoWay}" MaxDropDownHeight="420" />
+                </controls:SettingsRow>
+                <controls:SettingsRow Label="Subtitle behavior" Description="Decide when subtitles should appear.">
+                    <ComboBox Style="{StaticResource SiloSettingsComboBoxStyle}" ItemsSource="{x:Bind ViewModel.SubtitleModeChoices}"
+                              SelectedItem="{x:Bind ViewModel.SelectedSubtitleMode, Mode=TwoWay}" />
+                </controls:SettingsRow>
+                <controls:SettingsRow Label="Show forced subtitles" Description="Display forced subtitles for foreign-language dialogue.">
+                    <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.ShowForcedSubtitles, Mode=TwoWay}" />
+                </controls:SettingsRow>
+            </StackPanel>
+        </controls:SettingsGroup>
+
+        <!-- The preview's title column has Reset beside the title, so it is laid out as a group by hand. -->
+        <Border Padding="0,32" BorderThickness="0,1,0,0" BorderBrush="{StaticResource SiloSettingsHairlineBrush}">
+            <Grid ColumnSpacing="48">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="256" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Spacing="6">
+                    <Grid>
+                        <TextBlock Text="Preview" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="15"
+                                   Foreground="{StaticResource SiloForegroundBrush}" VerticalAlignment="Center" AutomationProperties.HeadingLevel="Level2" />
+                        <Button HorizontalAlignment="Right" Padding="8,4" Background="Transparent" BorderThickness="0"
+                                Command="{x:Bind ViewModel.ResetAppearanceCommand}" Visibility="{x:Bind ViewModel.IsAppearanceCustomized, Mode=OneWay}"
+                                AutomationProperties.Name="Reset subtitle appearance to the default">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <FontIcon Glyph="&#xE7A7;" FontSize="12" />
+                                <TextBlock Text="Reset" FontFamily="{StaticResource SiloFontMedium}" FontSize="14" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+                    <TextBlock Text="How subtitles look for this profile on every device." Style="{StaticResource SiloSettingsMutedTextStyle}" />
+                </StackPanel>
+                <StackPanel Grid.Column="1" Spacing="16">
+                    <controls:SubtitlePreview Appearance="{x:Bind ViewModel.Appearance, Mode=OneWay}" />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Content="Save Appearance" Style="{StaticResource SiloPrimaryButtonStyle}" controls:Pill.IsEnabled="False" CornerRadius="8"
+                                Command="{x:Bind ViewModel.SaveAppearanceCommand}" />
+                        <Button Content="Discard Changes" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Command="{x:Bind ViewModel.DiscardAppearanceCommand}" />
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <controls:SettingsGroup Title="Text" Description="Adjust the look and readability of subtitle text.">
+            <StackPanel>
+                <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Font size">
+                    <ComboBox Style="{StaticResource SiloSettingsComboBoxStyle}" Width="192" ItemsSource="{x:Bind ViewModel.FontSizeChoices}"
+                              SelectedItem="{x:Bind ViewModel.SelectedFontSize, Mode=TwoWay}" />
+                </controls:SettingsRow>
+                <controls:SettingsRow Label="Font family">
+                    <ComboBox Style="{StaticResource SiloSettingsComboBoxStyle}" Width="192" ItemsSource="{x:Bind ViewModel.FontFamilyChoices}"
+                              SelectedItem="{x:Bind ViewModel.SelectedFontFamily, Mode=TwoWay}" />
+                </controls:SettingsRow>
+                <controls:SettingsRow Label="Font color">
+                    <ItemsControl ItemsSource="{x:Bind ViewModel.FontColorSwatches, Mode=OneWay}" ItemTemplate="{StaticResource SwatchTemplate}"
+                                  ItemsPanel="{StaticResource SwatchPanel}" Tag="font" IsTabStop="False" />
+                </controls:SettingsRow>
+                <controls:SettingsRow Label="Text opacity" Description="How transparent the subtitle text itself is.">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <NumberBox Width="80" Minimum="1" Maximum="100" SmallChange="5" LargeChange="10"
+                                   Value="{x:Bind ViewModel.TextOpacity, Mode=TwoWay}" AutomationProperties.Name="Text opacity in percent" />
+                        <TextBlock Text="%" VerticalAlignment="Center" Foreground="{StaticResource SiloMutedBrush}" />
+                    </StackPanel>
+                </controls:SettingsRow>
+                <controls:SettingsRow Label="Text outline">
+                    <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.TextOutline, Mode=TwoWay}" />
+                </controls:SettingsRow>
+                <controls:SettingsRow Label="Outline color" Description="Only used when text outline is enabled.">
+                    <ItemsControl ItemsSource="{x:Bind ViewModel.OutlineColorSwatches, Mode=OneWay}" ItemTemplate="{StaticResource SwatchTemplate}"
+                                  ItemsPanel="{StaticResource SwatchPanel}" Tag="outline" IsTabStop="False"
+                                  Opacity="{x:Bind controls:SettingsText.Dim(ViewModel.TextOutline), Mode=OneWay}" />
+                </controls:SettingsRow>
+            </StackPanel>
+        </controls:SettingsGroup>
+
+        <controls:SettingsGroup Title="Background &amp; Position" Description="Tune subtitle placement and contrast.">
+            <StackPanel>
+                <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Background style">
+                    <ComboBox Style="{StaticResource SiloSettingsComboBoxStyle}" Width="192" ItemsSource="{x:Bind ViewModel.BackgroundStyleChoices}"
+                              SelectedItem="{x:Bind ViewModel.SelectedBackgroundStyle, Mode=TwoWay}" />
+                </controls:SettingsRow>
+                <controls:SettingsRow Label="Background opacity" Description="Only used for boxed subtitles.">
+                    <StackPanel Orientation="Horizontal" Spacing="8" Opacity="{x:Bind controls:SettingsText.Dim(ViewModel.IsBox), Mode=OneWay}">
+                        <NumberBox Width="80" Minimum="0" Maximum="100" SmallChange="5" LargeChange="10"
+                                   Value="{x:Bind ViewModel.BackgroundOpacity, Mode=TwoWay}" IsEnabled="{x:Bind ViewModel.IsBox, Mode=OneWay}"
+                                   AutomationProperties.Name="Background opacity in percent" />
+                        <TextBlock Text="%" VerticalAlignment="Center" Foreground="{StaticResource SiloMutedBrush}" />
+                    </StackPanel>
+                </controls:SettingsRow>
+                <controls:SettingsRow Label="Background color">
+                    <ItemsControl ItemsSource="{x:Bind ViewModel.BackgroundColorSwatches, Mode=OneWay}" ItemTemplate="{StaticResource SwatchTemplate}"
+                                  ItemsPanel="{StaticResource SwatchPanel}" Tag="background" IsTabStop="False"
+                                  Opacity="{x:Bind controls:SettingsText.Dim(ViewModel.IsBox), Mode=OneWay}" />
+                </controls:SettingsRow>
+                <controls:SettingsRow Label="Subtitle position">
+                    <ComboBox Style="{StaticResource SiloSettingsComboBoxStyle}" Width="192" ItemsSource="{x:Bind ViewModel.PositionChoices}"
+                              SelectedItem="{x:Bind ViewModel.SelectedPosition, Mode=TwoWay}" />
+                </controls:SettingsRow>
+            </StackPanel>
+        </controls:SettingsGroup>
+
+        <controls:SettingsGroup Title="Timing" Description="Shift every subtitle earlier or later. Applies to this profile on every device.">
+            <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Subtitle offset"
+                                  Description="Negative values show subtitles earlier, positive values later.">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Width="36" Height="36" Padding="0" Style="{StaticResource SiloSettingsOutlineButtonStyle}"
+                            Command="{x:Bind ViewModel.OffsetEarlierCommand}" IsEnabled="{x:Bind ViewModel.CanOffsetEarlier, Mode=OneWay}"
+                            AutomationProperties.Name="Show subtitles 100 ms earlier">
+                        <FontIcon Glyph="&#xE738;" FontSize="12" />
+                    </Button>
+                    <TextBlock MinWidth="72" Text="{x:Bind ViewModel.OffsetText, Mode=OneWay}" FontFamily="Consolas" FontSize="13" TextAlignment="Center"
+                               VerticalAlignment="Center" Foreground="{StaticResource SiloForegroundBrush}" AutomationProperties.LiveSetting="Polite" />
+                    <Button Width="36" Height="36" Padding="0" Style="{StaticResource SiloSettingsOutlineButtonStyle}"
+                            Command="{x:Bind ViewModel.OffsetLaterCommand}" IsEnabled="{x:Bind ViewModel.CanOffsetLater, Mode=OneWay}"
+                            AutomationProperties.Name="Show subtitles 100 ms later">
+                        <FontIcon Glyph="&#xE710;" FontSize="12" />
+                    </Button>
+                    <Button Content="Reset" Padding="12,0" Background="Transparent" BorderThickness="0" Foreground="{StaticResource SiloMutedBrush}"
+                            Command="{x:Bind ViewModel.ResetOffsetCommand}" IsEnabled="{x:Bind ViewModel.CanResetOffset, Mode=OneWay}"
+                            AutomationProperties.Name="Reset subtitle offset" />
+                </StackPanel>
+            </controls:SettingsRow>
+        </controls:SettingsGroup>
+    </StackPanel>
+</UserControl>
