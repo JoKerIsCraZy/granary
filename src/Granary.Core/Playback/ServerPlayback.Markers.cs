@@ -62,7 +62,8 @@ public sealed partial class ServerPlayback
                 }
                 var before = Markers;
                 _readMarkers = (fileId, markers);
-                if (!before.SequenceEqual(Markers))
+                // A renewed picture counts too: the seek bar shows it, and the signed address of the one before expires.
+                if (!before.SequenceEqual(Markers) || !before.Select(m => m.ThumbnailUrl).SequenceEqual(Markers.Select(m => m.ThumbnailUrl)))
                 {
                     MarkersChanged?.Invoke(this, EventArgs.Empty);
                 }

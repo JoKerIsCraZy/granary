@@ -21,9 +21,8 @@ public sealed partial class SeekBar
     // A few sheets stay decoded: scrubbing back and forth crosses the same ones.
     private const int KeptSheets = 3;
 
-    private readonly List<(Uri Url, BitmapImage Bitmap)> _sheets = [];
-    private readonly HashSet<Uri> _loadedSheets = [];
-    private readonly HashSet<Uri> _failedSheets = [];
+    // Most recently used last. Each sheet knows its own state, so the late events of one already let go change nothing.
+    private readonly List<SheetEntry> _sheets = [];
     private Uri? _pictureUrl;
     private bool _pictureFailed;
     private (double Seconds, double X)? _tip;
@@ -39,8 +38,6 @@ public sealed partial class SeekBar
     private void OnTrickplayChanged()
     {
         _sheets.Clear();
-        _loadedSheets.Clear();
-        _failedSheets.Clear();
         ShowTipAgain();
     }
 
@@ -80,13 +77,13 @@ public sealed partial class SeekBar
             // The next one too, so scrubbing forward rarely waits.
             Sheet(trickplay, trickplay.Sheets[tile.Sheet + 1]);
         }
-        if (!_loadedSheets.Contains(tile.Url) || _failedSheets.Contains(tile.Url))
+        if (!sheet.IsLoaded || sheet.HasFailed)
         {
             return false;
         }
         double scale = PictureWidth / trickplay.Width;
         double height = trickplay.Height * scale;
-        TipTileImage.Source = sheet;
+        TipTileImage.Source = sheet.Bitmap;
         TipTileImage.Width = trickplay.Columns * trickplay.Width * scale;
         TipTileImage.Height = trickplay.Rows * trickplay.Height * scale;
         Canvas.SetLeft(TipTileImage, -tile.X * scale);
@@ -98,7 +95,7 @@ public sealed partial class SeekBar
         return true;
     }
 
-    private BitmapImage Sheet(PlayerTrickplay trickplay, Uri url)
+    private SheetEntry Sheet(PlayerTrickplay trickplay, Uri url)
     {
         int index = _sheets.FindIndex(s => s.Url == url);
         if (index >= 0)
@@ -106,23 +103,37 @@ public sealed partial class SeekBar
             var kept = _sheets[index];
             _sheets.RemoveAt(index);
             _sheets.Add(kept);
-            return kept.Bitmap;
+            return kept;
         }
         // Decoded as wide as the bubble shows it, not at the sheet's own size.
-        var bitmap = Artwork.Load(url, (int)Math.Ceiling(trickplay.Columns * PictureWidth))!;
-        bitmap.ImageOpened += (_, _) =>
+        var entry = new SheetEntry(url, Artwork.Load(url, (int)Math.Ceiling(trickplay.Columns * PictureWidth))!);
+        entry.Bitmap.ImageOpened += (_, _) =>
         {
-            _loadedSheets.Add(url);
-            ShowTipAgain();
+            entry.IsLoaded = true;
+            if (_sheets.Contains(entry))
+            {
+                ShowTipAgain();
+            }
         };
-        bitmap.ImageFailed += (_, _) => _failedSheets.Add(url);
-        _sheets.Add((url, bitmap));
+        entry.Bitmap.ImageFailed += (_, _) => entry.HasFailed = true;
+        _sheets.Add(entry);
         if (_sheets.Count > KeptSheets)
         {
-            _loadedSheets.Remove(_sheets[0].Url);
+            // A sheet let go is loaded afresh when it is wanted again, and a failed one is tried again.
             _sheets.RemoveAt(0);
         }
-        return bitmap;
+        return entry;
+    }
+
+    private sealed class SheetEntry(Uri url, BitmapImage bitmap)
+    {
+        public Uri Url { get; } = url;
+
+        public BitmapImage Bitmap { get; } = bitmap;
+
+        public bool IsLoaded { get; set; }
+
+        public bool HasFailed { get; set; }
     }
 
     // A picture that arrives while the bubble shows takes its place at once.

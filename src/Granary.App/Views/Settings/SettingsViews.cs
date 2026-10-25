@@ -1,4 +1,5 @@
 using Granary.Core.ViewModels.Settings;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -13,7 +14,14 @@ public sealed partial class PlaybackSettingsView : UserControl
     {
         ViewModel = ActivatorUtilities.CreateInstance<PlaybackSettingsViewModel>(App.Services);
         InitializeComponent();
-        Loaded += async (_, _) => await ViewModel.LoadAsync();
+        // Once: the page keeps the view, and coming back to it must not overwrite what is shown.
+        Loaded += OnFirstLoaded;
+    }
+
+    private async void OnFirstLoaded(object sender, RoutedEventArgs e)
+    {
+        Loaded -= OnFirstLoaded;
+        await SettingsViewLoad.RunAsync(ViewModel.LoadAsync);
     }
 
     public PlaybackSettingsViewModel ViewModel { get; }
@@ -26,7 +34,13 @@ public sealed partial class LanguageSettingsView : UserControl
     {
         ViewModel = ActivatorUtilities.CreateInstance<LanguageSettingsViewModel>(App.Services);
         InitializeComponent();
-        Loaded += async (_, _) => await ViewModel.LoadAsync();
+        Loaded += OnFirstLoaded;
+    }
+
+    private async void OnFirstLoaded(object sender, RoutedEventArgs e)
+    {
+        Loaded -= OnFirstLoaded;
+        await SettingsViewLoad.RunAsync(ViewModel.LoadAsync);
     }
 
     public LanguageSettingsViewModel ViewModel { get; }
@@ -46,14 +60,30 @@ public sealed partial class LanguageSettingsView : UserControl
         switch ((parent as ItemsControl)?.Tag as string)
         {
             case "font":
-                ViewModel.PickFontColor(hex);
+                ViewModel.Look.PickFontColor(hex);
                 break;
             case "outline":
-                ViewModel.PickOutlineColor(hex);
+                ViewModel.Look.PickOutlineColor(hex);
                 break;
             case "background":
-                ViewModel.PickBackgroundColor(hex);
+                ViewModel.Look.PickBackgroundColor(hex);
                 break;
+        }
+    }
+}
+
+/// <summary>A settings view's first read: the page says what went wrong itself, and nothing escapes the event handler.</summary>
+internal static class SettingsViewLoad
+{
+    public static async Task RunAsync(Func<CancellationToken, Task> load)
+    {
+        try
+        {
+            await load(CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            App.Services.GetRequiredService<ILoggerFactory>().CreateLogger(typeof(SettingsViewLoad)).LogError(ex, "A settings page could not load");
         }
     }
 }

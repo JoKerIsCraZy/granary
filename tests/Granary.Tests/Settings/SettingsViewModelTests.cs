@@ -32,10 +32,20 @@ internal sealed class FakeProfileSettings : IProfileSettings
 
     public Task ResetAsync(string key, CancellationToken cancellationToken) => Write($"reset {key}");
 
-    private Task Write(string write)
+    /// <summary>While set, writes wait for it: saves on their way.</summary>
+    public TaskCompletionSource? Gate { get; set; }
+
+    private async Task Write(string write)
     {
         Writes.Add(write);
-        return Refuses ? Task.FromException(new SiloApiException(422, new ApiProblem(ApiProblem.TypeOrigin + "validation_failed", "validation_failed", 422, null, null, null))) : Task.CompletedTask;
+        if (Gate is { } gate)
+        {
+            await gate.Task;
+        }
+        if (Refuses)
+        {
+            throw new SiloApiException(422, new ApiProblem(ApiProblem.TypeOrigin + "validation_failed", "validation_failed", 422, null, null, null));
+        }
     }
 }
 
@@ -151,6 +161,40 @@ public sealed class SettingsViewModelTests
         Assert.False(page.ShowsLearnedLimit);
     }
 
+    [Fact]
+    public async Task SavesGoOutInOrder_AndARefusalOnlyTakesBackWhatIsStillShown()
+    {
+        _settings.Set(SettingKeys.IntroSkipMode, "\"ask\"");
+        Capabilities();
+        var page = Playback();
+        await page.LoadAsync(TestContext.Current.CancellationToken);
+        _settings.Refuses = true;
+        _settings.Gate = new TaskCompletionSource();
+
+        page.SelectedIntroSkip = page.IntroSkipChoices[0];
+        page.SelectedIntroSkip = page.IntroSkipChoices[2];
+        Assert.Equal(["save playback.intro_skip_mode \"never\""], _settings.Writes);
+        _settings.Gate.SetResult();
+        await Until(() => _settings.Writes.Count == 2 && page.SelectedIntroSkip?.Value == "ask");
+
+        // Never failed while Skip automatically showed, which then failed too: back to what the server holds.
+        Assert.Equal("save playback.intro_skip_mode \"always\"", _settings.Writes[1]);
+        Assert.Equal("ask", page.SelectedIntroSkip?.Value);
+    }
+
+    [Fact]
+    public async Task ALanguageTheListDoesNotHave_JoinsIt()
+    {
+        _settings.Set(SettingKeys.AudioLanguage, "\"pt-AO\"");
+        var page = Language();
+
+        await page.LoadAsync(TestContext.Current.CancellationToken);
+
+        Assert.Same(page.SelectedSpokenLanguage, page.SpokenLanguageChoices.Single(c => c.Value == "pt-AO"));
+        Assert.Equal("No preference", page.SpokenLanguageChoices[0].Label);
+        Assert.Empty(_settings.Writes);
+    }
+
     [Theory]
     [InlineData(800, "800 kbps")]
     [InlineData(4590, "4.5 Mbps")]
@@ -170,15 +214,15 @@ public sealed class SettingsViewModelTests
         Assert.Equal("de", page.SelectedSpokenLanguage?.Value);
         Assert.Equal("None", page.SelectedSubtitleLanguage?.Label);
         Assert.Equal("Always on", page.SelectedSubtitleMode?.Label);
-        Assert.Equal("Small", page.SelectedFontSize?.Label);
-        Assert.True(page.IsBox);
+        Assert.Equal("Small", page.Look.SelectedFontSize?.Label);
+        Assert.True(page.Look.IsBox);
         Assert.Equal("+300 ms", page.OffsetText);
         Assert.False(page.IsAppearanceChanged);
 
-        page.PickFontColor("#facc15");
-        page.SelectedPosition = page.PositionChoices[2];
+        page.Look.PickFontColor("#facc15");
+        page.Look.SelectedPosition = page.Look.PositionChoices[2];
         Assert.True(page.IsAppearanceChanged);
-        Assert.Single(page.FontColorSwatches, s => s.IsSelected && s.Label == "Yellow");
+        Assert.Single(page.Look.FontColorSwatches, s => s.IsSelected && s.Label == "Yellow");
         Assert.Empty(_settings.Writes);
 
         await page.SaveAppearanceCommand.ExecuteAsync(null);
@@ -199,14 +243,14 @@ public sealed class SettingsViewModelTests
         await page.LoadAsync(TestContext.Current.CancellationToken);
         Assert.True(page.IsAppearanceCustomized);
 
-        page.SelectedFontSize = page.FontSizeChoices[0];
+        page.Look.SelectedFontSize = page.Look.FontSizeChoices[0];
         page.DiscardAppearanceCommand.Execute(null);
-        Assert.Equal("XX-Large", page.SelectedFontSize?.Label);
+        Assert.Equal("XX-Large", page.Look.SelectedFontSize?.Label);
 
         await page.ResetAppearanceCommand.ExecuteAsync(null);
         Assert.Equal(["reset playback.subtitle_appearance"], _settings.Writes);
-        Assert.Equal("Large", page.SelectedFontSize?.Label);
-        Assert.Equal("Box", page.SelectedBackgroundStyle?.Label);
+        Assert.Equal("Large", page.Look.SelectedFontSize?.Label);
+        Assert.Equal("Box", page.Look.SelectedBackgroundStyle?.Label);
         Assert.False(page.IsAppearanceCustomized);
     }
 

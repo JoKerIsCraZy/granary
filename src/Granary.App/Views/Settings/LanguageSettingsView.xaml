@@ -83,7 +83,7 @@
                     <TextBlock Text="How subtitles look for this profile on every device." Style="{StaticResource SiloSettingsMutedTextStyle}" />
                 </StackPanel>
                 <StackPanel Grid.Column="1" Spacing="16">
-                    <controls:SubtitlePreview Appearance="{x:Bind ViewModel.Appearance, Mode=OneWay}" />
+                    <controls:SubtitlePreview Appearance="{x:Bind ViewModel.Look.Appearance, Mode=OneWay}" />
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <Button Content="Save Appearance" Style="{StaticResource SiloPrimaryButtonStyle}" controls:Pill.IsEnabled="False" CornerRadius="8"
                                 Command="{x:Bind ViewModel.SaveAppearanceCommand}" />
@@ -96,31 +96,31 @@
         <controls:SettingsGroup Title="Text" Description="Adjust the look and readability of subtitle text.">
             <StackPanel>
                 <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Font size">
-                    <ComboBox Style="{StaticResource SiloSettingsComboBoxStyle}" Width="192" ItemsSource="{x:Bind ViewModel.FontSizeChoices}"
-                              SelectedItem="{x:Bind ViewModel.SelectedFontSize, Mode=TwoWay}" />
+                    <ComboBox Style="{StaticResource SiloSettingsComboBoxStyle}" Width="192" ItemsSource="{x:Bind ViewModel.Look.FontSizeChoices}"
+                              SelectedItem="{x:Bind ViewModel.Look.SelectedFontSize, Mode=TwoWay}" />
                 </controls:SettingsRow>
                 <controls:SettingsRow Label="Font family">
-                    <ComboBox Style="{StaticResource SiloSettingsComboBoxStyle}" Width="192" ItemsSource="{x:Bind ViewModel.FontFamilyChoices}"
-                              SelectedItem="{x:Bind ViewModel.SelectedFontFamily, Mode=TwoWay}" />
+                    <ComboBox Style="{StaticResource SiloSettingsComboBoxStyle}" Width="192" ItemsSource="{x:Bind ViewModel.Look.FontFamilyChoices}"
+                              SelectedItem="{x:Bind ViewModel.Look.SelectedFontFamily, Mode=TwoWay}" />
                 </controls:SettingsRow>
                 <controls:SettingsRow Label="Font color">
-                    <ItemsControl ItemsSource="{x:Bind ViewModel.FontColorSwatches, Mode=OneWay}" ItemTemplate="{StaticResource SwatchTemplate}"
+                    <ItemsControl ItemsSource="{x:Bind ViewModel.Look.FontColorSwatches, Mode=OneWay}" ItemTemplate="{StaticResource SwatchTemplate}"
                                   ItemsPanel="{StaticResource SwatchPanel}" Tag="font" IsTabStop="False" />
                 </controls:SettingsRow>
                 <controls:SettingsRow Label="Text opacity" Description="How transparent the subtitle text itself is.">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <NumberBox Width="80" Minimum="1" Maximum="100" SmallChange="5" LargeChange="10"
-                                   Value="{x:Bind ViewModel.TextOpacity, Mode=TwoWay}" AutomationProperties.Name="Text opacity in percent" />
+                                   Value="{x:Bind ViewModel.Look.TextOpacity, Mode=TwoWay}" AutomationProperties.Name="Text opacity in percent" />
                         <TextBlock Text="%" VerticalAlignment="Center" Foreground="{StaticResource SiloMutedBrush}" />
                     </StackPanel>
                 </controls:SettingsRow>
                 <controls:SettingsRow Label="Text outline">
-                    <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.TextOutline, Mode=TwoWay}" />
+                    <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.Look.TextOutline, Mode=TwoWay}" />
                 </controls:SettingsRow>
                 <controls:SettingsRow Label="Outline color" Description="Only used when text outline is enabled.">
-                    <ItemsControl ItemsSource="{x:Bind ViewModel.OutlineColorSwatches, Mode=OneWay}" ItemTemplate="{StaticResource SwatchTemplate}"
+                    <ItemsControl ItemsSource="{x:Bind ViewModel.Look.OutlineColorSwatches, Mode=OneWay}" ItemTemplate="{StaticResource SwatchTemplate}"
                                   ItemsPanel="{StaticResource SwatchPanel}" Tag="outline" IsTabStop="False"
-                                  Opacity="{x:Bind controls:SettingsText.Dim(ViewModel.TextOutline), Mode=OneWay}" />
+                                  Opacity="{x:Bind controls:SettingsText.Dim(ViewModel.Look.TextOutline), Mode=OneWay}" />
                 </controls:SettingsRow>
             </StackPanel>
         </controls:SettingsGroup>
@@ -128,25 +128,25 @@
         <controls:SettingsGroup Title="Background &amp; Position" Description="Tune subtitle placement and contrast.">
             <StackPanel>
                 <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Background style">
-                    <ComboBox Style="{StaticResource SiloSettingsComboBoxStyle}" Width="192" ItemsSource="{x:Bind ViewModel.BackgroundStyleChoices}"
-                              SelectedItem="{x:Bind ViewModel.SelectedBackgroundStyle, Mode=TwoWay}" />
+                    <ComboBox Style="{StaticResource SiloSettingsComboBoxStyle}" Width="192" ItemsSource="{x:Bind ViewModel.Look.BackgroundStyleChoices}"
+                              SelectedItem="{x:Bind ViewModel.Look.SelectedBackgroundStyle, Mode=TwoWay}" />
                 </controls:SettingsRow>
                 <controls:SettingsRow Label="Background opacity" Description="Only used for boxed subtitles.">
-                    <StackPanel Orientation="Horizontal" Spacing="8" Opacity="{x:Bind controls:SettingsText.Dim(ViewModel.IsBox), Mode=OneWay}">
+                    <StackPanel Orientation="Horizontal" Spacing="8" Opacity="{x:Bind controls:SettingsText.Dim(ViewModel.Look.IsBox), Mode=OneWay}">
                         <NumberBox Width="80" Minimum="0" Maximum="100" SmallChange="5" LargeChange="10"
-                                   Value="{x:Bind ViewModel.BackgroundOpacity, Mode=TwoWay}" IsEnabled="{x:Bind ViewModel.IsBox, Mode=OneWay}"
+                                   Value="{x:Bind ViewModel.Look.BackgroundOpacity, Mode=TwoWay}" IsEnabled="{x:Bind ViewModel.Look.IsBox, Mode=OneWay}"
                                    AutomationProperties.Name="Background opacity in percent" />
                         <TextBlock Text="%" VerticalAlignment="Center" Foreground="{StaticResource SiloMutedBrush}" />
                     </StackPanel>
                 </controls:SettingsRow>
                 <controls:SettingsRow Label="Background color">
-                    <ItemsControl ItemsSource="{x:Bind ViewModel.BackgroundColorSwatches, Mode=OneWay}" ItemTemplate="{StaticResource SwatchTemplate}"
+                    <ItemsControl ItemsSource="{x:Bind ViewModel.Look.BackgroundColorSwatches, Mode=OneWay}" ItemTemplate="{StaticResource SwatchTemplate}"
                                   ItemsPanel="{StaticResource SwatchPanel}" Tag="background" IsTabStop="False"
-                                  Opacity="{x:Bind controls:SettingsText.Dim(ViewModel.IsBox), Mode=OneWay}" />
+                                  Opacity="{x:Bind controls:SettingsText.Dim(ViewModel.Look.IsBox), Mode=OneWay}" />
                 </controls:SettingsRow>
                 <controls:SettingsRow Label="Subtitle position">
-                    <ComboBox Style="{StaticResource SiloSettingsComboBoxStyle}" Width="192" ItemsSource="{x:Bind ViewModel.PositionChoices}"
-                              SelectedItem="{x:Bind ViewModel.SelectedPosition, Mode=TwoWay}" />
+                    <ComboBox Style="{StaticResource SiloSettingsComboBoxStyle}" Width="192" ItemsSource="{x:Bind ViewModel.Look.PositionChoices}"
+                              SelectedItem="{x:Bind ViewModel.Look.SelectedPosition, Mode=TwoWay}" />
                 </controls:SettingsRow>
             </StackPanel>
         </controls:SettingsGroup>

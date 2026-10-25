@@ -13,6 +13,9 @@ public sealed partial class ServerPlayback
     private static readonly TimeSpan TrickplayRetry = TimeSpan.FromMinutes(1);
 
     private PlayerTrickplay? _trickplay;
+
+    // Disposed without a stop (an app closing fast): a read on its way must not start the refresh again.
+    private bool _trickplayEnded;
     private string? _trickplayFile;
     private ITimer? _trickplayRefresh;
 
@@ -62,7 +65,7 @@ public sealed partial class ServerPlayback
         }
         _dispatcher.Post(() =>
         {
-            if (_stopping || _trickplayFile != fileId)
+            if (_stopping || _trickplayEnded || _trickplayFile != fileId)
             {
                 return;
             }
@@ -75,7 +78,7 @@ public sealed partial class ServerPlayback
             _trickplayRefresh = again is { } wait
                 ? _time.CreateTimer(_ => _dispatcher.Post(() =>
                 {
-                    if (!_stopping && _trickplayFile == fileId)
+                    if (!_stopping && !_trickplayEnded && _trickplayFile == fileId)
                     {
                         _ = ReadTrickplayAsync(fileId);
                     }
@@ -88,6 +91,7 @@ public sealed partial class ServerPlayback
 
     private void StopTrickplay()
     {
+        _trickplayEnded = true;
         _trickplayRefresh?.Dispose();
         _trickplayRefresh = null;
     }

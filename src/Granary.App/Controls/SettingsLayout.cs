@@ -52,8 +52,12 @@ public sealed partial class SettingsRow : ContentControl
         new PropertyMetadata("", (sender, _) => ((SettingsRow)sender).NameControl()));
 
     public static readonly DependencyProperty DescriptionProperty = DependencyProperty.Register(nameof(Description), typeof(string),
-        typeof(SettingsRow), new PropertyMetadata("", (sender, e) => ((SettingsRow)sender).DescriptionVisibility =
-            string.IsNullOrEmpty(e.NewValue as string) ? Visibility.Collapsed : Visibility.Visible));
+        typeof(SettingsRow), new PropertyMetadata("", (sender, e) =>
+        {
+            var row = (SettingsRow)sender;
+            row.DescriptionVisibility = string.IsNullOrEmpty(e.NewValue as string) ? Visibility.Collapsed : Visibility.Visible;
+            row.NameControl();
+        }));
 
     public static readonly DependencyProperty DescriptionVisibilityProperty =
         DependencyProperty.Register(nameof(DescriptionVisibility), typeof(Visibility), typeof(SettingsRow), new PropertyMetadata(Visibility.Collapsed));
@@ -82,6 +86,9 @@ public sealed partial class SettingsRow : ContentControl
         private set => SetValue(DescriptionVisibilityProperty, value);
     }
 
+    // The control the row names: set here, and kept in step with the label and the description.
+    private DependencyObject? _named;
+
     // A control without a name of its own is called by its row's label, with the description as its help.
     private void NameControl()
     {
@@ -89,13 +96,15 @@ public sealed partial class SettingsRow : ContentControl
         {
             return;
         }
-        if (string.IsNullOrEmpty(Microsoft.UI.Xaml.Automation.AutomationProperties.GetName(control)))
+        if (!ReferenceEquals(control, _named))
         {
-            Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(control, Label);
+            if (!string.IsNullOrEmpty(Microsoft.UI.Xaml.Automation.AutomationProperties.GetName(control)))
+            {
+                return;
+            }
+            _named = control;
         }
-        if (!string.IsNullOrEmpty(Description))
-        {
-            Microsoft.UI.Xaml.Automation.AutomationProperties.SetHelpText(control, Description);
-        }
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(control, Label);
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetHelpText(control, Description ?? "");
     }
 }

@@ -16,9 +16,7 @@ namespace Granary.Core.ViewModels.Settings;
 /// keeps for itself is cleared with it, so the control shows what was saved. A save the server refuses puts the
 /// control back and says so.
 /// </summary>
-public sealed partial class PlaybackSettingsViewModel(
-    IProfileSettings settings, PlaybackApi playback, PlaybackConnectionApi connection, ISessionManager session, TimeProvider time,
-    ILogger<PlaybackSettingsViewModel> logger) : ObservableObject
+public sealed partial class PlaybackSettingsViewModel : ObservableObject
 {
     public const string AutoQualityDescription = "Plays the original file whenever your device and connection can handle it.";
     public const string QualityDescriptionText = "The resolution your profile should request when playback begins.";
@@ -33,8 +31,31 @@ public sealed partial class PlaybackSettingsViewModel(
     // The ladder of the web's bitrate select (lib/bitrateOptions.ts), within the setting's 100 to 200000 kbps.
     private static readonly int[] BitrateLadderKbps = [1500, 2000, 4000, 6000, 10000, 15000, 20000, 40000, 60000, 100000, 200000];
 
+    private readonly IProfileSettings _settings;
+    private readonly PlaybackApi _playback;
+    private readonly PlaybackConnectionApi _connectionApi;
+    private readonly ISessionManager _session;
+    private readonly TimeProvider _time;
+    private readonly ILogger<PlaybackSettingsViewModel> _logger;
+    private readonly SettingSaves _saves;
     private readonly Dictionary<string, string?> _sources = [];
+
+    // What the server holds for each control, as far as this page knows: a refused save goes back to it.
+    private readonly Dictionary<string, object?> _confirmed = [];
     private bool _applying;
+
+    public PlaybackSettingsViewModel(
+        IProfileSettings settings, PlaybackApi playback, PlaybackConnectionApi connection, ISessionManager session, TimeProvider time,
+        ILogger<PlaybackSettingsViewModel> logger)
+    {
+        _settings = settings;
+        _playback = playback;
+        _connectionApi = connection;
+        _session = session;
+        _time = time;
+        _logger = logger;
+        _saves = new SettingSaves(logger);
+    }
 
     public IReadOnlyList<SettingChoice> QualityChoices { get; } =
     [
@@ -125,13 +146,13 @@ public sealed partial class PlaybackSettingsViewModel(
         ErrorMessage = "";
         try
         {
-            var values = await settings.ReadAsync(Keys, cancellationToken);
+            var values = await _settings.ReadAsync(Keys, cancellationToken);
             Apply(values);
             await LoadConnectionAsync(cancellationToken);
         }
-        catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex, cancellationToken))
+        catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex, cancellationToken) || ex is InvalidOperationException)
         {
-            logger.LogInformation("The playback settings could not be read: {Failure}", ApiFailureText.Describe(ex));
+            _logger.LogInformation("The playback settings could not be read: {Failure}", ApiFailureText.Describe(ex));
             ErrorMessage = "Could not load the playback settings. " + ApiFailureText.Describe(ex);
         }
         finally
@@ -143,19 +164,19 @@ public sealed partial class PlaybackSettingsViewModel(
     [RelayCommand]
     private async Task ResetLearnedLimitAsync()
     {
-        if (session.ActiveServer?.BaseUri is not { } server)
+        if (_session.ActiveServer?.BaseUri is not { } server)
         {
             return;
         }
         try
         {
-            await connection.ResetLearnedLimitAsync(server);
-            _connection = await connection.GetAsync(server);
+            await _connectionApi.ResetLearnedLimitAsync(server);
+            _connection = await _connectionApi.GetAsync(server);
             ShowConnection();
         }
         catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex))
         {
-            logger.LogInformation("The learned limit could not be reset: {Failure}", ApiFailureText.Describe(ex));
+            _logger.LogInformation("The learned limit could not be reset: {Failure}", ApiFailureText.Describe(ex));
             ErrorMessage = "Couldn't reset the limit. Try again.";
         }
     }
@@ -185,6 +206,16 @@ public sealed partial class PlaybackSettingsViewModel(
             AutoPlayNext = SettingValues.Bool(Get(SettingKeys.AutoPlayNext)) ?? true;
             SelectedRewind = Choice(SkipChoices, Seconds(Get(SettingKeys.SkipBackSeconds)), "10");
             SelectedFastForward = Choice(SkipChoices, Seconds(Get(SettingKeys.SkipForwardSeconds)), "30");
+            _confirmed[SettingKeys.PreferredQuality] = SelectedQuality;
+            _confirmed[SettingKeys.MaxBitrateKbps] = SelectedBitrate;
+            _confirmed[SettingKeys.BufferingQualityMode] = SelectedBuffering;
+            _confirmed[SettingKeys.IntroSkipMode] = SelectedIntroSkip;
+            _confirmed[SettingKeys.AutoSkipRecap] = AutoSkipRecaps;
+            _confirmed[SettingKeys.AutoSkipCredits] = AutoSkipCredits;
+            _confirmed[SettingKeys.AutoPlayNextPreview] = StartNextAtPreview;
+            _confirmed[SettingKeys.AutoPlayNext] = AutoPlayNext;
+            _confirmed[SettingKeys.SkipBackSeconds] = SelectedRewind;
+            _confirmed[SettingKeys.SkipForwardSeconds] = SelectedFastForward;
         }
         finally
         {
@@ -220,21 +251,21 @@ public sealed partial class PlaybackSettingsViewModel(
 
     private async Task LoadConnectionAsync(CancellationToken cancellationToken)
     {
-        if (session.ActiveServer?.BaseUri is not { } server)
+        if (_session.ActiveServer?.BaseUri is not { } server)
         {
             return;
         }
         try
         {
-            var capabilities = await playback.GetCapabilitiesAsync(server, cancellationToken);
+            var capabilities = await _playback.GetCapabilitiesAsync(server, cancellationToken);
             bool learns = capabilities.HasFeature("buffering_quality_v1");
             ShowsConnection = capabilities.HasFeature("connection_speed_v1");
-            _connection = learns ? await connection.GetAsync(server, cancellationToken) : null;
+            _connection = learns ? await _connectionApi.GetAsync(server, cancellationToken) : null;
         }
         catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex, cancellationToken))
         {
             // The rest of the page does not need it.
-            logger.LogInformation("This connection's playback state could not be read: {Failure}", ApiFailureText.Describe(ex));
+            _logger.LogInformation("This connection's playback state could not be read: {Failure}", ApiFailureText.Describe(ex));
             ShowsConnection = false;
             _connection = null;
         }
@@ -280,7 +311,7 @@ public sealed partial class PlaybackSettingsViewModel(
     // "just now", "3 minutes ago", "2 hours ago", "4 days ago".
     private string Ago(DateTimeOffset at)
     {
-        int minutes = Math.Max(0, (int)(time.GetUtcNow() - at).TotalMinutes);
+        int minutes = Math.Max(0, (int)(_time.GetUtcNow() - at).TotalMinutes);
         if (minutes < 1)
         {
             return "just now";
@@ -298,93 +329,112 @@ public sealed partial class PlaybackSettingsViewModel(
             : string.Create(CultureInfo.InvariantCulture, $"{value / 1000} Mbps");
     }
 
-    partial void OnSelectedQualityChanged(SettingChoice? oldValue, SettingChoice? newValue)
+    partial void OnSelectedQualityChanged(SettingChoice? value)
     {
-        if (newValue is not null)
+        if (value is not null)
         {
-            QualityDescription = newValue.Value == "auto" ? AutoQualityDescription : QualityDescriptionText;
+            QualityDescription = value.Value == "auto" ? AutoQualityDescription : QualityDescriptionText;
+            Save(SettingKeys.PreferredQuality, value, () => SelectedQuality, v => SelectedQuality = v, SettingValues.Json(value.Value),
+                "Failed to save preferred quality");
         }
-        Save(SettingKeys.PreferredQuality, newValue is null ? null : SettingValues.Json(newValue.Value), () => SelectedQuality = oldValue,
-            "Failed to save preferred quality");
     }
 
     // "No limit" clears the rows rather than storing a number, so no cap stays the absence of a value everywhere.
-    partial void OnSelectedBitrateChanged(SettingChoice? oldValue, SettingChoice? newValue)
+    partial void OnSelectedBitrateChanged(SettingChoice? value)
     {
-        if (_applying || newValue is null)
+        if (value is not null)
         {
-            return;
+            Save(SettingKeys.MaxBitrateKbps, value, () => SelectedBitrate, v => SelectedBitrate = v,
+                value.Value.Length == 0 ? null : SettingValues.Json(int.Parse(value.Value, CultureInfo.InvariantCulture)), "Failed to save maximum bitrate");
         }
-        if (newValue.Value.Length == 0)
-        {
-            _ = WriteAsync(SettingKeys.MaxBitrateKbps, () => settings.ResetAsync(SettingKeys.MaxBitrateKbps, CancellationToken.None),
-                () => SelectedBitrate = oldValue, "Failed to save maximum bitrate");
-            return;
-        }
-        Save(SettingKeys.MaxBitrateKbps, SettingValues.Json(int.Parse(newValue.Value, CultureInfo.InvariantCulture)), () => SelectedBitrate = oldValue,
-            "Failed to save maximum bitrate");
     }
 
-    partial void OnSelectedBufferingChanged(SettingChoice? oldValue, SettingChoice? newValue)
+    // Never ignores the learned limit, so the limit and Auto's budget follow the choice, also when it goes back.
+    partial void OnSelectedBufferingChanged(SettingChoice? value)
     {
-        Save(SettingKeys.BufferingQualityMode, newValue is null ? null : SettingValues.Json(newValue.Value), () => SelectedBuffering = oldValue);
+        if (value is not null)
+        {
+            Save(SettingKeys.BufferingQualityMode, value, () => SelectedBuffering, v => SelectedBuffering = v, SettingValues.Json(value.Value));
+        }
         if (!_applying)
         {
             ShowConnection();
         }
     }
 
-    partial void OnSelectedIntroSkipChanged(SettingChoice? oldValue, SettingChoice? newValue) =>
-        Save(SettingKeys.IntroSkipMode, newValue is null ? null : SettingValues.Json(newValue.Value), () => SelectedIntroSkip = oldValue);
+    partial void OnSelectedIntroSkipChanged(SettingChoice? value)
+    {
+        if (value is not null)
+        {
+            Save(SettingKeys.IntroSkipMode, value, () => SelectedIntroSkip, v => SelectedIntroSkip = v, SettingValues.Json(value.Value));
+        }
+    }
 
-    partial void OnAutoSkipRecapsChanged(bool value) => Save(SettingKeys.AutoSkipRecap, SettingValues.Json(value), () => AutoSkipRecaps = !value);
+    partial void OnAutoSkipRecapsChanged(bool value) =>
+        Save(SettingKeys.AutoSkipRecap, value, () => AutoSkipRecaps, v => AutoSkipRecaps = v, SettingValues.Json(value));
 
-    partial void OnAutoSkipCreditsChanged(bool value) => Save(SettingKeys.AutoSkipCredits, SettingValues.Json(value), () => AutoSkipCredits = !value);
+    partial void OnAutoSkipCreditsChanged(bool value) =>
+        Save(SettingKeys.AutoSkipCredits, value, () => AutoSkipCredits, v => AutoSkipCredits = v, SettingValues.Json(value));
 
     partial void OnStartNextAtPreviewChanged(bool value) =>
-        Save(SettingKeys.AutoPlayNextPreview, SettingValues.Json(value), () => StartNextAtPreview = !value);
+        Save(SettingKeys.AutoPlayNextPreview, value, () => StartNextAtPreview, v => StartNextAtPreview = v, SettingValues.Json(value));
 
-    partial void OnAutoPlayNextChanged(bool value) => Save(SettingKeys.AutoPlayNext, SettingValues.Json(value), () => AutoPlayNext = !value);
+    partial void OnAutoPlayNextChanged(bool value) =>
+        Save(SettingKeys.AutoPlayNext, value, () => AutoPlayNext, v => AutoPlayNext = v, SettingValues.Json(value));
 
-    partial void OnSelectedRewindChanged(SettingChoice? oldValue, SettingChoice? newValue) =>
-        Save(SettingKeys.SkipBackSeconds, newValue is null ? null : SettingValues.Json(int.Parse(newValue.Value, CultureInfo.InvariantCulture)),
-            () => SelectedRewind = oldValue, "Failed to save rewind interval for video");
-
-    partial void OnSelectedFastForwardChanged(SettingChoice? oldValue, SettingChoice? newValue) =>
-        Save(SettingKeys.SkipForwardSeconds, newValue is null ? null : SettingValues.Json(int.Parse(newValue.Value, CultureInfo.InvariantCulture)),
-            () => SelectedFastForward = oldValue, "Failed to save fast-forward interval for video");
-
-    private void Save(string key, JsonElement? value, Action revert, string failure = "Failed to save playback setting")
+    partial void OnSelectedRewindChanged(SettingChoice? value)
     {
-        if (_applying || value is not { } json)
+        if (value is not null)
+        {
+            Save(SettingKeys.SkipBackSeconds, value, () => SelectedRewind, v => SelectedRewind = v,
+                SettingValues.Json(int.Parse(value.Value, CultureInfo.InvariantCulture)), "Failed to save rewind interval for video");
+        }
+    }
+
+    partial void OnSelectedFastForwardChanged(SettingChoice? value)
+    {
+        if (value is not null)
+        {
+            Save(SettingKeys.SkipForwardSeconds, value, () => SelectedFastForward, v => SelectedFastForward = v,
+                SettingValues.Json(int.Parse(value.Value, CultureInfo.InvariantCulture)), "Failed to save fast-forward interval for video");
+        }
+    }
+
+    // Saved after the saves before it; a refusal puts the control back to what the server holds, unless the viewer
+    // has moved it on since. A null value is a reset.
+    private void Save<T>(string key, T value, Func<T> shown, Action<T> show, JsonElement? json, string failure = "Failed to save playback setting")
+    {
+        if (_applying)
         {
             return;
         }
         bool clearDevice = _sources.GetValueOrDefault(key) == SettingScopes.ProfileDevice;
-        _ = WriteAsync(key, () => settings.SaveAsync(key, json, clearDevice, CancellationToken.None), revert, failure);
-    }
-
-    private async Task WriteAsync(string key, Func<Task> write, Action revert, string failure)
-    {
         ErrorMessage = "";
-        try
-        {
-            await write();
-            _sources[key] = SettingScopes.Profile;
-        }
-        catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex))
-        {
-            logger.LogInformation("Saving {Key} failed: {Failure}", key, ApiFailureText.Describe(ex));
-            ErrorMessage = failure;
-            _applying = true;
-            try
+        _ = _saves.RunAsync(
+            () => json is { } stored ? _settings.SaveAsync(key, stored, clearDevice, CancellationToken.None) : _settings.ResetAsync(key, CancellationToken.None),
+            saved =>
             {
-                revert();
-            }
-            finally
-            {
-                _applying = false;
-            }
-        }
+                if (saved)
+                {
+                    _confirmed[key] = value;
+                    _sources[key] = SettingScopes.Profile;
+                    return;
+                }
+                ErrorMessage = failure;
+                if (EqualityComparer<T>.Default.Equals(shown(), value) && _confirmed.GetValueOrDefault(key) is T confirmed)
+                {
+                    _applying = true;
+                    try
+                    {
+                        show(confirmed);
+                        QualityDescription = SelectedQuality?.Value is null or "auto" ? AutoQualityDescription : QualityDescriptionText;
+                        ShowConnection();
+                    }
+                    finally
+                    {
+                        _applying = false;
+                    }
+                }
+            });
     }
 }
