@@ -75,6 +75,42 @@ public sealed class MpvPlaybackEngineTests : IDisposable
     }
 
     [Fact]
+    public async Task APause_OutlastsANewLoad_AsMpvKeepsIt()
+    {
+        using var engine = CreateEngine();
+        string file = TempWav(6.0);
+        var loaded = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var paused = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        long second = 0;
+        var reloaded = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        engine.StateChanged += (_, s) =>
+        {
+            if (s.IsLoaded)
+            {
+                loaded.TrySetResult();
+            }
+            if (s.IsPaused)
+            {
+                paused.TrySetResult();
+            }
+            if (s.IsLoaded && s.LoadId == Volatile.Read(ref second))
+            {
+                reloaded.TrySetResult();
+            }
+        };
+        engine.Load(MediaSource.Local(file));
+        await loaded.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken);
+        engine.SetPaused(true);
+        await paused.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken);
+
+        // A replan's new stream replaces the file: mpv stays paused, and so must what the player shows.
+        Volatile.Write(ref second, engine.Load(MediaSource.Local(file) with { Start = TimeSpan.FromSeconds(2) }));
+        await reloaded.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken);
+
+        Assert.True(engine.Current.IsPaused);
+    }
+
+    [Fact]
     public void PerFileOptions_CarryTheStartAndTheTracks()
     {
         var source = new MediaSource(new Uri("https://nas.example/stream"), [], TimeSpan.FromSeconds(12.5), AudioStream: 2, SubtitleStream: 0);

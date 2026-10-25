@@ -486,7 +486,8 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
 
     private void OnFileEnded(int reason, int error)
     {
-        var idle = Update(s => PlaybackSnapshot.Idle with { Volume = s.Volume, IsMuted = s.IsMuted, LoadId = s.LoadId }, force: true);
+        // mpv keeps its pause, volume and mute across files, and says nothing of them for the next one.
+        var idle = Update(s => PlaybackSnapshot.Idle with { IsPaused = s.IsPaused, Volume = s.Volume, IsMuted = s.IsMuted, LoadId = s.LoadId }, force: true);
         var ended = reason switch
         {
             LibMpv.EndFileError when IsRejected => new PlaybackEnded(PlaybackEndReason.AuthenticationFailed, LibMpv.Error(error)),
