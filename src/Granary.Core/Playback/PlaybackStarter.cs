@@ -87,7 +87,16 @@ public sealed class PlaybackStarter(
         ArgumentNullException.ThrowIfNull(context);
         string contentId = context.ContentId.Length > 0 ? context.ContentId : context.Watch.ContentId;
         var detail = await watch.GetWatchAsync(context.Server.BaseUri, contentId, fileId, cancellationToken: cancellationToken).ConfigureAwait(false);
-        return detail.Versions.FirstOrDefault(v => v.FileId == fileId) is { } version ? PlaybackMarker.Of(version) : null;
+        return detail.Versions.FirstOrDefault(v => v.FileId == fileId) is { } version ? PlaybackMarker.Of(version, context.Server.BaseUri) : null;
+    }
+
+    /// <summary>The seek-bar previews of <paramref name="fileId"/>; null when they cannot be shown, 404 when there are none.</summary>
+    public async Task<PlayerTrickplay?> ReadTrickplayAsync(PlaybackContext context, string fileId, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        string contentId = context.ContentId.Length > 0 ? context.ContentId : context.Watch.ContentId;
+        var manifest = await watch.GetTrickplayAsync(context.Server.BaseUri, contentId, fileId, cancellationToken).ConfigureAwait(false);
+        return PlayerTrickplay.Of(manifest, context.Server.BaseUri);
     }
 
     /// <summary>The same context with the installation id the server has now (after 409 <c>installation_changed</c>).</summary>

@@ -20,7 +20,7 @@ public sealed partial class ServerPlayback
 
     public IReadOnlyList<PlaybackMarker> Markers => PlayingVersion is not { } version
         ? []
-        : _readMarkers is { } read && read.FileId == version.FileId ? read.Markers : PlaybackMarker.Of(version);
+        : _readMarkers is { } read && read.FileId == version.FileId ? read.Markers : PlaybackMarker.Of(version, _context?.Server.BaseUri);
 
     // Once per file of this playback, after its first frame: the read never holds up the start, and nothing but the
     // skip pills depends on it.

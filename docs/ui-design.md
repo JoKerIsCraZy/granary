@@ -168,7 +168,10 @@ unmodified to refer to Silo, as its trademark policy allows; it is not Granary's
 - **Seek bar**: 3 px track, the played part white as on the web, over the marked parts tinted sky (intro), violet
   (recap), amber (credits) and emerald (preview), and a 10 px tick (white 55 %) where each chapter after the first
   starts. Under the pointer the track grows, a thumb appears and a bubble shows the time there, above it the part it
-  lies in ("● Intro 0:03-0:12") and under it the chapter (11 px, white 50 %). It seeks on click and when a drag is released, never while dragging or when the
+  lies in ("● Intro 0:03-0:12") and under it the chapter (11 px, white 50 %). With a picture the bubble is the web's
+  176 px card (neutral 95 %, white 8 % edge, a caret under it): the trickplay thumbnail of that time, or while its
+  sheet loads and without previews the part's or the chapter's picture, or a faint film frame on a gradient; the
+  lines sit left under it. The part under the pointer grows to 8 px with a white 80 % ring. It seeks on click and when a drag is released, never while dragging or when the
   position moves on, and keeps the target until playback has caught up, so the bar does not jump back. Keys:
   Left and Right by the skip intervals, Shift for 5 s, Home, End. Screen readers get a slider whose value
   is the position in words.

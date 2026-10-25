@@ -24,6 +24,45 @@ public sealed class ServerPlaybackMarkerTests
     private readonly ServerPlaybackFixture _fixture = new();
 
     [Fact]
+    public async Task TheIntro_HasItsSegmentsPicture()
+    {
+        var playback = await _fixture.StartAsync();
+
+        Assert.Equal(new Uri("https://images.example.test/intro.webp"), Assert.Single(playback.Markers).ThumbnailUrl);
+    }
+
+    [Fact]
+    public async Task ThePreviews_AreReadOnceTheFilePlays_AndAgainBeforeTheyExpire()
+    {
+        const string TrickplayPath = WatchPath + "/trickplay";
+        string expires = _fixture.Time.GetUtcNow().AddHours(1).ToString("yyyy-MM-ddTHH:mm:ss.fffZ", System.Globalization.CultureInfo.InvariantCulture);
+        string manifest = $$"""
+            { "file_id": "42", "interval_ms": 10000, "thumbnail_width": 320, "thumbnail_height": 180, "tile_columns": 10,
+              "tile_rows": 10, "thumbnail_count": 90, "sheets": [ { "index": 0, "url": "/api/v2/artwork/t0?exp=1&sig=a" } ],
+              "expires_at": "{{expires}}" }
+            """;
+        _fixture.Silo.On(HttpMethod.Get, WatchPath, Ok(PlaybackPayloads.WatchStateOk.Replace(
+            "\"trickplay_available\": false", "\"trickplay_available\": true", StringComparison.Ordinal)));
+        _fixture.Silo.On(HttpMethod.Get, TrickplayPath, Ok(manifest), Ok(manifest));
+        var playback = await _fixture.StartAsync();
+        int changes = 0;
+        playback.TrickplayChanged += (_, _) => changes++;
+        Assert.Null(playback.Trickplay);
+
+        _fixture.Engine.RaiseState(Frame(12.5));
+        await Until(() => changes == 1, "the previews are read");
+
+        var trickplay = playback.Trickplay!;
+        Assert.Equal((10_000, 10, 90), (trickplay.IntervalMs, trickplay.Columns, trickplay.Count));
+        Assert.Equal("?file_id=42", _fixture.Silo.SentTo(HttpMethod.Get, TrickplayPath)[0].Uri.Query);
+
+        await _fixture.AdvanceAsync(TimeSpan.FromMinutes(54));
+        Assert.Single(_fixture.Silo.SentTo(HttpMethod.Get, TrickplayPath));
+        await _fixture.AdvanceAsync(TimeSpan.FromMinutes(1));
+        await Until(() => changes == 2, "the previews are read again before they expire");
+    }
+
+    [Fact]
     public async Task TheChapters_AreThePlayingFilesInOrder_WithTheirPicturesOnTheServer()
     {
         string chapters = Regex.Replace(PlaybackPayloads.WatchStateOk, @"""chapters"": \[[^\]]*\]", """

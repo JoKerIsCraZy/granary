@@ -14,6 +14,10 @@ public sealed partial class PlayerViewModel
     [ObservableProperty]
     public partial IReadOnlyList<PlaybackMarker> Markers { get; private set; } = [];
 
+    /// <summary>Seek-bar previews of the playing file; null without.</summary>
+    [ObservableProperty]
+    public partial PlayerTrickplay? Trickplay { get; private set; }
+
     /// <summary>A skip pill shows; its texts stay while it fades out.</summary>
     [ObservableProperty]
     public partial bool HasSkipPrompt { get; private set; }
@@ -56,7 +60,16 @@ public sealed partial class PlayerViewModel
     {
         _markerPrompts = new MarkerPrompts();
         Markers = [];
+        Trickplay = null;
         ShowSkipPrompt();
+    }
+
+    private void OnTrickplayChanged(object? sender, EventArgs e)
+    {
+        if (sender == _playback && _playback is { } playback)
+        {
+            Trickplay = playback.Trickplay;
+        }
     }
 
     private void OnMarkersChanged(object? sender, EventArgs e)

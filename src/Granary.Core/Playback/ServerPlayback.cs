@@ -214,6 +214,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         SaveSubtitleDelayNow();
         SaveSpeedNow();
         StopTimers();
+        StopTrickplay();
         // Read now: the engine stops right after this call, and its idle state would read as position 0. Closing the
         // app waits for the stop, and for a pick still being saved.
         _stop = Task.WhenAll(StopSessionsAsync(StopPosition, _paused), _trackSaves);
@@ -226,6 +227,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         _engine.StateChanged -= OnEngineStateChanged;
         _engine.Ended -= OnEngineEnded;
         StopTimers();
+        StopTrickplay();
         // Saves still waiting go with the stop; without one there is nobody left to save for.
         _speedSave?.Dispose();
         _subtitleDelaySave?.Dispose();
@@ -500,6 +502,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         _planPlayed = true;
         _sessionPlayed = true;
         ReadMarkers();
+        ReadTrickplay();
         if (!_firstFrameReported)
         {
             _firstFrameReported = true;

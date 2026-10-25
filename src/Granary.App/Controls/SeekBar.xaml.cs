@@ -307,17 +307,30 @@ public sealed partial class SeekBar : UserControl
             HideTip();
             return;
         }
+        _tip = (seconds, x);
         TipText.Text = PlayerTime.Format(seconds, Duration);
-        ShowTipRegion(seconds);
-        ShowTipChapter(seconds);
+        var marker = ShowTipRegion(seconds);
+        var chapter = ShowTipChapter(seconds);
+        bool hasPicture = ShowTipPicture(seconds, marker, chapter);
+        TipLines.HorizontalAlignment = hasPicture ? HorizontalAlignment.Stretch : HorizontalAlignment.Center;
+        Tip.Width = hasPicture ? PictureWidth + 2 : double.NaN;
+        ShowRegionHighlight(_dragSeconds is null ? marker : null);
         Tip.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
         double width = Tip.DesiredSize.Width;
-        Canvas.SetLeft(Tip, Math.Clamp(x - width / 2, 0, Math.Max(0, Track.ActualWidth - width)));
+        double left = Math.Clamp(x - width / 2, 0, Math.Max(0, Track.ActualWidth - width));
+        Canvas.SetLeft(Tip, left);
         Canvas.SetTop(Tip, -(Tip.DesiredSize.Height + TipGap));
-        Tip.Opacity = 1;
+        Canvas.SetLeft(TipCaret, left + width / 2 - TipCaret.Width / 2);
+        Canvas.SetTop(TipCaret, -TipGap - 1);
+        Tip.Opacity = TipCaret.Opacity = 1;
     }
 
-    private void HideTip() => Tip.Opacity = 0;
+    private void HideTip()
+    {
+        _tip = null;
+        Tip.Opacity = TipCaret.Opacity = 0;
+        ShowRegionHighlight(null);
+    }
 
     private void Render()
     {

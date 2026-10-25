@@ -107,6 +107,12 @@ public interface IServerPlayback : IAsyncDisposable
     /// <summary>The chapters of the file that plays, in source seconds (11.3); empty without.</summary>
     IReadOnlyList<PlaybackChapter> Chapters { get; }
 
+    /// <summary>Seek-bar previews of the file that plays (11.4); null without, or until they are read.</summary>
+    PlayerTrickplay? Trickplay { get; }
+
+    /// <summary>Raised when previews are read, or read again with fresh addresses.</summary>
+    event EventHandler? TrickplayChanged;
+
     /// <summary>The stream that plays, for the playback info; null before the first plan.</summary>
     PlaybackStreamInfo? StreamInfo { get; }
 

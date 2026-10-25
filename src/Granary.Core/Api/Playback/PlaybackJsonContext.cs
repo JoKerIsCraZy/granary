@@ -12,6 +12,7 @@ namespace Granary.Core.Api.Playback;
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     PropertyNameCaseInsensitive = false)]
 [JsonSerializable(typeof(WatchDetail))]
+[JsonSerializable(typeof(TrickplayManifest))]
 [JsonSerializable(typeof(PlaybackCapabilities))]
 [JsonSerializable(typeof(PlaybackStartRequest))]
 [JsonSerializable(typeof(PlaybackReplanRequest))]

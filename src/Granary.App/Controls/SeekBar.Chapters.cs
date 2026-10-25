@@ -57,11 +57,12 @@ public sealed partial class SeekBar
     }
 
     // The chapter that holds the time, else the last, as the web player's bubble names it.
-    private void ShowTipChapter(double seconds)
+    private PlaybackChapter? ShowTipChapter(double seconds)
     {
         var chapters = Chapters ?? [];
         var chapter = chapters.FirstOrDefault(c => c.Contains(seconds)) ?? chapters.LastOrDefault();
         TipChapter.Text = chapter?.Title ?? "";
         TipChapter.Visibility = string.IsNullOrWhiteSpace(chapter?.Title) ? Visibility.Collapsed : Visibility.Visible;
+        return chapter;
     }
 }

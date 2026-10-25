@@ -98,6 +98,7 @@
                                   Duration="{x:Bind ViewModel.DurationSeconds, Mode=OneWay}"
                                   Markers="{x:Bind ViewModel.Markers, Mode=OneWay}"
                                   Chapters="{x:Bind ViewModel.ChapterMarks, Mode=OneWay}"
+                                  Trickplay="{x:Bind ViewModel.Trickplay, Mode=OneWay}"
                                   IsEnabled="{x:Bind ViewModel.CanSeek, Mode=OneWay}"
                                   SeekRequested="OnSeekRequested" />
 

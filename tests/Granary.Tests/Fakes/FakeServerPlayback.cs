@@ -96,6 +96,16 @@ internal sealed class FakeServerPlayback : IServerPlayback
 
     public PlaybackStreamInfo? StreamInfo { get; set; }
 
+    public PlayerTrickplay? Trickplay { get; set; }
+
+    public event EventHandler? TrickplayChanged;
+
+    public void RaiseTrickplay(PlayerTrickplay? trickplay)
+    {
+        Trickplay = trickplay;
+        TrickplayChanged?.Invoke(this, EventArgs.Empty);
+    }
+
     /// <summary>Plays a file with <paramref name="chapters"/>, as a newly taken plan does.</summary>
     public void RaiseChapters(IReadOnlyList<PlaybackChapter> chapters)
     {

@@ -5,7 +5,16 @@ namespace Granary.Core.Playback;
 /// <summary>A marked part of the playing file (<see cref="WatchMarkerKinds"/>), <c>[start, end)</c> in source seconds.</summary>
 public sealed record PlaybackMarker(string Kind, double StartSeconds, double EndSeconds)
 {
+    /// <summary>A frame of the part for the seek bar's bubble, when the server has one.</summary>
+    public Uri? ThumbnailUrl { get; init; }
+
     public bool Contains(double seconds) => seconds >= StartSeconds && seconds < EndSeconds;
+
+    // The picture shows the part, it is not which part it is: a read that only renews its signed address changes nothing.
+    public bool Equals(PlaybackMarker? other) =>
+        other is not null && Kind == other.Kind && StartSeconds.Equals(other.StartSeconds) && EndSeconds.Equals(other.EndSeconds);
+
+    public override int GetHashCode() => HashCode.Combine(Kind, StartSeconds, EndSeconds);
 
     /// <summary>The same part, perhaps as the server measured it again: same kind, overlapping ranges.</summary>
     public bool IsSamePart(PlaybackMarker other) =>
@@ -14,16 +23,23 @@ public sealed record PlaybackMarker(string Kind, double StartSeconds, double End
     /// <summary>
     /// The parts of <paramref name="version"/> the player acts on (docs/api-contract.md, 11.1): the intro from its
     /// single projection, as Android takes it, so a second intro segment is never offered; every recap, credits and
-    /// preview segment, or a kind's projection when the server lists no segment of it.
+    /// preview segment, or a kind's projection when the server lists no segment of it. A part's picture is its
+    /// segment's, resolved against <paramref name="server"/>.
     /// </summary>
-    public static IReadOnlyList<PlaybackMarker> Of(WatchFileVersion version)
+    public static IReadOnlyList<PlaybackMarker> Of(WatchFileVersion version, Uri? server = null)
     {
         ArgumentNullException.ThrowIfNull(version);
         var markers = new List<PlaybackMarker>();
+        PlaybackMarker FromSegment(WatchMarkerSegment s) =>
+            new(s.Kind, s.StartSeconds, s.EndSeconds) { ThumbnailUrl = Picture(s) };
+        Uri? Picture(WatchMarkerSegment segment) => server is null ? null : Api.Images.ArtworkUrl.Resolve(server, segment.ThumbnailUrl);
         var intro = version.Intro is { } projection
             ? new PlaybackMarker(WatchMarkerKinds.Intro, projection.StartSeconds, projection.EndSeconds)
-            : version.MarkerSegments.Where(s => s.Kind == WatchMarkerKinds.Intro)
-                .Select(s => new PlaybackMarker(s.Kind, s.StartSeconds, s.EndSeconds)).FirstOrDefault();
+            {
+                ThumbnailUrl = version.MarkerSegments.FirstOrDefault(s => s.Kind == WatchMarkerKinds.Intro
+                    && s.StartSeconds < projection.EndSeconds && projection.StartSeconds < s.EndSeconds) is { } segment ? Picture(segment) : null,
+            }
+            : version.MarkerSegments.Where(s => s.Kind == WatchMarkerKinds.Intro).Select(FromSegment).FirstOrDefault();
         if (intro is not null)
         {
             markers.Add(intro);
@@ -38,7 +54,7 @@ public sealed record PlaybackMarker(string Kind, double StartSeconds, double End
             var segments = version.MarkerSegments.Where(s => s.Kind == kind).ToList();
             if (segments.Count > 0)
             {
-                markers.AddRange(segments.Select(s => new PlaybackMarker(kind, s.StartSeconds, s.EndSeconds)));
+                markers.AddRange(segments.Select(FromSegment));
             }
             else if (single is not null)
             {

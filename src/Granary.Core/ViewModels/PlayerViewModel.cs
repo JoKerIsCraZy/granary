@@ -208,6 +208,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         playback.StatusChanged += OnPlaybackStatusChanged;
         playback.TracksChanged += OnTracksChanged;
         playback.MarkersChanged += OnMarkersChanged;
+        playback.TrickplayChanged += OnTrickplayChanged;
         await playback.StartAsync(request, CancellationToken.None);
     }
 
@@ -343,6 +344,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         playback.StatusChanged -= OnPlaybackStatusChanged;
         playback.TracksChanged -= OnTracksChanged;
         playback.MarkersChanged -= OnMarkersChanged;
+        playback.TrickplayChanged -= OnTrickplayChanged;
         AudioTracks = [];
         SubtitleTracks = [];
         ResetMarkers();

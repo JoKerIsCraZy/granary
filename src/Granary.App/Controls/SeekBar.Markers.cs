@@ -63,17 +63,35 @@ public sealed partial class SeekBar
     }
 
     // The shortest part that holds the time, as the web player picks among parts that overlap.
-    private void ShowTipRegion(double seconds)
+    private PlaybackMarker? ShowTipRegion(double seconds)
     {
         var marker = (Markers ?? []).Where(m => m.Contains(seconds)).MinBy(m => m.EndSeconds - m.StartSeconds);
         TipRegion.Visibility = marker is null ? Visibility.Collapsed : Visibility.Visible;
         if (marker is null)
         {
-            return;
+            return null;
         }
         var look = Look(marker.Kind);
         TipRegionDot.Fill = new SolidColorBrush(look.Dot);
         TipRegionName.Text = look.Name;
         TipRegionRange.Text = PlayerTime.Format(marker.StartSeconds, Duration) + "-" + PlayerTime.Format(marker.EndSeconds, Duration);
+        return marker;
+    }
+
+    // The part under the pointer grows past the track, 8 px high, with a white ring, as on the web; none while dragging.
+    private void ShowRegionHighlight(PlaybackMarker? marker)
+    {
+        double width = Track.ActualWidth;
+        if (marker is null || Duration <= 0 || width <= 0)
+        {
+            RegionHighlight.Visibility = Visibility.Collapsed;
+            return;
+        }
+        double start = marker.StartSeconds / Duration * width;
+        double end = Math.Min(marker.EndSeconds, Duration) / Duration * width;
+        RegionHighlight.Background = new SolidColorBrush(Look(marker.Kind).Tint);
+        RegionHighlight.Margin = new Thickness(start, 0, 0, 0);
+        RegionHighlight.Width = Math.Max(8, end - start);
+        RegionHighlight.Visibility = Visibility.Visible;
     }
 }
