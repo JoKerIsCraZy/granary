@@ -314,4 +314,35 @@ public sealed class PlaybackDecisionTests
     [InlineData("file:///C:/media.mkv")]
     public void MediaUrl_OffTheServerIsRefused(string? value) =>
         Assert.Null(PlaybackUrl.Resolve(ScriptedSilo.Base, value));
+
+    [Theory]
+    [InlineData("https://node.example/stream/v3/s1")]
+    [InlineData("https://node.example:8443/stream/v3/s1?seek=600.5")]
+    [InlineData("https://node.example/stream/v3/s1/master.m3u8")]
+    public void AProxyNodesStream_IsTakenOnceTheAttemptAgreedOnIt(string value)
+    {
+        Assert.Equal(value, PlaybackUrl.ResolveStream(ScriptedSilo.Base, value, "s1", mediaOrigins: true)!.OriginalString);
+        Assert.Null(PlaybackUrl.ResolveStream(ScriptedSilo.Base, value, "s1", mediaOrigins: false));
+    }
+
+    [Theory]
+    [InlineData("http://node.example/stream/v3/s1")]
+    [InlineData("https://user:pw@node.example/stream/v3/s1")]
+    [InlineData("https://node.example/stream/v3/s2")]
+    [InlineData("https://node.example/prefix/stream/v3/s1")]
+    [InlineData("https://node.example/stream/v3/s1/../../api/v2/users")]
+    [InlineData("https://node.example/stream/v3/s1?seek=600&token=x")]
+    [InlineData("https://node.example/stream/v3/s1#x")]
+    [InlineData("https://node.example/api/v2/stream/s1")]
+    public void AnythingElseOnAProxyNode_IsRefused(string value)
+    {
+        // Plain HTTP while the server is HTTPS, user info, another session, other paths or queries (Apple checks the same).
+        Assert.Null(PlaybackUrl.ResolveStream(ScriptedSilo.Base, value, "s1", mediaOrigins: true));
+        Assert.True(PlaybackUrl.IsElsewhere(ScriptedSilo.Base, value));
+    }
+
+    [Fact]
+    public void TheServersOwnStream_StaysWhatItWas() =>
+        Assert.Equal("https://nas.example/silo/api/v2/stream/s1",
+            PlaybackUrl.ResolveStream(ScriptedSilo.Base, "/api/v2/stream/s1", "s1", mediaOrigins: true)!.OriginalString);
 }

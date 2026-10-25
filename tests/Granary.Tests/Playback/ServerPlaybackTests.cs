@@ -14,6 +14,21 @@ public sealed class ServerPlaybackTests
     // The transcode, as the answer to a replan of the first session.
     private static string TranscodeInThisSession => PlaybackPayloads.TranscodeDecision.Replace(OtherSession, Session, StringComparison.Ordinal);
 
+    private const string NodeStream = "https://node.example/stream/v3/" + Session;
+
+    private static string OfferingMediaOrigins => PlaybackPayloads.CapabilityAvailable.Replace(
+        "\"connection_speed_v1\"", "\"connection_speed_v1\", \"authorized_media_origins_v1\"", StringComparison.Ordinal);
+
+    // The direct play from a proxy node; confirmed: the start answer's server_features name the feature too.
+    private static string FromTheNode(bool confirmed = true)
+    {
+        string decision = PlaybackPayloads.StartOpaqueIds.Replace("\"/api/v2/stream/" + Session + "\"", "\"" + NodeStream + "\"", StringComparison.Ordinal);
+        Assert.Contains(NodeStream, decision, StringComparison.Ordinal);
+        return confirmed
+            ? decision.Replace("\"server_features\": [", "\"server_features\": [ \"authorized_media_origins_v1\",", StringComparison.Ordinal)
+            : decision;
+    }
+
     private static CancellationToken Cancellation => TestContext.Current.CancellationToken;
 
     // Start
@@ -136,6 +151,68 @@ public sealed class ServerPlaybackTests
         await _fixture.AdvanceAsync(TimeSpan.FromSeconds(10));
         await Until(() => failed.Status.Phase == ServerPlaybackPhase.Failed, "the session ends");
         Assert.True(_fixture.Proxy.Routes[^1].Disposed);
+    }
+
+    [Fact]
+    public async Task ProxyNodes_AreOfferedOnlyWhereTheServerOffersThem()
+    {
+        await _fixture.StartAsync();
+        Assert.DoesNotContain("authorized_media_origins_v1", ClientFeatures(0));
+
+        _fixture.Silo.On(HttpMethod.Get, "api/v2/playback/capabilities", Ok(OfferingMediaOrigins));
+        await _fixture.StartAsync();
+        Assert.Contains("authorized_media_origins_v1", ClientFeatures(1));
+
+        IEnumerable<string?> ClientFeatures(int start) =>
+            _fixture.Body(HttpMethod.Post, StartPath, start).GetProperty("client_features").EnumerateArray().Select(f => f.GetString());
+    }
+
+    [Fact]
+    public async Task AStreamFromAProxyNode_PlaysThroughTheProxy_WithTheHeaders()
+    {
+        _fixture.Silo.On(HttpMethod.Get, "api/v2/playback/capabilities", Ok(OfferingMediaOrigins));
+        _fixture.Silo.On(HttpMethod.Post, StartPath, Created(FromTheNode()));
+
+        await _fixture.StartAsync();
+
+        var route = _fixture.RouteOf(Assert.Single(_fixture.Engine.Loaded));
+        Assert.Equal(NodeStream, route.Upstream.OriginalString);
+        Assert.Contains(new KeyValuePair<string, string>("Authorization", "Bearer token"), route.Initial!.Headers);
+    }
+
+    [Fact]
+    public async Task ANodeTheAttemptDidNotAgreeOn_GoesBackToTheServer()
+    {
+        // The server named a node without confirming the feature: sourceRefused makes it replay the plan at home.
+        _fixture.Silo.On(HttpMethod.Get, "api/v2/playback/capabilities", Ok(OfferingMediaOrigins));
+        _fixture.Silo.On(HttpMethod.Post, StartPath, Created(FromTheNode(confirmed: false)));
+        _fixture.Silo.On(HttpMethod.Post, ReplanPath, Ok(PlaybackPayloads.StartOpaqueIds));
+
+        var playback = await _fixture.StartAsync();
+        await playback.Recovery;
+
+        var replan = _fixture.Body(HttpMethod.Post, ReplanPath);
+        Assert.Equal("sourceRefused", replan.GetProperty("failure").GetProperty("classification").GetString());
+        // Not a failed recipe: the server does not count it, and neither does the client.
+        Assert.Empty(replan.GetProperty("attempted_plan_keys").EnumerateArray());
+        Assert.Equal(StreamUrl(), _fixture.LastUpstream);
+    }
+
+    [Fact]
+    public async Task ANodeThatNeverDelivers_IsRefused_OnceInAChain()
+    {
+        _fixture.Silo.On(HttpMethod.Get, "api/v2/playback/capabilities", Ok(OfferingMediaOrigins));
+        _fixture.Silo.On(HttpMethod.Post, StartPath, Created(FromTheNode()));
+        _fixture.Silo.On(HttpMethod.Post, ReplanPath, Ok(FromTheNode()));
+        var playback = await _fixture.StartAsync();
+
+        _fixture.Engine.RaiseEnded(new PlaybackEnded(PlaybackEndReason.Error, "connection refused"));
+        await playback.Recovery;
+        _fixture.Engine.RaiseEnded(new PlaybackEnded(PlaybackEndReason.Error, "connection refused"));
+        await playback.Recovery;
+
+        Assert.Equal(["sourceRefused", "load_failed"], Enumerable.Range(0, 2)
+            .Select(i => _fixture.Body(HttpMethod.Post, ReplanPath, i).GetProperty("failure").GetProperty("classification").GetString()));
     }
 
     [Fact]

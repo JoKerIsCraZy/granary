@@ -63,8 +63,7 @@ public sealed class PlaybackStarter(
         }
         var version = ChooseVersion(detail) ?? throw new PlaybackUnavailableException("This title has no file to play.", canRetry: false);
         var capabilities = await CapabilitiesAsync(server, cancellationToken).ConfigureAwait(false);
-        var report = PlaybackReportBuilder.Build(device.Facts, identity.ClientVersion, identity.ClientChannel);
-        return new PlaybackContext(server, profileId, detail, version, await settings.ConfigureAwait(false), capabilities.InstallationId!, report);
+        return new PlaybackContext(server, profileId, detail, version, await settings.ConfigureAwait(false), capabilities.InstallationId!, Report(capabilities));
     }
 
     /// <summary>The same context with the installation id the server has now (after 409 <c>installation_changed</c>).</summary>
@@ -72,8 +71,13 @@ public sealed class PlaybackStarter(
     {
         ArgumentNullException.ThrowIfNull(context);
         var capabilities = await CapabilitiesAsync(context.Server, cancellationToken).ConfigureAwait(false);
-        return context with { InstallationId = capabilities.InstallationId! };
+        return context with { InstallationId = capabilities.InstallationId!, Report = Report(capabilities) };
     }
+
+    // Proxy-node media only where the server offers it, as Apple's client asks (docs/api-contract.md, 9.1).
+    private PlaybackClientReport Report(PlaybackCapabilities capabilities) =>
+        PlaybackReportBuilder.Build(device.Facts, identity.ClientVersion, identity.ClientChannel,
+            capabilities.HasFeature(PlaybackFeatures.AuthorizedMediaOriginsV1));
 
     /// <summary>Starts an attempt of <paramref name="context"/>'s file at <paramref name="startPosition"/> (source seconds; null: the server's resume point).</summary>
     public Task<PlaybackDecision> StartAsync(PlaybackContext context, string attemptId, double? startPosition, CancellationToken cancellationToken)

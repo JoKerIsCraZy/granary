@@ -56,6 +56,10 @@ public sealed partial class ServerPlayback : IServerPlayback
     private string _planAttemptId = "";
     private PlaybackProgress? _progress;
     private Uri? _streamUrl;
+
+    // The attempt agreed on proxy-node media: the client offered authorized_media_origins_v1 and the start answer
+    // confirmed it (Apple's client checks the same).
+    private bool _mediaOrigins;
     private IMediaRoute? _route;
     private ITimer? _progressTimer;
     private ITimer? _pauseReport;
@@ -272,6 +276,11 @@ public sealed partial class ServerPlayback : IServerPlayback
             return;
         }
         var plan = decision.PlaybackPlan!;
+        if (newSession)
+        {
+            _mediaOrigins = _context!.Report.ClientFeatures.Contains(PlaybackFeatures.AuthorizedMediaOriginsV1)
+                && PlaybackProtocol.HasFeature(decision.ServerFeatures, PlaybackFeatures.AuthorizedMediaOriginsV1);
+        }
         if (newSession || _progress?.SessionId != decision.SessionId)
         {
             if (_progress is { } previous)
@@ -295,8 +304,15 @@ public sealed partial class ServerPlayback : IServerPlayback
             await RecoverFromFailureAsync("client_execution_unsupported", "The plan needs client-side processing.");
             return;
         }
-        if (PlaybackUrl.Resolve(_context!.Server.BaseUri, plan.Stream.Url) is not { } url)
+        var server = _context!.Server.BaseUri;
+        if (PlaybackUrl.ResolveStream(server, plan.Stream.Url, _progress!.SessionId, _mediaOrigins) is not { } url)
         {
+            if (PlaybackUrl.IsElsewhere(server, plan.Stream.Url))
+            {
+                // A proxy node this client does not take: the server replays the plan through its own address (8.7).
+                await RecoverFromFailureAsync(FailureClassifications.SourceRefused, "The stream's origin was not accepted.");
+                return;
+            }
             Fail("The server sent a stream address this app does not trust.", canRetry: true);
             return;
         }
@@ -478,9 +494,13 @@ public sealed partial class ServerPlayback : IServerPlayback
         }
         else
         {
-            Recover(() => RecoverFromFailureAsync("load_failed", ended.Detail));
+            // A proxy node that never delivered may be out of reach from here; the server can take the plan home.
+            string classification = IsFromNode(_streamUrl) ? FailureClassifications.SourceRefused : "load_failed";
+            Recover(() => RecoverFromFailureAsync(classification, ended.Detail));
         }
     }
+
+    private bool IsFromNode(Uri? stream) => stream is not null && _context is { } context && !SiloRequestOptions.IsBeneath(stream, context.Server.BaseUri);
 
     // Without a known length an end can only be taken for the end: neither the plan nor the file says otherwise.
     private bool IsAtTheEnd() => DurationSeconds is not { } duration || SourcePosition >= duration - EndTolerance;

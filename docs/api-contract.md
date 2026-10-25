@@ -1214,8 +1214,22 @@ Android still uses legacy mode
 The protocol text treats header auth as the direction for native clients
 (`silo-server/docs/architecture/playback-protocol-v3.md:748-905`), and it keeps tokens out of URLs
 and logs. **The Windows client opts into `header_authenticated_media_v1`.**
-`authorized_media_origins_v1` (absolute proxy-node URLs, still header-authenticated) is optional;
-the MVP does not send it, so all media stays on the API origin.
+`authorized_media_origins_v1` (absolute proxy-node URLs, still header-authenticated) is optional.
+Without it the server rejects every proxy route (`route_client_unsupported`) and silently plays from
+the API origin, even when the administrator set `prefer_proxy` (the default); under `proxy_only` the
+start fails (`silo-server/internal/api/handlers/playback_v3.go:1356,3331-3354`,
+`internal/noderouting/routes.go:100-102`). The node is the server's choice (round robin among healthy
+proxies), never the client's. With the feature the plan's stream URL is absolute and carries no
+credential: `{node}/stream/v3/{sid}[?seek=S]` or `{node}/stream/v3/{sid}/master.m3u8` with relative
+`segment/{name}` (pv3:3163-3181, 4538-4553); subtitles, fonts and every control call stay on the API.
+The node checks the bearer itself (`internal/proxy/mediagrant.go:62-146`). Apple sends the feature only
+when the capabilities list it, takes it as agreed only when the start answer's `server_features`
+names it too, and accepts only HTTPS (HTTP if the API is HTTP), the session's own `/stream/v3/{sid}`
+paths and no query but `seek` (`ApplePlaybackV3Capabilities.swift:65-74`,
+`PlaybackSessionBridge.swift:1270-1276`, `StreamRequest.swift:83-96,137-219`). A node the client
+cannot reach or refuses is reported as `failure_recovery` with `sourceRefused`: the server replays the
+same plan through the API origin and does not count its key (pv3:5418-5423,5655-5668). The Windows
+client does all of this.
 
 Mode selection: `silo-server/internal/playback/protocol_v3.go:51-55,195-227`,
 `silo-server/internal/api/handlers/playback_v3.go:208-238`.

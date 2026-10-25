@@ -67,6 +67,8 @@ public static class PlaybackFeatures
     public const string HlsSubtitleRenditionsV1 = "hls_subtitle_renditions_v1";
     public const string ClientVideoTransformationsV1 = "client_video_transformations_v1";
     public const string DeviceQuirksV1 = "device_quirks_v1";
+
+    /// <summary>A plan's stream may come from a proxy node, under an absolute URL, still with the bearer (docs/api-contract.md, 9.1).</summary>
     public const string AuthorizedMediaOriginsV1 = "authorized_media_origins_v1";
 }
 

@@ -23,10 +23,12 @@ public static class PlaybackReportBuilder
     /// stream index, as <see cref="NativeEmbeddedSubtitles"/> declares, and reports a failed mount as
     /// <c>subtitle_embedded_failed</c>.</item>
     /// </list>
-    /// The server needs no other client feature for a valid start. Left out on purpose: <c>software_video_decode_v1</c>
-    /// (no effect at <c>declared</c> evidence), <c>plan_invalidated_v1</c> (needs the control socket),
-    /// <c>buffering_quality_v1</c>, <c>subrip_sidecar_v1</c>, <c>hls_subtitle_renditions_v1</c>,
-    /// <c>client_video_transformations_v1</c>, <c>device_quirks_v1</c> and <c>authorized_media_origins_v1</c>.
+    /// The server needs no other client feature for a valid start. <see cref="Build"/> adds
+    /// <c>authorized_media_origins_v1</c> where the server offers it: the stream may then come from a proxy node,
+    /// whose absolute URL <see cref="PlaybackUrl.ResolveStream"/> checks. Left out on purpose:
+    /// <c>software_video_decode_v1</c> (no effect at <c>declared</c> evidence), <c>plan_invalidated_v1</c> (needs the
+    /// control socket), <c>buffering_quality_v1</c>, <c>subrip_sidecar_v1</c>, <c>hls_subtitle_renditions_v1</c>,
+    /// <c>client_video_transformations_v1</c> and <c>device_quirks_v1</c>.
     /// </summary>
     public static IReadOnlyList<string> ClientFeatures { get; } =
         [PlaybackFeatures.PlaybackPlanV3, PlaybackFeatures.HeaderAuthenticatedMediaV1, PlaybackFeatures.EmbeddedSubtitlesV1];
@@ -67,7 +69,8 @@ public static class PlaybackReportBuilder
     /// <param name="appVersion">The app's version, for example <see cref="Granary.Core.Auth.ClientIdentity.ClientVersion"/>.</param>
     /// <param name="appChannel">The distribution channel (<c>release</c>, <c>dev</c>), when known.</param>
     /// <exception cref="ArgumentException">The app version is blank, or a codec list has more entries than the server accepts.</exception>
-    public static PlaybackClientReport Build(PlaybackDeviceFacts device, string appVersion, string? appChannel = null)
+    /// <param name="mediaOrigins">The server offers <c>authorized_media_origins_v1</c> (its capabilities list it).</param>
+    public static PlaybackClientReport Build(PlaybackDeviceFacts device, string appVersion, string? appChannel = null, bool mediaOrigins = false)
     {
         ArgumentNullException.ThrowIfNull(device);
         ArgumentException.ThrowIfNullOrWhiteSpace(appVersion);
@@ -104,7 +107,8 @@ public static class PlaybackReportBuilder
                 [DeliveryClasses.Hls] = Hls(video),
             },
         };
-        return new PlaybackClientReport(ClientFeatures, capabilities, context);
+        IReadOnlyList<string> features = mediaOrigins ? [.. ClientFeatures, PlaybackFeatures.AuthorizedMediaOriginsV1] : ClientFeatures;
+        return new PlaybackClientReport(features, capabilities, context);
     }
 
     /// <summary>

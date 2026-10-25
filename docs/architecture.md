@@ -85,7 +85,10 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   start position (the resume point minus 7 s from 30 s on, 0 to start over, sent explicitly), the profile's
   quality and bitrate cap (`PlaybackPreferencesReader`), the server's capabilities, and the device report:
   `MpvDeviceProbe` reads the GPU's D3D11VA decoder profiles; HEVC, VP9 and AV1 count only with hardware.
-- **The plan**: its stream URL must lie beneath the saved server (`PlaybackUrl`). `MediaAuthorization` checks
+- **The plan**: its stream URL must lie beneath the saved server, or, where the server offers
+  `authorized_media_origins_v1` and the start confirms it, be the session's own stream on a proxy node
+  (`PlaybackUrl.ResolveStream`, Apple's rules). A node URL the client refuses, or a node stream that never
+  shows a picture, goes back as `sourceRefused` (once per chain), and the server replays the plan at home. `MediaAuthorization` checks
   the login and profile before the load and hands out the bearer and profile headers. mpv plays through the
   media proxy (below) and gets no credential. The plan starts at its own `player_start_seconds`; positions shown, reported
   and sent are source time (`player + timeline_offset_seconds`). A direct play (`original_http`) is the file

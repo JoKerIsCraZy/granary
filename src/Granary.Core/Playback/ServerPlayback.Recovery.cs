@@ -27,6 +27,10 @@ public sealed partial class ServerPlayback
     private static readonly TimeSpan[] ReplanRetryDelays = [.. new[] { 1, 2, 4, 8 }.Select(s => TimeSpan.FromSeconds(s))];
 
     private readonly List<string> _failedPlanKeys = [];
+
+    // Once per chain: the server answers sourceRefused with the same plan through its own address, so a second one
+    // would be a node it keeps choosing, and counts as an ordinary failure.
+    private bool _sourceRefused;
     private int _authReloads;
     private int _reconnectTries;
     private bool _recovering;
@@ -35,7 +39,11 @@ public sealed partial class ServerPlayback
     /// <summary>The latest recovery; tests wait for it instead of for time.</summary>
     internal Task Recovery { get; private set; } = Task.CompletedTask;
 
-    private void ResetPlanChain() => _failedPlanKeys.Clear();
+    private void ResetPlanChain()
+    {
+        _failedPlanKeys.Clear();
+        _sourceRefused = false;
+    }
 
     private bool Superseded(int generation) => _stopping || generation != _generation;
 
@@ -78,7 +86,19 @@ public sealed partial class ServerPlayback
     private async Task RecoverFromFailureAsync(string classification, string? detail)
     {
         var plan = _plan!;
-        _failedPlanKeys.Add(plan.PlanAttemptKey);
+        if (classification == FailureClassifications.SourceRefused && _sourceRefused)
+        {
+            classification = "load_failed";
+        }
+        if (classification == FailureClassifications.SourceRefused)
+        {
+            // Not a failed recipe: the server replays this plan through the API and does not count it either.
+            _sourceRefused = true;
+        }
+        else
+        {
+            _failedPlanKeys.Add(plan.PlanAttemptKey);
+        }
         if (_failedPlanKeys.Count > MaxPlanAttempts)
         {
             Fail("This title could not be played. Try again later.", canRetry: true);
