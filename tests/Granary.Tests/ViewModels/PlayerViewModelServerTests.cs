@@ -40,13 +40,13 @@ public sealed class PlayerViewModelServerTests
         var viewModel = CreateViewModel();
         await viewModel.StartAsync(PlayRequest.Resume("episode-1"));
         Playback.Title = "Lupin";
-        Playback.Subtitle = "S03E01 · Chapter 1";
+        Playback.Subtitle = "S3 · E1 — Chapter 1";
         Playback.Preferences = PlaybackPreferences.Default with { SkipBackSeconds = 15, SkipForwardSeconds = 45 };
 
         Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));
 
         Assert.Equal("Lupin", viewModel.Title);
-        Assert.Equal("S03E01 · Chapter 1", viewModel.Subtitle);
+        Assert.Equal("S3 · E1 — Chapter 1", viewModel.Subtitle);
         Assert.True(viewModel.IsPlaying);
         Assert.Equal(15, viewModel.SkipBackSeconds);
         Assert.Equal(45, viewModel.SkipForwardSeconds);

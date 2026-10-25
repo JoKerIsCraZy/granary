@@ -267,8 +267,13 @@ public sealed partial class PlayerPage : Page
 
     public Thickness TopBarPadding(bool isFullScreen) => new(24, isFullScreen ? 24 : TitleBarHeight + 8, 24, 40);
 
-    public string EndTimeText(double position, double duration, bool showsRemaining) =>
-        showsRemaining ? PlayerTime.Remaining(position, duration) : PlayerTime.Format(duration);
+    // "31:55 / 48:41", or "31:55 / -16:46" with the time left.
+    public string TimesText(double position, double duration, bool showsRemaining) =>
+        PlayerTime.Format(position, duration) + " / "
+        + (showsRemaining ? PlayerTime.Remaining(position, duration) : PlayerTime.Format(duration));
+
+    // Upper case on screen only: screen readers get the line as written, so "S1 · E1" is not spelled out.
+    public string MetaText(string subtitle) => subtitle.ToUpper(CultureInfo.CurrentCulture);
 
     // Named for what it does; screen readers hear the times from the seek bar ("4 minutes of 1 hour 30 minutes").
     public string EndTimeName(bool showsRemaining) => showsRemaining ? "Show the duration" : "Show the time left";

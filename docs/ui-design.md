@@ -83,24 +83,24 @@ View models build `MediaCard`s with the texts already worded; the controls only 
 
 ## Player
 
-`Views/PlayerPage` on `PlayerViewModel`, after the server's web player (`web/src/player`), with red as the
-accent where the web player is white.
+`Views/PlayerPage` on `PlayerViewModel`, drawn as the server's web player (`web/src/player`, measured below).
 
 - **Window**: the player owns it. The sidebar is hidden completely (not just shrunk), the page reaches under
   the title bar and the caption buttons float over the video; the top 40 px stay the drag area, so the top
   bar starts below them. Full screen (`AppWindow`'s full-screen presenter) shows nothing but the player and
   returns to the window as it was, maximized or not. Leaving the page leaves full screen and stops playback,
   whichever way it is left (Back, `Alt+Left`, `Ctrl+K`, a session change).
-- **Layout**: black, the video filling the page. Top bar over a soft scrim: back (glass disc), title,
-  subtitle. Bottom bar over a stronger scrim: position, `SeekBar`, then the duration, which a click turns into
-  the time left; below, volume (mute and slider) on the left, skip back, the red play/pause disc and skip
-  forward in the middle (the skip discs show the profile's intervals), full screen on the right.
+- **Layout**: black, the video filling the page. Top left over a soft scrim the "✕ Exit" pill. Bottom bar
+  over a stronger scrim: the `SeekBar` across the width; below it on the left the title and the upper-case
+  line "S1 · E1 — EPISODE · 31:55 / 48:41" (a movie shows its year), whose end time a click turns into the
+  time left; in the middle skip back, the white play/pause disc and skip forward (glass discs showing the
+  profile's intervals); on the right mute, the volume slider and full screen.
 - **Seek bar**: 3 px track, red progress. Under the pointer the track grows, a thumb appears and a bubble
   shows the time there. It seeks on click and when a drag is released, never while dragging or when the
   position moves on, and keeps the target until playback has caught up, so the bar does not jump back. Keys:
   Left and Right by the skip intervals, Shift for 5 s, Home, End. Screen readers get a slider whose value
   is the position in words.
-- **States**: preparing shows the top bar and a spinner, no transport. Buffering puts a spinner on a dark
+- **States**: preparing shows Exit and a spinner, no transport. Buffering puts a spinner on a dark
   disc over the picture. Failed shows the message, Retry when it can help and Back; keyboard focus moves
   to them. Ended keeps the controls up.
 - **Auto-hide**: during playback the controls fade (and slide a few pixels) after 3 s without pointer

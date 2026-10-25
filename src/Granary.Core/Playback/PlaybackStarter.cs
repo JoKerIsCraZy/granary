@@ -165,7 +165,10 @@ public sealed class PlaybackStarter(
         return position >= RewindFromSeconds ? position - ResumeRewindSeconds : position;
     }
 
-    /// <summary>The player's title line and the line under it: the movie and its year, or the series and "S01E05 · Episode".</summary>
+    /// <summary>
+    /// The player's title line and the line under it, as Silo's web player writes them: the movie and its year, or
+    /// the series and "S1 · E5 — Episode".
+    /// </summary>
     public static (string Title, string Subtitle) Titles(WatchDetail detail)
     {
         ArgumentNullException.ThrowIfNull(detail);
@@ -174,13 +177,13 @@ public sealed class PlaybackStarter(
             return (detail.Title, detail.Year?.ToString(CultureInfo.InvariantCulture) ?? "");
         }
         string code = detail.SeasonNumber is { } season && detail.EpisodeNumber is { } episode
-            ? string.Create(CultureInfo.InvariantCulture, $"S{season:00}E{episode:00}")
+            ? string.Create(CultureInfo.InvariantCulture, $"S{season} · E{episode}")
             : "";
         if (string.IsNullOrWhiteSpace(detail.SeriesTitle))
         {
             return (detail.Title, code);
         }
-        return (detail.SeriesTitle, string.Join(" · ", new[] { code, detail.Title }.Where(p => p.Length > 0)));
+        return (detail.SeriesTitle, string.Join(" — ", new[] { code, detail.Title }.Where(p => p.Length > 0)));
     }
 
     /// <summary>A failed call worded for the viewer, and whether trying again can help.</summary>

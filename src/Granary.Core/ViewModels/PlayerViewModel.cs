@@ -73,7 +73,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     public partial string Title { get; private set; } = "";
 
-    /// <summary>"S01E05 · Episode title" for an episode, the year for a movie; may be empty.</summary>
+    /// <summary>"S1 · E5 — Episode title" for an episode, the year for a movie; may be empty.</summary>
     [ObservableProperty]
     public partial string Subtitle { get; private set; } = "";
 

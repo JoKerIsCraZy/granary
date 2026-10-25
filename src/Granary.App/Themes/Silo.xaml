@@ -406,17 +406,28 @@
         <GradientStop Offset="1" Color="#00000000" />
     </LinearGradientBrush>
     <SolidColorBrush x:Key="SiloPlayerForegroundBrush" Color="#FFFFFFFF" />
-    <SolidColorBrush x:Key="SiloPlayerMutedBrush" Color="#B3FFFFFF" />
+    <SolidColorBrush x:Key="SiloPlayerMetaBrush" Color="#8CFFFFFF" />
     <SolidColorBrush x:Key="SiloPlayerTrackBrush" Color="#38FFFFFF" />
     <SolidColorBrush x:Key="SiloPlayerPopupBrush" Color="#F2161618" />
     <SolidColorBrush x:Key="SiloPlayerPopupBorderBrush" Color="#1AFFFFFF" />
 
-    <!-- Position and duration beside the seek bar. -->
-    <Style x:Key="SiloPlayerTimeTextStyle" TargetType="TextBlock">
+    <!-- Bottom left, as on Silo's web player: the title, and under it a small upper-case line with the times. -->
+    <Style x:Key="SiloPlayerTitleTextStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource SiloFontSemiBold}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="Foreground" Value="{StaticResource SiloPlayerForegroundBrush}" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        <Setter Property="TextWrapping" Value="NoWrap" />
+    </Style>
+    <!-- Without a colour of its own: in the time toggle it takes the button's, which lightens under the pointer. -->
+    <Style x:Key="SiloPlayerMetaTextStyle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource SiloFontMedium}" />
         <Setter Property="FontWeight" Value="Medium" />
-        <Setter Property="FontSize" Value="13" />
-        <Setter Property="Foreground" Value="#D9FFFFFF" />
+        <Setter Property="FontSize" Value="10" />
+        <Setter Property="CharacterSpacing" Value="220" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        <Setter Property="TextWrapping" Value="NoWrap" />
         <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
 
@@ -465,7 +476,7 @@
                 Foreground="{TemplateBinding Foreground}" />
         </Grid>
     </ControlTemplate>
-    <!-- Bare icon in the bottom rail: mute, full screen. -->
+    <!-- Bare icon at the bottom right: mute, full screen. -->
     <Style x:Key="SiloPlayerIconButtonStyle" TargetType="Button">
         <Setter Property="Width" Value="40" />
         <Setter Property="Height" Value="40" />
@@ -477,28 +488,80 @@
         <Setter Property="UseSystemFocusVisuals" Value="True" />
         <Setter Property="Template" Value="{StaticResource SiloPlayerButtonTemplate}" />
     </Style>
-    <!-- Glass disc: back, skip back and forward. -->
+    <!-- Glass disc around play: skip back and forward. -->
     <Style x:Key="SiloPlayerDiscButtonStyle" TargetType="Button" BasedOn="{StaticResource SiloPlayerIconButtonStyle}">
-        <Setter Property="Width" Value="48" />
-        <Setter Property="Height" Value="48" />
+        <Setter Property="Width" Value="44" />
+        <Setter Property="Height" Value="44" />
         <Setter Property="Background" Value="#0FFFFFFF" />
-        <Setter Property="BorderBrush" Value="#1FFFFFFF" />
+        <Setter Property="BorderBrush" Value="#1AFFFFFF" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Foreground" Value="#EBFFFFFF" />
     </Style>
-    <!-- A time that is also a toggle: the end of the seek bar switches between duration and remaining time. -->
+    <!-- Leaving the player, top left: "✕ Exit" on a dark pill that stays readable on a bright picture. -->
+    <Style x:Key="SiloPlayerPillButtonStyle" TargetType="Button" BasedOn="{StaticResource SiloPlayerIconButtonStyle}">
+        <Setter Property="Width" Value="Auto" />
+        <Setter Property="Height" Value="36" />
+        <Setter Property="Padding" Value="14,0,16,0" />
+        <Setter Property="Background" Value="#99000000" />
+        <Setter Property="Foreground" Value="{StaticResource SiloPlayerForegroundBrush}" />
+        <Setter Property="FontFamily" Value="{StaticResource SiloFontMedium}" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="FontSize" Value="14" />
+    </Style>
+    <!-- A time that is also a toggle: the end time switches between duration and remaining time. -->
     <Style x:Key="SiloPlayerTextButtonStyle" TargetType="Button" BasedOn="{StaticResource SiloPlayerIconButtonStyle}">
         <Setter Property="Width" Value="Auto" />
-        <Setter Property="Height" Value="32" />
-        <Setter Property="Padding" Value="8,0" />
-        <Setter Property="Foreground" Value="#D9FFFFFF" />
+        <Setter Property="Height" Value="Auto" />
+        <Setter Property="Padding" Value="4,2" />
+        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="Foreground" Value="#8CFFFFFF" />
     </Style>
-    <!-- Play and pause: the red Silo disc, the one prominent control. -->
-    <Style x:Key="SiloPlayerPlayButtonStyle" TargetType="Button" BasedOn="{StaticResource SiloPrimaryButtonStyle}">
+    <!-- Play and pause: the one white disc, its icon dark. -->
+    <Style x:Key="SiloPlayerPlayButtonStyle" TargetType="Button">
         <Setter Property="Width" Value="56" />
         <Setter Property="Height" Value="56" />
-        <Setter Property="MinHeight" Value="0" />
         <Setter Property="Padding" Value="0" />
+        <Setter Property="Background" Value="#FFFFFFFF" />
+        <Setter Property="Foreground" Value="{StaticResource SiloBackgroundBrush}" />
+        <Setter Property="CornerRadius" Value="{StaticResource SiloPillCornerRadius}" />
+        <Setter Property="UseSystemFocusVisuals" Value="True" />
+        <Setter Property="FocusVisualMargin" Value="-3" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid x:Name="Root" Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}">
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup x:Name="CommonStates">
+                                <VisualState x:Name="Normal" />
+                                <VisualState x:Name="PointerOver">
+                                    <VisualState.Setters>
+                                        <Setter Target="Root.Background" Value="#E6FFFFFF" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Pressed">
+                                    <VisualState.Setters>
+                                        <Setter Target="Root.Background" Value="#CCFFFFFF" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Disabled">
+                                    <VisualState.Setters>
+                                        <Setter Target="Root.Opacity" Value="0.4" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                            </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>
+                        <ContentPresenter
+                            Padding="{TemplateBinding Padding}"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            AutomationProperties.AccessibilityView="Raw"
+                            Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            Foreground="{TemplateBinding Foreground}" />
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <!--

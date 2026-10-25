@@ -96,7 +96,7 @@ public sealed partial class PlayerPage
         || SeekBar.IsDragging || IsPointerOverControls() || HasOpenMenu() || HasKeyboardFocusInControls();
 
     private bool IsPointerOverControls() =>
-        PointerInPage() is { } point && (Contains(BottomBar, point) || Contains(BackButton, point) || Contains(TitlePanel, point));
+        PointerInPage() is { } point && (Contains(BottomBar, point) || Contains(ExitButton, point));
 
     private bool Contains(FrameworkElement element, Point point) =>
         element.ActualWidth > 0

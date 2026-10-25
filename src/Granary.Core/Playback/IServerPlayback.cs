@@ -34,7 +34,7 @@ public interface IServerPlayback : IAsyncDisposable
     /// <summary>The movie, or the series of an episode; empty until the title is known.</summary>
     string Title { get; }
 
-    /// <summary>"S01E05 · Episode title" for an episode, the year for a movie; may be empty.</summary>
+    /// <summary>"S1 · E5 — Episode title" for an episode, the year for a movie; may be empty.</summary>
     string Subtitle { get; }
 
     /// <summary>Added to the engine's position to get the title's own time (source time).</summary>
