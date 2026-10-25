@@ -75,6 +75,35 @@ minute (its renewed URL is), and the bitmap then tries the URL itself.
   series page queues the episode stills of every season, the season to play first. Four workers fetch
   them beside the downloads for images on screen, so a long queue never delays those.
 
+## Server playback
+
+A title plays through one `ServerPlayback` (Granary.Core) per start of the player page; the page's
+`PlayerViewModel` shows its state in the title's own time and passes seeks to it. The protocol is in
+[api-contract.md](api-contract.md), sections 8 to 10.
+
+- **Before the plan** (`PlaybackStarter`): watch detail, the file played last (else the first whole file), the
+  start position (the resume point minus 7 s from 30 s on, 0 to start over, sent explicitly), the profile's
+  quality and bitrate cap (`PlaybackPreferencesReader`), the server's capabilities, and the device report:
+  `MpvDeviceProbe` reads the GPU's D3D11VA decoder profiles; HEVC, VP9 and AV1 count only with hardware.
+- **The plan**: its stream URL must lie beneath the saved server (`PlaybackUrl`). `MediaAuthorization` gives the
+  load the bearer and profile headers with a token that has at least half its lifetime ahead; mpv keeps them
+  for every request of the load. The plan starts at its own `player_start_seconds`; positions shown, reported
+  and sent are source time (`player + timeline_offset_seconds`).
+- **While playing**: progress every 10 s, and once a pause has held for a second (`PlaybackProgress`: one
+  sequence per sample, retried with the identical body). Leaving the page by any way stops the session with
+  its final position and stops the engine (`PlayerViewModel.Leave`). An end within 30 s of the title's end
+  finishes it; an earlier end is a stream that broke off.
+- **Recovery**: refused headers (401 mid-stream) → fresh token, same plan reloaded where the viewer was; a plan
+  that never played → `failure_recovery` replan with every key tried (at most 8); a connection lost after the
+  first frame → no-op `track_change` replans for about 2.5 minutes; a session the server forgot (404) → a new
+  attempt at the position; an administrator's stop (410) → leave; a seek outside a remux or transcode window
+  → `seek_reanchor`.
+- After a refused request mpv runs to the end of what it had read and pauses there before it reports the end.
+  The engine keeps the last real position and pause from the refusal until the next load, so the end of that
+  data is never taken for the viewer's position.
+- `--play <file or URL>` plays without the server and `--play-item <content id>` plays a title of the
+  signed-in server, for development.
+
 ## Sessions and authentication
 
 API calls pass through two handlers on the `SiloHttp` client:

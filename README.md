@@ -6,8 +6,8 @@ Granary is a working title and an independent project, not an official Silo app.
 Built with C# / .NET 10, WinUI 3 (Windows App SDK) and libmpv. It aims to play as much as possible
 via Direct Play so the server rarely has to transcode.
 
-**Status:** early development. The project structure, the playback engine and server discovery
-exist; sign-in, browsing and server playback follow next.
+**Status:** early development. Sign-in, browsing and playback from the server work; audio and subtitle
+menus, the next episode and the other player features follow next.
 
 ## Requirements
 
@@ -28,7 +28,8 @@ dotnet run --project src/Granary.App
 ```
 
 During development `--play <file or URL>` opens a video directly:
-`dotnet run --project src/Granary.App -- --play C:\Videos\sample.mkv`.
+`dotnet run --project src/Granary.App -- --play C:\Videos\sample.mkv`, and `--play-item <content id>` plays a
+title of the signed-in server.
 
 ## Documentation
 
