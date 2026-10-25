@@ -30,12 +30,12 @@
 
         <Grid Grid.Row="1">
             <!-- Rows of buttons scroll as focus moves; a row without buttons takes the focus itself (arrow keys scroll it). -->
-            <ScrollViewer x:Name="Scroller" HorizontalScrollMode="Enabled" HorizontalScrollBarVisibility="Hidden"
-                          VerticalScrollMode="Disabled" VerticalScrollBarVisibility="Disabled" ViewChanged="OnViewChanged"
-                          controls:WheelScrollsPage.IsEnabled="True"
-                          IsTabStop="{x:Bind IsScrollerTabStop, Mode=OneWay}" UseSystemFocusVisuals="True"
-                          AutomationProperties.Name="{x:Bind Title, Mode=OneWay}"
-                          Content="{x:Bind ShelfContent, Mode=OneWay}" />
+            <ScrollView x:Name="Scroller" ContentOrientation="Horizontal" HorizontalScrollMode="Enabled" HorizontalScrollBarVisibility="Hidden"
+                        VerticalScrollMode="Disabled" VerticalScrollBarVisibility="Hidden" ViewChanged="OnViewChanged"
+                        controls:WheelScrollsPage.IsEnabled="True"
+                        IsTabStop="{x:Bind IsScrollerTabStop, Mode=OneWay}" UseSystemFocusVisuals="True"
+                        AutomationProperties.Name="{x:Bind Title, Mode=OneWay}"
+                        Content="{x:Bind ShelfContent, Mode=OneWay}" />
 
             <Button x:Name="PreviousButton" Style="{StaticResource SiloIconButtonStyle}" HorizontalAlignment="Left" VerticalAlignment="Center"
                     Margin="-18,0,0,40" Visibility="Collapsed" Click="OnPreviousClick" IsTabStop="False"

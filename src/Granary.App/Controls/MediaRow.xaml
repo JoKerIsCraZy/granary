@@ -25,9 +25,9 @@
         </Grid>
 
         <Grid Grid.Row="1">
-            <ScrollViewer x:Name="Scroller" HorizontalScrollMode="Enabled" HorizontalScrollBarVisibility="Hidden"
-                          VerticalScrollMode="Disabled" VerticalScrollBarVisibility="Disabled" ViewChanged="OnViewChanged"
-                          controls:WheelScrollsPage.IsEnabled="True">
+            <ScrollView x:Name="Scroller" ContentOrientation="Horizontal" HorizontalScrollMode="Enabled" HorizontalScrollBarVisibility="Hidden"
+                        VerticalScrollMode="Disabled" VerticalScrollBarVisibility="Hidden" ViewChanged="OnViewChanged"
+                        controls:WheelScrollsPage.IsEnabled="True">
                 <ItemsRepeater x:Name="Items" ItemsSource="{x:Bind ItemsSource, Mode=OneWay}">
                     <ItemsRepeater.Layout>
                         <StackLayout Orientation="Horizontal" Spacing="20" />
@@ -41,7 +41,7 @@
                         </DataTemplate>
                     </ItemsRepeater.ItemTemplate>
                 </ItemsRepeater>
-            </ScrollViewer>
+            </ScrollView>
 
             <!-- Mouse users get arrows; touch and touchpads scroll directly, keyboard users tab through. -->
             <Button x:Name="PreviousButton" Style="{StaticResource SiloIconButtonStyle}" HorizontalAlignment="Left" VerticalAlignment="Center"

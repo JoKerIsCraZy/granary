@@ -53,7 +53,10 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
   rating bottom left, a watched mark bottom right, a 3 px red progress bar, then title, subtitle and an
   optional caption. Without artwork, or when it fails (expired signature), the title stands in.
 - `MediaRow`: row title, optional "EXPLORE ALL", horizontally scrolling cards (posters 185 px,
-  landscape 314 px, 20 px apart), arrows for mouse users.
+  landscape 314 px, 20 px apart), arrows for mouse users. Sideways rows (`MediaRow`, `DetailShelf`, search's
+  people) are `ScrollView`s that ignore the mouse wheel (`WheelScrollsPage`): the wheel scrolls the page, Shift or a
+  tilting wheel the row. A `ScrollViewer` row that only caught the wheel's routed event still took quick turns
+  sideways: WinUI handles the wheel as an inertial manipulation.
 - `MediaGrid`: cards filling the width (posters at least 185 px, landscape at least 280 px), meant to sit
   in the page's own `ScrollViewer`; `LoadMoreCommand` runs near the end for cursor paging. A list loaded by
   window instead (the library and collection grids) holds `MediaCard.Placeholder` for titles not loaded

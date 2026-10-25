@@ -15,7 +15,7 @@ public sealed partial class DetailShelf : UserControl
         DependencyProperty.Register(nameof(Caption), typeof(string), typeof(DetailShelf), new PropertyMetadata(""));
 
     public static readonly DependencyProperty ShelfContentProperty =
-        DependencyProperty.Register(nameof(ShelfContent), typeof(object), typeof(DetailShelf), new PropertyMetadata(null));
+        DependencyProperty.Register(nameof(ShelfContent), typeof(UIElement), typeof(DetailShelf), new PropertyMetadata(null));
 
     public static readonly DependencyProperty IsScrollerTabStopProperty =
         DependencyProperty.Register(nameof(IsScrollerTabStop), typeof(bool), typeof(DetailShelf), new PropertyMetadata(false));
@@ -40,9 +40,9 @@ public sealed partial class DetailShelf : UserControl
     }
 
     /// <summary>The row's items, laid out horizontally.</summary>
-    public object? ShelfContent
+    public UIElement? ShelfContent
     {
-        get => GetValue(ShelfContentProperty);
+        get => (UIElement?)GetValue(ShelfContentProperty);
         set => SetValue(ShelfContentProperty, value);
     }
 
@@ -58,7 +58,7 @@ public sealed partial class DetailShelf : UserControl
     private void OnNextClick(object sender, RoutedEventArgs e) => ScrollBy(1);
 
     private void ScrollBy(int direction) =>
-        Scroller.ChangeView(Scroller.HorizontalOffset + direction * Scroller.ViewportWidth * 0.85, null, null);
+        Scroller.ScrollTo(Scroller.HorizontalOffset + direction * Scroller.ViewportWidth * 0.85, 0);
 
     private void OnPointerEntered(object sender, PointerRoutedEventArgs e)
     {
@@ -72,7 +72,7 @@ public sealed partial class DetailShelf : UserControl
         UpdateArrows();
     }
 
-    private void OnViewChanged(object? sender, ScrollViewerViewChangedEventArgs e) => UpdateArrows();
+    private void OnViewChanged(ScrollView sender, object args) => UpdateArrows();
 
     private void UpdateArrows()
     {

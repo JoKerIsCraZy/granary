@@ -105,7 +105,7 @@ public sealed partial class MediaRow : UserControl
     private void OnNextClick(object sender, RoutedEventArgs e) => ScrollBy(1);
 
     private void ScrollBy(int direction) =>
-        Scroller.ChangeView(Scroller.HorizontalOffset + direction * Scroller.ViewportWidth * 0.85, null, null);
+        Scroller.ScrollTo(Scroller.HorizontalOffset + direction * Scroller.ViewportWidth * 0.85, 0);
 
     private void OnPointerEntered(object sender, PointerRoutedEventArgs e)
     {
@@ -119,7 +119,7 @@ public sealed partial class MediaRow : UserControl
         UpdateArrows();
     }
 
-    private void OnViewChanged(object? sender, ScrollViewerViewChangedEventArgs e) => UpdateArrows();
+    private void OnViewChanged(ScrollView sender, object args) => UpdateArrows();
 
     private void UpdateArrows()
     {
