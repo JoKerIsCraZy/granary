@@ -6,6 +6,7 @@ using Granary.Core.Api.Auth;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Discovery;
 using Granary.Core.Api.Images;
+using Granary.Core.Api.Playback;
 using Granary.Core.Api.Profiles;
 using Granary.Core.Artwork;
 using Granary.Core.Auth;
@@ -46,6 +47,8 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<SystemApi>();
         services.AddTransient<AccountApi>();
         services.AddTransient<CatalogApi>();
+        services.AddTransient<WatchApi>();
+        services.AddTransient<PlaybackApi>();
         services.AddTransient<LibraryPageApi>();
         services.AddTransient<ImagesApi>();
         services.AddSingleton<ImageParameterCache>();
