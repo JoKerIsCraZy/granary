@@ -38,6 +38,20 @@ public sealed class PlayerViewModelTests
         Assert.Equal(@"C:\Videos\movie.mkv", source.Url.LocalPath);
     }
 
+    [Theory]
+    [InlineData(@"\\nas\share\movie.mkv")]
+    [InlineData("//nas/share/movie.mkv")]
+    public async Task Direct_RefusesNetworkPaths(string path)
+    {
+        // Opening one would make Windows sign in to that host with the user's account.
+        var viewModel = CreateViewModel();
+
+        await viewModel.StartAsync(PlayRequest.Direct(path));
+
+        Assert.Empty(_engine.Loaded);
+        Assert.True(viewModel.IsFailed);
+    }
+
     [Fact]
     public async Task TheFirstFrame_TurnsPreparingIntoPlaying()
     {

@@ -245,6 +245,12 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     private void StartDirect(string text)
     {
         text = text.Trim().Trim('"');
+        // Opening a network path would make Windows sign in to that host with the user's account.
+        if (text.StartsWith(@"\\", StringComparison.Ordinal) || text.StartsWith("//", StringComparison.Ordinal))
+        {
+            Fail("Network paths cannot be played; copy the file to this computer.", canRetry: false);
+            return;
+        }
         var source = Uri.TryCreate(text, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https"
             ? new MediaSource(uri, [])
             : MediaSource.Local(text);

@@ -269,8 +269,13 @@ public sealed partial class ServerPlayback : IServerPlayback
         {
             return;
         }
-        // The plan's own headers are empty today; they would go to the same server only.
-        var headers = media.Headers.Concat(_plan!.Stream.Headers.Where(h => !media.Headers.Any(m => m.Key.Equals(h.Key, StringComparison.OrdinalIgnoreCase)))).ToList();
+        // Only the media headers this client knows go out. The plan's own headers are empty today, and a server
+        // that sent some could otherwise set anything (Cookie, Host, Range) on every request of the load.
+        if (_plan!.Stream.Headers.Count > 0)
+        {
+            _logger.LogWarning("The plan asks for {Count} header(s) of its own; they are not sent", _plan.Stream.Headers.Count);
+        }
+        var headers = media.Headers;
         _generation++;
         _started = false;
         _loadedAt = _time.GetTimestamp();

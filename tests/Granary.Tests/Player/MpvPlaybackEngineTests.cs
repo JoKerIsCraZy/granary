@@ -184,6 +184,15 @@ public sealed class MpvPlaybackEngineTests : IDisposable
     [InlineData("Authorization", "Bearer a,b")]
     [InlineData("X-Bad", "line\r\nbreak")]
     [InlineData("Bad:Name", "value")]
+    [InlineData("%3%Bad", "value")]
+    [InlineData("\"Quoted\"", "value")]
+    [InlineData("X Space", "value")]
+    [InlineData("X-Value", "a\\b")]
+    [InlineData("X-Value", "\"quoted")]
+    [InlineData("X-Value", "[bracketed]")]
+    [InlineData("X-Value", "%5%hello")]
+    [InlineData("X-Value", "nul\0inside")]
+    [InlineData("X-Value", "tab\tinside")]
     public void Load_RejectsHeadersMpvWouldSplit(string name, string value)
     {
         using var engine = CreateEngine();

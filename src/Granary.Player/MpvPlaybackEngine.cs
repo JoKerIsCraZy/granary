@@ -109,10 +109,9 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
     public void Load(MediaSource source)
     {
         ArgumentNullException.ThrowIfNull(source);
-        // mpv parses http-header-fields as a comma-separated list; reject values that would split.
         foreach (var (name, value) in source.Headers)
         {
-            if (name.AsSpan().IndexOfAny(",\r\n:") >= 0 || value.AsSpan().IndexOfAny(",\r\n") >= 0)
+            if (!IsSafeHeader(name, value))
             {
                 throw new ArgumentException($"Header '{name}' cannot be passed to mpv safely.", nameof(source));
             }
@@ -135,6 +134,16 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
         _logger.LogInformation("Loading {Target} with {HeaderCount} header(s)", Describe(source.Url), source.Headers.Count);
         _mpv.Command("loadfile", target, "replace", "-1", perFileOptions);
     }
+
+    /// <summary>
+    /// mpv reads <c>http-header-fields</c> as a list: commas split it, a backslash escapes, and an item starting with a
+    /// quote, a bracket or <c>%n%</c> is read as a quoted or counted string. Names must be HTTP tokens and values
+    /// printable ASCII without any of these, so no header can split, merge or smuggle another.
+    /// </summary>
+    internal static bool IsSafeHeader(string name, string value) =>
+        name.Length > 0 && name.All(c => char.IsAsciiLetterOrDigit(c) || c == '-')
+        && value.All(c => c is >= ' ' and <= '~' and not ',' and not '\\')
+        && (value.Length == 0 || value[0] is not ('"' or '\'' or '[' or '{' or '%'));
 
     public void SetPaused(bool paused) => _mpv.SetProperty("pause", paused ? "yes" : "no");
 

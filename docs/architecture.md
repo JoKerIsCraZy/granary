@@ -101,6 +101,11 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
 - After a refused request mpv runs to the end of what it had read and pauses there before it reports the end.
   The engine keeps the last real position and pause from the refusal until the next load, so the end of that
   data is never taken for the viewer's position.
+- mpv keeps the media headers for every request of a load and would forward them on a redirect or to an
+  absolute URL in an HLS manifest. v2 media routes do not redirect and their manifests are relative, so only a
+  server or proxy that already sees the tokens could send them elsewhere. A loopback proxy that adds the headers
+  per request and only towards the saved server (the Apple client's design) would close this for good and would
+  also make the reload after a token refresh unnecessary.
 - `--play <file or URL>` plays without the server and `--play-item <content id>` plays a title of the
   signed-in server, for development.
 

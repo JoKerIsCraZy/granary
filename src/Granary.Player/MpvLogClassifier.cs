@@ -24,6 +24,9 @@ public static partial class MpvLogClassifier
     [GeneratedRegex(@"\bHTTP error (\d{3})\b", RegexOptions.CultureInvariant)]
     private static partial Regex HttpError();
 
+    [GeneratedRegex(@"(https?://[^\s?#]+)\?[^\s#]*", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase)]
+    private static partial Regex UrlQuery();
+
     public static MpvNetworkFailure Classify(string prefix, string text)
     {
         if (!prefix.Contains("curl", StringComparison.OrdinalIgnoreCase)
@@ -49,10 +52,11 @@ public static partial class MpvLogClassifier
 
     /// <summary>
     /// Never let a credential reach the app log, even if a verbose line echoes an option: a line that
-    /// mentions an Authorization header is dropped whole, everything else is masked.
+    /// mentions an Authorization header is dropped whole, URLs lose their query (a plan's URL may carry a
+    /// signature under any name), and everything else is masked.
     /// </summary>
     public static string Redact(string text) =>
         text.Contains("authorization", StringComparison.OrdinalIgnoreCase)
             ? "<redacted: line contained an Authorization header>"
-            : LogRedactor.Redact(text);
+            : LogRedactor.Redact(UrlQuery().Replace(text, "$1?…"));
 }

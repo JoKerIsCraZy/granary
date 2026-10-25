@@ -318,6 +318,8 @@ public sealed class ServerPlaybackTests
         Assert.EndsWith("/master.m3u8", load.Url.AbsolutePath, StringComparison.Ordinal);
         Assert.Equal(TimeSpan.FromSeconds(2), load.Start);
         Assert.Equal(598, playback.TimelineOffsetSeconds);
+        // The plan's own headers (X-Test here) are not sent: the client sends only the media headers it knows.
+        Assert.DoesNotContain(load.Headers, h => h.Key == "X-Test");
     }
 
     [Fact]
