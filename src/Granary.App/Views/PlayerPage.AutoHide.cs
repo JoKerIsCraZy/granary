@@ -32,6 +32,9 @@ public sealed partial class PlayerPage
 
     private void InitializeAutoHide()
     {
+        // The bar changes height with the window, and the lift with it.
+        BottomBar.SizeChanged += (_, _) => LiftSubtitles();
+        SizeChanged += (_, _) => LiftSubtitles();
         _hideTimer = DispatcherQueue.CreateTimer();
         _hideTimer.Interval = HideDelay;
         _hideTimer.IsRepeating = false;
@@ -126,7 +129,14 @@ public sealed partial class PlayerPage
         TopChrome.IsHitTestVisible = BottomChrome.IsHitTestVisible = visible;
         TopChrome.Translation = visible ? Vector3.Zero : new Vector3(0, -ChromeSlide, 0);
         BottomChrome.Translation = visible ? Vector3.Zero : new Vector3(0, ChromeSlide, 0);
+        LiftSubtitles();
     }
+
+    // Subtitles at the bottom move above the controls while they show, and back down when they fade.
+    private void LiftSubtitles() =>
+        ViewModel.LiftSubtitles(_areControlsVisible && ActualHeight > 0 && BottomBar.ActualHeight > 0
+            ? BottomBar.ActualHeight / ActualHeight
+            : 0);
 
     private void OnPagePointerMoved(object sender, PointerRoutedEventArgs e)
     {

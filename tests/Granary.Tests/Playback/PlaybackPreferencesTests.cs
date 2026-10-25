@@ -25,10 +25,12 @@ public sealed class PlaybackPreferencesTests
 
         await Create().ReadAsync(ScriptedSilo.Base, Token);
 
-        var sent = Assert.Single(_silo.SentTo(HttpMethod.Get, EffectivePath));
         Assert.Equal(
-            "?keys=playback.preferred_quality&keys=playback.max_bitrate_kbps&keys=player.video_skip_back_seconds&keys=player.video_skip_forward_seconds",
-            sent.Uri.Query);
+            [
+                "?keys=playback.preferred_quality&keys=playback.max_bitrate_kbps&keys=player.video_skip_back_seconds&keys=player.video_skip_forward_seconds",
+                "?keys=playback.subtitle_appearance&keys=player.subtitle_sync_ms",
+            ],
+            _silo.SentTo(HttpMethod.Get, EffectivePath).Select(r => r.Uri.Query).Order(StringComparer.Ordinal));
     }
 
     [Fact]
@@ -90,6 +92,49 @@ public sealed class PlaybackPreferencesTests
         _silo.On(HttpMethod.Get, EffectivePath, ScriptedSilo.NetworkError());
 
         Assert.Equal(PlaybackPreferences.Default, await Create().ReadAsync(ScriptedSilo.Base, Token));
+    }
+
+    [Fact]
+    public async Task Read_TakesTheSubtitleStyleAndDelay()
+    {
+        _silo.On(HttpMethod.Get, EffectivePath, ScriptedSilo.Json(HttpStatusCode.OK, """
+            {
+              "items": [
+                { "key": "playback.subtitle_appearance", "source": "profile", "value": {
+                  "fontSize": "xlarge", "fontFamily": "serif", "fontColor": "#FFFF00", "textOpacity": 80, "backgroundColor": "#101010",
+                  "backgroundStyle": "box", "backgroundOpacity": 60, "textOutline": true, "textOutlineColor": "#222222", "position": "top" } },
+                { "key": "player.subtitle_sync_ms", "value": -250, "source": "profile_device" }
+              ],
+              "revision": 3
+            }
+            """));
+
+        var preferences = await Create().ReadAsync(ScriptedSilo.Base, Token);
+
+        Assert.Equal(new SubtitleAppearance(68, "serif", "#ffff00", 80, "#101010", SubtitleBackground.Box, 60, true, "#222222", SubtitlePosition.Top),
+            preferences.Subtitles);
+        Assert.Equal(-250, preferences.SubtitleDelayMs);
+        Assert.True(preferences.SubtitleDelayOnDevice);
+    }
+
+    [Fact]
+    public async Task Read_SanitizesABrokenSubtitleStyle()
+    {
+        _silo.On(HttpMethod.Get, EffectivePath, ScriptedSilo.Json(HttpStatusCode.OK, """
+            {
+              "items": [
+                { "key": "playback.subtitle_appearance", "value": { "fontSize": "huge", "fontColor": "red", "textOpacity": 0, "backgroundOpacity": 140,
+                  "position": "middle" } },
+                { "key": "player.subtitle_sync_ms", "value": 99000 }
+              ],
+              "revision": 3
+            }
+            """));
+
+        var preferences = await Create().ReadAsync(ScriptedSilo.Base, Token);
+
+        Assert.Equal(SubtitleAppearance.Default with { TextOpacity = 1, BackgroundOpacity = 100 }, preferences.Subtitles);
+        Assert.Equal(10_000, preferences.SubtitleDelayMs);
     }
 
     [Fact]

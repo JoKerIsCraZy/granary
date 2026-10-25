@@ -87,6 +87,14 @@ internal sealed class FakePlaybackEngine : IPlaybackEngine
 
     public void SetSubtitleDelay(double seconds) => SubtitleDelay = seconds;
 
+    public SubtitleAppearance? SubtitleLook { get; private set; }
+
+    public double SubtitleLift { get; private set; }
+
+    public void SetSubtitleLook(SubtitleAppearance look) => SubtitleLook = look;
+
+    public void SetSubtitleLift(double fraction) => SubtitleLift = fraction;
+
     public int Stops { get; private set; }
 
     public void Stop() => Stops++;

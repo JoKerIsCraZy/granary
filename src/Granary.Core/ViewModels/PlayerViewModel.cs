@@ -163,6 +163,12 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     /// <summary>The viewer's pick in the audio menu: it plays at once and is saved for the series.</summary>
     public void SelectAudio(int ordinal) => _playback?.SelectAudio(ordinal);
 
+    /// <summary>
+    /// Keeps subtitles clear of the controls: raised by <paramref name="fraction"/> of the picture's height while they
+    /// show, back down (0) when they fade.
+    /// </summary>
+    public void LiftSubtitles(double fraction) => _engine.SetSubtitleLift(fraction);
+
     /// <summary>The viewer's pick in the subtitle menu, null for Off: it shows at once and is saved for the series.</summary>
     public void SelectSubtitle(string? trackId) => _playback?.SelectSubtitle(trackId);
 

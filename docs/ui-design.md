@@ -105,8 +105,11 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   language's name (14 px), chips on the right for the format (SRT, ASS, VTT, PGS, DVD, DVB) and the source
   (EMBEDDED, EXTERNAL, DOWNLOADED; 10 px, white 50 % on white 10 %), and the track's own label under it (12 px,
   white 40 %) unless it only repeats the language or the format. The chosen row has a faint light behind it,
-  white text and a check; the others are white 70 %. Still to come: the delay row, appearance, and lifting the
-  subtitles while the controls show.
+  white text and a check; the others are white 70 %. Still to come: the delay row.
+- **Subtitle look**: text subtitles follow the profile's `playback.subtitle_appearance` as the Android and Apple
+  clients draw it (size at 1080 lines, font, colour and opacity, box, shadow or outline in the outline colour,
+  bottom, lower third or top), mapped to mpv's `sub-*` options; styled ASS and image subtitles keep their own.
+  While the controls show, subtitles at the bottom move up by the bar's height (`sub-pos`) and back when they fade.
 - **Seek bar**: 3 px track, red progress. Under the pointer the track grows, a thumb appears and a bubble
   shows the time there. It seeks on click and when a drag is released, never while dragging or when the
   position moves on, and keeps the target until playback has caught up, so the bar does not jump back. Keys:

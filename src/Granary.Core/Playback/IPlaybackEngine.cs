@@ -107,5 +107,14 @@ public interface IPlaybackEngine : IDisposable
     /// <summary>Shows subtitles this much later (negative: earlier) than their own times say.</summary>
     void SetSubtitleDelay(double seconds);
 
+    /// <summary>Styles text subtitles from now on; image subtitles and styled ASS keep their own look.</summary>
+    void SetSubtitleLook(SubtitleAppearance look);
+
+    /// <summary>
+    /// Raises subtitles at the bottom by <paramref name="fraction"/> of the picture's height, 0 to 0.5, so they clear
+    /// controls drawn over it; 0 puts them back.
+    /// </summary>
+    void SetSubtitleLift(double fraction);
+
     void Stop();
 }

@@ -217,6 +217,7 @@ public sealed partial class ServerPlayback : IServerPlayback
             return;
         }
         (Title, Subtitle) = PlaybackStarter.Titles(_context.Watch);
+        _engine.SetSubtitleLook(_context.Preferences.Subtitles);
         SetStatus(Status);
         await StartAttemptAsync(PlaybackStarter.StartPosition(_context.Watch, fromBeginning), cancellationToken);
     }

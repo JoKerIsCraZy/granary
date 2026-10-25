@@ -85,6 +85,36 @@ public sealed class MpvPlaybackEngineTests : IDisposable
     }
 
     [Fact]
+    public void TheDefaultSubtitleLook_IsWhiteTextWithAShadow_AtTheClientsSize()
+    {
+        var options = MpvPlaybackEngine.SubtitleOptions(SubtitleAppearance.Default).ToDictionary(o => o.Name, o => o.Value);
+
+        Assert.Equal("37.33", options["sub-font-size"]);
+        Assert.Equal("sans-serif", options["sub-font"]);
+        Assert.Equal("#FFFFFFFF", options["sub-color"]);
+        Assert.Equal("outline-and-shadow", options["sub-border-style"]);
+        Assert.Equal(("#FF000000", "2", "0"), (options["sub-back-color"], options["sub-shadow-offset"], options["sub-outline-size"]));
+        Assert.Equal("bottom", options["sub-align-y"]);
+    }
+
+    [Fact]
+    public void ABoxLook_DrawsTheBackgroundAtItsOpacity()
+    {
+        var look = SubtitleAppearance.Default with
+        {
+            Background = SubtitleBackground.Box, BackgroundColor = "#101010", BackgroundOpacity = 60, TextOpacity = 50,
+            FontFamily = SubtitleAppearance.Monospace, TextOutline = true, Position = SubtitlePosition.Top,
+        };
+
+        var options = MpvPlaybackEngine.SubtitleOptions(look).ToDictionary(o => o.Name, o => o.Value);
+
+        Assert.Equal("background-box", options["sub-border-style"]);
+        Assert.Equal("#99101010", options["sub-back-color"]);
+        Assert.Equal("#80FFFFFF", options["sub-color"]);
+        Assert.Equal(("Consolas", "1.65", "top"), (options["sub-font"], options["sub-outline-size"], options["sub-align-y"]));
+    }
+
+    [Fact]
     public async Task AnAudioSwitch_TakesOnlyAStreamTheFileHas()
     {
         using var engine = CreateEngine();

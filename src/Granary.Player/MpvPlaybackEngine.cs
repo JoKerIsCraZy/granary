@@ -24,6 +24,9 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
     // The audio stream the latest load asked for; checked once mpv opened the file.
     private int? _loadAudio;
 
+    private SubtitlePosition _subtitlePosition = SubtitlePosition.Bottom;
+    private double _subtitleLift;
+
     // Set once the server refused a request of the current load. mpv then runs to the end of what it had read and
     // pauses there (keep-open), well before it says the file ended: positions and pauses from then on are not the
     // viewer's, so the snapshot keeps the last real ones until the next load, and the end is the refusal's.
@@ -252,6 +255,100 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
 
     public void SetSubtitleDelay(double seconds) =>
         _mpv.SetProperty("sub-delay", seconds.ToString("0.###", CultureInfo.InvariantCulture));
+
+    public void SetSubtitleLook(SubtitleAppearance look)
+    {
+        ArgumentNullException.ThrowIfNull(look);
+        foreach (var (name, value) in SubtitleOptions(look))
+        {
+            _mpv.SetProperty(name, value);
+        }
+        lock (_gate)
+        {
+            _subtitlePosition = look.Position;
+        }
+        ApplySubtitlePosition();
+    }
+
+    public void SetSubtitleLift(double fraction)
+    {
+        lock (_gate)
+        {
+            _subtitleLift = Math.Clamp(fraction, 0, 0.5);
+        }
+        ApplySubtitlePosition();
+    }
+
+    // The clients' look in libass terms (Android's caption style, Apple's render style): sizes are scaled pixels at a
+    // window height of 720 where the clients count at 1080 lines; shadow and outline take the outline colour; a box
+    // gets an eighth of the text size as its margin, as Android pads it.
+    internal static IEnumerable<(string Name, string Value)> SubtitleOptions(SubtitleAppearance look)
+    {
+        const double Scale = 720.0 / 1080;
+        const double Outline = 1.65;
+        double size = look.FontSize * Scale;
+        yield return ("sub-font-size", Number(size));
+        yield return ("sub-font", look.FontFamily switch
+        {
+            SubtitleAppearance.Serif => "Times New Roman",
+            SubtitleAppearance.Monospace => "Consolas",
+            var family => family,
+        });
+        yield return ("sub-color", Color(look.FontColor, look.TextOpacity));
+        yield return ("sub-outline-color", Color(look.TextOutlineColor, 100));
+        double outline = look.TextOutline ? Outline : 0;
+        switch (look.Background)
+        {
+            case SubtitleBackground.Box:
+                yield return ("sub-border-style", "background-box");
+                yield return ("sub-back-color", Color(look.BackgroundColor, look.BackgroundOpacity));
+                yield return ("sub-shadow-offset", Number(size / 8));
+                break;
+            case SubtitleBackground.Shadow:
+                yield return ("sub-border-style", "outline-and-shadow");
+                yield return ("sub-back-color", Color(look.TextOutlineColor, 100));
+                yield return ("sub-shadow-offset", "2");
+                break;
+            case SubtitleBackground.Outline:
+                yield return ("sub-border-style", "outline-and-shadow");
+                yield return ("sub-shadow-offset", "0");
+                outline = Outline;
+                break;
+            default:
+                yield return ("sub-border-style", "outline-and-shadow");
+                yield return ("sub-shadow-offset", "0");
+                break;
+        }
+        yield return ("sub-outline-size", Number(outline));
+        yield return ("sub-align-y", look.Position == SubtitlePosition.Top ? "top" : "bottom");
+
+        static string Number(double value) => value.ToString("0.##", CultureInfo.InvariantCulture);
+
+        // #AARRGGBB, the alpha from a percentage.
+        static string Color(string rgb, int opacity) =>
+            "#" + ((int)Math.Round(Math.Clamp(opacity, 0, 100) * 255 / 100.0)).ToString("X2", CultureInfo.InvariantCulture) + rgb.TrimStart('#').ToUpperInvariant();
+    }
+
+    // sub-pos counts in percent of the picture's height from the top, 100 being the usual bottom place. Lower third
+    // sits at 70 (Android's position for it); top aligns to the top edge, which a lift leaves alone. The lift moves
+    // every kind of subtitle, styled ASS and images too.
+    private void ApplySubtitlePosition()
+    {
+        SubtitlePosition position;
+        double lift;
+        lock (_gate)
+        {
+            position = _subtitlePosition;
+            lift = _subtitleLift;
+        }
+        double pos = position switch
+        {
+            SubtitlePosition.LowerThird => 70 - lift * 100,
+            SubtitlePosition.Top => 100,
+            _ => 100 - lift * 100,
+        };
+        _mpv.SetProperty("sub-pos", Math.Max(0, pos).ToString("0.#", CultureInfo.InvariantCulture));
+    }
 
     private bool IsCurrentLoad(long loadId)
     {
