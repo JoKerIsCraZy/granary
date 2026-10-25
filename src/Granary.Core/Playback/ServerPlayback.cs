@@ -345,6 +345,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         }
         _plan = plan;
         TakeTracks(plan);
+        TakeAddedSubtitle(plan);
         _planAttemptId = Guid.NewGuid().ToString();
         _firstFrameReported = false;
         if (plan.RequiresClientExecution)

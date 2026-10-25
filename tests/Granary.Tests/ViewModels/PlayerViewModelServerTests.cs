@@ -75,12 +75,14 @@ public sealed class PlayerViewModelServerTests
         var viewModel = CreateViewModel();
         await viewModel.StartAsync(PlayRequest.Resume("movie-1"));
         Playback.RaiseSubtitles([], selected: null);
-        Assert.False(viewModel.HasSubtitleTracks);
+        // Off alone: the menu still adds subtitles.
+        Assert.True(viewModel.HasSubtitleMenu);
+        Assert.Equal([true], viewModel.SubtitleTracks.Select(row => row.IsSelected));
 
         Playback.RaiseSubtitles([new SubtitleInventoryItem { TrackId = "file:1:subtitle:0", Source = "embedded", Language = "eng" }], "file:1:subtitle:0");
         viewModel.SelectSubtitle(null);
 
-        Assert.True(viewModel.HasSubtitleTracks);
+        Assert.True(viewModel.IsSubtitleOn);
         Assert.Equal([false, true], viewModel.SubtitleTracks.Select(row => row.IsSelected));
         Assert.Equal([null], Playback.SubtitlePicks);
     }
@@ -94,6 +96,7 @@ public sealed class PlayerViewModelServerTests
     {
         var viewModel = CreateViewModel();
         await viewModel.StartAsync(PlayRequest.Resume("movie-1"));
+        Playback.RaiseSubtitles([new SubtitleInventoryItem { TrackId = "file:1:subtitle:0", Source = "embedded", Language = "eng" }], "file:1:subtitle:0");
 
         viewModel.ChangeSubtitleDelay(delay);
 

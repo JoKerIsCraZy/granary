@@ -137,7 +137,9 @@ says why above the sections.
   profile's intervals), for an episode with a previous or next one flanked by previous and next episode discs (both
   slots kept while one has an episode, so Play stays in the middle; a movie has none); on the right mute, the volume
   slider, audio, chapters, subtitles, settings, playback info, mini view, fill screen and full screen. A utility
-  button that is on (playback info, fill screen) turns white with the web's amber dot under it. Previous and next start that episode from where the
+  button that is on (playback info, fill screen, subtitles) turns white with the web's amber dot under it. As the
+  web's `1fr auto 1fr` row, the right column is never narrower than its buttons: in a narrow window the transport
+  moves left rather than the buttons being cut off. Previous and next start that episode from where the
   profile left it, as the web player does for the viewer; previous stays within the season and steps over episodes
   without a readable file.
 - **Audio menu** (`AudioTrackOption`, wording in `TrackText` after the web's `AudioTrackMenu`): the button shows
@@ -150,15 +152,38 @@ says why above the sections.
   placeholder without one), the title (14 px; "Chapter 2" when it has none) and its start (12 px, white 45 %). The
   chapter that plays has a faint light behind it and white text, the others are white 70 %; it has the focus when the
   menu opens. A row seeks to the chapter's start and closes the menu.
-- **Subtitle menu** (`SubtitleTrackOption`, after the web's `SubtitleMenu`): shown once the plan lists a track;
-  220 to 420 px wide, scrolling past 560 px. "Off" first, then the tracks embedded, external, downloaded: the
+- **Subtitle menu** (`SubtitleTrackOption`, after the web's `SubtitleMenu`): the button is there for every server
+  title, tracks or not, since the menu also adds subtitles. Captions glyph, struck through while none shows; white
+  with the amber dot while one does. C turns the subtitle off and back on to the track that showed last (both are
+  picks, saved for the series). 220 to 420 px wide, scrolling past 560 px. "Off" first, then the tracks embedded, external, downloaded: the
   language's name (14 px), chips on the right for the format (SRT, ASS, VTT, PGS, DVD, DVB) and the source
   (EMBEDDED, EXTERNAL, DOWNLOADED; 10 px, white 50 % on white 10 %), and the track's own label under it (12 px,
   white 40 %) unless it only repeats the language or the format. The chosen row has a faint light behind it,
   white text and a check; the others are white 70 %. Under a line, DELAY with earlier and later (100 ms steps,
-  up to 10 s either way), the value ("+300 ms") and Reset: subtitles move at once, and the profile's
-  `player.subtitle_sync_ms` is saved once the nudges settle for a second, or at the stop; a value this device kept
-  for itself is cleared, so the profile's counts, as the web does.
+  up to 10 s either way; disabled while no subtitle shows), the value ("+300 ms") and Reset: subtitles move at once,
+  and the profile's `player.subtitle_sync_ms` is saved once the nudges settle for 600 ms, as the web's, or at the
+  stop; a value this device kept for itself is cleared, so the profile's counts, as the web does. Under a line
+  "Add Subtitles…" and "Appearance…" (palette glyph), white 70 %.
+- **Add Subtitles** (`AddSubtitlesPanel`, `AddSubtitlesViewModel`, the web's `SubtitleSearchModal` with the player's
+  `SubtitleUploadForm`): a 480 px card (neutral 900, radius 8) on black 80 %, over everything; a click beside it, ✕
+  or Esc closes it, Tab stays inside. "Upload subtitle" with the web's help line, a dashed drop zone (white 20 %,
+  35 % under the pointer, 50 % while a file is dragged over it: "Drop subtitle file") that also opens the file
+  picker; SRT, VTT, ASS, SSA and SUB up to 5 MB, read and sent to `detect-language`, whose answer selects the
+  language ("Detected German from filename"; a language the viewer picks is sent as an override); Hearing impaired
+  (HI); Upload ("Uploading…"); "Selected: name"; errors in red 900 at 40 %. Then "Search online" (hidden only when
+  the server says its providers are off): a language and Search ("Searching…"), the server's warnings in yellow,
+  "Select a language and press Search." until there are results, and a row per result: the score badge (green from
+  70, yellow from 40, else red), the release, HI, "↓12,345" and the provider's badge (OS yellow, SDL blue, SS red,
+  UP violet), a ring while it downloads. The languages chosen stay while the page plays. A stored subtitle closes
+  the dialog and shows as the viewer's pick once a new plan lists it; the stream reloads where the viewer is.
+- **Subtitle appearance** (`SubtitleAppearancePanel`, the web's `SubtitleAppearancePanelView`): a 640 px glass card
+  (`#111114` at 95 %, radius 16, white 10 % edge) on black 70 %; "CAPTIONS" over "Subtitle appearance" and a round
+  ✕; a 112 px preview strip ("The quick brown fox / jumps over the lazy dog." at the web player's cue sizes); TEXT
+  (Size, Font as pills, the chosen one white; Color swatches; Opacity in %; Outline), BACKGROUND (Style pills; Opacity
+  and Color for a box), POSITION (Vertical), scrolling past 52 % of the window; at the bottom "↺ Use fallback style"
+  and "CHANGES SAVED AUTOMATICALLY" (or what went wrong). A change shows at once and is saved as the profile's
+  `playback.subtitle_appearance`, the latest only while a save is on its way, clearing this device's look as the web
+  does; fallback clears both and shows the server's default.
 - **Settings menu** (the web's QualityMenu): a gear pill (white 8 %) that names the quality ("Auto", "720p Medium")
   and, at a speed other than 1×, a white badge with it ("1.5×"). SPEED: the value at the right, the speeds 0.5× to 3×
   (0.25 apart up to 2×, then 2.5× and 3×) as stops on a track drawn like the seek bar, the fill from 1× to the
@@ -224,9 +249,10 @@ says why above the sections.
 - **Mouse**: a click on the picture plays or pauses (after 250 ms, so a double click does not), a double
   click toggles full screen. On touch a tap shows or hides the controls.
 - **Keyboard** (the web player's map, docs/api-contract.md 13.5): Space and K play/pause, F full screen,
-  P the mini view, Esc turns away an intro pill, else leaves full screen or the mini view, else closes, M mute, Left/Right skip, Up/Down volume ±5. Space wins over
-  a focused button; arrows go to a focused slider first. Nothing applies while a text field or an open menu
-  has focus, or with Ctrl, Alt, Shift or Windows held. The keys are handled on the page, not as keyboard
+  P the mini view, Esc turns away an intro pill, else leaves full screen or the mini view, else closes, M mute, C
+  subtitles off and on, Left/Right skip, Up/Down volume ±5. Space wins over a focused button; arrows go to a focused
+  slider first. Nothing applies while a text field, an open menu or the Add Subtitles or appearance panel has focus
+  (Esc closes the panel), or with Ctrl, Alt, Shift or Windows held. The keys are handled on the page, not as keyboard
   accelerators, so no accelerator tooltip appears; the buttons announce them through
   `AutomationProperties.AcceleratorKey`.
 

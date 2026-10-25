@@ -72,6 +72,11 @@ internal sealed class FakeServerPlayback : IServerPlayback
 
     public void SelectSubtitle(string? trackId) => SubtitlePicks.Add(trackId);
 
+    /// <summary>Every stored subtitle the player said was added, in order.</summary>
+    public List<string> AddedSubtitles { get; } = [];
+
+    public void ShowAddedSubtitle(string storedSubtitleId) => AddedSubtitles.Add(storedSubtitleId);
+
     public int SubtitleDelayMs { get; set; }
 
     public void SetSubtitleDelay(int milliseconds) => SubtitleDelayMs = Math.Clamp(milliseconds, -10_000, 10_000);

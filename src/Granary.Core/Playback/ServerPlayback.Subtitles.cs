@@ -3,6 +3,7 @@ using System.Text.Json;
 using Granary.Core.Api;
 using Granary.Core.Api.Playback;
 using Granary.Core.Api.Settings;
+using Granary.Core.ViewModels;
 using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.Playback;
@@ -22,7 +23,15 @@ public sealed partial class ServerPlayback
     private (string FileId, string? TrackId)? _pendingSubtitle;
 
     // Nudges come in runs: the delay is saved once they settle, as the web player does.
-    private static readonly TimeSpan SubtitleDelaySettle = TimeSpan.FromSeconds(1);
+    private static readonly TimeSpan SubtitleDelaySettle = TimeSpan.FromMilliseconds(600);
+
+    // A stored subtitle's track names it so (sync_key); an older server's only in its URL.
+    private const string StoredSyncKeyPrefix = "stored-";
+    private const string StoredIdParameter = "downloaded_subtitle_id";
+
+    // A subtitle the viewer added until a plan lists it, and whether a plan was asked for since.
+    private string? _addedSubtitle;
+    private bool _addedSubtitleAsked;
     private const string SubtitleDelayKey = "player.subtitle_sync_ms";
 
     // Where the shown track's cues sit against the player's clock (sidecars: -timeline offset), and the viewer's delay.
@@ -103,6 +112,76 @@ public sealed partial class ServerPlayback
             _context = _context! with { SubtitlePick = item?.CombinedIndex ?? -1 };
         }
         SwitchSubtitle(trackId);
+    }
+
+    public void ShowAddedSubtitle(string storedSubtitleId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(storedSubtitleId);
+        if (!CanChangeTracks)
+        {
+            return;
+        }
+        _addedSubtitle = storedSubtitleId;
+        _addedSubtitleAsked = false;
+        AskForAddedSubtitle();
+    }
+
+    // There is no refresh: a track_change for the tracks that play answers with a fresh plan, inventory included, as
+    // the web player re-reads it; the stream reloads from where the viewer is. A replan already on its way may list
+    // the new subtitle with its own plan; if it does not, the ask follows it.
+    private void AskForAddedSubtitle()
+    {
+        if (_addedSubtitle is null || _addedSubtitleAsked || _recovering)
+        {
+            return;
+        }
+        _addedSubtitleAsked = true;
+        Recover(RefreshSubtitlesAsync);
+    }
+
+    private async Task RefreshSubtitlesAsync()
+    {
+        ResetPlanChain();
+        double position = SourcePosition;
+        _logger.LogInformation("Asking for a plan that lists the added subtitle at {Position:F1} s", position);
+        var decision = await ReplanAsync(ReplanOperations.TrackChange, position, [],
+            refused: refusal => _logger.LogWarning("The server did not plan again ({Failure}); playing on", ApiFailureText.Describe(refusal)));
+        if (decision is { IsPlayable: true })
+        {
+            await AdoptAsync(decision, newSession: false, restorePosition: position);
+        }
+        else if (decision is not null)
+        {
+            _logger.LogWarning("The server has no stream for the tracks that play ({Reason}); playing on", decision.Terminal?.Reason);
+        }
+        if (_addedSubtitle is not null && !_stopping)
+        {
+            // Asked once: a plan that still does not list it will not show it.
+            _logger.LogWarning("The plan does not list the added subtitle");
+            _addedSubtitle = null;
+        }
+    }
+
+    // A plan that lists the added subtitle shows it, as the viewer's pick: Android selects a new download at once.
+    private void TakeAddedSubtitle(PlaybackPlan plan)
+    {
+        if (_addedSubtitle is not { } id || plan.Subtitle.Inventory.FirstOrDefault(i => IsStored(i, id)) is not { } item)
+        {
+            return;
+        }
+        _addedSubtitle = null;
+        SelectSubtitle(item.TrackId);
+    }
+
+    private static bool IsStored(SubtitleInventoryItem item, string storedId)
+    {
+        if (item.SyncKey is { Length: > 0 } key)
+        {
+            return key == StoredSyncKeyPrefix + storedId;
+        }
+        return item.Source == SubtitleSources.Downloaded && item.Url is { Length: > 0 } url
+            && Uri.TryCreate(new Uri("http://player.invalid/"), url, out var uri)
+            && System.Web.HttpUtility.ParseQueryString(uri.Query)[StoredIdParameter] == storedId;
     }
 
     // What the viewer asked for last: a pick still on its way, else the track that shows.

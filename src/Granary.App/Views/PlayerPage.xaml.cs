@@ -53,6 +53,7 @@ public sealed partial class PlayerPage : Page
         InitializeAutoHide();
         InitializeSkipPrompt();
         InitializeNextUp();
+        InitializeSubtitlePanels();
         RegisterPropertyChangedCallback(IsMiniViewProperty, (_, _) =>
         {
             ShowNextUpScreen();
@@ -133,6 +134,7 @@ public sealed partial class PlayerPage : Page
         ViewModel.PropertyChanged -= OnViewModelPropertyChanged;
         StopInput();
         StopAutoHide();
+        StopSubtitlePanels();
         ViewModel.Dispose();
     }
 
@@ -225,6 +227,18 @@ public sealed partial class PlayerPage : Page
     }
 
     private void OnSeekRequested(SeekBar sender, double seconds) => ViewModel.SeekTo(seconds);
+
+    // As the web's 1fr auto 1fr row: the right column is never narrower than its buttons. In a narrow window the
+    // transport moves left, rather than the buttons being cut off.
+    private void OnRightControlsLayoutUpdated(object? sender, object e)
+    {
+        var shown = RightControls.Children.OfType<FrameworkElement>().Where(child => child.Visibility == Visibility.Visible).ToList();
+        double width = shown.Sum(child => child.DesiredSize.Width) + Math.Max(0, shown.Count - 1) * RightControls.Spacing;
+        if (Math.Abs(RightColumn.MinWidth - width) > 0.5)
+        {
+            RightColumn.MinWidth = width;
+        }
+    }
 
     private void OnEndTimeClick(object sender, RoutedEventArgs e) => ShowsRemaining = !ShowsRemaining;
 

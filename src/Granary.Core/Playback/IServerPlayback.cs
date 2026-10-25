@@ -85,6 +85,12 @@ public interface IServerPlayback : IAsyncDisposable
     /// </summary>
     void SelectSubtitle(string? trackId);
 
+    /// <summary>
+    /// The viewer added stored subtitle <paramref name="storedSubtitleId"/> to the file that plays (uploaded or downloaded):
+    /// a new plan lists it, and it shows as the viewer's pick.
+    /// </summary>
+    void ShowAddedSubtitle(string storedSubtitleId);
+
     /// <summary>The profile's subtitle delay in milliseconds, positive later; the setting's value until changed here.</summary>
     int SubtitleDelayMs { get; }
 

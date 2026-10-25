@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The web player's Subtitle appearance panel (SubtitleAppearancePanelView): a 640 px glass card on a dark backdrop with
+    a live preview, then Text, Background and Position; "Use fallback style" and the autosave note at the bottom. A
+    click beside the card, ✕ or Esc closes it; Tab stays inside.
+-->
+<UserControl
+    x:Class="Granary.App.Controls.SubtitleAppearancePanel"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Granary.App.Controls"
+    xmlns:settings="using:Granary.Core.ViewModels.Settings"
+    RequestedTheme="Dark">
+
+    <UserControl.Resources>
+        <!-- The web's ToggleSwitch: white with a black knob when on, white/15 with a white knob when off. -->
+        <SolidColorBrush x:Key="ToggleSwitchFillOn" Color="White" />
+        <SolidColorBrush x:Key="ToggleSwitchFillOnPointerOver" Color="#FFE6E6E6" />
+        <SolidColorBrush x:Key="ToggleSwitchFillOnPressed" Color="#FFE6E6E6" />
+        <SolidColorBrush x:Key="ToggleSwitchFillOff" Color="#26FFFFFF" />
+        <SolidColorBrush x:Key="ToggleSwitchFillOffPointerOver" Color="#33FFFFFF" />
+        <SolidColorBrush x:Key="ToggleSwitchFillOffPressed" Color="#33FFFFFF" />
+        <SolidColorBrush x:Key="ToggleSwitchStrokeOff" Color="Transparent" />
+        <SolidColorBrush x:Key="ToggleSwitchStrokeOffPointerOver" Color="Transparent" />
+        <SolidColorBrush x:Key="ToggleSwitchStrokeOffPressed" Color="Transparent" />
+        <SolidColorBrush x:Key="ToggleSwitchStrokeOn" Color="Transparent" />
+        <SolidColorBrush x:Key="ToggleSwitchKnobFillOff" Color="White" />
+        <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPointerOver" Color="White" />
+        <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPressed" Color="White" />
+        <SolidColorBrush x:Key="ToggleSwitchKnobFillOn" Color="Black" />
+        <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPointerOver" Color="Black" />
+        <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPressed" Color="Black" />
+        <x:Double x:Key="ToggleSwitchThemeMinWidth">0</x:Double>
+
+        <!-- The web's PercentField: a 56 px number, right-aligned, on white/6 with a faint edge. -->
+        <SolidColorBrush x:Key="TextControlBackground" Color="#0FFFFFFF" />
+        <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="#14FFFFFF" />
+        <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="#14FFFFFF" />
+        <SolidColorBrush x:Key="TextControlBorderBrush" Color="#26FFFFFF" />
+        <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="#40FFFFFF" />
+        <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="#B3FFFFFF" />
+
+        <Style x:Key="SectionLabelStyle" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource SiloFontSemiBold}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="CharacterSpacing" Value="200" />
+            <Setter Property="Foreground" Value="#A6FFFFFF" />
+            <Setter Property="Margin" Value="0,0,0,12" />
+        </Style>
+        <Style x:Key="RowLabelStyle" TargetType="TextBlock">
+            <Setter Property="Width" Value="96" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Foreground" Value="#CCFFFFFF" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style x:Key="RowStyle" TargetType="StackPanel">
+            <Setter Property="Orientation" Value="Horizontal" />
+            <Setter Property="Spacing" Value="16" />
+            <Setter Property="Margin" Value="0,0,0,12" />
+            <Setter Property="MinHeight" Value="28" />
+        </Style>
+        <Style x:Key="PercentBoxStyle" TargetType="NumberBox">
+            <Setter Property="Width" Value="56" />
+            <Setter Property="MinWidth" Value="56" />
+            <Setter Property="SpinButtonPlacementMode" Value="Hidden" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Maximum" Value="100" />
+            <Setter Property="SmallChange" Value="5" />
+            <Setter Property="LargeChange" Value="10" />
+        </Style>
+
+        <!-- A 28 px colour; the chosen one a little larger with a white ring and a dark one round that, as the web's. -->
+        <DataTemplate x:Key="SwatchTemplate" x:DataType="settings:ColorSwatch">
+            <Button Width="34" Height="34" Padding="0" CornerRadius="17" Background="Transparent" Tag="{x:Bind Hex}"
+                    BorderThickness="2" BorderBrush="{x:Bind controls:SubtitleAppearancePanel.Ring(IsSelected)}" Click="OnSwatchClick"
+                    AutomationProperties.Name="{x:Bind Label}" AutomationProperties.ItemStatus="{x:Bind controls:SettingsSwatches.Status(IsSelected)}"
+                    ToolTipService.ToolTip="{x:Bind Label}">
+                <Ellipse Width="{x:Bind controls:SubtitleAppearancePanel.SwatchSize(IsSelected)}" Height="{x:Bind controls:SubtitleAppearancePanel.SwatchSize(IsSelected)}"
+                         Fill="{x:Bind controls:SettingsSwatches.Fill(Hex)}" Stroke="#2EFFFFFF" StrokeThickness="1" />
+            </Button>
+        </DataTemplate>
+        <ItemsPanelTemplate x:Key="SwatchPanel">
+            <StackPanel Orientation="Horizontal" Spacing="4" XYFocusKeyboardNavigation="Enabled" />
+        </ItemsPanelTemplate>
+    </UserControl.Resources>
+
+    <Grid x:Name="Backdrop" Background="#B3000000" Tapped="OnBackdropTapped" KeyDown="OnPanelKeyDown">
+        <Border x:Name="Card" MaxWidth="640" Margin="16" HorizontalAlignment="Stretch" VerticalAlignment="Center" CornerRadius="16"
+                BorderBrush="#1AFFFFFF" BorderThickness="1" Background="#F2111114" Tapped="OnCardTapped" TabFocusNavigation="Cycle"
+                AutomationProperties.Name="Subtitle appearance">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- Header. -->
+                <Grid Padding="20,14,14,14" BorderBrush="#14FFFFFF" BorderThickness="0,0,0,1">
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="CAPTIONS" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="12" CharacterSpacing="220"
+                                   Foreground="#A6FFFFFF" AutomationProperties.AccessibilityView="Raw" />
+                        <TextBlock Text="Subtitle appearance" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="17"
+                                   AutomationProperties.HeadingLevel="Level1" />
+                    </StackPanel>
+                    <Button x:Name="CloseButton" Width="36" Height="36" HorizontalAlignment="Right" Style="{StaticResource SiloPlayerIconButtonStyle}"
+                            Foreground="#B3FFFFFF" Command="{x:Bind ViewModel.CloseAppearanceCommand, Mode=OneWay}"
+                            AutomationProperties.Name="Close" ToolTipService.ToolTip="Close (Esc)">
+                        <FontIcon Glyph="&#xE711;" FontSize="14" />
+                    </Button>
+                </Grid>
+
+                <controls:SubtitlePreview Grid.Row="1" Margin="20,20,20,0" IsCompact="True" Appearance="{x:Bind ViewModel.Look.Appearance, Mode=OneWay}" />
+
+                <ScrollViewer x:Name="Body" Grid.Row="2" Padding="20" HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled"
+                              VerticalScrollBarVisibility="Auto">
+                    <StackPanel Spacing="12">
+                        <StackPanel>
+                            <TextBlock Text="TEXT" Style="{StaticResource SectionLabelStyle}" AutomationProperties.Name="Text" AutomationProperties.HeadingLevel="Level2" />
+                            <StackPanel Style="{StaticResource RowStyle}">
+                                <TextBlock Text="Size" Style="{StaticResource RowLabelStyle}" />
+                                <controls:PillChoices ItemsSource="{x:Bind ViewModel.Look.FontSizeChoices, Mode=OneWay}"
+                                                      SelectedItem="{x:Bind ViewModel.Look.SelectedFontSize, Mode=TwoWay}" AutomationProperties.Name="Size" />
+                            </StackPanel>
+                            <StackPanel Style="{StaticResource RowStyle}">
+                                <TextBlock Text="Font" Style="{StaticResource RowLabelStyle}" />
+                                <controls:PillChoices ItemsSource="{x:Bind ViewModel.Look.FontFamilyChoices, Mode=OneWay}"
+                                                      SelectedItem="{x:Bind ViewModel.Look.SelectedFontFamily, Mode=TwoWay}" AutomationProperties.Name="Font" />
+                            </StackPanel>
+                            <StackPanel Style="{StaticResource RowStyle}">
+                                <TextBlock Text="Color" Style="{StaticResource RowLabelStyle}" />
+                                <ItemsControl ItemsSource="{x:Bind ViewModel.Look.FontColorSwatches, Mode=OneWay}" ItemTemplate="{StaticResource SwatchTemplate}"
+                                              ItemsPanel="{StaticResource SwatchPanel}" Tag="font" IsTabStop="False" AutomationProperties.Name="Color" />
+                            </StackPanel>
+                            <StackPanel Style="{StaticResource RowStyle}">
+                                <TextBlock Text="Opacity" Style="{StaticResource RowLabelStyle}" />
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <NumberBox Style="{StaticResource PercentBoxStyle}" Minimum="1" Value="{x:Bind ViewModel.Look.TextOpacity, Mode=TwoWay}"
+                                               AutomationProperties.Name="Text opacity" />
+                                    <TextBlock Text="%" FontSize="13" Foreground="#99FFFFFF" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </StackPanel>
+                            <StackPanel Style="{StaticResource RowStyle}">
+                                <TextBlock Text="Outline" Style="{StaticResource RowLabelStyle}" />
+                                <ToggleSwitch Style="{StaticResource DefaultToggleSwitchStyle}" OnContent="" OffContent="" MinWidth="0" Width="44"
+                                              IsOn="{x:Bind ViewModel.Look.TextOutline, Mode=TwoWay}" AutomationProperties.Name="Text outline" />
+                            </StackPanel>
+                        </StackPanel>
+
+                        <Border Height="1" Margin="0,0,0,12" Background="#0FFFFFFF" />
+
+                        <StackPanel>
+                            <TextBlock Text="BACKGROUND" Style="{StaticResource SectionLabelStyle}" AutomationProperties.Name="Background"
+                                       AutomationProperties.HeadingLevel="Level2" />
+                            <StackPanel Style="{StaticResource RowStyle}">
+                                <TextBlock Text="Style" Style="{StaticResource RowLabelStyle}" />
+                                <controls:PillChoices ItemsSource="{x:Bind ViewModel.Look.BackgroundStyleChoices, Mode=OneWay}"
+                                                      SelectedItem="{x:Bind ViewModel.Look.SelectedBackgroundStyle, Mode=TwoWay}" AutomationProperties.Name="Background style" />
+                            </StackPanel>
+                            <StackPanel Visibility="{x:Bind ViewModel.Look.IsBox, Mode=OneWay}">
+                                <StackPanel Style="{StaticResource RowStyle}">
+                                    <TextBlock Text="Opacity" Style="{StaticResource RowLabelStyle}" />
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <NumberBox Style="{StaticResource PercentBoxStyle}" Minimum="0" Value="{x:Bind ViewModel.Look.BackgroundOpacity, Mode=TwoWay}"
+                                                   AutomationProperties.Name="Background opacity" />
+                                        <TextBlock Text="%" FontSize="13" Foreground="#99FFFFFF" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </StackPanel>
+                                <StackPanel Style="{StaticResource RowStyle}">
+                                    <TextBlock Text="Color" Style="{StaticResource RowLabelStyle}" />
+                                    <ItemsControl ItemsSource="{x:Bind ViewModel.Look.BackgroundColorSwatches, Mode=OneWay}" ItemTemplate="{StaticResource SwatchTemplate}"
+                                                  ItemsPanel="{StaticResource SwatchPanel}" Tag="background" IsTabStop="False" AutomationProperties.Name="Background color" />
+                                </StackPanel>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <Border Height="1" Margin="0,0,0,12" Background="#0FFFFFFF" />
+
+                        <StackPanel>
+                            <TextBlock Text="POSITION" Style="{StaticResource SectionLabelStyle}" AutomationProperties.Name="Position"
+                                       AutomationProperties.HeadingLevel="Level2" />
+                            <StackPanel Style="{StaticResource RowStyle}" Margin="0">
+                                <TextBlock Text="Vertical" Style="{StaticResource RowLabelStyle}" />
+                                <controls:PillChoices ItemsSource="{x:Bind ViewModel.Look.PositionChoices, Mode=OneWay}"
+                                                      SelectedItem="{x:Bind ViewModel.Look.SelectedPosition, Mode=TwoWay}" AutomationProperties.Name="Vertical position" />
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- Footer. -->
+                <Grid Grid.Row="3" Padding="20,10" Background="#4D000000" BorderBrush="#14FFFFFF" BorderThickness="0,1,0,0"
+                      CornerRadius="0,0,16,16">
+                    <Button x:Name="FallbackButton" HorizontalAlignment="Left" Style="{StaticResource SiloPlayerIconButtonStyle}" Width="Auto" Height="32"
+                            Padding="12,0" Foreground="#B3FFFFFF" FontSize="13" Command="{x:Bind ViewModel.ResetAppearanceCommand, Mode=OneWay}"
+                            AutomationProperties.Name="Use fallback style">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon Glyph="&#xE7A7;" FontSize="13" />
+                            <TextBlock Text="Use fallback style" />
+                        </StackPanel>
+                    </Button>
+                    <TextBlock HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="12" CharacterSpacing="25" Foreground="#A6FFFFFF"
+                               Text="{x:Bind Upper(ViewModel.AppearanceStatus), Mode=OneWay}" AutomationProperties.Name="{x:Bind ViewModel.AppearanceStatus, Mode=OneWay}"
+                               AutomationProperties.LiveSetting="Polite" />
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

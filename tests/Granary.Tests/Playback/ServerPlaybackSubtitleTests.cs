@@ -295,4 +295,58 @@ public sealed class ServerPlaybackSubtitleTests
         Assert.Empty(_fixture.Silo.SentTo(HttpMethod.Put, SubtitlePrefsPath));
         Assert.DoesNotContain(_fixture.Engine.SubtitleStreams, stream => stream != 0);
     }
+
+    // The plan of a replan after a subtitle was stored: the Spanish download is stored subtitle 77.
+    private static string ListingStored(string naming) =>
+        PlaybackPayloads.StartOpaqueIds.Replace("\"label\": \"Spanish (downloaded)\",", "\"label\": \"Spanish (downloaded)\", " + naming, StringComparison.Ordinal);
+
+    [Fact]
+    public async Task AnAddedSubtitle_TakesAPlanThatListsIt_AndShowsAsThePick()
+    {
+        _fixture.Silo.On(HttpMethod.Post, ReplanPath, Ok(ListingStored("\"sync_key\": \"stored-77\",")));
+        var playback = await _fixture.PlayingAsync();
+
+        playback.ShowAddedSubtitle("77");
+        await playback.Recovery;
+        _fixture.Engine.RaiseState(Frame(30));
+        await Until(() => _fixture.Engine.SubtitleFiles.Count == 1, "the sidecar is read");
+
+        // No refresh exists: a track_change for the tracks that play brings the new inventory; the stream reloads.
+        var replan = _fixture.Body(HttpMethod.Post, ReplanPath);
+        Assert.Equal("track_change", replan.GetProperty("operation").GetString());
+        Assert.Equal(2, _fixture.Engine.Loaded.Count);
+        Assert.Equal("file:42:subtitle:4", playback.SubtitleTrack);
+        Assert.Equal("spa", SavedChoice().GetProperty("subtitle_language").GetString());
+    }
+
+    [Fact]
+    public async Task AnOlderServersPlan_NamesTheStoredSubtitleInItsAddress()
+    {
+        _fixture.Silo.On(HttpMethod.Post, ReplanPath, Ok(ListingStored("").Replace("4.vtt?file_id=42", "4.vtt?file_id=42&downloaded_subtitle_id=77",
+            StringComparison.Ordinal)));
+        var playback = await _fixture.PlayingAsync();
+
+        playback.ShowAddedSubtitle("77");
+        await playback.Recovery;
+        _fixture.Engine.RaiseState(Frame(30));
+
+        Assert.Equal("file:42:subtitle:4", playback.SubtitleTrack);
+    }
+
+    [Fact]
+    public async Task APlanThatDoesNotListIt_IsAskedForOnce()
+    {
+        _fixture.Silo.On(HttpMethod.Post, ReplanPath, Ok(PlaybackPayloads.StartOpaqueIds));
+        var playback = await _fixture.PlayingAsync();
+        string? before = playback.SubtitleTrack;
+
+        playback.ShowAddedSubtitle("77");
+        await playback.Recovery;
+        _fixture.Engine.RaiseState(Frame(30));
+        await playback.Recovery;
+
+        Assert.Single(_fixture.Silo.SentTo(HttpMethod.Post, ReplanPath));
+        Assert.Equal(before, playback.SubtitleTrack);
+        Assert.Empty(_fixture.Silo.SentTo(HttpMethod.Put, SubtitlePrefsPath));
+    }
 }

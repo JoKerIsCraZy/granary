@@ -107,7 +107,7 @@ public sealed partial class PlayerPage
 
     private bool KeepsControls() =>
         !ViewModel.IsPlaying || ViewModel.IsPaused || ViewModel.IsBuffering
-        || SeekBar.IsDragging || IsPointerOverControls() || HasOpenMenu() || HasKeyboardFocusInControls();
+        || SeekBar.IsDragging || IsPointerOverControls() || HasOpenMenu() || HasKeyboardFocusInControls() || IsPanelOpen;
 
     private bool IsPointerOverControls() =>
         PointerInPage() is { } point && (Contains(BottomBar, point) || Contains(ExitButton, point)

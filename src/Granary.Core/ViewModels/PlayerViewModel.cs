@@ -2,7 +2,10 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
 using Granary.Core.Playback;
+using Granary.Core.Settings;
 using Granary.Core.ViewModels.Player;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Granary.Core.ViewModels;
 
@@ -36,6 +39,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     private readonly long _created;
     private readonly IUpNextSource? _upNext;
     private readonly AutoPlayStreak _streak;
+    private readonly ILogger _logger;
     // A seek's target counts as the position for this long, until the engine reports it: quick skips add up.
     private const long SeekTargetMilliseconds = 3000;
 
@@ -54,7 +58,9 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         PlaybackStops stops,
         TimeProvider? time = null,
         IUpNextSource? upNext = null,
-        AutoPlayStreak? streak = null)
+        AutoPlayStreak? streak = null,
+        IProfileSettings? settings = null,
+        ILogger<PlayerViewModel>? logger = null)
     {
         _engine = engine;
         _dispatcher = dispatcher;
@@ -65,6 +71,9 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         _created = _time.GetTimestamp();
         _upNext = upNext;
         _streak = streak ?? new AutoPlayStreak();
+        _settings = settings;
+        _logger = logger ?? (ILogger)NullLogger.Instance;
+        Look.Edited += OnLookEdited;
         _engine.StateChanged += OnStateChanged;
         _engine.Ended += OnEnded;
     }
@@ -141,13 +150,9 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
 
     public bool CanChooseAudio => AudioTracks.Count > 1;
 
-    /// <summary>The rows of the subtitle menu, Off first, the one that shows checked; empty without a server title.</summary>
+    /// <summary>The rows of the subtitle menu, Off first, the one that shows checked; empty until a server title has a plan.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasSubtitleTracks))]
     public partial IReadOnlyList<SubtitleTrackOption> SubtitleTracks { get; private set; } = [];
-
-    /// <summary>The subtitle button shows once the plan lists a track.</summary>
-    public bool HasSubtitleTracks => SubtitleTracks.Count > 1;
 
     /// <summary>The subtitle delay in milliseconds, positive later.</summary>
     [ObservableProperty]
@@ -159,11 +164,12 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         ? "0 ms"
         : (SubtitleDelayMs > 0 ? "+" : "\u2212") + Math.Abs(SubtitleDelayMs).ToString(System.Globalization.CultureInfo.InvariantCulture) + " ms";
 
-    public bool CanDelayEarlier => SubtitleDelayMs > -PlaybackPreferencesReader.MaxSubtitleDelayMs;
+    // As on the web, the delay is for a subtitle that shows.
+    public bool CanDelayEarlier => IsSubtitleOn && SubtitleDelayMs > -PlaybackPreferencesReader.MaxSubtitleDelayMs;
 
-    public bool CanDelayLater => SubtitleDelayMs < PlaybackPreferencesReader.MaxSubtitleDelayMs;
+    public bool CanDelayLater => IsSubtitleOn && SubtitleDelayMs < PlaybackPreferencesReader.MaxSubtitleDelayMs;
 
-    public bool CanResetSubtitleDelay => SubtitleDelayMs != 0;
+    public bool CanResetSubtitleDelay => IsSubtitleOn && SubtitleDelayMs != 0;
 
     /// <summary>Moves subtitles by <paramref name="deltaMs"/>; the menu steps by 100 ms.</summary>
     public void ChangeSubtitleDelay(int deltaMs)
@@ -198,6 +204,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         Phase = PlayerPhase.Preparing;
         LeavePlayback();
         ResetFill();
+        ResetLook();
         if (request.DirectSource is { } direct)
         {
             StartDirect(direct);
@@ -205,6 +212,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         }
         var playback = _serverPlaybacks();
         _playback = playback;
+        HasSubtitleMenu = true;
         playback.StatusChanged += OnPlaybackStatusChanged;
         playback.TracksChanged += OnTracksChanged;
         playback.MarkersChanged += OnMarkersChanged;
@@ -346,7 +354,8 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         playback.MarkersChanged -= OnMarkersChanged;
         playback.TrickplayChanged -= OnTrickplayChanged;
         AudioTracks = [];
-        SubtitleTracks = [];
+        HasSubtitleMenu = false;
+        ResetSubtitles();
         ResetMarkers();
         ResetChapters();
         _stops.Track(EndAsync(playback));
@@ -427,7 +436,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         if (sender == _playback && _playback is { } playback)
         {
             AudioTracks = AudioTrackOption.For(playback.AudioTracks, playback.AudioTrack);
-            SubtitleTracks = playback.SubtitleTracks.Count == 0 ? [] : SubtitleTrackOption.For(playback.SubtitleTracks, playback.SubtitleTrack);
+            TakeSubtitles(playback);
             TakeMarkers(playback);
             TakeChapters(playback);
             ShowSettings();

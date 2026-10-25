@@ -17,6 +17,9 @@ public sealed record PlaybackPreferences(string Quality, int? MaxBitrateKbps, do
     /// <summary>How text subtitles look (<c>playback.subtitle_appearance</c>).</summary>
     public SubtitleAppearance Subtitles { get; init; } = SubtitleAppearance.Default;
 
+    /// <summary>The look is this device's own value, which outranks the profile's until it is cleared.</summary>
+    public bool SubtitlesOnDevice { get; init; }
+
     /// <summary>Subtitles this much later, negative earlier (<c>player.subtitle_sync_ms</c>), within ±10 s.</summary>
     public int SubtitleDelayMs { get; init; }
 
@@ -86,6 +89,7 @@ public sealed class PlaybackPreferencesReader(SettingsApi settings, ILogger<Play
             preferences = preferences with
             {
                 Subtitles = SubtitleAppearance.From(subtitleValues.Find(SubtitleKeys[0])),
+                SubtitlesOnDevice = subtitleValues.Items.FirstOrDefault(i => i.Key == SubtitleKeys[0])?.Source == "profile_device",
                 SubtitleDelayMs = delay,
                 SubtitleDelayOnDevice = subtitleValues.Items.FirstOrDefault(i => i.Key == SubtitleKeys[1])?.Source == "profile_device",
             };

@@ -114,6 +114,9 @@ public sealed partial class PlayerPage
             case VirtualKey.M when !isRepeat:
                 ViewModel.ToggleMuteCommand.Execute(null);
                 break;
+            case VirtualKey.C when !isRepeat:
+                ViewModel.ToggleSubtitles();
+                break;
             case VirtualKey.Escape when !isRepeat:
                 // As on the web player, Esc first turns an intro pill away.
                 if (ViewModel.DismissSkipPrompt())
@@ -151,7 +154,8 @@ public sealed partial class PlayerPage
         e.Handled = true;
     }
 
-    // Modifier combinations belong to the app (Alt+Left, Ctrl+K); text fields and open menus keep their keys.
+    // Modifier combinations belong to the app (Alt+Left, Ctrl+K); text fields, open menus and the subtitle panels keep
+    // their keys.
     private bool AcceptsShortcut()
     {
         if (IsDown(VirtualKey.Control) || IsDown(VirtualKey.Menu) || IsDown(VirtualKey.Shift)
@@ -159,7 +163,7 @@ public sealed partial class PlayerPage
         {
             return false;
         }
-        return FocusManager.GetFocusedElement(XamlRoot) is not (TextBox or PasswordBox or RichEditBox) && !HasOpenMenu();
+        return FocusManager.GetFocusedElement(XamlRoot) is not (TextBox or PasswordBox or RichEditBox) && !HasOpenMenu() && !IsPanelOpen;
     }
 
     private static bool IsDown(VirtualKey key) =>

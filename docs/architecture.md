@@ -132,6 +132,17 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   and it is saved to `/api/v2/subtitle-prefs` (never with `show_forced_subtitles`, which would pin the profile's
   forced setting on the series). A sidecar that arrives after another load or pick is not shown, and a new load
   closes the sidecar routes of the one before.
+- **Added subtitles**: Add Subtitles stores one through `SubtitlesApi` (`/api/v2/subtitles/search`, `download`,
+  `upload` as a form, `detect-language`, `providers/status`, all with the profile's headers). There is no refresh
+  operation, so `ShowAddedSubtitle` replans with `track_change` for the tracks that play, as the web re-reads the
+  inventory; the new plan reloads the stream where the viewer is, and the stored subtitle (its `sync_key`
+  `stored-{id}`, an older server's `downloaded_subtitle_id` in the URL) is picked as the viewer's, as Android selects
+  a download. A replan already on its way may list it; if it does not, one more is asked for after it, then it is
+  given up.
+- **Subtitle look in the player**: the Appearance panel edits a `SubtitleAppearanceEditor` (shared with Settings);
+  each change goes to mpv at once and is saved through `IProfileSettings` as the profile's, one save after another
+  and only the latest of those waiting, clearing this device's row once when it has one. "Use fallback style"
+  resets both rows and reads the effective value back. A new title reads the profile's look afresh.
 - **Quality, file and speed** (8.7, 8.11): the plan's `available_qualities` (an older server's `original` rung left
   out) and `active_quality` make the menu; a pick replans with `quality_change` from where the viewer is, and later
   replans and attempts ask with it too; it is not saved, as on the web. Another file of the title starts a new

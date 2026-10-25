@@ -11,6 +11,7 @@ using Granary.Core.Settings;
 using Granary.Core.ViewModels.Settings;
 using Granary.Core.Api.Profiles;
 using Granary.Core.Api.Settings;
+using Granary.Core.Api.Subtitles;
 using Granary.Core.Artwork;
 using Granary.Core.Auth;
 using Granary.Core.Http;
@@ -63,6 +64,7 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<PlaybackApi>();
         services.AddTransient<PlaybackConnectionApi>();
         services.AddTransient<TrackPreferencesApi>();
+        services.AddTransient<SubtitlesApi>();
         services.AddTransient<SettingsApi>();
         services.AddTransient<LibraryPageApi>();
         services.AddTransient<ImagesApi>();
@@ -95,6 +97,7 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<LibraryViewModel>();
         services.AddTransient<AddServerViewModel>();
         services.AddTransient<PlayerViewModel>();
+        services.AddTransient<Granary.Core.ViewModels.Player.AddSubtitlesViewModel>();
         services.AddTransient<ItemDetailViewModel>();
         services.AddTransient<IProfileSettings, ProfileSettings>();
         services.AddTransient<PlaybackSettingsViewModel>();

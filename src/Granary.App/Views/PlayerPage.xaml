@@ -106,7 +106,7 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition x:Name="RightColumn" Width="*" />
                     </Grid.ColumnDefinitions>
 
                     <!--
@@ -184,7 +184,8 @@
                         </Grid>
                     </StackPanel>
 
-                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <StackPanel x:Name="RightControls" Grid.Column="2" Orientation="Horizontal" Spacing="4" HorizontalAlignment="Right" VerticalAlignment="Center"
+                                LayoutUpdated="OnRightControlsLayoutUpdated">
                         <Button x:Name="MuteButton" Style="{StaticResource SiloPlayerIconButtonStyle}" Command="{x:Bind ViewModel.ToggleMuteCommand}"
                                 AutomationProperties.Name="{x:Bind MuteName(ViewModel.IsMuted), Mode=OneWay}" AutomationProperties.AcceleratorKey="M"
                                 ToolTipService.ToolTip="{x:Bind MuteToolTip(ViewModel.IsMuted), Mode=OneWay}">
@@ -303,10 +304,20 @@
                                 </Flyout>
                             </Button.Flyout>
                         </Button>
+                        <!--
+                            Subtitles: there for every server title, as its menu also adds them. White with the amber dot while one
+                            shows; struck through while none does, as the web's CaptionsOff.
+                        -->
+                        <Grid Visibility="{x:Bind ViewModel.HasSubtitleMenu, Mode=OneWay}">
                         <Button x:Name="SubtitleButton" Style="{StaticResource SiloPlayerIconButtonStyle}"
-                                Visibility="{x:Bind ViewModel.HasSubtitleTracks, Mode=OneWay}"
-                                AutomationProperties.Name="Subtitles" ToolTipService.ToolTip="Subtitles">
-                            <FontIcon Glyph="&#xE7F0;" FontSize="18" />
+                                Foreground="{x:Bind UtilityForeground(ViewModel.IsSubtitleOn), Mode=OneWay}"
+                                AutomationProperties.Name="Subtitles" AutomationProperties.ItemStatus="{x:Bind OnStatus(ViewModel.IsSubtitleOn), Mode=OneWay}"
+                                AutomationProperties.AcceleratorKey="C" ToolTipService.ToolTip="Subtitles (C)">
+                            <Grid Width="20" Height="20">
+                                <FontIcon x:Name="SubtitleGlyph" Glyph="&#xE7F0;" FontSize="18" />
+                                <Line X1="3" Y1="3" X2="17" Y2="17" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                      Stroke="{Binding Foreground, ElementName=SubtitleGlyph}" Visibility="{x:Bind Not(ViewModel.IsSubtitleOn), Mode=OneWay}" />
+                            </Grid>
                             <Button.Flyout>
                                 <Flyout x:Name="SubtitleMenu" Placement="TopEdgeAlignedRight" FlyoutPresenterStyle="{StaticResource SiloPlayerWideMenuStyle}"
                                         Opened="OnSubtitleMenuOpened">
@@ -382,10 +393,26 @@
                                             </Button>
                                         </StackPanel>
                                     </Grid>
+                                    <!-- The web's footer: add a file or search for one, and the look. -->
+                                    <StackPanel Padding="0,4" BorderBrush="#1AFFFFFF" BorderThickness="0,1,0,0">
+                                        <Button x:Name="AddSubtitlesButton" Style="{StaticResource SiloPlayerMenuItemStyle}" Foreground="#B3FFFFFF"
+                                                Click="OnAddSubtitlesClick" AutomationProperties.Name="Add Subtitles…">
+                                            <TextBlock Text="Add Subtitles…" FontSize="14" />
+                                        </Button>
+                                        <Button x:Name="AppearanceButton" Style="{StaticResource SiloPlayerMenuItemStyle}" Foreground="#B3FFFFFF"
+                                                Click="OnAppearanceClick" AutomationProperties.Name="Appearance…">
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <FontIcon Glyph="&#xE790;" FontSize="13" Foreground="#80FFFFFF" />
+                                                <TextBlock Text="Appearance…" FontSize="14" />
+                                            </StackPanel>
+                                        </Button>
+                                    </StackPanel>
                                     </StackPanel>
                                 </Flyout>
                             </Button.Flyout>
                         </Button>
+                        <Ellipse Style="{StaticResource SiloPlayerActiveDotStyle}" Visibility="{x:Bind ViewModel.IsSubtitleOn, Mode=OneWay}" />
+                        </Grid>
                         <!--
                             The web player's settings (QualityMenu): the gear names the quality, and a speed other than 1x shows
                             beside it. SPEED always; VERSION with more than one file; QUALITY when the plan offers rungs.
@@ -719,6 +746,11 @@
                 <FontIcon Glyph="&#xE711;" FontSize="14" />
             </Button>
         </Grid>
+
+        <!-- Add Subtitles and Subtitle appearance: over everything, as the web's dialogs (PlayerPage.Subtitles.cs). -->
+        <controls:AddSubtitlesPanel x:Name="AddSubtitlesPanel" Canvas.ZIndex="5" Visibility="Collapsed" />
+        <controls:SubtitleAppearancePanel x:Name="AppearancePanel" Canvas.ZIndex="5"
+                                          Visibility="{x:Bind ShowsInWindow(ViewModel.IsAppearanceOpen, IsMiniView), Mode=OneWay}" />
 
         <!-- The small video: a click returns to it, until the episode has ended. -->
         <Button x:Name="MiniPlayerButton" Canvas.ZIndex="3" Style="{StaticResource SiloPlayerCardOutlineButtonStyle}" Padding="0" BorderThickness="0"

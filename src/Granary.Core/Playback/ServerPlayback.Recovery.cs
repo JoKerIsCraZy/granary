@@ -88,6 +88,8 @@ public sealed partial class ServerPlayback
         {
             return;
         }
+        // A subtitle added during that recovery, which its plan did not list.
+        AskForAddedSubtitle();
         if (_loadId == 0 && ended is { } missed)
         {
             // The stream ended while the recovery ran and nothing replaced it.
