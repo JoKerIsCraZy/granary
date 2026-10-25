@@ -257,7 +257,6 @@ public sealed class ServerPlaybackTests
     {
         var playback = await _fixture.PlayingAsync();
         _fixture.Engine.RaiseState(Frame(321.5, paused: true));
-        await Task.Delay(50, TestContext.Current.CancellationToken);
 
         await playback.StopAsync();
 
@@ -332,7 +331,7 @@ public sealed class ServerPlaybackTests
         _fixture.Engine.RaiseState(Frame(10195));
 
         _fixture.Engine.RaiseEnded(new PlaybackEnded(PlaybackEndReason.EndOfFile, null));
-        await Task.Delay(50, TestContext.Current.CancellationToken);
+        await playback.Recovery;
 
         Assert.Equal(ServerPlaybackPhase.Ended, playback.Status.Phase);
         Assert.Equal(10195, _fixture.Body(HttpMethod.Delete, StopPath).GetProperty("position").GetDouble());
@@ -347,7 +346,7 @@ public sealed class ServerPlaybackTests
         _fixture.Engine.RaiseState(Frame(400));
 
         _fixture.Engine.RaiseEnded(new PlaybackEnded(PlaybackEndReason.AuthenticationFailed, null));
-        await Task.Delay(50, TestContext.Current.CancellationToken);
+        await playback.Recovery;
 
         Assert.Equal([false, true], _fixture.Auth.Requests);
         var reload = _fixture.Engine.Loaded[^1];
@@ -362,12 +361,12 @@ public sealed class ServerPlaybackTests
     public async Task TheEndOfARejectedStream_IsNotWhereTheViewerIs()
     {
         // mpv takes a 401 mid-stream for the end of the file: it jumps to the end and pauses (keep-open).
-        await _fixture.PlayingAsync();
+        var playback = await _fixture.PlayingAsync();
         _fixture.Engine.RaiseState(Frame(400));
 
         _fixture.Engine.RaiseState(Frame(7200, paused: true) with { IsAtEnd = true });
         _fixture.Engine.RaiseEnded(new PlaybackEnded(PlaybackEndReason.AuthenticationFailed, null));
-        await Task.Delay(50, TestContext.Current.CancellationToken);
+        await playback.Recovery;
 
         Assert.Equal(TimeSpan.FromSeconds(400), _fixture.Engine.Loaded[^1].Start);
         Assert.Empty(_fixture.Silo.SentTo(HttpMethod.Post, ProgressPath));
@@ -411,7 +410,7 @@ public sealed class ServerPlaybackTests
 
         playback.Seek(3000);
         _fixture.Engine.RaiseEnded(new PlaybackEnded(PlaybackEndReason.AuthenticationFailed, null));
-        await Task.Delay(50, TestContext.Current.CancellationToken);
+        await playback.Recovery;
 
         Assert.Equal(TimeSpan.FromSeconds(3000), _fixture.Engine.Loaded[^1].Start);
     }
@@ -423,7 +422,7 @@ public sealed class ServerPlaybackTests
         var playback = await _fixture.StartAsync();
 
         _fixture.Engine.RaiseEnded(new PlaybackEnded(PlaybackEndReason.Error, "loading failed"));
-        await Task.Delay(50, TestContext.Current.CancellationToken);
+        await playback.Recovery;
 
         var replan = _fixture.Body(HttpMethod.Post, ReplanPath);
         Assert.Equal("failure_recovery", replan.GetProperty("operation").GetString());
@@ -479,11 +478,11 @@ public sealed class ServerPlaybackTests
         _fixture.Engine.RaiseState(Frame(700));
 
         _fixture.Engine.RaiseEnded(new PlaybackEnded(PlaybackEndReason.Error, "connection reset"));
-        await Task.Delay(50, TestContext.Current.CancellationToken);
         Assert.Equal(ServerPlaybackPhase.Reconnecting, playback.Status.Phase);
 
         await _fixture.AdvanceAsync(TimeSpan.FromSeconds(1));
         await _fixture.AdvanceAsync(TimeSpan.FromSeconds(2));
+        await playback.Recovery;
 
         var replans = _fixture.Silo.SentTo(HttpMethod.Post, ReplanPath);
         Assert.Equal(2, replans.Count);
@@ -576,7 +575,6 @@ public sealed class ServerPlaybackTests
         _fixture.Engine.RaiseState(Frame(5000));
 
         _fixture.Engine.RaiseEnded(new PlaybackEnded(PlaybackEndReason.EndOfFile, null));
-        await Task.Delay(50, TestContext.Current.CancellationToken);
 
         Assert.Equal(ServerPlaybackPhase.Reconnecting, playback.Status.Phase);
         Assert.Empty(_fixture.Silo.SentTo(HttpMethod.Delete, StopPath));
@@ -604,7 +602,7 @@ public sealed class ServerPlaybackTests
         _fixture.Engine.RaiseState(Frame(2));
 
         playback.Seek(100);
-        await Task.Delay(50, TestContext.Current.CancellationToken);
+        await playback.Recovery;
 
         var replan = _fixture.Body(HttpMethod.Post, "api/v2/playback/" + OtherSession + "/replan");
         Assert.Equal("seek_reanchor", replan.GetProperty("operation").GetString());
