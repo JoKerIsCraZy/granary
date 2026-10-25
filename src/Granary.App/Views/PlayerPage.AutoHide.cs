@@ -1,5 +1,7 @@
 using System.Numerics;
+using Granary.App.Controls;
 using Microsoft.UI;
+using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -18,17 +20,12 @@ public sealed partial class PlayerPage
     // Moves this small are jitter, or the framework testing a still pointer again while the controls fade.
     private const double PointerMoveThreshold = 2;
 
-    // While the cursor is hidden, how often to look whether the pointer left the picture without moving over it
-    // (into the title bar's drag area, or another window): XAML reports neither.
-    private static readonly TimeSpan CursorCheckInterval = TimeSpan.FromMilliseconds(200);
-
     private const float ChromeSlide = 8;
 
     // Between the skip pill and the seek bar's row, while the controls show.
     private const double SkipPromptGap = 12;
 
     private DispatcherQueueTimer _hideTimer = null!;
-    private DispatcherQueueTimer _cursorTimer = null!;
     private Point? _lastPointer;
     private bool _areControlsVisible = true;
     private bool _isCursorHidden;
@@ -50,15 +47,6 @@ public sealed partial class PlayerPage
         _hideTimer.Interval = HideDelay;
         _hideTimer.IsRepeating = false;
         _hideTimer.Tick += (_, _) => HideControlsWhenIdle();
-        _cursorTimer = DispatcherQueue.CreateTimer();
-        _cursorTimer.Interval = CursorCheckInterval;
-        _cursorTimer.Tick += (_, _) =>
-        {
-            if (PointerInPage() is null)
-            {
-                ShowCursor();
-            }
-        };
         PointerMoved += OnPagePointerMoved;
     }
 
@@ -195,16 +183,16 @@ public sealed partial class PlayerPage
         return inPage && !inDragArea ? point : null;
     }
 
-    // XAML has no hidden cursor (a custom one needs a cursor resource in the executable), so this uses the
-    // thread's cursor display count, balanced by _isCursorHidden. The count also applies to the title bar, so
-    // the cursor comes back as soon as the pointer is off the picture.
+    // Over WinUI content the cursor is the one of the element under the pointer, which WinUI's input stack sets:
+    // ShowCursor does not reach it. The page's cursor goes blank instead; the elements on the picture have none of
+    // their own and take it. It is only the page's, so the title bar and other windows keep theirs, and the pointer
+    // coming back moves, which shows the controls and the arrow again.
     private void HideCursor()
     {
-        if (!_isCursorHidden)
+        if (!_isCursorHidden && BlankCursor.Instance is { } blank)
         {
             _isCursorHidden = true;
-            _ = NativeShowCursor(false);
-            _cursorTimer.Start();
+            ProtectedCursor = blank;
         }
     }
 
@@ -213,8 +201,8 @@ public sealed partial class PlayerPage
         if (_isCursorHidden)
         {
             _isCursorHidden = false;
-            _ = NativeShowCursor(true);
-            _cursorTimer.Stop();
+            // The arrow, not null: null leaves the shown cursor as it is until the pointer reaches another element.
+            ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Arrow);
         }
     }
 }

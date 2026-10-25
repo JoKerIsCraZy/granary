@@ -273,7 +273,8 @@ says why above the sections.
   movement, and the cursor goes with them while it is over the picture. They stay while paused, preparing,
   buffering, failed or ended, while the pointer rests on them, during a seek drag, while a flyout is open or
   a control in them has keyboard focus. Any pointer movement or key brings them back. Hidden controls take no
-  clicks.
+  clicks. The cursor goes as the page's `ProtectedCursor`, a blank one made at run time (`BlankCursor`):
+  `ShowCursor` does not reach WinUI content, whose cursor WinUI's input stack sets per element.
 - **Mouse**: a click on the picture plays or pauses (after 250 ms, so a double click does not), a double
   click toggles full screen. On touch a tap shows or hides the controls.
 - **Keyboard** (the web player's map, docs/api-contract.md 13.5): Space and K play/pause, F full screen,
