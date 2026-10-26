@@ -496,41 +496,11 @@
         Sidebar group label ("LIBRARIES"). WinUI's template takes the text from Content and its own text style,
         so this copy keeps its pane states (hidden while the pane is closed) with the Silo label style.
     -->
-    <Style x:Key="SiloNavigationHeaderStyle" TargetType="NavigationViewItemHeader">
-        <Setter Property="IsEnabled" Value="False" />
-        <Setter Property="IsTabStop" Value="False" />
-        <Setter Property="MinHeight" Value="0" />
-        <Setter Property="AutomationProperties.AccessibilityView" Value="Raw" />
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="NavigationViewItemHeader">
-                    <Grid>
-                        <VisualStateManager.VisualStateGroups>
-                            <VisualStateGroup x:Name="PaneStates">
-                                <VisualState x:Name="HeaderTextVisible" />
-                                <VisualState x:Name="HeaderTextCollapsed">
-                                    <VisualState.Setters>
-                                        <Setter Target="HeaderText.Visibility" Value="Collapsed" />
-                                        <Setter Target="InnerHeaderGrid.Height" Value="0" />
-                                    </VisualState.Setters>
-                                </VisualState>
-                            </VisualStateGroup>
-                            <VisualStateGroup x:Name="DisplayModeStates">
-                                <VisualState x:Name="LeftMode" />
-                                <VisualState x:Name="TopMode" />
-                            </VisualStateGroup>
-                        </VisualStateManager.VisualStateGroups>
-                        <Grid x:Name="InnerHeaderGrid" Height="40" Padding="16,0,0,0" HorizontalAlignment="Left">
-                            <TextBlock x:Name="HeaderText" VerticalAlignment="Bottom" Margin="0,0,0,6" Text="{TemplateBinding Content}"
-                                       Style="{StaticResource SiloSectionLabelTextStyle}" FontSize="10" CharacterSpacing="220" />
-                        </Grid>
-                    </Grid>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
-    <!-- A sidebar header that folds its section away: its content is the fold button (SidebarSectionHeader). -->
+    <!--
+        A sidebar header that folds its section away: its content is the fold button, or in the icon-only rail a short
+        divider (SidebarSectionHeader). The window tells it which: NavigationView's own pane states lag behind after the
+        player's minimal mode.
+    -->
     <Style x:Key="SiloNavigationSectionHeaderStyle" TargetType="NavigationViewItemHeader">
         <!-- WinUI's own header style disables it, which would disable the button in it. -->
         <Setter Property="IsEnabled" Value="True" />
@@ -545,22 +515,14 @@
                         <VisualStateManager.VisualStateGroups>
                             <VisualStateGroup x:Name="PaneStates">
                                 <VisualState x:Name="HeaderTextVisible" />
-                                <VisualState x:Name="HeaderTextCollapsed">
-                                    <VisualState.Setters>
-                                        <Setter Target="HeaderContent.Visibility" Value="Collapsed" />
-                                        <Setter Target="InnerHeaderGrid.Height" Value="0" />
-                                    </VisualState.Setters>
-                                </VisualState>
+                                <VisualState x:Name="HeaderTextCollapsed" />
                             </VisualStateGroup>
                             <VisualStateGroup x:Name="DisplayModeStates">
                                 <VisualState x:Name="LeftMode" />
                                 <VisualState x:Name="TopMode" />
                             </VisualStateGroup>
                         </VisualStateManager.VisualStateGroups>
-                        <Grid x:Name="InnerHeaderGrid" Height="40">
-                            <ContentPresenter x:Name="HeaderContent" Content="{TemplateBinding Content}" HorizontalContentAlignment="Stretch"
-                                              VerticalContentAlignment="Stretch" />
-                        </Grid>
+                        <ContentPresenter Content="{TemplateBinding Content}" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
                     </Grid>
                 </ControlTemplate>
             </Setter.Value>

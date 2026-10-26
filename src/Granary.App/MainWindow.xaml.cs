@@ -11,6 +11,8 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Dispatching;
 using Windows.UI;
 
 namespace Granary.App;
@@ -23,10 +25,15 @@ public sealed partial class MainWindow : Window
     // How long a closing window waits for the player's stop; the stop itself keeps trying for longer.
     private static readonly TimeSpan StopBudget = TimeSpan.FromSeconds(4);
 
+    // The web's delay before the rail opens under the pointer, so passing over it opens nothing.
+    private static readonly TimeSpan RailHoverDelay = TimeSpan.FromMilliseconds(150);
+
     private readonly NavigationService _navigation;
     private readonly PlaybackStops _stops;
     private readonly ILogger<MainWindow> _logger;
+    private readonly DispatcherQueueTimer _railHover;
     private bool _closeAfterStops;
+    private bool _isRail;
 
     public MainWindow(NavigationService navigation, ShellViewModel shell, SidebarViewModel sidebar, SidebarSections sections,
         NotificationBadge notifications, RequestsFeature requests, PlaybackStops stops, ILogger<MainWindow> logger)
@@ -40,6 +47,11 @@ public sealed partial class MainWindow : Window
         Notifications = notifications;
         Requests = requests;
         InitializeComponent();
+        _railHover = DispatcherQueue.CreateTimer();
+        _railHover.Interval = RailHoverDelay;
+        _railHover.IsRepeating = false;
+        _railHover.Tick += (_, _) => OpenRail();
+        Navigation.Loaded += (_, _) => FollowRailPointer();
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
         StyleCaptionButtons();
@@ -118,7 +130,7 @@ public sealed partial class MainWindow : Window
                 Icon = new FontIcon { Glyph = LibraryGlyph(library.Type) },
             });
         }
-        ShowLibrariesHeader();
+        ShowHeaders();
         ShowSections();
         if (_navigation.Current is { } route)
         {
@@ -126,12 +138,72 @@ public sealed partial class MainWindow : Window
         }
     }
 
+    // The icon-only rail of a detail page opens over the page while the mouse rests on it, as the web's does: the pane
+    // is the NavigationView's SplitView pane, found once the template is up.
+    private void FollowRailPointer()
+    {
+        if (FindDescendant<SplitView>(Navigation)?.Pane is not { } pane)
+        {
+            _logger.LogWarning("The sidebar's pane was not found; the rail does not open under the pointer");
+            return;
+        }
+        pane.PointerEntered += (_, e) =>
+        {
+            if (_isRail && !Navigation.IsPaneOpen && e.Pointer.PointerDeviceType is PointerDeviceType.Mouse or PointerDeviceType.Pen)
+            {
+                _railHover.Start();
+            }
+        };
+        pane.PointerExited += (_, _) =>
+        {
+            _railHover.Stop();
+            if (_isRail && Navigation.IsPaneOpen)
+            {
+                Navigation.IsPaneOpen = false;
+            }
+        };
+    }
+
+    private void OpenRail()
+    {
+        if (_isRail)
+        {
+            Navigation.IsPaneOpen = true;
+        }
+    }
+
+    private static T? FindDescendant<T>(DependencyObject root) where T : DependencyObject
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
+        {
+            var child = VisualTreeHelper.GetChild(root, i);
+            if ((child as T ?? FindDescendant<T>(child)) is { } found)
+            {
+                return found;
+            }
+        }
+        return null;
+    }
+
+    // Opening or closing the pane, by the window or by the rail's pointer or a click beside it, turns the headers between
+    // fold buttons and dividers, and the folded sections' entries between hidden and shown.
+    private void OnPaneOpening(NavigationView sender, object args) => ShowPaneParts(open: true);
+
+    private void OnPaneClosing(NavigationView sender, NavigationViewPaneClosingEventArgs args) => ShowPaneParts(open: false);
+
+    private void ShowPaneParts(bool open)
+    {
+        ShowHeaders(open);
+        ShowSections(open);
+    }
+
     // A folded section hides its entries, all but the page shown, so the sidebar still says where the viewer is. The
     // icon-only pane shows them all, as the web's rail does: it has no headers to open them by. Requests and
     // Notifications show only while the server offers them.
-    private void ShowSections()
+    private void ShowSections() => ShowSections(Navigation.IsPaneOpen);
+
+    private void ShowSections(bool open)
     {
-        bool open = Navigation.IsPaneOpen;
         bool shown = true;
         foreach (object item in Navigation.MenuItems)
         {
@@ -225,25 +297,29 @@ public sealed partial class MainWindow : Window
         bool isPlayer = route == AppRoute.Player;
         // The settings bring their own sidebar, as on the web.
         bool hidesPane = isPlayer || route == AppRoute.Settings;
-        Navigation.PaneDisplayMode = hidesPane ? NavigationViewPaneDisplayMode.LeftMinimal : NavigationViewPaneDisplayMode.Left;
+        // A detail page's rail opens over the page (compact mode), not beside it: the page keeps its width.
+        _isRail = route == AppRoute.Item;
+        _railHover.Stop();
+        Navigation.PaneDisplayMode = hidesPane ? NavigationViewPaneDisplayMode.LeftMinimal
+            : _isRail ? NavigationViewPaneDisplayMode.LeftCompact
+            : NavigationViewPaneDisplayMode.Left;
         // Visibility first: a pane that becomes visible opens again, whatever IsPaneOpen said before.
         Navigation.IsPaneVisible = Shell.IsSignedIn && !hidesPane;
         Navigation.IsPaneOpen = Shell.IsSignedIn && route is not (AppRoute.Item or AppRoute.Player);
         Grid.SetRow(Navigation, isPlayer ? 0 : 1);
         Grid.SetRowSpan(Navigation, isPlayer ? 2 : 1);
         AppTitle.Visibility = isPlayer ? Visibility.Collapsed : Visibility.Visible;
-        ShowLibrariesHeader();
-        ShowSections();
+        ShowPaneParts(Navigation.IsPaneOpen);
     }
 
-    // "LIBRARIES" only in the open pane. NavigationView hides the header's text in the icon-only pane itself, but not
-    // after the player's minimal mode: back in Left mode with the pane closed it showed again, cut off.
-    private void ShowLibrariesHeader()
+    // The headers fold their sections in the open pane; in the icon-only rail each is the web's short divider. Set here,
+    // not by NavigationView's pane states, which lag behind after the player's minimal mode. LIBRARIES only with libraries.
+    private void ShowHeaders() => ShowHeaders(Navigation.IsPaneOpen);
+
+    private void ShowHeaders(bool open)
     {
-        LibrariesHeader.Visibility = Sidebar.Libraries.Count > 0 && Navigation.IsPaneOpen ? Visibility.Visible : Visibility.Collapsed;
-        var open = Navigation.IsPaneOpen ? Visibility.Visible : Visibility.Collapsed;
-        DiscoverHeader.Visibility = open;
-        YourStuffHeader.Visibility = open;
+        LibrariesHeader.Visibility = Sidebar.Libraries.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        LibrariesToggle.IsCompact = DiscoverToggle.IsCompact = YourStuffToggle.IsCompact = !open;
     }
 
     // The process ends with the window, and the player's stop carries where the viewer left off: the window goes

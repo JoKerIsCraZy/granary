@@ -17,11 +17,18 @@ public sealed partial class SidebarSectionHeader : UserControl
     public static readonly DependencyProperty IsExpandedProperty =
         DependencyProperty.Register(nameof(IsExpanded), typeof(bool), typeof(SidebarSectionHeader), new PropertyMetadata(true, (sender, _) => ((SidebarSectionHeader)sender).Show()));
 
+    public static readonly DependencyProperty IsCompactProperty =
+        DependencyProperty.Register(nameof(IsCompact), typeof(bool), typeof(SidebarSectionHeader), new PropertyMetadata(false, (sender, _) => ((SidebarSectionHeader)sender).Show()));
+
     public static readonly DependencyProperty CommandProperty =
         DependencyProperty.Register(nameof(Command), typeof(ICommand), typeof(SidebarSectionHeader), new PropertyMetadata(null));
 
     public static readonly DependencyProperty CommandParameterProperty =
         DependencyProperty.Register(nameof(CommandParameter), typeof(object), typeof(SidebarSectionHeader), new PropertyMetadata(null));
+
+    // The open pane's header is as tall as the web's label with its gap; the rail's divider takes less.
+    private const double OpenHeight = 40;
+    private const double CompactHeight = 24;
 
     // Segoe Fluent Icons' ChevronDown and ChevronRight.
     private const string OpenGlyph = "";
@@ -44,6 +51,13 @@ public sealed partial class SidebarSectionHeader : UserControl
     {
         get => (bool)GetValue(IsExpandedProperty);
         set => SetValue(IsExpandedProperty, value);
+    }
+
+    /// <summary>In the icon-only rail: a divider instead of the fold button.</summary>
+    public bool IsCompact
+    {
+        get => (bool)GetValue(IsCompactProperty);
+        set => SetValue(IsCompactProperty, value);
     }
 
     public ICommand? Command
@@ -73,5 +87,8 @@ public sealed partial class SidebarSectionHeader : UserControl
         Text.Text = Label.ToUpperInvariant();
         Chevron.Glyph = IsExpanded ? OpenGlyph : FoldedGlyph;
         AutomationProperties.SetName(Toggle, $"{(IsExpanded ? "Collapse" : "Expand")} {Label}");
+        Toggle.Visibility = IsCompact ? Visibility.Collapsed : Visibility.Visible;
+        Divider.Visibility = IsCompact ? Visibility.Visible : Visibility.Collapsed;
+        Height = IsCompact ? CompactHeight : OpenHeight;
     }
 }

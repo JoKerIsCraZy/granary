@@ -37,6 +37,8 @@
             IsBackButtonVisible="Collapsed"
             IsTitleBarAutoPaddingEnabled="False"
             IsPaneVisible="False"
+            PaneOpening="OnPaneOpening"
+            PaneClosing="OnPaneClosing"
             ItemInvoked="OnItemInvoked"
             BackRequested="OnBackRequested">
             <NavigationView.PaneHeader>
@@ -62,12 +64,12 @@
                 </NavigationViewItem>
                 <!-- The three sections fold away by their headers, and stay so across starts (MainWindow.ShowSections). -->
                 <NavigationViewItemHeader x:Name="LibrariesHeader" Style="{StaticResource SiloNavigationSectionHeaderStyle}">
-                    <controls:SidebarSectionHeader Label="Libraries" IsExpanded="{x:Bind Sections.IsLibrariesExpanded, Mode=OneWay}"
+                    <controls:SidebarSectionHeader x:Name="LibrariesToggle" Label="Libraries" IsExpanded="{x:Bind Sections.IsLibrariesExpanded, Mode=OneWay}"
                                                    Command="{x:Bind Sections.ToggleCommand}" CommandParameter="{x:Bind LibrariesSection}" />
                 </NavigationViewItemHeader>
                 <!-- The libraries go between the two headers. -->
                 <NavigationViewItemHeader x:Name="DiscoverHeader" Style="{StaticResource SiloNavigationSectionHeaderStyle}">
-                    <controls:SidebarSectionHeader Label="Discover" IsExpanded="{x:Bind Sections.IsDiscoverExpanded, Mode=OneWay}"
+                    <controls:SidebarSectionHeader x:Name="DiscoverToggle" Label="Discover" IsExpanded="{x:Bind Sections.IsDiscoverExpanded, Mode=OneWay}"
                                                    Command="{x:Bind Sections.ToggleCommand}" CommandParameter="{x:Bind DiscoverSection}" />
                 </NavigationViewItemHeader>
                 <NavigationViewItem Content="For You" Tag="ForYou">
@@ -98,7 +100,7 @@
                     </NavigationViewItem.InfoBadge>
                 </NavigationViewItem>
                 <NavigationViewItemHeader x:Name="YourStuffHeader" Style="{StaticResource SiloNavigationSectionHeaderStyle}">
-                    <controls:SidebarSectionHeader Label="Your Stuff" IsExpanded="{x:Bind Sections.IsYourStuffExpanded, Mode=OneWay}"
+                    <controls:SidebarSectionHeader x:Name="YourStuffToggle" Label="Your Stuff" IsExpanded="{x:Bind Sections.IsYourStuffExpanded, Mode=OneWay}"
                                                    Command="{x:Bind Sections.ToggleCommand}" CommandParameter="{x:Bind YourStuffSection}" />
                 </NavigationViewItemHeader>
                 <NavigationViewItem Content="Favorites" Tag="List:favorites">
