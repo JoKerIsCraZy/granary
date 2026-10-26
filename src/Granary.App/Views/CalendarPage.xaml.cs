@@ -75,8 +75,8 @@ public sealed partial class CalendarPage : Page
         }
     }
 
-    // A day picked in the strip brings its row to the top of the days; a day without airings shows "Nothing scheduled",
-    // which is at the top.
+    // A day picked in the strip brings its row to the top of the days, an empty day's too; in a week without airings
+    // the page says so at the top.
     private void OnDayRequested(object? sender, DateOnly day)
     {
         for (int index = 0; index < ViewModel.Rows.Count; index++)

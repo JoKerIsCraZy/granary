@@ -85,15 +85,16 @@ public sealed class CalendarViewModelTests
     {
         var page = await LoadedAsync();
 
-        Assert.Equal(["Thursday, October 1st", "Saturday, October 3rd"], page.Rows.Select(r => r.Heading));
-        Assert.Equal(["TODAY", ""], page.Rows.Select(r => r.Badge));
-        var premiere = page.Rows[0].Cards[0];
+        var aired = Aired(page);
+        Assert.Equal(["Thursday, October 1st", "Saturday, October 3rd"], aired.Select(r => r.Heading));
+        Assert.Equal(["TODAY", ""], aired.Select(r => r.Badge));
+        var premiere = aired[0].Cards[0];
         Assert.Equal("Severance", premiere.Title);
         Assert.Equal("S2 · E1 - HELLO, MS. COBEL", premiere.Subtitle);
         Assert.Equal("SEASON PREMIERE", premiere.StatusBadge);
         Assert.Equal(new TimeOnly(21, 0).ToString("t", CultureInfo.CurrentCulture), premiere.Caption);
         Assert.Equal(CalendarViewModel.CardType, premiere.Type);
-        var movie = page.Rows[1].Cards[0];
+        var movie = aired[1].Cards[0];
         Assert.Equal("MOVIE", movie.Subtitle);
         Assert.Equal(new TimeOnly(20, 15).ToString("t", CultureInfo.CurrentCulture), movie.Caption);
         Assert.True(movie.IsWatched && movie.ShowsWatchedMark);
@@ -104,8 +105,8 @@ public sealed class CalendarViewModelTests
     {
         var page = await LoadedAsync();
 
-        page.OpenCommand.Execute(page.Rows[0].Cards[0]);
-        page.OpenCommand.Execute(page.Rows[1].Cards[0]);
+        page.OpenCommand.Execute(Aired(page)[0].Cards[0]);
+        page.OpenCommand.Execute(Aired(page)[1].Cards[0]);
 
         Assert.Equal(["series:severance", "movie:dune-3"], _harness.Navigation.Navigations.Select(n => n.Parameter as string));
     }
@@ -156,20 +157,43 @@ public sealed class CalendarViewModelTests
     }
 
     [Fact]
-    public async Task ADayPicked_AsksForItsRow_OrSaysNothingIsScheduled()
+    public async Task AWeekWithAirings_ListsItsEmptyDaysToo()
+    {
+        var page = await LoadedAsync();
+
+        Assert.Equal(page.Days.Select(d => d.Date), page.Rows.Select(r => r.Date));
+        Assert.Equal([false, false, false, true, false, true, false], page.Rows.Select(r => r.HasAirings));
+        Assert.Equal("Friday, October 2nd", page.Rows[4].Heading);
+        Assert.True(page.Rows[4].HasNoAirings);
+        Assert.Equal("TODAY", page.Rows[3].Badge);
+    }
+
+    [Fact]
+    public async Task ADayPicked_AsksForItsRow_AnEmptyOneToo()
     {
         var page = await LoadedAsync();
         var requested = new List<DateOnly>();
         page.DayRequested += (_, day) => requested.Add(day);
 
         page.SelectDayCommand.Execute(page.Days[4]);
-        Assert.True(page.HasSelectedDayEmpty);
-        Assert.Equal("Nothing scheduled for Friday, October 2nd.", page.SelectedDayEmptyText);
+        // The empty day's own row says so; nothing at the top.
+        Assert.False(page.HasSelectedDayEmpty);
         Assert.True(page.Days[4].IsSelected);
 
         page.SelectDayCommand.Execute(page.Days[3]);
-        Assert.False(page.HasSelectedDayEmpty);
         Assert.Equal([new DateOnly(2026, 10, 2), new DateOnly(2026, 10, 1)], requested);
+    }
+
+    [Fact]
+    public async Task ADayPickedInAnEmptyWeek_SaysNothingIsScheduled()
+    {
+        _harness.Answer(CalendarPath, NoEvents);
+        var page = await LoadedAsync();
+
+        page.SelectDayCommand.Execute(page.Days[4]);
+
+        Assert.True(page.HasSelectedDayEmpty);
+        Assert.Equal("Nothing scheduled for Friday, October 2nd.", page.SelectedDayEmptyText);
     }
 
     [Fact]
@@ -181,7 +205,7 @@ public sealed class CalendarViewModelTests
         Assert.Equal(LibraryLoadState.Error, page.State);
 
         await page.RetryCommand.ExecuteAsync(null);
-        Assert.Equal(2, page.Rows.Count);
+        Assert.Equal(2, Aired(page).Count);
     }
 
     [Fact]
@@ -347,6 +371,8 @@ public sealed class CalendarViewModelTests
 
         public override TimeZoneInfo LocalTimeZone => zone;
     }
+
+    private static List<CalendarDayRow> Aired(CalendarViewModel page) => [.. page.Rows.Where(r => r.HasAirings)];
 
     private static async Task WaitUntilAsync(Func<bool> condition)
     {

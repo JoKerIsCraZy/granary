@@ -91,9 +91,10 @@
 
         <ScrollViewer x:Name="Scroller" Grid.Row="2" XYFocusKeyboardNavigation="Enabled">
             <StackPanel Padding="48,8,48,48" Spacing="24">
-                <Border Padding="16,12" CornerRadius="16" Background="#0AFFFFFF" Visibility="{x:Bind ViewModel.HasSelectedDayEmpty, Mode=OneWay}">
+                <!-- One line, no body line height and tight bounds: the text's spare room would sit it above the box's middle. -->
+                <Border Padding="16,17" CornerRadius="16" Background="#0AFFFFFF" Visibility="{x:Bind ViewModel.HasSelectedDayEmpty, Mode=OneWay}">
                     <TextBlock Text="{x:Bind ViewModel.SelectedDayEmptyText, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}"
-                               Foreground="{StaticResource SiloMutedBrush}" />
+                               Foreground="{StaticResource SiloMutedBrush}" LineHeight="0" TextLineBounds="Tight" VerticalAlignment="Center" />
                 </Border>
 
                 <ProgressRing IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay}"
@@ -131,8 +132,26 @@
                     </ItemsRepeater.Layout>
                     <ItemsRepeater.ItemTemplate>
                         <DataTemplate x:DataType="vm:CalendarDayRow">
-                            <controls:MediaRow Title="{x:Bind Heading}" TitleBadge="{x:Bind Badge}" ItemsSource="{x:Bind Cards}"
-                                               CardInvokedCommand="{x:Bind OpenCommand}" />
+                            <Grid>
+                                <controls:MediaRow Title="{x:Bind Heading}" TitleBadge="{x:Bind Badge}" ItemsSource="{x:Bind Cards}"
+                                                   CardInvokedCommand="{x:Bind OpenCommand}" Visibility="{x:Bind HasAirings}" />
+                                <!-- A day without airings keeps its place, so picking it in the strip scrolls there. -->
+                                <StackPanel Spacing="14" Visibility="{x:Bind HasNoAirings}">
+                                    <StackPanel Orientation="Horizontal" Spacing="10">
+                                        <TextBlock Text="{x:Bind Heading}" Style="{StaticResource SiloRowTitleTextStyle}" VerticalAlignment="Center"
+                                                   AutomationProperties.HeadingLevel="Level2" />
+                                        <Border Padding="8,2,8,3" CornerRadius="9" Background="{StaticResource SiloPrimaryBrush}" VerticalAlignment="Center"
+                                                Visibility="{x:Bind HasBadge}">
+                                            <TextBlock Text="{x:Bind Badge}" FontSize="10" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
+                                                       Foreground="White" />
+                                        </Border>
+                                    </StackPanel>
+                                    <Border Padding="16,17" CornerRadius="16" Background="#0AFFFFFF">
+                                        <TextBlock Text="Nothing scheduled." Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
+                                                   LineHeight="0" TextLineBounds="Tight" VerticalAlignment="Center" />
+                                    </Border>
+                                </StackPanel>
+                            </Grid>
                         </DataTemplate>
                     </ItemsRepeater.ItemTemplate>
                 </ItemsRepeater>

@@ -42,18 +42,25 @@ public sealed partial class CalendarDayChip(DateOnly date, string label, string 
 /// <param name="Command">Takes <see cref="Preset"/>.</param>
 public sealed record CalendarPresetLink(string Label, SettingChoice Preset, ICommand Command);
 
-/// <summary>A day's airings under "Monday, October 5th"; today's says TODAY.</summary>
+/// <summary>A day's airings under "Monday, October 5th", or none; today's says TODAY.</summary>
 /// <param name="OpenCommand">Takes the airing's <see cref="MediaCard"/>.</param>
 public sealed record CalendarDayRow(DateOnly Date, string Heading, bool IsToday, IReadOnlyList<MediaCard> Cards, ICommand OpenCommand)
 {
     public string Badge => IsToday ? "TODAY" : "";
+
+    public bool HasBadge => IsToday;
+
+    public bool HasAirings => Cards.Count > 0;
+
+    public bool HasNoAirings => Cards.Count == 0;
 }
 
 /// <summary>
 /// The Calendar, as Silo's web shows it (<c>pages/Calendar.tsx</c>): a week of airings (<c>GET /api/v2/calendar</c>,
 /// Monday to Sunday in the viewer's zone) as a row per day, the week strip with a dot on days that have some, the
 /// presets Following, Trending and All, and a library filter when there are several. A day in the strip scrolls to its
-/// row. An airing opens its movie or series.
+/// row. An airing opens its movie or series. Unlike the web, a week with airings lists its empty days too ("Nothing
+/// scheduled."), so a day picked in the strip always has its own place to scroll to.
 /// </summary>
 public sealed partial class CalendarViewModel : ObservableObject
 {
@@ -138,11 +145,11 @@ public sealed partial class CalendarViewModel : ObservableObject
 
     public string WeekName => $"Week of {WeekLabel}";
 
-    /// <summary>"Nothing scheduled for Monday, October 5th." when the picked day has no airings.</summary>
+    /// <summary>"Nothing scheduled for Monday, October 5th." when a day is picked in a week without any airings.</summary>
     public string SelectedDayEmptyText => HasSelectedDayEmpty ? $"Nothing scheduled for {CalendarText.DayHeading(SelectedDay!.Value)}." : "";
 
-    public bool HasSelectedDayEmpty => SelectedDay is { } day && State is LibraryLoadState.Ready or LibraryLoadState.Empty
-        && Rows.All(r => r.Date != day);
+    // A week with airings has a row for every day, which says so itself.
+    public bool HasSelectedDayEmpty => SelectedDay is not null && State == LibraryLoadState.Empty;
 
     public bool IsLoading => State == LibraryLoadState.Loading;
 
@@ -369,12 +376,20 @@ public sealed partial class CalendarViewModel : ObservableObject
                 rows.Add(new CalendarDayRow(date, CalendarText.DayHeading(date), date == today, cards, OpenCommand));
             }
         }
-        return rows;
+        if (rows.Count == 0)
+        {
+            return rows;
+        }
+        // Every day of the week, in order, the empty ones too.
+        var aired = rows.ToDictionary(r => r.Date);
+        var days = Enumerable.Range(0, 7).Select(i => WeekStart.AddDays(i))
+            .Select(day => aired.GetValueOrDefault(day) ?? new CalendarDayRow(day, CalendarText.DayHeading(day), day == today, [], OpenCommand));
+        return [.. days.Concat(rows.Where(r => r.Date < WeekStart || r.Date > WeekStart.AddDays(6))).OrderBy(r => r.Date)];
     }
 
     private List<CalendarDayChip> ChipsOf(IEnumerable<CalendarDayRow> rows)
     {
-        var withAirings = rows.Select(r => r.Date).ToHashSet();
+        var withAirings = rows.Where(r => r.HasAirings).Select(r => r.Date).ToHashSet();
         var today = Today;
         return [.. Enumerable.Range(0, 7).Select(i => WeekStart.AddDays(i)).Select(day => new CalendarDayChip(day, CalendarText.ShortDay(day),
             day.Day.ToString(CultureInfo.InvariantCulture), day == today, withAirings.Contains(day), SelectDayCommand) { IsSelected = day == SelectedDay })];

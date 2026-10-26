@@ -113,9 +113,10 @@ View models build `MediaCard`s with the texts already worded; the controls only 
 - Calendar (`CalendarPage`, the web's `pages/Calendar.tsx`): the title with the presets Following, Trending, All (the
   chosen one red) and "All Libraries" when there are several; the week strip pinned above the days (arrows, "Oct 19 –
   25, 2026", Today, a button per day with a dot on days with airings, today tinted red, the picked day filled red,
-  which scrolls to its row or says "Nothing scheduled for …"); then a row per day ("Monday, October 19th", TODAY on
-  today's) of airings: "S2 · E1 - TITLE", the air time on the viewer's clock, SERIES PREMIERE / SEASON PREMIERE / FINALE,
-  watched ones marked. An airing opens its series (a movie itself); airings have no card menu. An empty week names the
+  which scrolls to its row); then a row per day ("Monday, October 19th", TODAY on today's) of airings: "S2 · E1 - TITLE",
+  the air time on the viewer's clock, SERIES PREMIERE / SEASON PREMIERE / FINALE, watched ones marked. Unlike the web,
+  a week with airings lists its empty days too, each with "Nothing scheduled." in a faint box, so picking one scrolls
+  to its place instead of the top; a day picked in an empty week says "Nothing scheduled for …". An airing opens its series (a movie itself); airings have no card menu. An empty week names the
   other presets. The preset is kept while the app runs (the web keeps it in the browser).
 - Notifications (`NotificationsPage`, the web's `pages/Notifications.tsx`): one centred column of the web's width with
   the bell and title, Mark all read while anything is unread, Preferences (a flyout with the master switch and
