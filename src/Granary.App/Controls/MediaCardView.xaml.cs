@@ -33,6 +33,7 @@ public sealed partial class MediaCardView : UserControl
     private CancellationTokenSource? _artwork;
     private bool _sizedByMeasure;
     private bool _reservesEpisodeLine;
+    private ButtonBase? _host;
 
     public MediaCardView()
     {
@@ -106,15 +107,42 @@ public sealed partial class MediaCardView : UserControl
 
         WatchedMark.Visibility = card?.ShowsWatchedMark == true && state.IsWatched ? Visibility.Visible : Visibility.Collapsed;
         bool hasProgress = card?.Progress is > 0 && !state.IsProgressCleared;
-        Progress.Value = hasProgress ? Math.Clamp(card!.Progress!.Value, 0, 1) : 0;
-        Progress.Visibility = hasProgress ? Visibility.Visible : Visibility.Collapsed;
-        Progress.Foreground = Brush(state.IsWatched || Progress.Value >= 1 ? "SiloCompleteBrush" : "SiloPrimaryBrush");
+        if (hasProgress && Progress is null)
+        {
+            FindName(nameof(Progress));
+        }
+        if (Progress is { } bar)
+        {
+            bar.Value = hasProgress ? Math.Clamp(card!.Progress!.Value, 0, 1) : 0;
+            bar.Visibility = Visible(hasProgress);
+            bar.Foreground = Brush(state.IsWatched || bar.Value >= 1 ? "SiloCompleteBrush" : "SiloPrimaryBrush");
+        }
+        // A TMDB title's request state can change on the card: its watchlist add requested it.
+        SetBadge(StatusBadge, StatusText, card is null ? null : _actions.StatusBadgeOf(card));
+        if (HoverLayer is not null)
+        {
+            ShowActions(card, state, hasProgress);
+        }
+    }
+
+    // Makes the play disc, the card's buttons and its menu, for the pointer, the keyboard or the context menu. A row of
+    // cards scrolling in took more than a frame while every card made them up front, and most cards are never hovered.
+    // The caller shows the card's state on them next.
+    private void EnsureActions()
+    {
+        if (HoverLayer is null)
+        {
+            FindName(nameof(HoverLayer));
+            SizeActions(Art.ActualWidth > 0 ? Art.ActualWidth : ActualWidth);
+        }
+    }
+
+    private void ShowActions(MediaCard? card, MediaCardState state, bool hasProgress)
+    {
         var foot = new Thickness(10, 10, 10, hasProgress ? 12 : 10);
         ActionsPanel.Margin = foot;
         MoreButton.Margin = foot;
         TitleWatchlistButton.Margin = foot;
-        // A TMDB title's request state can change on the card: its watchlist add requested it.
-        SetBadge(StatusBadge, StatusText, card is null ? null : _actions.StatusBadgeOf(card));
 
         bool titleWatchlist = card is not null && _actions.CanToggleTitleWatchlist(card);
         TitleWatchlistButton.Visibility = Visible(titleWatchlist);
@@ -239,6 +267,15 @@ public sealed partial class MediaCardView : UserControl
         double height = Card?.Shape == MediaCardShape.Landscape ? width * 9 / 16 : width * 3 / 2;
         Art.Height = height;
         ArtImage.CenterPoint = new Vector3((float)(width / 2), (float)(height / 2), 0);
+        SizeActions(width);
+    }
+
+    private void SizeActions(double width)
+    {
+        if (HoverLayer is null || width <= 0)
+        {
+            return;
+        }
         bool wide = width >= WideCard;
         PlayButton.Width = PlayButton.Height = wide ? 44 : 40;
         foreach (var button in new[] { WatchedButton, FavoriteButton, MoreButton, TitleWatchlistButton })
@@ -251,20 +288,53 @@ public sealed partial class MediaCardView : UserControl
     private void SetHovered(bool hovered)
     {
         ArtImage.Scale = hovered ? new Vector3(HoverScale, HoverScale, 1) : Vector3.One;
-        HoverLayer.Opacity = hovered ? 1 : 0;
-        HoverLayer.IsHitTestVisible = hovered;
         BottomBadges.Opacity = hovered ? 0 : 1;
+        if (HoverLayer is not null)
+        {
+            HoverLayer.Opacity = hovered ? 1 : 0;
+            HoverLayer.IsHitTestVisible = hovered;
+        }
     }
 
     // The buttons are brought up to date first: whether the server keeps TMDB titles on the watchlist may have been read
     // after the card showed. The keyboard reaches them through focus.
     private void OnPointerEntered(object sender, PointerRoutedEventArgs e)
     {
+        if (Card is null)
+        {
+            SetHovered(false);
+            return;
+        }
+        EnsureActions();
         ShowState();
-        SetHovered(Card is not null);
+        SetHovered(true);
     }
 
     private void OnGotFocus(object sender, RoutedEventArgs e) => ShowState();
+
+    // The card's own button takes focus before Tab moves on to the buttons on the card, so they are made then.
+    private void OnHostGotFocus(object sender, RoutedEventArgs e)
+    {
+        if (Card is not null && HoverLayer is null)
+        {
+            EnsureActions();
+            ShowState();
+        }
+    }
+
+    // The button around the card, where there is one (a card in a row or grid).
+    private ButtonBase? HostButton()
+    {
+        var parent = VisualTreeHelper.GetParent(this);
+        for (int depth = 0; parent is not null && depth < 3; depth++, parent = VisualTreeHelper.GetParent(parent))
+        {
+            if (parent is ButtonBase button)
+            {
+                return button;
+            }
+        }
+        return null;
+    }
 
     private void OnPointerExited(object sender, PointerRoutedEventArgs e) => SetHovered(false);
 
@@ -327,8 +397,13 @@ public sealed partial class MediaCardView : UserControl
     // Right-click, Shift+F10 or the menu key open the same menu as the card's ⋮, where the pointer is.
     private void OnContextRequested(UIElement sender, ContextRequestedEventArgs args)
     {
+        if (Card is null)
+        {
+            return;
+        }
+        EnsureActions();
         ShowState();
-        if (Card is null || MoreButton.Visibility != Visibility.Visible)
+        if (MoreButton.Visibility != Visibility.Visible)
         {
             return;
         }
@@ -362,10 +437,29 @@ public sealed partial class MediaCardView : UserControl
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         _actions.Changed += OnStateChanged;
+        ForgetHost();
+        _host = HostButton();
+        if (_host is not null)
+        {
+            _host.GotFocus += OnHostGotFocus;
+        }
         ShowState();
     }
 
-    private void OnUnloaded(object sender, RoutedEventArgs e) => _actions.Changed -= OnStateChanged;
+    private void OnUnloaded(object sender, RoutedEventArgs e)
+    {
+        _actions.Changed -= OnStateChanged;
+        ForgetHost();
+    }
+
+    private void ForgetHost()
+    {
+        if (_host is not null)
+        {
+            _host.GotFocus -= OnHostGotFocus;
+            _host = null;
+        }
+    }
 
     private void OnStateChanged(object? sender, string contentId)
     {

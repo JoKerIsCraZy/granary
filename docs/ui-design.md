@@ -53,7 +53,9 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
   rating bottom left, a watched mark bottom right, a 3 px red progress bar, then title, subtitle and an
   optional caption. Without artwork, or when it fails (expired signature), the title stands in. An episode's poster
   reads as the web's grid card (`lib/episodeCardLabels.ts`): the series ("Tracker"), the episode's own title
-  ("Safe Harbor"), then "S04E01".
+  ("Safe Harbor"), then "S04E01". The play disc, the card's buttons and its menu are made on first need (the pointer,
+  focus on the card's button, the context menu), the progress bar only for a card with progress (`x:Load`): made for
+  every card, they cost a row of cards scrolling in 26–75 ms, now 10–23 ms, and most cards are never hovered.
 - `MediaRow`: row title, optional "EXPLORE ALL" (on every Home and library row, as on the web, also when the row
   already holds all of it; For You and Requests rows only when a page lists more), horizontally scrolling cards (posters 185 px,
   landscape 314 px, 20 px apart), arrows for mouse users. Sideways rows (`MediaRow`, `DetailShelf`, search's

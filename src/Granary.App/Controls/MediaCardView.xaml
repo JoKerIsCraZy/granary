@@ -81,12 +81,13 @@
                 </Border>
             </Grid>
 
-            <ProgressBar x:Name="Progress" Margin="10,0,10,8" VerticalAlignment="Bottom" Height="3" MinHeight="3" CornerRadius="2"
+            <!-- Made only for a card with progress, the play disc and the card's buttons only on first need (MediaCardView.EnsureActions). -->
+            <ProgressBar x:Name="Progress" x:Load="False" Margin="10,0,10,8" VerticalAlignment="Bottom" Height="3" MinHeight="3" CornerRadius="2"
                          Maximum="1" Foreground="{StaticResource SiloPrimaryBrush}" Background="#66000000"
                          AutomationProperties.Name="Progress" />
 
             <!-- Under the pointer only: play in the middle, the card's buttons along the foot. -->
-            <Grid x:Name="HoverLayer" Opacity="0" IsHitTestVisible="False">
+            <Grid x:Name="HoverLayer" x:Load="False" Opacity="0" IsHitTestVisible="False">
                 <Grid.OpacityTransition>
                     <ScalarTransition Duration="0:0:0.15" />
                 </Grid.OpacityTransition>
