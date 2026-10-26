@@ -107,10 +107,11 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   Between a title's page and any other the sidebar changes its width with the page; the old page then goes at once,
   the pane moves over the empty page, and the new page fades in (160 ms) once the pane stands, instead of the old page
   squeezing while the pane moved and the new one sliding in after it.
-- Sideways rows (`MediaRow`, `BrandRow`, the detail pages' `DetailShelf`) reach the window's edge as the web's
-  carousels do: the track takes the page's 48 px gutter on both sides and keeps it inside, so the first card lines up
-  with the page and scrolled cards run on to the edge rather than stopping at an invisible wall (`RowBleed`; the
-  player's On Deck row has a 32 px gutter).
+- Sideways rows (`MediaRow`, `BrandRow`, the detail pages' `DetailShelf`) reach the window's right edge as the web's
+  carousels do: the track takes the page's 48 px right gutter and keeps it inside, so the next card shows in the gutter
+  rather than stopping at an invisible wall (`RowBleed`; the player's On Deck row has a 32 px gutter). On the left a row
+  ends at the page's gutter, no cut-off card beside the sidebar, and the arrows page by as many whole cards as show, so a
+  card starts right on the gutter after each click.
 - Collections (`CollectionsPage`, the web's `pages/Collections.tsx`): "Your collections" with its count ("Manual ·
   4 titles", a SHARED badge on one other profiles see), "Shared with me" by owner ("by Mara"), and "Server
   collections" with a pill per library (All first) and Load more, which the end of the grid presses by itself. A

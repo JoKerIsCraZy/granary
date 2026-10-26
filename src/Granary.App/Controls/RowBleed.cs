@@ -5,10 +5,11 @@ using Microsoft.UI.Xaml.Media;
 namespace Granary.App.Controls;
 
 /// <summary>
-/// A sideways row that reaches the window's edge, as the web's carousels do: the scrolling track takes the page's gutter
-/// on both sides as well, and its content keeps that gutter inside, so the first card still lines up with the page and the
-/// last one ends a gutter from the edge, while scrolled cards run on to the edge instead of stopping at an invisible wall
-/// 48 px before it. The arrows stay where the content starts and ends.
+/// A sideways row that reaches the window's right edge, as the web's carousels do: the scrolling track takes the page's
+/// right gutter as well and keeps it inside its content, so the last card ends a gutter from the edge while the next one
+/// shows in the gutter instead of stopping at an invisible wall 48 px before it. On the left the row ends at the page's
+/// gutter, so no cut-off card shows beside the sidebar; the arrows page by whole cards, so one starts right there. The
+/// arrows stay where the content starts and ends.
 /// </summary>
 internal static class RowBleed
 {
@@ -30,7 +31,7 @@ internal static class RowBleed
         if (content is ItemsRepeater { Layout: StackLayout { Orientation: Orientation.Horizontal } layout } items && CardWidth(items) is { } width)
         {
             double pitch = width + layout.Spacing;
-            int cards = Math.Max(1, (int)Math.Floor((viewport - 2 * bleed + layout.Spacing) / pitch));
+            int cards = Math.Max(1, (int)Math.Floor((viewport - bleed + layout.Spacing) / pitch));
             target = (Math.Round(scroller.HorizontalOffset / pitch) + direction * cards) * pitch;
         }
         else
@@ -55,12 +56,12 @@ internal static class RowBleed
 
     public static void Apply(double bleed, FrameworkElement track, FrameworkElement? content, Button previous, Button next)
     {
-        track.Margin = new Thickness(-bleed, 0, -bleed, 0);
+        track.Margin = new Thickness(0, 0, -bleed, 0);
         if (content is not null)
         {
-            content.Margin = new Thickness(bleed, 0, bleed, 0);
+            content.Margin = new Thickness(0, 0, bleed, 0);
         }
-        previous.Margin = new Thickness(bleed - ArrowOverhang, 0, 0, previous.Margin.Bottom);
+        previous.Margin = new Thickness(-ArrowOverhang, 0, 0, previous.Margin.Bottom);
         next.Margin = new Thickness(0, 0, bleed - ArrowOverhang, next.Margin.Bottom);
     }
 }
