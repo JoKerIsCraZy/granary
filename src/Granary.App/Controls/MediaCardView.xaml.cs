@@ -32,6 +32,7 @@ public sealed partial class MediaCardView : UserControl
     // Cancelled when the container is recycled for another card, so the old card's artwork stays out.
     private CancellationTokenSource? _artwork;
     private bool _sizedByMeasure;
+    private bool _reservesEpisodeLine;
 
     public MediaCardView()
     {
@@ -44,6 +45,23 @@ public sealed partial class MediaCardView : UserControl
     {
         get => (MediaCard?)GetValue(CardProperty);
         set => SetValue(CardProperty, value);
+    }
+
+    /// <summary>
+    /// Keeps the episode title's line also on a card without one. A grid sizes every card by its first, so one holding
+    /// an episode sets this on all of them, as the web's grid grows its rows to the tallest card.
+    /// </summary>
+    public bool ReservesEpisodeLine
+    {
+        get => _reservesEpisodeLine;
+        set
+        {
+            if (_reservesEpisodeLine != value)
+            {
+                _reservesEpisodeLine = value;
+                ShowEpisodeTitle(Card);
+            }
+        }
     }
 
     private static void OnCardChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e) =>
@@ -69,6 +87,7 @@ public sealed partial class MediaCardView : UserControl
         SetBadge(RatingBadge, RatingText, card?.RatingBadge);
 
         TitleText.Text = card?.Title ?? "";
+        ShowEpisodeTitle(card);
         SubtitleText.Style = (Style)Application.Current.Resources[
             card?.Shape == MediaCardShape.Landscape ? "SiloCaptionTextStyle" : "SiloOverlineTextStyle"];
         SetText(SubtitleText, card?.Subtitle);
@@ -174,6 +193,13 @@ public sealed partial class MediaCardView : UserControl
     {
         text.Text = value ?? "";
         badge.Visibility = string.IsNullOrEmpty(value) ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    private void ShowEpisodeTitle(MediaCard? card)
+    {
+        SetText(EpisodeTitleText, card?.EpisodeTitle);
+        bool keepsLine = _reservesEpisodeLine && string.IsNullOrEmpty(card?.EpisodeTitle) && card?.Shape == MediaCardShape.Poster;
+        EpisodeLineSpacer.Visibility = keepsLine ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private static void SetText(TextBlock text, string? value)

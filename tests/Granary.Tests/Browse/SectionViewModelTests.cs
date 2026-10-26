@@ -52,7 +52,7 @@ public sealed class SectionViewModelTests
         Assert.Equal("342", requests[0].Query("poster_width"));
         Assert.Equal(requests[0].Query("poster_width"), requests[1].Query("poster_width"));
         Assert.Equal("Recently Added TV", section.Title);
-        Assert.Equal(MediaCardShape.Poster, section.CardShape);
+        Assert.Equal(MediaCardShape.Poster, section.Cards[0].Shape);
     }
 
     [Fact]
@@ -70,17 +70,16 @@ public sealed class SectionViewModelTests
     }
 
     [Fact]
-    public async Task ContinueWatching_ListsLandscapeVideoCards()
+    public async Task ContinueWatching_ListsItsVideosAsPosters_AsTheWebCatalog()
     {
         Pages((null, Page(null, Item("episode-1", "episode", "series-1"), Item("book-1", "audiobook"))));
         var section = Create();
 
         await section.OpenAsync(new SectionRouteParameter("cw", "Continue Watching", SectionType: "continue_watching"));
 
-        Assert.Equal(MediaCardShape.Landscape, section.CardShape);
         var card = Assert.Single(section.Cards);
-        Assert.Equal(MediaCardShape.Landscape, card.Shape);
-        Assert.Equal("Series series-1", card.Title);
+        Assert.Equal(MediaCardShape.Poster, card.Shape);
+        Assert.Equal(("Series series-1", "Title episode-1", "S01E02"), (card.Title, card.EpisodeTitle, card.Subtitle));
     }
 
     [Fact]

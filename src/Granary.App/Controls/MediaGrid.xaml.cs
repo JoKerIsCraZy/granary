@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Collections.Specialized;
 using System.Windows.Input;
 using Granary.Core.ViewModels.Cards;
 using Microsoft.UI.Dispatching;
@@ -12,7 +14,8 @@ namespace Granary.App.Controls;
 /// Cards in a grid that fills the width. <see cref="LoadMoreCommand"/> runs when a card near the end is
 /// realized, so a paged list grows while the user scrolls. A list loaded by window instead gets what is in view
 /// through <see cref="ViewportCommand"/> (a <see cref="GridViewport"/>), and <see cref="ScrollToIndex"/> brings a
-/// card's row to the top. The cards' artwork is prefetched as they arrive.
+/// card's row to the top. The cards' artwork is prefetched as they arrive. Once an episode's poster is among them, every
+/// card keeps the line of its episode title: the grid sizes all cards by its first one.
 /// </summary>
 public sealed partial class MediaGrid : UserControl
 {
@@ -45,6 +48,8 @@ public sealed partial class MediaGrid : UserControl
     private ScrollViewer? _scroller;
     private Rect _effectiveViewport;
     private GridViewport? _toldViewport;
+    private INotifyCollectionChanged? _followed;
+    private bool _reservesEpisodeLine;
 
     public MediaGrid()
     {
@@ -61,6 +66,7 @@ public sealed partial class MediaGrid : UserControl
         Unloaded += (_, _) =>
         {
             _prefetch.Follow(null);
+            Unfollow();
             _viewportTimer.Stop();
         };
     }
@@ -124,7 +130,62 @@ public sealed partial class MediaGrid : UserControl
         if (IsLoaded)
         {
             _prefetch.Follow(ItemsSource);
+            Follow(ItemsSource);
         }
+    }
+
+    private void Follow(object? items)
+    {
+        Unfollow();
+        _followed = items as INotifyCollectionChanged;
+        if (_followed is not null)
+        {
+            _followed.CollectionChanged += OnItemsChanged;
+        }
+        ReserveEpisodeLine(HasEpisodeTitle(items as IEnumerable));
+    }
+
+    // The kept line stays while the page is away: a cached page coming back keeps its rows, and Back its place.
+    private void Unfollow()
+    {
+        if (_followed is not null)
+        {
+            _followed.CollectionChanged -= OnItemsChanged;
+            _followed = null;
+        }
+    }
+
+    // Only the cards that came need a look: a line once kept stays until the grid gets another list.
+    private void OnItemsChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (e.Action == NotifyCollectionChangedAction.Reset)
+        {
+            ReserveEpisodeLine(HasEpisodeTitle(sender as IEnumerable));
+        }
+        else if (!_reservesEpisodeLine && HasEpisodeTitle(e.NewItems))
+        {
+            ReserveEpisodeLine(true);
+        }
+    }
+
+    private static bool HasEpisodeTitle(IEnumerable? cards) =>
+        cards?.OfType<MediaCard>().Any(card => !string.IsNullOrEmpty(card.EpisodeTitle)) == true;
+
+    private void ReserveEpisodeLine(bool reserve)
+    {
+        if (reserve == _reservesEpisodeLine)
+        {
+            return;
+        }
+        _reservesEpisodeLine = reserve;
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(Items); i++)
+        {
+            if (VisualTreeHelper.GetChild(Items, i) is Button { Content: MediaCardView card })
+            {
+                card.ReservesEpisodeLine = reserve;
+            }
+        }
+        Items.InvalidateMeasure();
     }
 
     private ScrollViewer? FindScroller()
@@ -141,6 +202,10 @@ public sealed partial class MediaGrid : UserControl
 
     private void OnElementPrepared(ItemsRepeater sender, ItemsRepeaterElementPreparedEventArgs args)
     {
+        if (args.Element is Button { Content: MediaCardView card })
+        {
+            card.ReservesEpisodeLine = _reservesEpisodeLine;
+        }
         int count = sender.ItemsSourceView?.Count ?? 0;
         if (count > 0 && args.Index >= count - Columns() * LoadMoreRowsAhead && LoadMoreCommand is { } command && command.CanExecute(null))
         {

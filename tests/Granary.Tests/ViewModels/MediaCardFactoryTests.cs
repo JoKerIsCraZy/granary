@@ -58,6 +58,36 @@ public sealed class MediaCardFactoryTests
         Assert.Equal(expected, MediaCardFactory.ShowStatusText(status));
 
     [Fact]
+    public void EpisodePoster_ShowsSeriesEpisodeTitleAndCode_AsTheWebGrid()
+    {
+        var episode = new CatalogItem
+        {
+            ContentId = "ep-1", Type = CatalogItemTypes.Episode, Title = "Safe Harbor", SeriesTitle = "Tracker",
+            SeasonNumber = 4, EpisodeNumber = 1, Year = 2026,
+        };
+
+        var card = MediaCardFactory.Poster(episode, Server);
+
+        Assert.Equal("Tracker", card.Title);
+        Assert.Equal("Safe Harbor", card.EpisodeTitle);
+        Assert.Equal("S04E01", card.Subtitle);
+        Assert.Equal("Tracker, Safe Harbor, S04E01", card.AccessibleName);
+    }
+
+    [Fact]
+    public void EpisodePoster_WithoutASeriesTitleOrNumbers_KeepsOneTitle()
+    {
+        var untitled = new CatalogItem { ContentId = "ep-1", Type = CatalogItemTypes.Episode, Title = "Pilot", SeasonNumber = 1, EpisodeNumber = 12 };
+        var unnumbered = new CatalogItem { ContentId = "ep-2", Type = CatalogItemTypes.Episode, Title = "Special", SeriesTitle = "Tracker", Year = 2024 };
+
+        var first = MediaCardFactory.Poster(untitled, Server);
+        var second = MediaCardFactory.Poster(unnumbered, Server);
+
+        Assert.Equal(("Pilot", null, "S01E12"), (first.Title, first.EpisodeTitle, first.Subtitle));
+        Assert.Equal(("Tracker", null, "2024"), (second.Title, second.EpisodeTitle, second.Subtitle));
+    }
+
+    [Fact]
     public void SeriesPoster_ShowsYearSeriesAndStatus()
     {
         var series = new CatalogItem { ContentId = "s-1", Type = CatalogItemTypes.Series, Title = "Lupin", Year = 2021, ShowStatus = "Returning Series" };

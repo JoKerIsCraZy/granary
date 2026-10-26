@@ -137,8 +137,12 @@
 
         <StackPanel Grid.Row="1" Spacing="4" Padding="2,0">
             <TextBlock x:Name="TitleText" Style="{StaticResource SiloCardTitleTextStyle}" />
+            <TextBlock x:Name="EpisodeTitleText" Style="{StaticResource SiloCaptionTextStyle}" TextTrimming="CharacterEllipsis" />
             <TextBlock x:Name="SubtitleText" />
             <TextBlock x:Name="CaptionText" Style="{StaticResource SiloCaptionTextStyle}" />
+            <!-- The episode title's line kept free at the foot, so a title's year stays right under it (ReservesEpisodeLine). -->
+            <TextBlock x:Name="EpisodeLineSpacer" Style="{StaticResource SiloCaptionTextStyle}" Text="&#160;" Visibility="Collapsed"
+                       AutomationProperties.AccessibilityView="Raw" />
         </StackPanel>
     </Grid>
 </UserControl>

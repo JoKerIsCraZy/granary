@@ -12,6 +12,7 @@ namespace Granary.Core.ViewModels;
 /// <summary>
 /// "Explore all" of a Home or library row: the row's cards in the row's own order, cursor-paged while
 /// the grid scrolls (docs/api-contract.md, 7.1). A section listing takes no sort or filter, so there are none.
+/// Every row lists posters, Continue Watching too, as the web's catalog grid does.
 /// </summary>
 /// <remarks>The commands take no cancellation token: a cancellable toolkit command cancels its running call when executed again.</remarks>
 public sealed partial class SectionViewModel(
@@ -33,9 +34,6 @@ public sealed partial class SectionViewModel(
 
     [ObservableProperty]
     public partial string Title { get; private set; } = "";
-
-    [ObservableProperty]
-    public partial MediaCardShape CardShape { get; private set; }
 
     [ObservableProperty]
     public partial IReadOnlyList<MediaCard> Cards { get; private set; } = [];
@@ -81,7 +79,6 @@ public sealed partial class SectionViewModel(
         }
         _section = section;
         Title = section.Title;
-        CardShape = HomeRowRules.IsWatchingRow(section.SectionType) ? MediaCardShape.Landscape : MediaCardShape.Poster;
         return Loading = LoadFirstPageAsync(section);
     }
 
@@ -171,9 +168,8 @@ public sealed partial class SectionViewModel(
             var query = section.LibraryId is { } libraryId
                 ? CatalogQuery.ForLibrarySection(libraryId, section.SectionId)
                 : CatalogQuery.ForHomeSection(section.SectionId);
-            var shape = CardShape;
             var listing = new BrowseCardPager(catalog, server.BaseUri, query with { Limit = PageSize, Images = imageParameters },
-                item => item.ContentId.Length > 0 && HomeRowRules.Shows(section.SectionType, item) ? CardFor(item, shape, server.BaseUri) : null);
+                item => item.ContentId.Length > 0 && HomeRowRules.Shows(section.SectionType, item) ? MediaCardFactory.Poster(item, server.BaseUri) : null);
             _listing = listing;
             Cards = listing.Cards;
             await listing.LoadFirstPageAsync(cancellationToken);
@@ -195,9 +191,6 @@ public sealed partial class SectionViewModel(
             }
         }
     }
-
-    private static MediaCard CardFor(CatalogItem item, MediaCardShape shape, Uri server) =>
-        shape == MediaCardShape.Landscape ? MediaCardFactory.Landscape(item, server) : MediaCardFactory.Poster(item, server);
 
     private void ShowLoaded(BrowseCardPager listing)
     {

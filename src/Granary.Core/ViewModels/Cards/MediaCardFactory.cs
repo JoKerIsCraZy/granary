@@ -16,13 +16,16 @@ public static class MediaCardFactory
             ? Landscape(item, serverBase)
             : Poster(item, serverBase);
 
+    /// <summary>"Dune" / "2021"; an episode as the web's grid card: "Tracker" / "Safe Harbor" / "S04E01".</summary>
     public static MediaCard Poster(CatalogItemBase item, Uri serverBase)
     {
-        bool isEpisode = item.Type == CatalogItemTypes.Episode;
-        return Decorate(new MediaCard(item.ContentId, item.Type, isEpisode ? item.SeriesTitle ?? item.Title : item.Title)
+        var episode = EpisodeLabels(item);
+        string title = episode?.Title ?? (item.Type == CatalogItemTypes.Episode ? item.SeriesTitle ?? item.Title : item.Title);
+        return Decorate(new MediaCard(item.ContentId, item.Type, title)
         {
             Shape = MediaCardShape.Poster,
-            Subtitle = PosterSubtitle(item),
+            EpisodeTitle = episode?.EpisodeTitle,
+            Subtitle = episode?.Code ?? PosterSubtitle(item),
             ImageUrl = ArtworkUrl.Resolve(serverBase, item.PosterUrl) ?? ArtworkUrl.Resolve(serverBase, item.BackdropUrl),
         }, item);
     }
@@ -136,9 +139,23 @@ public static class MediaCardFactory
         CatalogItemTypes.Movie => YearText(item.Year),
         CatalogItemTypes.Series => item.Year is > 0 ? $"{item.Year} SERIES" : "SERIES",
         CatalogItemTypes.Season => item.SeasonNumber is { } season ? $"SEASON {season}" : null,
-        CatalogItemTypes.Episode => item.SeasonNumber is { } s && item.EpisodeNumber is { } e ? $"S{s} E{e}" : null,
+        CatalogItemTypes.Episode => YearText(item.Year),
         _ => item.Year is > 0 ? $"{item.Year} {item.Type.ToUpperInvariant()}" : item.Type.ToUpperInvariant(),
     };
+
+    // The web's episode card labels (lib/episodeCardLabels.ts): the series' title, the episode's own when it differs, and
+    // "S04E01" zero-padded as the apps write it; none without the numbers or a title.
+    private static (string Title, string? EpisodeTitle, string Code)? EpisodeLabels(CatalogItemBase item)
+    {
+        if (item.Type != CatalogItemTypes.Episode || item.SeasonNumber is not { } season || item.EpisodeNumber is not { } episode
+            || string.IsNullOrEmpty(item.Title))
+        {
+            return null;
+        }
+        bool hasSeriesTitle = !string.IsNullOrEmpty(item.SeriesTitle) && item.SeriesTitle != item.Title;
+        return (hasSeriesTitle ? item.SeriesTitle! : item.Title, hasSeriesTitle ? item.Title : null,
+            string.Create(CultureInfo.InvariantCulture, $"S{season:00}E{episode:00}"));
+    }
 
     private static string? EpisodeLine(int? season, int? episode, string title) =>
         season is { } s && episode is { } e ? $"Season {s} Episode {e} • {title}" : title;

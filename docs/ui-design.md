@@ -51,7 +51,9 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
 - `MediaCardView` draws one `MediaCard` (`Granary.Core.ViewModels.Cards`): 2:3 poster or 16:9
   landscape artwork with radius 16, resolution badge top left, audio and status badges top right,
   rating bottom left, a watched mark bottom right, a 3 px red progress bar, then title, subtitle and an
-  optional caption. Without artwork, or when it fails (expired signature), the title stands in.
+  optional caption. Without artwork, or when it fails (expired signature), the title stands in. An episode's poster
+  reads as the web's grid card (`lib/episodeCardLabels.ts`): the series ("Tracker"), the episode's own title
+  ("Safe Harbor"), then "S04E01".
 - `MediaRow`: row title, optional "EXPLORE ALL" (on every Home and library row, as on the web, also when the row
   already holds all of it; For You and Requests rows only when a page lists more), horizontally scrolling cards (posters 185 px,
   landscape 314 px, 20 px apart), arrows for mouse users. Sideways rows (`MediaRow`, `DetailShelf`, search's
@@ -65,7 +67,12 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
   `ViewportCommand` (a `GridViewport`, at most every 50 ms while it scrolls) and `ScrollToIndex` puts a
   card's row at the top. A uniform grid sizes every row by one freshly made first card when that one is
   far out of view, so `MediaCardView` sizes its artwork at measure time: a card that only learns its
-  height after arrange shrinks every row and throws the scroll position off.
+  height after arrange shrinks every row and throws the scroll position off. For the same reason, once an episode's
+  poster with its extra line is among the cards, every card keeps that line free at its foot, as the web's grid grows
+  its rows to the tallest card.
+- A row in full (`SectionPage`, the web's catalog page for a section): the row's name, the web's line "Refine the
+  archive by type, era, rating, or genre.", its panel "Filters are locked to this source.", and the cards as posters,
+  Continue Watching too. No count: a section's total is only a lower bound.
 - Cards are buttons (`SiloCardButtonStyle`): Tab and Enter work, screen readers read
   `MediaCard.AccessibleName`. Card commands take the `MediaCard` as parameter. A card's ⋮ menu is the web's
   (`MediaItemMenu.buildMediaItemMenuModel`), in its order: Play from Beginning (a movie or episode with a resume

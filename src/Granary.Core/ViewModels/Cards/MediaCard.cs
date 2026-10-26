@@ -23,8 +23,11 @@ public sealed record MediaCard(string Id, string Type, string Title)
 
     public MediaCardShape Shape { get; init; } = MediaCardShape.Poster;
 
-    /// <summary>Poster cards: "2021 · SERIES". Landscape cards: "S1 E5 · Episode title".</summary>
+    /// <summary>Poster cards: "2021 SERIES", an episode's "S04E01". Landscape cards: "Season 1 Episode 5 • Episode title".</summary>
     public string? Subtitle { get; init; }
+
+    /// <summary>An episode's poster card: the episode's own title under the series', "Safe Harbor", as on the web.</summary>
+    public string? EpisodeTitle { get; init; }
 
     /// <summary>A third line on landscape cards: "18 min left", "Next episode".</summary>
     public string? Caption { get; init; }
@@ -63,5 +66,5 @@ public sealed record MediaCard(string Id, string Type, string Title)
     public string? PlayContentId { get; init; }
 
     /// <summary>The name screen readers announce for the whole card.</summary>
-    public string AccessibleName => Subtitle is { Length: > 0 } subtitle ? $"{Title}, {subtitle}" : Title;
+    public string AccessibleName => string.Join(", ", new[] { Title, EpisodeTitle, Subtitle }.Where(text => !string.IsNullOrEmpty(text)));
 }

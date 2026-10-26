@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- "Explore all" of a row: its title and every card in the row's order. A section listing has no sort or filter. -->
+<!--
+    "Explore all" of a row as Silo's web catalog page shows a section: its title over the web's line, the filters locked
+    to the row, and every card in the row's order as posters. A section listing has no sort or filter, and its count is
+    only a lower bound, so none shows.
+-->
 <Page
     x:Class="Granary.App.Views.SectionPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -8,11 +12,25 @@
     NavigationCacheMode="Enabled">
 
     <ScrollViewer x:Name="Scroller" XYFocusKeyboardNavigation="Enabled">
-        <StackPanel Padding="48,32,48,48" Spacing="28">
-            <TextBlock Text="{x:Bind ViewModel.Title, Mode=OneWay}" Style="{StaticResource SiloPageTitleTextStyle}"
-                       AutomationProperties.HeadingLevel="Level1" />
+        <StackPanel Padding="48,32,48,48" Spacing="24">
+            <StackPanel Spacing="6">
+                <TextBlock Text="{x:Bind ViewModel.Title, Mode=OneWay}" Style="{StaticResource SiloDisplayTextStyle}"
+                           AutomationProperties.HeadingLevel="Level1" />
+                <TextBlock Text="Refine the archive by type, era, rating, or genre." Style="{StaticResource SiloBodyTextStyle}"
+                           Foreground="{StaticResource SiloMutedBrush}" TextWrapping="Wrap" />
+            </StackPanel>
 
-            <controls:MediaGrid ItemsSource="{x:Bind ViewModel.Cards, Mode=OneWay}" CardShape="{x:Bind ViewModel.CardShape, Mode=OneWay}"
+            <Border Padding="16" CornerRadius="8" Background="{StaticResource SiloSurfaceBrush}" BorderBrush="{StaticResource SiloBorderBrush}"
+                    BorderThickness="1">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Filters" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium" FontSize="14"
+                               Foreground="{StaticResource SiloForegroundBrush}" AutomationProperties.HeadingLevel="Level2" />
+                    <TextBlock Text="Filters are locked to this source." FontSize="14" Foreground="{StaticResource SiloMutedBrush}"
+                               TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+
+            <controls:MediaGrid ItemsSource="{x:Bind ViewModel.Cards, Mode=OneWay}"
                                 CardInvokedCommand="{x:Bind ViewModel.OpenCardCommand}" LoadMoreCommand="{x:Bind ViewModel.LoadMoreCommand}" />
 
             <ProgressRing Width="28" Height="28" HorizontalAlignment="Center" IsActive="{x:Bind ViewModel.IsLoadingMore, Mode=OneWay}"
