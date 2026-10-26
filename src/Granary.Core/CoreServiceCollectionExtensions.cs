@@ -101,6 +101,9 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<SidebarViewModel>();
         services.AddSingleton(sp => new SidebarSections(SidebarSections.DefaultPath, sp.GetRequiredService<ILogger<SidebarSections>>()));
         services.AddSingleton(sp => new LibraryTabs(LibraryTabs.DefaultPath, sp.GetRequiredService<ILogger<LibraryTabs>>()));
+        // The app brings its own updater (Velopack); without it nothing updates.
+        services.TryAddSingleton<IAppUpdater, NoAppUpdater>();
+        services.AddSingleton<AppUpdatesViewModel>();
         services.AddTransient<SignInViewModel>();
         services.AddSingleton<MediaCardActions>();
         services.AddTransient<HomeViewModel>();

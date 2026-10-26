@@ -50,9 +50,13 @@ public sealed partial class MainWindow : Window
     private static readonly TimeSpan StartupLimit = TimeSpan.FromSeconds(6);
     private static readonly TimeSpan SplashFade = TimeSpan.FromMilliseconds(300);
 
+    private readonly CancellationTokenSource _updatesRun = new();
+
     public MainWindow(NavigationService navigation, ShellViewModel shell, SidebarViewModel sidebar, SidebarSections sections,
-        NotificationBadge notifications, RequestsFeature requests, PlaybackStops stops, ILogger<MainWindow> logger)
+        NotificationBadge notifications, RequestsFeature requests, PlaybackStops stops, AppUpdatesViewModel updates,
+        ILogger<MainWindow> logger)
     {
+        Updates = updates;
         _navigation = navigation;
         _stops = stops;
         _logger = logger;
@@ -71,6 +75,13 @@ public sealed partial class MainWindow : Window
         _reveal.IsRepeating = false;
         _reveal.Tick += (_, _) => RevealPage();
         Navigation.Loaded += (_, _) => FollowRailPointer();
+        // A restart into an update closes the window as the user would; the update is handed over as it closes.
+        Updates.CloseRequested += (_, _) => Close();
+        Closed += (_, _) =>
+        {
+            _updatesRun.Cancel();
+            Updates.OnExiting();
+        };
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
         StyleCaptionButtons();
@@ -128,6 +139,9 @@ public sealed partial class MainWindow : Window
 
     /// <summary>Whether the sidebar shows Requests.</summary>
     public RequestsFeature Requests { get; }
+
+    /// <summary>Granary's own updates: the notice of one that is ready (docs/release.md).</summary>
+    public AppUpdatesViewModel Updates { get; }
 
     // Instance method because x:Bind function bindings call it on the window.
     public string ProfileMenuName(string profileName) => $"Profile menu: {profileName}";
@@ -259,6 +273,8 @@ public sealed partial class MainWindow : Window
             _logger.LogWarning(ex, "The start screen ended early");
         }
         HideSplash();
+        // Updates are looked for once the app shows, so the first page's requests go first.
+        await Updates.RunAsync(_updatesRun.Token);
     }
 
     // The page's own load reports its failures; the start screen only waits for it, done or not.

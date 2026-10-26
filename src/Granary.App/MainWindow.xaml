@@ -178,6 +178,36 @@
         </Button>
 
         <!--
+            A downloaded update of Granary itself: restart into it, or it installs when Granary closes (AppUpdatesViewModel,
+            docs/release.md). Over the page at the bottom right, under the start screen.
+        -->
+        <Border Grid.Row="1" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,24,24" Padding="18,16"
+                MaxWidth="380" CornerRadius="14" Background="{StaticResource SiloSurfaceRaisedBrush}"
+                BorderBrush="{StaticResource SiloBorderBrush}" BorderThickness="1"
+                Visibility="{x:Bind Updates.IsNoticeShown, Mode=OneWay}">
+            <StackPanel Spacing="14">
+                <Grid ColumnSpacing="14">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <controls:GranaryMark Width="32" Height="32" VerticalAlignment="Top" AutomationProperties.AccessibilityView="Raw" />
+                    <StackPanel Grid.Column="1" Spacing="2">
+                        <TextBlock Text="{x:Bind Updates.NoticeText, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}"
+                                   FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" TextWrapping="Wrap"
+                                   AutomationProperties.LiveSetting="Polite" />
+                        <TextBlock Text="Restart now, or it installs when you close Granary." Style="{StaticResource SiloCaptionTextStyle}"
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
+                </Grid>
+                <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                    <Button Content="Later" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind Updates.LaterCommand}" />
+                    <Button Content="Restart now" Style="{StaticResource SiloPrimaryButtonStyle}" Command="{x:Bind Updates.RestartNowCommand}" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!--
             The start: Granary's mark plays its intro in the middle of the window while the app loads its first page, then
             its loading loop if that takes longer (MainWindow.ShowStartup). It lifts 40 px so it sits in the window's middle.
         -->

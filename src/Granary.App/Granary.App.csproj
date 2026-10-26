@@ -13,11 +13,24 @@
     <UseWinUI>true</UseWinUI>
     <WindowsPackageType>None</WindowsPackageType>
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <!-- Unpackaged too: the MSIX tooling puts the app's resources (Granary.pri, the compiled .xbf) in a published copy. -->
+    <EnableMsixTooling>true</EnableMsixTooling>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <!-- Granary's own icon (Assets/Logo): the window and the taskbar take it too (MainWindow). -->
     <ApplicationIcon>Assets\Logo\granary.ico</ApplicationIcon>
+    <!-- Program.Main starts Velopack before WinUI, so the XAML compiler's own Main stays out. -->
+    <DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
+    <!--
+      The GitHub repository installed copies look for updates in (docs/release.md), for example
+      https://github.com/owner/granary. Empty, as in development builds: no update checks. The release workflow sets it.
+    -->
+    <GranaryUpdateRepository Condition="'$(GranaryUpdateRepository)' == ''"></GranaryUpdateRepository>
   </PropertyGroup>
+
+  <ItemGroup>
+    <AssemblyMetadata Include="GranaryUpdateRepository" Value="$(GranaryUpdateRepository)" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Granary.Core\Granary.Core.csproj" />
@@ -29,6 +42,7 @@
     <PackageReference Include="Microsoft.Extensions.Logging" />
     <PackageReference Include="Microsoft.WindowsAppSDK" />
     <PackageReference Include="QRCoder" />
+    <PackageReference Include="Velopack" />
   </ItemGroup>
 
   <!-- Plus Jakarta Sans (SIL OFL 1.1, Assets/Fonts/OFL.txt), the typeface of Silo's web client. -->

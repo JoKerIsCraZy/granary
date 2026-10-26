@@ -35,6 +35,7 @@ Licenses as declared in each package's `.nuspec`:
 | Microsoft.WindowsAppSDK | 2.5.1 | Microsoft Software License Terms (`license.txt` in the package) | App; its runtime is redistributed because the app is self-contained |
 | CommunityToolkit.Mvvm | 8.4.2 | MIT | Core |
 | QRCoder | 1.8.1 | MIT | App (QR code for device sign-in) |
+| Velopack | 1.2.161 | MIT | App (setup and updates, docs/release.md); its setup, updater and launcher (`Setup.exe`, `Update.exe`) ship with every release |
 | Microsoft.Extensions.DependencyInjection(.Abstractions), .Http, .Logging(.Abstractions) | 10.0.13 | MIT | Core, Player, App |
 | System.Security.Cryptography.ProtectedData | 10.0.13 | MIT | Core |
 | xunit.v3 | 4.0.2 | Apache-2.0 | Tests only |

@@ -35,6 +35,7 @@ title of the signed-in server.
 
 - [docs/architecture.md](docs/architecture.md): projects, layers, decisions
 - [docs/api-contract.md](docs/api-contract.md): the Silo API as Granary uses it
+- [docs/release.md](docs/release.md): the installer, updates and how to make a release
 - [spike/README.md](spike/README.md): how libmpv video gets into WinUI 3, with measurements
 
 ## License

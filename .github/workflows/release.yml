@@ -1,0 +1,73 @@
+name: Release
+
+# Builds Granary's setup, portable zip and update packages with Velopack and publishes them as a GitHub release
+# (docs/release.md). Push a tag such as v0.2.0, or run the workflow by hand with a version.
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to release, for example 0.2.0
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      # Taken from an environment variable, never pasted into the script, so a tag or input cannot inject commands.
+      - name: Read the version
+        id: version
+        shell: pwsh
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          $version = if ($env:GITHUB_EVENT_NAME -eq 'workflow_dispatch') { $env:INPUT_VERSION } else { $env:TAG.TrimStart('v') }
+          if ($version -notmatch '^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$') {
+            throw "Not a version: $version"
+          }
+          "version=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Fetch libmpv
+        shell: pwsh
+        run: ./scripts/fetch-native.ps1
+
+      - name: Test
+        run: dotnet test tests/Granary.Tests -c Release -p:Platform=x64
+
+      # The previous release lets Velopack make a delta package; the first release has none.
+      - name: Download the previous release
+        shell: pwsh
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          dotnet tool restore
+          dotnet vpk download github --repoUrl "https://github.com/$env:GITHUB_REPOSITORY" --outputDir artifacts/releases --token $env:GITHUB_TOKEN
+
+      - name: Pack
+        shell: pwsh
+        run: ./scripts/pack-release.ps1 -Version '${{ steps.version.outputs.version }}' -Repository "https://github.com/$env:GITHUB_REPOSITORY"
+
+      - name: Publish the release
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          dotnet vpk upload github --repoUrl "https://github.com/$env:GITHUB_REPOSITORY" --outputDir artifacts/releases `
+            --token $env:GITHUB_TOKEN --publish --releaseName "Granary $env:VERSION" --tag "v$env:VERSION"

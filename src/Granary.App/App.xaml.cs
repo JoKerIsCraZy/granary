@@ -104,6 +104,7 @@ public partial class App : Application
         services.AddSingleton<NavigationService>();
         services.AddSingleton<INavigationService>(sp => sp.GetRequiredService<NavigationService>());
         services.AddSingleton<INetworkLink, WindowsNetworkLink>();
+        services.AddSingleton<IAppUpdater, VelopackUpdater>();
         services.AddGranaryCore();
         services.AddGranaryPlayer();
         services.AddSingleton<MainWindow>();
