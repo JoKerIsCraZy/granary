@@ -78,6 +78,12 @@
         </ResourceDictionary>
     </ResourceDictionary.ThemeDictionaries>
 
+    <!--
+        No edge over the page where the sidebar is hidden (the player, the settings): WinUI's minimal mode draws the top
+        of the content's border, 1 px of grey across the top of the video, in full screen too.
+    -->
+    <Thickness x:Key="NavigationViewMinimalContentGridBorderThickness">0</Thickness>
+
     <!-- Palette -->
     <Color x:Key="SiloBackgroundColor">#FF141417</Color>
     <Color x:Key="SiloSurfaceColor">#FF1C1C20</Color>
