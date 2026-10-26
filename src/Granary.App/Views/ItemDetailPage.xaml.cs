@@ -15,8 +15,9 @@ namespace Granary.App.Views;
 /// <summary>Any catalog item; the navigation parameter is its content id (<see cref="Core.Abstractions.AppRoute.Item"/>).</summary>
 public sealed partial class ItemDetailPage : Page
 {
-    // The hero fills most of the window as on the web (72 % of the height, a season's 50 %), never less than this.
-    private const double HeroShare = 0.72;
+    // The hero fills most of the window as on the web, never less than this: 60 % of the height (the web's below its lg
+    // width; its 72 % above put the title low on a wide screen), a season's 50 %.
+    private const double HeroShare = 0.6;
     private const double CompactHeroShare = 0.5;
     private const double MinimumHeroHeight = 440;
 

@@ -191,7 +191,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
 - Pages: 48 px side margins, 32 px top; rows 40 px apart.
 - Detail pages: full-bleed backdrop fading into the background, logo (or display title), chips,
   ratings, overview with "More", red Play/Resume pill, secondary actions, then rows (seasons, episodes,
-  cast, more like this).
+  cast, more like this). The hero takes 60 % of the window's height (a season's 50 %), the web's value below its `lg`
+  width: its 72 % above put the title low on a wide screen.
 - Back: the navigation view's back arrow, `Alt+Left`, and the mouse back button. The sidebar's sections (Home,
   Search, each library) are the apps' tabs: picking one does not stack on the pages visited before, only Home stays
   under it, so Back walks the pages opened within a section and then goes Home (Android's tab switch pops to the
