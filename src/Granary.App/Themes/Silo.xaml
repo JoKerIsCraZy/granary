@@ -349,6 +349,13 @@
         <Setter Property="Width" Value="44" />
         <Setter Property="Height" Value="44" />
     </Style>
+    <!-- The web's PageBack: a small glass disc with a chevron, at a page's top left. -->
+    <Style x:Key="SiloPageBackButtonStyle" TargetType="Button" BasedOn="{StaticResource SiloIconButtonStyle}">
+        <Setter Property="Width" Value="36" />
+        <Setter Property="Height" Value="36" />
+        <Setter Property="MinHeight" Value="0" />
+        <Setter Property="Background" Value="#B31B1B1E" />
+    </Style>
     <!-- "EXPLORE ALL" next to a row title. -->
     <Style x:Key="SiloLinkButtonStyle" TargetType="HyperlinkButton">
         <Setter Property="Padding" Value="4,2" />

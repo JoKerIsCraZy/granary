@@ -195,7 +195,10 @@ public sealed partial class MainWindow : Window
     {
         ShowHeaders(open);
         ShowSections(open);
+        PageBackButton.Visibility = _isRail && !open && _navigation.CanGoBack ? Visibility.Visible : Visibility.Collapsed;
     }
+
+    private void OnPageBackClick(object sender, RoutedEventArgs e) => _navigation.GoBack();
 
     // A folded section hides its entries, all but the page shown, so the sidebar still says where the viewer is. The
     // icon-only pane shows them all, as the web's rail does: it has no headers to open them by. Requests and
@@ -261,9 +264,10 @@ public sealed partial class MainWindow : Window
 
     private void OnNavigated(object? sender, AppRoute route)
     {
-        // A disabled arrow on pages without history is only noise; the player has its own back button.
+        // A disabled arrow on pages without history is only noise; the player has its own back button, and a title's page
+        // its disc at the top left (ShowPaneParts).
         Navigation.IsBackEnabled = _navigation.CanGoBack;
-        Navigation.IsBackButtonVisible = _navigation.CanGoBack && route is not (AppRoute.Player or AppRoute.Settings)
+        Navigation.IsBackButtonVisible = _navigation.CanGoBack && route is not (AppRoute.Player or AppRoute.Settings or AppRoute.Item)
             ? NavigationViewBackButtonVisible.Visible
             : NavigationViewBackButtonVisible.Collapsed;
         ShowChrome(route);
@@ -300,11 +304,23 @@ public sealed partial class MainWindow : Window
         // A detail page's rail opens over the page (compact mode), not beside it: the page keeps its width.
         _isRail = route == AppRoute.Item;
         _railHover.Stop();
-        Navigation.PaneDisplayMode = hidesPane ? NavigationViewPaneDisplayMode.LeftMinimal
+        var mode = hidesPane ? NavigationViewPaneDisplayMode.LeftMinimal
             : _isRail ? NavigationViewPaneDisplayMode.LeftCompact
             : NavigationViewPaneDisplayMode.Left;
-        // Visibility first: a pane that becomes visible opens again, whatever IsPaneOpen said before.
-        Navigation.IsPaneVisible = Shell.IsSignedIn && !hidesPane;
+        bool visible = Shell.IsSignedIn && !hidesPane;
+        // A pane comes back visible before its mode changes: a mode changed while it was hidden (the player) left the
+        // rail drawing the open pane's layout, the server's name and labels cut off at its edge. A pane that goes away
+        // takes its new mode first. Either way, visibility before IsPaneOpen: a pane that becomes visible opens again.
+        if (visible)
+        {
+            Navigation.IsPaneVisible = true;
+            Navigation.PaneDisplayMode = mode;
+        }
+        else
+        {
+            Navigation.PaneDisplayMode = mode;
+            Navigation.IsPaneVisible = false;
+        }
         Navigation.IsPaneOpen = Shell.IsSignedIn && route is not (AppRoute.Item or AppRoute.Player);
         Grid.SetRow(Navigation, isPlayer ? 0 : 1);
         Grid.SetRowSpan(Navigation, isPlayer ? 2 : 1);

@@ -162,5 +162,15 @@
 
             <Frame x:Name="ContentFrame" />
         </NavigationView>
+
+        <!--
+            On a title's page the sidebar is the icon rail, and the way back is the web's: a glass disc at the page's top
+            left, not the arrow above Home. Hidden while the rail is open over the page.
+        -->
+        <Button x:Name="PageBackButton" Grid.Row="1" Style="{StaticResource SiloPageBackButtonStyle}" Margin="64,12,0,0"
+                HorizontalAlignment="Left" VerticalAlignment="Top" Visibility="Collapsed" Click="OnPageBackClick"
+                AutomationProperties.Name="Go back" ToolTipService.ToolTip="Back (Alt+Left)">
+            <FontIcon Glyph="&#xE76B;" FontSize="14" />
+        </Button>
     </Grid>
 </Window>
