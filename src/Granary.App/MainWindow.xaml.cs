@@ -147,28 +147,42 @@ public sealed partial class MainWindow : Window
             _logger.LogWarning("The sidebar's pane was not found; the rail does not open under the pointer");
             return;
         }
-        pane.PointerEntered += (_, e) =>
+        // Handled ones too: a button under the mouse (a section's header) marks its own pointer events handled, and a mouse
+        // leaving the pane over one left the pane open.
+        pane.AddHandler(UIElement.PointerEnteredEvent, new PointerEventHandler((_, e) =>
         {
             if (_isRail && !Navigation.IsPaneOpen && e.Pointer.PointerDeviceType is PointerDeviceType.Mouse or PointerDeviceType.Pen)
             {
                 _railHover.Start();
             }
-        };
-        pane.PointerExited += (_, e) =>
+        }), handledEventsToo: true);
+        pane.AddHandler(UIElement.PointerExitedEvent, new PointerEventHandler((_, e) =>
         {
             // PointerExited bubbles: the entries move as the pane opens (the server's name appears on top), and the one
             // the mouse was on reports it left. Only a mouse outside the pane as shown has left it, as the web's
             // mouseleave; reacting to the rest closed the pane under the mouse and opened it again, on and off.
-            if (IsOverPane(pane, e))
+            if (!IsOverPane(pane, e))
             {
-                return;
+                CloseRail();
             }
-            _railHover.Stop();
-            if (_isRail && Navigation.IsPaneOpen)
+        }), handledEventsToo: true);
+        // And whatever the pane heard: a mouse moving beside the open rail has left it.
+        Root.AddHandler(UIElement.PointerMovedEvent, new PointerEventHandler((_, e) =>
+        {
+            if (_isRail && (Navigation.IsPaneOpen || _railHover.IsRunning) && !IsOverPane(pane, e))
             {
-                Navigation.IsPaneOpen = false;
+                CloseRail();
             }
-        };
+        }), handledEventsToo: true);
+    }
+
+    private void CloseRail()
+    {
+        _railHover.Stop();
+        if (_isRail && Navigation.IsPaneOpen)
+        {
+            Navigation.IsPaneOpen = false;
+        }
     }
 
     // The pane is as wide as the open pane even as the rail, which shows only its first CompactPaneLength.
