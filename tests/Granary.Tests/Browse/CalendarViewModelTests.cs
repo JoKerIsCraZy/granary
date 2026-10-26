@@ -185,6 +185,23 @@ public sealed class CalendarViewModelTests
     }
 
     [Fact]
+    public async Task ADayNamedTwice_IsOneRow_AndDaysOutsideTheWeekStayOut()
+    {
+        _harness.Answer(CalendarPath, """
+            { "events": [
+              { "date": "2026-10-01", "items": [ { "content_id": "movie:a", "type": "movie", "title": "A", "air_date": "2026-10-01", "badges": [], "watched": false } ] },
+              { "date": "2026-10-01", "items": [ { "content_id": "movie:b", "type": "movie", "title": "B", "air_date": "2026-10-01", "badges": [], "watched": false } ] },
+              { "date": "2026-10-09", "items": [ { "content_id": "movie:c", "type": "movie", "title": "C", "air_date": "2026-10-09", "badges": [], "watched": false } ] }
+            ] }
+            """);
+
+        var page = await LoadedAsync();
+
+        Assert.Equal(7, page.Rows.Count);
+        Assert.Equal(["A", "B"], Assert.Single(Aired(page)).Cards.Select(c => c.Title));
+    }
+
+    [Fact]
     public async Task ADayPickedInAnEmptyWeek_SaysNothingIsScheduled()
     {
         _harness.Answer(CalendarPath, NoEvents);
@@ -240,7 +257,8 @@ public sealed class CalendarViewModelTests
         await page.NextWeekCommand.ExecuteAsync(null);
         page.SelectedLibrary = page.LibraryChoices[1];
         page.SelectedPreset = page.Presets.Single(p => p.Label == "Trending");
-        await WaitUntilAsync(() => LastQuery.Contains("filter=trending&", StringComparison.Ordinal) && page.State == LibraryLoadState.Ready);
+        // The scripted week is October's first; the next one has no airings of its own.
+        await WaitUntilAsync(() => LastQuery.Contains("filter=trending&", StringComparison.Ordinal) && page.State == LibraryLoadState.Empty);
         page.SelectDayCommand.Execute(page.Days[0]);
         int asked = _harness.Queries(CalendarPath).Count;
 

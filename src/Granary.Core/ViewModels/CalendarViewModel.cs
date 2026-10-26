@@ -340,18 +340,26 @@ public sealed partial class CalendarViewModel : ObservableObject
         }
     }
 
+    // A row for every day of the week once any day has airings, the empty ones too. A day the server names twice is one
+    // row; a day outside the week stays out, as the strip has no place for it.
     private List<CalendarDayRow> RowsOf(CalendarWeek week, Uri server)
     {
-        var rows = new List<CalendarDayRow>();
         var zone = _time.LocalTimeZone;
         var today = Today;
+        var weekEnd = WeekStart.AddDays(6);
+        var aired = new Dictionary<DateOnly, List<MediaCard>>();
         foreach (var day in week.Events)
         {
-            if (!DateOnly.TryParseExact(day.Date, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
+            if (!DateOnly.TryParseExact(day.Date, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date)
+                || date < WeekStart || date > weekEnd)
             {
                 continue;
             }
-            var cards = new List<MediaCard>();
+            if (!aired.TryGetValue(date, out var cards))
+            {
+                cards = [];
+                aired.Add(date, cards);
+            }
             foreach (var airing in day.Items.Where(a => !string.IsNullOrWhiteSpace(a.ContentId)))
             {
                 // A movie opens itself; an airing of a series opens the series.
@@ -371,20 +379,13 @@ public sealed partial class CalendarViewModel : ObservableObject
                     ShowsWatchedMark = airing.Watched,
                 });
             }
-            if (cards.Count > 0)
-            {
-                rows.Add(new CalendarDayRow(date, CalendarText.DayHeading(date), date == today, cards, OpenCommand));
-            }
         }
-        if (rows.Count == 0)
+        if (aired.Values.All(cards => cards.Count == 0))
         {
-            return rows;
+            return [];
         }
-        // Every day of the week, in order, the empty ones too.
-        var aired = rows.ToDictionary(r => r.Date);
-        var days = Enumerable.Range(0, 7).Select(i => WeekStart.AddDays(i))
-            .Select(day => aired.GetValueOrDefault(day) ?? new CalendarDayRow(day, CalendarText.DayHeading(day), day == today, [], OpenCommand));
-        return [.. days.Concat(rows.Where(r => r.Date < WeekStart || r.Date > WeekStart.AddDays(6))).OrderBy(r => r.Date)];
+        return [.. Enumerable.Range(0, 7).Select(i => WeekStart.AddDays(i)).Select(day =>
+            new CalendarDayRow(day, CalendarText.DayHeading(day), day == today, aired.GetValueOrDefault(day) ?? [], OpenCommand))];
     }
 
     private List<CalendarDayChip> ChipsOf(IEnumerable<CalendarDayRow> rows)
