@@ -20,3 +20,6 @@
 *.dll binary
 *.mkv binary
 *.mp4 binary
+
+# Silo's brand files are used unmodified, byte for byte.
+src/Granary.App/Assets/Brand/*.svg binary

@@ -16,9 +16,17 @@
     <ContentControl Style="{StaticResource SiloAuthShellStyle}">
         <StackPanel Spacing="24">
             <StackPanel Spacing="8">
-                <TextBlock Text="{x:Bind ServerName(ViewModel.Server), Mode=OneWay, FallbackValue='Sign in'}" Style="{StaticResource SiloAuthTitleTextStyle}"
-                           AutomationProperties.HeadingLevel="Level1"
-                           AutomationProperties.Name="{x:Bind Heading(ViewModel.Server), Mode=OneWay, FallbackValue='Sign in'}" />
+                <!-- The Silo server's name, with Silo's mark beside it. -->
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Image Style="{StaticResource SiloAuthMarkStyle}" />
+                    <TextBlock Grid.Column="1" Text="{x:Bind ServerName(ViewModel.Server), Mode=OneWay, FallbackValue='Sign in'}"
+                               Style="{StaticResource SiloAuthTitleTextStyle}" VerticalAlignment="Center" AutomationProperties.HeadingLevel="Level1"
+                               AutomationProperties.Name="{x:Bind Heading(ViewModel.Server), Mode=OneWay, FallbackValue='Sign in'}" />
+                </Grid>
                 <TextBlock Text="Sign in with an existing account." Style="{StaticResource SiloAuthLeadTextStyle}" />
             </StackPanel>
 

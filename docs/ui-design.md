@@ -172,8 +172,11 @@ View models build `MediaCard`s with the texts already worded; the controls only 
 
 Adding a server and signing in look like Silo's web login (measured 2026-10-25). `SiloAuthShellStyle` centres a
 448 px card (the surface, radius 12, 28 + 24 px inside) on the background with a red glow at the top left and a
-light one at the top right, and puts Silo's white wordmark above it. The wordmark (`Assets/Brand`) is shown
-unmodified to refer to Silo, as its trademark policy allows; it is not Granary's logo (see the NOTICE there).
+light one at the top right. Above it Granary's own name (44 / ExtraBold) and "A Silo client for Windows": Granary's
+identity leads these screens, as Silo's developers asked (2026-10-26). Silo's mark, the official flat cut from
+siloserver.org/brand (`Assets/Brand`, unmodified, 44 px tall), only refers to the server: beside "Connect to your Silo
+server" and beside the server's name when signing in (`SiloAuthMarkStyle`; see the NOTICE there). Granary's logo and
+app icon must not look like Silo's; Silo's colours and the three-bar motif are free to use in the interface.
 
 - In the card: the title (`SiloAuthTitleTextStyle`, 30 / ExtraBold) over a muted lead, labelled 36 px fields
   (`SiloAuthTextBoxStyle`, `SiloAuthPasswordBoxStyle`), full-width buttons rounded 10 (`SiloAuthButtonStyle` red,

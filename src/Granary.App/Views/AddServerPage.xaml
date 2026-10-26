@@ -12,8 +12,15 @@
     <ContentControl Style="{StaticResource SiloAuthShellStyle}">
         <StackPanel Spacing="24">
             <StackPanel Spacing="8">
-                <TextBlock Text="Connect to your server" Style="{StaticResource SiloAuthTitleTextStyle}"
-                           AutomationProperties.HeadingLevel="Level1" />
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Image Style="{StaticResource SiloAuthMarkStyle}" />
+                    <TextBlock Grid.Column="1" Text="Connect to your Silo server" Style="{StaticResource SiloAuthTitleTextStyle}"
+                               VerticalAlignment="Center" AutomationProperties.HeadingLevel="Level1" />
+                </Grid>
                 <TextBlock Text="Type the address you use for Silo." Style="{StaticResource SiloAuthLeadTextStyle}" />
             </StackPanel>
 

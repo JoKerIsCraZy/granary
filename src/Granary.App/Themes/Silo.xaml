@@ -368,9 +368,10 @@
 
     <!--
         The signed-out screens (adding a server, signing in) as Silo's web draws its login: a 448 px card in the
-        middle, on the background with a red glow at the top left and a light one at the top right, and Silo's
-        wordmark above it (Assets/Brand/NOTICE.txt). The page puts its form in as the content and merges
-        Themes/SiloAuth.xaml for the inputs. The glows are the web's circles stretched with the window.
+        middle, on the background with a red glow at the top left and a light one at the top right. Above it Granary's
+        own name and what it is, the screen's identity as Silo's developers asked; Silo's mark only refers to the
+        server, inside the card (SiloAuthMarkStyle, Assets/Brand/NOTICE.txt). The page puts its form in as the content
+        and merges Themes/SiloAuth.xaml for the inputs. The glows are the web's circles stretched with the window.
     -->
     <Style x:Key="SiloAuthShellStyle" TargetType="ContentControl">
         <Setter Property="IsTabStop" Value="False" />
@@ -397,8 +398,12 @@
                         </Grid>
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <StackPanel MaxWidth="496" Padding="24" Spacing="28" VerticalAlignment="Center">
-                                <Image Height="64" HorizontalAlignment="Center" Source="ms-appx:///Assets/Brand/silo-wordmark-white.png"
-                                       AutomationProperties.Name="Silo" />
+                                <StackPanel Spacing="6" HorizontalAlignment="Center">
+                                    <TextBlock Text="Granary" HorizontalAlignment="Center" FontFamily="{StaticResource SiloFontExtraBold}"
+                                               FontWeight="ExtraBold" FontSize="44" CharacterSpacing="-40" Foreground="{StaticResource SiloForegroundBrush}" />
+                                    <TextBlock Text="A Silo client for Windows" HorizontalAlignment="Center" FontFamily="{StaticResource SiloFontMedium}"
+                                               FontWeight="Medium" FontSize="14" Foreground="{StaticResource SiloMutedBrush}" />
+                                </StackPanel>
                                 <!-- The web's glass card: its surface, a faint light along the top edge, 28 + 24 px inside. -->
                                 <Border Padding="52,24" CornerRadius="12" Background="{StaticResource SiloSurfaceBrush}"
                                         BorderBrush="#0AFFFFFF" BorderThickness="0,1,0,0">
@@ -411,6 +416,18 @@
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+    </Style>
+    <!--
+        Silo's mark beside the card's title, where the screen refers to the Silo server: the official flat cut, unmodified,
+        above its 24 px minimum and with more than its clear space (20 % of its width) around it.
+    -->
+    <Style x:Key="SiloAuthMarkStyle" TargetType="Image">
+        <Setter Property="Source" Value="ms-appx:///Assets/Brand/silo-mark-flat.svg" />
+        <Setter Property="Height" Value="44" />
+        <Setter Property="Stretch" Value="Uniform" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Margin" Value="0,0,16,0" />
+        <Setter Property="AutomationProperties.Name" Value="Silo" />
     </Style>
     <!-- The server's name over the form. -->
     <Style x:Key="SiloAuthTitleTextStyle" TargetType="TextBlock">

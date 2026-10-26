@@ -1,15 +1,21 @@
 SILO BRAND ASSETS - NOTICE
 ==========================
 
-silo-wordmark-white.png is the official Silo wordmark for dark surfaces:
+silo-mark-flat.svg is the official Silo mark, flat cut, exactly as Silo's brand page serves it
+(https://siloserver.org/brand/silo-mark-flat.svg):
 
     Copyright (c) 2026 Silo Media L.L.C. All rights reserved.
 
 It is a trademark of Silo Media L.L.C. and is NOT licensed under the GNU Affero
 General Public License that covers Granary's source code, nor under any other
-open-source license. Granary includes it unmodified only to refer to Silo, on
-the screens where a Silo server is added and signed in to, as Silo's
-Trademark & Brand Policy permits ("Showing the Silo logo or icon in a project
-that works with Silo"). It is not Granary's logo or app icon, and it must not
-be altered. A fork or redistribution that cannot make the same referential use
-must remove it. See https://github.com/Silo-Server/silo-server/blob/main/TRADEMARK.md.
+open-source license. Granary includes it unmodified only to refer to Silo: beside
+"Connect to your Silo server" and beside the server's name where a Silo server is
+signed in to, as Silo's brand policy permits ("Use the Silo logo or icon in a project
+that works with Silo") and as Silo's developers asked. Granary's own name stays the
+more prominent identity on those screens. The mark is not Granary's logo or app
+icon, and it must not be altered (the brand page: no recolouring, stretching,
+cropping or effects; at least 24 px tall; clear space of 20 % of its width).
+A fork or redistribution that cannot make the same referential use must remove it.
+
+Usage guide: https://siloserver.org/brand
+Full policy: https://github.com/Silo-Server/siloserver.org/blob/main/TRADEMARK.md

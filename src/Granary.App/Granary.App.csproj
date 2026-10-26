@@ -33,8 +33,8 @@
   <ItemGroup>
     <Content Include="Assets\Fonts\*.ttf" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Assets\Fonts\OFL.txt" CopyToOutputDirectory="PreserveNewest" />
-    <!-- Silo's wordmark, unmodified, to refer to Silo where a server is added and signed in to (Assets/Brand/NOTICE.txt). -->
-    <Content Include="Assets\Brand\silo-wordmark-white.png" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Silo's mark, unmodified, to refer to Silo where a server is added and signed in to (Assets/Brand/NOTICE.txt). -->
+    <Content Include="Assets\Brand\silo-mark-flat.svg" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <!-- libmpv comes from native/ (scripts/fetch-native.ps1), it is not committed. -->
