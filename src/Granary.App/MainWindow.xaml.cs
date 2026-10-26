@@ -12,6 +12,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Dispatching;
 using Windows.UI;
 
@@ -28,10 +29,16 @@ public sealed partial class MainWindow : Window
     // The web's delay before the rail opens under the pointer, so passing over it opens nothing.
     private static readonly TimeSpan RailHoverDelay = TimeSpan.FromMilliseconds(150);
 
+    // A page whose sidebar changes width shows once the pane stands, or after this at the latest, and fades in this fast.
+    private static readonly TimeSpan RevealFallback = TimeSpan.FromMilliseconds(450);
+    private static readonly TimeSpan RevealFade = TimeSpan.FromMilliseconds(160);
+
     private readonly NavigationService _navigation;
     private readonly PlaybackStops _stops;
     private readonly ILogger<MainWindow> _logger;
     private readonly DispatcherQueueTimer _railHover;
+    private readonly DispatcherQueueTimer _reveal;
+    private bool _revealPending;
     private bool _closeAfterStops;
     private bool _isRail;
     private bool _showsPageBack;
@@ -52,6 +59,10 @@ public sealed partial class MainWindow : Window
         _railHover.Interval = RailHoverDelay;
         _railHover.IsRepeating = false;
         _railHover.Tick += (_, _) => OpenRail();
+        _reveal = DispatcherQueue.CreateTimer();
+        _reveal.Interval = RevealFallback;
+        _reveal.IsRepeating = false;
+        _reveal.Tick += (_, _) => RevealPage();
         Navigation.Loaded += (_, _) => FollowRailPointer();
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
@@ -62,6 +73,7 @@ public sealed partial class MainWindow : Window
         AppWindow.Closing += OnClosing;
 
         _navigation.Attach(ContentFrame);
+        _navigation.TransitionFor = TransitionFor;
         _navigation.Navigated += OnNavigated;
         Shell.PropertyChanged += (_, e) =>
         {
@@ -217,6 +229,39 @@ public sealed partial class MainWindow : Window
         return null;
     }
 
+    // Between a title's page (the rail) and any other (the open pane) the sidebar changes its width, and the content with
+    // it: the old page squeezed or stretched while the pane moved, and the new one jumped in after it. Instead the old page
+    // goes at once, the pane moves over the empty page, and the new page fades in once the pane stands (OnPaneSettled).
+    private NavigationTransitionInfo? TransitionFor(AppRoute target)
+    {
+        bool fromPane = _navigation.Current is { } current && ShowsPane(current);
+        if (!Shell.IsSignedIn || !fromPane || !ShowsPane(target) || (target == AppRoute.Item) == _isRail)
+        {
+            return null;
+        }
+        _revealPending = true;
+        ContentFrame.OpacityTransition = null;
+        ContentFrame.Opacity = 0;
+        _reveal.Start();
+        return new SuppressNavigationTransitionInfo();
+    }
+
+    private static bool ShowsPane(AppRoute route) => route is not (AppRoute.Player or AppRoute.Settings);
+
+    private void OnPaneSettled(NavigationView sender, object args) => RevealPage();
+
+    private void RevealPage()
+    {
+        _reveal.Stop();
+        if (!_revealPending)
+        {
+            return;
+        }
+        _revealPending = false;
+        ContentFrame.OpacityTransition = new ScalarTransition { Duration = RevealFade };
+        ContentFrame.Opacity = 1;
+    }
+
     // Opening or closing the pane, by the window or by the rail's pointer or a click beside it, turns the headers between
     // fold buttons and dividers, and the folded sections' entries between hidden and shown.
     private void OnPaneOpening(NavigationView sender, object args) => ShowPaneParts(open: true);
@@ -358,7 +403,13 @@ public sealed partial class MainWindow : Window
             Navigation.PaneDisplayMode = mode;
             Navigation.IsPaneVisible = false;
         }
+        bool wasOpen = Navigation.IsPaneOpen;
         Navigation.IsPaneOpen = Shell.IsSignedIn && route is not (AppRoute.Item or AppRoute.Player);
+        if (_revealPending && wasOpen == Navigation.IsPaneOpen)
+        {
+            // The pane was already where it goes (the rail had opened under the mouse): nothing to wait for.
+            DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, RevealPage);
+        }
         Grid.SetRow(Navigation, isPlayer ? 0 : 1);
         Grid.SetRowSpan(Navigation, isPlayer ? 2 : 1);
         AppTitle.Visibility = isPlayer ? Visibility.Collapsed : Visibility.Visible;

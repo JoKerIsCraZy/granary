@@ -104,6 +104,9 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   no back arrow, as on the web: a page opened from another (a title, a row in full, a collection, the servers) has the
   web's PageBack, a 36 px glass disc with a chevron at its top left; the sidebar's own pages have none, and Back
   (Alt+Left, the mouse's back button) still leads from them to Home.
+  Between a title's page and any other the sidebar changes its width with the page; the old page then goes at once,
+  the pane moves over the empty page, and the new page fades in (160 ms) once the pane stands, instead of the old page
+  squeezing while the pane moved and the new one sliding in after it.
 - Collections (`CollectionsPage`, the web's `pages/Collections.tsx`): "Your collections" with its count ("Manual ·
   4 titles", a SHARED badge on one other profiles see), "Shared with me" by owner ("by Mara"), and "Server
   collections" with a pill per library (All first) and Load more, which the end of the grid presses by itself. A

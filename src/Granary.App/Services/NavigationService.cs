@@ -1,6 +1,7 @@
 using Granary.App.Views;
 using Granary.Core.Abstractions;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Navigation;
 
 namespace Granary.App.Services;
@@ -49,6 +50,12 @@ public sealed class NavigationService : INavigationService
     /// <summary>Raised after every navigation, Back included, and after the history was reset.</summary>
     public event EventHandler<AppRoute>? Navigated;
 
+    /// <summary>
+    /// Asked before each navigation with the route it goes to: a transition to play instead of the frame's own, or
+    /// null for the frame's own. The window replaces it where the sidebar changes its width with the page.
+    /// </summary>
+    public Func<AppRoute, NavigationTransitionInfo?>? TransitionFor { get; set; }
+
     public void Attach(Frame frame) => _frame = frame;
 
     public void NavigateTo(AppRoute route, object? parameter = null)
@@ -57,7 +64,7 @@ public sealed class NavigationService : INavigationService
         {
             return;
         }
-        _frame.Navigate(Pages[route], parameter);
+        Navigate(route, parameter);
         Arrived(route, parameter);
     }
 
@@ -74,7 +81,7 @@ public sealed class NavigationService : INavigationService
         }
         if (route != Current || !Equals(parameter, CurrentParameter))
         {
-            _frame.Navigate(Pages[route], parameter);
+            Navigate(route, parameter);
         }
         var home = _frame.BackStack.FirstOrDefault(e => e.SourcePageType == typeof(HomePage));
         _frame.BackStack.Clear();
@@ -91,7 +98,7 @@ public sealed class NavigationService : INavigationService
         {
             return;
         }
-        _frame.Navigate(Pages[route], parameter);
+        Navigate(route, parameter);
         _frame.BackStack.Clear();
         Arrived(route, parameter);
     }
@@ -103,10 +110,32 @@ public sealed class NavigationService : INavigationService
             return;
         }
         var entry = frame.BackStack[^1];
-        frame.GoBack();
-        if (Routes.TryGetValue(entry.SourcePageType, out var route))
+        AppRoute? route = Routes.TryGetValue(entry.SourcePageType, out var type)
+            ? type == AppRoute.List && entry.Parameter is CollectionRouteParameter ? AppRoute.Collection : type
+            : null;
+        if (route is { } target && TransitionFor?.Invoke(target) is { } transition)
         {
-            Arrived(route == AppRoute.List && entry.Parameter is CollectionRouteParameter ? AppRoute.Collection : route, entry.Parameter);
+            frame.GoBack(transition);
+        }
+        else
+        {
+            frame.GoBack();
+        }
+        if (route is { } arrived)
+        {
+            Arrived(arrived, entry.Parameter);
+        }
+    }
+
+    private void Navigate(AppRoute route, object? parameter)
+    {
+        if (TransitionFor?.Invoke(route) is { } transition)
+        {
+            _frame!.Navigate(Pages[route], parameter, transition);
+        }
+        else
+        {
+            _frame!.Navigate(Pages[route], parameter);
         }
     }
 

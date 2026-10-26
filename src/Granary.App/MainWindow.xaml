@@ -42,6 +42,8 @@
             IsPaneVisible="False"
             PaneOpening="OnPaneOpening"
             PaneClosing="OnPaneClosing"
+            PaneOpened="OnPaneSettled"
+            PaneClosed="OnPaneSettled"
             ItemInvoked="OnItemInvoked">
             <NavigationView.PaneHeader>
                 <TextBlock Margin="20,4,12,12" Text="{x:Bind Sidebar.ServerName, Mode=OneWay}" TextTrimming="CharacterEllipsis"
