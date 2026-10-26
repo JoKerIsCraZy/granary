@@ -1,0 +1,30 @@
+<svg class="gc" xmlns="http://www.w3.org/2000/svg" viewBox="28 28 200 200" width="200" height="200" role="img" aria-label="Granary">
+  <style>
+    .gc .glow { opacity: .2; animation: gc-breathe calc(4s * var(--rate, 1)) ease-in-out infinite; }
+    .gc .play { transform-box: fill-box; transform-origin: 40% 50%;
+      animation: gc-nudge calc(4s * var(--rate, 1)) cubic-bezier(.5, 0, .3, 1) infinite; }
+    @keyframes gc-breathe { 0%, 100% { opacity: .16; } 50% { opacity: .5; } }
+    @keyframes gc-nudge {
+      0%, 62%, 100% { transform: none; }
+      70% { transform: translateX(5px); }
+      78% { transform: translateX(-1px); }
+      84% { transform: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      :root:not(.motion-on) .gc * { animation: none !important; }
+    }
+  </style>
+  <defs>
+    <linearGradient id="gc-ring" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#EF4444"/>
+      <stop offset="1" stop-color="#F59E0B"/>
+      <animateTransform attributeName="gradientTransform" type="rotate" values="0 .5 .5;360 .5 .5" dur="8s" repeatCount="indefinite"/>
+    </linearGradient>
+    <filter id="gc-blur" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="9"/>
+    </filter>
+  </defs>
+  <path class="glow" d="M180 84 A68 68 0 1 0 192 151" fill="none" stroke="url(#gc-ring)" stroke-width="30" stroke-linecap="round" filter="url(#gc-blur)"/>
+  <path d="M180 84 A68 68 0 1 0 192 151" fill="none" stroke="url(#gc-ring)" stroke-width="30" stroke-linecap="round"/>
+  <path class="play" d="M114 106 L154 128 L114 150 Z" fill="#E8E8EC" stroke="#E8E8EC" stroke-width="10" stroke-linejoin="round"/>
+</svg>

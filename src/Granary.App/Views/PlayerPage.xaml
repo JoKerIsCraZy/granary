@@ -26,13 +26,16 @@
         <!-- The picture: a click plays or pauses, a double click toggles full screen. -->
         <Grid x:Name="Surface" Background="Transparent" Tapped="OnSurfaceTapped" DoubleTapped="OnSurfaceDoubleTapped" />
 
-        <!-- Preparing, and waiting for data later on; the dark disc keeps the white ring visible on a bright picture. -->
+        <!--
+            Preparing, and waiting for data later on: Granary's mark runs its loading loop. The dark disc keeps it visible on
+            a bright picture.
+        -->
         <Grid HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False"
               Visibility="{x:Bind SpinnerVisibility(ViewModel.Phase, ViewModel.IsBuffering), Mode=OneWay}">
-            <Ellipse Width="72" Height="72" Fill="#73000000" />
-            <ProgressRing Width="44" Height="44" Foreground="{StaticResource SiloPlayerForegroundBrush}" Background="#33FFFFFF"
-                          IsActive="{x:Bind ShowsSpinner(ViewModel.Phase, ViewModel.IsBuffering), Mode=OneWay}"
-                          AutomationProperties.Name="{x:Bind SpinnerName(ViewModel.Phase), Mode=OneWay}" />
+            <Ellipse Width="88" Height="88" Fill="#73000000" />
+            <controls:GranaryMark Width="60" Height="60"
+                                  IsLoading="{x:Bind ShowsSpinner(ViewModel.Phase, ViewModel.IsBuffering), Mode=OneWay}"
+                                  AutomationProperties.Name="{x:Bind SpinnerName(ViewModel.Phase), Mode=OneWay}" />
         </Grid>
 
         <!-- Failed: what went wrong, Retry when it can help, and Back. -->

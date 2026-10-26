@@ -176,5 +176,14 @@
                 AutomationProperties.Name="Go back" ToolTipService.ToolTip="Back (Alt+Left)">
             <FontIcon Glyph="&#xE76B;" FontSize="14" />
         </Button>
+
+        <!--
+            The start: Granary's mark plays its intro in the middle of the window while the app loads its first page, then
+            its loading loop if that takes longer (MainWindow.ShowStartup). It lifts 40 px so it sits in the window's middle.
+        -->
+        <Grid x:Name="Splash" Grid.Row="1" Background="{StaticResource SiloBackgroundBrush}">
+            <controls:GranaryMark x:Name="SplashMark" Width="132" Height="132" Margin="0,0,0,40"
+                                  AutomationProperties.Name="Granary is starting" />
+        </Grid>
     </Grid>
 </Window>

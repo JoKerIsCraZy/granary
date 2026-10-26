@@ -7,7 +7,7 @@ using Microsoft.UI.Xaml.Navigation;
 
 namespace Granary.App.Views;
 
-public sealed partial class HomePage : Page
+public sealed partial class HomePage : Page, IStartupContent
 {
     public HomePage()
     {
@@ -16,6 +16,9 @@ public sealed partial class HomePage : Page
     }
 
     public HomeViewModel ViewModel { get; }
+
+    /// <summary>The latest visit's load of the rows: the start screen waits for the first.</summary>
+    public Task Ready { get; private set; } = Task.CompletedTask;
 
     protected override async void OnNavigatedTo(NavigationEventArgs e)
     {
@@ -28,7 +31,9 @@ public sealed partial class HomePage : Page
         ViewModel.DisplayScale = XamlRoot?.RasterizationScale ?? 1;
         try
         {
-            await ViewModel.ActivateAsync();
+            var activation = ViewModel.ActivateAsync();
+            Ready = activation;
+            await activation;
         }
         catch (Exception ex)
         {

@@ -53,13 +53,15 @@ public partial class App : Application
         _logger = Services.GetRequiredService<ILogger<App>>();
         _logger.LogInformation("Granary {Version} starting", typeof(App).Assembly.GetName().Version);
         _window = Services.GetRequiredService<MainWindow>();
+        var started = new TaskCompletionSource();
+        _window.ShowStartup(started.Task);
         _window.Activate();
         // A server on this network is reached directly, once its key is verified (docs/api-contract.md, 9.7).
         Services.GetRequiredService<LocalRouteMonitor>().Start();
 
         // Developer shortcuts: --play <file or URL> plays it without the server; --play-item <content id> plays a
         // title of the signed-in server.
-        StartShell(_window.Shell, DeveloperPlayRequest() is null ? null : AppRoute.Player, DeveloperPlayRequest());
+        StartShell(_window.Shell, DeveloperPlayRequest() is null ? null : AppRoute.Player, DeveloperPlayRequest(), started);
     }
 
     private static PlayRequest? DeveloperPlayRequest()
@@ -74,7 +76,8 @@ public partial class App : Application
         return item >= 0 && item + 1 < arguments.Length ? PlayRequest.Resume(arguments[item + 1]) : null;
     }
 
-    private async void StartShell(ShellViewModel shell, AppRoute? initialRoute, object? parameter)
+    // Tells the start screen when the shell has started (or failed to), so it can make way.
+    private async void StartShell(ShellViewModel shell, AppRoute? initialRoute, object? parameter, TaskCompletionSource started)
     {
         try
         {
@@ -84,6 +87,10 @@ public partial class App : Application
         {
             _logger?.LogCritical(ex, "The shell failed to start");
             throw;
+        }
+        finally
+        {
+            started.TrySetResult();
         }
     }
 

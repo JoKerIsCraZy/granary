@@ -13,6 +13,8 @@ using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
+using Microsoft.UI.Composition;
+using Microsoft.UI.Xaml.Hosting;
 using Microsoft.UI.Dispatching;
 using Windows.UI;
 
@@ -42,6 +44,11 @@ public sealed partial class MainWindow : Window
     private bool _closeAfterStops;
     private bool _isRail;
     private bool _showsPageBack;
+
+    // The start screen leaves once its intro has played and the first page has what it shows, or after this at the
+    // latest, so a slow server or a failure does not keep the app hidden; it fades out this fast.
+    private static readonly TimeSpan StartupLimit = TimeSpan.FromSeconds(6);
+    private static readonly TimeSpan SplashFade = TimeSpan.FromMilliseconds(300);
 
     public MainWindow(NavigationService navigation, ShellViewModel shell, SidebarViewModel sidebar, SidebarSections sections,
         NotificationBadge notifications, RequestsFeature requests, PlaybackStops stops, ILogger<MainWindow> logger)
@@ -227,6 +234,55 @@ public sealed partial class MainWindow : Window
             }
         }
         return null;
+    }
+
+    /// <summary>
+    /// Plays the mark's intro over the window until the shell has <paramref name="started"/> and its first page has what it
+    /// shows; a longer wait runs the loading loop meanwhile, and <see cref="StartupLimit"/> ends it in any case.
+    /// </summary>
+    public async void ShowStartup(Task started)
+    {
+        try
+        {
+            var limit = Task.Delay(StartupLimit);
+            var ready = StartupReadyAsync(started);
+            await SplashMark.PlayIntroAsync();
+            if (!ready.IsCompleted && !limit.IsCompleted)
+            {
+                SplashMark.IsLoading = true;
+            }
+            await Task.WhenAny(ready, limit);
+        }
+        catch (Exception ex)
+        {
+            // Never the start's to fail: the app shows at once.
+            _logger.LogWarning(ex, "The start screen ended early");
+        }
+        HideSplash();
+    }
+
+    // The page's own load reports its failures; the start screen only waits for it, done or not.
+    private async Task StartupReadyAsync(Task started)
+    {
+        await Task.WhenAny(started);
+        if (ContentFrame.Content is IStartupContent page)
+        {
+            await Task.WhenAny(page.Ready);
+        }
+    }
+
+    private void HideSplash()
+    {
+        SplashMark.IsLoading = false;
+        Splash.IsHitTestVisible = false;
+        var visual = ElementCompositionPreview.GetElementVisual(Splash);
+        var fade = visual.Compositor.CreateScalarKeyFrameAnimation();
+        fade.InsertKeyFrame(1, 0);
+        fade.Duration = SplashFade;
+        var batch = visual.Compositor.CreateScopedBatch(CompositionBatchTypes.Animation);
+        visual.StartAnimation(nameof(Visual.Opacity), fade);
+        batch.End();
+        batch.Completed += (_, _) => Splash.Visibility = Visibility.Collapsed;
     }
 
     // Between a title's page (the rail) and any other (the open pane) the sidebar changes its width, and the content with

@@ -214,6 +214,15 @@ triangle: no slanted bars, no stack. The app icon (`Assets/Logo/granary-icon.svg
 256 px) sets it on a dark rounded tile; the exe, the window and the taskbar carry it, and the title bar shows the mark
 at 16 px before "Granary".
 
+The mark moves (2026-10-26; drafts as SVG in `Assets/Logo`: `granary-mark-intro.svg`, `-loading.svg`, `-ambient.svg`).
+`GranaryMark` draws it on the compositor, so it stays smooth while the UI thread is busy: the ring is a circle trimmed
+to the G (composition's circles start at 12 o'clock, so the trimming is offset to the G's lower end). At start the
+window shows a start screen (`MainWindow.ShowStartup`): the intro in the middle, 132 px (the ring draws itself back
+from its upper end with a quarter turn, play pops in, a glint runs round, 1.7 s), then the loading loop while the
+first page still loads (Home's rows, `IStartupContent`), at most 6 s in all, then the app fades in (300 ms). The
+player shows the loading loop (a stretch of the ring runs through the G, play breathes, 1.4 s) on a dark disc while a
+title prepares or buffers. With Windows' animations off the mark stands still.
+
 - In the card: the title (`SiloAuthTitleTextStyle`, 30 / ExtraBold) over a muted lead, labelled 36 px fields
   (`SiloAuthTextBoxStyle`, `SiloAuthPasswordBoxStyle`), full-width buttons rounded 10 (`SiloAuthButtonStyle` red,
   `SiloAuthOutlineButtonStyle`), refusals in a red box (`SiloAuthErrorStyle`) and the consent to an unencrypted
