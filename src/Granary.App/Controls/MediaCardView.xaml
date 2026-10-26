@@ -16,6 +16,7 @@
     PointerCanceled="OnPointerExited"
     Loaded="OnLoaded"
     Unloaded="OnUnloaded"
+    GotFocus="OnGotFocus"
     ContextRequested="OnContextRequested">
 
     <Grid RowSpacing="11">
@@ -121,6 +122,11 @@
                             <MenuFlyoutItem x:Name="MenuRemove" Click="OnRemoveClick" />
                         </MenuFlyout>
                     </Button.Flyout>
+                </Button>
+                <!-- A title from TMDB: the web's watchlist toggle, where library cards keep their menu. -->
+                <Button x:Name="TitleWatchlistButton" Style="{StaticResource SiloCardActionButtonStyle}" Margin="10" HorizontalAlignment="Right"
+                        VerticalAlignment="Bottom" Click="OnTitleWatchlistClick">
+                    <FontIcon x:Name="TitleWatchlistIcon" FontSize="15" />
                 </Button>
             </Grid>
 

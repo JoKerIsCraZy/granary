@@ -134,7 +134,10 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   or the admin's reason, Open in library, and Cancel request behind the web's confirmation. A Discover row of several
   pages has EXPLORE ALL; under the rows come Studios, Networks and Genres as rows of 208 × 112 tiles (a logo on gray-800
   with a gray-700 ring, the name when there is none, a genre's name on its 135° gradient), empty tiles while they load,
-  and "Could not load studios." beside Retry. Search comes next.
+  and "Could not load studios." beside Retry. Search comes next. Every TMDB title's card (on the hub, a row in full, a
+  studio's page, More like this) has the web's watchlist toggle where library cards keep their menu, while the server
+  keeps TMDB titles on the watchlist: + to add, ✓ in red when on it; an add that requested the title shows the request's
+  state on the card at once.
 - A Discover row in full and a studio's, network's or genre's titles (`RequestTitlesPage`, the web's
   `RequestDiscoverSection.tsx` / `RequestBrowse.tsx`): the name (the row's key in words until the server names it), for a
   browse page a 112 × 64 tile with the logo or name and "Studio" under the name, Movies | Series pills for a genre and

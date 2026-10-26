@@ -66,7 +66,6 @@ public sealed partial class MediaCardView : UserControl
         bool atmos = card?.AudioBadge == "ATMOS";
         AudioIcon.Visibility = atmos ? Visibility.Collapsed : Visibility.Visible;
         AudioText.FontFamily = (FontFamily)Application.Current.Resources[atmos ? "SiloFontExtraBold" : "SiloFontSemiBold"];
-        SetBadge(StatusBadge, StatusText, card?.StatusBadge);
         SetBadge(RatingBadge, RatingText, card?.RatingBadge);
 
         TitleText.Text = card?.Title ?? "";
@@ -94,6 +93,18 @@ public sealed partial class MediaCardView : UserControl
         var foot = new Thickness(10, 10, 10, hasProgress ? 12 : 10);
         ActionsPanel.Margin = foot;
         MoreButton.Margin = foot;
+        TitleWatchlistButton.Margin = foot;
+        // A TMDB title's request state can change on the card: its watchlist add requested it.
+        SetBadge(StatusBadge, StatusText, card is null ? null : _actions.StatusBadgeOf(card));
+
+        bool titleWatchlist = card is not null && _actions.CanToggleTitleWatchlist(card);
+        TitleWatchlistButton.Visibility = Visible(titleWatchlist);
+        TitleWatchlistButton.IsEnabled = card is not null && !_actions.IsSending(card);
+        TitleWatchlistIcon.Glyph = DetailHero.WatchlistGlyph(state.InWatchlist);
+        TitleWatchlistIcon.Foreground = Brush(state.InWatchlist ? "SiloPrimaryBrush" : "SiloForegroundBrush");
+        AutomationProperties.SetName(TitleWatchlistButton,
+            state.InWatchlist ? $"Remove {card?.Title} from your watchlist" : $"Add {card?.Title} to your watchlist");
+        ToolTipService.SetToolTip(TitleWatchlistButton, state.InWatchlist ? "On Watchlist" : "Add to Watchlist");
 
         bool canPlay = card is not null && MediaCardActions.CanPlay(card);
         bool canWatch = card is not null && MediaCardActions.CanMarkWatched(card);
@@ -204,7 +215,7 @@ public sealed partial class MediaCardView : UserControl
         ArtImage.CenterPoint = new Vector3((float)(width / 2), (float)(height / 2), 0);
         bool wide = width >= WideCard;
         PlayButton.Width = PlayButton.Height = wide ? 44 : 40;
-        foreach (var button in new[] { WatchedButton, FavoriteButton, MoreButton })
+        foreach (var button in new[] { WatchedButton, FavoriteButton, MoreButton, TitleWatchlistButton })
         {
             button.Width = button.Height = wide ? 36 : 32;
         }
@@ -219,7 +230,15 @@ public sealed partial class MediaCardView : UserControl
         BottomBadges.Opacity = hovered ? 0 : 1;
     }
 
-    private void OnPointerEntered(object sender, PointerRoutedEventArgs e) => SetHovered(Card is not null);
+    // The buttons are brought up to date first: whether the server keeps TMDB titles on the watchlist may have been read
+    // after the card showed. The keyboard reaches them through focus.
+    private void OnPointerEntered(object sender, PointerRoutedEventArgs e)
+    {
+        ShowState();
+        SetHovered(Card is not null);
+    }
+
+    private void OnGotFocus(object sender, RoutedEventArgs e) => ShowState();
 
     private void OnPointerExited(object sender, PointerRoutedEventArgs e) => SetHovered(false);
 
@@ -301,6 +320,14 @@ public sealed partial class MediaCardView : UserControl
         if (Card is { } card)
         {
             await _actions.ToggleWatchlistAsync(card);
+        }
+    }
+
+    private async void OnTitleWatchlistClick(object sender, RoutedEventArgs e)
+    {
+        if (Card is { } card)
+        {
+            await _actions.ToggleTitleWatchlistAsync(card);
         }
     }
 

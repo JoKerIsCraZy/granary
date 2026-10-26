@@ -1,8 +1,10 @@
 using System.Net;
 using Granary.Core.Abstractions;
 using Granary.Core.Api.Catalog;
+using Granary.Core.Api.Requests;
 using Granary.Core.Auth;
 using Granary.Core.Playback;
+using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Cards;
 using Granary.Tests.Fakes;
 using Granary.Tests.Profiles;
@@ -27,6 +29,177 @@ public sealed class MediaCardActionsTests
         actions.Changed += (_, id) => _changed.Add(id);
         return actions;
     }
+
+    private const string TitleWatchlistPath = "api/v2/watchlist/titles/movie/603";
+
+    /// <summary>A title from TMDB, as the Requests pages show it.</summary>
+    private static readonly MediaCard Matrix = RequestCards.Of(new RequestMediaResult
+    {
+        TmdbId = 603,
+        MediaType = "movie",
+        Title = "The Matrix",
+        Request = new RequestMediaState { Requestable = true },
+    });
+
+    private async Task<MediaCardActions> WithTitleWatchlistAsync(string status = """{ "requests_enabled": true, "watchlist_titles_supported": true }""")
+    {
+        _silo.On(HttpMethod.Get, "api/v2/requests/status", ScriptedSilo.Json(HttpStatusCode.OK, status));
+        var requests = new RequestsApi(_silo.Http);
+        var feature = new RequestsFeature(_session, requests, new ManualTimeProvider(), _logs.For<RequestsFeature>());
+        await feature.RefreshAsync(TestContext.Current.CancellationToken);
+        var actions = new MediaCardActions(new CatalogApi(_silo.Http), _session, _navigation, _logs.For<MediaCardActions>(), _viewerState, requests,
+            feature);
+        actions.Changed += (_, id) => _changed.Add(id);
+        return actions;
+    }
+
+    [Fact]
+    public async Task ATitleFromTmdb_GoesOnTheWatchlist_AndShowsTheRequestItMade()
+    {
+        _silo.On(HttpMethod.Put, TitleWatchlistPath, ScriptedSilo.Json(HttpStatusCode.OK, """
+            { "request": { "requestable": false, "reason": "already_requested", "status": "pending", "state": "pending", "following": false,
+              "requested_by_viewer": true } }
+            """));
+        var actions = await WithTitleWatchlistAsync();
+        Assert.Equal("tmdb:movie:603", Matrix.Id);
+        Assert.True(actions.CanToggleTitleWatchlist(Matrix));
+
+        Assert.True(await actions.ToggleTitleWatchlistAsync(Matrix));
+
+        var state = actions.StateOf(Matrix);
+        Assert.True(state.InWatchlist);
+        Assert.Equal("PENDING", state.StatusBadge);
+        Assert.Single(_silo.SentTo(HttpMethod.Put, TitleWatchlistPath));
+        Assert.False(actions.IsSending(Matrix));
+        Assert.Equal(1, _viewerState.Version);
+    }
+
+    [Fact]
+    public async Task ATitleOnTheWatchlist_ComesOff()
+    {
+        _silo.On(HttpMethod.Delete, TitleWatchlistPath, ScriptedSilo.NoContent());
+        var actions = await WithTitleWatchlistAsync();
+
+        Assert.True(await actions.ToggleTitleWatchlistAsync(Matrix with { InWatchlist = true }));
+
+        Assert.False(actions.StateOf(Matrix).InWatchlist);
+        Assert.Single(_silo.SentTo(HttpMethod.Delete, TitleWatchlistPath));
+    }
+
+    [Fact]
+    public async Task AWatchlistAddTheServerRefuses_GoesBack()
+    {
+        _silo.On(HttpMethod.Put, TitleWatchlistPath, ScriptedSilo.Problem(502, "bad_gateway"));
+        var actions = await WithTitleWatchlistAsync();
+
+        Assert.False(await actions.ToggleTitleWatchlistAsync(Matrix));
+
+        Assert.False(actions.StateOf(Matrix).InWatchlist);
+        Assert.Null(actions.StateOf(Matrix).StatusBadge);
+    }
+
+    [Fact]
+    public async Task AWatchlistChangeOnItsWay_IsNotSentTwice()
+    {
+        var release = new TaskCompletionSource();
+        _silo.On(HttpMethod.Put, TitleWatchlistPath, async () =>
+        {
+            await release.Task;
+            return await ScriptedSilo.Json(HttpStatusCode.OK, """{ "request": { "requestable": true } }""")();
+        });
+        var actions = await WithTitleWatchlistAsync();
+
+        var first = actions.ToggleTitleWatchlistAsync(Matrix);
+        Assert.True(actions.IsSending(Matrix));
+        Assert.False(await actions.ToggleTitleWatchlistAsync(Matrix));
+        release.SetResult();
+
+        Assert.True(await first);
+        Assert.Single(_silo.SentTo(HttpMethod.Put, TitleWatchlistPath));
+        Assert.True(actions.StateOf(Matrix).InWatchlist);
+        Assert.Null(actions.StateOf(Matrix).StatusBadge);
+    }
+
+    [Fact]
+    public async Task ARemoveTheServerRefuses_LeavesTheTitleOnTheWatchlist()
+    {
+        _silo.On(HttpMethod.Delete, TitleWatchlistPath, ScriptedSilo.NetworkError());
+        var actions = await WithTitleWatchlistAsync();
+        var onIt = Matrix with { InWatchlist = true };
+
+        Assert.False(await actions.ToggleTitleWatchlistAsync(onIt));
+
+        Assert.True(actions.StateOf(onIt).InWatchlist);
+    }
+
+    [Fact]
+    public async Task AnAnswerAfterAnotherProfileTookOver_ChangesNothingOfIt()
+    {
+        var release = new TaskCompletionSource();
+        _silo.On(HttpMethod.Put, TitleWatchlistPath, async () =>
+        {
+            await release.Task;
+            return await ScriptedSilo.Json(HttpStatusCode.OK, """{ "request": { "requestable": false, "status": "pending", "state": "pending" } }""")();
+        });
+        var actions = await WithTitleWatchlistAsync();
+
+        var toggle = actions.ToggleTitleWatchlistAsync(Matrix);
+        _session.ProfileId = "8";
+        _session.RaiseChanged();
+        release.SetResult();
+        await toggle;
+
+        var state = actions.StateOf(Matrix);
+        Assert.False(state.InWatchlist);
+        Assert.Null(state.StatusBadge);
+        Assert.Equal(0, _viewerState.Version);
+        Assert.False(actions.IsSending(Matrix));
+    }
+
+    [Fact]
+    public async Task TheRequestItMade_GivesWayToANewerAnswer()
+    {
+        _silo.On(HttpMethod.Put, TitleWatchlistPath, ScriptedSilo.Json(HttpStatusCode.OK, """
+            { "request": { "requestable": false, "status": "pending", "state": "pending" } }
+            """));
+        var actions = await WithTitleWatchlistAsync();
+        await actions.ToggleTitleWatchlistAsync(Matrix);
+        Assert.Equal("PENDING", actions.StatusBadgeOf(Matrix));
+
+        // The page read the title again: the request was approved meanwhile.
+        Assert.Equal("APPROVED", actions.StatusBadgeOf(Matrix with { StatusBadge = "APPROVED" }));
+    }
+
+    [Theory]
+    [InlineData("""{ "requests_enabled": true, "watchlist_titles_supported": false }""")]
+    [InlineData("""{ "requests_enabled": false, "watchlist_titles_supported": true }""")]
+    public async Task AServerWithoutAWatchlistOfTmdbTitles_OffersNone(string status)
+    {
+        var actions = await WithTitleWatchlistAsync(status);
+
+        Assert.False(actions.CanToggleTitleWatchlist(Matrix));
+        Assert.False(await actions.ToggleTitleWatchlistAsync(Matrix));
+        Assert.Empty(_silo.SentTo(HttpMethod.Put, TitleWatchlistPath));
+    }
+
+    [Fact]
+    public async Task ALibraryCard_HasNoTmdbWatchlist()
+    {
+        var actions = await WithTitleWatchlistAsync();
+
+        Assert.False(actions.CanToggleTitleWatchlist(Lupin));
+        Assert.False(actions.CanToggleTitleWatchlist(Matrix with { Id = "movie:603" }));
+    }
+
+    [Theory]
+    [InlineData("tmdb:movie:603", "movie", 603L)]
+    [InlineData("tmdb:series:1399", "series", 1399L)]
+    [InlineData("tmdb:person:1", null, 0L)]
+    [InlineData("tmdb:movie:-3", null, 0L)]
+    [InlineData("tmdb:movie:1:2", null, 0L)]
+    [InlineData("movie:603", null, 0L)]
+    public void ACardsId_NamesItsTmdbTitle(string id, string? mediaType, long tmdbId) =>
+        Assert.Equal(mediaType is null ? null : (mediaType, tmdbId), RequestCards.TitleOf(id));
 
     [Fact]
     public void Play_StartsTheNextEpisode_WhereTheViewerLeftOff()
