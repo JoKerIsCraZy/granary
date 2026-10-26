@@ -154,14 +154,29 @@ public sealed partial class MainWindow : Window
                 _railHover.Start();
             }
         };
-        pane.PointerExited += (_, _) =>
+        pane.PointerExited += (_, e) =>
         {
+            // PointerExited bubbles: the entries move as the pane opens (the server's name appears on top), and the one
+            // the mouse was on reports it left. Only a mouse outside the pane as shown has left it, as the web's
+            // mouseleave; reacting to the rest closed the pane under the mouse and opened it again, on and off.
+            if (IsOverPane(pane, e))
+            {
+                return;
+            }
             _railHover.Stop();
             if (_isRail && Navigation.IsPaneOpen)
             {
                 Navigation.IsPaneOpen = false;
             }
         };
+    }
+
+    // The pane is as wide as the open pane even as the rail, which shows only its first CompactPaneLength.
+    private bool IsOverPane(UIElement pane, PointerRoutedEventArgs e)
+    {
+        var point = e.GetCurrentPoint(pane).Position;
+        double width = Navigation.IsPaneOpen ? Navigation.OpenPaneLength : Navigation.CompactPaneLength;
+        return point.X >= 0 && point.X < width && point.Y >= 0 && point.Y < pane.ActualSize.Y;
     }
 
     private void OpenRail()
