@@ -212,7 +212,9 @@ app icon must not look like Silo's; Silo's colours and the three-bar motif are f
 Granary's mark (2026-10-26) is a "G" drawn as a ring from red (#EF4444) to gold (#F59E0B) around a light play
 triangle: no slanted bars, no stack. The app icon (`Assets/Logo/granary-icon.svg`, rendered to `granary.ico` at 16 to
 256 px) sets it on a dark rounded tile; the exe, the window and the taskbar carry it, and the title bar shows the mark
-at 16 px before "Granary".
+at 16 px before "Granary". The title bar is 32 px high, as Windows' caption buttons, so the title and the buttons share
+one middle line; a 1 px line (the content's border colour) runs under it across the whole window, and beside the
+sidebar the content keeps only its left edge, square at the top.
 
 The mark moves (2026-10-26; drafts as SVG in `Assets/Logo`: `granary-mark-intro.svg`, `-loading.svg`, `-ambient.svg`).
 `GranaryMark` draws it on the compositor, so it stays smooth while the UI thread is busy: the ring is a circle trimmed
@@ -269,7 +271,7 @@ says why above the sections.
 `Views/PlayerPage` on `PlayerViewModel`, drawn as the server's web player (`web/src/player`, measured below).
 
 - **Window**: the player owns it. The sidebar is hidden completely (not just shrunk), the page reaches under
-  the title bar and the caption buttons float over the video; the top 40 px stay the drag area, so the top
+  the title bar and the caption buttons float over the video; the top 32 px stay the drag area, so the top
   bar starts below them. Full screen (`AppWindow`'s full-screen presenter) shows nothing but the player and
   returns to the window as it was, maximized or not. Leaving the page leaves full screen and stops playback,
   whichever way it is left (Back, `Alt+Left`, `Ctrl+K`, a session change).

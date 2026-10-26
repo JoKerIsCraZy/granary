@@ -83,6 +83,12 @@
         of the content's border, 1 px of grey across the top of the video, in full screen too.
     -->
     <Thickness x:Key="NavigationViewMinimalContentGridBorderThickness">0</Thickness>
+    <!--
+        Beside the sidebar only the content's left edge, square at the top: the line under the title bar runs the whole
+        width instead (MainWindow), where WinUI drew the top edge from the sidebar on with a rounded corner.
+    -->
+    <Thickness x:Key="NavigationViewContentGridBorderThickness">1,0,0,0</Thickness>
+    <CornerRadius x:Key="NavigationViewContentGridCornerRadius">0</CornerRadius>
 
     <!-- Palette -->
     <Color x:Key="SiloBackgroundColor">#FF141417</Color>

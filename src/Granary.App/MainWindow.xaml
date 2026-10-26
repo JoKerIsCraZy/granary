@@ -9,8 +9,9 @@
     <!-- The window-wide shortcuts must not show their tooltip ("Ctrl+K") wherever the pointer rests. -->
     <Grid x:Name="Root" Background="{StaticResource SiloBackgroundBrush}" PointerPressed="OnRootPointerPressed"
           KeyboardAcceleratorPlacementMode="Hidden">
+        <!-- The title bar is as high as Windows' caption buttons (32 px), so they and the title sit on one middle line. -->
         <Grid.RowDefinitions>
-            <RowDefinition Height="40" />
+            <RowDefinition Height="32" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <Grid.KeyboardAccelerators>
@@ -25,6 +26,10 @@
                 <TextBlock Text="Granary" VerticalAlignment="Center" Style="{StaticResource SiloCaptionTextStyle}" />
             </StackPanel>
         </Grid>
+
+        <!-- The title bar's lower edge, across the whole window; the player, which reaches under the title bar, covers it. -->
+        <Border Height="1" VerticalAlignment="Bottom" IsHitTestVisible="False"
+                Background="{ThemeResource NavigationViewContentGridBorderBrush}" />
 
         <!--
             Silo's sidebar: server name, Home, Search, libraries; servers and the profile at the bottom.
@@ -209,10 +214,11 @@
 
         <!--
             The start: Granary's mark plays its intro in the middle of the window while the app loads its first page, then
-            its loading loop if that takes longer (MainWindow.ShowStartup). It lifts 40 px so it sits in the window's middle.
+            its loading loop if that takes longer (MainWindow.ShowStartup). It lifts by the title bar's 32 px so it sits in the
+            window's middle.
         -->
         <Grid x:Name="Splash" Grid.Row="1" Background="{StaticResource SiloBackgroundBrush}">
-            <controls:GranaryMark x:Name="SplashMark" Width="132" Height="132" Margin="0,0,0,40"
+            <controls:GranaryMark x:Name="SplashMark" Width="132" Height="132" Margin="0,0,0,32"
                                   AutomationProperties.Name="Granary is starting" />
         </Grid>
     </Grid>

@@ -34,7 +34,7 @@ public sealed partial class PlayerPage : Page
         DependencyProperty.Register(nameof(ShowsRemaining), typeof(bool), typeof(PlayerPage), new PropertyMetadata(false));
 
     // MainWindow's title bar row. In a window the top bar starts below it: that strip is the drag area.
-    private const double TitleBarHeight = 40;
+    private const double TitleBarHeight = 32;
 
     // The mini view's width in view pixels.
     private const double MiniViewWidth = 480;
