@@ -34,6 +34,7 @@ public sealed partial class MainWindow : Window
     private readonly DispatcherQueueTimer _railHover;
     private bool _closeAfterStops;
     private bool _isRail;
+    private bool _showsPageBack;
 
     public MainWindow(NavigationService navigation, ShellViewModel shell, SidebarViewModel sidebar, SidebarSections sections,
         NotificationBadge notifications, RequestsFeature requests, PlaybackStops stops, ILogger<MainWindow> logger)
@@ -224,7 +225,8 @@ public sealed partial class MainWindow : Window
     {
         ShowHeaders(open);
         ShowSections(open);
-        PageBackButton.Visibility = _isRail && !open && _navigation.CanGoBack ? Visibility.Visible : Visibility.Collapsed;
+        // Over the rail's pane while it is open over the page, the disc would sit on the sidebar.
+        PageBackButton.Visibility = _showsPageBack && !(_isRail && open) ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void OnPageBackClick(object sender, RoutedEventArgs e) => _navigation.GoBack();
@@ -293,12 +295,6 @@ public sealed partial class MainWindow : Window
 
     private void OnNavigated(object? sender, AppRoute route)
     {
-        // A disabled arrow on pages without history is only noise; the player has its own back button, and a title's page
-        // its disc at the top left (ShowPaneParts).
-        Navigation.IsBackEnabled = _navigation.CanGoBack;
-        Navigation.IsBackButtonVisible = _navigation.CanGoBack && route is not (AppRoute.Player or AppRoute.Settings or AppRoute.Item)
-            ? NavigationViewBackButtonVisible.Visible
-            : NavigationViewBackButtonVisible.Collapsed;
         ShowChrome(route);
         SelectItem(route, _navigation.CurrentParameter);
         RefreshNotifications();
@@ -333,6 +329,16 @@ public sealed partial class MainWindow : Window
         // A detail page's rail opens over the page (compact mode), not beside it: the page keeps its width.
         _isRail = route == AppRoute.Item;
         _railHover.Stop();
+        // The way back is the web's: no arrow in the sidebar, a disc at the top left of a page opened from another (a title,
+        // a row in full, a collection, the servers); the sidebar's own pages have none, Back (Alt+Left) still leads home.
+        _showsPageBack = _navigation.CanGoBack && route is not (null or AppRoute.Player or AppRoute.Settings or AppRoute.Home
+            or AppRoute.Search or AppRoute.Library or AppRoute.List or AppRoute.Collections or AppRoute.ForYou or AppRoute.Calendar
+            or AppRoute.Notifications or AppRoute.Requests);
+        // Clear of the page's heading, which starts 48 px in: just right of the pane, a little further beside the rail, and
+        // near the window's edge where there is no sidebar (signing in).
+        bool paneShown = Shell.IsSignedIn && !hidesPane;
+        PageBackButton.Margin = new Thickness(
+            !paneShown ? 16 : _isRail ? Navigation.CompactPaneLength + 16 : Navigation.OpenPaneLength + 6, 12, 0, 0);
         var mode = hidesPane ? NavigationViewPaneDisplayMode.LeftMinimal
             : _isRail ? NavigationViewPaneDisplayMode.LeftCompact
             : NavigationViewPaneDisplayMode.Left;
@@ -440,8 +446,6 @@ public sealed partial class MainWindow : Window
             ShowSections();
         }
     }
-
-    private void OnBackRequested(NavigationView sender, NavigationViewBackRequestedEventArgs args) => _navigation.GoBack();
 
     private void OnBackAccelerator(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
     {

@@ -39,8 +39,7 @@
             IsPaneVisible="False"
             PaneOpening="OnPaneOpening"
             PaneClosing="OnPaneClosing"
-            ItemInvoked="OnItemInvoked"
-            BackRequested="OnBackRequested">
+            ItemInvoked="OnItemInvoked">
             <NavigationView.PaneHeader>
                 <TextBlock Margin="20,4,12,12" Text="{x:Bind Sidebar.ServerName, Mode=OneWay}" TextTrimming="CharacterEllipsis"
                            FontFamily="{StaticResource SiloFontExtraBold}" FontWeight="ExtraBold" FontSize="22" CharacterSpacing="-30"
@@ -164,8 +163,8 @@
         </NavigationView>
 
         <!--
-            On a title's page the sidebar is the icon rail, and the way back is the web's: a glass disc at the page's top
-            left, not the arrow above Home. Hidden while the rail is open over the page.
+            The way back, as the web's PageBack: a glass disc at the top left of a page opened from another; the sidebar has
+            no back arrow. Placed and shown by MainWindow.ShowChrome; hidden while the rail is open over the page.
         -->
         <Button x:Name="PageBackButton" Grid.Row="1" Style="{StaticResource SiloPageBackButtonStyle}" Margin="64,12,0,0"
                 HorizontalAlignment="Left" VerticalAlignment="Top" Visibility="Collapsed" Click="OnPageBackClick"

@@ -100,8 +100,10 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   so across starts (`sidebar.json` in the data directory, the app's and not a profile's). A folded section still shows
   the entry of the page on screen. The icon-only rail of a detail page shows every entry, as the web's rail does, since
   it has no headers to open them by: the headers become the web's short dividers (20 × 1 px, `#2E2E35`). A mouse resting
-  on the rail for 150 ms opens it over the page, which keeps its width, and leaving it closes it again. There the way
-  back is the web's PageBack, a 36 px glass disc with a chevron at the page's top left, not the arrow above Home.
+  on the rail for 150 ms opens it over the page, which keeps its width, and leaving it closes it again. The sidebar has
+  no back arrow, as on the web: a page opened from another (a title, a row in full, a collection, the servers) has the
+  web's PageBack, a 36 px glass disc with a chevron at its top left; the sidebar's own pages have none, and Back
+  (Alt+Left, the mouse's back button) still leads from them to Home.
 - Collections (`CollectionsPage`, the web's `pages/Collections.tsx`): "Your collections" with its count ("Manual ·
   4 titles", a SHARED badge on one other profiles see), "Shared with me" by owner ("by Mara"), and "Server
   collections" with a pill per library (All first) and Load more, which the end of the grid presses by itself. A

@@ -6,7 +6,8 @@
     xmlns:vm="using:Granary.Core.ViewModels">
 
     <ScrollViewer>
-        <Grid Padding="36,24">
+        <!-- The other pages' gutter, which leaves the top left to the way back. -->
+        <Grid Padding="48,32">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" MaxWidth="880" />
                 <ColumnDefinition Width="Auto" />
