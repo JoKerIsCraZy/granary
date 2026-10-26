@@ -344,8 +344,8 @@ public sealed partial class HomeViewModel : ObservableObject
             {
                 continue;
             }
-            // "Explore all" only when the server has more than the row holds.
-            var exploreAll = section.TotalCount > section.Items.Count && section.Id.Length > 0
+            // "Explore all" on every row, as the web's, also when the row already holds all of it.
+            var exploreAll = section.Id.Length > 0
                 ? new RelayCommand(() => _navigation.NavigateTo(AppRoute.Section,
                     new SectionRouteParameter(section.Id, section.Title, SectionType: section.SectionType)))
                 : null;

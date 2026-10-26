@@ -202,7 +202,7 @@ public sealed class HomeViewModelTests
     }
 
     [Fact]
-    public async Task ExploreAll_OnlyWhenTheRowHasMoreThanItShows()
+    public async Task ExploreAll_OnEveryRow_AlsoWhenTheRowHoldsAllOfIt()
     {
         _silo.Map(SectionsPath, Sections(
             Section("tv", "recently_added", 240, Item("s1", "series"), Item("s2", "series")),
@@ -210,12 +210,14 @@ public sealed class HomeViewModelTests
         var home = Create();
         await home.ActivateAsync();
 
-        Assert.Null(home.Rows[1].ExploreAllCommand);
         home.Rows[0].ExploreAllCommand!.Execute(null);
+        home.Rows[1].ExploreAllCommand!.Execute(null);
 
-        var (route, parameter) = Assert.Single(_navigation.Navigations);
-        Assert.Equal(AppRoute.Section, route);
-        Assert.Equal(new SectionRouteParameter("tv", "Row tv", null, "recently_added"), parameter);
+        Assert.Equal(
+        [
+            (AppRoute.Section, new SectionRouteParameter("tv", "Row tv", null, "recently_added")),
+            (AppRoute.Section, new SectionRouteParameter("all", "Row all", null, "genre")),
+        ], _navigation.Navigations.Select(n => (n.Route, n.Parameter)).ToList<(AppRoute, object?)>());
     }
 
     [Fact]
