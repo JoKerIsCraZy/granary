@@ -50,7 +50,8 @@ public sealed partial class RequestsViewModel : ObservableObject
     private readonly TimeProvider _time;
     private readonly IUiDispatcher _dispatcher;
     private readonly ILogger<RequestsViewModel> _logger;
-    private readonly Dictionary<string, string> _libraryTitles = new(StringComparer.Ordinal);
+    // Where each Discover card opens: the library's title, or the title's own page.
+    private readonly Dictionary<string, (AppRoute Route, object Parameter)> _destinations = new(StringComparer.Ordinal);
     private (string? ServerId, string? ProfileId)? _loadedFor;
     private CancellationTokenSource _run = new();
     // Each read of Yours; an answer shows only while its read is the latest.
@@ -167,13 +168,13 @@ public sealed partial class RequestsViewModel : ObservableObject
         ? LoadMineAsync(server.BaseUri, _run.Token, quiet: false)
         : Task.CompletedTask;
 
-    /// <summary>A Discover title: the library's when it has the title.</summary>
+    /// <summary>A Discover title: the library's when it has the title, else the title's own page.</summary>
     [RelayCommand]
     private void OpenCard(MediaCard? card)
     {
-        if (card is not null && _libraryTitles.TryGetValue(card.Id, out string? contentId))
+        if (card is not null && _destinations.TryGetValue(card.Id, out var destination))
         {
-            _navigation.NavigateTo(AppRoute.Item, contentId);
+            _navigation.NavigateTo(destination.Route, destination.Parameter);
         }
     }
 
@@ -254,7 +255,7 @@ public sealed partial class RequestsViewModel : ObservableObject
     private async Task LoadDiscoverAsync(Uri server, CancellationToken token)
     {
         DiscoverRows.Clear();
-        _libraryTitles.Clear();
+        _destinations.Clear();
         DiscoverState = LibraryLoadState.Loading;
         try
         {
@@ -300,7 +301,8 @@ public sealed partial class RequestsViewModel : ObservableObject
             string? cursor = null;
             do
             {
-                var page = await _requests.ListMineAsync(server, Math.Min(RequestsApi.MaxPageSize, MineShown - requests.Count), cursor, token);
+                var page = await _requests.ListMineAsync(server, Math.Min(RequestsApi.MaxPageSize, MineShown - requests.Count), cursor,
+                    cancellationToken: token);
                 requests.AddRange(page.Items);
                 cursor = page.Page is { HasMore: true, NextCursor: { Length: > 0 } next } && next != cursor ? next : null;
             }
@@ -401,26 +403,12 @@ public sealed partial class RequestsViewModel : ObservableObject
 
     private MediaCard CardOf(RequestMediaResult result)
     {
-        string id = $"{result.MediaType}:{result.TmdbId.ToString(CultureInfo.InvariantCulture)}";
-        if (!string.IsNullOrWhiteSpace(result.LibraryContentId))
+        var card = RequestCards.Of(result);
+        if (RequestCards.Destination(result) is { } destination)
         {
-            _libraryTitles.TryAdd(id, result.LibraryContentId);
+            _destinations.TryAdd(card.Id, destination);
         }
-        // The request's state, or Available for a title already in the library, or why it cannot be requested.
-        string? state = result.Request.Status is { Length: > 0 }
-            ? RequestText.DisplayState(result.Request.Status, null, result.Request.State)
-            : result.Availability == "available" ? RequestStates.Available : null;
-        string? badge = state is not null ? RequestText.StateLabel(state)
-            : !result.Request.Requestable ? RequestText.ReasonLabel(result.Request.Reason)
-            : null;
-        string year = result.Year is int y and > 0 ? y.ToString(CultureInfo.InvariantCulture) : "";
-        return new MediaCard(id, CardType, result.Title)
-        {
-            Shape = MediaCardShape.Poster,
-            Subtitle = result.MediaType == "series" ? $"{year} SERIES".Trim() : year,
-            ImageUrl = TmdbImages.Poster(result.PosterPath),
-            StatusBadge = badge?.ToUpperInvariant(),
-        };
+        return card;
     }
 
     private static RequestStatusHelp Help(string state, string description) => new(RequestText.StateLabel(state), RequestText.Look(state), description);

@@ -818,8 +818,22 @@ tracks ([8.8.1](#881-initial-track-selection-before-start)) → `POST /api/v2/pl
   `RequestMediaResult`: `tmdb_id`, `media_type`, `title`, `year`, `poster_path`, `availability` (`available` when the
   library has it), `library_content_id`, `in_watchlist`, `request` (`requestable`, `reason`, `status`, `state`,
   `following`, `requested_by_viewer`).
-- Not built yet: a title's page (`GET /api/v2/requests/detail/{media_type}/{tmdb_id}`), making a request
-  (`POST /api/v2/requests`), follows, a Discover row in full, studios, networks and genres, search.
+- A title's page: `GET /api/v2/requests/detail/{media_type}/{tmdb_id}` → `RequestMediaDetail` (the result's members
+  plus `tagline`, `overview`, `backdrop_path`, `content_rating`, `runtime`, `number_of_seasons`, `number_of_episodes`,
+  `status`, `first_air_date`, `last_air_date`, `vote_average`, `vote_count`, `imdb_id`, `director`, `creators`, `genres`,
+  `networks`, `production_companies`, `cast` (`name`, `character`, `order`, `profile_path`), `seasons`
+  (`season_number`, `name`, `air_date`, `episode_count`, `availability` `missing|partial|available`, `requested`,
+  `poster_path`), `recommendations`); 404 for a title TMDB does not know or the profile may not see.
+  `request.request_id` names the request when it is the account's own (or the viewer is an admin).
+- `POST /api/v2/requests` with `{ "media_type", "tmdb_id", "title", "year"?, "overview"?, "poster_path"?,
+  "backdrop_path"?, "seasons"? }` → `201` with the request. Not idempotent: never retried. Without `seasons` the server
+  picks a series' aired seasons still missing, or the whole series when none aired. `GET /api/v2/requests/{id}` → one
+  request (`requested_by_user_id` says whose; only the owner may cancel).
+- Follows: `PUT`/`DELETE /api/v2/requests/follows/{media_type}/{tmdb_id}` (hear when someone else's request lands).
+- Watchlist of TMDB titles (while `requests_enabled` and `watchlist_titles_supported`): `PUT
+  /api/v2/watchlist/titles/{media_type}/{tmdb_id}` (no body) → `{ "item_id"?, "request": RequestMediaState }`, which says
+  whether the add also requested the title (`watchlist_requests`); `DELETE` → `204`.
+- Not built yet: a Discover row in full, studios, networks and genres, search.
 
 ## 8. Playback protocol v3
 

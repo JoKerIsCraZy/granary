@@ -58,6 +58,9 @@ public enum AppRoute
 
     /// <summary>The Requests hub: titles to request, and the account's requests.</summary>
     Requests,
+
+    /// <summary>A movie or series known only from TMDB; the parameter is a <see cref="TitleRouteParameter"/>.</summary>
+    Title,
 }
 
 /// <summary>Which row an "Explore all" grid lists: a Home row, or a library row when <see cref="LibraryId"/> is set.</summary>
@@ -73,6 +76,9 @@ public sealed record CollectionRouteParameter(string Source, string CollectionId
 /// <param name="Kind">One of <c>RecommendationSectionKinds</c>.</param>
 /// <param name="Key">A cluster's index or a genre's name, when the kind needs one.</param>
 public sealed record RecommendationSectionRouteParameter(string Kind, string? Key, string Title);
+
+/// <summary>A title from TMDB, by its media type (<c>movie</c> or <c>series</c>) and TMDB id; the title names it while it loads.</summary>
+public sealed record TitleRouteParameter(string MediaType, long TmdbId, string Title);
 
 public interface INavigationService
 {

@@ -61,6 +61,14 @@ public sealed class SiloHttp(HttpClient http)
         await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
     }
 
+    /// <summary>For bodiless operations of any method that answer JSON: putting a title on the watchlist is a <c>PUT</c>.</summary>
+    public async Task<TResponse> SendAsync<TResponse>(HttpMethod method, Uri server, string path, SiloAuth auth, JsonTypeInfo<TResponse> responseType,
+        CancellationToken cancellationToken)
+    {
+        using var request = Create(method, server, path, auth);
+        return await SendAsync(request, responseType, cancellationToken).ConfigureAwait(false);
+    }
+
     /// <summary>
     /// For operations that take a JSON body and answer JSON whatever their method: stopping playback is a
     /// <c>DELETE</c> with both (docs/api-contract.md, 10.3).

@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    A movie or series known only from TMDB, as Silo's web title page shows it: laid out like a library title (the hero
+    over the backdrop, then rows), with request actions in place of playback.
+-->
+<Page
+    x:Class="Granary.App.Views.TitlePage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Granary.App.Controls"
+    xmlns:detail="using:Granary.Core.ViewModels.Detail"
+    xmlns:views="using:Granary.App.Views"
+    xmlns:vm="using:Granary.Core.ViewModels"
+    Background="{StaticResource SiloBackgroundBrush}">
+
+    <Page.Resources>
+        <Style x:Key="TitleChipTextStyle" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource SiloFontSemiBold}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="11.2" />
+            <Setter Property="CharacterSpacing" Value="40" />
+        </Style>
+    </Page.Resources>
+
+    <Grid>
+        <ScrollViewer x:Name="PageScroller" Visibility="{x:Bind ViewModel.IsReady, Mode=OneWay}">
+            <StackPanel>
+                <!-- The hero, as the library's: the backdrop fades into the background toward the left and the bottom. -->
+                <Grid>
+                    <Rectangle IsHitTestVisible="False" AutomationProperties.AccessibilityView="Raw">
+                        <Rectangle.Fill>
+                            <ImageBrush Stretch="UniformToFill" AlignmentY="Top"
+                                        ImageSource="{x:Bind controls:DetailHero.LoadImage(ViewModel.BackdropUrl, 0), Mode=OneWay}" />
+                        </Rectangle.Fill>
+                    </Rectangle>
+                    <Rectangle IsHitTestVisible="False">
+                        <Rectangle.Fill>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                <GradientStop Offset="0" Color="#F2141417" />
+                                <GradientStop Offset="0.35" Color="#B3141417" />
+                                <GradientStop Offset="0.7" Color="#33141417" />
+                                <GradientStop Offset="1" Color="#00141417" />
+                            </LinearGradientBrush>
+                        </Rectangle.Fill>
+                    </Rectangle>
+                    <Rectangle IsHitTestVisible="False">
+                        <Rectangle.Fill>
+                            <LinearGradientBrush StartPoint="0,1" EndPoint="0,0">
+                                <GradientStop Offset="0" Color="#FF141417" />
+                                <GradientStop Offset="0.3" Color="#CC141417" />
+                                <GradientStop Offset="0.65" Color="#00141417" />
+                            </LinearGradientBrush>
+                        </Rectangle.Fill>
+                    </Rectangle>
+
+                    <Grid Padding="48,96,48,36" VerticalAlignment="Bottom">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid Width="220" Height="330" Margin="0,0,40,0" VerticalAlignment="Bottom" CornerRadius="{StaticResource SiloCardCornerRadius}"
+                              Background="{StaticResource SiloSurfaceBrush}" BorderBrush="#33FFFFFF" BorderThickness="1">
+                            <TextBlock Margin="20" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"
+                                       MaxLines="5" Text="{x:Bind ViewModel.Title, Mode=OneWay}" Style="{StaticResource SiloCaptionTextStyle}"
+                                       AutomationProperties.AccessibilityView="Raw" />
+                            <Image Stretch="UniformToFill" Source="{x:Bind controls:DetailHero.LoadImage(ViewModel.PosterUrl, 440), Mode=OneWay}"
+                                   AutomationProperties.AccessibilityView="Raw" />
+                        </Grid>
+
+                        <StackPanel Grid.Column="1" MaxWidth="760" HorizontalAlignment="Left" VerticalAlignment="Bottom">
+                            <TextBlock Margin="0,0,0,12" Text="{x:Bind ViewModel.Overline, Mode=OneWay}" Style="{StaticResource SiloSectionLabelTextStyle}"
+                                       FontSize="12" CharacterSpacing="160" />
+                            <TextBlock Margin="0,0,0,12" Text="{x:Bind ViewModel.Title, Mode=OneWay}" Style="{StaticResource SiloDisplayTextStyle}"
+                                       MaxLines="3" TextTrimming="CharacterEllipsis" AutomationProperties.HeadingLevel="Level1" />
+                            <TextBlock Margin="0,0,0,14" Text="{x:Bind ViewModel.Tagline, Mode=OneWay}" FontFamily="{StaticResource SiloFontItalic}"
+                                       FontStyle="Italic" FontSize="13" Foreground="{StaticResource SiloMutedBrush}" TextWrapping="Wrap"
+                                       Visibility="{x:Bind controls:DetailHero.Shows(ViewModel.Tagline), Mode=OneWay}" />
+
+                            <ItemsRepeater Margin="0,0,0,14" ItemsSource="{x:Bind ViewModel.Chips, Mode=OneWay}">
+                                <ItemsRepeater.Layout>
+                                    <StackLayout Orientation="Horizontal" Spacing="8" />
+                                </ItemsRepeater.Layout>
+                                <ItemsRepeater.ItemTemplate>
+                                    <DataTemplate x:DataType="detail:DetailChip">
+                                        <Border Style="{x:Bind controls:DetailHero.ChipStyle(IsAccent)}">
+                                            <TextBlock Text="{x:Bind Text}" Style="{StaticResource TitleChipTextStyle}"
+                                                       Foreground="{x:Bind controls:DetailHero.ChipForeground(IsAccent)}" />
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsRepeater.ItemTemplate>
+                            </ItemsRepeater>
+
+                            <StackPanel Margin="0,0,0,14" Orientation="Horizontal" Spacing="8" Visibility="{x:Bind views:TitlePage.Any(ViewModel.Ratings), Mode=OneWay}">
+                                <ItemsRepeater ItemsSource="{x:Bind ViewModel.Ratings, Mode=OneWay}" VerticalAlignment="Center">
+                                    <ItemsRepeater.ItemTemplate>
+                                        <DataTemplate x:DataType="detail:DetailRating">
+                                            <TextBlock Foreground="{StaticResource SiloPrimaryBrush}" AutomationProperties.Name="{x:Bind AccessibleName}">
+                                                <Run Text="{x:Bind Name}" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="13"
+                                                     Foreground="#BFEF4444" CharacterSpacing="-25" />
+                                                <Run Text="{x:Bind Display}" FontFamily="{StaticResource SiloFontBold}" FontWeight="Bold" FontSize="15" />
+                                            </TextBlock>
+                                        </DataTemplate>
+                                    </ItemsRepeater.ItemTemplate>
+                                </ItemsRepeater>
+                                <TextBlock Text="{x:Bind ViewModel.VotesText, Mode=OneWay}" Style="{StaticResource SiloCaptionTextStyle}" VerticalAlignment="Center" />
+                            </StackPanel>
+
+                            <TextBlock Text="{x:Bind ViewModel.Overview, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
+                                       TextWrapping="Wrap" TextTrimming="CharacterEllipsis" MaxLines="5"
+                                       Visibility="{x:Bind controls:DetailHero.Shows(ViewModel.Overview), Mode=OneWay}" />
+                            <TextBlock Margin="0,12,0,0" FontSize="13" LineHeight="20" TextWrapping="Wrap" Foreground="#CCE8E8EC"
+                                       Text="{x:Bind ViewModel.CrewLine, Mode=OneWay}" Visibility="{x:Bind controls:DetailHero.Shows(ViewModel.CrewLine), Mode=OneWay}" />
+                            <TextBlock Margin="0,4,0,0" FontSize="13" TextWrapping="Wrap" Foreground="#99A4A4AE"
+                                       Text="{x:Bind ViewModel.Genres, Mode=OneWay}" Visibility="{x:Bind controls:DetailHero.Shows(ViewModel.Genres), Mode=OneWay}" />
+
+                            <!-- Request in the Play pill's place; the request's state once there is one. -->
+                            <StackPanel Margin="0,26,0,0" Orientation="Horizontal" Spacing="12">
+                                <Button Style="{StaticResource SiloPrimaryButtonStyle}" Click="OnPrimaryClick" IsEnabled="{x:Bind ViewModel.CanAct, Mode=OneWay}"
+                                        AutomationProperties.Name="{x:Bind ViewModel.PrimaryLabel, Mode=OneWay}">
+                                    <StackPanel Orientation="Horizontal" Spacing="10">
+                                        <FontIcon Glyph="{x:Bind views:TitlePage.PrimaryGlyph(ViewModel.PrimaryAction), Mode=OneWay}" FontSize="16" />
+                                        <TextBlock Text="{x:Bind ViewModel.PrimaryLabel, Mode=OneWay}" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.ToggleWatchlistCommand}"
+                                        Visibility="{x:Bind ViewModel.ShowsWatchlist, Mode=OneWay}" AutomationProperties.Name="{x:Bind ViewModel.WatchlistLabel, Mode=OneWay}">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <FontIcon Glyph="{x:Bind controls:DetailHero.WatchlistGlyph(ViewModel.IsInWatchlist), Mode=OneWay}" FontSize="16"
+                                                  Foreground="{x:Bind controls:DetailHero.ActiveForeground(ViewModel.IsInWatchlist), Mode=OneWay}" />
+                                        <TextBlock Text="{x:Bind ViewModel.WatchlistLabel, Mode=OneWay}" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource SiloSecondaryButtonStyle}" Click="OnCancelClick" Visibility="{x:Bind ViewModel.CanCancel, Mode=OneWay}"
+                                        AutomationProperties.Name="Cancel request">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <FontIcon Glyph="&#xE711;" FontSize="14" />
+                                        <TextBlock Text="Cancel request" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.ToggleFollowCommand}"
+                                        Visibility="{x:Bind ViewModel.CanFollow, Mode=OneWay}" AutomationProperties.Name="{x:Bind ViewModel.FollowLabel, Mode=OneWay}">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <FontIcon Glyph="{x:Bind views:TitlePage.BellGlyph(ViewModel.IsFollowing), Mode=OneWay}" FontSize="16" />
+                                        <TextBlock Text="{x:Bind ViewModel.FollowLabel, Mode=OneWay}" />
+                                    </StackPanel>
+                                </Button>
+                                <HyperlinkButton Content="IMDb" NavigateUri="{x:Bind ViewModel.ImdbUrl, Mode=OneWay}" Foreground="{StaticResource SiloMutedBrush}"
+                                                 Visibility="{x:Bind views:TitlePage.HasLink(ViewModel.ImdbUrl), Mode=OneWay}" ToolTipService.ToolTip="Opens IMDb in the browser" />
+                                <HyperlinkButton Content="TMDB" NavigateUri="{x:Bind ViewModel.TmdbUrl, Mode=OneWay}" Foreground="{StaticResource SiloMutedBrush}"
+                                                 Visibility="{x:Bind views:TitlePage.HasLink(ViewModel.TmdbUrl), Mode=OneWay}" ToolTipService.ToolTip="Opens TMDB in the browser" />
+                            </StackPanel>
+
+                            <TextBlock Margin="0,10,0,0" Text="Adding it to your watchlist also requests it." Style="{StaticResource SiloCaptionTextStyle}"
+                                       Visibility="{x:Bind ViewModel.AddAlsoRequests, Mode=OneWay}" />
+                            <StackPanel Margin="0,12,0,0" MaxWidth="320" HorizontalAlignment="Left" Spacing="4" Visibility="{x:Bind ViewModel.HasDownload, Mode=OneWay}">
+                                <ProgressBar Value="{x:Bind views:TitlePage.Percent(ViewModel.DownloadPercent), Mode=OneWay}" Maximum="100"
+                                             Foreground="{StaticResource SiloPrimaryBrush}" Visibility="{x:Bind ViewModel.HasDownloadBar, Mode=OneWay}"
+                                             AutomationProperties.Name="Download progress" />
+                                <TextBlock Text="{x:Bind ViewModel.DownloadText, Mode=OneWay}" Style="{StaticResource SiloCaptionTextStyle}" />
+                            </StackPanel>
+                            <InfoBar Margin="0,16,0,0" MaxWidth="560" HorizontalAlignment="Left" IsClosable="True"
+                                     Severity="{x:Bind views:TitlePage.NoticeSeverity(ViewModel.IsNoticeError), Mode=OneWay}"
+                                     IsOpen="{x:Bind ViewModel.HasNotice, Mode=OneWay}" Message="{x:Bind ViewModel.Notice, Mode=OneWay}">
+                                <!-- After an action the page could not read the title again: Reload shows where it stands. -->
+                                <InfoBar.ActionButton>
+                                    <Button Content="Reload" Command="{x:Bind ViewModel.RetryCommand}" Visibility="{x:Bind ViewModel.IsStale, Mode=OneWay}" />
+                                </InfoBar.ActionButton>
+                            </InfoBar>
+                        </StackPanel>
+                    </Grid>
+                </Grid>
+
+                <StackPanel Padding="48,8,48,56" Spacing="40">
+                    <controls:DetailShelf Title="Seasons" Visibility="{x:Bind ViewModel.HasSeasons, Mode=OneWay}">
+                        <controls:DetailShelf.ShelfContent>
+                            <ItemsRepeater ItemsSource="{x:Bind ViewModel.Seasons, Mode=OneWay}">
+                                <ItemsRepeater.Layout>
+                                    <StackLayout Orientation="Horizontal" Spacing="20" />
+                                </ItemsRepeater.Layout>
+                                <ItemsRepeater.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:TitleSeason">
+                                        <StackPanel Width="165" Spacing="2" AutomationProperties.Name="{x:Bind AccessibleName}">
+                                            <Grid Height="248" CornerRadius="{StaticResource SiloCardCornerRadius}" Background="{StaticResource SiloSurfaceBrush}">
+                                                <TextBlock Margin="12" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center"
+                                                           Text="{x:Bind Name}" Style="{StaticResource SiloCaptionTextStyle}" TextWrapping="Wrap" />
+                                                <Image Stretch="UniformToFill" Source="{x:Bind controls:DetailHero.LoadImage(PosterUrl, 330)}" />
+                                            </Grid>
+                                            <TextBlock Margin="2,8,2,0" Text="{x:Bind Name}" Style="{StaticResource SiloCardTitleTextStyle}" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Margin="2,0" Text="{x:Bind Meta}" Style="{StaticResource SiloCaptionTextStyle}" />
+                                            <TextBlock Margin="2,0" Text="{x:Bind Status}" Style="{StaticResource SiloCaptionTextStyle}" Visibility="{x:Bind HasStatus}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsRepeater.ItemTemplate>
+                            </ItemsRepeater>
+                        </controls:DetailShelf.ShelfContent>
+                    </controls:DetailShelf>
+
+                    <controls:DetailShelf Title="Cast" IsScrollerTabStop="True" Visibility="{x:Bind ViewModel.HasCast, Mode=OneWay}">
+                        <controls:DetailShelf.ShelfContent>
+                            <ItemsRepeater ItemsSource="{x:Bind ViewModel.Cast, Mode=OneWay}">
+                                <ItemsRepeater.Layout>
+                                    <StackLayout Orientation="Horizontal" Spacing="16" />
+                                </ItemsRepeater.Layout>
+                                <ItemsRepeater.ItemTemplate>
+                                    <DataTemplate x:DataType="detail:DetailPerson">
+                                        <controls:PersonCreditCard Person="{x:Bind}" />
+                                    </DataTemplate>
+                                </ItemsRepeater.ItemTemplate>
+                            </ItemsRepeater>
+                        </controls:DetailShelf.ShelfContent>
+                    </controls:DetailShelf>
+
+                    <controls:MediaRow Title="More Like This" ItemsSource="{x:Bind ViewModel.Recommendations, Mode=OneWay}"
+                                       CardInvokedCommand="{x:Bind ViewModel.OpenCardCommand}"
+                                       Visibility="{x:Bind ViewModel.HasRecommendations, Mode=OneWay}" />
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+
+        <ProgressRing Width="48" Height="48" IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}"
+                      Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay}" AutomationProperties.Name="Loading the title" />
+
+        <StackPanel MaxWidth="520" Padding="48,0" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="14"
+                    Visibility="{x:Bind ViewModel.HasError, Mode=OneWay}">
+            <TextBlock Text="Couldn't load this title" Style="{StaticResource SiloPageTitleTextStyle}" TextAlignment="Center"
+                       AutomationProperties.HeadingLevel="Level1" />
+            <TextBlock Text="Something went wrong while loading it. Try again in a moment." Style="{StaticResource SiloBodyTextStyle}"
+                       Foreground="{StaticResource SiloMutedBrush}" TextAlignment="Center" TextWrapping="Wrap" />
+            <Button HorizontalAlignment="Center" Content="Try again" Style="{StaticResource SiloPrimaryButtonStyle}" Command="{x:Bind ViewModel.RetryCommand}" />
+        </StackPanel>
+
+        <StackPanel MaxWidth="520" Padding="48,0" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="14"
+                    Visibility="{x:Bind ViewModel.IsNotFound, Mode=OneWay}">
+            <TextBlock Text="This item isn't available" Style="{StaticResource SiloPageTitleTextStyle}" TextAlignment="Center"
+                       AutomationProperties.HeadingLevel="Level1" />
+            <TextBlock Text="It may have been removed, or you may not have access to it." Style="{StaticResource SiloBodyTextStyle}"
+                       Foreground="{StaticResource SiloMutedBrush}" TextAlignment="Center" TextWrapping="Wrap" />
+        </StackPanel>
+
+        <!-- Request seasons: a switch per season; seasons in the library or already asked for are shown but cannot be picked. -->
+        <ContentDialog x:Name="SeasonsDialog" Style="{StaticResource DefaultContentDialogStyle}" Title="Request seasons"
+                       PrimaryButtonText="{x:Bind Picker.SubmitLabel, Mode=OneWay}" IsPrimaryButtonEnabled="{x:Bind Picker.CanSubmit, Mode=OneWay}"
+                       CloseButtonText="Cancel" DefaultButton="Primary">
+            <StackPanel Width="440" Spacing="12">
+                <TextBlock Text="{x:Bind Picker.Description, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
+                           TextWrapping="Wrap" />
+                <TextBlock Text="{x:Bind Picker.NoSeasonsText, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
+                           TextWrapping="Wrap" Visibility="{x:Bind Show(Picker.HasNoSeasonsText), Mode=OneWay}" />
+                <TextBlock Text="{x:Bind Picker.Hint, Mode=OneWay}" Style="{StaticResource SiloCaptionTextStyle}" TextWrapping="Wrap"
+                           Visibility="{x:Bind Show(Picker.HasHint), Mode=OneWay}" />
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Content="Latest season" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind Picker.PickLatestCommand, Mode=OneWay}"
+                            Visibility="{x:Bind Show(Picker.CanPickLatest), Mode=OneWay}" />
+                    <Button Content="Upcoming seasons" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind Picker.PickUpcomingCommand, Mode=OneWay}"
+                            Visibility="{x:Bind Show(Picker.CanPickUpcoming), Mode=OneWay}" />
+                </StackPanel>
+                <Border BorderBrush="{StaticResource SiloBorderBrush}" BorderThickness="1" CornerRadius="8" Visibility="{x:Bind Show(Picker.HasSeasons), Mode=OneWay}">
+                    <ScrollViewer MaxHeight="420">
+                        <StackPanel>
+                            <Grid Padding="12,8" Background="#0AFFFFFF" Visibility="{x:Bind Show(Picker.ShowsAll), Mode=OneWay}">
+                                <ToggleSwitch MinWidth="0" OnContent="All seasons" OffContent="All seasons"
+                                              IsOn="{x:Bind Picker.AllPicked, Mode=TwoWay}" AutomationProperties.Name="All seasons" />
+                            </Grid>
+                            <ItemsRepeater ItemsSource="{x:Bind Picker.Seasons, Mode=OneWay}">
+                                <ItemsRepeater.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:RequestSeasonChoice">
+                                        <Grid Padding="12,8" ColumnSpacing="12" BorderBrush="{StaticResource SiloBorderBrush}" BorderThickness="0,1,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <ToggleSwitch MinWidth="0" OnContent="" OffContent="" IsOn="{x:Bind IsPicked, Mode=TwoWay}" IsEnabled="{x:Bind IsChoosable}"
+                                                          AutomationProperties.Name="{x:Bind AccessibleName}" VerticalAlignment="Center" />
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <TextBlock Text="{x:Bind Name}" Style="{StaticResource SiloBodyTextStyle}" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Text="{x:Bind Meta}" Style="{StaticResource SiloCaptionTextStyle}" />
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="2" Text="{x:Bind Status}" Style="{StaticResource SiloCaptionTextStyle}" VerticalAlignment="Center" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsRepeater.ItemTemplate>
+                            </ItemsRepeater>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Border>
+            </StackPanel>
+        </ContentDialog>
+    </Grid>
+</Page>

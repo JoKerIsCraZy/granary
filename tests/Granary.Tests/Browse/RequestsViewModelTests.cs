@@ -232,15 +232,19 @@ public sealed class RequestsViewModelTests
     }
 
     [Fact]
-    public async Task ADiscoverTitleInTheLibrary_OpensThere()
+    public async Task ADiscoverTitle_OpensInTheLibrary_OrOnItsOwnPage()
     {
         var hub = await LoadedAsync();
         var cards = hub.DiscoverRows[0].Cards;
 
         hub.OpenCardCommand.Execute(cards[2]);
-        hub.OpenCardCommand.Execute(cards[0]);
+        hub.OpenCardCommand.Execute(cards[1]);
 
-        Assert.Equal((AppRoute.Item, (object?)"movie:got-it-2020"), Assert.Single(_harness.Navigation.Navigations));
+        Assert.Equal(
+        [
+            (AppRoute.Item, (object?)"movie:got-it-2020"),
+            (AppRoute.Title, new TitleRouteParameter("series", 11, "Asked For")),
+        ], _harness.Navigation.Navigations.Select(n => (n.Route, n.Parameter)).ToList<(AppRoute, object?)>());
     }
 
     [Fact]

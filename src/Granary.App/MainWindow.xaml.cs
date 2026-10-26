@@ -242,6 +242,8 @@ public sealed partial class MainWindow : Window
             // A collection opens from the Collections page, which stays picked.
             AppRoute.Collection => nameof(AppRoute.Collections),
             AppRoute.RecommendationSection => nameof(AppRoute.ForYou),
+            // A title from TMDB opens from the Requests hub.
+            AppRoute.Title => nameof(AppRoute.Requests),
             _ => route.ToString(),
         };
         var item = Navigation.MenuItems.Concat(Navigation.FooterMenuItems).OfType<NavigationViewItem>()

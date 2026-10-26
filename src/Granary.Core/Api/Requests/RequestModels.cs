@@ -16,7 +16,11 @@ public sealed record RequestFeatureStatus
 
     public bool SeasonRequestsSupported { get; init; }
 
+    /// <summary>Adding a title outside the library to the watchlist also requests it, for this profile.</summary>
     public bool WatchlistRequests { get; init; }
+
+    /// <summary>Titles outside the library can go on the watchlist (<c>/api/v2/watchlist/titles</c>).</summary>
+    public bool WatchlistTitlesSupported { get; init; }
 }
 
 /// <summary><c>GET /api/v2/requests/mine</c>: a page of the account's requests, newest first.</summary>
@@ -56,6 +60,9 @@ public sealed record MediaRequest
     public string? OutcomeReason { get; init; }
 
     public string? LastError { get; init; }
+
+    /// <summary>The account that made the request; only its owner can cancel it.</summary>
+    public string? RequestedByUserId { get; init; }
 
     /// <summary>The library title once it arrived.</summary>
     public string? LibraryContentId { get; init; }
@@ -147,6 +154,145 @@ public sealed record RequestMediaState
     public string? Status { get; init; }
 
     public string? State { get; init; }
+
+    /// <summary>The request's id, when the viewer may see it (their account's own, or an admin).</summary>
+    public string? RequestId { get; init; }
+
+    /// <summary>The viewer asked to hear when someone else's request lands.</summary>
+    public bool Following { get; init; }
+
+    public bool RequestedByViewer { get; init; }
+
+    public RequestDownload? Download { get; init; }
+}
+
+/// <summary><c>GET /api/v2/requests/detail/{media_type}/{tmdb_id}</c>: a title from TMDB in full (what the title page uses).</summary>
+public sealed record RequestMediaDetail
+{
+    public long TmdbId { get; init; }
+
+    /// <summary><c>movie</c> or <c>series</c>.</summary>
+    public string MediaType { get; init => field = value ?? ""; } = "";
+
+    public string Title { get; init => field = value ?? ""; } = "";
+
+    public int? Year { get; init; }
+
+    public string? Overview { get; init; }
+
+    public string? Tagline { get; init; }
+
+    public string? PosterPath { get; init; }
+
+    public string? BackdropPath { get; init; }
+
+    public string? ContentRating { get; init; }
+
+    /// <summary>Minutes, for a movie.</summary>
+    public int? Runtime { get; init; }
+
+    public int? NumberOfSeasons { get; init; }
+
+    public int? NumberOfEpisodes { get; init; }
+
+    /// <summary>A series' status on TMDB ("Returning Series", "Ended").</summary>
+    public string? Status { get; init; }
+
+    /// <summary>YYYY-MM-DD.</summary>
+    public string? FirstAirDate { get; init; }
+
+    public string? LastAirDate { get; init; }
+
+    public double? VoteAverage { get; init; }
+
+    public int? VoteCount { get; init; }
+
+    public string? ImdbId { get; init; }
+
+    public string? Director { get; init; }
+
+    public IReadOnlyList<string> Creators { get; init => field = value ?? []; } = [];
+
+    public IReadOnlyList<string> Genres { get; init => field = value ?? []; } = [];
+
+    public IReadOnlyList<string> Networks { get; init => field = value ?? []; } = [];
+
+    public IReadOnlyList<string> ProductionCompanies { get; init => field = value ?? []; } = [];
+
+    public IReadOnlyList<RequestMediaCastMember> Cast { get; init => field = value ?? []; } = [];
+
+    public IReadOnlyList<RequestMediaSeason> Seasons { get; init => field = value ?? []; } = [];
+
+    public IReadOnlyList<RequestMediaResult> Recommendations { get; init => field = value ?? []; } = [];
+
+    /// <summary><c>available</c> when the library has it.</summary>
+    public string Availability { get; init => field = value ?? ""; } = "";
+
+    public string? LibraryContentId { get; init; }
+
+    public bool InWatchlist { get; init; }
+
+    public RequestMediaState Request { get; init => field = value ?? new(); } = new();
+}
+
+public sealed record RequestMediaCastMember
+{
+    public string Name { get; init => field = value ?? ""; } = "";
+
+    public string? Character { get; init; }
+
+    public int Order { get; init; }
+
+    public string? ProfilePath { get; init; }
+}
+
+/// <summary>A series' season as TMDB lists it, with what the library has and what was asked for.</summary>
+public sealed record RequestMediaSeason
+{
+    public int SeasonNumber { get; init; }
+
+    public string? Name { get; init; }
+
+    /// <summary>YYYY-MM-DD; absent before TMDB dates it.</summary>
+    public string? AirDate { get; init; }
+
+    public int EpisodeCount { get; init; }
+
+    /// <summary><c>missing</c>, <c>partial</c> or <c>available</c>.</summary>
+    public string Availability { get; init => field = value ?? ""; } = "";
+
+    public bool Requested { get; init; }
+
+    public string? PosterPath { get; init; }
+}
+
+/// <summary>The body of <c>POST /api/v2/requests</c>. Without <see cref="Seasons"/> the server picks a series' seasons itself.</summary>
+public sealed record MediaRequestCreate
+{
+    public string MediaType { get; init => field = value ?? ""; } = "";
+
+    public long TmdbId { get; init; }
+
+    public string Title { get; init => field = value ?? ""; } = "";
+
+    public int? Year { get; init; }
+
+    public string? Overview { get; init; }
+
+    public string? PosterPath { get; init; }
+
+    public string? BackdropPath { get; init; }
+
+    public IReadOnlyList<int>? Seasons { get; init; }
+}
+
+/// <summary><c>PUT /api/v2/watchlist/titles/{media_type}/{tmdb_id}</c>: the title as it now stands.</summary>
+public sealed record WatchlistTitleEntry
+{
+    /// <summary>The library title it went onto the watchlist as, when the library has it.</summary>
+    public string? ItemId { get; init; }
+
+    public RequestMediaState Request { get; init => field = value ?? new(); } = new();
 }
 
 /// <summary>Values of <see cref="MediaRequest.State"/>.</summary>

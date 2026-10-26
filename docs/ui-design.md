@@ -125,8 +125,17 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   each request a row with its poster, title and state badge (the web's variants: Available red, Failed destructive,
   approved and on their way filled, Pending outlined, closed ones outlined and muted), "Series · 2022 · Seasons 1–3",
   the download's bar and "Downloading · 43% · about 12 min left", when it was requested and changed, the error in red
-  or the admin's reason, Open in library, and Cancel request behind the web's confirmation. A title's own page, making
-  a request, studios, networks, genres and search come next.
+  or the admin's reason, Open in library, and Cancel request behind the web's confirmation. Studios, networks, genres
+  and search come next.
+- A title from TMDB (`TitlePage`, the web's `TitleDetail.tsx` / `ExternalTitleContent.tsx`): laid out like a library
+  title (backdrop, poster, "MOVIE · DC STUDIOS", chips, the TMDB score with its votes, overview, "Directed by" or
+  "Created by", genres), with request actions in place of playback: Request movie / Request series, or the request's
+  state greyed ("Requested", "Approved"), Open in library; Add to Watchlist / On Watchlist ("Adding it to your
+  watchlist also requests it." when it does), Cancel request for the account's own while withdrawable, Notify me when
+  available for someone else's open request, IMDb and TMDB in the browser, the download's progress; then Seasons (with
+  "In library", "Requested", "Not aired yet"), Cast and More Like This. A series asks "Request seasons" first: a switch
+  per season, the aired missing ones on, the others greyed; Latest season, Upcoming seasons and All seasons; an
+  untouched pick leaves the seasons to the server. Discover cards and More Like This open it, or the library's title.
 - Pages: 48 px side margins, 32 px top; rows 40 px apart.
 - Detail pages: full-bleed backdrop fading into the background, logo (or display title), chips,
   ratings, overview with "More", red Play/Resume pill, secondary actions, then rows (seasons, episodes,
