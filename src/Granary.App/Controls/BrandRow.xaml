@@ -87,11 +87,11 @@
             <Border Width="208" Height="112" CornerRadius="12" Background="#1AFFFFFF" />
         </StackPanel>
 
-        <Grid Grid.Row="1" Visibility="{x:Bind Row.IsReady, Mode=OneWay}">
+        <Grid x:Name="Track" Grid.Row="1" Visibility="{x:Bind Row.IsReady, Mode=OneWay}">
             <ScrollView x:Name="Scroller" ContentOrientation="Horizontal" HorizontalScrollMode="Enabled" HorizontalScrollBarVisibility="Hidden"
                         VerticalScrollMode="Disabled" VerticalScrollBarVisibility="Hidden" ViewChanged="OnViewChanged"
                         controls:WheelScrollsPage.IsEnabled="True">
-                <ItemsRepeater ItemsSource="{x:Bind Row.Tiles, Mode=OneWay}" AutomationProperties.Name="{x:Bind Row.Title, Mode=OneWay}">
+                <ItemsRepeater x:Name="Tiles" ItemsSource="{x:Bind Row.Tiles, Mode=OneWay}" AutomationProperties.Name="{x:Bind Row.Title, Mode=OneWay}">
                     <ItemsRepeater.Layout>
                         <StackLayout Orientation="Horizontal" Spacing="16" />
                     </ItemsRepeater.Layout>

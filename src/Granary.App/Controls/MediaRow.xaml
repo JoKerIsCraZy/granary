@@ -31,7 +31,7 @@
                              AutomationProperties.Name="{x:Bind ExploreAllName(Title), Mode=OneWay}" />
         </Grid>
 
-        <Grid Grid.Row="1">
+        <Grid x:Name="Track" Grid.Row="1">
             <ScrollView x:Name="Scroller" ContentOrientation="Horizontal" HorizontalScrollMode="Enabled" HorizontalScrollBarVisibility="Hidden"
                         VerticalScrollMode="Disabled" VerticalScrollBarVisibility="Hidden" ViewChanged="OnViewChanged"
                         controls:WheelScrollsPage.IsEnabled="True">

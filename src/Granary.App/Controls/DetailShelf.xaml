@@ -28,7 +28,7 @@
                        VerticalAlignment="Center" />
         </Grid>
 
-        <Grid Grid.Row="1">
+        <Grid x:Name="Track" Grid.Row="1">
             <!-- Rows of buttons scroll as focus moves; a row without buttons takes the focus itself (arrow keys scroll it). -->
             <ScrollView x:Name="Scroller" ContentOrientation="Horizontal" HorizontalScrollMode="Enabled" HorizontalScrollBarVisibility="Hidden"
                         VerticalScrollMode="Disabled" VerticalScrollBarVisibility="Hidden" ViewChanged="OnViewChanged"

@@ -40,6 +40,10 @@ public sealed partial class MediaRow : UserControl
     public static readonly DependencyProperty TitleBadgeProperty =
         DependencyProperty.Register(nameof(TitleBadge), typeof(string), typeof(MediaRow), new PropertyMetadata(""));
 
+    /// <summary>How far the row reaches past its own edges to the window's (RowBleed); the page's gutter.</summary>
+    public static readonly DependencyProperty BleedProperty =
+        DependencyProperty.Register(nameof(Bleed), typeof(double), typeof(MediaRow), new PropertyMetadata(RowBleed.PageGutter, (sender, _) => ((MediaRow)sender).ApplyBleed()));
+
     public const double PosterWidth = 185;
     public const double LandscapeWidth = 314;
 
@@ -49,6 +53,7 @@ public sealed partial class MediaRow : UserControl
     public MediaRow()
     {
         InitializeComponent();
+        ApplyBleed();
         Loaded += (_, _) => FollowItems();
         Unloaded += (_, _) => _prefetch.Follow(null);
     }
@@ -57,6 +62,13 @@ public sealed partial class MediaRow : UserControl
     {
         get => (string)GetValue(TitleProperty);
         set => SetValue(TitleProperty, value);
+    }
+
+    /// <summary>How far the row reaches past its own edges to the window's: the gutter of the page it is on.</summary>
+    public double Bleed
+    {
+        get => (double)GetValue(BleedProperty);
+        set => SetValue(BleedProperty, value);
     }
 
     /// <summary>The title's text style; the row title's (20 px semibold) when none is set.</summary>
@@ -114,6 +126,8 @@ public sealed partial class MediaRow : UserControl
     public string ExploreAllName(string title) => $"Explore all: {title}";
 
     public Visibility HasText(string? text) => string.IsNullOrEmpty(text) ? Visibility.Collapsed : Visibility.Visible;
+
+    private void ApplyBleed() => RowBleed.Apply(Bleed, Track, Items, PreviousButton, NextButton);
 
     private void FollowItems()
     {

@@ -747,7 +747,7 @@
                 </StackPanel>
             </ScrollViewer>
 
-            <controls:MediaRow Grid.Row="1" Margin="32,0,32,16" Title="ON DECK" TitleStyle="{StaticResource SiloSectionLabelTextStyle}"
+            <controls:MediaRow Grid.Row="1" Margin="32,0,32,16" Bleed="32" Title="ON DECK" TitleStyle="{StaticResource SiloSectionLabelTextStyle}"
                                ItemsSource="{x:Bind ViewModel.OnDeck, Mode=OneWay}" CardInvokedCommand="{x:Bind ViewModel.PlayOnDeckCommand}"
                                Visibility="{x:Bind HasCards(ViewModel.OnDeck), Mode=OneWay}" />
 

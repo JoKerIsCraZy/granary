@@ -17,6 +17,10 @@ public sealed partial class BrandRow : UserControl
     public static readonly DependencyProperty RowProperty =
         DependencyProperty.Register(nameof(Row), typeof(RequestBrandRowViewModel), typeof(BrandRow), new PropertyMetadata(null));
 
+    /// <summary>How far the row reaches past its own edges to the window's (RowBleed); the page's gutter.</summary>
+    public static readonly DependencyProperty BleedProperty =
+        DependencyProperty.Register(nameof(Bleed), typeof(double), typeof(BrandRow), new PropertyMetadata(RowBleed.PageGutter, (sender, _) => ((BrandRow)sender).ApplyBleed()));
+
     // A logo is drawn 160 px wide: the tile less its 24 px margins.
     private const int LogoWidth = 160;
 
@@ -30,12 +34,20 @@ public sealed partial class BrandRow : UserControl
     public BrandRow()
     {
         InitializeComponent();
+        ApplyBleed();
     }
 
     public RequestBrandRowViewModel? Row
     {
         get => (RequestBrandRowViewModel?)GetValue(RowProperty);
         set => SetValue(RowProperty, value);
+    }
+
+    /// <summary>How far the row reaches past its own edges to the window's: the gutter of the page it is on.</summary>
+    public double Bleed
+    {
+        get => (double)GetValue(BleedProperty);
+        set => SetValue(BleedProperty, value);
     }
 
     // Static helpers because x:Bind function bindings call them.
@@ -72,6 +84,8 @@ public sealed partial class BrandRow : UserControl
         uint rgb = uint.Parse(hex.AsSpan(1), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
         return Color.FromArgb(0xFF, (byte)(rgb >> 16), (byte)(rgb >> 8), (byte)rgb);
     }
+
+    private void ApplyBleed() => RowBleed.Apply(Bleed, Track, Tiles, PreviousButton, NextButton);
 
     private void OnPreviousClick(object sender, RoutedEventArgs e) => ScrollBy(-1);
 

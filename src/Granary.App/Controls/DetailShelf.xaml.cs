@@ -15,7 +15,10 @@ public sealed partial class DetailShelf : UserControl
         DependencyProperty.Register(nameof(Caption), typeof(string), typeof(DetailShelf), new PropertyMetadata(""));
 
     public static readonly DependencyProperty ShelfContentProperty =
-        DependencyProperty.Register(nameof(ShelfContent), typeof(UIElement), typeof(DetailShelf), new PropertyMetadata(null));
+        DependencyProperty.Register(nameof(ShelfContent), typeof(UIElement), typeof(DetailShelf), new PropertyMetadata(null, (sender, _) => ((DetailShelf)sender).ApplyBleed()));
+    /// <summary>How far the row reaches past its own edges to the window's (RowBleed); the page's gutter.</summary>
+    public static readonly DependencyProperty BleedProperty =
+        DependencyProperty.Register(nameof(Bleed), typeof(double), typeof(DetailShelf), new PropertyMetadata(RowBleed.PageGutter, (sender, _) => ((DetailShelf)sender).ApplyBleed()));
 
     public static readonly DependencyProperty IsScrollerTabStopProperty =
         DependencyProperty.Register(nameof(IsScrollerTabStop), typeof(bool), typeof(DetailShelf), new PropertyMetadata(false));
@@ -25,6 +28,7 @@ public sealed partial class DetailShelf : UserControl
     public DetailShelf()
     {
         InitializeComponent();
+        ApplyBleed();
     }
 
     public string Title
@@ -47,6 +51,13 @@ public sealed partial class DetailShelf : UserControl
     }
 
     /// <summary>Set when the content has nothing focusable, so keyboard users can still reach and scroll the row.</summary>
+    /// <summary>How far the row reaches past its own edges to the window's: the gutter of the page it is on.</summary>
+    public double Bleed
+    {
+        get => (double)GetValue(BleedProperty);
+        set => SetValue(BleedProperty, value);
+    }
+
     public bool IsScrollerTabStop
     {
         get => (bool)GetValue(IsScrollerTabStopProperty);
@@ -81,4 +92,6 @@ public sealed partial class DetailShelf : UserControl
             ? Visibility.Visible
             : Visibility.Collapsed;
     }
+
+    private void ApplyBleed() => RowBleed.Apply(Bleed, Track, ShelfContent as FrameworkElement, PreviousButton, NextButton);
 }
