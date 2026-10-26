@@ -32,6 +32,8 @@
             <TextBlock x:Name="Placeholder" Margin="16" VerticalAlignment="Center" HorizontalAlignment="Center" TextAlignment="Center"
                        Style="{StaticResource SiloCaptionTextStyle}" TextWrapping="Wrap" MaxLines="4"
                        AutomationProperties.AccessibilityView="Raw" />
+            <!-- The thumbhash's blur, at once; the artwork shows over it once it is in (MediaCardView.ShowArtworkAsync). -->
+            <Image x:Name="BlurImage" Stretch="UniformToFill" AutomationProperties.AccessibilityView="Raw" />
             <Image x:Name="ArtImage" Stretch="UniformToFill" ImageOpened="OnImageOpened" ImageFailed="OnImageFailed"
                    AutomationProperties.AccessibilityView="Raw" />
 

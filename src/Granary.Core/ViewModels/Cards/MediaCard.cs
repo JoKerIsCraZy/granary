@@ -34,6 +34,9 @@ public sealed record MediaCard(string Id, string Type, string Title)
 
     public Uri? ImageUrl { get; init; }
 
+    /// <summary>The ThumbHash of <see cref="ImageUrl"/>'s picture: shown blurred at once, until the picture itself is.</summary>
+    public string? ImageThumbhash { get; init; }
+
     /// <summary>"1080P", "4K DV".</summary>
     public string? ResolutionBadge { get; init; }
 

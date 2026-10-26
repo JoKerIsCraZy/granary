@@ -4,6 +4,7 @@ using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
 
 namespace Granary.App.Controls;
 
@@ -54,7 +55,16 @@ public sealed partial class MediaRow : UserControl
     {
         InitializeComponent();
         ApplyBleed();
-        Loaded += (_, _) => FollowItems();
+        Loaded += (_, _) =>
+        {
+            FollowItems();
+            // The row's cards wait for it and for the page to stop before their artwork shows.
+            ScrollMotion.Follow(Scroller);
+            if (PageScroller() is { } page)
+            {
+                ScrollMotion.Follow(page);
+            }
+        };
         Unloaded += (_, _) => _prefetch.Follow(null);
     }
 
@@ -128,6 +138,18 @@ public sealed partial class MediaRow : UserControl
     public Visibility HasText(string? text) => string.IsNullOrEmpty(text) ? Visibility.Collapsed : Visibility.Visible;
 
     private void ApplyBleed() => RowBleed.Apply(Bleed, Track, Items, PreviousButton, NextButton);
+
+    private ScrollViewer? PageScroller()
+    {
+        for (var parent = VisualTreeHelper.GetParent(this); parent is not null; parent = VisualTreeHelper.GetParent(parent))
+        {
+            if (parent is ScrollViewer scroller)
+            {
+                return scroller;
+            }
+        }
+        return null;
+    }
 
     private void FollowItems()
     {

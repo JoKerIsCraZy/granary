@@ -56,6 +56,13 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
   ("Safe Harbor"), then "S04E01". The play disc, the card's buttons and its menu are made on first need (the pointer,
   focus on the card's button, the context menu), the progress bar only for a card with progress (`x:Load`): made for
   every card, they cost a row of cards scrolling in 26–75 ms, now 10–23 ms, and most cards are never hovered.
+  Artwork comes as on the Android app (`ThumbhashImage.kt`): the server's thumbhash (`poster_thumbhash`,
+  `backdrop_thumbhash`, `still_thumbhash`) shows at once as a 32 px picture blurred over the box (`ThumbHash`,
+  `Thumbhashes`), the title only without one; the artwork, decoded as large as its box shows it, fades in over it in
+  300 ms, or shows at once when it came within 100 ms. While a page or row scrolls faster than about three rows of posters
+  a second (`ScrollMotion`), cards hold their artwork back until it slows down or stops: decoding every poster that
+  rushed past was half of what made a wide window stutter. The app collects garbage in `SustainedLowLatency` mode, so a
+  full blocking collection does not land in a scroll.
 - `MediaRow`: row title, optional "EXPLORE ALL" (on every Home and library row, as on the web, also when the row
   already holds all of it; For You and Requests rows only when a page lists more), horizontally scrolling cards (posters 185 px,
   landscape 314 px, 20 px apart), arrows for mouse users. Sideways rows (`MediaRow`, `DetailShelf`, search's

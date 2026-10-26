@@ -17,13 +17,22 @@ internal static class Artwork
     /// image; it raises ImageOpened then. When the cache cannot get the image, the bitmap loads the URL itself,
     /// so a broken image still raises ImageFailed. Cancelling (the view moved on to another item) leaves it empty.
     /// </summary>
-    public static BitmapImage? Load(Uri? url, int decodeWidth, CancellationToken cancellationToken = default)
+    public static BitmapImage? Load(Uri? url, int decodeWidth, CancellationToken cancellationToken = default) =>
+        url is { IsAbsoluteUri: true }
+            ? Filled(new BitmapImage { DecodePixelWidth = decodeWidth, DecodePixelType = DecodePixelType.Logical }, url, cancellationToken)
+            : null;
+
+    /// <summary>
+    /// As <see cref="Load(Uri?, int, CancellationToken)"/>, decoded as high as the view shows it: a picture of another
+    /// shape than its box (a backdrop on a poster card) then still fills it sharply.
+    /// </summary>
+    public static BitmapImage? LoadAtHeight(Uri? url, int decodeHeight, CancellationToken cancellationToken = default) =>
+        url is { IsAbsoluteUri: true }
+            ? Filled(new BitmapImage { DecodePixelHeight = decodeHeight, DecodePixelType = DecodePixelType.Logical }, url, cancellationToken)
+            : null;
+
+    private static BitmapImage Filled(BitmapImage bitmap, Uri url, CancellationToken cancellationToken)
     {
-        if (url is not { IsAbsoluteUri: true })
-        {
-            return null;
-        }
-        var bitmap = new BitmapImage { DecodePixelWidth = decodeWidth, DecodePixelType = DecodePixelType.Logical };
         Fill(bitmap, url, cancellationToken);
         return bitmap;
     }

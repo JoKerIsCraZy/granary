@@ -62,6 +62,10 @@ public sealed partial class MediaGrid : UserControl
         {
             FollowItems();
             _scroller = FindScroller();
+            if (_scroller is not null)
+            {
+                ScrollMotion.Follow(_scroller);
+            }
         };
         Unloaded += (_, _) =>
         {

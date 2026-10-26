@@ -27,6 +27,7 @@ public static class MediaCardFactory
             EpisodeTitle = episode?.EpisodeTitle,
             Subtitle = episode?.Code ?? PosterSubtitle(item),
             ImageUrl = ArtworkUrl.Resolve(serverBase, item.PosterUrl) ?? ArtworkUrl.Resolve(serverBase, item.BackdropUrl),
+            ImageThumbhash = ArtworkUrl.Resolve(serverBase, item.PosterUrl) is not null ? item.PosterThumbhash : item.BackdropThumbhash,
         }, item);
     }
 
@@ -40,6 +41,7 @@ public static class MediaCardFactory
             Subtitle = isEpisode ? EpisodeLine(item.SeasonNumber, item.EpisodeNumber, item.Title) : YearText(item.Year),
             Caption = item.ItemSource == ItemSources.NextUp ? "Next episode" : TimeLeft(item.PositionSeconds, item.DurationSeconds),
             ImageUrl = ArtworkUrl.Resolve(serverBase, item.BackdropUrl) ?? ArtworkUrl.Resolve(serverBase, item.PosterUrl),
+            ImageThumbhash = ArtworkUrl.Resolve(serverBase, item.BackdropUrl) is not null ? item.BackdropThumbhash : item.PosterThumbhash,
         }, item);
     }
 
@@ -54,6 +56,7 @@ public static class MediaCardFactory
                 ? $"{watched} of {season.EpisodeCount} episodes"
                 : $"{season.EpisodeCount} {(season.EpisodeCount == 1 ? "episode" : "episodes")}",
             ImageUrl = ArtworkUrl.Resolve(serverBase, season.PosterUrl),
+            ImageThumbhash = season.PosterThumbhash,
             // A season watched to the end keeps a full bar, green, as on the web.
             Progress = season.EpisodeCount > 0 && watched > 0 ? Math.Min(1, (double)watched / season.EpisodeCount) : null,
             IsWatched = season.UserData?.Played == true,
@@ -73,6 +76,7 @@ public static class MediaCardFactory
             Subtitle = string.Join(" · ", meta) is { Length: > 0 } line ? line : null,
             Caption = episode.Overview,
             ImageUrl = ArtworkUrl.Resolve(serverBase, episode.StillUrl),
+            ImageThumbhash = episode.StillThumbhash,
             ResolutionBadge = ResolutionText(episode.OverlaySummary),
             AudioBadge = AudioText(episode.OverlaySummary),
             Progress = ProgressOf(episode.UserData?.PositionSeconds, episode.UserData?.DurationSeconds, episode.UserData?.Played == true),

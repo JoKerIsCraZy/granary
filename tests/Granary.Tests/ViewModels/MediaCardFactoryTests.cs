@@ -36,6 +36,19 @@ public sealed class MediaCardFactoryTests
         Assert.Null(card.Progress);
     }
 
+    [Fact]
+    public void Cards_CarryTheThumbhashOfThePictureTheyShow()
+    {
+        var item = Movie() with { PosterThumbhash = "poster-hash", BackdropThumbhash = "backdrop-hash" };
+        var withoutPoster = item with { PosterUrl = null };
+
+        Assert.Equal("poster-hash", MediaCardFactory.Poster(item, Server).ImageThumbhash);
+        Assert.Equal("backdrop-hash", MediaCardFactory.Landscape(item, Server).ImageThumbhash);
+        Assert.Equal("backdrop-hash", MediaCardFactory.Poster(withoutPoster, Server).ImageThumbhash);
+        Assert.Equal("poster-hash", MediaCardFactory.Landscape(item with { BackdropUrl = null }, Server).ImageThumbhash);
+        Assert.Equal("still-hash", MediaCardFactory.Episode(new Episode { ContentId = "ep-1", StillUrl = "/s.webp", StillThumbhash = "still-hash" }, Server).ImageThumbhash);
+    }
+
     [Theory]
     [InlineData("2160p", "DV.HDR10", "4K DV")]
     [InlineData("4k", null, "4K")]

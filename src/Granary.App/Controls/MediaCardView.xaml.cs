@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Numerics;
 using Granary.Core.ViewModels.Cards;
 using Granary.Core.ViewModels.Detail;
@@ -17,9 +18,13 @@ public sealed partial class MediaCardView : UserControl
     public static readonly DependencyProperty CardProperty =
         DependencyProperty.Register(nameof(Card), typeof(MediaCard), typeof(MediaCardView), new PropertyMetadata(null, OnCardChanged));
 
-    // Decode at twice the shown width, so artwork stays sharp at 200 % scaling.
-    private const int PosterDecodeWidth = 370;
-    private const int LandscapeDecodeWidth = 640;
+    // Artwork is decoded as large as its box shows it; until the card has been laid out, as a row's cards are.
+    private const double PosterHeight = 320;
+    private const double LandscapeWidth = 400;
+
+    // Android's: artwork that comes this soon was never waited on and shows at once, later artwork fades in over its blur.
+    private static readonly TimeSpan InstantReveal = TimeSpan.FromMilliseconds(100);
+    private static readonly TimeSpan RevealDuration = TimeSpan.FromMilliseconds(300);
 
     // Silo's web: the artwork grows 6 % under the pointer, over 300 ms. A poster gets a 40 px disc and 32 px buttons,
     // a wide card 44 and 36; the buttons sit just above a progress bar.
@@ -31,6 +36,7 @@ public sealed partial class MediaCardView : UserControl
 
     // Cancelled when the container is recycled for another card, so the old card's artwork stays out.
     private CancellationTokenSource? _artwork;
+    private long _artworkShownAt;
     private bool _sizedByMeasure;
     private bool _reservesEpisodeLine;
     private ButtonBase? _host;
@@ -71,13 +77,21 @@ public sealed partial class MediaCardView : UserControl
     // Every part is set for every card: containers are recycled, so nothing of the previous card may stay.
     private void Show(MediaCard? card)
     {
+        // The thumbhash's blur shows at once; the title stands in only without one.
+        var blur = Thumbhashes.Get(card?.ImageThumbhash);
+        BlurImage.Source = blur;
         Placeholder.Text = card?.Title ?? "";
-        Placeholder.Visibility = Visibility.Visible;
+        Placeholder.Visibility = Visible(blur is null);
         _artwork?.Cancel();
-        _artwork = card?.ImageUrl is null ? null : new CancellationTokenSource();
-        ArtImage.Source = card is null || _artwork is null
-            ? null
-            : Artwork.Load(card.ImageUrl, card.Shape == MediaCardShape.Poster ? PosterDecodeWidth : LandscapeDecodeWidth, _artwork.Token);
+        _artwork = null;
+        ArtImage.OpacityTransition = null;
+        ArtImage.Opacity = 0;
+        ArtImage.Source = null;
+        if (card?.ImageUrl is { } url)
+        {
+            _artwork = new CancellationTokenSource();
+            _ = ShowArtworkAsync(card, url, _artwork.Token);
+        }
 
         SetBadge(ResolutionBadge, ResolutionText, card?.ResolutionBadge);
         SetBadge(AudioBadge, AudioText, card?.AudioBadge);
@@ -476,8 +490,31 @@ public sealed partial class MediaCardView : UserControl
         }
     }
 
-    private void OnImageOpened(object sender, RoutedEventArgs e) => Placeholder.Visibility = Visibility.Collapsed;
+    // While the page scrolls fast, the artwork waits for it to slow down (ScrollMotion): cards rushing by decode nothing.
+    private async Task ShowArtworkAsync(MediaCard card, Uri url, CancellationToken cancellationToken)
+    {
+        _artworkShownAt = Stopwatch.GetTimestamp();
+        await ScrollMotion.WhenSlowAsync();
+        if (cancellationToken.IsCancellationRequested)
+        {
+            return;
+        }
+        ArtImage.Source = card.Shape == MediaCardShape.Poster
+            ? Artwork.LoadAtHeight(url, DecodeSize(double.IsNaN(Art.Height) ? Art.ActualHeight : Art.Height, PosterHeight), cancellationToken)
+            : Artwork.Load(url, DecodeSize(Art.ActualWidth, LandscapeWidth), cancellationToken);
+    }
 
-    // A missing or expired artwork URL leaves the title placeholder in place.
+    private static int DecodeSize(double shown, double fallback) => (int)Math.Ceiling(shown > 0 ? shown : fallback);
+
+    // Artwork that came at once shows at once; artwork the viewer waited for fades in over its blur, as on Android.
+    private void OnImageOpened(object sender, RoutedEventArgs e)
+    {
+        Placeholder.Visibility = Visibility.Collapsed;
+        bool waited = Stopwatch.GetElapsedTime(_artworkShownAt) > InstantReveal;
+        ArtImage.OpacityTransition = waited ? new ScalarTransition { Duration = RevealDuration } : null;
+        ArtImage.Opacity = 1;
+    }
+
+    // A missing or expired artwork URL leaves the blur, or without one the title, in place.
     private void OnImageFailed(object sender, ExceptionRoutedEventArgs e) => ArtImage.Source = null;
 }

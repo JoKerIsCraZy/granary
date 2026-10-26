@@ -1,3 +1,4 @@
+using System.Runtime;
 using Granary.App.Logging;
 using Granary.App.Services;
 using Granary.Core;
@@ -22,6 +23,8 @@ public partial class App : Application
     public App()
     {
         InitializeComponent();
+        // A blocking full collection mid-scroll cost frames (up to 60 ms); while memory allows, collections run beside the app.
+        GCSettings.LatencyMode = GCLatencyMode.SustainedLowLatency;
         UnhandledException += (_, e) => _logger?.LogCritical(e.Exception, "Unhandled exception");
     }
 
