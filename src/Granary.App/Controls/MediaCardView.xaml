@@ -10,6 +10,7 @@
     x:Class="Granary.App.Controls.MediaCardView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Granary.App.Controls"
     SizeChanged="OnSizeChanged"
     PointerEntered="OnPointerEntered"
     PointerExited="OnPointerExited"
@@ -126,7 +127,7 @@
                 <!-- A title from TMDB: the web's watchlist toggle, where library cards keep their menu. -->
                 <Button x:Name="TitleWatchlistButton" Style="{StaticResource SiloCardActionButtonStyle}" Margin="10" HorizontalAlignment="Right"
                         VerticalAlignment="Bottom" Click="OnTitleWatchlistClick">
-                    <FontIcon x:Name="TitleWatchlistIcon" FontSize="15" />
+                    <controls:BookmarkIcon x:Name="TitleWatchlistIcon" Width="16" Height="16" />
                 </Button>
             </Grid>
 

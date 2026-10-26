@@ -100,7 +100,7 @@ public sealed partial class MediaCardView : UserControl
         bool titleWatchlist = card is not null && _actions.CanToggleTitleWatchlist(card);
         TitleWatchlistButton.Visibility = Visible(titleWatchlist);
         TitleWatchlistButton.IsEnabled = card is not null && !_actions.IsSending(card);
-        TitleWatchlistIcon.Glyph = DetailHero.WatchlistGlyph(state.InWatchlist);
+        TitleWatchlistIcon.IsChecked = state.InWatchlist;
         TitleWatchlistIcon.Foreground = Brush(state.InWatchlist ? "SiloPrimaryBrush" : "SiloForegroundBrush");
         AutomationProperties.SetName(TitleWatchlistButton,
             state.InWatchlist ? $"Remove {card?.Title} from your watchlist" : $"Add {card?.Title} to your watchlist");

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The web's watchlist icon for a title from TMDB (lucide's Bookmark and BookmarkCheck): a ribbon outline, and once the
+    title is on the watchlist a check in it over a faint red fill. Drawn in the control's Foreground.
+-->
+<UserControl
+    x:Class="Granary.App.Controls.BookmarkIcon"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    IsTabStop="False"
+    AutomationProperties.AccessibilityView="Raw">
+
+    <Viewbox Stretch="Uniform">
+        <Canvas Width="24" Height="24">
+            <Path x:Name="Ribbon" Data="M19,21 L12,17 L5,21 L5,5 A2,2 0 0 1 7,3 L17,3 A2,2 0 0 1 19,5 Z" StrokeThickness="2"
+                  StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+            <Path x:Name="Check" Data="M9,10 L11,12 L15,8" StrokeThickness="2" StrokeLineJoin="Round" StrokeStartLineCap="Round"
+                  StrokeEndLineCap="Round" Visibility="Collapsed" />
+        </Canvas>
+    </Viewbox>
+</UserControl>
