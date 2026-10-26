@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    A sidebar section's header that folds the section away, as the web's LIBRARIES: a chevron (down while open, right
+    while folded) before the small spaced capitals, muted until the pointer is over it.
+-->
+<UserControl
+    x:Class="Granary.App.Controls.SidebarSectionHeader"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <UserControl.Resources>
+        <Style x:Key="SectionToggleStyle" TargetType="Button">
+            <Setter Property="Foreground" Value="{StaticResource SiloMutedBrush}" />
+            <Setter Property="Padding" Value="16,0,8,6" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="VerticalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="VerticalContentAlignment" Value="Bottom" />
+            <Setter Property="UseSystemFocusVisuals" Value="True" />
+            <Setter Property="FocusVisualMargin" Value="4,2" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid x:Name="Root" Background="Transparent">
+                            <VisualStateManager.VisualStateGroups>
+                                <VisualStateGroup x:Name="CommonStates">
+                                    <VisualState x:Name="Normal" />
+                                    <VisualState x:Name="PointerOver">
+                                        <VisualState.Setters>
+                                            <Setter Target="Content.Foreground" Value="{StaticResource SiloForegroundBrush}" />
+                                        </VisualState.Setters>
+                                    </VisualState>
+                                    <VisualState x:Name="Pressed">
+                                        <VisualState.Setters>
+                                            <Setter Target="Content.Foreground" Value="{StaticResource SiloForegroundBrush}" />
+                                        </VisualState.Setters>
+                                    </VisualState>
+                                    <VisualState x:Name="Disabled" />
+                                </VisualStateGroup>
+                            </VisualStateManager.VisualStateGroups>
+                            <ContentPresenter x:Name="Content" Padding="{TemplateBinding Padding}" Foreground="{TemplateBinding Foreground}"
+                                              HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                              Content="{TemplateBinding Content}" AutomationProperties.AccessibilityView="Raw" />
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Button x:Name="Toggle" Style="{StaticResource SectionToggleStyle}" Click="OnToggleClick">
+        <StackPanel Orientation="Horizontal" Spacing="6">
+            <FontIcon x:Name="Chevron" Glyph="&#xE70D;" FontSize="8" VerticalAlignment="Center" />
+            <TextBlock x:Name="Text" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="10" CharacterSpacing="220"
+                       VerticalAlignment="Center" />
+        </StackPanel>
+    </Button>
+</UserControl>

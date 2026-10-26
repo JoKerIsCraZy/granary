@@ -530,6 +530,43 @@
         </Setter>
     </Style>
 
+    <!-- A sidebar header that folds its section away: its content is the fold button (SidebarSectionHeader). -->
+    <Style x:Key="SiloNavigationSectionHeaderStyle" TargetType="NavigationViewItemHeader">
+        <!-- WinUI's own header style disables it, which would disable the button in it. -->
+        <Setter Property="IsEnabled" Value="True" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="MinHeight" Value="0" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="AutomationProperties.AccessibilityView" Value="Raw" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="NavigationViewItemHeader">
+                    <Grid>
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup x:Name="PaneStates">
+                                <VisualState x:Name="HeaderTextVisible" />
+                                <VisualState x:Name="HeaderTextCollapsed">
+                                    <VisualState.Setters>
+                                        <Setter Target="HeaderContent.Visibility" Value="Collapsed" />
+                                        <Setter Target="InnerHeaderGrid.Height" Value="0" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                            </VisualStateGroup>
+                            <VisualStateGroup x:Name="DisplayModeStates">
+                                <VisualState x:Name="LeftMode" />
+                                <VisualState x:Name="TopMode" />
+                            </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>
+                        <Grid x:Name="InnerHeaderGrid" Height="40">
+                            <ContentPresenter x:Name="HeaderContent" Content="{TemplateBinding Content}" HorizontalContentAlignment="Stretch"
+                                              VerticalContentAlignment="Stretch" />
+                        </Grid>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!--
         The player (docs/ui-design.md, Player). Its controls sit on the picture, not on the Silo surfaces: white
         text and icons, glass buttons, and scrims that darken the top and bottom just enough to keep them legible.

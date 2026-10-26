@@ -95,6 +95,11 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   sources): the list's name, what it holds and its count, the media menu (All Media, Movies & Series, Movies, Series,
   Episodes), the list's own order ("List Order", History's "Watch History") or a sort, and the posters by window. The
   web's watchlist tab "Not in your library yet" comes with Requests, History's select-and-remove later. Detail pages shrink it to icons; the player hides it.
+  LIBRARIES, DISCOVER and YOUR STUFF fold away by their headers, a chevron before the capitals as on the web's
+  LIBRARIES (down while open, right while folded, brighter under the pointer); unlike the web, all three fold and stay
+  so across starts (`sidebar.json` in the data directory, the app's and not a profile's). A folded section still shows
+  the entry of the page on screen. The icon-only pane shows every entry, as the web's rail does, since it has no headers
+  to open them by.
 - Collections (`CollectionsPage`, the web's `pages/Collections.tsx`): "Your collections" with its count ("Manual ·
   4 titles", a SHARED badge on one other profiles see), "Shared with me" by owner ("by Mara"), and "Server
   collections" with a pill per library (All first) and Load more, which the end of the grid presses by itself. A

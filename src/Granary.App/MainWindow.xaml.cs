@@ -28,14 +28,15 @@ public sealed partial class MainWindow : Window
     private readonly ILogger<MainWindow> _logger;
     private bool _closeAfterStops;
 
-    public MainWindow(NavigationService navigation, ShellViewModel shell, SidebarViewModel sidebar, NotificationBadge notifications,
-        RequestsFeature requests, PlaybackStops stops, ILogger<MainWindow> logger)
+    public MainWindow(NavigationService navigation, ShellViewModel shell, SidebarViewModel sidebar, SidebarSections sections,
+        NotificationBadge notifications, RequestsFeature requests, PlaybackStops stops, ILogger<MainWindow> logger)
     {
         _navigation = navigation;
         _stops = stops;
         _logger = logger;
         Shell = shell;
         Sidebar = sidebar;
+        Sections = sections;
         Notifications = notifications;
         Requests = requests;
         InitializeComponent();
@@ -55,6 +56,21 @@ public sealed partial class MainWindow : Window
             }
         };
         Sidebar.Libraries.CollectionChanged += (_, _) => ShowLibraries();
+        Sections.PropertyChanged += (_, _) => ShowSections();
+        Requests.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(RequestsFeature.IsEnabled))
+            {
+                ShowSections();
+            }
+        };
+        Notifications.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(NotificationBadge.IsAvailable))
+            {
+                ShowSections();
+            }
+        };
         ShowLibraries();
     }
 
@@ -62,6 +78,16 @@ public sealed partial class MainWindow : Window
     public ShellViewModel Shell { get; }
 
     public SidebarViewModel Sidebar { get; }
+
+    /// <summary>Which sidebar sections are folded away.</summary>
+    public SidebarSections Sections { get; }
+
+    // The fold buttons' parameters.
+    public SidebarSection LibrariesSection => SidebarSection.Libraries;
+
+    public SidebarSection DiscoverSection => SidebarSection.Discover;
+
+    public SidebarSection YourStuffSection => SidebarSection.YourStuff;
 
     /// <summary>The sidebar's Notifications entry and its unread count.</summary>
     public NotificationBadge Notifications { get; }
@@ -93,11 +119,48 @@ public sealed partial class MainWindow : Window
             });
         }
         ShowLibrariesHeader();
+        ShowSections();
         if (_navigation.Current is { } route)
         {
             SelectItem(route, _navigation.CurrentParameter);
         }
     }
+
+    // A folded section hides its entries, all but the page shown, so the sidebar still says where the viewer is. The
+    // icon-only pane shows them all, as the web's rail does: it has no headers to open them by. Requests and
+    // Notifications show only while the server offers them.
+    private void ShowSections()
+    {
+        bool open = Navigation.IsPaneOpen;
+        bool shown = true;
+        foreach (object item in Navigation.MenuItems)
+        {
+            if (ReferenceEquals(item, LibrariesHeader))
+            {
+                shown = Sections.IsLibrariesExpanded || !open;
+            }
+            else if (ReferenceEquals(item, DiscoverHeader))
+            {
+                shown = Sections.IsDiscoverExpanded || !open;
+            }
+            else if (ReferenceEquals(item, YourStuffHeader))
+            {
+                shown = Sections.IsYourStuffExpanded || !open;
+            }
+            else if (item is NavigationViewItem entry)
+            {
+                bool current = ReferenceEquals(entry, Navigation.SelectedItem);
+                entry.Visibility = (shown || current) && IsOffered(entry) ? Visibility.Visible : Visibility.Collapsed;
+            }
+        }
+    }
+
+    private bool IsOffered(NavigationViewItem item) => item.Tag switch
+    {
+        nameof(AppRoute.Requests) => Requests.IsEnabled,
+        nameof(AppRoute.Notifications) => Notifications.IsAvailable,
+        _ => true,
+    };
 
     private static bool IsLibraryItem(NavigationViewItem item) =>
         item.Tag is string tag && tag.StartsWith(LibraryTagPrefix, StringComparison.Ordinal);
@@ -170,6 +233,7 @@ public sealed partial class MainWindow : Window
         Grid.SetRowSpan(Navigation, isPlayer ? 2 : 1);
         AppTitle.Visibility = isPlayer ? Visibility.Collapsed : Visibility.Visible;
         ShowLibrariesHeader();
+        ShowSections();
     }
 
     // "LIBRARIES" only in the open pane. NavigationView hides the header's text in the icon-only pane itself, but not
@@ -252,6 +316,7 @@ public sealed partial class MainWindow : Window
         if (!ReferenceEquals(Navigation.SelectedItem, item))
         {
             Navigation.SelectedItem = item;
+            ShowSections();
         }
     }
 

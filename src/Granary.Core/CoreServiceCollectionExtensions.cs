@@ -99,6 +99,7 @@ public static class CoreServiceCollectionExtensions
 
         services.AddSingleton<ShellViewModel>();
         services.AddSingleton<SidebarViewModel>();
+        services.AddSingleton(sp => new SidebarSections(SidebarSections.DefaultPath, sp.GetRequiredService<ILogger<SidebarSections>>()));
         services.AddTransient<SignInViewModel>();
         services.AddSingleton<MediaCardActions>();
         services.AddTransient<HomeViewModel>();
