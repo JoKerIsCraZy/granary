@@ -24,7 +24,8 @@ public enum LibraryTab
 /// One library (<see cref="AppRoute.Library"/>, the parameter is its id), laid out like Silo's web client:
 /// "LIBRARY / NAME", Shuffle, and the Recommended, Library and Collections tabs. Each tab loads the first time
 /// it shows. The page keeps its state while the same library, server and profile are shown, so Back returns
-/// to the same tab; another server or profile loads the library again, another library starts on Recommended.
+/// to the same tab; another server or profile loads the library again. A library opens on the tab it was last left
+/// on (<see cref="LibraryTabs"/>), as the web's "Remember library view", else on Recommended.
 /// </summary>
 public sealed partial class LibraryViewModel : ObservableObject
 {
@@ -52,6 +53,7 @@ public sealed partial class LibraryViewModel : ObservableObject
     private readonly TimeProvider _time;
     private readonly ILogger<LibraryViewModel> _logger;
     private readonly ViewerStateChanges? _changes;
+    private readonly LibraryTabs? _tabs;
     private readonly Dictionary<(string ServerId, string? ProfileId), bool> _serverCanShuffle = [];
     private (string? ServerId, string? ProfileId, string? LibraryId)? _loaded;
     private DateTimeOffset _loadedAt;
@@ -71,7 +73,8 @@ public sealed partial class LibraryViewModel : ObservableObject
         IUiDispatcher dispatcher,
         TimeProvider time,
         ILogger<LibraryViewModel> logger,
-        ViewerStateChanges? changes = null)
+        ViewerStateChanges? changes = null,
+        LibraryTabs? tabs = null)
     {
         _session = session;
         _catalog = catalog;
@@ -82,6 +85,7 @@ public sealed partial class LibraryViewModel : ObservableObject
         _time = time;
         _logger = logger;
         _changes = changes;
+        _tabs = tabs;
         Recommended = new LibraryRowsViewModel(catalog, navigation, logger);
         Browse = new LibraryBrowseViewModel(catalog, images, logger);
         Collections = new LibraryCollectionsViewModel(pages, catalog, images, logger);
@@ -192,7 +196,10 @@ public sealed partial class LibraryViewModel : ObservableObject
     private Task SelectTabAsync(LibraryTab tab)
     {
         SelectedTab = tab;
-        return State == LibraryLoadState.Ready ? StartTabAsync(tab, _run.Token) : Task.CompletedTask;
+        var remember = _tabs is not null && _loaded is { ServerId: { } server, ProfileId: var profile, LibraryId: { Length: > 0 } library }
+            ? _tabs.RememberAsync(server, profile, library, tab)
+            : Task.CompletedTask;
+        return Task.WhenAll(remember, State == LibraryLoadState.Ready ? StartTabAsync(tab, _run.Token) : Task.CompletedTask);
     }
 
     [RelayCommand]
@@ -257,8 +264,7 @@ public sealed partial class LibraryViewModel : ObservableObject
 
     private async Task LoadAsync(string? libraryId)
     {
-        // A retry, a refresh or another profile keeps the tab; another library starts on Recommended.
-        var token = Restart(libraryId == LibraryId ? SelectedTab : LibraryTab.Recommended);
+        var token = Restart(TabFor(libraryId));
         LibraryId = libraryId;
         _loaded = Key(libraryId);
         _loadedAt = _time.GetUtcNow();
@@ -311,6 +317,22 @@ public sealed partial class LibraryViewModel : ObservableObject
         Collections.Initialize(server, library, _sizes);
         State = LibraryLoadState.Ready;
         await Task.WhenAll(StartTabAsync(SelectedTab, cancellationToken), UpdateShuffleAsync(server, library, cancellationToken));
+    }
+
+    // A retry or a refresh keeps the tab. Otherwise the library opens on the tab it was last left on for this server and
+    // profile; one never left keeps the tab when only the server or profile changed, else starts on Recommended.
+    private LibraryTab TabFor(string? libraryId)
+    {
+        if (_loaded == Key(libraryId))
+        {
+            return SelectedTab;
+        }
+        if (_tabs is not null && _session.ActiveServer?.Id is { } server && !string.IsNullOrWhiteSpace(libraryId)
+            && _tabs.Recall(server, _session.ProfileId, libraryId) is { } remembered)
+        {
+            return remembered;
+        }
+        return libraryId == LibraryId ? SelectedTab : LibraryTab.Recommended;
     }
 
     private Task StartTabAsync(LibraryTab tab, CancellationToken cancellationToken) => tab switch

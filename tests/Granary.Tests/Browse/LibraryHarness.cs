@@ -53,6 +53,9 @@ internal sealed class LibraryHarness
 
     public ViewerStateChanges ViewerState { get; } = new(new PlaybackStops());
 
+    /// <summary>Where the libraries' last tabs are kept; none unless a test sets it.</summary>
+    public LibraryTabs? Tabs { get; set; }
+
     /// <summary>Answers GET <paramref name="path"/> with the bodies in order, repeating the last.</summary>
     public void Answer(string path, params string[] bodies) =>
         Silo.On(HttpMethod.Get, path, [.. bodies.Select(body => ScriptedSilo.Json(HttpStatusCode.OK, body))]);
@@ -74,7 +77,8 @@ internal sealed class LibraryHarness
         new ImmediateDispatcher(),
         Clock,
         Logs.For<LibraryViewModel>(),
-        ViewerState);
+        ViewerState,
+        Tabs);
 
     /// <summary>Library 1, shown on its Library tab with the first page loaded.</summary>
     public async Task<LibraryViewModel> OpenLibraryTabAsync(string libraryId = "1")

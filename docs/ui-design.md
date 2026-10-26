@@ -122,6 +122,10 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   rather than stopping at an invisible wall (`RowBleed`; the player's On Deck row has a 32 px gutter). On the left a row
   ends at the page's gutter, no cut-off card beside the sidebar, and the arrows page by as many whole cards as show, so a
   card starts right on the gutter after each click.
+- A library (`LibraryPage`) opens on the view it was last left on, Recommended, Library or Collections, as the web's
+  "Remember library view" (`ui.remember_library_page_state`, on by default) does: per server, profile and library in
+  `library-tabs.json` in the data directory, since the web keeps it per device too. A library never left opens on
+  Recommended. Unlike the web, the Library view's sort and filters are not kept yet.
 - Collections (`CollectionsPage`, the web's `pages/Collections.tsx`): "Your collections" with its count ("Manual ·
   4 titles", a SHARED badge on one other profiles see), "Shared with me" by owner ("by Mara"), and "Server
   collections" with a pill per library (All first) and Load more, which the end of the grid presses by itself. A

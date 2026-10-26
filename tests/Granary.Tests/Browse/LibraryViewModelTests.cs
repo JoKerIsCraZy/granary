@@ -112,6 +112,46 @@ public sealed class LibraryViewModelTests
     }
 
     [Fact]
+    public async Task ALibrary_OpensOnTheTabItWasLastLeftOn_AnotherOneOnRecommended()
+    {
+        string directory = Path.Combine(Path.GetTempPath(), "granary-tests", Guid.NewGuid().ToString("N"));
+        try
+        {
+            _harness.Tabs = new LibraryTabs(Path.Combine(directory, "library-tabs.json"), _harness.Logs.For<LibraryTabs>());
+            _harness.Answer("api/v2/library/2/sections", LibraryPayloads.Sections);
+            _harness.Answer("api/v2/library/2/sections/recently_added/items", LibraryPayloads.RecentlyAddedItems);
+            var first = _harness.Create();
+            await first.ActivateAsync("1");
+            await first.SelectTabCommand.ExecuteAsync(LibraryTab.Collections);
+            first.Deactivate();
+
+            // The next start: a new store reads the file, a new page opens the library.
+            _harness.Tabs = new LibraryTabs(Path.Combine(directory, "library-tabs.json"), _harness.Logs.For<LibraryTabs>());
+            var library = _harness.Create();
+            await library.ActivateAsync("1");
+
+            Assert.Equal(LibraryTab.Collections, library.SelectedTab);
+            Assert.NotEqual(LibraryLoadState.Idle, library.Collections.State);
+            Assert.Equal(2, _harness.Count("api/v2/library/1/collections"));
+            // Only the first page loaded the rows: this one opened straight on Collections.
+            Assert.Equal(1, _harness.Count("api/v2/library/1/sections"));
+
+            await library.ActivateAsync("2");
+            Assert.Equal(LibraryTab.Recommended, library.SelectedTab);
+
+            await library.ActivateAsync("1");
+            Assert.Equal(LibraryTab.Collections, library.SelectedTab);
+        }
+        finally
+        {
+            if (Directory.Exists(directory))
+            {
+                Directory.Delete(directory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public async Task ProfileChange_ReloadsTheShownLibraryOnItsTab()
     {
         var library = await _harness.OpenLibraryTabAsync();
