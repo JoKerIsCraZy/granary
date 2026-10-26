@@ -398,9 +398,17 @@
                         </Grid>
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <StackPanel MaxWidth="496" Padding="24" Spacing="28" VerticalAlignment="Center">
-                                <StackPanel Spacing="6" HorizontalAlignment="Center">
-                                    <TextBlock Text="Granary" HorizontalAlignment="Center" FontFamily="{StaticResource SiloFontExtraBold}"
-                                               FontWeight="ExtraBold" FontSize="44" CharacterSpacing="-40" Foreground="{StaticResource SiloForegroundBrush}" />
+                                <!--
+                                    Granary's lockup: its mark beside its name, in Bold at a plain tracking, apart from Silo's
+                                    wordmark (ExtraBold, -0.04 em).
+                                -->
+                                <StackPanel Spacing="8" HorizontalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal" Spacing="14" HorizontalAlignment="Center">
+                                        <Image Source="ms-appx:///Assets/Logo/granary-mark.svg" Width="48" Height="48" VerticalAlignment="Center"
+                                               AutomationProperties.AccessibilityView="Raw" />
+                                        <TextBlock Text="Granary" VerticalAlignment="Center" FontFamily="{StaticResource SiloFontBold}" FontWeight="Bold"
+                                                   FontSize="44" CharacterSpacing="-10" Foreground="{StaticResource SiloForegroundBrush}" />
+                                    </StackPanel>
                                     <TextBlock Text="A Silo client for Windows" HorizontalAlignment="Center" FontFamily="{StaticResource SiloFontMedium}"
                                                FontWeight="Medium" FontSize="14" Foreground="{StaticResource SiloMutedBrush}" />
                                 </StackPanel>

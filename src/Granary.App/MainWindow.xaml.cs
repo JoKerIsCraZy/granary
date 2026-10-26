@@ -56,6 +56,8 @@ public sealed partial class MainWindow : Window
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
         StyleCaptionButtons();
+        // The exe carries the icon too (ApplicationIcon); an unpackaged window still has to be given it.
+        AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets", "Logo", "granary.ico"));
         AppWindow.Resize(new Windows.Graphics.SizeInt32(1440, 900));
         AppWindow.Closing += OnClosing;
 

@@ -15,6 +15,8 @@
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- Granary's own icon (Assets/Logo): the window and the taskbar take it too (MainWindow). -->
+    <ApplicationIcon>Assets\Logo\granary.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -35,6 +37,9 @@
     <Content Include="Assets\Fonts\OFL.txt" CopyToOutputDirectory="PreserveNewest" />
     <!-- Silo's mark, unmodified, to refer to Silo where a server is added and signed in to (Assets/Brand/NOTICE.txt). -->
     <Content Include="Assets\Brand\silo-mark-flat.svg" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Granary's own mark and icon; Assets/Logo/granary-icon.svg is the icon's source. -->
+    <Content Include="Assets\Logo\granary-mark.svg" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\Logo\granary.ico" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <!-- libmpv comes from native/ (scripts/fetch-native.ps1), it is not committed. -->

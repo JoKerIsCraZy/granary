@@ -20,7 +20,10 @@
         </Grid.KeyboardAccelerators>
 
         <Grid x:Name="AppTitleBar" Padding="16,0,0,0">
-            <TextBlock x:Name="AppTitle" Text="Granary" VerticalAlignment="Center" Style="{StaticResource SiloCaptionTextStyle}" />
+            <StackPanel x:Name="AppTitle" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                <Image Source="ms-appx:///Assets/Logo/granary-mark.svg" Width="16" Height="16" AutomationProperties.AccessibilityView="Raw" />
+                <TextBlock Text="Granary" VerticalAlignment="Center" Style="{StaticResource SiloCaptionTextStyle}" />
+            </StackPanel>
         </Grid>
 
         <!--
