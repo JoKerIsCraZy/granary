@@ -91,8 +91,7 @@ public sealed partial class BrandRow : UserControl
 
     private void OnNextClick(object sender, RoutedEventArgs e) => ScrollBy(1);
 
-    private void ScrollBy(int direction) =>
-        Scroller.ScrollTo(Scroller.HorizontalOffset + direction * Scroller.ViewportWidth * 0.85, 0);
+    private void ScrollBy(int direction) => RowBleed.Page(Scroller, Tiles, Bleed, direction);
 
     private void OnPointerEntered(object sender, PointerRoutedEventArgs e)
     {

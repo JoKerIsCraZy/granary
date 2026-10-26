@@ -1,5 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 
 namespace Granary.App.Controls;
 
@@ -16,6 +17,41 @@ internal static class RowBleed
 
     // How far the arrows sit outside the content's start and end.
     private const double ArrowOverhang = 18;
+
+    /// <summary>
+    /// Pages the row by whole cards, as the web's carousel does: as many as show, so that afterwards a card starts right on
+    /// the page's gutter again, the one before it cut off in the gutter. A row whose cards cannot be measured pages by
+    /// most of its width.
+    /// </summary>
+    public static void Page(ScrollView scroller, UIElement? content, double bleed, int direction)
+    {
+        double viewport = scroller.ViewportWidth;
+        double target;
+        if (content is ItemsRepeater { Layout: StackLayout { Orientation: Orientation.Horizontal } layout } items && CardWidth(items) is { } width)
+        {
+            double pitch = width + layout.Spacing;
+            int cards = Math.Max(1, (int)Math.Floor((viewport - 2 * bleed + layout.Spacing) / pitch));
+            target = (Math.Round(scroller.HorizontalOffset / pitch) + direction * cards) * pitch;
+        }
+        else
+        {
+            target = scroller.HorizontalOffset + direction * viewport * 0.85;
+        }
+        scroller.ScrollTo(Math.Clamp(target, 0, scroller.ScrollableWidth), 0);
+    }
+
+    // A realized card's width: the row's cards are all one width.
+    private static double? CardWidth(ItemsRepeater items)
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(items); i++)
+        {
+            if (VisualTreeHelper.GetChild(items, i) is FrameworkElement { ActualWidth: > 0 } card)
+            {
+                return card.ActualWidth;
+            }
+        }
+        return null;
+    }
 
     public static void Apply(double bleed, FrameworkElement track, FrameworkElement? content, Button previous, Button next)
     {
