@@ -125,8 +125,16 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   each request a row with its poster, title and state badge (the web's variants: Available red, Failed destructive,
   approved and on their way filled, Pending outlined, closed ones outlined and muted), "Series · 2022 · Seasons 1–3",
   the download's bar and "Downloading · 43% · about 12 min left", when it was requested and changed, the error in red
-  or the admin's reason, Open in library, and Cancel request behind the web's confirmation. Studios, networks, genres
-  and search come next.
+  or the admin's reason, Open in library, and Cancel request behind the web's confirmation. A Discover row of several
+  pages has EXPLORE ALL; under the rows come Studios, Networks and Genres as rows of 208 × 112 tiles (a logo on gray-800
+  with a gray-700 ring, the name when there is none, a genre's name on its 135° gradient), empty tiles while they load,
+  and "Could not load studios." beside Retry. Search comes next.
+- A Discover row in full and a studio's, network's or genre's titles (`RequestTitlesPage`, the web's
+  `RequestDiscoverSection.tsx` / `RequestBrowse.tsx`): the name (the row's key in words until the server names it), for a
+  browse page a 112 × 64 tile with the logo or name and "Studio" under the name, Movies | Series pills for a genre and
+  the sort (Popularity, Rating, Release date) on the right; then the poster grid, which reads the next page as its end
+  comes into view, with Load more for the keyboard and "Couldn’t load more titles." beside Try again. The web's texts
+  for a row that does not exist, TMDB not answering, and nothing matching.
 - A title from TMDB (`TitlePage`, the web's `TitleDetail.tsx` / `ExternalTitleContent.tsx`): laid out like a library
   title (backdrop, poster, "MOVIE · DC STUDIOS", chips, the TMDB score with its votes, overview, "Directed by" or
   "Created by", genres), with request actions in place of playback: Request movie / Request series, or the request's

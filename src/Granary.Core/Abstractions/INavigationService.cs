@@ -61,6 +61,9 @@ public enum AppRoute
 
     /// <summary>A movie or series known only from TMDB; the parameter is a <see cref="TitleRouteParameter"/>.</summary>
     Title,
+
+    /// <summary>A Discover row in full, or a studio's, network's or genre's titles; the parameter is a <see cref="RequestTitlesRouteParameter"/>.</summary>
+    RequestTitles,
 }
 
 /// <summary>Which row an "Explore all" grid lists: a Home row, or a library row when <see cref="LibraryId"/> is set.</summary>
@@ -79,6 +82,14 @@ public sealed record RecommendationSectionRouteParameter(string Kind, string? Ke
 
 /// <summary>A title from TMDB, by its media type (<c>movie</c> or <c>series</c>) and TMDB id; the title names it while it loads.</summary>
 public sealed record TitleRouteParameter(string MediaType, long TmdbId, string Title);
+
+/// <summary>
+/// Titles from TMDB to request: a Discover row's (<see cref="Browse"/> null, <see cref="Key"/> its key, such as
+/// <c>trending_movies</c>), or a studio's, network's or genre's (<see cref="Key"/> its slug).
+/// </summary>
+/// <param name="Title">Names the page while it loads; empty for the key's own words.</param>
+/// <param name="MediaType">The media type a genre opens on, <c>movie</c> or <c>series</c>; movies when null.</param>
+public sealed record RequestTitlesRouteParameter(string Key, string Title, Api.Requests.DiscoverBrowseKind? Browse = null, string? MediaType = null);
 
 public interface INavigationService
 {

@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Titles from TMDB to request, as Silo's web shows a Discover row in full or a studio, network or genre: the name (with
+    a studio's logo beside it), for a browse page Movies | Series and the sort on the right, then a poster grid that reads
+    more while it scrolls. The page is cached: Back keeps the pages read and the place.
+-->
+<Page
+    x:Class="Granary.App.Views.RequestTitlesPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Granary.App.Controls"
+    xmlns:views="using:Granary.App.Views"
+    NavigationCacheMode="Enabled">
+
+    <ScrollViewer x:Name="Scroller" XYFocusKeyboardNavigation="Enabled">
+        <StackPanel Padding="48,32,48,48" Spacing="24">
+            <Grid ColumnSpacing="16" RowSpacing="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- The web's header tile: a studio's logo on gray, else the name; muted while the first page loads. -->
+                <Border Width="112" Height="64" CornerRadius="6" VerticalAlignment="Center" Visibility="{x:Bind ViewModel.HasHeaderTile, Mode=OneWay}"
+                        Background="{x:Bind views:RequestTitlesPage.TileBackground(ViewModel.IsGenre, ViewModel.TileText), Mode=OneWay}"
+                        BorderBrush="{x:Bind views:RequestTitlesPage.TileRing(ViewModel.IsGenre, ViewModel.TileText), Mode=OneWay}" BorderThickness="1"
+                        AutomationProperties.AccessibilityView="Raw">
+                    <Grid>
+                        <!-- A function binding is not called for a null logo, so whether there is one shows through a flag. -->
+                        <Image Source="{x:Bind views:RequestTitlesPage.LogoImage(ViewModel.Logo), Mode=OneWay}" Stretch="Uniform" Margin="8"
+                               Visibility="{x:Bind ViewModel.HasLogo, Mode=OneWay}" />
+                        <TextBlock Text="{x:Bind ViewModel.TileText, Mode=OneWay}" Visibility="{x:Bind views:RequestTitlesPage.Unless(ViewModel.HasLogo), Mode=OneWay}"
+                                   Margin="8,0" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"
+                                   MaxLines="2" TextTrimming="CharacterEllipsis" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
+                                   FontSize="{x:Bind views:RequestTitlesPage.TileFontSize(ViewModel.IsGenre), Mode=OneWay}"
+                                   Foreground="{StaticResource SiloForegroundBrush}" />
+                    </Grid>
+                </Border>
+
+                <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+                    <TextBlock Text="{x:Bind ViewModel.Title, Mode=OneWay}" Style="{StaticResource SiloDisplayTextStyle}" TextTrimming="CharacterEllipsis"
+                               AutomationProperties.HeadingLevel="Level1" />
+                    <TextBlock Text="{x:Bind ViewModel.Subtitle, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
+                               Visibility="{x:Bind views:RequestTitlesPage.HasText(ViewModel.Subtitle), Mode=OneWay}" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="12" VerticalAlignment="Bottom"
+                            Visibility="{x:Bind ViewModel.HasChoices, Mode=OneWay}">
+                    <controls:PillChoices ItemsSource="{x:Bind ViewModel.MediaChoices}" SelectedItem="{x:Bind ViewModel.SelectedMedia, Mode=TwoWay}"
+                                          Visibility="{x:Bind ViewModel.IsGenre, Mode=OneWay}" VerticalAlignment="Center" AutomationProperties.Name="Media type" />
+                    <ComboBox Width="160" ItemsSource="{x:Bind ViewModel.SortChoices}" SelectedItem="{x:Bind ViewModel.SelectedSort, Mode=TwoWay}"
+                              DisplayMemberPath="Label" VerticalAlignment="Center" AutomationProperties.Name="Sort by" />
+                </StackPanel>
+            </Grid>
+
+            <ProgressRing IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay}"
+                          Width="32" Height="32" Margin="0,48" HorizontalAlignment="Center" AutomationProperties.Name="Loading titles" />
+            <StackPanel Visibility="{x:Bind ViewModel.HasError, Mode=OneWay}" Spacing="16" Margin="0,48" HorizontalAlignment="Center">
+                <TextBlock Text="{x:Bind ViewModel.Message, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
+                           TextAlignment="Center" TextWrapping="Wrap" />
+                <Button Content="Retry" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center" Command="{x:Bind ViewModel.RetryCommand}" />
+            </StackPanel>
+            <TextBlock Text="{x:Bind ViewModel.Message, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
+                       Visibility="{x:Bind views:RequestTitlesPage.ShowsMessage(ViewModel.IsEmpty, ViewModel.IsNotFound, ViewModel.Message), Mode=OneWay}"
+                       TextWrapping="Wrap" />
+
+            <controls:MediaGrid ItemsSource="{x:Bind ViewModel.Cards}" CardInvokedCommand="{x:Bind ViewModel.OpenCardCommand}"
+                                LoadMoreCommand="{x:Bind ViewModel.LoadMoreCommand}" Visibility="{x:Bind ViewModel.IsReady, Mode=OneWay}" />
+            <ProgressRing IsActive="{x:Bind ViewModel.IsLoadingMore, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsLoadingMore, Mode=OneWay}"
+                          Width="24" Height="24" HorizontalAlignment="Center" AutomationProperties.Name="Loading more titles" />
+            <!-- Scrolling to the end presses it; it stays for the keyboard. -->
+            <Button Content="Load more" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
+                    Command="{x:Bind ViewModel.LoadMoreCommand}" Visibility="{x:Bind ViewModel.ShowsLoadMore, Mode=OneWay}" />
+            <StackPanel Spacing="12" HorizontalAlignment="Center" Visibility="{x:Bind ViewModel.HasMoreError, Mode=OneWay}">
+                <TextBlock Text="Couldn’t load more titles." Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
+                           HorizontalAlignment="Center" />
+                <Button Content="Try again" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
+                        Command="{x:Bind ViewModel.TryAgainCommand}" />
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

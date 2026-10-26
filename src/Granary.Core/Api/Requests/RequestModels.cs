@@ -105,12 +105,56 @@ public sealed record DiscoverSectionCollection
     public IReadOnlyList<DiscoverSection> Items { get; init => field = value ?? []; } = [];
 }
 
-/// <summary>A Discover row (Trending, Popular, …): its first page of titles.</summary>
+/// <summary>A Discover row (Trending, Popular, …): a page of its titles (the first, on the hub).</summary>
 public sealed record DiscoverSection
 {
     public string Key { get; init => field = value ?? ""; } = "";
 
     public string Title { get; init => field = value ?? ""; } = "";
+
+    public int Page { get; init; }
+
+    /// <summary>
+    /// The page to ask for next when the server read several TMDB pages to fill this one (for a rating-restricted
+    /// profile); page + 1 would repeat titles then.
+    /// </summary>
+    public int? NextPage { get; init; }
+
+    public int TotalPages { get; init; }
+
+    public IReadOnlyList<RequestMediaResult> Results { get; init => field = value ?? []; } = [];
+}
+
+/// <summary><c>GET /api/v2/requests/discover/{studios|networks|genres}</c>.</summary>
+public sealed record DiscoverBrandCollection
+{
+    public IReadOnlyList<DiscoverBrand> Items { get; init => field = value ?? []; } = [];
+}
+
+/// <summary>A studio, network or genre to browse: a logo, or a name on a gradient for a genre.</summary>
+public sealed record DiscoverBrand
+{
+    public string Slug { get; init => field = value ?? ""; } = "";
+
+    public string DisplayName { get; init => field = value ?? ""; } = "";
+
+    public string? LogoUrl { get; init; }
+
+    /// <summary>"#475569", a genre tile's colours.</summary>
+    public string? GradientFrom { get; init; }
+
+    public string? GradientTo { get; init; }
+
+    /// <summary>A genre that has series as well as movies.</summary>
+    public bool SeriesSupported { get; init; }
+}
+
+/// <summary><c>GET /api/v2/requests/discover/browse/{kind}/{slug}</c>: a page of a studio's, network's or genre's titles.</summary>
+public sealed record DiscoverBrowsePage
+{
+    public string DisplayName { get; init => field = value ?? ""; } = "";
+
+    public string? LogoUrl { get; init; }
 
     public int Page { get; init; }
 
@@ -323,9 +367,32 @@ public static partial class TmdbImages
             ? uri
             : null;
 
+    /// <summary>
+    /// A studio's or network's logo as the server names it: a TMDB image at any size, possibly through one of TMDB's
+    /// filters (<c>https://image.tmdb.org/t/p/w780_filter(duotone,ffffff,bababa)/abc.png</c>). Null for any other URL.
+    /// </summary>
+    public static Uri? Logo(string? url) =>
+        url is { Length: <= 512 } && Uri.TryCreate(url, UriKind.Absolute, out var uri) && uri.Scheme == Uri.UriSchemeHttps && uri.Host == Host
+            && uri.IsDefaultPort && uri.UserInfo.Length == 0 && uri.Query.Length == 0 && uri.Fragment.Length == 0 && LogoPath().IsMatch(uri.AbsolutePath)
+            ? uri
+            : null;
+
     [GeneratedRegex(@"^/[A-Za-z0-9_-]{1,128}\.(jpg|jpeg|png|webp|svg)$", RegexOptions.CultureInvariant)]
     private static partial Regex ImagePath();
 
+    // No SVG: a bitmap cannot draw one, and a tile without its logo shows the name instead.
+    [GeneratedRegex(@"^/t/p/(w[0-9]{2,4}|original)(_filter\([a-z]{1,16}(,[0-9a-fA-F]{6}){0,4}\))?/[A-Za-z0-9_-]{1,128}\.(jpg|jpeg|png|webp)$",
+        RegexOptions.CultureInvariant)]
+    private static partial Regex LogoPath();
+
     [GeneratedRegex(@"^(w[0-9]{2,4}|original)$", RegexOptions.CultureInvariant)]
     private static partial Regex SizeName();
+}
+
+/// <summary>What a browse page lists: a studio's movies, a network's series, a genre's movies or series.</summary>
+public enum DiscoverBrowseKind
+{
+    Studio,
+    Network,
+    Genre,
 }

@@ -19,11 +19,12 @@ public enum RequestsTab
 
 /// <summary>A Discover row of titles from TMDB.</summary>
 /// <param name="OpenCommand">Takes a card.</param>
-public sealed record RequestDiscoverRow(string Title, IReadOnlyList<MediaCard> Cards, ICommand OpenCommand);
+/// <param name="ExploreAllCommand">The row in full; null for a row of one page.</param>
+public sealed record RequestDiscoverRow(string Title, IReadOnlyList<MediaCard> Cards, ICommand OpenCommand, ICommand? ExploreAllCommand = null);
 
 /// <summary>
 /// The Requests hub, as Silo's web shows it (<c>pages/Requests.tsx</c>): Discover, rows of titles from TMDB with their
-/// request state; and Yours, the account's requests (up to 100) grouped by what happens next: Needs attention, On the
+/// request state, each in full behind Explore all, then the studios, networks and genres to browse; and Yours, the account's requests (up to 100) grouped by what happens next: Needs attention, On the
 /// way, In your library, Cancelled, each in the server's order. A request can be cancelled while nothing was sent for
 /// it; one that arrived opens in the library. While the page shows and a request is downloading, Yours is read again
 /// every <see cref="DownloadPollInterval"/>, quietly behind the rows shown, as the web does.
@@ -69,6 +70,12 @@ public sealed partial class RequestsViewModel : ObservableObject
         _time = time;
         _dispatcher = dispatcher;
         _logger = logger;
+        BrandRows =
+        [
+            new(DiscoverBrowseKind.Studio, "Studios", RetryBrandsAsync),
+            new(DiscoverBrowseKind.Network, "Networks", RetryBrandsAsync),
+            new(DiscoverBrowseKind.Genre, "Genres", RetryBrandsAsync),
+        ];
     }
 
     [ObservableProperty]
@@ -90,6 +97,9 @@ public sealed partial class RequestsViewModel : ObservableObject
     public bool IsDiscoverLoading => DiscoverState == LibraryLoadState.Loading;
 
     public bool HasDiscoverError => DiscoverState == LibraryLoadState.Error;
+
+    /// <summary>Studios, Networks and Genres, under the Discover rows.</summary>
+    public IReadOnlyList<RequestBrandRowViewModel> BrandRows { get; }
 
     public ObservableCollection<RequestGroupViewModel> RequestGroups { get; } = [];
 
@@ -178,6 +188,16 @@ public sealed partial class RequestsViewModel : ObservableObject
         }
     }
 
+    /// <summary>A studio's, network's or genre's titles.</summary>
+    [RelayCommand]
+    private void OpenBrand(RequestBrandTile? tile)
+    {
+        if (tile is not null)
+        {
+            _navigation.NavigateTo(AppRoute.RequestTitles, tile.Destination);
+        }
+    }
+
     [RelayCommand]
     private void OpenInLibrary(RequestRowViewModel? row)
     {
@@ -246,10 +266,16 @@ public sealed partial class RequestsViewModel : ObservableObject
             _loadedFor = null;
             DiscoverRows.Clear();
             DiscoverState = YoursState = LibraryLoadState.Idle;
+            foreach (var row in BrandRows)
+            {
+                row.Tiles.Clear();
+                row.State = LibraryLoadState.Idle;
+            }
             return;
         }
         _loadedFor = Key();
-        await Task.WhenAll(LoadDiscoverAsync(server.BaseUri, token), LoadMineAsync(server.BaseUri, token, quiet: false));
+        await Task.WhenAll([LoadDiscoverAsync(server.BaseUri, token), LoadMineAsync(server.BaseUri, token, quiet: false),
+            .. BrandRows.Select(row => LoadBrandsAsync(row, server.BaseUri, token))]);
     }
 
     private async Task LoadDiscoverAsync(Uri server, CancellationToken token)
@@ -269,7 +295,7 @@ public sealed partial class RequestsViewModel : ObservableObject
                 var cards = section.Results.Where(r => r.TmdbId > 0).Select(CardOf).DistinctBy(c => c.Id, StringComparer.Ordinal).ToList();
                 if (cards.Count > 0)
                 {
-                    DiscoverRows.Add(new RequestDiscoverRow(section.Title, cards, OpenCardCommand));
+                    DiscoverRows.Add(new RequestDiscoverRow(section.Title, cards, OpenCardCommand, ExploreAll(section)));
                 }
             }
             DiscoverState = DiscoverRows.Count == 0 ? LibraryLoadState.Empty : LibraryLoadState.Ready;
@@ -282,6 +308,52 @@ public sealed partial class RequestsViewModel : ObservableObject
             }
             Log(ex, "Could not load the request discovery rows");
             DiscoverState = LibraryLoadState.Error;
+        }
+    }
+
+    // The web offers a row in full when it has more than its first page.
+    private RelayCommand? ExploreAll(DiscoverSection section)
+    {
+        if (section.TotalPages <= 1 || section.Key.Length == 0)
+        {
+            return null;
+        }
+        var route = new RequestTitlesRouteParameter(section.Key, section.Title);
+        return new RelayCommand(() => _navigation.NavigateTo(AppRoute.RequestTitles, route));
+    }
+
+    private Task RetryBrandsAsync(RequestBrandRowViewModel row) => _session is { State: SessionState.Ready, ActiveServer: { } server }
+        ? LoadBrandsAsync(row, server.BaseUri, _run.Token)
+        : Task.CompletedTask;
+
+    private async Task LoadBrandsAsync(RequestBrandRowViewModel row, Uri server, CancellationToken token)
+    {
+        row.Tiles.Clear();
+        row.State = LibraryLoadState.Loading;
+        try
+        {
+            var brands = await _requests.ListBrandsAsync(server, row.Kind, token);
+            if (token.IsCancellationRequested)
+            {
+                return;
+            }
+            foreach (var brand in brands.Items.DistinctBy(b => b.Slug, StringComparer.Ordinal))
+            {
+                if (RequestBrandTiles.Of(row.Kind, brand, OpenBrandCommand) is { } tile)
+                {
+                    row.Tiles.Add(tile);
+                }
+            }
+            row.State = row.Tiles.Count == 0 ? LibraryLoadState.Empty : LibraryLoadState.Ready;
+        }
+        catch (Exception ex)
+        {
+            if (token.IsCancellationRequested)
+            {
+                return;
+            }
+            Log(ex, "Could not load the studios, networks or genres to browse");
+            row.State = LibraryLoadState.Error;
         }
     }
 

@@ -13,6 +13,36 @@ public sealed class RequestsViewModelTests
     private const string MinePath = "api/v2/requests/mine";
     private const string DiscoverPath = "api/v2/requests/discover";
     private const string StatusPath = "api/v2/requests/status";
+    private const string StudiosPath = "api/v2/requests/discover/studios";
+    private const string NetworksPath = "api/v2/requests/discover/networks";
+    private const string GenresPath = "api/v2/requests/discover/genres";
+
+    /// <summary>A studio with its logo, one without, one twice, one without a slug, and one whose logo is off TMDB.</summary>
+    private const string Studios = """
+        {
+          "items": [
+            { "tmdb_id": 420, "slug": "marvel-studios", "display_name": "Marvel Studios",
+              "logo_url": "https://image.tmdb.org/t/p/w780_filter(duotone,ffffff,bababa)/marvel.png" },
+            { "tmdb_id": 1, "slug": "a24", "display_name": "A24" },
+            { "tmdb_id": 420, "slug": "marvel-studios", "display_name": "Marvel Again" },
+            { "tmdb_id": 2, "slug": "", "display_name": "Nowhere" },
+            { "tmdb_id": 3, "slug": "elsewhere", "display_name": "Elsewhere", "logo_url": "https://evil.example/logo.png" }
+          ],
+          "page": { "has_more": false }
+        }
+        """;
+
+    /// <summary>A genre with its colours, and one with a colour that is not one.</summary>
+    private const string Genres = """
+        {
+          "items": [
+            { "slug": "action", "display_name": "Action", "gradient_from": "#7f1d1d", "gradient_to": "#1f2937", "series_supported": true },
+            { "slug": "drama", "display_name": "Drama", "gradient_from": "red; background: url(x)" }
+          ]
+        }
+        """;
+
+    private const string NoBrands = """{ "items": [] }""";
 
     /// <summary>
     /// A pending request (cancellable), a series partly in (two seasons, downloading), one declined with a reason, one
@@ -76,6 +106,9 @@ public sealed class RequestsViewModelTests
     {
         _harness.Answer(MinePath, Mine);
         _harness.Answer(DiscoverPath, Discover);
+        _harness.Answer(StudiosPath, Studios);
+        _harness.Answer(NetworksPath, NoBrands);
+        _harness.Answer(GenresPath, Genres);
         _harness.Silo.On(HttpMethod.Post, "api/v2/requests/r1/cancel", ScriptedSilo.Json(HttpStatusCode.OK, """
             { "id": "r1", "media_type": "movie", "tmdb_id": 1, "title": "Heat 2", "status": "pending", "outcome": "cancelled", "state": "cancelled",
               "seasons": [], "season_progress": [], "targets": [], "created_at": "2026-09-30T12:00:00Z", "updated_at": "2026-10-01T12:00:00Z",
@@ -245,6 +278,87 @@ public sealed class RequestsViewModelTests
             (AppRoute.Item, (object?)"movie:got-it-2020"),
             (AppRoute.Title, new TitleRouteParameter("series", 11, "Asked For")),
         ], _harness.Navigation.Navigations.Select(n => (n.Route, n.Parameter)).ToList<(AppRoute, object?)>());
+    }
+
+    [Fact]
+    public async Task ARowWithMorePages_OpensInFull()
+    {
+        var hub = await LoadedAsync();
+
+        var exploreAll = hub.DiscoverRows[0].ExploreAllCommand;
+        Assert.NotNull(exploreAll);
+        exploreAll.Execute(null);
+
+        var navigation = Assert.Single(_harness.Navigation.Navigations);
+        Assert.Equal(AppRoute.RequestTitles, navigation.Route);
+        Assert.Equal(new RequestTitlesRouteParameter("trending_movies", "Trending Movies"), navigation.Parameter);
+    }
+
+    [Fact]
+    public async Task ARowOfOnePage_HasNothingMoreToShow()
+    {
+        _harness.Answer(DiscoverPath, Discover.Replace("\"total_pages\": 5", "\"total_pages\": 1", StringComparison.Ordinal));
+
+        var hub = await LoadedAsync();
+
+        Assert.Null(hub.DiscoverRows[0].ExploreAllCommand);
+    }
+
+    [Fact]
+    public async Task Studios_NetworksAndGenres_FollowTheRows()
+    {
+        var hub = await LoadedAsync();
+
+        Assert.Equal(["Studios", "Networks", "Genres"], hub.BrandRows.Select(r => r.Title));
+        var studios = hub.BrandRows[0];
+        Assert.True(studios.IsReady);
+        // A brand shows once, and only one with somewhere to go.
+        Assert.Equal(["Marvel Studios", "A24", "Elsewhere"], studios.Tiles.Select(t => t.Name));
+        Assert.Equal(new Uri("https://image.tmdb.org/t/p/w780_filter(duotone,ffffff,bababa)/marvel.png"), studios.Tiles[0].Logo);
+        Assert.Equal([true, false, false], studios.Tiles.Select(t => t.HasLogo));
+        // A row without any stays hidden.
+        Assert.False(hub.BrandRows[1].IsShown);
+
+        var genres = hub.BrandRows[2].Tiles;
+        Assert.All(genres, t => Assert.True(t.IsGenre));
+        Assert.Equal(("#7f1d1d", "#1f2937"), (genres[0].GradientFrom, genres[0].GradientTo));
+        // The web's colours stand in for ones that are not colours.
+        Assert.Equal(("#475569", "#0f172a"), (genres[1].GradientFrom, genres[1].GradientTo));
+    }
+
+    [Fact]
+    public async Task ATile_OpensItsTitles_AGenreOnItsMovies()
+    {
+        var hub = await LoadedAsync();
+        var studio = hub.BrandRows[0].Tiles[0];
+        var genre = hub.BrandRows[2].Tiles[0];
+
+        studio.OpenCommand.Execute(studio);
+        genre.OpenCommand.Execute(genre);
+
+        Assert.Equal(
+        [
+            new RequestTitlesRouteParameter("marvel-studios", "Marvel Studios", DiscoverBrowseKind.Studio),
+            new RequestTitlesRouteParameter("action", "Action", DiscoverBrowseKind.Genre, "movie"),
+        ], _harness.Navigation.Navigations.Where(n => n.Route == AppRoute.RequestTitles).Select(n => n.Parameter));
+    }
+
+    [Fact]
+    public async Task ABrandRowThatFails_SaysSo_AndCanBeTriedAgainOnItsOwn()
+    {
+        _harness.Answer(NetworksPath, ScriptedSilo.Problem(502, "bad_gateway"),
+            ScriptedSilo.Json(HttpStatusCode.OK, """{ "items": [ { "slug": "hbo", "display_name": "HBO" } ] }"""));
+        var hub = await LoadedAsync();
+        var networks = hub.BrandRows[1];
+        Assert.True(networks.HasError);
+        Assert.True(networks.IsShown);
+        Assert.Equal("Could not load networks.", networks.FailureText);
+
+        await networks.RetryCommand.ExecuteAsync(null);
+
+        Assert.Equal(["HBO"], networks.Tiles.Select(t => t.Name));
+        Assert.Equal(1, _harness.Count(StudiosPath));
+        Assert.Equal(1, _harness.Count(DiscoverPath));
     }
 
     [Fact]

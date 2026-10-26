@@ -833,7 +833,20 @@ tracks ([8.8.1](#881-initial-track-selection-before-start)) → `POST /api/v2/pl
 - Watchlist of TMDB titles (while `requests_enabled` and `watchlist_titles_supported`): `PUT
   /api/v2/watchlist/titles/{media_type}/{tmdb_id}` (no body) → `{ "item_id"?, "request": RequestMediaState }`, which says
   whether the add also requested the title (`watchlist_requests`); `DELETE` → `204`.
-- Not built yet: a Discover row in full, studios, networks and genres, search.
+- A Discover row in full: `GET /api/v2/requests/discover/{key}?page=1..500` (`key` one of the hub's, such as
+  `trending_movies`; 400/404/422 for one the server does not know) → one section, plus `next_page` when a rating limit made
+  the server read several TMDB pages to fill this one. The next page is `next_page` once the row named one (a page
+  without it is then the last), else `page + 1` up to `min(total_pages, 500)`, TMDB's last page. Pages shift between
+  reads: a title an earlier page listed shows once.
+- Studios, networks, genres: `GET /api/v2/requests/discover/{studios|networks|genres}` → `{ "items": [{ "slug",
+  "display_name", "logo_url", "gradient_from", "gradient_to", "series_supported", "tmdb_id" }] }`. `logo_url` is a full
+  TMDB image URL, through a filter (`https://image.tmdb.org/t/p/w780_filter(duotone,ffffff,bababa)/x.png`); a client
+  takes it only from `image.tmdb.org` over https. A genre's colours are `#RRGGBB`.
+- Their titles: `GET /api/v2/requests/discover/browse/{studio|network|genre}/{slug}?sort=popularity|vote_average|release_date&page=`
+  (a genre also `&media_type=movie|series`, required) → `{ "kind", "slug", "display_name", "logo_url", "media_type",
+  "sort", "page", "total_pages", "results" }`; a studio lists movies, a network series. 404 for an unknown slug. The next
+  page is `page + 1` up to `min(total_pages, 500)`.
+- Not built yet: search.
 
 ## 8. Playback protocol v3
 

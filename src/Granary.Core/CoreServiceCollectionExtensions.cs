@@ -115,6 +115,7 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<RequestsFeature>();
         services.AddTransient<RequestsViewModel>();
         services.AddTransient<TitleViewModel>();
+        services.AddTransient<RequestTitlesViewModel>();
         services.AddTransient<AddServerViewModel>();
         services.AddTransient<PlayerViewModel>();
         services.AddTransient<Granary.Core.ViewModels.Player.AddSubtitlesViewModel>();

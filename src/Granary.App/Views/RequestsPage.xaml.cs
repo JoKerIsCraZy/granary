@@ -82,6 +82,8 @@ public sealed partial class RequestsPage : Page
 
     public static bool Not(bool value) => !value;
 
+    public static Visibility Unless(bool value) => value ? Visibility.Collapsed : Visibility.Visible;
+
     private static Brush Resource(string key) => (Brush)Application.Current.Resources[key];
 
     private static ILogger Logger() => App.Services.GetRequiredService<ILogger<RequestsPage>>();

@@ -110,7 +110,19 @@
                     </ItemsRepeater.Layout>
                     <ItemsRepeater.ItemTemplate>
                         <DataTemplate x:DataType="vm:RequestDiscoverRow">
-                            <controls:MediaRow Title="{x:Bind Title}" ItemsSource="{x:Bind Cards}" CardInvokedCommand="{x:Bind OpenCommand}" />
+                            <controls:MediaRow Title="{x:Bind Title}" ItemsSource="{x:Bind Cards}" CardInvokedCommand="{x:Bind OpenCommand}"
+                                               ExploreAllCommand="{x:Bind ExploreAllCommand}" />
+                        </DataTemplate>
+                    </ItemsRepeater.ItemTemplate>
+                </ItemsRepeater>
+                <!-- Studios, Networks and Genres, once the rows above have loaded, as on the web. -->
+                <ItemsRepeater ItemsSource="{x:Bind ViewModel.BrandRows}" Visibility="{x:Bind views:RequestsPage.Unless(ViewModel.IsDiscoverLoading), Mode=OneWay}">
+                    <ItemsRepeater.Layout>
+                        <StackLayout Spacing="40" />
+                    </ItemsRepeater.Layout>
+                    <ItemsRepeater.ItemTemplate>
+                        <DataTemplate x:DataType="vm:RequestBrandRowViewModel">
+                            <controls:BrandRow Row="{x:Bind}" Visibility="{x:Bind IsShown, Mode=OneWay}" />
                         </DataTemplate>
                     </ItemsRepeater.ItemTemplate>
                 </ItemsRepeater>

@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Studios, Networks or Genres on the Requests hub, as Silo's web shows them: a titled row of 208 × 112 tiles, a logo on
+    gray, or the name on a genre's gradient. While loading it shows empty tiles; a failure says so beside Retry.
+-->
+<UserControl
+    x:Class="Granary.App.Controls.BrandRow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Granary.App.Controls"
+    xmlns:vm="using:Granary.Core.ViewModels"
+    PointerEntered="OnPointerEntered"
+    PointerExited="OnPointerExited">
+
+    <UserControl.Resources>
+        <!-- The web's tile: a rounded fill with a thin ring that brightens under the pointer. -->
+        <Style x:Key="BrandTileStyle" TargetType="Button">
+            <Setter Property="Width" Value="208" />
+            <Setter Property="Height" Value="112" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Stretch" />
+            <Setter Property="UseSystemFocusVisuals" Value="True" />
+            <Setter Property="FocusVisualMargin" Value="-3" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid x:Name="Root" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                              BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{TemplateBinding CornerRadius}">
+                            <VisualStateManager.VisualStateGroups>
+                                <VisualStateGroup x:Name="CommonStates">
+                                    <VisualState x:Name="Normal" />
+                                    <VisualState x:Name="PointerOver">
+                                        <VisualState.Setters>
+                                            <Setter Target="Hover.Opacity" Value="1" />
+                                        </VisualState.Setters>
+                                    </VisualState>
+                                    <VisualState x:Name="Pressed">
+                                        <VisualState.Setters>
+                                            <Setter Target="Hover.Opacity" Value="1" />
+                                            <Setter Target="Content.Opacity" Value="0.85" />
+                                        </VisualState.Setters>
+                                    </VisualState>
+                                    <VisualState x:Name="Disabled" />
+                                </VisualStateGroup>
+                            </VisualStateManager.VisualStateGroups>
+                            <Border x:Name="Hover" Background="#14FFFFFF" BorderBrush="#4DFFFFFF" BorderThickness="1" Margin="-1"
+                                    CornerRadius="{TemplateBinding CornerRadius}" Opacity="0" />
+                            <ContentPresenter x:Name="Content" AutomationProperties.AccessibilityView="Raw" Content="{TemplateBinding Content}"
+                                              HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid RowSpacing="14">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Grid>
+            <TextBlock Text="{x:Bind Row.Title, Mode=OneWay}" Style="{StaticResource SiloRowTitleTextStyle}" VerticalAlignment="Center"
+                       AutomationProperties.HeadingLevel="Level2" />
+            <HyperlinkButton HorizontalAlignment="Right" VerticalAlignment="Center" Style="{StaticResource SiloLinkButtonStyle}" Content="Retry"
+                             Command="{x:Bind Row.RetryCommand, Mode=OneWay}" Visibility="{x:Bind Row.HasError, Mode=OneWay}" />
+        </Grid>
+
+        <TextBlock Grid.Row="1" Height="112" Text="{x:Bind Row.FailureText, Mode=OneWay}" Style="{StaticResource SiloCaptionTextStyle}"
+                   Visibility="{x:Bind Row.HasError, Mode=OneWay}" />
+
+        <!-- The web's skeleton: empty tiles where the row will be. -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="16" Visibility="{x:Bind Row.IsLoading, Mode=OneWay}"
+                    AutomationProperties.Name="{x:Bind LoadingName(Row.Title), Mode=OneWay}">
+            <Border Width="208" Height="112" CornerRadius="12" Background="#1AFFFFFF" />
+            <Border Width="208" Height="112" CornerRadius="12" Background="#1AFFFFFF" />
+            <Border Width="208" Height="112" CornerRadius="12" Background="#1AFFFFFF" />
+            <Border Width="208" Height="112" CornerRadius="12" Background="#1AFFFFFF" />
+            <Border Width="208" Height="112" CornerRadius="12" Background="#1AFFFFFF" />
+            <Border Width="208" Height="112" CornerRadius="12" Background="#1AFFFFFF" />
+            <Border Width="208" Height="112" CornerRadius="12" Background="#1AFFFFFF" />
+            <Border Width="208" Height="112" CornerRadius="12" Background="#1AFFFFFF" />
+        </StackPanel>
+
+        <Grid Grid.Row="1" Visibility="{x:Bind Row.IsReady, Mode=OneWay}">
+            <ScrollView x:Name="Scroller" ContentOrientation="Horizontal" HorizontalScrollMode="Enabled" HorizontalScrollBarVisibility="Hidden"
+                        VerticalScrollMode="Disabled" VerticalScrollBarVisibility="Hidden" ViewChanged="OnViewChanged"
+                        controls:WheelScrollsPage.IsEnabled="True">
+                <ItemsRepeater ItemsSource="{x:Bind Row.Tiles, Mode=OneWay}" AutomationProperties.Name="{x:Bind Row.Title, Mode=OneWay}">
+                    <ItemsRepeater.Layout>
+                        <StackLayout Orientation="Horizontal" Spacing="16" />
+                    </ItemsRepeater.Layout>
+                    <ItemsRepeater.ItemTemplate>
+                        <DataTemplate x:DataType="vm:RequestBrandTile">
+                            <Button Style="{StaticResource BrandTileStyle}" Background="{x:Bind controls:BrandRow.TileBackground(IsGenre, GradientFrom, GradientTo)}"
+                                    BorderBrush="{x:Bind controls:BrandRow.TileRing(IsGenre)}" Command="{x:Bind OpenCommand}" CommandParameter="{x:Bind}"
+                                    AutomationProperties.Name="{x:Bind Name}">
+                                <Grid>
+                                    <Image Source="{x:Bind controls:BrandRow.LogoImage(Logo)}" Stretch="Uniform" Margin="24,28" Visibility="{x:Bind HasLogo}" />
+                                    <TextBlock Text="{x:Bind Name}" Visibility="{x:Bind controls:BrandRow.Not(HasLogo)}" Margin="12,0"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"
+                                               MaxLines="3" TextTrimming="CharacterEllipsis" FontSize="16" FontFamily="{StaticResource SiloFontSemiBold}"
+                                               FontWeight="SemiBold" Foreground="White" />
+                                </Grid>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsRepeater.ItemTemplate>
+                </ItemsRepeater>
+            </ScrollView>
+
+            <!-- Mouse users get arrows; touch and touchpads scroll directly, keyboard users tab through. -->
+            <Button x:Name="PreviousButton" Style="{StaticResource SiloIconButtonStyle}" HorizontalAlignment="Left" VerticalAlignment="Center"
+                    Margin="-18,0,0,0" Visibility="Collapsed" Click="OnPreviousClick" IsTabStop="False" AutomationProperties.Name="Scroll left">
+                <FontIcon Glyph="&#xE76B;" FontSize="14" />
+            </Button>
+            <Button x:Name="NextButton" Style="{StaticResource SiloIconButtonStyle}" HorizontalAlignment="Right" VerticalAlignment="Center"
+                    Margin="0,0,-18,0" Visibility="Collapsed" Click="OnNextClick" IsTabStop="False" AutomationProperties.Name="Scroll right">
+                <FontIcon Glyph="&#xE76C;" FontSize="14" />
+            </Button>
+        </Grid>
+    </Grid>
+</UserControl>
