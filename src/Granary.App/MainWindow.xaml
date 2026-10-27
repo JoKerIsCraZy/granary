@@ -140,11 +140,6 @@
                         <FontIcon Glyph="&#xE713;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem Content="Servers" Tag="Servers">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE968;" />
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
                 <NavigationViewItem x:Name="ProfileItem" Tag="Profile" SelectsOnInvoked="False"
                                     Content="{x:Bind Sidebar.ProfileName, Mode=OneWay}"
                                     AutomationProperties.Name="{x:Bind ProfileMenuName(Sidebar.ProfileName), Mode=OneWay}">

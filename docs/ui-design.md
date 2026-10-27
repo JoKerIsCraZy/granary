@@ -109,7 +109,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
 
 - Sidebar (260 px): server name, Home, Search (`Ctrl+K`), "LIBRARIES" with the server's libraries, "DISCOVER" (For
   You, Requests while the server takes them, Calendar, Notifications with the unread count in red), "YOUR STUFF" (Favorites, Watchlist, Collections,
-  History; the web's Watch Party to come); Servers and the profile menu at the bottom. Favorites, Watchlist and History are one page (`PersonalListPage`, the web's `pages/Catalog.tsx` for those
+  History; the web's Watch Party to come); Settings and the profile menu at the bottom (the servers are in Settings → Servers). Favorites, Watchlist and History are one page (`PersonalListPage`, the web's `pages/Catalog.tsx` for those
   sources): the list's name, what it holds and its count, the media menu (All Media, Movies & Series, Movies, Series,
   Episodes), the list's own order ("List Order", History's "Watch History") or a sort, and the posters by window.
   While the server keeps watchlist titles the library does not have (`requests_enabled` and `watchlist_titles_supported`),
@@ -219,7 +219,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
 - Back: the navigation view's back arrow, `Alt+Left`, and the mouse back button. The sidebar's sections (Home,
   Search, each library) are the apps' tabs: picking one does not stack on the pages visited before, only Home stays
   under it, so Back walks the pages opened within a section and then goes Home (Android's tab switch pops to the
-  anchor tab). Settings and Servers open over the page they came from and go back to it.
+  anchor tab). Settings opens over the page it came from and goes back to it.
 
 ## Signed-out screens
 
@@ -264,8 +264,9 @@ title prepares or buffers. With Windows' animations off the mark stands still.
 
 Opened from the sidebar's Settings; as on Silo's web the app's sidebar gives way to the settings' own (260 px, a shade
 darker, a hairline at its edge): "← Back to App", "Settings", the current profile (its initial in a 32 px disc), then
-the pages by group. The page open is white 6 % with red text and a red mark. Pages scroll on the right, 1120 px at
-most, padded 50 px: the title (32 px bold) and its line, then sections between hairlines (`SettingsGroup`), their title
+the pages by group: PLAYBACK (the profile's) and APP (Servers, About). The page open is white 6 % with red text and a
+red mark. Pages scroll on the right in a centred column of at most 1120 px, padded 50 px (a column, not MaxWidth on the
+host, which pushed a page of short lines off the right edge): the title (32 px bold) and its line, then sections between hairlines (`SettingsGroup`), their title
 (15 px semibold) and description (13 px muted) in a 256 px column and their rows (`SettingsRow`: label 14 px medium,
 description 13 px muted, the control on the right, hairlines between rows). Selects are 220 px and 36 px high on the
 page background with a faint outline, red when focused; switches are only their 40 px track, red when on
@@ -288,6 +289,19 @@ says why above the sections.
   forced subtitles; a 16:9 preview of the look, edited as a draft with Save Appearance and Discard Changes, Reset back to
   the default; Text (size, family, colour swatches, opacity, outline and its colour), Background & Position (style,
   opacity and colour for the box, position); Timing (the profile's subtitle offset in 100 ms steps, Reset).
+- **Servers** (`ServersSettingsView` on `ServersViewModel`; the apps keep the server under Settings too): the title and
+  its line with Add server (outline) on the right; then a line per saved server between hairlines: a 40 px disc, the
+  name (15 px semibold) and "https://silo.example · Signed in as elena" (13 px muted, trimmed), the red Active pill or
+  Switch, and More (…) with Sign out and Remove… (asks first). The sign-in screen's "Use another server" still opens the
+  standalone servers page, which shares the question before removing.
+- **About** (`AboutSettingsView` on `AboutViewModel`, as the apps' About with Version and Acknowledgements): Granary's
+  mark (64 px), name and "Version 0.2.0", what it is and that it is not an official Silo app. Updates: the state in one
+  line ("Granary is up to date.", "Downloading Granary 0.3.0… 43%", "Granary 0.3.0 is ready. It installs when you
+  restart or close Granary.", why a copy does not update) over "Last checked today at 14:05", Check for updates (off
+  while it looks, or when the copy cannot update) or Restart now once a release is ready, and "What's new in 0.3.0"
+  from the release's notes. What's new: CHANGELOG.md as shipped, a release per heading ("0.2.0 · Oct 27, 2026"), its
+  groups in small muted capitals and bulleted items. License and source: View opens LICENSE and THIRD_PARTY_NOTICES.md
+  in Notepad, Open the repository. Troubleshooting: the data and logs folders in Explorer.
 
 ## Player
 

@@ -13,16 +13,100 @@ public sealed class AppUpdatesViewModelTests
 
     private AppUpdatesViewModel Create() => new(_updater, _clock, _logs.For<AppUpdatesViewModel>());
 
-    [Fact]
-    public async Task ACopyThatCannotUpdate_NeverLooks()
+    [Theory]
+    [InlineData(AppUpdateSupport.NotInstalled, "This copy wasn't installed with Granary's setup, so it doesn't update itself.")]
+    [InlineData(AppUpdateSupport.NoReleaseSource, "This build doesn't look for updates.")]
+    public async Task ACopyThatCannotUpdate_NeverLooks_AndSaysWhy(AppUpdateSupport support, string why)
     {
-        _updater.CanUpdate = false;
+        _updater.Support = support;
         var updates = Create();
 
         await updates.RunAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(0, _updater.Checks);
         Assert.False(updates.IsNoticeShown);
+        Assert.Equal(AppUpdateState.Unsupported, updates.State);
+        Assert.Equal(why, updates.StatusText);
+        Assert.False(updates.CheckNowCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public async Task CheckNow_LooksAtOnce_AndSaysWhenItLooked()
+    {
+        _updater.Answers.Enqueue(() => null);
+        var updates = Create();
+        Assert.Equal("Granary looks for updates when it starts and every six hours.", updates.StatusText);
+        Assert.Equal("", updates.LastCheckedText);
+
+        await updates.CheckNowCommand.ExecuteAsync(null);
+
+        Assert.Equal(1, _updater.Checks);
+        Assert.Equal(AppUpdateState.UpToDate, updates.State);
+        Assert.Equal("Granary is up to date.", updates.StatusText);
+        Assert.Equal("Last checked today at 12:00", updates.LastCheckedText);
+        Assert.True(updates.CheckNowCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public async Task CheckNow_DownloadsWhatItFinds_AndOffersItWithItsNotes()
+    {
+        var download = new TaskCompletionSource();
+        _updater.Answers.Enqueue(() => "0.3.0");
+        _updater.Notes = "### Fixed\n- Posters load faster.";
+        _updater.HoldDownload = download;
+        var updates = Create();
+
+        var looking = updates.CheckNowCommand.ExecuteAsync(null);
+        Assert.Equal(AppUpdateState.Downloading, updates.State);
+        Assert.Equal("Downloading Granary 0.3.0… 0%", updates.StatusText);
+        Assert.True(updates.IsBusy);
+        Assert.False(updates.CheckNowCommand.CanExecute(null));
+        Assert.Equal("", updates.ReleaseNotes);
+        download.SetResult();
+        await looking;
+
+        Assert.Equal(AppUpdateState.Ready, updates.State);
+        Assert.Equal("Granary 0.3.0 is ready. It installs when you restart or close Granary.", updates.StatusText);
+        Assert.Equal("### Fixed\n- Posters load faster.", updates.ReleaseNotes);
+        Assert.True(updates.IsNoticeShown);
+        Assert.True(updates.RestartNowCommand.CanExecute(null));
+        Assert.False(updates.CheckNowCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public async Task AFailedLook_SaysSo_AndCanBeTriedAgain()
+    {
+        _updater.Answers.Enqueue(() => throw new HttpRequestException("offline"));
+        _updater.Answers.Enqueue(() => null);
+        var updates = Create();
+
+        await updates.CheckNowCommand.ExecuteAsync(null);
+        Assert.Equal(AppUpdateState.Failed, updates.State);
+        Assert.Equal("Couldn't check for updates. Check the connection and try again.", updates.StatusText);
+
+        await updates.CheckNowCommand.ExecuteAsync(null);
+        Assert.Equal(AppUpdateState.UpToDate, updates.State);
+    }
+
+    [Fact]
+    public async Task TheTimersLookAndTheButtons_AreOne()
+    {
+        var download = new TaskCompletionSource();
+        _updater.Answers.Enqueue(() => "0.3.0");
+        _updater.HoldDownload = download;
+        var updates = Create();
+
+        var run = updates.RunAsync(TestContext.Current.CancellationToken);
+        Assert.False(updates.CheckNowCommand.CanExecute(null));
+        // Asked anyway, it waits for the timer's look rather than starting its own.
+        var asked = updates.CheckNowCommand.ExecuteAsync(null);
+        download.SetResult();
+        await asked;
+        await run;
+
+        Assert.Equal(1, _updater.Checks);
+        Assert.Equal(1, _updater.Downloads);
+        Assert.Equal("0.3.0", updates.ReadyVersion);
     }
 
     [Fact]
@@ -103,18 +187,35 @@ public sealed class AppUpdatesViewModelTests
 
     private sealed class FakeUpdater : IAppUpdater
     {
-        public bool CanUpdate { get; set; } = true;
+        public AppUpdateSupport Support { get; set; } = AppUpdateSupport.Supported;
 
+        /// <summary>Each look's answer: the version found, or null for none.</summary>
         public Queue<Func<string?>> Answers { get; } = new();
+
+        public string? Notes { get; set; }
+
+        /// <summary>Holds the download until set.</summary>
+        public TaskCompletionSource? HoldDownload { get; set; }
 
         public int Checks { get; private set; }
 
+        public int Downloads { get; private set; }
+
         public List<bool> Applied { get; } = [];
 
-        public Task<string?> CheckAndDownloadAsync(CancellationToken cancellationToken)
+        public Task<AppRelease?> CheckAsync(CancellationToken cancellationToken)
         {
             Checks++;
-            return Task.FromResult(Answers.Dequeue()());
+            return Task.FromResult(Answers.Dequeue()() is { } version ? new AppRelease(version, Notes) : null);
+        }
+
+        public async Task DownloadAsync(IProgress<int>? progress, CancellationToken cancellationToken)
+        {
+            Downloads++;
+            if (HoldDownload is { } hold)
+            {
+                await hold.Task;
+            }
         }
 
         public void ApplyWhenExited(bool restart) => Applied.Add(restart);

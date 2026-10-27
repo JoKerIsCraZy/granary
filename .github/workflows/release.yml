@@ -61,7 +61,7 @@ jobs:
 
       - name: Pack
         shell: pwsh
-        run: ./scripts/pack-release.ps1 -Version '${{ steps.version.outputs.version }}' -Repository "https://github.com/$env:GITHUB_REPOSITORY"
+        run: ./scripts/pack-release.ps1 -Version '${{ steps.version.outputs.version }}' -Repository "https://github.com/$env:GITHUB_REPOSITORY" -RequireNotes
 
       - name: Publish the release
         shell: pwsh

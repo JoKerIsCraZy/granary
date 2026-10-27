@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Settings → About, as the apps' About (Version, Acknowledgements) with Granary's own: the mark, name and version;
+    Updates with Check for updates, and what a downloaded release changes; the changelog shipped with the app; the licence,
+    third-party notices and source; the folders of Granary's data and logs.
+-->
+<UserControl
+    x:Class="Granary.App.Views.Settings.AboutSettingsView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Granary.App.Controls"
+    xmlns:vm="using:Granary.Core.ViewModels">
+
+    <!-- Its own copy: the view is made before it joins the page, whose resources it cannot see then. -->
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="ms-appx:///Themes/SiloSettings.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- A group of changes: "Added", then its items as a bulleted list. -->
+            <DataTemplate x:Key="ChangelogGroupTemplate" x:DataType="vm:ChangelogGroup">
+                <StackPanel Spacing="6" Margin="0,0,0,8">
+                    <TextBlock Text="{x:Bind Title}" Visibility="{x:Bind HasTitle}" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
+                               FontSize="12" CharacterSpacing="80" Foreground="{StaticResource SiloMutedBrush}" />
+                    <ItemsRepeater ItemsSource="{x:Bind Items}">
+                        <ItemsRepeater.Layout>
+                            <StackLayout Spacing="4" />
+                        </ItemsRepeater.Layout>
+                        <ItemsRepeater.ItemTemplate>
+                            <DataTemplate x:DataType="x:String">
+                                <Grid ColumnSpacing="10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="•" FontSize="14" Foreground="{StaticResource SiloMutedBrush}" AutomationProperties.AccessibilityView="Raw" />
+                                    <TextBlock Grid.Column="1" Text="{x:Bind}" FontSize="14" LineHeight="21" TextWrapping="Wrap"
+                                               Foreground="{StaticResource SiloForegroundBrush}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsRepeater.ItemTemplate>
+                    </ItemsRepeater>
+                </StackPanel>
+            </DataTemplate>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="20">
+            <Image Source="ms-appx:///Assets/Logo/granary-mark.svg" Width="64" Height="64" AutomationProperties.AccessibilityView="Raw" />
+            <StackPanel VerticalAlignment="Center" Spacing="2">
+                <TextBlock Text="Granary" Style="{StaticResource SiloSettingsPageTitleStyle}" AutomationProperties.HeadingLevel="Level1" />
+                <TextBlock Text="{x:Bind ViewModel.VersionText}" Style="{StaticResource SiloSettingsMutedTextStyle}" FontSize="14" IsTextSelectionEnabled="True" />
+            </StackPanel>
+        </StackPanel>
+        <TextBlock Margin="0,16,0,32" Style="{StaticResource SiloSettingsMutedTextStyle}" FontSize="14"
+                   Text="A native Windows client for Silo, the self-hosted media server. Granary is an independent project, not an official Silo app." />
+
+        <controls:SettingsGroup Title="Updates"
+                                Description="Granary looks for a new release when it starts and every six hours, downloads it in the background, and installs it when it closes.">
+            <StackPanel>
+                <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="{x:Bind ViewModel.Updates.StatusText, Mode=OneWay}"
+                                      Description="{x:Bind ViewModel.Updates.LastCheckedText, Mode=OneWay}">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <ProgressRing Width="16" Height="16" IsActive="{x:Bind ViewModel.Updates.IsBusy, Mode=OneWay}"
+                                      Visibility="{x:Bind ViewModel.Updates.IsBusy, Mode=OneWay}" AutomationProperties.Name="Updating" />
+                        <Button Content="Check for updates" Style="{StaticResource SiloSettingsOutlineButtonStyle}"
+                                Command="{x:Bind ViewModel.Updates.CheckNowCommand}"
+                                Visibility="{x:Bind controls:SettingsText.Hidden(ViewModel.Updates.IsReady), Mode=OneWay}" />
+                        <Button Content="Restart now" Style="{StaticResource SiloSettingsOutlineButtonStyle}"
+                                Command="{x:Bind ViewModel.Updates.RestartNowCommand}" Visibility="{x:Bind ViewModel.Updates.IsReady, Mode=OneWay}" />
+                    </StackPanel>
+                </controls:SettingsRow>
+
+                <!-- What the downloaded release changes, as it was packed with. -->
+                <StackPanel Margin="0,24,0,0" Spacing="10" Visibility="{x:Bind ViewModel.HasReadyChanges, Mode=OneWay}">
+                    <TextBlock Text="{x:Bind ViewModel.ReadyChangesTitle, Mode=OneWay}" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
+                               FontSize="14" Foreground="{StaticResource SiloForegroundBrush}" />
+                    <ItemsRepeater ItemsSource="{x:Bind ViewModel.ReadyChanges, Mode=OneWay}" ItemTemplate="{StaticResource ChangelogGroupTemplate}" />
+                </StackPanel>
+            </StackPanel>
+        </controls:SettingsGroup>
+
+        <controls:SettingsGroup Title="What's new" Description="The changes in each version of Granary, newest first."
+                                Visibility="{x:Bind ViewModel.HasChangelog}">
+            <ItemsRepeater ItemsSource="{x:Bind ViewModel.Releases}">
+                <ItemsRepeater.Layout>
+                    <StackLayout Spacing="24" />
+                </ItemsRepeater.Layout>
+                <ItemsRepeater.ItemTemplate>
+                    <DataTemplate x:DataType="vm:ChangelogRelease">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="{x:Bind Heading}" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="15"
+                                       Foreground="{StaticResource SiloForegroundBrush}" AutomationProperties.HeadingLevel="Level3" />
+                            <ItemsRepeater ItemsSource="{x:Bind Groups}" ItemTemplate="{StaticResource ChangelogGroupTemplate}" />
+                        </StackPanel>
+                    </DataTemplate>
+                </ItemsRepeater.ItemTemplate>
+            </ItemsRepeater>
+        </controls:SettingsGroup>
+
+        <controls:SettingsGroup Title="License and source" Description="Granary is free software. It may be shared and changed under its license.">
+            <StackPanel>
+                <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="License"
+                                      Description="GNU Affero General Public License, version 3 or later.">
+                    <Button Content="View" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Click="OnViewLicenseClick" AutomationProperties.Name="View the license" />
+                </controls:SettingsRow>
+                <controls:SettingsRow Label="Third-party notices"
+                                      Description="The components Granary uses and ships with their licenses, and the parts adapted from Silo's own apps.">
+                    <Button Content="View" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Click="OnViewNoticesClick"
+                            AutomationProperties.Name="View the third-party notices" />
+                </controls:SettingsRow>
+                <controls:SettingsRow Label="Source code" Description="{x:Bind controls:SettingsText.Of(ViewModel.SourceUrl)}"
+                                      Visibility="{x:Bind ViewModel.HasSource}">
+                    <HyperlinkButton Content="Open" NavigateUri="{x:Bind ViewModel.SourceUrl}" ToolTipService.ToolTip="Opens the repository in the browser"
+                                     AutomationProperties.Name="Open the source code" />
+                </controls:SettingsRow>
+            </StackPanel>
+        </controls:SettingsGroup>
+
+        <controls:SettingsGroup Title="Troubleshooting" Description="Where Granary keeps its data on this computer, for when something goes wrong.">
+            <StackPanel>
+                <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Data folder" Description="{x:Bind ViewModel.DataDirectory}">
+                    <Button Content="Open" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Click="OnOpenDataClick"
+                            AutomationProperties.Name="Open the data folder" />
+                </controls:SettingsRow>
+                <controls:SettingsRow Label="Logs" Description="{x:Bind ViewModel.LogsDirectory}">
+                    <Button Content="Open" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Click="OnOpenLogsClick"
+                            AutomationProperties.Name="Open the logs folder" />
+                </controls:SettingsRow>
+            </StackPanel>
+        </controls:SettingsGroup>
+    </StackPanel>
+</UserControl>

@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Settings → Servers, as the apps keep the server under Settings (Android's and Apple's Server): the title with Add server
+    beside it, then one line per saved server between hairlines (its disc, name, address and account, Active or Switch, and
+    Sign out and Remove behind More). Plain grids, so the lines always fill the page's width.
+-->
+<UserControl
+    x:Class="Granary.App.Views.Settings.ServersSettingsView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="using:Granary.Core.ViewModels">
+
+    <!-- Its own copy: the view is made before it joins the page, whose resources it cannot see then. -->
+    <UserControl.Resources>
+        <ResourceDictionary Source="ms-appx:///Themes/SiloSettings.xaml" />
+    </UserControl.Resources>
+
+    <Grid HorizontalAlignment="Stretch">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Grid ColumnSpacing="24">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Spacing="8">
+                <TextBlock Text="Servers" Style="{StaticResource SiloSettingsPageTitleStyle}" AutomationProperties.HeadingLevel="Level1" />
+                <TextBlock Style="{StaticResource SiloSettingsMutedTextStyle}" FontSize="14"
+                           Text="The Silo servers Granary knows. It uses one at a time; the others keep their sign-in." />
+            </StackPanel>
+            <Button Grid.Column="1" VerticalAlignment="Top" Margin="0,4,0,0" Style="{StaticResource SiloSettingsOutlineButtonStyle}"
+                    Command="{x:Bind ViewModel.AddServerCommand}" AutomationProperties.Name="Add server">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <FontIcon Glyph="&#xE710;" FontSize="12" />
+                    <TextBlock Text="Add server" />
+                </StackPanel>
+            </Button>
+        </Grid>
+
+        <!-- One line per server, a hairline above the first and under each. -->
+        <Border Grid.Row="1" Margin="0,32,0,0" BorderBrush="{StaticResource SiloSettingsHairlineBrush}" BorderThickness="0,1,0,0">
+            <ItemsControl ItemsSource="{x:Bind ViewModel.Servers, Mode=OneWay}" IsTabStop="False" HorizontalContentAlignment="Stretch">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:ServerItemViewModel">
+                        <Grid Padding="4,18" ColumnSpacing="16" BorderBrush="{StaticResource SiloSettingsHairlineBrush}" BorderThickness="0,0,0,1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Border Width="40" Height="40" CornerRadius="20" Background="#FF2A2A30" AutomationProperties.AccessibilityView="Raw">
+                                <FontIcon Glyph="&#xE968;" FontSize="16" Foreground="{StaticResource SiloForegroundBrush}" />
+                            </Border>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                <TextBlock Text="{x:Bind Name}" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="15"
+                                           Foreground="{StaticResource SiloForegroundBrush}" TextTrimming="CharacterEllipsis" />
+                                <TextBlock Text="{x:Bind Details}" FontSize="13" Foreground="{StaticResource SiloMutedBrush}" TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                            <Border Grid.Column="2" Visibility="{x:Bind IsActive}" VerticalAlignment="Center" Padding="10,3" CornerRadius="10"
+                                    Background="{StaticResource SiloPrimaryBrush}">
+                                <TextBlock Text="Active" FontSize="12" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" Foreground="White" />
+                            </Border>
+                            <Button Grid.Column="2" Content="Switch" VerticalAlignment="Center" Style="{StaticResource SiloSettingsOutlineButtonStyle}"
+                                    Visibility="{x:Bind CanSwitch}" Tag="{x:Bind}" Click="OnSwitchClick" AutomationProperties.Name="{x:Bind SwitchLabel}" />
+                            <Button Grid.Column="3" VerticalAlignment="Center" Padding="10,0" Style="{StaticResource SiloSettingsOutlineButtonStyle}"
+                                    ToolTipService.ToolTip="More options" AutomationProperties.Name="{x:Bind MoreOptionsLabel}">
+                                <FontIcon Glyph="&#xE712;" FontSize="14" />
+                                <Button.Flyout>
+                                    <MenuFlyout Placement="BottomEdgeAlignedRight">
+                                        <MenuFlyoutItem Text="Sign out" Tag="{x:Bind}" Click="OnSignOutClick" />
+                                        <MenuFlyoutSeparator />
+                                        <MenuFlyoutItem Text="Remove…" Tag="{x:Bind}" Click="OnRemoveClick">
+                                            <MenuFlyoutItem.Icon>
+                                                <SymbolIcon Symbol="Delete" />
+                                            </MenuFlyoutItem.Icon>
+                                        </MenuFlyoutItem>
+                                    </MenuFlyout>
+                                </Button.Flyout>
+                            </Button>
+                        </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </Border>
+
+        <TextBlock Grid.Row="2" Margin="4,18,0,0" Style="{StaticResource SiloSettingsMutedTextStyle}" FontSize="14"
+                   Visibility="{x:Bind ViewModel.HasNoServers, Mode=OneWay}" Text="No servers yet. Add a Silo server to get started." />
+
+        <Grid Grid.Row="3" Margin="4,16,0,0" ColumnSpacing="12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <ProgressRing IsActive="{x:Bind ViewModel.IsBusy, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsBusy, Mode=OneWay}"
+                          Width="16" Height="16" AutomationProperties.Name="Working" />
+            <TextBlock Grid.Column="1" Text="{x:Bind ViewModel.Status, Mode=OneWay}" Style="{StaticResource SiloSettingsMutedTextStyle}"
+                       VerticalAlignment="Center" AutomationProperties.LiveSetting="Polite" />
+        </Grid>
+    </Grid>
+</UserControl>

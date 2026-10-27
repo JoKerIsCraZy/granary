@@ -19,7 +19,7 @@ public sealed partial class ServersPage : Page
 
     private async void OnSwitchClick(object sender, RoutedEventArgs e)
     {
-        if (ItemOf(sender) is { } server)
+        if (Settings.ServerDialogs.ItemOf(sender) is { } server)
         {
             await ViewModel.SwitchCommand.ExecuteAsync(server);
         }
@@ -27,7 +27,7 @@ public sealed partial class ServersPage : Page
 
     private async void OnSignOutClick(object sender, RoutedEventArgs e)
     {
-        if (ItemOf(sender) is { } server)
+        if (Settings.ServerDialogs.ItemOf(sender) is { } server)
         {
             await ViewModel.SignOutCommand.ExecuteAsync(server);
         }
@@ -35,30 +35,9 @@ public sealed partial class ServersPage : Page
 
     private async void OnRemoveClick(object sender, RoutedEventArgs e)
     {
-        if (ItemOf(sender) is not { } server || XamlRoot is null)
-        {
-            return;
-        }
-        var dialog = new ContentDialog
-        {
-            XamlRoot = XamlRoot,
-            Style = (Style)Application.Current.Resources["DefaultContentDialogStyle"],
-            Title = $"Remove {server.Name}?",
-            Content = "Granary signs out of this server and forgets it. You can add it again later.",
-            PrimaryButtonText = "Remove",
-            CloseButtonText = "Cancel",
-            DefaultButton = ContentDialogButton.Close,
-        };
-        if (await dialog.ShowAsync() == ContentDialogResult.Primary)
+        if (Settings.ServerDialogs.ItemOf(sender) is { } server && await Settings.ServerDialogs.ConfirmRemoveAsync(XamlRoot, server))
         {
             await ViewModel.RemoveCommand.ExecuteAsync(server);
         }
     }
-
-    private static ServerItemViewModel? ItemOf(object sender) => sender switch
-    {
-        FrameworkElement { Tag: ServerItemViewModel tagged } => tagged,
-        FrameworkElement { DataContext: ServerItemViewModel context } => context,
-        _ => null,
-    };
 }

@@ -140,6 +140,7 @@ public sealed class SidebarViewModelTests
         sidebar.OpenServersCommand.Execute(null);
 
         Assert.Equal(new[] { "clear-profile", "sign-out:active" }, _session.Calls);
-        Assert.Equal(AppRoute.Servers, _navigation.Current);
+        // The servers are in Settings → Servers now.
+        Assert.Equal((AppRoute.Settings, (object?)"servers"), _navigation.Navigations[^1]);
     }
 }

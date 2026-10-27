@@ -10,6 +10,9 @@ public sealed record ServerItemViewModel(string Id, string Name, string Url, boo
 
     public string AccountText => AccountName is null ? "" : $"Signed in as {AccountName}";
 
+    /// <summary>"https://silo.example · Signed in as elena": the address, and the account on the active server.</summary>
+    public string Details => HasAccount ? $"{Url} · {AccountText}" : Url;
+
     public string SwitchLabel => $"Switch to {Name}";
 
     public string MoreOptionsLabel => $"More options for {Name}";

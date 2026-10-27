@@ -542,7 +542,7 @@ public sealed partial class MainWindow : Window
                     or AppRoute.Requests:
                 _navigation.ShowSection(route);
                 break;
-            // Settings and Servers open over the page they were opened from, and go back to it.
+            // Settings opens over the page it was opened from, and goes back to it.
             case string tag when Enum.TryParse<AppRoute>(tag, out var route):
                 _navigation.NavigateTo(route);
                 break;

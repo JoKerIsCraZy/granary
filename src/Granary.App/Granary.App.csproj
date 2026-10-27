@@ -60,6 +60,8 @@
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)..\..\LICENSE" Link="LICENSE" CopyToOutputDirectory="PreserveNewest" />
     <None Include="$(MSBuildThisFileDirectory)..\..\THIRD_PARTY_NOTICES.md" Link="THIRD_PARTY_NOTICES.md" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Settings → About shows it. -->
+    <None Include="$(MSBuildThisFileDirectory)..\..\CHANGELOG.md" Link="CHANGELOG.md" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <!-- libmpv comes from native/ (scripts/fetch-native.ps1), it is not committed. -->

@@ -31,14 +31,20 @@ out the app's resources (`Granary.pri`, the compiled XAML), and the published co
 - `VelopackUpdater` (App) is the app's `IAppUpdater`. It looks for releases on the GitHub repository the build names
   (`-p:GranaryUpdateRepository=https://github.com/owner/repo`, kept in the assembly's metadata). A build without
   one, a development build, or a copy not installed by the setup never looks (the log says why).
-- `AppUpdatesViewModel` (Core) looks once Granary has shown its first page, then every six hours while it runs. A
-  newer release is downloaded in the background; then a notice at the bottom right offers "Restart now" (the window
+- `AppUpdatesViewModel` (Core) looks once Granary has shown its first page, then every six hours while it runs, and at
+  once on Settings → About's Check for updates (one look at a time, whoever asks). A newer release is downloaded in
+  the background, its progress shown in About; then a notice at the bottom right offers "Restart now" (the window
   closes as usual, playback stops first, Velopack applies the update and starts Granary again) or "Later" (it is
-  applied silently once Granary closes). A failed look is logged and tried again at the next one.
+  applied silently once Granary closes). A failed look is logged, shown in About, and tried again at the next one.
+- What a release changes comes from CHANGELOG.md ([Keep a Changelog](https://keepachangelog.com)): the app ships the
+  file and shows it in Settings → About, and `pack-release.ps1` hands the version's section to `vpk pack
+  --releaseNotes`, so a downloaded update says what's new in it before the restart.
 
 ## Making a release
 
-1. Raise `Version` in `Directory.Build.props` (SemVer, for example `0.2.0`).
+1. Raise `Version` in `Directory.Build.props` (SemVer, for example `0.2.0`), and in CHANGELOG.md turn `## [Unreleased]`
+   into `## [0.2.0] - 2026-11-01` (a new empty Unreleased above it). Without that section the release goes out without
+   notes (the script warns).
 2. Commit, then tag and push: `git tag v0.2.0` and `git push origin v0.2.0`.
 3. `.github/workflows/release.yml` fetches libmpv, runs the tests, downloads the previous release (for the delta),
    packs with the repository's URL and publishes the release with `GITHUB_TOKEN`. It can also be run by hand with a

@@ -137,8 +137,9 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private Task SignOutAsync() => _session.SignOutAsync();
 
+    /// <summary>The servers live in Settings → Servers, as the apps keep them under their settings.</summary>
     [RelayCommand]
-    private void OpenServers() => _navigation.NavigateTo(AppRoute.Servers);
+    private void OpenServers() => _navigation.NavigateTo(AppRoute.Settings, "servers");
 
     public void Dispose() => _session.Changed -= OnSessionChanged;
 

@@ -62,12 +62,42 @@
                         </StackPanel>
                     </ListViewItem>
                 </ListView>
+                <!-- The app's own: its servers, and what it is. One page is open across both lists. -->
+                <TextBlock Text="APP" Margin="8,20,0,6" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="11"
+                           CharacterSpacing="150" Foreground="{StaticResource SiloMutedBrush}" AutomationProperties.HeadingLevel="Level2" />
+                <ListView x:Name="AppPages" SelectionMode="Single" SelectionChanged="OnPageSelected" IsItemClickEnabled="False"
+                          AutomationProperties.Name="App pages">
+                    <ListViewItem Tag="servers" AutomationProperties.Name="Servers">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <FontIcon Glyph="&#xE968;" FontSize="14" />
+                            <TextBlock Text="Servers" FontSize="14" />
+                        </StackPanel>
+                    </ListViewItem>
+                    <ListViewItem Tag="about" AutomationProperties.Name="About">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <FontIcon Glyph="&#xE946;" FontSize="14" />
+                            <TextBlock Text="About" FontSize="14" />
+                        </StackPanel>
+                    </ListViewItem>
+                </ListView>
             </StackPanel>
         </Border>
 
-        <ScrollViewer x:Name="PageScroller" Grid.Column="1">
-            <ContentControl x:Name="PageHost" MaxWidth="1120" Padding="50,48,50,64" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
-                            IsTabStop="False" />
+        <!--
+            The page in a column of at most 1120 px. A column, not MaxWidth on the host: a host held to MaxWidth placed a page
+            of short lines by its own narrower width and still drew it full width, pushing it off the right edge.
+        -->
+        <ScrollViewer x:Name="PageScroller" Grid.Column="1" HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled">
+            <!-- The middle column takes nearly all the width up to its maximum; the sides share the rest, so the page is centred. -->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="1000*" MaxWidth="1120" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <ContentControl x:Name="PageHost" Grid.Column="1" Padding="50,48,50,64" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                                IsTabStop="False" />
+            </Grid>
         </ScrollViewer>
     </Grid>
 </Page>

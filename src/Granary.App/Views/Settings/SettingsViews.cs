@@ -1,3 +1,6 @@
+using System.ComponentModel;
+using System.Diagnostics;
+using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Settings;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
@@ -69,6 +72,141 @@ public sealed partial class LanguageSettingsView : UserControl
                 ViewModel.Look.PickBackgroundColor(hex);
                 break;
         }
+    }
+}
+
+/// <summary>Settings → Servers; the page disposes it as it leaves, so the list stops following the servers.</summary>
+public sealed partial class ServersSettingsView : UserControl, IDisposable
+{
+    public ServersSettingsView()
+    {
+        // Created outside the container: the root provider would keep every disposable transient alive.
+        ViewModel = ActivatorUtilities.CreateInstance<ServersViewModel>(App.Services);
+        InitializeComponent();
+    }
+
+    public ServersViewModel ViewModel { get; }
+
+    public void Dispose() => ViewModel.Dispose();
+
+    private async void OnSwitchClick(object sender, RoutedEventArgs e)
+    {
+        if (ServerDialogs.ItemOf(sender) is { } server)
+        {
+            await ViewModel.SwitchCommand.ExecuteAsync(server);
+        }
+    }
+
+    private async void OnSignOutClick(object sender, RoutedEventArgs e)
+    {
+        if (ServerDialogs.ItemOf(sender) is { } server)
+        {
+            await ViewModel.SignOutCommand.ExecuteAsync(server);
+        }
+    }
+
+    private async void OnRemoveClick(object sender, RoutedEventArgs e)
+    {
+        if (ServerDialogs.ItemOf(sender) is { } server && await ServerDialogs.ConfirmRemoveAsync(XamlRoot, server))
+        {
+            await ViewModel.RemoveCommand.ExecuteAsync(server);
+        }
+    }
+}
+
+/// <summary>Settings → About; the page detaches it as it leaves, so the app's updates let go of it.</summary>
+public sealed partial class AboutSettingsView : UserControl, IDisposable
+{
+    public AboutSettingsView()
+    {
+        ViewModel = ActivatorUtilities.CreateInstance<AboutViewModel>(App.Services);
+        InitializeComponent();
+    }
+
+    public AboutViewModel ViewModel { get; }
+
+    public void Dispose() => ViewModel.Detach();
+
+    private void OnViewLicenseClick(object sender, RoutedEventArgs e) => OpenText(ViewModel.LicensePath);
+
+    private void OnViewNoticesClick(object sender, RoutedEventArgs e) => OpenText(ViewModel.NoticesPath);
+
+    private void OnOpenDataClick(object sender, RoutedEventArgs e) => OpenFolder(ViewModel.DataDirectory);
+
+    // The logs folder is made with the first log line; before that, its parent.
+    private void OnOpenLogsClick(object sender, RoutedEventArgs e) =>
+        OpenFolder(Directory.Exists(ViewModel.LogsDirectory) ? ViewModel.LogsDirectory : ViewModel.DataDirectory);
+
+    // Notepad: the licence has no extension, and Windows knows no app for .md by default. A missing file is not offered to
+    // be made, nor a missing folder swapped for Documents.
+    private static void OpenText(string path)
+    {
+        if (File.Exists(path))
+        {
+            Start("notepad.exe", path);
+        }
+        else
+        {
+            Logger().LogWarning("{File} is missing next to Granary", Path.GetFileName(path));
+        }
+    }
+
+    private static void OpenFolder(string path)
+    {
+        if (Directory.Exists(path))
+        {
+            Start("explorer.exe", path);
+        }
+        else
+        {
+            Logger().LogWarning("Granary's folder {Folder} does not exist yet", path);
+        }
+    }
+
+    private static ILogger Logger() => App.Services.GetRequiredService<ILoggerFactory>().CreateLogger<AboutSettingsView>();
+
+    private static void Start(string program, string path)
+    {
+        try
+        {
+            var start = new ProcessStartInfo(program) { UseShellExecute = false };
+            start.ArgumentList.Add(path);
+            using var process = Process.Start(start);
+        }
+        catch (Exception ex) when (ex is Win32Exception or InvalidOperationException)
+        {
+            Logger().LogWarning(ex, "Could not open {Program}", program);
+        }
+    }
+}
+
+/// <summary>What the servers list and Settings → Servers share: the server a control stands for, and the question before removing one.</summary>
+internal static class ServerDialogs
+{
+    public static ServerItemViewModel? ItemOf(object sender) => sender switch
+    {
+        FrameworkElement { Tag: ServerItemViewModel tagged } => tagged,
+        FrameworkElement { DataContext: ServerItemViewModel context } => context,
+        _ => null,
+    };
+
+    public static async Task<bool> ConfirmRemoveAsync(XamlRoot? root, ServerItemViewModel server)
+    {
+        if (root is null)
+        {
+            return false;
+        }
+        var dialog = new ContentDialog
+        {
+            XamlRoot = root,
+            Style = (Style)Application.Current.Resources["DefaultContentDialogStyle"],
+            Title = $"Remove {server.Name}?",
+            Content = "Granary signs out of this server and forgets it. You can add it again later.",
+            PrimaryButtonText = "Remove",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Close,
+        };
+        return await dialog.ShowAsync() == ContentDialogResult.Primary;
     }
 }
 
