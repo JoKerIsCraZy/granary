@@ -93,6 +93,7 @@ public sealed partial class MainWindow : Window
         AppWindow.Closing += OnClosing;
 
         _navigation.Attach(ContentFrame);
+        _navigation.AttachPlayer(this);
         _navigation.TransitionFor = TransitionFor;
         _navigation.Navigated += OnNavigated;
         Shell.PropertyChanged += (_, e) =>
@@ -358,6 +359,7 @@ public sealed partial class MainWindow : Window
     {
         ShowHeaders(open);
         ShowSections(open);
+        PlaceDock(animate: true, open);
         // Over the rail's pane while it is open over the page, the disc would sit on the sidebar.
         PageBackButton.Visibility = _showsPageBack && !(_isRail && open) ? Visibility.Visible : Visibility.Collapsed;
     }
@@ -568,10 +570,8 @@ public sealed partial class MainWindow : Window
         {
             return;
         }
-        if (ContentFrame.Content is PlayerPage player)
-        {
-            player.ViewModel.Leave();
-        }
+        // Only playback ends: the window closes as it is, full screen or not.
+        _player?.ViewModel.Leave();
         var stopped = _stops.WhenStoppedAsync(StopBudget);
         if (stopped.IsCompleted)
         {

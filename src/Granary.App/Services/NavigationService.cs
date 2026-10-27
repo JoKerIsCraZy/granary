@@ -6,7 +6,11 @@ using Microsoft.UI.Xaml.Navigation;
 
 namespace Granary.App.Services;
 
-/// <summary>Maps <see cref="AppRoute"/> to pages in the main window's frame and keeps its back stack.</summary>
+/// <summary>
+/// Maps <see cref="AppRoute"/> to pages in the main window's frame and keeps its back stack. The player is not a page: its
+/// route goes to the <see cref="IPlayerOverlay"/> over the window, and while that fills the window, Back closes it and any
+/// other page closes it first, as leaving the player always ended playback.
+/// </summary>
 public sealed class NavigationService : INavigationService
 {
     private static readonly Dictionary<AppRoute, Type> Pages = new()
@@ -17,7 +21,6 @@ public sealed class NavigationService : INavigationService
         [AppRoute.SignIn] = typeof(SignInPage),
         [AppRoute.ProfilePicker] = typeof(ProfilePickerPage),
         [AppRoute.ChangePassword] = typeof(ChangePasswordPage),
-        [AppRoute.Player] = typeof(PlayerPage),
         [AppRoute.Search] = typeof(SearchPage),
         [AppRoute.Library] = typeof(LibraryPage),
         [AppRoute.Item] = typeof(ItemDetailPage),
@@ -39,13 +42,14 @@ public sealed class NavigationService : INavigationService
     private static readonly Dictionary<Type, AppRoute> Routes = Pages.Where(p => p.Key != AppRoute.Collection).ToDictionary(p => p.Value, p => p.Key);
 
     private Frame? _frame;
+    private IPlayerOverlay? _player;
 
     public AppRoute? Current { get; private set; }
 
     /// <summary>The parameter the current page was opened with.</summary>
     public object? CurrentParameter { get; private set; }
 
-    public bool CanGoBack => _frame?.CanGoBack == true;
+    public bool CanGoBack => _player?.IsPlayerFull == true || _frame?.CanGoBack == true;
 
     /// <summary>Raised after every navigation, Back included, and after the history was reset.</summary>
     public event EventHandler<AppRoute>? Navigated;
@@ -58,8 +62,16 @@ public sealed class NavigationService : INavigationService
 
     public void Attach(Frame frame) => _frame = frame;
 
+    public void AttachPlayer(IPlayerOverlay player) => _player = player;
+
     public void NavigateTo(AppRoute route, object? parameter = null)
     {
+        if (route == AppRoute.Player)
+        {
+            _player?.Play(parameter);
+            return;
+        }
+        CloseFullPlayer();
         if (_frame is null || (route == Current && Equals(parameter, CurrentParameter)))
         {
             return;
@@ -75,6 +87,7 @@ public sealed class NavigationService : INavigationService
     /// </summary>
     public void ShowSection(AppRoute route, object? parameter = null)
     {
+        CloseFullPlayer();
         if (_frame is null)
         {
             return;
@@ -92,8 +105,13 @@ public sealed class NavigationService : INavigationService
         Arrived(route, parameter);
     }
 
+    /// <summary>A new start (a sign-in, another profile): the player closes too, even as the bar.</summary>
     public void ResetTo(AppRoute route, object? parameter = null)
     {
+        if (_player?.IsPlayerOpen == true)
+        {
+            _player.ClosePlayer();
+        }
         if (_frame is null)
         {
             return;
@@ -105,6 +123,11 @@ public sealed class NavigationService : INavigationService
 
     public void GoBack()
     {
+        if (_player?.IsPlayerFull == true)
+        {
+            LeavePlayer();
+            return;
+        }
         if (_frame is not { CanGoBack: true } frame)
         {
             return;
@@ -136,6 +159,27 @@ public sealed class NavigationService : INavigationService
         else
         {
             _frame!.Navigate(Pages[route], parameter);
+        }
+    }
+
+    public void LeavePlayer()
+    {
+        if (_player?.IsPlayerOpen == true)
+        {
+            _player.ClosePlayer();
+        }
+        // Played from the start (--play): nothing is under the player.
+        if (Current is null)
+        {
+            ResetTo(AppRoute.Home);
+        }
+    }
+
+    private void CloseFullPlayer()
+    {
+        if (_player?.IsPlayerFull == true)
+        {
+            _player.ClosePlayer();
         }
     }
 

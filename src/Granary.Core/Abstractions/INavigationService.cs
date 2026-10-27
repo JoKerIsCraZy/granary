@@ -103,4 +103,7 @@ public interface INavigationService
     void ResetTo(AppRoute route, object? parameter = null);
 
     void GoBack();
+
+    /// <summary>Takes the player away once its playback has ended: the page it was played from shows again.</summary>
+    void LeavePlayer();
 }

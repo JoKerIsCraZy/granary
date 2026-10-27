@@ -238,7 +238,7 @@ public sealed class PlayerViewModelServerTests
     }
 
     [Fact]
-    public async Task Close_StopsTheServerSession_AndGoesBack()
+    public async Task Close_StopsTheServerSession_AndLeavesThePlayer()
     {
         _navigation.NavigateTo(AppRoute.Item, "movie-1");
         _navigation.NavigateTo(AppRoute.Player);
@@ -249,7 +249,7 @@ public sealed class PlayerViewModelServerTests
 
         Assert.Equal(1, Playback.Stops);
         Assert.Equal(1, _engine.Stops);
-        Assert.Equal(1, _navigation.BackCount);
+        Assert.Equal(1, _navigation.PlayerLeaves);
     }
 
     [Fact]
@@ -264,7 +264,7 @@ public sealed class PlayerViewModelServerTests
 
         Assert.Equal(1, Playback.Stops);
         Assert.Equal(1, _engine.Stops);
-        Assert.Equal(0, _navigation.BackCount);
+        Assert.Equal(0, _navigation.PlayerLeaves);
     }
 
     [Fact]

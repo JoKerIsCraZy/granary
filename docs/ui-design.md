@@ -331,12 +331,25 @@ says why above the sections.
 
 `Views/PlayerPage` on `PlayerViewModel`, drawn as the server's web player (`web/src/player`, measured below).
 
-- **Window**: the player owns it. The sidebar is hidden completely (not just shrunk), the page reaches under
-  the title bar and the caption buttons float over the video; the top 32 px stay the drag area, so the top
-  bar starts below them. Full screen (`AppWindow`'s full-screen presenter) shows nothing but the player and
-  returns to the window as it was, maximized or not. Leaving the page leaves full screen and stops playback,
-  whichever way it is left (Back, `Alt+Left`, `Ctrl+K`, a session change).
-- **Layout**: black, the video filling the page. Top left over a soft scrim the "✕ Exit" pill. Bottom bar
+- **Window**: the player is not a page of the frame but lies over the whole window (`PlayerHost`, MainWindow.Player.cs,
+  `IPlayerOverlay`), the title bar included: the caption buttons float over the video; the top 32 px stay the drag
+  area, so the top bar starts below them. The app under it is neither drawn nor reached and keeps the page the title
+  was played from. Full screen (`AppWindow`'s full-screen presenter) shows nothing but the player and returns to the
+  window as it was, maximized or not. Leaving the player leaves full screen and stops playback, whichever way it is
+  left (Exit, Back, `Alt+Left`, `Ctrl+K`, another page, a session change); the page under it shows again.
+- **Minimized** (the web's Minimize player, a 44 px glass disc with a chevron, top left; Exit is top right): the player becomes the bar
+  at the bottom of the page, beside the sidebar, which goes on down to the window's edge; the page ends above the bar
+  and the viewer browses on. Unlike the web's bar, the picture plays on in it: a 160 by 90 box at its left, a click on
+  which brings the full player back, its only way there (under the pointer, or the keyboard, the whole picture greys
+  and shows a chevron up). Then the title, the episode line and the times; previous episode, skip back,
+  play/pause, skip forward and next episode; on the right mute and Stop playback (✕, as the web bar's). Along its top edge, right of the picture, the full player's seek bar (`DockSeekBar`): thin, thicker under
+  the pointer with its thumb and the bubble with the picture, time and chapter above the bar; a click or drag seeks. The bar keeps its controls and the pointer, and leaves the keyboard to the page.
+  Minimizing leaves full screen and the mini view and closes the menus; a failure brings the full player back to
+  say it. The rail of a title's page opens over the page: the bar's left edge moves aside with it (250 ms, easing
+  out), so the pane is reached and the picture plays on beside it, and comes back as the rail closes. A new title replaces the one in the bar; Back and other pages work on the page under it; where the full player
+  would leave at a title's end, the bar closes (`INavigationService.LeavePlayer`).
+- **Layout**: black, the video filling the page. Over a soft scrim at the top the Minimize disc on the left and the
+  "✕ Exit" pill on the right. Bottom bar
   over a stronger scrim: the `SeekBar` across the width; below it on the left the title and the upper-case
   line "S1 · E1 — EPISODE · 31:55 / 48:41" (a movie shows its year), whose end time a click turns into the
   time left; in the middle skip back, the white play/pause disc and skip forward (glass discs showing the

@@ -175,7 +175,7 @@ public sealed class PlayerViewModelTests
     }
 
     [Fact]
-    public async Task Close_StopsAndGoesBack()
+    public async Task Close_StopsAndLeavesThePlayer()
     {
         _navigation.NavigateTo(Granary.Core.Abstractions.AppRoute.Item, "movie-1");
         _navigation.NavigateTo(Granary.Core.Abstractions.AppRoute.Player);
@@ -185,7 +185,7 @@ public sealed class PlayerViewModelTests
         viewModel.CloseCommand.Execute(null);
 
         Assert.Equal(1, _engine.Stops);
-        Assert.Equal(1, _navigation.BackCount);
+        Assert.Equal(1, _navigation.PlayerLeaves);
     }
 
     [Fact]

@@ -54,6 +54,7 @@ public sealed partial class PlayerPage : Page
         InitializeSkipPrompt();
         InitializeNextUp();
         InitializeSubtitlePanels();
+        InitializeDock();
         RegisterPropertyChangedCallback(IsMiniViewProperty, (_, _) =>
         {
             ShowNextUpScreen();
@@ -89,22 +90,17 @@ public sealed partial class PlayerPage : Page
 
     private bool HasTransport => ViewModel.Phase is PlayerPhase.Playing or PlayerPhase.Ended;
 
-    protected override void OnNavigatedTo(NavigationEventArgs e)
-    {
-        base.OnNavigatedTo(e);
-        if (e.Parameter is PlayRequest request)
-        {
-            _ = ViewModel.StartAsync(request);
-        }
-    }
+    /// <summary>Plays <paramref name="request"/>; the window shows the page over everything first.</summary>
+    public void Start(PlayRequest request) => _ = ViewModel.StartAsync(request);
 
-    protected override void OnNavigatedFrom(NavigationEventArgs e)
+    /// <summary>
+    /// Ends playback as the window takes the player away: Exit, Stop, Alt+Left, the mouse back button, Ctrl+K or a session
+    /// change; the sound must not go on behind another page nor the server session stay open.
+    /// </summary>
+    public void Leave()
     {
-        base.OnNavigatedFrom(e);
         SetFullScreen(false);
         SetMiniView(false);
-        // Close stops playback, but Alt+Left, the mouse back button, Ctrl+K or a session change leave without it, and
-        // the sound must not go on behind another page nor the server session stay open.
         ViewModel.Leave();
     }
 
@@ -177,9 +173,14 @@ public sealed partial class PlayerPage : Page
         }
     }
 
-    // Keyboard users land on what they can do next; screen readers read the message.
+    // Keyboard users land on what they can do next; screen readers read the message. The bar has no room for it: the
+    // full player comes back to say it.
     private void OnFailed() => DispatcherQueue.TryEnqueue(() =>
     {
+        if (IsDocked)
+        {
+            ExpandRequested?.Invoke(this, EventArgs.Empty);
+        }
         Button target = ViewModel.CanRetry ? RetryButton : FailedBackButton;
         target.Focus(FocusState.Programmatic);
         FrameworkElementAutomationPeer.FromElement(ErrorText)?.RaiseAutomationEvent(AutomationEvents.LiveRegionChanged);
@@ -189,7 +190,7 @@ public sealed partial class PlayerPage : Page
     // button collapses with its panel (Retry, the transport); the page takes it back, unless a menu has it.
     private void KeepFocusInPage() => DispatcherQueue.TryEnqueue(() =>
     {
-        if (!IsLoaded || XamlRoot is not { } root || HasOpenMenu())
+        if (!IsLoaded || IsDocked || XamlRoot is not { } root || HasOpenMenu())
         {
             return;
         }
@@ -222,8 +223,14 @@ public sealed partial class PlayerPage : Page
         AutomationProperties.SetName(SkipForwardButton, $"Forward {forward} seconds");
         ToolTipService.SetToolTip(SkipBackButton, $"Back {back} seconds (Left arrow)");
         ToolTipService.SetToolTip(SkipForwardButton, $"Forward {forward} seconds (Right arrow)");
-        SeekBar.BackStepSeconds = ViewModel.SkipBackSeconds;
-        SeekBar.ForwardStepSeconds = ViewModel.SkipForwardSeconds;
+        DockSkipBackText.Text = back;
+        DockSkipForwardText.Text = forward;
+        AutomationProperties.SetName(DockSkipBackButton, $"Back {back} seconds");
+        AutomationProperties.SetName(DockSkipForwardButton, $"Forward {forward} seconds");
+        ToolTipService.SetToolTip(DockSkipBackButton, $"Back {back} seconds");
+        ToolTipService.SetToolTip(DockSkipForwardButton, $"Forward {forward} seconds");
+        SeekBar.BackStepSeconds = DockSeekBar.BackStepSeconds = ViewModel.SkipBackSeconds;
+        SeekBar.ForwardStepSeconds = DockSeekBar.ForwardStepSeconds = ViewModel.SkipForwardSeconds;
     }
 
     private void OnSeekRequested(SeekBar sender, double seconds) => ViewModel.SeekTo(seconds);
@@ -465,10 +472,10 @@ public sealed partial class PlayerPage : Page
 
     public string OnStatus(bool isOn) => isOn ? "On" : "";
 
-    // What the mini view leaves out: the full controls, the pills, the playback info and the Playing Next screen.
-    public Visibility ShowsInWindow(bool shows, bool isMiniView) => shows && !isMiniView ? Visibility.Visible : Visibility.Collapsed;
+    // What the mini view and the bar leave out: the full controls, the pills, the playback info and the Playing Next screen.
+    public Visibility ShowsInWindow(bool shows, bool isCompact) => shows && !isCompact ? Visibility.Visible : Visibility.Collapsed;
 
-    public Visibility ShowsTopChrome(bool isNextUpScreenShown, bool isMiniView) => ShowsInWindow(!isNextUpScreenShown, isMiniView);
+    public Visibility ShowsTopChrome(bool isNextUpScreenShown, bool isCompact) => ShowsInWindow(!isNextUpScreenShown, isCompact);
 
     // "31:55 / 48:41", or "31:55 / -16:46" with the time left.
     public string TimesText(double position, double duration, bool showsRemaining) =>
@@ -481,14 +488,15 @@ public sealed partial class PlayerPage : Page
     // Named for what it does; screen readers hear the times from the seek bar ("4 minutes of 1 hour 30 minutes").
     public string EndTimeName(bool showsRemaining) => showsRemaining ? "Show the duration" : "Show the time left";
 
-    public Visibility ShowsTransport(PlayerPhase phase, bool isNextUpScreenShown, bool isMiniView) =>
-        ShowsInWindow(phase is PlayerPhase.Playing or PlayerPhase.Ended && !isNextUpScreenShown, isMiniView);
+    public Visibility ShowsTransport(PlayerPhase phase, bool isNextUpScreenShown, bool isCompact) =>
+        ShowsInWindow(phase is PlayerPhase.Playing or PlayerPhase.Ended && !isNextUpScreenShown, isCompact);
 
     public bool ShowsSpinner(PlayerPhase phase, bool isBuffering) =>
         phase == PlayerPhase.Preparing || (phase == PlayerPhase.Playing && isBuffering);
 
-    public Visibility SpinnerVisibility(PlayerPhase phase, bool isBuffering) =>
-        ShowsSpinner(phase, isBuffering) ? Visibility.Visible : Visibility.Collapsed;
+    // The bar has no room for the mark: its picture shows the wait.
+    public Visibility SpinnerVisibility(PlayerPhase phase, bool isBuffering, bool isDocked) =>
+        ShowsSpinner(phase, isBuffering) && !isDocked ? Visibility.Visible : Visibility.Collapsed;
 
     public string SpinnerName(PlayerPhase phase) => phase == PlayerPhase.Preparing ? "Loading" : "Buffering";
 

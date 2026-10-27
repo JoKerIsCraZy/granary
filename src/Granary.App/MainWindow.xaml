@@ -208,6 +208,12 @@
         </Border>
 
         <!--
+            The player, over the window (MainWindow.Player.cs): the whole of it while it plays, or minimized the bar at the
+            bottom, under which the pages go on. Under the start screen.
+        -->
+        <Border x:Name="PlayerHost" Grid.RowSpan="2" Visibility="Collapsed" />
+
+        <!--
             The start: Granary's mark plays its intro in the middle of the window while the app loads its first page, then
             its loading loop if that takes longer (MainWindow.ShowStartup). It lifts by the title bar's 32 px so it sits in the
             window's middle.

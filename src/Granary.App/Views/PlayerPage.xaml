@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    The player (docs/ui-design.md, Player), laid out as Silo's web player: Exit top left; at the bottom the seek bar
-    across the width, under it the title on the left, the transport in the middle and volume and full screen on the
-    right. The controls fade out during playback. The page itself takes focus, so the keyboard map works without a
-    control being focused; it has no focus visual of its own.
+    The player (docs/ui-design.md, Player), laid out as Silo's web player: Minimize top left, Exit top right; at the bottom the
+    seek bar across the width, under it the title on the left, the transport in the middle and volume and full screen on
+    the right. The controls fade out during playback. The page itself takes focus, so the keyboard map works without a
+    control being focused; it has no focus visual of its own. Minimized, it is the bar at the bottom of the window
+    (DockBar), the picture playing on at its left (MainWindow.Player.cs).
 -->
 <Page
     x:Class="Granary.App.Views.PlayerPage"
@@ -24,14 +25,15 @@
         </Border>
 
         <!-- The picture: a click plays or pauses, a double click toggles full screen. -->
-        <Grid x:Name="Surface" Background="Transparent" Tapped="OnSurfaceTapped" DoubleTapped="OnSurfaceDoubleTapped" />
+        <Grid x:Name="Surface" Background="Transparent" Tapped="OnSurfaceTapped" DoubleTapped="OnSurfaceDoubleTapped"
+              Visibility="{x:Bind ShowsUndocked(IsDocked), Mode=OneWay}" />
 
         <!--
             Preparing, and waiting for data later on: Granary's mark runs its loading loop. The dark disc keeps it visible on
             a bright picture.
         -->
         <Grid HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False"
-              Visibility="{x:Bind SpinnerVisibility(ViewModel.Phase, ViewModel.IsBuffering), Mode=OneWay}">
+              Visibility="{x:Bind SpinnerVisibility(ViewModel.Phase, ViewModel.IsBuffering, IsDocked), Mode=OneWay}">
             <Ellipse Width="88" Height="88" Fill="#73000000" />
             <controls:GranaryMark Width="60" Height="60"
                                   IsLoading="{x:Bind ShowsSpinner(ViewModel.Phase, ViewModel.IsBuffering), Mode=OneWay}"
@@ -39,7 +41,7 @@
         </Grid>
 
         <!-- Failed: what went wrong, Retry when it can help, and Back. -->
-        <Grid Background="#B3000000" Visibility="{x:Bind ViewModel.IsFailed, Mode=OneWay}">
+        <Grid Background="#B3000000" Visibility="{x:Bind ShowsInWindow(ViewModel.IsFailed, IsDocked), Mode=OneWay}">
             <StackPanel MaxWidth="560" Margin="32" Spacing="20" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <FontIcon Glyph="&#xE7BA;" FontSize="36" Foreground="{StaticResource SiloPrimaryBrush}" />
                 <TextBlock x:Name="ErrorText" Text="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}" Style="{StaticResource SiloRowTitleTextStyle}"
@@ -53,8 +55,8 @@
             </StackPanel>
         </Grid>
 
-        <!-- Top bar: Exit. In a window it starts below the title bar's drag area. -->
-        <Grid x:Name="TopChrome" VerticalAlignment="Top" Visibility="{x:Bind ShowsTopChrome(ViewModel.IsNextUpScreenShown, IsMiniView), Mode=OneWay}">
+        <!-- Top bar: Minimize (the web's chevron) top left, Exit top right. In a window it starts below the title bar's drag area. -->
+        <Grid x:Name="TopChrome" VerticalAlignment="Top" Visibility="{x:Bind ShowsTopChrome(ViewModel.IsNextUpScreenShown, IsCompact), Mode=OneWay}">
             <Grid.OpacityTransition>
                 <ScalarTransition Duration="0:0:0.3" />
             </Grid.OpacityTransition>
@@ -63,7 +65,11 @@
             </Grid.TranslationTransition>
             <Border Background="{StaticResource SiloPlayerTopScrimBrush}" IsHitTestVisible="False" />
             <Grid x:Name="TopBar" Padding="{x:Bind TopBarPadding(IsFullScreen), Mode=OneWay}">
-                <Button x:Name="ExitButton" Style="{StaticResource SiloPlayerPillButtonStyle}" HorizontalAlignment="Left"
+                <Button x:Name="MinimizeButton" Style="{StaticResource SiloPlayerDiscButtonStyle}" HorizontalAlignment="Left"
+                        Click="OnMinimizeClick" AutomationProperties.Name="Minimize player" ToolTipService.ToolTip="Minimize player">
+                    <FontIcon Glyph="&#xE70D;" FontSize="16" />
+                </Button>
+                <Button x:Name="ExitButton" Style="{StaticResource SiloPlayerPillButtonStyle}" HorizontalAlignment="Right" VerticalAlignment="Center"
                         Command="{x:Bind ViewModel.CloseCommand}" AutomationProperties.Name="Exit"
                         AutomationProperties.AcceleratorKey="Escape" ToolTipService.ToolTip="Exit (Esc)">
                     <StackPanel Orientation="Horizontal" Spacing="8">
@@ -76,7 +82,7 @@
 
         <!-- Bottom bar: the seek bar, then the title with the times, the transport, and volume and full screen. -->
         <Grid x:Name="BottomChrome" VerticalAlignment="Bottom"
-              Visibility="{x:Bind ShowsTransport(ViewModel.Phase, ViewModel.IsNextUpScreenShown, IsMiniView), Mode=OneWay}">
+              Visibility="{x:Bind ShowsTransport(ViewModel.Phase, ViewModel.IsNextUpScreenShown, IsCompact), Mode=OneWay}">
             <Grid.OpacityTransition>
                 <ScalarTransition Duration="0:0:0.3" />
             </Grid.OpacityTransition>
@@ -549,7 +555,7 @@
         -->
         <Border x:Name="PlaybackInfoPanel" Width="320" HorizontalAlignment="Left" VerticalAlignment="Top" CornerRadius="8" Background="#D9000000"
                 Margin="{x:Bind PlaybackInfoMargin(IsFullScreen), Mode=OneWay}"
-                Visibility="{x:Bind ShowsInWindow(ViewModel.IsPlaybackInfoShown, IsMiniView), Mode=OneWay}">
+                Visibility="{x:Bind ShowsInWindow(ViewModel.IsPlaybackInfoShown, IsCompact), Mode=OneWay}">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -617,7 +623,7 @@
         </Grid>
 
         <StackPanel x:Name="SkipPrompt" Margin="0,0,28,28" Spacing="6" HorizontalAlignment="Right" VerticalAlignment="Bottom"
-                    Visibility="{x:Bind ShowsInWindow(ViewModel.HasSkipPrompt, IsMiniView), Mode=OneWay}">
+                    Visibility="{x:Bind ShowsInWindow(ViewModel.HasSkipPrompt, IsCompact), Mode=OneWay}">
             <StackPanel.TranslationTransition>
                 <Vector3Transition Duration="0:0:0.3" />
             </StackPanel.TranslationTransition>
@@ -645,7 +651,7 @@
 
         <!-- The web's NextEpisodeOverlay at the credits: where the skip pill sits, and above the bar with it. -->
         <Border x:Name="NextUpCard" Margin="0,0,28,28" MinWidth="260" Padding="16" CornerRadius="8" Background="#CC000000"
-                HorizontalAlignment="Right" VerticalAlignment="Bottom" Visibility="{x:Bind ShowsInWindow(ViewModel.IsNextUpCardShown, IsMiniView), Mode=OneWay}">
+                HorizontalAlignment="Right" VerticalAlignment="Bottom" Visibility="{x:Bind ShowsInWindow(ViewModel.IsNextUpCardShown, IsCompact), Mode=OneWay}">
             <Border.TranslationTransition>
                 <Vector3Transition Duration="0:0:0.3" />
             </Border.TranslationTransition>
@@ -671,7 +677,7 @@
             darkened, blurred copy of its still; Play Now with the countdown ring once the episode has ended; the
             auto-play switch; On Deck along the bottom. The video plays on small in the top left corner, above this.
         -->
-        <Grid x:Name="NextUpScreen" Canvas.ZIndex="1" Background="Black" Visibility="{x:Bind ShowsInWindow(ViewModel.IsNextUpScreenShown, IsMiniView), Mode=OneWay}">
+        <Grid x:Name="NextUpScreen" Canvas.ZIndex="1" Background="Black" Visibility="{x:Bind ShowsInWindow(ViewModel.IsNextUpScreenShown, IsCompact), Mode=OneWay}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
@@ -764,18 +770,130 @@
 
         <!-- The marker panel, bottom left above the controls; it can be moved by its header. -->
         <controls:MarkerEditPanel x:Name="MarkerPanel" Canvas.ZIndex="2" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="24,0,0,176"
-                                  Visibility="{x:Bind ShowsInWindow(ViewModel.MarkerEditor.IsEditing, IsMiniView), Mode=OneWay}" />
+                                  Visibility="{x:Bind ShowsInWindow(ViewModel.MarkerEditor.IsEditing, IsCompact), Mode=OneWay}" />
 
         <!-- Add Subtitles and Subtitle appearance: over everything, as the web's dialogs (PlayerPage.Subtitles.cs). -->
         <controls:AddSubtitlesPanel x:Name="AddSubtitlesPanel" Canvas.ZIndex="5" Visibility="Collapsed" />
         <controls:SubtitleAppearancePanel x:Name="AppearancePanel" Canvas.ZIndex="5"
-                                          Visibility="{x:Bind ShowsInWindow(ViewModel.IsAppearanceOpen, IsMiniView), Mode=OneWay}" />
+                                          Visibility="{x:Bind ShowsInWindow(ViewModel.IsAppearanceOpen, IsCompact), Mode=OneWay}" />
 
         <!-- The small video: a click returns to it, until the episode has ended. -->
         <Button x:Name="MiniPlayerButton" Canvas.ZIndex="3" Style="{StaticResource SiloPlayerCardOutlineButtonStyle}" Padding="0" BorderThickness="0"
                 CornerRadius="16" HorizontalAlignment="Left" VerticalAlignment="Top" Width="320" Height="180"
                 Margin="{x:Bind CornerInset(IsFullScreen, 24), Mode=OneWay}"
-                Visibility="{x:Bind ShowsMiniPlayer(ViewModel.IsNextUpScreenShown, ViewModel.Phase, IsMiniView), Mode=OneWay}"
+                Visibility="{x:Bind ShowsMiniPlayer(ViewModel.IsNextUpScreenShown, ViewModel.Phase, IsCompact), Mode=OneWay}"
                 Command="{x:Bind ViewModel.KeepWatchingCommand}" AutomationProperties.Name="Keep watching" ToolTipService.ToolTip="Keep watching" />
+
+        <!--
+            Minimized: the bar at the bottom of the window while the viewer browses. The picture plays on at its left
+            (VideoFrame, placed by PlayerPage.Dock.cs), and a click on it brings the player back; then the title, the
+            transport, and on the right mute and Stop (✕). The seek bar runs along the
+            top (DockSeekBar).
+        -->
+        <Grid x:Name="DockBar" Visibility="{x:Bind IsDocked, Mode=OneWay}" CornerRadius="14" BorderThickness="1"
+              Background="{StaticResource SiloSurfaceRaisedBrush}" BorderBrush="{StaticResource SiloBorderBrush}"
+              Padding="0,0,12,0" ColumnSpacing="16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="176" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                <TextBlock Text="{x:Bind ViewModel.Title, Mode=OneWay}" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
+                           FontSize="14" Foreground="{StaticResource SiloForegroundBrush}" TextTrimming="CharacterEllipsis" MaxLines="1" />
+                <TextBlock Text="{x:Bind ViewModel.Subtitle, Mode=OneWay}" FontSize="12" Foreground="{StaticResource SiloMutedBrush}"
+                           TextTrimming="CharacterEllipsis" MaxLines="1" Visibility="{x:Bind Shows(ViewModel.Subtitle), Mode=OneWay}" />
+                <TextBlock Text="{x:Bind TimesText(ViewModel.PositionSeconds, ViewModel.DurationSeconds, ShowsRemaining), Mode=OneWay}" FontSize="12"
+                           Foreground="{StaticResource SiloMutedBrush}" Typography.NumeralAlignment="Tabular" />
+            </StackPanel>
+
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                <Button Style="{StaticResource SiloPlayerIconButtonStyle}" Command="{x:Bind ViewModel.PlayPreviousEpisodeCommand}"
+                        Visibility="{x:Bind ViewModel.HasPreviousEpisode, Mode=OneWay}" AutomationProperties.Name="Previous episode"
+                        ToolTipService.ToolTip="Previous episode">
+                    <FontIcon Glyph="&#xE892;" FontSize="14" />
+                </Button>
+                <Button x:Name="DockSkipBackButton" Style="{StaticResource SiloPlayerIconButtonStyle}" Command="{x:Bind ViewModel.SkipBackCommand}"
+                        IsEnabled="{x:Bind ViewModel.CanSeek, Mode=OneWay}">
+                    <Grid>
+                        <FontIcon Glyph="&#xE72C;" FontSize="22" RenderTransformOrigin="0.5,0.5">
+                            <FontIcon.RenderTransform>
+                                <ScaleTransform ScaleX="-1" />
+                            </FontIcon.RenderTransform>
+                        </FontIcon>
+                        <TextBlock x:Name="DockSkipBackText" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   FontFamily="{StaticResource SiloFontBold}" FontWeight="Bold" FontSize="8" />
+                    </Grid>
+                </Button>
+                <Button Style="{StaticResource SiloPlayerPlayButtonStyle}" Width="44" Height="44" Command="{x:Bind ViewModel.TogglePauseCommand}"
+                        AutomationProperties.Name="{x:Bind PlayPauseName(ViewModel.IsPaused), Mode=OneWay}"
+                        ToolTipService.ToolTip="{x:Bind PlayPauseName(ViewModel.IsPaused), Mode=OneWay}">
+                    <FontIcon Glyph="{x:Bind PlayPauseGlyph(ViewModel.IsPaused), Mode=OneWay}" FontSize="18"
+                              Margin="{x:Bind PlayPauseGlyphMargin(ViewModel.IsPaused), Mode=OneWay}" />
+                </Button>
+                <Button x:Name="DockSkipForwardButton" Style="{StaticResource SiloPlayerIconButtonStyle}" Command="{x:Bind ViewModel.SkipForwardCommand}"
+                        IsEnabled="{x:Bind ViewModel.CanSeek, Mode=OneWay}">
+                    <Grid>
+                        <FontIcon Glyph="&#xE72C;" FontSize="22" />
+                        <TextBlock x:Name="DockSkipForwardText" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   FontFamily="{StaticResource SiloFontBold}" FontWeight="Bold" FontSize="8" />
+                    </Grid>
+                </Button>
+                <Button Style="{StaticResource SiloPlayerIconButtonStyle}" Command="{x:Bind ViewModel.PlayNextEpisodeCommand}"
+                        Visibility="{x:Bind ViewModel.HasNextEpisode, Mode=OneWay}" AutomationProperties.Name="Next episode"
+                        ToolTipService.ToolTip="Next episode">
+                    <FontIcon Glyph="&#xE893;" FontSize="14" />
+                </Button>
+            </StackPanel>
+
+            <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="4" HorizontalAlignment="Right" VerticalAlignment="Center">
+                <Button Style="{StaticResource SiloPlayerIconButtonStyle}" Command="{x:Bind ViewModel.ToggleMuteCommand}"
+                        AutomationProperties.Name="{x:Bind MuteName(ViewModel.IsMuted), Mode=OneWay}"
+                        ToolTipService.ToolTip="{x:Bind MuteName(ViewModel.IsMuted), Mode=OneWay}">
+                    <FontIcon Glyph="{x:Bind VolumeGlyph(ViewModel.IsMuted, ViewModel.Volume), Mode=OneWay}" FontSize="16" />
+                </Button>
+                <!-- The web bar's ✕: playback ends, the page stays. -->
+                <Button x:Name="DockStopButton" Style="{StaticResource SiloPlayerIconButtonStyle}" Click="OnDockStopClick"
+                        AutomationProperties.Name="Stop playback" ToolTipService.ToolTip="Stop playback">
+                    <FontIcon Glyph="&#xE711;" FontSize="14" />
+                </Button>
+            </StackPanel>
+        </Grid>
+
+        <!--
+            The bar's seek bar along its top edge right of the picture, the full player's own (thumb, picture and time under
+            the pointer, a seek on release, the arrow keys' steps). Outside the bar, whose rounded corners would cut off the
+            bubble above it.
+        -->
+        <controls:SeekBar x:Name="DockSeekBar" Canvas.ZIndex="4" VerticalAlignment="Top" Margin="184,-10,16,0"
+                          Visibility="{x:Bind IsDocked, Mode=OneWay}" AutomationProperties.Name="Seek"
+                          Position="{x:Bind ViewModel.PositionSeconds, Mode=OneWay}"
+                          Duration="{x:Bind ViewModel.DurationSeconds, Mode=OneWay}"
+                          Markers="{x:Bind ViewModel.SeekBarMarkers, Mode=OneWay}"
+                          Chapters="{x:Bind ViewModel.ChapterMarks, Mode=OneWay}"
+                          Trickplay="{x:Bind ViewModel.Trickplay, Mode=OneWay}"
+                          IsEnabled="{x:Bind ViewModel.CanSeek, Mode=OneWay}"
+                          SeekRequested="OnSeekRequested" />
+
+        <!--
+            The picture in the bar: a click on it brings the full player back, its only way there. Under the pointer, or with
+            the keyboard on it, the whole picture greys and a chevron up says what the click does: a veil of the picture's own
+            size and place, under the button that takes the click.
+        -->
+        <Grid x:Name="DockVideoHover" Canvas.ZIndex="3" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="8,0,0,0"
+              Width="160" Height="90" CornerRadius="8" Background="#A6141417" Opacity="0" IsHitTestVisible="False"
+              Visibility="{x:Bind IsDocked, Mode=OneWay}">
+            <Grid.OpacityTransition>
+                <ScalarTransition Duration="0:0:0.15" />
+            </Grid.OpacityTransition>
+            <FontIcon Glyph="&#xE70E;" FontSize="24" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
+        </Grid>
+        <Button x:Name="DockVideoButton" Canvas.ZIndex="4" Style="{StaticResource SiloPlayerCardOutlineButtonStyle}" Padding="0" BorderThickness="0"
+                CornerRadius="8" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="8,0,0,0" Width="160" Height="90"
+                Background="Transparent" Visibility="{x:Bind IsDocked, Mode=OneWay}" Click="OnExpandClick"
+                PointerEntered="OnDockVideoPointerEntered" PointerExited="OnDockVideoPointerExited"
+                GotFocus="OnDockVideoFocusChanged" LostFocus="OnDockVideoFocusChanged"
+                AutomationProperties.Name="Back to the player" ToolTipService.ToolTip="Back to the player" />
     </Grid>
 </Page>

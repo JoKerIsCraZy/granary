@@ -315,19 +315,12 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     [RelayCommand(CanExecute = nameof(CanRetry))]
     private Task RetryAsync() => _request is { } request ? StartAsync(request) : Task.CompletedTask;
 
-    /// <summary>Stops playback and leaves the player (Back, Esc outside full screen).</summary>
+    /// <summary>Stops playback and leaves the player (Exit, Esc outside full screen, the end of a movie), full or minimized.</summary>
     [RelayCommand]
     private void Close()
     {
         Leave();
-        if (_navigation.CanGoBack)
-        {
-            _navigation.GoBack();
-        }
-        else
-        {
-            _navigation.ResetTo(AppRoute.Home);
-        }
+        _navigation.LeavePlayer();
     }
 
     // A value the engine does not have yet is the viewer's change: it also ends a mute, as on the web player.

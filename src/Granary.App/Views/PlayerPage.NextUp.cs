@@ -21,8 +21,8 @@ public sealed partial class PlayerPage
 
     private static readonly SolidColorBrush MiniPlayerEdge = new(Color.FromArgb(0x1A, 0xFF, 0xFF, 0xFF));
 
-    // The screen is not for the mini view: there the picture stays whole, and the countdown runs on behind it.
-    private bool ShowsNextUpScreen => ViewModel.IsNextUpScreenShown && !IsMiniView;
+    // The screen is not for the mini view nor the bar: there the picture stays as it is, and the countdown runs on behind it.
+    private bool ShowsNextUpScreen => ViewModel.IsNextUpScreenShown && !IsCompact;
 
     private void InitializeNextUp() =>
         RegisterPropertyChangedCallback(IsFullScreenProperty, (_, _) =>
@@ -35,31 +35,15 @@ public sealed partial class PlayerPage
 
     private void ShowNextUpScreen()
     {
+        PlaceVideoFrame();
         if (ShowsNextUpScreen)
         {
-            VideoFrame.Width = MiniPlayerWidth;
-            VideoFrame.Height = MiniPlayerWidth * 9 / 16;
-            VideoFrame.HorizontalAlignment = HorizontalAlignment.Left;
-            VideoFrame.VerticalAlignment = VerticalAlignment.Top;
-            VideoFrame.Margin = CornerInset(IsFullScreen, 24);
-            VideoFrame.CornerRadius = new CornerRadius(16);
-            VideoFrame.BorderThickness = new Thickness(1);
-            VideoFrame.BorderBrush = MiniPlayerEdge;
-            Canvas.SetZIndex(VideoFrame, 2);
             SizeNextUpStill();
             // Enter plays the next episode; Tab goes on from there.
             DispatcherQueue.TryEnqueue(() => (ViewModel.HasNextEpisode ? (Control)PlayNowButton : FinishedBackButton).Focus(FocusState.Programmatic));
         }
         else
         {
-            VideoFrame.Width = double.NaN;
-            VideoFrame.Height = double.NaN;
-            VideoFrame.HorizontalAlignment = HorizontalAlignment.Stretch;
-            VideoFrame.VerticalAlignment = VerticalAlignment.Stretch;
-            VideoFrame.Margin = default;
-            VideoFrame.CornerRadius = default;
-            VideoFrame.BorderThickness = default;
-            Canvas.SetZIndex(VideoFrame, 0);
             KeepFocusInPage();
         }
         FadeMiniPlayer();
@@ -96,8 +80,8 @@ public sealed partial class PlayerPage
     // A corner's distance, and below the title bar's drag area in a window.
     public Thickness CornerInset(bool isFullScreen, double inset) => new(inset, isFullScreen ? inset : TitleBarHeight + 8, inset, 0);
 
-    public Visibility ShowsMiniPlayer(bool isScreenShown, PlayerPhase phase, bool isMiniView) =>
-        isScreenShown && phase != PlayerPhase.Ended && !isMiniView ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility ShowsMiniPlayer(bool isScreenShown, PlayerPhase phase, bool isCompact) =>
+        isScreenShown && phase != PlayerPhase.Ended && !isCompact ? Visibility.Visible : Visibility.Collapsed;
 
     public Visibility Not(bool value) => value ? Visibility.Collapsed : Visibility.Visible;
 }

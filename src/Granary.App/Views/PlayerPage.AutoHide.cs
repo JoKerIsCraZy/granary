@@ -93,13 +93,14 @@ public sealed partial class PlayerPage
         }
     }
 
+    // The bar always shows its controls, and the pointer over the pages stays.
     private bool KeepsControls() =>
-        !ViewModel.IsPlaying || ViewModel.IsPaused || ViewModel.IsBuffering
+        IsDocked || !ViewModel.IsPlaying || ViewModel.IsPaused || ViewModel.IsBuffering
         || SeekBar.IsDragging || IsPointerOverControls() || HasOpenMenu() || HasKeyboardFocusInControls() || IsPanelOpen
         || ViewModel.MarkerEditor.IsEditing;
 
     private bool IsPointerOverControls() =>
-        PointerInPage() is { } point && (Contains(BottomBar, point) || Contains(ExitButton, point)
+        PointerInPage() is { } point && (Contains(BottomBar, point) || Contains(ExitButton, point) || Contains(MinimizeButton, point)
             || (IsMiniView && (Contains(MiniPlayPauseButton, point) || Contains(LeaveMiniViewButton, point))));
 
     private bool Contains(FrameworkElement element, Point point) =>
@@ -141,9 +142,10 @@ public sealed partial class PlayerPage
         SkipPrompt.Translation = NextUpCard.Translation = new Vector3(0, -(float)Math.Max(0, above), 0);
     }
 
-    // Subtitles at the bottom move above the controls while they show, and back down when they fade.
+    // Subtitles at the bottom move above the controls while they show, and back down when they fade. The bar's
+    // picture has no controls over it.
     private void LiftSubtitles() =>
-        ViewModel.LiftSubtitles(_areControlsVisible && ActualHeight > 0 && BottomBar.ActualHeight > 0
+        ViewModel.LiftSubtitles(!IsDocked && _areControlsVisible && ActualHeight > 0 && BottomBar.ActualHeight > 0
             ? BottomBar.ActualHeight / ActualHeight
             : 0);
 

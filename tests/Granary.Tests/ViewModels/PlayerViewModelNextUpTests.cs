@@ -216,14 +216,14 @@ public sealed class PlayerViewModelNextUpTests
     }
 
     [Fact]
-    public async Task AMoviesEnd_GoesBack()
+    public async Task AMoviesEnd_LeavesThePlayer()
     {
         var viewModel = await PlayingAsync(episode: null);
         PlayTo(2099);
 
         Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Ended));
 
-        Assert.Equal(1, _navigation.BackCount);
+        Assert.Equal(1, _navigation.PlayerLeaves);
         Assert.False(viewModel.IsNextUpScreenShown);
     }
 

@@ -2,6 +2,7 @@ using Granary.Core.ViewModels;
 using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Windows.System;
@@ -60,13 +61,14 @@ public sealed partial class PlayerPage
     }
 
     // Any key shows the controls. Space is taken here, before a focused button would press itself with it:
-    // on the player Space always plays or pauses, as on the web.
+    // on the player Space always plays or pauses, as on the web. In the bar a focused button keeps it.
     private void OnPagePreviewKeyDown(object sender, KeyRoutedEventArgs e)
     {
         ShowControls();
         // On the Playing Next screen too, as long as the episode plays on in its corner; after its end Space presses
         // the focused button.
-        if (e.Key == VirtualKey.Space && AcceptsShortcut() && !(ShowsNextUpScreen && ViewModel.Phase == PlayerPhase.Ended))
+        if (e.Key == VirtualKey.Space && AcceptsShortcut() && !(ShowsNextUpScreen && ViewModel.Phase == PlayerPhase.Ended)
+            && !(IsDocked && FocusManager.GetFocusedElement(XamlRoot) is ButtonBase))
         {
             e.Handled = true;
             if (!e.KeyStatus.WasKeyDown)
@@ -85,6 +87,11 @@ public sealed partial class PlayerPage
             return;
         }
         bool isRepeat = e.KeyStatus.WasKeyDown;
+        // The bar takes the transport's keys only: full screen, the mini view, subtitles and Esc are the full player's.
+        if (IsDocked && e.Key is VirtualKey.F or VirtualKey.P or VirtualKey.C or VirtualKey.Escape)
+        {
+            return;
+        }
         if (ShowsNextUpScreen)
         {
             // The Playing Next screen's keys, as on the web: Esc closes, Enter plays the next episode.

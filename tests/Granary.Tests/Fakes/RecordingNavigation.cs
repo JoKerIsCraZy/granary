@@ -18,6 +18,11 @@ internal sealed class RecordingNavigation : INavigationService
 
     public int BackCount { get; private set; }
 
+    /// <summary>How often the player was taken away.</summary>
+    public int PlayerLeaves { get; private set; }
+
+    public void LeavePlayer() => PlayerLeaves++;
+
     public void NavigateTo(AppRoute route, object? parameter = null)
     {
         if (Current is { } current)
