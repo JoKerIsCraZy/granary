@@ -21,17 +21,17 @@ public sealed class ArtworkDiskCacheTests : IDisposable
     [Fact]
     public async Task Write_KeepsTheImageForTheNextStart()
     {
-        await Create().WriteAsync("a", [1, 2, 3], TestContext.Current.CancellationToken);
+        await Create().WriteAsync("a", Bytes([1, 2, 3]), TestContext.Current.CancellationToken);
 
-        var read = await Create().ReadAsync("a", TestContext.Current.CancellationToken);
+        var read = await Create().ReadAsync("a", ArtworkChunkPool.None, TestContext.Current.CancellationToken);
 
-        Assert.Equal([1, 2, 3], read);
+        Assert.Equal([1, 2, 3], Read(read));
     }
 
     [Fact]
     public async Task Read_OfAnUnknownImage_IsAMiss()
     {
-        Assert.Null(await Create().ReadAsync("missing", TestContext.Current.CancellationToken));
+        Assert.Null(await Create().ReadAsync("missing", ArtworkChunkPool.None, TestContext.Current.CancellationToken));
         Assert.False(Create().Contains("missing"));
     }
 
@@ -51,9 +51,9 @@ public sealed class ArtworkDiskCacheTests : IDisposable
         AppDomain.CurrentDomain.FirstChanceException += count;
         try
         {
-            await cache.ReadAsync("missing", TestContext.Current.CancellationToken);
-            await cache.WriteAsync("other", [1], TestContext.Current.CancellationToken);
-            await cache.ReadAsync("missing", TestContext.Current.CancellationToken);
+            await cache.ReadAsync("missing", ArtworkChunkPool.None, TestContext.Current.CancellationToken);
+            await cache.WriteAsync("other", Bytes([1]), TestContext.Current.CancellationToken);
+            await cache.ReadAsync("missing", ArtworkChunkPool.None, TestContext.Current.CancellationToken);
         }
         finally
         {
@@ -67,12 +67,12 @@ public sealed class ArtworkDiskCacheTests : IDisposable
     public async Task Write_BeyondTheBudget_DeletesTheLeastRecentlyUsedImages()
     {
         var cache = Create(capacityBytes: 100);
-        await cache.WriteAsync("old", new byte[40], TestContext.Current.CancellationToken);
-        await cache.WriteAsync("newer", new byte[40], TestContext.Current.CancellationToken);
+        await cache.WriteAsync("old", Bytes(new byte[40]), TestContext.Current.CancellationToken);
+        await cache.WriteAsync("newer", Bytes(new byte[40]), TestContext.Current.CancellationToken);
         File.SetLastWriteTimeUtc(cache.PathFor("old"), _time.GetUtcNow().UtcDateTime.AddDays(-3));
         File.SetLastWriteTimeUtc(cache.PathFor("newer"), _time.GetUtcNow().UtcDateTime.AddDays(-2));
 
-        await cache.WriteAsync("newest", new byte[40], TestContext.Current.CancellationToken);
+        await cache.WriteAsync("newest", Bytes(new byte[40]), TestContext.Current.CancellationToken);
         await cache.WhenTrimmed;
 
         Assert.False(cache.Contains("old"));
@@ -84,13 +84,13 @@ public sealed class ArtworkDiskCacheTests : IDisposable
     public async Task Write_CountsTheImagesOfEarlierStarts()
     {
         var earlier = Create(capacityBytes: 1024);
-        await earlier.WriteAsync("earlier-1", new byte[40], TestContext.Current.CancellationToken);
-        await earlier.WriteAsync("earlier-2", new byte[40], TestContext.Current.CancellationToken);
+        await earlier.WriteAsync("earlier-1", Bytes(new byte[40]), TestContext.Current.CancellationToken);
+        await earlier.WriteAsync("earlier-2", Bytes(new byte[40]), TestContext.Current.CancellationToken);
         File.SetLastWriteTimeUtc(earlier.PathFor("earlier-1"), _time.GetUtcNow().UtcDateTime.AddDays(-3));
         File.SetLastWriteTimeUtc(earlier.PathFor("earlier-2"), _time.GetUtcNow().UtcDateTime.AddDays(-2));
         var cache = Create(capacityBytes: 100);
 
-        await cache.WriteAsync("now", new byte[40], TestContext.Current.CancellationToken);
+        await cache.WriteAsync("now", Bytes(new byte[40]), TestContext.Current.CancellationToken);
         await cache.WhenTrimmed;
 
         Assert.False(cache.Contains("earlier-1"));
@@ -110,7 +110,7 @@ public sealed class ArtworkDiskCacheTests : IDisposable
         File.SetLastWriteTimeUtc(abandoned, _time.GetUtcNow().UtcDateTime.AddHours(-2));
         File.SetLastWriteTimeUtc(inProgress, _time.GetUtcNow().UtcDateTime);
 
-        await Create().WriteAsync("a", [1], TestContext.Current.CancellationToken);
+        await Create().WriteAsync("a", Bytes([1]), TestContext.Current.CancellationToken);
 
         Assert.False(File.Exists(abandoned));
         Assert.True(File.Exists(inProgress));
@@ -120,13 +120,13 @@ public sealed class ArtworkDiskCacheTests : IDisposable
     public async Task Read_MarksTheImageAsRecentlyUsed()
     {
         var cache = Create(capacityBytes: 100);
-        await cache.WriteAsync("read", new byte[40], TestContext.Current.CancellationToken);
-        await cache.WriteAsync("unread", new byte[40], TestContext.Current.CancellationToken);
+        await cache.WriteAsync("read", Bytes(new byte[40]), TestContext.Current.CancellationToken);
+        await cache.WriteAsync("unread", Bytes(new byte[40]), TestContext.Current.CancellationToken);
         File.SetLastWriteTimeUtc(cache.PathFor("read"), _time.GetUtcNow().UtcDateTime.AddDays(-3));
         File.SetLastWriteTimeUtc(cache.PathFor("unread"), _time.GetUtcNow().UtcDateTime.AddDays(-2));
 
-        await cache.ReadAsync("read", TestContext.Current.CancellationToken);
-        await cache.WriteAsync("newest", new byte[40], TestContext.Current.CancellationToken);
+        await cache.ReadAsync("read", ArtworkChunkPool.None, TestContext.Current.CancellationToken);
+        await cache.WriteAsync("newest", Bytes(new byte[40]), TestContext.Current.CancellationToken);
         await cache.WhenTrimmed;
 
         Assert.True(cache.Contains("read"));
@@ -137,7 +137,7 @@ public sealed class ArtworkDiskCacheTests : IDisposable
     public async Task Remove_DeletesTheImage()
     {
         var cache = Create();
-        await cache.WriteAsync("a", [1], TestContext.Current.CancellationToken);
+        await cache.WriteAsync("a", Bytes([1]), TestContext.Current.CancellationToken);
 
         cache.Remove("a");
 
@@ -155,4 +155,18 @@ public sealed class ArtworkDiskCacheTests : IDisposable
 
     private ArtworkDiskCache Create(long capacityBytes = 1024) =>
         new(_directory, capacityBytes, _logs.For<ArtworkDiskCache>(), _time);
+
+    private static ArtworkBytes Bytes(byte[] data) => ArtworkBytes.From(data);
+
+    private static byte[]? Read(ArtworkBytes? bytes)
+    {
+        if (bytes is null)
+        {
+            return null;
+        }
+        using var stream = bytes.OpenRead();
+        using var copy = new MemoryStream();
+        stream.CopyTo(copy);
+        return copy.ToArray();
+    }
 }

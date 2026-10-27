@@ -3,8 +3,8 @@ using System.Diagnostics.CodeAnalysis;
 namespace Granary.Core.Artwork;
 
 /// <summary>
-/// The most recently used images, up to a budget of bytes; the least recently used one goes first.
-/// Safe to use from any thread.
+/// The most recently used images, up to a budget of memory (their chunks, whole); the least recently used one goes first.
+/// The cache holds each image it keeps (<see cref="ArtworkBytes"/>) and lets go of it as it goes. Safe to use from any thread.
 /// </summary>
 public sealed class ArtworkMemoryCache(long capacityBytes)
 {
@@ -13,7 +13,7 @@ public sealed class ArtworkMemoryCache(long capacityBytes)
     private readonly LinkedList<Entry> _recency = [];
     private long _size;
 
-    /// <summary>The bytes held right now.</summary>
+    /// <summary>The memory held right now.</summary>
     public long Size
     {
         get
@@ -33,11 +33,13 @@ public sealed class ArtworkMemoryCache(long capacityBytes)
         }
     }
 
-    public bool TryGet(string key, [NotNullWhen(true)] out ArtworkBytes? bytes)
+    /// <summary>The image under <paramref name="key"/>, held for the caller, who lets go of it (an <see cref="ArtworkLease"/>).</summary>
+    public bool TryHold(string key, [NotNullWhen(true)] out ArtworkBytes? bytes)
     {
         lock (_gate)
         {
-            if (_entries.TryGetValue(key, out var node))
+            // The cache's own hold keeps it alive, so a hold for the caller always succeeds here.
+            if (_entries.TryGetValue(key, out var node) && node.Value.Bytes.TryHold())
             {
                 _recency.Remove(node);
                 _recency.AddFirst(node);
@@ -49,19 +51,23 @@ public sealed class ArtworkMemoryCache(long capacityBytes)
         return false;
     }
 
-    /// <summary>Keeps <paramref name="bytes"/> under <paramref name="key"/>; an image larger than the whole budget is not kept.</summary>
+    /// <summary>
+    /// Keeps <paramref name="bytes"/> under <paramref name="key"/>, taking over the caller's hold; an image larger than the
+    /// whole budget is let go of at once.
+    /// </summary>
     public void Add(string key, ArtworkBytes bytes)
     {
         ArgumentNullException.ThrowIfNull(bytes);
         lock (_gate)
         {
             RemoveLocked(key);
-            if (bytes.Length > capacityBytes)
+            if (bytes.Footprint > capacityBytes)
             {
+                bytes.Release();
                 return;
             }
             _entries[key] = _recency.AddFirst(new Entry(key, bytes));
-            _size += bytes.Length;
+            _size += bytes.Footprint;
             while (_size > capacityBytes && _recency.Last is { } oldest)
             {
                 RemoveLocked(oldest.Value.Key);
@@ -82,7 +88,8 @@ public sealed class ArtworkMemoryCache(long capacityBytes)
         if (_entries.Remove(key, out var node))
         {
             _recency.Remove(node);
-            _size -= node.Value.Bytes.Length;
+            _size -= node.Value.Bytes.Footprint;
+            node.Value.Bytes.Release();
         }
     }
 

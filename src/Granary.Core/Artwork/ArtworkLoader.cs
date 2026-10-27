@@ -23,8 +23,6 @@ public sealed class ArtworkLoader : IArtworkPrefetcher, IDisposable
 {
     public const string HttpClientName = "Granary.Artwork";
 
-    private const int ReadChunkBytes = 64 * 1024;
-
     // Failed URLs are forgotten once their hold is over, when this many have piled up.
     private const int FailuresBeforePruning = 256;
 
@@ -34,11 +32,12 @@ public sealed class ArtworkLoader : IArtworkPrefetcher, IDisposable
     private readonly ArtworkLoaderOptions _options;
     private readonly TimeProvider _time;
     private readonly ArtworkMemoryCache _memory;
+    private readonly ArtworkChunkPool _pool;
     private readonly SemaphoreSlim _downloads;
     private readonly Channel<PrefetchRequest> _prefetches = Channel.CreateUnbounded<PrefetchRequest>();
     private readonly CancellationTokenSource _lifetime = new();
     private readonly Lock _gate = new();
-    private readonly Dictionary<string, Task<ArtworkBytes?>> _loads = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, Load> _loads = new(StringComparer.Ordinal);
     private readonly Dictionary<string, DateTimeOffset> _failedUntil = new(StringComparer.Ordinal);
     private bool _prefetching;
 
@@ -55,19 +54,45 @@ public sealed class ArtworkLoader : IArtworkPrefetcher, IDisposable
         _options = options ?? new ArtworkLoaderOptions();
         _time = time ?? TimeProvider.System;
         _memory = new ArtworkMemoryCache(_options.MemoryCapacityBytes);
+        // Enough for the images on their way while the cache lets go of as much: a full pool beside a full cache would keep
+        // twice the memory for good.
+        _pool = new ArtworkChunkPool(Math.Max(_options.MemoryCapacityBytes / 6, 64L * ArtworkChunkPool.ChunkSize));
         _downloads = new SemaphoreSlim(_options.MaxConcurrentDownloads);
     }
 
-    /// <summary>The image at <paramref name="url"/>, or null when it cannot be had (the reason is logged).</summary>
+    /// <summary>
+    /// The image at <paramref name="url"/>, lent to the caller, or null when it cannot be had (the reason is logged). Dispose
+    /// the lease once the bytes are read.
+    /// </summary>
     /// <remarks>Cancelling ends only this wait: the download goes on for other requests and the cache.</remarks>
-    public Task<ArtworkBytes?> GetAsync(Uri url, CancellationToken cancellationToken = default)
+    public Task<ArtworkLease?> GetAsync(Uri url, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(url);
         string key = ArtworkCacheKey.From(url);
-        return _memory.TryGet(key, out var cached) || _memory.TryGet(url.AbsoluteUri, out cached)
-            ? Task.FromResult<ArtworkBytes?>(cached)
-            : StartOrJoin(url, key, onScreen: true).WaitAsync(cancellationToken);
+        if (_memory.TryHold(key, out var cached) || _memory.TryHold(url.AbsoluteUri, out cached))
+        {
+            return Task.FromResult<ArtworkLease?>(new ArtworkLease(cached));
+        }
+        return LendAsync(StartOrJoin(url, key, waiting: true), cancellationToken);
     }
+
+    // The load's result carries a hold for this caller; a caller that stops waiting lets go of it when the load ends.
+    private static async Task<ArtworkLease?> LendAsync(Task<ArtworkBytes?> load, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await load.WaitAsync(cancellationToken).ConfigureAwait(false) is { } bytes ? new ArtworkLease(bytes) : null;
+        }
+        catch (OperationCanceledException)
+        {
+            _ = load.ContinueWith(static ended => ended.Result?.Release(), CancellationToken.None,
+                TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+            throw;
+        }
+    }
+
+    /// <summary>The chunks images are held in, for tests.</summary>
+    internal ArtworkChunkPool Pool => _pool;
 
     public void Prefetch(IEnumerable<Uri> urls, CancellationToken cancellationToken = default)
     {
@@ -98,19 +123,28 @@ public sealed class ArtworkLoader : IArtworkPrefetcher, IDisposable
         _lifetime.Cancel();
     }
 
-    private Task<ArtworkBytes?> StartOrJoin(Uri url, string key, bool onScreen)
+    // A waiting caller gets a hold on the image with it; a prefetch, which only fills the cache, does not.
+    private Task<ArtworkBytes?> StartOrJoin(Uri url, string key, bool waiting)
     {
-        TaskCompletionSource<ArtworkBytes?> load;
+        Load load;
         lock (_gate)
         {
             if (_loads.TryGetValue(key, out var running))
             {
-                return running;
+                running.Waiters += waiting ? 1 : 0;
+                return running.Completion.Task;
             }
             // A load that finished since the caller looked keeps its image in memory.
-            if (_memory.TryGet(key, out var cached) || _memory.TryGet(url.AbsoluteUri, out cached))
+            if (_memory.Contains(key) || _memory.Contains(url.AbsoluteUri))
             {
-                return Task.FromResult<ArtworkBytes?>(cached);
+                if (!waiting)
+                {
+                    return Task.FromResult<ArtworkBytes?>(null);
+                }
+                if (_memory.TryHold(key, out var cached) || _memory.TryHold(url.AbsoluteUri, out cached))
+                {
+                    return Task.FromResult<ArtworkBytes?>(cached);
+                }
             }
             // Held per URL: an expired signature fails, and the renewed URL for the same image must not wait.
             if (_failedUntil.TryGetValue(url.AbsoluteUri, out var until))
@@ -121,17 +155,18 @@ public sealed class ArtworkLoader : IArtworkPrefetcher, IDisposable
                 }
                 _failedUntil.Remove(url.AbsoluteUri);
             }
-            load = new TaskCompletionSource<ArtworkBytes?>(TaskCreationOptions.RunContinuationsAsynchronously);
-            _loads[key] = load.Task;
+            load = new Load { Waiters = waiting ? 1 : 0 };
+            _loads[key] = load;
         }
-        _ = Task.Run(() => RunAsync(url, key, onScreen, load));
-        return load.Task;
+        // Images on screen download beside the prefetches, each with their own limit.
+        _ = Task.Run(() => RunAsync(url, key, onScreen: waiting, load));
+        return load.Completion.Task;
     }
 
-    // Never throws: every waiter gets the image or null.
-    private async Task RunAsync(Uri url, string key, bool onScreen, TaskCompletionSource<ArtworkBytes?> load)
+    // Never throws: every waiter gets the image, with a hold of its own, or null.
+    private async Task RunAsync(Uri url, string key, bool onScreen, Load load)
     {
-        ArtworkBytes? result = null;
+        Loaded? result = null;
         try
         {
             result = await LoadAsync(url, key, onScreen, _lifetime.Token).ConfigureAwait(false);
@@ -144,18 +179,26 @@ public sealed class ArtworkLoader : IArtworkPrefetcher, IDisposable
             // The path only: the query holds the signature.
             _logger.LogWarning("Artwork {Path} could not be loaded: {Failure}", url.AbsolutePath, ex.Message);
         }
-        finally
+        ArtworkBytes? shared = null;
+        lock (_gate)
         {
-            lock (_gate)
+            _loads.Remove(key);
+            if (result is { } loaded)
             {
-                _loads.Remove(key);
-                if (result is null && !_lifetime.IsCancellationRequested)
+                // A hold for every waiter before the cache takes over the load's own, which it may let go of at once.
+                for (int i = 0; i < load.Waiters; i++)
                 {
-                    HoldFailed(url.AbsoluteUri);
+                    loaded.Bytes.TryHold();
                 }
+                shared = load.Waiters > 0 ? loaded.Bytes : null;
+                _memory.Add(loaded.Identity, loaded.Bytes);
             }
-            load.SetResult(result);
+            else if (!_lifetime.IsCancellationRequested)
+            {
+                HoldFailed(url.AbsoluteUri);
+            }
         }
+        load.Completion.SetResult(shared);
     }
 
     // Called under the lock.
@@ -172,12 +215,13 @@ public sealed class ArtworkLoader : IArtworkPrefetcher, IDisposable
         _failedUntil[url] = now + _options.FailureHold;
     }
 
-    private async Task<ArtworkBytes?> LoadAsync(Uri url, string key, bool onScreen, CancellationToken cancellationToken)
+    // The image, held by the load, with the identity it is cached under.
+    private async Task<Loaded?> LoadAsync(Uri url, string key, bool onScreen, CancellationToken cancellationToken)
     {
         // Only immutable images are on disk.
-        if (await _disk.ReadAsync(key, cancellationToken).ConfigureAwait(false) is { } stored)
+        if (await _disk.ReadAsync(key, _pool, cancellationToken).ConfigureAwait(false) is { } stored)
         {
-            return Remember(key, stored);
+            return new Loaded(stored, key);
         }
         Download? download;
         if (onScreen)
@@ -201,17 +245,18 @@ public sealed class ArtworkLoader : IArtworkPrefetcher, IDisposable
         }
         if (!download.IsImmutable)
         {
-            return Remember(url.AbsoluteUri, download.Data);
+            return new Loaded(download.Data, url.AbsoluteUri);
         }
-        await _disk.WriteAsync(key, download.Data, cancellationToken).ConfigureAwait(false);
-        return Remember(key, download.Data);
-    }
-
-    private ArtworkBytes Remember(string identity, byte[] data)
-    {
-        var bytes = new ArtworkBytes(data);
-        _memory.Add(identity, bytes);
-        return bytes;
+        try
+        {
+            await _disk.WriteAsync(key, download.Data, cancellationToken).ConfigureAwait(false);
+        }
+        catch
+        {
+            download.Data.Release();
+            throw;
+        }
+        return new Loaded(download.Data, key);
     }
 
     private async Task<Download?> DownloadWithinTimeoutAsync(Uri url, CancellationToken cancellationToken)
@@ -245,7 +290,13 @@ public sealed class ArtworkLoader : IArtworkPrefetcher, IDisposable
             _ when response.Content.Headers.ContentLength > _options.MaxImageBytes => "the image is too large",
             _ => null,
         };
-        var data = refusal is null ? await ReadAtMostAsync(response.Content, _options.MaxImageBytes, cancellationToken).ConfigureAwait(false) : null;
+        ArtworkBytes? data = null;
+        if (refusal is null)
+        {
+            // Null when the body is longer than allowed, which a missing or wrong Content-Length does not reveal.
+            await using var body = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+            data = await ArtworkBytes.ReadAsync(body, _options.MaxImageBytes, _pool, cancellationToken).ConfigureAwait(false);
+        }
         if (data is null)
         {
             _logger.LogDebug("Artwork {Path} was refused: {Reason}", url.AbsolutePath, refusal ?? "the image is too large");
@@ -261,25 +312,6 @@ public sealed class ArtworkLoader : IArtworkPrefetcher, IDisposable
         || mediaType.StartsWith("image/", StringComparison.OrdinalIgnoreCase)
         || mediaType.Equals("application/octet-stream", StringComparison.OrdinalIgnoreCase)
         || mediaType.Equals("binary/octet-stream", StringComparison.OrdinalIgnoreCase);
-
-    // Null when the body is longer than maxBytes, which a missing or wrong Content-Length does not reveal.
-    // A stated length sizes the buffer up front, so a correct one costs no growing and no copy.
-    private static async Task<byte[]?> ReadAtMostAsync(HttpContent content, long maxBytes, CancellationToken cancellationToken)
-    {
-        await using var stream = await content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-        using var buffer = new MemoryStream(content.Headers.ContentLength is { } length and > 0 && length <= maxBytes ? (int)length : 0);
-        var chunk = new byte[ReadChunkBytes];
-        int read;
-        while ((read = await stream.ReadAsync(chunk, cancellationToken).ConfigureAwait(false)) > 0)
-        {
-            if (buffer.Length + read > maxBytes)
-            {
-                return null;
-            }
-            buffer.Write(chunk, 0, read);
-        }
-        return buffer.Length == buffer.Capacity ? buffer.GetBuffer() : buffer.ToArray();
-    }
 
     private void StartPrefetching()
     {
@@ -310,7 +342,7 @@ public sealed class ArtworkLoader : IArtworkPrefetcher, IDisposable
                 string key = ArtworkCacheKey.From(request.Url);
                 if (!_memory.Contains(key) && !_memory.Contains(request.Url.AbsoluteUri) && !_disk.Contains(key))
                 {
-                    await StartOrJoin(request.Url, key, onScreen: false).ConfigureAwait(false);
+                    await StartOrJoin(request.Url, key, waiting: false).ConfigureAwait(false);
                 }
             }
         }
@@ -321,5 +353,15 @@ public sealed class ArtworkLoader : IArtworkPrefetcher, IDisposable
 
     private readonly record struct PrefetchRequest(Uri Url, CancellationToken CancellationToken);
 
-    private sealed record Download(byte[] Data, bool IsImmutable);
+    private sealed record Download(ArtworkBytes Data, bool IsImmutable);
+
+    private sealed record Loaded(ArtworkBytes Bytes, string Identity);
+
+    // A load in flight, and how many callers wait for its image (a prefetch does not count).
+    private sealed class Load
+    {
+        public TaskCompletionSource<ArtworkBytes?> Completion { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public int Waiters { get; set; }
+    }
 }

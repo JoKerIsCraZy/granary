@@ -42,7 +42,7 @@ public sealed class ArtworkLoaderTests : IDisposable
         var second = await loader.GetAsync(Poster, Token);
 
         Assert.Equal(PosterBytes, Read(first));
-        Assert.Same(first, second);
+        Assert.Same(first!.Bytes, second!.Bytes);
         Assert.Equal(1, _server.Requests);
     }
 
@@ -68,7 +68,7 @@ public sealed class ArtworkLoaderTests : IDisposable
         var second = loader.GetAsync(Poster, Token);
         gate.SetResult();
 
-        Assert.Same(await first, await second);
+        Assert.Same((await first)!.Bytes, (await second)!.Bytes);
         Assert.Equal(1, _server.Requests);
     }
 
@@ -182,7 +182,7 @@ public sealed class ArtworkLoaderTests : IDisposable
     public async Task Get_DoesNotNeedTheCallersThread()
     {
         // The UI thread calls GetAsync; disk and network work must not queue up on it.
-        Task<ArtworkBytes?> load;
+        Task<ArtworkLease?> load;
         var previous = SynchronizationContext.Current;
         SynchronizationContext.SetSynchronizationContext(new NeverRunsContext());
         try
@@ -294,6 +294,90 @@ public sealed class ArtworkLoaderTests : IDisposable
         Assert.Equal(2, _server.Requests);
     }
 
+    [Fact]
+    public async Task AnImageLeavingTheCache_GivesItsChunksToTheNext_OnceItsLeasesEnd()
+    {
+        // Room for one image at a time: each new one pushes the last out.
+        var loader = Create(new ArtworkLoaderOptions { MemoryCapacityBytes = ArtworkChunkPool.ChunkSize });
+        var poster = await loader.GetAsync(Poster, Token);
+        var chunk = OnlyChunk(poster);
+
+        var still = await loader.GetAsync(Still, Token);
+
+        Assert.Equal(PosterBytes, Read(poster));
+        Assert.NotSame(chunk, OnlyChunk(still));
+        poster!.Dispose();
+        still!.Dispose();
+        _server.Body = [9, 8, 7];
+        var next = await loader.GetAsync(new Uri("https://nas.example/api/v2/artwork/movies/1/poster/w342.ef56.webp?exp=1&sig=d"), Token);
+
+        Assert.Same(chunk, OnlyChunk(next));
+        Assert.Equal([9, 8, 7], Read(next));
+    }
+
+    [Fact]
+    public async Task ACallerThatStoppedWaiting_LetsGoOfItsShare_WhenTheDownloadEnds()
+    {
+        var gate = _server.Hold();
+        var loader = Create(new ArtworkLoaderOptions { MemoryCapacityBytes = ArtworkChunkPool.ChunkSize });
+        using var cancel = CancellationTokenSource.CreateLinkedTokenSource(Token);
+        var abandoned = loader.GetAsync(Poster, cancel.Token);
+        await cancel.CancelAsync();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => abandoned);
+
+        gate.SetResult();
+        using (var poster = await loader.GetAsync(Poster, Token))
+        {
+            loader.Invalidate(Poster);
+        }
+
+        // Only once the abandoned caller's share is let go too is the image's chunk free again.
+        await AuthPipeline.Eventually(() => loader.Pool.FreeChunks == 1);
+    }
+
+    [Fact]
+    public async Task TwoCallersOfOneDownload_EachHoldTheImage_UntilBothLetGo()
+    {
+        var gate = _server.Hold();
+        var loader = Create();
+        var first = loader.GetAsync(Poster, Token);
+        var second = loader.GetAsync(Poster, Token);
+        gate.SetResult();
+        var one = await first;
+        var two = await second;
+
+        loader.Invalidate(Poster);
+        one!.Dispose();
+
+        Assert.Equal(0, loader.Pool.FreeChunks);
+        Assert.Equal(PosterBytes, Read(two));
+        two!.Dispose();
+        Assert.Equal(1, loader.Pool.FreeChunks);
+    }
+
+    [Fact]
+    public async Task APrefetchedImage_IsHeldByTheCacheAlone()
+    {
+        var loader = Create();
+        loader.Prefetch([Poster], Token);
+        await AuthPipeline.Eventually(() => _server.Requests == 1);
+        using (var shown = await loader.GetAsync(Poster, Token))
+        {
+            Assert.Equal(PosterBytes, Read(shown));
+        }
+
+        loader.Invalidate(Poster);
+
+        Assert.Equal(1, loader.Pool.FreeChunks);
+    }
+
+    private static byte[] OnlyChunk(ArtworkLease? lease)
+    {
+        Assert.NotNull(lease);
+        Assert.True(System.Runtime.InteropServices.MemoryMarshal.TryGetArray(Assert.Single(lease.Bytes.Chunks), out var segment));
+        return segment.Array!;
+    }
+
     private ArtworkLoader Create(ArtworkLoaderOptions? options = null)
     {
         var loader = new ArtworkLoader(
@@ -306,10 +390,10 @@ public sealed class ArtworkLoaderTests : IDisposable
         return loader;
     }
 
-    private static byte[] Read(ArtworkBytes? artwork)
+    private static byte[] Read(ArtworkLease? artwork)
     {
         Assert.NotNull(artwork);
-        using var stream = artwork.OpenRead();
+        using var stream = artwork.Bytes.OpenRead();
         using var copy = new MemoryStream();
         stream.CopyTo(copy);
         return copy.ToArray();
@@ -338,6 +422,8 @@ public sealed class ArtworkLoaderTests : IDisposable
         public string CacheControl { get; set; } = "private, max-age=3600, immutable";
 
         public bool SendsLength { get; set; } = true;
+
+        public byte[] Body { get; set; } = PosterBytes;
 
         /// <summary>Sends the headers, then never a byte of the body.</summary>
         public bool StallsBody { get; set; }
@@ -385,8 +471,8 @@ public sealed class ArtworkLoaderTests : IDisposable
                 throw failure;
             }
             HttpContent content = StallsBody ? new StreamContent(new StalledStream())
-                : SendsLength ? new ByteArrayContent(PosterBytes)
-                : new StreamContent(new UnknownLengthStream(PosterBytes));
+                : SendsLength ? new ByteArrayContent(Body)
+                : new StreamContent(new UnknownLengthStream(Body));
             content.Headers.ContentType = new MediaTypeHeaderValue(ContentType);
             var response = new HttpResponseMessage(Status) { Content = content, Version = request.Version };
             response.Headers.CacheControl = CacheControlHeaderValue.Parse(CacheControl);

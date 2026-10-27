@@ -83,7 +83,18 @@ over HTTP/2 without credentials (artwork URLs are presigned) and are not logged.
 body included. One download serves every request for an image; a failed URL is not asked for again for a
 minute (its renewed URL is), and the bitmap then tries the URL itself.
 
-- Memory: the encoded bytes of the most recently used images, 96 MB.
+- Memory: the encoded bytes of the most recently used images, 96 MB, in 16 KB chunks (`ArtworkBytes`). As one array
+  each, backdrops and large posters went on the large object heap, whose allocations start full collections; ordinary
+  long-lived arrays the collector copies from generation to generation. So the chunks come from `ArtworkChunkPool`,
+  allocated once on the pinned object heap, and go back to it (up to a sixth of the cache's size) when an image leaves
+  the cache and nobody reads it any more: the bytes are counted out to their holders, the cache and each `ArtworkLease` that `GetAsync` lends. Measured
+  on a 5,212-title grid scrolled 80 pages: large object heap allocations 68 MB to 4 MB, gen1 collections 6 to 1, GC
+  pauses 225 to 190 ms.
+- Decoding: the control copies an image's chunks into one native buffer (`Windows.Storage.Streams.Buffer`) and writes
+  it once into an `InMemoryRandomAccessStream`, off the UI thread, before ending the lease. A .NET stream given to the
+  decoder (`AsRandomAccessStream`) made a managed buffer as large as each of its reads, and every WinRT object .NET
+  holds adds 1,000 bytes of memory pressure (CsWinRT's `IObjectReference`), enough of which starts blocking full
+  collections: the remaining gen2 collections while scrolling are those.
 - Disk: images the server marks `immutable`, in `cache\artwork` under the data directory, 512 MB, the
   least recently used deleted first, in the background. File names are hashes of the URL without its
   signature. Temporary files of writes that never finished are swept on the first write of a run.

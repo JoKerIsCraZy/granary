@@ -56,7 +56,8 @@ public sealed class ArtworkDiskCache
         }
     }
 
-    public async Task<byte[]?> ReadAsync(string key, CancellationToken cancellationToken)
+    /// <summary>The stored image in chunks of <paramref name="pool"/>, held by the caller; null on a miss.</summary>
+    public async Task<ArtworkBytes?> ReadAsync(string key, ArtworkChunkPool pool, CancellationToken cancellationToken)
     {
         string path = PathFor(key);
         // Misses are the rule on a cold cache: asking first spares an exception per image, which a
@@ -67,7 +68,13 @@ public sealed class ArtworkDiskCache
         }
         try
         {
-            var data = await File.ReadAllBytesAsync(path, cancellationToken).ConfigureAwait(false);
+            // Unbuffered: the chunks are the only copy (ArtworkBytes).
+            ArtworkBytes? data;
+            await using (var file = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 1,
+                FileOptions.Asynchronous | FileOptions.SequentialScan))
+            {
+                data = await ArtworkBytes.ReadAsync(file, int.MaxValue, pool, cancellationToken).ConfigureAwait(false);
+            }
             MarkUsed(path);
             return data;
         }
@@ -82,7 +89,7 @@ public sealed class ArtworkDiskCache
         }
     }
 
-    public async Task WriteAsync(string key, byte[] data, CancellationToken cancellationToken)
+    public async Task WriteAsync(string key, ArtworkBytes data, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(data);
         string path = PathFor(key);
@@ -91,7 +98,11 @@ public sealed class ArtworkDiskCache
         {
             Directory.CreateDirectory(_directory);
             long replaced = File.Exists(path) ? new FileInfo(path).Length : 0;
-            await File.WriteAllBytesAsync(temporary, data, cancellationToken).ConfigureAwait(false);
+            await using (var file = new FileStream(temporary, FileMode.CreateNew, FileAccess.Write, FileShare.None, bufferSize: 1,
+                FileOptions.Asynchronous))
+            {
+                await data.WriteToAsync(file, cancellationToken).ConfigureAwait(false);
+            }
             File.Move(temporary, path, overwrite: true);
             File.SetLastWriteTimeUtc(path, _time.GetUtcNow().UtcDateTime);
             Account(data.Length - replaced);
