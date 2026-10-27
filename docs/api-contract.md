@@ -846,7 +846,10 @@ tracks ([8.8.1](#881-initial-track-selection-before-start)) → `POST /api/v2/pl
   (a genre also `&media_type=movie|series`, required) → `{ "kind", "slug", "display_name", "logo_url", "media_type",
   "sort", "page", "total_pages", "results" }`; a studio lists movies, a network series. 404 for an unknown slug. The next
   page is `page + 1` up to `min(total_pages, 500)`.
-- Not built yet: search.
+- Search: `GET /api/v2/requests/search?q=&media_type=all|movie|series&page=1..500` (profile-scoped; a blank `q` is a
+  validation problem) → `{ "page", "total_pages", "total_results", "results": RequestMediaResult[] }`, TMDB's page of 20.
+  The web asks only for a text of two characters or more, and only while `requests_enabled`; it leaves out what the
+  library has (`availability` `available`) and reads pages up to `min(total_pages, 500)`.
 
 ## 8. Playback protocol v3
 

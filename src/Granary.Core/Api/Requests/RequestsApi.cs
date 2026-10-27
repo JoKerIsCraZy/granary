@@ -93,6 +93,21 @@ public sealed class RequestsApi(SiloHttp http)
             SiloJsonContext.Default.DiscoverBrowsePage, cancellationToken);
     }
 
+    /// <summary>A page of the movies and series TMDB finds for <paramref name="query"/>, with what the library and the viewer have of each.</summary>
+    /// <param name="mediaType"><c>all</c>, <c>movie</c> or <c>series</c>.</param>
+    public Task<RequestMediaPage> SearchAsync(Uri server, string query, string mediaType, int page, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(query);
+        if (mediaType is not ("all" or "movie" or "series"))
+        {
+            throw new ArgumentException($"'{mediaType}' is not a media type of request search.", nameof(mediaType));
+        }
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(page);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(page, TmdbMaxPage);
+        string search = new QueryBuilder().Add("q", query.Trim()).Add("media_type", mediaType).Add("page", page).ToString();
+        return http.GetAsync(server, "api/v2/requests/search" + search, SiloAuth.Profile, SiloJsonContext.Default.RequestMediaPage, cancellationToken);
+    }
+
     // A Discover row's key: lower-case words and numbers joined by underscores.
     private static bool IsKey(string? value) =>
         value is { Length: > 0 and <= 64 } && value.All(c => c is (>= 'a' and <= 'z') or (>= '0' and <= '9') or '_');

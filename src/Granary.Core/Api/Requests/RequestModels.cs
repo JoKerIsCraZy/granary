@@ -163,6 +163,18 @@ public sealed record DiscoverBrowsePage
     public IReadOnlyList<RequestMediaResult> Results { get; init => field = value ?? []; } = [];
 }
 
+/// <summary><c>GET /api/v2/requests/search</c>: a page of the titles TMDB finds for a text.</summary>
+public sealed record RequestMediaPage
+{
+    public int Page { get; init; }
+
+    public int TotalPages { get; init; }
+
+    public int TotalResults { get; init; }
+
+    public IReadOnlyList<RequestMediaResult> Results { get; init => field = value ?? []; } = [];
+}
+
 /// <summary>A title from TMDB, as search and Discover list it.</summary>
 public sealed record RequestMediaResult
 {
