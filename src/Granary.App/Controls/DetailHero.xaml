@@ -152,7 +152,7 @@
                         <DataTemplate x:DataType="detail:DetailRating">
                             <TextBlock Foreground="{StaticResource SiloPrimaryBrush}" AutomationProperties.Name="{x:Bind AccessibleName}">
                                 <Run Text="{x:Bind Name}" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="13"
-                                     Foreground="#BFEF4444" CharacterSpacing="-25" />
+                                     Foreground="{StaticResource SiloPrimaryTint75Brush}" CharacterSpacing="-25" />
                                 <Run Text="{x:Bind Display}" FontFamily="{StaticResource SiloFontBold}" FontWeight="Bold" FontSize="15" />
                             </TextBlock>
                         </DataTemplate>

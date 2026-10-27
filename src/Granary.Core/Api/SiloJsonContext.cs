@@ -9,6 +9,7 @@ using Granary.Core.Api.Notifications;
 using Granary.Core.Api.Profiles;
 using Granary.Core.Api.Requests;
 using Granary.Core.Api.Settings;
+using Granary.Core.Api.Theme;
 
 namespace Granary.Core.Api;
 
@@ -100,6 +101,7 @@ namespace Granary.Core.Api;
 [JsonSerializable(typeof(DiscoverBrowsePage))]
 [JsonSerializable(typeof(RequestMediaPage))]
 [JsonSerializable(typeof(WatchlistTitleCollection))]
+[JsonSerializable(typeof(ServerBranding))]
 [JsonSerializable(typeof(Person))]
 [JsonSerializable(typeof(ImageCapabilities))]
 [JsonSerializable(typeof(ImageSizeWidths))]

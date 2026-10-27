@@ -21,7 +21,7 @@
     <SolidColorBrush x:Key="ComboBoxBorderBrush" Color="#FF28282E" />
     <SolidColorBrush x:Key="ComboBoxBorderBrushPointerOver" Color="#FF3A3A42" />
     <SolidColorBrush x:Key="ComboBoxBorderBrushPressed" Color="#FF3A3A42" />
-    <SolidColorBrush x:Key="ComboBoxBorderBrushFocused" Color="#FFEF4444" />
+    <StaticResource x:Key="ComboBoxBorderBrushFocused" ResourceKey="SiloPrimaryBrush" />
     <SolidColorBrush x:Key="ComboBoxBorderBrushUnfocused" Color="#FF28282E" />
     <SolidColorBrush x:Key="ComboBoxBorderBrushDisabled" Color="#FF202024" />
     <SolidColorBrush x:Key="ComboBoxForeground" Color="#FFE8E8EC" />
@@ -35,9 +35,9 @@
     <!-- Without text beside it, the switch is only its track, right-aligned in its row. -->
     <x:Double x:Key="ToggleSwitchThemeMinWidth">0</x:Double>
     <Thickness x:Key="ToggleSwitchTopHeaderMargin">0</Thickness>
-    <SolidColorBrush x:Key="ToggleSwitchFillOn" Color="#FFEF4444" />
-    <SolidColorBrush x:Key="ToggleSwitchFillOnPointerOver" Color="#FFF25858" />
-    <SolidColorBrush x:Key="ToggleSwitchFillOnPressed" Color="#FFDC2F2F" />
+    <StaticResource x:Key="ToggleSwitchFillOn" ResourceKey="SiloPrimaryBrush" />
+    <StaticResource x:Key="ToggleSwitchFillOnPointerOver" ResourceKey="SiloPrimaryHoverBrush" />
+    <StaticResource x:Key="ToggleSwitchFillOnPressed" ResourceKey="SiloPrimaryPressedBrush" />
     <SolidColorBrush x:Key="ToggleSwitchFillOff" Color="#FF3A3A42" />
     <SolidColorBrush x:Key="ToggleSwitchFillOffPointerOver" Color="#FF45454E" />
     <SolidColorBrush x:Key="ToggleSwitchFillOffPressed" Color="#FF45454E" />
@@ -58,7 +58,7 @@
     <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="#FF141417" />
     <SolidColorBrush x:Key="TextControlBorderBrush" Color="#FF28282E" />
     <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="#FF3A3A42" />
-    <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="#FFEF4444" />
+    <StaticResource x:Key="TextControlBorderBrushFocused" ResourceKey="SiloPrimaryBrush" />
     <SolidColorBrush x:Key="TextControlForeground" Color="#FFE8E8EC" />
     <SolidColorBrush x:Key="TextControlForegroundPointerOver" Color="#FFE8E8EC" />
     <SolidColorBrush x:Key="TextControlForegroundFocused" Color="#FFE8E8EC" />
@@ -73,10 +73,10 @@
     <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPointerOver" Color="#14FFFFFF" />
     <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPressed" Color="#14FFFFFF" />
     <SolidColorBrush x:Key="ListViewItemForeground" Color="#FFE8E8EC" />
-    <SolidColorBrush x:Key="ListViewItemForegroundSelected" Color="#FFEF4444" />
-    <SolidColorBrush x:Key="ListViewItemForegroundSelectedPointerOver" Color="#FFEF4444" />
-    <SolidColorBrush x:Key="ListViewItemSelectionIndicatorBrush" Color="#FFEF4444" />
-    <SolidColorBrush x:Key="ListViewItemSelectionIndicatorPointerOverBrush" Color="#FFEF4444" />
+    <StaticResource x:Key="ListViewItemForegroundSelected" ResourceKey="SiloPrimaryBrush" />
+    <StaticResource x:Key="ListViewItemForegroundSelectedPointerOver" ResourceKey="SiloPrimaryBrush" />
+    <StaticResource x:Key="ListViewItemSelectionIndicatorBrush" ResourceKey="SiloPrimaryBrush" />
+    <StaticResource x:Key="ListViewItemSelectionIndicatorPointerOverBrush" ResourceKey="SiloPrimaryBrush" />
 
     <Style x:Key="SiloSettingsBackButtonStyle" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
         <Setter Property="Background" Value="Transparent" />

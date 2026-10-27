@@ -14,7 +14,7 @@
     <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="#FF141417" />
     <SolidColorBrush x:Key="TextControlBorderBrush" Color="#FF28282E" />
     <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="#FF3A3A42" />
-    <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="#FFEF4444" />
+    <StaticResource x:Key="TextControlBorderBrushFocused" ResourceKey="SiloPrimaryBrush" />
     <!-- The web adds a 3 px half-red ring around the red outline; a 2 px outline stands for both. -->
     <Thickness x:Key="TextControlBorderThemeThickness">1</Thickness>
     <Thickness x:Key="TextControlBorderThemeThicknessFocused">2</Thickness>

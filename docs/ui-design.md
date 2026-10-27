@@ -14,7 +14,7 @@ Window chrome stays Windows: caption buttons, keyboard and focus behaviour, acce
 | `SiloBorderBrush` | `#2A2A2F` at 70 % | Dividers, outlines |
 | `SiloForegroundBrush` | `#E8E8EC` | Text |
 | `SiloMutedBrush` | `#A4A4AE` | Secondary text, overlines, section labels |
-| `SiloPrimaryBrush` | `#EF4444` | The only accent: Play, progress, selection, focus |
+| `SiloPrimaryBrush` | `#EF4444`, or the server's accent | The only accent: Play, progress, selection, focus. The server's branding accent replaces it, as on the web (`ServerAccent`, `AccentPainter`); its shades (`SiloPrimaryHoverBrush`, `SiloPrimaryPressedBrush`), tints (`SiloPrimaryTint15/60/75Brush`), labels (`SiloOnPrimaryBrush` dark on buttons, `SiloOnPrimaryBadgeBrush` white on badges) and the sign-in glow follow it. Errors stay red. |
 | `SiloBadgeBackgroundBrush` / `SiloBadgeBorderBrush` | `#14141E` at 70 % / white at 15 % | Pills on artwork |
 | `SiloAttentionBrush` / `SiloAttentionDotBrush` | `#FCD34D` / `#FBBF24` | A watchlist title TMDB lost: its caption, the tab's dot |
 | `SiloCardCornerRadius` | 16 | Cards, artwork, sidebar items |

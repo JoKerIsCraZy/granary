@@ -58,7 +58,8 @@ public sealed partial class CalendarPage : Page
 
     private static Brush Primary() => (Brush)Application.Current.Resources["SiloPrimaryBrush"];
 
-    private static Windows.UI.Color PrimaryColor() => (Windows.UI.Color)Application.Current.Resources["SiloPrimaryColor"];
+    // The brush, not SiloPrimaryColor: the brush carries the server's accent (AccentPainter).
+    private static Windows.UI.Color PrimaryColor() => ((SolidColorBrush)Application.Current.Resources["SiloPrimaryBrush"]).Color;
 
     private static Brush Muted() => (Brush)Application.Current.Resources["SiloMutedBrush"];
 

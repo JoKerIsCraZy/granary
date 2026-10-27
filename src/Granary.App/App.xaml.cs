@@ -1,11 +1,13 @@
 using System.Runtime;
 using Granary.App.Logging;
 using Granary.App.Services;
+using Granary.App.Themes;
 using Granary.Core;
 using Granary.Core.Abstractions;
 using Granary.Core.Diagnostics;
 using Granary.Core.Playback;
 using Granary.Core.Servers;
+using Granary.Core.Theme;
 using Granary.Core.ViewModels;
 using Granary.Player;
 using Microsoft.Extensions.DependencyInjection;
@@ -58,6 +60,16 @@ public partial class App : Application
         _window.Activate();
         // A server on this network is reached directly, once its key is verified (docs/api-contract.md, 9.7).
         Services.GetRequiredService<LocalRouteMonitor>().Start();
+        // The server's accent recolours Granary as it arrives, and with every other server.
+        var accent = Services.GetRequiredService<ServerAccent>();
+        accent.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(ServerAccent.Palette))
+            {
+                AccentPainter.Apply(accent.Palette);
+            }
+        };
+        _ = accent.StartAsync();
 
         // Developer shortcuts: --play <file or URL> plays it without the server; --play-item <content id> plays a
         // title of the signed-in server.

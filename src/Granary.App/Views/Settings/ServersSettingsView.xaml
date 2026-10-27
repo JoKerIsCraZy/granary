@@ -64,7 +64,8 @@
                             </StackPanel>
                             <Border Grid.Column="2" Visibility="{x:Bind IsActive}" VerticalAlignment="Center" Padding="10,3" CornerRadius="10"
                                     Background="{StaticResource SiloPrimaryBrush}">
-                                <TextBlock Text="Active" FontSize="12" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" Foreground="White" />
+                                <TextBlock Text="Active" FontSize="12" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
+                                           Foreground="{StaticResource SiloOnPrimaryBadgeBrush}" />
                             </Border>
                             <Button Grid.Column="2" Content="Switch" VerticalAlignment="Center" Style="{StaticResource SiloSettingsOutlineButtonStyle}"
                                     Visibility="{x:Bind CanSwitch}" Tag="{x:Bind}" Click="OnSwitchClick" AutomationProperties.Name="{x:Bind SwitchLabel}" />

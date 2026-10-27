@@ -22,7 +22,7 @@
                 <Border Padding="8,2,8,3" CornerRadius="9" Background="{StaticResource SiloPrimaryBrush}" VerticalAlignment="Center"
                         Visibility="{x:Bind HasText(TitleBadge), Mode=OneWay}">
                     <TextBlock Text="{x:Bind TitleBadge, Mode=OneWay}" FontSize="10" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
-                               Foreground="White" />
+                               Foreground="{StaticResource SiloOnPrimaryBadgeBrush}" />
                 </Border>
             </StackPanel>
             <HyperlinkButton HorizontalAlignment="Right" VerticalAlignment="Center" Style="{StaticResource SiloLinkButtonStyle}"

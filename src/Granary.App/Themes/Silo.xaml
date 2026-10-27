@@ -118,6 +118,24 @@
     <SolidColorBrush x:Key="SiloForegroundBrush" Color="{StaticResource SiloForegroundColor}" />
     <SolidColorBrush x:Key="SiloMutedBrush" Color="{StaticResource SiloMutedColor}" />
     <SolidColorBrush x:Key="SiloPrimaryBrush" Color="{StaticResource SiloPrimaryColor}" />
+    <!--
+        The accent's shades and see-through tints, and the labels drawn on it. AccentPainter repaints these brushes (and the
+        Fluent accent brushes above) with the server's accent, keeping each one's alpha; anything in the accent's colour
+        refers to one of them, never to a colour of its own.
+    -->
+    <SolidColorBrush x:Key="SiloPrimaryHoverBrush" Color="{StaticResource SiloPrimaryHoverColor}" />
+    <SolidColorBrush x:Key="SiloPrimaryPressedBrush" Color="{StaticResource SiloPrimaryPressedColor}" />
+    <SolidColorBrush x:Key="SiloPrimaryTint15Brush" Color="#26EF4444" />
+    <SolidColorBrush x:Key="SiloPrimaryTint60Brush" Color="#99EF4444" />
+    <SolidColorBrush x:Key="SiloPrimaryTint75Brush" Color="#BFEF4444" />
+    <!-- Labels on an accent fill: dark on buttons and the play disc, white on small badges (for a custom accent, the web's choice). -->
+    <SolidColorBrush x:Key="SiloOnPrimaryBrush" Color="#FF141417" />
+    <SolidColorBrush x:Key="SiloOnPrimaryBadgeBrush" Color="#FFFFFFFF" />
+    <!-- The signed-out screens' glow at the top left. -->
+    <RadialGradientBrush x:Key="SiloAccentGlowBrush" Center="0.18,0.18" GradientOrigin="0.18,0.18" RadiusX="0.26" RadiusY="0.52">
+        <GradientStop Offset="0" Color="#2EEF4444" />
+        <GradientStop Offset="1" Color="#00EF4444" />
+    </RadialGradientBrush>
     <SolidColorBrush x:Key="SiloBadgeBackgroundBrush" Color="{StaticResource SiloBadgeBackgroundColor}" />
     <SolidColorBrush x:Key="SiloBadgeBorderBrush" Color="{StaticResource SiloBadgeBorderColor}" />
     <SolidColorBrush x:Key="SiloRatingBadgeBrush" Color="{StaticResource SiloRatingBadgeColor}" />
@@ -239,8 +257,8 @@
     </Style>
     <!-- Technical chips in the accent colour: "1080P", "EAC3". -->
     <Style x:Key="SiloAccentChipStyle" TargetType="Border" BasedOn="{StaticResource SiloChipStyle}">
-        <Setter Property="Background" Value="#26EF4444" />
-        <Setter Property="BorderBrush" Value="#99EF4444" />
+        <Setter Property="Background" Value="{StaticResource SiloPrimaryTint15Brush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource SiloPrimaryTint60Brush}" />
     </Style>
 
     <!--
@@ -249,7 +267,7 @@
     -->
     <Style x:Key="SiloPrimaryButtonStyle" TargetType="Button">
         <Setter Property="Background" Value="{StaticResource SiloPrimaryBrush}" />
-        <Setter Property="Foreground" Value="{StaticResource SiloBackgroundBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource SiloOnPrimaryBrush}" />
         <Setter Property="CornerRadius" Value="{StaticResource SiloPillCornerRadius}" />
         <Setter Property="controls:Pill.IsEnabled" Value="True" />
         <Setter Property="Padding" Value="12,8,14,8" />
@@ -271,12 +289,12 @@
                                 <VisualState x:Name="Normal" />
                                 <VisualState x:Name="PointerOver">
                                     <VisualState.Setters>
-                                        <Setter Target="Root.Background" Value="#FFF25858" />
+                                        <Setter Target="Root.Background" Value="{StaticResource SiloPrimaryHoverBrush}" />
                                     </VisualState.Setters>
                                 </VisualState>
                                 <VisualState x:Name="Pressed">
                                     <VisualState.Setters>
-                                        <Setter Target="Root.Background" Value="#FFDC2F2F" />
+                                        <Setter Target="Root.Background" Value="{StaticResource SiloPrimaryPressedBrush}" />
                                     </VisualState.Setters>
                                 </VisualState>
                                 <VisualState x:Name="Disabled">
@@ -451,14 +469,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="ContentControl">
                     <Grid Background="{StaticResource SiloBackgroundBrush}">
-                        <Grid IsHitTestVisible="False">
-                            <Grid.Background>
-                                <RadialGradientBrush Center="0.18,0.18" GradientOrigin="0.18,0.18" RadiusX="0.26" RadiusY="0.52">
-                                    <GradientStop Offset="0" Color="#2EEF4444" />
-                                    <GradientStop Offset="1" Color="#00EF4444" />
-                                </RadialGradientBrush>
-                            </Grid.Background>
-                        </Grid>
+                        <Grid IsHitTestVisible="False" Background="{StaticResource SiloAccentGlowBrush}" />
                         <Grid IsHitTestVisible="False">
                             <Grid.Background>
                                 <RadialGradientBrush Center="0.82,0.12" GradientOrigin="0.82,0.12" RadiusX="0.24" RadiusY="0.5">
@@ -1105,7 +1116,7 @@
     <!-- The red play disc in the middle of a card under the pointer; it grows a little under the pointer itself. -->
     <Style x:Key="SiloCardPlayButtonStyle" TargetType="Button">
         <Setter Property="IsTabStop" Value="False" />
-        <Setter Property="Foreground" Value="{StaticResource SiloBackgroundBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource SiloOnPrimaryBrush}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -1118,14 +1129,14 @@
                                 <VisualState x:Name="Normal" />
                                 <VisualState x:Name="PointerOver">
                                     <VisualState.Setters>
-                                        <Setter Target="Fill.Fill" Value="#FFF25858" />
+                                        <Setter Target="Fill.Fill" Value="{StaticResource SiloPrimaryHoverBrush}" />
                                         <Setter Target="DiscScale.ScaleX" Value="1.1" />
                                         <Setter Target="DiscScale.ScaleY" Value="1.1" />
                                     </VisualState.Setters>
                                 </VisualState>
                                 <VisualState x:Name="Pressed">
                                     <VisualState.Setters>
-                                        <Setter Target="Fill.Fill" Value="#FFDC2F2F" />
+                                        <Setter Target="Fill.Fill" Value="{StaticResource SiloPrimaryPressedBrush}" />
                                         <Setter Target="DiscScale.ScaleX" Value="0.95" />
                                         <Setter Target="DiscScale.ScaleY" Value="0.95" />
                                     </VisualState.Setters>

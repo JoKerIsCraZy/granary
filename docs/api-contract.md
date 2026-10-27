@@ -482,6 +482,15 @@ Signing out keeps the entry but drops its tokens and profile; removing a server 
 (`silo-android/shared/src/androidMain/kotlin/org/siloserver/silo/network/AndroidServerRegistry.kt`,
 `EncryptedTokenManagerImpl.kt`). A refresh in flight when the server changes is discarded.
 
+### 6.5.1 Branding
+
+`GET /api/v2/theme/branding` (public, no sign-in) → `{ "server_name", "login_subtitle", "accent_color"?,
+"wordmark_url"?, "mark_url"?, "favicon_url"?, "login_bg_url"?, "storage_available" }`. The web paints `accent_color`
+over its theme (`web/src/lib/accentColor.ts`): only `#rgb` or `#rrggbb` counts (the admin's setting is free text,
+`branding.accent_color`); it recolours the primary actions, the focus ring and the selection, and labels on it turn
+white when white contrasts more than the dark label `#141417`. Granary reads it for the active server
+(`ServerAccent`) and keeps its own red when there is none or the read fails.
+
 ### 6.6 Settings the client reads
 
 Profile and device settings live on the server (manifest
