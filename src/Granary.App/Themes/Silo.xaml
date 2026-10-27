@@ -107,6 +107,9 @@
     <Color x:Key="SiloWatchedColor">#E622C55E</Color>
     <Color x:Key="SiloWatchedButtonColor">#FF34D399</Color>
     <Color x:Key="SiloCompleteColor">#FF4CAF50</Color>
+    <!-- Tailwind's amber-300 and amber-400: a watchlist title TMDB lost, in words and as a dot. -->
+    <Color x:Key="SiloAttentionColor">#FFFCD34D</Color>
+    <Color x:Key="SiloAttentionDotColor">#FFFBBF24</Color>
 
     <SolidColorBrush x:Key="SiloBackgroundBrush" Color="{StaticResource SiloBackgroundColor}" />
     <SolidColorBrush x:Key="SiloSurfaceBrush" Color="{StaticResource SiloSurfaceColor}" />
@@ -121,6 +124,8 @@
     <SolidColorBrush x:Key="SiloWatchedBrush" Color="{StaticResource SiloWatchedColor}" />
     <SolidColorBrush x:Key="SiloWatchedButtonBrush" Color="{StaticResource SiloWatchedButtonColor}" />
     <SolidColorBrush x:Key="SiloCompleteBrush" Color="{StaticResource SiloCompleteColor}" />
+    <SolidColorBrush x:Key="SiloAttentionBrush" Color="{StaticResource SiloAttentionColor}" />
+    <SolidColorBrush x:Key="SiloAttentionDotBrush" Color="{StaticResource SiloAttentionDotColor}" />
 
     <!-- Plus Jakarta Sans, one file per weight: XAML loads only the face of the file it names. -->
     <FontFamily x:Key="SiloFontRegular">ms-appx:///Assets/Fonts/PlusJakartaSans-Regular.ttf#Plus Jakarta Sans</FontFamily>
@@ -369,6 +374,60 @@
         <Setter Property="Background" Value="#B31B1B1E" />
     </Style>
     <!-- "EXPLORE ALL" next to a row title. -->
+    <!--
+        The web's line tabs (Requests' Discover and Yours, the watchlist's two): muted text, white once picked with a
+        white bar under it, over a hairline across the page. RadioButtons in one group.
+    -->
+    <Style x:Key="SiloLineTabStyle" TargetType="RadioButton">
+        <Setter Property="Foreground" Value="{StaticResource SiloMutedBrush}" />
+        <Setter Property="FontFamily" Value="{StaticResource SiloFontMedium}" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="Padding" Value="12,8" />
+        <Setter Property="MinWidth" Value="0" />
+        <Setter Property="UseSystemFocusVisuals" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RadioButton">
+                    <Grid x:Name="Root" Background="Transparent">
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup x:Name="CommonStates">
+                                <VisualState x:Name="Normal" />
+                                <VisualState x:Name="PointerOver">
+                                    <VisualState.Setters>
+                                        <Setter Target="Text.Foreground" Value="{StaticResource SiloForegroundBrush}" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Pressed">
+                                    <VisualState.Setters>
+                                        <Setter Target="Text.Foreground" Value="{StaticResource SiloForegroundBrush}" />
+                                        <Setter Target="Root.Opacity" Value="0.8" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Disabled" />
+                            </VisualStateGroup>
+                            <VisualStateGroup x:Name="CheckStates">
+                                <VisualState x:Name="Checked">
+                                    <VisualState.Setters>
+                                        <Setter Target="Shade.Foreground" Value="{StaticResource SiloForegroundBrush}" />
+                                        <Setter Target="Bar.Opacity" Value="1" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Unchecked" />
+                                <VisualState x:Name="Indeterminate" />
+                            </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>
+                        <ContentPresenter x:Name="Shade" Padding="{TemplateBinding Padding}" Foreground="{TemplateBinding Foreground}"
+                                          AutomationProperties.AccessibilityView="Raw">
+                            <ContentPresenter x:Name="Text" Content="{TemplateBinding Content}" AutomationProperties.AccessibilityView="Raw" />
+                        </ContentPresenter>
+                        <Border x:Name="Bar" Height="2" VerticalAlignment="Bottom" Background="{StaticResource SiloForegroundBrush}" Opacity="0" />
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <Style x:Key="SiloLinkButtonStyle" TargetType="HyperlinkButton">
         <Setter Property="Padding" Value="4,2" />
         <Setter Property="Foreground" Value="{StaticResource SiloMutedBrush}" />

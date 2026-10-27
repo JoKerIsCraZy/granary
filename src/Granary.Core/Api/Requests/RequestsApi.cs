@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Granary.Core.Api.Catalog;
 
 namespace Granary.Core.Api.Requests;
@@ -139,6 +140,37 @@ public sealed class RequestsApi(SiloHttp http)
     public Task<WatchlistTitleEntry> AddToWatchlistAsync(Uri server, string mediaType, long tmdbId, CancellationToken cancellationToken = default) =>
         http.SendAsync(HttpMethod.Put, server, $"api/v2/watchlist/titles/{TitlePath(mediaType, tmdbId)}", SiloAuth.Profile,
             SiloJsonContext.Default.WatchlistTitleEntry, cancellationToken);
+
+    /// <summary>The largest page <c>GET /api/v2/watchlist/titles</c> answers.</summary>
+    public const int WatchlistTitlesPageSize = 200;
+
+    /// <summary>
+    /// Every title on the watchlist that the library does not have, newest first: the pages one after another, as the web
+    /// reads them to sort and count the whole list. A page cursor the server repeats ends the read with an error rather than
+    /// a loop, or part of the list shown as all of it.
+    /// </summary>
+    public async Task<IReadOnlyList<WatchlistTitle>> ListWatchlistTitlesAsync(Uri server, CancellationToken cancellationToken = default)
+    {
+        var titles = new List<WatchlistTitle>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        string? cursor = null;
+        while (true)
+        {
+            string query = new QueryBuilder().Add("limit", WatchlistTitlesPageSize).Add("cursor", cursor).ToString();
+            var page = await http.GetAsync(server, "api/v2/watchlist/titles" + query, SiloAuth.Profile,
+                SiloJsonContext.Default.WatchlistTitleCollection, cancellationToken);
+            titles.AddRange(page.Items);
+            if (page.Page is not { HasMore: true, NextCursor: { Length: > 0 } next })
+            {
+                return titles;
+            }
+            if (!seen.Add(next))
+            {
+                throw new JsonException("The watchlist titles repeated a page cursor.");
+            }
+            cursor = next;
+        }
+    }
 
     public Task RemoveFromWatchlistAsync(Uri server, string mediaType, long tmdbId, CancellationToken cancellationToken = default) =>
         http.SendAsync(HttpMethod.Delete, server, $"api/v2/watchlist/titles/{TitlePath(mediaType, tmdbId)}", SiloAuth.Profile, cancellationToken);

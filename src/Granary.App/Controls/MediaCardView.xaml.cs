@@ -107,6 +107,15 @@ public sealed partial class MediaCardView : UserControl
             card?.Shape == MediaCardShape.Landscape ? "SiloCaptionTextStyle" : "SiloOverlineTextStyle"];
         SetText(SubtitleText, card?.Subtitle);
         SetText(CaptionText, card?.Caption);
+        if (card?.IsCaptionAttention == true)
+        {
+            CaptionText.Foreground = (Brush)Application.Current.Resources["SiloAttentionBrush"];
+        }
+        else
+        {
+            // The style's colour again, for a recycled card.
+            CaptionText.ClearValue(TextBlock.ForegroundProperty);
+        }
 
         SetHovered(false);
         ShowState();

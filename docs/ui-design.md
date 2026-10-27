@@ -16,6 +16,7 @@ Window chrome stays Windows: caption buttons, keyboard and focus behaviour, acce
 | `SiloMutedBrush` | `#A4A4AE` | Secondary text, overlines, section labels |
 | `SiloPrimaryBrush` | `#EF4444` | The only accent: Play, progress, selection, focus |
 | `SiloBadgeBackgroundBrush` / `SiloBadgeBorderBrush` | `#14141E` at 70 % / white at 15 % | Pills on artwork |
+| `SiloAttentionBrush` / `SiloAttentionDotBrush` | `#FCD34D` / `#FBBF24` | A watchlist title TMDB lost: its caption, the tab's dot |
 | `SiloCardCornerRadius` | 16 | Cards, artwork, sidebar items |
 | `SiloPillCornerRadius` | 999 | Badges, chips, buttons |
 
@@ -110,8 +111,20 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   You, Requests while the server takes them, Calendar, Notifications with the unread count in red), "YOUR STUFF" (Favorites, Watchlist, Collections,
   History; the web's Watch Party to come); Servers and the profile menu at the bottom. Favorites, Watchlist and History are one page (`PersonalListPage`, the web's `pages/Catalog.tsx` for those
   sources): the list's name, what it holds and its count, the media menu (All Media, Movies & Series, Movies, Series,
-  Episodes), the list's own order ("List Order", History's "Watch History") or a sort, and the posters by window. The
-  web's watchlist tab "Not in your library yet" comes with Requests, History's select-and-remove later. Detail pages shrink it to icons; the player hides it.
+  Episodes), the list's own order ("List Order", History's "Watch History") or a sort, and the posters by window.
+  While the server keeps watchlist titles the library does not have (`requests_enabled` and `watchlist_titles_supported`),
+  the watchlist has the web's line tabs (`SiloLineTabStyle`, as Requests'): In your library, the list; and Not in your
+  library yet (`WatchlistTitlesViewModel`, the web's `WatchlistTitlesTab`) with its count in a pill and an amber dot
+  while TMDB lost one of them. That tab drops the count, menus and posters for: a panel with the hint (whether adding
+  requested them) and Find more in Discover in red; the TMDB posters soonest first (downloading, then by release date,
+  awaiting approval, not requested, TMDB lost), each with its state as the badge ("DOWNLOADING 43%", "OUT DEC 18",
+  "AWAITING APPROVAL", "NOT REQUESTED", "NOT ON TMDB"), "MOVIE · 2020" and the state in words under it ("Out Dec 18 ·
+  approved", amber for a lost one), and the watchlist toggle to take it off; "Could not load these titles." with
+  Retry; or, empty, the web's dashed box: a bookmark, "Nothing waiting for the library", what goes there and Browse
+  Discover. The titles are read on every visit, every 30 s while one downloads, and after a watchlist change; one that
+  left (arrived, or taken off) reloads the library's list. Unlike the web source, the cards offer no Request action:
+  requesting is the title page's, as on Discover's cards. History's select-and-remove comes later. Detail pages shrink
+  it to icons; the player hides it.
   LIBRARIES, DISCOVER and YOUR STUFF fold away by their headers, a chevron before the capitals as on the web's
   LIBRARIES (down while open, right while folded, brighter under the pointer); unlike the web, all three fold and stay
   so across starts (`sidebar.json` in the data directory, the app's and not a profile's). A folded section still shows

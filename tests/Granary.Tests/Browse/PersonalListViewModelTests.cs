@@ -18,13 +18,13 @@ public sealed class PersonalListViewModelTests
     private readonly LibraryHarness _harness = new();
     private readonly ViewerStateChanges _changes = new(new PlaybackStops());
 
-    private PersonalListViewModel Create() => new(
-        _harness.Session,
-        new CatalogApi(_harness.Silo.Http),
-        new ImageParameterCache(new ImagesApi(_harness.Silo.Http), _harness.Logs.For<ImageParameterCache>()),
-        _harness.Navigation,
-        _harness.Logs.For<PersonalListViewModel>(),
-        _changes);
+    public PersonalListViewModelTests()
+    {
+        // The watchlist's second tab has its own tests (WatchlistTitlesViewModelTests); here the server keeps no such titles.
+        _harness.Answer(WatchlistTitlesViewModelTests.StatusPath, """{ "requests_enabled": false }""");
+    }
+
+    private PersonalListViewModel Create() => WatchlistTitlesViewModelTests.CreateList(_harness, _changes);
 
     private string LastQuery => _harness.Queries(CatalogPath)[^1];
 

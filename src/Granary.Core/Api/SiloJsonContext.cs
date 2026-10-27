@@ -99,6 +99,7 @@ namespace Granary.Core.Api;
 [JsonSerializable(typeof(DiscoverBrandCollection))]
 [JsonSerializable(typeof(DiscoverBrowsePage))]
 [JsonSerializable(typeof(RequestMediaPage))]
+[JsonSerializable(typeof(WatchlistTitleCollection))]
 [JsonSerializable(typeof(Person))]
 [JsonSerializable(typeof(ImageCapabilities))]
 [JsonSerializable(typeof(ImageSizeWidths))]

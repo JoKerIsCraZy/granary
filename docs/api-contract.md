@@ -832,7 +832,13 @@ tracks ([8.8.1](#881-initial-track-selection-before-start)) → `POST /api/v2/pl
 - Follows: `PUT`/`DELETE /api/v2/requests/follows/{media_type}/{tmdb_id}` (hear when someone else's request lands).
 - Watchlist of TMDB titles (while `requests_enabled` and `watchlist_titles_supported`): `PUT
   /api/v2/watchlist/titles/{media_type}/{tmdb_id}` (no body) → `{ "item_id"?, "request": RequestMediaState }`, which says
-  whether the add also requested the title (`watchlist_requests`); `DELETE` → `204`.
+  whether the add also requested the title (`watchlist_requests`); `DELETE` → `204`. `GET
+  /api/v2/watchlist/titles?limit=1..200&cursor=` → `{ "items": [{ "tmdb_id", "media_type", "title", "year", "poster_path",
+  "release_date" (`YYYY-MM-DD`), "content_rating", "vote_average", "status", "added_at", "request": RequestMediaState }],
+  "page" }`, newest first: the entries the library does not have. `status` is `active`, `needs_review` (TMDB deleted the
+  id and several titles could replace it) or `removed`; read an unknown value as active. The web reads every page (a
+  repeated cursor fails the read) to sort and count the list; a read moves titles the library now has onto the library
+  watchlist, server side.
 - A Discover row in full: `GET /api/v2/requests/discover/{key}?page=1..500` (`key` one of the hub's, such as
   `trending_movies`; 400/404/422 for one the server does not know) → one section, plus `next_page` when a rating limit made
   the server read several TMDB pages to fill this one. The next page is `next_page` once the row named one (a page

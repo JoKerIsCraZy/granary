@@ -351,6 +351,57 @@ public sealed record WatchlistTitleEntry
     public RequestMediaState Request { get; init => field = value ?? new(); } = new();
 }
 
+/// <summary><c>GET /api/v2/watchlist/titles</c>: a page of the watchlist's titles the library does not have, newest first.</summary>
+public sealed record WatchlistTitleCollection
+{
+    public IReadOnlyList<WatchlistTitle> Items { get; init => field = value ?? []; } = [];
+
+    public PageInfo? Page { get; init; }
+}
+
+/// <summary>A title on the watchlist that the library does not have yet, saved from TMDB.</summary>
+public sealed record WatchlistTitle
+{
+    /// <summary>The title's current TMDB id.</summary>
+    public long TmdbId { get; init; }
+
+    /// <summary><c>movie</c> or <c>series</c>.</summary>
+    public string MediaType { get; init => field = value ?? ""; } = "";
+
+    public string Title { get; init => field = value ?? ""; } = "";
+
+    public int? Year { get; init; }
+
+    public string? PosterPath { get; init; }
+
+    /// <summary>"1995-12-15": a movie's release, a series' first air date.</summary>
+    public string? ReleaseDate { get; init; }
+
+    public string? ContentRating { get; init; }
+
+    public double? VoteAverage { get; init; }
+
+    /// <summary><see cref="WatchlistTitleStatuses"/>; a value this client does not know reads as active.</summary>
+    public string Status { get; init => field = value ?? ""; } = "";
+
+    public DateTimeOffset AddedAt { get; init; }
+
+    /// <summary>The viewer's request for it, with the download's progress while it downloads.</summary>
+    public RequestMediaState Request { get; init => field = value ?? new(); } = new();
+}
+
+/// <summary>Values of <see cref="WatchlistTitle.Status"/>.</summary>
+public static class WatchlistTitleStatuses
+{
+    public const string Active = "active";
+
+    /// <summary>TMDB deleted the id and several titles could replace it.</summary>
+    public const string NeedsReview = "needs_review";
+
+    /// <summary>TMDB deleted the id and nothing replaces it.</summary>
+    public const string Removed = "removed";
+}
+
 /// <summary>Values of <see cref="MediaRequest.State"/>.</summary>
 public static class RequestStates
 {

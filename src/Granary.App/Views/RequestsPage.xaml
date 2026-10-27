@@ -12,59 +12,6 @@
     xmlns:vm="using:Granary.Core.ViewModels"
     NavigationCacheMode="Enabled">
 
-    <Page.Resources>
-        <!-- The web's line tabs: muted text, white once picked with a white bar under it. -->
-        <Style x:Key="RequestTabStyle" TargetType="RadioButton">
-            <Setter Property="Foreground" Value="{StaticResource SiloMutedBrush}" />
-            <Setter Property="FontFamily" Value="{StaticResource SiloFontMedium}" />
-            <Setter Property="FontWeight" Value="Medium" />
-            <Setter Property="FontSize" Value="14" />
-            <Setter Property="Padding" Value="12,8" />
-            <Setter Property="MinWidth" Value="0" />
-            <Setter Property="UseSystemFocusVisuals" Value="True" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="RadioButton">
-                        <Grid x:Name="Root" Background="Transparent">
-                            <VisualStateManager.VisualStateGroups>
-                                <VisualStateGroup x:Name="CommonStates">
-                                    <VisualState x:Name="Normal" />
-                                    <VisualState x:Name="PointerOver">
-                                        <VisualState.Setters>
-                                            <Setter Target="Text.Foreground" Value="{StaticResource SiloForegroundBrush}" />
-                                        </VisualState.Setters>
-                                    </VisualState>
-                                    <VisualState x:Name="Pressed">
-                                        <VisualState.Setters>
-                                            <Setter Target="Text.Foreground" Value="{StaticResource SiloForegroundBrush}" />
-                                            <Setter Target="Root.Opacity" Value="0.8" />
-                                        </VisualState.Setters>
-                                    </VisualState>
-                                    <VisualState x:Name="Disabled" />
-                                </VisualStateGroup>
-                                <VisualStateGroup x:Name="CheckStates">
-                                    <VisualState x:Name="Checked">
-                                        <VisualState.Setters>
-                                            <Setter Target="Shade.Foreground" Value="{StaticResource SiloForegroundBrush}" />
-                                            <Setter Target="Bar.Opacity" Value="1" />
-                                        </VisualState.Setters>
-                                    </VisualState>
-                                    <VisualState x:Name="Unchecked" />
-                                    <VisualState x:Name="Indeterminate" />
-                                </VisualStateGroup>
-                            </VisualStateManager.VisualStateGroups>
-                            <ContentPresenter x:Name="Shade" Padding="{TemplateBinding Padding}" Foreground="{TemplateBinding Foreground}"
-                                              AutomationProperties.AccessibilityView="Raw">
-                                <ContentPresenter x:Name="Text" Content="{TemplateBinding Content}" AutomationProperties.AccessibilityView="Raw" />
-                            </ContentPresenter>
-                            <Border x:Name="Bar" Height="2" VerticalAlignment="Bottom" Background="{StaticResource SiloForegroundBrush}" Opacity="0" />
-                        </Grid>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-    </Page.Resources>
-
     <ScrollViewer x:Name="Scroller" XYFocusKeyboardNavigation="Enabled">
         <StackPanel Padding="48,32,48,48" Spacing="24">
             <StackPanel Spacing="6">
@@ -76,9 +23,9 @@
             <Grid>
                 <Border Height="1" VerticalAlignment="Bottom" Background="{StaticResource SiloBorderBrush}" />
                 <StackPanel Orientation="Horizontal" Spacing="4" XYFocusKeyboardNavigation="Enabled" AutomationProperties.Name="Requests view">
-                    <RadioButton GroupName="RequestTabs" Content="Discover" Style="{StaticResource RequestTabStyle}"
+                    <RadioButton GroupName="RequestTabs" Content="Discover" Style="{StaticResource SiloLineTabStyle}"
                                  IsChecked="{x:Bind ViewModel.IsDiscoverTab, Mode=OneWay}" Checked="OnDiscoverChecked" />
-                    <RadioButton GroupName="RequestTabs" Style="{StaticResource RequestTabStyle}" AutomationProperties.Name="Yours"
+                    <RadioButton GroupName="RequestTabs" Style="{StaticResource SiloLineTabStyle}" AutomationProperties.Name="Yours"
                                  IsChecked="{x:Bind ViewModel.IsYoursTab, Mode=OneWay}" Checked="OnYoursChecked">
                         <StackPanel Orientation="Horizontal" Spacing="6">
                             <TextBlock Text="Yours" />

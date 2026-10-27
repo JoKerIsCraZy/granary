@@ -29,7 +29,8 @@ public sealed record ListMediaScope(string? Type, string Label)
 /// those sources (<c>pages/Catalog.tsx</c>). The list's own order comes first ("List Order", History's "Watch History",
 /// a collection's "Collection Order"); the other sorts and a media scope narrow it. The grid loads by window. A visit
 /// after the viewer's state changed (<see cref="ViewerStateChanges"/>: a favourite, a watched mark, playback) loads it
-/// again.
+/// again. The watchlist also shows "Not in your library yet" (<see cref="Titles"/>) as a second tab, while the server keeps
+/// titles the library does not have.
 /// </summary>
 public sealed partial class PersonalListViewModel : ObservableObject
 {
@@ -57,7 +58,7 @@ public sealed partial class PersonalListViewModel : ObservableObject
     private int _starts;
 
     public PersonalListViewModel(ISessionManager session, CatalogApi catalog, ImageParameterCache images, INavigationService navigation,
-        ILogger<PersonalListViewModel> logger, ViewerStateChanges? changes = null)
+        WatchlistTitlesViewModel titles, ILogger<PersonalListViewModel> logger, ViewerStateChanges? changes = null)
     {
         _session = session;
         _images = images;
@@ -65,16 +66,51 @@ public sealed partial class PersonalListViewModel : ObservableObject
         _logger = logger;
         _changes = changes;
         Grid = new LibraryGridViewModel(catalog, logger);
+        Titles = titles;
+        Titles.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(WatchlistTitlesViewModel.IsAvailable))
+            {
+                OnPropertyChanged(nameof(ShowsTabs));
+                OnPropertyChanged(nameof(ShowsTitles));
+                OnPropertyChanged(nameof(ShowsLibrary));
+            }
+        };
+        // A title that left "Not in your library yet" may be in the library's watchlist now.
+        Titles.TitlesLeft += (_, _) =>
+        {
+            if (Source == CatalogSources.Watchlist && _collection is null)
+            {
+                _ = StartAsync();
+            }
+        };
     }
 
     public LibraryGridViewModel Grid { get; }
+
+    /// <summary>The watchlist's titles the library does not have yet, its second tab.</summary>
+    public WatchlistTitlesViewModel Titles { get; }
 
     /// <summary>
     /// <see cref="CatalogSources.Favorites"/>, <see cref="CatalogSources.Watchlist"/>, <see cref="CatalogSources.History"/>,
     /// or a collection's <see cref="CatalogSources.UserCollection"/> or <see cref="CatalogSources.LibraryCollection"/>.
     /// </summary>
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowsTabs), nameof(ShowsTitles), nameof(ShowsLibrary))]
     public partial string Source { get; private set; } = "";
+
+    /// <summary>The watchlist's "Not in your library yet" tab is picked.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowsTitles), nameof(ShowsLibrary))]
+    public partial bool IsTitlesTab { get; private set; }
+
+    /// <summary>"In your library" and "Not in your library yet" over the watchlist, while the server keeps such titles.</summary>
+    public bool ShowsTabs => Source == CatalogSources.Watchlist && _collection is null && Titles.IsAvailable;
+
+    public bool ShowsTitles => ShowsTabs && IsTitlesTab;
+
+    /// <summary>The list's count, menus and posters: everywhere but on the watchlist's second tab.</summary>
+    public bool ShowsLibrary => !ShowsTitles;
 
     [ObservableProperty]
     public partial string Title { get; private set; } = "";
@@ -129,8 +165,16 @@ public sealed partial class PersonalListViewModel : ObservableObject
         {
             Show(source, list.Title, list.Description, collection: null);
         }
+        if (source == CatalogSources.Watchlist)
+        {
+            return Task.WhenAll(LoadUnlessCurrentAsync(), Titles.ActivateAsync());
+        }
+        Titles.Deactivate();
         return LoadUnlessCurrentAsync();
     }
+
+    /// <summary>The page left: the watchlist's titles stop following their downloads.</summary>
+    public void Deactivate() => Titles.Deactivate();
 
     /// <summary>Shows a collection's titles, as <see cref="ActivateAsync"/> a list's.</summary>
     public Task ShowCollectionAsync(CollectionRouteParameter collection)
@@ -140,6 +184,7 @@ public sealed partial class PersonalListViewModel : ObservableObject
         {
             Show(collection.Source, collection.Title, CollectionDescription, collection);
         }
+        Titles.Deactivate();
         return LoadUnlessCurrentAsync();
     }
 
@@ -147,6 +192,7 @@ public sealed partial class PersonalListViewModel : ObservableObject
     {
         _collection = collection;
         Source = source;
+        IsTitlesTab = false;
         Title = title;
         Description = description;
         Scope = ListMediaScope.All[0];
@@ -188,6 +234,12 @@ public sealed partial class PersonalListViewModel : ObservableObject
         IsDescending = option?.StartsDescending ?? false;
         return StartAsync();
     }
+
+    [RelayCommand]
+    private void ShowLibraryTab() => IsTitlesTab = false;
+
+    [RelayCommand]
+    private void ShowTitlesTab() => IsTitlesTab = true;
 
     [RelayCommand]
     private Task SortAscendingAsync() => SetOrderAsync(descending: false);

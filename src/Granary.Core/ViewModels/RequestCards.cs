@@ -40,7 +40,29 @@ internal static class RequestCards
         return badge?.ToUpperInvariant();
     }
 
-    public static string IdOf(RequestMediaResult result) => $"{IdPrefix}{result.MediaType}:{result.TmdbId.ToString(CultureInfo.InvariantCulture)}";
+    /// <summary>
+    /// A watchlist title the library does not have, as the web's <c>WatchlistTitleCard</c>: "MOVIE · 2020" under the title, the
+    /// status as the badge and in words as the caption (amber while TMDB lost the title), and the watchlist toggle on, to take it
+    /// off.
+    /// </summary>
+    public static MediaCard Of(WatchlistTitle title, WatchlistTitleStatus status)
+    {
+        string type = title.MediaType == "series" ? "SERIES" : "MOVIE";
+        return new MediaCard(IdOf(title.MediaType, title.TmdbId), RequestsViewModel.CardType, title.Title)
+        {
+            Shape = MediaCardShape.Poster,
+            Subtitle = title.Year is int year and > 0 ? $"{type} · {year.ToString(CultureInfo.InvariantCulture)}" : type,
+            Caption = status.Caption,
+            IsCaptionAttention = status.Attention,
+            ImageUrl = TmdbImages.Poster(title.PosterPath),
+            StatusBadge = status.Badge.ToUpperInvariant(),
+            InWatchlist = true,
+        };
+    }
+
+    public static string IdOf(RequestMediaResult result) => IdOf(result.MediaType, result.TmdbId);
+
+    public static string IdOf(string mediaType, long tmdbId) => $"{IdPrefix}{mediaType}:{tmdbId.ToString(CultureInfo.InvariantCulture)}";
 
     /// <summary>The media type and TMDB id a card's id names; null for a card that is not a TMDB title's.</summary>
     public static (string MediaType, long TmdbId)? TitleOf(string cardId)
