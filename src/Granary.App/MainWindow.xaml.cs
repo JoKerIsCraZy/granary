@@ -333,7 +333,7 @@ public sealed partial class MainWindow : Window
         return new SuppressNavigationTransitionInfo();
     }
 
-    private static bool ShowsPane(AppRoute route) => route is not (AppRoute.Player or AppRoute.Settings);
+    private static bool ShowsPane(AppRoute route) => route is not (AppRoute.Player or AppRoute.Settings or AppRoute.Admin);
 
     private void OnPaneSettled(NavigationView sender, object args) => RevealPage();
 
@@ -507,14 +507,14 @@ public sealed partial class MainWindow : Window
     private void ShowChrome(AppRoute? route)
     {
         bool isPlayer = route == AppRoute.Player;
-        // The settings bring their own sidebar, as on the web.
-        bool hidesPane = isPlayer || route == AppRoute.Settings;
+        // The settings and the admin area bring their own sidebar, as on the web.
+        bool hidesPane = isPlayer || route is AppRoute.Settings or AppRoute.Admin;
         // A detail page's rail opens over the page (compact mode), not beside it: the page keeps its width.
         _isRail = route == AppRoute.Item;
         _railHover.Stop();
         // The way back is the web's: no arrow in the sidebar, a disc at the top left of a page opened from another (a title,
         // a row in full, a collection, the servers); the sidebar's own pages have none, Back (Alt+Left) still leads home.
-        _showsPageBack = _navigation.CanGoBack && route is not (null or AppRoute.Player or AppRoute.Settings or AppRoute.Home
+        _showsPageBack = _navigation.CanGoBack && route is not (null or AppRoute.Player or AppRoute.Settings or AppRoute.Admin or AppRoute.Home
             or AppRoute.Search or AppRoute.Library or AppRoute.List or AppRoute.Collections or AppRoute.ForYou or AppRoute.Calendar
             or AppRoute.Notifications or AppRoute.Requests);
         // Clear of the page's heading, which starts 48 px in: just right of the pane, a little further beside the rail, and
@@ -604,7 +604,7 @@ public sealed partial class MainWindow : Window
                     or AppRoute.Requests:
                 _navigation.ShowSection(route);
                 break;
-            // Settings opens over the page it was opened from, and goes back to it.
+            // Settings and Admin open over the page they were opened from, and go back to it.
             case string tag when Enum.TryParse<AppRoute>(tag, out var route):
                 _navigation.NavigateTo(route);
                 break;

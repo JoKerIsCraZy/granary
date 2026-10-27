@@ -135,6 +135,12 @@
             </NavigationView.MenuItems>
 
             <NavigationView.FooterMenuItems>
+                <!-- The server's administration, for an administrator only, as the web's sidebar offers it. -->
+                <NavigationViewItem x:Name="AdminItem" Content="Admin" Tag="Admin" Visibility="{x:Bind Sidebar.IsAdmin, Mode=OneWay}">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xEA18;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
                 <NavigationViewItem Content="Settings" Tag="Settings">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE713;" />

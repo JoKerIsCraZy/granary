@@ -886,6 +886,48 @@ tracks ([8.8.1](#881-initial-track-selection-before-start)) → `POST /api/v2/pl
   The web asks only for a text of two characters or more, and only while `requests_enabled`; it leaves out what the
   library has (`availability` `available`) and reads pages up to `min(total_pages, 500)`.
 
+### 7.16 Administration
+
+Every call needs an administrator account (`role` `admin`, `Account.IsAdmin`); anyone else gets 403. Granary reads the
+web's Dashboard and Activity and sends Activity's commands; nothing else of the admin API is used.
+
+- `GET /api/v2/admin/stats` → `{ "active_streams", "total_movies", "total_movie_files", "total_shows", "total_show_files",
+  "total_files", "total_storage_bytes", "total_users", "advisory_titles", "watch_providers" }`.
+- `GET /api/v2/admin/server/status` → `{ "started_at", "restart_required", "health": { "errors_24h", "warnings_24h",
+  "postgres", "redis" } }`; a component is `{ "configured", "ok"?, "latency_ms"? }` (configured before up: no Redis is
+  healthy). `GET /api/v2/admin/system/build` → `{ "available", "build_number", "display", "revision", "dirty" }`; the web
+  shows `"{build_number} · {display}"` when the number is above 0. `GET /api/v2/admin/nodes` → `{ "items": [{ "id",
+  "name", "type", "enabled", "healthy", "active_jobs", "egress_kbps" }] }`; a disabled node counts on neither side of
+  "healthy".
+- `GET /api/v2/admin/stats/timeseries?hours=` → `{ "egress_bytes", "resolution_seconds", "from", "to", "points": [{ "t",
+  "streams", "direct", "remux", "transcode", "egress_kbps", "download_egress_kbps" }] }`. Minutes the sampler did not
+  write are missing (a gap, not zero); a last point older than two minutes means "now" is unknown.
+- `GET /api/v2/admin/stats/playback-activity?hours=` → `{ "hours", "bucket_seconds", "profiles_active_24h", "from", "to",
+  "buckets": [{ "hour", "direct", "remux", "transcode" }] }`, only the buckets that saw a start; past two days the server
+  groups by day. `GET /api/v2/admin/stats/top-activity?days=` → `{ "titles": [{ "media_item_id", "title", "plays",
+  "total_seconds" }], "profiles": [{ "profile_id", "profile_name", "user_id", "username", "plays", "total_seconds" }] }`.
+- `GET /api/v2/admin/users?limit=200` → `{ "items": [{ "id", "username", "email", "role", "enabled", "is_owner",
+  "created_at", "last_active_at" }], "page" }`. `GET /api/v2/libraries` answers an administrator with each library's
+  `enabled`, `paths` and scan state.
+- `GET /api/v2/admin/sessions` → `{ "items": AdminPlaybackSession[] }`: who (`user_id`, `username`, `profile_id`,
+  `profile_name`), what (`media_title`, `media_type`, `content_id`, `series_name`, `season_number`, `episode_number`,
+  `episode_name`, `poster_url`, `media_file_id`), how (`play_method`; `effective_play_method` is `direct`, `remux`,
+  `direct_stream` or `transcode` when the server knows, else read `video_decision`, `audio_decision` and
+  `transcode_audio`), the source and target codecs, `output_container`, `output_protocol`, `stream_bitrate_kbps`,
+  `transcode_hw_accel`, where (`position_seconds`, `file_duration`, `is_paused`, `started_at`), the client
+  (`client_label`, `client_label_full`, `client_name`, `client_version`, `client_ip`), the route (`routing_execution`,
+  `routing_egress` and their node names; older servers only `reporting_node` and `node_display_name`),
+  `stream_location`, and `has_playback_control` (the player takes pause, resume and messages).
+- Commands: `POST /api/v2/admin/sessions/{id}/pause|resume|stop|message` with `{ "command_id" (a UUID), "sequence",
+  "message"? }` → `202` (or `200` replaying a retry) `{ "command_id", "delivery" ("dispatched", or "fallback_scheduled":
+  no lane, the server ends the session after a deadline), "outcome", "sequence" }`. The sequence must rise within a
+  session: Granary takes the clock in milliseconds, above the last it sent. 409 refuses a stale or conflicting command,
+  404 a session that ended, `dependency_unavailable` a server without playback control. `POST …/{id}/terminate` with
+  `{}` → `{ "session_id", "authority_revoked", "already_revoked", "client_notified", "delivery", "durable_state" }`: the
+  session's playback authority is revoked for good, the player told as best it can be.
+- `GET /api/v2/admin/ips?ip=&days=30&limit=50[&cursor=]` → `{ "items": [{ "user_id", "username", "first_seen",
+  "last_seen", "request_count" }], "page" }`: the accounts seen at an address.
+
 ## 8. Playback protocol v3
 
 The server decides **how** a file is delivered; the client reports honestly what it can play and

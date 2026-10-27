@@ -115,7 +115,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
 
 - Sidebar (260 px): server name, Home, Search (`Ctrl+K`), "LIBRARIES" with the server's libraries, "DISCOVER" (For
   You, Requests while the server takes them, Calendar, Notifications with the unread count in red), "YOUR STUFF" (Favorites, Watchlist, Collections,
-  History; the web's Watch Party to come); Settings and the profile menu at the bottom (the servers are in Settings → Servers). Favorites, Watchlist and History are one page (`PersonalListPage`, the web's `pages/Catalog.tsx` for those
+  History; the web's Watch Party to come); Admin (an administrator's only, a shield), Settings and the profile menu at the bottom (the servers are in Settings → Servers). Favorites, Watchlist and History are one page (`PersonalListPage`, the web's `pages/Catalog.tsx` for those
   sources): the list's name, what it holds and its count, the media menu (All Media, Movies & Series, Movies, Series,
   Episodes), the list's own order ("List Order", History's "Watch History") or a sort, and the posters by window.
   While the server keeps watchlist titles the library does not have (`requests_enabled` and `watchlist_titles_supported`),
@@ -229,7 +229,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
 - Back: the navigation view's back arrow, `Alt+Left`, and the mouse back button. The sidebar's sections (Home,
   Search, each library) are the apps' tabs: picking one does not stack on the pages visited before, only Home stays
   under it, so Back walks the pages opened within a section and then goes Home (Android's tab switch pops to the
-  anchor tab). Settings opens over the page it came from and goes back to it.
+  anchor tab). Settings and Admin open over the page they came from and go back to it.
 
 ## Signed-out screens
 
@@ -326,6 +326,46 @@ says why above the sections.
   from the release's notes. What's new: CHANGELOG.md as shipped, a release per heading ("0.2.0 · Oct 27, 2026"), its
   groups in small muted capitals and bulleted items. License and source: View opens LICENSE and THIRD_PARTY_NOTICES.md
   in Notepad, Open the repository. Troubleshooting: the data and logs folders in Explorer.
+
+## Admin
+
+For an administrator (`Account.IsAdmin`) the sidebar offers Admin above Settings, as the web's does. As Settings, the app's
+sidebar gives way to the area's own (`AdminPage`, 260 px): "← Back to App", "Admin", MONITOR with Dashboard and
+Activity (the web's "2 live" in red beside it while streams run), and BUILD at its foot ("1715 · 13ad7a74", "dev build",
+"load failed"). Granary has these two pages only; the rest of the web's admin stays on the web. The pages switch inside
+the area, not in the app's history, so Back to App leaves it in one step. Pages scroll in a centred column of at most
+1400 px, padded 40 px; cards are the surface with a hairline and 16 px corners. Nothing here changes the server except a
+stream's commands on Activity.
+
+- **Dashboard** (`AdminDashboardView` on `AdminDashboardViewModel`, the web's default arrangement without Customize or
+  Scan): "Dashboard" and its line, "Updated less than 1 minute ago" and Refresh ("Refreshing..."); read again once a
+  minute while shown. Six tiles (Active Streams, Egress now, Profiles · 24h, Total Movies, Total Shows, Storage: label and
+  icon, the value 28 px extra bold, a muted line, "Unavailable" in red when its source failed), 3 + 3 where six do not
+  fit (`ColumnsPanel`). The health strip: Version, Uptime (amber with "restart required"), Postgres and Redis ("OK" and
+  the latency, "Not configured" / optional, red "Unreachable"), Nodes (healthy of enabled, amber below all), Errors · 24h
+  (red above none, with the warnings). Now Playing: a card a stream, two a row and four at most (the poster dimmed with
+  "Paused", the title opening it, "S1 · E3 — Dark", the method tag in the web's colour, client and profile pills, the
+  account's initial and name, "5m ago"), "View all 6 streams ›" and "+2 more active streams" opening Activity; "Nothing
+  playing right now" when idle. Playback activity · last 24 h: stacked hour columns (direct play `#5F74EE`, direct stream
+  `#169E88`, transcode `#BF7F22`, 2 px apart, rounded on top; a column's tooltip counts them) with the legend and the
+  session count (`PlaybackChart`). Egress · last 24 h: the rate over gridlines at human numbers, a fill at 12 %, the line
+  broken where the sampler wrote nothing, "Total 4.1 GB" and "Peak 133 Mbps" (`RateChart`). Top titles and Most active
+  profiles · last 7 d: eight rows each, the rank, the name (a title opens), the plays and watch time over a bar of the
+  busiest row's share. Libraries (an icon box, the name, "movies · 1 path", a green or grey dot) and Users (the eight
+  most recently active: initial, name, an "owner" or "admin" badge, the email, "Last active", Active or a red Disabled).
+  Recent Activity: "elena (Kids) started watching Dark", "5m ago · Granary 0.3.0". Each card says its own failure in red.
+- **Activity** (`AdminActivityView` on `AdminActivityViewModel`, the web's Activity): "Activity", "2 active streams across
+  1 node", the live badge, Refresh, and "AUTO REFRESH · Every 10 s" where the web says its realtime state (Granary
+  reads the streams again every ten seconds). A notice bar for what a command or Refresh answered. IP Lookup (an
+  expander): an address, Lookup or Enter, the accounts seen there over 30 days (User, First Seen, Last Seen, Requests),
+  Load more. PLAYBACK METHOD: one bar of the methods' shares and their legend, each a toggle that filters (the others
+  dim); BY ROUTING NODE with more than one node. The filter box ("Filter by user, media, client, or node..."), Movies,
+  Series, Clear filters, "Showing 1 of 2 streams". A card a stream, newest first: poster, title, "S1E3 · Dark", the
+  account, profile, method tag, transcode mode and client; "MKV · HEVC · 2160p · TrueHD 7.1"; on the right Pause or
+  Resume (a player that takes live commands), Stop and More (Message…, Terminate, which asks first), "Started 5m ago ·
+  5:00", the position and its bar. Details (an expander that stays open across reads): container, video, audio, bitrate,
+  route, client with its build, and the address with Look up. "No active streams" or "No streams match your filters"
+  when nothing shows.
 
 ## Player
 

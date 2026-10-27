@@ -143,4 +143,24 @@ public sealed class SidebarViewModelTests
         // The servers are in Settings → Servers now.
         Assert.Equal((AppRoute.Settings, (object?)"servers"), _navigation.Navigations[^1]);
     }
+
+    [Fact]
+    public async Task AdminAccount_OffersAdmin_OthersDoNot()
+    {
+        Ready();
+        using var sidebar = Create();
+
+        await sidebar.RefreshAsync(TestContext.Current.CancellationToken);
+        Assert.True(sidebar.IsAdmin);
+
+        // Another account on the same server and profile: the role is read again, not kept with the loaded sidebar.
+        _session.Account = new Account("2", "kim", "", "user", [], true, false, null);
+        await sidebar.RefreshAsync(TestContext.Current.CancellationToken);
+        Assert.False(sidebar.IsAdmin);
+
+        _session.Account = new Account("1", "elena", "", "admin", [], true, false, null);
+        _session.State = SessionState.SignedOut;
+        await sidebar.RefreshAsync(TestContext.Current.CancellationToken);
+        Assert.False(sidebar.IsAdmin);
+    }
 }

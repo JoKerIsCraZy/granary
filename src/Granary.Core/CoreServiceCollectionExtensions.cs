@@ -2,6 +2,7 @@ using System.Runtime.Versioning;
 using Granary.Core.Abstractions;
 using Granary.Core.Api;
 using Granary.Core.Api.Accounts;
+using Granary.Core.Api.Admin;
 using Granary.Core.Api.Auth;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Discovery;
@@ -24,6 +25,7 @@ using Granary.Core.Security;
 using Granary.Core.Servers;
 using Granary.Core.Theme;
 using Granary.Core.ViewModels;
+using Granary.Core.ViewModels.Admin;
 using Granary.Core.ViewModels.Cards;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -81,6 +83,7 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<NotificationsApi>();
         services.AddTransient<RequestsApi>();
         services.AddTransient<BrandingApi>();
+        services.AddTransient<AdminApi>();
         services.AddSingleton<ServerAccent>();
         services.AddSingleton<CardOverlaySettings>();
         services.AddTransient<ImagesApi>();
@@ -138,6 +141,9 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<IProfileSettings, ProfileSettings>();
         services.AddTransient<PlaybackSettingsViewModel>();
         services.AddTransient<LanguageSettingsViewModel>();
+        services.AddSingleton<AdminSidebarViewModel>();
+        services.AddTransient<AdminDashboardViewModel>();
+        services.AddTransient<AdminActivityViewModel>();
         return services;
     }
 

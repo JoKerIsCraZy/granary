@@ -20,7 +20,7 @@ public sealed partial class MainWindow : IPlayerOverlay
     private const double DockHeight = 100;
     private const double DockInset = 8;
 
-    // The settings bring their own sidebar, as wide as the app's (SettingsPage).
+    // The settings and the admin area bring their own sidebar, as wide as the app's (SettingsPage, AdminPage).
     private const double SettingsSidebarWidth = 260;
 
     // As the rail opens over the page: the bar's edge moves aside with it, easing out.
@@ -152,7 +152,7 @@ public sealed partial class MainWindow : IPlayerOverlay
         {
             return;
         }
-        double left = !Navigation.IsPaneVisible ? (_navigation.Current == AppRoute.Settings ? SettingsSidebarWidth : 0)
+        double left = !Navigation.IsPaneVisible ? (_navigation.Current is AppRoute.Settings or AppRoute.Admin ? SettingsSidebarWidth : 0)
             : paneOpen && Navigation.PaneDisplayMode is NavigationViewPaneDisplayMode.Left or NavigationViewPaneDisplayMode.LeftCompact
                 ? Navigation.OpenPaneLength
             : Navigation.PaneDisplayMode is NavigationViewPaneDisplayMode.LeftCompact or NavigationViewPaneDisplayMode.Left

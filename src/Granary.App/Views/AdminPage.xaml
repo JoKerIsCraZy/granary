@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The server's administration, as Silo's web opens it for an administrator: the app's sidebar gives way to the admin area's
+    own (260 px) with Back to App, the MONITOR pages and the server's build at its foot; the page on the right scrolls,
+    1400 px at most. Granary offers the Dashboard and Activity; the rest of the web's admin stays on the web.
+-->
+<Page
+    x:Class="Granary.App.Views.AdminPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    AutomationProperties.Name="Admin">
+
+    <Page.Resources>
+        <ResourceDictionary Source="ms-appx:///Themes/SiloSettings.xaml" />
+    </Page.Resources>
+
+    <Grid Background="{StaticResource SiloBackgroundBrush}">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="260" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <Border Background="#FF111113" BorderBrush="{StaticResource SiloSettingsHairlineBrush}" BorderThickness="0,0,1,0">
+            <Grid Padding="12,20,12,20">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <StackPanel Spacing="4">
+                    <Button Style="{StaticResource SiloSettingsBackButtonStyle}" Padding="8,4" Click="OnBackClick" AutomationProperties.Name="Back to App">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon Glyph="&#xE72B;" FontSize="12" />
+                            <TextBlock Text="Back to App" FontSize="14" />
+                        </StackPanel>
+                    </Button>
+                    <TextBlock Text="Admin" Margin="8,16,0,12" FontFamily="{StaticResource SiloFontBold}" FontWeight="Bold" FontSize="22"
+                               Foreground="{StaticResource SiloForegroundBrush}" AutomationProperties.HeadingLevel="Level1" />
+                    <TextBlock Text="MONITOR" Margin="8,8,0,6" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="11"
+                               CharacterSpacing="150" Foreground="{StaticResource SiloMutedBrush}" AutomationProperties.HeadingLevel="Level2" />
+                    <ListView x:Name="Pages" SelectionMode="Single" SelectionChanged="OnPageSelected" IsItemClickEnabled="False"
+                              AutomationProperties.Name="Admin pages">
+                        <ListViewItem Tag="dashboard" AutomationProperties.Name="Dashboard">
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <FontIcon Glyph="&#xF246;" FontSize="14" />
+                                <TextBlock Text="Dashboard" FontSize="14" />
+                            </StackPanel>
+                        </ListViewItem>
+                        <ListViewItem Tag="activity" AutomationProperties.Name="Activity">
+                            <Grid ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <FontIcon Glyph="&#xE93E;" FontSize="14" />
+                                <TextBlock Grid.Column="1" Text="Activity" FontSize="14" />
+                                <!-- The web's live badge: how many streams run now. -->
+                                <Border Grid.Column="2" Visibility="{x:Bind Sidebar.HasLive, Mode=OneWay}" Padding="7,1" CornerRadius="8"
+                                        Background="#26EF4444" VerticalAlignment="Center">
+                                    <TextBlock Text="{x:Bind Sidebar.LiveText, Mode=OneWay}" FontFamily="{StaticResource SiloFontSemiBold}" FontSize="10"
+                                               Foreground="#FFEF4444" />
+                                </Border>
+                            </Grid>
+                        </ListViewItem>
+                    </ListView>
+                </StackPanel>
+
+                <!-- The server's build, as the web's admin sidebar shows it at its foot. -->
+                <Border Grid.Row="1" Margin="0,16,0,0" Padding="12,8" CornerRadius="12" Background="#66232328"
+                        BorderBrush="{StaticResource SiloSettingsHairlineBrush}" BorderThickness="1">
+                    <StackPanel Spacing="2">
+                        <TextBlock Text="BUILD" FontFamily="{StaticResource SiloFontSemiBold}" FontSize="10" CharacterSpacing="180"
+                                   Foreground="{StaticResource SiloMutedBrush}" />
+                        <TextBlock Text="{x:Bind Sidebar.BuildText, Mode=OneWay}" FontFamily="Consolas" FontSize="12"
+                                   Foreground="{StaticResource SiloForegroundBrush}" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- The page in a column of at most 1400 px, centred, as the settings' page is in theirs. -->
+        <ScrollViewer x:Name="PageScroller" Grid.Column="1" HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="1000*" MaxWidth="1400" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <ContentControl x:Name="PageHost" Grid.Column="1" Padding="40,40,40,64" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                                IsTabStop="False" />
+            </Grid>
+        </ScrollViewer>
+    </Grid>
+</Page>

@@ -64,6 +64,9 @@ public enum AppRoute
 
     /// <summary>A Discover row in full, or a studio's, network's or genre's titles; the parameter is a <see cref="RequestTitlesRouteParameter"/>.</summary>
     RequestTitles,
+
+    /// <summary>The server's administration, for an administrator; the parameter is an optional page (<c>AdminPages</c>).</summary>
+    Admin,
 }
 
 /// <summary>Which row an "Explore all" grid lists: a Home row, or a library row when <see cref="LibraryId"/> is set.</summary>

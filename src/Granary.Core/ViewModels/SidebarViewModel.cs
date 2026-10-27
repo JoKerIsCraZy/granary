@@ -61,9 +61,14 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
     /// <summary>The profile's libraries in the server's order.</summary>
     public ObservableCollection<SidebarLibrary> Libraries { get; } = [];
 
+    /// <summary>The account administers the server: the sidebar offers Admin above Settings, as the web's menu does.</summary>
+    [ObservableProperty]
+    public partial bool IsAdmin { get; private set; }
+
     /// <summary>Loads what the current session shows; does nothing when that is already shown.</summary>
     public async Task RefreshAsync(CancellationToken cancellationToken = default)
     {
+        IsAdmin = _session is { State: SessionState.Ready, Account.IsAdmin: true };
         var key = (_session.ActiveServer?.Id, _session.ProfileId);
         if (_loaded == key)
         {
