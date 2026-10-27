@@ -44,7 +44,9 @@ Licenses as declared in each package's `.nuspec`:
 
 Open point: the Windows App SDK runtime is proprietary and not a system library of Windows. Before
 the first release, decide how the AGPL-3.0-or-later licensing handles linking with it (for example an
-additional permission for the Windows App SDK, similar to the App Store permission in silo-apple).
+additional permission for the Windows App SDK, similar to the App Store permission in silo-apple). Only
+copyright holders can grant one: Granary's contributors for their code, Silo Media L.L.C. for the parts
+adapted from Silo (see Silo below).
 
 ## Plus Jakarta Sans (bundled font)
 
@@ -55,7 +57,48 @@ additional permission for the Windows App SDK, similar to the App Store permissi
 | Origin | Release archive `PlusJakartaSans-2.7.1.zip` of <https://github.com/tokotype/PlusJakartaSans>, SHA-256 `4bfc5cdf97d750423bb3d1d40ed8e529bc92288924d9c65e18ff486acefac66c` |
 | License | SIL Open Font License 1.1; the license ships next to the fonts (`src/Granary.App/Assets/Fonts/OFL.txt`). The OFL allows bundling the fonts with software under any license. |
 
+## ThumbHash decoder
+
+| | |
+|---|---|
+| Component | ThumbHash, the placeholder format of the server's artwork (`*_thumbhash`) |
+| Origin | `src/Granary.Core/Artwork/ThumbHash.cs` is a C# port of the reference decoder `thumbHashToRGBA` of <https://github.com/evanw/thumbhash>; only the decode path is kept, with size checks added |
+| License | MIT, Copyright (c) 2023 Evan Wallace; the license text follows |
+
+```text
+Copyright (c) 2023 Evan Wallace
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
 ## Silo
 
-Granary talks to Silo Server over its native API and contains no Silo code. "Silo" is a trademark of
-Silo Media L.L.C.; Granary is an independent client and not an official Silo product.
+Granary talks to Silo Server over its native API. It rebuilds the features of Silo's own clients, and
+parts of it are adapted from them: behaviour, interface texts, layouts and code of Silo's web client
+(`web/` of <https://github.com/Silo-Server/silo-server>), its Android app
+(<https://github.com/Silo-Server/silo-android>) and its Apple app
+(<https://github.com/Silo-Server/silo-apple>), translated to C# and XAML and changed for Windows since
+2026. Those repositories are Copyright (C) 2026 Silo Media L.L.C. and contributors and licensed under
+AGPL-3.0-or-later, as Granary is; the Apple app's additional App Store permission does not carry over
+to Granary.
+
+"Silo", the Silo logo and the Silo wordmark are trademarks of Silo Media L.L.C. and are not covered by
+the AGPL (their `TRADEMARK.md`). Granary uses its own name and logo; the one Silo asset it includes, the
+unmodified Silo mark, only refers to Silo (`src/Granary.App/Assets/Brand/NOTICE.txt`). Granary is an
+independent client and not an official Silo product.

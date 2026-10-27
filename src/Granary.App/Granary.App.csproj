@@ -56,6 +56,12 @@
     <Content Include="Assets\Logo\granary.ico" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <!-- The AGPL asks that every copy carry the license; the notices name what else ships and whose work it holds. -->
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)..\..\LICENSE" Link="LICENSE" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(MSBuildThisFileDirectory)..\..\THIRD_PARTY_NOTICES.md" Link="THIRD_PARTY_NOTICES.md" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <!-- libmpv comes from native/ (scripts/fetch-native.ps1), it is not committed. -->
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)..\..\native\libmpv\libmpv-2.dll" Link="libmpv-2.dll" CopyToOutputDirectory="PreserveNewest" Condition="Exists('$(MSBuildThisFileDirectory)..\..\native\libmpv\libmpv-2.dll')" />

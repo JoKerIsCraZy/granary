@@ -40,5 +40,7 @@ title of the signed-in server.
 
 ## License
 
-AGPL-3.0-or-later, like the other Silo repositories. Third-party components and their licenses are
-listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). "Silo" is a trademark of Silo Media L.L.C.
+AGPL-3.0-or-later, like the other Silo repositories; see [LICENSE](LICENSE). Parts of Granary are
+adapted from Silo's web, Android and Apple clients (Copyright (C) 2026 Silo Media L.L.C. and
+contributors, AGPL-3.0-or-later). Those parts and third-party components with their licenses are listed
+in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). "Silo" is a trademark of Silo Media L.L.C.
