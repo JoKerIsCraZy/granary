@@ -109,6 +109,7 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<HomeViewModel>();
         services.AddTransient<SectionViewModel>();
         services.AddTransient<SearchViewModel>();
+        services.AddTransient<RequestToAddViewModel>();
         services.AddTransient<LibraryViewModel>();
         services.AddTransient<PersonalListViewModel>();
         services.AddTransient<CollectionsViewModel>();

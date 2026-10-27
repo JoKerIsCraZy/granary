@@ -426,19 +426,40 @@ public sealed class RequestsViewModelTests
     }
 
     [Fact]
-    public async Task TwoPagesAskingAtOnce_SendOneRead()
+    public async Task TwoPagesAskingAtOnce_SendOneRead_AndBothHearItsAnswer()
     {
         var release = new TaskCompletionSource();
         _harness.Answer(StatusPath, LibraryHarness.Held(release, """{ "requests_enabled": true }"""));
         var feature = Feature();
 
         var first = feature.RefreshAsync(TestContext.Current.CancellationToken);
-        await feature.RefreshAsync(TestContext.Current.CancellationToken);
+        var second = feature.RefreshAsync(TestContext.Current.CancellationToken);
+        Assert.False(second.IsCompleted);
         release.SetResult();
-        await first;
+        await second;
 
-        Assert.Equal(1, _harness.Count(StatusPath));
         Assert.True(feature.IsEnabled);
+        await first;
+        Assert.Equal(1, _harness.Count(StatusPath));
+    }
+
+    [Fact]
+    public async Task AFirstCallerGivingUp_LeavesTheReadToTheOthers()
+    {
+        var release = new TaskCompletionSource();
+        _harness.Answer(StatusPath, LibraryHarness.Held(release, """{ "requests_enabled": true }"""));
+        var feature = Feature();
+        using var giveUp = new CancellationTokenSource();
+
+        var first = feature.RefreshAsync(giveUp.Token);
+        var second = feature.RefreshAsync(TestContext.Current.CancellationToken);
+        giveUp.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => first);
+        release.SetResult();
+        await second;
+
+        Assert.True(feature.IsEnabled);
+        Assert.Equal(1, _harness.Count(StatusPath));
     }
 
     [Fact]

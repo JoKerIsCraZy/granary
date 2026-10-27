@@ -35,11 +35,13 @@ internal sealed class BrowseFakeSilo
 
     public BrowseFakeSilo()
     {
-        var http = new SiloHttp(new HttpClient(new FakeHttpMessageHandler(RespondAsync)));
-        Catalog = new CatalogApi(http);
-        Images = new ImageParameterCache(new ImagesApi(http), Logs.For<ImageParameterCache>());
+        Http = new SiloHttp(new HttpClient(new FakeHttpMessageHandler(RespondAsync)));
+        Catalog = new CatalogApi(Http);
+        Images = new ImageParameterCache(new ImagesApi(Http), Logs.For<ImageParameterCache>());
         Map("api/v2/images/capabilities", CatalogPayloads.ImageCapabilities);
     }
+
+    public SiloHttp Http { get; }
 
     public CatalogApi Catalog { get; }
 

@@ -167,7 +167,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   or the admin's reason, Open in library, and Cancel request behind the web's confirmation. A Discover row of several
   pages has EXPLORE ALL; under the rows come Studios, Networks and Genres as rows of 208 × 112 tiles (a logo on gray-800
   with a gray-700 ring, the name when there is none, a genre's name on its 135° gradient), empty tiles while they load,
-  and "Could not load studios." beside Retry. Search comes next. Every TMDB title's card (on the hub, a row in full, a
+  and "Could not load studios." beside Retry. Every TMDB title's card (on the hub, a row in full, a
   studio's page, More like this) has the web's watchlist toggle where library cards keep their menu, while the server
   keeps TMDB titles on the watchlist: the web's bookmark, red with a check when on it (the TMDB title page's Add to
   Watchlist too; a library title keeps + and ✓); an add that requested the title shows the request's state on the card
@@ -188,6 +188,16 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   "In library", "Requested", "Not aired yet"), Cast and More Like This. A series asks "Request seasons" first: a switch
   per season, the aired missing ones on, the others greyed; Latest season, Upcoming seasons and All seasons; an
   untouched pick leaves the seasons to the server. Discover cards and More Like This open it, or the library's title.
+- Request to add (`SearchPage`, `RequestToAddViewModel`, the web's `RequestToAddSection` as its catalog search shows it):
+  under Search's titles while the server takes requests, the movies and series TMDB finds for a text of two characters
+  or more that the library does not have, following the type switch. A heading like People's, "Nothing in your library
+  matches “text”." under it when the library found nothing (its empty grid and "Titles" then go, and "No titles found"
+  shows only once TMDB found nothing to add either; the ring turns until it knows), up to 20 TMDB posters, and under
+  them Previous, "Page 2 of 9" and Next (TMDB's pages, at most 500). Another page dims the shown one to 60 % until it
+  arrives and brings the heading back into view when it was scrolled away. A first page that fails, or that is the only
+  page and holds only library titles, leaves the section out; a page of only library titles among others says "Every
+  title on this page is already in your library."; a later page that fails says "Couldn’t load page 2." beside Retry
+  and a ghost Back to page 1. An opened person hides it; the cards open the title's page, or the library's title.
 - Pages: 48 px side margins, 32 px top; rows 40 px apart.
 - Detail pages: full-bleed backdrop fading into the background, logo (or display title), chips,
   ratings, overview with "More", red Play/Resume pill, secondary actions, then rows (seasons, episodes,

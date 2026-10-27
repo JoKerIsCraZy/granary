@@ -24,10 +24,11 @@ public sealed class SearchViewModelTests
         _silo.Map(PeoplePath, People(("7", "Al Pacino")));
         // Titles: one card per search text, so each answer shows which text it was for.
         _silo.Map(CatalogPath, request => BrowseFakeSilo.Json(Page(null, Item("for-" + Read(request, "q")))));
+        // "Request to add" has its own tests (SearchRequestToAddTests); here the server takes no requests.
+        _silo.Map(SearchRequestToAddTests.StatusPath, """{ "requests_enabled": false }""");
     }
 
-    private SearchViewModel Create() =>
-        new(_session, _silo.Catalog, _silo.Images, _navigation, new ImmediateDispatcher(), _time, _silo.Logs.For<SearchViewModel>());
+    private SearchViewModel Create() => SearchRequestToAddTests.Create(_silo, _session, _navigation, _time);
 
     private static string? Read(HttpRequestMessage request, string name) => new BrowseRequest(request.Method, request.RequestUri!, null).Query(name);
 

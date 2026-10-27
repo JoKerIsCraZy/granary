@@ -22,7 +22,8 @@ public enum SearchScope
 /// <summary>
 /// Search as on Silo's web client (docs/api-contract.md, 7.5): titles 300 ms after the last keystroke,
 /// in relevance order and cursor-paged, and the people whose names match in parallel when the server
-/// can search them. A person opens their titles in place; <see cref="BackToResultsCommand"/> returns.
+/// can search them, and under them the titles TMDB finds that the library does not have (<see cref="Requests"/>).
+/// A person opens their titles in place; <see cref="BackToResultsCommand"/> returns.
 /// A new search cancels the previous one, and an answer that arrives for an older text is dropped.
 /// </summary>
 /// <remarks>The commands take no cancellation token: a cancellable toolkit command cancels its running call when executed again.</remarks>
@@ -53,6 +54,8 @@ public sealed partial class SearchViewModel : ObservableObject
     private (string Status, bool HasError) _resultsState = ("", false);
     private Task<CatalogSearchCapabilities?>? _capabilities;
     private bool _isSearchingTitles;
+    // The last search found no titles, without failing.
+    private bool _libraryEmpty;
     private (bool IsReady, string? ServerId, string? ProfileId)? _sessionKey;
     private bool _isActive;
 
@@ -63,6 +66,7 @@ public sealed partial class SearchViewModel : ObservableObject
         INavigationService navigation,
         IUiDispatcher dispatcher,
         TimeProvider time,
+        RequestToAddViewModel requests,
         ILogger<SearchViewModel> logger)
     {
         _session = session;
@@ -72,7 +76,19 @@ public sealed partial class SearchViewModel : ObservableObject
         _dispatcher = dispatcher;
         _time = time;
         _logger = logger;
+        Requests = requests;
+        Requests.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName is nameof(RequestToAddViewModel.IsShown) or nameof(RequestToAddViewModel.IsSearching))
+            {
+                OnPropertyChanged(nameof(ShowsRequests));
+                ShowResultsState();
+            }
+        };
     }
+
+    /// <summary>"Request to add": what TMDB finds for the text that the library does not have.</summary>
+    public RequestToAddViewModel Requests { get; }
 
     /// <summary>The search box; every change searches again once typing pauses.</summary>
     [ObservableProperty]
@@ -91,13 +107,21 @@ public sealed partial class SearchViewModel : ObservableObject
     public partial IReadOnlyList<MediaCard> Cards { get; private set; } = [];
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ShowsPeople))]
+    [NotifyPropertyChangedFor(nameof(ShowsPeople), nameof(ShowsTitlesHeading))]
     public partial IReadOnlyList<SearchPerson> People { get; private set; } = [];
 
     /// <summary>The person whose titles are shown instead of the results.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(Heading), nameof(IsPersonOpen), nameof(ShowsPeople))]
+    [NotifyPropertyChangedFor(nameof(Heading), nameof(IsPersonOpen), nameof(ShowsPeople), nameof(ShowsTitlesHeading), nameof(ShowsRequests))]
     public partial SearchPerson? Person { get; private set; }
+
+    /// <summary>
+    /// The library found nothing, and "Request to add" is searching or shows titles: it says so instead of "No titles
+    /// found", as the web hides its empty grid then.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowsTitlesHeading))]
+    public partial bool IsLibraryRescued { get; private set; }
 
     /// <summary>Titles or people are being searched (or a person's titles loaded).</summary>
     [ObservableProperty]
@@ -119,6 +143,11 @@ public sealed partial class SearchViewModel : ObservableObject
     public bool IsPersonOpen => Person is not null;
 
     public bool ShowsPeople => Person is null && People.Count > 0;
+
+    /// <summary>"Titles" between the people and the library's titles, unless "Request to add" stands in for none.</summary>
+    public bool ShowsTitlesHeading => ShowsPeople && !IsLibraryRescued;
+
+    public bool ShowsRequests => Person is null && Requests.IsShown;
 
     /// <summary>The display's scale (1.5 at 150 %), so artwork is asked for at the pixels it is drawn at.</summary>
     public double DisplayScale { get; set; } = 1;
@@ -242,8 +271,7 @@ public sealed partial class SearchViewModel : ObservableObject
         _filmography = null;
         Person = null;
         Cards = _titles is { } titles ? titles.Cards : [];
-        IsSearching = _isSearchingTitles;
-        (StatusText, HasError) = _resultsState;
+        ShowResultsState();
     }
 
     /// <summary>Searches the box's text after <paramref name="delay"/>, cancelling whatever ran for an older text.</summary>
@@ -279,8 +307,11 @@ public sealed partial class SearchViewModel : ObservableObject
             {
                 return;
             }
+            // What the last text found is no guide to this one's "Request to add".
+            _libraryEmpty = false;
             SetSearchingTitles(true);
             var people = FindPeopleAsync(server, text, cancellationToken);
+            var requests = Requests.SearchAsync(text, scope);
             BrowseCardPager? titles = null;
             Exception? failure = null;
             try
@@ -297,6 +328,7 @@ public sealed partial class SearchViewModel : ObservableObject
             var found = await people;
             cancellationToken.ThrowIfCancellationRequested();
             ShowResults(text, titles, found, failure);
+            await requests;
         }
         catch (Exception ex) when (cancellationToken.IsCancellationRequested && ApiFailureText.IsRequestFailure(ex))
         {
@@ -383,21 +415,36 @@ public sealed partial class SearchViewModel : ObservableObject
         {
             _resultsState = (titles.Cards.Count == 0 ? $"No titles found for \"{text}\"" : "", false);
         }
+        _libraryEmpty = failure is null && titles is { Cards.Count: 0 };
+        Requests.LibraryFoundNothing = _libraryEmpty;
+        _isSearchingTitles = false;
         // A person opened from the previous results keeps the page until Back to results.
         if (Person is null)
         {
             Cards = titles is null ? [] : titles.Cards;
-            (StatusText, HasError) = _resultsState;
         }
+        ShowResultsState();
+    }
+
+    /// <summary>
+    /// The results' busy ring, word and error, unless a person is open. While the library found nothing, "Request to add"
+    /// may still find titles: the ring turns until it knows, and "No titles found" waits until it found none.
+    /// </summary>
+    private void ShowResultsState()
+    {
+        IsLibraryRescued = _libraryEmpty && (Requests.IsSearching || Requests.IsShown);
+        if (Person is not null)
+        {
+            return;
+        }
+        IsSearching = _isSearchingTitles || (_libraryEmpty && Requests.IsSearching);
+        (StatusText, HasError) = IsLibraryRescued ? ("", false) : _resultsState;
     }
 
     private void SetSearchingTitles(bool isSearching)
     {
         _isSearchingTitles = isSearching;
-        if (Person is null)
-        {
-            IsSearching = isSearching;
-        }
+        ShowResultsState();
     }
 
     private async Task LoadFilmographyAsync(SearchPerson person, CancellationTokenSource run)
@@ -477,6 +524,8 @@ public sealed partial class SearchViewModel : ObservableObject
     {
         _titles = null;
         _isSearchingTitles = false;
+        _libraryEmpty = false;
+        Requests.Clear();
         _resultsState = ("", false);
         ResultsQuery = "";
         People = [];

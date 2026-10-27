@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using Granary.Core.Api;
 using Granary.Core.Api.Requests;
 using Granary.Core.Auth;
+using Granary.Core.Servers;
 using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.ViewModels;
@@ -19,6 +20,8 @@ public sealed partial class RequestsFeature : ObservableObject
     private readonly ILogger<RequestsFeature> _logger;
     private (string? ServerId, string? ProfileId)? _readFor;
     private (string? ServerId, string? ProfileId)? _asking;
+    // The read in flight, which a second caller for the same profile waits for.
+    private Task? _reading;
     private ((string? ServerId, string? ProfileId) Key, DateTimeOffset At)? _failed;
 
     public RequestsFeature(ISessionManager session, RequestsApi requests, TimeProvider time, ILogger<RequestsFeature> logger)
@@ -50,7 +53,13 @@ public sealed partial class RequestsFeature : ObservableObject
             return;
         }
         var key = (_session.ActiveServer?.Id, _session.ProfileId);
-        if (_readFor == key || _asking == key || (_failed is { } failed && failed.Key == key && _time.GetUtcNow() - failed.At < RetryAfter))
+        if (_asking == key && _reading is { } reading)
+        {
+            // Another caller is reading it: its answer is this one's too.
+            await reading.WaitAsync(cancellationToken);
+            return;
+        }
+        if (_readFor == key || (_failed is { } failed && failed.Key == key && _time.GetUtcNow() - failed.At < RetryAfter))
         {
             return;
         }
@@ -62,6 +71,14 @@ public sealed partial class RequestsFeature : ObservableObject
             Status = null;
         }
         _asking = key;
+        // The read is everyone's: a caller that gives up stops waiting, it does not end the read for the others.
+        var read = ReadAsync(server, key, CancellationToken.None);
+        _reading = read;
+        await read.WaitAsync(cancellationToken);
+    }
+
+    private async Task ReadAsync(ServerEntry server, (string? ServerId, string? ProfileId) key, CancellationToken cancellationToken)
+    {
         try
         {
             var status = await _requests.GetStatusAsync(server.BaseUri, cancellationToken);
@@ -87,7 +104,11 @@ public sealed partial class RequestsFeature : ObservableObject
         {
             _logger.LogWarning(ex, "Could not read whether the server takes requests");
             _failed = (key, _time.GetUtcNow());
-            IsEnabled = false;
+            // A late failure for a profile left since leaves the current one's answer alone.
+            if ((_session.ActiveServer?.Id, _session.ProfileId) == key)
+            {
+                IsEnabled = false;
+            }
         }
         finally
         {
