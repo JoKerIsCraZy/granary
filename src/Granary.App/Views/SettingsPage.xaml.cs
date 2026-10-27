@@ -10,12 +10,12 @@ namespace Granary.App.Views;
 
 /// <summary>
 /// The settings (docs/ui-design.md, Settings): the profile's, and the app's own servers and About. The parameter names the
-/// page to open first (<c>playback</c>, <c>subtitles</c>, <c>servers</c>, <c>about</c>).
+/// page to open first (<c>playback</c>, <c>subtitles</c>, <c>interface</c>, <c>servers</c>, <c>about</c>).
 /// </summary>
 public sealed partial class SettingsPage : Page
 {
     private readonly Dictionary<string, UIElement> _views = [];
-    // Set while one list clears the other's pick, so the clearing opens nothing.
+    // Set while one list clears the others' picks, so the clearing opens nothing.
     private bool _switchingLists;
 
     public SettingsPage()
@@ -31,14 +31,15 @@ public sealed partial class SettingsPage : Page
     {
         base.OnNavigatedTo(e);
         string page = e.Parameter as string ?? "playback";
-        if (AppPages.Items.OfType<ListViewItem>().FirstOrDefault(i => i.Tag as string == page) is { } appPage)
+        foreach (var list in Lists())
         {
-            AppPages.SelectedItem = appPage;
+            if (list.Items.OfType<ListViewItem>().FirstOrDefault(i => i.Tag as string == page) is { } item)
+            {
+                list.SelectedItem = item;
+                return;
+            }
         }
-        else
-        {
-            Pages.SelectedItem = Pages.Items.OfType<ListViewItem>().FirstOrDefault(i => i.Tag as string == page) ?? Pages.Items[0];
-        }
+        Pages.SelectedItem = Pages.Items[0];
     }
 
     // A speed test left running would split the link with whatever plays next.
@@ -64,13 +65,17 @@ public sealed partial class SettingsPage : Page
             return;
         }
         _switchingLists = true;
-        (ReferenceEquals(list, Pages) ? AppPages : Pages).SelectedItem = null;
+        foreach (var other in Lists().Where(other => !ReferenceEquals(other, list)))
+        {
+            other.SelectedItem = null;
+        }
         _switchingLists = false;
         if (!_views.TryGetValue(page, out var view))
         {
             view = page switch
             {
                 "subtitles" => new LanguageSettingsView(),
+                "interface" => new InterfaceSettingsView(),
                 "servers" => new ServersSettingsView(),
                 "about" => new AboutSettingsView(),
                 _ => new PlaybackSettingsView(),
@@ -80,6 +85,8 @@ public sealed partial class SettingsPage : Page
         PageHost.Content = view;
         PageScroller.ChangeView(null, 0, null, disableAnimation: true);
     }
+
+    private ListView[] Lists() => [Pages, AppearancePages, AppPages];
 
     // Back to where the settings were opened from, or Home.
     private void OnBackClick(object sender, RoutedEventArgs e)

@@ -5,6 +5,7 @@ using Granary.App.Themes;
 using Granary.Core;
 using Granary.Core.Abstractions;
 using Granary.Core.Diagnostics;
+using Granary.Core.Overlays;
 using Granary.Core.Playback;
 using Granary.Core.Servers;
 using Granary.Core.Theme;
@@ -70,6 +71,8 @@ public partial class App : Application
             }
         };
         _ = accent.StartAsync();
+        // The profile's card badges, read with every sign-in and profile switch.
+        _ = Services.GetRequiredService<CardOverlaySettings>().StartAsync();
 
         // Developer shortcuts: --play <file or URL> plays it without the server; --play-item <content id> plays a
         // title of the signed-in server.

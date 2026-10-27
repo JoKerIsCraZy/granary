@@ -50,9 +50,15 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
 ## Components (`src/Granary.App/Controls`)
 
 - `MediaCardView` draws one `MediaCard` (`Granary.Core.ViewModels.Cards`): 2:3 poster or 16:9
-  landscape artwork with radius 16, resolution badge top left, audio and status badges top right,
-  rating bottom left, a watched mark bottom right, a 3 px red progress bar, then title, subtitle and an
-  optional caption. Without artwork, or when it fails (expired signature), the title stands in. An episode's poster
+  landscape artwork with radius 16, the profile's badges in the four corners, the card's own status ("NEW", "APPROVED")
+  and a watched mark top right, a 3 px red progress bar, then title, subtitle and an optional caption. The badges are
+  the web's CardOverlays (`Granary.Core.Overlays`): which ones, their corner, colour, icon and style come from the
+  profile's `ui.card_overlays` (or the server's defaults), at most three a corner (`CardBadges`), drawn by
+  `CardBadgeViews` in the five styles (Minimal, Classic, Vibrant, Pill, Square; colours mixed as CSS `color-mix`). An
+  edge's two corners share its width only when they must (`BadgeEdge`, the web's `justify-between`), a label then ending
+  in "…". A poster lays them out at the web's 185 px and scales them, insets and all, to its width; a wide card keeps
+  them. Over a progress bar the bottom row rises 8 px clear of it. Icons are Segoe Fluent glyphs; HDR10, Atmos and AV1
+  are heavy words, as Silo writes them. Cards show no badges until the profile's are known, so no defaults flash. Without artwork, or when it fails (expired signature), the title stands in. An episode's poster
   reads as the web's grid card (`lib/episodeCardLabels.ts`): the series ("Tracker"), the episode's own title
   ("Safe Harbor"), then "S04E01". The play disc, the card's buttons and its menu are made on first need (the pointer,
   focus on the card's button, the context menu), the progress bar only for a card with progress (`x:Load`): made for
@@ -264,7 +270,7 @@ title prepares or buffers. With Windows' animations off the mark stands still.
 
 Opened from the sidebar's Settings; as on Silo's web the app's sidebar gives way to the settings' own (260 px, a shade
 darker, a hairline at its edge): "← Back to App", "Settings", the current profile (its initial in a 32 px disc), then
-the pages by group: PLAYBACK (the profile's) and APP (Servers, About). The page open is white 6 % with red text and a
+the pages by group: PLAYBACK (the profile's), APPEARANCE (Navigation & Cards) and APP (Servers, About). The page open is white 6 % with red text and a
 red mark. Pages scroll on the right in a centred column of at most 1120 px, padded 50 px (a column, not MaxWidth on the
 host, which pushed a page of short lines off the right edge): the title (32 px bold) and its line, then sections between hairlines (`SettingsGroup`), their title
 (15 px semibold) and description (13 px muted) in a 256 px column and their rows (`SettingsRow`: label 14 px medium,
@@ -289,6 +295,16 @@ says why above the sections.
   forced subtitles; a 16:9 preview of the look, edited as a draft with Save Appearance and Discard Changes, Reset back to
   the default; Text (size, family, colour swatches, opacity, outline and its colour), Background & Position (style,
   opacity and colour for the box, position); Timing (the profile's subtitle offset in 100 ms steps, Reset).
+- **Navigation & Cards** (`InterfaceSettingsView` on `BadgeSettingsViewModel`, the web's page of that name): Badges,
+  with Reset beside the title while the profile has its own (asks first: "Reset badges?"). "Show badges on posters";
+  while on, Style as five 112 px tiles, each with its "4K" on a dark slate (the chosen one outlined and tinted in the
+  accent), then the categories as a flat accordion (Media Info, Ratings & Certifications, Content Metadata, Status &
+  Awards), each header saying "None on" or "2 of 5 on" with a chevron, its rows flush with it between hairlines: name,
+  description, a muted italic hint (hidden by the combined Resolution + HDR badge, or data still to come), Adjust while
+  on, and the switch. Adjust opens a popover (`SiloSettingsPopoverStyle`): the corner on an 80 × 120 poster with four
+  buttons, Color as Default and the web's twelve swatches, and Show icon for a badge that has one. Badges the server
+  cannot store (an older manifest) or whose rating it does not show (Rotten Tomatoes) are not offered; a server without
+  badge settings shows its own, and the page says so. Every change saves to the profile at once.
 - **Servers** (`ServersSettingsView` on `ServersViewModel`; the apps keep the server under Settings too): the title and
   its line with Add server (outline) on the right; then a line per saved server between hairlines: a 40 px disc, the
   name (15 px semibold) and "https://silo.example · Signed in as elena" (13 px muted, trimmed), the red Active pill or

@@ -40,17 +40,14 @@ public sealed record MediaCard(string Id, string Type, string Title)
     /// <summary>The ThumbHash of <see cref="ImageUrl"/>'s picture: shown blurred at once, until the picture itself is.</summary>
     public string? ImageThumbhash { get; init; }
 
-    /// <summary>"1080P", "4K DV".</summary>
-    public string? ResolutionBadge { get; init; }
+    /// <summary>
+    /// What the card's badges can say (resolution, audio, ratings, show status, …); which of them it shows, where and how,
+    /// is the profile's choice (<see cref="Overlays.CardOverlaySettings"/>). Null for a card without badges.
+    /// </summary>
+    public Overlays.OverlayData? Overlay { get; init; }
 
-    /// <summary>"EAC3", "ATMOS".</summary>
-    public string? AudioBadge { get; init; }
-
-    /// <summary>"RETURNING", "ENDED", "NEW".</summary>
+    /// <summary>A badge of the card's own, outside the profile's set: "NEW", a request's "APPROVED", a calendar's "PREMIERE", "SHARED".</summary>
     public string? StatusBadge { get; init; }
-
-    /// <summary>"IMDB 7.5".</summary>
-    public string? RatingBadge { get; init; }
 
     /// <summary>Watched share between 0 and 1, or null without progress.</summary>
     public double? Progress { get; init; }

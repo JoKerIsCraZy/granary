@@ -46,6 +46,22 @@ public sealed record CatalogItemDetail : CatalogItemBase
 /// <summary>An external rating; <see cref="Score"/> is on a 0-100 scale, <see cref="Display"/> on the source's own.</summary>
 public sealed record CatalogRating(string Source, string Name, double Score, string Display);
 
+/// <summary>
+/// <c>GET /api/v2/capabilities/ratings</c>: the rating sources title pages and cards show, in display order (IMDb, TMDB and
+/// those an administrator turned on). A card carries a Rotten Tomatoes score only while its source is listed.
+/// </summary>
+public sealed record RatingsCapability
+{
+    public string State { get; init => field = value ?? ""; } = "";
+
+    public IReadOnlyList<RatingsCapabilitySource> Sources { get; init => field = value ?? []; } = [];
+
+    /// <summary>The shown sources' names; none from a server that does not offer ratings.</summary>
+    public IReadOnlySet<string> Shown => State == "available" ? Sources.Select(source => source.Source).ToHashSet(StringComparer.Ordinal) : new HashSet<string>();
+}
+
+public sealed record RatingsCapabilitySource(string Source, string Name);
+
 public sealed record CastCredit(string Name, string Character, int Order, string? PersonId, string? PhotoUrl, string? PhotoThumbhash);
 
 public sealed record CrewCredit(string Name, string Job, string? PersonId, string? PhotoUrl, string? PhotoThumbhash);

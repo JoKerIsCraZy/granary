@@ -10,6 +10,10 @@ namespace Granary.Core.Api.Catalog;
 /// </summary>
 public sealed class CatalogApi(SiloHttp http)
 {
+    /// <summary>Which rating sources the server shows; a server without ratings answers 404.</summary>
+    public Task<RatingsCapability> GetRatingsCapabilityAsync(Uri server, CancellationToken cancellationToken = default) =>
+        http.GetAsync(server, "api/v2/capabilities/ratings", SiloAuth.Profile, SiloJsonContext.Default.RatingsCapability, cancellationToken);
+
     /// <summary>Every Home row with its cards. Rows can be large (100 cards); hide rows with <c>total_count == 0</c>.</summary>
     public Task<SectionCollection> ListHomeSectionsAsync(Uri server, ImageParameters? images = null, CancellationToken cancellationToken = default) =>
         http.GetAsync(server, "api/v2/home/sections" + Query(images), SiloAuth.Profile, SiloJsonContext.Default.SectionCollection, cancellationToken);

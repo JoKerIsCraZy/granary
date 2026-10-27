@@ -42,7 +42,7 @@ internal static class RequestCards
 
     /// <summary>
     /// A watchlist title the library does not have, as the web's <c>WatchlistTitleCard</c>: "MOVIE · 2020" under the title, the
-    /// status as the badge and in words as the caption (amber while TMDB lost the title), and the watchlist toggle on, to take it
+    /// status as the profile's Request Status badge and in words as the caption (amber while TMDB lost the title), and the watchlist toggle on, to take it
     /// off.
     /// </summary>
     public static MediaCard Of(WatchlistTitle title, WatchlistTitleStatus status)
@@ -55,7 +55,16 @@ internal static class RequestCards
             Caption = status.Caption,
             IsCaptionAttention = status.Attention,
             ImageUrl = TmdbImages.Poster(title.PosterPath),
-            StatusBadge = status.Badge.ToUpperInvariant(),
+            // The state is the profile's Request Status badge, beside TMDB's rating, the age rating and the year (the web's
+            // overlayDataFromWatchlistTitle); the file badges have nothing to say about a title not in the library.
+            Overlay = new Overlays.OverlayData
+            {
+                RatingTmdb = title.VoteAverage,
+                ContentRating = string.IsNullOrEmpty(title.ContentRating) ? null : title.ContentRating,
+                Year = title.Year is > 0 ? title.Year : null,
+                RequestStatus = status.Badge,
+                RequestStatusAttention = status.Attention,
+            },
             InWatchlist = true,
         };
     }

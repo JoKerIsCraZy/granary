@@ -17,4 +17,6 @@ release's section is what its update says it changes (docs/release.md).
 - The player, built on mpv: direct play and the server's streams, audio and subtitle tracks with their look, intro and
   credits skipping, the next episode, chapters, trickplay previews and a mini view.
 - Settings for playback and subtitles, the servers, and About with Check for updates.
+- Posters with your profile's badges, as on Silo's web, chosen under Settings → Navigation & Cards; Granary takes the
+  server's accent colour.
 - Installing and updating with Velopack: a setup without administrator rights, and updates in the background.

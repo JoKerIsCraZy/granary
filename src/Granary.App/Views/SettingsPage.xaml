@@ -62,7 +62,19 @@
                         </StackPanel>
                     </ListViewItem>
                 </ListView>
-                <!-- The app's own: its servers, and what it is. One page is open across both lists. -->
+                <!-- How Granary looks: posters' badges (and, as on the web, later the menu). -->
+                <TextBlock Text="APPEARANCE" Margin="8,20,0,6" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="11"
+                           CharacterSpacing="150" Foreground="{StaticResource SiloMutedBrush}" AutomationProperties.HeadingLevel="Level2" />
+                <ListView x:Name="AppearancePages" SelectionMode="Single" SelectionChanged="OnPageSelected" IsItemClickEnabled="False"
+                          AutomationProperties.Name="Appearance pages">
+                    <ListViewItem Tag="interface" AutomationProperties.Name="Navigation &amp; Cards">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <FontIcon Glyph="&#xE8A1;" FontSize="14" />
+                            <TextBlock Text="Navigation &amp; Cards" FontSize="14" />
+                        </StackPanel>
+                    </ListViewItem>
+                </ListView>
+                <!-- The app's own: its servers, and what it is. One page is open across all the lists. -->
                 <TextBlock Text="APP" Margin="8,20,0,6" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="11"
                            CharacterSpacing="150" Foreground="{StaticResource SiloMutedBrush}" AutomationProperties.HeadingLevel="Level2" />
                 <ListView x:Name="AppPages" SelectionMode="Single" SelectionChanged="OnPageSelected" IsItemClickEnabled="False"

@@ -18,6 +18,7 @@ using Granary.Core.Api.Theme;
 using Granary.Core.Artwork;
 using Granary.Core.Auth;
 using Granary.Core.Http;
+using Granary.Core.Overlays;
 using Granary.Core.Playback;
 using Granary.Core.Security;
 using Granary.Core.Servers;
@@ -81,6 +82,7 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<RequestsApi>();
         services.AddTransient<BrandingApi>();
         services.AddSingleton<ServerAccent>();
+        services.AddSingleton<CardOverlaySettings>();
         services.AddTransient<ImagesApi>();
         services.AddSingleton<ImageParameterCache>();
         AddArtwork(services);

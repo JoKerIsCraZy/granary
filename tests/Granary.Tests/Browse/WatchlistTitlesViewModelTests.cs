@@ -96,7 +96,7 @@ public sealed class WatchlistTitlesViewModelTests
 
         Assert.Equal(["tmdb:movie:1", "tmdb:movie:21", "tmdb:movie:22", "tmdb:movie:3", "tmdb:movie:4", "tmdb:movie:5"], Ids(titles));
         Assert.Equal(["DOWNLOADING 10%", "OUT NOV 1", "OUT MAR 1, 2027", "AWAITING APPROVAL", "NOT REQUESTED", "NOT ON TMDB"],
-            titles.Cards.Select(c => c.StatusBadge));
+            titles.Cards.Select(c => c.Overlay?.RequestStatus?.ToUpperInvariant()));
         Assert.Equal(["Downloading · 10%", "Out Nov 1 · approved", "Out Mar 1, 2027 · approved", "Awaiting approval", "Not requested",
             "No longer listed on TMDB"], titles.Cards.Select(c => c.Caption));
         Assert.Equal([false, false, false, false, false, true], titles.Cards.Select(c => c.IsCaptionAttention));

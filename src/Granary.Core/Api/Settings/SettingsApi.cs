@@ -25,9 +25,27 @@ public static class SettingScopes
     public const string ProfileDevice = "profile_device";
 }
 
+/// <summary><c>GET /api/v2/settings/overlay-config</c>: the server's card badge defaults, which a profile without a choice follows.</summary>
+/// <param name="Defaults">The administrator's badge document, as a JSON string; null when none is set.</param>
+public sealed record OverlayConfig(string? Defaults, bool Enabled);
+
+/// <summary><c>GET /api/v2/settings/contract/capabilities</c>: which settings the server knows.</summary>
+public sealed record SettingsContractCapabilities(int ApiVersion, int ManifestRevision, IReadOnlyList<string>? ClientFamilies);
+
 /// <summary>The profile and device settings stored on the server (docs/api-contract.md, 6.6).</summary>
 public sealed class SettingsApi(SiloHttp http)
 {
+    /// <summary>The settings contract version this client speaks; a server on another reports its revision only for its own.</summary>
+    public const int ApiVersion = 1;
+
+    /// <summary>The server's card badge defaults, which a profile without a choice follows.</summary>
+    public Task<OverlayConfig> GetOverlayConfigAsync(Uri server, CancellationToken cancellationToken = default) =>
+        http.GetAsync(server, "api/v2/settings/overlay-config", SiloAuth.Profile, SiloJsonContext.Default.OverlayConfig, cancellationToken);
+
+    public Task<SettingsContractCapabilities> GetCapabilitiesAsync(Uri server, CancellationToken cancellationToken = default) =>
+        http.GetAsync(server, "api/v2/settings/contract/capabilities", SiloAuth.Profile, SiloJsonContext.Default.SettingsContractCapabilities,
+            cancellationToken);
+
     /// <summary>
     /// The effective values of <paramref name="keys"/> for the acting profile and this device. A key the
     /// server's contract does not know fails the whole call with 422.

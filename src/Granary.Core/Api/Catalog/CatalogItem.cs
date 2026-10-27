@@ -79,6 +79,17 @@ public abstract record CatalogItemBase
 
     public double? RatingTmdb { get; init; }
 
+    /// <summary>Rotten Tomatoes' critics and audience, out of 100, when an administrator shows them.</summary>
+    public double? RatingRtCritic { get; init; }
+
+    public double? RatingRtAudience { get; init; }
+
+    /// <summary>A recommended minimum age, such as Common Sense Media's 13.</summary>
+    public int? AdvisoryAge { get; init; }
+
+    /// <summary>"en", "ja".</summary>
+    public string? OriginalLanguage { get; init; }
+
     /// <summary>Airing state of a series.</summary>
     public string? ShowStatus { get; init; }
 

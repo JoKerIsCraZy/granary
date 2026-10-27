@@ -77,8 +77,7 @@ public static class MediaCardFactory
             Caption = episode.Overview,
             ImageUrl = ArtworkUrl.Resolve(serverBase, episode.StillUrl),
             ImageThumbhash = episode.StillThumbhash,
-            ResolutionBadge = ResolutionText(episode.OverlaySummary),
-            AudioBadge = AudioText(episode.OverlaySummary),
+            Overlay = OverlayOf(episode.OverlaySummary) with { Runtime = episode.Runtime > 0 ? episode.Runtime : null },
             Progress = ProgressOf(episode.UserData?.PositionSeconds, episode.UserData?.DurationSeconds, episode.UserData?.Played == true),
             IsWatched = episode.UserData?.Played == true,
             ShowsWatchedMark = true,
@@ -107,27 +106,42 @@ public static class MediaCardFactory
     public static string? AudioText(CatalogItemOverlay? overlay) =>
         overlay?.Audio is { Length: > 0 } audio ? audio.Trim().ToUpperInvariant() : null;
 
-    /// <summary>The web's formatShowStatus, upper-cased.</summary>
-    public static string? ShowStatusText(string? status) => status?.Trim().ToLowerInvariant() switch
+    /// <summary>What a title's badges can say, as the web's overlay extractor (<c>lib/overlays/extractors.ts</c>) takes it from a card.</summary>
+    public static Overlays.OverlayData OverlayOf(CatalogItemBase item) => OverlayOf(item.OverlaySummary) with
     {
-        null or "" => null,
-        "returning" or "returning series" or "continuing" or "in_production" or "in production" => "RETURNING",
-        "ended" => "ENDED",
-        "cancelled" or "canceled" => "CANCELLED",
-        "upcoming" or "planned" => "UPCOMING",
-        { } other => other.ToUpperInvariant(),
+        RatingImdb = item.RatingImdb,
+        RatingTmdb = item.RatingTmdb,
+        RatingRtCritic = item.RatingRtCritic,
+        RatingRtAudience = item.RatingRtAudience,
+        ContentRating = string.IsNullOrEmpty(item.ContentRating) ? null : item.ContentRating,
+        AdvisoryAge = item.AdvisoryAge,
+        Year = item.Year is > 0 ? item.Year : null,
+        Runtime = item.Runtime,
+        OriginalLanguage = item.OriginalLanguage,
+        Studio = item.Studios.FirstOrDefault(s => !string.IsNullOrWhiteSpace(s))?.Trim(),
+        Network = item.Networks.FirstOrDefault(n => !string.IsNullOrWhiteSpace(n))?.Trim(),
+        ShowStatus = string.IsNullOrEmpty(item.ShowStatus) ? null : item.ShowStatus,
     };
 
-    /// <summary>"IMDB 7.5": the source always goes with the score.</summary>
-    public static string? RatingText(double? imdb) =>
-        imdb is { } score ? "IMDB " + (Math.Round(score * 10) / 10).ToString("0.0", CultureInfo.InvariantCulture) : null;
+    private static Overlays.OverlayData OverlayOf(CatalogItemOverlay? summary) => new()
+    {
+        Resolution = summary?.Resolution,
+        Hdr = summary?.Hdr,
+        Audio = summary?.Audio,
+        AudioChannels = summary?.AudioChannels,
+        VideoCodec = summary?.VideoCodec,
+        Container = summary?.Container,
+        AspectRatio = summary?.AspectRatio,
+        ReleaseType = summary?.ReleaseType,
+        Edition = summary?.Edition,
+        MultiAudio = summary?.MultiAudio == true,
+        MultiSub = summary?.MultiSub == true,
+    };
 
     private static MediaCard Decorate(MediaCard card, CatalogItemBase item) => card with
     {
-        ResolutionBadge = ResolutionText(item.OverlaySummary),
-        AudioBadge = AudioText(item.OverlaySummary),
-        StatusBadge = ShowStatusText(item.ShowStatus) ?? (item.Badges.Contains("new") ? "NEW" : null),
-        RatingBadge = RatingText(item.RatingImdb),
+        Overlay = OverlayOf(item),
+        StatusBadge = item.Badges.Contains("new") ? "NEW" : null,
         Progress = ProgressOf(item.PositionSeconds, item.DurationSeconds, item.UserState?.Played == true),
         // Like the web, rows and grids mark no watched titles (season and episode cards do); the state shows on hover.
         IsWatched = item.UserState?.Played == true,

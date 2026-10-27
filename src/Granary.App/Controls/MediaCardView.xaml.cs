@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Numerics;
+using Granary.Core.Overlays;
 using Granary.Core.ViewModels.Cards;
 using Granary.Core.ViewModels.Detail;
 using Microsoft.Extensions.DependencyInjection;
@@ -31,13 +32,20 @@ public sealed partial class MediaCardView : UserControl
     private const float HoverScale = 1.06f;
     private const double WideCard = 250;
     private static readonly TimeSpan ZoomDuration = TimeSpan.FromMilliseconds(300);
+    // The web's inset of the badges from the artwork's edges, and of an edge's two corners from each other.
+    private const double EdgeInset = 8;
 
     private readonly MediaCardActions _actions = App.Services.GetRequiredService<MediaCardActions>();
+    private readonly CardOverlaySettings _overlays = App.Services.GetRequiredService<CardOverlaySettings>();
 
     // Cancelled when the container is recycled for another card, so the old card's artwork stays out.
     private CancellationTokenSource? _artwork;
     private long _artworkShownAt;
     private bool _sizedByMeasure;
+    private double _artWidth;
+    // The card and badges the corners show, so a card loaded again keeps its badges rather than making them anew.
+    private MediaCard? _badgedCard;
+    private CardOverlayPrefs? _badgedPrefs;
     private bool _reservesEpisodeLine;
     private ButtonBase? _host;
 
@@ -93,13 +101,7 @@ public sealed partial class MediaCardView : UserControl
             _ = ShowArtworkAsync(card, url, _artwork.Token);
         }
 
-        SetBadge(ResolutionBadge, ResolutionText, card?.ResolutionBadge);
-        SetBadge(AudioBadge, AudioText, card?.AudioBadge);
-        // Silo writes ATMOS as a heavy word of its own, without the speaker.
-        bool atmos = card?.AudioBadge == "ATMOS";
-        AudioIcon.Visibility = atmos ? Visibility.Collapsed : Visibility.Visible;
-        AudioText.FontFamily = (FontFamily)Application.Current.Resources[atmos ? "SiloFontExtraBold" : "SiloFontSemiBold"];
-        SetBadge(RatingBadge, RatingText, card?.RatingBadge);
+        ShowBadges(card);
 
         TitleText.Text = card?.Title ?? "";
         ShowEpisodeTitle(card);
@@ -142,6 +144,7 @@ public sealed partial class MediaCardView : UserControl
         }
         // A TMDB title's request state can change on the card: its watchlist add requested it.
         SetBadge(StatusBadge, StatusText, card is null ? null : _actions.StatusBadgeOf(card));
+        PlaceBadges();
         if (HoverLayer is not null)
         {
             ShowActions(card, state, hasProgress);
@@ -240,6 +243,71 @@ public sealed partial class MediaCardView : UserControl
         ToolTipService.SetToolTip(button, label);
     }
 
+    // The profile's badges for this card, in its style; none while they load or are off. The card's own status stays first
+    // in the top right corner, the watched mark last.
+    private void ShowBadges(MediaCard? card)
+    {
+        if (ReferenceEquals(card, _badgedCard) && ReferenceEquals(_overlays.Shown, _badgedPrefs) && card is not null)
+        {
+            return;
+        }
+        _badgedCard = card;
+        _badgedPrefs = _overlays.Shown;
+        var badges = card?.Overlay is { } overlay && _overlays.Shown is { } prefs ? CardBadges.Resolve(overlay, prefs) : [];
+        var preset = OverlayPreset.Of(_overlays.Shown?.Preset ?? OverlayPresetId.Classic);
+        TopBadges.Gap = BottomBadges.Gap = EdgeInset;
+        Fill(TopLeftBadges, OverlayPosition.TopLeft, keep: 0);
+        Fill(TopRightBadges, OverlayPosition.TopRight, keep: 2);
+        Fill(BottomLeftBadges, OverlayPosition.BottomLeft, keep: 0);
+        Fill(BottomRightBadges, OverlayPosition.BottomRight, keep: 0);
+
+        // Replaces the badges before the corner's fixed children (StatusBadge and WatchedMark top right).
+        void Fill(StackPanel corner, OverlayPosition position, int keep)
+        {
+            corner.Spacing = preset.StackGap;
+            while (corner.Children.Count > keep)
+            {
+                corner.Children.RemoveAt(0);
+            }
+            int at = 0;
+            foreach (var badge in badges.Where(b => b.Position == position))
+            {
+                corner.Children.Insert(at++, CardBadgeViews.Create(badge, preset, position is OverlayPosition.TopRight or OverlayPosition.BottomRight));
+            }
+        }
+    }
+
+    // A poster's badges are laid out at the web's 185 px poster and scaled to its width, insets and all; a wide card
+    // keeps them at their size. Over a progress bar the bottom row rises clear of it, as the web's does.
+    private void PlaceBadges()
+    {
+        double width = _artWidth;
+        if (width <= 0)
+        {
+            return;
+        }
+        double scale = Card?.Shape == MediaCardShape.Landscape ? 1 : width / OverlayPreset.ReferenceWidth;
+        double inset = EdgeInset * scale;
+        double edgeWidth = Math.Max(0, (width - 2 * inset) / scale);
+        bool lifted = Progress?.Visibility == Visibility.Visible;
+        // The right margin makes the layout slot exactly the unscaled width, which a small poster's exceeds: a slot too
+        // narrow would clip the right corner.
+        double right = width - inset - edgeWidth;
+        TopBadges.Width = BottomBadges.Width = edgeWidth;
+        TopBadges.Margin = new Thickness(inset, inset, right, 0);
+        BottomBadges.Margin = new Thickness(inset, 0, right, inset + (lifted ? EdgeInset : 0));
+        TopScale.ScaleX = TopScale.ScaleY = BottomScale.ScaleX = BottomScale.ScaleY = scale;
+    }
+
+    // The profile chose other badges, or they arrived: from any thread the setting changes on, here on the card's.
+    private void OnOverlaysChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(CardOverlaySettings.Shown))
+        {
+            DispatcherQueue.TryEnqueue(() => ShowBadges(Card));
+        }
+    }
+
     private static void SetBadge(Border badge, TextBlock text, string? value)
     {
         text.Text = value ?? "";
@@ -289,6 +357,8 @@ public sealed partial class MediaCardView : UserControl
         }
         double height = Card?.Shape == MediaCardShape.Landscape ? width * 9 / 16 : width * 3 / 2;
         Art.Height = height;
+        _artWidth = width;
+        PlaceBadges();
         ArtImage.CenterPoint = new Vector3((float)(width / 2), (float)(height / 2), 0);
         SizeActions(width);
     }
@@ -460,6 +530,8 @@ public sealed partial class MediaCardView : UserControl
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         _actions.Changed += OnStateChanged;
+        _overlays.PropertyChanged += OnOverlaysChanged;
+        ShowBadges(Card);
         ForgetHost();
         _host = HostButton();
         if (_host is not null)
@@ -472,6 +544,7 @@ public sealed partial class MediaCardView : UserControl
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
         _actions.Changed -= OnStateChanged;
+        _overlays.PropertyChanged -= OnOverlaysChanged;
         ForgetHost();
     }
 

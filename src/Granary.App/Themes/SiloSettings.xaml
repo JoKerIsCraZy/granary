@@ -111,6 +111,17 @@
         <Setter Property="FontSize" Value="14" />
     </Style>
 
+    <!-- A settings popover (a badge's Adjust), in the colours of the settings' drop-downs. -->
+    <Style x:Key="SiloSettingsPopoverStyle" TargetType="FlyoutPresenter">
+        <Setter Property="Background" Value="#FF1C1C20" />
+        <Setter Property="BorderBrush" Value="#FF2A2A2F" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="Padding" Value="16" />
+        <Setter Property="MaxWidth" Value="360" />
+        <Setter Property="RequestedTheme" Value="Dark" />
+    </Style>
+
     <Style x:Key="SiloSettingsPageTitleStyle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource SiloFontBold}" />
         <Setter Property="FontWeight" Value="Bold" />

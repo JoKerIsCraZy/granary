@@ -518,6 +518,26 @@ Profile and device settings live on the server (manifest
 | `player.subtitle_sync_ms`, `player.audio_sync_ms`, `player.playback_speed` | profile(_device) | – | player offsets and speed |
 | `player.resume_rewind_seconds`, `player.passout_threshold` | **client_local** (never on the server) | `7`, `3` | resume rewind, auto-advance streak limit |
 | `ui.next_up_mode`, `ui.disabled_library_ids`, `ui.library_order` | profile | `combined`, –, – | Home row behaviour, hidden libraries, library order |
+| `ui.card_overlays`, `ui.card_overlays_enabled` | profile | server defaults, `true` | card badges ([6.6.1](#661-card-badges)) |
+
+#### 6.6.1 Card badges
+
+The web's card overlays (`web/src/lib/overlays`, `hooks/useOverlayPrefs.ts`), which Granary reads and edits the same
+way, so a profile's badges look alike in both.
+
+- `ui.card_overlays` is the document `{ "version": 2, "preset": "classic|minimal|vibrant|pill|square", "order": [ids],
+  "items": { id: { enabled, position: "top-left|top-right|bottom-left|bottom-right", accentColor?, showIcon? } } }`.
+  Older values are a JSON string of it, or version 1: a flat map of id to `{ enabled, position }`. Read every form;
+  write the object. Keep ids you do not draw (`imdb_top_250`, `rt_certified_fresh`): another client chose them.
+- Without a profile value, `GET /api/v2/settings/overlay-config` gives the server's: `{ defaults: JSON string | null,
+  enabled, quick_actions_* }`. Reset deletes both keys (`DELETE /api/v2/settings/values/{key}?scope=profile`); a copy
+  of the server's values would freeze the profile at them.
+- The server refuses the whole document over one id its settings manifest lacks. `GET
+  /api/v2/settings/contract/capabilities` → `{ api_version: 1, manifest_revision }`: `advisory_age` came with revision
+  13, `request_status` with 15. While the revision is unknown, send only ids the server stored before.
+- A server whose effective-settings read refuses the keys (`422`) predates them: show its defaults, offer no editing.
+- Rotten Tomatoes badges (`rating_rt`, `rating_rt_audience`) are offered only while `GET /api/v2/capabilities/ratings`
+  lists their source (`rt_critic`, `rt_audience`); a server without the operation (`404`) shows none.
 
 ## 7. Catalog
 

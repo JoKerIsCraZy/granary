@@ -75,6 +75,50 @@ public sealed partial class LanguageSettingsView : UserControl
     }
 }
 
+/// <summary>Settings → Navigation &amp; Cards; it reads the profile's badges when it is shown, and lets go of them as the page leaves.</summary>
+public sealed partial class InterfaceSettingsView : UserControl, IDisposable
+{
+    public InterfaceSettingsView()
+    {
+        ViewModel = ActivatorUtilities.CreateInstance<BadgeSettingsViewModel>(App.Services);
+        InitializeComponent();
+        Loaded += OnFirstLoaded;
+    }
+
+    public BadgeSettingsViewModel ViewModel { get; }
+
+    public void Dispose() => ViewModel.Dispose();
+
+    private async void OnFirstLoaded(object sender, RoutedEventArgs e)
+    {
+        Loaded -= OnFirstLoaded;
+        await SettingsViewLoad.RunAsync(_ => ViewModel.LoadAsync());
+    }
+
+    // Reset clears every badge choice of the profile, so it asks first, as the web does.
+    private async void OnResetBadgesClick(object sender, RoutedEventArgs e)
+    {
+        if (XamlRoot is null)
+        {
+            return;
+        }
+        var dialog = new ContentDialog
+        {
+            XamlRoot = XamlRoot,
+            Style = (Style)Application.Current.Resources["DefaultContentDialogStyle"],
+            Title = BadgeSettingsViewModel.ResetTitle,
+            Content = BadgeSettingsViewModel.ResetText,
+            PrimaryButtonText = "Reset badges",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Close,
+        };
+        if (await dialog.ShowAsync() == ContentDialogResult.Primary)
+        {
+            await ViewModel.ResetCommand.ExecuteAsync(null);
+        }
+    }
+}
+
 /// <summary>Settings → Servers; the page disposes it as it leaves, so the list stops following the servers.</summary>
 public sealed partial class ServersSettingsView : UserControl, IDisposable
 {

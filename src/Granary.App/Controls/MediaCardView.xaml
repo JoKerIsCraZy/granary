@@ -47,41 +47,36 @@
                 </Rectangle.Fill>
             </Rectangle>
 
-            <Grid Margin="8" VerticalAlignment="Top" ColumnSpacing="8" IsHitTestVisible="False">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <Border x:Name="ResolutionBadge" Style="{StaticResource SiloBadgeStyle}" VerticalAlignment="Top">
-                    <TextBlock x:Name="ResolutionText" Style="{StaticResource SiloBadgeTextStyle}" />
-                </Border>
-                <StackPanel Grid.Column="2" Spacing="4" HorizontalAlignment="Right">
-                    <Border x:Name="AudioBadge" Style="{StaticResource SiloBadgeStyle}" HorizontalAlignment="Right">
-                        <StackPanel Orientation="Horizontal" Spacing="4">
-                            <FontIcon x:Name="AudioIcon" Glyph="&#xE767;" FontSize="11" Foreground="White" />
-                            <TextBlock x:Name="AudioText" Style="{StaticResource SiloBadgeTextStyle}" />
-                        </StackPanel>
-                    </Border>
+            <!--
+                The profile's badges in the four corners, as the web's CardOverlays: each edge a row of two stacks that
+                share its width only when they must (BadgeEdge), a corner at most three badges (CardBadges). Top right also
+                holds the card's own status ("NEW", "APPROVED") and the watched mark. Built in code (CardBadgeViews); a
+                poster lays them out at the web's 185 px and scales them to its width (MediaCardView.PlaceBadges).
+            -->
+            <controls:BadgeEdge x:Name="TopBadges" Margin="8" HorizontalAlignment="Left" VerticalAlignment="Top" IsHitTestVisible="False">
+                <controls:BadgeEdge.RenderTransform>
+                    <ScaleTransform x:Name="TopScale" />
+                </controls:BadgeEdge.RenderTransform>
+                <StackPanel x:Name="TopLeftBadges" Spacing="4" HorizontalAlignment="Left" />
+                <StackPanel x:Name="TopRightBadges" Spacing="4" HorizontalAlignment="Right">
                     <Border x:Name="StatusBadge" Style="{StaticResource SiloBadgeStyle}" HorizontalAlignment="Right">
-                        <StackPanel Orientation="Horizontal" Spacing="4">
-                            <FontIcon Glyph="&#xE7F4;" FontSize="11" Foreground="White" />
-                            <TextBlock x:Name="StatusText" Style="{StaticResource SiloBadgeTextStyle}" />
-                        </StackPanel>
+                        <TextBlock x:Name="StatusText" Style="{StaticResource SiloBadgeTextStyle}" />
                     </Border>
                     <Border x:Name="WatchedMark" Width="22" Height="22" CornerRadius="11" HorizontalAlignment="Right"
                             Background="{StaticResource SiloWatchedBrush}" AutomationProperties.Name="Watched">
                         <FontIcon Glyph="&#xE73E;" FontSize="12" Foreground="White" />
                     </Border>
                 </StackPanel>
-            </Grid>
+            </controls:BadgeEdge>
 
-            <Grid x:Name="BottomBadges" Margin="8" VerticalAlignment="Bottom" IsHitTestVisible="False">
-                <Border x:Name="RatingBadge" Style="{StaticResource SiloBadgeStyle}" HorizontalAlignment="Left"
-                        Background="{StaticResource SiloRatingBadgeBrush}">
-                    <TextBlock x:Name="RatingText" Style="{StaticResource SiloBadgeTextStyle}" />
-                </Border>
-            </Grid>
+            <controls:BadgeEdge x:Name="BottomBadges" Margin="8" HorizontalAlignment="Left" VerticalAlignment="Bottom" IsHitTestVisible="False"
+                                RenderTransformOrigin="0,1">
+                <controls:BadgeEdge.RenderTransform>
+                    <ScaleTransform x:Name="BottomScale" />
+                </controls:BadgeEdge.RenderTransform>
+                <StackPanel x:Name="BottomLeftBadges" Spacing="4" HorizontalAlignment="Left" VerticalAlignment="Bottom" />
+                <StackPanel x:Name="BottomRightBadges" Spacing="4" HorizontalAlignment="Right" VerticalAlignment="Bottom" />
+            </controls:BadgeEdge>
 
             <!-- Made only for a card with progress, the play disc and the card's buttons only on first need (MediaCardView.EnsureActions). -->
             <ProgressBar x:Name="Progress" x:Load="False" Margin="10,0,10,8" VerticalAlignment="Bottom" Height="3" MinHeight="3" CornerRadius="2"

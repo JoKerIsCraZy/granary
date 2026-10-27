@@ -21,16 +21,14 @@ public sealed class MediaCardFactoryTests
     };
 
     [Fact]
-    public void MoviePoster_ShowsYearBadgesAndRating()
+    public void MoviePoster_ShowsYear_AndCarriesWhatItsBadgesSay()
     {
         var card = MediaCardFactory.Poster(Movie(), Server);
 
         Assert.Equal(MediaCardShape.Poster, card.Shape);
         Assert.Equal("Masterplan", card.Title);
         Assert.Equal("2026", card.Subtitle);
-        Assert.Equal("1080P", card.ResolutionBadge);
-        Assert.Equal("EAC3", card.AudioBadge);
-        Assert.Equal("IMDB 5.4", card.RatingBadge);
+        Assert.Equal(("1080p", "eac3", 5.44), (card.Overlay?.Resolution, card.Overlay?.Audio, card.Overlay?.RatingImdb));
         Assert.Null(card.StatusBadge);
         Assert.Equal(new Uri("https://silo.test/media/api/v2/artwork/p.webp?sig=a"), card.ImageUrl);
         Assert.Null(card.Progress);
@@ -58,17 +56,6 @@ public sealed class MediaCardFactoryTests
     [InlineData(null, "DV", null)]
     public void Resolution_IsWordedLikeTheWeb(string? resolution, string? hdr, string? expected) =>
         Assert.Equal(expected, MediaCardFactory.ResolutionText(new CatalogItemOverlay { Resolution = resolution, Hdr = hdr }));
-
-    [Theory]
-    [InlineData("Returning Series", "RETURNING")]
-    [InlineData("continuing", "RETURNING")]
-    [InlineData("Ended", "ENDED")]
-    [InlineData("canceled", "CANCELLED")]
-    [InlineData("planned", "UPCOMING")]
-    [InlineData("pilot", "PILOT")]
-    [InlineData("", null)]
-    public void ShowStatus_IsWordedLikeTheWeb(string status, string? expected) =>
-        Assert.Equal(expected, MediaCardFactory.ShowStatusText(status));
 
     [Fact]
     public void EpisodePoster_ShowsSeriesEpisodeTitleAndCode_AsTheWebGrid()
@@ -101,14 +88,15 @@ public sealed class MediaCardFactoryTests
     }
 
     [Fact]
-    public void SeriesPoster_ShowsYearSeriesAndStatus()
+    public void SeriesPoster_ShowsYearAndSeries_AndCarriesItsStatus()
     {
         var series = new CatalogItem { ContentId = "s-1", Type = CatalogItemTypes.Series, Title = "Lupin", Year = 2021, ShowStatus = "Returning Series" };
 
         var card = MediaCardFactory.Poster(series, Server);
 
         Assert.Equal("2021 SERIES", card.Subtitle);
-        Assert.Equal("RETURNING", card.StatusBadge);
+        Assert.Equal("Returning Series", card.Overlay?.ShowStatus);
+        Assert.Null(card.StatusBadge);
         Assert.Null(card.ImageUrl);
     }
 
