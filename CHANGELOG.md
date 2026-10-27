@@ -19,4 +19,5 @@ release's section is what its update says it changes (docs/release.md).
 - Settings for playback and subtitles, the servers, and About with Check for updates.
 - Posters with your profile's badges, as on Silo's web, chosen under Settings → Navigation & Cards; Granary takes the
   server's accent colour.
+- The sidebar's entries can be hidden and put in another order, for each profile, under Settings → Navigation & Cards.
 - Installing and updating with Velopack: a setup without administrator rights, and updates in the background.

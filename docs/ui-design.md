@@ -134,7 +134,11 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   LIBRARIES, DISCOVER and YOUR STUFF fold away by their headers, a chevron before the capitals as on the web's
   LIBRARIES (down while open, right while folded, brighter under the pointer); unlike the web, all three fold and stay
   so across starts (`sidebar.json` in the data directory, the app's and not a profile's). A folded section still shows
-  the entry of the page on screen. The icon-only rail of a detail page shows every entry, as the web's rail does, since
+  the entry of the page on screen. Each profile can hide entries and order each section's own (Settings → Navigation &
+  Cards → Sidebar; `SidebarLayout`, `sidebar-layout.json`, kept on this PC by server and profile: the server's
+  `nav.primary_menu` is shared with the Mac app and knows neither Requests nor the profile's lists). Home, Search,
+  Settings and the profile always show; a hidden entry still shows while its page is on screen, and a section with nothing
+  left loses its header. A library added since the order was set comes after the ordered ones. The icon-only rail of a detail page shows every entry, as the web's rail does, since
   it has no headers to open them by: the headers become the web's short dividers (20 × 1 px, `#2E2E35`). A mouse resting
   on the rail for 150 ms opens it over the page, which keeps its width, and leaving it closes it again. The sidebar has
   no back arrow, as on the web: a page opened from another (a title, a row in full, a collection, the servers) has the
@@ -304,7 +308,11 @@ says why above the sections.
   on, and the switch. Adjust opens a popover (`SiloSettingsPopoverStyle`): the corner on an 80 × 120 poster with four
   buttons, Color as Default and the web's twelve swatches, and Show icon for a badge that has one. Badges the server
   cannot store (an older manifest) or whose rating it does not show (Rotten Tomatoes) are not offered; a server without
-  badge settings shows its own, and the page says so. Every change saves to the profile at once.
+  badge settings shows its own, and the page says so. Every change saves to the profile at once. Then Sidebar, with
+  Reset beside the title while something is hidden or moved: Libraries, Discover and Your Stuff, each a list between
+  hairlines of the entry's icon and name (Requests and Notifications: "Shows while your server offers it."), up and down
+  as 32 px ghost buttons (off at the ends), and the switch; a hidden entry is dimmed. Changes show in the sidebar at
+  once.
 - **Servers** (`ServersSettingsView` on `ServersViewModel`; the apps keep the server under Settings too): the title and
   its line with Add server (outline) on the right; then a line per saved server between hairlines: a 40 px disc, the
   name (15 px semibold) and "https://silo.example · Signed in as elena" (13 px muted, trimmed), the red Active pill or

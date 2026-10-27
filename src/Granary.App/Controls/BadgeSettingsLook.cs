@@ -21,6 +21,12 @@ public static class BadgeSettingsLook
 
     public static string AdjustName(string label) => "Adjust " + label;
 
+    public static string MoveUpName(string label) => $"Move {label} up";
+
+    public static string MoveDownName(string label) => $"Move {label} down";
+
+    public static string ShowName(string label) => "Show " + label;
+
     // A category's chevron: down while folded, up while open.
     public static string Chevron(bool isExpanded) => isExpanded ? "\uE70E" : "\uE70D";
 

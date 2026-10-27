@@ -31,6 +31,38 @@
             </Button>
         </DataTemplate>
 
+        <!-- One sidebar entry: its icon and name, up and down within its section, and its switch. -->
+        <DataTemplate x:Key="SidebarRowTemplate" x:DataType="settings:SidebarRowViewModel">
+            <Grid Padding="0,10" ColumnSpacing="16" BorderThickness="0,1,0,0" BorderBrush="{StaticResource SiloSettingsHairlineBrush}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="20" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <FontIcon Glyph="{x:Bind controls:SidebarGlyphs.Of(Kind)}" FontSize="16" Foreground="{StaticResource SiloMutedBrush}"
+                          Opacity="{x:Bind controls:SettingsText.Dim(IsShown), Mode=OneWay}" />
+                <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center" Opacity="{x:Bind controls:SettingsText.Dim(IsShown), Mode=OneWay}">
+                    <TextBlock Text="{x:Bind Label}" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium" FontSize="14"
+                               TextTrimming="CharacterEllipsis" Foreground="{StaticResource SiloForegroundBrush}" />
+                    <TextBlock Text="{x:Bind Note}" Style="{StaticResource SiloSettingsMutedTextStyle}" FontSize="12"
+                               Visibility="{x:Bind controls:SettingsText.Shows(Note)}" />
+                </StackPanel>
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
+                    <Button Style="{StaticResource BadgeGhostButtonStyle}" Width="32" Height="32" Padding="0" Command="{x:Bind MoveUpCommand}"
+                            AutomationProperties.Name="{x:Bind controls:BadgeSettingsLook.MoveUpName(Label)}" ToolTipService.ToolTip="Move up">
+                        <FontIcon Glyph="&#xE70E;" FontSize="12" />
+                    </Button>
+                    <Button Style="{StaticResource BadgeGhostButtonStyle}" Width="32" Height="32" Padding="0" Command="{x:Bind MoveDownCommand}"
+                            AutomationProperties.Name="{x:Bind controls:BadgeSettingsLook.MoveDownName(Label)}" ToolTipService.ToolTip="Move down">
+                        <FontIcon Glyph="&#xE70D;" FontSize="12" />
+                    </Button>
+                </StackPanel>
+                <ToggleSwitch Grid.Column="3" Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind IsShown, Mode=TwoWay}"
+                              VerticalAlignment="Center" AutomationProperties.Name="{x:Bind controls:BadgeSettingsLook.ShowName(Label)}" />
+            </Grid>
+        </DataTemplate>
+
         <!-- One badge: its words, Adjust while it is on, and its switch. -->
         <DataTemplate x:Key="BadgeRowTemplate" x:DataType="settings:BadgeRowViewModel">
             <Grid Padding="0,16" ColumnSpacing="16" BorderThickness="0,1,0,0" BorderBrush="{StaticResource SiloSettingsHairlineBrush}">
@@ -147,7 +179,7 @@
     <StackPanel>
         <TextBlock Text="Navigation &amp; Cards" Style="{StaticResource SiloSettingsPageTitleStyle}" AutomationProperties.HeadingLevel="Level1" />
         <TextBlock Margin="0,8,0,32" Style="{StaticResource SiloSettingsMutedTextStyle}" FontSize="14"
-                   Text="Choose how posters look. Changes save as you make them, for this profile on every device." />
+                   Text="Choose how posters look and what the sidebar shows. Changes show as you make them." />
         <InfoBar IsOpen="{x:Bind controls:SettingsText.Not(ViewModel.CanEdit), Mode=OneWay}" Severity="Informational" IsClosable="False"
                  Message="This server does not keep badge choices for profiles; posters show the server's badges." Margin="0,0,0,16" />
 
@@ -254,6 +286,44 @@
                         </ItemsControl>
                     </StackPanel>
                 </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- The sidebar: Reset beside the title, so laid out by hand as Badges. -->
+        <Border Padding="0,32" BorderThickness="0,1,0,0" BorderBrush="{StaticResource SiloSettingsHairlineBrush}">
+            <Grid ColumnSpacing="48">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="256" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Spacing="6">
+                    <Grid>
+                        <TextBlock Text="Sidebar" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="15"
+                                   Foreground="{StaticResource SiloForegroundBrush}" VerticalAlignment="Center" AutomationProperties.HeadingLevel="Level2" />
+                        <Button HorizontalAlignment="Right" Padding="8,4" Background="Transparent" BorderThickness="0"
+                                Command="{x:Bind Sidebar.ResetCommand}" Visibility="{x:Bind Sidebar.IsCustomized, Mode=OneWay}"
+                                AutomationProperties.Name="Reset sidebar">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <FontIcon Glyph="&#xE7A7;" FontSize="12" />
+                                <TextBlock Text="Reset" FontFamily="{StaticResource SiloFontMedium}" FontSize="14" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+                    <TextBlock Style="{StaticResource SiloSettingsMutedTextStyle}"
+                               Text="What Granary's sidebar shows, and in which order, for this profile on this PC. Home, Search and Settings always show." />
+                </StackPanel>
+                <ItemsControl Grid.Column="1" ItemsSource="{x:Bind Sidebar.Groups}" IsTabStop="False">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="settings:SidebarGroupViewModel">
+                            <StackPanel Margin="0,0,0,24" Visibility="{x:Bind HasRows, Mode=OneWay}">
+                                <TextBlock Text="{x:Bind Title}" Margin="0,0,0,8" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
+                                           FontSize="13" Foreground="{StaticResource SiloMutedBrush}" AutomationProperties.HeadingLevel="Level3" />
+                                <ItemsControl ItemsSource="{x:Bind Rows}" ItemTemplate="{StaticResource SidebarRowTemplate}" IsTabStop="False"
+                                              BorderThickness="0,0,0,1" BorderBrush="{StaticResource SiloSettingsHairlineBrush}" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
             </Grid>
         </Border>
     </StackPanel>

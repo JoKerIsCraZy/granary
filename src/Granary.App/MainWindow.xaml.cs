@@ -1,3 +1,4 @@
+using Granary.App.Controls;
 using Granary.App.Services;
 using Granary.App.Views;
 using Granary.Core.Abstractions;
@@ -22,7 +23,7 @@ namespace Granary.App;
 
 public sealed partial class MainWindow : Window
 {
-    private const string LibraryTagPrefix = "Library:";
+    private const string LibraryTagPrefix = SidebarLayout.LibraryTagPrefix;
     private const string ListTagPrefix = "List:";
 
     // How long a closing window waits for the player's stop; the stop itself keeps trying for longer.
@@ -53,9 +54,10 @@ public sealed partial class MainWindow : Window
     private readonly CancellationTokenSource _updatesRun = new();
 
     public MainWindow(NavigationService navigation, ShellViewModel shell, SidebarViewModel sidebar, SidebarSections sections,
-        NotificationBadge notifications, RequestsFeature requests, PlaybackStops stops, AppUpdatesViewModel updates,
+        SidebarLayout layout, NotificationBadge notifications, RequestsFeature requests, PlaybackStops stops, AppUpdatesViewModel updates,
         ILogger<MainWindow> logger)
     {
+        Layout = layout;
         Updates = updates;
         _navigation = navigation;
         _stops = stops;
@@ -102,6 +104,14 @@ public sealed partial class MainWindow : Window
         };
         Sidebar.Libraries.CollectionChanged += (_, _) => ShowLibraries();
         Sections.PropertyChanged += (_, _) => ShowSections();
+        Layout.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(SidebarLayout.Revision))
+            {
+                ArrangeSections();
+                ShowSections();
+            }
+        };
         Requests.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(RequestsFeature.IsEnabled))
@@ -126,6 +136,9 @@ public sealed partial class MainWindow : Window
 
     /// <summary>Which sidebar sections are folded away.</summary>
     public SidebarSections Sections { get; }
+
+    /// <summary>The profile's hidden entries and their order (Settings → Navigation &amp; Cards → Sidebar).</summary>
+    public SidebarLayout Layout { get; }
 
     // The fold buttons' parameters.
     public SidebarSection LibrariesSection => SidebarSection.Libraries;
@@ -166,6 +179,7 @@ public sealed partial class MainWindow : Window
                 Icon = new FontIcon { Glyph = LibraryGlyph(library.Type) },
             });
         }
+        ArrangeSections();
         ShowHeaders();
         ShowSections();
         if (_navigation.Current is { } route)
@@ -352,33 +366,88 @@ public sealed partial class MainWindow : Window
 
     // A folded section hides its entries, all but the page shown, so the sidebar still says where the viewer is. The
     // icon-only pane shows them all, as the web's rail does: it has no headers to open them by. Requests and
-    // Notifications show only while the server offers them.
+    // Notifications show only while the server offers them, and an entry the profile hid not at all but while it is the
+    // page shown; a section with nothing left to show loses its header too.
     private void ShowSections() => ShowSections(Navigation.IsPaneOpen);
 
     private void ShowSections(bool open)
     {
         bool shown = true;
+        NavigationViewItemHeader? header = null;
+        var available = new Dictionary<NavigationViewItemHeader, bool>();
         foreach (object item in Navigation.MenuItems)
         {
-            if (ReferenceEquals(item, LibrariesHeader))
+            if (item is NavigationViewItemHeader sectionHeader && SectionOf(sectionHeader) is { } section)
             {
-                shown = Sections.IsLibrariesExpanded || !open;
-            }
-            else if (ReferenceEquals(item, DiscoverHeader))
-            {
-                shown = Sections.IsDiscoverExpanded || !open;
-            }
-            else if (ReferenceEquals(item, YourStuffHeader))
-            {
-                shown = Sections.IsYourStuffExpanded || !open;
+                header = sectionHeader;
+                available[header] = false;
+                shown = Sections.IsExpanded(section) || !open;
             }
             else if (item is NavigationViewItem entry)
             {
                 bool current = ReferenceEquals(entry, Navigation.SelectedItem);
-                entry.Visibility = (shown || current) && IsOffered(entry) ? Visibility.Visible : Visibility.Collapsed;
+                bool kept = IsOffered(entry) && (current || !(entry.Tag is string tag && Layout.IsHidden(tag)));
+                entry.Visibility = kept && (shown || current) ? Visibility.Visible : Visibility.Collapsed;
+                if (header is not null && kept)
+                {
+                    available[header] = true;
+                }
+            }
+        }
+        foreach (var (sectionHeader, hasEntries) in available)
+        {
+            sectionHeader.Visibility = hasEntries ? Visibility.Visible : Visibility.Collapsed;
+        }
+    }
+
+    // Each section's entries in the profile's order (SidebarLayout), moved only when that differs from the order shown.
+    private void ArrangeSections()
+    {
+        var items = Navigation.MenuItems;
+        foreach (var sectionHeader in new[] { LibrariesHeader, DiscoverHeader, YourStuffHeader })
+        {
+            int start = items.IndexOf(sectionHeader) + 1;
+            var entries = items.Skip(start).TakeWhile(item => item is NavigationViewItem).Cast<NavigationViewItem>().ToList();
+            if (entries.DistinctBy(entry => entry.Tag as string).Count() != entries.Count)
+            {
+                // A library the server lists twice: the section stays as it comes.
+                continue;
+            }
+            var order = Layout.Arrange(SectionOf(sectionHeader)!.Value, DefaultOrder(entries));
+            var arranged = order.Select(tag => entries.First(entry => entry.Tag as string == tag)).ToList();
+            if (arranged.SequenceEqual(entries))
+            {
+                continue;
+            }
+            var selected = Navigation.SelectedItem;
+            foreach (var entry in entries)
+            {
+                items.Remove(entry);
+            }
+            for (int index = 0; index < arranged.Count; index++)
+            {
+                items.Insert(start + index, arranged[index]);
+            }
+            if (selected is not null && !ReferenceEquals(Navigation.SelectedItem, selected))
+            {
+                Navigation.SelectedItem = selected;
             }
         }
     }
+
+    // The order a section's entries come in: the libraries as the server lists them, the others as the sidebar declares them.
+    private List<string> DefaultOrder(IReadOnlyList<NavigationViewItem> entries)
+    {
+        var tags = entries.Select(entry => entry.Tag as string ?? "").ToList();
+        var declared = Sidebar.Libraries.Select(SidebarLayout.TagOf).Concat(SidebarLayout.Entries.Select(entry => entry.Tag)).ToList();
+        return [.. tags.OrderBy(tag => declared.IndexOf(tag) is var index and >= 0 ? index : int.MaxValue)];
+    }
+
+    private SidebarSection? SectionOf(NavigationViewItemHeader header) =>
+        ReferenceEquals(header, LibrariesHeader) ? SidebarSection.Libraries
+        : ReferenceEquals(header, DiscoverHeader) ? SidebarSection.Discover
+        : ReferenceEquals(header, YourStuffHeader) ? SidebarSection.YourStuff
+        : null;
 
     private bool IsOffered(NavigationViewItem item) => item.Tag switch
     {
@@ -390,14 +459,7 @@ public sealed partial class MainWindow : Window
     private static bool IsLibraryItem(NavigationViewItem item) =>
         item.Tag is string tag && tag.StartsWith(LibraryTagPrefix, StringComparison.Ordinal);
 
-    // Library types are free text (docs/api-contract.md, 7.3).
-    private static string LibraryGlyph(string type) => type.ToLowerInvariant() switch
-    {
-        "movies" or "movie" or "films" => "",
-        "series" or "tv" or "shows" or "tvshows" => "",
-        "music" => "",
-        _ => "",
-    };
+    private static string LibraryGlyph(string type) => SidebarGlyphs.Library(type);
 
     private void StyleCaptionButtons()
     {
@@ -492,9 +554,9 @@ public sealed partial class MainWindow : Window
     // not by NavigationView's pane states, which lag behind after the player's minimal mode. LIBRARIES only with libraries.
     private void ShowHeaders() => ShowHeaders(Navigation.IsPaneOpen);
 
+    // Whether a header shows at all (LIBRARIES only with libraries) is ShowSections'.
     private void ShowHeaders(bool open)
     {
-        LibrariesHeader.Visibility = Sidebar.Libraries.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         LibrariesToggle.IsCompact = DiscoverToggle.IsCompact = YourStuffToggle.IsCompact = !open;
     }
 

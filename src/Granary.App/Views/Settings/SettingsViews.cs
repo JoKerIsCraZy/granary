@@ -75,19 +75,29 @@ public sealed partial class LanguageSettingsView : UserControl
     }
 }
 
-/// <summary>Settings → Navigation &amp; Cards; it reads the profile's badges when it is shown, and lets go of them as the page leaves.</summary>
+/// <summary>
+/// Settings → Navigation &amp; Cards; it reads the profile's badges when it is shown, and lets go of them and of the sidebar
+/// as the page leaves.
+/// </summary>
 public sealed partial class InterfaceSettingsView : UserControl, IDisposable
 {
     public InterfaceSettingsView()
     {
         ViewModel = ActivatorUtilities.CreateInstance<BadgeSettingsViewModel>(App.Services);
+        Sidebar = ActivatorUtilities.CreateInstance<SidebarSettingsViewModel>(App.Services);
         InitializeComponent();
         Loaded += OnFirstLoaded;
     }
 
     public BadgeSettingsViewModel ViewModel { get; }
 
-    public void Dispose() => ViewModel.Dispose();
+    public SidebarSettingsViewModel Sidebar { get; }
+
+    public void Dispose()
+    {
+        ViewModel.Dispose();
+        Sidebar.Dispose();
+    }
 
     private async void OnFirstLoaded(object sender, RoutedEventArgs e)
     {
