@@ -221,6 +221,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         playback.TracksChanged += OnTracksChanged;
         playback.MarkersChanged += OnMarkersChanged;
         playback.TrickplayChanged += OnTrickplayChanged;
+        playback.NoticeRaised += OnNoticeRaised;
         await playback.StartAsync(request, CancellationToken.None);
     }
 
@@ -350,6 +351,8 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         playback.TracksChanged -= OnTracksChanged;
         playback.MarkersChanged -= OnMarkersChanged;
         playback.TrickplayChanged -= OnTrickplayChanged;
+        playback.NoticeRaised -= OnNoticeRaised;
+        ResetNotice();
         AudioTracks = [];
         HasSubtitleMenu = false;
         ResetSubtitles();

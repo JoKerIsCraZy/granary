@@ -250,7 +250,8 @@ public sealed partial class ServerPlayback
     }
 
     // An administrator ended the session: leave, do not start again (10.1).
-    private void EndedByServer() => Fail("This playback was ended on the server.", canRetry: false);
+    // 410 playback_session_ended: an administrator ended the session (docs/api-contract.md, 10).
+    private void EndedByServer() => Fail(AdminEndedText, canRetry: false);
 
     // Asks the session for a new plan; null when it cannot give one (and the playback says why or starts anew).
     // The tracks are the ones that play, unless the replan asks for others. A refusal fails playback, or with

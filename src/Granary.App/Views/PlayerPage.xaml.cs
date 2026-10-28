@@ -55,6 +55,7 @@ public sealed partial class PlayerPage : Page
         InitializeNextUp();
         InitializeSubtitlePanels();
         InitializeDock();
+        InitializeNotices();
         RegisterPropertyChangedCallback(IsMiniViewProperty, (_, _) =>
         {
             ShowNextUpScreen();

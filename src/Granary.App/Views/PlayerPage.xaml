@@ -772,6 +772,23 @@
         <controls:MarkerEditPanel x:Name="MarkerPanel" Canvas.ZIndex="2" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="24,0,0,176"
                                   Visibility="{x:Bind ShowsInWindow(ViewModel.MarkerEditor.IsEditing, IsCompact), Mode=OneWay}" />
 
+        <!--
+            A message from the server or an administrator (the control lane), as the web's PlaybackNoticeOverlay: below the top
+            bar, at most 576 px wide, sky blue or amber over a dark glass; it goes after eight seconds (PlayerPage.Notices.cs).
+        -->
+        <Grid Canvas.ZIndex="4" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="16,96,16,0" MaxWidth="576" IsHitTestVisible="False"
+              CornerRadius="16" Background="#D9101014" Visibility="{x:Bind ShowsInWindow(ViewModel.HasNotice, IsCompact), Mode=OneWay}">
+            <Border CornerRadius="16" BorderThickness="1" Padding="20,16" Background="{x:Bind NoticeTint(ViewModel.IsNoticeWarning), Mode=OneWay}"
+                    BorderBrush="{x:Bind NoticeEdge(ViewModel.IsNoticeWarning), Mode=OneWay}">
+                <StackPanel Spacing="4">
+                    <TextBlock Text="{x:Bind ViewModel.NoticeTitle, Mode=OneWay}" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
+                               FontSize="14" Foreground="White" TextWrapping="Wrap" />
+                    <TextBlock Text="{x:Bind ViewModel.NoticeMessage, Mode=OneWay}" FontSize="14" LineHeight="24" Foreground="#D9FFFFFF" TextWrapping="Wrap"
+                               AutomationProperties.LiveSetting="Assertive" />
+                </StackPanel>
+            </Border>
+        </Grid>
+
         <!-- Add Subtitles and Subtitle appearance: over everything, as the web's dialogs (PlayerPage.Subtitles.cs). -->
         <controls:AddSubtitlesPanel x:Name="AddSubtitlesPanel" Canvas.ZIndex="5" Visibility="Collapsed" />
         <controls:SubtitleAppearancePanel x:Name="AppearancePanel" Canvas.ZIndex="5"

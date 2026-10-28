@@ -1899,6 +1899,35 @@ on `subscribed`, on any catalog event, and on a `user_state` event for the activ
 `silo-server/docs/realtime-api.md:23-106`,
 `silo-server/internal/api/handlers/events_ws.go:735-739`.
 
+### 12.1 Playback control lane
+
+Each playback session has a control socket of its own, which the web player and Android keep while a title plays; an
+administrator's pause, stop, terminate and message (7.16) reach a player only through it, and without one the session
+reports `has_playback_control: false`. Sources: `silo-server/docs/realtime-api.md` ("Owner-bound playback control
+handshake (v2)"), the web's `player/hooks/usePlaybackRealtime.ts` and `player/realtime-protocol.ts`, Android's
+`network/PlaybackRealtimeClient.kt` and `playback/PlaybackCommandDispatch.kt`.
+
+- Ticket: `POST /api/v2/playback/sessions/{session_id}/control/ws-ticket` (bearer and profile headers) with
+  `{ "installation_id"? }` → `{ "ticket", "expires_in" (≤ 30 s), "max_connection_seconds" (14400), "protocol":
+  "silo.playback-control.v2" }`; single use, for the caller's own session only (403 otherwise, 409 for another
+  installation, 404 once the session ended).
+- Connect: `GET /api/v2/playback/sessions/{session_id}/control/ws`, offering `silo.playback-control.v2` then
+  `silo.ticket.<ticket>`; the server selects only the protocol. No token in the URL, no bearer header. Frames over
+  64 KiB close it (1009).
+- Once open the player sends `{ "type": "hello", "session_id", "client": { "name", "version" }, "capabilities": {
+  "commands": [...] } }`; the server issues only the commands named. A command is `{ "type": "command", "command_id",
+  "session_id", "name", "payload", "issued_by": { "kind": "admin" | "server" } }`; the player answers `{ "type": "ack",
+  "command_id", "session_id", "status": "accepted" }`, does it, then `{ "type": "result", …, "status": "completed" |
+  "rejected", "error"? }`. A pause, resume or stop not confirmed before its deadline ends the session.
+- Commands: `pause`, `unpause`, `play_pause`, `seek` (`position` | `position_seconds` | `seconds`), `set_volume`
+  (`volume` | `level`, 0 to 1), `stop`, `terminate`, `display_message` (`title`?, `message`), `server_restarting`,
+  `server_shutting_down`; also `play_media`, `set_audio_track`, `set_subtitle_track`, `plan_invalidated`, which
+  Granary does not announce. Events (`type: "event"`: `markers_updated`, `subtitle_ready`, …) Granary ignores.
+- Granary (`PlaybackControlLane`): a lane per session that plays, a fresh ticket per connection, back after 0.5, 1, 2,
+  5, 10, then 30 s; none on a server that answers the ticket with 404, 501 or 503, and none after an administrator's
+  terminate. Stop and terminate answer first and then end playback with the administrator's words ("An administrator
+  stopped / ended this playback session.", or their own message); a message shows as the web's notice for 8 s.
+
 ## 13. Consequences for the Windows client
 
 ### 13.1 Decisions this contract implies

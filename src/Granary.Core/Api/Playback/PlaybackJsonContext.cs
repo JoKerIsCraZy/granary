@@ -28,4 +28,6 @@ namespace Granary.Core.Api.Playback;
 [JsonSerializable(typeof(SubtitleChoice))]
 [JsonSerializable(typeof(FileMarkers))]
 [JsonSerializable(typeof(System.Text.Json.JsonElement))]
+[JsonSerializable(typeof(PlaybackControlTicketRequest))]
+[JsonSerializable(typeof(PlaybackControlTicket))]
 internal sealed partial class PlaybackJsonContext : JsonSerializerContext;

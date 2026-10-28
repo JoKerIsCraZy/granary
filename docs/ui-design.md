@@ -377,6 +377,12 @@ stream's commands on Activity.
   was played from. Full screen (`AppWindow`'s full-screen presenter) shows nothing but the player and returns to the
   window as it was, maximized or not. Leaving the player leaves full screen and stops playback, whichever way it is
   left (Exit, Back, `Alt+Left`, `Ctrl+K`, another page, a session change); the page under it shows again.
+- **Notices** (the web's PlaybackNoticeOverlay): a message from the server or an administrator (the control lane,
+  api-contract 12.1) shows below the top bar, centred, at most 576 px wide: 16 px corners over dark glass, sky blue
+  (`#0EA5E9` at 15 %, its edge `#38BDF8` at 50 %) or amber while the server restarts or shuts down, the title 14 px
+  semibold and the message 14 px white at 85 %. It goes after eight seconds, a newer one in its place; the bar and the
+  mini view keep it until the full player shows again. An administrator's stop or terminate ends playback with their
+  words on the failed screen ("An administrator ended this playback session.").
 - **Minimized** (the web's Minimize player, a 44 px glass disc with a chevron, top left; Exit is top right): the player becomes the bar
   at the bottom of the page, beside the sidebar, which goes on down to the window's edge; the page ends above the bar
   and the viewer browses on. Settings and Admin keep their own sidebar down to the window's edge too (`IDockSpace`):

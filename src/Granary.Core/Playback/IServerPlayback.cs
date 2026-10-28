@@ -31,6 +31,9 @@ public interface IServerPlayback : IAsyncDisposable
 {
     event EventHandler<ServerPlaybackStatus>? StatusChanged;
 
+    /// <summary>Raised on the UI thread with a message the server or its administrator sent the player (the control lane).</summary>
+    event EventHandler<PlaybackNotice>? NoticeRaised;
+
     ServerPlaybackStatus Status { get; }
 
     /// <summary>The movie, or the series of an episode; empty until the title is known.</summary>

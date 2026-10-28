@@ -8,6 +8,11 @@ internal sealed class FakeServerPlayback : IServerPlayback
 {
     public event EventHandler<ServerPlaybackStatus>? StatusChanged;
 
+    public event EventHandler<PlaybackNotice>? NoticeRaised;
+
+    /// <summary>A notice the control lane brought.</summary>
+    public void RaiseNotice(PlaybackNotice notice) => NoticeRaised?.Invoke(this, notice);
+
     public event EventHandler? TracksChanged;
 
     public event EventHandler? MarkersChanged;

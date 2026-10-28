@@ -56,6 +56,7 @@ public sealed partial class ServerPlayback : IServerPlayback
     private readonly ILoggerFactory _loggers;
     private readonly ILogger _logger;
     private readonly ServerPlaybackOptions _options;
+    private readonly PlaybackControlLane? _controlLane;
 
     private PlaybackContext? _context;
     private string _attemptId = "";
@@ -111,7 +112,8 @@ public sealed partial class ServerPlayback : IServerPlayback
         IUiDispatcher dispatcher,
         TimeProvider time,
         ILoggerFactory loggers,
-        ServerPlaybackOptions? options = null)
+        ServerPlaybackOptions? options = null,
+        Func<PlaybackControlLane>? controlLanes = null)
     {
         _starter = starter;
         _api = api;
@@ -126,6 +128,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         _loggers = loggers;
         _logger = loggers.CreateLogger<ServerPlayback>();
         _options = options ?? ServerPlaybackOptions.Default;
+        _controlLane = controlLanes?.Invoke();
         _engine.StateChanged += OnEngineStateChanged;
         _engine.Ended += OnEngineEnded;
     }
@@ -218,6 +221,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         SaveSpeedNow();
         StopTimers();
         StopTrickplay();
+        StopControlLane();
         // Read now: the engine stops right after this call, and its idle state would read as position 0. Closing the
         // app waits for the stop, and for a pick still being saved.
         _stop = Task.WhenAll(StopSessionsAsync(StopPosition, _paused), _trackSaves);
@@ -235,6 +239,10 @@ public sealed partial class ServerPlayback : IServerPlayback
         _speedSave?.Dispose();
         _subtitleDelaySave?.Dispose();
         CloseRoute();
+        if (_controlLane is { } lane)
+        {
+            await lane.DisposeAsync().ConfigureAwait(false);
+        }
         await _stop.ConfigureAwait(false);
         await _retired.ConfigureAwait(false);
         await _trackSaves.ConfigureAwait(false);
@@ -341,6 +349,7 @@ public sealed partial class ServerPlayback : IServerPlayback
             }
             _progress = NewSession(decision.SessionId!);
             _sessionPlayed = false;
+            KeepControlLane();
         }
         if (_plan?.PlanAttemptKey != plan.PlanAttemptKey)
         {
@@ -739,6 +748,7 @@ public sealed partial class ServerPlayback : IServerPlayback
             return;
         }
         StopTimers();
+        StopControlLane();
         _generation++;
         _loadId = 0;
         _started = false;

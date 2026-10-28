@@ -155,6 +155,13 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<PlaybackPreferencesReader>();
         services.AddSingleton<IMediaAuthorization, MediaAuthorization>();
         services.AddTransient<PlaybackStarter>();
+        // Each playback keeps its session's control lane: an administrator's pause, stop or message reaches the player.
+        // Made outside the container, as the playback is: a transient disposable resolved from the root provider would be
+        // kept until the app exits.
+        services.AddTransient<PlaybackControlApi>();
+        services.AddSingleton<Func<IPlaybackControlSocket>>(() => new WebSocketPlaybackControlSocket());
+        services.AddSingleton<Func<PlaybackControlLane>>(sp => () => new PlaybackControlLane(sp.GetRequiredService<PlaybackControlApi>(),
+            sp.GetRequiredService<Func<IPlaybackControlSocket>>(), sp.GetRequiredService<TimeProvider>(), sp.GetRequiredService<ILogger<PlaybackControlLane>>()));
         services.AddSingleton<PlaybackStops>();
         services.AddSingleton<ViewerStateChanges>();
         // Media of the saved address takes its local route too.

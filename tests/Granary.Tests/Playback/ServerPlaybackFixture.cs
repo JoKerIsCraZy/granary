@@ -62,6 +62,9 @@ internal sealed class ServerPlaybackFixture
 
     public List<ServerPlaybackStatus> Statuses { get; } = [];
 
+    /// <summary>The session's control lane, when a test talks to the player through it.</summary>
+    public PlaybackControlLane? ControlLane { get; set; }
+
     public static Uri StreamUrl(string session = Session) => new(ScriptedSilo.Base.AbsoluteUri + "/api/v2/stream/" + session);
 
     public static Func<Task<HttpResponseMessage>> Ok(string json) => ScriptedSilo.Json(HttpStatusCode.OK, json);
@@ -92,7 +95,8 @@ internal sealed class ServerPlaybackFixture
             new ImmediateDispatcher(),
             Time,
             Logs.AsFactory(),
-            new ServerPlaybackOptions(new PlaybackRetryPolicy(TimeSpan.Zero, TimeSpan.Zero, TimeSpan.FromSeconds(5))));
+            new ServerPlaybackOptions(new PlaybackRetryPolicy(TimeSpan.Zero, TimeSpan.Zero, TimeSpan.FromSeconds(5))),
+            ControlLane is { } lane ? () => lane : null);
         playback.StatusChanged += (_, status) => Statuses.Add(status);
         return playback;
     }
