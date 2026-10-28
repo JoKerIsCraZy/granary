@@ -1,10 +1,27 @@
+<div align="center">
+
+<img src="src/Granary.App/Assets/Logo/granary-icon.svg" alt="Granary" width="112" height="112">
+
 # Granary
 
 A native Windows client for [Silo Server](https://siloserver.org), the self-hosted media server.
 
-Granary is an independent project. It is not made, endorsed or supported by Silo Media L.L.C. "Silo" is a
+[![CI](https://github.com/JoKeRIsCraZy/granary/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/JoKeRIsCraZy/granary/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/JoKeRIsCraZy/granary?sort=semver)](https://github.com/JoKeRIsCraZy/granary/releases/latest)
+[![Release date](https://img.shields.io/github/release-date/JoKeRIsCraZy/granary)](https://github.com/JoKeRIsCraZy/granary/releases)
+[![License: AGPL-3.0-or-later](https://img.shields.io/badge/license-AGPL--3.0--or--later-blue)](LICENSE)
+[![Windows 10 (2004+) and 11, x64](https://img.shields.io/badge/platform-Windows%2010%20%282004%2B%29%20%7C%2011%20x64-0078D6)](#requirements)
+[![.NET 10](https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com)
+[![WinUI 3](https://img.shields.io/badge/WinUI-3-0078D4)](https://learn.microsoft.com/windows/apps/winui/winui3/)
+
+[Download](https://github.com/JoKeRIsCraZy/granary/releases/latest) · [Build from source](#building-from-source) · [Docs](#documentation) ·
+[Contributing](CONTRIBUTING.md) · [Changelog](CHANGELOG.md) · [Security](SECURITY.md)
+
+<sub>Granary is an independent project. It is not made, endorsed or supported by Silo Media L.L.C. "Silo" is a
 trademark of Silo Media L.L.C.; Granary uses the name only to say which server it works with, as Silo's
-[trademark policy](https://github.com/Silo-Server/siloserver.org/blob/main/TRADEMARK.md) allows.
+[trademark policy](https://github.com/Silo-Server/siloserver.org/blob/main/TRADEMARK.md) allows.</sub>
+
+</div>
 
 Granary is built with C# / .NET 10, WinUI 3 (Windows App SDK) and libmpv. It plays as much as possible with
 Direct Play, so the server rarely has to transcode. Its look follows Silo's web app and its behaviour follows
@@ -51,8 +68,8 @@ Profiles hide libraries the same way they do on the web. The full description of
 ## Install
 
 Granary will ship as a per-user setup (no administrator rights) and as a portable zip. Both update
-themselves in the background with [Velopack](https://velopack.io). The packages will be on the releases page
-of this repository. <!-- TODO: link the releases page once the repository is public. -->
+themselves in the background with [Velopack](https://velopack.io). The packages will be on the
+[releases page](https://github.com/JoKeRIsCraZy/granary/releases/latest).
 [docs/release.md](docs/release.md) describes what a release contains and how updates work.
 
 ## Building from source

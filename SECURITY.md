@@ -9,7 +9,8 @@ updates itself, so staying on the latest release is the default.
 
 Please report security problems privately. Do not open a public issue, pull request or discussion about them.
 
-- Use **Report a vulnerability** on this repository's **Security** tab (GitHub private vulnerability reporting).
+- Use **Report a vulnerability** on this repository's **Security** tab (GitHub private vulnerability reporting):
+  <https://github.com/JoKeRIsCraZy/granary/security/advisories/new>.
   <!-- TODO: enable private vulnerability reporting in the repository settings once it is public. -->
 - Or email **TODO: security contact address**.
 

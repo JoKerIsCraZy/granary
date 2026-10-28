@@ -7,8 +7,8 @@ Everyone taking part follows the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Report a problem
 
-- Search the open issues first. If one covers your problem, add what is new there.
-- Open an issue with the **Bug report** form. It asks for:
+- Search the [open issues](https://github.com/JoKeRIsCraZy/granary/issues) first. If one covers your problem, add what is new there.
+- Open an issue with the [**Bug report** form](https://github.com/JoKeRIsCraZy/granary/issues/new/choose). It asks for:
   - what you saw, the exact steps, and what you expected
   - Granary's version (Settings → About)
   - how you installed Granary
