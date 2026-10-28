@@ -120,12 +120,15 @@ public sealed partial class CardPresentationSettings : ObservableObject
 
     private async Task ClearAsync(string scope)
     {
+        var owner = Owner();
         // After the saves on their way, or one of them would put a choice back.
         await _saves.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing | ConfigureAwaitOptions.ContinueOnCapturedContext);
-        if (_session is not { State: SessionState.Ready, ActiveServer: { } server })
+        // For the profile acting when it was asked: another one's choice stays.
+        if (Owner() != owner || _session is not { State: SessionState.Ready, ActiveServer: { } server })
         {
             return;
         }
+        bool cleared = true;
         try
         {
             await _settings.ClearValueAsync(server.BaseUri, Key, scope);
@@ -137,6 +140,19 @@ public sealed partial class CardPresentationSettings : ObservableObject
         catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex))
         {
             _logger.LogWarning("Resetting the poster settings failed: {Failure}", ApiFailureText.Describe(ex));
+            cleared = false;
+        }
+        if (cleared && Owner() == owner)
+        {
+            // Gone from the server: a read again that fails keeps the sizes, but not a choice that is no longer there.
+            if (scope == SettingScopes.ProfileDevice)
+            {
+                HasDeviceOverride = false;
+            }
+            else
+            {
+                HasOverride = false;
+            }
         }
         _loadedFor = null;
         await LoadIfNewAsync();
@@ -146,7 +162,7 @@ public sealed partial class CardPresentationSettings : ObservableObject
     private Task QueueSave(CardPresentation value)
     {
         int generation = ++_saveGeneration;
-        var owner = (_session.ActiveServer?.Id, _session.ProfileId);
+        var owner = Owner();
         _savesQueued++;
         return _saves = SaveInTurnAsync(_saves, value, generation, owner);
     }
@@ -156,7 +172,7 @@ public sealed partial class CardPresentationSettings : ObservableObject
         await previous.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing | ConfigureAwaitOptions.ContinueOnCapturedContext);
         try
         {
-            if (generation == _saveGeneration && owner == (_session.ActiveServer?.Id, _session.ProfileId))
+            if (generation == _saveGeneration && owner == Owner())
             {
                 await SaveAsync(value);
             }
@@ -165,10 +181,11 @@ public sealed partial class CardPresentationSettings : ObservableObject
         {
             if (--_savesQueued == 0 && _saveFailed)
             {
-                // Refused or lost: once nothing else is on its way, show what the server has.
+                // Refused or lost: once nothing else is on its way, show what the server has. This save is the last one on
+                // its way, so the read does not wait for it.
                 _saveFailed = false;
                 _loadedFor = null;
-                await LoadIfNewAsync();
+                await LoadIfNewAsync(Task.CompletedTask);
             }
         }
     }
@@ -190,9 +207,12 @@ public sealed partial class CardPresentationSettings : ObservableObject
         }
     }
 
-    private Task LoadIfNewAsync()
+    private Task LoadIfNewAsync() => LoadIfNewAsync(_saves);
+
+    // The read waits for the saves on their way: the server's answer before one lands would put the old choice back.
+    private Task LoadIfNewAsync(Task saves)
     {
-        var key = (_session.ActiveServer?.Id, _session.ProfileId);
+        var key = Owner();
         if (_session is not { State: SessionState.Ready, ActiveServer: { } server } || _session.ProfileId is null)
         {
             _loadedFor = null;
@@ -208,12 +228,18 @@ public sealed partial class CardPresentationSettings : ObservableObject
         {
             State = CardPresentationState.Loading;
         }
-        return LoadAsync(server.BaseUri, key, ++_loads);
+        return LoadAsync(server.BaseUri, key, ++_loads, saves);
     }
 
-    private async Task LoadAsync(Uri server, (string? ServerId, string? ProfileId) key, int load)
+    private async Task LoadAsync(Uri server, (string? ServerId, string? ProfileId) key, int load, Task saves)
     {
         int edits = _edits;
+        await saves.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing | ConfigureAwaitOptions.ContinueOnCapturedContext);
+        if (load != _loads)
+        {
+            // A later read is on its way.
+            return;
+        }
         EffectiveSetting? item = null;
         var state = CardPresentationState.Ready;
         try
@@ -231,7 +257,7 @@ public sealed partial class CardPresentationSettings : ObservableObject
             _logger.LogWarning("Reading the poster settings failed: {Failure}", ApiFailureText.Describe(ex));
             state = CardPresentationState.Unavailable;
         }
-        if (load != _loads || (_session.ActiveServer?.Id, _session.ProfileId) != key)
+        if (load != _loads || Owner() != key)
         {
             return;
         }
@@ -268,6 +294,8 @@ public sealed partial class CardPresentationSettings : ObservableObject
         HasOverride = item?.Source == SettingScopes.ProfileClient;
         HasDeviceOverride = item?.Source == SettingScopes.ProfileDevice;
     }
+
+    private (string? ServerId, string? ProfileId) Owner() => (_session.ActiveServer?.Id, _session.ProfileId);
 
     // Changed can come from a background thread (a sign-out by the authentication handler).
     private void OnSessionChanged(object? sender, EventArgs e) => _dispatcher.Post(() => Working = LoadIfNewAsync());

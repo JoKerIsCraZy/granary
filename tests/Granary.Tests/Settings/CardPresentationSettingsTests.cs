@@ -190,6 +190,43 @@ public sealed class CardPresentationSettingsTests
         Assert.False(settings.HasOverride);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task AResetThatLanded_LeavesNoChoiceOfItsOwn_ThoughTheReadAfterFails(bool thisPc)
+    {
+        _harness.Answer(EffectivePath, thisPc ? Answer("profile_device", """{ "poster_size": "large", "caption": "title" }""") : DesktopsOwn);
+        var settings = Create();
+        await settings.StartAsync();
+        _harness.Silo.On(HttpMethod.Get, EffectivePath, ScriptedSilo.Problem(503, "unavailable"));
+
+        await (thisPc ? settings.FollowOtherComputersAsync() : settings.ResetAsync());
+
+        Assert.Single(_harness.Silo.SentTo(HttpMethod.Delete, ValuePath));
+        Assert.False(settings.HasOverride);
+        Assert.False(settings.HasDeviceOverride);
+        Assert.True(settings.CanEdit);
+    }
+
+    [Fact]
+    public async Task AResetAskedBeforeAnotherProfileTookOver_DropsNothingOfTheOthers()
+    {
+        _harness.Answer(EffectivePath, DesktopsOwn);
+        var settings = Create();
+        await settings.StartAsync();
+        var release = new TaskCompletionSource();
+        _harness.Silo.On(HttpMethod.Put, ValuePath, LibraryHarness.Held(release, "{}"));
+        var saving = settings.SetAsync(settings.Shown with { PosterSize = PosterSize.Large });
+        var resetting = settings.ResetAsync();
+
+        _harness.Session.ProfileId = "8";
+        _harness.Session.RaiseChanged();
+        release.SetResult();
+        await Task.WhenAll(saving, resetting, settings.Working);
+
+        Assert.Empty(_harness.Silo.SentTo(HttpMethod.Delete, ValuePath));
+    }
+
     [Fact]
     public async Task AnOlderServer_ShowsTheDefault_AndCannotBeEdited()
     {
@@ -264,6 +301,27 @@ public sealed class CardPresentationSettingsTests
         await reading;
         await saving;
 
+        Assert.Equal(PosterSize.Large, settings.Shown.PosterSize);
+        Assert.True(settings.HasOverride);
+    }
+
+    [Fact]
+    public async Task AReadAgainWhileAChangeIsOnItsWay_WaitsForIt_AndDoesNotPutTheOldChoiceBack()
+    {
+        var settings = Create();
+        await settings.StartAsync();
+        var release = new TaskCompletionSource();
+        _harness.Silo.On(HttpMethod.Put, ValuePath, LibraryHarness.Held(release, "{}"));
+        var saving = settings.SetAsync(settings.Shown with { PosterSize = PosterSize.Large });
+
+        var reading = settings.RefreshAsync();
+        Assert.Equal(1, _harness.Count(EffectivePath));
+        // What the server has once the change landed.
+        _harness.Answer(EffectivePath, Answer("profile_client", """{ "poster_size": "large", "caption": "title_metadata" }"""));
+        release.SetResult();
+        await Task.WhenAll(saving, reading);
+
+        Assert.Equal(2, _harness.Count(EffectivePath));
         Assert.Equal(PosterSize.Large, settings.Shown.PosterSize);
         Assert.True(settings.HasOverride);
     }

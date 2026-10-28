@@ -185,6 +185,8 @@ public sealed partial class MediaGrid : UserControl
         {
             ShowCaption(VisualTreeHelper.GetChild(Items, i));
         }
+        // Other columns move the cards under the same viewport, whether or not the grid's height changes with them.
+        QueueViewport();
     }
 
     private void ShowCaption(DependencyObject element)
@@ -329,10 +331,11 @@ public sealed partial class MediaGrid : UserControl
         }
     }
 
-    // As many as fit, up to the poster size's columns.
+    // As many as UniformGridLayout puts in a row: as many as fit with a gap after each, even the last, up to the poster size's
+    // columns. A window a gap short of one more column has one less.
     private int Columns()
     {
-        int fit = Math.Max(1, (int)((Items.ActualWidth + GridLayout.MinColumnSpacing) / (GridLayout.MinItemWidth + GridLayout.MinColumnSpacing)));
+        int fit = Math.Max(1, (int)(Items.ActualWidth / (GridLayout.MinItemWidth + GridLayout.MinColumnSpacing)));
         int most = GridLayout.MaximumRowsOrColumns;
         return most > 0 ? Math.Min(most, fit) : fit;
     }
