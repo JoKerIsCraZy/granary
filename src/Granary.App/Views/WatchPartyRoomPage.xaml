@@ -274,7 +274,11 @@
                         <!-- The hero: what plays, what is up next, or the vote's leader. -->
                         <Border Style="{StaticResource PanelStyle}" Padding="0" Visibility="{x:Bind ViewModel.ShowsHero, Mode=OneWay}">
                             <Grid>
-                                <Image Source="{x:Bind views:WatchPartyRoomPage.Backdrop(ViewModel.HeroBackdrop), Mode=OneWay}" Stretch="UniformToFill" Opacity="0.22" />
+                                <!-- A brush, not an Image: the backdrop fills the hero without setting its height, which the poster sets, as
+                                     the web's StagedHero draws it behind (absolute inset-0). -->
+                                <Grid.Background>
+                                    <ImageBrush ImageSource="{x:Bind views:WatchPartyRoomPage.Backdrop(ViewModel.HeroBackdrop), Mode=OneWay}" Stretch="UniformToFill" Opacity="0.22" />
+                                </Grid.Background>
                                 <Grid Padding="24" ColumnSpacing="22">
                                     <Grid.Background>
                                         <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
