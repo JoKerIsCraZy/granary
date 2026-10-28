@@ -22,6 +22,8 @@ public sealed class PersonalListViewModelTests
     {
         // The watchlist's second tab has its own tests (WatchlistTitlesViewModelTests); here the server keeps no such titles.
         _harness.Answer(WatchlistTitlesViewModelTests.StatusPath, """{ "requests_enabled": false }""");
+        // Whose collection it is has its own tests (PersonalListCollectionTests); here it can't be read.
+        _harness.Silo.On(HttpMethod.Get, "api/v2/collections/u1", ScriptedSilo.Problem(404, "not_found"));
     }
 
     private PersonalListViewModel Create() => WatchlistTitlesViewModelTests.CreateList(_harness, _changes);

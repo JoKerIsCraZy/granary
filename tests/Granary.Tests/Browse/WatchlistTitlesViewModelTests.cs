@@ -43,14 +43,16 @@ public sealed class WatchlistTitlesViewModelTests
             harness.Logs.For<WatchlistTitlesViewModel>(), changes);
     }
 
-    internal static PersonalListViewModel CreateList(LibraryHarness harness, ViewerStateChanges changes) => new(
+    internal static PersonalListViewModel CreateList(LibraryHarness harness, ViewerStateChanges changes, IConfirmation? confirmation = null) => new(
         harness.Session,
         new CatalogApi(harness.Silo.Http),
         new ImageParameterCache(new ImagesApi(harness.Silo.Http), harness.Logs.For<ImageParameterCache>()),
         harness.Navigation,
         CreateTitles(harness, changes),
         harness.Logs.For<PersonalListViewModel>(),
-        changes);
+        changes,
+        new CollectionsApi(harness.Silo.Http),
+        confirmation ?? new FakeConfirmation());
 
     private WatchlistTitlesViewModel Create() => CreateTitles(_harness, _harness.ViewerState);
 

@@ -53,14 +53,19 @@ public sealed partial class PersonalListViewModel : ObservableObject
     private readonly INavigationService _navigation;
     private readonly ILogger<PersonalListViewModel> _logger;
     private readonly ViewerStateChanges? _changes;
+    private readonly CollectionsApi? _collections;
+    private readonly IConfirmation? _confirmation;
     private (string? ServerId, string? ProfileId, string Source, CollectionRouteParameter? Collection)? _loadedFor;
     private CollectionRouteParameter? _collection;
     private long _loadedVersion;
     private int _starts;
 
     public PersonalListViewModel(ISessionManager session, CatalogApi catalog, ImageParameterCache images, INavigationService navigation,
-        WatchlistTitlesViewModel titles, ILogger<PersonalListViewModel> logger, ViewerStateChanges? changes = null)
+        WatchlistTitlesViewModel titles, ILogger<PersonalListViewModel> logger, ViewerStateChanges? changes = null, CollectionsApi? collections = null,
+        IConfirmation? confirmation = null)
     {
+        _collections = collections;
+        _confirmation = confirmation;
         _session = session;
         _catalog = catalog;
         _images = images;
@@ -182,12 +187,14 @@ public sealed partial class PersonalListViewModel : ObservableObject
     public Task ShowCollectionAsync(CollectionRouteParameter collection)
     {
         ArgumentNullException.ThrowIfNull(collection);
+        Task owner = Task.CompletedTask;
         if (collection != _collection)
         {
             Show(collection.Source, collection.Title, CollectionDescription, collection);
+            owner = ReadCollectionAsync(collection);
         }
         Titles.Deactivate();
-        return LoadUnlessCurrentAsync();
+        return Task.WhenAll(LoadUnlessCurrentAsync(), owner);
     }
 
     private void Show(string source, string title, string description, CollectionRouteParameter? collection)

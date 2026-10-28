@@ -43,6 +43,29 @@
                     <TextBlock Text="{x:Bind ViewModel.Description, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}"
                                Foreground="{StaticResource SiloMutedBrush}" TextWrapping="Wrap" />
                 </StackPanel>
+                <!-- The profile's own collection: Edit, and ⋯ Delete…, as the web's collection page. -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Top"
+                            Visibility="{x:Bind ViewModel.IsOwnCollection, Mode=OneWay}">
+                    <Button Style="{StaticResource HistoryButtonStyle}" Command="{x:Bind ViewModel.EditCollectionCommand}"
+                            Visibility="{x:Bind ViewModel.CanEditCollection, Mode=OneWay}" AutomationProperties.Name="Edit">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon Glyph="&#xE70F;" FontSize="13" />
+                            <TextBlock Text="Edit" />
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource SiloIconButtonStyle}" AutomationProperties.Name="More actions" ToolTipService.ToolTip="More actions">
+                        <FontIcon Glyph="&#xE712;" FontSize="16" />
+                        <Button.Flyout>
+                            <MenuFlyout Placement="BottomEdgeAlignedRight">
+                                <MenuFlyoutItem Text="Delete&#x2026;" Command="{x:Bind ViewModel.DeleteCollectionCommand}">
+                                    <MenuFlyoutItem.Icon>
+                                        <FontIcon Glyph="&#xE74D;" />
+                                    </MenuFlyoutItem.Icon>
+                                </MenuFlyoutItem>
+                            </MenuFlyout>
+                        </Button.Flyout>
+                    </Button>
+                </StackPanel>
                 <!-- "18 RESULTS" behind a hairline, as on the web. -->
                 <Border Grid.Column="1" VerticalAlignment="Bottom" BorderBrush="{StaticResource SiloBorderBrush}" BorderThickness="1,0,0,0"
                         Padding="14,0,0,0" Visibility="{x:Bind Both(ViewModel.Grid.IsReady, ViewModel.ShowsLibrary), Mode=OneWay}">
@@ -54,6 +77,9 @@
                     </StackPanel>
                 </Border>
             </Grid>
+
+            <TextBlock Text="{x:Bind ViewModel.CollectionNotice, Mode=OneWay}" Visibility="{x:Bind ViewModel.HasCollectionNotice, Mode=OneWay}"
+                       Foreground="{StaticResource SiloPrimaryBrush}" FontSize="13" TextWrapping="Wrap" />
 
             <!-- The watchlist's tabs: the list, and the titles the library doesn't have yet with their count and an amber dot. -->
             <Grid Visibility="{x:Bind ViewModel.ShowsTabs, Mode=OneWay}">
