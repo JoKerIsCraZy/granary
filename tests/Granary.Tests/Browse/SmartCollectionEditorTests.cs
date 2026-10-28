@@ -39,6 +39,8 @@ public sealed class SmartCollectionEditorTests
         _harness.Silo.On(HttpMethod.Get, CollectionPath, Versioned(Saved, "\"rev-1\""));
         _harness.Silo.On(HttpMethod.Post, PreviewPath, ScriptedSilo.Json(HttpStatusCode.OK, Preview));
         _harness.Answer("api/v2/collections/capabilities", """{ "item_reorder": true }""");
+        // The poster comes from the list; these collections have none (CollectionEditorLookTests has the poster).
+        _harness.Answer("api/v2/collections", """{ "items": [] }""");
         _harness.Answer("api/v2/catalog/search/capabilities", """{ "state": "available", "allowed": true, "extended_query_rules": true }""");
         _harness.Answer("api/v2/catalog/filters", LibraryPayloads.Filters);
         _harness.Answer("api/v2/profiles", """{ "items": [ { "id": "7", "name": "Elena", "is_primary": true } ], "avatar_upload_enabled": false }""");

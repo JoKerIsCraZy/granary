@@ -37,6 +37,8 @@ public sealed class CollectionEditorViewModelTests
         _harness.Silo.On(HttpMethod.Get, CollectionPath, Versioned(Saved, "\"rev-1\""));
         _harness.Answer(ItemsPath, Items);
         _harness.Answer("api/v2/collections/capabilities", """{ "item_reorder": true }""");
+        // The poster comes from the list; these collections have none (CollectionEditorLookTests has the poster).
+        _harness.Answer("api/v2/collections", """{ "items": [] }""");
         _harness.Silo.On(HttpMethod.Get, OrderPath, Versioned("""{ "ordered_ids": ["movie:alien-1979", "movie:heat-1995"], "has_more": false }""", "\"o1\""));
         _harness.Answer("api/v2/profiles", """
             { "items": [ { "id": "7", "name": "Elena", "is_primary": true, "has_pin": false, "is_child": false },

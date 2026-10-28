@@ -23,6 +23,39 @@ public sealed class CollectionsApi(SiloHttp http)
             CollectionsJsonContext.Default.PersonalCollectionList, cancellationToken);
     }
 
+    /// <summary>The largest poster image the server takes.</summary>
+    public const int PosterMaxBytes = 10 << 20;
+
+    /// <summary>The image types a poster may be.</summary>
+    public static IReadOnlyList<string> PosterTypes { get; } = ["image/jpeg", "image/png", "image/webp"];
+
+    /// <summary>Gives a collection a poster from an image file (one of <see cref="PosterTypes"/>, at most <see cref="PosterMaxBytes"/>).</summary>
+    public async Task<PersonalCollection> SetPosterAsync(Uri server, string id, ReadOnlyMemory<byte> image, string fileName, string contentType,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(fileName);
+        ArgumentException.ThrowIfNullOrWhiteSpace(contentType);
+        var part = new ReadOnlyMemoryContent(image);
+        part.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(contentType);
+        using var form = new MultipartFormDataContent { { part, "poster", fileName } };
+        return await http.SendFormAsync(HttpMethod.Put, server, Path(id) + "/poster", SiloAuth.Profile, form,
+            CollectionsJsonContext.Default.PersonalCollection, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>Gives a collection a poster the server fetches from <paramref name="sourceUrl"/>.</summary>
+    public async Task<PersonalCollection> SetPosterFromLinkAsync(Uri server, string id, string sourceUrl, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(sourceUrl);
+        using var form = new MultipartFormDataContent { { new StringContent(sourceUrl), "source_url" } };
+        return await http.SendFormAsync(HttpMethod.Put, server, Path(id) + "/poster", SiloAuth.Profile, form,
+            CollectionsJsonContext.Default.PersonalCollection, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>Takes the collection's own poster away: it shows the collage of its titles, or none.</summary>
+    public Task RemovePosterAsync(Uri server, string id, CancellationToken cancellationToken = default) =>
+        http.SendAsync(HttpMethod.Delete, server, Path(id) + "/image" + new QueryBuilder().Add("type", "poster").ToString(), SiloAuth.Profile,
+            cancellationToken);
+
     public Task<CollectionCapabilities> GetCapabilitiesAsync(Uri server, CancellationToken cancellationToken = default) =>
         http.GetAsync(server, "api/v2/collections/capabilities", SiloAuth.Profile, CollectionsJsonContext.Default.CollectionCapabilities, cancellationToken);
 

@@ -198,7 +198,13 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   Order (sort, direction, max titles), a saved default sort with Clear, and the live preview under it ("Live preview ·
   40 titles match · showing 24" over posters, ghosts with "No titles match yet", or "The preview didn't load. You can
   still save."). Before Create the save bar says how many match now; the meta line adds "Updates itself as titles are
-  added". The poster (Look) and "Rows that show it" come later.
+  added". Last comes Look, while the server takes artwork: closed, one line with the poster's thumbnail, "Poster: a
+  collage of its titles" (an image, a new image, a collage once its titles have posters, none) and Change; open, the
+  112 px tile with its pencil menu (Upload image… for a JPEG, PNG or WebP of 10 MB at most, Paste a link… with the
+  "Poster image link" box, Use the collage or Remove poster), the caption, and "The new poster saves when you press
+  Save." with Undo. The poster is part of the draft ("Poster not saved"); it saves after the collection, and one that
+  fails stays with "Couldn't save the poster. …" and Retry while the card opens by itself. After a save without a
+  poster of its own, the collage is waited for a while. "Rows that show it" comes later.
 - For You (`ForYouPage`, the web's `pages/Recommendations.tsx`): the title, "Personalized picks…" only when a row comes
   from the profile's history, the taste profile card on the right (top genres filled, favourite directors outlined),
   then a row per recommendation. A row's Explore all opens it in full (`RecommendationSectionPage`: name, "60 titles",

@@ -36,10 +36,15 @@ public sealed class SiloHttp(HttpClient http)
     }
 
     /// <summary>For operations that take a form (<c>multipart/form-data</c>), as file uploads do.</summary>
-    public async Task<TResponse> PostFormAsync<TResponse>(Uri server, string path, SiloAuth auth, MultipartFormDataContent form,
+    public Task<TResponse> PostFormAsync<TResponse>(Uri server, string path, SiloAuth auth, MultipartFormDataContent form,
+        JsonTypeInfo<TResponse> responseType, CancellationToken cancellationToken) =>
+        SendFormAsync(HttpMethod.Post, server, path, auth, form, responseType, cancellationToken);
+
+    /// <summary>As <see cref="PostFormAsync{TResponse}"/>, for a form sent with another method: a poster is a <c>PUT</c>.</summary>
+    public async Task<TResponse> SendFormAsync<TResponse>(HttpMethod method, Uri server, string path, SiloAuth auth, MultipartFormDataContent form,
         JsonTypeInfo<TResponse> responseType, CancellationToken cancellationToken)
     {
-        using var request = Create(HttpMethod.Post, server, path, auth);
+        using var request = Create(method, server, path, auth);
         request.Content = form;
         return await SendAsync(request, responseType, cancellationToken).ConfigureAwait(false);
     }

@@ -154,10 +154,11 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
             SmartSortConfig.Key(Rules.SortConfig))
         : new(Name.Trim(), Description.Trim(), new CollectionShowOnly(Watch.Value, Media.Value), IsShared, OnCollectionsTab);
 
-    public IReadOnlyList<string> ChangedFields => IsNew ? [] : Draft.ChangedFrom(_saved);
+    /// <summary>The fields the save bar names: the draft's that changed, then a staged poster.</summary>
+    public IReadOnlyList<string> ChangedFields => IsNew ? [] : [.. Draft.ChangedFrom(_saved), .. IsPosterStaged ? ["Poster"] : Array.Empty<string>()];
 
     /// <summary>Leaving now would lose something: a changed field, or for a new collection anything at all.</summary>
-    public bool HasUnsavedChanges => !_deleted && (IsNew ? !Draft.SameAs(_saved) || Titles.Count > 0 : ChangedFields.Count > 0);
+    public bool HasUnsavedChanges => !_deleted && (IsNew ? !Draft.SameAs(_saved) || Titles.Count > 0 || IsPosterStaged : ChangedFields.Count > 0);
 
     /// <summary>A new collection's bar is always there; a saved one's while something changed or a save failed.</summary>
     public bool ShowsSaveBar => IsReady && (IsNew || ChangedFields.Count > 0 || HasSaveError);
@@ -186,6 +187,7 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
             return;
         }
         ResetSmart();
+        ResetLook();
         var profiles = ReadOtherProfilesAsync(server.BaseUri);
         var capabilities = ReadCapabilitiesAsync(server.BaseUri);
         if (collectionId is null)
@@ -213,6 +215,12 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
         }
         await profiles;
         await capabilities;
+        // Whether the poster card shows, and what a missing poster falls back to, come with the capabilities.
+        LookChanged();
+        if (IsCreated && IsReady && CollectionId is { } id)
+        {
+            await ReadListedPosterAsync(server.BaseUri, id);
+        }
         if (IsCreated && IsReady && !IsSmart)
         {
             await LoadTitlesAsync();
@@ -248,6 +256,8 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
         Conflicts = [];
         _theirs = null;
         SaveError = "";
+        IsPastingLink = false;
+        Stage(null);
     }
 
     /// <summary>Changed in both places: takes the other side's values for those fields.</summary>
@@ -325,7 +335,11 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
 
     partial void OnOnCollectionsTabChanged(bool value) => DraftChanged();
 
-    partial void OnStateChanged(LibraryLoadState value) => OnPropertyChanged(nameof(ShowsSaveBar));
+    partial void OnStateChanged(LibraryLoadState value)
+    {
+        OnPropertyChanged(nameof(ShowsSaveBar));
+        OnPropertyChanged(nameof(ShowsLook));
+    }
 
     partial void OnSaveErrorChanged(string value) => DraftChanged();
 
@@ -382,7 +396,8 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
         try
         {
             var draft = Draft;
-            var made = await _collections.CreateAsync(server.BaseUri, draft.ToCreate());
+            // A link goes in the create; a file is put once the collection exists.
+            var made = await _collections.CreateAsync(server.BaseUri, draft.ToCreate() with { PosterSourceUrl = StagedPoster?.Link });
             var staged = Titles.ToList();
             // Titles added from here on wait for these, and go after them.
             _maxPosition = staged.Count - 1;
@@ -407,6 +422,7 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
                 await LoadTitlesAsync();
                 ShowFailedAdds(failed);
             }
+            await SavePosterAsync(server.BaseUri, made.Id, justCreated: true);
         }
         catch (Exception ex) when (LibraryErrors.IsExpected(ex))
         {
@@ -442,6 +458,8 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
                     _version = saved.Version.Length > 0 ? saved.Version : null;
                     _saved = CollectionDraft.Of(saved.Value);
                     DraftChanged();
+                    // The poster after the collection: one that fails stays staged, and the collection is saved.
+                    await SavePosterAsync(server.BaseUri, id, justCreated: false);
                     return;
                 }
                 catch (SiloApiException ex) when (ex.Status == 412 && attempt == 0)

@@ -32,6 +32,7 @@ public sealed partial class CollectionEditorPage : Page, ILeaveGuard
         ViewModel = App.Services.GetRequiredService<CollectionEditorViewModel>();
         BackToCollectionsCommand = new RelayCommand(() => App.Services.GetRequiredService<INavigationService>().ShowSection(AppRoute.Collections));
         InitializeComponent();
+        FollowLook();
     }
 
     public CollectionEditorViewModel ViewModel { get; }
@@ -68,6 +69,7 @@ public sealed partial class CollectionEditorPage : Page, ILeaveGuard
         {
             var route = e.Parameter as CollectionEditorRouteParameter;
             await ViewModel.ActivateAsync(route?.CollectionId, route?.Kind);
+            await ShowPosterPreviewAsync();
             if (ViewModel.IsNew)
             {
                 NameBox.Focus(FocusState.Programmatic);

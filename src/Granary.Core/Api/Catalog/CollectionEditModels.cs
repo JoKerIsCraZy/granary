@@ -27,6 +27,9 @@ public sealed record PersonalCollectionCreate
 
     /// <summary>A smart collection's <c>sort_config</c>, sent back as stored (<c>{}</c> for none).</summary>
     public JsonElement? SortConfig { get; init; }
+
+    /// <summary>An image link the server fetches and keeps as the poster; left out for none.</summary>
+    public string? PosterSourceUrl { get; init; }
 }
 
 /// <summary>The body of <c>PATCH /api/v2/collections/{id}</c>: every field the editor owns, each time.</summary>

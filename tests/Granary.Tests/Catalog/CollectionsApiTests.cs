@@ -195,4 +195,53 @@ public sealed class CollectionsApiTests
         Assert.True(capabilities.ItemReorder);
         Assert.False(capabilities.PosterCollages);
     }
+    [Fact]
+    public async Task APosterFile_IsPutAsAForm()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        _silo.On(HttpMethod.Put, "api/v2/collections/c1/poster", ScriptedSilo.Json(HttpStatusCode.OK, Collection));
+
+        await Api.SetPosterAsync(Server, "c1", new byte[] { 1, 2, 3 }, "rainy.png", "image/png", ct);
+
+        var sent = Assert.Single(_silo.Sent);
+        Assert.Equal(HttpMethod.Put, sent.Method);
+        Assert.Contains("name=poster", sent.Body, StringComparison.Ordinal);
+        Assert.Contains("filename=rainy.png", sent.Body, StringComparison.Ordinal);
+        Assert.Contains("Content-Type: image/png", sent.Body, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task APosterLink_IsPutAsASourceUrl()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        _silo.On(HttpMethod.Put, "api/v2/collections/c1/poster", ScriptedSilo.Json(HttpStatusCode.OK, Collection));
+
+        await Api.SetPosterFromLinkAsync(Server, "c1", "https://images.example/rainy.jpg", ct);
+
+        string body = Assert.Single(_silo.Sent).Body!;
+        Assert.Contains("name=source_url", body, StringComparison.Ordinal);
+        Assert.Contains("https://images.example/rainy.jpg", body, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task RemovingThePoster_DeletesThePosterImage()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        _silo.On(HttpMethod.Delete, "api/v2/collections/c1/image", ScriptedSilo.NoContent());
+
+        await Api.RemovePosterAsync(Server, "c1", ct);
+
+        Assert.Equal("/silo/api/v2/collections/c1/image?type=poster", Assert.Single(_silo.Sent).Uri.PathAndQuery);
+    }
+
+    [Fact]
+    public async Task ACreate_SendsAPosterLinkOnlyWhenThereIsOne()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        _silo.On(HttpMethod.Post, "api/v2/collections", ScriptedSilo.Json(HttpStatusCode.Created, Collection));
+
+        await Api.CreateAsync(Server, new PersonalCollectionCreate { Name = "Rainy", PosterSourceUrl = "https://images.example/rainy.jpg" }, ct);
+
+        Assert.Equal("https://images.example/rainy.jpg", Body().GetProperty("poster_source_url").GetString());
+    }
 }

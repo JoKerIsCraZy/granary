@@ -34,6 +34,9 @@ public sealed record PersonalCollection
     /// <summary>Presigned and short-lived; empty when there is none.</summary>
     public string? PosterUrl { get; init; }
 
+    /// <summary><see cref="PosterUrl"/> is the server's collage of the titles, not an image someone chose.</summary>
+    public bool PosterIsCollage { get; init; }
+
     /// <summary>A synced list's last sync: <c>running</c>, <c>failed</c>, …; empty until the first.</summary>
     public string LastSyncStatus { get; init => field = value ?? ""; } = "";
 

@@ -996,6 +996,12 @@ read): a missing one answers 428, one changed since 412, after which the client 
 - Order: `GET …/{id}/items/order` → `{ ordered_ids, has_more }` with its own `ETag` (`has_more` above 200 titles: no
   reordering); `PUT …/{id}/items/order` `{ ordered_ids }` (every title) with `If-Match` → `200` and the new `ETag`.
 - `GET /api/v2/collections?contains_item=<content_id>`: the profile's own manual collections carry `contains`.
+- Poster (while `artwork`): only the list carries it (`poster_url`, `poster_is_collage` for the server's collage of the
+  titles, which `poster_collages` offers). `PUT …/{id}/poster`, multipart with `poster` (a JPEG, PNG or WebP file of
+  10 MB at most, its part's `Content-Type` naming it) or `source_url` (a public http(s) address the server fetches) →
+  `200` `PersonalCollection`; `DELETE …/{id}/image?type=poster` → `204`. Neither takes a version. A new collection
+  takes a link as `poster_source_url` in its `POST`; a file goes after it. After a save without a poster of its own
+  the list is read every 3 s for up to 15 s until the collage shows.
 - Smart collections: `collection_type: "smart"` with `query_definition` and `sort_config` on `POST` and `PATCH` (no
   `display_query_definition`). `query_definition` is `{ library_ids: number[] (none: every library the profile sees),
   media_scope? (movie, series, episode, video, audiobook, ebook, manga), match: "all"|"any" (how groups combine),

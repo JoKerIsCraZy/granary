@@ -597,6 +597,121 @@
                             </Grid>
                         </StackPanel>
                     </Border>
+
+                    <!--
+                        Look, last as on the web: closed, one line with the poster's thumbnail, what it shows and Change; open, the
+                        tile with its menu, what's staged (Undo) or why it didn't save (Retry), and the link box.
+                    -->
+                    <Border Style="{StaticResource EditorCardStyle}" Padding="0" AutomationProperties.Name="Look" Visibility="{x:Bind ViewModel.ShowsLook, Mode=OneWay}">
+                        <Grid>
+                            <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Padding="16" CornerRadius="22" BorderThickness="0"
+                                    Background="Transparent" Command="{x:Bind ViewModel.OpenLookCommand}" Visibility="{x:Bind Unless(ViewModel.IsLookOpen), Mode=OneWay}"
+                                    AutomationProperties.Name="{x:Bind LookName(ViewModel.LookSummary), Mode=OneWay}">
+                                <Grid ColumnSpacing="16">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid Width="32" Height="48" CornerRadius="6" BorderBrush="{StaticResource SiloBorderBrush}" BorderThickness="1" Background="#0AFFFFFF">
+                                        <Image x:Name="LookThumb" Stretch="UniformToFill" />
+                                        <FontIcon Glyph="{x:Bind EmptyGlyph(ViewModel.UsesCollage), Mode=OneWay}" FontSize="12" Foreground="{StaticResource SiloMutedBrush}"
+                                                  Visibility="{x:Bind Unless(ViewModel.HasPosterPreview), Mode=OneWay}" />
+                                    </Grid>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                        <TextBlock Text="Look" FontSize="15" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource SiloForegroundBrush}" />
+                                        <TextBlock Text="{x:Bind ViewModel.LookSummary, Mode=OneWay}" FontSize="13" Foreground="{StaticResource SiloMutedBrush}"
+                                                   TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                    <Border Grid.Column="2" VerticalAlignment="Center" BorderBrush="{StaticResource SiloBorderBrush}" BorderThickness="1" CornerRadius="10"
+                                            Padding="12,5">
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <TextBlock Text="Change" FontSize="13.5" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium"
+                                                       Foreground="{StaticResource SiloForegroundBrush}" />
+                                            <FontIcon Glyph="&#xE70D;" FontSize="10" Foreground="{StaticResource SiloMutedBrush}" />
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+                            </Button>
+
+                            <StackPanel Padding="24" Spacing="14" Visibility="{x:Bind ViewModel.IsLookOpen, Mode=OneWay}">
+                                <Grid>
+                                    <TextBlock Text="Look" Style="{StaticResource EditorHeadingStyle}" FontSize="17" VerticalAlignment="Center"
+                                               AutomationProperties.HeadingLevel="Level2" />
+                                    <Button HorizontalAlignment="Right" Style="{StaticResource EditorGhostButtonStyle}" Command="{x:Bind ViewModel.CloseLookCommand}"
+                                            AutomationProperties.Name="Done">
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <TextBlock Text="Done" />
+                                            <FontIcon Glyph="&#xE70E;" FontSize="10" />
+                                        </StackPanel>
+                                    </Button>
+                                </Grid>
+                                <StackPanel Width="112" HorizontalAlignment="Left" Spacing="6">
+                                    <Grid Width="112" Height="168" CornerRadius="10" BorderBrush="{StaticResource SiloBorderBrush}" BorderThickness="1" Background="#0AFFFFFF">
+                                        <Image x:Name="LookTile" Stretch="UniformToFill" AutomationProperties.Name="Poster preview" />
+                                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="6"
+                                                    Visibility="{x:Bind Unless(ViewModel.HasPosterPreview), Mode=OneWay}">
+                                            <FontIcon Glyph="{x:Bind EmptyGlyph(ViewModel.UsesCollage), Mode=OneWay}" FontSize="16" Foreground="{StaticResource SiloMutedBrush}" />
+                                            <TextBlock Text="{x:Bind EmptyLabel(ViewModel.UsesCollage), Mode=OneWay}" FontSize="12" Foreground="{StaticResource SiloMutedBrush}" />
+                                        </StackPanel>
+                                        <Button HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="6" Width="28" Height="28" Padding="0" CornerRadius="8"
+                                                Background="#B3000000" BorderThickness="0" AutomationProperties.Name="Change poster" ToolTipService.ToolTip="Change poster">
+                                            <FontIcon Glyph="&#xE70F;" FontSize="12" Foreground="White" />
+                                            <Button.Flyout>
+                                                <MenuFlyout Placement="BottomEdgeAlignedLeft">
+                                                    <MenuFlyoutItem Text="Upload image&#x2026;" Click="OnUploadPosterClick">
+                                                        <MenuFlyoutItem.Icon>
+                                                            <FontIcon Glyph="&#xE898;" />
+                                                        </MenuFlyoutItem.Icon>
+                                                    </MenuFlyoutItem>
+                                                    <MenuFlyoutItem Text="Paste a link&#x2026;" Command="{x:Bind ViewModel.PastePosterLinkCommand}">
+                                                        <MenuFlyoutItem.Icon>
+                                                            <FontIcon Glyph="&#xE71B;" />
+                                                        </MenuFlyoutItem.Icon>
+                                                    </MenuFlyoutItem>
+                                                    <MenuFlyoutSeparator />
+                                                    <MenuFlyoutItem Text="{x:Bind ViewModel.ClearPosterLabel, Mode=OneWay}" Command="{x:Bind ViewModel.ClearPosterCommand}"
+                                                                    IsEnabled="{x:Bind ViewModel.CanClearPoster, Mode=OneWay}" />
+                                                </MenuFlyout>
+                                            </Button.Flyout>
+                                        </Button>
+                                    </Grid>
+                                    <TextBlock Text="Poster" FontSize="13" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium"
+                                               Foreground="{StaticResource SiloForegroundBrush}" />
+                                    <TextBlock Text="{x:Bind ViewModel.PosterCaption, Mode=OneWay}" Style="{StaticResource EditorHelpStyle}"
+                                               Visibility="{x:Bind ViewModel.HasPosterCaption, Mode=OneWay}" />
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Spacing="10" Visibility="{x:Bind ViewModel.HasPosterError, Mode=OneWay}">
+                                    <TextBlock Text="{x:Bind ViewModel.PosterErrorText, Mode=OneWay}" Foreground="{StaticResource SiloPrimaryBrush}" FontSize="12.5"
+                                               TextWrapping="Wrap" VerticalAlignment="Center" MaxWidth="560" />
+                                    <Button Content="Retry" Style="{StaticResource EditorSmallButtonStyle}" Command="{x:Bind ViewModel.SaveCommand}" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="6" Visibility="{x:Bind ViewModel.ShowsStagedPoster, Mode=OneWay}">
+                                    <TextBlock Text="{x:Bind ViewModel.StagedPosterText, Mode=OneWay}" Style="{StaticResource EditorHelpStyle}" VerticalAlignment="Center" />
+                                    <HyperlinkButton Content="Undo" Padding="0" FontSize="12.5" Foreground="{StaticResource SiloForegroundBrush}"
+                                                     Command="{x:Bind ViewModel.UndoPosterCommand}" />
+                                </StackPanel>
+                                <TextBlock Text="{x:Bind ViewModel.PosterPickError, Mode=OneWay}" Visibility="{x:Bind ViewModel.HasPosterPickError, Mode=OneWay}"
+                                           Foreground="{StaticResource SiloPrimaryBrush}" FontSize="12.5" TextWrapping="Wrap" />
+
+                                <!-- "Paste a link…": the link the server fetches the poster from. -->
+                                <Border MaxWidth="360" HorizontalAlignment="Left" Padding="14" CornerRadius="12" BorderBrush="{StaticResource SiloBorderBrush}"
+                                        BorderThickness="1" Background="{StaticResource SiloSurfaceRaisedBrush}" Visibility="{x:Bind ViewModel.IsPastingLink, Mode=OneWay}">
+                                    <StackPanel Spacing="10">
+                                        <TextBlock Text="Poster image link" Style="{StaticResource EditorLabelStyle}" FontSize="13.5" />
+                                        <TextBox x:Name="PosterLinkBox" Text="{x:Bind ViewModel.PosterLink, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 PlaceholderText="https://" CornerRadius="8" AutomationProperties.Name="Poster image link" KeyDown="OnPosterLinkKeyDown" />
+                                        <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                                            <Button Content="Cancel" Style="{StaticResource EditorGhostButtonStyle}" Command="{x:Bind ViewModel.CancelPosterLinkCommand}" />
+                                            <Button Content="Use link" Style="{StaticResource EditorSmallButtonStyle}" Command="{x:Bind ViewModel.UsePosterLinkCommand}" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
                 </StackPanel>
             </StackPanel>
         </ScrollViewer>
