@@ -102,6 +102,8 @@ public sealed partial class CollectionEditorPage : Page, ILeaveGuard
         }
     }
 
+    void ILeaveGuard.Rearm() => _released = false;
+
     // A column capped by MaxWidth in a ScrollViewer ends up off centre, so its width is set here.
     private void OnScrollerSizeChanged(object sender, SizeChangedEventArgs e) => Column.Width = Math.Min(ColumnWidth, e.NewSize.Width);
 
@@ -119,11 +121,10 @@ public sealed partial class CollectionEditorPage : Page, ILeaveGuard
                 CloseButtonText = "Cancel",
                 DefaultButton = ContentDialogButton.Close,
             };
+            // A deleted collection has nothing left to lose: the editor lets go of it by itself.
             if (await dialog.ShowAsync() == ContentDialogResult.Primary)
             {
-                _released = true;
                 await ViewModel.DeleteAsync();
-                _released = !ViewModel.HasDeleteError;
             }
         }
         catch (Exception ex)

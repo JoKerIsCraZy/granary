@@ -329,6 +329,95 @@ public sealed class CollectionEditorViewModelTests
         Assert.Equal("Show to other profiles not saved", editor.SaveBarMessage);
     }
 
+    [Fact]
+    public async Task ATitleAdded_AfterARenameElsewhere_StillAsksForAPick()
+    {
+        _harness.Silo.On(HttpMethod.Put, "api/v2/collections/c1/items/movie%3Atotoro", ScriptedSilo.NoContent());
+        var editor = await EditAsync();
+        editor.Name = "Ghibli";
+        _harness.Silo.On(HttpMethod.Get, CollectionPath, Versioned(Saved.Replace("Ghibli Night", "Totoro Night", StringComparison.Ordinal), "\"rev-2\""));
+
+        await editor.AddTitleCommand.ExecuteAsync(new CollectionSearchResult("movie:totoro", "My Neighbor Totoro", "", null, false, editor.AddTitleCommand));
+
+        Assert.Equal(["Name"], editor.Conflicts);
+        Assert.Equal("Ghibli", editor.Name);
+        Assert.False(editor.SaveCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public async Task ARereadThatFails_KeepsTheVersion_SoASaveMergesInsteadOfOverwriting()
+    {
+        _harness.Silo.On(HttpMethod.Put, "api/v2/collections/c1/items/movie%3Atotoro", ScriptedSilo.NoContent());
+        var editor = await EditAsync();
+        _harness.Silo.On(HttpMethod.Get, CollectionPath, ScriptedSilo.Problem(503, "unavailable"));
+        await editor.AddTitleCommand.ExecuteAsync(new CollectionSearchResult("movie:totoro", "My Neighbor Totoro", "", null, false, editor.AddTitleCommand));
+        _harness.Silo.On(HttpMethod.Patch, CollectionPath, Versioned(Saved, "\"rev-3\""));
+
+        editor.Name = "Ghibli";
+        await editor.SaveCommand.ExecuteAsync(null);
+
+        Assert.Equal("\"rev-1\"", Last(HttpMethod.Patch, CollectionPath).IfMatch);
+    }
+
+    [Fact]
+    public async Task TwoQuickAdds_TakeTheirOwnPlaces()
+    {
+        _harness.Silo.On(HttpMethod.Put, "api/v2/collections/c1/items/movie%3Atotoro", ScriptedSilo.NoContent());
+        _harness.Silo.On(HttpMethod.Put, "api/v2/collections/c1/items/movie%3Aponyo", ScriptedSilo.NoContent());
+        var editor = await EditAsync();
+
+        var first = editor.AddTitleCommand.ExecuteAsync(new CollectionSearchResult("movie:totoro", "My Neighbor Totoro", "", null, false, editor.AddTitleCommand));
+        var second = editor.AddTitleCommand.ExecuteAsync(new CollectionSearchResult("movie:ponyo", "Ponyo", "", null, false, editor.AddTitleCommand));
+        await Task.WhenAll(first, second);
+
+        Assert.Equal("""{"position":2}""", Last(HttpMethod.Put, "api/v2/collections/c1/items/movie%3Atotoro").Body);
+        Assert.Equal("""{"position":3}""", Last(HttpMethod.Put, "api/v2/collections/c1/items/movie%3Aponyo").Body);
+        Assert.Equal(["Alien", "Heat", "My Neighbor Totoro", "Ponyo"], editor.Titles.Select(t => t.Title));
+    }
+
+    [Fact]
+    public async Task AMove_EndsTheUndoOfARemovedTitle()
+    {
+        _harness.Answer(ItemsPath, """
+            { "items": [ { "media_item_id": "movie:alien-1979", "position": 0, "title": "Alien" }, { "media_item_id": "movie:heat-1995", "position": 1, "title": "Heat" },
+                         { "media_item_id": "movie:totoro", "position": 2, "title": "Totoro" } ], "page": { "has_more": false } }
+            """);
+        _harness.Silo.On(HttpMethod.Get, OrderPath,
+            Versioned("""{ "ordered_ids": ["movie:alien-1979", "movie:heat-1995", "movie:totoro"], "has_more": false }""", "\"o1\""),
+            Versioned("""{ "ordered_ids": ["movie:heat-1995", "movie:totoro"], "has_more": false }""", "\"o2\""));
+        _harness.Silo.On(HttpMethod.Put, OrderPath, Versioned("""{ "ordered_ids": ["movie:totoro", "movie:heat-1995"], "has_more": false }""", "\"o3\""));
+        _harness.Silo.On(HttpMethod.Delete, "api/v2/collections/c1/items/movie%3Aalien-1979", ScriptedSilo.NoContent());
+        var editor = await EditAsync();
+        await editor.RemoveTitleCommand.ExecuteAsync(editor.Titles[0]);
+        Assert.True(editor.HasRemoved);
+
+        await editor.ApplyShownOrderAsync(["movie:totoro", "movie:heat-1995"]);
+
+        Assert.Equal("\"o2\"", Last(HttpMethod.Put, OrderPath).IfMatch);
+        Assert.False(editor.HasRemoved);
+    }
+
+    [Fact]
+    public async Task ACreateThatFails_CanBePressedAgain()
+    {
+        _harness.Silo.On(HttpMethod.Post, "api/v2/collections", ScriptedSilo.Problem(503, "unavailable"), ScriptedSilo.Json(HttpStatusCode.Created, """
+            { "id": "c1", "name": "Ghibli Night", "description": "", "collection_type": "manual", "creator_profile_id": "7", "is_shared": false }
+            """));
+        var editor = Create();
+        await editor.ActivateAsync(null);
+        editor.Name = "Ghibli Night";
+
+        await editor.SaveCommand.ExecuteAsync(null);
+        Assert.True(editor.HasSaveError);
+        Assert.True(editor.IsNew);
+        Assert.Equal("Try again", editor.SaveLabel);
+
+        await editor.SaveCommand.ExecuteAsync(null);
+
+        Assert.Equal("c1", editor.CollectionId);
+        Assert.Equal(2, _harness.Silo.SentTo(HttpMethod.Post, "api/v2/collections").Count);
+    }
+
     private static async Task WaitUntilAsync(Func<bool> condition)
     {
         for (int i = 0; i < 200 && !condition(); i++)

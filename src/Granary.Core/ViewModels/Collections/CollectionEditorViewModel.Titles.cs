@@ -114,7 +114,12 @@ public sealed partial class CollectionEditorViewModel
             TitlesChanged();
             return;
         }
-        if (CollectionId is not { } id || _session is not { State: SessionState.Ready, ActiveServer: { } server })
+        await SerializedAsync(() => AddNowAsync(result));
+    }
+
+    private async Task AddNowAsync(CollectionSearchResult result)
+    {
+        if (CollectionId is not { } id || _session is not { State: SessionState.Ready, ActiveServer: { } server } || Titles.Any(t => t.Id == result.Id))
         {
             return;
         }
@@ -123,7 +128,7 @@ public sealed partial class CollectionEditorViewModel
         try
         {
             await _collections.AddItemAsync(server.BaseUri, id, result.Id, position);
-            _maxPosition = position;
+            _maxPosition = Math.Max(_maxPosition, position);
             if (Titles.All(t => t.Id != result.Id))
             {
                 Titles.Add(new CollectionTitleRow(result.Id, result.Title, result.Meta, result.PosterUrl, position, RemoveTitleCommand));
@@ -156,7 +161,13 @@ public sealed partial class CollectionEditorViewModel
             TitlesChanged();
             return;
         }
-        if (CollectionId is not { } id || _session is not { State: SessionState.Ready, ActiveServer: { } server })
+        await SerializedAsync(() => RemoveNowAsync(row));
+    }
+
+    private async Task RemoveNowAsync(CollectionTitleRow row)
+    {
+        int index = Titles.IndexOf(row);
+        if (index < 0 || CollectionId is not { } id || _session is not { State: SessionState.Ready, ActiveServer: { } server })
         {
             return;
         }
@@ -194,15 +205,21 @@ public sealed partial class CollectionEditorViewModel
             TitlesChanged();
             return;
         }
+        await SerializedAsync(() => PutBackAsync(removed.Row, index));
+    }
+
+    private async Task PutBackAsync(CollectionTitleRow row, int index)
+    {
         if (CollectionId is not { } id || _session is not { State: SessionState.Ready, ActiveServer: { } server })
         {
             return;
         }
+        var removed = (Row: row, Index: index);
         TitlesStatus = "Saving…";
         try
         {
             await _collections.AddItemAsync(server.BaseUri, id, removed.Row.Id, removed.Row.Position);
-            Titles.Insert(index, removed.Row);
+            Titles.Insert(Math.Min(index, Titles.Count), removed.Row);
             TitlesStatus = "Saved";
             TitlesChanged();
             await AfterTitlesWrittenAsync(server.BaseUri, id);
@@ -233,7 +250,9 @@ public sealed partial class CollectionEditorViewModel
 
     /// <summary>Adds the titles that did not go in when the collection was made.</summary>
     [RelayCommand]
-    private async Task RetryFailedAddsAsync()
+    private Task RetryFailedAddsAsync() => SerializedAsync(RetryFailedAddsNowAsync);
+
+    private async Task RetryFailedAddsNowAsync()
     {
         if (CollectionId is not { } id || _session is not { State: SessionState.Ready, ActiveServer: { } server })
         {
@@ -246,7 +265,7 @@ public sealed partial class CollectionEditorViewModel
             {
                 long position = _maxPosition + 1;
                 await _collections.AddItemAsync(server.BaseUri, id, row.Id, position);
-                _maxPosition = position;
+                _maxPosition = Math.Max(_maxPosition, position);
             }
             catch (Exception ex) when (LibraryErrors.IsExpected(ex))
             {
@@ -260,7 +279,7 @@ public sealed partial class CollectionEditorViewModel
     }
 
     [RelayCommand]
-    private Task ReloadTitlesAsync() => LoadTitlesAsync();
+    private Task ReloadTitlesAsync() => SerializedAsync(LoadTitlesAsync);
 
     private async Task LoadTitlesAsync()
     {
@@ -330,6 +349,11 @@ public sealed partial class CollectionEditorViewModel
         var ids = Titles.Select(t => t.Id).ToList();
         ids.RemoveAt(index);
         ids.Insert(index + by, row.Id);
+        if (index + by >= ShownLimit)
+        {
+            // The row goes past the first ten: they all show, so it stays in view.
+            ShowsAllTitles = true;
+        }
         await ReorderAsync(ids);
     }
 
@@ -337,22 +361,30 @@ public sealed partial class CollectionEditorViewModel
     // when that fails.
     private async Task ReorderAsync(IReadOnlyList<string> ids)
     {
-        if (!CanReorder || ids.SequenceEqual(Titles.Select(t => t.Id)) || ids.Count != Titles.Count)
-        {
-            return;
-        }
         var rows = Titles.ToDictionary(t => t.Id, StringComparer.Ordinal);
-        if (!ids.All(rows.ContainsKey))
+        if (!CanReorder || ids.SequenceEqual(Titles.Select(t => t.Id)) || ids.Count != Titles.Count || !ids.All(rows.ContainsKey))
         {
+            // A drag may have moved the shown rows already: they show the order as it is.
+            ResyncShown();
             return;
         }
+        // A removed title's place is gone with the old order: no Undo past a move.
+        ClearRemoved();
         Titles.Clear();
         foreach (string id in ids)
         {
             Titles.Add(rows[id]);
         }
         TitlesChanged();
-        if (IsNew || CollectionId is not { } collection || _session is not { State: SessionState.Ready, ActiveServer: { } server })
+        if (!IsNew)
+        {
+            await SerializedAsync(() => SaveOrderAsync(ids));
+        }
+    }
+
+    private async Task SaveOrderAsync(IReadOnlyList<string> ids)
+    {
+        if (CollectionId is not { } collection || _session is not { State: SessionState.Ready, ActiveServer: { } server })
         {
             return;
         }
@@ -425,7 +457,11 @@ public sealed partial class CollectionEditorViewModel
         {
             return;
         }
-        ClearRemoved();
+        // A newer removal ended this one's window already.
+        if (!token.IsCancellationRequested)
+        {
+            ClearRemoved();
+        }
     }
 
     private void ClearRemoved()
@@ -463,6 +499,12 @@ public sealed partial class CollectionEditorViewModel
         OnPropertyChanged(nameof(ShowsReorderHint));
         MarkResults();
         DraftChanged();
+    }
+
+    private void ResyncShown()
+    {
+        ShownTitles.Clear();
+        ShowTitles();
     }
 
     private void ShowTitles()

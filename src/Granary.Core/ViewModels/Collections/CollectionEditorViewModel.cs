@@ -36,6 +36,8 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
     private bool _creating;
     private bool _deleted;
     private CollectionCapabilities _capabilities = new();
+    // Writes and version reads go one at a time: each starts from the version and positions the last one left.
+    private readonly SemaphoreSlim _gate = new(1, 1);
 
     public CollectionEditorViewModel(ISessionManager session, CollectionsApi collections, CatalogApi catalog, ImageParameterCache images,
         ProfilesApi profiles, INavigationService navigation, TimeProvider time, ILogger<CollectionEditorViewModel> logger)
@@ -195,7 +197,7 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private async Task RetryAsync()
+    private Task RetryAsync() => SerializedAsync(async () =>
     {
         if (CollectionId is { } id && _session is { State: SessionState.Ready, ActiveServer: { } server })
         {
@@ -205,11 +207,11 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
                 await LoadTitlesAsync();
             }
         }
-    }
+    });
 
     /// <summary>Makes the new collection, or saves the changed one.</summary>
     [RelayCommand(CanExecute = nameof(CanSave))]
-    private Task SaveAsync() => IsNew ? CreateAsync() : UpdateAsync(retried: false);
+    private Task SaveAsync() => SerializedAsync(IsNew ? CreateAsync : UpdateAsync);
 
     private bool CanSave() => !IsSaving && !HasConflict && Name.Trim().Length > 0 && (IsNew || ChangedFields.Count > 0 || HasSaveError);
 
@@ -260,7 +262,9 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
     }
 
     /// <summary>Deletes the collection (after the page asked) and goes to Collections.</summary>
-    public async Task DeleteAsync()
+    public Task DeleteAsync() => SerializedAsync(DeleteNowAsync);
+
+    private async Task DeleteNowAsync()
     {
         if (CollectionId is not { } id || _session is not { State: SessionState.Ready, ActiveServer: { } server })
         {
@@ -360,6 +364,8 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
             var draft = Draft;
             var made = await _collections.CreateAsync(server.BaseUri, draft.ToCreate());
             var staged = Titles.ToList();
+            // Titles added from here on wait for these, and go after them.
+            _maxPosition = staged.Count - 1;
             CollectionId = made.Id;
             _saved = CollectionDraft.Of(made);
             var failed = new List<CollectionTitleRow>();
@@ -376,7 +382,6 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
                 }
             }
             await RefreshVersionAsync(server.BaseUri);
-            Show(Draft);
             await LoadTitlesAsync();
             ShowFailedAdds(failed);
         }
@@ -393,8 +398,9 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
         }
     }
 
-    // The draft at the version it was read at; a 412 merges with the collection as it is now and tries once more.
-    private async Task UpdateAsync(bool retried)
+    // The draft at the version it was read at. A 412 merges with the collection as it is now and sends the merge once
+    // more; a field changed on both sides waits for the viewer's pick instead. Save stays busy throughout.
+    private async Task UpdateAsync()
     {
         if (CollectionId is not { } id || _session is not { State: SessionState.Ready, ActiveServer: { } server })
         {
@@ -402,20 +408,29 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
         }
         IsSaving = true;
         SaveError = "";
-        var sent = Draft;
-        bool stale = false;
         try
         {
-            _version ??= (await _collections.GetAsync(server.BaseUri, id)).Version;
-            var saved = await _collections.UpdateAsync(server.BaseUri, id, _version, sent.ToUpdate());
-            _version = saved.Version;
-            _saved = CollectionDraft.Of(saved.Value);
-            DraftChanged();
-        }
-        catch (SiloApiException ex) when (ex.Status == 412 && !retried)
-        {
-            _logger.LogInformation("A collection changed elsewhere while it was edited; merging");
-            stale = true;
+            for (int attempt = 0; ; attempt++)
+            {
+                try
+                {
+                    _version ??= (await _collections.GetAsync(server.BaseUri, id)).Version;
+                    var saved = await _collections.UpdateAsync(server.BaseUri, id, _version, Draft.ToUpdate());
+                    _version = saved.Version.Length > 0 ? saved.Version : null;
+                    _saved = CollectionDraft.Of(saved.Value);
+                    DraftChanged();
+                    return;
+                }
+                catch (SiloApiException ex) when (ex.Status == 412 && attempt == 0)
+                {
+                    _logger.LogInformation("A collection changed elsewhere while it was edited; merging");
+                    var now = await _collections.GetAsync(server.BaseUri, id);
+                    if (AdoptRemote(CollectionDraft.Of(now.Value), now.Version).Count > 0)
+                    {
+                        return;
+                    }
+                }
+            }
         }
         catch (Exception ex) when (LibraryErrors.IsExpected(ex))
         {
@@ -426,37 +441,35 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
         {
             IsSaving = false;
         }
-        if (stale)
-        {
-            await MergeAndSaveAsync(server.BaseUri, id, sent);
-        }
     }
 
-    // Merges what was sent with the collection as it is now; saves again unless a field changed on both sides.
-    private async Task MergeAndSaveAsync(Uri server, string id, CollectionDraft sent)
+    // The collection as the server has it now becomes the base: fields not touched here take its values, touched ones
+    // stay as typed, and fields changed on both sides wait for Use theirs or Keep mine. Answers those fields.
+    private IReadOnlyList<string> AdoptRemote(CollectionDraft theirs, string version)
     {
+        var (merged, conflicts) = CollectionDraft.Merge(_saved, Draft, theirs);
+        _version = version;
+        _saved = theirs;
+        Show(merged);
+        if (conflicts.Count > 0)
+        {
+            _theirs = theirs;
+            Conflicts = conflicts;
+        }
+        return conflicts;
+    }
+
+    private async Task SerializedAsync(Func<Task> work)
+    {
+        await _gate.WaitAsync();
         try
         {
-            var now = await _collections.GetAsync(server, id);
-            var theirs = CollectionDraft.Of(now.Value);
-            var (merged, conflicts) = CollectionDraft.Merge(_saved, sent, theirs);
-            _version = now.Version;
-            _saved = theirs;
-            Show(merged);
-            if (conflicts.Count > 0)
-            {
-                _theirs = theirs;
-                Conflicts = conflicts;
-                return;
-            }
+            await work();
         }
-        catch (Exception ex) when (LibraryErrors.IsExpected(ex))
+        finally
         {
-            _logger.LogWarning(ex, "Could not read a changed collection to merge");
-            SaveError = CollectionEditorText.Stale;
-            return;
+            _gate.Release();
         }
-        await UpdateAsync(retried: true);
     }
 
     private static string Failure(Exception ex) =>
@@ -473,19 +486,13 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
         try
         {
             var read = await _collections.GetAsync(server, id);
-            var draft = Draft;
-            var theirs = CollectionDraft.Of(read.Value);
-            var (merged, _) = CollectionDraft.Merge(_saved, draft, theirs);
-            _version = read.Version;
             _itemCount = read.Value.ItemCount;
-            _saved = theirs;
-            Show(merged);
+            AdoptRemote(CollectionDraft.Of(read.Value), read.Version);
         }
         catch (Exception ex) when (LibraryErrors.IsExpected(ex))
         {
-            // The next save reads the version first.
+            // The last version stays: a save at it answers 412 and merges, rather than overwriting what changed.
             _logger.LogWarning(ex, "Could not read a collection's version again");
-            _version = null;
         }
     }
 
@@ -521,8 +528,15 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
         _showing = true;
         try
         {
-            Name = draft.Name;
-            Description = draft.Description;
+            // Only what differs: a box being typed in keeps its text (and its trailing space).
+            if (Name.Trim() != draft.Name)
+            {
+                Name = draft.Name;
+            }
+            if (Description.Trim() != draft.Description)
+            {
+                Description = draft.Description;
+            }
             Watch = WatchChoices.FirstOrDefault(c => c.Value == draft.ShowOnly.Watch) ?? WatchChoices[0];
             Media = MediaChoices.FirstOrDefault(c => c.Value == draft.ShowOnly.Media) ?? MediaChoices[0];
             IsShared = draft.IsShared;

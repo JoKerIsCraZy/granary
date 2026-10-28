@@ -86,12 +86,12 @@ public sealed class SiloHttp(HttpClient http)
         CancellationToken cancellationToken)
     {
         using var request = Create(HttpMethod.Get, server, path, auth);
-        return await SendVersionedAsync(request, responseType, cancellationToken).ConfigureAwait(false);
+        return await SendVersionedAsync(request, responseType, requireVersion: true, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// A write the server takes only at the version it was read at (<c>If-Match</c>); one changed since answers 412.
-    /// Answers the result and its new version.
+    /// Answers the result and its new version, empty when the answer names none (the write still went through).
     /// </summary>
     public async Task<Versioned<TResponse>> SendIfMatchAsync<TRequest, TResponse>(HttpMethod method, Uri server, string path, SiloAuth auth, string version,
         TRequest body, JsonTypeInfo<TRequest> requestType, JsonTypeInfo<TResponse> responseType, CancellationToken cancellationToken)
@@ -99,7 +99,7 @@ public sealed class SiloHttp(HttpClient http)
         using var request = Create(method, server, path, auth);
         IfMatch(request, version);
         request.Content = JsonContent.Create(body, requestType);
-        return await SendVersionedAsync(request, responseType, cancellationToken).ConfigureAwait(false);
+        return await SendVersionedAsync(request, responseType, requireVersion: false, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>As the other <c>SendIfMatchAsync</c>, for a bodiless write that answers 204, as a delete.</summary>
@@ -144,13 +144,13 @@ public sealed class SiloHttp(HttpClient http)
     }
 
     private async Task<Versioned<TResponse>> SendVersionedAsync<TResponse>(HttpRequestMessage request, JsonTypeInfo<TResponse> responseType,
-        CancellationToken cancellationToken)
+        bool requireVersion, CancellationToken cancellationToken)
     {
         using var response = await http.SendAsync(request, cancellationToken).ConfigureAwait(false);
         await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
-        // Without its version nothing read here can be written back.
+        // Without its version nothing read here can be written back; a write that names none still went through.
         string version = response.Headers.ETag?.ToString()
-            ?? throw new HttpRequestException(HttpRequestError.InvalidResponse, "The server named no version of what it answered.");
+            ?? (requireVersion ? throw new HttpRequestException(HttpRequestError.InvalidResponse, "The server named no version of what it answered.") : "");
         return new Versioned<TResponse>(await ReadAsync(response, responseType, cancellationToken).ConfigureAwait(false), version);
     }
 

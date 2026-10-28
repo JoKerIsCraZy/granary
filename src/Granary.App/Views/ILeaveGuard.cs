@@ -11,4 +11,7 @@ internal interface ILeaveGuard
 
     /// <summary>Asks; true lets the navigation go on, and the page does not ask again.</summary>
     Task<bool> ConfirmLeaveAsync();
+
+    /// <summary>The navigation it let go did not leave it after all: it asks again next time.</summary>
+    void Rearm();
 }

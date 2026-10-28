@@ -208,7 +208,16 @@ public sealed class NavigationService : INavigationService
     {
         if (await guard.ConfirmLeaveAsync())
         {
+            // A new start (sign-in, another profile) may have replaced the page while it asked: nothing is left to go from.
+            if (!ReferenceEquals(_frame?.Content, guard))
+            {
+                return;
+            }
             go();
+            if (ReferenceEquals(_frame?.Content, guard))
+            {
+                guard.Rearm();
+            }
         }
         else if (Current is { } current)
         {
