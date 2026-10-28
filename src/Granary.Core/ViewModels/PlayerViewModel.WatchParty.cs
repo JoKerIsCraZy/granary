@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using Granary.Core.Api.WatchParty;
 using Granary.Core.Playback;
+using Granary.Core.ViewModels.WatchParty;
 using Granary.Core.WatchParty;
 using Microsoft.Extensions.Logging;
 
@@ -8,7 +9,8 @@ namespace Granary.Core.ViewModels;
 
 // A Watch Party's title (PlayRequest.WatchParty): the room plays, pauses and seeks it through its commands, and the
 // viewer's play, pause and seek become requests to the room (WatchPartyPlaybackBinding). The player leaves when the room
-// stops playing this title: the host stopped it, it finished, or the room ended.
+// stops playing this title: the host stopped it, it finished, or the room ended. Meanwhile the panel (Party) shows the
+// room over the picture.
 public sealed partial class PlayerViewModel
 {
     private WatchPartyPlaybackBinding? _party;
@@ -20,6 +22,20 @@ public sealed partial class PlayerViewModel
 
     /// <summary>The viewer of a Watch Party may seek (the host).</summary>
     public bool CanSeekInRoom => !IsWatchParty || _watchParty?.Room?.IsHost == true;
+
+    /// <summary>The Watch Party panel, while <see cref="IsWatchParty"/>; null in an app without Watch Party.</summary>
+    public WatchPartyPanelViewModel? Party { get; }
+
+    private WatchPartyPanelViewModel? InitializeWatchParty()
+    {
+        if (_watchParty is null)
+        {
+            return null;
+        }
+        var panel = new WatchPartyPanelViewModel(_watchParty, _navigation, _logger);
+        panel.Said += (_, notice) => ShowPartyNotice(notice);
+        return panel;
+    }
 
     private void BeginWatchParty(PlayRequest request)
     {
@@ -33,6 +49,7 @@ public sealed partial class PlayerViewModel
         _party.Notice += OnPartyNotice;
         _party.Start();
         _watchParty.PropertyChanged += OnPartyChanged;
+        Party?.Attach();
     }
 
     private void EndWatchParty()
@@ -48,6 +65,7 @@ public sealed partial class PlayerViewModel
         {
             _watchParty.PropertyChanged -= OnPartyChanged;
         }
+        Party?.Detach();
         IsWatchParty = false;
         // A correction rate never outlives the room, nor do the room's skip settings.
         _engine.SetSpeed(1);
@@ -76,11 +94,15 @@ public sealed partial class PlayerViewModel
 
     private void OnPartyNotice(object? sender, string text)
     {
-        if (sender != _party)
+        if (sender == _party)
         {
-            return;
+            ShowPartyNotice(new PlaybackNotice("Watch Party", text, IsWarning: true));
         }
-        Notice = new PlaybackNotice("Watch Party", text, IsWarning: true);
+    }
+
+    private void ShowPartyNotice(PlaybackNotice notice)
+    {
+        Notice = notice;
         StopNoticeTimer();
         if (!_noticesHeld)
         {

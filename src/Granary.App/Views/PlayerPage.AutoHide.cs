@@ -101,6 +101,7 @@ public sealed partial class PlayerPage
 
     private bool IsPointerOverControls() =>
         PointerInPage() is { } point && (Contains(BottomBar, point) || Contains(ExitButton, point) || Contains(MinimizeButton, point)
+            || (PartyPanel.Visibility == Visibility.Visible && Contains(PartyPanel, point))
             || (IsMiniView && (Contains(MiniPlayPauseButton, point) || Contains(LeaveMiniViewButton, point))));
 
     private bool Contains(FrameworkElement element, Point point) =>
@@ -109,7 +110,7 @@ public sealed partial class PlayerPage
 
     private bool HasKeyboardFocusInControls() =>
         FocusManager.GetFocusedElement(XamlRoot) is Control { FocusState: FocusState.Keyboard } control
-        && (IsWithin(control, TopChrome) || IsWithin(control, BottomChrome) || IsWithin(control, MiniChrome));
+        && (IsWithin(control, TopChrome) || IsWithin(control, BottomChrome) || IsWithin(control, MiniChrome) || IsWithin(control, PartyPanel));
 
     private static bool IsWithin(DependencyObject element, DependencyObject container)
     {
@@ -123,12 +124,13 @@ public sealed partial class PlayerPage
         return false;
     }
 
-    // Hidden controls take no clicks, so a click there reaches the picture.
+    // Hidden controls take no clicks, so a click there reaches the picture. The Watch Party panel fades with them, as on
+    // the web.
     private void SetControlsVisible(bool visible)
     {
         _areControlsVisible = visible;
-        TopChrome.Opacity = BottomChrome.Opacity = MiniChrome.Opacity = visible ? 1 : 0;
-        TopChrome.IsHitTestVisible = BottomChrome.IsHitTestVisible = MiniChrome.IsHitTestVisible = visible;
+        TopChrome.Opacity = BottomChrome.Opacity = MiniChrome.Opacity = PartyPanel.Opacity = visible ? 1 : 0;
+        TopChrome.IsHitTestVisible = BottomChrome.IsHitTestVisible = MiniChrome.IsHitTestVisible = PartyPanel.IsHitTestVisible = visible;
         TopChrome.Translation = visible ? Vector3.Zero : new Vector3(0, -ChromeSlide, 0);
         BottomChrome.Translation = visible ? Vector3.Zero : new Vector3(0, ChromeSlide, 0);
         LiftSubtitles();

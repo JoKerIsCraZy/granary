@@ -12,6 +12,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:Granary.App.Controls"
     xmlns:player="using:Granary.Core.ViewModels.Player"
+    xmlns:wp="using:Granary.Core.ViewModels.WatchParty"
     IsTabStop="True"
     AutomationProperties.Name="Player">
 
@@ -599,6 +600,95 @@
                     </ItemsControl>
                 </ScrollViewer>
             </Grid>
+        </Border>
+
+        <!--
+            The web player's Watch Party panel (WatchTogetherPanel.tsx), under Exit on the right: the connection, the room
+            code and how many watch, who controls playback, the viewers, and the host's actions. It fades with the controls
+            (PlayerPage.WatchParty.cs).
+        -->
+        <Border x:Name="PartyPanel" Width="224" HorizontalAlignment="Right" VerticalAlignment="Top" Padding="12" CornerRadius="12"
+                Background="#CC000000" BorderBrush="#1AFFFFFF" BorderThickness="1"
+                Margin="{x:Bind PartyPanelMargin(IsFullScreen), Mode=OneWay}"
+                Visibility="{x:Bind ShowsInWindow(ViewModel.IsWatchParty, IsCompact), Mode=OneWay}">
+            <Border.Resources>
+                <!-- The web's 10 px label, upper case and spaced, at 60 % white. -->
+                <Style x:Key="PartyLabelStyle" TargetType="TextBlock">
+                    <Setter Property="FontSize" Value="10" />
+                    <Setter Property="FontFamily" Value="{StaticResource SiloFontSemiBold}" />
+                    <Setter Property="FontWeight" Value="SemiBold" />
+                    <Setter Property="CharacterSpacing" Value="160" />
+                    <Setter Property="Foreground" Value="#99FFFFFF" />
+                    <Setter Property="VerticalAlignment" Value="Center" />
+                </Style>
+            </Border.Resources>
+            <Border.OpacityTransition>
+                <ScalarTransition Duration="0:0:0.3" />
+            </Border.OpacityTransition>
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="WATCH PARTY" Style="{StaticResource PartyLabelStyle}" AutomationProperties.Name="Watch Party" />
+                    <Ellipse Width="6" Height="6" VerticalAlignment="Center" Fill="{x:Bind PartyDot(ViewModel.Party.ConnectionState), Mode=OneWay}" />
+                    <TextBlock Text="{x:Bind controls:PlayerMenus.Upper(ViewModel.Party.ConnectionText), Mode=OneWay}" Style="{StaticResource PartyLabelStyle}"
+                               AutomationProperties.Name="{x:Bind ViewModel.Party.ConnectionText, Mode=OneWay}" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+                    <TextBlock Text="{x:Bind ViewModel.Party.Code, Mode=OneWay}" FontFamily="Cascadia Mono, Consolas" FontSize="18" FontWeight="SemiBold"
+                               CharacterSpacing="50" Foreground="White" VerticalAlignment="Bottom" />
+                    <TextBlock Text="{x:Bind ViewModel.Party.ViewersText, Mode=OneWay}" FontSize="12" Foreground="#80FFFFFF" VerticalAlignment="Bottom" Margin="0,0,0,2" />
+                </StackPanel>
+                <TextBlock Text="{x:Bind ViewModel.Party.PolicyText, Mode=OneWay}" Margin="0,6,0,0" FontSize="11" Foreground="#80FFFFFF" TextWrapping="Wrap" />
+                <ScrollViewer MaxHeight="160" Margin="0,12,0,0" Visibility="{x:Bind ViewModel.Party.HasViewers, Mode=OneWay}"
+                              HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled" AutomationProperties.Name="Viewers">
+                    <ItemsControl ItemsSource="{x:Bind ViewModel.Party.Viewers, Mode=OneWay}" IsTabStop="False">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Spacing="6" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="wp:WatchPartyViewerRow">
+                                <Grid ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{x:Bind Name}" FontSize="12" Foreground="White" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Grid.Column="1" Text="{x:Bind State}" FontSize="12" Foreground="#99FFFFFF" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+                <!-- The host's: Invite, the policy, then Stop and End on the right. -->
+                <Border Margin="0,12,0,0" Padding="0,10,0,0" BorderBrush="#14FFFFFF" BorderThickness="0,1,0,0"
+                        Visibility="{x:Bind ViewModel.Party.IsHost, Mode=OneWay}">
+                    <Grid ColumnSpacing="4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Button Style="{StaticResource SiloPlayerPanelButtonStyle}" Click="OnPartyInviteClick" AutomationProperties.Name="Copy invite link"
+                                VerticalAlignment="Center">
+                            <TextBlock Text="Invite" />
+                        </Button>
+                        <Button Grid.Column="1" Style="{StaticResource SiloPlayerPanelButtonStyle}" HorizontalAlignment="Left" VerticalAlignment="Center"
+                                Command="{x:Bind ViewModel.Party.TogglePolicyCommand}">
+                            <TextBlock Text="{x:Bind ViewModel.Party.PolicyButtonText, Mode=OneWay}" TextWrapping="Wrap" TextAlignment="Center" />
+                        </Button>
+                        <Button Grid.Column="2" Style="{StaticResource SiloPlayerPanelButtonStyle}" VerticalAlignment="Center"
+                                Command="{x:Bind ViewModel.Party.StopCommand}"
+                                ToolTipService.ToolTip="Stop for everyone and go back to the room to pick something else">
+                            <TextBlock Text="Stop" />
+                        </Button>
+                        <Button Grid.Column="3" Style="{StaticResource SiloPlayerPanelDangerButtonStyle}" VerticalAlignment="Center" Click="OnPartyEndClick">
+                            <TextBlock Text="End" />
+                        </Button>
+                    </Grid>
+                </Border>
+            </StackPanel>
         </Border>
 
         <!--

@@ -79,6 +79,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         _logger = logger ?? (ILogger)NullLogger.Instance;
         _permissions = permissions;
         _watchParty = watchParty;
+        Party = InitializeWatchParty();
         Look.Edited += OnLookEdited;
         InitializeMarkerEdit();
         _engine.StateChanged += OnStateChanged;

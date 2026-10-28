@@ -45,6 +45,10 @@ public sealed record WatchPartyMemberRow(string Name, bool IsHost, bool IsSelf, 
     public string Initials => WatchPartyMembers.Initials(Name);
 }
 
+/// <summary>A viewer in the player's Watch Party panel: "Elena (you) · Ready".</summary>
+/// <param name="State">Buffering, Syncing, Ready or Connected, as the member's own player reports it.</param>
+public sealed record WatchPartyViewerRow(string Key, string Name, string State);
+
 /// <summary>A line of the activity feed: "2m · Elena joined". Its text fills in once the title it names is read.</summary>
 public sealed partial class WatchPartyActivityRow(long id, DateTimeOffset at) : ObservableObject
 {

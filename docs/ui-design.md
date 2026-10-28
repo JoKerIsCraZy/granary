@@ -598,6 +598,16 @@ stream's commands on Activity.
   size in GiB, bitrates, codec and profile, range type, colour range, the playing audio track's codec, channels and
   sample rate). Labels white 60 %, values white 90 % on the right; read again every second while it shows; it stays
   while the controls fade, until closed.
+- **Watch Party panel** (the web's WatchTogetherPanel), while the room plays its title: 224 px, black at 80 %, a white
+  10 % border, radius 12, under Exit on the right, fading with the controls. "WATCH PARTY", the connection's dot (emerald
+  connected, amber connecting, red disconnected) and its word; the room code in a monospace font with "2 viewers"; who
+  controls playback ("Only you control playback" or "Guests can pause & resume" for the host, "Host controls playback"
+  or "You can pause & resume" for a guest); each viewer, "(you)" after this one, with Buffering, Syncing, Ready or
+  Connected, scrolling past 160 px. The host's row under a line: Invite (copies the invite link, "Invite link is not
+  ready yet." until the room has one), Allow Pause or Host Only, then Stop (for everyone, back to the room, no question)
+  and End in red, which asks "End watch party?" / "End the watch party for everyone?" with End Party and Cancel, then
+  goes to Watch Party. What they did shows as the player's notice in the web's toast words ("Invite copied. Room code
+  ABCD1234", "Guests can now pause and resume", "Stopped for everyone. The room is still open.").
 - **Fill screen** (the web's video fit): the picture fills the page and is cut where it does not fit (mpv `panscan`);
   a new title shows its whole picture again.
 - **Mini view** (the web's Picture in Picture, P): the window becomes small (480 by 270), stays above the others

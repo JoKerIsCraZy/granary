@@ -771,6 +771,25 @@
         <Setter Property="FontWeight" Value="Medium" />
         <Setter Property="FontSize" Value="14" />
     </Style>
+    <!-- The Watch Party panel's actions (the web's WatchTogetherPanel): small, on white at 12 %, their text wrapping when short of room. -->
+    <Style x:Key="SiloPlayerPanelButtonStyle" TargetType="Button" BasedOn="{StaticResource SiloPlayerIconButtonStyle}">
+        <Setter Property="Width" Value="Auto" />
+        <Setter Property="Height" Value="Auto" />
+        <Setter Property="MinHeight" Value="24" />
+        <Setter Property="Padding" Value="10,4" />
+        <Setter Property="controls:Pill.IsEnabled" Value="False" />
+        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="Background" Value="#1FFFFFFF" />
+        <Setter Property="Foreground" Value="#E6FFFFFF" />
+        <Setter Property="FontFamily" Value="{StaticResource SiloFontMedium}" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="FontSize" Value="11" />
+    </Style>
+    <!-- End: the web's red at a quarter, its text a pale red. -->
+    <Style x:Key="SiloPlayerPanelDangerButtonStyle" TargetType="Button" BasedOn="{StaticResource SiloPlayerPanelButtonStyle}">
+        <Setter Property="Background" Value="#40EF4444" />
+        <Setter Property="Foreground" Value="#FFFEE2E2" />
+    </Style>
     <!-- A time that is also a toggle: the end time switches between duration and remaining time. -->
     <Style x:Key="SiloPlayerTextButtonStyle" TargetType="Button" BasedOn="{StaticResource SiloPlayerIconButtonStyle}">
         <Setter Property="Width" Value="Auto" />

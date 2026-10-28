@@ -40,3 +40,5 @@ release's section is what its update says it changes (docs/release.md).
 - Smart collections: titles that match your rules, with a live preview of what they find.
 - Filters on Favorites, Watchlist, History and a collection's page; a library keeps its sort and filters.
 - Watch Party: open a room, share its code or invite link, and play, pause and seek together.
+- Watch Party in the player: a panel with the room's code, its viewers and who controls playback, and for the host
+  Invite, Allow Pause, Stop and End, as on Silo's web player.

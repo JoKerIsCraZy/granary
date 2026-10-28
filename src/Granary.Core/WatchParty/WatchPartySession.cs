@@ -51,7 +51,7 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
 
     /// <summary>The room as last heard of; null while in none.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsInRoom))]
+    [NotifyPropertyChangedFor(nameof(IsInRoom), nameof(InviteLink))]
     public partial WatchPartyRoom? Room { get; private set; }
 
     [ObservableProperty]
@@ -63,6 +63,9 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
     public partial WatchPartyEnd? End { get; private set; }
 
     public bool IsInRoom => Room is not null && End is null;
+
+    /// <summary>The room's invitation as a link to the server's web client; null until the room has one.</summary>
+    public Uri? InviteLink => Room is { } room && _session.ActiveServer is { } server ? WatchPartyApi.InviteLink(server.BaseUri, room) : null;
 
     /// <summary>The connection that is open now; commands of an older one no longer count.</summary>
     public long ConnectionEpoch => _connection?.Epoch ?? 0;

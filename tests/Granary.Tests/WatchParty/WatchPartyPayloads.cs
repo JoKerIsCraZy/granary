@@ -10,20 +10,25 @@ internal static class WatchPartyPayloads
 
     public static string TicketAnswer => $$"""{ "ticket": "{{Ticket}}", "expires_in": 30, "max_connection_seconds": 300, "protocol": "silo.room.v2" }""";
 
-    /// <summary>A room snapshot; <paramref name="extra"/> adds members after the generation.</summary>
+    /// <summary>
+    /// A room snapshot; <paramref name="extra"/> adds fields after the members, and <paramref name="elena"/> and
+    /// <paramref name="maya"/> add fields to theirs (<c>"is_buffering": true</c>). A null <paramref name="invite"/> leaves the
+    /// invite path out.
+    /// </summary>
     public static string Room(string phase = "lobby", string state = "idle", long generation = 1, long revision = 0, string role = "host",
-        string? selected = null, string extra = "", string mode = "host_pick", string policy = "host_only", bool mayaReady = true) => $$"""
+        string? selected = null, string extra = "", string mode = "host_pick", string policy = "host_only", bool mayaReady = true, int count = 2,
+        bool transport = true, string? invite = "/rooms/join?token=invite-secret", string elena = "", string maya = "") => $$"""
         {
           "room_id": "{{RoomId}}", "code": "ABCD1234", "phase": "{{phase}}", "playback_state": "{{state}}",
           "selection_mode": "{{mode}}", "guest_control_policy": "{{policy}}", "self_role": "{{role}}",
           "selection_revision": {{revision}}, "generation": {{generation}}, "anchor_position_seconds": 0,
-          "anchor_updated_at": "2026-10-01T12:00:00.000Z", "is_paused": true, "host_connected": true, "member_count": 2,
+          "anchor_updated_at": "2026-10-01T12:00:00.000Z", "is_paused": true, "host_connected": true, "member_count": {{count}},
           {{(selected is null ? "" : $"\"selected_content_id\": \"{selected}\", \"selected_file_id\": \"77\",")}}
-          "self_can_control_transport": true, "self_can_manage_room": true, "self_ignore_wait": false,
-          "invite_path": "/rooms/join?token=invite-secret",
+          "self_can_control_transport": {{(transport ? "true" : "false")}}, "self_can_manage_room": true, "self_ignore_wait": false,
+          {{(invite is null ? "" : $"\"invite_path\": \"{invite}\",")}}
           "members": [
-            { "user_id": "1", "profile_id": "7", "display_name": "Elena", "is_host": true, "is_self": {{(role == "host" ? "true" : "false")}}, "connected": true, "lobby_ready": false },
-            { "user_id": "2", "profile_id": "9", "display_name": "Maya", "is_host": false, "is_self": {{(role == "host" ? "false" : "true")}}, "connected": true, "lobby_ready": {{(mayaReady ? "true" : "false")}} }
+            { "user_id": "1", "profile_id": "7", "display_name": "Elena", "is_host": true, "is_self": {{(role == "host" ? "true" : "false")}}, "connected": true, "lobby_ready": false{{(elena.Length > 0 ? ", " + elena : "")}} },
+            { "user_id": "2", "profile_id": "9", "display_name": "Maya", "is_host": false, "is_self": {{(role == "host" ? "false" : "true")}}, "connected": true, "lobby_ready": {{(mayaReady ? "true" : "false")}}{{(maya.Length > 0 ? ", " + maya : "")}} }
           ]{{extra}}
         }
         """;

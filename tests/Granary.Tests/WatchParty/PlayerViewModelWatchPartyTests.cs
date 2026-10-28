@@ -171,5 +171,30 @@ public sealed class PlayerViewModelWatchPartyTests : IAsyncDisposable
         Assert.Equal(1, Playback.Stops);
     }
 
+    [Fact]
+    public async Task ThePanel_FollowsTheRoom_AndSaysWhatItDid_AsTheNotice()
+    {
+        var viewModel = await PlayingAsync();
+        var panel = viewModel.Party!;
+
+        Assert.Equal(("ABCD1234", "2 viewers"), (panel.Code, panel.ViewersText));
+
+        panel.CopyInvite(_ => true);
+
+        Assert.Equal(("Watch Party", "Invite copied. Room code ABCD1234", false), (viewModel.NoticeTitle, viewModel.NoticeMessage, viewModel.IsNoticeWarning));
+    }
+
+    [Fact]
+    public async Task ThePanel_LetsGoOfTheRoom_WhenThePlayerCloses()
+    {
+        var viewModel = await PlayingAsync();
+        viewModel.Leave();
+
+        Socket.Push(WatchPartyPayloads.Snapshot(WatchPartyPayloads.Room("playing", "playing", generation: 4, revision: 1, selected: "movie:heat", count: 3)));
+        await ServerPlaybackFixture.Until(() => _party.Room?.MemberCount == 3, "the new snapshot");
+
+        Assert.Equal("2 viewers", viewModel.Party!.ViewersText);
+    }
+
     public async ValueTask DisposeAsync() => await _party.LeaveAsync();
 }

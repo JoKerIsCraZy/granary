@@ -204,7 +204,7 @@ public sealed partial class WatchPartyRoomViewModel : ObservableObject
     public string PolicyText => GuestsCanPause ? "Guests can pause" : "Host controls playback";
 
     /// <summary>The invitation as a link to the server's web client, for the Link copy.</summary>
-    public Uri? InviteLink => Room is { } room && _session.ActiveServer is { } server ? WatchPartyApi.InviteLink(server.BaseUri, room) : null;
+    public Uri? InviteLink => _party.InviteLink;
 
     /// <summary>The invite row's link as the web shows it, without its scheme.</summary>
     public string InviteText => InviteLink is { } link ? link.AbsoluteUri[(link.Scheme.Length + 3)..] : "";

@@ -1,4 +1,5 @@
 using Granary.App.Controls;
+using Granary.App.Services;
 using Granary.Core.ViewModels.WatchParty;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -8,7 +9,6 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.UI.Xaml.Navigation;
-using Windows.ApplicationModel.DataTransfer;
 using Windows.UI;
 
 namespace Granary.App.Views;
@@ -122,7 +122,7 @@ public sealed partial class WatchPartyRoomPage : Page
 
     private void OnCopyCodeClick(object sender, RoutedEventArgs e)
     {
-        if (ViewModel.Code.Length > 0 && Copy(ViewModel.Code))
+        if (ViewModel.Code.Length > 0 && RoomClipboard.Copy(ViewModel.Code))
         {
             ViewModel.Copied($"Room code {ViewModel.Code} copied");
         }
@@ -135,7 +135,7 @@ public sealed partial class WatchPartyRoomPage : Page
             ViewModel.Copied("Invite link isn't ready yet");
             return;
         }
-        if (Copy(link.AbsoluteUri))
+        if (RoomClipboard.Copy(link.AbsoluteUri))
         {
             ViewModel.Copied("Invite link copied");
         }
@@ -195,23 +195,6 @@ public sealed partial class WatchPartyRoomPage : Page
         {
             // async void: nothing may escape. A refused end is the page's to say; this is anything else.
             App.Services.GetRequiredService<ILogger<WatchPartyRoomPage>>().LogError(ex, "The Watch Party could not be ended");
-        }
-    }
-
-    // The code and the link are secrets of the room: they go to the clipboard only, never to a log, nor to the
-    // clipboard's history or other devices.
-    private static bool Copy(string text)
-    {
-        try
-        {
-            var package = new DataPackage();
-            package.SetText(text);
-            return Clipboard.SetContentWithOptions(package, new ClipboardContentOptions { IsAllowedInHistory = false, IsRoamable = false });
-        }
-        catch (Exception ex)
-        {
-            App.Services.GetRequiredService<ILogger<WatchPartyRoomPage>>().LogInformation("The clipboard could not be written: {Failure}", ex.GetType().Name);
-            return false;
         }
     }
 }
