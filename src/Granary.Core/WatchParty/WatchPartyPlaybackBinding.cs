@@ -60,7 +60,8 @@ public enum RoomTransportResult
 /// Binds one Watch Party to one player for the room's current playback, as Silo's Android app does
 /// (<c>RoomPlaybackBinding.kt</c>): it attaches the playback session on every connection and waits for the server's echo;
 /// reports what the player really does every 1.5 s and stays quiet while it stalls or seeks; runs each command at its
-/// <c>execute_at</c> on the server's clock, projected to that moment; acknowledges the room's waiting command until the
+/// <c>execute_at</c> on the server's clock, projected to that moment (a command waits for the clock, and for the room's
+/// snapshot of its playback epoch when it came first); acknowledges the room's waiting command until the
 /// room marks this member ready; reports a stall after 2 s; acknowledges recovery while catching up; and keeps a playing
 /// member on the room with a small temporary rate. The viewer's play, pause and seek become requests: the player
 /// changes only when the room's command comes back.
@@ -80,6 +81,7 @@ public sealed class WatchPartyPlaybackBinding : IDisposable
     private static readonly TimeSpan CommandQuiet = TimeSpan.FromMilliseconds(250);
     private static readonly TimeSpan BusyDefer = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan MaxLead = TimeSpan.FromSeconds(5);
+    private static readonly TimeSpan EarlySlack = TimeSpan.FromMilliseconds(1);
     private static readonly TimeSpan ReportHoldMax = TimeSpan.FromSeconds(3);
     private static readonly TimeSpan PendingSeekTimeout = TimeSpan.FromSeconds(5);
     private const double GuestSeekTolerance = 5;
@@ -211,30 +213,51 @@ public sealed class WatchPartyPlaybackBinding : IDisposable
             return;
         }
         _lastSeen = (command.CommandId, delivery.Epoch);
+        // A command of a playback epoch the room already left is no command.
+        if (_room.Room is { } room && command.SelectionRevision < room.SelectionRevision)
+        {
+            return;
+        }
         _readiness = null;
+        // The player keeps what it does until the command runs: without the server's clock yet, it waits for one.
         var pending = new Pending(++_nextToken, command, delivery.Epoch);
         _pending = pending;
-        if (_room.ClockOffsetMs is null)
-        {
-            // No server clock yet: nothing plays on the device's own clock meanwhile.
-            _player.SetPlaying(false);
-        }
         Schedule(pending);
     }
 
-    private void Schedule(Pending pending)
+    // At execute_at on the server's clock, at most MaxLead from now (the run checks it is due); a tick while the clock is unknown.
+    private void Schedule(Pending pending) =>
+        Arm(pending.Token, ServerNow() is { } serverNow ? Clamp(pending.Command.ExecuteAt - serverNow, TimeSpan.Zero, MaxLead) : Tick);
+
+    private void Arm(long token, TimeSpan delay)
     {
         _execution?.Dispose();
-        var delay = ServerNow() is { } serverNow
-            ? Clamp(pending.Command.ExecuteAt - serverNow, TimeSpan.Zero, MaxLead)
-            : Tick;
-        _execution = _time.CreateTimer(_ => _dispatcher.Post(() => Execute(pending.Token)), null, delay, Timeout.InfiniteTimeSpan);
+        _execution = _time.CreateTimer(_ => _dispatcher.Post(() => Execute(token)), null, delay, Timeout.InfiniteTimeSpan);
     }
 
     private void Execute(long token)
     {
         if (_disposed || _pending is not { } pending || pending.Token != token)
         {
+            return;
+        }
+        var command = pending.Command;
+        // Another connection's command (its re-attach brings the room's own), or one of an epoch the room already left.
+        if (pending.Epoch != _room.ConnectionEpoch || _room.Room is not { } room || command.SelectionRevision < room.SelectionRevision)
+        {
+            _pending = null;
+            return;
+        }
+        // The room's snapshot of the command's epoch is still on its way, or the server's clock is not known yet: it waits.
+        if (command.SelectionRevision > room.SelectionRevision || !room.IsPlaying || ServerNow() is not { } serverNow)
+        {
+            Arm(token, Tick);
+            return;
+        }
+        // Not due yet (one wait is at most MaxLead, and the clock may have moved): it waits again.
+        if (command.ExecuteAt - serverNow > EarlySlack)
+        {
+            Schedule(pending);
             return;
         }
         var now = _time.GetUtcNow();
@@ -245,21 +268,13 @@ public sealed class WatchPartyPlaybackBinding : IDisposable
             pending.DeferredSince ??= now;
             if (now - pending.DeferredSince < BusyDefer)
             {
-                _execution?.Dispose();
-                _execution = _time.CreateTimer(_ => _dispatcher.Post(() => Execute(token)), null, Tick, Timeout.InfiniteTimeSpan);
+                Arm(token, Tick);
                 return;
             }
         }
-        var command = pending.Command;
-        if (_room.Room is not { IsPlaying: true } room || command.SelectionRevision != room.SelectionRevision
-            || (command.SessionId is { } session && session != obs.SessionId) || pending.Epoch != _room.ConnectionEpoch)
+        if (command.SessionId is { } session && session != obs.SessionId)
         {
             _pending = null;
-            return;
-        }
-        if (ServerNow() is not { } serverNow)
-        {
-            Schedule(pending);
             return;
         }
         _pending = null;
@@ -318,12 +333,13 @@ public sealed class WatchPartyPlaybackBinding : IDisposable
             return;
         }
         var now = _time.GetUtcNow();
+        FollowRevision();
         if (_room.Room is not { IsPlaying: true } room)
         {
-            ResetEpoch();
+            // Nothing plays in the room: nothing to correct. A command that came before the room's snapshot waits for it.
+            SetRate(null);
             return;
         }
-        FollowRevision();
         if (PendingSeekSeconds is not null && now - _pendingSeekAt >= PendingSeekTimeout)
         {
             PendingSeekSeconds = null;
@@ -468,13 +484,21 @@ public sealed class WatchPartyPlaybackBinding : IDisposable
         _ = _room.SendAsync(WatchPartyFrames.StateReport(sessionId, _reportedCommandId, obs.PositionSeconds, paused));
     }
 
-    // A new playback epoch (a start, a restart with other content) starts the binding over.
+    // A new playback epoch (a start, a restart with other content) starts the binding over, and only that: a command of
+    // the new epoch that came before the room's snapshot stays, and runs now.
     private void FollowRevision()
     {
-        if (_room.Room is { IsPlaying: true } room && room.SelectionRevision != _lastRevision)
+        if (_room.Room is not { } room || room.SelectionRevision == _lastRevision)
         {
-            _lastRevision = room.SelectionRevision;
-            ResetEpoch();
+            return;
+        }
+        _lastRevision = room.SelectionRevision;
+        var held = _pending is { } pending && pending.Command.SelectionRevision >= room.SelectionRevision ? pending : null;
+        ResetEpoch();
+        if (held is not null)
+        {
+            _pending = held;
+            Schedule(held);
         }
     }
 

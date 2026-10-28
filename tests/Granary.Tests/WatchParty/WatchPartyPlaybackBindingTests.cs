@@ -31,13 +31,13 @@ public sealed class WatchPartyPlaybackBindingTests : IDisposable
     }
 
     private static WatchPartyRoom Room(string state = "playing", long generation = 3, string role = "host", string? attached = "s1",
-        bool selfReady = false, bool selfBuffering = false, bool ignoreWait = false, string policy = "host_only") => new()
+        bool selfReady = false, bool selfBuffering = false, bool ignoreWait = false, string policy = "host_only", long revision = 1) => new()
     {
         RoomId = "r1",
         Phase = WatchPartyPhases.Playing,
         PlaybackState = state,
         SelfRole = role,
-        SelectionRevision = 1,
+        SelectionRevision = revision,
         Generation = generation,
         AttachedSessionId = attached,
         SelfIgnoreWait = ignoreWait,
@@ -47,8 +47,8 @@ public sealed class WatchPartyPlaybackBindingTests : IDisposable
     };
 
     private static WatchPartyCommand Command(string id, string action, double position, double serverSecondsFromStart, string state = "playing",
-        string? session = null) =>
-        new(id, session, 1, action, position, ServerStart.AddSeconds(serverSecondsFromStart), state);
+        string? session = null, long revision = 1) =>
+        new(id, session, revision, action, position, ServerStart.AddSeconds(serverSecondsFromStart), state);
 
     private void Advance(double seconds) => _time.Advance(TimeSpan.FromSeconds(seconds));
 
@@ -85,6 +85,51 @@ public sealed class WatchPartyPlaybackBindingTests : IDisposable
 
         Assert.Equal([true], _player.Playing);
         Assert.Empty(_player.Seeks);
+    }
+
+    [Fact]
+    public void ACommandFarAhead_WaitsForItsMoment()
+    {
+        _player.Observation = _player.Observation with { IntendsToPlay = false, IsAdvancing = false };
+        _room.Deliver(Command("c1", "play", 12, serverSecondsFromStart: 8));
+
+        Advance(5.1);
+        Assert.Empty(_player.Playing);
+        Advance(2.8);
+        Assert.Empty(_player.Playing);
+        Advance(0.1);
+
+        Assert.Equal([true], _player.Playing);
+    }
+
+    [Fact]
+    public void WithoutTheServersClock_ACommandWaits_AndThePlayerGoesOnMeanwhile()
+    {
+        _room.ClockOffsetMs = null;
+        _room.Deliver(Command("c1", "pause", 12, serverSecondsFromStart: 0.5));
+
+        Advance(3);
+        Assert.Empty(_player.Playing);
+
+        _room.ClockOffsetMs = 10_000;
+        Advance(0.25);
+        Assert.Equal([false], _player.Playing);
+    }
+
+    [Fact]
+    public void ACommand_ThatCameBeforeItsSnapshot_RunsOnceTheSnapshotLands()
+    {
+        _player.Observation = _player.Observation with { IntendsToPlay = false, IsAdvancing = false };
+        _room.Room = Room(revision: 1) with { Phase = WatchPartyPhases.Lobby };
+        Advance(0.5);
+
+        _room.Deliver(Command("c1", "play", 12, serverSecondsFromStart: 0.75, revision: 2));
+        Advance(1);
+        Assert.Empty(_player.Playing);
+
+        _room.Room = Room(revision: 2);
+        Advance(0.25);
+        Assert.Equal([true], _player.Playing);
     }
 
     [Fact]
@@ -201,10 +246,13 @@ public sealed class WatchPartyPlaybackBindingTests : IDisposable
     }
 
     [Fact]
-    public void CommandsOfAnOlderConnection_OrAnotherSession_AreDropped()
+    public void CommandsOfAnOlderConnection_AnotherSession_OrAnOlderEpoch_AreDropped()
     {
         _room.Deliver(Command("c1", "pause", 12, 0), epoch: 0);
         _room.Deliver(Command("c2", "pause", 12, 0, session: "other"));
+        _room.Room = Room(revision: 2);
+        Advance(0.25);
+        _room.Deliver(Command("c3", "pause", 12, 1, revision: 1));
         Advance(1);
 
         Assert.Empty(_player.Playing);

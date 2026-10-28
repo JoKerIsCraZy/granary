@@ -37,12 +37,13 @@ public sealed partial class PlayerViewModel
 
     private void EndWatchParty()
     {
-        if (_party is { } party)
+        if (_party is not { } party)
         {
-            _party = null;
-            party.Notice -= OnPartyNotice;
-            party.Dispose();
+            return;
         }
+        _party = null;
+        party.Notice -= OnPartyNotice;
+        party.Dispose();
         if (_watchParty is not null)
         {
             _watchParty.PropertyChanged -= OnPartyChanged;
@@ -52,27 +53,20 @@ public sealed partial class PlayerViewModel
         _engine.SetSpeed(1);
     }
 
-    // The viewer's play or pause in a room: asked of the room; the room's command changes the player.
-    private bool RequestRoomPlayPause()
-    {
-        if (_party is not { } party)
-        {
-            return false;
-        }
-        party.RequestPlayPause(pause: !_engine.Current.IsPaused);
-        return true;
-    }
+    // The viewer's play or pause in a room: asked of the room (refused, or held while it reconnects); the room's command
+    // changes the player. Only a room that plays nothing leaves it to the player.
+    private bool RequestRoomPlayPause() =>
+        _party is { } party && party.RequestPlayPause(pause: !_engine.Current.IsPaused) != RoomTransportResult.NotInRoom;
 
     // The viewer's seek in a room: the host's goes to the room, a guest's is refused with the web's words.
-    private bool RequestRoomSeek(double seconds)
-    {
-        if (_party is not { } party)
-        {
-            return false;
-        }
-        party.RequestSeek(seconds);
-        return true;
-    }
+    private bool RequestRoomSeek(double seconds) =>
+        _party is { } party && party.RequestSeek(seconds) != RoomTransportResult.NotInRoom;
+
+    // In a room an intro never skips itself, nor do credits or a recap: the pill only offers it (to whoever may seek), as
+    // in Silo's apps.
+    private MarkerSettings RoomMarkers(MarkerSettings settings) => IsWatchParty
+        ? settings with { IntroSkipMode = MarkerSettings.Ask, AutoSkipCredits = false, AutoSkipRecap = false }
+        : settings;
 
     private void OnPartyNotice(object? sender, string text)
     {

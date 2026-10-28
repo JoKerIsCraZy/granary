@@ -278,9 +278,9 @@ View models build `MediaCard`s with the texts already worded; the controls only 
 - Watch Party (`WatchPartyPage`, the web's `pages/watchtogether/WatchPartyHub.tsx`): "WATCH PARTY", "Watch together,
   wherever everyone is." and what a party is; beside each other "Start a party" (Create Watch Party opens an empty room
   the host picks for) and "Join a party" (the code in a wide spaced box, Paste, Join Watch Party; a pasted invite link
-  joins by its token); an error in the web's red box ("Room not found.", "That room is no longer active."); in a room
-  already, a line back to it; "How it works" in three steps. Voting rooms, recent parties and invite links opened from
-  outside the app are not there yet.
+  of this server joins by its token, a link to anywhere else not at all); an error in the web's red box ("Room not
+  found.", "That room is no longer active."); in a room already, a line back to it; "How it works" in three steps.
+  Voting rooms, recent parties and invite links opened from outside the app are not there yet.
 - The room (`WatchPartyRoomPage`, the web's `WatchTogetherRoomPage.tsx`): the status strip (the code, copied by a
   click; Invite link copies the web link; Leave; End room for the host, asked first), then the stage beside "People ·
   N" (initial, name, the host's star, Connected, Ready / Not ready, Watching, Buffering, Away). The stage is the web's:
@@ -288,12 +288,14 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   ready", the host's "Start for everyone · 2/3 ready" ("Start alone anyway") and the guests' "I'm ready" / "Ready ✓";
   "NOW PLAYING" with the room's clock ("12:04 · Playing · 3 here"), Rejoin playback, and the host's Stop for everyone.
   In the lobby the host searches movies and shows (a show by the episode it would play next) and queues one; the
-  invite bar has the guests' pause switch. When the room starts a title the player opens by itself, once per start.
-  The room's end ("The room has ended.") or another device taking it over (Rejoin Watch Party) replaces the page.
+  invite bar has the guests' pause switch. When the room starts a title the player opens by itself, once per start
+  (leaving the player and coming back to the room does not open it again). The room's end ("The room has ended.") or
+  another device taking it over (Rejoin Watch Party) replaces the page.
 - The player in a room plays the room's file from the start; play, pause and seek go to the room and the player
   follows its commands; a guest's seek, or pause while the host controls playback, shows the web's words as the
   player's notice ("Only the host can seek the room."). The speed and version settings are the room's, not offered.
-  When the host stops, the title finishes or the room ends, the player closes onto the room.
+  No marked part skips itself: the host is offered Skip Intro (a room seek), guests see no skip pill. When the host
+  stops, the title finishes or the room ends, the player closes onto the room.
 - Back: the navigation view's back arrow, `Alt+Left`, and the mouse back button. The sidebar's sections (Home,
   Search, each library) are the apps' tabs: picking one does not stack on the pages visited before, only Home stays
   under it, so Back walks the pages opened within a section and then goes Home (Android's tab switch pops to the

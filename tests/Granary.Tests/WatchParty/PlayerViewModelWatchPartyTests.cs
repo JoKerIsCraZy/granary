@@ -1,4 +1,6 @@
 using System.Net;
+using System.Text.Json;
+using Granary.Core.Api.Playback;
 using Granary.Core.Api.WatchParty;
 using Granary.Core.Auth;
 using Granary.Core.Playback;
@@ -44,7 +46,13 @@ public sealed class PlayerViewModelWatchPartyTests : IAsyncDisposable
 
     private FakeRealtimeSocket Socket => _sockets[^1];
 
-    private async Task<PlayerViewModel> PlayingAsync(string role = "host")
+    private void At(double seconds)
+    {
+        _time.Advance(TimeSpan.FromSeconds(0.25));
+        _engine.RaiseState(new PlaybackSnapshot(true, false, TimeSpan.FromSeconds(seconds), TimeSpan.FromHours(2), null, HasStarted: true));
+    }
+
+    private async Task<PlayerViewModel> PlayingAsync(string role = "host", MarkerSettings? markers = null)
     {
         string playing = WatchPartyPayloads.Room("playing", "playing", generation: 3, revision: 1, role: role, selected: "movie:heat");
         _silo.On(HttpMethod.Post, "api/v2/watch-together/join", ScriptedSilo.Json(HttpStatusCode.OK, WatchPartyPayloads.Answer(playing)));
@@ -52,7 +60,11 @@ public sealed class PlayerViewModelWatchPartyTests : IAsyncDisposable
         await ServerPlaybackFixture.Until(() => _sockets.Count == 1 && _party.IsConnected, "the room connection");
         var viewModel = new PlayerViewModel(_engine, new ImmediateDispatcher(), _navigation, () =>
         {
-            var playback = new FakeServerPlayback();
+            var playback = new FakeServerPlayback
+            {
+                DurationSeconds = 7200,
+                Preferences = PlaybackPreferences.Default with { Markers = markers ?? MarkerSettings.Default },
+            };
             _playbacks.Add(playback);
             return playback;
         }, new PlaybackStops(), _time, watchParty: _party);
@@ -95,6 +107,45 @@ public sealed class PlayerViewModelWatchPartyTests : IAsyncDisposable
         Assert.Empty(Playback.Seeks);
         Assert.Equal(WatchPartyPlaybackBinding.HostSeeksText, viewModel.NoticeMessage);
         Assert.False(viewModel.CanSeekInRoom);
+    }
+
+    [Fact]
+    public async Task InARoom_NoPartSkipsItself_AndTheHostsSkipIsAskedOfTheRoom()
+    {
+        var viewModel = await PlayingAsync(markers: MarkerSettings.Default with
+        {
+            IntroSkipMode = MarkerSettings.Always,
+            AutoSkipRecap = true,
+            AutoSkipCredits = true,
+        });
+        Playback.RaiseMarkers([new PlaybackMarker(WatchMarkerKinds.Recap, 10, 50), new PlaybackMarker(WatchMarkerKinds.Intro, 60, 120)]);
+
+        At(11);
+        At(61);
+
+        Assert.Empty(Playback.Seeks);
+        Assert.Null(viewModel.Notice);
+        Assert.DoesNotContain(Socket.Sent, f => f.Contains("\"transport_request\"", StringComparison.Ordinal));
+        Assert.True(viewModel.HasSkipPrompt);
+        Assert.Equal("Skip Intro", viewModel.SkipLabel);
+
+        viewModel.SkipCommand.Execute(null);
+        await ServerPlaybackFixture.Until(() => Socket.Sent.Any(f => f.Contains("\"transport_request\"", StringComparison.Ordinal)), "the request");
+        var request = JsonDocument.Parse(Socket.Sent.First(f => f.Contains("\"transport_request\"", StringComparison.Ordinal))).RootElement;
+        Assert.Equal(("seek", 120.0), (request.GetProperty("action").GetString(), request.GetProperty("position_seconds").GetDouble()));
+        Assert.Empty(Playback.Seeks);
+    }
+
+    [Fact]
+    public async Task AGuest_IsNotOfferedASkip_TheyCouldNotMake()
+    {
+        var viewModel = await PlayingAsync(role: "guest");
+        Playback.RaiseMarkers([new PlaybackMarker(WatchMarkerKinds.Intro, 60, 120)]);
+
+        At(61);
+
+        Assert.False(viewModel.HasSkipPrompt);
+        Assert.Null(viewModel.Notice);
     }
 
     [Fact]

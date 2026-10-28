@@ -38,6 +38,7 @@ public sealed partial class MainWindow : Window
 
     private readonly NavigationService _navigation;
     private readonly PlaybackStops _stops;
+    private readonly Granary.Core.WatchParty.WatchPartySession _room;
     private readonly ILogger<MainWindow> _logger;
     private readonly DispatcherQueueTimer _railHover;
     private readonly DispatcherQueueTimer _reveal;
@@ -55,12 +56,13 @@ public sealed partial class MainWindow : Window
 
     public MainWindow(NavigationService navigation, ShellViewModel shell, SidebarViewModel sidebar, SidebarSections sections,
         SidebarLayout layout, NotificationBadge notifications, RequestsFeature requests, PlaybackStops stops, AppUpdatesViewModel updates,
-        Granary.Core.WatchParty.WatchPartyFeature watchParty, ILogger<MainWindow> logger)
+        Granary.Core.WatchParty.WatchPartyFeature watchParty, Granary.Core.WatchParty.WatchPartySession room, ILogger<MainWindow> logger)
     {
         Layout = layout;
         Updates = updates;
         _navigation = navigation;
         _stops = stops;
+        _room = room;
         _logger = logger;
         Shell = shell;
         Sidebar = sidebar;
@@ -588,6 +590,8 @@ public sealed partial class MainWindow : Window
         }
         // Only playback ends: the window closes as it is, full screen or not.
         _player?.ViewModel.Leave();
+        // So does a Watch Party's socket, with a close the room sees at once rather than a connection that times out.
+        _stops.Track(_room.LeaveAsync());
         var stopped = _stops.WhenStoppedAsync(StopBudget);
         if (stopped.IsCompleted)
         {

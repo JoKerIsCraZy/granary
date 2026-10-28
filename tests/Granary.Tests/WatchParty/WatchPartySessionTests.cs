@@ -111,6 +111,51 @@ public sealed class WatchPartySessionTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AnAnswerAfterTheLeave_DoesNotBringTheRoomBack()
+    {
+        var answered = new TaskCompletionSource();
+        string playing = WatchPartyPayloads.Answer(WatchPartyPayloads.Room("playing", "waiting", generation: 3, revision: 1, selected: "movie:heat"));
+        _silo.On(HttpMethod.Post, Room + "/playback/start", async () =>
+        {
+            await answered.Task;
+            return await ScriptedSilo.Json(HttpStatusCode.OK, playing)();
+        });
+        await _party.CreateAsync(TestContext.Current.CancellationToken);
+        await Connected();
+        _party.StartedRevision = 1;
+
+        var starting = _party.StartAsync();
+        await _party.LeaveAsync();
+        answered.SetResult();
+        await starting;
+
+        Assert.Null(_party.Room);
+        Assert.False(_party.IsInRoom);
+        Assert.Null(_party.StartedRevision);
+        Assert.Single(_sockets);
+    }
+
+    [Fact]
+    public async Task ARoomCreatedForTheProfileBefore_IsNotEntered()
+    {
+        var answered = new TaskCompletionSource();
+        _silo.On(HttpMethod.Post, "api/v2/watch-together/rooms", async () =>
+        {
+            await answered.Task;
+            return await ScriptedSilo.Json(HttpStatusCode.Created, WatchPartyPayloads.Answer(WatchPartyPayloads.Room()))();
+        });
+
+        var creating = _party.CreateAsync(TestContext.Current.CancellationToken);
+        _session.ProfileId = "8";
+        _session.RaiseChanged();
+        answered.SetResult();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => creating);
+        Assert.Null(_party.Room);
+        Assert.Empty(_sockets);
+    }
+
+    [Fact]
     public async Task Leaving_ClosesTheSocket_AndForgetsTheRoom()
     {
         await _party.CreateAsync(TestContext.Current.CancellationToken);

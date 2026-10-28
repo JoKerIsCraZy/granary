@@ -26,7 +26,8 @@ public sealed record WatchPartyPick(string ContentId, string Title, string Meta,
 /// The room page, as the web's (<c>pages/watchtogether/WatchTogetherRoomPage.tsx</c> and its stages): the code and invite
 /// link, who is here, and the stage: an empty lobby, a title up next (the host starts it, guests mark themselves ready),
 /// or what plays (back into the player, or the host stops it for everyone). The host finds titles to put up next by
-/// searching. When the room starts a title, the player opens by itself, once per start.
+/// searching. When the room starts a title, the player opens by itself, once per start: the start is kept on the session,
+/// so the page shown again (a new page each time, it is not cached) after the viewer left the player does not reopen it.
 /// </summary>
 public sealed partial class WatchPartyRoomViewModel : ObservableObject
 {
@@ -38,16 +39,16 @@ public sealed partial class WatchPartyRoomViewModel : ObservableObject
     private readonly CatalogApi _catalog;
     private readonly ImageParameterCache _images;
     private readonly INavigationService _navigation;
+    private readonly IUiDispatcher _dispatcher;
     private readonly TimeProvider _time;
     private readonly ILogger<WatchPartyRoomViewModel> _logger;
-    private long? _startedRevision;
     private bool _active;
     private string? _stagedShown;
     private ITimer? _clock;
     private CancellationTokenSource? _search;
 
     public WatchPartyRoomViewModel(WatchPartySession party, WatchPartyFeature feature, ISessionManager session, CatalogApi catalog,
-        ImageParameterCache images, INavigationService navigation, TimeProvider time, ILogger<WatchPartyRoomViewModel> logger)
+        ImageParameterCache images, INavigationService navigation, IUiDispatcher dispatcher, TimeProvider time, ILogger<WatchPartyRoomViewModel> logger)
     {
         _party = party;
         _feature = feature;
@@ -55,6 +56,7 @@ public sealed partial class WatchPartyRoomViewModel : ObservableObject
         _catalog = catalog;
         _images = images;
         _navigation = navigation;
+        _dispatcher = dispatcher;
         _time = time;
         _logger = logger;
     }
@@ -192,7 +194,7 @@ public sealed partial class WatchPartyRoomViewModel : ObservableObject
         _active = true;
         _party.PropertyChanged += OnPartyChanged;
         _feature.PropertyChanged += OnFeatureChanged;
-        _clock = _time.CreateTimer(_ => ShowPlaying(), null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+        _clock = _time.CreateTimer(_ => _dispatcher.Post(ShowPlaying), null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
         _ = _feature.RefreshAsync();
         Show();
     }
@@ -250,7 +252,7 @@ public sealed partial class WatchPartyRoomViewModel : ObservableObject
     {
         if (Room is { IsPlaying: true, SelectedContentId: { } content } room)
         {
-            _startedRevision = room.SelectionRevision;
+            _party.StartedRevision = room.SelectionRevision;
             _navigation.NavigateTo(AppRoute.Player, PlayRequest.WatchParty(content, room.SelectedFileId, room.SelectionRevision));
         }
     }
@@ -415,11 +417,12 @@ public sealed partial class WatchPartyRoomViewModel : ObservableObject
     // The room started a title (a new revision): the player opens once for it, as the web's room page does.
     private void AutoStart()
     {
-        if (!_active || IsEnded || Room is not { IsPlaying: true, SelectedContentId: { } content } room || _startedRevision == room.SelectionRevision)
+        if (!_active || IsEnded || Room is not { IsPlaying: true, SelectedContentId: { } content } room
+            || _party.StartedRevision == room.SelectionRevision)
         {
             return;
         }
-        _startedRevision = room.SelectionRevision;
+        _party.StartedRevision = room.SelectionRevision;
         _navigation.NavigateTo(AppRoute.Player, PlayRequest.WatchParty(content, room.SelectedFileId, room.SelectionRevision));
     }
 

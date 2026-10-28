@@ -25,7 +25,10 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
     private readonly ILogger<WatchPartySession> _logger;
     private WatchPartyConnection? _connection;
     private string? _roomToken;
-    private (string? ServerId, string? ProfileId) _joinedAs;
+    // The server and profile last seen: a change of either leaves the room.
+    private (string? ServerId, string? ProfileId) _seenAs;
+    // Counts every entry and leave: an answer to a call made before one is about a room this profile is no longer in.
+    private long _generation;
 
     public WatchPartySession(ISessionManager session, WatchPartyApi api, Func<WatchPartyConnection> connections, IUiDispatcher dispatcher,
         ILogger<WatchPartySession> logger)
@@ -35,6 +38,7 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
         _connections = connections;
         _dispatcher = dispatcher;
         _logger = logger;
+        _seenAs = (_session.ActiveServer?.Id, _session.ProfileId);
         _session.Changed += (_, _) => _dispatcher.Post(OnSessionChanged);
     }
 
@@ -64,37 +68,75 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
     /// <summary>A command of the room, on the UI thread.</summary>
     public event EventHandler<WatchPartyDelivery>? CommandReceived;
 
+    /// <summary>
+    /// The playback epoch this device's player last opened for: a room page shown again (after the viewer left the
+    /// player) does not open it a second time for the same start.
+    /// </summary>
+    public long? StartedRevision { get; set; }
+
     /// <summary>Opens a room this profile hosts and goes in.</summary>
+    /// <exception cref="OperationCanceledException">The profile or server changed meanwhile: the room is not entered.</exception>
     public async Task<WatchPartyRoom> CreateAsync(CancellationToken cancellationToken = default)
     {
         var server = Server();
+        long generation = _generation;
         var opened = await _api.CreateAsync(server, Guid.NewGuid().ToString(), cancellationToken);
+        Stale(generation);
         Enter(server, opened);
         return opened.Room;
     }
 
-    /// <summary>Goes into the room of a code (<c>ABCD1234</c>) or an invitation link (one with <c>token=</c>).</summary>
+    /// <summary>Goes into the room of a code (<c>ABCD1234</c>) or an invitation link of this server.</summary>
     /// <exception cref="ArgumentException">The text is neither.</exception>
+    /// <exception cref="OperationCanceledException">The profile or server changed meanwhile: the room is not entered.</exception>
     public async Task<WatchPartyRoom> JoinAsync(string codeOrLink, CancellationToken cancellationToken = default)
     {
-        var join = ParseJoin(codeOrLink) ?? throw new ArgumentException("Enter the room's code or paste its invite link.", nameof(codeOrLink));
         var server = Server();
+        var join = ParseJoin(codeOrLink, server) ?? throw new ArgumentException("Enter the room's code or paste its invite link.", nameof(codeOrLink));
+        long generation = _generation;
         var joined = await _api.JoinAsync(server, join, cancellationToken);
+        Stale(generation);
         Enter(server, joined);
         return joined.Room;
     }
 
-    /// <summary>A code or an invitation's token from what the viewer typed or pasted; null for neither.</summary>
-    public static WatchPartyJoin? ParseJoin(string? text)
+    /// <summary>
+    /// A code, or an invitation's token from a link to <paramref name="server"/>'s own Watch Party (<c>…/rooms?token=</c>,
+    /// as the web shares it); null for anything else. A token is a credential: one in a link to another host, or to
+    /// another page, is not sent anywhere.
+    /// </summary>
+    public static WatchPartyJoin? ParseJoin(string? text, Uri server)
     {
+        ArgumentNullException.ThrowIfNull(server);
         string input = text?.Trim() ?? "";
-        if (TokenPattern().Match(input) is { Success: true } link)
+        if (input.Contains("token=", StringComparison.OrdinalIgnoreCase))
         {
-            return new WatchPartyJoin { JoinToken = Uri.UnescapeDataString(link.Groups[1].Value) };
+            return InviteToken(input, server) is { } token ? new WatchPartyJoin { JoinToken = token } : null;
         }
         string code = new([.. input.Where(char.IsAsciiLetterOrDigit)]);
         return code.Length is >= 4 and <= 12 && code.Length == input.Count(c => !char.IsWhiteSpace(c) && c != '-')
             ? new WatchPartyJoin { Code = code.ToUpperInvariant() }
+            : null;
+    }
+
+    // The token of a link to this server's Watch Party page: same scheme and host (and port), its path the server's own
+    // path followed by "/rooms". A path alone ("/rooms?token=…") is taken as the server's.
+    private static string? InviteToken(string input, Uri server)
+    {
+        // A path alone is the room's invite_path, which follows the server's own path as WatchPartyApi.InviteLink puts it.
+        string absolute = input.StartsWith('/') && !input.StartsWith("//", StringComparison.Ordinal) ? server.AbsoluteUri.TrimEnd('/') + input : input;
+        if (!Uri.TryCreate(absolute, UriKind.Absolute, out var link))
+        {
+            return null;
+        }
+        string basePath = server.AbsolutePath.TrimEnd('/');
+        if (link.Scheme != server.Scheme || !string.Equals(link.Host, server.Host, StringComparison.OrdinalIgnoreCase) || link.Port != server.Port
+            || !string.Equals(link.AbsolutePath.TrimEnd('/'), basePath + "/rooms", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+        return TokenPattern().Match(link.Query) is { Success: true } match && Uri.UnescapeDataString(match.Groups[1].Value) is { Length: > 0 } token
+            ? token
             : null;
     }
 
@@ -105,7 +147,12 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
         {
             return;
         }
+        long generation = _generation;
         var read = await _api.GetAsync(Server(), room.RoomId, token, cancellationToken);
+        if (generation != _generation || _connection is null)
+        {
+            return;
+        }
         _roomToken = read.RoomAccessToken;
         Show(read.Room);
     }
@@ -135,9 +182,11 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
     /// <summary>Leaves the room on this device: the socket closes, and nothing of the room stays.</summary>
     public async Task LeaveAsync()
     {
+        _generation++;
         var connection = _connection;
         _connection = null;
         _roomToken = null;
+        StartedRevision = null;
         Room = null;
         End = null;
         ConnectionState = WatchPartyConnectionState.Disconnected;
@@ -169,9 +218,23 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
         {
             return;
         }
+        long generation = _generation;
         var answer = await operation(Server(), room.RoomId);
+        // Left (or another profile) meanwhile: the answer is about a room this device is no longer in.
+        if (generation != _generation || _connection is null)
+        {
+            return;
+        }
         _roomToken = answer.RoomAccessToken;
         Show(answer.Room);
+    }
+
+    private void Stale(long generation)
+    {
+        if (generation != _generation)
+        {
+            throw new OperationCanceledException("The profile left or changed while the room was asked for.");
+        }
     }
 
     private void Enter(Uri server, WatchPartyRoomResponse response)
@@ -181,8 +244,12 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
             // Another room: this one is left first.
             _ = LeaveAsync();
         }
-        _joinedAs = (_session.ActiveServer?.Id, _session.ProfileId);
+        _generation++;
         _roomToken = response.RoomAccessToken;
+        if (Room?.RoomId != response.Room.RoomId)
+        {
+            StartedRevision = null;
+        }
         End = null;
         Room = response.Room;
         Connect(server, response.Room.RoomId, response.RoomAccessToken);
@@ -245,7 +312,7 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
         {
             return;
         }
-        _logger.LogInformation("The Watch Party engagement ended: {Reason}", end.Reason);
+        _logger.LogInformation("The Watch Party engagement ended: {Reason}", end.LoggedReason);
         ConnectionState = WatchPartyConnectionState.Disconnected;
         End = end;
     });
@@ -264,10 +331,17 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
         }
     }
 
-    // Another server or profile is not in this room.
+    // Another server or profile is not in this room, nor in a join or create still on its way.
     private void OnSessionChanged()
     {
-        if (Room is not null && _joinedAs != (_session.ActiveServer?.Id, _session.ProfileId))
+        var now = (_session.ActiveServer?.Id, _session.ProfileId);
+        if (now == _seenAs)
+        {
+            return;
+        }
+        _seenAs = now;
+        _generation++;
+        if (Room is not null)
         {
             _ = LeaveAsync();
         }
@@ -277,6 +351,6 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
         ? server.BaseUri
         : throw new InvalidOperationException("Sign in to a server to watch together.");
 
-    [GeneratedRegex(@"[?&]token=([^&#\s]+)", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"(?:^|[?&])token=([^&#\s]+)", RegexOptions.CultureInvariant)]
     private static partial Regex TokenPattern();
 }

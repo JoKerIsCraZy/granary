@@ -89,7 +89,7 @@ public sealed partial class PlayerViewModel
             return;
         }
         Markers = markers;
-        _markerPrompts.Reset(markers, playback.Preferences.Markers);
+        _markerPrompts.Reset(markers, RoomMarkers(playback.Preferences.Markers));
         TakeCredits(markers);
         ShowSkipPrompt();
     }
@@ -113,10 +113,11 @@ public sealed partial class PlayerViewModel
         ShowSkipPrompt();
     }
 
-    // The texts first: whoever sees the pill appear reads them. The card and the screen of the next episode take its place.
+    // The texts first: whoever sees the pill appear reads them. The card and the screen of the next episode take its place,
+    // and a room's guest, who cannot seek, has none.
     private void ShowSkipPrompt()
     {
-        if (_markerPrompts.Prompt is not { } prompt || _nextUp.View != NextUpView.None)
+        if (_markerPrompts.Prompt is not { } prompt || _nextUp.View != NextUpView.None || !CanSeekInRoom)
         {
             HasSkipPrompt = false;
             return;

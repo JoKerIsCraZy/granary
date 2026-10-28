@@ -50,7 +50,8 @@ public sealed class WatchPartyPagesTests : IAsyncDisposable
     private WatchPartyFeature Feature() => new(_session, _api, _time, _logs.For<WatchPartyFeature>());
 
     private WatchPartyRoomViewModel RoomPage(WatchPartyFeature feature) => new(_party, feature, _session, new CatalogApi(_silo.Http),
-        new ImageParameterCache(new ImagesApi(_silo.Http), _logs.For<ImageParameterCache>()), _navigation, _time, _logs.For<WatchPartyRoomViewModel>());
+        new ImageParameterCache(new ImagesApi(_silo.Http), _logs.For<ImageParameterCache>()), _navigation, new ImmediateDispatcher(), _time,
+        _logs.For<WatchPartyRoomViewModel>());
 
     private async Task JoinAsync(string room)
     {
@@ -123,6 +124,27 @@ public sealed class WatchPartyPagesTests : IAsyncDisposable
         Assert.Equal(("movie:heat", "77", 1L), (request.ContentId, request.PinnedFileId, request.SelectionRevision));
         Assert.True(page.IsPlaying);
         page.Deactivate();
+    }
+
+    [Fact]
+    public async Task TheRoomPageShownAgain_DoesNotReopenThePlayer_ForTheSameStart()
+    {
+        await JoinAsync(WatchPartyPayloads.Room("playing", "playing", generation: 3, revision: 1, role: "guest", selected: "movie:heat"));
+        var page = RoomPage(Feature());
+        page.Activate();
+        Assert.Single(_navigation.Navigations, n => n.Route == AppRoute.Player);
+        page.Deactivate();
+
+        // The viewer left the player: the room page comes up again, a new one (it is not cached).
+        var again = RoomPage(Feature());
+        again.Activate();
+        Assert.Single(_navigation.Navigations, n => n.Route == AppRoute.Player);
+
+        _sockets[0].Push(WatchPartyPayloads.Snapshot(WatchPartyPayloads.Room("playing", "waiting", generation: 5, revision: 2, role: "guest", selected: "movie:heat")));
+        await ServerPlaybackFixture.Until(() => _party.Room!.SelectionRevision == 2, "the next start");
+
+        Assert.Equal(2, _navigation.Navigations.Count(n => n.Route == AppRoute.Player));
+        again.Deactivate();
     }
 
     [Fact]

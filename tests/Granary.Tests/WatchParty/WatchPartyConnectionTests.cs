@@ -61,6 +61,21 @@ public sealed class WatchPartyConnectionTests
 
     private Task Until(Func<bool> condition, string what) => ServerPlaybackFixture.Until(condition, what);
 
+    // Loses the connection of socket <paramref name="index"/>; answers how long it waits before the next.
+    private async Task<TimeSpan> LoseAsync(WatchPartyConnection connection, int index)
+    {
+        Socket(index).Close();
+        await _time.WaitUntilAsync(() => connection.State == WatchPartyConnectionState.Disconnected
+            && _time.NextDue is { } due && due <= TimeSpan.FromSeconds(1.5), TestContext.Current.CancellationToken);
+        return _time.NextDue!.Value;
+    }
+
+    private async Task ComeBackAsync(WatchPartyConnection connection, TimeSpan wait, int sockets)
+    {
+        _time.Advance(wait);
+        await Until(() => _sockets.Count == sockets && connection.State == WatchPartyConnectionState.Connected, "the next connection");
+    }
+
     [Fact]
     public async Task Opening_OffersTheProtocolAndTicket_AndPingsForTheClock()
     {
@@ -84,8 +99,11 @@ public sealed class WatchPartyConnectionTests
 
         Socket(0).Push(WatchPartyPayloads.Snapshot(WatchPartyPayloads.Room(generation: 4)));
         Socket(0).Push(WatchPartyPayloads.Command("c1", "seek", 61.5, "2026-10-01T12:00:02.000Z", state: "waiting"));
-        // The server's clock is 10 s ahead; the round trip took nothing on the manual clock.
-        Socket(0).Push("""{ "type": "pong", "client_sent_at": "2026-10-01T12:00:00.000Z", "server_received_at": "2026-10-01T12:00:10.000Z", "server_sent_at": "2026-10-01T12:00:10.000Z" }""");
+        // The server's clock is 10 s ahead; the round trip took nothing on the manual clock. Three samples make a clock.
+        for (int i = 0; i < RoomClock.MinSamples; i++)
+        {
+            Socket(0).Push("""{ "type": "pong", "client_sent_at": "2026-10-01T12:00:00.000Z", "server_received_at": "2026-10-01T12:00:10.000Z", "server_sent_at": "2026-10-01T12:00:10.000Z" }""");
+        }
         Socket(0).Push("""{ "type": "suggestions_update", "suggestions": [] }""");
         await Until(() => connection.Clock.OffsetMs is not null && _frames.Count == 2, "the frames");
 
@@ -101,15 +119,68 @@ public sealed class WatchPartyConnectionTests
         await using var connection = Open();
         await Until(() => _sockets.Count == 1 && connection.State == WatchPartyConnectionState.Connected, "the connection");
 
-        Socket(0).Close();
-        await Until(() => connection.State == WatchPartyConnectionState.Disconnected, "the loss");
-        _time.Advance(TimeSpan.FromMilliseconds(500));
-        await Until(() => _sockets.Count == 2 && connection.State == WatchPartyConnectionState.Connected, "the second connection");
+        var wait = await LoseAsync(connection, 0);
+        Assert.InRange(wait, TimeSpan.FromMilliseconds(400), TimeSpan.FromMilliseconds(600));
+        await ComeBackAsync(connection, wait, 2);
 
         Assert.Equal(2, _silo.SentTo(HttpMethod.Post, TicketPath).Count);
         Assert.Equal(2, connection.Epoch);
         Assert.Empty(_ends);
     }
+
+    [Fact]
+    public async Task TheWaits_StartOver_OnlyAfterAConnectionHeld()
+    {
+        await using var connection = Open();
+        await Until(() => _sockets.Count == 1 && connection.State == WatchPartyConnectionState.Connected, "the connection");
+
+        var first = await LoseAsync(connection, 0);
+        await ComeBackAsync(connection, first, 2);
+        // Lost again at once: a connection that opened is no reason to hurry back.
+        var second = await LoseAsync(connection, 1);
+        Assert.InRange(second, TimeSpan.FromMilliseconds(800), TimeSpan.FromMilliseconds(1200));
+        await ComeBackAsync(connection, second, 3);
+
+        _time.Advance(WatchPartyConnection.SteadyAfter);
+        var afterSteady = await LoseAsync(connection, 2);
+
+        Assert.InRange(afterSteady, TimeSpan.FromMilliseconds(400), TimeSpan.FromMilliseconds(600));
+    }
+
+    [Fact]
+    public async Task TheFiveMinutes_RenewTheConnectionAtOnce_WithoutReconnecting()
+    {
+        await using var connection = Open();
+        await Until(() => _sockets.Count == 1 && connection.State == WatchPartyConnectionState.Connected, "the connection");
+        var states = new List<WatchPartyConnectionState>();
+        connection.StateChanged += (_, state) =>
+        {
+            lock (states)
+            {
+                states.Add(state);
+            }
+        };
+
+        _time.Advance(TimeSpan.FromSeconds(300));
+        await Until(() => _sockets.Count == 2 && connection.Epoch == 2, "the renewed connection");
+        // The server's own close a moment before the five minutes are up on this clock renews it as well.
+        _time.Advance(TimeSpan.FromSeconds(297));
+        Socket(1).Close();
+        await Until(() => _sockets.Count == 3 && connection.Epoch == 3, "the connection after the server's close");
+
+        Assert.True(Socket(0).Disposed);
+        Assert.Equal(3, _silo.SentTo(HttpMethod.Post, TicketPath).Count);
+        Assert.Empty(states);
+        Assert.Equal(WatchPartyConnectionState.Connected, connection.State);
+    }
+
+    [Theory]
+    [InlineData("host_left", "host_left")]
+    [InlineData("ended", "ended")]
+    [InlineData("Bearer abc.def", "other")]
+    [InlineData("token=secret", "other")]
+    [InlineData("", "other")]
+    public void AnEndsReason_IsLoggedOnlyAsACode(string reason, string logged) => Assert.Equal(logged, new WatchPartyEnd(reason).LoggedReason);
 
     [Fact]
     public async Task ARoomThatClosed_EndsTheEngagement()
@@ -167,18 +238,42 @@ public sealed class WatchPartyConnectionTests
     }
 
     [Fact]
-    public void TheClock_KeepsTheShortestRoundTrip_AndDropsSamplesAfterAStep()
+    public void TheClock_IsTheMedianOfTheShortestRoundTrips_FromThreeSamplesOn()
     {
         var clock = new RoomClock();
         var t0 = DateTimeOffset.Parse("2026-10-01T12:00:00Z", System.Globalization.CultureInfo.InvariantCulture);
 
+        // Offsets 4900 (400 ms there and back), 5000 (40 ms), 5005 (50 ms).
         clock.Record(t0, t0.AddMilliseconds(5_100), t0.AddMilliseconds(5_100), t0.AddMilliseconds(400));
         clock.Record(t0, t0.AddMilliseconds(5_020), t0.AddMilliseconds(5_020), t0.AddMilliseconds(40));
+        Assert.Null(clock.OffsetMs);
+        clock.Record(t0, t0.AddMilliseconds(5_030), t0.AddMilliseconds(5_030), t0.AddMilliseconds(50));
         Assert.Equal(5_000, clock.OffsetMs);
-        Assert.False(clock.Record(t0, t0, t0, t0.AddMilliseconds(6_000)));
+        // 5010 in 30 ms: the three shortest are 5010, 5000 and 5005.
+        clock.Record(t0, t0.AddMilliseconds(5_025), t0.AddMilliseconds(5_025), t0.AddMilliseconds(30));
+        Assert.Equal(5_005, clock.OffsetMs);
 
-        // A clock that stepped by a minute cannot agree with the samples before.
+        Assert.False(clock.Record(t0, t0, t0, t0.AddMilliseconds(6_000)));
+        Assert.False(clock.Record(t0, t0.AddHours(13), t0.AddHours(13), t0));
+        Assert.Equal(5_005, clock.OffsetMs);
+    }
+
+    [Fact]
+    public void AClockThatStepped_StartsTheSamplesOver()
+    {
+        var clock = new RoomClock();
+        var t0 = DateTimeOffset.Parse("2026-10-01T12:00:00Z", System.Globalization.CultureInfo.InvariantCulture);
+        for (int i = 0; i < RoomClock.MinSamples; i++)
+        {
+            clock.Record(t0, t0.AddMilliseconds(5_020), t0.AddMilliseconds(5_020), t0.AddMilliseconds(40));
+        }
+
+        // A minute later than any sample before could be.
         clock.Record(t0, t0.AddMilliseconds(65_100), t0.AddMilliseconds(65_100), t0.AddMilliseconds(200));
+        Assert.Null(clock.OffsetMs);
+        clock.Record(t0, t0.AddMilliseconds(65_100), t0.AddMilliseconds(65_100), t0.AddMilliseconds(200));
+        clock.Record(t0, t0.AddMilliseconds(65_100), t0.AddMilliseconds(65_100), t0.AddMilliseconds(200));
+
         Assert.Equal(65_000, clock.OffsetMs);
     }
 

@@ -2055,7 +2055,9 @@ the commands its player runs. Sources: `silo-server/docs/realtime-api.md` ("Watc
   rooms are offered only when `state` is `available`, `allowed`, and the protocol is `silo.room.v2`.
 - `POST /api/v2/watch-together/rooms` `{ room_id (a client UUID: a retry answers the same room), selection_mode:
   "host_pick" | "vote" }` → `201 { room, room_access_token }`. `POST /api/v2/watch-together/join` `{ code }` or
-  `{ join_token }` (the token of an invitation link `…/rooms?token=`, which wins) → `{ room, room_access_token }`.
+  `{ join_token }` (the token of an invitation link `…/rooms?token=`, which wins; Granary takes it only from a link to
+  the active server's own scheme, host, port and `<base path>/rooms`, or from that path alone) → `{ room,
+  room_access_token }`.
   `GET /api/v2/watch-together/rooms/{id}` with `X-Room-Token` reads it and renews the proof. The proof (and the
   room's `invite_path`, which carries the join token) is a credential: never logged.
 - The room: `room_id`, `code` (eight letters), `phase` (`lobby` | `playing` | `ended`), `playback_state` (`idle` |
@@ -2072,14 +2074,17 @@ the commands its player runs. Sources: `silo-server/docs/realtime-api.md` ("Watc
 - Socket: `POST …/{id}/ws-ticket` with `X-Room-Token` → `{ ticket (43 URL-safe characters), expires_in,
   max_connection_seconds (300), protocol }`; connect `GET …/{id}/ws` offering `silo.room.v2` then
   `silo.ticket.<ticket>`, nothing in the URL. The server closes it after five minutes; a fresh ticket opens the
-  next. A refused ticket (401, 403, 404, 409, 422) ends the engagement.
+  next at once, the room staying connected meanwhile. A lost connection comes back after 0.5, 1, 2, then every 5 s
+  (each ± 20 %), starting over only after one held 10 s. A refused ticket (401, 403, 404, 409, 422) ends the
+  engagement. A `room_closed` reason is logged only as a short code.
 - Server frames: `snapshot { room }`, `transport_command { command: { command_id, session_id?, selection_revision,
   action: play | pause | seek, position_seconds (the room's position at execute_at), execute_at, issued_at,
   playback_state } }`, `pong { client_sent_at, server_received_at, server_sent_at }`, `room_closed { reason }`,
   `connection_replaced { reason }` (this profile joined on another device: no reconnect until the viewer rejoins),
   `error { code }` (`not_found`, `gone` end it), `suggestions_update`.
-- Client frames: `ping { client_sent_at }` (every 2 s for four samples, then every 15 s: an NTP-style clock offset
-  from the shortest round trip), `attach_session { session_id }` (each connection and session; attached once the
+- Client frames: `ping { client_sent_at }` (every 2 s for four samples, then every 15 s: an NTP-style clock offset,
+  the median of the three shortest round trips of the last eight, known from three samples; a sample more than 12 h
+  off or 5 s there and back is none, and one that cannot agree with the best starts the samples over), `attach_session { session_id }` (each connection and session; attached once the
   snapshot echoes it), `state_report { session_id, command_id?, position_seconds, is_paused, is_ready? }` every 1.5 s
   (not while stalled or seeking), `ready { session_id, command_id, position_seconds, is_paused }` (every 500 ms while
   the room waits on this member's command, until its member entry is `is_ready`; also to end a catch-up), `buffering`
@@ -2087,9 +2092,13 @@ the commands its player runs. Sources: `silo-server/docs/realtime-api.md` ("Watc
   changes only when the room's command comes; guests may seek never and play/pause only under `guest_play_pause`),
   `lobby_ready { ready }`.
 - Playback: everyone plays `selected_file_id` from 0 with `allow_alternate_versions: false`. A command runs at its
-  `execute_at` on the server's clock, projected to the moment it runs; a seek always seeks, a play within 0.4 s
-  leaves the player alone, up to 5 s (2 s for the host) is closed by a playback rate of 1 ± 1–4 %, more seeks. While
-  both play, a drift loop keeps the member on the room with the same rate.
+  `execute_at` on the server's clock (never earlier, however far ahead), projected to the moment it runs; until the
+  clock is known it waits and the player goes on as it was, and one of a newer `selection_revision` than the last
+  snapshot waits for that snapshot (an older one is dropped). A seek always seeks, a play within 0.4 s leaves the
+  player alone, up to 5 s (2 s for the host) is closed by a playback rate of 1 ± 1–4 %, more seeks. While both play,
+  a drift loop keeps the member on the room with the same rate. No marked part skips itself in a room: the intro is
+  offered (Ask) and credits and recaps are not skipped, and only a member who may seek sees the pill, whose skip is a
+  room seek.
 
 ## 13. Consequences for the Windows client
 

@@ -15,14 +15,20 @@ public enum WatchPartyConnectionState
 
 /// <summary>Why a room engagement is over: the room's reason (<c>host_left</c>, <c>ended</c>, …), or another device took it over.</summary>
 /// <param name="Message">The server's words for a takeover.</param>
-public sealed record WatchPartyEnd(string Reason, bool Replaced = false, string? Message = null);
+public sealed record WatchPartyEnd(string Reason, bool Replaced = false, string? Message = null)
+{
+    /// <summary>The reason as a log may carry it: a short code, or <c>other</c> for anything the server put there besides.</summary>
+    public string LoggedReason => Reason.Length is > 0 and <= 40 && Reason.All(c => char.IsAsciiLetterLower(c) || c == '_') ? Reason : "other";
+}
 
 /// <summary>
 /// One room engagement's socket, as the web keeps it (<c>useWatchTogetherRoomConnection.ts</c>): a fresh ticket for
 /// each connection, the socket with <c>silo.room.v2</c>, pings for the room clock, and the server's snapshots and
-/// commands passed on. The server closes a connection after five minutes; a lost one comes back after 0.5, 1, 2, then
-/// every 5 seconds. A room that ended, a proof the server refuses, or this profile joining on another device ends it
-/// for good (<see cref="Ended"/>).
+/// commands passed on. A connection lasts five minutes, and one that ends then (either side closing it, up to
+/// <see cref="RenewMargin"/> early) is followed at once by the next; a lost one comes back after 0.5, 1, 2, then every 5
+/// seconds (a little more or less, so clients do not come back together), starting over only once a connection held
+/// <see cref="SteadyAfter"/>. A room that ended, a proof the server refuses, or this profile joining on another device
+/// ends it for good (<see cref="Ended"/>).
 /// </summary>
 /// <remarks>Its events are raised on the socket's thread.</remarks>
 public sealed class WatchPartyConnection : IAsyncDisposable
@@ -32,6 +38,12 @@ public sealed class WatchPartyConnection : IAsyncDisposable
 
     private static readonly TimeSpan ConnectTimeout = TimeSpan.FromSeconds(15);
 
+    /// <summary>A connection that ends this close to its five minutes, the server's close or this side's, is renewed.</summary>
+    public static readonly TimeSpan RenewMargin = TimeSpan.FromSeconds(5);
+
+    /// <summary>A connection that held this long was a good one: the next loss starts the waits over.</summary>
+    public static readonly TimeSpan SteadyAfter = TimeSpan.FromSeconds(10);
+
     private readonly WatchPartyApi _api;
     private readonly Func<IRealtimeSocket> _sockets;
     private readonly TimeProvider _time;
@@ -39,6 +51,7 @@ public sealed class WatchPartyConnection : IAsyncDisposable
     private readonly SemaphoreSlim _sending = new(1, 1);
     private CancellationTokenSource? _run;
     private IRealtimeSocket? _socket;
+    private CancellationToken _socketToken;
     private long _epoch;
     private int _pongs;
 
@@ -86,14 +99,18 @@ public sealed class WatchPartyConnection : IAsyncDisposable
         {
             return false;
         }
-        await _sending.WaitAsync().ConfigureAwait(false);
+        // The connection's own token: a frame for a connection that closed is not sent on the next.
+        var token = _socketToken;
+        bool entered = false;
         try
         {
+            await _sending.WaitAsync(token).ConfigureAwait(false);
+            entered = true;
             if (!ReferenceEquals(socket, _socket))
             {
                 return false;
             }
-            await socket.SendAsync(frame, _run?.Token ?? CancellationToken.None).ConfigureAwait(false);
+            await socket.SendAsync(frame, token).ConfigureAwait(false);
             return true;
         }
         catch (Exception ex) when (ex is WebSocketException or OperationCanceledException or ObjectDisposedException or InvalidOperationException)
@@ -103,7 +120,10 @@ public sealed class WatchPartyConnection : IAsyncDisposable
         }
         finally
         {
-            _sending.Release();
+            if (entered)
+            {
+                ReleaseSending();
+            }
         }
     }
 
@@ -128,6 +148,19 @@ public sealed class WatchPartyConnection : IAsyncDisposable
         _sending.Dispose();
     }
 
+    // A send that finished after the dispose has nothing to release.
+    private void ReleaseSending()
+    {
+        try
+        {
+            _sending.Release();
+        }
+        catch (ObjectDisposedException)
+        {
+            // Disposed meanwhile.
+        }
+    }
+
     private void Cancel()
     {
         if (_run is not { } run)
@@ -142,13 +175,21 @@ public sealed class WatchPartyConnection : IAsyncDisposable
     private async Task RunAsync(Uri server, string roomId, string roomToken, CancellationToken cancellationToken)
     {
         int attempt = 0;
+        bool renewing = false;
         while (!cancellationToken.IsCancellationRequested)
         {
             WatchPartyEnd? end;
-            SetState(WatchPartyConnectionState.Connecting);
+            DateTimeOffset? openedAt = null;
+            // A renewal keeps the room connected for the moment it takes: controls are not "reconnecting" every five minutes.
+            if (!renewing)
+            {
+                SetState(WatchPartyConnectionState.Connecting);
+            }
+            renewing = false;
             try
             {
-                end = await ConnectOnceAsync(server, roomId, roomToken, () => attempt = 0, cancellationToken).ConfigureAwait(false);
+                (end, renewing) = await ConnectOnceAsync(server, roomId, roomToken, () => openedAt = _time.GetUtcNow(), cancellationToken)
+                    .ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
@@ -181,8 +222,17 @@ public sealed class WatchPartyConnection : IAsyncDisposable
                 Ended?.Invoke(this, end);
                 return;
             }
+            if (openedAt is { } at && _time.GetUtcNow() - at >= SteadyAfter)
+            {
+                attempt = 0;
+            }
+            if (renewing)
+            {
+                // The five minutes are up: the next connection opens at once.
+                continue;
+            }
             SetState(WatchPartyConnectionState.Disconnected);
-            var delay = ReconnectDelays[Math.Min(attempt, ReconnectDelays.Length - 1)];
+            var delay = Jittered(ReconnectDelays[Math.Min(attempt, ReconnectDelays.Length - 1)]);
             attempt++;
             try
             {
@@ -195,8 +245,9 @@ public sealed class WatchPartyConnection : IAsyncDisposable
         }
     }
 
-    // One connection: null when it was lost (and comes back), else why the engagement is over.
-    private async Task<WatchPartyEnd?> ConnectOnceAsync(Uri server, string roomId, string roomToken, Action opened, CancellationToken cancellationToken)
+    // One connection: why the engagement is over, else whether its five minutes ran out (a renewal) or it was lost.
+    private async Task<(WatchPartyEnd? End, bool Renew)> ConnectOnceAsync(Uri server, string roomId, string roomToken, Action opened,
+        CancellationToken cancellationToken)
     {
         var ticket = await _api.MintTicketAsync(server, roomId, roomToken, cancellationToken).ConfigureAwait(false);
         if (!ticket.IsValid)
@@ -214,8 +265,14 @@ public sealed class WatchPartyConnection : IAsyncDisposable
         {
             throw new InvalidDataException("The server chose another protocol.");
         }
-        using var lifetime = new CancellationTokenSource(TimeSpan.FromSeconds(ticket.MaxConnectionSeconds), _time);
+        var maxConnection = TimeSpan.FromSeconds(ticket.MaxConnectionSeconds);
+        using var lifetime = new CancellationTokenSource(maxConnection, _time);
         using var connection = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, lifetime.Token);
+        var openedAt = _time.GetUtcNow();
+        // The five minutes are up, by this side's clock or the server's close just before it.
+        bool Renews() => !cancellationToken.IsCancellationRequested
+            && (lifetime.IsCancellationRequested || _time.GetUtcNow() - openedAt >= maxConnection - RenewMargin);
+        _socketToken = connection.Token;
         _socket = socket;
         Interlocked.Increment(ref _epoch);
         opened();
@@ -232,18 +289,18 @@ public sealed class WatchPartyConnection : IAsyncDisposable
                         _pongs++;
                         break;
                     case WatchPartyFrame.Closed closed:
-                        return new WatchPartyEnd(closed.Reason);
+                        return (new WatchPartyEnd(closed.Reason), false);
                     case WatchPartyFrame.Replaced replaced:
-                        return new WatchPartyEnd("replaced", Replaced: true, replaced.Reason);
+                        return (new WatchPartyEnd("replaced", Replaced: true, replaced.Reason), false);
                     case { } frame:
                         FrameReceived?.Invoke(this, frame);
                         break;
                 }
             }
         }
-        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested && lifetime.IsCancellationRequested)
+        catch (Exception ex) when ((ex is OperationCanceledException or WebSocketException) && Renews())
         {
-            // The connection's five minutes are up: a fresh ticket opens the next one.
+            // A socket cut off as its five minutes end (one that closes cleanly answers null instead).
         }
         finally
         {
@@ -258,8 +315,12 @@ public sealed class WatchPartyConnection : IAsyncDisposable
                 // The pings end with the connection.
             }
         }
-        return null;
+        // Its five minutes up, a fresh ticket opens the next at once; anything sooner was a loss.
+        return (null, Renews());
     }
+
+    // 80 % to 120 % of the wait.
+    private static TimeSpan Jittered(TimeSpan delay) => delay * (0.8 + (0.4 * Random.Shared.NextDouble()));
 
     // Pings come fast until the clock has a few samples of this connection, then slowly.
     private async Task PingAsync(CancellationToken cancellationToken)

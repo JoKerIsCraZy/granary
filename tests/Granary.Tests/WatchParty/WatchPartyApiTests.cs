@@ -98,11 +98,12 @@ public sealed class WatchPartyApiTests
     [Theory]
     [InlineData("abcd1234", "ABCD1234", null)]
     [InlineData(" ABCD-1234 ", "ABCD1234", null)]
-    [InlineData("https://silo.example/rooms?token=abc%2B1", null, "abc+1")]
+    [InlineData("https://nas.example/silo/rooms?token=abc%2B1", null, "abc+1")]
+    [InlineData("HTTPS://NAS.EXAMPLE/silo/rooms/?x=1&token=tok-3", null, "tok-3")]
     [InlineData("/rooms?x=1&token=tok-2#frag", null, "tok-2")]
-    public void AJoin_TakesACodeOrAnInvitationLink(string input, string? code, string? token)
+    public void AJoin_TakesACodeOrAnInvitationLinkOfThisServer(string input, string? code, string? token)
     {
-        var join = WatchPartySession.ParseJoin(input);
+        var join = WatchPartySession.ParseJoin(input, ScriptedSilo.Base);
 
         Assert.Equal((code, token), (join?.Code, join?.JoinToken));
     }
@@ -111,5 +112,13 @@ public sealed class WatchPartyApiTests
     [InlineData("")]
     [InlineData("ab")]
     [InlineData("hello there!")]
-    public void Neither_IsNoJoin(string input) => Assert.Null(WatchPartySession.ParseJoin(input));
+    [InlineData("https://evil.example/silo/rooms?token=secret")]
+    [InlineData("http://nas.example/silo/rooms?token=secret")]
+    [InlineData("https://nas.example:8443/silo/rooms?token=secret")]
+    [InlineData("https://nas.example/silo/login?token=secret")]
+    [InlineData("https://nas.example/rooms?token=secret")]
+    [InlineData("//evil.example/silo/rooms?token=secret")]
+    [InlineData("token=secret")]
+    [InlineData("https://nas.example/silo/rooms?token=")]
+    public void Neither_IsNoJoin_AndATokenGoesNowhereElse(string input) => Assert.Null(WatchPartySession.ParseJoin(input, ScriptedSilo.Base));
 }
