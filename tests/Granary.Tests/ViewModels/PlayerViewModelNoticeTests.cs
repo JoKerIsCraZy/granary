@@ -4,7 +4,7 @@ using Granary.Tests.Fakes;
 
 namespace Granary.Tests.ViewModels;
 
-/// <summary>Notices from the server or its administrator, as the web player shows them: eight seconds, held while unseen.</summary>
+/// <summary>Notices from the server or its administrator, as the web player shows them: eight seconds, held in the mini view.</summary>
 public sealed class PlayerViewModelNoticeTests
 {
     private static readonly PlaybackNotice Message = new("Playback notice", "Server restart in 5 minutes.");
@@ -59,7 +59,7 @@ public sealed class PlayerViewModelNoticeTests
     }
 
     [Fact]
-    public async Task MinimizedPlayer_KeepsTheNotice_UntilItIsSeen()
+    public async Task MiniView_KeepsTheNotice_UntilItIsSeen()
     {
         var viewModel = await PlayingAsync();
         viewModel.HoldNotices(true);

@@ -2,6 +2,7 @@ using Granary.App.Services;
 using Granary.App.Views;
 using Granary.Core.Abstractions;
 using Granary.Core.Playback;
+using Granary.Core.ViewModels;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -19,6 +20,7 @@ public sealed partial class MainWindow : IPlayerOverlay
     // The bar: its height and its distance from the window's edges.
     private const double DockHeight = 100;
     private const double DockInset = 8;
+    private const double DockNoticeGap = 12;
 
     // The settings and the admin area bring their own sidebar, as wide as the app's (SettingsPage, AdminPage).
     private const double SettingsSidebarWidth = 260;
@@ -68,6 +70,7 @@ public sealed partial class MainWindow : IPlayerOverlay
         page.MinimizeRequested += (_, _) => Dock();
         page.ExpandRequested += (_, _) => Expand();
         page.StopRequested += (_, _) => ClosePlayer();
+        page.ViewModel.PropertyChanged += OnPlayerChanged;
         _player = page;
         PlayerHost.Child = page;
         PlayerHost.Visibility = Visibility.Visible;
@@ -82,6 +85,7 @@ public sealed partial class MainWindow : IPlayerOverlay
             return;
         }
         _player = null;
+        page.ViewModel.PropertyChanged -= OnPlayerChanged;
         StopDockSlide();
         page.Leave();
         // Unloaded, the page lets go of its view model and the engine's picture; one never loaded lets go of it here.
@@ -93,6 +97,7 @@ public sealed partial class MainWindow : IPlayerOverlay
         PlayerHost.Visibility = Visibility.Collapsed;
         ShowApp(true);
         ShowDockSpace();
+        ShowDockNotice();
     }
 
     private void Dock()
@@ -109,6 +114,7 @@ public sealed partial class MainWindow : IPlayerOverlay
         ShowDockSpace();
         ShowApp(true);
         PlaceDock(animate: false);
+        ShowDockNotice();
         // Played from the start (--play), nothing is under the player yet.
         if (ContentFrame.Content is null)
         {
@@ -136,7 +142,36 @@ public sealed partial class MainWindow : IPlayerOverlay
         ShowApp(false);
         page.IsDocked = false;
         ShowDockSpace();
+        ShowDockNotice();
     }
+
+    // A notice the server or an administrator sent while the player is the bar shows above the bar, so it is seen there
+    // too; the full player shows its own.
+    private void OnPlayerChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(PlayerViewModel.Notice))
+        {
+            ShowDockNotice();
+        }
+    }
+
+    private void ShowDockNotice()
+    {
+        if (_player is not { IsDocked: true, ViewModel: { Notice: { } notice } })
+        {
+            DockNotice.Visibility = Visibility.Collapsed;
+            return;
+        }
+        DockNotice.NoticeTitle = notice.Title;
+        DockNotice.Message = notice.Message;
+        DockNotice.IsWarning = notice.IsWarning;
+        DockNotice.Visibility = Visibility.Visible;
+        PlaceDockNotice();
+    }
+
+    // Its left edge is the bar's, as the bar slides; its foot a little above the bar's top.
+    private void PlaceDockNotice() =>
+        DockNotice.Margin = new Thickness(_dockLeft, 0, DockInset, DockHeight + DockInset + DockNoticeGap);
 
     // The page ends above the bar, so nothing hides under it. Settings and Admin bring a sidebar of their own, which runs
     // to the window's foot beside the bar as the app's does: they keep their whole height and end their own page above it.
@@ -219,6 +254,7 @@ public sealed partial class MainWindow : IPlayerOverlay
     {
         _dockLeft = left;
         PlayerHost.Margin = new Thickness(left, 0, DockInset, DockInset);
+        PlaceDockNotice();
     }
 
     // Under the full player the app is neither drawn nor reached, by the pointer, Tab or a screen reader; collapsed, it

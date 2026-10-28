@@ -380,8 +380,9 @@ stream's commands on Activity.
 - **Notices** (the web's PlaybackNoticeOverlay): a message from the server or an administrator (the control lane,
   api-contract 12.1) shows below the top bar, centred, at most 576 px wide: 16 px corners over dark glass, sky blue
   (`#0EA5E9` at 15 %, its edge `#38BDF8` at 50 %) or amber while the server restarts or shuts down, the title 14 px
-  semibold and the message 14 px white at 85 %. It goes after eight seconds, a newer one in its place; the bar and the
-  mini view keep it until the full player shows again. An administrator's stop or terminate ends playback with their
+  semibold and the message 14 px white at 85 %, over black where the web blurs the picture (`PlaybackNoticeView`). It goes
+  after eight seconds, a newer one in its place. Minimized, the window shows it above the bar at the bar's left edge, 12 px
+  up, where the web keeps it until the player opens again (Granary's bar still plays the picture); the mini view keeps it. An administrator's stop or terminate ends playback with their
   words on the failed screen ("An administrator ended this playback session.").
 - **Minimized** (the web's Minimize player, a 44 px glass disc with a chevron, top left; Exit is top right): the player becomes the bar
   at the bottom of the page, beside the sidebar, which goes on down to the window's edge; the page ends above the bar

@@ -219,6 +219,10 @@
         -->
         <Border x:Name="PlayerHost" Grid.RowSpan="2" Visibility="Collapsed" />
 
+        <!-- A notice for the minimized player: above its bar, at its left edge (MainWindow.Player.cs, ShowDockNotice). -->
+        <controls:PlaybackNoticeView x:Name="DockNotice" Grid.Row="1" HorizontalAlignment="Left" VerticalAlignment="Bottom" MaxWidth="576"
+                                     Visibility="Collapsed" />
+
         <!--
             The start: Granary's mark plays its intro in the middle of the window while the app loads its first page, then
             its loading loop if that takes longer (MainWindow.ShowStartup). It lifts by the title bar's 32 px so it sits in the

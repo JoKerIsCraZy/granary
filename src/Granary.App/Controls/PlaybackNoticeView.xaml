@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    A message from the server or an administrator, as the web's PlaybackNoticeOverlay: 16 px corners, sky blue or amber at
+    15 % with its edge at 50 %, the title 14 px semibold and the message 14 px white at 85 %. Over near-black: the web blurs
+    the picture behind it, which the picture here cannot be, so it is opaque.
+-->
+<UserControl
+    x:Class="Granary.App.Controls.PlaybackNoticeView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    IsHitTestVisible="False">
+
+    <Grid CornerRadius="16" Background="#FF050608">
+        <Border x:Name="Frame" CornerRadius="16" BorderThickness="1" Padding="20,16">
+            <StackPanel Spacing="4">
+                <TextBlock x:Name="TitleText" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="14" CharacterSpacing="25"
+                           Foreground="White" TextWrapping="Wrap" />
+                <TextBlock x:Name="MessageText" FontSize="14" LineHeight="24" Foreground="#D9FFFFFF" TextWrapping="Wrap"
+                           AutomationProperties.LiveSetting="Assertive" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

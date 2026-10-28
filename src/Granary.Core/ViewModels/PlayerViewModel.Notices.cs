@@ -5,7 +5,8 @@ using Granary.Core.Playback;
 namespace Granary.Core.ViewModels;
 
 // Notices from the server or its administrator (the control lane), as the web player shows them: below the top bar for
-// eight seconds, a newer one in place of the last; a minimized player keeps one until the viewer can see it.
+// eight seconds, a newer one in place of the last. Minimized to the bar, the window shows it above the bar; the mini view,
+// too small for one, keeps it until the viewer can see it.
 public sealed partial class PlayerViewModel
 {
     /// <summary>How long a notice shows.</summary>
@@ -29,8 +30,8 @@ public sealed partial class PlayerViewModel
     public bool IsNoticeWarning => Notice?.IsWarning == true;
 
     /// <summary>
-    /// The player is out of sight (minimized to the bar) or back: a notice waits while it is, and its eight seconds start
-    /// once the viewer sees it.
+    /// The player has no room for a notice (the mini view) or has it again: a notice waits meanwhile, and its eight seconds
+    /// start once the viewer sees it.
     /// </summary>
     public void HoldNotices(bool held)
     {
