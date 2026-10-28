@@ -16,6 +16,9 @@ public sealed class DnssdLanServiceBrowser(ILogger<DnssdLanServiceBrowser> logge
     private const string PortKey = "System.Devices.Dnssd.PortNumber";
     private const string TextKey = "System.Devices.Dnssd.TextAttributes";
 
+    // Instances followed at once; discovery follows fewer still.
+    private const int MaxInstances = 64;
+
     // The DNS-SD protocol of association endpoints, in local. only.
     private static readonly string Query =
         "System.Devices.AepService.ProtocolId:={4526e8c1-8aac-4153-9b16-55e86ada0e54} AND " +
@@ -135,11 +138,12 @@ public sealed class DnssdLanServiceBrowser(ILogger<DnssdLanServiceBrowser> logge
         }
     }
 
+    // Anyone on the network can advertise: past the cap, a new instance is not followed until one goes.
     private bool Keep(DeviceWatcher watcher, DeviceInformation info)
     {
         lock (_gate)
         {
-            if (!ReferenceEquals(_watcher, watcher))
+            if (!ReferenceEquals(_watcher, watcher) || (!_found.ContainsKey(info.Id) && _found.Count >= MaxInstances))
             {
                 return false;
             }

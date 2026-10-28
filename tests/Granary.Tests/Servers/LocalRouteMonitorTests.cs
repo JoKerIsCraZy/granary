@@ -277,6 +277,106 @@ public sealed class LocalRouteMonitorTests : IDisposable
         Assert.Equal(2, _browser.Starts);
     }
 
+    [Fact]
+    public async Task LaterAdvertsWithTheServersId_DoNotCrowdOutTheFirst()
+    {
+        // Anyone can advertise the id: four 10.x adverts after the genuine 192.168.x one must not push it out.
+        AnswerPinOnly();
+        _probe.Reachable = false;
+        var monitor = Create();
+        await monitor.CheckAsync(Cancellation);
+        _browser.Advertise("genuine", "server-1", 8090, "Silo", "192.168.1.30");
+        for (int i = 1; i <= 4; i++)
+        {
+            _browser.Advertise($"spoof{i}", "server-1", 8090, "Silo", $"10.0.0.{i}");
+        }
+
+        await monitor.CheckAsync(Cancellation);
+
+        Assert.Equal(["https://192.168.1.30:8090/", "https://10.0.0.1:8090/", "https://10.0.0.2:8090/", "https://10.0.0.3:8090/"], _probe.Tried);
+    }
+
+    [Fact]
+    public async Task TheOriginLastConfirmed_IsTriedFirst()
+    {
+        AnswerPinOnly();
+        var monitor = Create();
+        await monitor.CheckAsync(Cancellation);
+        for (int i = 1; i <= 4; i++)
+        {
+            _browser.Advertise($"spoof{i}", "server-1", 8090, "Silo", $"10.0.0.{i}");
+        }
+        _probe.Reachable = false;
+        await monitor.CheckAsync(Cancellation);
+        _browser.Advertise("genuine", "server-1", 8090, "Silo", "192.168.1.30");
+        _probe.Reachable = true;
+        _probe.Only = "https://192.168.1.30:8090/";
+        // Four spoofs fill the window before it, so it is not even a candidate yet; it comes when one goes.
+        _browser.Lose("spoof4");
+        await monitor.CheckAsync(Cancellation);
+        Assert.Equal("https://192.168.1.30:8090/", _routes.Find(Saved)!.Origin.AbsoluteUri);
+
+        // The route drops (a request on it failed); the next check starts with the origin that presented the key.
+        _routes.Drop(Saved);
+        _browser.Advertise("spoof4", "server-1", 8090, "Silo", "10.0.0.4");
+        _probe.Tried.Clear();
+        await monitor.CheckAsync(Cancellation);
+
+        Assert.Equal("https://192.168.1.30:8090/", _probe.Tried[0]);
+    }
+
+    [Fact]
+    public void OnlyTheWatchedServersAdverts_AreKept_AtMostEight()
+    {
+        var watch = new LanAdvertWatch(_browser, _logs.For<LanAdvertWatch>());
+        watch.Watch("server-1");
+
+        for (int i = 1; i <= 20; i++)
+        {
+            _browser.Advertise($"other{i}", "server-9", 8090, "Silo", $"192.168.3.{i}");
+            _browser.Advertise($"ours{i}", "server-1", 8090, "Silo", $"192.168.4.{i}");
+        }
+
+        Assert.Equal(["https://192.168.4.1:8090/", "https://192.168.4.2:8090/", "https://192.168.4.3:8090/", "https://192.168.4.4:8090/"],
+            watch.Origins("server-1").Select(o => o.AbsoluteUri));
+        Assert.Empty(watch.Origins("server-9"));
+        // Past eight, later adverts are dropped until one goes.
+        _browser.Lose("ours1");
+        _browser.Lose("ours2");
+        _browser.Lose("ours3");
+        _browser.Lose("ours4");
+        _browser.Lose("ours5");
+        Assert.Equal(["https://192.168.4.6:8090/", "https://192.168.4.7:8090/", "https://192.168.4.8:8090/"],
+            watch.Origins("server-1").Select(o => o.AbsoluteUri));
+    }
+
+    [Fact]
+    public async Task AdvertChurn_ChecksAtMostEveryThirtySeconds()
+    {
+        AnswerPinOnly();
+        _probe.Reachable = false;
+        var monitor = Create();
+        monitor.Start();
+        await _time.FireNextTimerAsync(Cancellation);
+        await Until(() => _browser.IsBrowsing && _silo.Sent.Count == 1);
+
+        _browser.Advertise("a", "server-1", 8090, "Silo", "192.168.1.30");
+        _time.Advance(TimeSpan.FromSeconds(2));
+        await Until(() => _silo.Sent.Count == 2);
+
+        // More adverts: no check before thirty seconds after the last, and they do not put it off.
+        _browser.Advertise("b", "server-1", 8090, "Silo", "192.168.1.31");
+        _time.Advance(TimeSpan.FromSeconds(10));
+        _browser.Advertise("c", "server-1", 8090, "Silo", "192.168.1.32");
+        _time.Advance(TimeSpan.FromSeconds(10));
+        await Task.Delay(50, Cancellation);
+        Assert.Equal(2, _silo.Sent.Count);
+
+        _time.Advance(LocalRouteMonitor.AdvertRecheckInterval - TimeSpan.FromSeconds(20));
+        await Until(() => _silo.Sent.Count == 3);
+        monitor.Dispose();
+    }
+
     public void Dispose() => _routes.Dispose();
 
     private LocalRouteMonitor Create() =>
@@ -309,11 +409,14 @@ public sealed class LocalRouteMonitorTests : IDisposable
 
         public bool Reachable { get; set; } = true;
 
+        /// <summary>When set, the only candidate that presents the key.</summary>
+        public string? Only { get; set; }
+
         public Task<LocalRoute?> ProbeAsync(Uri savedOrigin, Uri candidate, string pin, string serverId, CancellationToken cancellationToken)
         {
             Tried.Add(candidate.AbsoluteUri);
             Pins.Add(pin);
-            return Task.FromResult(Reachable && serverId == "server-1"
+            return Task.FromResult(Reachable && serverId == "server-1" && (Only is null || Only == candidate.AbsoluteUri)
                 ? new LocalRoute(savedOrigin, candidate, pin, new HttpMessageInvoker(new HttpClientHandler()))
                 : null);
         }

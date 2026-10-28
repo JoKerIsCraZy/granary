@@ -77,6 +77,11 @@
                                                                    FontSize="15" Foreground="{StaticResource SiloForegroundBrush}" TextTrimming="CharacterEllipsis" />
                                                         <TextBlock Text="{x:Bind Detail}" FontSize="13" Foreground="{StaticResource SiloMutedBrush}"
                                                                    TextTrimming="CharacterEllipsis" />
+                                                        <!-- Plain HTTP, in the amber of the sign-in's consent to it. -->
+                                                        <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,2,0,0" Visibility="{x:Bind IsUnencrypted}">
+                                                            <FontIcon Glyph="&#xE785;" FontSize="11" Foreground="#FFFBBF24" />
+                                                            <TextBlock Text="Not encrypted" FontSize="12" Foreground="#FFFBBF24" />
+                                                        </StackPanel>
                                                     </StackPanel>
                                                     <ProgressRing Grid.Column="2" Width="16" Height="16" IsActive="{x:Bind IsConnecting}"
                                                                   Visibility="{x:Bind IsConnecting}" />

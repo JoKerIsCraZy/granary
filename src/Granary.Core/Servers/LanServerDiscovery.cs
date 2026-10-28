@@ -16,7 +16,9 @@ public sealed record DiscoveredServer(string ServerId, string Name, Uri Url)
 /// An advert is a hint: its TXT <c>id</c> names a deployment, but anyone on the network can advertise anything. A
 /// server is listed only when <c>GET /api/v2/system/identity</c> at its resolved address answers that same id, and
 /// picking it is the same as typing its address. Adverts with one id (replicas, a host seen on several interfaces)
-/// share one row.
+/// share one row. The network is not trusted with the work either: at most 32 adverts are followed (later ones are
+/// dropped until one goes), an advert that keeps changing is checked at most every 5 s, and rows keep the order they
+/// were found in, so a flood of adverts cannot push a server found earlier off the list.
 /// </summary>
 public sealed class LanServerDiscovery
 {
@@ -26,8 +28,13 @@ public sealed class LanServerDiscovery
     internal static readonly TimeSpan RetryDelay = TimeSpan.FromSeconds(3);
     internal static readonly TimeSpan BrowseRetryDelay = TimeSpan.FromSeconds(2);
     internal static readonly TimeSpan RefreshInterval = TimeSpan.FromSeconds(30);
+    internal static readonly TimeSpan MinConfirmInterval = TimeSpan.FromSeconds(5);
     internal const int MaxAttempts = 2;
     internal const int MaxMisses = 3;
+
+    /// <summary>Adverts followed at once; an advert past them is dropped.</summary>
+    internal const int MaxEntries = 32;
+
     private const int MaxConcurrentProbes = 4;
 
     private readonly ILanServiceBrowser _browser;
@@ -39,6 +46,13 @@ public sealed class LanServerDiscovery
 
     // Keyed by the browser's result key; an entry is replaced, never edited, when its advert changes.
     private readonly Dictionary<string, Entry> _entries = new(StringComparer.Ordinal);
+
+    // When each advert's last check started, kept past the advert, so going and coming back does not hurry the next.
+    private readonly Dictionary<string, DateTimeOffset> _checkedAt = new(StringComparer.Ordinal);
+
+    // The order servers were first confirmed in, by id: the rows' order.
+    private readonly Dictionary<string, long> _foundOrder = new(StringComparer.Ordinal);
+    private long _found;
     private IReadOnlyList<DiscoveredServer> _servers = [];
     private CancellationTokenSource? _run;
     private ITimer? _refresh;
@@ -61,7 +75,7 @@ public sealed class LanServerDiscovery
     /// <summary>Raised on any thread when <see cref="Servers"/> changed.</summary>
     public event EventHandler? Changed;
 
-    /// <summary>The confirmed servers, one per id, by name.</summary>
+    /// <summary>The confirmed servers, one per id, in the order they were found.</summary>
     public IReadOnlyList<DiscoveredServer> Servers
     {
         get
@@ -105,6 +119,8 @@ public sealed class LanServerDiscovery
             run.Cancel();
             run.Dispose();
             ClearEntries();
+            _checkedAt.Clear();
+            _foundOrder.Clear();
         }
         Changed?.Invoke(this, EventArgs.Empty);
     }
@@ -163,6 +179,10 @@ public sealed class LanServerDiscovery
             return;
         }
         _entries.TryGetValue(key, out var existing);
+        if (existing is null && _entries.Count >= MaxEntries)
+        {
+            return;
+        }
         if (existing is not null && existing.ServerId == serverId && existing.Origins.SequenceEqual(origins)
             && existing.InstanceName == advertisement.InstanceName)
         {
@@ -217,19 +237,54 @@ public sealed class LanServerDiscovery
 
     // A new advert gets two tries a few seconds apart; a listed row one per refresh, and it stays through two failures
     // in a row, so a probe that times out during a network change does not pull it from under the person picking it.
+    // An advert that changes again within 5 s of its last check waits out the rest of them; changing again meanwhile
+    // replaces the waiting check, it does not put it off.
     private void Confirm(string key, Entry entry)
     {
         entry.Cancel();
+        var now = _time.GetUtcNow();
+        var wait = _checkedAt.TryGetValue(key, out var last) && last + MinConfirmInterval > now ? last + MinConfirmInterval - now : TimeSpan.Zero;
+        if (wait == TimeSpan.Zero)
+        {
+            RememberCheck(key, now);
+        }
         var job = CancellationTokenSource.CreateLinkedTokenSource(_run!.Token);
         entry.Job = job;
-        _ = Task.Run(() => ConfirmAsync(key, entry, job));
+        _ = Task.Run(() => ConfirmAsync(key, entry, job, wait));
     }
 
-    private async Task ConfirmAsync(string key, Entry entry, CancellationTokenSource job)
+    // Bounded like the adverts: what is older than the interval no longer holds anything back.
+    private void RememberCheck(string key, DateTimeOffset at)
+    {
+        if (_checkedAt.Count >= MaxEntries * 2 && !_checkedAt.ContainsKey(key))
+        {
+            var now = _time.GetUtcNow();
+            foreach (string stale in _checkedAt.Where(c => c.Value + MinConfirmInterval <= now).Select(c => c.Key).ToList())
+            {
+                _checkedAt.Remove(stale);
+            }
+            if (_checkedAt.Count >= MaxEntries * 2)
+            {
+                _checkedAt.Remove(_checkedAt.MinBy(c => c.Value).Key);
+            }
+        }
+        _checkedAt[key] = at;
+    }
+
+    private async Task ConfirmAsync(string key, Entry entry, CancellationTokenSource job, TimeSpan wait)
     {
         var token = job.Token;
         try
         {
+            if (wait > TimeSpan.Zero)
+            {
+                await Task.Delay(wait, _time, token).ConfigureAwait(false);
+                lock (_gate)
+                {
+                    token.ThrowIfCancellationRequested();
+                    RememberCheck(key, _time.GetUtcNow());
+                }
+            }
             int attempts = entry.Row is null ? MaxAttempts : 1;
             for (int attempt = 0; attempt < attempts; attempt++)
             {
@@ -270,6 +325,10 @@ public sealed class LanServerDiscovery
             {
                 entry.Row = found;
                 entry.Misses = 0;
+                if (!_foundOrder.ContainsKey(found.ServerId) && _foundOrder.Count < MaxEntries * 2)
+                {
+                    _foundOrder[found.ServerId] = ++_found;
+                }
             }
             else if (entry.Row is not null && ++entry.Misses >= MaxMisses)
             {
@@ -327,7 +386,8 @@ public sealed class LanServerDiscovery
     }
 
     // One row per server: of several confirmed adverts with one id, the one with the fewest failed checks, then the
-    // lowest address; then by name.
+    // lowest address; then in the order the servers were found, so a server found later never pushes one found before
+    // it down the list.
     private void Publish() => _servers =
     [
         .. _entries.Values
@@ -336,8 +396,8 @@ public sealed class LanServerDiscovery
             .ThenBy(e => e.Row!.Url.AbsoluteUri, StringComparer.Ordinal)
             .DistinctBy(e => e.ServerId, StringComparer.Ordinal)
             .Select(e => e.Row!)
-            .OrderBy(s => s.Name, StringComparer.CurrentCultureIgnoreCase)
-            .ThenBy(s => s.Url.AbsoluteUri, StringComparer.Ordinal),
+            .OrderBy(s => _foundOrder.GetValueOrDefault(s.ServerId, long.MaxValue))
+            .ThenBy(s => s.Name, StringComparer.CurrentCultureIgnoreCase),
     ];
 
     private sealed class Entry(string serverId, IReadOnlyList<Uri> origins, string instanceName)

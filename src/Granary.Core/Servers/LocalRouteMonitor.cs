@@ -13,7 +13,8 @@ namespace Granary.Core.Servers;
 /// Apple client does: reads the key and the local address through the saved address, reduces that address and the
 /// server's <c>_silo._tcp</c> adverts (<see cref="LanAdvertWatch"/>) to private IPv4 addresses, and uses the first that
 /// presents the key over HTTPS on the same port and answers as the same server. Checks again when the session or the
-/// network changes, when an advert of the server comes or moves while there is no route, and every 15 minutes. Only a
+/// network changes, when an advert of the server comes or moves while there is no route (at most every 30 s: anyone can
+/// advertise the server's id), and every 15 minutes. Only a
 /// saved HTTPS address without a path prefix gets a local route: a plain HTTP one cannot vouch for a key, and the local
 /// address serves the API at its root.
 /// </summary>
@@ -23,6 +24,9 @@ public sealed class LocalRouteMonitor : IDisposable
 
     // A network change comes in bursts (an adapter going down, another coming up).
     private static readonly TimeSpan NetworkSettle = TimeSpan.FromSeconds(2);
+
+    // Adverts are anyone's to send: those of the server set off a check at most this often.
+    internal static readonly TimeSpan AdvertRecheckInterval = TimeSpan.FromSeconds(30);
 
     // The server names the local address: a check stays small whatever it resolves to.
     private const int MaxCandidates = 4;
@@ -40,6 +44,11 @@ public sealed class LocalRouteMonitor : IDisposable
     private readonly Lock _gate = new();
     private ITimer? _recheck;
     private ITimer? _settle;
+    private ITimer? _advertCheck;
+    private DateTimeOffset _lastAdvertCheck = DateTimeOffset.MinValue;
+
+    // The local origin that last presented the key, for this server: tried first among the adverts.
+    private Uri? _lastConfirmed;
     private Uri? _server;
     private int _started;
     private int _queued;
@@ -109,6 +118,7 @@ public sealed class LocalRouteMonitor : IDisposable
         lock (_gate)
         {
             _settle?.Dispose();
+            _advertCheck?.Dispose();
         }
     }
 
@@ -160,6 +170,7 @@ public sealed class LocalRouteMonitor : IDisposable
         if (_server is { } previous && previous != server?.BaseUri)
         {
             _routes.Drop(previous);
+            _lastConfirmed = null;
         }
         _server = server?.BaseUri;
         if (server is null || !CanHaveLocalRoute(server.BaseUri))
@@ -182,18 +193,19 @@ public sealed class LocalRouteMonitor : IDisposable
             _routes.Drop(server.BaseUri);
             return;
         }
-        // An id an advert cannot carry leaves only the administrator's address.
+        var current = _routes.Find(server.BaseUri);
+        // An id an advert cannot carry leaves only the administrator's address. Of the adverts, the one in use or last
+        // confirmed goes first: others with the same id cannot crowd it out.
         IReadOnlyList<Uri> advertised = [];
         if (LanAdverts.UsableId(connections.ServerId) is { } serverId)
         {
             _adverts.Watch(serverId);
-            advertised = _adverts.Origins(serverId);
+            advertised = _adverts.Origins(serverId, current?.Origin ?? _lastConfirmed);
         }
         else
         {
             _adverts.Unwatch();
         }
-        var current = _routes.Find(server.BaseUri);
         // The administrator's address first, then the adverts: each only a candidate the pin decides on.
         var candidates = (await CandidatesAsync(local.Url, cancellationToken).ConfigureAwait(false)).Concat(advertised).Distinct();
         foreach (var candidate in candidates)
@@ -211,6 +223,7 @@ public sealed class LocalRouteMonitor : IDisposable
                 }
                 _logger.LogInformation("Using the local route to the server at {Address}", candidate.Authority);
                 _routes.Use(route);
+                _lastConfirmed = candidate;
                 return;
             }
         }
@@ -245,12 +258,32 @@ public sealed class LocalRouteMonitor : IDisposable
 
     private void OnNetworkChanged(object? sender, EventArgs e) => CheckWhenSettled();
 
-    // An advert that came or moved is worth a check only while there is no route; adverts come in bursts too.
+    // An advert that came or moved is worth a check only while there is no route. Adverts come in bursts and anyone can
+    // send them: one check waits for the burst to settle, and the next not before 30 s after the last; more adverts in
+    // the meantime neither add a check nor put the waiting one off.
     private void OnAdvertsChanged(object? sender, EventArgs e)
     {
-        if (_server is { } server && _routes.Find(server) is null)
+        if (_disposed || _server is not { } server || _routes.Find(server) is not null)
         {
-            CheckWhenSettled();
+            return;
+        }
+        lock (_gate)
+        {
+            if (_advertCheck is not null)
+            {
+                return;
+            }
+            var wait = _lastAdvertCheck == DateTimeOffset.MinValue ? NetworkSettle : _lastAdvertCheck + AdvertRecheckInterval - _time.GetUtcNow();
+            _advertCheck = _time.CreateTimer(_ =>
+            {
+                lock (_gate)
+                {
+                    _advertCheck?.Dispose();
+                    _advertCheck = null;
+                    _lastAdvertCheck = _time.GetUtcNow();
+                }
+                Check();
+            }, null, wait < NetworkSettle ? NetworkSettle : wait, Timeout.InfiniteTimeSpan);
         }
     }
 

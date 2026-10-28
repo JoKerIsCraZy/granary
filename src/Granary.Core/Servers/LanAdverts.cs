@@ -1,5 +1,8 @@
+using System.Buffers;
+using System.Globalization;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 
 namespace Granary.Core.Servers;
 
@@ -85,9 +88,9 @@ public static class LanAdverts
     }
 
     /// <summary>
-    /// <c>http://</c> origins for a resolved advert in the order to try them: IPv4 first, then routable IPv6 in brackets.
-    /// Link-local IPv6 is left out because a URL cannot carry its interface; loopback, unspecified and multicast
-    /// addresses never name a server on this network.
+    /// <c>http://</c> origins for a resolved advert in the order to try them: private IPv4 (RFC 1918) first, then unique
+    /// local IPv6 (fc00::/7) in brackets. Nothing else names a server on this network: an advert pointing anywhere else
+    /// would have this device probe it unasked (a public address, link-local 169.254/16 and fe80::/10, loopback).
     /// </summary>
     public static IReadOnlyList<Uri> Origins(IEnumerable<string> addresses, int port)
     {
@@ -101,8 +104,8 @@ public static class LanAdverts
             .OfType<IPAddress>()
             .Distinct()
             .ToList();
-        var ipv4 = parsed.Where(a => a.AddressFamily == AddressFamily.InterNetwork && IsUsableIPv4(a));
-        var ipv6 = parsed.Where(a => a.AddressFamily == AddressFamily.InterNetworkV6 && IsUsableIPv6(a));
+        var ipv4 = parsed.Where(LocalRouteMonitor.IsPrivateIPv4);
+        var ipv6 = parsed.Where(IsUniqueLocalIPv6);
         return
         [
             .. ipv4.Select(a => new Uri($"http://{a}:{port}/"))
@@ -127,19 +130,40 @@ public static class LanAdverts
     public static string DisplayName(string? brandingName, string? instanceName) =>
         Clean(brandingName) ?? Clean(instanceName) ?? "Silo";
 
-    // Control characters dropped and the length capped: the label comes from whoever answered.
+    /// <summary>The letter of a label's mark: its first character when that is a letter or digit, else "S".</summary>
+    public static string Initial(string label)
+    {
+        ArgumentNullException.ThrowIfNull(label);
+        return Rune.DecodeFromUtf16(label, out var first, out _) == OperationStatus.Done && Rune.IsLetterOrDigit(first)
+            ? Rune.ToUpperInvariant(first).ToString()
+            : "S";
+    }
+
+    // The label comes from whoever answered: what could reorder or hide text goes (controls, format characters such as
+    // bidi overrides and zero-width joiners, line and paragraph separators, lone surrogates), compatibility forms fold
+    // to their plain letters, and the length is capped between characters, never inside one.
     private static string? Clean(string? text)
     {
         if (text is null)
         {
             return null;
         }
-        string kept = new string([.. text.Where(c => !char.IsControl(c))]).Trim();
-        if (kept.Length > MaxNameLength)
+        var kept = new StringBuilder(text.Length);
+        foreach (var rune in text.EnumerateRunes())
         {
-            kept = kept[..MaxNameLength].TrimEnd() + "…";
+            if (rune != Rune.ReplacementChar && Rune.GetUnicodeCategory(rune) is not (UnicodeCategory.Control or UnicodeCategory.Format
+                or UnicodeCategory.LineSeparator or UnicodeCategory.ParagraphSeparator or UnicodeCategory.Surrogate))
+            {
+                kept.Append(rune.ToString());
+            }
         }
-        return kept.Length > 0 ? kept : null;
+        string label = kept.ToString().Normalize(NormalizationForm.FormKC).Trim();
+        var elements = new StringInfo(label);
+        if (elements.LengthInTextElements > MaxNameLength)
+        {
+            label = elements.SubstringByTextElements(0, MaxNameLength).TrimEnd() + "…";
+        }
+        return label.Length > 0 ? label : null;
     }
 
     private static IPAddress? Parse(string? literal)
@@ -153,13 +177,7 @@ public static class LanAdverts
         return IPAddress.TryParse(text, out var address) ? address : null;
     }
 
-    private static bool IsUsableIPv4(IPAddress address)
-    {
-        byte first = address.GetAddressBytes()[0];
-        return first is not (0 or 127) && first < 224;
-    }
-
-    private static bool IsUsableIPv6(IPAddress address) =>
-        !address.IsIPv6LinkLocal && !address.IsIPv6Multicast && !address.Equals(IPAddress.IPv6Loopback) && !address.Equals(IPAddress.IPv6Any)
-        && !address.IsIPv4MappedToIPv6;
+    // fc00::/7: the IPv6 a home network numbers itself from.
+    private static bool IsUniqueLocalIPv6(IPAddress address) =>
+        address.AddressFamily == AddressFamily.InterNetworkV6 && (address.GetAddressBytes()[0] & 0xFE) == 0xFC;
 }

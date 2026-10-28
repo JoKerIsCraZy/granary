@@ -28,6 +28,7 @@ public sealed partial class AddServerViewModel(
 
     private readonly LanServerDiscovery _discovery = discovery;
     private readonly IUiDispatcher _dispatcher = dispatcher;
+    private readonly IServerRegistry _registry = registry;
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(ConnectCommand))]
@@ -123,7 +124,7 @@ public sealed partial class AddServerViewModel(
         ServerEntry entry;
         try
         {
-            entry = await registry.AddOrUpdateAsync(baseUri, name, serverId, cancellationToken);
+            entry = await _registry.AddOrUpdateAsync(baseUri, name, serverId, cancellationToken);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {

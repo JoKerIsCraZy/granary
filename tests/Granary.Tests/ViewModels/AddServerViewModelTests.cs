@@ -47,12 +47,14 @@ public sealed class AddServerViewModelTests
         {
             Probe = new ScriptedProbe(probe);
             Http = new FakeHttpMessageHandler((request, _) => Task.FromResult(Respond(request)));
-            var discovery = new LanServerDiscovery(Browser, LanProbe, new ManualTimeProvider(), new LogSink().For<LanServerDiscovery>());
-            ViewModel = new AddServerViewModel(Probe, new SystemApi(new SiloHttp(new HttpClient(Http))), Registry, Navigation, discovery,
+            Discovery = new LanServerDiscovery(Browser, LanProbe, new ManualTimeProvider(), new LogSink().For<LanServerDiscovery>());
+            ViewModel = new AddServerViewModel(Probe, new SystemApi(new SiloHttp(new HttpClient(Http))), Registry, Navigation, Discovery,
                 new ImmediateDispatcher());
         }
 
         public ScriptedProbe Probe { get; }
+
+        public LanServerDiscovery Discovery { get; }
 
         public FakeLanBrowser Browser { get; } = new();
 
@@ -337,6 +339,47 @@ public sealed class AddServerViewModelTests
         Assert.Equal("On this network · 192.168.1.6:8090", row.Detail);
         Assert.Equal("L", row.Initial);
         Assert.False(row.IsConnecting);
+        // Every found address is plain HTTP, and the row says so.
+        Assert.True(row.IsUnencrypted);
+        Assert.Equal("Living room, On this network · 192.168.1.6:8090, not encrypted", row.AccessibleName);
+    }
+
+    [Theory]
+    [InlineData("https://silo.example/", FoundId)]
+    [InlineData("http://192.168.1.6:8090/", null)]
+    [InlineData("https://192.168.1.6:8090/", "another-id")]
+    public async Task AFoundServerMatchingASavedOne_ByIdOrAddress_IsNotOffered(string saved, string? savedId)
+    {
+        // The id is public and the name the answerer's own: a look-alike on this network must not become a second entry.
+        var harness = new Harness(uri => new ServerProbeResult.Compatible(uri, V2));
+        await harness.Registry.AddOrUpdateAsync(new Uri(saved), "Home", savedId, TestContext.Current.CancellationToken);
+        harness.LanProbe.Ids[FoundUrl] = FoundId;
+        harness.ViewModel.StartDiscovery();
+
+        harness.Browser.Advertise("a", FoundId);
+        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(5);
+        while (harness.Discovery.Servers.Count == 0)
+        {
+            Assert.True(DateTime.UtcNow < deadline, "Timed out");
+            await Task.Delay(5, TestContext.Current.CancellationToken);
+        }
+        await Task.Delay(50, TestContext.Current.CancellationToken);
+
+        Assert.False(harness.ViewModel.HasFound);
+    }
+
+    [Fact]
+    public async Task AFoundServerSavedSinceItWasListed_IsNotAddedAgain()
+    {
+        var harness = await FoundAsync();
+        var row = harness.ViewModel.Found[0];
+        await harness.Registry.AddOrUpdateAsync(new Uri("https://silo.example/"), "Home", FoundId, TestContext.Current.CancellationToken);
+
+        await harness.ViewModel.ConnectToFoundCommand.ExecuteAsync(row);
+
+        Assert.Empty(harness.Probe.Probed);
+        Assert.Single(harness.Registry.Servers);
+        Assert.False(harness.ViewModel.HasFound);
     }
 
     [Fact]
@@ -353,7 +396,8 @@ public sealed class AddServerViewModelTests
         Assert.Equal(FoundId, entry.ServerId);
         Assert.Equal([(AppRoute.SignIn, (object?)entry.Id)], harness.Navigation.Navigations);
         Assert.False(harness.ViewModel.IsBusy);
-        Assert.False(harness.ViewModel.Found[0].IsConnecting);
+        // Saved now, it is no longer offered as found.
+        Assert.False(harness.ViewModel.HasFound);
     }
 
     [Fact]

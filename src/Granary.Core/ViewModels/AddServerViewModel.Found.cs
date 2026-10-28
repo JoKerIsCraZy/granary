@@ -7,7 +7,10 @@ namespace Granary.Core.ViewModels;
 // "Found nearby", as the Apple and Android apps list it on their server screen (DiscoveredServerList.swift,
 // ServerSetupScreen.kt): the Silo servers advertised on this network and confirmed by their identity, at most four.
 // The list shows nothing until something is found, so a network without servers looks as before. Picking one is the
-// same as typing its address.
+// same as typing its address. The identity proves nothing (the id is public, the name the answerer's own), so a found
+// server that matches a saved one, by id or by address, is not offered: that server is already in the list of saved
+// servers, and something else answering for it on this network must not become a second, plain-HTTP entry. Every
+// found address is plain HTTP; its row says so, and sign-in asks before a password goes there.
 public sealed partial class AddServerViewModel
 {
     /// <summary>Rows the list shows at most, as the apps.</summary>
@@ -63,6 +66,12 @@ public sealed partial class AddServerViewModel
         {
             return;
         }
+        if (IsSaved(row.Server))
+        {
+            // Saved since it was listed: the saved entry is the one to use.
+            ShowFound();
+            return;
+        }
         ConnectedServer = null;
         IsBusy = true;
         _connectingTo = row.Server.Url;
@@ -97,8 +106,18 @@ public sealed partial class AddServerViewModel
     private void OnDiscoveryChanged(object? sender, EventArgs e) => _dispatcher.Post(ShowFound);
 
     private void ShowFound() => Found = _discovering
-        ? [.. _discovery.Servers.Take(MaxFound).Select((server, index) => new FoundServerRow(server, server.Url == _connectingTo, index == 0))]
+        ?
+        [
+            .. _discovery.Servers
+                .Where(server => !IsSaved(server))
+                .Take(MaxFound)
+                .Select((server, index) => new FoundServerRow(server, server.Url == _connectingTo, index == 0)),
+        ]
         : [];
+
+    private bool IsSaved(DiscoveredServer server) => _registry.Servers.Any(saved =>
+        (saved.ServerId is { } id && string.Equals(id, server.ServerId, StringComparison.Ordinal))
+        || Uri.Compare(saved.BaseUri, server.Url, UriComponents.HostAndPort, UriFormat.SafeUnescaped, StringComparison.OrdinalIgnoreCase) == 0);
 }
 
 /// <summary>A found server's row: its mark, name and address, and whether it is being connected to.</summary>
@@ -111,7 +130,11 @@ public sealed record FoundServerRow(DiscoveredServer Server, bool IsConnecting, 
     public string Detail => Server.Detail;
 
     /// <summary>The mark's letter: the name's first.</summary>
-    public string Initial => Name.Length > 0 && char.IsLetterOrDigit(Name[0]) ? char.ToUpperInvariant(Name[0]).ToString() : "S";
+    public string Initial => LanAdverts.Initial(Name);
 
-    public string AccessibleName => IsConnecting ? $"{Name}, {Detail}, connecting" : $"{Name}, {Detail}";
+    /// <summary>A found server answers plain HTTP: the row says "Not encrypted".</summary>
+    public bool IsUnencrypted => Server.Url.Scheme == Uri.UriSchemeHttp;
+
+    public string AccessibleName =>
+        $"{Name}, {Detail}{(IsUnencrypted ? ", not encrypted" : "")}{(IsConnecting ? ", connecting" : "")}";
 }

@@ -238,7 +238,13 @@ Plain `http://` origins require explicit user consent before credentials are sen
   checks; their probes follow no redirect, send nothing of the device and read at most 64 KB. Granary does the same
   (`LanServerDiscovery`, `LanServerProbe`) with Windows' DNS-SD (`DeviceWatcher` over association-endpoint services,
   protocol `{4526e8c1-8aac-4153-9b16-55e86ada0e54}`); a picked server goes through Add server's checks and must still
-  answer the advertised `id`. The overlay part of server-discovery.md (probing `http://silo`) is not built.
+  answer the advertised `id`. That proves nothing (the id is public, the name the answerer's), so Granary goes further
+  than the apps: it probes only private addresses (RFC 1918 IPv4, fc00::/7 IPv6), follows at most 32 adverts (Windows
+  64), checks an advert that keeps changing at most every 5 s, lists servers in the order they were found (a later flood
+  cannot push one off the four rows), does not offer a found server that matches a saved one by id or address, and
+  marks every found row "Not encrypted"; sign-in then asks before a password goes over plain HTTP (the apps ask at
+  setup: "Connect without encryption?"). Labels lose control, format (bidi, zero-width) and separator characters and
+  are NFKC-normalized. The overlay part of server-discovery.md (probing `http://silo`) is not built.
 - "Local route" (optional, post-MVP): an HTTPS LAN shortcut to the same server, pinned by
   `local_route.spki_sha256` from `system/connections`
   (`silo-server/docs/architecture/server-identity.md:95-161`). It needs certificate pinning, also
@@ -1641,8 +1647,10 @@ the pin every 15 minutes; its API calls and media both move, media only when it 
 (`LocalRouteController.kt:62-82`, `LocalRouteInterceptor.kt:21-117`).
 
 The Windows client follows Apple, Bonjour included: `LocalRouteMonitor` checks `local_route.url` first, then the
-`_silo._tcp` adverts whose TXT `id` is the server's (`LanAdvertWatch`, browsing while the server has a pin), checks
-again when such an advert comes or moves while there is no route, `LocalRouteHandler` moves the API calls but sign-in (`/api/v2/auth/`), writes included as Android moves
+`_silo._tcp` adverts whose TXT `id` is the server's (`LanAdvertWatch`, browsing while the server has a pin; it keeps
+only that server's adverts, at most eight in the order they came, and puts the origin in use or last confirmed first,
+so spoofed adverts with the id cannot crowd the genuine one out of the four tried), checks again when such an advert
+comes or moves while there is no route (at most every 30 s), `LocalRouteHandler` moves the API calls but sign-in (`/api/v2/auth/`), writes included as Android moves
 them, repeating one on the saved address only when the route did not connect, and, behind the media proxy (9.4), the
 media; FFmpeg never sees the pinned connection. The server keys connection state (`playback/connection`, learned limits, probe results) by the
 path a request came over (`local` for a private client address, else a keyed hash of it), and it builds absolute

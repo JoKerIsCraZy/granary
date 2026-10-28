@@ -292,8 +292,9 @@ title prepares or buffers. With Windows' animations off the mark stands still.
 - Add server: "Connect to your server" and "Type the address you use for Silo." as in the apps; progress and
   refusals below the button. Under the address, "Found nearby" as the apps list it once a server on this network is
   confirmed (nothing before): up to four rows in a rounded card with hairlines between them, each a 40 px disc with
-  the name's letter, the name, "On this network · 192.168.1.6:8090" and a chevron, a spinner while it connects; Cancel
-  stops either way of connecting.
+  the name's letter, the name, "On this network · 192.168.1.6:8090", an amber open lock with "Not encrypted" (every
+  found address is plain HTTP; sign-in's amber consent follows), and a chevron, a spinner while it connects; Cancel
+  stops either way of connecting. A found server that matches a saved one, by id or address, is not offered.
 - Sign in: the server's name, a refusal, the password form, then "Use your phone instead". As on the web, the QR code
   shows on "Show QR code" (at once when the server has no password sign-in), framed, with the address and the code
   below it; the page scrolls to it.

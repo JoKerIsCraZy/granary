@@ -101,7 +101,7 @@ public sealed class LanServerDiscoveryTests
     }
 
     [Fact]
-    public async Task TwoServers_AreListedByName()
+    public async Task Servers_AreListedInTheOrderTheyWereFound()
     {
         _probe.Ids[Lan] = "srv-1";
         _probe.Names[Lan] = "Zoo";
@@ -110,9 +110,60 @@ public sealed class LanServerDiscoveryTests
         _discovery.Start();
 
         _browser.Advertise("a", "srv-1", 8090, "Silo", "192.168.1.6");
+        await ListedAsync(1);
         _browser.Advertise("b", "srv-2", 8090, "Silo", "192.168.1.7");
 
-        Assert.Equal(["attic", "Zoo"], (await ListedAsync(2)).Select(s => s.Name));
+        // Not by name: a server found later, whatever it calls itself, goes below.
+        Assert.Equal(["Zoo", "attic"], (await ListedAsync(2)).Select(s => s.Name));
+    }
+
+    [Fact]
+    public async Task AFloodOfAdverts_IsCapped_AndLeavesAServerFoundBeforeOnTop()
+    {
+        _probe.Ids[Lan] = "srv-1";
+        _probe.Names[Lan] = "Home";
+        _discovery.Start();
+        _browser.Advertise("real", "srv-1");
+        await ListedAsync(1);
+
+        for (int i = 0; i < 40; i++)
+        {
+            string origin = $"http://192.168.2.{i + 1}:8090/";
+            _probe.Ids[origin] = $"fake-{i}";
+            _probe.Names[origin] = "AAA Home";
+            _browser.Advertise($"f{i}", $"fake-{i}", 8090, "Silo", $"192.168.2.{i + 1}");
+        }
+        await Until(() => _discovery.Servers.Count == LanServerDiscovery.MaxEntries);
+        await Task.Delay(50, Cancellation);
+
+        // Thirty-one fakes followed with the real one, the rest dropped; the real one still heads the list.
+        Assert.Equal(LanServerDiscovery.MaxEntries, _probe.Asked.Distinct().Count());
+        Assert.Equal("Home", _discovery.Servers[0].Name);
+
+        _browser.Lose("real");
+        _browser.Advertise("f39", "fake-39", 8090, "Silo", "192.168.2.40");
+        await Until(() => _probe.IdentityCalls("http://192.168.2.40:8090/") == 1);
+    }
+
+    [Fact]
+    public async Task AnAdvertThatKeepsChanging_IsCheckedAtMostEveryFiveSeconds()
+    {
+        _probe.Ids[Lan] = "srv-1";
+        _discovery.Start();
+        _browser.Advertise("a", "srv-1", instance: "n0");
+        await Until(() => _probe.IdentityCalls(Lan) == 1);
+
+        for (int i = 1; i <= 5; i++)
+        {
+            _browser.Advertise("a", "srv-1", instance: $"n{i}");
+        }
+        await _time.WaitUntilAsync(() => _time.NextDue == LanServerDiscovery.MinConfirmInterval, Cancellation);
+        Assert.Equal(1, _probe.IdentityCalls(Lan));
+
+        _time.Advance(LanServerDiscovery.MinConfirmInterval);
+        await Until(() => _probe.IdentityCalls(Lan) == 2);
+        await Task.Delay(50, Cancellation);
+        Assert.Equal(2, _probe.IdentityCalls(Lan));
     }
 
     [Fact]
