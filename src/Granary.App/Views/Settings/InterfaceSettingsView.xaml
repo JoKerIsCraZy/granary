@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Settings → Navigation & Cards, as on Silo's web (pages/settings/InterfaceSettings.tsx, CardOverlaySettings.tsx). -->
+<!-- Settings → Navigation & Cards, as on Silo's web (pages/settings/InterfaceSettings.tsx, CardOverlaySettings.tsx): Posters, Badges, Sidebar. -->
 <UserControl
     x:Class="Granary.App.Views.Settings.InterfaceSettingsView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -29,6 +29,16 @@
                     ToolTipService.ToolTip="{x:Bind Label}">
                 <Ellipse Width="24" Height="24" Fill="{x:Bind controls:SettingsSwatches.Fill(Hex)}" Stroke="#33FFFFFF" StrokeThickness="1" />
             </Button>
+        </DataTemplate>
+
+        <!-- A poster setting's choice: the chosen one filled in the accent, as the web's ChoiceButtons. -->
+        <DataTemplate x:Key="SettingsChoiceTemplate" x:DataType="settings:SettingsChoice">
+            <Button Content="{x:Bind Label}" Style="{StaticResource SiloSettingsChoiceButtonStyle}" Command="{x:Bind PickCommand}"
+                    Background="{x:Bind controls:BadgeSettingsLook.ChoiceFill(IsSelected), Mode=OneWay}"
+                    BorderBrush="{x:Bind controls:BadgeSettingsLook.ChoiceRing(IsSelected), Mode=OneWay}"
+                    Foreground="{x:Bind controls:BadgeSettingsLook.ChoiceText(IsSelected), Mode=OneWay}"
+                    AutomationProperties.Name="{x:Bind Label}"
+                    AutomationProperties.ItemStatus="{x:Bind controls:SettingsSwatches.Status(IsSelected), Mode=OneWay}" />
         </DataTemplate>
 
         <!-- One sidebar entry: its icon and name, up and down within its section, and its switch. -->
@@ -180,6 +190,88 @@
         <TextBlock Text="Navigation &amp; Cards" Style="{StaticResource SiloSettingsPageTitleStyle}" AutomationProperties.HeadingLevel="Level1" />
         <TextBlock Margin="0,8,0,32" Style="{StaticResource SiloSettingsMutedTextStyle}" FontSize="14"
                    Text="Choose how posters look and what the sidebar shows. Changes show as you make them." />
+
+        <!-- Posters, as the web's PosterSettings: Reset beside the title, so laid out by hand as Badges. -->
+        <Border Padding="0,32" BorderThickness="0,1,0,0" BorderBrush="{StaticResource SiloSettingsHairlineBrush}">
+            <Grid ColumnSpacing="48">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="256" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Spacing="6">
+                    <Grid>
+                        <TextBlock Text="Posters" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="15"
+                                   Foreground="{StaticResource SiloForegroundBrush}" VerticalAlignment="Center" AutomationProperties.HeadingLevel="Level2" />
+                        <Button HorizontalAlignment="Right" Padding="8,4" Background="Transparent" BorderThickness="0"
+                                Command="{x:Bind Posters.ResetCommand}" Visibility="{x:Bind Posters.HasOverride, Mode=OneWay}"
+                                AutomationProperties.Name="Reset poster settings">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <FontIcon Glyph="&#xE7A7;" FontSize="12" />
+                                <TextBlock Text="Reset" FontFamily="{StaticResource SiloFontMedium}" FontSize="14" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+                    <TextBlock Style="{StaticResource SiloSettingsMutedTextStyle}"
+                               Text="How big posters are, and what's written under them, in Granary and Silo's other desktop apps." />
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Spacing="24">
+                    <TextBlock Text="Loading…" Style="{StaticResource SiloSettingsMutedTextStyle}" FontSize="14"
+                               Visibility="{x:Bind Posters.IsLoading, Mode=OneWay}" />
+                    <!-- Why the choices cannot show: the read failed, or the server predates them. -->
+                    <Border Padding="16" CornerRadius="12" BorderThickness="1" BorderBrush="#FF28282E" Background="#0AFFFFFF"
+                            Visibility="{x:Bind controls:SettingsText.Shows(Posters.BlockerTitle), Mode=OneWay}">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="{x:Bind Posters.BlockerTitle, Mode=OneWay}" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium"
+                                       FontSize="14" TextWrapping="Wrap" Foreground="{StaticResource SiloForegroundBrush}" />
+                            <TextBlock Text="{x:Bind Posters.BlockerText, Mode=OneWay}" Style="{StaticResource SiloSettingsMutedTextStyle}" />
+                        </StackPanel>
+                    </Border>
+
+                    <StackPanel Spacing="24" Visibility="{x:Bind Posters.IsReady, Mode=OneWay}">
+                        <!-- This PC's own value outranks the desktop apps' choice: the web's notice, with its one way out. -->
+                        <Grid Padding="16" ColumnSpacing="16" CornerRadius="12" BorderThickness="1" BorderBrush="#B328282E" Background="#0AFFFFFF"
+                              Visibility="{x:Bind Posters.HasDeviceOverride, Mode=OneWay}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="This PC has its own poster settings, so changes here won't show on it." FontSize="14"
+                                       Style="{StaticResource SiloSettingsMutedTextStyle}" VerticalAlignment="Center" />
+                            <Button Grid.Column="1" Content="Match my other computers" Style="{StaticResource SiloSettingsOutlineButtonStyle}"
+                                    MinHeight="32" VerticalAlignment="Center" Command="{x:Bind Posters.MatchOtherComputersCommand}" />
+                        </Grid>
+
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Size" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium" FontSize="14"
+                                       Foreground="{StaticResource SiloForegroundBrush}" />
+                            <ItemsControl ItemsSource="{x:Bind Posters.Sizes}" ItemTemplate="{StaticResource SettingsChoiceTemplate}" IsTabStop="False"
+                                          IsEnabled="{x:Bind Posters.CanEdit, Mode=OneWay}" AutomationProperties.Name="Size">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal" Spacing="8" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                            </ItemsControl>
+                        </StackPanel>
+
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Under each poster" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium" FontSize="14"
+                                       Foreground="{StaticResource SiloForegroundBrush}" />
+                            <ItemsControl ItemsSource="{x:Bind Posters.Captions}" ItemTemplate="{StaticResource SettingsChoiceTemplate}" IsTabStop="False"
+                                          IsEnabled="{x:Bind Posters.CanEdit, Mode=OneWay}" AutomationProperties.Name="Under each poster">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal" Spacing="8" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                            </ItemsControl>
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+        </Border>
+
         <InfoBar IsOpen="{x:Bind controls:SettingsText.Not(ViewModel.CanEdit), Mode=OneWay}" Severity="Informational" IsClosable="False"
                  Message="This server does not keep badge choices for profiles; posters show the server's badges." Margin="0,0,0,16" />
 

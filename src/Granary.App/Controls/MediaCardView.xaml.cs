@@ -37,6 +37,8 @@ public sealed partial class MediaCardView : UserControl
     private static readonly TimeSpan ZoomDuration = TimeSpan.FromMilliseconds(300);
     // The web's inset of the badges from the artwork's edges, and of an edge's two corners from each other.
     private const double EdgeInset = 8;
+    // Between the artwork and the title.
+    private const double CaptionGap = 11;
 
     private readonly MediaCardActions _actions = App.Services.GetRequiredService<MediaCardActions>();
     private readonly CardOverlaySettings _overlays = App.Services.GetRequiredService<CardOverlaySettings>();
@@ -50,6 +52,7 @@ public sealed partial class MediaCardView : UserControl
     private MediaCard? _badgedCard;
     private CardOverlayPrefs? _badgedPrefs;
     private bool _reservesEpisodeLine;
+    private CardCaption _caption = CardCaption.TitleMetadata;
     private ButtonBase? _host;
     // The entries the card's list adds to its menu, and the menu items made for them.
     private IReadOnlyList<CardMenuEntry> _entries = [];
@@ -99,6 +102,23 @@ public sealed partial class MediaCardView : UserControl
         }
     }
 
+    /// <summary>
+    /// What shows under the artwork, the profile's choice (<see cref="CardPresentation"/>), set by the row or grid the card is
+    /// in. A card elsewhere (an episode on a title's page) keeps its title and details, as the web's.
+    /// </summary>
+    public CardCaption Caption
+    {
+        get => _caption;
+        set
+        {
+            if (_caption != value)
+            {
+                _caption = value;
+                ShowCaption(Card);
+            }
+        }
+    }
+
     private static void OnCardChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e) =>
         ((MediaCardView)sender).Show((MediaCard?)e.NewValue);
 
@@ -124,11 +144,9 @@ public sealed partial class MediaCardView : UserControl
         ShowBadges(card);
 
         TitleText.Text = card?.Title ?? "";
-        ShowEpisodeTitle(card);
         SubtitleText.Style = (Style)Application.Current.Resources[
             card?.Shape == MediaCardShape.Landscape ? "SiloCaptionTextStyle" : "SiloOverlineTextStyle"];
-        SetText(SubtitleText, card?.Subtitle);
-        SetText(CaptionText, card?.Caption);
+        ShowCaption(card);
         if (card?.IsCaptionAttention == true)
         {
             CaptionText.Foreground = (Brush)Application.Current.Resources["SiloAttentionBrush"];
@@ -385,10 +403,22 @@ public sealed partial class MediaCardView : UserControl
         badge.Visibility = string.IsNullOrEmpty(value) ? Visibility.Collapsed : Visibility.Visible;
     }
 
+    // The lines under the artwork, as the profile chose them: the title and its details, the title only, or none.
+    private void ShowCaption(MediaCard? card)
+    {
+        bool details = _caption == CardCaption.TitleMetadata;
+        CaptionPanel.Visibility = Visible(_caption != CardCaption.Artwork);
+        LayoutRoot.RowSpacing = _caption == CardCaption.Artwork ? 0 : CaptionGap;
+        ShowEpisodeTitle(card);
+        SetText(SubtitleText, details ? card?.Subtitle : null);
+        SetText(CaptionText, details ? card?.Caption : null);
+    }
+
     private void ShowEpisodeTitle(MediaCard? card)
     {
-        SetText(EpisodeTitleText, card?.EpisodeTitle);
-        bool keepsLine = _reservesEpisodeLine && string.IsNullOrEmpty(card?.EpisodeTitle) && card?.Shape == MediaCardShape.Poster;
+        bool details = _caption == CardCaption.TitleMetadata;
+        SetText(EpisodeTitleText, details ? card?.EpisodeTitle : null);
+        bool keepsLine = details && _reservesEpisodeLine && string.IsNullOrEmpty(card?.EpisodeTitle) && card?.Shape == MediaCardShape.Poster;
         EpisodeLineSpacer.Visibility = keepsLine ? Visibility.Visible : Visibility.Collapsed;
     }
 

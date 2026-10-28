@@ -35,13 +35,14 @@
             <ScrollView x:Name="Scroller" ContentOrientation="Horizontal" HorizontalScrollMode="Enabled" HorizontalScrollBarVisibility="Hidden"
                         VerticalScrollMode="Disabled" VerticalScrollBarVisibility="Hidden" ViewChanged="OnViewChanged"
                         controls:WheelScrollsPage.IsEnabled="True">
-                <ItemsRepeater x:Name="Items" ItemsSource="{x:Bind ItemsSource, Mode=OneWay}">
+                <!-- A card's width follows the profile's poster size at the window's breakpoint (MediaRow.OnElementPrepared). -->
+                <ItemsRepeater x:Name="Items" ItemsSource="{x:Bind ItemsSource, Mode=OneWay}" ElementPrepared="OnElementPrepared">
                     <ItemsRepeater.Layout>
                         <StackLayout Orientation="Horizontal" Spacing="20" />
                     </ItemsRepeater.Layout>
                     <ItemsRepeater.ItemTemplate>
                         <DataTemplate x:DataType="cards:MediaCard">
-                            <Button Style="{StaticResource SiloCardButtonStyle}" Width="{x:Bind controls:MediaRow.CardWidth(Shape)}" VerticalAlignment="Top" DataContext="{x:Bind}"
+                            <Button Style="{StaticResource SiloCardButtonStyle}" VerticalAlignment="Top" DataContext="{x:Bind}"
                                     Click="OnCardClick" AutomationProperties.Name="{x:Bind AccessibleName}">
                                 <controls:MediaCardView Card="{x:Bind}" />
                             </Button>

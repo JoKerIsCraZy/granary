@@ -26,7 +26,8 @@
     <ItemsRepeater x:Name="Items" ItemsSource="{x:Bind ItemsSource, Mode=OneWay}" ItemTemplate="{StaticResource CardTemplateSelector}"
                    ElementPrepared="OnElementPrepared" EffectiveViewportChanged="OnEffectiveViewportChanged" SizeChanged="OnItemsSizeChanged">
         <ItemsRepeater.Layout>
-            <UniformGridLayout x:Name="GridLayout" MinItemWidth="185" MinColumnSpacing="20" MinRowSpacing="28"
+            <!-- The columns and gap follow the profile's poster size at the window's breakpoint (MediaGrid.ApplyLook). -->
+            <UniformGridLayout x:Name="GridLayout" MinItemWidth="64" MinColumnSpacing="12" MinRowSpacing="12" MaximumRowsOrColumns="8"
                                ItemsStretch="Fill" ItemsJustification="Start" />
         </ItemsRepeater.Layout>
     </ItemsRepeater>

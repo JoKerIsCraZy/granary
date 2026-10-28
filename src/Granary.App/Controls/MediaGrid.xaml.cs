@@ -46,7 +46,13 @@ public sealed partial class MediaGrid : UserControl
     // What is in view is told at most this often while the grid scrolls, and once more when it stops.
     private static readonly TimeSpan ViewportInterval = TimeSpan.FromMilliseconds(50);
 
+    // A poster is never narrower: a window too narrow for the web's columns beside the sidebar has one column less. The web's
+    // own narrowest, compact posters at 1024 px, are about 75 px wide.
+    private const double MinPosterWidth = 64;
+    private const double MinLandscapeWidth = 280;
+
     private readonly CardArtworkPrefetch _prefetch = new();
+    private readonly CardLook _look;
     private readonly DispatcherQueueTimer _viewportTimer;
     private ScrollViewer? _scroller;
     private Rect _effectiveViewport;
@@ -57,6 +63,7 @@ public sealed partial class MediaGrid : UserControl
     public MediaGrid()
     {
         InitializeComponent();
+        _look = new CardLook(this);
         _viewportTimer = DispatcherQueue.CreateTimer();
         _viewportTimer.Interval = ViewportInterval;
         _viewportTimer.IsRepeating = false;
@@ -85,7 +92,10 @@ public sealed partial class MediaGrid : UserControl
         set => SetValue(ItemsSourceProperty, value);
     }
 
-    /// <summary>Posters (2:3, at least 185 px) or landscape stills (16:9, at least 280 px).</summary>
+    /// <summary>
+    /// Posters (2:3, in the web's columns for the profile's poster size at the window's breakpoint) or landscape stills (16:9,
+    /// at least 280 px).
+    /// </summary>
     public MediaCardShape CardShape
     {
         get => (MediaCardShape)GetValue(CardShapeProperty);
@@ -143,8 +153,52 @@ public sealed partial class MediaGrid : UserControl
         _scroller.ChangeView(null, top + row * grid.Pitch, null, disableAnimation: true);
     }
 
-    private static void OnCardShapeChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e) =>
-        ((MediaGrid)sender).GridLayout.MinItemWidth = (MediaCardShape)e.NewValue == MediaCardShape.Landscape ? 280 : 185;
+    private static void OnCardShapeChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e) => ((MediaGrid)sender).ApplyLook();
+
+    // The profile's choice and the window's breakpoint, taken before the cards are laid out in them.
+    protected override Size MeasureOverride(Size availableSize)
+    {
+        if (_look.Update())
+        {
+            ApplyLook();
+        }
+        return base.MeasureOverride(availableSize);
+    }
+
+    // The web's columns and gap (cardGridClasses) for posters; a wide card keeps its least width. And the cards' captions.
+    private void ApplyLook()
+    {
+        var presentation = _look.Presentation;
+        GridLayout.MinColumnSpacing = presentation.GridGap;
+        GridLayout.MinRowSpacing = presentation.GridGap;
+        if (CardShape == MediaCardShape.Landscape)
+        {
+            GridLayout.MinItemWidth = MinLandscapeWidth;
+            GridLayout.ClearValue(UniformGridLayout.MaximumRowsOrColumnsProperty);
+        }
+        else
+        {
+            GridLayout.MinItemWidth = MinPosterWidth;
+            GridLayout.MaximumRowsOrColumns = presentation.GridColumns(_look.Breakpoint);
+        }
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(Items); i++)
+        {
+            ShowCaption(VisualTreeHelper.GetChild(Items, i));
+        }
+    }
+
+    private void ShowCaption(DependencyObject element)
+    {
+        switch (element)
+        {
+            case Button { Content: MediaCardView card }:
+                card.Caption = _look.Presentation.Caption;
+                break;
+            case MediaCardSkeleton skeleton:
+                skeleton.ShowsTitle = _look.Presentation.ShowsCaption;
+                break;
+        }
+    }
 
     private void FollowItems()
     {
@@ -223,6 +277,7 @@ public sealed partial class MediaGrid : UserControl
 
     private void OnElementPrepared(ItemsRepeater sender, ItemsRepeaterElementPreparedEventArgs args)
     {
+        ShowCaption(args.Element);
         if (args.Element is Button { Content: MediaCardView card })
         {
             card.ReservesEpisodeLine = _reservesEpisodeLine;
@@ -274,8 +329,13 @@ public sealed partial class MediaGrid : UserControl
         }
     }
 
-    private int Columns() =>
-        Math.Max(1, (int)((Items.ActualWidth + GridLayout.MinColumnSpacing) / (GridLayout.MinItemWidth + GridLayout.MinColumnSpacing)));
+    // As many as fit, up to the poster size's columns.
+    private int Columns()
+    {
+        int fit = Math.Max(1, (int)((Items.ActualWidth + GridLayout.MinColumnSpacing) / (GridLayout.MinItemWidth + GridLayout.MinColumnSpacing)));
+        int most = GridLayout.MaximumRowsOrColumns;
+        return most > 0 ? Math.Min(most, fit) : fit;
+    }
 
     // Every row of a uniform grid is as tall as the others, so the grid's height gives the pitch of its rows.
     private (int Count, int Columns, double Pitch)? Measure()

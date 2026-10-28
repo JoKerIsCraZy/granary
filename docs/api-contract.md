@@ -518,7 +518,9 @@ Profile and device settings live on the server (manifest
   know fails the **whole batch** with `422`
   (`silo-server/internal/apiv2/settings.go:1027-1048`), so check keys against
   `GET /api/v2/settings/contract` first on older servers.
-- Write: `PUT /api/v2/settings/values/{key}?scope=profile|profile_device` with `{ "value": ... }`.
+- Write: `PUT /api/v2/settings/values/{key}?scope=profile|profile_client|profile_device` with `{ "value": ... }`.
+  `profile_client` is the profile in one client family's apps, the one `X-Silo-Client-Family` names ([6.4](#64-client-identification-headers));
+  it sits between the device's value and the profile's.
 - The preference columns in `GET /api/v2/profiles` (`subtitle_mode`, `quality_preference`, …) go
   stale after settings writes; use them only as a fallback for old servers.
 
@@ -535,6 +537,7 @@ Profile and device settings live on the server (manifest
 | `player.resume_rewind_seconds`, `player.passout_threshold` | **client_local** (never on the server) | `7`, `3` | resume rewind, auto-advance streak limit |
 | `ui.next_up_mode`, `ui.disabled_library_ids`, `ui.library_order` | profile | `combined`, –, – | Home row behaviour, hidden libraries, library order |
 | `ui.card_overlays`, `ui.card_overlays_enabled` | profile | server defaults, `true` | card badges ([6.6.1](#661-card-badges)) |
+| `ui.card_presentation` | profile, profile_client, profile_device | `{ "poster_size": "standard", "caption": "title_metadata" }` | poster size and caption ([6.6.2](#662-poster-size-and-caption)) |
 
 #### 6.6.1 Card badges
 
@@ -554,6 +557,30 @@ way, so a profile's badges look alike in both.
 - A server whose effective-settings read refuses the keys (`422`) predates them: show its defaults, offer no editing.
 - Rotten Tomatoes badges (`rating_rt`, `rating_rt_audience`) are offered only while `GET /api/v2/capabilities/ratings`
   lists their source (`rt_critic`, `rt_audience`); a server without the operation (`404`) shows none.
+
+#### 6.6.2 Poster size and caption
+
+The web's card presentation (`web/src/lib/uiCustomization.ts`, `pages/settings/InterfaceSettings.tsx`), manifest revision 5.
+The web saves it for its browsers (`profile_client`, family `web`); Granary saves it for the desktop apps (family `desktop`,
+shared with the other desktop clients), so a browser and Granary each keep their own.
+
+- The value is `{ "poster_size": "compact|standard|large", "caption": "title_metadata|title|artwork" }`. Anything else,
+  either field missing or unknown, reads as the default, as `parseCardPresentation` does.
+- The effective item's `source` says where it comes from: `profile_client` is the desktop apps' own choice (Reset deletes it,
+  `DELETE …?scope=profile_client`), `profile_device` this PC's value, which outranks it: editing is off until it is deleted
+  ("Match my other computers", `DELETE …?scope=profile_device`). `profile` or `default` apply when neither exists.
+- A server whose effective read refuses the key (`422`) predates it: cards keep the default and nothing is editable.
+- The sizes are the web's at its Tailwind breakpoints (`sm` 640, `md` 768, `lg` 1024, `xl` 1280 px), measured against
+  Granary's window width as the web's against its viewport, sidebar included:
+
+  | Size | Grid columns (base/sm/md/lg/xl) | Grid gap | Row card width (base/sm/lg) |
+  |---|---|---|---|
+  | compact | 3 / 5 / 6 / 8 / 10 | 12 | 120 / 140 / 160 |
+  | standard | 3 / 4 / 5 / 7 / 8 | 12 | 140 / 160 / 185 |
+  | large | 2 / 3 / 4 / 5 / 6 | 16 | 170 / 195 / 220 |
+
+  Wide (16:9) row cards are 260 px, 315 from `sm`, at every size. `title` drops the details under the title (year, episode
+  title and code, time left), `artwork` the whole caption.
 
 ## 7. Catalog
 

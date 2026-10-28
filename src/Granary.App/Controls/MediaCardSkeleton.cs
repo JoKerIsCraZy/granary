@@ -15,6 +15,7 @@ namespace Granary.App.Controls;
 public sealed partial class MediaCardSkeleton : Grid
 {
     private static readonly TimeSpan PulseDuration = TimeSpan.FromSeconds(2);
+    private const double TitleGap = 8;
 
     private readonly Border _art;
     private readonly Border _title;
@@ -24,7 +25,7 @@ public sealed partial class MediaCardSkeleton : Grid
         var fill = (Brush)Application.Current.Resources["SiloSurfaceRaisedBrush"];
         VerticalAlignment = VerticalAlignment.Top;
         IsHitTestVisible = false;
-        RowSpacing = 8;
+        RowSpacing = TitleGap;
         RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         _art = new Border { Background = fill, CornerRadius = (CornerRadius)Application.Current.Resources["SiloCardCornerRadius"] };
@@ -39,6 +40,17 @@ public sealed partial class MediaCardSkeleton : Grid
             _title.Width = e.NewSize.Width * 3 / 4;
         };
         Loaded += (_, _) => Pulse();
+    }
+
+    /// <summary>The title bar shows: off while the profile has nothing written under posters, as the web's skeleton.</summary>
+    public bool ShowsTitle
+    {
+        get => _title.Visibility == Visibility.Visible;
+        set
+        {
+            _title.Visibility = value ? Visibility.Visible : Visibility.Collapsed;
+            RowSpacing = value ? TitleGap : 0;
+        }
     }
 
     // On the compositor, so a screen of skeletons costs the UI thread nothing.

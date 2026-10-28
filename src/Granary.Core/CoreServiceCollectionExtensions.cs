@@ -99,6 +99,7 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<AdminApi>();
         services.AddSingleton<ServerAccent>();
         services.AddSingleton<CardOverlaySettings>();
+        services.AddSingleton<CardPresentationSettings>();
         services.AddTransient<ImagesApi>();
         services.AddSingleton<ImageParameterCache>();
         AddArtwork(services);

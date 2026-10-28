@@ -51,7 +51,10 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
 
 - `MediaCardView` draws one `MediaCard` (`Granary.Core.ViewModels.Cards`): 2:3 poster or 16:9
   landscape artwork with radius 16, the profile's badges in the four corners, the card's own status ("NEW", "APPROVED")
-  and a watched mark top right, a 3 px red progress bar, then title, subtitle and an optional caption. The badges are
+  and a watched mark top right, a 3 px red progress bar, then title, subtitle and an optional caption. In a row or grid
+  the lines under the artwork follow the profile's caption choice ([poster size and caption](api-contract.md#662-poster-size-and-caption)):
+  all of them, the title only, or none (then nothing under the artwork, not even its 11 px gap); a card elsewhere (an
+  episode on a title's page) keeps them all, as the web's. The badges are
   the web's CardOverlays (`Granary.Core.Overlays`): which ones, their corner, colour, icon and style come from the
   profile's `ui.card_overlays` (or the server's defaults), at most three a corner (`CardBadges`), drawn by
   `CardBadgeViews` in the five styles (Minimal, Classic, Vibrant, Pill, Square; colours mixed as CSS `color-mix`). An
@@ -71,12 +74,19 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
   rushed past was half of what made a wide window stutter. The app collects garbage in `SustainedLowLatency` mode, so a
   full blocking collection does not land in a scroll.
 - `MediaRow`: row title, optional "EXPLORE ALL" (on every Home and library row, as on the web, also when the row
-  already holds all of it; For You and Requests rows only when a page lists more), horizontally scrolling cards (posters 185 px,
-  landscape 314 px, 20 px apart), arrows for mouse users. Sideways rows (`MediaRow`, `DetailShelf`, search's
+  already holds all of it; For You and Requests rows only when a page lists more), horizontally scrolling cards 20 px apart
+  as wide as the web's for the profile's poster size at the window's breakpoint (posters 120 to 220 px, standard 185 from
+  1024 px; wide cards 260 px, 315 from 640), arrows for mouse users. Sideways rows (`MediaRow`, `DetailShelf`, search's
   people) are `ScrollView`s that ignore the mouse wheel (`WheelScrollsPage`): the wheel scrolls the page, Shift or a
   tilting wheel the row. A `ScrollViewer` row that only caught the wheel's routed event still took quick turns
   sideways: WinUI handles the wheel as an inertial manipulation.
-- `MediaGrid`: cards filling the width (posters at least 185 px, landscape at least 280 px), meant to sit
+- `MediaGrid`: cards filling the width, posters in the web's columns for the profile's poster size at the window's
+  breakpoint (standard: 3, 4 from 640 px, 5 from 768, 7 from 1024, 8 from 1280), 12 px apart across and down (16 for
+  large), and never narrower than 64 px: a window too narrow for the columns beside the sidebar has one less. The basis
+  is the window's width, as the web's breakpoints are its viewport's, sidebar included, so both show the same density at
+  the same size; the columns change, and the realized cards are told, only when a resize crosses a breakpoint
+  (`CardLook`, taken as the grid measures). Landscape cards are
+  at least 280 px. The grid is meant to sit
   in the page's own `ScrollViewer`; `LoadMoreCommand` runs near the end for cursor paging. A list loaded by
   window instead (the library and collection grids) holds `MediaCard.Placeholder` for titles not loaded
   yet, drawn as the web's pulsing skeleton (`MediaCardSkeleton`); the grid tells what it shows through
@@ -400,7 +410,13 @@ says why above the sections.
   forced subtitles; a 16:9 preview of the look, edited as a draft with Save Appearance and Discard Changes, Reset back to
   the default; Text (size, family, colour swatches, opacity, outline and its colour), Background & Position (style,
   opacity and colour for the box, position); Timing (the profile's subtitle offset in 100 ms steps, Reset).
-- **Navigation & Cards** (`InterfaceSettingsView` on `BadgeSettingsViewModel`, the web's page of that name): Badges,
+- **Navigation & Cards** (`InterfaceSettingsView` on `PosterSettingsViewModel` and `BadgeSettingsViewModel`, the web's
+  page of that name): Posters first, with Reset beside the title while the desktop apps have their own choice: Size
+  (Compact, Standard, Large) and "Under each poster" (Title and details, Title only, Nothing) as the web's choice buttons
+  (`SiloSettingsChoiceButtonStyle`: 32 px, outlined, the chosen one filled in the accent). A change shows on every row
+  and grid at once and saves for the desktop apps. While it loads the group says "Loading…"; a failed read or an older
+  server shows the web's panel instead of the buttons ("Couldn't load your poster settings", "Your server needs an
+  update"), and a value of this PC's own its notice with "Match my other computers". Then Badges,
   with Reset beside the title while the profile has its own (asks first: "Reset badges?"). "Show badges on posters";
   while on, Style as five 112 px tiles, each with its "4K" on a dark slate (the chosen one outlined and tinted in the
   accent), then the categories as a flat accordion (Media Info, Ratings & Certifications, Content Metadata, Status &

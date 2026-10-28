@@ -76,18 +76,21 @@ public sealed partial class LanguageSettingsView : UserControl
 }
 
 /// <summary>
-/// Settings → Navigation &amp; Cards; it reads the profile's badges when it is shown, and lets go of them and of the sidebar
-/// as the page leaves.
+/// Settings → Navigation &amp; Cards; it reads the profile's poster settings and badges when it is shown, and lets go of them
+/// and of the sidebar as the page leaves.
 /// </summary>
 public sealed partial class InterfaceSettingsView : UserControl, IDisposable
 {
     public InterfaceSettingsView()
     {
+        Posters = ActivatorUtilities.CreateInstance<PosterSettingsViewModel>(App.Services);
         ViewModel = ActivatorUtilities.CreateInstance<BadgeSettingsViewModel>(App.Services);
         Sidebar = ActivatorUtilities.CreateInstance<SidebarSettingsViewModel>(App.Services);
         InitializeComponent();
         Loaded += OnFirstLoaded;
     }
+
+    public PosterSettingsViewModel Posters { get; }
 
     public BadgeSettingsViewModel ViewModel { get; }
 
@@ -95,6 +98,7 @@ public sealed partial class InterfaceSettingsView : UserControl, IDisposable
 
     public void Dispose()
     {
+        Posters.Dispose();
         ViewModel.Dispose();
         Sidebar.Dispose();
     }
@@ -102,7 +106,7 @@ public sealed partial class InterfaceSettingsView : UserControl, IDisposable
     private async void OnFirstLoaded(object sender, RoutedEventArgs e)
     {
         Loaded -= OnFirstLoaded;
-        await SettingsViewLoad.RunAsync(_ => ViewModel.LoadAsync());
+        await SettingsViewLoad.RunAsync(_ => Task.WhenAll(Posters.LoadAsync(), ViewModel.LoadAsync()));
     }
 
     // Reset clears every badge choice of the profile, so it asks first, as the web does.

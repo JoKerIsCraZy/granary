@@ -20,7 +20,8 @@
     GotFocus="OnGotFocus"
     ContextRequested="OnContextRequested">
 
-    <Grid RowSpacing="11">
+    <!-- Without a caption (the profile's "Nothing" under posters) the artwork is all, with no gap under it. -->
+    <Grid x:Name="LayoutRoot" RowSpacing="11">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -144,7 +145,7 @@
             <Border BorderBrush="#0DFFFFFF" BorderThickness="0,1,0,0" CornerRadius="{StaticResource SiloCardCornerRadius}" IsHitTestVisible="False" />
         </Grid>
 
-        <StackPanel Grid.Row="1" Spacing="4" Padding="2,0">
+        <StackPanel x:Name="CaptionPanel" Grid.Row="1" Spacing="4" Padding="2,0">
             <TextBlock x:Name="TitleText" Style="{StaticResource SiloCardTitleTextStyle}" />
             <TextBlock x:Name="EpisodeTitleText" Style="{StaticResource SiloCaptionTextStyle}" TextTrimming="CharacterEllipsis" />
             <TextBlock x:Name="SubtitleText" />

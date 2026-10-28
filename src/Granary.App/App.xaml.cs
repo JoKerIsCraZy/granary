@@ -11,6 +11,7 @@ using Granary.Core.Realtime;
 using Granary.Core.Servers;
 using Granary.Core.Theme;
 using Granary.Core.ViewModels;
+using Granary.Core.ViewModels.Cards;
 using Granary.Player;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -77,6 +78,8 @@ public partial class App : Application
         _ = accent.StartAsync();
         // The profile's card badges, read with every sign-in and profile switch.
         _ = Services.GetRequiredService<CardOverlaySettings>().StartAsync();
+        // The profile's poster size and caption, likewise.
+        _ = Services.GetRequiredService<CardPresentationSettings>().StartAsync();
         // Home and the sidebar's count follow what happens on other devices (docs/api-contract.md, 12). Closing tells the
         // server the connection goes, but waits for that only a moment: the stop never needs this thread.
         var realtime = Services.GetRequiredService<RealtimeEvents>();

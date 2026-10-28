@@ -5,13 +5,14 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Windows.Foundation;
 
 namespace Granary.App.Controls;
 
 /// <summary>
-/// A titled row of cards. <see cref="CardInvokedCommand"/> gets the <see cref="MediaCard"/>; "Explore all"
-/// shows only when <see cref="ExploreAllCommand"/> is set. The cards' artwork is prefetched, so scrolling the
-/// row shows images at once.
+/// A titled row of cards, as wide as the web's for the profile's poster size at the window's breakpoint.
+/// <see cref="CardInvokedCommand"/> gets the <see cref="MediaCard"/>; "Explore all" shows only when
+/// <see cref="ExploreAllCommand"/> is set. The cards' artwork is prefetched, so scrolling the row shows images at once.
 /// </summary>
 public sealed partial class MediaRow : UserControl
 {
@@ -45,15 +46,14 @@ public sealed partial class MediaRow : UserControl
     public static readonly DependencyProperty BleedProperty =
         DependencyProperty.Register(nameof(Bleed), typeof(double), typeof(MediaRow), new PropertyMetadata(RowBleed.PageGutter, (sender, _) => ((MediaRow)sender).ApplyBleed()));
 
-    public const double PosterWidth = 185;
-    public const double LandscapeWidth = 314;
-
     private readonly CardArtworkPrefetch _prefetch = new();
+    private readonly CardLook _look;
     private bool _isPointerInside;
 
     public MediaRow()
     {
         InitializeComponent();
+        _look = new CardLook(this);
         ApplyBleed();
         Loaded += (_, _) =>
         {
@@ -128,9 +128,7 @@ public sealed partial class MediaRow : UserControl
         set => SetValue(TitleBadgeProperty, value);
     }
 
-    // Static and instance helpers because x:Bind function bindings call them.
-    public static double CardWidth(MediaCardShape shape) => shape == MediaCardShape.Landscape ? LandscapeWidth : PosterWidth;
-
+    // Instance helpers because x:Bind function bindings call them.
     public Visibility HasCommand(ICommand? command) => command is null ? Visibility.Collapsed : Visibility.Visible;
 
     public string ExploreAllName(string title) => $"Explore all: {title}";
@@ -138,6 +136,38 @@ public sealed partial class MediaRow : UserControl
     public Visibility HasText(string? text) => string.IsNullOrEmpty(text) ? Visibility.Collapsed : Visibility.Visible;
 
     private void ApplyBleed() => RowBleed.Apply(Bleed, Track, Items, PreviousButton, NextButton);
+
+    // The profile's choice and the window's breakpoint, taken before the cards are laid out in them.
+    protected override Size MeasureOverride(Size availableSize)
+    {
+        if (_look.Update())
+        {
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(Items); i++)
+            {
+                if (VisualTreeHelper.GetChild(Items, i) is Button { Content: MediaCardView view } button)
+                {
+                    ShowLook(button, view, view.Card?.Shape ?? MediaCardShape.Poster);
+                }
+            }
+        }
+        return base.MeasureOverride(availableSize);
+    }
+
+    private void OnElementPrepared(ItemsRepeater sender, ItemsRepeaterElementPreparedEventArgs args)
+    {
+        if (args.Element is Button { Content: MediaCardView view } button)
+        {
+            var shape = sender.ItemsSourceView?.GetAt(args.Index) is MediaCard card ? card.Shape : MediaCardShape.Poster;
+            ShowLook(button, view, shape);
+        }
+    }
+
+    // The web's card width for the shape (carouselCardWidthPx), and the caption.
+    private void ShowLook(Button button, MediaCardView view, MediaCardShape shape)
+    {
+        button.Width = _look.Presentation.RowCardWidth(shape, _look.Breakpoint);
+        view.Caption = _look.Presentation.Caption;
+    }
 
     private ScrollViewer? PageScroller()
     {

@@ -21,6 +21,12 @@ public static class SettingScopes
     /// <summary>The acting profile, on every device.</summary>
     public const string Profile = "profile";
 
+    /// <summary>
+    /// The acting profile in the apps of this client family (<c>X-Silo-Client-Family</c>, <c>desktop</c> for Granary); it
+    /// outranks the profile's value, and this device's outranks it.
+    /// </summary>
+    public const string ProfileClient = "profile_client";
+
     /// <summary>The acting profile on this device only (<c>X-Silo-Device-Id</c>); it outranks the profile's value.</summary>
     public const string ProfileDevice = "profile_device";
 }
