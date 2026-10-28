@@ -92,7 +92,7 @@ public sealed partial class MainWindow : IPlayerOverlay
         PlayerHost.Child = null;
         PlayerHost.Visibility = Visibility.Collapsed;
         ShowApp(true);
-        ContentFrame.Margin = default;
+        ShowDockSpace();
     }
 
     private void Dock()
@@ -106,8 +106,7 @@ public sealed partial class MainWindow : IPlayerOverlay
         Grid.SetRowSpan(PlayerHost, 1);
         PlayerHost.VerticalAlignment = VerticalAlignment.Bottom;
         PlayerHost.Height = DockHeight;
-        // The page ends above the bar, so nothing hides under it.
-        ContentFrame.Margin = new Thickness(0, 0, 0, DockHeight + (2 * DockInset));
+        ShowDockSpace();
         ShowApp(true);
         PlaceDock(animate: false);
         // Played from the start (--play), nothing is under the player yet.
@@ -134,9 +133,25 @@ public sealed partial class MainWindow : IPlayerOverlay
         PlayerHost.VerticalAlignment = VerticalAlignment.Stretch;
         PlayerHost.Height = double.NaN;
         PlayerHost.Margin = default;
-        ContentFrame.Margin = default;
         ShowApp(false);
         page.IsDocked = false;
+        ShowDockSpace();
+    }
+
+    // The page ends above the bar, so nothing hides under it. Settings and Admin bring a sidebar of their own, which runs
+    // to the window's foot beside the bar as the app's does: they keep their whole height and end their own page above it.
+    private void ShowDockSpace()
+    {
+        double reserved = _player is { IsDocked: true } ? DockHeight + (2 * DockInset) : 0;
+        if (ContentFrame.Content is IDockSpace page)
+        {
+            ContentFrame.Margin = default;
+            page.ReserveBottom(reserved);
+        }
+        else
+        {
+            ContentFrame.Margin = new Thickness(0, 0, 0, reserved);
+        }
     }
 
     // The bar starts right of the sidebar, as wide as the sidebar is: open, the rail of a title's page, or the settings'

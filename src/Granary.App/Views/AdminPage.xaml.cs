@@ -14,7 +14,7 @@ namespace Granary.App.Views;
 /// open first (<see cref="AdminPages"/>); Back into the area returns to the page last shown. Its pages switch here, not in
 /// the app's history, so Back to App leaves the area in one step.
 /// </summary>
-public sealed partial class AdminPage : Page
+public sealed partial class AdminPage : Page, IDockSpace
 {
     private AdminDashboardView? _dashboard;
     private AdminActivityView? _activity;
@@ -89,6 +89,9 @@ public sealed partial class AdminPage : Page
             App.Services.GetRequiredService<ILogger<AdminPage>>().LogError(ex, "The admin page {Page} could not be shown", page);
         }
     }
+
+    // The area's sidebar runs on beside the minimized player's bar, its build at the window's foot; only the page ends above it.
+    void IDockSpace.ReserveBottom(double height) => PageScroller.Margin = new Thickness(0, 0, 0, height);
 
     private void Show(UIElement view)
     {

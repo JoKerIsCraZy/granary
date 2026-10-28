@@ -12,7 +12,7 @@ namespace Granary.App.Views;
 /// The settings (docs/ui-design.md, Settings): the profile's, and the app's own servers and About. The parameter names the
 /// page to open first (<c>playback</c>, <c>subtitles</c>, <c>interface</c>, <c>servers</c>, <c>about</c>).
 /// </summary>
-public sealed partial class SettingsPage : Page
+public sealed partial class SettingsPage : Page, IDockSpace
 {
     private readonly Dictionary<string, UIElement> _views = [];
     // Set while one list clears the others' picks, so the clearing opens nothing.
@@ -87,6 +87,9 @@ public sealed partial class SettingsPage : Page
     }
 
     private ListView[] Lists() => [Pages, AppearancePages, AppPages];
+
+    // The settings' sidebar runs on beside the minimized player's bar; only the page ends above it.
+    void IDockSpace.ReserveBottom(double height) => PageScroller.Margin = new Thickness(0, 0, 0, height);
 
     // Back to where the settings were opened from, or Home.
     private void OnBackClick(object sender, RoutedEventArgs e)

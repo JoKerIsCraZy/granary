@@ -379,7 +379,8 @@ stream's commands on Activity.
   left (Exit, Back, `Alt+Left`, `Ctrl+K`, another page, a session change); the page under it shows again.
 - **Minimized** (the web's Minimize player, a 44 px glass disc with a chevron, top left; Exit is top right): the player becomes the bar
   at the bottom of the page, beside the sidebar, which goes on down to the window's edge; the page ends above the bar
-  and the viewer browses on. Unlike the web's bar, the picture plays on in it: a 160 by 90 box at its left, a click on
+  and the viewer browses on. Settings and Admin keep their own sidebar down to the window's edge too (`IDockSpace`):
+  only their page ends above the bar. Unlike the web's bar, the picture plays on in it: a 160 by 90 box at its left, a click on
   which brings the full player back, its only way there (under the pointer, or the keyboard, the whole picture greys
   and shows a chevron up). Then the title, the episode line and the times; previous episode, skip back,
   play/pause, skip forward and next episode; on the right mute and Stop playback (✕, as the web bar's). Along its top edge, right of the picture, the full player's seek bar (`DockSeekBar`): thin, thicker under

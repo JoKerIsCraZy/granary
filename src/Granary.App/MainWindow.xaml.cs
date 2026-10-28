@@ -479,6 +479,7 @@ public sealed partial class MainWindow : Window
     private void OnNavigated(object? sender, AppRoute route)
     {
         ShowChrome(route);
+        ShowDockSpace();
         SelectItem(route, _navigation.CurrentParameter);
         RefreshNotifications();
     }
