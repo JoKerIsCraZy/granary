@@ -182,7 +182,13 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   then the entries: poster, a red dot and a lighter background while unread, title, "5m ago", what happened
   ("S4E2 — Blind Rooster"), the reasons as pills, a check button to mark it read; 25 at a time with Load more. An entry
   opens its episode or series and is read from then. The sidebar hides the entry when the server has no inbox and
-  reads the count again on the way through the app, at most every half minute. The web's Series view comes later.
+  reads the count again on the way through the app, at most every half minute. Where the server lists them, Series
+  joins All and Unread (and "See which series notify you" the Preferences and the empty inbox): the web's words with a
+  Preferences link, a search box (after a 300 ms pause), "All reasons" and "Title (A–Z)" as outlined menus, then the
+  series that notify ("Any new episode", "Any episode after S2E9") and under "Won't notify" the others, dimmed, with why
+  ("Muted", "Watchlist notifications are off") and their reasons as pills, struck through when off; both lists load as
+  the foot comes into view. Mute and Unmute sit at a row's right; "Muted Dark" with Undo stands above the lists, where
+  the web shows a toast, and the lists are read again, dimmed until they come.
 - Requests (`RequestsPage`, the web's `pages/Requests.tsx`): the title and what the page is for, Discover and "Yours 2"
   as line tabs (the picked one white with a white bar under it). Discover: rows of TMDB posters with their state
   (AVAILABLE, APPROVED, …, or why they cannot be requested); a title in the library opens there. Yours, up to the web's

@@ -48,6 +48,9 @@ public sealed partial class NotificationPreferencesViewModel : ObservableObject
     [ObservableProperty]
     public partial bool NotifyNextUp { get; set; }
 
+    /// <summary>A switch was saved: which series notify may have changed.</summary>
+    public event EventHandler? Saved;
+
     public bool IsLoading => State == LibraryLoadState.Loading;
 
     public bool HasError => State == LibraryLoadState.Error;
@@ -114,7 +117,9 @@ public sealed partial class NotificationPreferencesViewModel : ObservableObject
                 await LoadAsync();
             }
             SaveError = "Couldn't save. Try again.";
+            return;
         }
+        Saved?.Invoke(this, EventArgs.Empty);
     }
 
     private void Show(NotificationPreferences preferences)

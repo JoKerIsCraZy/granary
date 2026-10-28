@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     The Notifications inbox, as Silo's web shows it: a column of entries with their posters, unread ones marked with a
-    red dot and set off, All and Unread, Mark all read, and the Preferences beside the title. The page is cached.
+    red dot and set off, All and Unread, Mark all read, and the Preferences beside the title. Series, where the server
+    lists them, shows which series notify and which won't, with search, reason, sort and Mute. The page is cached.
 -->
 <Page
     x:Class="Granary.App.Views.NotificationsPage"
@@ -18,11 +19,88 @@
             <Setter Property="FontFamily" Value="{StaticResource SiloFontMedium}" />
             <Setter Property="FontWeight" Value="Medium" />
         </Style>
+        <!-- The web's small outline and ghost buttons of the Series view. -->
+        <Style x:Key="SeriesSmallButtonStyle" TargetType="Button" BasedOn="{StaticResource SiloSecondaryButtonStyle}">
+            <Setter Property="MinHeight" Value="32" />
+            <Setter Property="Padding" Value="12,4" />
+            <Setter Property="FontSize" Value="13" />
+        </Style>
+        <Style x:Key="SeriesMuteButtonStyle" TargetType="Button" BasedOn="{StaticResource SeriesSmallButtonStyle}">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Foreground" Value="{StaticResource SiloMutedBrush}" />
+        </Style>
+        <!-- "All reasons", "Title (A–Z)": the web's select boxes, outlined like the search box beside them. -->
+        <Style x:Key="SeriesMenuButtonStyle" TargetType="DropDownButton">
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="MinHeight" Value="36" />
+            <Setter Property="MinWidth" Value="152" />
+            <Setter Property="Padding" Value="12,4,10,4" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="{StaticResource SiloBorderBrush}" />
+        </Style>
+
+        <!--
+            A series in the Series view: its poster (dimmed when it won't notify), title, what notifies or why nothing does,
+            its reasons as pills (struck through when off), and Mute or Unmute at the right.
+        -->
+        <DataTemplate x:Key="NotifiedSeriesRowTemplate" x:DataType="vm:NotifiedSeriesRowViewModel">
+            <Grid ColumnSpacing="4" Padding="0,0,8,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Padding="12" CornerRadius="12" BorderThickness="0"
+                        Background="Transparent" Command="{x:Bind OpenCommand}" CommandParameter="{x:Bind}"
+                        AutomationProperties.Name="{x:Bind AccessibleName}">
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Border Width="44" Height="64" CornerRadius="6" Background="#1AFFFFFF" VerticalAlignment="Top"
+                                Opacity="{x:Bind views:NotificationsPage.SeriesOpacity(Notifies)}">
+                            <Image Source="{x:Bind views:NotificationsPage.Poster(PosterUrl)}" Stretch="UniformToFill" />
+                        </Border>
+                        <StackPanel Grid.Column="1" Spacing="2">
+                            <TextBlock Text="{x:Bind Title}" FontSize="14" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium"
+                                       TextTrimming="CharacterEllipsis" Foreground="{x:Bind views:NotificationsPage.SeriesTitleBrush(Notifies)}" />
+                            <TextBlock Text="{x:Bind Line}" FontSize="14" Foreground="{StaticResource SiloMutedBrush}" TextTrimming="CharacterEllipsis" />
+                            <ItemsRepeater ItemsSource="{x:Bind Pills}" Margin="0,4,0,0" Visibility="{x:Bind HasPills}">
+                                <ItemsRepeater.Layout>
+                                    <controls:WrapLayout HorizontalSpacing="4" VerticalSpacing="4" />
+                                </ItemsRepeater.Layout>
+                                <ItemsRepeater.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:ReasonPill">
+                                        <Border Padding="8,2,8,3" CornerRadius="9" BorderBrush="{StaticResource SiloBorderBrush}"
+                                                Background="{x:Bind views:NotificationsPage.PillBackground(IsOff)}"
+                                                BorderThickness="{x:Bind views:NotificationsPage.PillBorder(IsOff)}" AutomationProperties.Name="{x:Bind AccessibleName}">
+                                            <TextBlock Text="{x:Bind Label}" FontSize="10" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium"
+                                                       Foreground="{StaticResource SiloMutedBrush}" TextDecorations="{x:Bind views:NotificationsPage.PillDecorations(IsOff)}" />
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsRepeater.ItemTemplate>
+                            </ItemsRepeater>
+                        </StackPanel>
+                    </Grid>
+                </Button>
+                <Button Grid.Column="1" Style="{StaticResource SeriesMuteButtonStyle}" VerticalAlignment="Center" Command="{x:Bind MuteCommand}"
+                        CommandParameter="{x:Bind}" IsEnabled="{x:Bind CanPressMute, Mode=OneWay}" Visibility="{x:Bind CanMute}"
+                        AutomationProperties.Name="{x:Bind MuteName}" ToolTipService.ToolTip="{x:Bind MuteTip}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <FontIcon Glyph="{x:Bind views:NotificationsPage.MuteGlyph(Muted)}" FontSize="14" />
+                        <TextBlock Text="{x:Bind MuteLabel}" />
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </DataTemplate>
     </Page.Resources>
 
     <!-- One column of the web's max-w-3xl in the middle; the page sets its width as the window changes. -->
-    <ScrollViewer x:Name="Scroller" XYFocusKeyboardNavigation="Enabled" SizeChanged="OnScrollerSizeChanged">
-        <StackPanel x:Name="Column" Padding="16,32,16,48" Spacing="16" HorizontalAlignment="Center">
+    <ScrollViewer x:Name="Scroller" XYFocusKeyboardNavigation="Enabled" SizeChanged="OnScrollerSizeChanged" ViewChanged="OnScrollerViewChanged">
+        <StackPanel x:Name="Column" Padding="16,32,16,48" Spacing="16" HorizontalAlignment="Center" SizeChanged="OnColumnSizeChanged">
             <Grid ColumnSpacing="12">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -35,19 +113,19 @@
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
                     <Button Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.MarkAllReadCommand}"
-                            Visibility="{x:Bind ViewModel.HasUnread, Mode=OneWay}">
+                            Visibility="{x:Bind ViewModel.ShowsMarkAllRead, Mode=OneWay}">
                         <StackPanel Orientation="Horizontal" Spacing="6">
                             <FontIcon Glyph="&#xE73E;" FontSize="14" />
                             <TextBlock Text="Mark all read" />
                         </StackPanel>
                     </Button>
-                    <Button Style="{StaticResource SiloSecondaryButtonStyle}" AutomationProperties.Name="Preferences">
+                    <Button x:Name="PreferencesButton" Style="{StaticResource SiloSecondaryButtonStyle}" AutomationProperties.Name="Preferences">
                         <StackPanel Orientation="Horizontal" Spacing="6">
                             <FontIcon Glyph="&#xE713;" FontSize="14" />
                             <TextBlock Text="Preferences" />
                         </StackPanel>
                         <Button.Flyout>
-                            <Flyout Placement="BottomEdgeAlignedRight" Opening="OnPreferencesOpening">
+                            <Flyout x:Name="PreferencesFlyout" Placement="BottomEdgeAlignedRight" Opening="OnPreferencesOpening">
                                 <StackPanel Width="300" Spacing="14">
                                     <ProgressRing IsActive="{x:Bind ViewModel.Preferences.IsLoading, Mode=OneWay}"
                                                   Visibility="{x:Bind ViewModel.Preferences.IsLoading, Mode=OneWay}" Width="24" Height="24"
@@ -106,6 +184,11 @@
                                     </StackPanel>
                                     <TextBlock Text="{x:Bind ViewModel.Preferences.SaveError, Mode=OneWay}" Style="{StaticResource SiloCaptionTextStyle}"
                                                Foreground="{StaticResource SiloPrimaryBrush}" />
+                                    <StackPanel Spacing="12" Visibility="{x:Bind ViewModel.IsSeriesAvailable, Mode=OneWay}">
+                                        <Border Height="1" Background="{StaticResource SiloBorderBrush}" />
+                                        <HyperlinkButton Content="See which series notify you" Padding="0" FontSize="14"
+                                                         Foreground="{StaticResource SiloPrimaryBrush}" Click="OnSeeSeriesClick" />
+                                    </StackPanel>
                                 </StackPanel>
                             </StackPanel>
                         </Flyout>
@@ -117,89 +200,191 @@
             <controls:PillChoices ItemsSource="{x:Bind ViewModel.Filters, Mode=OneWay}" SelectedItem="{x:Bind ViewModel.SelectedFilter, Mode=TwoWay}"
                                   AutomationProperties.Name="Show" />
 
-            <TextBlock Text="{x:Bind ViewModel.MarkAllError, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloPrimaryBrush}"
-                       TextWrapping="Wrap" Visibility="{x:Bind ViewModel.HasMarkAllFailed, Mode=OneWay}" />
-            <TextBlock Text="{x:Bind ViewModel.Notice, Mode=OneWay}" Style="{StaticResource SiloCaptionTextStyle}"
-                       Visibility="{x:Bind ViewModel.HasNotice, Mode=OneWay}" />
+            <StackPanel Spacing="16" Visibility="{x:Bind ViewModel.IsInboxView, Mode=OneWay}">
+                <TextBlock Text="{x:Bind ViewModel.MarkAllError, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloPrimaryBrush}"
+                           TextWrapping="Wrap" Visibility="{x:Bind ViewModel.HasMarkAllFailed, Mode=OneWay}" />
+                <TextBlock Text="{x:Bind ViewModel.Notice, Mode=OneWay}" Style="{StaticResource SiloCaptionTextStyle}"
+                           Visibility="{x:Bind ViewModel.HasNotice, Mode=OneWay}" />
 
-            <ProgressRing IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay}"
-                          Width="32" Height="32" Margin="0,48" HorizontalAlignment="Center" AutomationProperties.Name="Loading notifications" />
-            <StackPanel Visibility="{x:Bind ViewModel.HasError, Mode=OneWay}" Spacing="12" Margin="0,24" HorizontalAlignment="Center">
-                <TextBlock Text="Could not load notifications." Style="{StaticResource SiloBodyTextStyle}" HorizontalAlignment="Center" />
-                <Button Content="Reload notifications" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
-                        Command="{x:Bind ViewModel.LoadCommand}" />
-            </StackPanel>
-            <StackPanel Visibility="{x:Bind ViewModel.IsEmpty, Mode=OneWay}" Spacing="10" Margin="0,64" HorizontalAlignment="Center">
-                <FontIcon Glyph="&#xE7ED;" FontSize="40" Foreground="{StaticResource SiloMutedBrush}" Opacity="0.5" HorizontalAlignment="Center" />
-                <TextBlock Text="{x:Bind ViewModel.EmptyTitle, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
-                           HorizontalAlignment="Center" />
-                <TextBlock MaxWidth="380" Style="{StaticResource SiloCaptionTextStyle}" TextAlignment="Center" TextWrapping="Wrap" HorizontalAlignment="Center"
-                           Text="You will be notified here when new episodes arrive for series you favorite, watchlist, or are watching." />
+                <ProgressRing IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay}"
+                              Width="32" Height="32" Margin="0,48" HorizontalAlignment="Center" AutomationProperties.Name="Loading notifications" />
+                <StackPanel Visibility="{x:Bind ViewModel.HasError, Mode=OneWay}" Spacing="12" Margin="0,24" HorizontalAlignment="Center">
+                    <TextBlock Text="Could not load notifications." Style="{StaticResource SiloBodyTextStyle}" HorizontalAlignment="Center" />
+                    <Button Content="Reload notifications" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
+                            Command="{x:Bind ViewModel.LoadCommand}" />
+                </StackPanel>
+                <StackPanel Visibility="{x:Bind ViewModel.IsEmpty, Mode=OneWay}" Spacing="10" Margin="0,64" HorizontalAlignment="Center">
+                    <FontIcon Glyph="&#xE7ED;" FontSize="40" Foreground="{StaticResource SiloMutedBrush}" Opacity="0.5" HorizontalAlignment="Center" />
+                    <TextBlock Text="{x:Bind ViewModel.EmptyTitle, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
+                               HorizontalAlignment="Center" />
+                    <TextBlock MaxWidth="380" Style="{StaticResource SiloCaptionTextStyle}" TextAlignment="Center" TextWrapping="Wrap" HorizontalAlignment="Center"
+                               Text="You will be notified here when new episodes arrive for series you favorite, watchlist, or are watching." />
+                    <HyperlinkButton Content="See which series can notify you" FontSize="13" HorizontalAlignment="Center" Foreground="{StaticResource SiloPrimaryBrush}"
+                                     Command="{x:Bind ViewModel.ShowSeriesCommand}" Visibility="{x:Bind ViewModel.IsSeriesAvailable, Mode=OneWay}" />
+                </StackPanel>
+
+                <ItemsRepeater ItemsSource="{x:Bind ViewModel.Rows}">
+                    <ItemsRepeater.Layout>
+                        <StackLayout Spacing="4" />
+                    </ItemsRepeater.Layout>
+                    <ItemsRepeater.ItemTemplate>
+                        <DataTemplate x:DataType="vm:NotificationRowViewModel">
+                            <Grid>
+                                <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Padding="12" CornerRadius="12" BorderThickness="0"
+                                        Background="{x:Bind views:NotificationsPage.RowBackground(IsUnread), Mode=OneWay}"
+                                        Command="{x:Bind OpenCommand}" CommandParameter="{x:Bind}" IsEnabled="{x:Bind CanOpen}"
+                                        AutomationProperties.Name="{x:Bind AccessibleName, Mode=OneWay}">
+                                    <Grid ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Border Width="44" Height="64" CornerRadius="6" Background="#1AFFFFFF" VerticalAlignment="Top">
+                                            <Image Source="{x:Bind views:NotificationsPage.Poster(PosterUrl)}" Stretch="UniformToFill" />
+                                        </Border>
+                                        <StackPanel Grid.Column="1" Spacing="2">
+                                            <!-- Margins, not column spacing: a read entry's title starts where its text does. -->
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <Ellipse Width="8" Height="8" Margin="0,0,8,0" Fill="{StaticResource SiloPrimaryBrush}" VerticalAlignment="Center"
+                                                         Visibility="{x:Bind IsUnread, Mode=OneWay}" />
+                                                <TextBlock Grid.Column="1" Text="{x:Bind Title}" FontSize="14" TextTrimming="CharacterEllipsis"
+                                                           FontFamily="{x:Bind views:NotificationsPage.TitleFont(IsUnread), Mode=OneWay}"
+                                                           Foreground="{StaticResource SiloForegroundBrush}" />
+                                                <TextBlock Grid.Column="2" Text="{x:Bind When}" Margin="8,0,0,0" Style="{StaticResource SiloCaptionTextStyle}" VerticalAlignment="Center" />
+                                            </Grid>
+                                            <TextBlock Text="{x:Bind Description}" FontSize="14" Foreground="{StaticResource SiloMutedBrush}" TextTrimming="CharacterEllipsis" />
+                                            <ItemsRepeater ItemsSource="{x:Bind Reasons}" Margin="0,4,0,0" Visibility="{x:Bind HasReasons}">
+                                                <ItemsRepeater.Layout>
+                                                    <controls:WrapLayout HorizontalSpacing="4" VerticalSpacing="4" />
+                                                </ItemsRepeater.Layout>
+                                                <ItemsRepeater.ItemTemplate>
+                                                    <DataTemplate x:DataType="x:String">
+                                                        <Border Padding="8,2,8,3" CornerRadius="9" Background="#1FFFFFFF">
+                                                            <TextBlock Text="{x:Bind}" FontSize="10" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium"
+                                                                       Foreground="{StaticResource SiloMutedBrush}" />
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsRepeater.ItemTemplate>
+                                            </ItemsRepeater>
+                                        </StackPanel>
+                                    </Grid>
+                                </Button>
+                                <Button Style="{StaticResource SiloIconButtonStyle}" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,8,8"
+                                        Command="{x:Bind MarkReadCommand}" CommandParameter="{x:Bind}" Visibility="{x:Bind IsUnread, Mode=OneWay}"
+                                        AutomationProperties.Name="Mark as read" ToolTipService.ToolTip="Mark as read">
+                                    <FontIcon Glyph="&#xE73E;" FontSize="12" />
+                                </Button>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsRepeater.ItemTemplate>
+                </ItemsRepeater>
+
+                <Button Content="Load more" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center" Margin="0,8,0,0"
+                        Command="{x:Bind ViewModel.LoadMoreCommand}" Visibility="{x:Bind ViewModel.CanLoadMore, Mode=OneWay}" />
             </StackPanel>
 
-            <ItemsRepeater ItemsSource="{x:Bind ViewModel.Rows}">
-                <ItemsRepeater.Layout>
-                    <StackLayout Spacing="4" />
-                </ItemsRepeater.Layout>
-                <ItemsRepeater.ItemTemplate>
-                    <DataTemplate x:DataType="vm:NotificationRowViewModel">
-                        <Grid>
-                            <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Padding="12" CornerRadius="12" BorderThickness="0"
-                                    Background="{x:Bind views:NotificationsPage.RowBackground(IsUnread), Mode=OneWay}"
-                                    Command="{x:Bind OpenCommand}" CommandParameter="{x:Bind}" IsEnabled="{x:Bind CanOpen}"
-                                    AutomationProperties.Name="{x:Bind AccessibleName, Mode=OneWay}">
-                                <Grid ColumnSpacing="12">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <Border Width="44" Height="64" CornerRadius="6" Background="#1AFFFFFF" VerticalAlignment="Top">
-                                        <Image Source="{x:Bind views:NotificationsPage.Poster(PosterUrl)}" Stretch="UniformToFill" />
-                                    </Border>
-                                    <StackPanel Grid.Column="1" Spacing="2">
-                                        <!-- Margins, not column spacing: a read entry's title starts where its text does. -->
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto" />
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
-                                            <Ellipse Width="8" Height="8" Margin="0,0,8,0" Fill="{StaticResource SiloPrimaryBrush}" VerticalAlignment="Center"
-                                                     Visibility="{x:Bind IsUnread, Mode=OneWay}" />
-                                            <TextBlock Grid.Column="1" Text="{x:Bind Title}" FontSize="14" TextTrimming="CharacterEllipsis"
-                                                       FontFamily="{x:Bind views:NotificationsPage.TitleFont(IsUnread), Mode=OneWay}"
-                                                       Foreground="{StaticResource SiloForegroundBrush}" />
-                                            <TextBlock Grid.Column="2" Text="{x:Bind When}" Margin="8,0,0,0" Style="{StaticResource SiloCaptionTextStyle}" VerticalAlignment="Center" />
-                                        </Grid>
-                                        <TextBlock Text="{x:Bind Description}" FontSize="14" Foreground="{StaticResource SiloMutedBrush}" TextTrimming="CharacterEllipsis" />
-                                        <ItemsRepeater ItemsSource="{x:Bind Reasons}" Margin="0,4,0,0" Visibility="{x:Bind HasReasons}">
-                                            <ItemsRepeater.Layout>
-                                                <controls:WrapLayout HorizontalSpacing="4" VerticalSpacing="4" />
-                                            </ItemsRepeater.Layout>
-                                            <ItemsRepeater.ItemTemplate>
-                                                <DataTemplate x:DataType="x:String">
-                                                    <Border Padding="8,2,8,3" CornerRadius="9" Background="#1FFFFFFF">
-                                                        <TextBlock Text="{x:Bind}" FontSize="10" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium"
-                                                                   Foreground="{StaticResource SiloMutedBrush}" />
-                                                    </Border>
-                                                </DataTemplate>
-                                            </ItemsRepeater.ItemTemplate>
-                                        </ItemsRepeater>
-                                    </StackPanel>
-                                </Grid>
-                            </Button>
-                            <Button Style="{StaticResource SiloIconButtonStyle}" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,8,8"
-                                    Command="{x:Bind MarkReadCommand}" CommandParameter="{x:Bind}" Visibility="{x:Bind IsUnread, Mode=OneWay}"
-                                    AutomationProperties.Name="Mark as read" ToolTipService.ToolTip="Mark as read">
-                                <FontIcon Glyph="&#xE73E;" FontSize="12" />
-                            </Button>
+            <!-- The Series view: the series that notify, then those that won't, as the web's NotifiedSeriesList. -->
+            <StackPanel Spacing="12" Visibility="{x:Bind ViewModel.IsSeriesView, Mode=OneWay}">
+                <TextBlock FontSize="14" Foreground="{StaticResource SiloMutedBrush}" TextWrapping="Wrap" Margin="12,0">
+                    <!-- The line break between the runs is the space before "Preferences"; none comes before ", or mute". -->
+                    <Run Text="New episodes of these series notify this profile. Change which reasons count in" />
+                    <Hyperlink Click="OnSeriesPreferencesClick" Foreground="{StaticResource SiloForegroundBrush}"><Run Text="Preferences" /></Hyperlink><Run Text="{x:Bind ViewModel.Series.IntroEnd, Mode=OneWay}" />
+                </TextBlock>
+
+                <Grid ColumnSpacing="8" Margin="12,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBox Text="{x:Bind ViewModel.Series.Search, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="Search series"
+                             AutomationProperties.Name="Search series" MinHeight="36" Padding="34,7,8,6" VerticalContentAlignment="Center" CornerRadius="8" />
+                    <FontIcon Glyph="&#xE721;" FontSize="14" Margin="12,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center"
+                              Foreground="{StaticResource SiloMutedBrush}" IsHitTestVisible="False" />
+                    <DropDownButton Grid.Column="1" Style="{StaticResource SeriesMenuButtonStyle}" Content="{x:Bind ViewModel.Series.Reason.Label, Mode=OneWay}"
+                                    AutomationProperties.Name="Filter by reason">
+                        <DropDownButton.Flyout>
+                            <MenuFlyout x:Name="ReasonMenu" Placement="BottomEdgeAlignedRight" Opening="OnReasonMenuOpening" />
+                        </DropDownButton.Flyout>
+                    </DropDownButton>
+                    <DropDownButton Grid.Column="2" Style="{StaticResource SeriesMenuButtonStyle}" Content="{x:Bind ViewModel.Series.Sort.Label, Mode=OneWay}"
+                                    AutomationProperties.Name="Sort">
+                        <DropDownButton.Flyout>
+                            <MenuFlyout x:Name="SeriesSortMenu" Placement="BottomEdgeAlignedRight" Opening="OnSeriesSortMenuOpening" />
+                        </DropDownButton.Flyout>
+                    </DropDownButton>
+                </Grid>
+
+                <!-- "Muted Dark" with Undo, as the web's toast; or a mute that failed. -->
+                <Grid ColumnSpacing="8" Margin="12,0" Visibility="{x:Bind ViewModel.Series.HasNotice, Mode=OneWay}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{x:Bind ViewModel.Series.Notice, Mode=OneWay}" FontSize="14" TextWrapping="Wrap" VerticalAlignment="Center"
+                               Foreground="{x:Bind NoticeBrush(ViewModel.Series.NoticeFailed), Mode=OneWay}" />
+                    <Button Grid.Column="1" Content="Undo" Style="{StaticResource SeriesSmallButtonStyle}" Command="{x:Bind ViewModel.Series.UndoCommand}"
+                            Visibility="{x:Bind ViewModel.Series.CanUndo, Mode=OneWay}" />
+                    <Button Grid.Column="2" Style="{StaticResource SiloIconButtonStyle}" Command="{x:Bind ViewModel.Series.DismissNoticeCommand}"
+                            AutomationProperties.Name="Dismiss" ToolTipService.ToolTip="Dismiss">
+                        <FontIcon Glyph="&#xE711;" FontSize="12" />
+                    </Button>
+                </Grid>
+
+                <ProgressRing IsActive="{x:Bind ViewModel.Series.IsLoading, Mode=OneWay}" Visibility="{x:Bind ViewModel.Series.IsLoading, Mode=OneWay}"
+                              Width="32" Height="32" Margin="0,48" HorizontalAlignment="Center" AutomationProperties.Name="Loading series" />
+                <StackPanel Visibility="{x:Bind ViewModel.Series.HasError, Mode=OneWay}" Orientation="Horizontal" Spacing="12" Margin="12,0">
+                    <TextBlock Text="Could not load the series that notify you." FontSize="14" Foreground="{StaticResource SiloForegroundBrush}" VerticalAlignment="Center" />
+                    <Button Content="Retry" Style="{StaticResource SeriesSmallButtonStyle}" Command="{x:Bind ViewModel.Series.LoadCommand}" />
+                </StackPanel>
+                <TextBlock Text="No series match. Try another search or reason." FontSize="14" Foreground="{StaticResource SiloMutedBrush}"
+                           HorizontalAlignment="Center" Margin="0,64" Visibility="{x:Bind ViewModel.Series.IsFilteredEmpty, Mode=OneWay}" />
+                <StackPanel Visibility="{x:Bind ViewModel.Series.IsBareEmpty, Mode=OneWay}" Spacing="10" Margin="0,80" HorizontalAlignment="Center">
+                    <FontIcon Glyph="&#xE7ED;" FontSize="40" Foreground="{StaticResource SiloMutedBrush}" Opacity="0.5" HorizontalAlignment="Center" />
+                    <TextBlock Text="No series notify you yet" FontSize="14" Foreground="{StaticResource SiloMutedBrush}" HorizontalAlignment="Center" />
+                    <TextBlock MaxWidth="380" Style="{StaticResource SiloCaptionTextStyle}" TextAlignment="Center" TextWrapping="Wrap" HorizontalAlignment="Center"
+                               Text="Series you favorite, add to your watchlist, or start watching show up here." />
+                </StackPanel>
+
+                <!-- Other filters or a mute being read: the lists stay, dimmed, until the new ones come. -->
+                <StackPanel Visibility="{x:Bind ViewModel.Series.IsReady, Mode=OneWay}" Opacity="{x:Bind Dimmed(ViewModel.Series.IsRefreshing), Mode=OneWay}">
+                    <ItemsRepeater ItemsSource="{x:Bind ViewModel.Series.Notifying}" ItemTemplate="{StaticResource NotifiedSeriesRowTemplate}">
+                        <ItemsRepeater.Layout>
+                            <StackLayout Spacing="4" />
+                        </ItemsRepeater.Layout>
+                    </ItemsRepeater>
+                    <StackPanel Visibility="{x:Bind ViewModel.Series.ShowsSilenced, Mode=OneWay}" Margin="0,24,0,0" Spacing="4">
+                        <Grid ColumnSpacing="8" Margin="12,0,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Won&#x2019;t notify" FontSize="12" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
+                                       Foreground="{StaticResource SiloMutedBrush}" AutomationProperties.HeadingLevel="Level2" />
+                            <Border Grid.Column="1" Height="1" Background="{StaticResource SiloBorderBrush}" VerticalAlignment="Center" />
                         </Grid>
-                    </DataTemplate>
-                </ItemsRepeater.ItemTemplate>
-            </ItemsRepeater>
-
-            <Button Content="Load more" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center" Margin="0,8,0,0"
-                    Command="{x:Bind ViewModel.LoadMoreCommand}" Visibility="{x:Bind ViewModel.CanLoadMore, Mode=OneWay}" />
+                        <ItemsRepeater ItemsSource="{x:Bind ViewModel.Series.Silenced}" ItemTemplate="{StaticResource NotifiedSeriesRowTemplate}">
+                            <ItemsRepeater.Layout>
+                                <StackLayout Spacing="4" />
+                            </ItemsRepeater.Layout>
+                        </ItemsRepeater>
+                    </StackPanel>
+                    <ProgressRing IsActive="{x:Bind ViewModel.Series.IsLoadingMore, Mode=OneWay}" Visibility="{x:Bind ViewModel.Series.IsLoadingMore, Mode=OneWay}"
+                                  Width="24" Height="24" Margin="0,16" HorizontalAlignment="Center" AutomationProperties.Name="Loading more series" />
+                    <StackPanel Visibility="{x:Bind ViewModel.Series.HasLoadMoreError, Mode=OneWay}" Spacing="12" Margin="0,24" HorizontalAlignment="Center">
+                        <TextBlock Text="{x:Bind ViewModel.Series.LoadMoreError, Mode=OneWay}" FontSize="14" Foreground="{StaticResource SiloMutedBrush}"
+                                   HorizontalAlignment="Center" />
+                        <Button Content="Try again" Style="{StaticResource SeriesSmallButtonStyle}" HorizontalAlignment="Center"
+                                Command="{x:Bind ViewModel.Series.LoadMoreCommand}" />
+                    </StackPanel>
+                </StackPanel>
+            </StackPanel>
         </StackPanel>
     </ScrollViewer>
 </Page>

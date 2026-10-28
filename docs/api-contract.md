@@ -832,7 +832,14 @@ tracks ([8.8.1](#881-initial-track-selection-before-start)) → `POST /api/v2/pl
   `POST /api/v2/notifications/read-all` with `{ "through": read_cutoff }` marks what that listing saw, nothing newer.
 - `GET` and `PUT /api/v2/notifications/preferences`: `enabled` (the master switch), `notify_favorites`,
   `notify_watchlist`, `notify_continue_watching`, `notify_next_up`; `PUT` takes only the switches that change.
-- The Series view (`GET /api/v2/notifications/series`, `PUT`/`DELETE …/series/{series_id}/mute`) is not built yet.
+- `GET /api/v2/notifications/series?status=active|inactive&limit=50&image_size=small[&cursor=][&q=][&reason=][&sort=]`
+  → `{ "items": NotificationSeries[], "page" }` while `series.available`: `active` keeps the series that notify,
+  `inactive` the ones the preferences silence or the profile muted. `reason` is `favorite`, `watchlist`,
+  `continue_watching` or `next_up` (whether or not it is on); `sort` is `title`, `year`, `added_at` or
+  `latest_episode_added`, descending with a leading `-`. `NotificationSeries`: `item` (a `CatalogItem`), `reasons` and
+  `active_reasons` (the four flags; active ones are those the preferences let notify), `muted`, `notifies`, and with an
+  active Next Up `next_up_after` `{ season_number, episode_number }` (only a later episode notifies on that reason).
+- `PUT` / `DELETE /api/v2/notifications/series/{series_id}/mute` → `204` while `series.mute`: mutes or unmutes one series.
 
 ### 7.15 Requests
 

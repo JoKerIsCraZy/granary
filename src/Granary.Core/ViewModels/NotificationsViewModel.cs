@@ -14,13 +14,16 @@ namespace Granary.Core.ViewModels;
 /// The Notifications inbox, as Silo's web shows it (<c>pages/Notifications.tsx</c>): All or Unread (with its count),
 /// the entries newest first in pages of 25 with Load more, Mark all read (only what the first page saw, through its
 /// <c>read_cutoff</c>), and the Preferences. Opening an unread entry marks it read; so does its own check button. The
-/// sidebar's count (<see cref="NotificationBadge"/>) follows.
+/// sidebar's count (<see cref="NotificationBadge"/>) follows. Where the server lists them, Series shows which series
+/// notify (<see cref="NotifiedSeriesViewModel"/>).
 /// </summary>
 public sealed partial class NotificationsViewModel : ObservableObject
 {
     internal const string MarkAllFailedText = "Could not mark the displayed notifications read. Reload the inbox before trying again.";
 
     private static readonly SettingChoice All = new("all", "All");
+
+    private static readonly SettingChoice SeriesChoice = new("series", "Series");
 
     private readonly ISessionManager _session;
     private readonly NotificationsApi _notifications;
@@ -32,6 +35,9 @@ public sealed partial class NotificationsViewModel : ObservableObject
     private string? _nextCursor;
     private string _readCutoff = "";
     private bool _following;
+    private (string? ServerId, string? ProfileId)? _capabilitiesFor;
+    private bool _seriesAvailable;
+    private string _inboxFilter = All.Value;
     private CancellationTokenSource _run = new();
 
     public NotificationsViewModel(ISessionManager session, NotificationsApi notifications, NotificationBadge badge, INavigationService navigation,
@@ -44,12 +50,27 @@ public sealed partial class NotificationsViewModel : ObservableObject
         _time = time;
         _logger = logger;
         Preferences = new NotificationPreferencesViewModel(session, notifications, logger);
+        Series = new NotifiedSeriesViewModel(session, notifications, navigation, time, logger);
+        Preferences.Saved += (_, _) => _ = Series.RefreshAsync();
         Filters = FiltersFor(0);
     }
 
     public ObservableCollection<NotificationRowViewModel> Rows { get; } = [];
 
     public NotificationPreferencesViewModel Preferences { get; }
+
+    public NotifiedSeriesViewModel Series { get; }
+
+    /// <summary>Series is picked: the series that notify show instead of the inbox.</summary>
+    public bool IsSeriesView => SelectedFilter.Value == SeriesChoice.Value;
+
+    public bool IsInboxView => !IsSeriesView;
+
+    /// <summary>The server lists the series that notify: Series and its links are there.</summary>
+    public bool IsSeriesAvailable => _seriesAvailable;
+
+    /// <summary>Mark all read: for unread entries, and not in the Series view.</summary>
+    public bool ShowsMarkAllRead => HasUnread && IsInboxView;
 
     /// <summary>All, and "Unread (3)".</summary>
     [ObservableProperty]
@@ -81,7 +102,7 @@ public sealed partial class NotificationsViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(HasNotice))]
     public partial string Notice { get; private set; } = "";
 
-    public bool IsUnreadOnly => SelectedFilter.Value == "unread";
+    public bool IsUnreadOnly => _inboxFilter == "unread";
 
     /// <summary>"No unread notifications" or "No notifications yet".</summary>
     public string EmptyTitle => IsUnreadOnly ? "No unread notifications" : "No notifications yet";
@@ -101,10 +122,10 @@ public sealed partial class NotificationsViewModel : ObservableObject
     public bool IsReady => State == LibraryLoadState.Ready;
 
     /// <summary>
-    /// Shows the inbox: Back keeps it for the same profile; otherwise it is read again. The unread count is followed while
-    /// the page shows, until <see cref="Deactivate"/>.
+    /// Shows the inbox: Back keeps it (or the Series view) for the same profile; otherwise the inbox is read again, as the
+    /// web's sidebar link opens it. The unread count is followed while the page shows, until <see cref="Deactivate"/>.
     /// </summary>
-    public Task ActivateAsync(bool isReturn)
+    public async Task ActivateAsync(bool isReturn)
     {
         if (!_following)
         {
@@ -112,8 +133,15 @@ public sealed partial class NotificationsViewModel : ObservableObject
             _badge.PropertyChanged += OnBadgeChanged;
             OnUnreadChanged();
         }
+        var capabilities = ReadCapabilitiesAsync();
         bool shown = _loadedFor == Key() && State is LibraryLoadState.Ready or LibraryLoadState.Empty or LibraryLoadState.Loading;
-        return isReturn && shown ? Task.CompletedTask : LoadAsync();
+        if (!(isReturn && shown))
+        {
+            ShowInbox();
+            Series.ResetIfAnotherProfile();
+            await LoadAsync();
+        }
+        await capabilities;
     }
 
     /// <summary>Stops following the unread count when the page goes, so the long-lived count does not hold this page.</summary>
@@ -268,18 +296,87 @@ public sealed partial class NotificationsViewModel : ObservableObject
         }
     }
 
-    // The count in "Unread (3)" changing is the same filter: only another one reads the inbox again.
+    /// <summary>The web's "See which series notify you": the Series view.</summary>
+    [RelayCommand]
+    private void ShowSeries()
+    {
+        if (_seriesAvailable)
+        {
+            SelectedFilter = Filters.First(f => f.Value == SeriesChoice.Value);
+        }
+    }
+
+    // The count in "Unread (3)" changing is the same filter: only another one reads the inbox again. Series leaves the
+    // inbox as it was, and coming back to the same filter shows it so.
     partial void OnSelectedFilterChanged(SettingChoice oldValue, SettingChoice newValue)
     {
         if (oldValue.Value == newValue.Value)
         {
             return;
         }
+        OnPropertyChanged(nameof(IsSeriesView));
+        OnPropertyChanged(nameof(IsInboxView));
+        OnPropertyChanged(nameof(ShowsMarkAllRead));
+        if (IsSeriesView)
+        {
+            _ = Series.ActivateAsync();
+            return;
+        }
+        if (newValue.Value == _inboxFilter)
+        {
+            return;
+        }
+        _inboxFilter = newValue.Value;
         OnPropertyChanged(nameof(IsUnreadOnly));
         OnPropertyChanged(nameof(EmptyTitle));
         if (_loadedFor is not null)
         {
             _ = LoadAsync();
+        }
+    }
+
+    // Whether the server lists the series that notify, read once per profile; without an answer there is no Series.
+    private async Task ReadCapabilitiesAsync()
+    {
+        var key = Key();
+        if (_capabilitiesFor == key || _session is not { State: SessionState.Ready, ActiveServer: { } server })
+        {
+            return;
+        }
+        _capabilitiesFor = key;
+        // Another profile's answer does not stand for this one's while it is asked.
+        ShowSeriesCapability(null);
+        NotificationSeriesCapability? series = null;
+        try
+        {
+            series = (await _notifications.GetCapabilitiesAsync(server.BaseUri)).Series;
+        }
+        catch (Exception ex)
+        {
+            Log(ex, "Could not read the notification capabilities");
+            // Asked again on the next visit.
+            _capabilitiesFor = null;
+        }
+        if (Key() == key)
+        {
+            ShowSeriesCapability(series);
+        }
+    }
+
+    private void ShowSeriesCapability(NotificationSeriesCapability? series)
+    {
+        _seriesAvailable = series is { Available: true };
+        Series.CanMute = series is { Available: true, Mute: true };
+        OnPropertyChanged(nameof(IsSeriesAvailable));
+        OnUnreadChanged();
+    }
+
+    // From the Series view to the inbox's own filter.
+    private void ShowInbox()
+    {
+        if (IsSeriesView)
+        {
+            SelectedFilter = Filters.First(f => f.Value == _inboxFilter);
         }
     }
 
@@ -346,14 +443,18 @@ public sealed partial class NotificationsViewModel : ObservableObject
     private void OnUnreadChanged()
     {
         Filters = FiltersFor(_badge.UnreadCount);
-        // The list of filters is new: the picked one is its equal in it.
-        SelectedFilter = Filters.First(f => f.Value == SelectedFilter.Value);
+        // The list of filters is new: the picked one is its equal in it (Series, gone for another profile, is the inbox's).
+        SelectedFilter = Filters.FirstOrDefault(f => f.Value == SelectedFilter.Value) ?? Filters.First(f => f.Value == _inboxFilter);
         OnPropertyChanged(nameof(HasUnread));
+        OnPropertyChanged(nameof(ShowsMarkAllRead));
         MarkAllReadCommand.NotifyCanExecuteChanged();
     }
 
-    private static IReadOnlyList<SettingChoice> FiltersFor(int unread) =>
-        [All, new("unread", unread > 0 ? $"Unread ({unread})" : "Unread")];
+    private IReadOnlyList<SettingChoice> FiltersFor(int unread) => _seriesAvailable
+        ? [All, Unread(unread), SeriesChoice]
+        : [All, Unread(unread)];
+
+    private static SettingChoice Unread(int unread) => new("unread", unread > 0 ? $"Unread ({unread})" : "Unread");
 
     private bool CanPressLoadMore() => CanLoadMore && !IsLoadingMore;
 

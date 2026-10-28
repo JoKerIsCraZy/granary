@@ -90,6 +90,7 @@ namespace Granary.Core.Api;
 [JsonSerializable(typeof(NotificationUnreadCount))]
 [JsonSerializable(typeof(NotificationCapabilities))]
 [JsonSerializable(typeof(NotificationPreferences))]
+[JsonSerializable(typeof(NotifiedSeriesPage))]
 [JsonSerializable(typeof(NotificationPreferencesChange))]
 [JsonSerializable(typeof(NotificationReadAll))]
 [JsonSerializable(typeof(RequestFeatureStatus))]

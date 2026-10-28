@@ -40,6 +40,38 @@ public sealed class NotificationsApi(SiloHttp http)
             SiloJsonContext.Default.NotificationReadAll, cancellationToken);
     }
 
+    /// <summary>Series a page of the Series view holds, as the web asks.</summary>
+    public const int SeriesPageSize = 50;
+
+    /// <summary>A page of the series whose new episodes notify the profile, or of the ones that do not.</summary>
+    public Task<NotifiedSeriesPage> ListSeriesAsync(Uri server, NotifiedSeriesStatus status, NotifiedSeriesQuery query, string? cursor = null,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+        string path = "api/v2/notifications/series" + new QueryBuilder()
+            .Add("status", status == NotifiedSeriesStatus.Active ? "active" : "inactive")
+            .Add("limit", SeriesPageSize)
+            .Add("cursor", cursor)
+            .Add("image_size", "small")
+            .Add("q", string.IsNullOrWhiteSpace(query.Search) ? null : query.Search.Trim())
+            .Add("reason", query.Reason)
+            .Add("sort", query.Sort)
+            .ToString();
+        return http.GetAsync(server, path, SiloAuth.Profile, SiloJsonContext.Default.NotifiedSeriesPage, cancellationToken);
+    }
+
+    /// <summary>Mutes (or unmutes) new-episode notifications for one series.</summary>
+    public Task SetSeriesMutedAsync(Uri server, string seriesId, bool muted, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(seriesId);
+        if (seriesId is "." or "..")
+        {
+            throw new ArgumentException($"'{seriesId}' is not an id.", nameof(seriesId));
+        }
+        return http.SendAsync(muted ? HttpMethod.Put : HttpMethod.Delete, server, $"api/v2/notifications/series/{SiloHttp.Escape(seriesId)}/mute",
+            SiloAuth.Profile, cancellationToken);
+    }
+
     public Task<NotificationPreferences> GetPreferencesAsync(Uri server, CancellationToken cancellationToken = default) =>
         http.GetAsync(server, "api/v2/notifications/preferences", SiloAuth.Profile, SiloJsonContext.Default.NotificationPreferences, cancellationToken);
 

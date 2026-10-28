@@ -164,7 +164,7 @@ public sealed class NotificationsViewModelTests
     public async Task Unread_ShowsOnlyUnreadEntries_AndCountsThem()
     {
         var inbox = await LoadedAsync();
-        Assert.Equal(["All", "Unread (2)"], inbox.Filters.Select(f => f.Label));
+        Assert.Equal(["All", "Unread (2)", "Series"], inbox.Filters.Select(f => f.Label));
         _harness.Answer(ListPath, NoNotifications);
 
         inbox.SelectedFilter = inbox.Filters[1];
