@@ -151,7 +151,16 @@ public sealed partial class DetailHero : UserControl
                 DefaultButton = ContentDialogButton.Close,
             };
             var shown = dialog.ShowAsync();
-            await collections.LoadAsync(item.ContentId, item.DisplayTitle);
+            try
+            {
+                await collections.LoadAsync(item.ContentId, item.DisplayTitle);
+            }
+            catch
+            {
+                // Not left open, empty and loading.
+                dialog.Hide();
+                throw;
+            }
             await shown;
         }
         catch (Exception ex)

@@ -73,14 +73,14 @@ public sealed partial class CollectionsViewModel : ICardMenuSource
             var read = await _collections.GetAsync(server.BaseUri, collection.Id);
             var change = CollectionDraft.Of(read.Value) with { IsShared = share };
             await _collections.UpdateAsync(server.BaseUri, collection.Id, read.Version, change.ToUpdate());
-            // The list's copy keeps the poster, which a single collection's answer leaves out.
-            Replace(collection with { IsShared = share }, server.BaseUri);
+            // The collection as read now, with the list's poster, which a single collection's answer leaves out.
+            Replace(read.Value with { IsShared = share, PosterUrl = collection.PosterUrl }, server.BaseUri);
             Say(share ? "Shown to other profiles" : "Only you see it now", failed: false);
         }
         catch (Exception ex) when (LibraryErrors.IsExpected(ex))
         {
             _logger.LogWarning(ex, "Could not change a collection's sharing");
-            Say("Couldn't change sharing", failed: true);
+            Say(ex is SiloApiException { Status: 412 } ? CollectionEditorText.Stale : "Couldn't change sharing", failed: true);
         }
     }
 

@@ -51,14 +51,17 @@ public sealed partial class PersonalListViewModel
         {
             return;
         }
-        if (!await _confirmation.AskAsync($"Delete “{Title}”?", CollectionEditorText.DeleteDescription(_collectionShared), "Delete"))
-        {
-            return;
-        }
         CollectionNotice = "";
         try
         {
-            _collectionVersion ??= (await _collections.GetAsync(server.BaseUri, collection.CollectionId)).Version;
+            // Read now: an edit since the page showed changed the version, and maybe the sharing the question names.
+            var read = await _collections.GetAsync(server.BaseUri, collection.CollectionId);
+            _collectionVersion = read.Version;
+            _collectionShared = read.Value.IsShared;
+            if (!await _confirmation.AskAsync($"Delete “{read.Value.Name}”?", CollectionEditorText.DeleteDescription(_collectionShared), "Delete"))
+            {
+                return;
+            }
             await _collections.DeleteAsync(server.BaseUri, collection.CollectionId, _collectionVersion);
             _navigation.ShowSection(AppRoute.Collections);
         }

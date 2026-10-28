@@ -55,6 +55,9 @@ public sealed partial class MediaCardView : UserControl
     private IReadOnlyList<CardMenuEntry> _entries = [];
     private readonly List<MenuFlyoutItemBase> _entryItems = [];
     private bool _hasOwnEntries;
+    // The grid the card sits in, found once: a card stays in its grid while it is reused.
+    private MediaGrid? _grid;
+    private bool _gridFound;
 
     public MediaCardView()
     {
@@ -229,12 +232,18 @@ public sealed partial class MediaCardView : UserControl
         MenuNotInterested.Text = state.IsNotInterested ? "Show in Recommendations" : "Not Interested";
         MenuNotInterested.Visibility = Visible(notInterested);
         var row = card is null ? null : RowOf(this);
-        var grid = card is null || row is not null ? null : GridOf(this);
+        if (!_gridFound && row is null && card is not null && VisualTreeHelper.GetParent(this) is not null)
+        {
+            _grid = GridOf(this);
+            _gridFound = true;
+        }
+        var grid = row is null ? _grid : null;
         bool canRemove = card is not null && row?.CardRemoveCommand is { } remove && remove.CanExecute(card);
         MenuRemove.Text = row?.CardRemoveLabel ?? "";
         MenuRemove.Visibility = Visible(canRemove);
         bool others = canWatch || canCollect || fromBeginning || resetProgress || notInterested;
         MenuRemoveSeparator.Visibility = Visible(canRemove && others);
+        // Only a grid with entries of its own asks for them; every other card skips this.
         _entries = card is not null && grid?.CardMenu is { } source ? source.EntriesFor(card) : [];
         _hasOwnEntries = others || canRemove;
         MoreButton.Visibility = Visible(others || canRemove || _entries.Count > 0);

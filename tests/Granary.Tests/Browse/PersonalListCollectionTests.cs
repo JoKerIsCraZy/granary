@@ -87,6 +87,19 @@ public sealed class PersonalListCollectionTests
     }
 
     [Fact]
+    public async Task Delete_GoesAtTheVersionTheCollectionHasNow()
+    {
+        // Edited since the page showed it: the second read names the new version.
+        _harness.Silo.On(HttpMethod.Get, CollectionPath, Versioned(Own, "\"r1\""), Versioned(Own, "\"r2\""));
+        _harness.Silo.On(HttpMethod.Delete, CollectionPath, ScriptedSilo.NoContent());
+        var list = await ShownAsync(Rainy);
+
+        await list.DeleteCollectionCommand.ExecuteAsync(null);
+
+        Assert.Equal("\"r2\"", Assert.Single(_harness.Silo.SentTo(HttpMethod.Delete, CollectionPath)).IfMatch);
+    }
+
+    [Fact]
     public async Task ADeleteThatIsCancelled_SendsNothing()
     {
         _harness.Silo.On(HttpMethod.Get, CollectionPath, Versioned(Own, "\"r1\""));

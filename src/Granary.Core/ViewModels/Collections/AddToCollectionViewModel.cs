@@ -174,38 +174,45 @@ public sealed partial class AddToCollectionViewModel : ObservableObject
         }
         IsCreating = true;
         Notice = "";
-        PersonalCollection made;
         try
         {
-            made = await _collections.CreateAsync(server.BaseUri, new PersonalCollectionCreate { Name = name });
-        }
-        catch (Exception ex) when (LibraryErrors.IsExpected(ex))
-        {
-            _logger.LogWarning(ex, "Could not make a collection from a title's page");
-            Notice = "Couldn't make the collection";
-            IsCreating = false;
-            return;
-        }
-        var row = new CollectionChoiceRow(made, null, isIn: false, ToggleCommand);
-        _all.Add(row);
-        NewName = "";
-        Search = "";
-        State = LibraryLoadState.Ready;
-        Filter();
-        try
-        {
-            await _collections.AddItemAsync(server.BaseUri, made.Id, _contentId, 0);
-            row.IsIn = true;
-            _ = FlashAsync(row, "Added");
-        }
-        catch (Exception ex) when (LibraryErrors.IsExpected(ex))
-        {
-            _logger.LogWarning(ex, "Made a collection but could not add the title to it");
-            Notice = $"Made {made.Name}, but couldn't add {ItemTitle}";
+            PersonalCollection made;
+            try
+            {
+                made = await _collections.CreateAsync(server.BaseUri, new PersonalCollectionCreate { Name = name });
+            }
+            catch (Exception ex) when (LibraryErrors.IsExpected(ex))
+            {
+                _logger.LogWarning(ex, "Could not make a collection from a title's page");
+                Notice = "Couldn't make the collection";
+                return;
+            }
+            // Its tick waits until the title went in.
+            var row = new CollectionChoiceRow(made, null, isIn: false, ToggleCommand) { IsBusy = true };
+            _all.Add(row);
+            NewName = "";
+            Search = "";
+            State = LibraryLoadState.Ready;
+            Filter();
+            try
+            {
+                await _collections.AddItemAsync(server.BaseUri, made.Id, _contentId, 0);
+                row.IsIn = true;
+                _ = FlashAsync(row, "Added");
+            }
+            catch (Exception ex) when (LibraryErrors.IsExpected(ex))
+            {
+                _logger.LogWarning(ex, "Made a collection but could not add the title to it");
+                Notice = $"Made {made.Name}, but couldn't add {ItemTitle}";
+            }
+            finally
+            {
+                row.IsBusy = false;
+                Count();
+            }
         }
         finally
         {
-            Count();
             IsCreating = false;
         }
     }
@@ -235,9 +242,11 @@ public sealed partial class AddToCollectionViewModel : ObservableObject
 
     private async Task FlashAsync(CollectionChoiceRow row, string text)
     {
+        // Only the latest flash clears it: Add, Remove, Add within the time keeps the last "Added" its full time.
+        int flash = ++row.Flashes;
         row.Flash = text;
         await Task.Delay(FlashTime, _time);
-        if (row.Flash == text)
+        if (row.Flashes == flash)
         {
             row.Flash = "";
         }
@@ -284,4 +293,6 @@ public sealed partial class CollectionChoiceRow : ObservableObject
     public partial string Flash { get; internal set; } = "";
 
     public bool HasFlash => Flash.Length > 0;
+
+    internal int Flashes { get; set; }
 }
