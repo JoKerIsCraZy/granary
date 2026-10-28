@@ -125,19 +125,7 @@ public sealed partial class SmartRulesViewModel : ObservableObject
         _showing = true;
         try
         {
-            Libraries.Clear();
-            foreach (var library in libraries)
-            {
-                if (long.TryParse(library.Id, NumberStyles.None, CultureInfo.InvariantCulture, out long id))
-                {
-                    Libraries.Add(new LibraryPick(id, library.Name, query.LibraryIds.Contains(id), LibraryPicked));
-                }
-            }
-            // A picked library this profile no longer sees stays picked, by its number.
-            foreach (long id in query.LibraryIds.Where(id => Libraries.All(l => l.Id != id)))
-            {
-                Libraries.Add(new LibraryPick(id, $"Library {id.ToString(CultureInfo.InvariantCulture)}", true, LibraryPicked));
-            }
+            ShowLibraries(libraries, query.LibraryIds);
             Scope = CollectionRuleFields.Scopes.FirstOrDefault(s => s.Value == (query.MediaScope ?? "all")) ?? CollectionRuleFields.Scopes[0];
             Join = Joins.First(j => j.Value == query.Match);
             Groups.Clear();
@@ -155,6 +143,31 @@ public sealed partial class SmartRulesViewModel : ObservableObject
             _showing = false;
         }
         Refresh();
+    }
+
+    /// <summary>A rule has a number or span with nothing in it yet.</summary>
+    public bool HasIncompleteRule => Groups.SelectMany(g => g.Rules).Any(r => r.IsIncomplete);
+
+    /// <summary>
+    /// The libraries to pick from and the fields the server takes arrived: shown in place, the picks and every rule as
+    /// they are, so nothing being typed is taken away.
+    /// </summary>
+    internal void ShowContext(IReadOnlyList<Library> libraries)
+    {
+        var picked = Libraries.Where(l => l.IsPicked).Select(l => l.Id).ToList();
+        _showing = true;
+        try
+        {
+            ShowLibraries(libraries, picked);
+            OfferFields();
+        }
+        finally
+        {
+            _showing = false;
+        }
+        OnPropertyChanged(nameof(LibrariesText));
+        OnPropertyChanged(nameof(LibraryWord));
+        OnPropertyChanged(nameof(FromText));
     }
 
     /// <summary>The facet and language values of the profile's titles, for the rules' pickers.</summary>
@@ -279,11 +292,12 @@ public sealed partial class SmartRulesViewModel : ObservableObject
             return;
         }
         OfferFields();
-        // A sort the new kind of titles does not have falls back to Date Added.
-        if (Sorts.All(s => s.Value != SortField?.Value))
-        {
-            ShowOrder(new SmartSort("added_at", SmartSort.DefaultOrder("added_at")));
-        }
+        // The sorts follow the new kind of titles; one it does not have falls back to its first, in that sort's own
+        // direction (the web's normalizeQuerySortForScope). A saved default sort stays, as on the web.
+        var sorts = CollectionRuleFields.Sorts(value.Value, keep: "");
+        ShowOrder(sorts.Any(s => s.Value == SortField?.Value) || sorts.Count == 0
+            ? new SmartSort(SortField?.Value ?? "added_at", Direction?.Value ?? SmartSort.DefaultOrder(SortField?.Value))
+            : new SmartSort(sorts[0].Value, SmartSort.DefaultOrder(sorts[0].Value)));
         Refresh();
     }
 
@@ -329,6 +343,23 @@ public sealed partial class SmartRulesViewModel : ObservableObject
     internal void GroupChanged() => Refresh();
 
     private void LibraryPicked() => Refresh();
+
+    private void ShowLibraries(IReadOnlyList<Library> libraries, IReadOnlyList<long> picked)
+    {
+        Libraries.Clear();
+        foreach (var library in libraries)
+        {
+            if (long.TryParse(library.Id, NumberStyles.None, CultureInfo.InvariantCulture, out long id))
+            {
+                Libraries.Add(new LibraryPick(id, library.Name, picked.Contains(id), LibraryPicked));
+            }
+        }
+        // A picked library this profile no longer sees stays picked, by its number.
+        foreach (long id in picked.Where(id => Libraries.All(l => l.Id != id)))
+        {
+            Libraries.Add(new LibraryPick(id, $"Library {id.ToString(CultureInfo.InvariantCulture)}", true, LibraryPicked));
+        }
+    }
 
     private void AddGroupView(SmartRuleGroup group)
     {
@@ -391,9 +422,12 @@ public sealed partial class SmartRulesViewModel : ObservableObject
 
     private static SmartRule NewRule() => new() { Field = "genre", Op = "is", Value = CollectionRuleFields.DefaultValue("genre", "is") };
 
-    // Blank is no limit; anything but a positive whole number is none either.
+    // Blank is no limit; so is anything but a positive whole number, and the server's stand-in for none
+    // (normalizeSmartCollectionLimit).
     private static long? Limit(string text) =>
-        long.TryParse(text.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out long limit) && limit > 0 ? limit : null;
+        long.TryParse(text.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out long limit) && limit > 0 && limit != SmartQuery.NoLimitSentinel
+            ? limit
+            : null;
 }
 
 /// <summary>A group of rules: its number, how its rules combine, and its rules.</summary>

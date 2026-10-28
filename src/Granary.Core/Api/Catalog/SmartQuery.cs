@@ -64,7 +64,11 @@ public sealed record SmartQuery
             sortOrder = Text(sort, "order");
         }
         string field = SmartSort.NormalizeField(sortField) ?? "added_at";
-        long? limit = raw.TryGetProperty("limit", out var rawLimit) && rawLimit.TryGetInt64(out long number) ? number : null;
+        // A whole number, also written as 24.0.
+        long? limit = raw.TryGetProperty("limit", out var rawLimit) && rawLimit.ValueKind == JsonValueKind.Number && rawLimit.TryGetDouble(out double number)
+            && double.IsFinite(number) && number == Math.Floor(number) && Math.Abs(number) < long.MaxValue
+            ? (long)number
+            : null;
         return new SmartQuery
         {
             LibraryIds = LibraryIdsOf(raw),
@@ -89,8 +93,18 @@ public sealed record SmartQuery
             .Distinct()];
     }
 
-    /// <summary>The same rules for comparing: libraries in id order, and the rules as JSON.</summary>
-    public string RulesKey() => JsonSerializer.Serialize(this with { LibraryIds = [] }, CollectionsJsonContext.Default.SmartQuery);
+    /// <summary>The rules for comparing, without the libraries: JSON with every object's keys in order, so a rule's members
+    /// coming back in another order never read as a change.</summary>
+    public string RulesKey() => Canonical(JsonSerializer.SerializeToElement(this with { LibraryIds = [] }, CollectionsJsonContext.Default.SmartQuery));
+
+    /// <summary>JSON with every object's keys in order, at every depth.</summary>
+    internal static string Canonical(JsonElement value) => value.ValueKind switch
+    {
+        JsonValueKind.Object => "{" + string.Join(",", value.EnumerateObject().OrderBy(m => m.Name, StringComparer.Ordinal)
+            .Select(m => $"{JsonSerializer.Serialize(m.Name, CollectionsJsonContext.Default.String)}:{Canonical(m.Value)}")) + "}",
+        JsonValueKind.Array => "[" + string.Join(",", value.EnumerateArray().Select(Canonical)) + "]",
+        _ => value.GetRawText(),
+    };
 
     public string LibrariesKey() => string.Join(",", LibraryIds.Order());
 
@@ -237,11 +251,8 @@ public static class SmartSortConfig
         return Parse("{" + string.Join(",", rest) + "}");
     }
 
-    /// <summary>The config as JSON with its keys in order, so key order never reads as a change.</summary>
-    public static string Key(JsonElement config) => config.ValueKind == JsonValueKind.Object
-        ? "{" + string.Join(",", config.EnumerateObject().OrderBy(m => m.Name, StringComparer.Ordinal)
-            .Select(m => $"{JsonSerializer.Serialize(m.Name, CollectionsJsonContext.Default.String)}:{m.Value.GetRawText()}")) + "}"
-        : "{}";
+    /// <summary>The config as JSON with its keys in order at every depth, so key order never reads as a change.</summary>
+    public static string Key(JsonElement config) => config.ValueKind == JsonValueKind.Object ? SmartQuery.Canonical(config) : "{}";
 
     private static JsonElement Parse(string json)
     {

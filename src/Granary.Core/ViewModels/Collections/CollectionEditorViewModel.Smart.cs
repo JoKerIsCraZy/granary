@@ -17,6 +17,8 @@ public sealed partial class CollectionEditorViewModel
     private IReadOnlyList<Library> _libraries = [];
     private CancellationTokenSource? _previewRun;
     private string? _previewed;
+    // The Rules card was built for this visit; after that it is rebuilt only when the rules differ.
+    private bool _rulesShown;
 
     /// <summary>A smart collection's rules, libraries and order.</summary>
     public SmartRulesViewModel Rules { get; } = new();
@@ -142,15 +144,23 @@ public sealed partial class CollectionEditorViewModel
         {
             return;
         }
+        // A number or span with nothing in it yet would be refused: the titles shown stay until it is filled in.
+        if (Rules.HasIncompleteRule)
+        {
+            CancelPreview();
+            IsPreviewRefreshing = false;
+            return;
+        }
         var rules = Rules.ToQuery();
         string key = JsonSerializer.Serialize(rules, CollectionsJsonContext.Default.SmartQuery);
         if (key == _previewed && PreviewState != LibraryLoadState.Error)
         {
+            // Back to the rules shown: a read for rules in between is no longer wanted.
+            CancelPreview();
             IsPreviewRefreshing = false;
             return;
         }
-        _previewRun?.Cancel();
-        _previewRun?.Dispose();
+        CancelPreview();
         var run = new CancellationTokenSource();
         _previewRun = run;
         if (PreviewState is LibraryLoadState.Ready or LibraryLoadState.Empty)
@@ -162,6 +172,29 @@ public sealed partial class CollectionEditorViewModel
             PreviewState = LibraryLoadState.Loading;
         }
         Previewing = PreviewAsync(rules, key, delay, run.Token);
+    }
+
+    private void CancelPreview()
+    {
+        _previewRun?.Cancel();
+        _previewRun?.Dispose();
+        _previewRun = null;
+    }
+
+    // Another visit: no preview, and no rules, are left from the last one.
+    private void ResetSmart()
+    {
+        CancelPreview();
+        _previewed = null;
+        _previewTotal = null;
+        _rulesShown = false;
+        PreviewTiles.Clear();
+        PreviewCount = "";
+        PreviewShowing = "";
+        IsPreviewRefreshing = false;
+        PreviewState = LibraryLoadState.Idle;
+        Rules.Show(SmartQuery.Empty, SmartSortConfig.Empty, []);
+        Previewing = Task.CompletedTask;
     }
 
     private async Task PreviewAsync(SmartQuery rules, string key, TimeSpan delay, CancellationToken token)
@@ -203,16 +236,30 @@ public sealed partial class CollectionEditorViewModel
             if (!token.IsCancellationRequested)
             {
                 _logger.LogWarning(ex, "Could not preview a smart collection's rules");
-                _previewed = null;
-                _previewTotal = null;
-                PreviewTiles.Clear();
-                PreviewCount = "";
-                PreviewShowing = "";
-                PreviewState = LibraryLoadState.Error;
-                IsPreviewRefreshing = false;
-                OnPropertyChanged(nameof(SaveBarHint));
+                ShowPreviewFailed();
             }
         }
+        catch (Exception ex)
+        {
+            // Started without being awaited: nothing may escape, and what went wrong is logged.
+            _logger.LogError(ex, "The preview of a smart collection's rules failed");
+            if (!token.IsCancellationRequested)
+            {
+                ShowPreviewFailed();
+            }
+        }
+    }
+
+    private void ShowPreviewFailed()
+    {
+        _previewed = null;
+        _previewTotal = null;
+        PreviewTiles.Clear();
+        PreviewCount = "";
+        PreviewShowing = "";
+        PreviewState = LibraryLoadState.Error;
+        IsPreviewRefreshing = false;
+        OnPropertyChanged(nameof(SaveBarHint));
     }
 }
 

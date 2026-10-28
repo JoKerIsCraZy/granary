@@ -247,6 +247,167 @@ public sealed class SmartCollectionEditorTests
         Assert.Equal(["Drama"], rule.Suggestions);
     }
 
+    /// <summary>Values the controls would rewrite: text numbers, 1.50, a list of genres, an option not offered, "12h".</summary>
+    private const string Awkward = """
+        { "id": "s1", "name": "Odd rules", "description": "", "collection_type": "smart", "creator_profile_id": "7", "is_shared": false,
+          "item_count": 3,
+          "query_definition": { "library_ids": [], "match": "all", "groups": [ { "match": "all", "rules": [
+              { "field": "year", "op": "gte", "value": "1990" },
+              { "field": "rating_imdb", "op": "gte", "value": 1.50 },
+              { "field": "genre", "op": "is", "value": ["Comedy", "Drama"] },
+              { "field": "type", "op": "is", "value": "anime" },
+              { "field": "added_at", "op": "in_last", "value": "12h" } ] } ],
+            "sort": { "field": "added_at", "order": "desc" }, "limit": 10000000 },
+          "sort_config": {} }
+        """;
+
+    [Fact]
+    public async Task RulesAsSaved_AreNotChanged_UntilTheViewerChangesThem()
+    {
+        _harness.Silo.On(HttpMethod.Get, CollectionPath, Versioned(Awkward, "\"rev-1\""));
+        _harness.Silo.On(HttpMethod.Patch, CollectionPath, Versioned(Awkward, "\"rev-2\""));
+        var editor = await EditAsync();
+
+        Assert.Empty(editor.ChangedFields);
+        Assert.False(editor.ShowsSaveBar);
+        Assert.Equal([false, false, true, true, true], editor.Rules.Groups[0].Rules.Select(r => r.IsLocked));
+        Assert.Equal("1.50", Rule(editor, 1).Text);
+
+        editor.Name = "Odd";
+        await editor.SaveCommand.ExecuteAsync(null);
+
+        var rules = Sent(HttpMethod.Patch, CollectionPath).GetProperty("query_definition").GetProperty("groups")[0].GetProperty("rules");
+        Assert.Equal(["\"1990\"", "1.50", "[\"Comedy\",\"Drama\"]", "\"anime\"", "\"12h\""], rules.EnumerateArray().Select(r => r.GetProperty("value").GetRawText()));
+    }
+
+    [Fact]
+    public async Task ATypedLimitOfNone_IsNone()
+    {
+        var editor = await EditAsync();
+
+        editor.Rules.LimitText = "10000000";
+
+        Assert.Null(editor.Rules.ToQuery().Limit);
+        Assert.Empty(editor.ChangedFields);
+    }
+
+    [Fact]
+    public async Task RulesChangedAndBack_AskForNoPreview()
+    {
+        var editor = await EditAsync();
+        int Previews() => _harness.Silo.SentTo(HttpMethod.Post, PreviewPath).Count;
+        int before = Previews();
+
+        Rule(editor, 0).Text = "Drama";
+        Rule(editor, 0).Text = "Comedy";
+        _harness.Clock.Advance(CollectionEditorViewModel.PreviewDelay);
+        await editor.Previewing;
+
+        Assert.Equal(before, Previews());
+        Assert.False(editor.IsPreviewRefreshing);
+    }
+
+    [Fact]
+    public async Task Discard_PreviewsTheRulesPutBack()
+    {
+        var editor = await EditAsync();
+        Rule(editor, 0).Text = "Drama";
+        _harness.Clock.Advance(CollectionEditorViewModel.PreviewDelay);
+        await editor.Previewing;
+
+        editor.DiscardCommand.Execute(null);
+        _harness.Clock.Advance(CollectionEditorViewModel.PreviewDelay);
+        await editor.Previewing;
+
+        Assert.Contains("Comedy", Sent(HttpMethod.Post, PreviewPath).GetProperty("query_definition").GetRawText(), StringComparison.Ordinal);
+        Assert.Empty(editor.ChangedFields);
+    }
+
+    [Fact]
+    public async Task AnEmptyNumber_HoldsThePreviewBack()
+    {
+        var editor = await EditAsync();
+        int before = _harness.Silo.SentTo(HttpMethod.Post, PreviewPath).Count;
+
+        Rule(editor, 1).From = "";
+        _harness.Clock.Advance(CollectionEditorViewModel.PreviewDelay);
+        await editor.Previewing;
+
+        Assert.True(editor.Rules.HasIncompleteRule);
+        Assert.Equal(before, _harness.Silo.SentTo(HttpMethod.Post, PreviewPath).Count);
+        Assert.True(editor.HasPreviewTiles);
+        Assert.Equal(["Rules"], editor.ChangedFields);
+    }
+
+    [Fact]
+    public async Task APreviewThatThrows_IsLogged_AndSaysSo()
+    {
+        _harness.Silo.On(HttpMethod.Post, PreviewPath, () => throw new InvalidOperationException("boom"));
+
+        var editor = await EditAsync();
+
+        Assert.True(editor.HasPreviewFailed);
+    }
+
+    [Fact]
+    public async Task AnotherVisit_StartsWithNoRulesOrPreview()
+    {
+        var editor = await EditAsync();
+        _harness.Silo.On(HttpMethod.Post, PreviewPath, ScriptedSilo.Problem(503, "dependency_unavailable"));
+
+        await editor.ActivateAsync(null, PersonalCollectionTypes.Smart);
+        await editor.Previewing;
+
+        Assert.True(editor.Rules.HasNoRules);
+        Assert.Empty(editor.PreviewTiles);
+        Assert.Equal("", editor.PreviewCount);
+        Assert.All(editor.Rules.Libraries, l => Assert.False(l.IsPicked));
+    }
+
+    [Fact]
+    public async Task TheLibrariesArriving_LeaveARuleBeingTypedAlone()
+    {
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _harness.Answer("api/v2/user/libraries", LibraryHarness.Held(release, LibraryPayloads.Libraries));
+        var editor = Create();
+        var activation = editor.ActivateAsync("s1");
+        for (int i = 0; i < 200 && editor.Rules.Groups.Count == 0; i++)
+        {
+            await Task.Delay(10, TestContext.Current.CancellationToken);
+        }
+        var rule = Rule(editor, 0);
+        rule.Text = "Dram";
+
+        release.SetResult();
+        await activation;
+
+        Assert.Same(rule, Rule(editor, 0));
+        Assert.Equal("Dram", rule.Text);
+        Assert.Equal("Filme", editor.Rules.LibrariesText);
+    }
+
+    [Fact]
+    public async Task AnotherKindOfTitles_TakesItsFirstSort_WhenTheSortDoesNotFit()
+    {
+        var editor = await EditAsync();
+        editor.Rules.SortField = editor.Rules.Sorts.First(s => s.Value == "rating_imdb");
+
+        editor.Rules.Scope = CollectionRuleFields.Scopes.First(s => s.Value == "audiobook");
+
+        Assert.Equal(new SmartSort("title", "asc"), editor.Rules.ToQuery().Sort);
+        Assert.DoesNotContain(editor.Rules.Sorts, s => s.Value == "rating_imdb");
+    }
+
+    [Fact]
+    public void RulesKey_IgnoresTheOrderOfARulesMembers()
+    {
+        var a = SmartQuery.Read(JsonDocument.Parse("""{ "groups": [ { "rules": [ { "field": "genre", "op": "is", "value": "x", "a": 1, "b": 2 } ] } ] }""").RootElement);
+        var b = SmartQuery.Read(JsonDocument.Parse("""{ "groups": [ { "rules": [ { "b": 2, "value": "x", "a": 1, "op": "is", "field": "genre" } ] } ] }""").RootElement);
+
+        Assert.Equal(a.RulesKey(), b.RulesKey());
+        Assert.Equal(24, SmartQuery.Read(JsonDocument.Parse("""{ "limit": 24.0 }""").RootElement).Limit);
+    }
+
     [Fact]
     public void Rules_AreReadAsTheWebNormalizesThem()
     {

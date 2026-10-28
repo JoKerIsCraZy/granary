@@ -53,6 +53,16 @@ public sealed class PersonalListCollectionTests
     }
 
     [Fact]
+    public async Task AnOwnSmartCollection_CanBeEditedToo()
+    {
+        _harness.Silo.On(HttpMethod.Get, CollectionPath, Versioned(Own.Replace("\"manual\"", "\"smart\"", StringComparison.Ordinal), "\"r1\""));
+
+        var list = await ShownAsync(Rainy);
+
+        Assert.True(list.CanEditCollection);
+    }
+
+    [Fact]
     public async Task AnotherProfilesCollection_HasNoActions()
     {
         _harness.Silo.On(HttpMethod.Get, CollectionPath, Versioned(Own.Replace("\"creator_profile_id\": \"7\"", "\"creator_profile_id\": \"8\"", StringComparison.Ordinal), "\"r1\""));

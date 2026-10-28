@@ -185,6 +185,7 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
         {
             return;
         }
+        ResetSmart();
         var profiles = ReadOtherProfilesAsync(server.BaseUri);
         var capabilities = ReadCapabilitiesAsync(server.BaseUri);
         if (collectionId is null)
@@ -197,11 +198,6 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
             }
             _saved = IsSmart ? CollectionDraft.EmptySmart : CollectionDraft.Empty;
             Show(_saved);
-            if (IsSmart)
-            {
-                // Built in full: an empty draft's rules equal the card's before it is filled.
-                ShowRules(_saved);
-            }
             State = LibraryLoadState.Ready;
             TitlesStatus = CollectionEditorText.NotCreatedYet;
         }
@@ -210,9 +206,9 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
             await LoadAsync(collectionId, server.BaseUri);
             if (IsSmart && IsReady)
             {
-                // The libraries arrived after the rules showed: shown again, with their names.
+                // The libraries and the fields the server takes arrived after the rules showed: in place, with their names.
                 await ReadSmartContextAsync(server.BaseUri);
-                ShowRules(Draft);
+                Rules.ShowContext(_libraries);
             }
         }
         await profiles;
@@ -503,8 +499,11 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
     private static readonly string[] SmartFields = ["Libraries", "Rules", "Order"];
 
     // Builds the Rules card from a draft, with the libraries to pick from.
-    private void ShowRules(CollectionDraft draft) =>
+    private void ShowRules(CollectionDraft draft)
+    {
         Rules.Show(draft.Rules ?? SmartQuery.Empty, ParseSortConfig(draft.SortConfig), _libraries);
+        _rulesShown = true;
+    }
 
     private static System.Text.Json.JsonElement ParseSortConfig(string json)
     {
@@ -582,7 +581,7 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
             IsShared = draft.IsShared;
             OnCollectionsTab = draft.OnCollectionsTab;
             // The rules too only when they differ: rebuilding them would take a rule being typed in away.
-            if (draft.IsSmart && (!IsSmart || Draft.ChangedFrom(draft).Intersect(SmartFields).Any()))
+            if (draft.IsSmart && (!_rulesShown || Draft.ChangedFrom(draft).Intersect(SmartFields).Any()))
             {
                 ShowRules(draft);
             }
@@ -592,6 +591,8 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
             _showing = false;
         }
         DraftChanged();
+        // Rules put back (Discard, Use theirs, a merge) are previewed too.
+        SchedulePreview(PreviewDelay);
     }
 
     private void DraftChanged()

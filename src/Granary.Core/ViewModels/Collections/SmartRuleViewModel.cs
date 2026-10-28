@@ -22,6 +22,8 @@ public sealed partial class SmartRuleViewModel : ObservableObject
     private readonly SmartRule _rule;
     private readonly SmartRulesViewModel _owner;
     private bool _showing;
+    // Changed by the viewer: until then the rule goes back exactly as it came.
+    private bool _dirty;
 
     internal SmartRuleViewModel(SmartRule rule, SmartRulesViewModel owner, ICommand removeCommand)
     {
@@ -29,11 +31,15 @@ public sealed partial class SmartRuleViewModel : ObservableObject
         _owner = owner;
         RemoveCommand = removeCommand;
         var definition = CollectionRuleFields.Find(rule.Field);
-        IsLocked = definition is null || !CanEdit(rule, definition);
-        if (!IsLocked)
+        bool editable = definition is not null && CanEdit(rule, definition);
+        if (editable)
         {
             Show(rule.Field, rule.Op, rule.Value);
+            // As the web's guidedRepresentable: a value the controls would change (a list where one value goes, an option
+            // not offered, "12h") is kept as saved instead.
+            editable = Same(BuildValue(), rule.Value);
         }
+        IsLocked = !editable;
     }
 
     /// <summary>Takes this rule.</summary>
@@ -113,10 +119,22 @@ public sealed partial class SmartRuleViewModel : ObservableObject
 
     internal RuleField? Definition => Field is { } picked ? CollectionRuleFields.Find(picked.Value) : null;
 
-    /// <summary>The rule to save; a locked one as it came.</summary>
-    public SmartRule ToRule() => IsLocked || Field is null || Operator is null
+    /// <summary>The rule to save; a locked one, or one the viewer has not changed, as it came.</summary>
+    public SmartRule ToRule() => IsLocked || !_dirty || Field is null || Operator is null
         ? _rule
         : _rule with { Field = Field.Value, Op = Operator.Value, Value = BuildValue() };
+
+    /// <summary>
+    /// A number or "in the last" with nothing in it yet: the server would refuse the rules, so the preview waits for it.
+    /// Saving does not, as on the web.
+    /// </summary>
+    public bool IsIncomplete => !IsLocked && Shape switch
+    {
+        RuleShape.Number => Text.Trim().Length == 0,
+        RuleShape.Range => Definition is { IsNumber: true } && (From.Trim().Length == 0 || To.Trim().Length == 0),
+        RuleShape.InLast => !int.TryParse(InLastCount.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out int count) || count <= 0,
+        _ => false,
+    };
 
     /// <summary>The fields the rule offers changed with the kind of title or the server's capabilities.</summary>
     internal void OfferFields(IReadOnlyList<RuleField> offered)
@@ -181,6 +199,7 @@ public sealed partial class SmartRuleViewModel : ObservableObject
         }
         var definition = CollectionRuleFields.Find(newValue.Value);
         string op = definition?.Operators.FirstOrDefault()?.Value ?? "is";
+        _dirty = true;
         Show(newValue.Value, op, CollectionRuleFields.DefaultValue(newValue.Value, op));
         _owner.RuleChanged(this);
     }
@@ -191,7 +210,9 @@ public sealed partial class SmartRuleViewModel : ObservableObject
         {
             return;
         }
-        Show(Field.Value, newValue.Value, Normalized(Field.Value, newValue.Value, BuildValue()));
+        var value = Normalized(Field.Value, newValue.Value, BuildValue());
+        _dirty = true;
+        Show(Field.Value, newValue.Value, value);
         _owner.RuleChanged(this);
     }
 
@@ -211,6 +232,7 @@ public sealed partial class SmartRuleViewModel : ObservableObject
     {
         if (!_showing)
         {
+            _dirty = true;
             _owner.RuleChanged(this);
         }
     }
@@ -346,6 +368,20 @@ public sealed partial class SmartRuleViewModel : ObservableObject
         }
         return value;
     }
+
+    // The same value as the server reads it: numbers by their value, a number in text as that number (the catalog reads
+    // "7.5" back as text and 1917 as a number), lists item by item.
+    private static bool Same(JsonElement a, JsonElement b) => Canonical(a) == Canonical(b);
+
+    private static string Canonical(JsonElement value) => value.ValueKind switch
+    {
+        JsonValueKind.Number => "n:" + value.GetDouble().ToString("R", CultureInfo.InvariantCulture),
+        JsonValueKind.String when double.TryParse(value.GetString(), NumberStyles.Float, CultureInfo.InvariantCulture, out double number)
+            => "n:" + number.ToString("R", CultureInfo.InvariantCulture),
+        JsonValueKind.String => "s:" + value.GetString(),
+        JsonValueKind.Array => "[" + string.Join(",", value.EnumerateArray().Select(Canonical)) + "]",
+        _ => value.GetRawText(),
+    };
 
     // The web's canEditRule: a field these controls know, one of its conditions, and a value that fits.
     private static bool CanEdit(SmartRule rule, RuleField definition)

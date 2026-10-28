@@ -96,7 +96,7 @@ public sealed partial class PersonalListViewModel
             _collectionVersion = read.Version;
             _collectionShared = read.Value.IsShared;
             IsOwnCollection = read.Value.CreatorProfileId == _session.ProfileId;
-            CanEditCollection = IsOwnCollection && read.Value.IsManual;
+            CanEditCollection = IsOwnCollection && (read.Value.IsManual || read.Value.IsSmart);
         }
         catch (Exception ex) when (LibraryErrors.IsExpected(ex))
         {
