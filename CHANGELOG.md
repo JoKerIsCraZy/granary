@@ -23,7 +23,8 @@ release's section is what its update says it changes (docs/release.md).
   server's accent colour.
 - The sidebar's entries can be hidden and put in another order, for each profile, under Settings → Navigation & Cards.
 - Posters in three sizes, Compact, Standard and Large, as many to a row as on Silo's web at the same window size, with
-  their title and details, the title only, or nothing under them; under Settings → Navigation & Cards → Posters.
+  their title and details, the title only, or nothing under them; under Settings → Navigation & Cards → Posters. On a
+  wide or ultrawide window a grid takes more columns, so its posters stay the size they are in the rows.
 - Installing and updating with Velopack: a setup without administrator rights, and updates in the background.
 - The player minimizes to a bar at the bottom of the window that keeps playing while you browse.
 - An administrator's pause, stop and messages reach Granary's player.

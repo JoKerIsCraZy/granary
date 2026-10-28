@@ -109,7 +109,7 @@ public sealed class CardPresentationTests
     {
         var presentation = CardPresentation.Default with { PosterSize = size };
 
-        Assert.Equal(columns, Enum.GetValues<WindowBreakpoint>().Select(presentation.GridColumns));
+        Assert.Equal(columns, Enum.GetValues<WindowBreakpoint>().Select(at => presentation.GridColumns(at)));
     }
 
     [Theory]
@@ -142,6 +142,44 @@ public sealed class CardPresentationTests
             Assert.Equal([260.0, 315, 315, 315, 315],
                 Enum.GetValues<WindowBreakpoint>().Select(at => presentation.RowCardWidth(MediaCardShape.Landscape, at)));
         }
+    }
+
+    [Theory]
+    [InlineData(PosterSize.Compact, 3100, 19)]
+    [InlineData(PosterSize.Standard, 3100, 16)]
+    [InlineData(PosterSize.Large, 3100, 14)]
+    [InlineData(PosterSize.Compact, 1900, 12)]
+    public void AWideGrid_AddsColumns_SoItsPostersAreNoWiderThanARowsOnes(PosterSize size, double width, int columns)
+    {
+        var presentation = CardPresentation.Default with { PosterSize = size };
+
+        int shown = presentation.GridColumns(WindowBreakpoint.ExtraLarge, width);
+
+        Assert.Equal(columns, shown);
+        double poster = (width - (shown - 1) * presentation.GridGap) / shown;
+        Assert.True(poster <= presentation.RowCardWidth(MediaCardShape.Poster, WindowBreakpoint.ExtraLarge), $"{poster} px");
+    }
+
+    [Theory]
+    [InlineData(PosterSize.Compact, WindowBreakpoint.ExtraLarge, 1000)]
+    [InlineData(PosterSize.Standard, WindowBreakpoint.ExtraLarge, 1400)]
+    [InlineData(PosterSize.Large, WindowBreakpoint.Large, 700)]
+    [InlineData(PosterSize.Standard, WindowBreakpoint.Base, 360)]
+    public void AGridWhosePostersFit_KeepsTheWebsColumns(PosterSize size, WindowBreakpoint at, double width)
+    {
+        var presentation = CardPresentation.Default with { PosterSize = size };
+
+        Assert.Equal(presentation.GridColumns(at), presentation.GridColumns(at, width));
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-10)]
+    [InlineData(double.NaN)]
+    [InlineData(double.PositiveInfinity)]
+    public void AGridOfNoKnownWidth_KeepsTheWebsColumns(double width)
+    {
+        Assert.Equal(8, CardPresentation.Default.GridColumns(WindowBreakpoint.ExtraLarge, width));
     }
 
     [Fact]

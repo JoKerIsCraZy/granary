@@ -78,6 +78,23 @@ public sealed record CardPresentation(PosterSize PosterSize, CardCaption Caption
         return columns[Math.Clamp((int)at, 0, columns.Length - 1)];
     }
 
+    /// <summary>
+    /// A grid's columns at <paramref name="at"/> in <paramref name="width"/>: the web's, and more where its posters would be wider
+    /// than a row's. The web stops adding columns at <c>xl</c>, so on a wide or ultrawide window its posters keep growing; here
+    /// a poster of the chosen size stays as big as it is in the rows.
+    /// </summary>
+    public int GridColumns(WindowBreakpoint at, double width)
+    {
+        int columns = GridColumns(at);
+        if (!double.IsFinite(width) || width <= 0)
+        {
+            return columns;
+        }
+        double widest = RowCardWidth(MediaCardShape.Poster, at);
+        int needed = (int)Math.Ceiling((width + GridGap) / (widest + GridGap));
+        return Math.Max(columns, needed);
+    }
+
     /// <summary>A row's card width at <paramref name="at"/>, as the web's <c>carouselCardWidthPx</c>; a wide card's is the same at every size.</summary>
     public double RowCardWidth(MediaCardShape shape, WindowBreakpoint at)
     {

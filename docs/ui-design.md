@@ -85,7 +85,9 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
   large), and never narrower than 64 px: a window too narrow for the columns beside the sidebar has one less. The basis
   is the window's width, as the web's breakpoints are its viewport's, sidebar included, so both show the same density at
   the same size; the columns change, and the realized cards are told, only when a resize crosses a breakpoint
-  (`CardLook`, taken as the grid measures). Landscape cards are
+  (`CardLook`, taken as the grid measures). Past that, a grid whose posters would be wider than a row's of the same size
+  (160, 185 or 220 px from 1024) takes more columns (`CardPresentation.GridColumns(at, width)`): the web stops at `xl`
+  and its posters keep growing, which on a wide or ultrawide window makes them several times a row's size. Landscape cards are
   at least 280 px. The grid is meant to sit
   in the page's own `ScrollViewer`; `LoadMoreCommand` runs near the end for cursor paging. A list loaded by
   window instead (the library and collection grids) holds `MediaCard.Placeholder` for titles not loaded

@@ -59,6 +59,7 @@ public sealed partial class MediaGrid : UserControl
     private GridViewport? _toldViewport;
     private INotifyCollectionChanged? _followed;
     private bool _reservesEpisodeLine;
+    private double _width;
 
     public MediaGrid()
     {
@@ -155,12 +156,17 @@ public sealed partial class MediaGrid : UserControl
 
     private static void OnCardShapeChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e) => ((MediaGrid)sender).ApplyLook();
 
-    // The profile's choice and the window's breakpoint, taken before the cards are laid out in them.
+    // The profile's choice, the window's breakpoint and the grid's width, taken before the cards are laid out in them.
     protected override Size MeasureOverride(Size availableSize)
     {
+        _width = availableSize.Width;
         if (_look.Update())
         {
             ApplyLook();
+        }
+        else if (CardShape != MediaCardShape.Landscape)
+        {
+            FitColumns();
         }
         return base.MeasureOverride(availableSize);
     }
@@ -179,7 +185,7 @@ public sealed partial class MediaGrid : UserControl
         else
         {
             GridLayout.MinItemWidth = MinPosterWidth;
-            GridLayout.MaximumRowsOrColumns = presentation.GridColumns(_look.Breakpoint);
+            GridLayout.MaximumRowsOrColumns = presentation.GridColumns(_look.Breakpoint, _width);
         }
         for (int i = 0; i < VisualTreeHelper.GetChildrenCount(Items); i++)
         {
@@ -187,6 +193,17 @@ public sealed partial class MediaGrid : UserControl
         }
         // Other columns move the cards under the same viewport, whether or not the grid's height changes with them.
         QueueViewport();
+    }
+
+    // Within a breakpoint a wider grid can take more posters: past the web's columns once its posters would outgrow a row's.
+    private void FitColumns()
+    {
+        int columns = _look.Presentation.GridColumns(_look.Breakpoint, _width);
+        if (GridLayout.MaximumRowsOrColumns != columns)
+        {
+            GridLayout.MaximumRowsOrColumns = columns;
+            QueueViewport();
+        }
     }
 
     private void ShowCaption(DependencyObject element)
