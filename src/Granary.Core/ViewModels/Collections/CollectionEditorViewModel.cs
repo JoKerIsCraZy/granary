@@ -219,7 +219,7 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
         LookChanged();
         if (IsCreated && IsReady && CollectionId is { } id)
         {
-            await ReadListedPosterAsync(server.BaseUri, id);
+            await ReadListedPosterAsync(server.BaseUri, id, CancellationToken.None);
         }
         if (IsCreated && IsReady && !IsSmart)
         {
@@ -449,6 +449,12 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
         SaveError = "";
         try
         {
+            // Only the poster changed: the collection is as saved, so only the poster goes, and Retry moves no version.
+            if (IsPosterStaged && Draft.SameAs(_saved))
+            {
+                await SavePosterAsync(server.BaseUri, id, justCreated: false);
+                return;
+            }
             for (int attempt = 0; ; attempt++)
             {
                 try

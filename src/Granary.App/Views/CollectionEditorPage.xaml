@@ -687,6 +687,8 @@
                                     <TextBlock Text="{x:Bind ViewModel.PosterErrorText, Mode=OneWay}" Foreground="{StaticResource SiloPrimaryBrush}" FontSize="12.5"
                                                TextWrapping="Wrap" VerticalAlignment="Center" MaxWidth="560" />
                                     <Button Content="Retry" Style="{StaticResource EditorSmallButtonStyle}" Command="{x:Bind ViewModel.SaveCommand}" />
+                                    <!-- The failed poster can go on its own, without discarding the rest. -->
+                                    <Button Content="Undo" Style="{StaticResource EditorGhostButtonStyle}" Command="{x:Bind ViewModel.UndoPosterCommand}" />
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Spacing="6" Visibility="{x:Bind ViewModel.ShowsStagedPoster, Mode=OneWay}">
                                     <TextBlock Text="{x:Bind ViewModel.StagedPosterText, Mode=OneWay}" Style="{StaticResource EditorHelpStyle}" VerticalAlignment="Center" />

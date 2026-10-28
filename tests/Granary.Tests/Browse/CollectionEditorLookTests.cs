@@ -35,10 +35,12 @@ public sealed class CollectionEditorLookTests
         Listed(poster: "", collage: false);
     }
 
-    private void Listed(string poster, bool collage, int items = 2) => _harness.Answer(ListPath, $$"""
+    private void Listed(string poster, bool collage, int items = 2) => _harness.Answer(ListPath, ListBody(poster, collage, items));
+
+    private static string ListBody(string poster, bool collage, int items = 2) => $$"""
         { "items": [ { "id": "c1", "name": "Ghibli Night", "collection_type": "manual", "creator_profile_id": "7", "item_count": {{items}},
                        "poster_url": "{{poster}}", "poster_is_collage": {{(collage ? "true" : "false")}} } ] }
-        """);
+        """;
 
     private static Func<Task<HttpResponseMessage>> Versioned(string json, string etag) => () =>
     {
@@ -124,14 +126,141 @@ public sealed class CollectionEditorLookTests
         Assert.Same(Png, editor.PosterPreviewImage);
 
         Listed(poster: "/api/v2/artwork/user-collections/c1/poster.webp?sig=n", collage: false);
+        editor.Name = "Ghibli";
         await editor.SaveCommand.ExecuteAsync(null);
 
-        var order = _harness.Silo.Sent.Where(r => r.Method == HttpMethod.Patch || r.Method == HttpMethod.Put).Select(r => r.Method).ToList();
-        Assert.Equal([HttpMethod.Patch, HttpMethod.Put], order);
+        Assert.Equal([HttpMethod.Patch, HttpMethod.Put], Writes());
         Assert.Contains("filename=ghibli.png", Assert.Single(_harness.Silo.SentTo(HttpMethod.Put, PosterPath)).Body, StringComparison.Ordinal);
         Assert.False(editor.IsPosterStaged);
-        Assert.Empty(editor.ChangedFields);
+        Assert.DoesNotContain("Poster", editor.ChangedFields);
         Assert.Equal("Poster: an image", editor.LookSummary);
+    }
+
+    [Fact]
+    public async Task OnlyThePosterChanged_SendsNoPatch()
+    {
+        _harness.Silo.On(HttpMethod.Put, PosterPath, ScriptedSilo.Json(HttpStatusCode.OK, Saved));
+        var editor = await EditAsync();
+        editor.UsePosterFile(Png, "ghibli.png", "image/png");
+
+        await editor.SaveCommand.ExecuteAsync(null);
+
+        Assert.Equal([HttpMethod.Put], Writes());
+        Assert.False(editor.IsPosterStaged);
+    }
+
+    [Fact]
+    public async Task AMergeAfterAChangeElsewhere_KeepsThePoster_AndSendsItAfterTheMergedPatch()
+    {
+        _harness.Silo.On(HttpMethod.Get, CollectionPath, Versioned(Saved, "\"rev-1\""),
+            Versioned(Saved.Replace("\"description\": \"\"", "\"description\": \"Rainy days\"", StringComparison.Ordinal), "\"rev-2\""));
+        _harness.Silo.On(HttpMethod.Patch, CollectionPath, ScriptedSilo.Problem(412, "precondition_failed"), Versioned(Saved, "\"rev-3\""));
+        _harness.Silo.On(HttpMethod.Put, PosterPath, ScriptedSilo.Json(HttpStatusCode.OK, Saved));
+        var editor = await EditAsync();
+        editor.Name = "Ghibli";
+        editor.UsePosterFile(Png, "ghibli.png", "image/png");
+
+        await editor.SaveCommand.ExecuteAsync(null);
+
+        Assert.Equal([HttpMethod.Patch, HttpMethod.Patch, HttpMethod.Put], Writes());
+        Assert.Equal("\"rev-2\"", _harness.Silo.SentTo(HttpMethod.Patch, CollectionPath)[^1].IfMatch);
+        Assert.False(editor.IsPosterStaged);
+    }
+
+    [Fact]
+    public async Task APosterThatFailsOnANewCollection_IsRetriedAlone()
+    {
+        _harness.Silo.On(HttpMethod.Post, ListPath, ScriptedSilo.Json(HttpStatusCode.Created, Saved));
+        _harness.Silo.On(HttpMethod.Put, PosterPath, ScriptedSilo.Problem(503, "unavailable"), ScriptedSilo.Json(HttpStatusCode.OK, Saved));
+        var editor = Create();
+        await editor.ActivateAsync(null);
+        editor.Name = "Ghibli Night";
+        editor.UsePosterFile(Png, "ghibli.png", "image/png");
+
+        await editor.SaveCommand.ExecuteAsync(null);
+
+        Assert.False(editor.IsNew);
+        Assert.True(editor.HasPosterError);
+        Assert.Equal(["Poster"], editor.ChangedFields);
+
+        await editor.SaveCommand.ExecuteAsync(null);
+
+        Assert.Equal([HttpMethod.Put, HttpMethod.Put], Writes());
+        Assert.False(editor.IsPosterStaged);
+        Assert.False(editor.HasPosterError);
+    }
+
+    [Fact]
+    public async Task ASecondSaveDuringTheWait_KeepsOneWait()
+    {
+        var editor = await EditAsync();
+        editor.Name = "Ghibli";
+        await editor.SaveCommand.ExecuteAsync(null);
+        var first = editor.CollageWaiting;
+        editor.Name = "Ghibli Night";
+        await editor.SaveCommand.ExecuteAsync(null);
+        await first;
+        int reads = ListReads();
+
+        _harness.Clock.Advance(CollectionEditorViewModel.CollagePoll);
+        await WaitUntilAsync(() => ListReads() > reads);
+        await Task.Delay(50, TestContext.Current.CancellationToken);
+
+        Assert.Equal(reads + 1, ListReads());
+    }
+
+    [Fact]
+    public async Task AReadOvertakenByANewerOne_IsDropped()
+    {
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        string none = ListBody(poster: "", collage: false);
+        string image = ListBody(poster: "/api/v2/artwork/user-collections/c1/poster.webp?sig=n", collage: false);
+        _harness.Answer(ListPath, ScriptedSilo.Json(HttpStatusCode.OK, none), ScriptedSilo.Json(HttpStatusCode.OK, none), LibraryHarness.Held(release, none),
+            ScriptedSilo.Json(HttpStatusCode.OK, image));
+        var editor = await EditAsync();
+        editor.Name = "Ghibli";
+        await editor.SaveCommand.ExecuteAsync(null);
+        var waiting = editor.CollageWaiting;
+        _harness.Clock.Advance(CollectionEditorViewModel.CollagePoll);
+        await WaitUntilAsync(() => ListReads() == 3);
+
+        editor.Name = "Ghibli Night";
+        await editor.SaveCommand.ExecuteAsync(null);
+        Assert.Equal("Poster: an image", editor.LookSummary);
+        release.SetResult();
+        await waiting;
+
+        Assert.Equal("Poster: an image", editor.LookSummary);
+    }
+
+    [Fact]
+    public async Task LeavingThePage_EndsTheWait()
+    {
+        var editor = await EditAsync();
+        editor.Name = "Ghibli";
+        await editor.SaveCommand.ExecuteAsync(null);
+        int reads = ListReads();
+
+        editor.Deactivate();
+        await editor.CollageWaiting;
+        _harness.Clock.Advance(CollectionEditorViewModel.CollagePoll);
+        await Task.Delay(50, TestContext.Current.CancellationToken);
+
+        Assert.Equal(reads, ListReads());
+    }
+
+    private List<HttpMethod> Writes() =>
+        [.. _harness.Silo.Sent.Where(r => r.Method == HttpMethod.Patch || r.Method == HttpMethod.Put).Select(r => r.Method)];
+
+    private int ListReads() => _harness.Silo.SentTo(HttpMethod.Get, ListPath).Count;
+
+    private static async Task WaitUntilAsync(Func<bool> condition)
+    {
+        for (int i = 0; i < 200 && !condition(); i++)
+        {
+            await Task.Delay(10, TestContext.Current.CancellationToken);
+        }
+        Assert.True(condition());
     }
 
     [Fact]

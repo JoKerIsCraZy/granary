@@ -82,6 +82,13 @@ public sealed partial class CollectionEditorPage : Page, ILeaveGuard
         }
     }
 
+    // The collage wait, a poster read and the smart preview end with the page.
+    protected override void OnNavigatedFrom(NavigationEventArgs e)
+    {
+        base.OnNavigatedFrom(e);
+        ViewModel.Deactivate();
+    }
+
     async Task<bool> ILeaveGuard.ConfirmLeaveAsync()
     {
         if (_asking)

@@ -57,8 +57,9 @@ public sealed partial class CollectionEditorPage
         }
     }
 
-    // A chosen file shows from its bytes; a pasted link straight from where it points; the saved poster and the
-    // collage through the app's artwork, which knows the server.
+    // A chosen file shows from its bytes; a pasted link straight from where it points, as the web's tile shows it
+    // (useArtworkPreview puts the link in an img); the saved poster and the collage through the app's artwork, which
+    // knows the server.
     private async Task ShowPosterPreviewAsync()
     {
         int shown = ++_previewShown;

@@ -21,6 +21,8 @@ public sealed partial class CollectionEditorViewModel
     private Uri? _listedPoster;
     private bool _listedIsCollage;
     private int _listedItemCount;
+    // Counts the list reads: only the newest one's answer is shown.
+    private int _listedReads;
     private CancellationTokenSource? _collageRun;
 
     /// <summary>The poster the next save sends: a file, a link, or the image taken away; null while nothing is staged.</summary>
@@ -192,11 +194,19 @@ public sealed partial class CollectionEditorViewModel
         DraftChanged();
     }
 
-    // A visit starts with nothing staged and the card closed.
+    /// <summary>The page went: the collage wait, a list read on its way and the smart preview stop.</summary>
+    public void Deactivate()
+    {
+        StopCollageWait();
+        _listedReads++;
+        CancelPreview();
+    }
+
+    // A visit starts with nothing staged and the card closed; a read from the last visit is dropped.
     private void ResetLook()
     {
-        _collageRun?.Cancel();
-        _collageRun = null;
+        StopCollageWait();
+        _listedReads++;
         _listedPoster = null;
         _listedIsCollage = false;
         _listedItemCount = 0;
@@ -212,6 +222,7 @@ public sealed partial class CollectionEditorViewModel
     // was made with went in its create already.
     private async Task SavePosterAsync(Uri server, string id, bool justCreated)
     {
+        PosterChange? saved = null;
         if (StagedPoster is { } change && !(justCreated && change.File is null))
         {
             try
@@ -228,7 +239,7 @@ public sealed partial class CollectionEditorViewModel
                 {
                     await _collections.RemovePosterAsync(server, id);
                 }
-                Settle(change);
+                saved = change;
                 // The poster moves the collection's version: the next save goes at the new one.
                 await RefreshVersionAsync(server);
             }
@@ -241,9 +252,14 @@ public sealed partial class CollectionEditorViewModel
         }
         else if (StagedPoster is { } created)
         {
-            Settle(created);
+            saved = created;
         }
-        await ReadListedPosterAsync(server, id);
+        // The staged image shows until the list names the saved one, so the old poster doesn't flash in between.
+        await ReadListedPosterAsync(server, id, CancellationToken.None);
+        if (saved is not null)
+        {
+            Settle(saved);
+        }
         WaitForCollage(server, id);
     }
 
@@ -258,16 +274,23 @@ public sealed partial class CollectionEditorViewModel
         DraftChanged();
     }
 
-    // The poster lives on the list's copy of the collection.
-    private async Task ReadListedPosterAsync(Uri server, string id)
+    // The poster lives on the list's copy of the collection. The list isn't paged (GET /api/v2/collections takes no
+    // limit or cursor), so the collection is in it, as the web's useListedPoster finds it. Only the newest read counts:
+    // one that a later read, another visit or the page's leaving overtook is dropped.
+    private async Task ReadListedPosterAsync(Uri server, string id, CancellationToken token)
     {
         if (!_capabilities.TakesArtwork)
         {
             return;
         }
+        int read = ++_listedReads;
         try
         {
-            var list = await _collections.ListAsync(server);
+            var list = await _collections.ListAsync(server, token);
+            if (read != _listedReads || token.IsCancellationRequested)
+            {
+                return;
+            }
             if (list.Items.FirstOrDefault(c => c.Id == id) is { } listed && CollectionId == id)
             {
                 _listedPoster = ArtworkUrl.Resolve(server, listed.PosterUrl);
@@ -278,15 +301,18 @@ public sealed partial class CollectionEditorViewModel
         }
         catch (Exception ex) when (LibraryErrors.IsExpected(ex))
         {
-            // The card shows what it knew; the next save reads it again.
-            _logger.LogWarning(ex, "Could not read a collection's poster");
+            if (!token.IsCancellationRequested)
+            {
+                // The card shows what it knew; the next save reads it again.
+                _logger.LogWarning(ex, "Could not read a collection's poster");
+            }
         }
     }
 
     // A collection with titles and no poster gets a collage soon after a save: the list is read until it shows, for a while.
     private void WaitForCollage(Uri server, string id)
     {
-        _collageRun?.Cancel();
+        StopCollageWait();
         if (!UsesCollage || !_capabilities.TakesArtwork || _listedPoster is not null || _listedItemCount == 0)
         {
             return;
@@ -296,23 +322,35 @@ public sealed partial class CollectionEditorViewModel
         CollageWaiting = WaitForCollageAsync(server, id, run.Token);
     }
 
+    private void StopCollageWait()
+    {
+        _collageRun?.Cancel();
+        _collageRun?.Dispose();
+        _collageRun = null;
+    }
+
     /// <summary>The wait for a collage a save set off (for tests).</summary>
     internal Task CollageWaiting { get; private set; } = Task.CompletedTask;
 
     private async Task WaitForCollageAsync(Uri server, string id, CancellationToken token)
     {
-        var started = _time.GetUtcNow();
-        while (_listedPoster is null && _time.GetUtcNow() - started < CollageWait)
+        try
         {
-            try
+            var started = _time.GetUtcNow();
+            while (!token.IsCancellationRequested && _listedPoster is null && _time.GetUtcNow() - started < CollageWait)
             {
                 await Task.Delay(CollagePoll, _time, token);
+                await ReadListedPosterAsync(server, id, token);
             }
-            catch (OperationCanceledException)
-            {
-                return;
-            }
-            await ReadListedPosterAsync(server, id);
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            // A later save, another visit or the page's leaving ended the wait.
+        }
+        catch (Exception ex)
+        {
+            // Nobody awaits this wait: whatever goes wrong in it is logged, not lost.
+            _logger.LogError(ex, "Waiting for a collection's collage failed");
         }
     }
 
