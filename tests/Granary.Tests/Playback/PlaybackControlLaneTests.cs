@@ -321,6 +321,18 @@ public sealed class PlaybackControlFramesTests
         Assert.Null(command.Text("title"));
     }
 
+    [Fact]
+    public void BlankText_IsNone_AsTheWebReadsIt()
+    {
+        var command = PlaybackControlFrames.ParseCommand(
+            """{ "type": "command", "command_id": "c1", "session_id": "s1", "name": "display_message", "payload": { "title": " ", "heading": "Hi", "message": "" } }""",
+            "s1")!;
+
+        Assert.Null(command.Text("title"));
+        Assert.Equal("Hi", command.Text("title", "heading"));
+        Assert.Null(command.Text("message"));
+    }
+
     [Theory]
     [InlineData("""{ "type": "event", "session_id": "s1", "name": "markers_updated" }""")]
     [InlineData("""{ "type": "command", "command_id": "c1", "session_id": "s2", "name": "pause" }""")]

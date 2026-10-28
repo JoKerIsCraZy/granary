@@ -90,7 +90,8 @@ public sealed class ServerPlaybackControlTests
     {
         await using var playback = await PlayingAsync();
 
-        await SendAsync("c1", "display_message", """{ "message": "Server restart in 5 minutes." }""");
+        // The server's own form of an administrator's message without a title.
+        await SendAsync("c1", "display_message", """{ "title": "", "message": "Server restart in 5 minutes." }""");
         await SendAsync("c2", "display_message", """{ "title": "Hello", "message": "Hi there" }""");
         await SendAsync("c3", "server_restarting", issuedBy: "server");
 

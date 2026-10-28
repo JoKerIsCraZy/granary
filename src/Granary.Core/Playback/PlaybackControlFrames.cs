@@ -11,15 +11,19 @@ public sealed record PlaybackControlCommand(string CommandId, string Name, JsonE
 {
     public bool IsFromAdministrator => string.Equals(IssuedBy?.Trim(), "admin", StringComparison.OrdinalIgnoreCase);
 
-    /// <summary>The payload's text under the first of <paramref name="keys"/> it has; null without one.</summary>
+    /// <summary>
+    /// The payload's text under the first of <paramref name="keys"/> it has; null without one. A blank text is none, as
+    /// the web reads it: the server sends an admin's message with <c>"title": ""</c> when it has no title.
+    /// </summary>
     public string? Text(params string[] keys)
     {
         ArgumentNullException.ThrowIfNull(keys);
         foreach (string key in keys)
         {
-            if (Payload.ValueKind == JsonValueKind.Object && Payload.TryGetProperty(key, out var value) && value.ValueKind == JsonValueKind.String)
+            if (Payload.ValueKind == JsonValueKind.Object && Payload.TryGetProperty(key, out var value) && value.ValueKind == JsonValueKind.String
+                && value.GetString() is { } text && !string.IsNullOrWhiteSpace(text))
             {
-                return value.GetString();
+                return text;
             }
         }
         return null;
