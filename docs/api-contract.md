@@ -227,10 +227,18 @@ Plain `http://` origins require explicit user consent before credentials are sen
 - The client keeps the address the user saved. A matching `server_id` is never a reason to switch
   addresses automatically. Two saved URLs of the same deployment are two entries, linked by
   `server_id`.
-- LAN discovery (optional): DNS-SD `_silo._tcp.local` with TXT `v=1`, `id=<server_id>`; confirm a
-  candidate with `GET http://<addr>:<port>/api/v2/system/identity` matching the TXT `id`
-  (`silo-server/docs/architecture/server-discovery.md:10-45`). Windows can browse this with the
-  built-in DNS-SD APIs.
+- LAN discovery: every API process advertises DNS-SD `_silo._tcp` in `local.` with TXT `v=1` and
+  `id=<server_id>` (the instance name is `branding.server_name`, cut to 56 bytes; the port speaks plain HTTP);
+  confirm a candidate with `GET http://<addr>:<port>/api/v2/system/identity` matching the TXT `id`
+  (`silo-server/docs/architecture/server-discovery.md:10-45`). Rules the apps follow: the `id` is a hint, anyone can
+  advertise anything; connect by the resolved address, IPv4 first, IPv6 in brackets, never link-local; group by `id`;
+  ignore unknown TXT keys; label with `server_name` from `GET /api/v2/theme/branding`. Android
+  (`LanServerDiscovery.kt`) and Apple (`ServerDiscovery.swift`, "Found nearby") browse while the setup screen shows,
+  confirm each advert twice 3 s apart with 4 s probes, re-check every 30 s and drop a listed row after three failed
+  checks; their probes follow no redirect, send nothing of the device and read at most 64 KB. Granary does the same
+  (`LanServerDiscovery`, `LanServerProbe`) with Windows' DNS-SD (`DeviceWatcher` over association-endpoint services,
+  protocol `{4526e8c1-8aac-4153-9b16-55e86ada0e54}`); a picked server goes through Add server's checks and must still
+  answer the advertised `id`. The overlay part of server-discovery.md (probing `http://silo`) is not built.
 - "Local route" (optional, post-MVP): an HTTPS LAN shortcut to the same server, pinned by
   `local_route.spki_sha256` from `system/connections`
   (`silo-server/docs/architecture/server-identity.md:95-161`). It needs certificate pinning, also
@@ -1632,8 +1640,9 @@ the pin every 15 minutes; its API calls and media both move, media only when it 
 (`LocalRouteController.swift:41-56,237-333,488-525`). Android does the same without Bonjour
 (`LocalRouteController.kt:62-82`, `LocalRouteInterceptor.kt:21-117`).
 
-The Windows client follows Apple without Bonjour so far (`local_route.url` only): `LocalRouteMonitor`
-checks, `LocalRouteHandler` moves the API calls but sign-in (`/api/v2/auth/`), writes included as Android moves
+The Windows client follows Apple, Bonjour included: `LocalRouteMonitor` checks `local_route.url` first, then the
+`_silo._tcp` adverts whose TXT `id` is the server's (`LanAdvertWatch`, browsing while the server has a pin), checks
+again when such an advert comes or moves while there is no route, `LocalRouteHandler` moves the API calls but sign-in (`/api/v2/auth/`), writes included as Android moves
 them, repeating one on the saved address only when the route did not connect, and, behind the media proxy (9.4), the
 media; FFmpeg never sees the pinned connection. The server keys connection state (`playback/connection`, learned limits, probe results) by the
 path a request came over (`local` for a private client address, else a keyed hash of it), and it builds absolute

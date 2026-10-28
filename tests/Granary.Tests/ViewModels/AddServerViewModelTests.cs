@@ -21,10 +21,17 @@ public sealed class AddServerViewModelTests
     {
         public List<Uri> Probed { get; } = [];
 
-        public Task<ServerProbeResult> ProbeAsync(Uri baseUri, CancellationToken cancellationToken = default)
+        /// <summary>When set, a probe waits for it (or the cancellation) before it answers.</summary>
+        public TaskCompletionSource? Gate { get; set; }
+
+        public async Task<ServerProbeResult> ProbeAsync(Uri baseUri, CancellationToken cancellationToken = default)
         {
             Probed.Add(baseUri);
-            return Task.FromResult(answer(baseUri));
+            if (Gate is { } gate)
+            {
+                await gate.Task.WaitAsync(cancellationToken);
+            }
+            return answer(baseUri);
         }
     }
 
@@ -40,10 +47,16 @@ public sealed class AddServerViewModelTests
         {
             Probe = new ScriptedProbe(probe);
             Http = new FakeHttpMessageHandler((request, _) => Task.FromResult(Respond(request)));
-            ViewModel = new AddServerViewModel(Probe, new SystemApi(new SiloHttp(new HttpClient(Http))), Registry, Navigation);
+            var discovery = new LanServerDiscovery(Browser, LanProbe, new ManualTimeProvider(), new LogSink().For<LanServerDiscovery>());
+            ViewModel = new AddServerViewModel(Probe, new SystemApi(new SiloHttp(new HttpClient(Http))), Registry, Navigation, discovery,
+                new ImmediateDispatcher());
         }
 
         public ScriptedProbe Probe { get; }
+
+        public FakeLanBrowser Browser { get; } = new();
+
+        public FakeLanProbe LanProbe { get; } = new();
 
         public FakeHttpMessageHandler Http { get; }
 
@@ -250,7 +263,8 @@ public sealed class AddServerViewModelTests
         var registry = new InMemoryServerRegistry();
         var navigation = new RecordingNavigation();
         var system = new SystemApi(new SiloHttp(new HttpClient(FakeHttpMessageHandler.Returning(HttpStatusCode.OK, Ready))));
-        var viewModel = new AddServerViewModel(probe, system, registry, navigation) { Address = "nas.local" };
+        var discovery = new LanServerDiscovery(new NoLanServiceBrowser(), new FakeLanProbe(), TimeProvider.System, new LogSink().For<LanServerDiscovery>());
+        var viewModel = new AddServerViewModel(probe, system, registry, navigation, discovery, new ImmediateDispatcher()) { Address = "nas.local" };
 
         var connecting = viewModel.ConnectCommand.ExecuteAsync(null);
         await probing.Task.WaitAsync(TestContext.Current.CancellationToken);
@@ -292,5 +306,107 @@ public sealed class AddServerViewModelTests
         Assert.False(viewModel.ConnectCommand.CanExecute(null));
         viewModel.Address = "nas";
         Assert.True(viewModel.ConnectCommand.CanExecute(null));
+    }
+
+    private const string FoundUrl = "http://192.168.1.6:8090/";
+    private const string FoundId = "7d1c2a4e-0f3b-4c55-9a7e-2b6f1d8c9e01";
+
+    private static async Task<Harness> FoundAsync(string advertisedId = FoundId)
+    {
+        var harness = new Harness(uri => new ServerProbeResult.Compatible(uri, V2)).ReadyServer("http://192.168.1.6:8090");
+        harness.LanProbe.Ids[FoundUrl] = advertisedId;
+        harness.LanProbe.Names[FoundUrl] = "Living room";
+        harness.ViewModel.StartDiscovery();
+        harness.Browser.Advertise("a", advertisedId);
+        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(5);
+        while (!harness.ViewModel.HasFound)
+        {
+            Assert.True(DateTime.UtcNow < deadline, "Timed out");
+            await Task.Delay(5, TestContext.Current.CancellationToken);
+        }
+        return harness;
+    }
+
+    [Fact]
+    public async Task AServerFoundOnThisNetwork_IsListed_ByNameAndAddress()
+    {
+        var harness = await FoundAsync();
+
+        var row = Assert.Single(harness.ViewModel.Found);
+        Assert.Equal("Living room", row.Name);
+        Assert.Equal("On this network · 192.168.1.6:8090", row.Detail);
+        Assert.Equal("L", row.Initial);
+        Assert.False(row.IsConnecting);
+    }
+
+    [Fact]
+    public async Task PickingAFoundServer_GoesTheTypedAddresssWay()
+    {
+        var harness = await FoundAsync();
+
+        await harness.ViewModel.ConnectToFoundCommand.ExecuteAsync(harness.ViewModel.Found[0]);
+
+        // The same checks as a typed address: info, setup, identity, branding; then saved and on to sign-in.
+        Assert.Equal([new Uri(FoundUrl)], harness.Probe.Probed);
+        var entry = Assert.Single(harness.Registry.Servers);
+        Assert.Equal(FoundUrl, entry.BaseUri.AbsoluteUri);
+        Assert.Equal(FoundId, entry.ServerId);
+        Assert.Equal([(AppRoute.SignIn, (object?)entry.Id)], harness.Navigation.Navigations);
+        Assert.False(harness.ViewModel.IsBusy);
+        Assert.False(harness.ViewModel.Found[0].IsConnecting);
+    }
+
+    [Fact]
+    public async Task AFoundServerThatNowAnswersAsAnother_IsNotSaved()
+    {
+        // Found as srv-x; the address answers the identity in Identity when it is picked.
+        var harness = await FoundAsync("srv-x");
+
+        await harness.ViewModel.ConnectToFoundCommand.ExecuteAsync(harness.ViewModel.Found[0]);
+
+        Assert.Empty(harness.Registry.Servers);
+        Assert.Empty(harness.Navigation.Navigations);
+        Assert.Equal(AddServerViewModel.AnswersAsAnotherMessage, harness.ViewModel.Status);
+    }
+
+    [Fact]
+    public async Task LeavingTheScreen_StopsBrowsing_AndEmptiesTheList()
+    {
+        var harness = await FoundAsync();
+
+        harness.ViewModel.StopDiscovery();
+
+        Assert.False(harness.ViewModel.HasFound);
+        Assert.False(harness.Browser.IsBrowsing);
+    }
+
+    [Fact]
+    public void NothingFound_ShowsNothing()
+    {
+        var harness = new Harness(uri => new ServerProbeResult.Compatible(uri, V2));
+
+        harness.ViewModel.StartDiscovery();
+
+        Assert.True(harness.Browser.IsBrowsing);
+        Assert.False(harness.ViewModel.HasFound);
+    }
+
+    [Fact]
+    public async Task WhileAFoundServerConnects_TheRowSaysSo_TheTypedWayWaits_AndCancelStopsIt()
+    {
+        var harness = await FoundAsync();
+        harness.ViewModel.Address = "nas";
+        harness.Probe.Gate = new TaskCompletionSource();
+
+        var connecting = harness.ViewModel.ConnectToFoundCommand.ExecuteAsync(harness.ViewModel.Found[0]);
+
+        Assert.True(harness.ViewModel.Found[0].IsConnecting);
+        Assert.True(harness.ViewModel.IsBusy);
+        Assert.False(harness.ViewModel.ConnectCommand.CanExecute(null));
+        harness.ViewModel.CancelConnectCommand.Execute(null);
+        await connecting;
+        Assert.Equal("Cancelled.", harness.ViewModel.Status);
+        Assert.False(harness.ViewModel.IsBusy);
+        Assert.Empty(harness.Registry.Servers);
     }
 }

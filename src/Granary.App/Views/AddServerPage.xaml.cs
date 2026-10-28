@@ -15,9 +15,18 @@ public sealed partial class AddServerPage : Page
     {
         ViewModel = App.Services.GetRequiredService<AddServerViewModel>();
         InitializeComponent();
-        Loaded += (_, _) => AddressBox.Focus(FocusState.Programmatic);
-        // A connect still running when the user leaves must not navigate to sign-in later.
-        Unloaded += (_, _) => ViewModel.ConnectCommand.Cancel();
+        Loaded += (_, _) =>
+        {
+            AddressBox.Focus(FocusState.Programmatic);
+            // The network is browsed while the screen shows, as the apps do.
+            ViewModel.StartDiscovery();
+        };
+        Unloaded += (_, _) =>
+        {
+            // A connect still running when the user leaves must not navigate to sign-in later.
+            ViewModel.CancelConnectCommand.Execute(null);
+            ViewModel.StopDiscovery();
+        };
         ViewModel.PropertyChanged += OnViewModelPropertyChanged;
     }
 
@@ -28,12 +37,26 @@ public sealed partial class AddServerPage : Page
 
     public Visibility HasText(string text) => string.IsNullOrEmpty(text) ? Visibility.Collapsed : Visibility.Visible;
 
+    public bool Idle(bool isBusy) => !isBusy;
+
+    // Static because the found rows' template calls it on the type.
+    public static Visibility Unless(bool value) => value ? Visibility.Collapsed : Visibility.Visible;
+
     // Progress and refusals are read out; the line that shows them is hidden while there is none.
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(AddServerViewModel.Status))
         {
             Announcer.Announce(this, ViewModel.Status, "AddServerStatus");
+        }
+    }
+
+    // The row comes from the button's tag: x:Bind templates in an ItemsRepeater set no DataContext.
+    private void OnFoundClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: FoundServerRow row } && ViewModel.ConnectToFoundCommand.CanExecute(row))
+        {
+            ViewModel.ConnectToFoundCommand.Execute(row);
         }
     }
 

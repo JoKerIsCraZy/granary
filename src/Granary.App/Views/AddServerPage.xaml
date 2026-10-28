@@ -2,10 +2,25 @@
 <Page
     x:Class="Granary.App.Views.AddServerPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:views="using:Granary.App.Views"
+    xmlns:vm="using:Granary.Core.ViewModels">
 
     <Page.Resources>
-        <ResourceDictionary Source="ms-appx:///Themes/SiloAuth.xaml" />
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="ms-appx:///Themes/SiloAuth.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+            <!-- A found server's row: the whole line picks it, as the apps' ServerPickerRow. -->
+            <Style x:Key="FoundServerButtonStyle" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="CornerRadius" Value="10" />
+                <Setter Property="Padding" Value="12,10" />
+                <Setter Property="HorizontalAlignment" Value="Stretch" />
+                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            </Style>
+        </ResourceDictionary>
     </Page.Resources>
 
     <!-- Silo's web login card with the words of the apps' server screen. -->
@@ -28,10 +43,59 @@
                 <TextBox x:Name="AddressBox" Header="Server address" PlaceholderText="silo.example.org or 192.168.1.10:8090"
                          Style="{StaticResource SiloAuthTextBoxStyle}" InputScope="Url" KeyDown="OnAddressKeyDown"
                          Text="{x:Bind ViewModel.Address, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                <!--
+                    "Found nearby", as the apps: the Silo servers advertised on this network and confirmed by their
+                    identity, in a rounded card of rows with hairlines between them. Nothing shows until one is found.
+                -->
+                <StackPanel Spacing="8" Visibility="{x:Bind ViewModel.HasFound, Mode=OneWay}">
+                    <TextBlock Text="Found nearby" Style="{StaticResource SiloAuthHeadingTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
+                               AutomationProperties.HeadingLevel="Level2" />
+                    <Border Padding="2" CornerRadius="12" Background="#12FFFFFF" BorderBrush="#1FFFFFFF" BorderThickness="1">
+                        <ContentControl IsTabStop="False" HorizontalContentAlignment="Stretch" IsEnabled="{x:Bind Idle(ViewModel.IsBusy), Mode=OneWay}">
+                            <ItemsRepeater ItemsSource="{x:Bind ViewModel.Found, Mode=OneWay}">
+                                <ItemsRepeater.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:FoundServerRow">
+                                        <StackPanel>
+                                            <Border Height="1" Margin="12,0" Background="#14FFFFFF" Visibility="{x:Bind views:AddServerPage.Unless(IsFirst)}" />
+                                            <Button Style="{StaticResource FoundServerButtonStyle}" Tag="{x:Bind}" Click="OnFoundClick"
+                                                    AutomationProperties.Name="{x:Bind AccessibleName}">
+                                                <Grid ColumnSpacing="12">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <Grid Width="40" Height="40">
+                                                        <Ellipse Fill="#1FFFFFFF" />
+                                                        <TextBlock Text="{x:Bind Initial}" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
+                                                                   FontSize="16" Foreground="{StaticResource SiloForegroundBrush}"
+                                                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                    </Grid>
+                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                                        <TextBlock Text="{x:Bind Name}" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
+                                                                   FontSize="15" Foreground="{StaticResource SiloForegroundBrush}" TextTrimming="CharacterEllipsis" />
+                                                        <TextBlock Text="{x:Bind Detail}" FontSize="13" Foreground="{StaticResource SiloMutedBrush}"
+                                                                   TextTrimming="CharacterEllipsis" />
+                                                    </StackPanel>
+                                                    <ProgressRing Grid.Column="2" Width="16" Height="16" IsActive="{x:Bind IsConnecting}"
+                                                                  Visibility="{x:Bind IsConnecting}" />
+                                                    <FontIcon Grid.Column="2" Glyph="&#xE76C;" FontSize="12" Foreground="{StaticResource SiloMutedBrush}"
+                                                              Visibility="{x:Bind views:AddServerPage.Unless(IsConnecting)}" />
+                                                </Grid>
+                                            </Button>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsRepeater.ItemTemplate>
+                            </ItemsRepeater>
+                        </ContentControl>
+                    </Border>
+                </StackPanel>
+
                 <Button Style="{StaticResource SiloAuthButtonStyle}" Command="{x:Bind ViewModel.ConnectCommand}"
                         Content="{x:Bind ConnectLabel(ViewModel.ConnectCommand.IsRunning), Mode=OneWay}" />
-                <Button Content="Cancel" Style="{StaticResource SiloAuthOutlineButtonStyle}" Command="{x:Bind ViewModel.ConnectCancelCommand}"
-                        Visibility="{x:Bind ViewModel.ConnectCommand.IsRunning, Mode=OneWay}" />
+                <Button Content="Cancel" Style="{StaticResource SiloAuthOutlineButtonStyle}" Command="{x:Bind ViewModel.CancelConnectCommand}"
+                        Visibility="{x:Bind ViewModel.IsBusy, Mode=OneWay}" />
                 <!-- Progress and refusals alike ("Trying …", "No Silo server answered …"). -->
                 <TextBlock Text="{x:Bind ViewModel.Status, Mode=OneWay}" Style="{StaticResource SiloAuthTextStyle}" TextAlignment="Center"
                            Visibility="{x:Bind HasText(ViewModel.Status), Mode=OneWay}" />

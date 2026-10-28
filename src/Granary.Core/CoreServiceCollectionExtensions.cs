@@ -60,6 +60,14 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<ILocalNetwork, LocalNetwork>();
         services.AddSingleton<ILocalRouteProbe, LocalRouteProbe>();
         services.AddSingleton<LocalRouteMonitor>();
+        // Servers advertised on this network (_silo._tcp): the app puts Windows' DNS-SD browser in first. A found
+        // address is read on a client of its own, with nothing of this device's.
+        services.TryAddTransient<ILanServiceBrowser, NoLanServiceBrowser>();
+        services.AddHttpClient<ILanServerProbe, LanServerProbe>()
+            .ConfigurePrimaryHttpMessageHandler(LanServerProbe.CreateHandler)
+            .RemoveAllLoggers();
+        services.AddTransient<LanServerDiscovery>();
+        services.AddSingleton<LanAdvertWatch>();
         services.AddHttpClient(TokenRefresher.HttpClientName)
             .ConfigurePrimaryHttpMessageHandler(CreateSocketsHandler)
             .AddHttpMessageHandler<ClientIdentityHandler>();

@@ -10,10 +10,11 @@ namespace Granary.Core.Servers;
 
 /// <summary>
 /// Finds and keeps the local route of the active server (docs/api-contract.md, 9.7; server-identity.md), as the
-/// Apple and Android clients do: reads the key and the local address through the saved address, reduces that address
-/// to private IPv4 addresses, and uses the first that presents the key over HTTPS on the same port and answers as the
-/// same server. Checks again when the session or the network changes, and every 15 minutes. Only a saved HTTPS
-/// address without a path prefix gets a local route: a plain HTTP one cannot vouch for a key, and the local
+/// Apple client does: reads the key and the local address through the saved address, reduces that address and the
+/// server's <c>_silo._tcp</c> adverts (<see cref="LanAdvertWatch"/>) to private IPv4 addresses, and uses the first that
+/// presents the key over HTTPS on the same port and answers as the same server. Checks again when the session or the
+/// network changes, when an advert of the server comes or moves while there is no route, and every 15 minutes. Only a
+/// saved HTTPS address without a path prefix gets a local route: a plain HTTP one cannot vouch for a key, and the local
 /// address serves the API at its root.
 /// </summary>
 public sealed class LocalRouteMonitor : IDisposable
@@ -32,6 +33,7 @@ public sealed class LocalRouteMonitor : IDisposable
     private readonly LocalRoutes _routes;
     private readonly ILocalRouteProbe _probe;
     private readonly ILocalNetwork _network;
+    private readonly LanAdvertWatch _adverts;
     private readonly TimeProvider _time;
     private readonly ILogger<LocalRouteMonitor> _logger;
     private readonly SemaphoreSlim _checking = new(1, 1);
@@ -44,13 +46,14 @@ public sealed class LocalRouteMonitor : IDisposable
     private volatile bool _disposed;
 
     public LocalRouteMonitor(SystemApi system, ISessionManager session, LocalRoutes routes, ILocalRouteProbe probe, ILocalNetwork network,
-        TimeProvider time, ILogger<LocalRouteMonitor> logger)
+        LanAdvertWatch adverts, TimeProvider time, ILogger<LocalRouteMonitor> logger)
     {
         _system = system;
         _session = session;
         _routes = routes;
         _probe = probe;
         _network = network;
+        _adverts = adverts;
         _time = time;
         _logger = logger;
     }
@@ -64,6 +67,7 @@ public sealed class LocalRouteMonitor : IDisposable
         }
         _session.Changed += OnSessionChanged;
         _network.Changed += OnNetworkChanged;
+        _adverts.Changed += OnAdvertsChanged;
         _recheck = _time.CreateTimer(_ => Check(), null, TimeSpan.Zero, Recheck);
     }
 
@@ -99,6 +103,8 @@ public sealed class LocalRouteMonitor : IDisposable
         _disposed = true;
         _session.Changed -= OnSessionChanged;
         _network.Changed -= OnNetworkChanged;
+        _adverts.Changed -= OnAdvertsChanged;
+        _adverts.Unwatch();
         _recheck?.Dispose();
         lock (_gate)
         {
@@ -158,6 +164,7 @@ public sealed class LocalRouteMonitor : IDisposable
         _server = server?.BaseUri;
         if (server is null || !CanHaveLocalRoute(server.BaseUri))
         {
+            _adverts.Unwatch();
             return;
         }
         var connections = await _system.GetConnectionsAsync(server.BaseUri, cancellationToken).ConfigureAwait(false);
@@ -165,16 +172,31 @@ public sealed class LocalRouteMonitor : IDisposable
         {
             // The saved address answers for another deployment now: nothing it says is about this server.
             _logger.LogWarning("The saved address answers as another server; no local route");
+            _adverts.Unwatch();
             _routes.Drop(server.BaseUri);
             return;
         }
         if (connections.LocalRoute is not { SpkiSha256.Length: > 0 } local)
         {
+            _adverts.Unwatch();
             _routes.Drop(server.BaseUri);
             return;
         }
+        // An id an advert cannot carry leaves only the administrator's address.
+        IReadOnlyList<Uri> advertised = [];
+        if (LanAdverts.UsableId(connections.ServerId) is { } serverId)
+        {
+            _adverts.Watch(serverId);
+            advertised = _adverts.Origins(serverId);
+        }
+        else
+        {
+            _adverts.Unwatch();
+        }
         var current = _routes.Find(server.BaseUri);
-        foreach (var candidate in await CandidatesAsync(local.Url, cancellationToken).ConfigureAwait(false))
+        // The administrator's address first, then the adverts: each only a candidate the pin decides on.
+        var candidates = (await CandidatesAsync(local.Url, cancellationToken).ConfigureAwait(false)).Concat(advertised).Distinct();
+        foreach (var candidate in candidates)
         {
             if (current is not null && current.Origin == candidate && current.Pin == local.SpkiSha256)
             {
@@ -221,7 +243,18 @@ public sealed class LocalRouteMonitor : IDisposable
 
     private void OnSessionChanged(object? sender, EventArgs e) => Check();
 
-    private void OnNetworkChanged(object? sender, EventArgs e)
+    private void OnNetworkChanged(object? sender, EventArgs e) => CheckWhenSettled();
+
+    // An advert that came or moved is worth a check only while there is no route; adverts come in bursts too.
+    private void OnAdvertsChanged(object? sender, EventArgs e)
+    {
+        if (_server is { } server && _routes.Find(server) is null)
+        {
+            CheckWhenSettled();
+        }
+    }
+
+    private void CheckWhenSettled()
     {
         lock (_gate)
         {

@@ -10,6 +10,8 @@ release's section is what its update says it changes (docs/release.md).
 
 - Signing in to Silo servers with a password or a code on the phone, profiles with their PINs, and several servers to
   switch between.
+- Silo servers on the local network show under "Found nearby" when you add a server, and their adverts give the
+  local route at home another way in.
 - Home, the libraries, Search with people and Request to add, For You, Calendar, Notifications, Favorites, Watchlist,
   History and Collections, in the look of Silo's web app.
 - Requests: Discover, studios, networks and genres, the titles from TMDB with their seasons, your requests and the

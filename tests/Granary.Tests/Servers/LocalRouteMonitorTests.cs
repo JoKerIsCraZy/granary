@@ -17,6 +17,7 @@ public sealed class LocalRouteMonitorTests : IDisposable
     private readonly LocalRoutes _routes = new();
     private readonly FakeProbe _probe = new();
     private readonly FakeNetwork _network = new();
+    private readonly FakeLanBrowser _browser = new();
     private readonly ManualTimeProvider _time = new();
     private readonly LogSink _logs = new();
     private readonly FakeSessionManager _session = new()
@@ -176,10 +177,114 @@ public sealed class LocalRouteMonitorTests : IDisposable
         monitor.Dispose();
     }
 
+    [Fact]
+    public async Task TheServersAdvert_IsACandidate_OverHttpsOnItsPort()
+    {
+        // No address from the administrator: the advert alone names one.
+        AnswerPinOnly();
+        var monitor = Create();
+        await monitor.CheckAsync(Cancellation);
+        Assert.True(_browser.IsBrowsing);
+
+        _browser.Advertise("a", "server-1", 8090, "Silo", "192.168.1.30", "fd00::30");
+        await monitor.CheckAsync(Cancellation);
+
+        Assert.Equal(["https://192.168.1.30:8090/"], _probe.Tried);
+        Assert.Equal("https://192.168.1.30:8090/", _routes.Find(Saved)!.Origin.AbsoluteUri);
+    }
+
+    [Fact]
+    public async Task TheAdministratorsAddress_IsTriedBeforeTheAdverts()
+    {
+        Answer("http://192.168.1.20:8080");
+        _probe.Reachable = false;
+        var monitor = Create();
+        await monitor.CheckAsync(Cancellation);
+        _browser.Advertise("a", "server-1", 8090, "Silo", "192.168.1.30");
+
+        await monitor.CheckAsync(Cancellation);
+
+        Assert.Equal(["https://192.168.1.20:8080/", "https://192.168.1.20:8080/", "https://192.168.1.30:8090/"], _probe.Tried);
+    }
+
+    [Fact]
+    public async Task AnotherServersAdvert_OrAPublicAddress_IsNoCandidate()
+    {
+        AnswerPinOnly();
+        var monitor = Create();
+        await monitor.CheckAsync(Cancellation);
+
+        _browser.Advertise("a", "server-9", 8090, "Silo", "192.168.1.31");
+        _browser.Advertise("b", "server-1", 8090, "Silo", "8.8.8.8");
+        _browser.Advertise("c", null, 8090, "Silo", "192.168.1.32");
+        await monitor.CheckAsync(Cancellation);
+
+        Assert.Empty(_probe.Tried);
+        Assert.Null(_routes.Find(Saved));
+    }
+
+    [Fact]
+    public async Task AnAdvertThatComes_WhileThereIsNoRoute_ChecksAgainOnceItSettles()
+    {
+        AnswerPinOnly();
+        var monitor = Create();
+        monitor.Start();
+        await _time.FireNextTimerAsync(Cancellation);
+        await Until(() => _browser.IsBrowsing);
+
+        _browser.Advertise("a", "server-1", 8090, "Silo", "192.168.1.30");
+        _time.Advance(TimeSpan.FromSeconds(2));
+
+        await Until(() => _routes.Find(Saved) is not null);
+        monitor.Dispose();
+        Assert.False(_browser.IsBrowsing);
+    }
+
+    [Fact]
+    public async Task WithoutAPin_NothingIsBrowsed()
+    {
+        _silo.On(HttpMethod.Get, Connections, Json("""{ "server_id": "server-1" }"""));
+        var monitor = Create();
+
+        await monitor.CheckAsync(Cancellation);
+
+        Assert.Equal(0, _browser.Starts);
+    }
+
+    [Fact]
+    public async Task SigningOut_StopsBrowsing()
+    {
+        AnswerPinOnly();
+        var monitor = Create();
+        await monitor.CheckAsync(Cancellation);
+
+        _session.State = SessionState.SignedOut;
+        await monitor.CheckAsync(Cancellation);
+
+        Assert.False(_browser.IsBrowsing);
+    }
+
+    [Fact]
+    public async Task ABrowseThatStopped_StartsAgainWithTheNextCheck()
+    {
+        AnswerPinOnly();
+        var monitor = Create();
+        await monitor.CheckAsync(Cancellation);
+
+        _browser.Fail();
+        await monitor.CheckAsync(Cancellation);
+
+        Assert.Equal(2, _browser.Starts);
+    }
+
     public void Dispose() => _routes.Dispose();
 
     private LocalRouteMonitor Create() =>
-        new(new SystemApi(_silo.Http), _session, _routes, _probe, _network, _time, _logs.For<LocalRouteMonitor>());
+        new(new SystemApi(_silo.Http), _session, _routes, _probe, _network, new LanAdvertWatch(_browser, _logs.For<LanAdvertWatch>()), _time,
+            _logs.For<LocalRouteMonitor>());
+
+    private void AnswerPinOnly() => _silo.On(HttpMethod.Get, Connections,
+        Json("""{ "server_id": "server-1", "current": { "kind": "default" }, "endpoints": [], "local_route": { "spki_sha256": "pin-1" } }"""));
 
     private void Answer(string localUrl) => _silo.On(HttpMethod.Get, Connections,
         Json($$"""{ "server_id": "server-1", "current": { "kind": "default" }, "endpoints": [], "local_route": { "spki_sha256": "pin-1", "url": "{{localUrl}}" } }"""));

@@ -11,16 +11,23 @@ namespace Granary.Core.ViewModels;
 /// <summary>
 /// "Add server" (docs/api-contract.md, 3.2): tries each candidate URL for the typed address, accepts the
 /// first v2 server, stops at a server that needs updating or its first-time setup, saves the server with
-/// its identity and display name, and goes to sign-in.
+/// its identity and display name, and goes to sign-in. Servers found on this network can be picked instead of typed
+/// (<see cref="Found"/>); they go the same way.
 /// </summary>
 public sealed partial class AddServerViewModel(
     IServerProbe probe,
     SystemApi system,
     IServerRegistry registry,
-    INavigationService navigation) : ObservableObject
+    INavigationService navigation,
+    LanServerDiscovery discovery,
+    IUiDispatcher dispatcher) : ObservableObject
 {
     internal const string UpdateRequiredMessage = "This Silo server is too old for this app. Update the server and try again.";
     internal const string NeedsSetupMessage = "This server still needs its first-time setup. Finish it in the server's web interface.";
+    internal const string AnswersAsAnotherMessage = "That server no longer answers as the one found. Try again.";
+
+    private readonly LanServerDiscovery _discovery = discovery;
+    private readonly IUiDispatcher _dispatcher = dispatcher;
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(ConnectCommand))]
@@ -44,20 +51,26 @@ public sealed partial class AddServerViewModel(
             return;
         }
 
+        IsBusy = true;
         try
         {
-            await TryCandidatesAsync(candidates, cancellationToken);
+            await TryCandidatesAsync(candidates, expectedServerId: null, cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             ConnectedServer = null;
             Status = "Cancelled.";
         }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
-    private bool CanConnect() => !string.IsNullOrWhiteSpace(Address);
+    private bool CanConnect() => !string.IsNullOrWhiteSpace(Address) && !IsBusy;
 
-    private async Task TryCandidatesAsync(IReadOnlyList<Uri> candidates, CancellationToken cancellationToken)
+    // A found server goes the typed address's way, and must still answer as the server that was found.
+    private async Task TryCandidatesAsync(IReadOnlyList<Uri> candidates, string? expectedServerId, CancellationToken cancellationToken)
     {
         string lastReason = "";
         foreach (var candidate in candidates)
@@ -78,13 +91,13 @@ public sealed partial class AddServerViewModel(
                 lastReason = noVerdict.Reason;
                 continue;
             }
-            await AcceptAsync(candidate, setup, cancellationToken);
+            await AcceptAsync(candidate, setup, expectedServerId, cancellationToken);
             return;
         }
         Status = $"No Silo server answered at that address ({lastReason}).";
     }
 
-    private async Task AcceptAsync(Uri baseUri, SetupStatus? setup, CancellationToken cancellationToken)
+    private async Task AcceptAsync(Uri baseUri, SetupStatus? setup, string? expectedServerId, CancellationToken cancellationToken)
     {
         ConnectedServer = baseUri;
         if (setup is { NeedsSetup: true })
@@ -97,6 +110,12 @@ public sealed partial class AddServerViewModel(
         var identity = await TryGetAsync(ct => system.GetIdentityAsync(baseUri, ct), cancellationToken);
         var branding = await TryGetAsync(ct => system.GetBrandingAsync(baseUri, ct), cancellationToken);
         string? serverId = identity?.ServerId is { } id && !string.IsNullOrWhiteSpace(id) ? id : null;
+        if (expectedServerId is not null && serverId != expectedServerId)
+        {
+            ConnectedServer = null;
+            Status = AnswersAsAnotherMessage;
+            return;
+        }
         string name = branding?.ServerName is { } serverName && !string.IsNullOrWhiteSpace(serverName)
             ? serverName.Trim()
             : baseUri.Host;

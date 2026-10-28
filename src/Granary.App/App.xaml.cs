@@ -128,6 +128,7 @@ public partial class App : Application
         services.AddSingleton<NavigationService>();
         services.AddSingleton<INavigationService>(sp => sp.GetRequiredService<NavigationService>());
         services.AddSingleton<INetworkLink, WindowsNetworkLink>();
+        services.AddTransient<ILanServiceBrowser, DnssdLanServiceBrowser>();
         services.AddSingleton<IAppUpdater, VelopackUpdater>();
         services.AddSingleton<IAppInfo, BuildInfo>();
         services.AddGranaryCore();
