@@ -113,6 +113,15 @@ public sealed partial class LibraryFiltersViewModel(Func<Task> applied, ILogger 
         ShowOptions(new CatalogFilters());
     }
 
+    /// <summary>Applies remembered filters without restarting anything; the options keep showing what they have.</summary>
+    public void Restore(string? genre, IReadOnlyList<string> ratings, int? from, int? to)
+    {
+        ArgumentNullException.ThrowIfNull(ratings);
+        Commit(string.IsNullOrWhiteSpace(genre) ? null : genre, [.. ratings.Where(r => !string.IsNullOrWhiteSpace(r)).Distinct(StringComparer.Ordinal)],
+            from, to);
+        BeginEdit();
+    }
+
     /// <summary>Fills the draft from the applied filters when the flyout opens.</summary>
     public void BeginEdit()
     {

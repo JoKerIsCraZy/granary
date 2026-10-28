@@ -91,6 +91,10 @@ public sealed partial class LibraryViewModel : ObservableObject
         _tabs = tabs;
         Recommended = new LibraryRowsViewModel(catalog, navigation, logger);
         Browse = new LibraryBrowseViewModel(catalog, images, logger);
+        // The grid's sort and filters are remembered with the tab, per server, profile and library.
+        Browse.Remember = state => _tabs is not null && _server is { } shown && _library is { } library
+            ? _tabs.RememberBrowseAsync(shown.Id, _session.ProfileId, library.Id, state)
+            : Task.CompletedTask;
         Collections = new LibraryCollectionsViewModel(pages, catalog, images, logger);
     }
 
@@ -318,6 +322,10 @@ public sealed partial class LibraryViewModel : ObservableObject
         _sizes = ImageSizes.Default.ScaledBy(DisplayScale > 0 && double.IsFinite(DisplayScale) ? DisplayScale : 1);
         LibraryName = library.Name ?? "";
         Browse.Initialize(server, library, _sizes);
+        if (_tabs?.RecallBrowse(server.Id, _session.ProfileId, library.Id) is { } remembered)
+        {
+            Browse.Restore(remembered);
+        }
         Collections.Initialize(server, library, _sizes);
         State = LibraryLoadState.Ready;
         await Task.WhenAll(StartTabAsync(SelectedTab, cancellationToken), UpdateShuffleAsync(server, library, cancellationToken));

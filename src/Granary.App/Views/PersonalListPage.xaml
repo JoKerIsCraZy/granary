@@ -138,6 +138,7 @@
                             </MenuFlyout>
                         </DropDownButton.Flyout>
                     </DropDownButton>
+                    <controls:CatalogFiltersButton Filters="{x:Bind ViewModel.Filters}" />
                 </StackPanel>
 
                 <!--
@@ -203,8 +204,15 @@
                     <Button Content="Retry" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
                             Command="{x:Bind ViewModel.Grid.RetryCommand}" />
                 </StackPanel>
-                <TextBlock Visibility="{x:Bind ViewModel.Grid.IsEmpty, Mode=OneWay}" Margin="0,48" HorizontalAlignment="Center"
+                <TextBlock Visibility="{x:Bind FirstOnly(ViewModel.Grid.IsEmpty, ViewModel.IsNarrowed), Mode=OneWay}" Margin="0,48" HorizontalAlignment="Center"
                            Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}" Text="Nothing here yet." />
+                <!-- Filters that leave nothing: the library page's words, and the way back. -->
+                <StackPanel Visibility="{x:Bind Both(ViewModel.Grid.IsEmpty, ViewModel.IsNarrowed), Mode=OneWay}" Spacing="16" Margin="0,48"
+                            HorizontalAlignment="Center">
+                    <TextBlock Text="No titles match these filters" Style="{StaticResource SiloRowTitleTextStyle}" HorizontalAlignment="Center" />
+                    <Button Content="Clear filters" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
+                            Command="{x:Bind ViewModel.ClearFiltersCommand}" />
+                </StackPanel>
 
                 <controls:MediaGrid x:Name="ListGrid" ItemsSource="{x:Bind ViewModel.Grid.Cards, Mode=OneWay}"
                                     CardInvokedCommand="{x:Bind ViewModel.OpenItemCommand}" Selection="{x:Bind ViewModel.Selection}"

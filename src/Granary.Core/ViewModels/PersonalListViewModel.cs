@@ -27,7 +27,7 @@ public sealed record ListMediaScope(string? Type, string Label)
 /// <summary>
 /// Favorites, Watchlist, History or a collection: a list in a poster grid, as Silo's web catalog page shows it for
 /// those sources (<c>pages/Catalog.tsx</c>). The list's own order comes first ("List Order", History's "Watch History",
-/// a collection's "Collection Order"); the other sorts and a media scope narrow it. The grid loads by window. A visit
+/// a collection's "Collection Order"); the other sorts, a media scope and the Filters narrow it. The grid loads by window. A visit
 /// after the viewer's state changed (<see cref="ViewerStateChanges"/>: a favourite, a watched mark, playback) loads it
 /// again. The watchlist also shows "Not in your library yet" (<see cref="Titles"/>) as a second tab, while the server keeps
 /// titles the library does not have. On History the viewer can pick titles and clear their watch data (Selection).
@@ -73,6 +73,8 @@ public sealed partial class PersonalListViewModel : ObservableObject
         _logger = logger;
         _changes = changes;
         Grid = new LibraryGridViewModel(catalog, logger);
+        Filters = new LibraryFiltersViewModel(StartAsync, logger);
+        Filters.PropertyChanged += OnFiltersChanged;
         Titles = titles;
         Titles.PropertyChanged += (_, e) =>
         {
@@ -208,6 +210,7 @@ public sealed partial class PersonalListViewModel : ObservableObject
         Scope = ListMediaScope.All[0];
         Sort = null;
         IsDescending = false;
+        ResetFilters();
         OnPropertyChanged(nameof(SourceOrderLabel));
         OnPropertyChanged(nameof(SortLabel));
         // The other list's cards must not show under this one's name while its first page is on its way.
@@ -293,7 +296,7 @@ public sealed partial class PersonalListViewModel : ObservableObject
             // Another scope or sort was picked meanwhile; its own start shows it.
             return;
         }
-        await Grid.StartAsync(server.BaseUri, new CatalogQuery
+        await Grid.StartAsync(server.BaseUri, Filters.ApplyTo(new CatalogQuery
         {
             Source = Source,
             CollectionId = _collection?.CollectionId,
@@ -302,7 +305,7 @@ public sealed partial class PersonalListViewModel : ObservableObject
             Sort = Sort is { } sort ? new CatalogSort(sort.Field, IsDescending) : null,
             Limit = PageSize,
             Images = images,
-        });
+        }));
     }
 
     private (string? ServerId, string? ProfileId, string Source, CollectionRouteParameter? Collection) Key() =>

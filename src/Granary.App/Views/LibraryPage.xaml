@@ -228,60 +228,8 @@
                                     </MenuFlyout>
                                 </DropDownButton.Flyout>
                             </DropDownButton>
-                            <Button Style="{StaticResource LibraryPillButtonStyle}"
-                                    AutomationProperties.Name="{x:Bind FiltersName(ViewModel.Browse.Filters.ActiveCount), Mode=OneWay}">
-                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <FontIcon Glyph="&#xE71C;" FontSize="14" />
-                                    <TextBlock Text="Filters" />
-                                    <Border Visibility="{x:Bind ViewModel.Browse.Filters.HasActiveFilters, Mode=OneWay}" Background="{StaticResource SiloPrimaryBrush}"
-                                            CornerRadius="{StaticResource SiloPillCornerRadius}" controls:Pill.IsEnabled="True" MinWidth="20" Height="20" Padding="6,0">
-                                        <TextBlock Text="{x:Bind CountText(ViewModel.Browse.Filters.ActiveCount), Mode=OneWay}" Style="{StaticResource SiloBadgeTextStyle}"
-                                                   FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                    </Border>
-                                </StackPanel>
-                                <Button.Flyout>
-                                    <Flyout x:Name="FiltersFlyout" Placement="BottomEdgeAlignedLeft" Opening="OnFiltersFlyoutOpening">
-                                        <StackPanel Width="340" Spacing="18">
-                                            <TextBlock Text="Filters" Style="{StaticResource SiloRowTitleTextStyle}" AutomationProperties.HeadingLevel="Level2" />
-                                            <ComboBox Header="Genre" HorizontalAlignment="Stretch" ItemsSource="{x:Bind ViewModel.Browse.Filters.GenreChoices}"
-                                                      SelectedIndex="{x:Bind ViewModel.Browse.Filters.DraftGenreIndex, Mode=TwoWay}" />
-                                            <StackPanel Spacing="8" Visibility="{x:Bind ViewModel.Browse.Filters.HasRatings, Mode=OneWay}">
-                                                <TextBlock Text="Content rating" Style="{StaticResource SiloCaptionTextStyle}" />
-                                                <ItemsRepeater ItemsSource="{x:Bind ViewModel.Browse.Filters.RatingOptions}">
-                                                    <ItemsRepeater.Layout>
-                                                        <UniformGridLayout MinItemWidth="72" MinColumnSpacing="8" MinRowSpacing="8" ItemsStretch="Fill" />
-                                                    </ItemsRepeater.Layout>
-                                                    <ItemsRepeater.ItemTemplate>
-                                                        <DataTemplate x:DataType="vm:LibraryFilterToggle">
-                                                            <ToggleButton Content="{x:Bind Value}" IsChecked="{x:Bind IsSelected, Mode=TwoWay}" HorizontalAlignment="Stretch"
-                                                                          CornerRadius="{StaticResource SiloPillCornerRadius}" controls:Pill.IsEnabled="True" />
-                                                        </DataTemplate>
-                                                    </ItemsRepeater.ItemTemplate>
-                                                </ItemsRepeater>
-                                            </StackPanel>
-                                            <Grid ColumnSpacing="12">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="*" />
-                                                </Grid.ColumnDefinitions>
-                                                <NumberBox x:Name="YearFromBox" Header="Year from" PlaceholderText="Any" SpinButtonPlacementMode="Hidden"
-                                                           Minimum="1" Maximum="9999" Value="{x:Bind ViewModel.Browse.Filters.DraftYearFrom, Mode=TwoWay}" />
-                                                <NumberBox x:Name="YearToBox" Grid.Column="1" Header="Year to" PlaceholderText="Any" SpinButtonPlacementMode="Hidden"
-                                                           Minimum="1" Maximum="9999" Value="{x:Bind ViewModel.Browse.Filters.DraftYearTo, Mode=TwoWay}" />
-                                            </Grid>
-                                            <TextBlock Visibility="{x:Bind ViewModel.Browse.Filters.HasOptionsError, Mode=OneWay}" TextWrapping="Wrap"
-                                                       Style="{StaticResource SiloCaptionTextStyle}"
-                                                       Text="Couldn't load the genres and ratings of this library. The year range still works." />
-                                            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
-                                                <Button Content="Clear" Style="{StaticResource LibraryPillButtonStyle}"
-                                                        Command="{x:Bind ViewModel.Browse.Filters.ClearCommand}" Click="OnFilterActionClick" />
-                                                <Button Content="Apply" Style="{StaticResource SiloPrimaryButtonStyle}" MinHeight="38" Padding="20,6"
-                                                        Command="{x:Bind ViewModel.Browse.Filters.ApplyCommand}" Click="OnFilterActionClick" />
-                                            </StackPanel>
-                                        </StackPanel>
-                                    </Flyout>
-                                </Button.Flyout>
-                            </Button>
+                            <controls:CatalogFiltersButton Filters="{x:Bind ViewModel.Browse.Filters}"
+                                                           OptionsErrorText="Couldn't load the genres and ratings of this library. The year range still works." />
                             <TextBlock Text="{x:Bind ViewModel.Browse.Grid.TotalText, Mode=OneWay}" Style="{StaticResource SiloCaptionTextStyle}"
                                        VerticalAlignment="Center" Margin="6,0,0,0" />
                         </StackPanel>

@@ -1,5 +1,4 @@
 using System.ComponentModel;
-using System.Globalization;
 using Granary.Core.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -8,7 +7,6 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
-using Windows.Globalization.NumberFormatting;
 
 namespace Granary.App.Views;
 
@@ -23,10 +21,6 @@ public sealed partial class LibraryPage : Page
         ViewModel = App.Services.GetRequiredService<LibraryViewModel>();
         InitializeComponent();
         BuildSortMenu();
-        // Years without grouping or decimals: "1999", not "1,999.00".
-        var years = new DecimalFormatter { IntegerDigits = 1, FractionDigits = 0, IsGrouped = false };
-        YearFromBox.NumberFormatter = years;
-        YearToBox.NumberFormatter = years;
 
         ViewModel.LibraryChanged += (_, _) =>
         {
@@ -70,20 +64,11 @@ public sealed partial class LibraryPage : Page
 
     public bool Not(bool value) => !value;
 
-    public string CountText(int count) => count.ToString(CultureInfo.InvariantCulture);
-
     public string HeadingName(string libraryName) => libraryName.Length > 0 ? $"Library {libraryName}" : "Library";
 
     public string SortName(string label) => $"Sort by: {label}";
 
     public string OrderName(string label) => $"Order: {label}";
-
-    public string FiltersName(int activeCount) => activeCount switch
-    {
-        0 => "Filters",
-        1 => "Filters, 1 active",
-        _ => $"Filters, {activeCount} active",
-    };
 
     private void BuildSortMenu()
     {
@@ -117,10 +102,6 @@ public sealed partial class LibraryPage : Page
         }
     }
 
-    private void OnFiltersFlyoutOpening(object sender, object e) => ViewModel.Browse.Filters.BeginEdit();
-
-    // The buttons run their commands; this only closes the flyout.
-    private void OnFilterActionClick(object sender, RoutedEventArgs e) => FiltersFlyout.Hide();
 
     // Opening a collection starts at the top of its titles; closing it returns to where the shelves were.
     // The focused card or Back button is hidden by the switch, so the keyboard focus moves along with it.

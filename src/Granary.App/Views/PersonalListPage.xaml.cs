@@ -56,6 +56,8 @@ public sealed partial class PersonalListPage : Page
 
     public Visibility Both(bool first, bool second) => first && second ? Visibility.Visible : Visibility.Collapsed;
 
+    public Visibility FirstOnly(bool first, bool second) => first && !second ? Visibility.Visible : Visibility.Collapsed;
+
     public Visibility Unless(bool value) => value ? Visibility.Collapsed : Visibility.Visible;
 
     /// <summary>A removal's word: muted, or the web's destructive red when it failed.</summary>

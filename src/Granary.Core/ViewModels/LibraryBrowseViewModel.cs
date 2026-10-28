@@ -46,8 +46,15 @@ public sealed partial class LibraryBrowseViewModel : ObservableObject
             }
         };
         Grid.ListingChanged += (_, _) => _ = ReloadLettersAsync();
-        Filters = new LibraryFiltersViewModel(RestartAsync, logger);
+        Filters = new LibraryFiltersViewModel(() => Task.WhenAll(RememberAsync(), RestartAsync()), logger);
     }
+
+    /// <summary>Keeps the sort and filters each time they change (the library page's memory); null keeps nothing.</summary>
+    public Func<LibraryBrowseState, Task>? Remember { get; set; }
+
+    /// <summary>The sort and filters as they are now.</summary>
+    public LibraryBrowseState CurrentState =>
+        new(Sort.Field, IsDescending, Filters.Genre, Filters.ContentRatings, Filters.YearFrom, Filters.YearTo);
 
     public LibraryGridViewModel Grid { get; }
 
@@ -124,6 +131,20 @@ public sealed partial class LibraryBrowseViewModel : ObservableObject
         OnPropertyChanged(nameof(IsNarrowed));
     }
 
+    /// <summary>
+    /// Sorts and filters as <paramref name="state"/> says, before the first page loads; a sort this app does not know
+    /// keeps the title order.
+    /// </summary>
+    public void Restore(LibraryBrowseState state)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        var known = LibrarySortOption.All.FirstOrDefault(o => o.Field == state.SortField);
+        Sort = known ?? LibrarySortOption.Title;
+        IsDescending = known is not null && state.Descending;
+        Filters.Restore(state.Genre, state.ContentRatings, state.YearFrom, state.YearTo);
+        OnPropertyChanged(nameof(IsNarrowed));
+    }
+
     /// <summary>Loads the first page and the filter options the first time the tab is shown.</summary>
     public async Task EnsureStartedAsync()
     {
@@ -145,7 +166,7 @@ public sealed partial class LibraryBrowseViewModel : ObservableObject
         }
         Sort = option;
         IsDescending = option.StartsDescending;
-        return RestartAsync();
+        return Task.WhenAll(RememberAsync(), RestartAsync());
     }
 
     [RelayCommand(AllowConcurrentExecutions = true)]
@@ -199,7 +220,7 @@ public sealed partial class LibraryBrowseViewModel : ObservableObject
     private Task ClearFiltersAsync()
     {
         Filters.ClearSilently();
-        return RestartAsync();
+        return Task.WhenAll(RememberAsync(), RestartAsync());
     }
 
     private Task SetOrderAsync(bool descending)
@@ -209,8 +230,10 @@ public sealed partial class LibraryBrowseViewModel : ObservableObject
             return Task.CompletedTask;
         }
         IsDescending = descending;
-        return RestartAsync();
+        return Task.WhenAll(RememberAsync(), RestartAsync());
     }
+
+    private Task RememberAsync() => _library is null || Remember is not { } remember ? Task.CompletedTask : remember(CurrentState);
 
     private async Task RestartAsync()
     {

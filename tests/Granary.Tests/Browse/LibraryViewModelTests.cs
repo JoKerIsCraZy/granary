@@ -1,5 +1,6 @@
 using Granary.Core.Abstractions;
 using Granary.Core.Api;
+using Granary.Core.Api.Catalog;
 using Granary.Core.Auth;
 using Granary.Core.ViewModels;
 using Granary.Tests.Profiles;
@@ -154,6 +155,107 @@ public sealed class LibraryViewModelTests
 
             await library.ActivateAsync("1");
             Assert.Equal(LibraryTab.Collections, library.SelectedTab);
+        }
+        finally
+        {
+            if (Directory.Exists(directory))
+            {
+                Directory.Delete(directory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task ALibrary_OpensSortedAndFilteredAsItWasLastLeft()
+    {
+        string directory = Path.Combine(Path.GetTempPath(), "granary-tests", Guid.NewGuid().ToString("N"));
+        try
+        {
+            string file = Path.Combine(directory, "library-tabs.json");
+            _harness.Tabs = new LibraryTabs(file, _harness.Logs.For<LibraryTabs>());
+            var first = await _harness.OpenLibraryTabAsync();
+            await first.Browse.SetSortCommand.ExecuteAsync(LibrarySortOption.All.Single(o => o.Field == CatalogSortFields.Year));
+            first.Browse.Filters.BeginEdit();
+            first.Browse.Filters.DraftGenreIndex = first.Browse.Filters.GenreChoices.IndexOf("Drama");
+            first.Browse.Filters.RatingOptions.Single(o => o.Value == "R").IsSelected = true;
+            first.Browse.Filters.DraftYearFrom = 1990;
+            await first.Browse.Filters.ApplyCommand.ExecuteAsync(null);
+            first.Deactivate();
+
+            // The next start: a new store reads the file, a new page opens the library on the grid, as it was.
+            _harness.Tabs = new LibraryTabs(file, _harness.Logs.For<LibraryTabs>());
+            var library = _harness.Create();
+            await library.ActivateAsync("1");
+
+            Assert.Equal(LibraryTab.Library, library.SelectedTab);
+            Assert.Equal(CatalogSortFields.Year, library.Browse.Sort.Field);
+            Assert.True(library.Browse.IsDescending);
+            Assert.Equal("Drama", library.Browse.Filters.Genre);
+            Assert.Equal(["R"], library.Browse.Filters.ContentRatings);
+            Assert.Equal(1990, library.Browse.Filters.YearFrom);
+            Assert.Equal(3, library.Browse.Filters.ActiveCount);
+            string query = _harness.Queries(LibraryHarness.CatalogPath)[^1];
+            Assert.Contains("sort=-year", query, StringComparison.Ordinal);
+            Assert.Contains("genre=Drama", query, StringComparison.Ordinal);
+            Assert.Contains("year_min=1990", query, StringComparison.Ordinal);
+        }
+        finally
+        {
+            if (Directory.Exists(directory))
+            {
+                Directory.Delete(directory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task AnOlderFile_KeepsItsTabs_AndTheLibraryOpensByTitle()
+    {
+        string directory = Path.Combine(Path.GetTempPath(), "granary-tests", Guid.NewGuid().ToString("N"));
+        try
+        {
+            string file = Path.Combine(directory, "library-tabs.json");
+            Directory.CreateDirectory(directory);
+            await File.WriteAllTextAsync(file, """{ "tabs": [ { "server": "srv1", "profile": "7", "library": "1", "tab": "library" } ] }""",
+                TestContext.Current.CancellationToken);
+            _harness.Tabs = new LibraryTabs(file, _harness.Logs.For<LibraryTabs>());
+
+            var library = _harness.Create();
+            await library.ActivateAsync("1");
+
+            Assert.Equal(LibraryTab.Library, library.SelectedTab);
+            Assert.True(library.Browse.Sort.IsTitle);
+            Assert.False(library.Browse.IsNarrowed);
+            Assert.Null(_harness.Tabs.RecallBrowse("srv1", "7", "1"));
+
+            await library.Browse.SortDescendingCommand.ExecuteAsync(null);
+            var reread = new LibraryTabs(file, _harness.Logs.For<LibraryTabs>());
+            Assert.Equal(LibraryTab.Library, reread.Recall("srv1", "7", "1"));
+            Assert.Equal(new LibraryBrowseState(CatalogSortFields.Title, true, null, [], null, null), reread.RecallBrowse("srv1", "7", "1"));
+        }
+        finally
+        {
+            if (Directory.Exists(directory))
+            {
+                Directory.Delete(directory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task ASortOnlyKeptForAnotherProfile_LeavesThisOneByTitle()
+    {
+        string directory = Path.Combine(Path.GetTempPath(), "granary-tests", Guid.NewGuid().ToString("N"));
+        try
+        {
+            string file = Path.Combine(directory, "library-tabs.json");
+            _harness.Tabs = new LibraryTabs(file, _harness.Logs.For<LibraryTabs>());
+            await _harness.Tabs.RememberBrowseAsync("srv1", "8", "1", new LibraryBrowseState(CatalogSortFields.Year, true, "Crime", [], null, null));
+
+            var library = await _harness.OpenLibraryTabAsync();
+
+            Assert.True(library.Browse.Sort.IsTitle);
+            Assert.Null(library.Browse.Filters.Genre);
         }
         finally
         {

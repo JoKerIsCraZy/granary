@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    "Filters" with its count, as a dark pill, and the flyout behind it: one genre, any of the content ratings, and a
+    year range, as the web's filter sheet keeps them. The library's grid and the personal lists share it.
+-->
+<UserControl
+    x:Class="Granary.App.Controls.CatalogFiltersButton"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Granary.App.Controls"
+    xmlns:vm="using:Granary.Core.ViewModels">
+
+    <UserControl.Resources>
+        <Style x:Key="FiltersPillButtonStyle" TargetType="Button" BasedOn="{StaticResource SiloSecondaryButtonStyle}">
+            <Setter Property="MinHeight" Value="38" />
+            <Setter Property="Padding" Value="16,6" />
+            <Setter Property="FontSize" Value="13" />
+        </Style>
+    </UserControl.Resources>
+
+    <Button Style="{StaticResource FiltersPillButtonStyle}" AutomationProperties.Name="{x:Bind FiltersName(Filters.ActiveCount), Mode=OneWay}">
+        <StackPanel Orientation="Horizontal" Spacing="8">
+            <FontIcon Glyph="&#xE71C;" FontSize="14" />
+            <TextBlock Text="Filters" />
+            <Border Visibility="{x:Bind Filters.HasActiveFilters, Mode=OneWay}" Background="{StaticResource SiloPrimaryBrush}"
+                    CornerRadius="{StaticResource SiloPillCornerRadius}" controls:Pill.IsEnabled="True" MinWidth="20" Height="20" Padding="6,0">
+                <TextBlock Text="{x:Bind CountText(Filters.ActiveCount), Mode=OneWay}" Style="{StaticResource SiloBadgeTextStyle}"
+                           FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+        </StackPanel>
+        <Button.Flyout>
+            <Flyout x:Name="FiltersFlyout" Placement="BottomEdgeAlignedLeft" Opening="OnFiltersFlyoutOpening">
+                <StackPanel Width="340" Spacing="18">
+                    <TextBlock Text="Filters" Style="{StaticResource SiloRowTitleTextStyle}" AutomationProperties.HeadingLevel="Level2" />
+                    <ComboBox Header="Genre" HorizontalAlignment="Stretch" ItemsSource="{x:Bind Filters.GenreChoices, Mode=OneWay}"
+                              SelectedIndex="{x:Bind Filters.DraftGenreIndex, Mode=TwoWay}" />
+                    <StackPanel Spacing="8" Visibility="{x:Bind Filters.HasRatings, Mode=OneWay}">
+                        <TextBlock Text="Content rating" Style="{StaticResource SiloCaptionTextStyle}" />
+                        <ItemsRepeater ItemsSource="{x:Bind Filters.RatingOptions, Mode=OneWay}">
+                            <ItemsRepeater.Layout>
+                                <UniformGridLayout MinItemWidth="72" MinColumnSpacing="8" MinRowSpacing="8" ItemsStretch="Fill" />
+                            </ItemsRepeater.Layout>
+                            <ItemsRepeater.ItemTemplate>
+                                <DataTemplate x:DataType="vm:LibraryFilterToggle">
+                                    <ToggleButton Content="{x:Bind Value}" IsChecked="{x:Bind IsSelected, Mode=TwoWay}" HorizontalAlignment="Stretch"
+                                                  CornerRadius="{StaticResource SiloPillCornerRadius}" controls:Pill.IsEnabled="True" />
+                                </DataTemplate>
+                            </ItemsRepeater.ItemTemplate>
+                        </ItemsRepeater>
+                    </StackPanel>
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <NumberBox x:Name="YearFromBox" Header="Year from" PlaceholderText="Any" SpinButtonPlacementMode="Hidden"
+                                   Minimum="1" Maximum="9999" Value="{x:Bind Filters.DraftYearFrom, Mode=TwoWay}" />
+                        <NumberBox x:Name="YearToBox" Grid.Column="1" Header="Year to" PlaceholderText="Any" SpinButtonPlacementMode="Hidden"
+                                   Minimum="1" Maximum="9999" Value="{x:Bind Filters.DraftYearTo, Mode=TwoWay}" />
+                    </Grid>
+                    <TextBlock Visibility="{x:Bind Filters.HasOptionsError, Mode=OneWay}" TextWrapping="Wrap" Style="{StaticResource SiloCaptionTextStyle}"
+                               Text="{x:Bind OptionsErrorText, Mode=OneWay}" />
+                    <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                        <Button Content="Clear" Style="{StaticResource FiltersPillButtonStyle}" Command="{x:Bind Filters.ClearCommand, Mode=OneWay}"
+                                Click="OnFilterActionClick" />
+                        <Button Content="Apply" Style="{StaticResource SiloPrimaryButtonStyle}" MinHeight="38" Padding="20,6"
+                                Command="{x:Bind Filters.ApplyCommand, Mode=OneWay}" Click="OnFilterActionClick" />
+                    </StackPanel>
+                </StackPanel>
+            </Flyout>
+        </Button.Flyout>
+    </Button>
+</UserControl>
