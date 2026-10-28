@@ -9,4 +9,12 @@ namespace Granary.Core.Api.Catalog;
     PropertyNameCaseInsensitive = false)]
 [JsonSerializable(typeof(PersonalCollectionList))]
 [JsonSerializable(typeof(ServerCollectionList))]
+[JsonSerializable(typeof(PersonalCollection))]
+[JsonSerializable(typeof(PersonalCollectionCreate))]
+[JsonSerializable(typeof(PersonalCollectionUpdate))]
+[JsonSerializable(typeof(PersonalCollectionItemPage))]
+[JsonSerializable(typeof(PersonalCollectionItemAdd))]
+[JsonSerializable(typeof(PersonalCollectionOrder))]
+[JsonSerializable(typeof(PersonalCollectionOrderChange))]
+[JsonSerializable(typeof(CollectionCapabilities))]
 internal sealed partial class CollectionsJsonContext : JsonSerializerContext;

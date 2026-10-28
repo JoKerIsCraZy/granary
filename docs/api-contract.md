@@ -938,6 +938,29 @@ web's Dashboard and Activity and sends Activity's commands; nothing else of the 
 - `GET /api/v2/admin/ips?ip=&days=30&limit=50[&cursor=]` → `{ "items": [{ "user_id", "username", "first_seen",
   "last_seen", "request_count" }], "page" }`: the accounts seen at an address.
 
+### 7.17 A profile's own collections, made and changed
+
+Only the profile that made a collection (`creator_profile_id`) changes it; the others it is shared with read it.
+Writes to a collection and to its titles' order carry the version they were read at (`If-Match`, the `ETag` of the
+read): a missing one answers 428, one changed since 412, after which the client reads again.
+
+- `GET /api/v2/collections/capabilities` → `artwork` (absent counts as yes), `poster_collages`, `item_reorder`, ….
+- `GET /api/v2/collections/{id}` → `PersonalCollection` with an `ETag`; it carries no poster (the list does).
+  `PersonalCollection` adds `description`, `include_in_server_collections` (on the Collections tab) and
+  `display_query_definition` ("Show only": `{ match: "all", groups: [{ match: "all", rules: [{ field: "watched", op: "is",
+  value: true|false }, { field: "type", op: "is", value: "movie"|"series" }] }] }`, no group for everything).
+- `POST /api/v2/collections` `{ name, description, is_shared, include_in_server_collections, display_query_definition?,
+  collection_type: "manual" }` → `201` `PersonalCollection`; not repeatable. `PATCH /api/v2/collections/{id}` with every
+  one of those fields (an empty fragment `{ match: "all", groups: [] }` clears Show only) → `200` with the new `ETag`.
+  `DELETE /api/v2/collections/{id}` → `204`.
+- Titles of a manual collection: `GET …/{id}/items?limit=200[&cursor=]` → `{ items: [{ media_item_id, position, title? }],
+  page }`; `PUT …/{id}/items/{item_id}` `{ position }` → `204` (stored as given, others not moved; one already in it
+  stays); `DELETE …/{id}/items/{item_id}` → `204`. Neither takes a version. Cards for them come from
+  `GET /api/v2/catalog?source=user_collection&collection_id=`.
+- Order: `GET …/{id}/items/order` → `{ ordered_ids, has_more }` with its own `ETag` (`has_more` above 200 titles: no
+  reordering); `PUT …/{id}/items/order` `{ ordered_ids }` (every title) with `If-Match` → `200` and the new `ETag`.
+- `GET /api/v2/collections?contains_item=<content_id>`: the profile's own manual collections carry `contains`.
+
 ## 8. Playback protocol v3
 
 The server decides **how** a file is delivered; the client reports honestly what it can play and

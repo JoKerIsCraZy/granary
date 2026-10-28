@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace Granary.Core.Api.Catalog;
 
 /// <summary>
@@ -9,12 +11,14 @@ public sealed record PersonalCollectionList
     public IReadOnlyList<PersonalCollection> Items { get; init => field = value ?? []; } = [];
 }
 
-/// <summary>A personal collection (only the members a card needs are modelled).</summary>
+/// <summary>A personal collection (only the members its card and its editor need are modelled).</summary>
 public sealed record PersonalCollection
 {
     public string Id { get; init => field = value ?? ""; } = "";
 
     public string Name { get; init => field = value ?? ""; } = "";
+
+    public string Description { get; init => field = value ?? ""; } = "";
 
     /// <summary><c>manual</c>, <c>smart</c>, or an import source (<c>mdblist</c>, <c>tmdb</c>): a synced list.</summary>
     public string CollectionType { get; init => field = value ?? ""; } = "";
@@ -32,6 +36,17 @@ public sealed record PersonalCollection
 
     /// <summary>A synced list's last sync: <c>running</c>, <c>failed</c>, …; empty until the first.</summary>
     public string LastSyncStatus { get; init => field = value ?? ""; } = "";
+
+    /// <summary>It shows on the Collections tab of the profiles that see it.</summary>
+    public bool IncludeInServerCollections { get; init; }
+
+    /// <summary>"Show only" as stored; read it with <see cref="CollectionShowOnly.Read"/>.</summary>
+    public JsonElement DisplayQueryDefinition { get; init; }
+
+    /// <summary>Only in a list asked with <c>contains_item</c>, on the profile's own manual collections: the title is in it.</summary>
+    public bool? Contains { get; init; }
+
+    public bool IsManual => CollectionType == PersonalCollectionTypes.Manual;
 }
 
 /// <summary><c>GET /api/v2/collections/server</c>: the visible server collections, by library.</summary>

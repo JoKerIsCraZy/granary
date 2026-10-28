@@ -81,6 +81,36 @@ public sealed class SiloHttp(HttpClient http)
         return await SendAsync(request, responseType, cancellationToken).ConfigureAwait(false);
     }
 
+    /// <summary>As <see cref="GetAsync{TResponse}"/>, with the answer's version (its ETag) for a later write's <c>If-Match</c>.</summary>
+    public async Task<Versioned<TResponse>> GetVersionedAsync<TResponse>(Uri server, string path, SiloAuth auth, JsonTypeInfo<TResponse> responseType,
+        CancellationToken cancellationToken)
+    {
+        using var request = Create(HttpMethod.Get, server, path, auth);
+        return await SendVersionedAsync(request, responseType, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// A write the server takes only at the version it was read at (<c>If-Match</c>); one changed since answers 412.
+    /// Answers the result and its new version.
+    /// </summary>
+    public async Task<Versioned<TResponse>> SendIfMatchAsync<TRequest, TResponse>(HttpMethod method, Uri server, string path, SiloAuth auth, string version,
+        TRequest body, JsonTypeInfo<TRequest> requestType, JsonTypeInfo<TResponse> responseType, CancellationToken cancellationToken)
+    {
+        using var request = Create(method, server, path, auth);
+        IfMatch(request, version);
+        request.Content = JsonContent.Create(body, requestType);
+        return await SendVersionedAsync(request, responseType, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>As the other <c>SendIfMatchAsync</c>, for a bodiless write that answers 204, as a delete.</summary>
+    public async Task SendIfMatchAsync(HttpMethod method, Uri server, string path, SiloAuth auth, string version, CancellationToken cancellationToken)
+    {
+        using var request = Create(method, server, path, auth);
+        IfMatch(request, version);
+        using var response = await http.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
+    }
+
     /// <summary>
     /// For a download read as it arrives: the answer once its headers are in, whatever its status, for the caller to
     /// read and dispose. <paramref name="url"/> is absolute; credentials still go only beneath <paramref name="server"/>.
@@ -110,6 +140,29 @@ public sealed class SiloHttp(HttpClient http)
     {
         using var response = await http.SendAsync(request, cancellationToken).ConfigureAwait(false);
         await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
+        return await ReadAsync(response, responseType, cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task<Versioned<TResponse>> SendVersionedAsync<TResponse>(HttpRequestMessage request, JsonTypeInfo<TResponse> responseType,
+        CancellationToken cancellationToken)
+    {
+        using var response = await http.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
+        // Without its version nothing read here can be written back.
+        string version = response.Headers.ETag?.ToString()
+            ?? throw new HttpRequestException(HttpRequestError.InvalidResponse, "The server named no version of what it answered.");
+        return new Versioned<TResponse>(await ReadAsync(response, responseType, cancellationToken).ConfigureAwait(false), version);
+    }
+
+    // The version goes back as the server wrote it.
+    private static void IfMatch(HttpRequestMessage request, string version)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(version);
+        request.Headers.TryAddWithoutValidation("If-Match", version);
+    }
+
+    private static async Task<TResponse> ReadAsync<TResponse>(HttpResponseMessage response, JsonTypeInfo<TResponse> responseType, CancellationToken cancellationToken)
+    {
         await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
         try
         {
@@ -188,3 +241,6 @@ public sealed class SiloHttp(HttpClient http)
 
     internal static string Invariant(FormattableString value) => value.ToString(CultureInfo.InvariantCulture);
 }
+
+/// <summary>What a read answered, with its version (the <c>ETag</c>) that a later write sends back as <c>If-Match</c>.</summary>
+public sealed record Versioned<T>(T Value, string Version);

@@ -11,7 +11,7 @@ namespace Granary.Tests.Profiles;
 /// What the client sent; the body is read at send time because SiloHttp disposes the request.
 /// <paramref name="SavedAddressOnly"/>: it may not take a local route.
 /// </summary>
-internal sealed record SentRequest(HttpMethod Method, Uri Uri, string? Body, SiloAuth Auth, bool SavedAddressOnly = false);
+internal sealed record SentRequest(HttpMethod Method, Uri Uri, string? Body, SiloAuth Auth, bool SavedAddressOnly = false, string? IfMatch = null);
 
 /// <summary>
 /// A Silo server behind a reverse-proxy path prefix, scripted per method and URL. Each route answers
@@ -84,7 +84,8 @@ internal sealed class ScriptedSilo
         string? body = request.Content is null ? null : await request.Content.ReadAsStringAsync(cancellationToken);
         var uri = request.RequestUri!;
         bool savedOnly = request.Options.TryGetValue(SiloRequestOptions.SavedAddressOnly, out bool only) && only;
-        Sent.Add(new SentRequest(request.Method, uri, body, request.GetAuth(), savedOnly));
+        string? ifMatch = request.Headers.TryGetValues("If-Match", out var versions) ? string.Join(",", versions) : null;
+        Sent.Add(new SentRequest(request.Method, uri, body, request.GetAuth(), savedOnly, ifMatch));
         if (!_routes.TryGetValue(Key(request.Method, uri), out var responders) || responders.Count == 0)
         {
             throw new InvalidOperationException($"Unscripted request {request.Method} {uri}");
