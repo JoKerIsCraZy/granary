@@ -45,8 +45,8 @@ internal sealed class ProfileSelectionRecorder(FakeSessionManager inner) : ISess
     /// <summary>The server each selection was made for.</summary>
     public List<string> ProfileServers { get; } = [];
 
-    public Task<bool> ReopenServerAsync(string serverEntryId, CancellationToken cancellationToken = default) =>
-        Inner.ReopenServerAsync(serverEntryId, cancellationToken);
+    public Task<bool> ReopenServerAsync(string serverEntryId, string? serverId, CancellationToken cancellationToken = default) =>
+        Inner.ReopenServerAsync(serverEntryId, serverId, cancellationToken);
 
     public async Task SelectProfileAsync(string serverEntryId, string profileId, string? profileToken, CancellationToken cancellationToken = default)
     {

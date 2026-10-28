@@ -127,9 +127,11 @@ public sealed partial class AddServerViewModel(
         ServerEntry entry;
         try
         {
-            entry = await _registry.AddOrUpdateAsync(baseUri, name, serverId, cancellationToken);
-            // Added before and still signed in (the address is the saved one's): the shell goes to its profiles.
-            if (await session.ReopenServerAsync(entry.Id, cancellationToken))
+            // Added before and still signed in: the shell goes to its profiles. This is settled before the entry takes
+            // the answer's identity, so a session saved for another server at this address is never handed on.
+            bool reopened = SavedAt(baseUri) is { } saved && await ReopenAsync(saved, serverId, cancellationToken);
+            entry = await _registry.AddOrUpdateAsync(baseUri, name, serverId, reopened ? CancellationToken.None : cancellationToken);
+            if (reopened)
             {
                 Status = $"Opening {entry.Name}…";
                 return;
@@ -142,6 +144,25 @@ public sealed partial class AddServerViewModel(
         }
         Status = $"Found {entry.Name}.";
         navigation.NavigateTo(AppRoute.SignIn, entry.Id);
+    }
+
+    private ServerEntry? SavedAt(Uri baseUri)
+    {
+        var address = ServerAddress.Normalize(baseUri);
+        return _registry.Servers.FirstOrDefault(s => ServerAddress.Normalize(s.BaseUri) == address);
+    }
+
+    private async Task<bool> ReopenAsync(ServerEntry saved, string? serverId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await session.ReopenServerAsync(saved.Id, serverId, cancellationToken);
+        }
+        catch (InvalidOperationException)
+        {
+            // Removed meanwhile: it is added as a new one.
+            return false;
+        }
     }
 
     /// <summary>

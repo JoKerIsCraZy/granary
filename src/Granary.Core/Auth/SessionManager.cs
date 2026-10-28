@@ -91,16 +91,30 @@ public sealed class SessionManager : ISessionManager, IDisposable
         await ActivateCoreAsync(saved.Id, CancellationToken.None).ConfigureAwait(false);
     }
 
-    public async Task<bool> ReopenServerAsync(string serverEntryId, CancellationToken cancellationToken = default)
+    public async Task<bool> ReopenServerAsync(string serverEntryId, string? serverId, CancellationToken cancellationToken = default)
     {
         var entry = _registry.Find(serverEntryId) ?? throw new InvalidOperationException("The server is not saved.");
-        // Who is watching is asked again; the login stays.
+        if (entry.ServerId is { } saved && !string.Equals(saved, serverId, StringComparison.Ordinal))
+        {
+            if (serverId is not null && await _credentials.GetAsync(entry.Id, cancellationToken).ConfigureAwait(false) is not null)
+            {
+                // Another server answers at this address now. Signing out would send it the old tokens: they are
+                // forgotten here only.
+                _logger.LogWarning("Saved server {ServerEntryId} answers as another server; its session is forgotten", entry.Id);
+                await _credentials.RemoveAsync(entry.Id, CancellationToken.None).ConfigureAwait(false);
+                await SyncAsync(CancellationToken.None).ConfigureAwait(false);
+            }
+            return false;
+        }
+        // Who is watching is asked again; the login stays. The profile goes first, so the shell never shows the old
+        // profile's Home on the way to the picker.
         if (await _credentials.UpdateAsync(entry.Id, c => c with { ProfileId = null, ProfileToken = null }, cancellationToken).ConfigureAwait(false) is null)
         {
             return false;
         }
         _logger.LogInformation("Opened saved server {ServerEntryId} again", entry.Id);
-        await ActivateCoreAsync(entry.Id, cancellationToken).ConfigureAwait(false);
+        // Not cancelled once the profile is gone: the server becomes active rather than being left half reopened.
+        await ActivateCoreAsync(entry.Id, CancellationToken.None).ConfigureAwait(false);
         RefreshAccountInBackground();
         return true;
     }

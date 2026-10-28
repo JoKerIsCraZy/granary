@@ -34,7 +34,11 @@ public interface IServerRegistry
 
     ServerEntry? Find(string id);
 
-    /// <summary>Adds a server, or updates name and server id of the entry with the same normalized URL.</summary>
+    /// <summary>
+    /// Adds a server, or updates name and server id of the entry with the same normalized URL. A session saved for that
+    /// entry is the caller's to settle first when the id changes (<see cref="Auth.ISessionManager.ReopenServerAsync"/>):
+    /// a session of one server must not stay on an entry that now names another.
+    /// </summary>
     Task<ServerEntry> AddOrUpdateAsync(Uri baseUri, string name, string? serverId, CancellationToken cancellationToken = default);
 
     Task UpdateAsync(ServerEntry entry, CancellationToken cancellationToken = default);

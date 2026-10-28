@@ -52,10 +52,14 @@ public interface ISessionManager
     Task SignInWithTokensAsync(ServerEntry server, TokenPair tokens, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// A saved server added again: when it is still signed in it becomes active and asks who is watching, as the apps'
-    /// server screen does; false when it has no session, and nothing changed (it needs a sign-in).
+    /// A saved server added again: when it is still signed in and answers as the server it was saved as, it becomes
+    /// active and asks who is watching, as the apps' server screen does. False when it has no session, or when its
+    /// identity cannot be confirmed: it then needs a sign-in. When it answers as another server, its saved session is
+    /// forgotten here without telling that server, so the old tokens never reach it.
     /// </summary>
-    Task<bool> ReopenServerAsync(string serverEntryId, CancellationToken cancellationToken = default);
+    /// <param name="serverId">The id the address answers with now; null when it did not say.</param>
+    /// <exception cref="InvalidOperationException">The server is no longer saved.</exception>
+    Task<bool> ReopenServerAsync(string serverEntryId, string? serverId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Selects the acting profile on the server its list came from; <paramref name="profileToken"/> is required for a

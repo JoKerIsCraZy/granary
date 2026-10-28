@@ -281,6 +281,11 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
         catch (ActiveServerChangedException)
         {
             _logger.LogInformation("Another server became active while profile {ProfileId} was picked; the pick was dropped", profileId);
+            // The session may have moved on before this list was shown: the new server's profiles come either way.
+            if (!ListBelongsToActiveServer(out _))
+            {
+                LoadCommand.Execute(null);
+            }
         }
         catch (Exception ex)
         {

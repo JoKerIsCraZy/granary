@@ -108,7 +108,7 @@ public sealed class SessionManagerTests
         await session.SelectProfileAsync(server.Id, "7", "pin-token", ct);
         await session.SignInWithPasswordAsync(other, "sam", "pw", ct);
 
-        bool reopened = await session.ReopenServerAsync(server.Id, ct);
+        bool reopened = await session.ReopenServerAsync(server.Id, "server-1", ct);
 
         Assert.True(reopened);
         Assert.Equal(server.Id, session.ActiveServer!.Id);
@@ -120,6 +120,40 @@ public sealed class SessionManagerTests
     }
 
     [Fact]
+    public async Task ReopeningAnAddressThatAnswersAsAnotherServer_ForgetsItsSession_WithoutTellingIt()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var server = await _pipeline.AddServerAsync();
+        using var session = _pipeline.CreateSessionManager();
+        await session.SignInWithPasswordAsync(server, "alex", "pw", ct);
+        await session.SelectProfileAsync(server.Id, "7", null, ct);
+
+        bool reopened = await session.ReopenServerAsync(server.Id, "server-2", ct);
+
+        Assert.False(reopened);
+        Assert.Null(await _pipeline.Credentials.GetAsync(server.Id, ct));
+        Assert.Empty(_pipeline.Server.RequestsTo("/api/v2/auth/logout"));
+        Assert.Equal(SessionState.SignedOut, session.State);
+    }
+
+    [Fact]
+    public async Task ReopeningAnAddressThatGivesNoIdentity_KeepsTheSession_ButDoesNotReopenIt()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var server = await _pipeline.AddServerAsync();
+        using var session = _pipeline.CreateSessionManager();
+        await session.SignInWithPasswordAsync(server, "alex", "pw", ct);
+        await session.SelectProfileAsync(server.Id, "7", "pin-token", ct);
+
+        bool reopened = await session.ReopenServerAsync(server.Id, serverId: null, ct);
+
+        Assert.False(reopened);
+        var stored = await _pipeline.Credentials.GetAsync(server.Id, ct);
+        Assert.Equal("7", stored!.ProfileId);
+        Assert.Equal("pin-token", stored.ProfileToken);
+    }
+
+    [Fact]
     public async Task ReopeningASignedOutServer_ChangesNothing()
     {
         var ct = TestContext.Current.CancellationToken;
@@ -128,7 +162,7 @@ public sealed class SessionManagerTests
         using var session = _pipeline.CreateSessionManager();
         await session.SignInWithPasswordAsync(server, "alex", "pw", ct);
 
-        bool reopened = await session.ReopenServerAsync(signedOut.Id, ct);
+        bool reopened = await session.ReopenServerAsync(signedOut.Id, "server-1", ct);
 
         Assert.False(reopened);
         Assert.Equal(server.Id, session.ActiveServer!.Id);

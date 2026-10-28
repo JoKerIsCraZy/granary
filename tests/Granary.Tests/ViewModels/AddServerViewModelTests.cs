@@ -134,10 +134,41 @@ public sealed class AddServerViewModelTests
         await harness.ConnectAsync("nas.local");
 
         Assert.Equal(saved.Id, Assert.Single(harness.Registry.Servers).Id);
-        Assert.Equal([$"reopen:{saved.Id}"], harness.Session.Calls);
+        Assert.Equal([$"reopen:{saved.Id}:7d1c2a4e-0f3b-4c55-9a7e-2b6f1d8c9e01"], harness.Session.Calls);
         // The shell routes on the session: the page itself goes nowhere.
         Assert.Empty(harness.Navigation.Navigations);
         Assert.Equal("Opening Living room…", harness.ViewModel.Status);
+    }
+
+    [Fact]
+    public async Task Connect_ToASavedAddress_SettlesItsSession_BeforeTheEntryTakesTheNewIdentity()
+    {
+        var harness = new Harness(uri => new ServerProbeResult.Compatible(uri, V2)).ReadyServer("https://nas.local");
+        var saved = await harness.Registry.AddOrUpdateAsync(new Uri("https://nas.local"), "Living room", "another-server", TestContext.Current.CancellationToken);
+        string? idWhenAsked = "";
+        harness.Session.ReopenAnswer = id =>
+        {
+            idWhenAsked = harness.Registry.Find(id)!.ServerId;
+            return false;
+        };
+
+        await harness.ConnectAsync("nas.local");
+
+        Assert.Equal("another-server", idWhenAsked);
+        Assert.Equal("7d1c2a4e-0f3b-4c55-9a7e-2b6f1d8c9e01", harness.Registry.Find(saved.Id)!.ServerId);
+        Assert.Equal([(AppRoute.SignIn, (object?)saved.Id)], harness.Navigation.Navigations);
+    }
+
+    [Fact]
+    public async Task Connect_ToASavedServerRemovedMeanwhile_AddsItAgain()
+    {
+        var harness = new Harness(uri => new ServerProbeResult.Compatible(uri, V2)).ReadyServer("https://nas.local");
+        await harness.Registry.AddOrUpdateAsync(new Uri("https://nas.local"), "Living room", null, TestContext.Current.CancellationToken);
+        harness.Session.ReopenAnswer = _ => throw new InvalidOperationException("The server is not saved.");
+
+        await harness.ConnectAsync("nas.local");
+
+        Assert.Equal(AppRoute.SignIn, Assert.Single(harness.Navigation.Navigations).Route);
     }
 
     [Fact]

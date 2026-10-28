@@ -49,10 +49,13 @@ internal sealed class FakeSessionManager : ISessionManager
     /// <summary>The servers <see cref="ReopenServerAsync"/> finds signed in.</summary>
     public HashSet<string> SignedInServers { get; } = [];
 
-    public async Task<bool> ReopenServerAsync(string serverEntryId, CancellationToken cancellationToken = default)
+    /// <summary>When set, answers <see cref="ReopenServerAsync"/> instead of <see cref="SignedInServers"/>, so a test can look on.</summary>
+    public Func<string, bool>? ReopenAnswer { get; set; }
+
+    public async Task<bool> ReopenServerAsync(string serverEntryId, string? serverId, CancellationToken cancellationToken = default)
     {
-        await Record($"reopen:{serverEntryId}");
-        return SignedInServers.Contains(serverEntryId);
+        await Record($"reopen:{serverEntryId}:{serverId ?? "unknown"}");
+        return ReopenAnswer?.Invoke(serverEntryId) ?? SignedInServers.Contains(serverEntryId);
     }
 
     public async Task SelectProfileAsync(string serverEntryId, string profileId, string? profileToken, CancellationToken cancellationToken = default)

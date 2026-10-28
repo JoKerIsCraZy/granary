@@ -307,7 +307,9 @@ title prepares or buffers. With Windows' animations off the mark stands still.
   found address is plain HTTP; sign-in's amber consent follows), and a chevron, a spinner while it connects; Cancel
   stops either way of connecting. A found server that matches a saved one, by id or address, is not offered. A typed
   address that is a saved server still signed in opens it again and asks who is watching, as the apps' server screens
-  do ("Opening Living room…"); a saved one without a session goes to sign-in as a new one does.
+  do ("Opening Living room…"), as long as it answers as the server it was saved as. A saved one without a session, or
+  one that cannot confirm it is the same server, goes to sign-in as a new one does; one that answers as another server
+  has its saved session forgotten first, without telling it, so the old tokens never reach it.
 - Sign in: the server's name, a refusal, the password form, then "Use your phone instead". As on the web, the QR code
   shows on "Show QR code" (at once when the server has no password sign-in), framed, with the address and the code
   below it; the page scrolls to it.

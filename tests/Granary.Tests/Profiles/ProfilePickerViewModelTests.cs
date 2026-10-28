@@ -433,16 +433,23 @@ public sealed class ProfilePickerViewModelTests
         var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         harness.Recorder.SelectGate = gate.Task;
 
+        var other = ScriptedSilo.Entry("srv2", new Uri("https://other.example"));
+        harness.Silo.On(HttpMethod.Get, ScriptedSilo.Url(ProfilesPath, other.BaseUri), ScriptedSilo.Json(HttpStatusCode.OK, KidWithoutPinJson));
+
         var selecting = harness.ViewModel.SelectCommand.ExecuteAsync(harness.Profile("p-owner"));
-        // The switch lands after the picker's own check, before the session applies the pick.
-        harness.Session.ActiveServer = ScriptedSilo.Entry("srv2", new Uri("https://other.example"));
+        // The switch lands after the picker's own check, before the session applies the pick, and says nothing.
+        harness.Session.ActiveServer = other;
         gate.SetResult();
         await selecting;
+        await (harness.ViewModel.LoadCommand.ExecutionTask ?? Task.CompletedTask);
 
         Assert.Empty(harness.Session.Calls);
         Assert.Null(harness.Session.ProfileId);
         Assert.Equal("", harness.ViewModel.Status);
         Assert.False(harness.ViewModel.IsSelecting);
+        // The picker shows the new server's profiles rather than a list it can no longer use.
+        Assert.Equal("https://other.example/api/v2/profiles", harness.Silo.Sent[^1].Uri.AbsoluteUri);
+        Assert.Single(harness.ViewModel.Profiles);
     }
 
     [Fact]
