@@ -38,6 +38,7 @@ public sealed class NavigationService : INavigationService
         [AppRoute.Title] = typeof(TitlePage),
         [AppRoute.RequestTitles] = typeof(RequestTitlesPage),
         [AppRoute.Admin] = typeof(AdminPage),
+        [AppRoute.CollectionEditor] = typeof(CollectionEditorPage),
     };
 
     private static readonly Dictionary<Type, AppRoute> Routes = Pages.Where(p => p.Key != AppRoute.Collection).ToDictionary(p => p.Value, p => p.Key);
@@ -72,6 +73,10 @@ public sealed class NavigationService : INavigationService
             _player?.Play(parameter);
             return;
         }
+        if (Holds(() => NavigateTo(route, parameter)))
+        {
+            return;
+        }
         CloseFullPlayer();
         if (_frame is null || (route == Current && Equals(parameter, CurrentParameter)))
         {
@@ -88,6 +93,10 @@ public sealed class NavigationService : INavigationService
     /// </summary>
     public void ShowSection(AppRoute route, object? parameter = null)
     {
+        if (Holds(() => ShowSection(route, parameter)))
+        {
+            return;
+        }
         CloseFullPlayer();
         if (_frame is null)
         {
@@ -129,7 +138,7 @@ public sealed class NavigationService : INavigationService
             LeavePlayer();
             return;
         }
-        if (_frame is not { CanGoBack: true } frame)
+        if (_frame is not { CanGoBack: true } frame || Holds(GoBack))
         {
             return;
         }
@@ -181,6 +190,30 @@ public sealed class NavigationService : INavigationService
         if (_player?.IsPlayerFull == true)
         {
             _player.ClosePlayer();
+        }
+    }
+
+    // A page with something to lose asks first (ILeaveGuard); the navigation goes on once it lets go.
+    private bool Holds(Action go)
+    {
+        if (_frame?.Content is not ILeaveGuard { AsksBeforeLeaving: true } guard)
+        {
+            return false;
+        }
+        _ = AskAsync(guard, go);
+        return true;
+    }
+
+    private async Task AskAsync(ILeaveGuard guard, Action go)
+    {
+        if (await guard.ConfirmLeaveAsync())
+        {
+            go();
+        }
+        else if (Current is { } current)
+        {
+            // The page stayed: the sidebar shows it again.
+            Navigated?.Invoke(this, current);
         }
     }
 

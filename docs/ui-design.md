@@ -163,8 +163,18 @@ View models build `MediaCard`s with the texts already worded; the controls only 
 - Collections (`CollectionsPage`, the web's `pages/Collections.tsx`): "Your collections" with its count ("Manual ·
   4 titles", a SHARED badge on one other profiles see), "Shared with me" by owner ("by Mara"), and "Server
   collections" with a pill per library (All first) and Load more, which the end of the grid presses by itself. A
-  collection opens on the list page with its name and "Collection Order"; the sidebar keeps Collections picked.
-  Making, editing, sharing and reordering collections come later.
+  collection opens on the list page with its name and "Collection Order"; the sidebar keeps Collections picked. The
+  red New collection at the title (and, with none yet, the dashed card) opens the collection editor
+  (`CollectionEditorPage`, the web's `CollectionEditor` for a personal Manual collection): "‹ Collections", the tags
+  (Manual, Shared, Not created yet), the name and "3 titles", Open and ⋯ Delete… once it exists; then cards for Name,
+  Description and Show only (watch state, content), Titles (search "Add a title" after a 250 ms pause with Add or
+  "In this collection"; the list ten at first with Show all, × with "Removed …" and Undo for 6 s, moved by drag or
+  Alt+Up/Down), and Where it shows (Show to other profiles, with who loses it when turned off, and Show on the
+  Collections tab). The save bar at the foot: "Not created yet" with Cancel and Create collection, or "Name and
+  description not saved · Titles are already saved." with Discard and Save. Titles save as they change; the rest at
+  the version it was read at, merged when it changed elsewhere, with Use theirs / Keep mine for a field changed in both
+  places. Leaving with something not saved asks "Discard unsaved changes?". The poster (Look) and "Rows that show it"
+  come later.
 - For You (`ForYouPage`, the web's `pages/Recommendations.tsx`): the title, "Personalized picks…" only when a row comes
   from the profile's history, the taste profile card on the right (top genres filled, favourite directors outlined),
   then a row per recommendation. A row's Explore all opens it in full (`RecommendationSectionPage`: name, "60 titles",

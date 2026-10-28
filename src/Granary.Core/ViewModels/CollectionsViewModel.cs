@@ -196,6 +196,10 @@ public sealed partial class CollectionsViewModel : ObservableObject
         }
     }
 
+    /// <summary>The editor for a new collection of the profile's own.</summary>
+    [RelayCommand]
+    private void NewCollection() => _navigation.NavigateTo(AppRoute.CollectionEditor, new CollectionEditorRouteParameter(null));
+
     /// <summary>Opens one of the profile's own or shared collections.</summary>
     [RelayCommand]
     private void Open(MediaCard? card)

@@ -33,6 +33,17 @@ internal sealed class RecordingNavigation : INavigationService
         Current = route;
     }
 
+    /// <summary>The sections shown, as the sidebar shows them.</summary>
+    public List<AppRoute> Sections { get; } = [];
+
+    public void ShowSection(AppRoute route, object? parameter = null)
+    {
+        _history.Clear();
+        Sections.Add(route);
+        Navigations.Add((route, parameter));
+        Current = route;
+    }
+
     public void ResetTo(AppRoute route, object? parameter = null)
     {
         _history.Clear();

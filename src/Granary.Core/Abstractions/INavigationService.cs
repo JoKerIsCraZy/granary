@@ -67,11 +67,17 @@ public enum AppRoute
 
     /// <summary>The server's administration, for an administrator; the parameter is an optional page (<c>AdminPages</c>).</summary>
     Admin,
+
+    /// <summary>A profile's own collection made or changed; the parameter is a <see cref="CollectionEditorRouteParameter"/>.</summary>
+    CollectionEditor,
 }
 
 /// <summary>Which row an "Explore all" grid lists: a Home row, or a library row when <see cref="LibraryId"/> is set.</summary>
 /// <param name="SectionType">The row's <c>section_type</c>; Continue Watching and Next Up list landscape cards.</param>
 public sealed record SectionRouteParameter(string SectionId, string Title, string? LibraryId = null, string? SectionType = null);
+
+/// <summary>The collection the editor changes; null makes a new one.</summary>
+public sealed record CollectionEditorRouteParameter(string? CollectionId);
 
 /// <summary>A collection whose titles a list shows in the collection's own order.</summary>
 /// <param name="Source"><c>user_collection</c> for a personal collection, <c>library_collection</c> for a server one.</param>
@@ -106,6 +112,12 @@ public interface INavigationService
     void ResetTo(AppRoute route, object? parameter = null);
 
     void GoBack();
+
+    /// <summary>
+    /// A sidebar section (Home, Collections, a library), as the apps' tabs: only Home stays under it, so Back from it
+    /// goes Home. Also where a page goes that replaces itself, as after its collection was deleted.
+    /// </summary>
+    void ShowSection(AppRoute route, object? parameter = null);
 
     /// <summary>Takes the player away once its playback has ended: the page it was played from shows again.</summary>
     void LeavePlayer();

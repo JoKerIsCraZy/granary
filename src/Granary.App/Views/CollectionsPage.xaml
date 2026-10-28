@@ -26,11 +26,25 @@
 
     <ScrollViewer x:Name="Scroller" XYFocusKeyboardNavigation="Enabled">
         <StackPanel Padding="48,32,48,48" Spacing="40">
-            <StackPanel Spacing="6">
-                <TextBlock Text="Collections" Style="{StaticResource SiloDisplayTextStyle}" AutomationProperties.HeadingLevel="Level1" />
-                <TextBlock Text="{x:Bind ViewModel.Subtitle, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}"
-                           Foreground="{StaticResource SiloMutedBrush}" TextWrapping="Wrap" />
-            </StackPanel>
+            <Grid ColumnSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Spacing="6">
+                    <TextBlock Text="Collections" Style="{StaticResource SiloDisplayTextStyle}" AutomationProperties.HeadingLevel="Level1" />
+                    <TextBlock Text="{x:Bind ViewModel.Subtitle, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}"
+                               Foreground="{StaticResource SiloMutedBrush}" TextWrapping="Wrap" />
+                </StackPanel>
+                <!-- The web's red New collection at the title's right. -->
+                <Button Grid.Column="1" Style="{StaticResource SiloPrimaryButtonStyle}" VerticalAlignment="Top" Command="{x:Bind ViewModel.NewCollectionCommand}"
+                        AutomationProperties.Name="New collection">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE710;" FontSize="12" />
+                        <TextBlock Text="New collection" />
+                    </StackPanel>
+                </Button>
+            </Grid>
 
             <ProgressRing IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay}"
                           Width="32" Height="32" Margin="0,48" HorizontalAlignment="Center" AutomationProperties.Name="Loading collections" />
@@ -55,8 +69,19 @@
                         <TextBlock Grid.Column="1" Text="Only you can change these" Style="{StaticResource SectionNoteStyle}"
                                    Visibility="{x:Bind ViewModel.HasOwn, Mode=OneWay}" />
                     </Grid>
-                    <TextBlock Text="You haven't made any collections yet." Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
-                               Visibility="{x:Bind ViewModel.IsOwnEmpty, Mode=OneWay}" />
+                    <!-- None yet: the web's dashed card that makes the first. -->
+                    <Button Width="150" Height="225" Padding="0" Background="Transparent" BorderThickness="0" CornerRadius="12" HorizontalAlignment="Left"
+                            HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
+                            Command="{x:Bind ViewModel.NewCollectionCommand}" Visibility="{x:Bind ViewModel.IsOwnEmpty, Mode=OneWay}"
+                            AutomationProperties.Name="New collection">
+                        <Grid>
+                            <Rectangle RadiusX="12" RadiusY="12" Stroke="{StaticResource SiloBorderBrush}" StrokeThickness="1.5" StrokeDashArray="4,3" />
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
+                                <FontIcon Glyph="&#xE710;" FontSize="16" Foreground="{StaticResource SiloMutedBrush}" />
+                                <TextBlock Text="New collection" FontSize="13" Foreground="{StaticResource SiloMutedBrush}" />
+                            </StackPanel>
+                        </Grid>
+                    </Button>
                     <StackPanel Orientation="Horizontal" Spacing="12" Visibility="{x:Bind ViewModel.HasOwnError, Mode=OneWay}">
                         <TextBlock Text="{x:Bind ViewModel.OwnErrorMessage, Mode=OneWay}" Style="{StaticResource SiloCaptionTextStyle}" VerticalAlignment="Center" />
                         <Button Content="Retry" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.LoadCommand}" />
