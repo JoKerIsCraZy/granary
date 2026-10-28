@@ -51,7 +51,7 @@ public sealed class CalendarViewModelTests
     {
         _harness.Answer(CalendarPath, Week);
         _harness.Answer("api/v2/profiles", CollectionPayloads.OneProfile);
-        _sidebar = new SidebarViewModel(_harness.Session, new ProfilesApi(_harness.Silo.Http), new CatalogApi(_harness.Silo.Http),
+        _sidebar = new SidebarViewModel(_harness.Session, new ProfilesApi(_harness.Silo.Http), _harness.Libraries(),
             _harness.Navigation, new ImmediateDispatcher(), _harness.Logs.For<SidebarViewModel>());
     }
 

@@ -3,6 +3,7 @@ using Granary.Core.Api;
 using Granary.Core.Api.Auth;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Profiles;
+using Granary.Core.Api.Settings;
 using Granary.Core.Auth;
 using Granary.Core.Servers;
 using Granary.Core.ViewModels;
@@ -23,16 +24,23 @@ public sealed class SidebarViewModelTests
     private Func<HttpResponseMessage> _libraries = () => FakeSiloServer.Json(200,
         """{"items":[{"id":"2","name":"Serien","type":"series","sort_order":2},{"id":"1","name":"Filme","type":"movies","sort_order":1}]}""");
 
+    // The profile's hidden libraries and order (ui.disabled_library_ids, ui.library_order): none by default.
+    private Func<HttpResponseMessage> _settings = () => FakeSiloServer.Json(200,
+        """{"items":[{"key":"ui.disabled_library_ids","value":null},{"key":"ui.library_order","value":null}],"revision":1}""");
+
     private SidebarViewModel Create()
     {
         var handler = new FakeHttpMessageHandler((request, _) =>
         {
             string path = request.RequestUri!.AbsolutePath;
             _requests.Add(path);
-            return Task.FromResult(path.EndsWith("/user/libraries", StringComparison.Ordinal) ? _libraries() : _profiles());
+            return Task.FromResult(path.EndsWith("/user/libraries", StringComparison.Ordinal) ? _libraries()
+                : path.EndsWith("/settings/values/effective", StringComparison.Ordinal) ? _settings()
+                : _profiles());
         });
         var http = new SiloHttp(new HttpClient(handler));
-        return new SidebarViewModel(_session, new ProfilesApi(http), new CatalogApi(http), _navigation, new ImmediateDispatcher(),
+        var libraries = new VisibleLibraries(new CatalogApi(http), new SettingsApi(http), _logs.For<VisibleLibraries>());
+        return new SidebarViewModel(_session, new ProfilesApi(http), libraries, _navigation, new ImmediateDispatcher(),
             _logs.For<SidebarViewModel>());
     }
 
@@ -61,6 +69,33 @@ public sealed class SidebarViewModelTests
     }
 
     [Fact]
+    public async Task TheProfilesHiddenLibraries_AreLeftOut_AndItsOrderKept()
+    {
+        Ready();
+        _libraries = () => FakeSiloServer.Json(200,
+            """{"items":[{"id":"1","name":"Filme","type":"movies","sort_order":1},{"id":"2","name":"Serien","type":"series","sort_order":2},{"id":"3","name":"Filme-4k","type":"movies","sort_order":3}]}""");
+        _settings = () => FakeSiloServer.Json(200,
+            """{"items":[{"key":"ui.disabled_library_ids","value":[2]},{"key":"ui.library_order","value":"[3,1]"}],"revision":1}""");
+        using var sidebar = Create();
+
+        await sidebar.RefreshAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal(["Filme-4k", "Filme"], sidebar.Libraries.Select(l => l.Name));
+    }
+
+    [Fact]
+    public async Task PreferencesThatFail_HideNoLibrary()
+    {
+        Ready();
+        _settings = () => FakeSiloServer.Problem(503, ProblemCodes.DependencyUnavailable);
+        using var sidebar = Create();
+
+        await sidebar.RefreshAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal(["Filme", "Serien"], sidebar.Libraries.Select(l => l.Name));
+    }
+
+    [Fact]
     public async Task FailedLibraries_LeaveTheListEmptyAndTryAgainLater()
     {
         Ready();
@@ -84,7 +119,8 @@ public sealed class SidebarViewModelTests
         await sidebar.RefreshAsync(TestContext.Current.CancellationToken);
         await sidebar.RefreshAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal(2, _requests.Count);
+        // The profile, its libraries and their preferences, once.
+        Assert.Equal(3, _requests.Count);
     }
 
     [Fact]
@@ -96,7 +132,7 @@ public sealed class SidebarViewModelTests
 
         _session.ProfileId = "8";
         _session.RaiseChanged();
-        await Auth.AuthPipeline.Eventually(() => _requests.Count == 4);
+        await Auth.AuthPipeline.Eventually(() => _requests.Count == 6);
 
         Assert.Null(sidebar.Profile);
         Assert.Equal("elena", sidebar.ProfileName);

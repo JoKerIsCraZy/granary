@@ -113,7 +113,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
 
 ## Layout
 
-- Sidebar (260 px): server name, Home, Search (`Ctrl+K`), "LIBRARIES" with the server's libraries, "DISCOVER" (For
+- Sidebar (260 px): server name, Home, Search (`Ctrl+K`), "LIBRARIES" with the libraries the profile browses (its hidden
+  ones left out, in its library order: the web's Settings → Libraries), "DISCOVER" (For
   You, Requests while the server takes them, Calendar, Notifications with the unread count in red), "YOUR STUFF" (Favorites, Watchlist, Collections,
   History; the web's Watch Party to come); Admin (an administrator's only, a shield), Settings and the profile menu at the bottom (the servers are in Settings → Servers). Favorites, Watchlist and History are one page (`PersonalListPage`, the web's `pages/Catalog.tsx` for those
   sources): the list's name, what it holds and its count, the media menu (All Media, Movies & Series, Movies, Series,

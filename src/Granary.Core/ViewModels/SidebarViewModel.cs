@@ -21,7 +21,7 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
 {
     private readonly ISessionManager _session;
     private readonly ProfilesApi _profiles;
-    private readonly CatalogApi _catalog;
+    private readonly VisibleLibraries _libraries;
     private readonly INavigationService _navigation;
     private readonly IUiDispatcher _dispatcher;
     private readonly ILogger<SidebarViewModel> _logger;
@@ -31,14 +31,14 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
     public SidebarViewModel(
         ISessionManager session,
         ProfilesApi profiles,
-        CatalogApi catalog,
+        VisibleLibraries libraries,
         INavigationService navigation,
         IUiDispatcher dispatcher,
         ILogger<SidebarViewModel> logger)
     {
         _session = session;
         _profiles = profiles;
-        _catalog = catalog;
+        _libraries = libraries;
         _navigation = navigation;
         _dispatcher = dispatcher;
         _logger = logger;
@@ -58,7 +58,7 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
 
     public string ProfileInitials => Profile?.Initials ?? ProfileItemViewModel.InitialsOf(ProfileName);
 
-    /// <summary>The profile's libraries in the server's order.</summary>
+    /// <summary>The libraries the profile browses: its hidden ones left out, in its order or else the server's.</summary>
     public ObservableCollection<SidebarLibrary> Libraries { get; } = [];
 
     /// <summary>The account administers the server: the sidebar offers Admin above Settings, as the web's menu does.</summary>
@@ -118,11 +118,10 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
     {
         try
         {
-            var collection = await _catalog.ListLibrariesAsync(server, cancellationToken);
+            var libraries = await _libraries.ListAsync(server, cancellationToken);
             if (generation == _generation)
             {
-                var ordered = collection.Items.OrderBy(l => l.SortOrder).ThenBy(l => l.Name, StringComparer.CurrentCultureIgnoreCase);
-                foreach (var library in ordered)
+                foreach (var library in libraries)
                 {
                     Libraries.Add(new SidebarLibrary(library.Id, library.Name, library.Type));
                 }

@@ -606,8 +606,13 @@ series/season card), `user_state { played, is_favorite, in_watchlist, not_intere
 ### 7.3 Libraries
 
 - `GET /api/v2/user/libraries` (`listUserLibraries`) → `{ "items": [{ "id", "name", "type", "sort_order", "poster_url"? }] }`.
-  `type` is free text (`movies`, `series`, `mixed`, …); sort by `sort_order`; hide the ids listed
-  in the profile setting `ui.disabled_library_ids`.
+  `type` is free text (`movies`, `series`, `mixed`, …); sort by `sort_order`. The libraries a profile browses are the
+  web's `useUserLibraries`: read with the profile settings `ui.disabled_library_ids` (left out) and `ui.library_order`
+  (those it names first, in its order, the rest after) in one `GET /api/v2/settings/values/effective?keys=…`. Both are
+  id arrays, or the older JSON string of one; keep whole numbers above 0, each once. The server drops hidden libraries
+  itself only for a profile with a library limit (`include_hidden=true` lists them, for the screen that unhides them).
+  Preferences that cannot be read hide nothing. The sidebar, the Calendar's libraries and a library's page use this
+  list; a hidden library's page is "not available". Server collections keep every library, as on the web.
 - Library landing rows: `GET /api/v2/library/{id}/sections` → `{ "sections": Section[] }` and
   `GET /api/v2/library/{id}/sections/{section_id}/items` → `Section`.
 - All items of a library: `GET /api/v2/catalog?source=query&library_id=<id>[&type=movie|series]`.

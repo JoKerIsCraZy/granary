@@ -67,6 +67,7 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<SystemApi>();
         services.AddTransient<AccountApi>();
         services.AddTransient<CatalogApi>();
+        services.AddTransient<VisibleLibraries>();
         services.AddTransient<WatchApi>();
         services.AddTransient<PlaybackApi>();
         services.AddTransient<PlaybackConnectionApi>();

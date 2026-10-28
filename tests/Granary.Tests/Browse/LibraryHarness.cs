@@ -2,6 +2,7 @@ using System.Net;
 using Granary.Core.Api.Auth;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
+using Granary.Core.Api.Settings;
 using Granary.Core.Auth;
 using Granary.Core.Playback;
 using Granary.Core.ViewModels;
@@ -24,6 +25,12 @@ internal sealed class LibraryHarness
 
     public const string LettersPath = "api/v2/catalog/letters";
 
+    public const string SettingsPath = "api/v2/settings/values/effective";
+
+    /// <summary>The profile hides no library and keeps the server's order.</summary>
+    public const string NoLibraryPreferences =
+        """{ "items": [{ "key": "ui.disabled_library_ids", "value": null }, { "key": "ui.library_order", "value": null }], "revision": 1 }""";
+
     public LibraryHarness()
     {
         Session.State = SessionState.Ready;
@@ -32,6 +39,7 @@ internal sealed class LibraryHarness
         Session.Account = new Account("1", "elena", "", "user", [], true, false, null);
         Answer("api/v2/images/capabilities", CatalogPayloads.ImageCapabilities);
         Answer("api/v2/user/libraries", LibraryPayloads.Libraries);
+        Answer(SettingsPath, NoLibraryPreferences);
         Answer("api/v2/shuffles/capabilities", LibraryPayloads.ShuffleAvailable);
         Answer("api/v2/library/1/sections", LibraryPayloads.Sections);
         Answer("api/v2/library/1/sections/recently_added/items", LibraryPayloads.RecentlyAddedItems);
@@ -68,9 +76,13 @@ internal sealed class LibraryHarness
     /// <summary>The bodies sent to the letter index, oldest first.</summary>
     public List<string> LetterBodies() => [.. Silo.SentTo(HttpMethod.Post, LettersPath).Select(r => r.Body ?? "")];
 
+    /// <summary>The libraries the profile browses, read through <see cref="Silo"/>.</summary>
+    public VisibleLibraries Libraries() => new(new CatalogApi(Silo.Http), new SettingsApi(Silo.Http), Logs.For<VisibleLibraries>());
+
     public LibraryViewModel Create() => new(
         Session,
         new CatalogApi(Silo.Http),
+        Libraries(),
         new LibraryPageApi(Silo.Http),
         new ImageParameterCache(new ImagesApi(Silo.Http), Logs.For<ImageParameterCache>()),
         Navigation,

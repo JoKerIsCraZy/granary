@@ -152,7 +152,7 @@
                         HorizontalAlignment="Center" VerticalAlignment="Center">
                 <TextBlock Text="This library is not available" Style="{StaticResource SiloRowTitleTextStyle}" HorizontalAlignment="Center"
                            AutomationProperties.HeadingLevel="Level2" />
-                <TextBlock Text="It may have been removed, or this profile can't see it." Style="{StaticResource SiloBodyTextStyle}"
+                <TextBlock Text="It may be hidden or removed, or this profile can't see it." Style="{StaticResource SiloBodyTextStyle}"
                            Foreground="{StaticResource SiloMutedBrush}" TextAlignment="Center" />
             </StackPanel>
             <StackPanel Visibility="{x:Bind ViewModel.HasError, Mode=OneWay}" Spacing="16" MaxWidth="480"

@@ -3,6 +3,7 @@ using Granary.Core.Api;
 using Granary.Core.Api.Auth;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Profiles;
+using Granary.Core.Api.Settings;
 using Granary.Core.Auth;
 using Granary.Core.Servers;
 using Granary.Core.ViewModels;
@@ -201,7 +202,8 @@ public sealed class SidebarLayoutTests : IDisposable
             : FakeSiloServer.Json(200, """{"items":[],"avatar_upload_enabled":false}""")));
         var http = new SiloHttp(new HttpClient(handler));
         _session.Account = new Account("1", "elena", "", "admin", [], true, false, null);
-        return new SidebarViewModel(_session, new ProfilesApi(http), new CatalogApi(http), new RecordingNavigation(), new ImmediateDispatcher(),
+        var libraries = new VisibleLibraries(new CatalogApi(http), new SettingsApi(http), _logs.For<VisibleLibraries>());
+        return new SidebarViewModel(_session, new ProfilesApi(http), libraries, new RecordingNavigation(), new ImmediateDispatcher(),
             _logs.For<SidebarViewModel>());
     }
 }

@@ -41,6 +41,19 @@ public sealed class LibraryViewModelTests
     }
 
     [Fact]
+    public async Task Activate_AHiddenLibrary_SaysItIsNotAvailable()
+    {
+        _harness.Answer(LibraryHarness.SettingsPath,
+            """{ "items": [{ "key": "ui.disabled_library_ids", "value": [1] }, { "key": "ui.library_order", "value": null }], "revision": 2 }""");
+        var library = _harness.Create();
+
+        await library.ActivateAsync("1");
+
+        Assert.Equal(LibraryLoadState.Unavailable, library.State);
+        Assert.Equal(0, _harness.Count("api/v2/library/1/sections"));
+    }
+
+    [Fact]
     public async Task Activate_WithoutAnId_SaysTheLibraryIsNotAvailable()
     {
         var library = _harness.Create();
