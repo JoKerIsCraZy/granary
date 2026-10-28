@@ -1,5 +1,4 @@
 using System.Net;
-using Granary.Core.Abstractions;
 using Granary.Core.Api.WatchParty;
 using Granary.Core.Auth;
 using Granary.Core.Playback;
@@ -20,7 +19,7 @@ public sealed class WatchPartyPanelTests : IAsyncDisposable
     private readonly FakeSessionManager _session = new() { State = SessionState.Ready, ActiveServer = ScriptedSilo.Server, ProfileId = "7" };
     private readonly LogSink _logs = new();
     private readonly List<FakeRealtimeSocket> _sockets = [];
-    private readonly RecordingNavigation _navigation = new();
+    private readonly FakeConfirmation _confirmation = new();
     private readonly WatchPartySession _party;
     private readonly List<PlaybackNotice> _said = [];
 
@@ -44,24 +43,29 @@ public sealed class WatchPartyPanelTests : IAsyncDisposable
         _silo.On(HttpMethod.Post, "api/v2/watch-together/join", ScriptedSilo.Json(HttpStatusCode.OK, WatchPartyPayloads.Answer(room)));
         await _party.JoinAsync("ABCD1234", TestContext.Current.CancellationToken);
         await ServerPlaybackFixture.Until(() => _sockets.Count == 1 && _party.IsConnected, "the room connection");
-        var panel = new WatchPartyPanelViewModel(_party, _navigation, _logs.For<WatchPartyPanelViewModel>());
+        var panel = new WatchPartyPanelViewModel(_party, _confirmation, _logs.For<WatchPartyPanelViewModel>());
         panel.Said += (_, notice) => _said.Add(notice);
         panel.Attach();
         return panel;
     }
 
     private static string Playing(string role = "host", string policy = "host_only", bool transport = true, int count = 2, string? invite = "/rooms/join?token=invite-secret",
-        string elena = "", string maya = "", long generation = 3) =>
+        string elena = "", string maya = "", long generation = 3, bool? manage = null) =>
         WatchPartyPayloads.Room("playing", "playing", generation: generation, revision: 1, role: role, selected: "movie:heat", policy: policy, transport: transport,
-            count: count, invite: invite, elena: elena, maya: maya);
+            count: count, invite: invite, elena: elena, maya: maya, manage: manage);
+
+    private static string Lobby(long generation) => WatchPartyPayloads.Room(generation: generation, revision: 1, selected: "movie:heat");
 
     private string LastSaid => _said.Count > 0 ? _said[^1].Message : "";
+
+    private int Deletes => _silo.Sent.Count(r => r.Method == HttpMethod.Delete);
 
     [Fact]
     public async Task TheHost_SeesTheCode_TheViewers_AndThatOnlyTheyControlPlayback()
     {
         var panel = await PanelAsync(Playing());
 
+        Assert.True(panel.IsShown);
         Assert.Equal("ABCD1234", panel.Code);
         Assert.Equal("2 viewers", panel.ViewersText);
         Assert.Equal("Only you control playback", panel.PolicyText);
@@ -90,9 +94,19 @@ public sealed class WatchPartyPanelTests : IAsyncDisposable
         Assert.Equal("Host controls playback", panel.PolicyText);
         Assert.False(panel.StopCommand.CanExecute(null));
         Assert.False(panel.TogglePolicyCommand.CanExecute(null));
+        Assert.False(panel.EndCommand.CanExecute(null));
 
         _sockets[0].Push(WatchPartyPayloads.Snapshot(Playing(role: "guest", policy: "guest_play_pause", transport: true, generation: 4)));
         await ServerPlaybackFixture.Until(() => panel.PolicyText == "You can pause & resume", "the guest's new policy");
+    }
+
+    [Fact]
+    public async Task TheHostButtons_FollowWhetherThisProfileManagesTheRoom()
+    {
+        var panel = await PanelAsync(Playing(manage: false));
+
+        Assert.False(panel.IsHost);
+        Assert.False(panel.EndCommand.CanExecute(null));
     }
 
     [Fact]
@@ -159,6 +173,25 @@ public sealed class WatchPartyPanelTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AnAnswerForARoomLeftMeanwhile_SaysNothing()
+    {
+        var panel = await PanelAsync(Playing());
+        var answer = new TaskCompletionSource();
+        _silo.On(HttpMethod.Patch, Room + "/policy", async () =>
+        {
+            await answer.Task;
+            return await ScriptedSilo.Json(HttpStatusCode.OK, WatchPartyPayloads.Answer(Playing(policy: "guest_play_pause", generation: 4)))();
+        });
+
+        var flipping = panel.TogglePolicyCommand.ExecuteAsync(null);
+        await _party.LeaveAsync();
+        answer.SetResult();
+        await flipping;
+
+        Assert.Empty(_said);
+    }
+
+    [Fact]
     public async Task Stop_StopsForEveryone_AndAFailureSaysWhatFailed()
     {
         var panel = await PanelAsync(Playing());
@@ -174,43 +207,137 @@ public sealed class WatchPartyPanelTests : IAsyncDisposable
         await panel.StopCommand.ExecuteAsync(null);
         Assert.Equal("Could not stop playback", LastSaid);
 
-        _silo.On(HttpMethod.Post, Room + "/playback/stop", ScriptedSilo.Json(HttpStatusCode.OK,
-            WatchPartyPayloads.Answer(WatchPartyPayloads.Room(generation: 4, revision: 1, selected: "movie:heat"))));
+        _said.Clear();
+        _silo.On(HttpMethod.Post, Room + "/playback/stop", ScriptedSilo.Json(HttpStatusCode.OK, WatchPartyPayloads.Answer(Lobby(4))));
         await panel.StopCommand.ExecuteAsync(null);
 
-        Assert.Equal("Stopped for everyone. The room is still open.", LastSaid);
+        // The player closes with the room's lobby: nothing is said where nobody would see it.
         Assert.False(_party.Room!.IsPlaying);
+        Assert.Empty(_said);
     }
 
     [Fact]
-    public async Task End_EndsTheRoomForEveryone_AndGoesToWatchParty()
+    public async Task End_AsksFirst_InTheWebsWords_AndEndsTheRoomOnlyWhenConfirmed()
+    {
+        var panel = await PanelAsync(Playing());
+        _silo.On(HttpMethod.Delete, Room, ScriptedSilo.NoContent());
+        _confirmation.Answer = false;
+
+        await panel.EndCommand.ExecuteAsync(null);
+
+        Assert.Equal([("End watch party?", "End the watch party for everyone?", "End Party")], _confirmation.Asked);
+        Assert.Equal(0, Deletes);
+        Assert.True(_party.IsInRoom);
+
+        _confirmation.Answer = true;
+        await panel.EndCommand.ExecuteAsync(null);
+
+        Assert.Equal(1, Deletes);
+        Assert.False(_party.IsInRoom);
+        Assert.False(panel.IsShown);
+    }
+
+    [Fact]
+    public async Task AnEndThatFails_SaysSo_AndTheRoomGoesOn()
     {
         var panel = await PanelAsync(Playing());
         _silo.On(HttpMethod.Delete, Room, ScriptedSilo.Problem(500, "internal"));
 
-        await panel.EndRoomAsync();
+        await panel.EndCommand.ExecuteAsync(null);
 
         Assert.Equal("Failed to end room", LastSaid);
         Assert.True(_party.IsInRoom);
-        Assert.DoesNotContain(_navigation.Navigations, n => n.Route == AppRoute.WatchParty);
-
-        _silo.On(HttpMethod.Delete, Room, ScriptedSilo.NoContent());
-        await panel.EndRoomAsync();
-
-        Assert.False(_party.IsInRoom);
-        Assert.Equal(AppRoute.WatchParty, _navigation.Navigations[^1].Route);
+        Assert.True(panel.EndCommand.CanExecute(null));
     }
 
     [Fact]
-    public async Task ADetachedPanel_NoLongerFollowsTheRoom()
+    public async Task ARoomGoneWhileEndWasAsked_IsNotEnded()
+    {
+        var panel = await PanelAsync(Playing());
+        _silo.On(HttpMethod.Delete, Room, ScriptedSilo.NoContent());
+        _confirmation.WhileAsking = () => _party.LeaveAsync();
+
+        await panel.EndCommand.ExecuteAsync(null);
+
+        Assert.Equal(0, Deletes);
+        Assert.Empty(_said);
+    }
+
+    [Fact]
+    public async Task APanelPutAwayWhileEndWasAsked_EndsNothing()
+    {
+        var panel = await PanelAsync(Playing());
+        _silo.On(HttpMethod.Delete, Room, ScriptedSilo.NoContent());
+        _confirmation.WhileAsking = () =>
+        {
+            panel.Detach();
+            return Task.CompletedTask;
+        };
+
+        await panel.EndCommand.ExecuteAsync(null);
+
+        Assert.Equal(0, Deletes);
+        Assert.True(_party.IsInRoom);
+    }
+
+    [Fact]
+    public async Task ACallStillRunning_KeepsTheButtonsWaiting_AcrossANewTitle()
+    {
+        var panel = await PanelAsync(Playing());
+        var answer = new TaskCompletionSource();
+        _silo.On(HttpMethod.Patch, Room + "/policy", async () =>
+        {
+            await answer.Task;
+            return await ScriptedSilo.Json(HttpStatusCode.OK, WatchPartyPayloads.Answer(Playing(policy: "guest_play_pause", generation: 4)))();
+        });
+
+        var flipping = panel.TogglePolicyCommand.ExecuteAsync(null);
+        Assert.True(panel.IsBusy);
+        panel.Detach();
+        panel.Attach();
+
+        Assert.True(panel.IsBusy);
+        Assert.False(panel.StopCommand.CanExecute(null));
+        Assert.False(panel.EndCommand.CanExecute(null));
+
+        answer.SetResult();
+        await flipping;
+
+        Assert.False(panel.IsBusy);
+        Assert.True(panel.StopCommand.CanExecute(null));
+        // Asked under the title before: its answer is not said over the next one.
+        Assert.Empty(_said);
+    }
+
+    [Fact]
+    public async Task ADetachedPanel_NoLongerFollowsTheRoom_AndAttachedAgain_ShowsItAsItIs()
     {
         var panel = await PanelAsync(Playing());
         panel.Detach();
+        int changes = 0;
+        panel.PropertyChanged += (_, _) => changes++;
 
         _sockets[0].Push(WatchPartyPayloads.Snapshot(Playing(count: 3, generation: 4)));
         await ServerPlaybackFixture.Until(() => _party.Room?.MemberCount == 3, "the new snapshot");
 
+        Assert.Equal(0, changes);
+        Assert.False(panel.IsShown);
         Assert.Equal("2 viewers", panel.ViewersText);
+
+        panel.Attach();
+
+        Assert.True(panel.IsShown);
+        Assert.Equal("3 viewers", panel.ViewersText);
+    }
+
+    [Fact]
+    public async Task ThePanel_ShowsOnlyWhileTheRoomLasts()
+    {
+        var panel = await PanelAsync(Playing());
+
+        await _party.LeaveAsync();
+
+        Assert.False(panel.IsShown);
     }
 
     public async ValueTask DisposeAsync() => await _party.LeaveAsync();

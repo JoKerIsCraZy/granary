@@ -202,20 +202,24 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
     public Task StartAsync() => HostAsync((server, id) => _api.StartAsync(server, id));
 
     /// <summary>The host stops playback for everyone and brings the room back to its lobby.</summary>
-    public Task StopAsync() => HostAsync((server, id) => _api.StopAsync(server, id));
+    /// <returns>True when the room's answer was taken; false when this device was in no room, or left it meanwhile.</returns>
+    public Task<bool> StopAsync() => HostAsync((server, id) => _api.StopAsync(server, id));
 
-    public Task SetGuestsCanPauseAsync(bool allowed) => HostAsync((server, id) => _api.SetPolicyAsync(server, id, allowed));
+    /// <returns>True when the room's answer was taken; false when this device was in no room, or left it meanwhile.</returns>
+    public Task<bool> SetGuestsCanPauseAsync(bool allowed) => HostAsync((server, id) => _api.SetPolicyAsync(server, id, allowed));
 
     /// <summary>The host ends the room for everyone, and leaves it.</summary>
-    public async Task EndRoomAsync()
+    /// <returns>True when a room ended; false when this device was in none.</returns>
+    public async Task<bool> EndRoomAsync()
     {
         if (Room is not { } room)
         {
-            return;
+            return false;
         }
         await _api.EndAsync(Server(), room.RoomId);
         MarkEnded(room);
         await LeaveAsync();
+        return true;
     }
 
     /// <summary>Leaves the room on this device: the socket closes, and nothing of the room stays.</summary>
@@ -252,21 +256,23 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
     public Task<bool> SendAsync(string frame) =>
         _connection is { } connection && IsConnected ? connection.SendAsync(frame) : Task.FromResult(false);
 
-    private async Task HostAsync(Func<Uri, string, Task<WatchPartyRoomResponse>> operation)
+    // True when the answer was taken.
+    private async Task<bool> HostAsync(Func<Uri, string, Task<WatchPartyRoomResponse>> operation)
     {
         if (Room is not { } room)
         {
-            return;
+            return false;
         }
         long generation = _generation;
         var answer = await operation(Server(), room.RoomId);
         // Left (or another profile) meanwhile: the answer is about a room this device is no longer in.
         if (generation != _generation || _connection is null)
         {
-            return;
+            return false;
         }
         _roomToken = answer.RoomAccessToken;
         Show(answer.Room);
+        return true;
     }
 
     private void Stale(long generation)

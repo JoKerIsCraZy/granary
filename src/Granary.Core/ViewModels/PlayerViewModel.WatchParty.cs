@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using Granary.Core.Abstractions;
 using Granary.Core.Api.WatchParty;
 using Granary.Core.Playback;
 using Granary.Core.ViewModels.WatchParty;
@@ -26,13 +27,13 @@ public sealed partial class PlayerViewModel
     /// <summary>The Watch Party panel, while <see cref="IsWatchParty"/>; null in an app without Watch Party.</summary>
     public WatchPartyPanelViewModel? Party { get; }
 
-    private WatchPartyPanelViewModel? InitializeWatchParty()
+    private WatchPartyPanelViewModel? InitializeWatchParty(IConfirmation? confirmation)
     {
         if (_watchParty is null)
         {
             return null;
         }
-        var panel = new WatchPartyPanelViewModel(_watchParty, _navigation, _logger);
+        var panel = new WatchPartyPanelViewModel(_watchParty, confirmation, _logger);
         panel.Said += (_, notice) => ShowPartyNotice(notice);
         return panel;
     }
@@ -123,8 +124,14 @@ public sealed partial class PlayerViewModel
             return;
         }
         _logger.LogInformation("The Watch Party left the title; the player closes");
+        // The host ended the room from the panel: on to Watch Party, as the room page's End goes. Only here, once.
+        bool ended = party.Room is null && Party?.IsEndingRoom == true;
         Leave();
         _navigation.LeavePlayer();
+        if (ended)
+        {
+            _navigation.NavigateTo(AppRoute.WatchParty);
+        }
     }
 
     /// <summary>The player as the room's commands see it.</summary>

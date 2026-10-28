@@ -56,6 +56,7 @@ public sealed partial class PlayerPage : Page
         InitializeSubtitlePanels();
         InitializeDock();
         InitializeNotices();
+        InitializePartyPanel();
         RegisterPropertyChangedCallback(IsMiniViewProperty, (_, _) =>
         {
             ShowNextUpScreen();
@@ -132,6 +133,7 @@ public sealed partial class PlayerPage : Page
         StopInput();
         StopAutoHide();
         StopSubtitlePanels();
+        StopPartyPanel();
         ViewModel.Dispose();
     }
 

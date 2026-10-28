@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using Granary.Core.Abstractions;
 using Granary.Core.Api.Playback;
 using Granary.Core.Api.WatchParty;
 using Granary.Core.Auth;
@@ -25,6 +26,7 @@ public sealed class PlayerViewModelWatchPartyTests : IAsyncDisposable
     private readonly ManualTimeProvider _time = new();
     private readonly RecordingNavigation _navigation = new();
     private readonly List<FakeServerPlayback> _playbacks = [];
+    private readonly FakeConfirmation _confirmation = new();
     private readonly WatchPartySession _party;
 
     public PlayerViewModelWatchPartyTests()
@@ -67,7 +69,7 @@ public sealed class PlayerViewModelWatchPartyTests : IAsyncDisposable
             };
             _playbacks.Add(playback);
             return playback;
-        }, new PlaybackStops(), _time, watchParty: _party);
+        }, new PlaybackStops(), _time, watchParty: _party, confirmation: _confirmation);
         await viewModel.StartAsync(PlayRequest.WatchParty("movie:heat", "77", 1));
         Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));
         _engine.RaiseState(new PlaybackSnapshot(true, false, TimeSpan.FromSeconds(30), TimeSpan.FromHours(2), null, HasStarted: true));
@@ -194,6 +196,49 @@ public sealed class PlayerViewModelWatchPartyTests : IAsyncDisposable
         await ServerPlaybackFixture.Until(() => _party.Room?.MemberCount == 3, "the new snapshot");
 
         Assert.Equal("2 viewers", viewModel.Party!.ViewersText);
+        Assert.False(viewModel.Party.IsShown);
+    }
+
+    [Fact]
+    public async Task StopFromThePanel_ClosesThePlayer_BackToTheRoom()
+    {
+        var viewModel = await PlayingAsync();
+        _silo.On(HttpMethod.Post, Room + "/playback/stop", ScriptedSilo.Json(HttpStatusCode.OK,
+            WatchPartyPayloads.Answer(WatchPartyPayloads.Room(generation: 4, revision: 1, selected: "movie:heat"))));
+
+        await viewModel.Party!.StopCommand.ExecuteAsync(null);
+
+        Assert.Equal(1, _navigation.PlayerLeaves);
+        Assert.Empty(_navigation.Navigations);
+        Assert.Equal(1, Playback.Stops);
+        Assert.True(_party.IsInRoom);
+    }
+
+    [Fact]
+    public async Task EndFromThePanel_AsksFirst_ThenClosesThePlayer_AndGoesToWatchPartyOnce()
+    {
+        var viewModel = await PlayingAsync();
+        _silo.On(HttpMethod.Delete, Room, ScriptedSilo.NoContent());
+
+        await viewModel.Party!.EndCommand.ExecuteAsync(null);
+
+        Assert.Single(_confirmation.Asked);
+        Assert.False(_party.IsInRoom);
+        Assert.Equal(1, _navigation.PlayerLeaves);
+        Assert.Equal([AppRoute.WatchParty], _navigation.Navigations.Select(n => n.Route));
+        Assert.Equal(1, Playback.Stops);
+    }
+
+    [Fact]
+    public async Task AFailedEnd_KeepsThePlayer_AndSaysSo()
+    {
+        var viewModel = await PlayingAsync();
+        _silo.On(HttpMethod.Delete, Room, ScriptedSilo.Problem(500, "internal"));
+
+        await viewModel.Party!.EndCommand.ExecuteAsync(null);
+
+        Assert.Equal(0, _navigation.PlayerLeaves);
+        Assert.Equal(("Watch Party", "Failed to end room", true), (viewModel.NoticeTitle, viewModel.NoticeMessage, viewModel.IsNoticeWarning));
     }
 
     public async ValueTask DisposeAsync() => await _party.LeaveAsync();

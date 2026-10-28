@@ -101,7 +101,7 @@ public sealed partial class PlayerPage
 
     private bool IsPointerOverControls() =>
         PointerInPage() is { } point && (Contains(BottomBar, point) || Contains(ExitButton, point) || Contains(MinimizeButton, point)
-            || (PartyPanel.Visibility == Visibility.Visible && Contains(PartyPanel, point))
+            || (PartyPanel is { Visibility: Visibility.Visible, IsHitTestVisible: true } && Contains(PartyPanel, point))
             || (IsMiniView && (Contains(MiniPlayPauseButton, point) || Contains(LeaveMiniViewButton, point))));
 
     private bool Contains(FrameworkElement element, Point point) =>
@@ -129,8 +129,9 @@ public sealed partial class PlayerPage
     private void SetControlsVisible(bool visible)
     {
         _areControlsVisible = visible;
-        TopChrome.Opacity = BottomChrome.Opacity = MiniChrome.Opacity = PartyPanel.Opacity = visible ? 1 : 0;
-        TopChrome.IsHitTestVisible = BottomChrome.IsHitTestVisible = MiniChrome.IsHitTestVisible = PartyPanel.IsHitTestVisible = visible;
+        TopChrome.Opacity = BottomChrome.Opacity = MiniChrome.Opacity = visible ? 1 : 0;
+        TopChrome.IsHitTestVisible = BottomChrome.IsHitTestVisible = MiniChrome.IsHitTestVisible = visible;
+        ShowPartyPanel(visible);
         TopChrome.Translation = visible ? Vector3.Zero : new Vector3(0, -ChromeSlide, 0);
         BottomChrome.Translation = visible ? Vector3.Zero : new Vector3(0, ChromeSlide, 0);
         LiftSubtitles();

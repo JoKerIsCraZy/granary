@@ -603,14 +603,14 @@
         </Border>
 
         <!--
-            The web player's Watch Party panel (WatchTogetherPanel.tsx), under Exit on the right: the connection, the room
-            code and how many watch, who controls playback, the viewers, and the host's actions. It fades with the controls
-            (PlayerPage.WatchParty.cs).
+            The web player's Watch Party panel (WatchTogetherPanel.tsx), under Exit on the right, while the room lasts: the
+            connection, the room code and how many watch, who controls playback, the viewers, and the host's actions. It
+            fades with the controls (PlayerPage.WatchParty.cs).
         -->
         <Border x:Name="PartyPanel" Width="224" HorizontalAlignment="Right" VerticalAlignment="Top" Padding="12" CornerRadius="12"
                 Background="#CC000000" BorderBrush="#1AFFFFFF" BorderThickness="1"
                 Margin="{x:Bind PartyPanelMargin(IsFullScreen), Mode=OneWay}"
-                Visibility="{x:Bind ShowsInWindow(ViewModel.IsWatchParty, IsCompact), Mode=OneWay}">
+                Visibility="{x:Bind ShowsInWindow(ViewModel.Party.IsShown, IsCompact), Mode=OneWay, FallbackValue=Collapsed}">
             <Border.Resources>
                 <!-- The web's 10 px label, upper case and spaced, at 60 % white. -->
                 <Style x:Key="PartyLabelStyle" TargetType="TextBlock">
@@ -670,20 +670,21 @@
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <Button Style="{StaticResource SiloPlayerPanelButtonStyle}" Click="OnPartyInviteClick" AutomationProperties.Name="Copy invite link"
-                                VerticalAlignment="Center">
+                        <Button x:Name="PartyInviteButton" Style="{StaticResource SiloPlayerPanelButtonStyle}" Click="OnPartyInviteClick"
+                                AutomationProperties.Name="Copy invite link" VerticalAlignment="Center">
                             <TextBlock Text="Invite" />
                         </Button>
-                        <Button Grid.Column="1" Style="{StaticResource SiloPlayerPanelButtonStyle}" HorizontalAlignment="Left" VerticalAlignment="Center"
-                                Command="{x:Bind ViewModel.Party.TogglePolicyCommand}">
+                        <Button x:Name="PartyPolicyButton" Grid.Column="1" Style="{StaticResource SiloPlayerPanelButtonStyle}" HorizontalAlignment="Left"
+                                VerticalAlignment="Center" Command="{x:Bind ViewModel.Party.TogglePolicyCommand}">
                             <TextBlock Text="{x:Bind ViewModel.Party.PolicyButtonText, Mode=OneWay}" TextWrapping="Wrap" TextAlignment="Center" />
                         </Button>
-                        <Button Grid.Column="2" Style="{StaticResource SiloPlayerPanelButtonStyle}" VerticalAlignment="Center"
+                        <Button x:Name="PartyStopButton" Grid.Column="2" Style="{StaticResource SiloPlayerPanelButtonStyle}" VerticalAlignment="Center"
                                 Command="{x:Bind ViewModel.Party.StopCommand}"
                                 ToolTipService.ToolTip="Stop for everyone and go back to the room to pick something else">
                             <TextBlock Text="Stop" />
                         </Button>
-                        <Button Grid.Column="3" Style="{StaticResource SiloPlayerPanelDangerButtonStyle}" VerticalAlignment="Center" Click="OnPartyEndClick">
+                        <Button x:Name="PartyEndButton" Grid.Column="3" Style="{StaticResource SiloPlayerPanelDangerButtonStyle}" VerticalAlignment="Center"
+                                Command="{x:Bind ViewModel.Party.EndCommand}">
                             <TextBlock Text="End" />
                         </Button>
                     </Grid>

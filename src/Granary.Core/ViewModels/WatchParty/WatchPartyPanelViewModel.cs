@@ -15,21 +15,26 @@ namespace Granary.Core.ViewModels.WatchParty;
 /// The Watch Party panel over the player, as the web's (<c>player/components/WatchTogetherPanel.tsx</c>): the connection,
 /// the room code and how many watch, who controls playback, each viewer with what their player is doing, and for the
 /// host Invite, Allow Pause or Host Only, Stop and End. It acts through the room the app is in
-/// (<see cref="WatchPartySession"/>), as the room page does, and says what happened in the web's toast words.
+/// (<see cref="WatchPartySession"/>), as the room page does, and says what happened in the web's toast words while the
+/// player is there to show it: Stop and End close the player, the room's lobby or Watch Party then shows what they did.
 /// </summary>
 public sealed partial class WatchPartyPanelViewModel : ObservableObject
 {
     private const string Title = "Watch Party";
 
     private readonly WatchPartySession _party;
-    private readonly INavigationService _navigation;
+    private readonly IConfirmation? _confirmation;
     private readonly ILogger _logger;
     private bool _attached;
+    // Counts the times the panel was shown for a title: what a call made under one says is not said over the next.
+    private long _attachment;
+    // The host's calls on their way: each keeps the buttons waiting until its own answer is back.
+    private int _calls;
 
-    public WatchPartyPanelViewModel(WatchPartySession party, INavigationService navigation, ILogger logger)
+    public WatchPartyPanelViewModel(WatchPartySession party, IConfirmation? confirmation, ILogger logger)
     {
         _party = party;
-        _navigation = navigation;
+        _confirmation = confirmation;
         _logger = logger;
     }
 
@@ -40,15 +45,21 @@ public sealed partial class WatchPartyPanelViewModel : ObservableObject
     [ObservableProperty]
     public partial WatchPartyRoom? Room { get; private set; }
 
-    [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(TogglePolicyCommand), nameof(StopCommand))]
-    public partial bool IsBusy { get; private set; }
-
     public ObservableCollection<WatchPartyViewerRow> Viewers { get; } = [];
+
+    /// <summary>A host's call is on its way.</summary>
+    public bool IsBusy => _calls > 0;
+
+    /// <summary>The host ended the room from here and this device is leaving it: the player goes on to Watch Party.</summary>
+    internal bool IsEndingRoom { get; private set; }
+
+    /// <summary>The panel shows while the player plays the room's title and the room lasts, as on the web.</summary>
+    public bool IsShown => _attached && Room is not null && _party.End is null;
 
     public bool HasViewers => Viewers.Count > 0;
 
-    public bool IsHost => Room?.IsHost == true;
+    /// <summary>This profile may manage the room (the web's <c>self_can_manage_room</c>): the host's buttons show.</summary>
+    public bool IsHost => Room?.SelfCanManageRoom == true;
 
     /// <summary>The room's code, "..." until there is one.</summary>
     public string Code => Room?.Code is { Length: > 0 } code ? code : "...";
@@ -60,8 +71,8 @@ public sealed partial class WatchPartyPanelViewModel : ObservableObject
     public string PolicyText => Room switch
     {
         null => "Syncing room state",
-        { IsHost: true, GuestsCanPause: true } => "Guests can pause & resume",
-        { IsHost: true } => "Only you control playback",
+        { SelfCanManageRoom: true, GuestsCanPause: true } => "Guests can pause & resume",
+        { SelfCanManageRoom: true } => "Only you control playback",
         { SelfCanControlTransport: true } => "You can pause & resume",
         _ => "Host controls playback",
     };
@@ -88,10 +99,12 @@ public sealed partial class WatchPartyPanelViewModel : ObservableObject
             return;
         }
         _attached = true;
+        _attachment++;
         _party.PropertyChanged += OnPartyChanged;
         Show();
     }
 
+    /// <summary>Lets go of the room. A call still on its way keeps its guard until its answer is back.</summary>
     public void Detach()
     {
         if (!_attached)
@@ -100,7 +113,7 @@ public sealed partial class WatchPartyPanelViewModel : ObservableObject
         }
         _attached = false;
         _party.PropertyChanged -= OnPartyChanged;
-        IsBusy = false;
+        OnPropertyChanged(nameof(IsShown));
     }
 
     /// <summary>
@@ -111,16 +124,16 @@ public sealed partial class WatchPartyPanelViewModel : ObservableObject
         ArgumentNullException.ThrowIfNull(copy);
         if (_party.InviteLink is not { } link)
         {
-            Say("Invite link is not ready yet.");
+            Say("Invite link is not ready yet.", _attachment);
             return;
         }
         if (copy(link.AbsoluteUri))
         {
-            Say($"Invite copied. Room code {Room?.Code}".Trim());
+            Say($"Invite copied. Room code {Room?.Code}".Trim(), _attachment);
         }
         else
         {
-            Say("Failed to copy invite link", warning: true);
+            Say("Failed to copy invite link", _attachment, warning: true);
         }
     }
 
@@ -128,53 +141,87 @@ public sealed partial class WatchPartyPanelViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanAct))]
     private async Task TogglePolicyAsync()
     {
-        if (await HostAsync(() => _party.SetGuestsCanPauseAsync(Room?.GuestsCanPause != true), "Failed to update room"))
+        long attachment = _attachment;
+        bool allow = Room?.GuestsCanPause != true;
+        if (await HostAsync(() => _party.SetGuestsCanPauseAsync(allow), "Failed to update room", attachment))
         {
-            Say(_party.Room?.GuestsCanPause == true ? "Guests can now pause and resume" : "Room is now host controlled");
+            Say(_party.Room?.GuestsCanPause == true ? "Guests can now pause and resume" : "Room is now host controlled", attachment);
         }
     }
 
-    /// <summary>Stops for everyone; the room stays open and everyone goes back to it to pick something else.</summary>
+    /// <summary>
+    /// Stops for everyone; the room stays open and everyone goes back to it to pick something else. The player closes
+    /// with the room's lobby, so only a failure is said here.
+    /// </summary>
     [RelayCommand(CanExecute = nameof(CanAct))]
-    private async Task StopAsync()
-    {
-        if (await HostAsync(_party.StopAsync, "Could not stop playback"))
-        {
-            Say("Stopped for everyone. The room is still open.");
-        }
-    }
+    private Task StopAsync() => HostAsync(_party.StopAsync, "Could not stop playback", _attachment);
 
-    /// <summary>Ends the room for everyone (the page asked first) and goes to Watch Party.</summary>
-    public async Task EndRoomAsync()
+    /// <summary>
+    /// Ends the room for everyone once the host confirms, in the web's words (<c>EndWatchPartyDialog</c>). The player then
+    /// closes and goes on to Watch Party; only a failure is said here.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanAct))]
+    private async Task EndAsync()
     {
-        if (await HostAsync(_party.EndRoomAsync, "Failed to end room"))
+        if (_confirmation is null || Room is not { } room)
         {
-            Say("Room ended");
-            _navigation.NavigateTo(AppRoute.WatchParty);
+            return;
+        }
+        long attachment = _attachment;
+        if (!await _confirmation.AskAsync("End watch party?", "End the watch party for everyone?", "End Party"))
+        {
+            return;
+        }
+        // Asked again once answered: the player may have closed, the room stopped or ended, or another call started.
+        if (attachment != _attachment || !_attached || !CanAct() || _party.Room?.RoomId != room.RoomId || !_party.IsInRoom)
+        {
+            return;
+        }
+        IsEndingRoom = true;
+        try
+        {
+            await HostAsync(_party.EndRoomAsync, "Failed to end room", attachment);
+        }
+        finally
+        {
+            IsEndingRoom = false;
         }
     }
 
     private bool CanAct() => !IsBusy && IsHost;
 
-    // True when the room took it.
-    private async Task<bool> HostAsync(Func<Task> action, string failure)
+    // True when the room took the call.
+    private async Task<bool> HostAsync(Func<Task<bool>> action, string failure, long attachment)
     {
-        IsBusy = true;
+        Count(1);
         try
         {
-            await action();
-            return true;
+            return await action();
         }
         catch (Exception ex) when (LibraryErrors.IsExpected(ex) || ex is InvalidOperationException)
         {
             _logger.LogWarning(ex, "{Failure}", failure);
-            Say(Failed(failure, ex), warning: true);
+            Say(Failed(failure, ex), attachment, warning: true);
             return false;
         }
         finally
         {
-            IsBusy = false;
+            Count(-1);
         }
+    }
+
+    private void Count(int change)
+    {
+        _calls += change;
+        OnPropertyChanged(nameof(IsBusy));
+        NotifyCommands();
+    }
+
+    private void NotifyCommands()
+    {
+        TogglePolicyCommand.NotifyCanExecuteChanged();
+        StopCommand.NotifyCanExecuteChanged();
+        EndCommand.NotifyCanExecuteChanged();
     }
 
     // The web's words for what failed; a server out of reach or busy says so too.
@@ -185,10 +232,10 @@ public sealed partial class WatchPartyPanelViewModel : ObservableObject
         _ => failure,
     };
 
-    // Said only while the player shows the panel: a player that left has nowhere to say it.
-    private void Say(string text, bool warning = false)
+    // Said only while the panel shows for the title the call was made under.
+    private void Say(string text, long attachment, bool warning = false)
     {
-        if (_attached)
+        if (_attached && attachment == _attachment)
         {
             Said?.Invoke(this, new PlaybackNotice(Title, text, warning));
         }
@@ -210,13 +257,12 @@ public sealed partial class WatchPartyPanelViewModel : ObservableObject
         {
             OnPropertyChanged(name);
         }
-        TogglePolicyCommand.NotifyCanExecuteChanged();
-        StopCommand.NotifyCanExecuteChanged();
+        NotifyCommands();
     }
 
     private static readonly string[] RoomProperties =
     [
-        nameof(IsHost), nameof(Code), nameof(ViewersText), nameof(PolicyText), nameof(PolicyButtonText), nameof(ConnectionState),
+        nameof(IsShown), nameof(IsHost), nameof(Code), nameof(ViewersText), nameof(PolicyText), nameof(PolicyButtonText), nameof(ConnectionState),
         nameof(ConnectionText),
     ];
 

@@ -1,47 +1,54 @@
+using System.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using Granary.App.Services;
 using Granary.Core.WatchParty;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 
 namespace Granary.App.Views;
 
-// The Watch Party panel (PartyPanel), as the web player's WatchTogetherPanel: Invite copies the link, End asks first in the
-// web's words. What either did shows as the player's notice.
+// The Watch Party panel (PartyPanel), as the web player's WatchTogetherPanel: Invite copies the link, End asks first
+// (the view model, through IConfirmation). What they did shows as the player's notice. Faded, its buttons leave the tab
+// order with it.
 public sealed partial class PlayerPage
 {
+    private void InitializePartyPanel()
+    {
+        if (ViewModel.Party is { } party)
+        {
+            party.EndCommand.PropertyChanged += OnPartyEndChanged;
+        }
+    }
+
+    private void StopPartyPanel()
+    {
+        if (ViewModel.Party is { } party)
+        {
+            party.EndCommand.PropertyChanged -= OnPartyEndChanged;
+        }
+    }
+
     private void OnPartyInviteClick(object sender, RoutedEventArgs e) => ViewModel.Party?.CopyInvite(RoomClipboard.Copy);
 
-    private async void OnPartyEndClick(object sender, RoutedEventArgs e)
+    // The question gives focus back to End when it closes: the page takes it, or a focused End would hold the controls
+    // up for good.
+    private void OnPartyEndChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (ViewModel.Party is not { } party)
+        if (e.PropertyName == nameof(IAsyncRelayCommand.IsRunning) && ViewModel.Party?.EndCommand.IsRunning == false
+            && XamlRoot is { } root && FocusManager.GetFocusedElement(root) is DependencyObject focused && IsWithin(focused, PartyPanel))
         {
-            return;
+            Focus(FocusState.Programmatic);
         }
-        // The web's EndWatchPartyDialog.
-        var dialog = new ContentDialog
-        {
-            XamlRoot = XamlRoot,
-            Title = "End watch party?",
-            Content = new TextBlock { Text = "End the watch party for everyone?", TextWrapping = TextWrapping.Wrap },
-            PrimaryButtonText = "End Party",
-            CloseButtonText = "Cancel",
-            DefaultButton = ContentDialogButton.Close,
-        };
-        try
-        {
-            if (await dialog.ShowAsync() == ContentDialogResult.Primary)
-            {
-                await party.EndRoomAsync();
-            }
-        }
-        catch (Exception ex)
-        {
-            // async void: nothing may escape. A refused end is the panel's to say; this is anything else.
-            App.Services.GetRequiredService<ILogger<PlayerPage>>().LogError(ex, "The Watch Party could not be ended from the player");
-        }
+    }
+
+    // A faded panel takes no keyboard focus, as it takes no clicks.
+    private void ShowPartyPanel(bool visible)
+    {
+        PartyPanel.Opacity = visible ? 1 : 0;
+        PartyPanel.IsHitTestVisible = visible;
+        PartyInviteButton.IsTabStop = PartyPolicyButton.IsTabStop = PartyStopButton.IsTabStop = PartyEndButton.IsTabStop = visible;
     }
 
     // Under Exit on the right, as the playback info sits under Minimize on the left.

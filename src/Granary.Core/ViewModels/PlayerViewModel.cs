@@ -64,7 +64,8 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         IProfileSettings? settings = null,
         ILogger<PlayerViewModel>? logger = null,
         Auth.AccountPermissions? permissions = null,
-        global::Granary.Core.WatchParty.WatchPartySession? watchParty = null)
+        global::Granary.Core.WatchParty.WatchPartySession? watchParty = null,
+        IConfirmation? confirmation = null)
     {
         _engine = engine;
         _dispatcher = dispatcher;
@@ -79,7 +80,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         _logger = logger ?? (ILogger)NullLogger.Instance;
         _permissions = permissions;
         _watchParty = watchParty;
-        Party = InitializeWatchParty();
+        Party = InitializeWatchParty(confirmation);
         Look.Edited += OnLookEdited;
         InitializeMarkerEdit();
         _engine.StateChanged += OnStateChanged;
