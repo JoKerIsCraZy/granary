@@ -45,7 +45,8 @@ public sealed class VisibleLibrariesTests
 
         var libraries = await Create().ListAsync(ScriptedSilo.Base, TestContext.Current.CancellationToken);
 
-        Assert.Equal(["Filme", "Anime"], libraries.Select(l => l.Name));
+        Assert.Equal(["Filme", "Anime"], libraries.Items.Select(l => l.Name));
+        Assert.True(libraries.PreferencesRead);
         var read = Assert.Single(_silo.SentTo(HttpMethod.Get, SettingsPath));
         Assert.Equal("?keys=ui.disabled_library_ids&keys=ui.library_order", read.Uri.Query);
     }
@@ -57,7 +58,7 @@ public sealed class VisibleLibrariesTests
 
         var libraries = await Create().ListAsync(ScriptedSilo.Base, TestContext.Current.CancellationToken);
 
-        Assert.Equal(["Anime", "Serien", "Filme"], libraries.Select(l => l.Name));
+        Assert.Equal(["Anime", "Serien", "Filme"], libraries.Items.Select(l => l.Name));
     }
 
     [Fact]
@@ -67,7 +68,8 @@ public sealed class VisibleLibrariesTests
 
         var libraries = await Create().ListAsync(ScriptedSilo.Base, TestContext.Current.CancellationToken);
 
-        Assert.Equal(["Filme", "Serien", "Anime"], libraries.Select(l => l.Name));
+        Assert.Equal(["Filme", "Serien", "Anime"], libraries.Items.Select(l => l.Name));
+        Assert.False(libraries.PreferencesRead);
     }
 
     [Fact]

@@ -52,7 +52,7 @@ public sealed class CalendarViewModelTests
         _harness.Answer(CalendarPath, Week);
         _harness.Answer("api/v2/profiles", CollectionPayloads.OneProfile);
         _sidebar = new SidebarViewModel(_harness.Session, new ProfilesApi(_harness.Silo.Http), _harness.Libraries(),
-            _harness.Navigation, new ImmediateDispatcher(), _harness.Logs.For<SidebarViewModel>());
+            _harness.Navigation, new ImmediateDispatcher(), _harness.Clock, _harness.Logs.For<SidebarViewModel>());
     }
 
     private CalendarViewModel Create() => new(
@@ -271,19 +271,38 @@ public sealed class CalendarViewModelTests
     }
 
     [Fact]
-    public async Task BackWhileTheSidebarReloads_KeepsTheLibrary()
+    public async Task BackAfterTheSidebarReadItsLibrariesAgain_KeepsTheLibrary()
     {
         await _sidebar.RefreshAsync(TestContext.Current.CancellationToken);
         var page = await LoadedAsync();
         page.SelectedLibrary = page.LibraryChoices[1];
         await WaitUntilAsync(() => LastQuery.Contains("library_id=", StringComparison.Ordinal) && page.State == LibraryLoadState.Ready);
         int asked = _harness.Queries(CalendarPath).Count;
-        _sidebar.Libraries.Clear();
+        int libraryReads = _harness.Count("api/v2/user/libraries");
+        _harness.Clock.Advance(SidebarViewModel.StaleAfter);
+        await WaitUntilAsync(() => _harness.Count("api/v2/user/libraries") == libraryReads + 1 && _sidebar.Libraries.Count == 3);
 
         await page.ActivateAsync(isReturn: true);
 
         Assert.Equal(page.LibraryChoices[1], page.SelectedLibrary);
         Assert.Equal(asked, _harness.Queries(CalendarPath).Count);
+    }
+
+    [Fact]
+    public async Task AProfileThatHidesEveryLibrary_HasNoLibraryToPick()
+    {
+        await _sidebar.RefreshAsync(TestContext.Current.CancellationToken);
+        var page = await LoadedAsync();
+        page.SelectedLibrary = page.LibraryChoices[1];
+        _harness.Answer(LibraryHarness.SettingsPath,
+            """{ "items": [{ "key": "ui.disabled_library_ids", "value": [1, 2, 3] }, { "key": "ui.library_order", "value": null }], "revision": 2 }""");
+        _harness.Clock.Advance(SidebarViewModel.StaleAfter);
+        await WaitUntilAsync(() => _sidebar.Libraries.Count == 0);
+
+        await page.ActivateAsync(isReturn: true);
+
+        Assert.Empty(page.LibraryChoices);
+        Assert.Equal("All Libraries", page.SelectedLibrary.Label);
     }
 
     [Fact]

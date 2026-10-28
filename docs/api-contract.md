@@ -611,8 +611,11 @@ series/season card), `user_state { played, is_favorite, in_watchlist, not_intere
   (those it names first, in its order, the rest after) in one `GET /api/v2/settings/values/effective?keys=…`. Both are
   id arrays, or the older JSON string of one; keep whole numbers above 0, each once. The server drops hidden libraries
   itself only for a profile with a library limit (`include_hidden=true` lists them, for the screen that unhides them).
-  Preferences that cannot be read hide nothing. The sidebar, the Calendar's libraries and a library's page use this
-  list; a hidden library's page is "not available". Server collections keep every library, as on the web.
+  Preferences that cannot be read hide nothing for the moment and are asked for again. The sidebar (read again once
+  five minutes old, the web's staleTime), the Calendar's libraries and a library's page use this list; a hidden
+  library's page is "not available". The Collections page's server collections keep every library, as the web's
+  (`useServerCollections`, `GET /api/v2/collections/server`); only the web's Home-row collection picker
+  (`useAllUserCollections`) goes through the filtered list.
 - Library landing rows: `GET /api/v2/library/{id}/sections` → `{ "sections": Section[] }` and
   `GET /api/v2/library/{id}/sections/{section_id}/items` → `Section`.
 - All items of a library: `GET /api/v2/catalog?source=query&library_id=<id>[&type=movie|series]`.

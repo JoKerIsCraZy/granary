@@ -17,13 +17,20 @@ public sealed class VisibleLibraries(CatalogApi catalog, SettingsApi settings, I
 
     public const string OrderKey = "ui.library_order";
 
-    public async Task<IReadOnlyList<Library>> ListAsync(Uri server, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// The libraries the profile browses. Without its preferences (<see cref="VisibleLibraryList.PreferencesRead"/>
+    /// false) every library is there, so a caller that keeps the list asks again.
+    /// </summary>
+    public async Task<VisibleLibraryList> ListAsync(Uri server, CancellationToken cancellationToken = default)
     {
         var preferences = ReadPreferencesAsync(server, cancellationToken);
         var libraries = catalog.ListLibrariesAsync(server, cancellationToken);
         await Task.WhenAll(preferences, libraries).ConfigureAwait(false);
-        var (hidden, order) = await preferences.ConfigureAwait(false);
-        return Arrange((await libraries.ConfigureAwait(false)).Items, hidden, order);
+        var read = await preferences.ConfigureAwait(false);
+        var items = (await libraries.ConfigureAwait(false)).Items;
+        return read is { } profile
+            ? new(Arrange(items, profile.Hidden, profile.Order), PreferencesRead: true)
+            : new(Arrange(items, [], []), PreferencesRead: false);
     }
 
     /// <summary>
@@ -89,17 +96,22 @@ public sealed class VisibleLibraries(CatalogApi catalog, SettingsApi settings, I
         return ids;
     }
 
-    private async Task<(IReadOnlyCollection<string> Hidden, IReadOnlyList<string> Order)> ReadPreferencesAsync(Uri server, CancellationToken cancellationToken)
+    // Null when they could not be read: a refusal, no connection, or a timeout (not the caller's cancelling).
+    private async Task<(IReadOnlyCollection<string> Hidden, IReadOnlyList<string> Order)?> ReadPreferencesAsync(Uri server, CancellationToken cancellationToken)
     {
         try
         {
             var values = await settings.GetEffectiveAsync(server, [HiddenKey, OrderKey], cancellationToken).ConfigureAwait(false);
             return (ParseIds(values.Find(HiddenKey)).ToHashSet(StringComparer.Ordinal), ParseIds(values.Find(OrderKey)));
         }
-        catch (Exception ex) when (ex is HttpRequestException or SiloApiException or JsonException)
+        catch (Exception ex) when (ex is HttpRequestException or SiloApiException or JsonException
+            || ex is OperationCanceledException && !cancellationToken.IsCancellationRequested)
         {
-            logger.LogWarning(ex, "Could not read the profile's hidden libraries; showing them all");
-            return ([], []);
+            logger.LogWarning(ex, "Could not read the profile's hidden libraries; showing them all for now");
+            return null;
         }
     }
 }
+
+/// <summary>The libraries a profile browses, and whether its hidden ones and order could be read to arrange them.</summary>
+public sealed record VisibleLibraryList(IReadOnlyList<Library> Items, bool PreferencesRead);

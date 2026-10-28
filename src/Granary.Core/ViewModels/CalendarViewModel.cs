@@ -263,11 +263,12 @@ public sealed partial class CalendarViewModel : ObservableObject
         return LoadAsync();
     }
 
-    // The sidebar's libraries. A library that went away falls back to all of them; a sidebar still loading changes nothing.
+    // The sidebar's libraries. A library that went away (or the profile hid) falls back to all of them; a sidebar still
+    // loading changes nothing.
     private void ShowLibraries()
     {
         var libraries = _sidebar.Libraries;
-        if (libraries.Count == 0)
+        if (!_sidebar.AreLibrariesLoaded)
         {
             return;
         }

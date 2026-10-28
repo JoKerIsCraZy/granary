@@ -204,6 +204,6 @@ public sealed class SidebarLayoutTests : IDisposable
         _session.Account = new Account("1", "elena", "", "admin", [], true, false, null);
         var libraries = new VisibleLibraries(new CatalogApi(http), new SettingsApi(http), _logs.For<VisibleLibraries>());
         return new SidebarViewModel(_session, new ProfilesApi(http), libraries, new RecordingNavigation(), new ImmediateDispatcher(),
-            _logs.For<SidebarViewModel>());
+            new ManualTimeProvider(), _logs.For<SidebarViewModel>());
     }
 }

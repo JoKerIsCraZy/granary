@@ -28,21 +28,37 @@ public sealed class SidebarViewModelTests
     private Func<HttpResponseMessage> _settings = () => FakeSiloServer.Json(200,
         """{"items":[{"key":"ui.disabled_library_ids","value":null},{"key":"ui.library_order","value":null}],"revision":1}""");
 
+    private readonly ManualTimeProvider _clock = new();
+
+    // The next library read waits for this, answering as the libraries did when it was asked.
+    private TaskCompletionSource? _holdLibraries;
+
     private SidebarViewModel Create()
     {
-        var handler = new FakeHttpMessageHandler((request, _) =>
+        var handler = new FakeHttpMessageHandler(async (request, _) =>
         {
             string path = request.RequestUri!.AbsolutePath;
             _requests.Add(path);
-            return Task.FromResult(path.EndsWith("/user/libraries", StringComparison.Ordinal) ? _libraries()
-                : path.EndsWith("/settings/values/effective", StringComparison.Ordinal) ? _settings()
-                : _profiles());
+            if (path.EndsWith("/user/libraries", StringComparison.Ordinal))
+            {
+                var respond = _libraries;
+                if (_holdLibraries is { } hold)
+                {
+                    _holdLibraries = null;
+                    await hold.Task;
+                }
+                return respond();
+            }
+            return path.EndsWith("/settings/values/effective", StringComparison.Ordinal) ? _settings() : _profiles();
         });
         var http = new SiloHttp(new HttpClient(handler));
         var libraries = new VisibleLibraries(new CatalogApi(http), new SettingsApi(http), _logs.For<VisibleLibraries>());
-        return new SidebarViewModel(_session, new ProfilesApi(http), libraries, _navigation, new ImmediateDispatcher(),
+        return new SidebarViewModel(_session, new ProfilesApi(http), libraries, _navigation, new ImmediateDispatcher(), _clock,
             _logs.For<SidebarViewModel>());
     }
+
+    private static Func<HttpResponseMessage> Hiding(string ids) => () => FakeSiloServer.Json(200,
+        $$"""{"items":[{"key":"ui.disabled_library_ids","value":{{ids}}},{"key":"ui.library_order","value":null}],"revision":2}""");
 
     private void Ready(string profileId = "7")
     {
@@ -93,6 +109,103 @@ public sealed class SidebarViewModelTests
         await sidebar.RefreshAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(["Filme", "Serien"], sidebar.Libraries.Select(l => l.Name));
+    }
+
+    [Fact]
+    public async Task HiddenLibrariesThatCouldNotBeRead_AreAskedForAgain_AndThenLeftOut()
+    {
+        Ready();
+        _settings = () => FakeSiloServer.Problem(503, ProblemCodes.DependencyUnavailable);
+        using var sidebar = Create();
+        await sidebar.RefreshAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(["Filme", "Serien"], sidebar.Libraries.Select(l => l.Name));
+
+        _settings = Hiding("[2]");
+        _clock.Advance(SidebarViewModel.RetryAfter);
+
+        await Auth.AuthPipeline.Eventually(() => sidebar.Libraries.Count == 1);
+        Assert.Equal("Filme", sidebar.Libraries[0].Name);
+        Assert.Equal("Elena Moreau", sidebar.ProfileName);
+    }
+
+    [Fact]
+    public async Task ALibraryReadThatTimesOut_LeavesNothingStuck_AndIsTriedAgain()
+    {
+        Ready();
+        _libraries = () => throw new TaskCanceledException("The request timed out.");
+        using var sidebar = Create();
+
+        await sidebar.RefreshAsync(TestContext.Current.CancellationToken);
+        Assert.Empty(sidebar.Libraries);
+        Assert.False(sidebar.AreLibrariesLoaded);
+
+        _libraries = () => FakeSiloServer.Json(200, """{"items":[{"id":"1","name":"Filme","type":"movies","sort_order":1}]}""");
+        _clock.Advance(SidebarViewModel.RetryAfter);
+
+        await Auth.AuthPipeline.Eventually(() => sidebar.Libraries.Count == 1);
+        Assert.True(sidebar.AreLibrariesLoaded);
+    }
+
+    [Fact]
+    public async Task HiddenLibrariesThatTimeOut_ShowEveryLibraryForNow_AndAreTriedAgain()
+    {
+        Ready();
+        _settings = () => throw new TaskCanceledException("The request timed out.");
+        using var sidebar = Create();
+
+        await sidebar.RefreshAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(2, sidebar.Libraries.Count);
+
+        _settings = Hiding("[1]");
+        _clock.Advance(SidebarViewModel.RetryAfter);
+
+        await Auth.AuthPipeline.Eventually(() => sidebar.Libraries.Count == 1);
+        Assert.Equal("Serien", sidebar.Libraries[0].Name);
+    }
+
+    [Fact]
+    public async Task OnceStale_TheLibrariesAreReadAgain_InPlace()
+    {
+        Ready();
+        using var sidebar = Create();
+        await sidebar.RefreshAsync(TestContext.Current.CancellationToken);
+        int asked = _requests.Count;
+        _settings = Hiding("[2]");
+        var cleared = false;
+        sidebar.Libraries.CollectionChanged += (_, e) => cleared |= sidebar.Libraries.Count == 0;
+
+        _clock.Advance(SidebarViewModel.StaleAfter - TimeSpan.FromSeconds(1));
+        Assert.Equal(asked, _requests.Count);
+        _clock.Advance(TimeSpan.FromSeconds(1));
+
+        await Auth.AuthPipeline.Eventually(() => sidebar.Libraries.Count == 1);
+        Assert.Equal("Elena Moreau", sidebar.ProfileName);
+        // Only the list that changed was redrawn; the profile never went away.
+        Assert.True(cleared);
+        Assert.NotNull(sidebar.Profile);
+    }
+
+    [Fact]
+    public async Task AnOlderRefreshThatFails_LeavesTheNewerProfileLoaded()
+    {
+        Ready();
+        _libraries = () => FakeSiloServer.Problem(503, ProblemCodes.DependencyUnavailable);
+        var hold = new TaskCompletionSource();
+        _holdLibraries = hold;
+        using var sidebar = Create();
+        var older = sidebar.RefreshAsync(TestContext.Current.CancellationToken);
+
+        _libraries = () => FakeSiloServer.Json(200, """{"items":[{"id":"1","name":"Filme","type":"movies","sort_order":1}]}""");
+        _session.ProfileId = "8";
+        await sidebar.RefreshAsync(TestContext.Current.CancellationToken);
+        hold.SetResult();
+        await older;
+        int asked = _requests.Count;
+
+        await sidebar.RefreshAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal(asked, _requests.Count);
+        Assert.Equal("Filme", Assert.Single(sidebar.Libraries).Name);
     }
 
     [Fact]

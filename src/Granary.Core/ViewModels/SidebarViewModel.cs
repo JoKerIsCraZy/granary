@@ -15,18 +15,29 @@ public sealed record SidebarLibrary(string Id, string Name, string Type);
 
 /// <summary>
 /// The sidebar shown once a profile is acting: the server's name and libraries on top and the profile at
-/// the bottom, as in Silo's web client. It follows the session; a new server or profile reloads it.
+/// the bottom, as in Silo's web client. It follows the session; a new server or profile reloads it. What could not be
+/// read is asked for again after <see cref="RetryAfter"/>, and the rest once it is <see cref="StaleAfter"/> old, so a
+/// library the profile hid elsewhere goes; the shown list stays while it is read again.
 /// </summary>
 public sealed partial class SidebarViewModel : ObservableObject, IDisposable
 {
+    /// <summary>A read that failed (the libraries, the profile, or its hidden libraries) is tried again after this.</summary>
+    public static readonly TimeSpan RetryAfter = TimeSpan.FromSeconds(30);
+
+    /// <summary>As the web's staleTime for the library list and its preferences.</summary>
+    public static readonly TimeSpan StaleAfter = TimeSpan.FromMinutes(5);
+
     private readonly ISessionManager _session;
     private readonly ProfilesApi _profiles;
     private readonly VisibleLibraries _libraries;
     private readonly INavigationService _navigation;
     private readonly IUiDispatcher _dispatcher;
+    private readonly TimeProvider _time;
     private readonly ILogger<SidebarViewModel> _logger;
     private (string? ServerId, string? ProfileId)? _loaded;
+    private (string? ServerId, string? ProfileId)? _shown;
     private int _generation;
+    private ITimer? _readAgain;
 
     public SidebarViewModel(
         ISessionManager session,
@@ -34,6 +45,7 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
         VisibleLibraries libraries,
         INavigationService navigation,
         IUiDispatcher dispatcher,
+        TimeProvider time,
         ILogger<SidebarViewModel> logger)
     {
         _session = session;
@@ -41,6 +53,7 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
         _libraries = libraries;
         _navigation = navigation;
         _dispatcher = dispatcher;
+        _time = time;
         _logger = logger;
         _session.Changed += OnSessionChanged;
     }
@@ -61,6 +74,10 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
     /// <summary>The libraries the profile browses: its hidden ones left out, in its order or else the server's.</summary>
     public ObservableCollection<SidebarLibrary> Libraries { get; } = [];
 
+    /// <summary>The libraries were read for this server and profile: an empty list then means it browses none.</summary>
+    [ObservableProperty]
+    public partial bool AreLibrariesLoaded { get; private set; }
+
     /// <summary>The account administers the server: the sidebar offers Admin above Settings, as the web's menu does.</summary>
     [ObservableProperty]
     public partial bool IsAdmin { get; private set; }
@@ -77,21 +94,39 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
         _loaded = key;
         int generation = ++_generation;
         ServerName = _session.ActiveServer?.Name ?? "";
-        Profile = null;
-        Libraries.Clear();
-        OnPropertyChanged(nameof(ProfileName));
-        OnPropertyChanged(nameof(ProfileInitials));
+        if (_shown != key)
+        {
+            // Another server or profile: nothing of the last one stays while this one's is read.
+            _shown = key;
+            Profile = null;
+            Libraries.Clear();
+            AreLibrariesLoaded = false;
+            OnPropertyChanged(nameof(ProfileName));
+            OnPropertyChanged(nameof(ProfileInitials));
+        }
         if (_session is not { State: SessionState.Ready, ActiveServer: { } server, ProfileId: { } profileId })
         {
             return;
         }
-        var profileLoaded = LoadProfileAsync(server.BaseUri, profileId, generation, cancellationToken);
-        var librariesLoaded = LoadLibrariesAsync(server.BaseUri, generation, cancellationToken);
-        bool complete = await profileLoaded & await librariesLoaded;
-        if (!complete)
+        bool complete = false;
+        try
         {
-            // The next refresh tries again.
-            _loaded = null;
+            var profileLoaded = LoadProfileAsync(server.BaseUri, profileId, generation, cancellationToken);
+            var librariesLoaded = LoadLibrariesAsync(server.BaseUri, generation, cancellationToken);
+            complete = (await Task.WhenAll(profileLoaded, librariesLoaded)).All(loaded => loaded);
+        }
+        finally
+        {
+            // A refresh a newer one overtook (another profile, say) leaves the outcome to that one.
+            if (generation == _generation)
+            {
+                if (!complete)
+                {
+                    // The next refresh tries again.
+                    _loaded = null;
+                }
+                ReadAgainIn(complete ? StaleAfter : RetryAfter);
+            }
         }
     }
 
@@ -106,7 +141,7 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
             }
             return true;
         }
-        catch (Exception ex) when (ex is HttpRequestException or SiloApiException)
+        catch (Exception ex) when (IsFailedRead(ex, cancellationToken))
         {
             // The account name stands in.
             _logger.LogWarning(ex, "Could not load the acting profile for the sidebar");
@@ -121,18 +156,39 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
             var libraries = await _libraries.ListAsync(server, cancellationToken);
             if (generation == _generation)
             {
-                foreach (var library in libraries)
+                // Read again in place: the entries change only where the list did.
+                var shown = libraries.Items.Select(library => new SidebarLibrary(library.Id, library.Name, library.Type)).ToList();
+                if (!shown.SequenceEqual(Libraries))
                 {
-                    Libraries.Add(new SidebarLibrary(library.Id, library.Name, library.Type));
+                    Libraries.Clear();
+                    shown.ForEach(Libraries.Add);
                 }
+                AreLibrariesLoaded = true;
             }
-            return true;
+            // Without the profile's hidden libraries every one shows for now; they are asked for again.
+            return libraries.PreferencesRead;
         }
-        catch (Exception ex) when (ex is HttpRequestException or SiloApiException)
+        catch (Exception ex) when (IsFailedRead(ex, cancellationToken))
         {
             _logger.LogWarning(ex, "Could not load the libraries for the sidebar");
             return false;
         }
+    }
+
+    // A refusal, no connection, or a timeout: the caller's own cancelling is not a failure to try again.
+    private static bool IsFailedRead(Exception ex, CancellationToken cancellationToken) =>
+        ex is HttpRequestException or SiloApiException || ex is OperationCanceledException && !cancellationToken.IsCancellationRequested;
+
+    private void ReadAgainIn(TimeSpan delay)
+    {
+        _readAgain?.Dispose();
+        _readAgain = _time.CreateTimer(_ => _dispatcher.Post(ReadAgain), null, delay, Timeout.InfiniteTimeSpan);
+    }
+
+    private void ReadAgain()
+    {
+        _loaded = null;
+        _ = RefreshSafelyAsync();
     }
 
     [RelayCommand]
@@ -145,7 +201,11 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void OpenServers() => _navigation.NavigateTo(AppRoute.Settings, "servers");
 
-    public void Dispose() => _session.Changed -= OnSessionChanged;
+    public void Dispose()
+    {
+        _session.Changed -= OnSessionChanged;
+        _readAgain?.Dispose();
+    }
 
     private void OnSessionChanged(object? sender, EventArgs e) => _dispatcher.Post(() => _ = RefreshSafelyAsync());
 

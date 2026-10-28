@@ -291,7 +291,7 @@ public sealed partial class LibraryViewModel : ObservableObject
                 return;
             }
             // One the profile hid is not there for it, as on the web, whatever link led here.
-            if (libraries.FirstOrDefault(l => l.Id == libraryId) is not { } library)
+            if (libraries.Items.FirstOrDefault(l => l.Id == libraryId) is not { } library)
             {
                 State = LibraryLoadState.Unavailable;
                 return;
