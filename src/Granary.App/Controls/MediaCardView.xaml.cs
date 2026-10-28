@@ -360,9 +360,9 @@ public sealed partial class MediaCardView : UserControl
         double inset = EdgeInset * scale;
         double edgeWidth = Math.Max(0, (width - 2 * inset) / scale);
         bool lifted = Progress?.Visibility == Visibility.Visible;
-        // The right margin makes the layout slot exactly the unscaled width, which a small poster's exceeds: a slot too
-        // narrow would clip the right corner.
-        double right = width - inset - edgeWidth;
+        // The layout slot holds the edge at its unscaled width, and on a poster wider than the web's also as drawn: a slot
+        // narrower than either clips the right corner (a small poster's unscaled width, a big one's scaled-up badges).
+        double right = Math.Max(0, width - inset - edgeWidth * Math.Max(scale, 1));
         TopBadges.Width = BottomBadges.Width = edgeWidth;
         TopBadges.Margin = new Thickness(inset, inset, right, 0);
         BottomBadges.Margin = new Thickness(inset, 0, right, inset + (lifted ? EdgeInset : 0));
