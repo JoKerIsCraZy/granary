@@ -83,6 +83,9 @@ public sealed partial class WatchPartyShelfViewModel : ObservableObject
         SelectedChip = Chips[0];
     }
 
+    /// <summary>The page's lifetime: the shelf's reads end with it.</summary>
+    public CancellationToken Lifetime { get; set; }
+
     /// <summary>A card the viewer chose, to put on the stage.</summary>
     public event EventHandler<WatchPartyShelfCard>? CardChosen;
 
@@ -167,7 +170,7 @@ public sealed partial class WatchPartyShelfViewModel : ObservableObject
     {
         if (_picker is not null && MemberSet() != _pickerMembers)
         {
-            _ = ReadPickerAsync(force: true, CancellationToken.None);
+            _ = ReadPickerAsync(force: true, Lifetime);
         }
     }
 
@@ -187,14 +190,15 @@ public sealed partial class WatchPartyShelfViewModel : ObservableObject
     private void Fold() => IsOpen = false;
 
     [RelayCommand]
-    private Task RetrySearchAsync() => SearchNowAsync(Query.Trim(), CancellationToken.None);
+    private Task RetrySearchAsync() => SearchNowAsync(Query.Trim(), Lifetime);
 
     partial void OnQueryChanged(string value)
     {
         OnPropertyChanged(nameof(IsSearching));
         OnPropertyChanged(nameof(IsBrowsing));
         _search?.Cancel();
-        _search = new CancellationTokenSource();
+        _search?.Dispose();
+        _search = CancellationTokenSource.CreateLinkedTokenSource(Lifetime);
         _ = SearchLaterAsync(value.Trim(), _search.Token);
     }
 
@@ -213,7 +217,7 @@ public sealed partial class WatchPartyShelfViewModel : ObservableObject
     {
         if (value)
         {
-            _ = RefreshAsync();
+            _ = RefreshAsync(Lifetime);
         }
     }
 
@@ -280,13 +284,17 @@ public sealed partial class WatchPartyShelfViewModel : ObservableObject
         }
         try
         {
-            if (await _party.GetPickerAsync(cancellationToken) is { } picker)
+            if (await _party.GetPickerAsync(cancellationToken) is { } picker && !cancellationToken.IsCancellationRequested)
             {
                 _picker = picker;
                 _pickerMembers = members;
                 _pickerReadAt = _time.GetUtcNow();
                 Show();
             }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // The page went.
         }
         catch (Exception ex) when (LibraryErrors.IsExpected(ex) || ex is InvalidOperationException)
         {
@@ -305,14 +313,22 @@ public sealed partial class WatchPartyShelfViewModel : ObservableObject
         try
         {
             var images = await _images.GetAsync(server, ImageSizes.Default, cancellationToken);
-            var home = ReadHomeAsync(server.BaseUri, images, cancellationToken);
-            var movies = RecentAsync(server.BaseUri, MediaScopes.Movie, images, cancellationToken);
-            var series = RecentAsync(server.BaseUri, MediaScopes.Series, images, cancellationToken);
+            // Each read on its own: Home failing still shows the newest titles, and the other way round.
+            var home = ReadSafelyAsync(() => ReadHomeAsync(server.BaseUri, images, cancellationToken), "Home's rows", cancellationToken);
+            var movies = ReadSafelyAsync(() => RecentAsync(server.BaseUri, MediaScopes.Movie, images, cancellationToken), "the newest movies",
+                cancellationToken);
+            var series = ReadSafelyAsync(() => RecentAsync(server.BaseUri, MediaScopes.Series, images, cancellationToken), "the newest series",
+                cancellationToken);
             await Task.WhenAll(home, movies, series);
-            _homeRows = home.Result;
-            _recentMovies = movies.Result;
-            _recentSeries = series.Result;
-            _browseRead = true;
+            _homeRows = home.Result ?? _homeRows;
+            _recentMovies = movies.Result ?? _recentMovies;
+            _recentSeries = series.Result ?? _recentSeries;
+            // A shelf with a read that failed is read again the next time it opens.
+            _browseRead = home.Result is not null && movies.Result is not null && series.Result is not null;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return;
         }
         catch (Exception ex) when (LibraryErrors.IsExpected(ex) || ex is InvalidOperationException)
         {
@@ -323,6 +339,24 @@ public sealed partial class WatchPartyShelfViewModel : ObservableObject
             _browseReading = false;
         }
         Show();
+    }
+
+    // Null when the read failed or the page went.
+    private async Task<T?> ReadSafelyAsync<T>(Func<Task<T>> read, string what, CancellationToken cancellationToken) where T : class
+    {
+        try
+        {
+            return await read();
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return null;
+        }
+        catch (Exception ex) when (LibraryErrors.IsExpected(ex) || ex is InvalidOperationException)
+        {
+            _logger.LogWarning("The room's shelf could not read {What}: {Failure}", what, ex.GetType().Name);
+            return null;
+        }
     }
 
     private async Task<IReadOnlyList<(string Title, IReadOnlyList<CatalogItem> Items)>> ReadHomeAsync(Uri server, ImageParameters images,

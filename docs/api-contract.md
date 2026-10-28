@@ -2089,7 +2089,9 @@ the commands its player runs. Sources: `silo-server/docs/realtime-api.md` ("Watc
   content_type, title, subtitle?, poster_url?, note? }` → `201 { suggestion_id }` (a series goes in as one of its
   episodes: title the episode's, subtitle "Series · S1 E2"); `POST|DELETE …/suggestions/{sid}/vote` → 204 (an
   existing state is no error; votes are per suggestion, not one per member); `DELETE …/suggestions/{sid}` (the
-  suggester's own, or any as the host) → 204. After each, the client reads the list again. The host's `POST
+  suggester's own, or any as the host) → 204. After each, the client reads the list again, also after a failure that
+  was not a clear 4xx (the change may have gone through); a retried suggestion keeps its `suggestion_id`, so it is
+  not made twice. A list read over HTTP while a newer `suggestions_update` arrived gives only this profile's votes. The host's `POST
   …/suggestions/promote { suggestion_id }` plays any suggestion for everyone (`vote_host_override`), answering the room.
   The socket's `suggestions_update { suggestions[] }` carries the list with every `voted_by_me` false (and numeric
   `suggester_user_id`): a client keeps its own votes from what it knew.
@@ -2137,8 +2139,12 @@ the commands its player runs. Sources: `silo-server/docs/realtime-api.md` ("Watc
   added_at&order=desc`); search is the catalog's `q`, movies and series only. The activity feed is the client's own:
   the server keeps no log, so it is the changes between two snapshots or suggestion lists seen while connected (the
   first of each connection is the baseline). Recent rooms (the web keeps eight of the last 24 hours in the browser's
-  storage, with their proofs) go to Granary's DPAPI secret store, per server and profile; the hub asks each once with
-  `GET …/{id}` whether it is still on (403 forgets it, 404/409/410 mark it ended) and rejoins with the kept proof.
+  storage, with their proofs) go to Granary's DPAPI secret store, eight per server and profile; expired ones leave the
+  store when it is read, an ended one keeps no proof, and signing out of a server or removing it clears its rooms. A
+  room counts as ended when it said so (`ended`, `room_closed`, `host_left`, `not_found`); a refused proof or another
+  device leaves the entry, and the hub asks each once with `GET …/{id}` whether it is still on (403 forgets it,
+  404/409/410 mark it ended) and rejoins with the kept proof. The code and the invite link are copied with the
+  clipboard's history and roaming off.
 
 ## 13. Consequences for the Windows client
 

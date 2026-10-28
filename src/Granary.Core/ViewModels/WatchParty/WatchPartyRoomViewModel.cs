@@ -33,6 +33,8 @@ public sealed partial class WatchPartyRoomViewModel : ObservableObject
     private readonly TimeProvider _time;
     private readonly ILogger<WatchPartyRoomViewModel> _logger;
     private bool _active;
+    // The page's reads end with it.
+    private CancellationTokenSource _life = new();
     private ITimer? _clock;
     private ITimer? _messageTimer;
     private string _phaseKey = "";
@@ -220,12 +222,18 @@ public sealed partial class WatchPartyRoomViewModel : ObservableObject
             return;
         }
         _active = true;
+        if (_life.IsCancellationRequested)
+        {
+            _life.Dispose();
+            _life = new CancellationTokenSource();
+        }
+        Shelf.Lifetime = _life.Token;
         _party.PropertyChanged += OnPartyChanged;
         _feature.PropertyChanged += OnFeatureChanged;
         _clock = _time.CreateTimer(_ => _dispatcher.Post(Tick), null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
         _ = _feature.RefreshAsync();
         Show();
-        _ = Shelf.RefreshAsync();
+        _ = Shelf.RefreshAsync(_life.Token);
     }
 
     public void Deactivate()
@@ -241,6 +249,8 @@ public sealed partial class WatchPartyRoomViewModel : ObservableObject
         _clock = null;
         _messageTimer?.Dispose();
         _messageTimer = null;
+        _life.Cancel();
+        _heroShown = null;
         Candidate.Clear();
     }
 

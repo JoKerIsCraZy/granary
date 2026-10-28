@@ -192,15 +192,15 @@ public sealed partial class WatchPartyRoomPage : Page
         }
     }
 
-    // The code and the link are secrets of the room: they go to the clipboard only, never to a log.
+    // The code and the link are secrets of the room: they go to the clipboard only, never to a log, nor to the
+    // clipboard's history or other devices.
     private static bool Copy(string text)
     {
         try
         {
             var package = new DataPackage();
             package.SetText(text);
-            Clipboard.SetContent(package);
-            return true;
+            return Clipboard.SetContentWithOptions(package, new ClipboardContentOptions { IsAllowedInHistory = false, IsRoamable = false });
         }
         catch (Exception ex)
         {

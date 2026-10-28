@@ -1,3 +1,4 @@
+using Granary.Core.Api;
 using Granary.Core.Api.WatchParty;
 using Granary.Core.ViewModels;
 using Microsoft.Extensions.Logging;
@@ -24,6 +25,9 @@ public sealed partial class WatchPartySession
             }
         }
     } = [];
+
+    // Counts the broadcasts: a list read over HTTP before the latest one is older than what shows.
+    private long _suggestionsStamp;
 
     /// <summary>What happened in the room while this device watched it, newest first.</summary>
     public IReadOnlyList<WatchPartyActivityEntry> Activity => _activity.Entries;
@@ -57,7 +61,8 @@ public sealed partial class WatchPartySession
 
     private static InvalidOperationException NotInRoom() => new("This profile is in no Watch Party.");
 
-    // A member's own change, then the list as it is after it; an answer about a room left meanwhile is dropped.
+    // A member's own change, then the list as it is after it. A clear refusal (4xx) changed nothing; any other failure
+    // may have gone through, so the list is read back before the failure is told, as the server's docs ask.
     private async Task MemberAsync(Func<Uri, string, string, Task> change)
     {
         if (Room is not { } room || _roomToken is not { } token)
@@ -65,13 +70,55 @@ public sealed partial class WatchPartySession
             return;
         }
         long generation = _generation;
+        long stamp = _suggestionsStamp;
         var server = Server();
-        await change(server, room.RoomId, token);
-        var suggestions = await _api.ListSuggestionsAsync(server, room.RoomId, token);
-        if (generation == _generation && _connection is not null)
+        bool reread = true;
+        try
         {
-            Suggestions = suggestions;
+            await change(server, room.RoomId, token);
         }
+        catch (SiloApiException ex) when (ex.Status is >= 400 and < 500)
+        {
+            reread = false;
+            throw;
+        }
+        finally
+        {
+            if (reread)
+            {
+                await ReadBackAsync(server, room.RoomId, token, generation, stamp);
+            }
+        }
+    }
+
+    // The list after a change of this profile's; a failed read is logged, the broadcast brings the list anyway.
+    private async Task ReadBackAsync(Uri server, string roomId, string token, long generation, long stamp)
+    {
+        try
+        {
+            TakeRead(await _api.ListSuggestionsAsync(server, roomId, token), generation, stamp);
+        }
+        catch (Exception ex) when (LibraryErrors.IsExpected(ex) || ex is InvalidOperationException)
+        {
+            _logger.LogWarning("The room's suggestions could not be read back: {Failure}", ex.GetType().Name);
+        }
+    }
+
+    // A read whole: dropped for a room left meanwhile. A broadcast since it was asked for is newer: of the read, only
+    // this profile's own votes count then.
+    private void TakeRead(IReadOnlyList<WatchPartySuggestion> read, long generation, long stamp)
+    {
+        if (generation != _generation || _connection is null)
+        {
+            return;
+        }
+        if (stamp == _suggestionsStamp)
+        {
+            Suggestions = read;
+            return;
+        }
+        var mine = read.ToDictionary(s => s.Id, s => s.VotedByMe, StringComparer.Ordinal);
+        Suggestions = [.. Suggestions.Select(s => mine.TryGetValue(s.Id, out bool voted) && voted != s.VotedByMe ? s with { VotedByMe = voted } : s)];
     }
 
     // Each connection reads the list once: suggestions_update tells only of changes from then on.
@@ -82,14 +129,15 @@ public sealed partial class WatchPartySession
             return;
         }
         long generation = _generation;
+        long stamp = _suggestionsStamp;
         try
         {
             var suggestions = await _api.ListSuggestionsAsync(Server(), room.RoomId, token);
-            if (generation == _generation && _connection is not null)
+            if (generation == _generation && _connection is not null && stamp == _suggestionsStamp)
             {
                 _activity.SeedSuggestions(suggestions);
-                Suggestions = suggestions;
             }
+            TakeRead(suggestions, generation, stamp);
         }
         catch (Exception ex) when (LibraryErrors.IsExpected(ex) || ex is InvalidOperationException)
         {
@@ -100,6 +148,7 @@ public sealed partial class WatchPartySession
     // The broadcast's rows carry no one's own vote: this profile's are kept from what it knew.
     private void TakeSuggestions(IReadOnlyList<WatchPartySuggestion> broadcast)
     {
+        _suggestionsStamp++;
         var mine = Suggestions.Where(s => s.VotedByMe).Select(s => s.Id).ToHashSet(StringComparer.Ordinal);
         Suggestions = WatchPartyApi.Rank(broadcast.Select(s => s with { VotedByMe = mine.Contains(s.Id) }));
     }

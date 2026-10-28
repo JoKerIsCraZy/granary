@@ -298,7 +298,8 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
     {
         if (_recent is { } recent && _session.ActiveServer?.Id is { } serverId && _session.ProfileId is { } profileId)
         {
-            _ = recent.RememberAsync(new WatchPartyRecentRoom(serverId, profileId, room.RoomId, room.Code, token, room.IsHost, _time.GetUtcNow(), title));
+            Recent(recent.RememberAsync(new WatchPartyRecentRoom(serverId, profileId, room.RoomId, room.Code, token, room.IsHost, _time.GetUtcNow(),
+                title)));
         }
     }
 
@@ -306,9 +307,18 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
     {
         if (_recent is { } recent && _session.ActiveServer?.Id is { } serverId && _session.ProfileId is { } profileId)
         {
-            _ = recent.MarkEndedAsync(serverId, profileId, room.RoomId);
+            Recent(recent.MarkEndedAsync(serverId, profileId, room.RoomId));
         }
     }
+
+    // The recent rooms are kept on the side: a failure is logged (by its type: the list holds proofs), never thrown.
+    private void Recent(Task write) => _ = write.ContinueWith(
+        t => _logger.LogWarning("The recent Watch Parties could not be updated: {Failure}", t.Exception?.InnerException?.GetType().Name),
+        CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+
+    // The room is over for good: it ended, closed, or is gone. A refused proof (forbidden) or another device says nothing
+    // of the room itself, and the hub asks it again.
+    private static bool RoomIsOver(WatchPartyEnd end) => !end.Replaced && end.Reason is "ended" or "room_closed" or "not_found" or "host_left";
 
     private void Connect(Uri server, string roomId, string roomToken)
     {
@@ -380,7 +390,7 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
         _logger.LogInformation("The Watch Party engagement ended: {Reason}", end.LoggedReason);
         ConnectionState = WatchPartyConnectionState.Disconnected;
         End = end;
-        if (!end.Replaced && Room is { } room)
+        if (RoomIsOver(end) && Room is { } room)
         {
             MarkEnded(room);
         }

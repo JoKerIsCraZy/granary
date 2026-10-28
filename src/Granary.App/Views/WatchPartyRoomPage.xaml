@@ -393,37 +393,37 @@
                                                     <ColumnDefinition Width="Auto" />
                                                     <ColumnDefinition Width="Auto" />
                                                 </Grid.ColumnDefinitions>
-                                                <Button Width="28" Height="28" Padding="0" CornerRadius="14" Click="OnVoteClick" Tag="{x:Bind}" Visibility="{x:Bind ShowsVotes}"
-                                                        Background="{x:Bind views:WatchPartyRoomPage.VoteBackground(VotedByMe)}" BorderBrush="{x:Bind views:WatchPartyRoomPage.VoteBorder(VotedByMe)}"
-                                                        AutomationProperties.Name="{x:Bind VoteName}" ToolTipService.ToolTip="{x:Bind VoteName}">
-                                                    <TextBlock Text="&#x2713;" FontSize="12" Foreground="White" Opacity="{x:Bind views:WatchPartyRoomPage.Shown(VotedByMe)}" />
+                                                <Button Width="28" Height="28" Padding="0" CornerRadius="14" Click="OnVoteClick" Tag="{x:Bind}" Visibility="{x:Bind ShowsVotes, Mode=OneWay}"
+                                                        Background="{x:Bind views:WatchPartyRoomPage.VoteBackground(VotedByMe), Mode=OneWay}" BorderBrush="{x:Bind views:WatchPartyRoomPage.VoteBorder(VotedByMe), Mode=OneWay}"
+                                                        AutomationProperties.Name="{x:Bind VoteName, Mode=OneWay}" ToolTipService.ToolTip="{x:Bind VoteName, Mode=OneWay}">
+                                                    <TextBlock Text="&#x2713;" FontSize="12" Foreground="White" Opacity="{x:Bind views:WatchPartyRoomPage.Shown(VotedByMe), Mode=OneWay}" />
                                                 </Button>
                                                 <Border Grid.Column="1" Width="32" Height="48" CornerRadius="4" Background="{StaticResource SiloSurfaceRaisedBrush}">
-                                                    <Image Source="{x:Bind views:WatchPartyRoomPage.SmallPoster(PosterUrl)}" Stretch="UniformToFill" />
+                                                    <Image Source="{x:Bind views:WatchPartyRoomPage.SmallPoster(PosterUrl), Mode=OneWay}" Stretch="UniformToFill" />
                                                 </Border>
                                                 <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="2">
                                                     <StackPanel Orientation="Horizontal" Spacing="8">
-                                                        <TextBlock Text="{x:Bind Title}" FontSize="14" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
-                                                        <TextBlock Text="{x:Bind Subtitle}" Style="{StaticResource SmallMutedStyle}" TextTrimming="CharacterEllipsis" VerticalAlignment="Bottom" />
-                                                        <Border Padding="6,1" CornerRadius="8" Background="#26FBBF24" Visibility="{x:Bind IsLeading}" VerticalAlignment="Center">
+                                                        <TextBlock Text="{x:Bind Title, Mode=OneWay}" FontSize="14" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                                        <TextBlock Text="{x:Bind Subtitle, Mode=OneWay}" Style="{StaticResource SmallMutedStyle}" TextTrimming="CharacterEllipsis" VerticalAlignment="Bottom" />
+                                                        <Border Padding="6,1" CornerRadius="8" Background="#26FBBF24" Visibility="{x:Bind IsLeading, Mode=OneWay}" VerticalAlignment="Center">
                                                             <TextBlock Text="LEADING" FontSize="10" FontWeight="SemiBold" Foreground="#FFFCD34D" />
                                                         </Border>
                                                     </StackPanel>
-                                                    <TextBlock Text="{x:Bind By}" Style="{StaticResource SmallMutedStyle}" TextTrimming="CharacterEllipsis" />
+                                                    <TextBlock Text="{x:Bind By, Mode=OneWay}" Style="{StaticResource SmallMutedStyle}" TextTrimming="CharacterEllipsis" />
                                                 </StackPanel>
-                                                <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" Visibility="{x:Bind ShowsVotes}">
-                                                    <ProgressBar Width="120" Value="{x:Bind SharePercent}" Maximum="100" VerticalAlignment="Center" IsHitTestVisible="False" />
-                                                    <TextBlock Text="{x:Bind VotesText}" Style="{StaticResource SmallMutedStyle}" Width="56" TextAlignment="Right" />
+                                                <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" Visibility="{x:Bind ShowsVotes, Mode=OneWay}">
+                                                    <ProgressBar Width="120" Value="{x:Bind SharePercent, Mode=OneWay}" Maximum="100" VerticalAlignment="Center" IsHitTestVisible="False" />
+                                                    <TextBlock Text="{x:Bind VotesText, Mode=OneWay}" Style="{StaticResource SmallMutedStyle}" Width="56" TextAlignment="Right" />
                                                 </StackPanel>
                                                 <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                                                    <Button Style="{StaticResource SmallButtonStyle}" Click="OnPromoteClick" Tag="{x:Bind}" Visibility="{x:Bind CanPromote}">
+                                                    <Button Style="{StaticResource SmallButtonStyle}" Click="OnPromoteClick" Tag="{x:Bind}" Visibility="{x:Bind CanPromote, Mode=OneWay}">
                                                         <StackPanel Orientation="Horizontal" Spacing="6">
                                                             <FontIcon Glyph="&#xE768;" FontSize="10" />
-                                                            <TextBlock Text="{x:Bind PromoteLabel}" />
+                                                            <TextBlock Text="{x:Bind PromoteLabel, Mode=OneWay}" />
                                                         </StackPanel>
                                                     </Button>
-                                                    <Button Style="{StaticResource SiloIconButtonStyle}" Click="OnDeleteSuggestionClick" Tag="{x:Bind}" Visibility="{x:Bind CanDelete}"
-                                                            AutomationProperties.Name="{x:Bind DeleteName}" ToolTipService.ToolTip="{x:Bind DeleteName}">
+                                                    <Button Style="{StaticResource SiloIconButtonStyle}" Click="OnDeleteSuggestionClick" Tag="{x:Bind}" Visibility="{x:Bind CanDelete, Mode=OneWay}"
+                                                            AutomationProperties.Name="{x:Bind DeleteName, Mode=OneWay}" ToolTipService.ToolTip="{x:Bind DeleteName, Mode=OneWay}">
                                                         <FontIcon Glyph="&#xE74D;" FontSize="12" />
                                                     </Button>
                                                 </StackPanel>

@@ -148,11 +148,66 @@ public sealed class WatchPartySessionSuggestionsTests : IAsyncDisposable
         await _recent.RememberAsync(new WatchPartyRecentRoom("srv1", "8", "other", "OTHER", "proof", false, start), ct);
 
         var mine = await _recent.ListAsync("srv1", "7", ct);
-        Assert.Equal(7, mine.Count);
+        Assert.Equal(8, mine.Count);
         Assert.Equal("room-9", mine[0].RoomId);
 
         _time.Advance(TimeSpan.FromHours(24).Add(TimeSpan.FromMinutes(8.5)));
         Assert.Equal(["room-9"], (await _recent.ListAsync("srv1", "7", ct)).Select(r => r.RoomId));
+    }
+
+    [Fact]
+    public async Task ARefusedProof_LeavesTheRecentRoom_ForTheHubToAskAgain()
+    {
+        _silo.On(HttpMethod.Post, Room + "/ws-ticket", ScriptedSilo.Problem(403, "forbidden"));
+        _silo.On(HttpMethod.Post, "api/v2/watch-together/join",
+            ScriptedSilo.Json(HttpStatusCode.OK, WatchPartyPayloads.Answer(WatchPartyPayloads.Room(role: "guest"))));
+
+        await _party.JoinAsync("ABCD1234", TestContext.Current.CancellationToken);
+        await ServerPlaybackFixture.Until(() => _party.End is not null, "the refused ticket");
+        await ServerPlaybackFixture.Until(() => _secrets.Values.ContainsKey(WatchPartyRecentRooms.SecretKey), "the recent room");
+
+        Assert.Equal("forbidden", _party.End!.Reason);
+        var recent = Assert.Single(await _party.ListRecentAsync(TestContext.Current.CancellationToken));
+        Assert.Equal((false, WatchPartyPayloads.Token), (recent.Ended, recent.Token));
+    }
+
+    [Fact]
+    public async Task AnOlderListOverHttp_DoesNotUndoANewerBroadcast_OnlyThisProfilesVotesCount()
+    {
+        await JoinAsync(WatchPartyPayloads.Room(role: "guest", mode: "vote"));
+        var answered = new TaskCompletionSource();
+        _silo.On(HttpMethod.Post, Room + "/suggestions/s2/vote", ScriptedSilo.NoContent());
+        _silo.On(HttpMethod.Get, Room + "/suggestions", async () =>
+        {
+            await answered.Task;
+            return await ScriptedSilo.Json(HttpStatusCode.OK, WatchPartyPayloads.Suggestions(
+                WatchPartyPayloads.Suggestion("s1", "Heat", votes: 1, mine: true),
+                WatchPartyPayloads.Suggestion("s2", "Alien", votes: 1, mine: true)))();
+        });
+        int reads = _silo.SentTo(HttpMethod.Get, Room + "/suggestions").Count;
+
+        var voting = _party.SetVoteAsync("s2", vote: true);
+        await ServerPlaybackFixture.Until(() => _silo.SentTo(HttpMethod.Get, Room + "/suggestions").Count > reads, "the read back");
+        Socket.Push(WatchPartyPayloads.SuggestionsUpdate(("s2", "Alien", 4), ("s1", "Heat", 2), ("s3", "Ronin", 0)));
+        await ServerPlaybackFixture.Until(() => _party.Suggestions.Count == 3, "the broadcast");
+        answered.SetResult();
+        await voting;
+
+        Assert.Equal([("Alien", 4, true), ("Heat", 2, true), ("Ronin", 0, false)], _party.Suggestions.Select(s => (s.Title, s.VoteCount, s.VotedByMe)));
+    }
+
+    [Fact]
+    public async Task AClearRefusal_IsNotReadBack_AnUncertainFailureIs()
+    {
+        await JoinAsync(WatchPartyPayloads.Room(role: "guest", mode: "vote"));
+        _silo.On(HttpMethod.Post, Room + "/suggestions/s1/vote", ScriptedSilo.Problem(409, "conflict"), ScriptedSilo.NetworkError());
+        int reads = _silo.SentTo(HttpMethod.Get, Room + "/suggestions").Count;
+
+        await Assert.ThrowsAsync<Granary.Core.Api.SiloApiException>(() => _party.SetVoteAsync("s1", vote: true));
+        Assert.Equal(reads, _silo.SentTo(HttpMethod.Get, Room + "/suggestions").Count);
+        await Assert.ThrowsAsync<HttpRequestException>(() => _party.SetVoteAsync("s1", vote: true));
+
+        Assert.Equal(reads + 1, _silo.SentTo(HttpMethod.Get, Room + "/suggestions").Count);
     }
 
     [Fact]

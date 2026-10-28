@@ -124,10 +124,46 @@ public sealed record WatchPartyShelfRow(string Key, string Title, string Hint, I
 /// A suggestion as the lists show it: the vote toggle, poster, title and subtitle, who put it forward, the vote bar and
 /// count, and the host's (or its suggester's) actions.
 /// </summary>
-public sealed record WatchPartySuggestionRow(WatchPartySuggestion Suggestion, string SuggesterName, double Share, bool IsLeading,
-    bool ShowsVotes, bool CanVote, bool CanPromote, string PromoteLabel, bool CanDelete, Uri? PosterUrl)
+/// <remarks>One row per suggestion, changed in place as the list moves: a vote does not reload its poster or lose focus.</remarks>
+public sealed partial class WatchPartySuggestionRow(WatchPartySuggestion suggestion) : ObservableObject
 {
-    public string Id => Suggestion.Id;
+    public string Id { get; } = suggestion.Id;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Title), nameof(Subtitle), nameof(HasSubtitle), nameof(VotedByMe), nameof(By), nameof(VotesText), nameof(VoteName),
+        nameof(DeleteName))]
+    public partial WatchPartySuggestion Suggestion { get; set; } = suggestion;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(By))]
+    public partial string SuggesterName { get; set; } = "";
+
+    /// <summary>Its votes against the leader's, 0 to 1.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SharePercent))]
+    public partial double Share { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsLeading { get; set; }
+
+    [ObservableProperty]
+    public partial bool ShowsVotes { get; set; }
+
+    [ObservableProperty]
+    public partial bool CanVote { get; set; }
+
+    [ObservableProperty]
+    public partial bool CanPromote { get; set; }
+
+    /// <summary>"Play this" in a vote room, "Queue this" in a host-pick lobby.</summary>
+    [ObservableProperty]
+    public partial string PromoteLabel { get; set; } = "";
+
+    [ObservableProperty]
+    public partial bool CanDelete { get; set; }
+
+    [ObservableProperty]
+    public partial Uri? PosterUrl { get; set; }
 
     public string Title => Suggestion.Title;
 
@@ -137,7 +173,7 @@ public sealed record WatchPartySuggestionRow(WatchPartySuggestion Suggestion, st
 
     public bool VotedByMe => Suggestion.VotedByMe;
 
-    public string By => Suggestion.Note.Length > 0 ? $"{SuggesterName}: “{Suggestion.Note}”" : SuggesterName;
+    public string By => Suggestion.Note.Length > 0 ? $"{SuggesterName}: \u201C{Suggestion.Note}\u201D" : SuggesterName;
 
     public string VotesText => Suggestion.VoteCount == 1 ? "1 vote" : $"{Suggestion.VoteCount} votes";
 

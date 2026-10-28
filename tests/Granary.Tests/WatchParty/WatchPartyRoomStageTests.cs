@@ -237,6 +237,43 @@ public sealed class WatchPartyRoomStageTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task ASuggestionRetriedAfterALostAnswer_IsTheSameSuggestion()
+    {
+        var page = await InRoomAsync(WatchPartyPayloads.Room(role: "guest", mode: "vote"));
+        await ServerPlaybackFixture.Until(() => page.Shelf.Rows.Count > 0, "the shelf");
+        _silo.On(HttpMethod.Post, Room + "/suggestions", ScriptedSilo.NetworkError(), ScriptedSilo.Json(HttpStatusCode.Created, """{ "suggestion_id": "s5" }"""));
+        page.Shelf.ChooseCommand.Execute(page.Shelf.Rows.Single(r => r.Title == "Recently added movies").Cards[0]);
+
+        await page.ConfirmAsync(new WatchPartyChoice("blair", "movie", "Blair Witch Project", "1999", null));
+        Assert.True(page.HasCandidate);
+        await page.ConfirmAsync(new WatchPartyChoice("blair", "movie", "Blair Witch Project", "1999", null));
+
+        var ids = _silo.SentTo(HttpMethod.Post, Room + "/suggestions").Select(r => JsonDocument.Parse(r.Body!).RootElement.GetProperty("suggestion_id").GetString()).ToList();
+        Assert.Equal(2, ids.Count);
+        Assert.Equal(ids[0], ids[1]);
+        Assert.False(page.HasCandidate);
+        page.Deactivate();
+    }
+
+    [Fact]
+    public async Task AVote_ChangesItsRowInPlace()
+    {
+        Suggestions(WatchPartyPayloads.Suggestion("s1", "Heat", content: "heat"), WatchPartyPayloads.Suggestion("s2", "Alien", content: "alien",
+            created: "2026-10-01T12:30:00Z"));
+        var page = await InRoomAsync(WatchPartyPayloads.Room(role: "guest", mode: "vote"), suggestions: 2);
+        var heat = page.SuggestionRows[0];
+        var alien = page.SuggestionRows[1];
+
+        _sockets[0].Push(WatchPartyPayloads.SuggestionsUpdate(("s2", "Alien", 3), ("s1", "Heat", 1)));
+        await ServerPlaybackFixture.Until(() => page.SuggestionRows[0].Title == "Alien", "the new order");
+
+        Assert.Same(alien, page.SuggestionRows[0]);
+        Assert.Same(heat, page.SuggestionRows[1]);
+        Assert.Equal(("3 votes", true), (alien.VotesText, alien.IsLeading));
+        page.Deactivate();
+    }
+
+    [Fact]
     public async Task TheHostOfAHostPickLobby_StagesTheCandidate()
     {
         var page = await InRoomAsync(WatchPartyPayloads.Room());

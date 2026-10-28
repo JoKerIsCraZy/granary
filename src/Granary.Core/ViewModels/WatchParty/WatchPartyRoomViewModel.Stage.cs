@@ -18,6 +18,10 @@ public sealed partial class WatchPartyRoomViewModel
 {
     private string? _heroShown;
     private CancellationTokenSource? _heroRead;
+    private IReadOnlyList<WatchPartySuggestion>? _rowsFrom;
+    private string _rowsKey = "";
+    // The suggestion a confirm sends, kept for its candidate: a retry after a lost answer is the same suggestion.
+    private (string ContentId, string SuggestionId)? _suggestion;
 
     public ObservableCollection<WatchPartySuggestionRow> SuggestionRows { get; } = [];
 
@@ -143,20 +147,55 @@ public sealed partial class WatchPartyRoomViewModel
     {
         var room = Room;
         var suggestions = _party.Suggestions;
+        string? profile = _session.ProfileId;
+        // Only what the rows show moves them; a snapshot that changed nothing of it leaves them be.
+        string key = string.Join("|", room?.SelectionMode, room?.Phase, room?.IsHost, profile,
+            string.Join(",", (room?.Members ?? []).Select(m => m.Key + "=" + m.DisplayName)));
+        if (ReferenceEquals(suggestions, _rowsFrom) && key == _rowsKey)
+        {
+            return;
+        }
+        _rowsFrom = suggestions;
+        _rowsKey = key;
         bool votes = IsVote || IsPlaying;
         int maxVotes = suggestions.Count > 0 ? suggestions[0].VoteCount : 0;
         var names = (room?.Members ?? []).GroupBy(m => m.Key).ToDictionary(g => g.Key, g => g.First().DisplayName);
-        string? profile = _session.ProfileId;
         var server = _session.ActiveServer?.BaseUri;
-        SuggestionRows.Clear();
+        var existing = SuggestionRows.ToDictionary(r => r.Id, StringComparer.Ordinal);
+        var wanted = suggestions.Select(s => s.Id).ToHashSet(StringComparer.Ordinal);
+        for (int i = SuggestionRows.Count - 1; i >= 0; i--)
+        {
+            if (!wanted.Contains(SuggestionRows[i].Id))
+            {
+                SuggestionRows.RemoveAt(i);
+            }
+        }
         for (int i = 0; i < suggestions.Count; i++)
         {
             var suggestion = suggestions[i];
-            bool own = suggestion.SuggesterProfileId == profile;
-            SuggestionRows.Add(new WatchPartySuggestionRow(suggestion, names.GetValueOrDefault(suggestion.SuggesterKey) ?? "Someone",
-                maxVotes > 0 ? (double)suggestion.VoteCount / maxVotes : 0, votes && i == 0 && suggestion.VoteCount > 0, votes, votes,
-                IsHost && !IsPlaying, IsVote ? "Play this" : "Queue this", IsHost || own,
-                server is null ? null : ArtworkUrl.Resolve(server, suggestion.PosterUrl)));
+            if (!existing.TryGetValue(suggestion.Id, out var row))
+            {
+                row = new WatchPartySuggestionRow(suggestion);
+                SuggestionRows.Insert(i, row);
+            }
+            else if (SuggestionRows.IndexOf(row) is int at && at != i)
+            {
+                SuggestionRows.Move(at, i);
+            }
+            row.Suggestion = suggestion;
+            row.SuggesterName = names.GetValueOrDefault(suggestion.SuggesterKey) ?? "Someone";
+            row.Share = maxVotes > 0 ? (double)suggestion.VoteCount / maxVotes : 0;
+            row.IsLeading = votes && i == 0 && suggestion.VoteCount > 0;
+            row.ShowsVotes = votes;
+            row.CanVote = votes;
+            row.CanPromote = IsHost && !IsPlaying;
+            row.PromoteLabel = IsVote ? "Play this" : "Queue this";
+            row.CanDelete = IsHost || suggestion.SuggesterProfileId == profile;
+            var poster = server is null ? null : ArtworkUrl.Resolve(server, suggestion.PosterUrl);
+            if (!Equals(row.PosterUrl, poster))
+            {
+                row.PosterUrl = poster;
+            }
         }
         Leader = IsVote && suggestions.Count > 0 ? suggestions[0] : null;
         foreach (string name in new[]
@@ -185,7 +224,8 @@ public sealed partial class WatchPartyRoomViewModel
         HeroBackdrop = null;
         if (content is not null)
         {
-            _heroRead = new CancellationTokenSource();
+            _heroRead?.Dispose();
+            _heroRead = CancellationTokenSource.CreateLinkedTokenSource(_life.Token);
             _ = ReadHeroAsync(content, _heroRead.Token);
         }
     }
@@ -252,6 +292,7 @@ public sealed partial class WatchPartyRoomViewModel
     private void OnCardChosen(object? sender, WatchPartyShelfCard card)
     {
         bool stages = Shelf.Picks;
+        _suggestion = null;
         HasCandidate = true;
         Shelf.SelectedId = card.ContentId;
         OnPropertyChanged(nameof(ShowsInvite));
@@ -266,6 +307,7 @@ public sealed partial class WatchPartyRoomViewModel
             return;
         }
         HasCandidate = false;
+        _suggestion = null;
         Candidate.Clear();
         Shelf.SelectedId = IsStaged ? Room?.SelectedContentId : null;
         OnPropertyChanged(nameof(ShowsInvite));
@@ -300,8 +342,11 @@ public sealed partial class WatchPartyRoomViewModel
                 }
                 return;
             }
-            await _party.SuggestAsync(new WatchPartySuggestionCreate(Guid.NewGuid().ToString(), choice.ContentId, choice.ContentType, choice.Title,
-                choice.Subtitle, choice.PosterPath));
+            string id = _suggestion is { } pending && pending.ContentId == choice.ContentId ? pending.SuggestionId : Guid.NewGuid().ToString();
+            _suggestion = (choice.ContentId, id);
+            await _party.SuggestAsync(new WatchPartySuggestionCreate(id, choice.ContentId, choice.ContentType, choice.Title, choice.Subtitle,
+                choice.PosterPath));
+            _suggestion = null;
             Say($"Suggested {choice.Title}");
             DismissCandidate();
         }
