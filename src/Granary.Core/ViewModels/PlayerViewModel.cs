@@ -35,6 +35,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     private readonly INavigationService _navigation;
     private readonly Func<IServerPlayback> _serverPlaybacks;
     private readonly PlaybackStops _stops;
+    private IDisposable? _playing;
     private readonly TimeProvider _time;
     private readonly long _created;
     private readonly IUpNextSource? _upNext;
@@ -215,6 +216,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         }
         var playback = _serverPlaybacks();
         _playback = playback;
+        _playing = _stops.Playing();
         HasSubtitleMenu = true;
         ReadMarkerPermission();
         playback.StatusChanged += OnPlaybackStatusChanged;
@@ -359,9 +361,12 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         ResetMarkerEdit();
         ResetMarkers();
         ResetChapters();
-        _stops.Track(EndAsync(playback));
+        var playing = _playing;
+        _playing = null;
+        _stops.Track(EndAsync(playback, playing));
 
-        static async Task EndAsync(IServerPlayback playback)
+        // It counts as playing until its stop ended: the server's echo of its progress is this app's own.
+        static async Task EndAsync(IServerPlayback playback, IDisposable? playing)
         {
             try
             {
@@ -369,7 +374,14 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
             }
             finally
             {
-                await playback.DisposeAsync();
+                try
+                {
+                    await playback.DisposeAsync();
+                }
+                finally
+                {
+                    playing?.Dispose();
+                }
             }
         }
     }

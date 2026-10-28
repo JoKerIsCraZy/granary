@@ -21,6 +21,9 @@ namespace Granary.App;
 
 public partial class App : Application
 {
+    // The events connection's close at exit: a server that does not answer is not waited for longer.
+    private static readonly TimeSpan RealtimeStopBudget = TimeSpan.FromSeconds(2.5);
+
     private MainWindow? _window;
     private ILogger<App>? _logger;
 
@@ -74,10 +77,11 @@ public partial class App : Application
         _ = accent.StartAsync();
         // The profile's card badges, read with every sign-in and profile switch.
         _ = Services.GetRequiredService<CardOverlaySettings>().StartAsync();
-        // Home and the sidebar's count follow what happens on other devices (docs/api-contract.md, 12).
+        // Home and the sidebar's count follow what happens on other devices (docs/api-contract.md, 12). Closing tells the
+        // server the connection goes, but waits for that only a moment: the stop never needs this thread.
         var realtime = Services.GetRequiredService<RealtimeEvents>();
         realtime.Start();
-        _window.Closed += (_, _) => _ = realtime.StopAsync();
+        _window.Closed += (_, _) => realtime.StopAsync().Wait(RealtimeStopBudget);
 
         // Developer shortcuts: --play <file or URL> plays it without the server; --play-item <content id> plays a
         // title of the signed-in server.

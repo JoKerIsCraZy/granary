@@ -1949,14 +1949,19 @@ Granary (`Realtime/EventsLane`, `Realtime/RealtimeEvents`): one connection per s
 with the window and replaced on a profile or server switch, none while signed out. A profile-bound
 ticket (bearer and profile headers, no body), the protocol and `silo.ticket.<ticket>` offered, `subscribe`
 to `catalog`, `user_state`, `notifications` after `hello`; frames up to 1 MiB. The connection ends with
-`max_connection_seconds`; a lost one comes back after 1 s, doubling to 30 s until one subscribes again, at
-once after `access_changed` or close code 4001; a server answering the ticket with 404 or 501 has none.
+`max_connection_seconds`; a lost one comes back after 1 s, doubling to 30 s until one subscribes and holds
+longer than 1 s, and at once after `access_changed` or close code 4001 on a connection that held that long
+(one closed sooner waits like any loss, so a server that closes every connection is not asked in a loop).
+A server answering the ticket with 404 or 501 gets no lane until the next sign-in, profile switch or start.
 What it does:
 - `user_state.changed` for the profile (`progress` aside), any `catalog` event, `access_changed`, and a
-  connection back after more than 5 s without one: `ViewerStateChanges.Report()` once the burst has been
-  quiet for 2 s, at most 30 s after its first change. Home reloads in place while shown; other pages
-  compare the version on their next visit.
-- `user_state.changed` with `progress`: one report per 30 s window.
+  later connection back after more than 5 s without one (the lane's first has no gap): one
+  `ViewerStateChanges.Report()` once the burst has been quiet for 2 s, at most 30 s after its first change.
+  Home reloads in place while shown; other pages compare the version on their next visit.
+- `user_state.changed` with `progress`: one report per 30 s window, none while this app plays.
+- Echoes: the events name no device, so Granary's own changes come back. News of the profile's state within
+  5 s of a change the app reported itself is dropped, and a reload waiting only for such news is dropped
+  when the app reports (its own reload covers it); a waiting catalog or access change still reloads.
 - Any `notifications` event or snapshot: the sidebar's unread count is read again after 1 s of quiet
   (`GET /notifications/unread-count`), rather than counted locally.
 - Left out: `user_settings` (card badges and other profile settings are read on sign-in and profile

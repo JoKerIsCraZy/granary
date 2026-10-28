@@ -106,7 +106,8 @@ public sealed class EventsLaneTests
         var subscribe = JsonDocument.Parse(Assert.Single(Socket(0).Sent)).RootElement;
         Assert.Equal("subscribe", subscribe.GetProperty("type").GetString());
         Assert.Equal(Channels, subscribe.GetProperty("channels").EnumerateArray().Select(c => c.GetString()));
-        Assert.Equal(TimeSpan.Zero, Assert.Single(Frames()).Gap);
+        // The lane's first connection missed nothing.
+        Assert.Null(Assert.Single(Frames()).Gap);
     }
 
     [Fact]
@@ -158,9 +159,26 @@ public sealed class EventsLaneTests
         Socket(3).Push(Hello);
         Socket(3).Push(Subscribed);
         await ServerPlaybackFixture.Until(() => Frames().Count == 1, "the subscription");
+        _time.Advance(TimeSpan.FromSeconds(2));
         Socket(3).Close();
 
         await WaitForTheWaitAsync(TimeSpan.FromSeconds(1));
+    }
+
+    [Fact]
+    public async Task AConnectionClosedAtOnce_DoesNotStartTheWaitsOver()
+    {
+        await using var lane = Lane();
+        Follow(lane);
+        await OpenAsync(0);
+        Socket(0).Close();
+        await WaitForTheWaitAsync(TimeSpan.FromSeconds(1));
+        _time.Advance(TimeSpan.FromSeconds(1));
+
+        await OpenAsync(1);
+        Socket(1).Close();
+
+        await WaitForTheWaitAsync(TimeSpan.FromSeconds(2));
     }
 
     [Fact]
@@ -169,6 +187,7 @@ public sealed class EventsLaneTests
         await using var lane = Lane();
         Follow(lane);
         await OpenAsync(0);
+        _time.Advance(TimeSpan.FromSeconds(2));
 
         Socket(0).Push("""{ "type": "access_changed" }""");
         Socket(0).Close(4001);
@@ -183,11 +202,29 @@ public sealed class EventsLaneTests
         await using var lane = Lane();
         Follow(lane);
         await OpenAsync(0);
+        _time.Advance(TimeSpan.FromSeconds(2));
 
         Socket(0).Close(4001);
 
         await ServerPlaybackFixture.Until(() => SocketCount == 2, "the new connection, without a wait");
         Assert.Single(Frames(), f => f.Type == EventsFrameTypes.AccessChanged);
+    }
+
+    [Fact]
+    public async Task AServerThatChangesTheAccessOfEveryConnection_IsNotAskedInALoop()
+    {
+        await using var lane = Lane();
+        Follow(lane);
+        await OpenAsync(0);
+
+        Socket(0).Close(4001);
+        await WaitForTheWaitAsync(TimeSpan.FromSeconds(1));
+        _time.Advance(TimeSpan.FromSeconds(1));
+        await OpenAsync(1);
+        Socket(1).Close(4001);
+
+        await WaitForTheWaitAsync(TimeSpan.FromSeconds(2));
+        Assert.Equal(2, SocketCount);
     }
 
     [Fact]
@@ -253,15 +290,52 @@ public sealed class EventsLaneTests
     }
 
     [Fact]
-    public async Task Stop_ClosesTheConnection()
+    public async Task Stop_ClosesTheConnection_ForGood()
     {
         var lane = Lane();
         Follow(lane);
         await OpenAsync(0);
 
         await lane.StopAsync();
+        Follow(lane);
+        await Task.Delay(50, TestContext.Current.CancellationToken);
 
         Assert.True(lane.Running.IsCompleted);
         Assert.True(Socket(0).Disposed);
+        Assert.Equal(1, SocketCount);
+        Assert.Single(_silo.SentTo(HttpMethod.Post, TicketPath));
+    }
+
+    [Fact]
+    public async Task FollowingAgain_LeavesOneConnection()
+    {
+        await using var lane = Lane();
+        Follow(lane);
+        await OpenAsync(0);
+
+        Follow(lane);
+
+        await ServerPlaybackFixture.Until(() => SocketCount == 2 && Socket(0).Disposed, "the second connection in place of the first");
+        Assert.False(Socket(1).Disposed);
+    }
+
+    [Fact]
+    public async Task FollowingFromManyThreadsAtOnce_LeavesOneConnection()
+    {
+        await using var lane = Lane();
+
+        Parallel.For(0, 16, _ => Follow(lane));
+
+        await ServerPlaybackFixture.Until(() => SocketCount >= 1 && Live() == 1, "a single live connection");
+        await Task.Delay(100, TestContext.Current.CancellationToken);
+        Assert.Equal(1, Live());
+
+        int Live()
+        {
+            lock (_sockets)
+            {
+                return _sockets.Count(socket => !socket.Disposed);
+            }
+        }
     }
 }

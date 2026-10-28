@@ -9,10 +9,14 @@ namespace Granary.Core.Realtime;
 /// The events stream's connection, as the web and Silo's Android app keep it (docs/api-contract.md, 12): a fresh ticket per
 /// connection, the socket offering the protocol and the ticket, a <c>subscribe</c> once the server said hello, and every
 /// frame after it handed on. The server ends a connection after five minutes; a lost one comes back after 1 second, then
-/// 2, 4, … up to 30 (from 1 again once one subscribed), and at once after an access change. A server that serves no
-/// events (404, 501) has no lane.
+/// 2, 4, … up to 30 (from 1 again once one subscribed and held longer than a second), and at once after an access change
+/// on a connection that held that long. A server that serves no events (404, 501) has no lane until the next one is made
+/// (sign-in, another profile, the next start).
 /// </summary>
-/// <remarks>The socket runs off the UI thread; <c>onFrame</c> is called there.</remarks>
+/// <remarks>
+/// The socket runs off the UI thread; <c>onFrame</c> is called there. Once stopped, a lane stays stopped: a late
+/// <see cref="Follow"/> does nothing.
+/// </remarks>
 public sealed class EventsLane : IAsyncDisposable
 {
     /// <summary>The close code after <c>access_changed</c>.</summary>
@@ -29,7 +33,10 @@ public sealed class EventsLane : IAsyncDisposable
     private readonly Func<IRealtimeSocket> _sockets;
     private readonly TimeProvider _time;
     private readonly ILogger<EventsLane> _logger;
+    private readonly Lock _gate = new();
     private CancellationTokenSource? _run;
+    private Task _running = Task.CompletedTask;
+    private bool _stopped;
 
     public EventsLane(EventsApi api, Func<IRealtimeSocket> sockets, TimeProvider time, ILogger<EventsLane> logger)
     {
@@ -40,26 +47,52 @@ public sealed class EventsLane : IAsyncDisposable
     }
 
     /// <summary>The run that keeps the lane, for a caller that waits for it to end.</summary>
-    public Task Running { get; private set; } = Task.CompletedTask;
+    public Task Running
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _running;
+            }
+        }
+    }
 
-    /// <summary>Keeps a connection to <paramref name="server"/> on <paramref name="channels"/>, ending an earlier one.</summary>
+    /// <summary>
+    /// Keeps a connection to <paramref name="server"/> on <paramref name="channels"/>, ending an earlier one. The run starts
+    /// off the caller's thread, so a caller may hold a lock of its own; after <see cref="StopAsync"/> it does nothing.
+    /// </summary>
     public void Follow(Uri server, IReadOnlyList<string> channels, Action<EventsFrame> onFrame)
     {
         ArgumentNullException.ThrowIfNull(server);
         ArgumentNullException.ThrowIfNull(channels);
         ArgumentNullException.ThrowIfNull(onFrame);
-        Cancel();
-        _run = new CancellationTokenSource();
-        Running = RunAsync(server, channels, onFrame, _run.Token);
+        lock (_gate)
+        {
+            if (_stopped)
+            {
+                return;
+            }
+            CancelLocked();
+            var run = new CancellationTokenSource();
+            _run = run;
+            _running = Task.Run(() => RunAsync(server, channels, onFrame, run.Token), CancellationToken.None);
+        }
     }
 
-    /// <summary>Ends the lane and waits until its connection closed. Never throws: whatever ended the run was logged.</summary>
+    /// <summary>Ends the lane for good and waits until its connection closed. Never throws: whatever ended the run was logged.</summary>
     public async Task StopAsync()
     {
-        Cancel();
+        Task running;
+        lock (_gate)
+        {
+            _stopped = true;
+            CancelLocked();
+            running = _running;
+        }
         try
         {
-            await Running.ConfigureAwait(false);
+            await running.ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -70,7 +103,7 @@ public sealed class EventsLane : IAsyncDisposable
     public async ValueTask DisposeAsync() => await StopAsync().ConfigureAwait(false);
 
     // Disposed only once its run ended: the run may still be inside a call that holds its token.
-    private void Cancel()
+    private void CancelLocked()
     {
         if (_run is not { } run)
         {
@@ -78,14 +111,14 @@ public sealed class EventsLane : IAsyncDisposable
         }
         _run = null;
         run.Cancel();
-        _ = Running.ContinueWith(_ => run.Dispose(), CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+        _ = _running.ContinueWith(_ => run.Dispose(), CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
     }
 
     private async Task RunAsync(Uri server, IReadOnlyList<string> channels, Action<EventsFrame> onFrame, CancellationToken cancellationToken)
     {
         var wait = FirstWait;
-        // Since when the lane has had no subscribed connection: what a new one may have missed.
-        var since = _time.GetUtcNow();
+        // Since when the lane has had no subscribed connection: what a new one may have missed. None before the first.
+        DateTimeOffset? since = null;
         while (!cancellationToken.IsCancellationRequested)
         {
             var attempt = new Attempt(since);
@@ -112,12 +145,19 @@ public sealed class EventsLane : IAsyncDisposable
                 // No reason to give the lane up; only the type is logged, as a message could carry the ticket.
                 _logger.LogWarning("The events connection failed: {Failure}", ex.GetType().Name);
             }
+            var now = _time.GetUtcNow();
+            // A connection that held a while was a good one; one closed at once (by a server that closes every one, say)
+            // keeps the waits growing, so the lane does not ask for tickets in a tight loop.
+            bool held = attempt.OpenedAt is { } opened && now - opened > FirstWait;
             if (attempt.Subscribed)
             {
-                wait = FirstWait;
-                since = _time.GetUtcNow();
+                since = now;
+                if (held)
+                {
+                    wait = FirstWait;
+                }
             }
-            if (attempt.AccessChanged)
+            if (attempt.AccessChanged && held)
             {
                 // The new access goes with the next ticket: no wait.
                 continue;
@@ -142,6 +182,8 @@ public sealed class EventsLane : IAsyncDisposable
         {
             throw new InvalidDataException("The server's events ticket is not one of this protocol.");
         }
+        // A lane stopped meanwhile opens no socket.
+        cancellationToken.ThrowIfCancellationRequested();
         await using var socket = _sockets();
         using (var connecting = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
         {
@@ -153,6 +195,7 @@ public sealed class EventsLane : IAsyncDisposable
         {
             throw new InvalidDataException("The server chose another protocol.");
         }
+        attempt.OpenedAt = _time.GetUtcNow();
         using var lifetime = new CancellationTokenSource(TimeSpan.FromSeconds(ticket.MaxConnectionSeconds), _time);
         using var connection = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, lifetime.Token);
         int requests = 0;
@@ -205,9 +248,12 @@ public sealed class EventsLane : IAsyncDisposable
         }
     }
 
-    private sealed class Attempt(DateTimeOffset since)
+    private sealed class Attempt(DateTimeOffset? since)
     {
-        public DateTimeOffset Since { get; } = since;
+        /// <summary>When the last subscribed connection ended; null before the lane's first.</summary>
+        public DateTimeOffset? Since { get; } = since;
+
+        public DateTimeOffset? OpenedAt { get; set; }
 
         public bool Subscribed { get; set; }
 

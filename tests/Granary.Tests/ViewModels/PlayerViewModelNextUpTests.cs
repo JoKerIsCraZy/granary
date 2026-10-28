@@ -27,6 +27,7 @@ public sealed class PlayerViewModelNextUpTests
     private readonly FakeUpNextSource _source = new();
     private readonly AutoPlayStreak _streak = new();
     private readonly List<FakeServerPlayback> _playbacks = [];
+    private readonly PlaybackStops _stops = new();
     private double _position;
 
     private FakeServerPlayback Playback => _playbacks[^1];
@@ -43,7 +44,7 @@ public sealed class PlayerViewModelNextUpTests
             };
             _playbacks.Add(playback);
             return playback;
-        }, new PlaybackStops(), _time, _source, _streak);
+        }, _stops, _time, _source, _streak);
         _navigation.NavigateTo(AppRoute.Item, "detail");
         _navigation.NavigateTo(AppRoute.Player);
         await viewModel.StartAsync(PlayRequest.Resume(episode?.ContentId ?? "movie-1"));
@@ -75,6 +76,18 @@ public sealed class PlayerViewModelNextUpTests
         await viewModel.PlayPreviousEpisodeCommand.ExecuteAsync(null);
         Assert.Equal(PlayRequest.Resume("episode-1-2"), Playback.Started);
         Assert.Equal(1, _playbacks[0].Stops);
+    }
+
+    [Fact]
+    public async Task APlayback_CountsAsPlaying_UntilItsStopEnded()
+    {
+        var viewModel = await PlayingAsync(Ted);
+        Assert.True(_stops.IsPlaying);
+
+        viewModel.Leave();
+
+        Assert.True(await _stops.WhenStoppedAsync(TimeSpan.FromSeconds(5)));
+        Assert.False(_stops.IsPlaying);
     }
 
     [Fact]

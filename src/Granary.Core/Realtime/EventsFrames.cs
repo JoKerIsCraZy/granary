@@ -48,8 +48,8 @@ public sealed record EventsFrame(string Type)
     public IReadOnlyList<string> Rejected { get; init; } = [];
 
     /// <summary>
-    /// On a <c>subscribed</c> frame of a later connection: how long the lane was without one. Changes made meanwhile were
-    /// not sent, and the catalog and the profile's state send no snapshot.
+    /// On a <c>subscribed</c> frame of a later connection: how long the lane was without one (null on its first). Changes
+    /// made meanwhile were not sent, and the catalog and the profile's state send no snapshot.
     /// </summary>
     public TimeSpan? Gap { get; init; }
 

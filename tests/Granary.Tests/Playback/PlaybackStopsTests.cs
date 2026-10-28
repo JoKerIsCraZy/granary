@@ -46,6 +46,21 @@ public sealed class PlaybackStopsTests
     }
 
     [Fact]
+    public void Playing_LastsUntilItsHandleIsDisposed_Once()
+    {
+        var first = _stops.Playing();
+        var second = _stops.Playing();
+        Assert.True(_stops.IsPlaying);
+
+        first.Dispose();
+        first.Dispose();
+        Assert.True(_stops.IsPlaying);
+
+        second.Dispose();
+        Assert.False(_stops.IsPlaying);
+    }
+
+    [Fact]
     public async Task AFailedStop_CountsAsDone()
     {
         var stop = new TaskCompletionSource();

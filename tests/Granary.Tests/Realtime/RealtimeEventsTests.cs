@@ -2,6 +2,7 @@ using System.Net;
 using Granary.Core.Api.Events;
 using Granary.Core.Api.Notifications;
 using Granary.Core.Auth;
+using Granary.Core.Playback;
 using Granary.Core.Realtime;
 using Granary.Core.ViewModels;
 using Granary.Tests.Browse;
@@ -21,6 +22,7 @@ public sealed class RealtimeEventsTests : IAsyncDisposable
     private readonly LibraryHarness _harness = new();
     private readonly List<FakeRealtimeSocket> _sockets = [];
     private readonly NotificationBadge _badge;
+    private readonly PlaybackStops _stops = new();
     private readonly RealtimeEvents _events;
 
     public RealtimeEventsTests()
@@ -30,7 +32,7 @@ public sealed class RealtimeEventsTests : IAsyncDisposable
         _harness.Answer("api/v2/notifications/unread-count", """{ "count": 3 }""");
         var notifications = new NotificationsApi(_harness.Silo.Http);
         _badge = new NotificationBadge(_harness.Session, notifications, _harness.Clock, _harness.Logs.For<NotificationBadge>());
-        _events = new RealtimeEvents(_harness.Session, Lane, _harness.ViewerState, _badge, new ImmediateDispatcher(), _harness.Clock,
+        _events = new RealtimeEvents(_harness.Session, Lane, _harness.ViewerState, _stops, _badge, new ImmediateDispatcher(), _harness.Clock,
             _harness.Logs.For<RealtimeEvents>());
     }
 
@@ -43,6 +45,17 @@ public sealed class RealtimeEventsTests : IAsyncDisposable
             lock (_sockets)
             {
                 return _sockets.Count;
+            }
+        }
+    }
+
+    private int LiveSockets
+    {
+        get
+        {
+            lock (_sockets)
+            {
+                return _sockets.Count(socket => !socket.Disposed);
             }
         }
     }
@@ -237,6 +250,126 @@ public sealed class RealtimeEventsTests : IAsyncDisposable
 
         Assert.Equal(0, SocketCount);
         Assert.Empty(_harness.Silo.SentTo(HttpMethod.Post, EventsLaneTests.TicketPath));
+    }
+
+    [Fact]
+    public async Task TheAppsOwnChange_ComingBack_IsNotASecondReload()
+    {
+        var socket = await StartedAsync();
+        long before = Version;
+
+        _harness.ViewerState.Report();
+        await PushedAsync(socket, UserState("7", "watched"));
+        _harness.Clock.Advance(RealtimeEvents.EchoWindow + TimeSpan.FromSeconds(1));
+        Assert.Equal(before + 1, Version);
+
+        // Later news of the profile's state is another device's again.
+        await PushedAsync(socket, UserState("7", "favorite"));
+        _harness.Clock.Advance(RealtimeEvents.SettleDelay);
+        Assert.Equal(before + 2, Version);
+    }
+
+    [Fact]
+    public async Task NewsOfTheAppsOwnChange_ArrivingBeforeItsReport_IsCoveredByIt()
+    {
+        var socket = await StartedAsync();
+        long before = Version;
+
+        await PushedAsync(socket, UserState("7", "watchlist"));
+        _harness.ViewerState.Report();
+        _harness.Clock.Advance(TimeSpan.FromSeconds(31));
+
+        Assert.Equal(before + 1, Version);
+    }
+
+    [Fact]
+    public async Task ACatalogChangeWaiting_StillReloads_AfterTheAppsOwnReport()
+    {
+        var socket = await StartedAsync();
+        long before = Version;
+
+        await PushedAsync(socket, CatalogChanged);
+        _harness.ViewerState.Report();
+        _harness.Clock.Advance(RealtimeEvents.SettleDelay);
+
+        Assert.Equal(before + 2, Version);
+    }
+
+    [Fact]
+    public async Task ProgressWhileThisAppPlays_IsItsOwn()
+    {
+        var socket = await StartedAsync();
+        long before = Version;
+
+        using (_stops.Playing())
+        {
+            await PushedAsync(socket, UserState("7", "progress"));
+            _harness.Clock.Advance(TimeSpan.FromSeconds(31));
+        }
+        Assert.Equal(before, Version);
+
+        await PushedAsync(socket, UserState("7", "progress"));
+        _harness.Clock.Advance(RealtimeEvents.ProgressWindow);
+        Assert.Equal(before + 1, Version);
+    }
+
+    [Fact]
+    public async Task SessionChangesFromManyThreads_LeaveOneConnection()
+    {
+        await StartedAsync();
+
+        Parallel.For(0, 24, i =>
+        {
+            _harness.Session.ProfileId = i % 2 == 0 ? "8" : "9";
+            _harness.Session.RaiseChanged();
+        });
+        _harness.Session.ProfileId = "8";
+        _harness.Session.RaiseChanged();
+
+        await ServerPlaybackFixture.Until(() => LiveSockets == 1 && Socket(0).Disposed, "a single live connection");
+        // A replaced lane caught mid-connect may still open and close one socket; after that nothing more comes.
+        await Task.Delay(100, TestContext.Current.CancellationToken);
+        int made = SocketCount;
+        _harness.Clock.Advance(TimeSpan.FromSeconds(60));
+        await Task.Delay(100, TestContext.Current.CancellationToken);
+        Assert.Equal(1, LiveSockets);
+        Assert.Equal(made, SocketCount);
+    }
+
+    [Fact]
+    public async Task StartAfterStop_FollowsAgain()
+    {
+        var first = await StartedAsync();
+
+        await _events.StopAsync();
+        Assert.True(first.Disposed);
+        _events.Start();
+
+        await ServerPlaybackFixture.Until(() => SocketCount == 2 && LiveSockets == 1, "the new connection");
+    }
+
+    [Fact]
+    public async Task StopRacingASessionChange_LeavesNoConnection()
+    {
+        await StartedAsync();
+
+        var changes = Task.Run(() =>
+        {
+            for (int i = 0; i < 20; i++)
+            {
+                _harness.Session.ProfileId = i % 2 == 0 ? "8" : "7";
+                _harness.Session.RaiseChanged();
+            }
+        }, TestContext.Current.CancellationToken);
+        await _events.StopAsync();
+        await changes;
+
+        await ServerPlaybackFixture.Until(() => LiveSockets == 0, "every connection closed");
+        await Task.Delay(100, TestContext.Current.CancellationToken);
+        int made = SocketCount;
+        _harness.Clock.Advance(TimeSpan.FromSeconds(60));
+        await Task.Delay(100, TestContext.Current.CancellationToken);
+        Assert.Equal(made, SocketCount);
     }
 
     [Fact]
