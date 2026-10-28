@@ -51,8 +51,18 @@ public interface ISessionManager
     /// <summary>Completes a sign-in whose tokens came from elsewhere (device sign-in); activates the server.</summary>
     Task SignInWithTokensAsync(ServerEntry server, TokenPair tokens, CancellationToken cancellationToken = default);
 
-    /// <summary>Selects the acting profile; <paramref name="profileToken"/> is required for a PIN profile.</summary>
-    Task SelectProfileAsync(string profileId, string? profileToken, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// A saved server added again: when it is still signed in it becomes active and asks who is watching, as the apps'
+    /// server screen does; false when it has no session, and nothing changed (it needs a sign-in).
+    /// </summary>
+    Task<bool> ReopenServerAsync(string serverEntryId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Selects the acting profile on the server its list came from; <paramref name="profileToken"/> is required for a
+    /// PIN profile.
+    /// </summary>
+    /// <exception cref="ActiveServerChangedException">That server is no longer the active one; nothing was applied.</exception>
+    Task SelectProfileAsync(string serverEntryId, string profileId, string? profileToken, CancellationToken cancellationToken = default);
 
     /// <summary>Forgets the selected profile but keeps the login session (back to the profile picker).</summary>
     Task ClearProfileAsync(CancellationToken cancellationToken = default);

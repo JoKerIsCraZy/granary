@@ -210,7 +210,7 @@ public sealed class SessionPinningTests
         using var session = _pipeline.CreateSessionManager();
         await session.SignInWithPasswordAsync(server, "alex", "pw", ct);
 
-        await Assert.ThrowsAsync<HttpRequestException>(() => session.SelectProfileAsync("7", "token\r\nX-Injected: 1", ct));
+        await Assert.ThrowsAsync<HttpRequestException>(() => session.SelectProfileAsync(server.Id, "7", "token\r\nX-Injected: 1", ct));
 
         Assert.Null((await _pipeline.Credentials.GetAsync(server.Id, ct))!.ProfileId);
     }

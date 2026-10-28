@@ -91,14 +91,33 @@ public sealed class SessionManager : ISessionManager, IDisposable
         await ActivateCoreAsync(saved.Id, CancellationToken.None).ConfigureAwait(false);
     }
 
-    public async Task SelectProfileAsync(string profileId, string? profileToken, CancellationToken cancellationToken = default)
+    public async Task<bool> ReopenServerAsync(string serverEntryId, CancellationToken cancellationToken = default)
+    {
+        var entry = _registry.Find(serverEntryId) ?? throw new InvalidOperationException("The server is not saved.");
+        // Who is watching is asked again; the login stays.
+        if (await _credentials.UpdateAsync(entry.Id, c => c with { ProfileId = null, ProfileToken = null }, cancellationToken).ConfigureAwait(false) is null)
+        {
+            return false;
+        }
+        _logger.LogInformation("Opened saved server {ServerEntryId} again", entry.Id);
+        await ActivateCoreAsync(entry.Id, cancellationToken).ConfigureAwait(false);
+        RefreshAccountInBackground();
+        return true;
+    }
+
+    public async Task SelectProfileAsync(string serverEntryId, string profileId, string? profileToken, CancellationToken cancellationToken = default)
     {
         // Both come from the server and go back to it as headers.
         if (!SessionCredentials.IsHeaderSafe(profileId) || (profileToken is not null && !SessionCredentials.IsHeaderSafe(profileToken)))
         {
             throw new HttpRequestException(HttpRequestError.InvalidResponse, "The server sent a profile id or token that cannot be sent back.");
         }
+        // A profile of one server's account means nothing to another: the pick needs the server it was listed for.
         var server = RequireActiveServer();
+        if (server.Id != serverEntryId || _registry.ActiveServerId != serverEntryId)
+        {
+            throw new ActiveServerChangedException("The profile was picked for a server that is no longer active.");
+        }
         var updated = await _credentials.UpdateAsync(server.Id,
             c => c with { ProfileId = profileId, ProfileToken = profileToken }, cancellationToken).ConfigureAwait(false)
             ?? throw new InvalidOperationException("Selecting a profile needs a signed-in server.");

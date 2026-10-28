@@ -105,7 +105,7 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
             return;
         }
         ClosePinPrompt();
-        if (!ListBelongsToActiveServer(out _))
+        if (!ListBelongsToActiveServer(out var server))
         {
             LoadCommand.Execute(null);
             return;
@@ -116,7 +116,7 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
             IsPinPromptOpen = true;
             return;
         }
-        await CommitAsync(profile.Id, null);
+        await CommitAsync(server.Id, profile.Id, null);
     }
 
     /// <summary>
@@ -172,7 +172,7 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
         if (outcome.ProfileToken is { } token)
         {
             ClosePinPrompt();
-            await CommitAsync(profile.Id, token);
+            await CommitAsync(server.Id, profile.Id, token);
         }
         else if (outcome.ProfileChanged)
         {
@@ -269,12 +269,18 @@ public sealed partial class ProfilePickerViewModel : ObservableObject, IDisposab
         }
     }
 
-    private async Task CommitAsync(string profileId, string? profileToken)
+    // The pick goes to the server the list came from; when another one became active meanwhile it is dropped, and the
+    // list follows the new server (OnSessionChanged).
+    private async Task CommitAsync(string serverId, string profileId, string? profileToken)
     {
         IsSelecting = true;
         try
         {
-            await _session.SelectProfileAsync(profileId, profileToken);
+            await _session.SelectProfileAsync(serverId, profileId, profileToken);
+        }
+        catch (ActiveServerChangedException)
+        {
+            _logger.LogInformation("Another server became active while profile {ProfileId} was picked; the pick was dropped", profileId);
         }
         catch (Exception ex)
         {

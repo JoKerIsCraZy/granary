@@ -48,7 +48,7 @@ public sealed class AddServerViewModelTests
             Probe = new ScriptedProbe(probe);
             Http = new FakeHttpMessageHandler((request, _) => Task.FromResult(Respond(request)));
             Discovery = new LanServerDiscovery(Browser, LanProbe, new ManualTimeProvider(), new LogSink().For<LanServerDiscovery>());
-            ViewModel = new AddServerViewModel(Probe, new SystemApi(new SiloHttp(new HttpClient(Http))), Registry, Navigation, Discovery,
+            ViewModel = new AddServerViewModel(Probe, new SystemApi(new SiloHttp(new HttpClient(Http))), Registry, Session, Navigation, Discovery,
                 new ImmediateDispatcher());
         }
 
@@ -63,6 +63,8 @@ public sealed class AddServerViewModelTests
         public FakeHttpMessageHandler Http { get; }
 
         public InMemoryServerRegistry Registry { get; } = new();
+
+        public FakeSessionManager Session { get; } = new();
 
         public RecordingNavigation Navigation { get; } = new();
 
@@ -120,6 +122,33 @@ public sealed class AddServerViewModelTests
         Assert.Equal("https://nas.local", harness.ViewModel.ConnectedServer?.OriginalString);
         Assert.Contains("Living room", harness.ViewModel.Status, StringComparison.Ordinal);
         Assert.All(harness.Http.Requests, r => Assert.Null(r.Headers.Authorization));
+    }
+
+    [Fact]
+    public async Task Connect_ToASavedServerStillSignedIn_OpensItAgain_InsteadOfSignIn()
+    {
+        var harness = new Harness(uri => new ServerProbeResult.Compatible(uri, V2)).ReadyServer("https://nas.local");
+        var saved = await harness.Registry.AddOrUpdateAsync(new Uri("https://nas.local"), "Living room", null, TestContext.Current.CancellationToken);
+        harness.Session.SignedInServers.Add(saved.Id);
+
+        await harness.ConnectAsync("nas.local");
+
+        Assert.Equal(saved.Id, Assert.Single(harness.Registry.Servers).Id);
+        Assert.Equal([$"reopen:{saved.Id}"], harness.Session.Calls);
+        // The shell routes on the session: the page itself goes nowhere.
+        Assert.Empty(harness.Navigation.Navigations);
+        Assert.Equal("Opening Living room…", harness.ViewModel.Status);
+    }
+
+    [Fact]
+    public async Task Connect_ToASavedServerSignedOut_GoesToSignIn()
+    {
+        var harness = new Harness(uri => new ServerProbeResult.Compatible(uri, V2)).ReadyServer("https://nas.local");
+        var saved = await harness.Registry.AddOrUpdateAsync(new Uri("https://nas.local"), "Living room", null, TestContext.Current.CancellationToken);
+
+        await harness.ConnectAsync("nas.local");
+
+        Assert.Equal([(AppRoute.SignIn, (object?)saved.Id)], harness.Navigation.Navigations);
     }
 
     [Fact]
@@ -266,7 +295,10 @@ public sealed class AddServerViewModelTests
         var navigation = new RecordingNavigation();
         var system = new SystemApi(new SiloHttp(new HttpClient(FakeHttpMessageHandler.Returning(HttpStatusCode.OK, Ready))));
         var discovery = new LanServerDiscovery(new NoLanServiceBrowser(), new FakeLanProbe(), TimeProvider.System, new LogSink().For<LanServerDiscovery>());
-        var viewModel = new AddServerViewModel(probe, system, registry, navigation, discovery, new ImmediateDispatcher()) { Address = "nas.local" };
+        var viewModel = new AddServerViewModel(probe, system, registry, new FakeSessionManager(), navigation, discovery, new ImmediateDispatcher())
+        {
+            Address = "nas.local",
+        };
 
         var connecting = viewModel.ConnectCommand.ExecuteAsync(null);
         await probing.Task.WaitAsync(TestContext.Current.CancellationToken);

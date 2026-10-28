@@ -415,6 +415,37 @@ public sealed class ProfilePickerViewModelTests
     }
 
     [Fact]
+    public async Task Select_GoesToTheServerTheListCameFrom()
+    {
+        using var harness = new Harness();
+        await harness.ViewModel.LoadCommand.ExecuteAsync(null);
+
+        await harness.ViewModel.SelectCommand.ExecuteAsync(harness.Profile("p-owner"));
+
+        Assert.Equal([ScriptedSilo.Server.Id], harness.Recorder.ProfileServers);
+    }
+
+    [Fact]
+    public async Task Select_WhileAnotherServerBecomesActive_IsDroppedQuietly()
+    {
+        using var harness = new Harness();
+        await harness.ViewModel.LoadCommand.ExecuteAsync(null);
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        harness.Recorder.SelectGate = gate.Task;
+
+        var selecting = harness.ViewModel.SelectCommand.ExecuteAsync(harness.Profile("p-owner"));
+        // The switch lands after the picker's own check, before the session applies the pick.
+        harness.Session.ActiveServer = ScriptedSilo.Entry("srv2", new Uri("https://other.example"));
+        gate.SetResult();
+        await selecting;
+
+        Assert.Empty(harness.Session.Calls);
+        Assert.Null(harness.Session.ProfileId);
+        Assert.Equal("", harness.ViewModel.Status);
+        Assert.False(harness.ViewModel.IsSelecting);
+    }
+
+    [Fact]
     public async Task SubmitPin_AfterCancelAndReopen_IgnoresTheEarlierCheck()
     {
         using var harness = new Harness();

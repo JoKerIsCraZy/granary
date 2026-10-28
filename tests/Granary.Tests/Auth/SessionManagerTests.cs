@@ -70,12 +70,69 @@ public sealed class SessionManagerTests
         using var session = _pipeline.CreateSessionManager();
         await session.SignInWithPasswordAsync(server, "alex", "pw", ct);
 
-        await session.SelectProfileAsync("7", "pin-token", ct);
+        await session.SelectProfileAsync(server.Id, "7", "pin-token", ct);
 
         Assert.Equal(SessionState.Ready, session.State);
         Assert.Equal("7", session.ProfileId);
         Assert.Equal("7", _pipeline.Registry.Find(server.Id)!.LastProfileId);
         Assert.Equal("pin-token", (await _pipeline.Credentials.GetAsync(server.Id, ct))!.ProfileToken);
+    }
+
+    [Fact]
+    public async Task APickForAServerNoLongerActive_IsNotApplied()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var first = await _pipeline.AddServerAsync();
+        var second = await _pipeline.AddServerAsync("https://other.test");
+        using var session = _pipeline.CreateSessionManager();
+        await session.SignInWithPasswordAsync(first, "alex", "pw", ct);
+        await session.SignInWithPasswordAsync(second, "alex", "pw", ct);
+
+        await Assert.ThrowsAsync<ActiveServerChangedException>(() => session.SelectProfileAsync(first.Id, "7", null, ct));
+
+        Assert.Equal(second.Id, session.ActiveServer!.Id);
+        Assert.Equal(SessionState.ProfileRequired, session.State);
+        Assert.Null((await _pipeline.Credentials.GetAsync(first.Id, ct))!.ProfileId);
+        Assert.Null((await _pipeline.Credentials.GetAsync(second.Id, ct))!.ProfileId);
+        Assert.Null(_pipeline.Registry.Find(first.Id)!.LastProfileId);
+    }
+
+    [Fact]
+    public async Task ReopeningASignedInServer_MakesItActive_AndAsksWhoIsWatching()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var server = await _pipeline.AddServerAsync();
+        var other = await _pipeline.AddServerAsync("https://other.test");
+        using var session = _pipeline.CreateSessionManager();
+        await session.SignInWithPasswordAsync(server, "alex", "pw", ct);
+        await session.SelectProfileAsync(server.Id, "7", "pin-token", ct);
+        await session.SignInWithPasswordAsync(other, "sam", "pw", ct);
+
+        bool reopened = await session.ReopenServerAsync(server.Id, ct);
+
+        Assert.True(reopened);
+        Assert.Equal(server.Id, session.ActiveServer!.Id);
+        Assert.Equal(SessionState.ProfileRequired, session.State);
+        var stored = await _pipeline.Credentials.GetAsync(server.Id, ct);
+        Assert.Null(stored!.ProfileId);
+        Assert.Null(stored.ProfileToken);
+        Assert.Equal("access-1", stored.AccessToken);
+    }
+
+    [Fact]
+    public async Task ReopeningASignedOutServer_ChangesNothing()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var server = await _pipeline.AddServerAsync();
+        var signedOut = await _pipeline.AddServerAsync("https://other.test");
+        using var session = _pipeline.CreateSessionManager();
+        await session.SignInWithPasswordAsync(server, "alex", "pw", ct);
+
+        bool reopened = await session.ReopenServerAsync(signedOut.Id, ct);
+
+        Assert.False(reopened);
+        Assert.Equal(server.Id, session.ActiveServer!.Id);
+        Assert.Null(await _pipeline.Credentials.GetAsync(signedOut.Id, ct));
     }
 
     [Fact]
@@ -86,7 +143,7 @@ public sealed class SessionManagerTests
         using (var first = _pipeline.CreateSessionManager())
         {
             await first.SignInWithPasswordAsync(server, "alex", "pw", ct);
-            await first.SelectProfileAsync("7", null, ct);
+            await first.SelectProfileAsync(server.Id, "7", null, ct);
         }
 
         using var second = _pipeline.CreateSessionManager();
@@ -104,7 +161,7 @@ public sealed class SessionManagerTests
         var server = await _pipeline.AddServerAsync();
         using var session = _pipeline.CreateSessionManager();
         await session.SignInWithPasswordAsync(server, "alex", "pw", ct);
-        await session.SelectProfileAsync("7", "pin-token", ct);
+        await session.SelectProfileAsync(server.Id, "7", "pin-token", ct);
 
         await session.ClearProfileAsync(ct);
 
@@ -169,7 +226,7 @@ public sealed class SessionManagerTests
         var server = await _pipeline.AddServerAsync();
         using var session = _pipeline.CreateSessionManager();
         await session.SignInWithPasswordAsync(server, "alex", "pw", ct);
-        await session.SelectProfileAsync("7", null, ct);
+        await session.SelectProfileAsync(server.Id, "7", null, ct);
         var signedOut = new TaskCompletionSource();
         session.Changed += (_, _) =>
         {
@@ -194,7 +251,7 @@ public sealed class SessionManagerTests
         var server = await _pipeline.AddServerAsync();
         using var session = _pipeline.CreateSessionManager();
         await session.SignInWithPasswordAsync(server, "alex", "pw", ct);
-        await session.SelectProfileAsync("7", "stale", ct);
+        await session.SelectProfileAsync(server.Id, "7", "stale", ct);
         _pipeline.Server.Intercept = r => r.Path == "/api/v2/home" ? FakeSiloServer.Problem(403, ProblemCodes.ProfileVerificationRequired) : null;
 
         await Assert.ThrowsAsync<SiloApiException>(() =>
@@ -232,7 +289,7 @@ public sealed class SessionManagerTests
         var cabin = await _pipeline.AddServerAsync("https://cabin.test");
         using var session = _pipeline.CreateSessionManager();
         await session.SignInWithPasswordAsync(home, "alex", "pw", ct);
-        await session.SelectProfileAsync("7", null, ct);
+        await session.SelectProfileAsync(home.Id, "7", null, ct);
 
         await session.ActivateServerAsync(cabin.Id, ct);
         Assert.Equal(SessionState.SignedOut, session.State);

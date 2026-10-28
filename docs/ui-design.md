@@ -305,7 +305,9 @@ title prepares or buffers. With Windows' animations off the mark stands still.
   confirmed (nothing before): up to four rows in a rounded card with hairlines between them, each a 40 px disc with
   the name's letter, the name, "On this network · 192.168.1.6:8090", an amber open lock with "Not encrypted" (every
   found address is plain HTTP; sign-in's amber consent follows), and a chevron, a spinner while it connects; Cancel
-  stops either way of connecting. A found server that matches a saved one, by id or address, is not offered.
+  stops either way of connecting. A found server that matches a saved one, by id or address, is not offered. A typed
+  address that is a saved server still signed in opens it again and asks who is watching, as the apps' server screens
+  do ("Opening Living room…"); a saved one without a session goes to sign-in as a new one does.
 - Sign in: the server's name, a refusal, the password form, then "Use your phone instead". As on the web, the QR code
   shows on "Show QR code" (at once when the server has no password sign-in), framed, with the address and the code
   below it; the page scrolls to it.

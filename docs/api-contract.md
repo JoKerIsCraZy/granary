@@ -462,6 +462,8 @@ profile headers.
 - When a request that carried `X-Profile-Id` gets `403 profile_verification_required`, clear the
   selected profile (not the account session) and return to the profile picker (Android:
   `silo-android/shared/.../repository/ProfileVerificationRecovery.kt:62-141`).
+- A profile id and its token belong to one server's account: Granary applies a pick only to the server whose list it
+  came from, and drops it when another server became active meanwhile.
 
 ### 6.4 Client identification headers
 

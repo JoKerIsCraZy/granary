@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
 using Granary.Core.Api;
 using Granary.Core.Api.Discovery;
+using Granary.Core.Auth;
 using Granary.Core.Servers;
 
 namespace Granary.Core.ViewModels;
@@ -11,13 +12,15 @@ namespace Granary.Core.ViewModels;
 /// <summary>
 /// "Add server" (docs/api-contract.md, 3.2): tries each candidate URL for the typed address, accepts the
 /// first v2 server, stops at a server that needs updating or its first-time setup, saves the server with
-/// its identity and display name, and goes to sign-in. Servers found on this network can be picked instead of typed
+/// its identity and display name, and goes to sign-in. A saved server that is still signed in is opened again instead
+/// and asks who is watching, as the apps do. Servers found on this network can be picked instead of typed
 /// (<see cref="Found"/>); they go the same way.
 /// </summary>
 public sealed partial class AddServerViewModel(
     IServerProbe probe,
     SystemApi system,
     IServerRegistry registry,
+    ISessionManager session,
     INavigationService navigation,
     LanServerDiscovery discovery,
     IUiDispatcher dispatcher) : ObservableObject
@@ -125,6 +128,12 @@ public sealed partial class AddServerViewModel(
         try
         {
             entry = await _registry.AddOrUpdateAsync(baseUri, name, serverId, cancellationToken);
+            // Added before and still signed in (the address is the saved one's): the shell goes to its profiles.
+            if (await session.ReopenServerAsync(entry.Id, cancellationToken))
+            {
+                Status = $"Opening {entry.Name}…";
+                return;
+            }
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {

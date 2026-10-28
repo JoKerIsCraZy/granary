@@ -46,8 +46,21 @@ internal sealed class FakeSessionManager : ISessionManager
         Changed?.Invoke(this, EventArgs.Empty);
     }
 
-    public async Task SelectProfileAsync(string profileId, string? profileToken, CancellationToken cancellationToken = default)
+    /// <summary>The servers <see cref="ReopenServerAsync"/> finds signed in.</summary>
+    public HashSet<string> SignedInServers { get; } = [];
+
+    public async Task<bool> ReopenServerAsync(string serverEntryId, CancellationToken cancellationToken = default)
     {
+        await Record($"reopen:{serverEntryId}");
+        return SignedInServers.Contains(serverEntryId);
+    }
+
+    public async Task SelectProfileAsync(string serverEntryId, string profileId, string? profileToken, CancellationToken cancellationToken = default)
+    {
+        if (ActiveServer?.Id != serverEntryId)
+        {
+            throw new ActiveServerChangedException();
+        }
         await Record($"profile:{profileId}:{(profileToken is null ? "no-token" : "token")}");
         ProfileId = profileId;
         State = SessionState.Ready;
