@@ -310,21 +310,6 @@ public sealed class SearchRequestToAddTests
     }
 
     [Fact]
-    public async Task APerson_HidesTheSection_AndBackShowsItAgain()
-    {
-        _silo.Map("api/v2/catalog/search/capabilities", SearchCapabilities(people: true));
-        _silo.Map("api/v2/catalog/people", People(("7", "Al Pacino")));
-        var search = Create();
-        await search.ActivateAsync("al");
-
-        await search.OpenPersonCommand.ExecuteAsync(search.People[0]);
-        Assert.False(search.ShowsRequests);
-
-        search.BackToResultsCommand.Execute(null);
-        Assert.True(search.ShowsRequests);
-    }
-
-    [Fact]
     public async Task ClearingTheBox_HidesTheSection()
     {
         var search = Create();

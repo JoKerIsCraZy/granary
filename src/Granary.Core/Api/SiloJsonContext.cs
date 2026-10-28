@@ -110,6 +110,7 @@ namespace Granary.Core.Api;
 [JsonSerializable(typeof(WatchlistTitleCollection))]
 [JsonSerializable(typeof(ServerBranding))]
 [JsonSerializable(typeof(Person))]
+[JsonSerializable(typeof(PersonRefresh))]
 [JsonSerializable(typeof(ImageCapabilities))]
 [JsonSerializable(typeof(ImageSizeWidths))]
 public sealed partial class SiloJsonContext : JsonSerializerContext;

@@ -23,7 +23,7 @@ public enum SearchScope
 /// Search as on Silo's web client (docs/api-contract.md, 7.5): titles 300 ms after the last keystroke,
 /// in relevance order and cursor-paged, and the people whose names match in parallel when the server
 /// can search them, and under them the titles TMDB finds that the library does not have (<see cref="Requests"/>).
-/// A person opens their titles in place; <see cref="BackToResultsCommand"/> returns.
+/// A person opens their page, as the web's search does.
 /// A new search cancels the previous one, and an answer that arrives for an older text is dropped.
 /// </summary>
 /// <remarks>The commands take no cancellation token: a cancellable toolkit command cancels its running call when executed again.</remarks>
@@ -44,12 +44,10 @@ public sealed partial class SearchViewModel : ObservableObject
     private readonly TimeProvider _time;
     private readonly ILogger<SearchViewModel> _logger;
 
-    // One run per search text (its wait, titles and people), and one per opened person.
+    // One run per search text (its wait, titles and people).
     private CancellationTokenSource? _searchRun;
-    private CancellationTokenSource? _personRun;
     private string? _scheduledText;
     private BrowseCardPager? _titles;
-    private BrowseCardPager? _filmography;
     private (string Text, IReadOnlyList<SearchPerson> People)? _peopleFound;
     private (string Status, bool HasError) _resultsState = ("", false);
     private Task<CatalogSearchCapabilities?>? _capabilities;
@@ -102,18 +100,13 @@ public sealed partial class SearchViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(Heading))]
     public partial string ResultsQuery { get; private set; } = "";
 
-    /// <summary>The titles of the search, or of the opened person.</summary>
+    /// <summary>The titles of the search.</summary>
     [ObservableProperty]
     public partial IReadOnlyList<MediaCard> Cards { get; private set; } = [];
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowsPeople), nameof(ShowsTitlesHeading))]
     public partial IReadOnlyList<SearchPerson> People { get; private set; } = [];
-
-    /// <summary>The person whose titles are shown instead of the results.</summary>
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(Heading), nameof(IsPersonOpen), nameof(ShowsPeople), nameof(ShowsTitlesHeading), nameof(ShowsRequests))]
-    public partial SearchPerson? Person { get; private set; }
 
     /// <summary>
     /// The library found nothing, and "Request to add" is searching or shows titles: it says so instead of "No titles
@@ -123,7 +116,7 @@ public sealed partial class SearchViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(ShowsTitlesHeading))]
     public partial bool IsLibraryRescued { get; private set; }
 
-    /// <summary>Titles or people are being searched (or a person's titles loaded).</summary>
+    /// <summary>Titles or people are being searched.</summary>
     [ObservableProperty]
     public partial bool IsSearching { get; private set; }
 
@@ -135,24 +128,20 @@ public sealed partial class SearchViewModel : ObservableObject
     [ObservableProperty]
     public partial string StatusText { get; private set; } = "";
 
-    /// <summary>"Search", "Results for "heat"", or "Titles with Al Pacino".</summary>
-    public string Heading => Person is { } person ? $"Titles with {person.Name}"
-        : ResultsQuery.Length > 0 ? $"Results for \"{ResultsQuery}\""
-        : "Search";
+    /// <summary>"Search", or "Results for "heat"".</summary>
+    public string Heading => ResultsQuery.Length > 0 ? $"Results for \"{ResultsQuery}\"" : "Search";
 
-    public bool IsPersonOpen => Person is not null;
-
-    public bool ShowsPeople => Person is null && People.Count > 0;
+    public bool ShowsPeople => People.Count > 0;
 
     /// <summary>"Titles" between the people and the library's titles, unless "Request to add" stands in for none.</summary>
     public bool ShowsTitlesHeading => ShowsPeople && !IsLibraryRescued;
 
-    public bool ShowsRequests => Person is null && Requests.IsShown;
+    public bool ShowsRequests => Requests.IsShown;
 
     /// <summary>The display's scale (1.5 at 150 %), so artwork is asked for at the pixels it is drawn at.</summary>
     public double DisplayScale { get; set; } = 1;
 
-    /// <summary>The current search or person load, for tests.</summary>
+    /// <summary>The current search, for tests.</summary>
     internal Task Searching { get; private set; } = Task.CompletedTask;
 
     /// <summary>The page is shown; <paramref name="query"/> (the route's parameter) searches at once.</summary>
@@ -168,7 +157,7 @@ public sealed partial class SearchViewModel : ObservableObject
             StartOver();
         }
         string text = query?.Trim() ?? "";
-        if (text.Length > 0 && (text != Query.Trim() || text != ResultsQuery || IsPersonOpen))
+        if (text.Length > 0 && (text != Query.Trim() || text != ResultsQuery))
         {
             Query = text;
             Schedule(TimeSpan.Zero);
@@ -222,10 +211,6 @@ public sealed partial class SearchViewModel : ObservableObject
     [RelayCommand]
     private Task RetryAsync()
     {
-        if (Person is { } person)
-        {
-            return _filmography is { IsLoaded: true } ? LoadNextPageAsync() : OpenPersonAsync(person);
-        }
         if (_titles is { IsLoaded: true } && ResultsQuery == Query.Trim())
         {
             return LoadNextPageAsync();
@@ -242,36 +227,14 @@ public sealed partial class SearchViewModel : ObservableObject
         }
     }
 
-    /// <summary>Shows the person's titles, newest first, in place of the results.</summary>
+    /// <summary>Opens the person's page; the results stay for Back.</summary>
     [RelayCommand]
-    private Task OpenPersonAsync(SearchPerson? person)
+    private void OpenPerson(SearchPerson? person)
     {
-        if (person is null)
+        if (person is not null)
         {
-            return Task.CompletedTask;
+            _navigation.NavigateTo(AppRoute.Person, person.Id);
         }
-        _personRun?.Cancel();
-        var run = new CancellationTokenSource();
-        _personRun = run;
-        _filmography = null;
-        Person = person;
-        Cards = [];
-        return Searching = LoadFilmographyAsync(person, run);
-    }
-
-    [RelayCommand]
-    private void BackToResults()
-    {
-        if (Person is null)
-        {
-            return;
-        }
-        _personRun?.Cancel();
-        _personRun = null;
-        _filmography = null;
-        Person = null;
-        Cards = _titles is { } titles ? titles.Cards : [];
-        ShowResultsState();
     }
 
     /// <summary>Searches the box's text after <paramref name="delay"/>, cancelling whatever ran for an older text.</summary>
@@ -279,7 +242,6 @@ public sealed partial class SearchViewModel : ObservableObject
     {
         _searchRun?.Cancel();
         SetSearchingTitles(false);
-        BackToResults();
         string text = Query.Trim();
         _scheduledText = text;
         if (text.Length == 0)
@@ -332,7 +294,7 @@ public sealed partial class SearchViewModel : ObservableObject
         }
         catch (Exception ex) when (cancellationToken.IsCancellationRequested && ApiFailureText.IsRequestFailure(ex))
         {
-            // A newer text or an opened person replaced this search; its answer, or its failure, is stale.
+            // A newer text replaced this search; its answer, or its failure, is stale.
         }
         finally
         {
@@ -418,25 +380,17 @@ public sealed partial class SearchViewModel : ObservableObject
         _libraryEmpty = failure is null && titles is { Cards.Count: 0 };
         Requests.LibraryFoundNothing = _libraryEmpty;
         _isSearchingTitles = false;
-        // A person opened from the previous results keeps the page until Back to results.
-        if (Person is null)
-        {
-            Cards = titles is null ? [] : titles.Cards;
-        }
+        Cards = titles is null ? [] : titles.Cards;
         ShowResultsState();
     }
 
     /// <summary>
-    /// The results' busy ring, word and error, unless a person is open. While the library found nothing, "Request to add"
-    /// may still find titles: the ring turns until it knows, and "No titles found" waits until it found none.
+    /// The results' busy ring, word and error. While the library found nothing, "Request to add" may still find titles:
+    /// the ring turns until it knows, and "No titles found" waits until it found none.
     /// </summary>
     private void ShowResultsState()
     {
         IsLibraryRescued = _libraryEmpty && (Requests.IsSearching || Requests.IsShown);
-        if (Person is not null)
-        {
-            return;
-        }
         IsSearching = _isSearchingTitles || (_libraryEmpty && Requests.IsSearching);
         (StatusText, HasError) = IsLibraryRescued ? ("", false) : _resultsState;
     }
@@ -447,55 +401,15 @@ public sealed partial class SearchViewModel : ObservableObject
         ShowResultsState();
     }
 
-    private async Task LoadFilmographyAsync(SearchPerson person, CancellationTokenSource run)
-    {
-        var cancellationToken = run.Token;
-        if (_session is not { State: SessionState.Ready, ActiveServer: { } server })
-        {
-            return;
-        }
-        IsSearching = true;
-        HasError = false;
-        StatusText = $"Loading titles with {person.Name}";
-        try
-        {
-            var images = await BrowseArtwork.ParametersAsync(_images, server, DisplayScale, _logger, cancellationToken);
-            var query = CatalogQuery.ForPerson(person.Id) with { Limit = PageSize, Images = images };
-            var filmography = new BrowseCardPager(_catalog, server.BaseUri, query, item => CardFor(item, server.BaseUri));
-            _filmography = filmography;
-            Cards = filmography.Cards;
-            await filmography.LoadFirstPageAsync(cancellationToken);
-            StatusText = filmography.Cards.Count == 0 ? $"No titles with {person.Name}" : "";
-        }
-        catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex))
-        {
-            // Back to results or another person replaced this load; its failure is stale.
-            if (!cancellationToken.IsCancellationRequested)
-            {
-                _logger.LogWarning("Loading a person's titles failed: {Failure}", ApiFailureText.Describe(ex));
-                HasError = true;
-                StatusText = Describe(ex);
-            }
-        }
-        finally
-        {
-            if (run == _personRun)
-            {
-                IsSearching = false;
-            }
-        }
-    }
-
     private async Task LoadNextPageAsync()
     {
-        bool forPerson = Person is not null;
-        var listing = forPerson ? _filmography : _titles;
-        var run = forPerson ? _personRun : _searchRun;
+        var listing = _titles;
+        var run = _searchRun;
         if (listing is not { HasMore: true } || run is null || IsSearching)
         {
             return;
         }
-        bool IsShown() => listing == (Person is null ? _titles : _filmography);
+        bool IsShown() => listing == _titles;
         try
         {
             await listing.LoadNextPageAsync(run.Token);
@@ -514,7 +428,7 @@ public sealed partial class SearchViewModel : ObservableObject
                 StatusText = Describe(ex);
             }
         }
-        if (!forPerson && IsShown())
+        if (IsShown())
         {
             _resultsState = (StatusText, HasError);
         }
@@ -541,7 +455,6 @@ public sealed partial class SearchViewModel : ObservableObject
         _sessionKey = SessionKey();
         _searchRun?.Cancel();
         _searchRun = null;
-        BackToResults();
         _capabilities = null;
         _peopleFound = null;
         ShowNoSearch();

@@ -262,45 +262,17 @@ public sealed class SearchViewModelTests
     }
 
     [Fact]
-    public async Task Person_OpensTheirTitlesAndBackReturnsToTheResults()
+    public async Task Person_OpensTheirPage_AndTheResultsStay()
     {
         var search = Create();
         await search.ActivateAsync("al");
-        _silo.Map(CatalogPath, request => BrowseFakeSilo.Json(Read(request, "source") == "person"
-            ? Page(null, Item("heat-1995"), Item("serpico-1973"))
-            : Page(null, Item("for-" + Read(request, "q")))));
 
-        await search.OpenPersonCommand.ExecuteAsync(search.People[0]);
+        search.OpenPersonCommand.Execute(search.People[0]);
 
-        var request = _silo.To(CatalogPath)[^1];
-        Assert.Equal("person", request.Query("source"));
-        Assert.Equal("7", request.Query("person_id"));
-        Assert.Equal("-year", request.Query("sort"));
-        Assert.Null(request.Query("q"));
-        Assert.Equal("Titles with Al Pacino", search.Heading);
-        Assert.Equal(["heat-1995", "serpico-1973"], search.Cards.Select(c => c.Id));
-        Assert.False(search.ShowsPeople);
-
-        search.BackToResultsCommand.Execute(null);
-
+        Assert.Equal((AppRoute.Person, (object?)"7"), Assert.Single(_navigation.Navigations));
         Assert.Equal("Results for \"al\"", search.Heading);
         Assert.Equal(["for-al"], search.Cards.Select(c => c.Id));
         Assert.True(search.ShowsPeople);
-    }
-
-    [Fact]
-    public async Task Typing_LeavesAnOpenedPerson()
-    {
-        var search = Create();
-        await search.ActivateAsync("al");
-        await search.OpenPersonCommand.ExecuteAsync(search.People[0]);
-
-        search.Query = "alien";
-
-        Assert.Null(search.Person);
-        _time.Advance(SearchViewModel.DebounceDelay);
-        await search.Searching;
-        Assert.Equal(["for-alien"], search.Cards.Select(c => c.Id));
     }
 
     [Fact]

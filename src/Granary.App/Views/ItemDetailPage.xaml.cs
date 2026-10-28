@@ -71,6 +71,9 @@ public sealed partial class ItemDetailPage : Page
     private void OnEpisodeClick(object sender, RoutedEventArgs e) =>
         Invoke(ViewModel.OpenEpisodeCommand, (sender as FrameworkElement)?.DataContext as DetailEpisode);
 
+    private void OnPersonClick(object sender, RoutedEventArgs e) =>
+        Invoke(ViewModel.OpenPersonCommand, (sender as FrameworkElement)?.DataContext as DetailPerson);
+
     private static void Invoke(ICommand command, object? parameter)
     {
         if (parameter is not null && command.CanExecute(parameter))

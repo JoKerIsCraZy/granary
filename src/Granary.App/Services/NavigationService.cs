@@ -39,6 +39,7 @@ public sealed class NavigationService : INavigationService
         [AppRoute.RequestTitles] = typeof(RequestTitlesPage),
         [AppRoute.Admin] = typeof(AdminPage),
         [AppRoute.CollectionEditor] = typeof(CollectionEditorPage),
+        [AppRoute.Person] = typeof(PersonPage),
     };
 
     private static readonly Dictionary<Type, AppRoute> Routes = Pages.Where(p => p.Key != AppRoute.Collection).ToDictionary(p => p.Value, p => p.Key);

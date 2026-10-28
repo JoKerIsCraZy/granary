@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     Search as on Silo's web client: a large title, a large rounded search box, the type switch, people as
-    round photo cards, the titles, then Request to add. A person opens their titles here. Cached, so Back keeps the
+    round photo cards, the titles, then Request to add. A person opens their page. Cached, so Back keeps the
     results and the Request to add page.
 -->
 <Page
@@ -37,14 +37,6 @@
             <TextBlock Text="{x:Bind ViewModel.Heading, Mode=OneWay}" Style="{StaticResource SiloDisplayTextStyle}" MaxLines="2"
                        TextTrimming="CharacterEllipsis" AutomationProperties.HeadingLevel="Level1" />
 
-            <Button x:Name="BackToResultsButton" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.BackToResultsCommand}"
-                    Visibility="{x:Bind ViewModel.IsPersonOpen, Mode=OneWay}">
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                    <FontIcon Glyph="&#xE72B;" FontSize="14" />
-                    <TextBlock Text="Back to results" />
-                </StackPanel>
-            </Button>
-
             <Grid MaxWidth="760" HorizontalAlignment="Stretch">
                 <TextBox x:Name="SearchBox" Style="{StaticResource SearchBoxStyle}"
                          Text="{x:Bind ViewModel.Query, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -57,8 +49,7 @@
                               AutomationProperties.Name="Searching" />
             </Grid>
 
-            <SelectorBar x:Name="ScopeBar" SelectionChanged="OnScopeSelectionChanged" AutomationProperties.Name="Search in"
-                         Visibility="{x:Bind Not(ViewModel.IsPersonOpen), Mode=OneWay}">
+            <SelectorBar x:Name="ScopeBar" SelectionChanged="OnScopeSelectionChanged" AutomationProperties.Name="Search in">
                 <SelectorBarItem Text="Movies &amp; Series" />
                 <SelectorBarItem Text="Movies" />
                 <SelectorBarItem Text="Series" />

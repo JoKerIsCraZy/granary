@@ -134,6 +134,18 @@ public sealed class CatalogApi(SiloHttp http)
         return http.GetAsync(server, "api/v2/catalog/people" + query, SiloAuth.Profile, SiloJsonContext.Default.PersonCollection, cancellationToken);
     }
 
+    /// <summary>
+    /// One person. A read counts as a view: the server may queue a provider refresh of a person it knows little about.
+    /// Their titles: <see cref="CatalogQuery.ForPerson"/>.
+    /// </summary>
+    public Task<Person> GetPersonAsync(Uri server, string personId, CancellationToken cancellationToken = default) =>
+        http.GetAsync(server, $"api/v2/catalog/people/{Segment(personId)}", SiloAuth.Profile, SiloJsonContext.Default.Person, cancellationToken);
+
+    /// <summary>Queues a provider refresh of the person's details (202); the server coalesces repeats.</summary>
+    public Task<PersonRefresh> RefreshPersonAsync(Uri server, string personId, CancellationToken cancellationToken = default) =>
+        http.SendAsync(HttpMethod.Post, server, $"api/v2/catalog/people/{Segment(personId)}/refresh", SiloAuth.Profile,
+            SiloJsonContext.Default.PersonRefresh, cancellationToken);
+
     /// <summary>Adds the item to (PUT) or removes it from (DELETE) the profile's favorites; idempotent.</summary>
     public Task SetFavoriteAsync(Uri server, string itemId, bool isFavorite, CancellationToken cancellationToken = default) =>
         http.SendAsync(isFavorite ? HttpMethod.Put : HttpMethod.Delete, server, $"api/v2/favorites/{Segment(itemId)}", SiloAuth.Profile, cancellationToken);

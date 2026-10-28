@@ -18,9 +18,13 @@ public sealed record DetailCreditPart(string? Label, string Text)
 }
 
 /// <summary>A cast or crew card: photo (initials without one), name and role or character.</summary>
+/// <param name="PersonId">The catalog person the card opens; null for one known only from TMDB.</param>
 public sealed record DetailPerson(string Name, string? Role, Uri? PhotoUrl, string? PersonId, bool IsCrew = false)
 {
     public string Initials => ProfileItemViewModel.InitialsOf(Name);
+
+    /// <summary>The card leads to the person's page.</summary>
+    public bool CanOpen => !string.IsNullOrWhiteSpace(PersonId);
 }
 
 /// <summary>A crumb above a season or episode title; <see cref="TargetId"/> is the item it opens, if any.</summary>

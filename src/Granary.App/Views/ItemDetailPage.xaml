@@ -103,8 +103,13 @@
                                     <StackLayout Orientation="Horizontal" Spacing="16" />
                                 </ItemsRepeater.Layout>
                                 <ItemsRepeater.ItemTemplate>
+                                    <!-- A card with a person opens their page; one without is only a card (not a stop for the keyboard). -->
                                     <DataTemplate x:DataType="detail:DetailPerson">
-                                        <controls:PersonCreditCard Person="{x:Bind}" />
+                                        <Button Style="{StaticResource SiloCardButtonStyle}" HorizontalAlignment="Left" Click="OnPersonClick" DataContext="{x:Bind}"
+                                                IsTabStop="{x:Bind CanOpen}" IsHitTestVisible="{x:Bind CanOpen}"
+                                                AutomationProperties.Name="{x:Bind Name}" ToolTipService.ToolTip="{x:Bind Name}">
+                                            <controls:PersonCreditCard Person="{x:Bind}" />
+                                        </Button>
                                     </DataTemplate>
                                 </ItemsRepeater.ItemTemplate>
                             </ItemsRepeater>

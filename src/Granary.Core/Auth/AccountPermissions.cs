@@ -28,6 +28,11 @@ public sealed class AccountPermissions(ISessionManager session, ProfilesApi prof
         return account.IsAdmin && await ActsOnPrimaryProfileAsync(server.BaseUri, session.ProfileId, cancellationToken).ConfigureAwait(false);
     }
 
+    /// <summary>An administrator acting on the primary profile (or none), as the web's <c>useIsActingAdmin</c>.</summary>
+    public async Task<bool> IsActingAdminAsync(CancellationToken cancellationToken = default) =>
+        session is { Account.IsAdmin: true, ActiveServer: { } server }
+        && await ActsOnPrimaryProfileAsync(server.BaseUri, session.ProfileId, cancellationToken).ConfigureAwait(false);
+
     // An admin on another profile of the household (a child's) is a viewer there.
     private async Task<bool> ActsOnPrimaryProfileAsync(Uri server, string? profileId, CancellationToken cancellationToken)
     {

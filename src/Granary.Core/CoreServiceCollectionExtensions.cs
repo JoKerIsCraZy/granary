@@ -140,6 +140,7 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<CollectionsViewModel>();
         services.AddTransient<ForYouViewModel>();
         services.AddTransient<RecommendationSectionViewModel>();
+        services.AddTransient<PersonViewModel>();
         services.AddTransient<CalendarViewModel>();
         services.AddSingleton<NotificationBadge>();
         services.AddTransient<NotificationsViewModel>();

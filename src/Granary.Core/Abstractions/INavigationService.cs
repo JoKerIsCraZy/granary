@@ -70,6 +70,9 @@ public enum AppRoute
 
     /// <summary>A profile's own collection made or changed; the parameter is a <see cref="CollectionEditorRouteParameter"/>.</summary>
     CollectionEditor,
+
+    /// <summary>A cast or crew member and their titles; the parameter is the person's id.</summary>
+    Person,
 }
 
 /// <summary>Which row an "Explore all" grid lists: a Home row, or a library row when <see cref="LibraryId"/> is set.</summary>

@@ -322,7 +322,7 @@ public sealed partial class MainWindow : Window
     private NavigationTransitionInfo? TransitionFor(AppRoute target)
     {
         bool fromPane = _navigation.Current is { } current && ShowsPane(current);
-        if (!Shell.IsSignedIn || !fromPane || !ShowsPane(target) || (target == AppRoute.Item) == _isRail)
+        if (!Shell.IsSignedIn || !fromPane || !ShowsPane(target) || IsDetail(target) == _isRail)
         {
             return null;
         }
@@ -511,7 +511,7 @@ public sealed partial class MainWindow : Window
         // The settings and the admin area bring their own sidebar, as on the web.
         bool hidesPane = isPlayer || route is AppRoute.Settings or AppRoute.Admin;
         // A detail page's rail opens over the page (compact mode), not beside it: the page keeps its width.
-        _isRail = route == AppRoute.Item;
+        _isRail = IsDetail(route);
         _railHover.Stop();
         // The way back is the web's: no arrow in the sidebar, a disc at the top left of a page opened from another (a title,
         // a row in full, a collection, the servers); the sidebar's own pages have none, Back (Alt+Left) still leads home.
@@ -541,7 +541,7 @@ public sealed partial class MainWindow : Window
             Navigation.IsPaneVisible = false;
         }
         bool wasOpen = Navigation.IsPaneOpen;
-        Navigation.IsPaneOpen = Shell.IsSignedIn && route is not (AppRoute.Item or AppRoute.Player);
+        Navigation.IsPaneOpen = Shell.IsSignedIn && !IsDetail(route) && route != AppRoute.Player;
         if (_revealPending && wasOpen == Navigation.IsPaneOpen)
         {
             // The pane was already where it goes (the rail had opened under the mouse): nothing to wait for.
@@ -552,6 +552,9 @@ public sealed partial class MainWindow : Window
         AppTitle.Visibility = isPlayer ? Visibility.Collapsed : Visibility.Visible;
         ShowPaneParts(Navigation.IsPaneOpen);
     }
+
+    // A title's page and a person's, the web's detail pages: the sidebar narrows to its rail beside them.
+    private static bool IsDetail(AppRoute? route) => route is AppRoute.Item or AppRoute.Person;
 
     // The headers fold their sections in the open pane; in the icon-only rail each is the web's short divider. Set here,
     // not by NavigationView's pane states, which lag behind after the player's minimal mode. LIBRARIES only with libraries.

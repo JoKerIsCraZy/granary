@@ -26,6 +26,16 @@ public sealed partial class ItemDetailViewModel
     [RelayCommand]
     private void OpenCrumb(DetailCrumb? crumb) => Open(crumb?.TargetId);
 
+    /// <summary>A cast or crew card opens the person's page, as the web's cast row links it; one without an id stays.</summary>
+    [RelayCommand]
+    private void OpenPerson(DetailPerson? person)
+    {
+        if (person is { CanOpen: true, PersonId: { } id })
+        {
+            _navigation.NavigateTo(AppRoute.Person, id);
+        }
+    }
+
     [RelayCommand]
     private void GoBack() => _navigation.GoBack();
 

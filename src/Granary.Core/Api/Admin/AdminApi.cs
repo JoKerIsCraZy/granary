@@ -15,6 +15,11 @@ public sealed class AdminApi(SiloHttp http)
     public Task<AdminBuildInfo> GetBuildAsync(Uri server, CancellationToken cancellationToken = default) =>
         http.GetAsync(server, "api/v2/admin/system/build", SiloAuth.Profile, AdminJsonContext.Default.AdminBuildInfo, cancellationToken);
 
+    /// <summary>Refreshes a person's details from the provider and answers them, as the web's "Refresh now".</summary>
+    public Task<Catalog.Person> RefreshPersonAsync(Uri server, string personId, CancellationToken cancellationToken = default) =>
+        http.SendAsync(HttpMethod.Post, server, $"api/v2/admin/people/{SiloHttp.PathSegment(personId, nameof(personId))}/refresh", SiloAuth.Profile,
+            SiloJsonContext.Default.Person, cancellationToken);
+
     public Task<AdminNodeCollection> ListNodesAsync(Uri server, CancellationToken cancellationToken = default) =>
         http.GetAsync(server, "api/v2/admin/nodes", SiloAuth.Profile, AdminJsonContext.Default.AdminNodeCollection, cancellationToken);
 

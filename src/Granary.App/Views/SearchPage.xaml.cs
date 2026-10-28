@@ -26,7 +26,6 @@ public sealed partial class SearchPage : Page
         ViewModel = App.Services.GetRequiredService<SearchViewModel>();
         InitializeComponent();
         ScopeBar.SelectedItem = ScopeBar.Items[(int)ViewModel.Scope];
-        ViewModel.PropertyChanged += OnViewModelPropertyChanged;
         ViewModel.Requests.PropertyChanged += OnRequestsPropertyChanged;
     }
 
@@ -122,20 +121,6 @@ public sealed partial class SearchPage : Page
         if (sender is FrameworkElement { DataContext: SearchPerson person } && ViewModel.OpenPersonCommand.CanExecute(person))
         {
             ViewModel.OpenPersonCommand.Execute(person);
-        }
-    }
-
-    // A person's titles start at the top, and keyboard users land on the way back.
-    private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName != nameof(SearchViewModel.Person))
-        {
-            return;
-        }
-        Scroller.ChangeView(null, 0, null, disableAnimation: true);
-        if (ViewModel.IsPersonOpen)
-        {
-            DispatcherQueue.TryEnqueue(() => BackToResultsButton.Focus(FocusState.Programmatic));
         }
     }
 

@@ -713,10 +713,21 @@ sort `-added_at` (phone) / `title` (TV) (`silo-android/shared/.../apiv2/CatalogV
   `type=video_with_episodes` only when that flag is true). A search deadline (3 s) answers `503`
   with `Retry-After`; an expired Meilisearch ranking session answers `invalid_cursor`.
 - People: `GET /api/v2/catalog/people?q=&limit=1..100&media_scope=video` → `{ "items": Person[] }`
-  (only when `people_media_scope` is true). Filmography:
-  `GET /api/v2/catalog?source=person&person_id=<id>&sort=-year`.
+  (only when `people_media_scope` is true). A person found opens their page (7.6a).
 - Android: 300 ms debounce, `limit=60` (phone) / 40 (TV), people search in parallel with
   `limit=20` (`silo-android/.../SearchViewModel.kt:142-333`).
+
+### 7.6a A person: `GET /api/v2/catalog/people/{id}`
+
+- → `Person`: `id`, `name`, `photo_url?` (presigned, signed anew on every read), `photo_thumbhash?`, `bio?`,
+  `birth_date?` / `death_date?` (`YYYY-MM-DD`), `birthplace?`, `homepage?`, provider ids. `404` once the person is gone.
+  A read counts as a view and may queue a provider refresh (`?prefetch=true` marks a warm-up that must not).
+- Titles: `GET /api/v2/catalog?source=person&person_id=<id>&sort=-year&limit=60[&type=movie|series]`, cursor-paged.
+- `POST /api/v2/catalog/people/{id}/refresh` → `202 { person_id, status: "queued" }`: a provider refresh, coalesced by
+  the server. An administrator's `POST /api/v2/admin/people/{id}/refresh` waits for the provider and answers the
+  `Person`. As the apps do, a person without a bio, photo or birth date is refreshed once per visit and read again every
+  3 s, for at most 2 minutes, 40 reads, or 5 reads that change nothing.
+- Cast and crew carry `person_id` on a title (7.6); a TMDB title's cast (7.15) has none and opens no page.
 
 ### 7.6 Item detail: `GET /api/v2/catalog/items/{id}`
 

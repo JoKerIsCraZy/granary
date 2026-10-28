@@ -63,6 +63,19 @@ public sealed class ItemDetailViewModelTests
     }
 
     [Fact]
+    public async Task ACastOrCrewCard_OpensThePersonsPage()
+    {
+        var detail = await _fixture.Movie().LoadAsync(MovieId);
+        var rivas = detail.People.Single(p => p.Name == "Arianna Rivas");
+
+        detail.OpenPersonCommand.Execute(detail.People.Single(p => p.Name == "Jason Statham"));
+        detail.OpenPersonCommand.Execute(rivas);
+
+        Assert.Equal((AppRoute.Person, (object?)"976"), Assert.Single(_fixture.Navigation.Navigations));
+        Assert.False(rivas.CanOpen);
+    }
+
+    [Fact]
     public async Task Movie_ShowsCrewThenCastTrailersAndSimilarTitles()
     {
         var detail = await _fixture.Movie().LoadAsync(MovieId);

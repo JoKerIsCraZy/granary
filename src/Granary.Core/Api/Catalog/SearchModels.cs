@@ -50,7 +50,13 @@ public sealed record Person
     public string? DeathDate { get; init; }
 
     public string? Birthplace { get; init; }
+
+    /// <summary>The provider has not given the bio, photo or birth date yet: a refresh may fill them in.</summary>
+    public bool IsIncomplete => string.IsNullOrWhiteSpace(Bio) || string.IsNullOrWhiteSpace(PhotoUrl) || string.IsNullOrWhiteSpace(BirthDate);
 }
+
+/// <summary>The answer of <c>POST /api/v2/catalog/people/{id}/refresh</c>: the refresh is queued.</summary>
+public sealed record PersonRefresh(string PersonId, string Status);
 
 /// <summary>Values of the browse <c>type</c> filter and of the people search <c>media_scope</c>.</summary>
 public static class MediaScopes

@@ -96,11 +96,20 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
   Watchlist, Not Interested (`PUT`/`DELETE /api/v2/not-interested/{id}`, movies and series), then "Remove from
   Continue Watching" / "Next Up" when its `MediaRow` offers removal. Right-click, Shift+F10 and the menu key open the
   same menu. The web's admin entries (play history, metadata) are not there yet.
-- Page-specific pieces: `PersonCard` (search people), `AlphabetJumpBar` (library A–Z: "#" and A–Z on a
+- Page-specific pieces: `PersonCard` (search people, opening the person's page), `AlphabetJumpBar` (library A–Z: "#" and A–Z on a
   26 px round panel, letters without titles at 35 %, the top row's letter red with dark text; a letter
   scrolls the grid to its first title, as the web's `LetterBar`),
   `DetailHero`, `DetailShelf`, `DetailEpisodeCard`, `DetailTrailerCard`, `PersonCreditCard`
-  (detail pages), `SeekBar` and `MpvVideoHost` (player).
+  (detail pages; a card with a person opens their page, one without, as a TMDB title's cast, is only a card),
+  `SeekBar` and `MpvVideoHost` (player).
+- Person (`PersonPage`, the web's `pages/PersonDetail.tsx`): a detail page, so the sidebar narrows to its rail as beside
+  a title. The 2:3 photo (180 px, initials without one) beside the name (30 px) with Refresh metadata (an administrator's
+  "Refresh now"; "Queueing..." while it is sent), the facts as the detail chips in capitals ("BORN APR 25, 1940",
+  "86 YEARS OLD" or "DIED FEB 28, 2005 (AGE 84)", the birthplace), and the bio in muted 14 px at most 672 px wide; a
+  line under them says "Person refresh queued", "Person metadata refreshed" or why it failed. Under a hairline
+  "Filmography" with All, Movies and Series as the web's small outlined boxes (the picked one lighter), then the posters
+  newest first, 60 at a time as the grid scrolls, or "No items found.". A read that fails says "Couldn't load this
+  person" with Retry; a person that is gone, "This person isn't available".
 - `ItemsRepeater` sets no `DataContext` on elements of `x:Bind` templates: a click handler reads its item
   from the control it shows (`MediaCardView.Card`) or from `DataContext="{x:Bind}"` set on the element.
 - `x:Bind` function bindings skip null arguments, so a recycled element would keep stale values:
@@ -240,7 +249,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   arrives and brings the heading back into view when it was scrolled away. A first page that fails, or that is the only
   page and holds only library titles, leaves the section out; a page of only library titles among others says "Every
   title on this page is already in your library."; a later page that fails says "Couldn’t load page 2." beside Retry
-  and a ghost Back to page 1. An opened person hides it; the cards open the title's page, or the library's title.
+  and a ghost Back to page 1. The cards open the title's page, or the library's title.
 - Pages: 48 px side margins, 32 px top; rows 40 px apart.
 - What happens on another device shows without a visit (`RealtimeEvents`, docs/api-contract.md 12): a title watched,
   favourited, put on the watchlist or taken off Home there, or a title the server added or changed, reloads Home in
