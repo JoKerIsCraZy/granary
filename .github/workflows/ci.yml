@@ -1,0 +1,36 @@
+name: CI
+
+# Builds the app and runs the tests on every push to main and every pull request, as the release workflow does
+# before it packs (docs/release.md).
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      # The pinned libmpv must stay downloadable: mirror it before the upstream asset is replaced (docs/release.md).
+      - name: Fetch libmpv
+        shell: pwsh
+        run: ./scripts/fetch-native.ps1
+
+      - name: Build the app
+        run: dotnet build src/Granary.App/Granary.App.csproj -c Release -p:Platform=x64
+
+      - name: Test
+        run: dotnet test tests/Granary.Tests -c Release -p:Platform=x64

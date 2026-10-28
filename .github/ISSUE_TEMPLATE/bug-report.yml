@@ -1,0 +1,94 @@
+name: Bug report
+description: Report something broken in Granary
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Describe what you observed before any theory about the cause, and paste raw log lines rather than a summary.
+
+        Remove tokens, passwords, server addresses, account names and anything else private, and mark each removal. A problem that Silo's web app shows as well is probably the server's: report it in [Silo's issue tracker](https://github.com/Silo-Server/silo-server/issues/new/choose). Report security problems privately as SECURITY.md describes, not here.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What did you see? How often does it happen (for example "3 of 3 tries"), and what still works?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The exact steps, from a stated starting point (for example "signed in, on Home").
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should have happened? If Silo's web or mobile apps do it differently, say how.
+    validations:
+      required: true
+  - type: input
+    id: granary-version
+    attributes:
+      label: Granary version
+      description: Settings → About, or the commit if you built it yourself.
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How Granary is installed
+      options:
+        - Setup (installed)
+        - Portable zip
+        - Built from source
+    validations:
+      required: true
+  - type: input
+    id: windows-version
+    attributes:
+      label: Windows version
+      description: Run `winver`, for example "Windows 11 24H2 (26100.4061)".
+    validations:
+      required: true
+  - type: input
+    id: silo-version
+    attributes:
+      label: Silo server version
+      description: The Build value at the bottom of the admin sidebar in Silo's web app, if you can see it, or the image tag you run.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Where the problem shows up. Pick the closest match.
+      options:
+        - Sign-in, servers and profiles
+        - Home and libraries
+        - Title pages
+        - Search
+        - Favorites, Watchlist, History and Collections
+        - Notifications
+        - Requests
+        - Player
+        - Settings
+        - Admin
+        - Install and updates
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: The relevant lines from `%LOCALAPPDATA%\Granary\logs`, around the time it happened. Redacted as described above.
+      render: text
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else
+      description: Screenshots, a screen recording, your network setup (same LAN as the server, a proxy, a VPN), or a suspected cause with the files involved.

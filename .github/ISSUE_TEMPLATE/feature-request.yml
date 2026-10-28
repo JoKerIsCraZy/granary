@@ -1,0 +1,33 @@
+name: Feature request
+description: Propose something Granary should do
+title: "[feature] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Granary follows Silo's own clients: the Android and Apple apps decide how things behave, the web app how they look. A feature that one of them already has is the easiest to add; say where it is.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What are you trying to do, and what stops you today? Who does it affect?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: What should Granary do?
+    validations:
+      required: true
+  - type: textarea
+    id: silo-clients
+    attributes:
+      label: In Silo's own clients
+      description: Does Silo's web, Android or Apple app have this? Where, and how does it work there?
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives
+      description: Other ways to solve the problem you considered.
