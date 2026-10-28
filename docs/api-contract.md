@@ -2042,6 +2042,55 @@ handshake (v2)"), the web's `player/hooks/usePlaybackRealtime.ts` and `player/re
   terminate. Stop and terminate answer first and then end playback with the administrator's words ("An administrator
   stopped / ended this playback session.", or their own message); a message shows as the web's notice for 8 s.
 
+### 12.4 Watch Party rooms
+
+A room plays one title for its members in sync; the server keeps the room's clock and position and sends each member
+the commands its player runs. Sources: `silo-server/docs/realtime-api.md` ("Watch Together" sections),
+`docs/architecture/watch-together-rooms.md` and `watch-party-synchronization.md`, the web's `api/v2/watchTogether*.ts`,
+`player/hooks/useWatchTogetherRoomConnection.ts` and `useWatchTogetherPlaybackSync.ts`, Android's
+`shared/.../watchtogether/RoomPlaybackBinding.kt` and `RoomCatchup.kt`.
+
+- `GET /api/v2/watch-together/capabilities` → `{ state, allowed, socket_protocol ("silo.room.v2" or ""),
+  staged_selection, stop_playback, lobby_ready, connection_replaced, picker, member_state, selection_mode_switch, … }`;
+  rooms are offered only when `state` is `available`, `allowed`, and the protocol is `silo.room.v2`.
+- `POST /api/v2/watch-together/rooms` `{ room_id (a client UUID: a retry answers the same room), selection_mode:
+  "host_pick" | "vote" }` → `201 { room, room_access_token }`. `POST /api/v2/watch-together/join` `{ code }` or
+  `{ join_token }` (the token of an invitation link `…/rooms?token=`, which wins) → `{ room, room_access_token }`.
+  `GET /api/v2/watch-together/rooms/{id}` with `X-Room-Token` reads it and renews the proof. The proof (and the
+  room's `invite_path`, which carries the join token) is a credential: never logged.
+- The room: `room_id`, `code` (eight letters), `phase` (`lobby` | `playing` | `ended`), `playback_state` (`idle` |
+  `waiting` | `paused` | `playing`), `selection_mode`, `guest_control_policy` (`host_only` | `guest_play_pause`),
+  `self_role` (`host` | `guest`), `selection_revision` (the playback epoch), `generation` (every change; an older
+  snapshot is stale), `anchor_position_seconds` at `anchor_updated_at`, `is_paused`, `selected_content_id`,
+  `selected_file_id`, `attached_session_id` (this member's, as the server has it), `invite_path`, `self_ignore_wait`,
+  `members[]` (`display_name`, `is_host`, `is_self`, `connected`, `lobby_ready`, `is_ready`, `is_buffering`,
+  `is_syncing`).
+- Host only (profile authority, no proof): `PUT …/{id}/staged-selection { content_id }` (the lobby shows it),
+  `POST …/{id}/playback/start` (plays what is staged: phase `playing`, a new revision, the barrier `waiting`),
+  `POST …/{id}/playback/stop` (back to the lobby, still staged), `PATCH …/{id}/policy { guest_control_policy }`,
+  `DELETE …/{id}` (ends it for everyone). Each answers the room and a renewed proof; none is retried.
+- Socket: `POST …/{id}/ws-ticket` with `X-Room-Token` → `{ ticket (43 URL-safe characters), expires_in,
+  max_connection_seconds (300), protocol }`; connect `GET …/{id}/ws` offering `silo.room.v2` then
+  `silo.ticket.<ticket>`, nothing in the URL. The server closes it after five minutes; a fresh ticket opens the
+  next. A refused ticket (401, 403, 404, 409, 422) ends the engagement.
+- Server frames: `snapshot { room }`, `transport_command { command: { command_id, session_id?, selection_revision,
+  action: play | pause | seek, position_seconds (the room's position at execute_at), execute_at, issued_at,
+  playback_state } }`, `pong { client_sent_at, server_received_at, server_sent_at }`, `room_closed { reason }`,
+  `connection_replaced { reason }` (this profile joined on another device: no reconnect until the viewer rejoins),
+  `error { code }` (`not_found`, `gone` end it), `suggestions_update`.
+- Client frames: `ping { client_sent_at }` (every 2 s for four samples, then every 15 s: an NTP-style clock offset
+  from the shortest round trip), `attach_session { session_id }` (each connection and session; attached once the
+  snapshot echoes it), `state_report { session_id, command_id?, position_seconds, is_paused, is_ready? }` every 1.5 s
+  (not while stalled or seeking), `ready { session_id, command_id, position_seconds, is_paused }` (every 500 ms while
+  the room waits on this member's command, until its member entry is `is_ready`; also to end a catch-up), `buffering`
+  after a 2 s stall while the room plays, `transport_request { action, position_seconds, is_paused }` (the player
+  changes only when the room's command comes; guests may seek never and play/pause only under `guest_play_pause`),
+  `lobby_ready { ready }`.
+- Playback: everyone plays `selected_file_id` from 0 with `allow_alternate_versions: false`. A command runs at its
+  `execute_at` on the server's clock, projected to the moment it runs; a seek always seeks, a play within 0.4 s
+  leaves the player alone, up to 5 s (2 s for the host) is closed by a playback rate of 1 ± 1–4 %, more seeks. While
+  both play, a drift loop keeps the member on the room with the same rate.
+
 ## 13. Consequences for the Windows client
 
 ### 13.1 Decisions this contract implies

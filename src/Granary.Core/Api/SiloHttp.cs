@@ -81,6 +81,22 @@ public sealed class SiloHttp(HttpClient http)
         return await SendAsync(request, responseType, cancellationToken).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// For a bodiless operation of any method that answers JSON and needs headers of its own, as a Watch Party room's
+    /// proof (<c>X-Room-Token</c>). They go with this request only and are never logged.
+    /// </summary>
+    public async Task<TResponse> SendWithHeadersAsync<TResponse>(HttpMethod method, Uri server, string path, SiloAuth auth,
+        IReadOnlyDictionary<string, string> headers, JsonTypeInfo<TResponse> responseType, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(headers);
+        using var request = Create(method, server, path, auth);
+        foreach (var (name, value) in headers)
+        {
+            request.Headers.TryAddWithoutValidation(name, value);
+        }
+        return await SendAsync(request, responseType, cancellationToken).ConfigureAwait(false);
+    }
+
     /// <summary>As <see cref="GetAsync{TResponse}"/>, with the answer's version (its ETag) for a later write's <c>If-Match</c>.</summary>
     public async Task<Versioned<TResponse>> GetVersionedAsync<TResponse>(Uri server, string path, SiloAuth auth, JsonTypeInfo<TResponse> responseType,
         CancellationToken cancellationToken)

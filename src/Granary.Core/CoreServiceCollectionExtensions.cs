@@ -17,6 +17,7 @@ using Granary.Core.Api.Requests;
 using Granary.Core.Api.Settings;
 using Granary.Core.Api.Subtitles;
 using Granary.Core.Api.Theme;
+using Granary.Core.Api.WatchParty;
 using Granary.Core.Artwork;
 using Granary.Core.Auth;
 using Granary.Core.Http;
@@ -32,6 +33,7 @@ using Granary.Core.ViewModels.Cards;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
+using Granary.Core.WatchParty;
 
 namespace Granary.Core;
 
@@ -179,6 +181,11 @@ public static class CoreServiceCollectionExtensions
             sp.GetRequiredService<Func<IRealtimeSocket>>(), sp.GetRequiredService<TimeProvider>(), sp.GetRequiredService<ILogger<PlaybackControlLane>>()));
         services.AddSingleton<PlaybackStops>();
         services.AddSingleton<ViewerStateChanges>();
+        // The Watch Party this profile is in, for the room page and the player alike; its socket is made per engagement.
+        services.AddTransient<WatchPartyApi>();
+        services.AddSingleton<Func<WatchPartyConnection>>(sp => () => new WatchPartyConnection(sp.GetRequiredService<WatchPartyApi>(),
+            sp.GetRequiredService<Func<IRealtimeSocket>>(), sp.GetRequiredService<TimeProvider>(), sp.GetRequiredService<ILogger<WatchPartyConnection>>()));
+        services.AddSingleton<WatchPartySession>();
         // Media of the saved address takes its local route too.
         services.AddSingleton<MediaProxy>(sp => new MediaProxy(
             new LocalRouteHandler(sp.GetRequiredService<LocalRoutes>(), sp.GetRequiredService<ILogger<LocalRouteHandler>>()) { InnerHandler = CreateMediaHandler() },
