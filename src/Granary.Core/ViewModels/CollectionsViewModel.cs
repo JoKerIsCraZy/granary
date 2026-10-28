@@ -201,9 +201,10 @@ public sealed partial class CollectionsViewModel : ObservableObject
         }
     }
 
-    /// <summary>The editor for a new collection of the profile's own.</summary>
+    /// <summary>The editor for a new collection of the profile's own, of the kind the New collection picker chose.</summary>
     [RelayCommand]
-    private void NewCollection() => _navigation.NavigateTo(AppRoute.CollectionEditor, new CollectionEditorRouteParameter(null));
+    private void NewCollection(string? kind) =>
+        _navigation.NavigateTo(AppRoute.CollectionEditor, new CollectionEditorRouteParameter(null, kind ?? PersonalCollectionTypes.Manual));
 
     /// <summary>Opens one of the profile's own or shared collections.</summary>
     [RelayCommand]

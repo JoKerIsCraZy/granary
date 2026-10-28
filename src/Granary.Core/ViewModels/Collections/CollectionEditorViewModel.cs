@@ -12,10 +12,11 @@ using Microsoft.Extensions.Logging;
 namespace Granary.Core.ViewModels.Collections;
 
 /// <summary>
-/// A profile's own manual collection made or changed, as the web's collection editor
-/// (<c>components/collections/editor/CollectionEditor.tsx</c>): name, description and Show only, where it shows, and its
-/// titles. Everything but the titles is a draft the save bar saves (or, for a new one, Create collection makes); titles
-/// save as they are added, removed or moved. A save is sent at the version the collection was read at: when it changed
+/// A profile's own manual or smart collection made or changed, as the web's collection editor
+/// (<c>components/collections/editor/CollectionEditor.tsx</c>): name and description, a manual collection's Show only
+/// and titles or a smart collection's rules with their live preview, and where it shows. Everything but a manual
+/// collection's titles is a draft the save bar saves (or, for a new one, Create collection makes); titles save as they
+/// are added, removed or moved. A save is sent at the version the collection was read at: when it changed
 /// elsewhere meanwhile, the two are merged field by field, and fields changed on both sides wait for the viewer's pick.
 /// </summary>
 public sealed partial class CollectionEditorViewModel : ObservableObject
@@ -25,6 +26,7 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
     private readonly CatalogApi _catalog;
     private readonly ImageParameterCache _images;
     private readonly ProfilesApi _profiles;
+    private readonly VisibleLibraries _visibleLibraries;
     private readonly INavigationService _navigation;
     private readonly TimeProvider _time;
     private readonly ILogger<CollectionEditorViewModel> _logger;
@@ -40,18 +42,20 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
     private readonly SemaphoreSlim _gate = new(1, 1);
 
     public CollectionEditorViewModel(ISessionManager session, CollectionsApi collections, CatalogApi catalog, ImageParameterCache images,
-        ProfilesApi profiles, INavigationService navigation, TimeProvider time, ILogger<CollectionEditorViewModel> logger)
+        ProfilesApi profiles, VisibleLibraries visibleLibraries, INavigationService navigation, TimeProvider time, ILogger<CollectionEditorViewModel> logger)
     {
         _session = session;
         _collections = collections;
         _catalog = catalog;
         _images = images;
         _profiles = profiles;
+        _visibleLibraries = visibleLibraries;
         _navigation = navigation;
         _time = time;
         _logger = logger;
         Watch = WatchChoices[0];
         Media = MediaChoices[0];
+        Rules.Changed += OnRulesChanged;
     }
 
     public static IReadOnlyList<SettingChoice> WatchChoices { get; } =
@@ -145,12 +149,15 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
     public string UnshareWarning => CollectionEditorText.UnshareWarning(OtherProfiles);
 
     /// <summary>The draft as it would be saved.</summary>
-    public CollectionDraft Draft => new(Name.Trim(), Description.Trim(), new CollectionShowOnly(Watch.Value, Media.Value), IsShared, OnCollectionsTab);
+    public CollectionDraft Draft => IsSmart
+        ? new(Name.Trim(), Description.Trim(), CollectionShowOnly.Everything, IsShared, OnCollectionsTab, PersonalCollectionTypes.Smart, Rules.ToQuery(),
+            SmartSortConfig.Key(Rules.SortConfig))
+        : new(Name.Trim(), Description.Trim(), new CollectionShowOnly(Watch.Value, Media.Value), IsShared, OnCollectionsTab);
 
     public IReadOnlyList<string> ChangedFields => IsNew ? [] : Draft.ChangedFrom(_saved);
 
     /// <summary>Leaving now would lose something: a changed field, or for a new collection anything at all.</summary>
-    public bool HasUnsavedChanges => !_deleted && (IsNew ? Draft != CollectionDraft.Empty || Titles.Count > 0 : ChangedFields.Count > 0);
+    public bool HasUnsavedChanges => !_deleted && (IsNew ? !Draft.SameAs(_saved) || Titles.Count > 0 : ChangedFields.Count > 0);
 
     /// <summary>A new collection's bar is always there; a saved one's while something changed or a save failed.</summary>
     public bool ShowsSaveBar => IsReady && (IsNew || ChangedFields.Count > 0 || HasSaveError);
@@ -158,8 +165,9 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
     /// <summary>"Not created yet", or "Name and description not saved".</summary>
     public string SaveBarMessage => IsNew ? CollectionEditorText.NotCreatedYet : CollectionEditorText.NotSaved(ChangedFields);
 
-    public string SaveBarHint => !IsNew ? CollectionEditorText.TitlesAlreadySaved
+    public string SaveBarHint => !IsNew ? (IsSmart ? "" : CollectionEditorText.TitlesAlreadySaved)
         : Name.Trim().Length == 0 ? CollectionEditorText.NameItThenCreate
+        : IsSmart ? SmartCreateHint()
         : Titles.Count > 0 ? CollectionEditorText.TitlesReadyToAdd(Titles.Count)
         : "";
 
@@ -167,8 +175,11 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
 
     public IReadOnlyList<string> OtherProfiles { get; private set; } = [];
 
-    /// <summary>Opens the collection to edit it, or a new one when <paramref name="collectionId"/> is null.</summary>
-    public async Task ActivateAsync(string? collectionId)
+    /// <summary>
+    /// Opens the collection to edit it, or a new one of <paramref name="kind"/> (manual unless it says
+    /// <see cref="PersonalCollectionTypes.Smart"/>) when <paramref name="collectionId"/> is null.
+    /// </summary>
+    public async Task ActivateAsync(string? collectionId, string? kind = null)
     {
         if (_session is not { State: SessionState.Ready, ActiveServer: { } server })
         {
@@ -179,21 +190,38 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
         if (collectionId is null)
         {
             CollectionId = null;
-            Show(CollectionDraft.Empty);
-            _saved = CollectionDraft.Empty;
+            Kind = kind == PersonalCollectionTypes.Smart ? PersonalCollectionTypes.Smart : PersonalCollectionTypes.Manual;
+            if (IsSmart)
+            {
+                await ReadSmartContextAsync(server.BaseUri);
+            }
+            _saved = IsSmart ? CollectionDraft.EmptySmart : CollectionDraft.Empty;
+            Show(_saved);
+            if (IsSmart)
+            {
+                // Built in full: an empty draft's rules equal the card's before it is filled.
+                ShowRules(_saved);
+            }
             State = LibraryLoadState.Ready;
             TitlesStatus = CollectionEditorText.NotCreatedYet;
         }
         else
         {
             await LoadAsync(collectionId, server.BaseUri);
+            if (IsSmart && IsReady)
+            {
+                // The libraries arrived after the rules showed: shown again, with their names.
+                await ReadSmartContextAsync(server.BaseUri);
+                ShowRules(Draft);
+            }
         }
         await profiles;
         await capabilities;
-        if (IsCreated && IsReady)
+        if (IsCreated && IsReady && !IsSmart)
         {
             await LoadTitlesAsync();
         }
+        SchedulePreview(TimeSpan.Zero);
     }
 
     [RelayCommand]
@@ -202,10 +230,11 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
         if (CollectionId is { } id && _session is { State: SessionState.Ready, ActiveServer: { } server })
         {
             await LoadAsync(id, server.BaseUri);
-            if (IsReady)
+            if (IsReady && !IsSmart)
             {
                 await LoadTitlesAsync();
             }
+            SchedulePreview(TimeSpan.Zero);
         }
     });
 
@@ -231,13 +260,7 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
     {
         if (_theirs is { } theirs)
         {
-            var draft = Draft;
-            Show(new CollectionDraft(
-                Conflicts.Contains("Name") ? theirs.Name : draft.Name,
-                Conflicts.Contains("Description") ? theirs.Description : draft.Description,
-                Conflicts.Contains("Show only") ? theirs.ShowOnly : draft.ShowOnly,
-                Conflicts.Contains("Show to other profiles") ? theirs.IsShared : draft.IsShared,
-                Conflicts.Contains("Show on the Collections tab") ? theirs.OnCollectionsTab : draft.OnCollectionsTab));
+            Show(Draft.Taking(theirs, Conflicts));
         }
         Conflicts = [];
         _theirs = null;
@@ -326,13 +349,14 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
         try
         {
             var read = await _collections.GetAsync(server, id);
-            if (read.Value.CreatorProfileId != _session.ProfileId || !read.Value.IsManual)
+            if (read.Value.CreatorProfileId != _session.ProfileId || !(read.Value.IsManual || read.Value.IsSmart))
             {
                 LoadError = "Only the profile that made this collection can change it here.";
                 State = LibraryLoadState.Error;
                 return;
             }
             CollectionId = id;
+            Kind = read.Value.IsSmart ? PersonalCollectionTypes.Smart : PersonalCollectionTypes.Manual;
             _version = read.Version;
             _saved = CollectionDraft.Of(read.Value);
             _itemCount = read.Value.ItemCount;
@@ -382,8 +406,11 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
                 }
             }
             await RefreshVersionAsync(server.BaseUri);
-            await LoadTitlesAsync();
-            ShowFailedAdds(failed);
+            if (!IsSmart)
+            {
+                await LoadTitlesAsync();
+                ShowFailedAdds(failed);
+            }
         }
         catch (Exception ex) when (LibraryErrors.IsExpected(ex))
         {
@@ -472,6 +499,19 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
         }
     }
 
+    // A smart collection's libraries, rules and saved sort, as the save bar names them.
+    private static readonly string[] SmartFields = ["Libraries", "Rules", "Order"];
+
+    // Builds the Rules card from a draft, with the libraries to pick from.
+    private void ShowRules(CollectionDraft draft) =>
+        Rules.Show(draft.Rules ?? SmartQuery.Empty, ParseSortConfig(draft.SortConfig), _libraries);
+
+    private static System.Text.Json.JsonElement ParseSortConfig(string json)
+    {
+        using var document = System.Text.Json.JsonDocument.Parse(json);
+        return document.RootElement.Clone();
+    }
+
     private static string Failure(Exception ex) =>
         ex is SiloApiException { Status: 412 } ? CollectionEditorText.Stale : "Couldn't save · " + LibraryErrors.Describe(ex);
 
@@ -541,6 +581,11 @@ public sealed partial class CollectionEditorViewModel : ObservableObject
             Media = MediaChoices.FirstOrDefault(c => c.Value == draft.ShowOnly.Media) ?? MediaChoices[0];
             IsShared = draft.IsShared;
             OnCollectionsTab = draft.OnCollectionsTab;
+            // The rules too only when they differ: rebuilding them would take a rule being typed in away.
+            if (draft.IsSmart && (!IsSmart || Draft.ChangedFrom(draft).Intersect(SmartFields).Any()))
+            {
+                ShowRules(draft);
+            }
         }
         finally
         {

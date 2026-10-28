@@ -53,7 +53,7 @@ public sealed class CollectionEditorViewModelTests
 
     private CollectionEditorViewModel Create() => new(_harness.Session, new CollectionsApi(_harness.Silo.Http), new CatalogApi(_harness.Silo.Http),
         new ImageParameterCache(new ImagesApi(_harness.Silo.Http), _harness.Logs.For<ImageParameterCache>()), new ProfilesApi(_harness.Silo.Http),
-        _harness.Navigation, _harness.Clock, _harness.Logs.For<CollectionEditorViewModel>());
+        _harness.Libraries(), _harness.Navigation, _harness.Clock, _harness.Logs.For<CollectionEditorViewModel>());
 
     private async Task<CollectionEditorViewModel> EditAsync()
     {

@@ -175,8 +175,9 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   4 titles", a SHARED badge on one other profiles see), "Shared with me" by owner ("by Mara"), and "Server
   collections" with a pill per library (All first) and Load more, which the end of the grid presses by itself. A
   collection opens on the list page with its name and "Collection Order"; the sidebar keeps Collections picked. The
-  red New collection at the title (and, with none yet, the dashed card) opens the collection editor
-  (`CollectionEditorPage`, the web's `CollectionEditor` for a personal Manual collection): "‹ Collections", the tags
+  red New collection at the title (and, with none yet, the dashed card) opens the web's picker ("New collection", what
+  decides what's in it, a card each for Manual and Smart with "Good for …"; synced lists are left out), and the card the
+  collection editor (`CollectionEditorPage`, the web's `CollectionEditor` for a personal collection): "‹ Collections", the tags
   (Manual, Shared, Not created yet), the name and "3 titles", Open and ⋯ Delete… once it exists; then cards for Name,
   Description and Show only (watch state, content), Titles (search "Add a title" after a 250 ms pause with Add or
   "In this collection"; the list ten at first with Show all, × with "Removed …" and Undo for 6 s, moved by drag or
@@ -184,8 +185,15 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   Collections tab). The save bar at the foot: "Not created yet" with Cancel and Create collection, or "Name and
   description not saved · Titles are already saved." with Discard and Save. Titles save as they change; the rest at
   the version it was read at, merged when it changed elsewhere, with Use theirs / Keep mine for a field changed in both
-  places. Leaving with something not saved asks "Discard unsaved changes?". The poster (Look) and "Rows that show it"
-  come later.
+  places. Leaving with something not saved asks "Discard unsaved changes?". A Smart collection has Rules instead of
+  Show only and Titles, as the web's sentence: "Show [movies] from [all my libraries] that match [all] of these:", one line
+  per rule (field, condition, and a value control that fits: text, number with its unit, a range, Yes/No, a list, a
+  facet or person with suggestions, a date or "in the last 30 days"), later groups joined by "and" or "or", Add rule and
+  Add an "or" group; a rule these controls can't show reads "Not editable here" and stays as saved until removed. Then
+  Order (sort, direction, max titles), a saved default sort with Clear, and the live preview under it ("Live preview ·
+  40 titles match · showing 24" over posters, ghosts with "No titles match yet", or "The preview didn't load. You can
+  still save."). Before Create the save bar says how many match now; the meta line adds "Updates itself as titles are
+  added". The poster (Look) and "Rows that show it" come later.
 - For You (`ForYouPage`, the web's `pages/Recommendations.tsx`): the title, "Personalized picks…" only when a row comes
   from the profile's history, the taste profile card on the right (top genres filled, favourite directors outlined),
   then a row per recommendation. A row's Explore all opens it in full (`RecommendationSectionPage`: name, "60 titles",

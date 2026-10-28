@@ -46,7 +46,15 @@ public sealed record PersonalCollection
     /// <summary>Only in a list asked with <c>contains_item</c>, on the profile's own manual collections: the title is in it.</summary>
     public bool? Contains { get; init; }
 
+    /// <summary>A smart collection's rules as stored; read them with <see cref="SmartQuery.Read"/>.</summary>
+    public JsonElement QueryDefinition { get; init; }
+
+    /// <summary>A smart collection's <c>sort_config</c> as stored.</summary>
+    public JsonElement SortConfig { get; init; }
+
     public bool IsManual => CollectionType == PersonalCollectionTypes.Manual;
+
+    public bool IsSmart => CollectionType == PersonalCollectionTypes.Smart;
 }
 
 /// <summary><c>GET /api/v2/collections/server</c>: the visible server collections, by library.</summary>

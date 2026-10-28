@@ -17,4 +17,8 @@ namespace Granary.Core.Api.Catalog;
 [JsonSerializable(typeof(PersonalCollectionOrder))]
 [JsonSerializable(typeof(PersonalCollectionOrderChange))]
 [JsonSerializable(typeof(CollectionCapabilities))]
+[JsonSerializable(typeof(SmartQuery))]
+[JsonSerializable(typeof(CollectionPreviewRequest))]
+[JsonSerializable(typeof(CollectionPreview))]
+[JsonSerializable(typeof(string))]
 internal sealed partial class CollectionsJsonContext : JsonSerializerContext;

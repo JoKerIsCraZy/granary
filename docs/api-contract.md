@@ -996,6 +996,18 @@ read): a missing one answers 428, one changed since 412, after which the client 
 - Order: `GET …/{id}/items/order` → `{ ordered_ids, has_more }` with its own `ETag` (`has_more` above 200 titles: no
   reordering); `PUT …/{id}/items/order` `{ ordered_ids }` (every title) with `If-Match` → `200` and the new `ETag`.
 - `GET /api/v2/collections?contains_item=<content_id>`: the profile's own manual collections carry `contains`.
+- Smart collections: `collection_type: "smart"` with `query_definition` and `sort_config` on `POST` and `PATCH` (no
+  `display_query_definition`). `query_definition` is `{ library_ids: number[] (none: every library the profile sees),
+  media_scope? (movie, series, episode, video, audiobook, ebook, manga), match: "all"|"any" (how groups combine),
+  groups: [{ match, rules: [{ field, op, value, … }] }], sort: { field, order }, limit? }`; a rule's `value` is text, a
+  number, true/false, or a two-item range, and members a client does not know are sent back untouched. A stored
+  `limit` of 10000000 (or none) means no limit. `sort_config` is sent back as stored; a `field` and `order` in it are a
+  saved default sort that wins over the rules' order, and changing the order clears them (other members stay).
+  `POST /api/v2/collections/preview` `{ query_definition, limit }` → `{ items: [{ content_id, title, type, poster_url? }],
+  total }`: the first titles the rules match (the web asks for 24, 300 ms after the rules stop changing). Which newer
+  rule fields the server takes comes from `GET /api/v2/catalog/search/capabilities` (`extended_query_rules`,
+  `show_title_rules`); facet and language values from `GET /api/v2/catalog/filters?source=query`; people from
+  `GET /api/v2/catalog/people?q=` (a person rule stores the name).
 
 ## 8. Playback protocol v3
 

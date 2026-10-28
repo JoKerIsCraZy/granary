@@ -1,3 +1,4 @@
+using Granary.App.Controls;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Settings;
 using Microsoft.Extensions.DependencyInjection;
@@ -33,6 +34,39 @@ public sealed partial class CollectionsPage : Page
         {
             // An async void handler must not throw; failed requests are already shown by the page.
             App.Services.GetRequiredService<ILogger<CollectionsPage>>().LogError(ex, "The collections could not be shown");
+        }
+    }
+
+    // New collection: the web's picker, Manual or Smart, then the editor for the kind picked.
+    private async void OnNewCollectionClick(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var picker = new NewCollectionPicker();
+            var dialog = new ContentDialog
+            {
+                XamlRoot = XamlRoot,
+                Title = "New collection",
+                Content = picker,
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+            };
+            string? kind = null;
+            picker.Picked += (_, picked) =>
+            {
+                kind = picked;
+                dialog.Hide();
+            };
+            await dialog.ShowAsync();
+            if (kind is not null)
+            {
+                ViewModel.NewCollectionCommand.Execute(kind);
+            }
+        }
+        catch (Exception ex)
+        {
+            // Another dialog is open, or the page went.
+            App.Services.GetRequiredService<ILogger<CollectionsPage>>().LogError(ex, "The New collection picker could not be shown");
         }
     }
 

@@ -52,6 +52,17 @@ public sealed class CollectionsViewModelTests
     private static List<string> Titles(IEnumerable<MediaCard> cards) => [.. cards.Select(c => c.Title)];
 
     [Fact]
+    public void NewCollection_OpensTheEditor_ForTheKindPicked()
+    {
+        var page = Create();
+
+        page.NewCollectionCommand.Execute(PersonalCollectionTypes.Smart);
+
+        Assert.Equal((AppRoute.CollectionEditor, (object?)new CollectionEditorRouteParameter(null, PersonalCollectionTypes.Smart)),
+            Assert.Single(_harness.Navigation.Navigations));
+    }
+
+    [Fact]
     public async Task OwnCollections_ShowInTheProfilesOrder_WithTheirKindAndCount()
     {
         var page = await LoadedAsync();
@@ -367,6 +378,20 @@ public sealed class CollectionsViewModelTests
         Assert.Equal([null, true, null], manual.Select(e => e.IsChecked));
         Assert.Equal(["Show to other profiles", "Delete…"], page.EntriesFor(page.Own[1]).Select(e => e.Label));
         Assert.Empty(page.EntriesFor(page.Shared[0].Cards[0]));
+    }
+
+    [Fact]
+    public async Task AnOwnSmartCollection_IsEditedToo()
+    {
+        _harness.Answer(PersonalPath, """
+            { "items": [ { "id": "u9", "name": "90s Comedies", "collection_type": "smart", "creator_profile_id": "7", "profile_id": "7", "item_count": 40 } ] }
+            """);
+        var page = await LoadedAsync();
+
+        Assert.Equal("Edit collection", page.EntriesFor(page.Own[0])[0].Label);
+        page.EditCollectionCommand.Execute(page.Own[0]);
+
+        Assert.Equal((AppRoute.CollectionEditor, (object?)new CollectionEditorRouteParameter("u9")), _harness.Navigation.Navigations[^1]);
     }
 
     [Fact]

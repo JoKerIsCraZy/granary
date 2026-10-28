@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The web's New collection picker for a profile's own collections: what decides what's in it, then a card per kind,
+    Manual and Smart, each with what it does and what it is good for. A card opens the editor for that kind.
+-->
+<UserControl
+    x:Class="Granary.App.Controls.NewCollectionPicker"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <UserControl.Resources>
+        <Style x:Key="KindCardStyle" TargetType="Button">
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="VerticalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Top" />
+            <Setter Property="Padding" Value="18,18,18,20" />
+            <Setter Property="CornerRadius" Value="18" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="{StaticResource SiloBorderBrush}" />
+            <Setter Property="Background" Value="#0AFFFFFF" />
+        </Style>
+    </UserControl.Resources>
+
+    <StackPanel Spacing="16" MaxWidth="560">
+        <TextBlock Text="What decides what's in it? Only you can change it. Next you'll name it, fill it and choose who sees it."
+                   FontSize="13.5" Foreground="{StaticResource SiloMutedBrush}" TextWrapping="Wrap" />
+        <Grid ColumnSpacing="12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Button Style="{StaticResource KindCardStyle}" Click="OnManualClick" AutomationProperties.Name="Manual: You pick the titles and put them in order.">
+                <StackPanel Spacing="6">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Border Width="32" Height="32" CornerRadius="9" Background="#2E5F74EE">
+                            <FontIcon Glyph="&#xE8FD;" FontSize="15" Foreground="#FF5F74EE" />
+                        </Border>
+                        <TextBlock Text="Manual" FontSize="17" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
+                                   Foreground="{StaticResource SiloForegroundBrush}" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <TextBlock Text="You pick the titles and put them in order." FontSize="13.5" Foreground="{StaticResource SiloForegroundBrush}"
+                               Opacity="0.75" TextWrapping="Wrap" />
+                    <TextBlock FontSize="12.5" Foreground="{StaticResource SiloMutedBrush}" TextWrapping="Wrap" Margin="0,6,0,0">
+                        <Run Text="Good for" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium" />
+                        <Run Text="a director's best, movie night, a watch order." />
+                    </TextBlock>
+                </StackPanel>
+            </Button>
+            <Button Grid.Column="1" Style="{StaticResource KindCardStyle}" Click="OnSmartClick"
+                    AutomationProperties.Name="Smart: Titles that match your rules. It fills itself and keeps up as titles are added.">
+                <StackPanel Spacing="6">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Border Width="32" Height="32" CornerRadius="9" Background="#2E169E88">
+                            <FontIcon Glyph="&#xE945;" FontSize="15" Foreground="#FF169E88" />
+                        </Border>
+                        <TextBlock Text="Smart" FontSize="17" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
+                                   Foreground="{StaticResource SiloForegroundBrush}" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <TextBlock Text="Titles that match your rules. It fills itself and keeps up as titles are added." FontSize="13.5"
+                               Foreground="{StaticResource SiloForegroundBrush}" Opacity="0.75" TextWrapping="Wrap" />
+                    <TextBlock FontSize="12.5" Foreground="{StaticResource SiloMutedBrush}" TextWrapping="Wrap" Margin="0,6,0,0">
+                        <Run Text="Good for" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium" />
+                        <Run Text="90s comedies, unwatched 4K, Christmas movies." />
+                    </TextBlock>
+                </StackPanel>
+            </Button>
+        </Grid>
+        <TextBlock Text="Next: name it and fill it in, on its own page." FontSize="13" Foreground="{StaticResource SiloMutedBrush}" />
+    </StackPanel>
+</UserControl>

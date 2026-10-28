@@ -33,8 +33,8 @@ public sealed partial class CollectionsViewModel : ICardMenuSource
         {
             return [];
         }
-        // The editor takes manual collections; a synced list is changed where it syncs from.
-        List<CardMenuEntry> entries = collection.IsManual ? [new("Edit collection", EditCollectionCommand)] : [];
+        // The editor takes manual and smart collections; a synced list is changed where it syncs from.
+        List<CardMenuEntry> entries = collection.IsManual || collection.IsSmart ? [new("Edit collection", EditCollectionCommand)] : [];
         if (_otherProfiles.Count > 0)
         {
             entries.Add(new("Show to other profiles", ToggleSharingCommand, collection.IsShared));
@@ -46,7 +46,7 @@ public sealed partial class CollectionsViewModel : ICardMenuSource
     [RelayCommand]
     private void EditCollection(MediaCard? card)
     {
-        if (card is not null && _ownCollections.TryGetValue(card.Id, out var collection) && collection.IsManual)
+        if (card is not null && _ownCollections.TryGetValue(card.Id, out var collection) && (collection.IsManual || collection.IsSmart))
         {
             _navigation.NavigateTo(AppRoute.CollectionEditor, new CollectionEditorRouteParameter(card.Id));
         }

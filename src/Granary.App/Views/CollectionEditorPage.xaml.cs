@@ -21,6 +21,7 @@ namespace Granary.App.Views;
 public sealed partial class CollectionEditorPage : Page, ILeaveGuard
 {
     private const int PosterWidth = 32;
+    private const int PreviewPosterWidth = 96;
     private const double ColumnWidth = 768;
 
     private bool _released;
@@ -42,6 +43,15 @@ public sealed partial class CollectionEditorPage : Page, ILeaveGuard
 
     public IReadOnlyList<SettingChoice> MediaChoices => CollectionEditorViewModel.MediaChoices;
 
+    public IReadOnlyList<SettingChoice> Scopes => CollectionRuleFields.Scopes;
+
+    // Static because x:Bind in the rule template reads them on the type.
+    public static IReadOnlyList<SettingChoice> InLastUnits => CollectionRuleFields.InLastUnits;
+
+    public static BitmapImage? PreviewPoster(Uri? url) => Artwork.Load(url, PreviewPosterWidth);
+
+    public double Dimmed(bool refreshing) => refreshing ? 0.6 : 1;
+
     bool ILeaveGuard.AsksBeforeLeaving => !_released && ViewModel.HasUnsavedChanges;
 
     // Static because x:Bind function bindings in the row templates call them on the type.
@@ -56,7 +66,8 @@ public sealed partial class CollectionEditorPage : Page, ILeaveGuard
         base.OnNavigatedTo(e);
         try
         {
-            await ViewModel.ActivateAsync((e.Parameter as CollectionEditorRouteParameter)?.CollectionId);
+            var route = e.Parameter as CollectionEditorRouteParameter;
+            await ViewModel.ActivateAsync(route?.CollectionId, route?.Kind);
             if (ViewModel.IsNew)
             {
                 NameBox.Focus(FocusState.Programmatic);
@@ -168,6 +179,59 @@ public sealed partial class CollectionEditorPage : Page, ILeaveGuard
         catch (Exception ex)
         {
             Log(ex, "A title could not be moved");
+        }
+    }
+
+    // The libraries the rules take: all of them, or the ones ticked.
+    private void OnLibrariesMenuOpening(object? sender, object e)
+    {
+        LibrariesMenu.Items.Clear();
+        var all = new ToggleMenuFlyoutItem { Text = "All my libraries", IsChecked = ViewModel.Rules.Libraries.All(l => !l.IsPicked) };
+        all.Click += (_, _) =>
+        {
+            foreach (var library in ViewModel.Rules.Libraries)
+            {
+                library.IsPicked = false;
+            }
+        };
+        LibrariesMenu.Items.Add(all);
+        if (ViewModel.Rules.Libraries.Count > 0)
+        {
+            LibrariesMenu.Items.Add(new MenuFlyoutSeparator());
+        }
+        foreach (var library in ViewModel.Rules.Libraries)
+        {
+            var item = new ToggleMenuFlyoutItem { Text = library.Name, IsChecked = library.IsPicked };
+            item.Click += (_, _) => library.IsPicked = item.IsChecked;
+            LibrariesMenu.Items.Add(item);
+        }
+    }
+
+    // A facet or person rule suggests as the viewer types, and when it takes focus.
+    private async void OnRuleTextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
+    {
+        if (args.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
+        {
+            await SuggestAsync(sender);
+        }
+    }
+
+    private async void OnRuleSuggestFocus(object sender, RoutedEventArgs e) => await SuggestAsync((AutoSuggestBox)sender);
+
+    private async Task SuggestAsync(AutoSuggestBox box)
+    {
+        try
+        {
+            if (box.Tag is SmartRuleViewModel rule)
+            {
+                await ViewModel.Rules.SuggestAsync(rule);
+                box.IsSuggestionListOpen = rule.Suggestions.Count > 0 && box.FocusState != FocusState.Unfocused;
+            }
+        }
+        catch (Exception ex)
+        {
+            // async void callers: nothing may escape. A failed people search just suggests nothing.
+            Log(ex, "A rule's suggestions could not be read");
         }
     }
 

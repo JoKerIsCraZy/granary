@@ -16,10 +16,17 @@ public sealed record PersonalCollectionCreate
     /// <summary>It shows on the Collections tab of the profiles that see it.</summary>
     public bool IncludeInServerCollections { get; init; }
 
-    /// <summary>"Show only"; left out when it shows everything.</summary>
+    /// <summary>"Show only" of a manual collection; left out when it shows everything.</summary>
     public DisplayQuery? DisplayQueryDefinition { get; init; }
 
+    /// <summary><see cref="PersonalCollectionTypes.Manual"/> or <see cref="PersonalCollectionTypes.Smart"/>.</summary>
     public string CollectionType { get; init; } = PersonalCollectionTypes.Manual;
+
+    /// <summary>A smart collection's rules.</summary>
+    public SmartQuery? QueryDefinition { get; init; }
+
+    /// <summary>A smart collection's <c>sort_config</c>, sent back as stored (<c>{}</c> for none).</summary>
+    public JsonElement? SortConfig { get; init; }
 }
 
 /// <summary>The body of <c>PATCH /api/v2/collections/{id}</c>: every field the editor owns, each time.</summary>
@@ -33,8 +40,37 @@ public sealed record PersonalCollectionUpdate
 
     public bool IncludeInServerCollections { get; init; }
 
-    /// <summary>"Show only"; an empty one (no groups) when it shows everything again.</summary>
-    public required DisplayQuery DisplayQueryDefinition { get; init; }
+    /// <summary>A manual collection's "Show only"; an empty one (no groups) when it shows everything again.</summary>
+    public DisplayQuery? DisplayQueryDefinition { get; init; }
+
+    /// <summary>A smart collection's rules.</summary>
+    public SmartQuery? QueryDefinition { get; init; }
+
+    /// <summary>A smart collection's <c>sort_config</c>, sent back as stored.</summary>
+    public JsonElement? SortConfig { get; init; }
+}
+
+/// <summary>The body of <c>POST /api/v2/collections/preview</c>: the first titles rules would match.</summary>
+public sealed record CollectionPreviewRequest(SmartQuery QueryDefinition, int Limit);
+
+/// <summary><c>POST /api/v2/collections/preview</c>: the first titles that match, and how many do.</summary>
+public sealed record CollectionPreview
+{
+    public IReadOnlyList<CollectionPreviewItem> Items { get; init => field = value ?? []; } = [];
+
+    public long Total { get; init; }
+}
+
+public sealed record CollectionPreviewItem
+{
+    public string ContentId { get; init => field = value ?? ""; } = "";
+
+    public string Title { get; init => field = value ?? ""; } = "";
+
+    public string Type { get; init => field = value ?? ""; } = "";
+
+    /// <summary>Card-size, presigned; absent when the title has none.</summary>
+    public string? PosterUrl { get; init; }
 }
 
 /// <summary>A filter-only query fragment: one AND group of rules, as a collection's "Show only" keeps it.</summary>

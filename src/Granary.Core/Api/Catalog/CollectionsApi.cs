@@ -61,6 +61,14 @@ public sealed class CollectionsApi(SiloHttp http)
     public Task<Versioned<PersonalCollectionOrder>> GetOrderAsync(Uri server, string id, CancellationToken cancellationToken = default) =>
         http.GetVersionedAsync(server, Path(id) + "/items/order", SiloAuth.Profile, CollectionsJsonContext.Default.PersonalCollectionOrder, cancellationToken);
 
+    /// <summary>Titles a preview of rules shows, as the web asks.</summary>
+    public const int PreviewLimit = 24;
+
+    /// <summary>The first titles <paramref name="rules"/> match across the profile's libraries, and how many do.</summary>
+    public Task<CollectionPreview> PreviewAsync(Uri server, SmartQuery rules, int limit = PreviewLimit, CancellationToken cancellationToken = default) =>
+        http.PostAsync(server, "api/v2/collections/preview", SiloAuth.Profile, new CollectionPreviewRequest(rules, limit),
+            CollectionsJsonContext.Default.CollectionPreviewRequest, CollectionsJsonContext.Default.CollectionPreview, cancellationToken);
+
     /// <summary>Puts every title in <paramref name="orderedIds"/>'s order, as the order was read at <paramref name="version"/>.</summary>
     public Task<Versioned<PersonalCollectionOrder>> SetOrderAsync(Uri server, string id, string version, IReadOnlyList<string> orderedIds,
         CancellationToken cancellationToken = default) =>

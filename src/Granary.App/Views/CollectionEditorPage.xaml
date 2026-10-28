@@ -94,7 +94,7 @@
                         <StackPanel Spacing="8">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <Border Style="{StaticResource EditorTagStyle}">
-                                    <TextBlock Text="Manual" FontSize="11" Foreground="{StaticResource SiloMutedBrush}" />
+                                    <TextBlock Text="{x:Bind ViewModel.KindLabel, Mode=OneWay}" FontSize="11" Foreground="{StaticResource SiloMutedBrush}" />
                                 </Border>
                                 <Border Style="{StaticResource EditorTagStyle}" Visibility="{x:Bind ViewModel.IsSavedShared, Mode=OneWay}">
                                     <TextBlock Text="Shared" FontSize="11" Foreground="{StaticResource SiloMutedBrush}" />
@@ -143,7 +143,7 @@
                                 <TextBox Text="{x:Bind ViewModel.Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" CornerRadius="8"
                                          AcceptsReturn="True" TextWrapping="Wrap" MinHeight="84" AutomationProperties.Name="Description" />
                             </StackPanel>
-                            <StackPanel Spacing="8">
+                            <StackPanel Spacing="8" Visibility="{x:Bind ViewModel.IsManualKind, Mode=OneWay}">
                                 <TextBlock Text="Show only" Style="{StaticResource EditorLabelStyle}" />
                                 <Grid ColumnSpacing="8">
                                     <Grid.ColumnDefinitions>
@@ -164,7 +164,7 @@
                     </Border>
 
                     <!-- Titles: search to add, the list in its order, remove with Undo, move by drag or Alt+arrows. -->
-                    <Border Style="{StaticResource EditorCardStyle}" AutomationProperties.Name="Titles">
+                    <Border Style="{StaticResource EditorCardStyle}" AutomationProperties.Name="Titles" Visibility="{x:Bind ViewModel.IsManualKind, Mode=OneWay}">
                         <StackPanel Spacing="14">
                             <Grid>
                                 <TextBlock Text="Titles" Style="{StaticResource EditorHeadingStyle}" AutomationProperties.HeadingLevel="Level2" />
@@ -292,6 +292,273 @@
                                 <TextBlock Grid.Column="1" Style="{StaticResource EditorHelpStyle}" HorizontalAlignment="Right"
                                            Text="{x:Bind OrderHint(ViewModel.ShowsReorderHint), Mode=OneWay}" />
                             </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!--
+                        A smart collection's Rules, as the web's sentence: "Show [movies] from [all my libraries]", then each group
+                        ("that match [all] of these:", later ones joined by "and" or "or"), a line per rule, and Order.
+                    -->
+                    <Border Style="{StaticResource EditorCardStyle}" AutomationProperties.Name="Rules" Visibility="{x:Bind ViewModel.IsSmart, Mode=OneWay}">
+                        <StackPanel Spacing="16">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Rules" Style="{StaticResource EditorHeadingStyle}" FontSize="17" AutomationProperties.HeadingLevel="Level2" />
+                                <TextBlock Text="Titles that match are in the collection. New matches join on their own." Style="{StaticResource EditorHelpStyle}"
+                                           FontSize="13.5" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="8" AutomationProperties.Name="What the collection shows">
+                                <TextBlock Text="Show" FontSize="15" VerticalAlignment="Center" Foreground="{StaticResource SiloForegroundBrush}" />
+                                <ComboBox ItemsSource="{x:Bind Scopes}" DisplayMemberPath="Label" SelectedItem="{x:Bind ViewModel.Rules.Scope, Mode=TwoWay}"
+                                          MinHeight="36" CornerRadius="8" AutomationProperties.Name="Kind of titles" />
+                                <TextBlock Text="{x:Bind ViewModel.Rules.FromText, Mode=OneWay}" FontSize="15" VerticalAlignment="Center"
+                                           Foreground="{StaticResource SiloForegroundBrush}" />
+                                <DropDownButton Content="{x:Bind ViewModel.Rules.LibrariesText, Mode=OneWay}" MinHeight="36" CornerRadius="8"
+                                                AutomationProperties.Name="Libraries">
+                                    <DropDownButton.Flyout>
+                                        <MenuFlyout x:Name="LibrariesMenu" Placement="BottomEdgeAlignedLeft" Opening="OnLibrariesMenuOpening" />
+                                    </DropDownButton.Flyout>
+                                </DropDownButton>
+                                <TextBlock Text="{x:Bind ViewModel.Rules.LibraryWord, Mode=OneWay}" FontSize="15" VerticalAlignment="Center"
+                                           Foreground="{StaticResource SiloForegroundBrush}" />
+                            </StackPanel>
+
+                            <Border BorderBrush="{StaticResource SiloBorderBrush}" BorderThickness="1" CornerRadius="16" Padding="14">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Text="No rules yet, so the collection holds every title from these libraries." Style="{StaticResource EditorHelpStyle}"
+                                               FontSize="14" Visibility="{x:Bind ViewModel.Rules.HasNoRules, Mode=OneWay}" />
+                                    <ItemsRepeater ItemsSource="{x:Bind ViewModel.Rules.Groups}">
+                                        <ItemsRepeater.Layout>
+                                            <StackLayout Spacing="12" />
+                                        </ItemsRepeater.Layout>
+                                        <ItemsRepeater.ItemTemplate>
+                                            <DataTemplate x:DataType="vm:SmartGroupViewModel">
+                                                <StackPanel Spacing="8">
+                                                    <StackPanel Orientation="Horizontal" Spacing="8" Visibility="{x:Bind IsFirst, Mode=OneWay}">
+                                                        <TextBlock Text="that match" FontSize="15" VerticalAlignment="Center" Foreground="{StaticResource SiloForegroundBrush}" />
+                                                        <ComboBox ItemsSource="{x:Bind vm:SmartRulesViewModel.Matches}" DisplayMemberPath="Label"
+                                                                  SelectedItem="{x:Bind Match, Mode=TwoWay}" MinHeight="36" CornerRadius="8"
+                                                                  AutomationProperties.Name="{x:Bind MatchName, Mode=OneWay}" />
+                                                        <TextBlock Text="of these:" FontSize="15" VerticalAlignment="Center" Foreground="{StaticResource SiloForegroundBrush}" />
+                                                    </StackPanel>
+                                                    <Grid ColumnSpacing="8" BorderBrush="{StaticResource SiloBorderBrush}" BorderThickness="0,1,0,0" Padding="0,12,0,0"
+                                                          Visibility="{x:Bind IsLater, Mode=OneWay}">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                            <ColumnDefinition Width="*" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <ComboBox ItemsSource="{x:Bind vm:SmartRulesViewModel.Joins}" DisplayMemberPath="Label"
+                                                                  SelectedItem="{x:Bind Join, Mode=TwoWay}" MinHeight="32" CornerRadius="8"
+                                                                  AutomationProperties.Name="How the groups combine" />
+                                                        <TextBlock Grid.Column="1" Text="titles that match" FontSize="14" VerticalAlignment="Center"
+                                                                   Foreground="{StaticResource SiloForegroundBrush}" />
+                                                        <ComboBox Grid.Column="2" ItemsSource="{x:Bind vm:SmartRulesViewModel.Matches}" DisplayMemberPath="Label"
+                                                                  SelectedItem="{x:Bind Match, Mode=TwoWay}" MinHeight="32" CornerRadius="8"
+                                                                  AutomationProperties.Name="{x:Bind MatchName, Mode=OneWay}" />
+                                                        <TextBlock Grid.Column="3" Text="of these:" FontSize="14" VerticalAlignment="Center"
+                                                                   Foreground="{StaticResource SiloForegroundBrush}" />
+                                                        <Button Grid.Column="4" Style="{StaticResource SiloIconButtonStyle}" HorizontalAlignment="Right"
+                                                                Command="{x:Bind RemoveCommand}" CommandParameter="{x:Bind}"
+                                                                AutomationProperties.Name="{x:Bind RemoveName, Mode=OneWay}" ToolTipService.ToolTip="{x:Bind RemoveName, Mode=OneWay}">
+                                                            <FontIcon Glyph="&#xE711;" FontSize="12" />
+                                                        </Button>
+                                                    </Grid>
+                                                    <ItemsRepeater ItemsSource="{x:Bind Rules}">
+                                                        <ItemsRepeater.Layout>
+                                                            <StackLayout Spacing="8" />
+                                                        </ItemsRepeater.Layout>
+                                                        <ItemsRepeater.ItemTemplate>
+                                                            <DataTemplate x:DataType="vm:SmartRuleViewModel">
+                                                                <Grid>
+                                                                    <!-- A rule these controls can't show: kept as saved until removed. -->
+                                                                    <Grid ColumnSpacing="8" Padding="8,4" CornerRadius="6" BorderBrush="{StaticResource SiloBorderBrush}"
+                                                                          BorderThickness="1" Visibility="{x:Bind IsLocked}" AutomationProperties.Name="Rule not editable here">
+                                                                        <Grid.ColumnDefinitions>
+                                                                            <ColumnDefinition Width="*" />
+                                                                            <ColumnDefinition Width="Auto" />
+                                                                        </Grid.ColumnDefinitions>
+                                                                        <TextBlock FontSize="12" VerticalAlignment="Center" TextWrapping="Wrap">
+                                                                            <Run Text="Not editable here" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium"
+                                                                                 Foreground="{StaticResource SiloForegroundBrush}" />
+                                                                            <Run Text="{x:Bind LockedText}" FontFamily="Consolas" Foreground="{StaticResource SiloMutedBrush}" />
+                                                                        </TextBlock>
+                                                                        <Button Grid.Column="1" Content="Remove" Style="{StaticResource EditorGhostButtonStyle}"
+                                                                                Command="{x:Bind RemoveCommand}" CommandParameter="{x:Bind}" />
+                                                                    </Grid>
+                                                                    <Grid ColumnSpacing="8" Visibility="{x:Bind IsEditable}">
+                                                                        <Grid.ColumnDefinitions>
+                                                                            <ColumnDefinition Width="170" />
+                                                                            <ColumnDefinition Width="150" />
+                                                                            <ColumnDefinition Width="*" />
+                                                                            <ColumnDefinition Width="Auto" />
+                                                                        </Grid.ColumnDefinitions>
+                                                                        <ComboBox ItemsSource="{x:Bind Fields, Mode=OneWay}" DisplayMemberPath="Label" HorizontalAlignment="Stretch"
+                                                                                  SelectedItem="{x:Bind Field, Mode=TwoWay}" MinHeight="36" CornerRadius="8" AutomationProperties.Name="Field" />
+                                                                        <ComboBox Grid.Column="1" ItemsSource="{x:Bind Operators, Mode=OneWay}" DisplayMemberPath="Label"
+                                                                                  HorizontalAlignment="Stretch" SelectedItem="{x:Bind Operator, Mode=TwoWay}" MinHeight="36"
+                                                                                  CornerRadius="8" AutomationProperties.Name="Condition" />
+                                                                        <Grid Grid.Column="2" ColumnSpacing="8">
+                                                                            <Grid.ColumnDefinitions>
+                                                                                <ColumnDefinition Width="*" />
+                                                                                <ColumnDefinition Width="Auto" />
+                                                                            </Grid.ColumnDefinitions>
+                                                                            <TextBox Text="{x:Bind Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="{x:Bind Placeholder, Mode=OneWay}"
+                                                                                     MinHeight="36" CornerRadius="8" Visibility="{x:Bind ShowsText, Mode=OneWay}" AutomationProperties.Name="Value" />
+                                                                            <Grid ColumnSpacing="8" Visibility="{x:Bind ShowsRange, Mode=OneWay}">
+                                                                                <Grid.ColumnDefinitions>
+                                                                                    <ColumnDefinition Width="*" />
+                                                                                    <ColumnDefinition Width="*" />
+                                                                                </Grid.ColumnDefinitions>
+                                                                                <TextBox Text="{x:Bind From, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="From"
+                                                                                         MinHeight="36" CornerRadius="8" AutomationProperties.Name="From" />
+                                                                                <TextBox Grid.Column="1" Text="{x:Bind To, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="To"
+                                                                                         MinHeight="36" CornerRadius="8" AutomationProperties.Name="To" />
+                                                                            </Grid>
+                                                                            <ComboBox ItemsSource="{x:Bind Options, Mode=OneWay}" DisplayMemberPath="Label" HorizontalAlignment="Stretch"
+                                                                                      SelectedItem="{x:Bind Choice, Mode=TwoWay}" PlaceholderText="Pick one" MinHeight="36" CornerRadius="8"
+                                                                                      Visibility="{x:Bind ShowsChoice, Mode=OneWay}" AutomationProperties.Name="Value" />
+                                                                            <AutoSuggestBox Text="{x:Bind Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ItemsSource="{x:Bind Suggestions}"
+                                                                                            PlaceholderText="{x:Bind Placeholder, Mode=OneWay}" Tag="{x:Bind}" MinHeight="36"
+                                                                                            TextChanged="OnRuleTextChanged" GotFocus="OnRuleSuggestFocus"
+                                                                                            Visibility="{x:Bind ShowsSuggest, Mode=OneWay}" AutomationProperties.Name="Value" />
+                                                                            <Grid ColumnSpacing="8" Visibility="{x:Bind ShowsInLast, Mode=OneWay}">
+                                                                                <Grid.ColumnDefinitions>
+                                                                                    <ColumnDefinition Width="*" />
+                                                                                    <ColumnDefinition Width="*" />
+                                                                                </Grid.ColumnDefinitions>
+                                                                                <TextBox Text="{x:Bind InLastCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="30"
+                                                                                         MinHeight="36" CornerRadius="8" AutomationProperties.Name="How many" />
+                                                                                <ComboBox Grid.Column="1" ItemsSource="{x:Bind views:CollectionEditorPage.InLastUnits}" DisplayMemberPath="Label"
+                                                                                          HorizontalAlignment="Stretch" SelectedItem="{x:Bind InLastUnit, Mode=TwoWay}" MinHeight="36"
+                                                                                          CornerRadius="8" AutomationProperties.Name="Unit" />
+                                                                            </Grid>
+                                                                            <TextBlock Grid.Column="1" Text="{x:Bind Unit, Mode=OneWay}" FontSize="13" VerticalAlignment="Center"
+                                                                                       Foreground="{StaticResource SiloMutedBrush}" Visibility="{x:Bind HasUnit, Mode=OneWay}" />
+                                                                        </Grid>
+                                                                        <Button Grid.Column="3" Style="{StaticResource SiloIconButtonStyle}" VerticalAlignment="Center"
+                                                                                Command="{x:Bind RemoveCommand}" CommandParameter="{x:Bind}"
+                                                                                AutomationProperties.Name="Remove rule" ToolTipService.ToolTip="Remove rule">
+                                                                            <FontIcon Glyph="&#xE74D;" FontSize="13" />
+                                                                        </Button>
+                                                                    </Grid>
+                                                                </Grid>
+                                                            </DataTemplate>
+                                                        </ItemsRepeater.ItemTemplate>
+                                                    </ItemsRepeater>
+                                                    <Button Style="{StaticResource EditorGhostButtonStyle}" Command="{x:Bind AddRuleCommand}" CommandParameter="{x:Bind}">
+                                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                                            <FontIcon Glyph="&#xE710;" FontSize="12" />
+                                                            <TextBlock Text="Add rule" />
+                                                        </StackPanel>
+                                                    </Button>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ItemsRepeater.ItemTemplate>
+                                    </ItemsRepeater>
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <Button Style="{StaticResource EditorGhostButtonStyle}" Command="{x:Bind ViewModel.Rules.AddRuleCommand}"
+                                                Visibility="{x:Bind ViewModel.Rules.HasNoRules, Mode=OneWay}">
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <FontIcon Glyph="&#xE710;" FontSize="12" />
+                                                <TextBlock Text="Add rule" />
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Style="{StaticResource EditorGhostButtonStyle}" Command="{x:Bind ViewModel.Rules.AddGroupCommand}"
+                                                Visibility="{x:Bind ViewModel.Rules.HasRules, Mode=OneWay}" Foreground="{StaticResource SiloMutedBrush}">
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <FontIcon Glyph="&#xE710;" FontSize="12" />
+                                                <TextBlock Text="{x:Bind ViewModel.Rules.AddGroupText, Mode=OneWay}" />
+                                            </StackPanel>
+                                        </Button>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                            <TextBlock Style="{StaticResource EditorHelpStyle}"
+                                       Text="&#x201C;All my libraries&#x201D; follows the libraries this profile can see. Rules about you, like Watched, are offered only here." />
+
+                            <!-- Order: sort, direction and the most titles; a saved default sort wins over them until cleared. -->
+                            <StackPanel Spacing="12" BorderBrush="{StaticResource SiloBorderBrush}" BorderThickness="0,1,0,0" Padding="0,16,0,0">
+                                <TextBlock Text="Order" Style="{StaticResource EditorLabelStyle}" AutomationProperties.HeadingLevel="Level3" />
+                                <Grid ColumnSpacing="10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="1.2*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <ComboBox ItemsSource="{x:Bind ViewModel.Rules.Sorts, Mode=OneWay}" DisplayMemberPath="Label" HorizontalAlignment="Stretch"
+                                              SelectedItem="{x:Bind ViewModel.Rules.SortField, Mode=TwoWay}" MinHeight="40" CornerRadius="8" AutomationProperties.Name="Sort by" />
+                                    <ComboBox Grid.Column="1" ItemsSource="{x:Bind ViewModel.Rules.Directions, Mode=OneWay}" DisplayMemberPath="Label"
+                                              HorizontalAlignment="Stretch" SelectedItem="{x:Bind ViewModel.Rules.Direction, Mode=TwoWay}" MinHeight="40" CornerRadius="8"
+                                              AutomationProperties.Name="Direction" />
+                                    <Grid Grid.Column="2" ColumnSpacing="8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox Text="{x:Bind ViewModel.Rules.LimitText, Mode=TwoWay}" PlaceholderText="No limit" MinHeight="40" CornerRadius="8"
+                                                 AutomationProperties.Name="Max titles" />
+                                        <TextBlock Grid.Column="1" Text="max titles" FontSize="13" VerticalAlignment="Center" Foreground="{StaticResource SiloMutedBrush}" />
+                                    </Grid>
+                                </Grid>
+                                <Grid ColumnSpacing="10" Padding="12,10" CornerRadius="12" Background="#14FFFFFF" Visibility="{x:Bind ViewModel.Rules.HasStoredSort, Mode=OneWay}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <FontIcon Glyph="&#xE946;" FontSize="14" Foreground="{StaticResource SiloMutedBrush}" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1" Text="{x:Bind ViewModel.Rules.StoredSortLine, Mode=OneWay}" FontSize="13" TextWrapping="Wrap"
+                                               VerticalAlignment="Center" Foreground="{StaticResource SiloForegroundBrush}" />
+                                    <Button Grid.Column="2" Content="Clear" Style="{StaticResource EditorSmallButtonStyle}" Command="{x:Bind ViewModel.Rules.ClearStoredSortCommand}"
+                                            AutomationProperties.Name="Clear the saved default sort" />
+                                </Grid>
+                                <TextBlock Text="A profile that picks its own sort while browsing keeps that choice." Style="{StaticResource EditorHelpStyle}" FontSize="13" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- The live preview: the first titles the rules match, as posters. -->
+                    <Border Style="{StaticResource EditorCardStyle}" AutomationProperties.Name="Live preview" Visibility="{x:Bind ViewModel.IsSmart, Mode=OneWay}">
+                        <StackPanel Spacing="14">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Ellipse Width="6" Height="6" Fill="{StaticResource SiloCompleteBrush}" VerticalAlignment="Center" />
+                                <TextBlock Text="Live preview" FontSize="14" Foreground="{StaticResource SiloMutedBrush}" VerticalAlignment="Center" />
+                                <TextBlock FontSize="14" VerticalAlignment="Center" Visibility="{x:Bind ViewModel.IsPreviewReady, Mode=OneWay}">
+                                    <Run Text="&#x00B7;" Foreground="{StaticResource SiloMutedBrush}" />
+                                    <Run Text="{x:Bind ViewModel.PreviewCount, Mode=OneWay}" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
+                                         Foreground="{StaticResource SiloForegroundBrush}" />
+                                </TextBlock>
+                                <TextBlock FontSize="14" VerticalAlignment="Center" Foreground="{StaticResource SiloMutedBrush}"
+                                           Visibility="{x:Bind ViewModel.HasPreviewShowing, Mode=OneWay}">
+                                    <Run Text="&#x00B7;" />
+                                    <Run Text="{x:Bind ViewModel.PreviewShowing, Mode=OneWay}" />
+                                </TextBlock>
+                            </StackPanel>
+                            <ProgressRing IsActive="{x:Bind ViewModel.IsPreviewLoading, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsPreviewLoading, Mode=OneWay}"
+                                          Width="24" Height="24" HorizontalAlignment="Center" AutomationProperties.Name="Loading the preview" />
+                            <ItemsRepeater ItemsSource="{x:Bind ViewModel.PreviewTiles}" Visibility="{x:Bind ViewModel.HasPreviewTiles, Mode=OneWay}"
+                                           Opacity="{x:Bind Dimmed(ViewModel.IsPreviewRefreshing), Mode=OneWay}" AutomationProperties.Name="Matching titles">
+                                <ItemsRepeater.Layout>
+                                    <UniformGridLayout MinItemWidth="80" MinItemHeight="120" MinRowSpacing="10" MinColumnSpacing="10" ItemsStretch="Uniform" />
+                                </ItemsRepeater.Layout>
+                                <ItemsRepeater.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:CollectionPreviewTile">
+                                        <Border CornerRadius="10" Background="#1AFFFFFF" AutomationProperties.Name="{x:Bind Title}" ToolTipService.ToolTip="{x:Bind Title}">
+                                            <Image Source="{x:Bind views:CollectionEditorPage.PreviewPoster(PosterUrl)}" Stretch="UniformToFill" />
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsRepeater.ItemTemplate>
+                            </ItemsRepeater>
+                            <StackPanel Spacing="4" HorizontalAlignment="Center" Visibility="{x:Bind ViewModel.IsPreviewEmpty, Mode=OneWay}">
+                                <TextBlock Text="No titles match yet" FontSize="14.5" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
+                                           HorizontalAlignment="Center" Foreground="{StaticResource SiloForegroundBrush}" />
+                                <TextBlock Text="You can still save. Titles that match later join on their own." Style="{StaticResource EditorHelpStyle}" FontSize="13"
+                                           HorizontalAlignment="Center" />
+                            </StackPanel>
+                            <TextBlock Text="The preview didn't load. You can still save." Style="{StaticResource EditorHelpStyle}" FontSize="13" HorizontalAlignment="Center"
+                                       Visibility="{x:Bind ViewModel.HasPreviewFailed, Mode=OneWay}" />
                         </StackPanel>
                     </Border>
 

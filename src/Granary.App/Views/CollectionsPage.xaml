@@ -37,7 +37,7 @@
                                Foreground="{StaticResource SiloMutedBrush}" TextWrapping="Wrap" />
                 </StackPanel>
                 <!-- The web's red New collection at the title's right. -->
-                <Button Grid.Column="1" Style="{StaticResource SiloPrimaryButtonStyle}" VerticalAlignment="Top" Command="{x:Bind ViewModel.NewCollectionCommand}"
+                <Button Grid.Column="1" Style="{StaticResource SiloPrimaryButtonStyle}" VerticalAlignment="Top" Click="OnNewCollectionClick"
                         AutomationProperties.Name="New collection">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <FontIcon Glyph="&#xE710;" FontSize="12" />
@@ -72,7 +72,7 @@
                     <!-- None yet: the web's dashed card that makes the first. -->
                     <Button Width="150" Height="225" Padding="0" Background="Transparent" BorderThickness="0" CornerRadius="12" HorizontalAlignment="Left"
                             HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
-                            Command="{x:Bind ViewModel.NewCollectionCommand}" Visibility="{x:Bind ViewModel.IsOwnEmpty, Mode=OneWay}"
+                            Click="OnNewCollectionClick" Visibility="{x:Bind ViewModel.IsOwnEmpty, Mode=OneWay}"
                             AutomationProperties.Name="New collection">
                         <Grid>
                             <Rectangle RadiusX="12" RadiusY="12" Stroke="{StaticResource SiloBorderBrush}" StrokeThickness="1.5" StrokeDashArray="4,3" />

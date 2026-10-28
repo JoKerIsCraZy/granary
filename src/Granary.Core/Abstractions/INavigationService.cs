@@ -79,8 +79,8 @@ public enum AppRoute
 /// <param name="SectionType">The row's <c>section_type</c>; Continue Watching and Next Up list landscape cards.</param>
 public sealed record SectionRouteParameter(string SectionId, string Title, string? LibraryId = null, string? SectionType = null);
 
-/// <summary>The collection the editor changes; null makes a new one.</summary>
-public sealed record CollectionEditorRouteParameter(string? CollectionId);
+/// <summary>The collection the editor changes; null makes a new one, of <paramref name="Kind"/> (manual unless smart).</summary>
+public sealed record CollectionEditorRouteParameter(string? CollectionId, string? Kind = null);
 
 /// <summary>A collection whose titles a list shows in the collection's own order.</summary>
 /// <param name="Source"><c>user_collection</c> for a personal collection, <c>library_collection</c> for a server one.</param>

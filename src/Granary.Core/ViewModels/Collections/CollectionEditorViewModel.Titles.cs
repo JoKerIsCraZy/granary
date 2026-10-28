@@ -73,8 +73,12 @@ public sealed partial class CollectionEditorViewModel
         ? "Pick titles now. They're added when you press Create collection."
         : "In the order you see them. Titles save as you add, remove or drag them.";
 
-    /// <summary>"3 titles" in the header.</summary>
-    public string MetaLine => CollectionEditorText.Titles(TitlesCapped ? Math.Max(_itemCount, Titles.Count) : Titles.Count);
+    /// <summary>"3 titles" in the header; a smart collection's "Updates itself as titles are added" after its count.</summary>
+    public string MetaLine => IsSmart
+        ? IsNew ? SmartUpdatesItself : $"{CollectionEditorText.Titles(_itemCount)} \u00B7 {SmartUpdatesItself}"
+        : CollectionEditorText.Titles(TitlesCapped ? Math.Max(_itemCount, Titles.Count) : Titles.Count);
+
+    private const string SmartUpdatesItself = "Updates itself as titles are added";
 
     public bool IsTitlesEmpty => Titles.Count == 0 && TitlesState is not (LibraryLoadState.Loading or LibraryLoadState.Error);
 

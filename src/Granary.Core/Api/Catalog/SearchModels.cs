@@ -20,6 +20,12 @@ public sealed record CatalogSearchCapabilities
 
     public bool VideoWithEpisodesScope { get; init; }
 
+    /// <summary>Rules take the newer fields (title, decade, duration, TMDB and RT ratings, …).</summary>
+    public bool ExtendedQueryRules { get; init; }
+
+    /// <summary>Rules about episodes take the show's title.</summary>
+    public bool ShowTitleRules { get; init; }
+
     /// <summary>Maximum candidates in a Meilisearch ranked window.</summary>
     public int? ResultWindowLimit { get; init; }
 
