@@ -29,3 +29,8 @@ release's section is what its update says it changes (docs/release.md).
 - History: Select titles and remove their watch data.
 - Notifications: the Series view shows which series notify you and why, with search, reasons, sort and Mute.
 - Libraries a profile hides on the web are hidden in Granary too, in the profile's order.
+- Home and the unread count follow what happens on your other devices, live.
+- Collections of your own: make a manual collection, name it, fill it from a search, put its titles in order, share it
+  with the other profiles on your account, and delete it; and Add to Collection from a movie's or series' page.
+- A person's page from cast, crew and Search: their photo, life, and the titles they're in.
+- Adding a server that is already signed in opens it at the profile picker again.
