@@ -66,6 +66,13 @@ internal sealed class FakeServerPlayback : IServerPlayback
 
     public void Seek(double sourceSeconds) => Seeks.Add(sourceSeconds);
 
+    public string? SessionId { get; set; } = "sess-1";
+
+    /// <summary>Whether a seek stays in the stream; the test sets it.</summary>
+    public bool ReachesInPlace { get; set; } = true;
+
+    public bool CanReachInPlace(double sourceSeconds) => ReachesInPlace;
+
     public void SelectAudio(int ordinal) => AudioPicks.Add(ordinal);
 
     public IReadOnlyList<SubtitleInventoryItem> SubtitleTracks { get; set; } = [];

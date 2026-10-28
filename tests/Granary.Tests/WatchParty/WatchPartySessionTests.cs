@@ -160,9 +160,9 @@ public sealed class WatchPartySessionTests : IAsyncDisposable
 
         _session.ProfileId = "8";
         _session.RaiseChanged();
-        await ServerPlaybackFixture.Until(() => _party.Room is null, "the leave");
+        await ServerPlaybackFixture.Until(() => _party.Room is null && Socket(0).Disposed, "the leave");
 
-        Assert.True(Socket(0).Disposed);
+        Assert.False(_party.IsInRoom);
     }
 
     public async ValueTask DisposeAsync() => await _party.LeaveAsync();

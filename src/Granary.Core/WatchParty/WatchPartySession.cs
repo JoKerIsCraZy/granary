@@ -16,7 +16,7 @@ public sealed record WatchPartyDelivery(WatchPartyCommand Command, long Epoch);
 /// the room's snapshots and commands on the UI thread. Leaving closes the socket (the server has no leave message: a
 /// host who leaves ends the room two minutes later unless they come back); the host's End ends it for everyone.
 /// </summary>
-public sealed partial class WatchPartySession : ObservableObject
+public sealed partial class WatchPartySession : ObservableObject, IRoomLink
 {
     private readonly ISessionManager _session;
     private readonly WatchPartyApi _api;
@@ -58,8 +58,8 @@ public sealed partial class WatchPartySession : ObservableObject
 
     public bool IsConnected => ConnectionState == WatchPartyConnectionState.Connected && End is null;
 
-    /// <summary>The server's clock, as the room's pings measured it.</summary>
-    public RoomClock? Clock => _connection?.Clock;
+    /// <summary>Server time minus local time in milliseconds, as the room's pings measured it; null before.</summary>
+    public double? ClockOffsetMs => _connection?.Clock.OffsetMs;
 
     /// <summary>A command of the room, on the UI thread.</summary>
     public event EventHandler<WatchPartyDelivery>? CommandReceived;

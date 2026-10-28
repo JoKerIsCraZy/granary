@@ -70,7 +70,8 @@ public sealed partial class PlayerViewModel
         if (_playback is { } playback)
         {
             QualityOptions = QualityOption.For(playback.Qualities, playback.QualityPreference, playback.ActiveQuality, playback.IsBandwidthLimited);
-            VersionOptions = VersionOption.For(playback.Versions, playback.PlayingFileId, playback.RequestedFileId);
+            // A Watch Party plays one file for everyone, as the web player keeps it.
+            VersionOptions = IsWatchParty ? [] : VersionOption.For(playback.Versions, playback.PlayingFileId, playback.RequestedFileId);
             Speed = playback.Speed;
         }
         else

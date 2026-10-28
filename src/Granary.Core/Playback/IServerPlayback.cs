@@ -166,6 +166,12 @@ public interface IServerPlayback : IAsyncDisposable
 
     Task StartAsync(PlayRequest request, CancellationToken cancellationToken);
 
+    /// <summary>The server's playback session that plays now; null before the first plan and after the stop.</summary>
+    string? SessionId { get; }
+
+    /// <summary>The stream that plays gets to <paramref name="sourceSeconds"/> without the server making a new one.</summary>
+    bool CanReachInPlace(double sourceSeconds);
+
     /// <summary>Moves to <paramref name="sourceSeconds"/>, asking the server for a new plan when the stream cannot get there itself.</summary>
     void Seek(double sourceSeconds);
 

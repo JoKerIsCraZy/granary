@@ -31,6 +31,9 @@ public sealed record PlaybackContext(
 {
     /// <summary>The id the title was asked for by, which the watch detail may spell differently in its <c>content_id</c>.</summary>
     public string ContentId { get; init; } = "";
+
+    /// <summary>The file was chosen for this playback (a Watch Party's): the server may not fall back to another.</summary>
+    public bool FilePinned { get; init; }
 }
 
 /// <summary>
@@ -52,7 +55,8 @@ public sealed class PlaybackStarter(
     private const double ResumeRewindSeconds = 7;
 
     /// <exception cref="PlaybackUnavailableException">The title, the profile or the server cannot play.</exception>
-    public async Task<PlaybackContext> PrepareAsync(string contentId, CancellationToken cancellationToken)
+    /// <param name="pinnedFileId">The one file to play (a Watch Party's); null lets the client choose.</param>
+    public async Task<PlaybackContext> PrepareAsync(string contentId, CancellationToken cancellationToken, string? pinnedFileId = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(contentId);
         var server = session.ActiveServer ?? throw new PlaybackUnavailableException("Choose a server to play from.", canRetry: false);
@@ -70,11 +74,14 @@ public sealed class PlaybackStarter(
         {
             throw Describe(ex);
         }
-        var version = ChooseVersion(detail) ?? throw new PlaybackUnavailableException("This title has no file to play.", canRetry: false);
+        var version = (pinnedFileId is null ? ChooseVersion(detail) : detail.Versions.FirstOrDefault(v => v.FileId == pinnedFileId))
+            ?? throw new PlaybackUnavailableException(pinnedFileId is null ? "This title has no file to play." : "The room's file is not available here.",
+                canRetry: false);
         var capabilities = await CapabilitiesAsync(server, cancellationToken).ConfigureAwait(false);
         return new PlaybackContext(server, profileId, detail, version, await settings.ConfigureAwait(false), capabilities.InstallationId!, Report(capabilities))
         {
             ContentId = contentId,
+            FilePinned = pinnedFileId is not null,
         };
     }
 
@@ -123,6 +130,8 @@ public sealed class PlaybackStarter(
             FileId = context.Version.FileId,
             ProfileId = context.ProfileId,
             PlaybackAttemptId = attemptId,
+            // A Watch Party plays one file for everyone: no recovery may pick another.
+            AllowAlternateVersions = context.FilePinned ? false : null,
             QualityPreference = context.Preferences.Quality,
             StartPosition = startPosition,
             // Always explicit: an omitted index is resolved from another device header (docs/api-contract.md, 8.8.1).

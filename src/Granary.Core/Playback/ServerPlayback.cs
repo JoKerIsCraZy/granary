@@ -181,9 +181,14 @@ public sealed partial class ServerPlayback : IServerPlayback
             throw new ArgumentException("A server playback plays a server title.", nameof(request));
         }
         SetStatus(new ServerPlaybackStatus(ServerPlaybackPhase.Preparing));
-        _starting = Guarded(() => PrepareAndStartAsync(contentId, request.FromBeginning, cancellationToken));
+        _starting = Guarded(() => PrepareAndStartAsync(contentId, request, cancellationToken));
         await _starting;
     }
+
+    public string? SessionId => _stopping ? null : _progress?.SessionId;
+
+    public bool CanReachInPlace(double sourceSeconds) =>
+        _plan is { } plan && _started && !_recovering && (plan.Timeline.CanSeekAnywhere || IsInsideStream(plan.Timeline, sourceSeconds));
 
     public void Seek(double sourceSeconds)
     {
@@ -248,11 +253,11 @@ public sealed partial class ServerPlayback : IServerPlayback
         await _trackSaves.ConfigureAwait(false);
     }
 
-    private async Task PrepareAndStartAsync(string contentId, bool fromBeginning, CancellationToken cancellationToken)
+    private async Task PrepareAndStartAsync(string contentId, PlayRequest request, CancellationToken cancellationToken)
     {
         try
         {
-            _context = await _starter.PrepareAsync(contentId, cancellationToken);
+            _context = await _starter.PrepareAsync(contentId, cancellationToken, request.PinnedFileId);
         }
         catch (PlaybackUnavailableException ex)
         {
@@ -266,10 +271,11 @@ public sealed partial class ServerPlayback : IServerPlayback
         (Title, Subtitle) = PlaybackStarter.Titles(_context.Watch);
         _engine.SetSubtitleLook(_context.Preferences.Subtitles);
         _subtitleDelayMs = _context.Preferences.SubtitleDelayMs;
-        _speed = _context.Preferences.Speed;
+        // A Watch Party plays at the room's speed: 1x, with the room's own corrections.
+        _speed = request.IsWatchParty ? 1 : _context.Preferences.Speed;
         _engine.SetSpeed(_speed);
         SetStatus(Status);
-        await StartAttemptAsync(PlaybackStarter.StartPosition(_context.Watch, fromBeginning), cancellationToken);
+        await StartAttemptAsync(PlaybackStarter.StartPosition(_context.Watch, request.FromBeginning), cancellationToken);
     }
 
     // A new attempt: a fresh attempt id and, from the server, a fresh session.

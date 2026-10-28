@@ -41,6 +41,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     private readonly IUpNextSource? _upNext;
     private readonly AutoPlayStreak _streak;
     private readonly ILogger _logger;
+    private readonly WatchParty.WatchPartySession? _watchParty;
     // A seek's target counts as the position for this long, until the engine reports it: quick skips add up.
     private const long SeekTargetMilliseconds = 3000;
 
@@ -62,7 +63,8 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         AutoPlayStreak? streak = null,
         IProfileSettings? settings = null,
         ILogger<PlayerViewModel>? logger = null,
-        Auth.AccountPermissions? permissions = null)
+        Auth.AccountPermissions? permissions = null,
+        WatchParty.WatchPartySession? watchParty = null)
     {
         _engine = engine;
         _dispatcher = dispatcher;
@@ -76,6 +78,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         _settings = settings;
         _logger = logger ?? (ILogger)NullLogger.Instance;
         _permissions = permissions;
+        _watchParty = watchParty;
         Look.Edited += OnLookEdited;
         InitializeMarkerEdit();
         _engine.StateChanged += OnStateChanged;
@@ -199,6 +202,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     // A start of the player's own: the next episode after a countdown.
     private async Task PlayAsync(PlayRequest request)
     {
+        EndWatchParty();
         _request = request;
         _left = false;
         // A seek on its way belongs to the title before.
@@ -224,6 +228,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         playback.MarkersChanged += OnMarkersChanged;
         playback.TrickplayChanged += OnTrickplayChanged;
         playback.NoticeRaised += OnNoticeRaised;
+        BeginWatchParty(request);
         await playback.StartAsync(request, CancellationToken.None);
     }
 
@@ -248,8 +253,18 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         Seek(seconds);
     }
 
-    // A seek of the player's own, as when a marked part skips itself.
+    // A seek of the player's own, as when a marked part skips itself. In a Watch Party it is asked of the room.
     private void Seek(double seconds)
+    {
+        if (RequestRoomSeek(Math.Max(0, seconds)))
+        {
+            return;
+        }
+        SeekLocally(seconds);
+    }
+
+    // Moves the player itself: the viewer's seek, or the room's.
+    private void SeekLocally(double seconds)
     {
         double target = Math.Max(0, seconds);
         if (DurationSeconds > 0)
@@ -279,6 +294,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
             return;
         }
         _left = true;
+        EndWatchParty();
         LeavePlayback();
         _engine.Stop();
     }
@@ -293,6 +309,10 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         if (IsPlaying)
         {
             _streak.Reset();
+            if (RequestRoomPlayPause())
+            {
+                return;
+            }
             if (!_engine.Current.IsPaused)
             {
                 _nextUp.Paused(Now);
@@ -310,7 +330,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
 
     // Where a skip goes from: a seek on its way, else the position.
     private double SkipOrigin =>
-        _seekTarget is { } target && Environment.TickCount64 - _seekTargetAt < SeekTargetMilliseconds ? target : PositionSeconds;
+        _party?.PendingSeekSeconds ?? (_seekTarget is { } target && Environment.TickCount64 - _seekTargetAt < SeekTargetMilliseconds ? target : PositionSeconds);
 
     [RelayCommand]
     private void ToggleMute() => _engine.SetMuted(!IsMuted);

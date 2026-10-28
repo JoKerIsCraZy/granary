@@ -158,7 +158,8 @@ public sealed partial class PlayerViewModel
     // Once per playback, when it first plays: its settings and title are known by then.
     private void BeginNextUp(IServerPlayback playback)
     {
-        if (_nextUpStarted)
+        // In a Watch Party the room decides what plays next.
+        if (_nextUpStarted || IsWatchParty)
         {
             return;
         }
