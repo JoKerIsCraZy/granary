@@ -96,7 +96,7 @@ public sealed partial class SidebarSettingsViewModel : ObservableObject, IDispos
                 var entry = entries[tag];
                 if (!_rows.TryGetValue(tag, out var row) || row.Entry != entry)
                 {
-                    _rows[tag] = row = new SidebarRowViewModel(this, entry, entry.Tag is "Requests" or "Notifications" ? ServerOfferNote : null);
+                    _rows[tag] = row = new SidebarRowViewModel(this, entry, entry.Tag is "Requests" or "Notifications" or "WatchParty" ? ServerOfferNote : null);
                 }
                 row.Show(!_layout.IsHidden(tag), canMoveUp: index > 0, canMoveDown: index < arranged.Count - 1);
                 return row;

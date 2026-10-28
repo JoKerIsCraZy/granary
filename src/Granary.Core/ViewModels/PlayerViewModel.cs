@@ -41,7 +41,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     private readonly IUpNextSource? _upNext;
     private readonly AutoPlayStreak _streak;
     private readonly ILogger _logger;
-    private readonly WatchParty.WatchPartySession? _watchParty;
+    private readonly global::Granary.Core.WatchParty.WatchPartySession? _watchParty;
     // A seek's target counts as the position for this long, until the engine reports it: quick skips add up.
     private const long SeekTargetMilliseconds = 3000;
 
@@ -64,7 +64,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         IProfileSettings? settings = null,
         ILogger<PlayerViewModel>? logger = null,
         Auth.AccountPermissions? permissions = null,
-        WatchParty.WatchPartySession? watchParty = null)
+        global::Granary.Core.WatchParty.WatchPartySession? watchParty = null)
     {
         _engine = engine;
         _dispatcher = dispatcher;

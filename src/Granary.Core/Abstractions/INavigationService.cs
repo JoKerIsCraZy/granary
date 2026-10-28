@@ -73,6 +73,12 @@ public enum AppRoute
 
     /// <summary>A cast or crew member and their titles; the parameter is the person's id.</summary>
     Person,
+
+    /// <summary>The Watch Party hub: open a room, or join one by code or link.</summary>
+    WatchParty,
+
+    /// <summary>The Watch Party this profile is in (<c>WatchPartySession</c>).</summary>
+    WatchPartyRoom,
 }
 
 /// <summary>Which row an "Explore all" grid lists: a Home row, or a library row when <see cref="LibraryId"/> is set.</summary>

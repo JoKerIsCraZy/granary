@@ -444,8 +444,9 @@
                             <Button.Flyout>
                                 <Flyout x:Name="SettingsMenu" Placement="TopEdgeAlignedRight" FlyoutPresenterStyle="{StaticResource SiloPlayerMenuStyle}">
                                     <StackPanel MinWidth="240" XYFocusKeyboardNavigation="Enabled">
+                                        <!-- A Watch Party plays at the room's speed. -->
                                         <controls:SpeedTrack x:Name="SpeedTrack" Speed="{x:Bind ViewModel.Speed, Mode=OneWay}" SpeedPicked="OnSpeedPicked"
-                                                             AutomationProperties.Name="Playback speed" />
+                                                             AutomationProperties.Name="Playback speed" Visibility="{x:Bind Not(ViewModel.IsWatchParty), Mode=OneWay}" />
 
                                         <StackPanel Visibility="{x:Bind ViewModel.HasVersionOptions, Mode=OneWay}">
                                             <Border Height="1" Margin="0,4" Background="#1AFFFFFF" />

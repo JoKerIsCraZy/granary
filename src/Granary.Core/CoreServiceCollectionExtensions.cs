@@ -148,6 +148,9 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<NotificationBadge>();
         services.AddTransient<NotificationsViewModel>();
         services.AddSingleton<RequestsFeature>();
+        services.AddSingleton<WatchPartyFeature>();
+        services.AddTransient<Granary.Core.ViewModels.WatchParty.WatchPartyHubViewModel>();
+        services.AddTransient<Granary.Core.ViewModels.WatchParty.WatchPartyRoomViewModel>();
         services.AddTransient<RequestsViewModel>();
         services.AddTransient<TitleViewModel>();
         services.AddTransient<RequestTitlesViewModel>();

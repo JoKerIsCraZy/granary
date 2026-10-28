@@ -12,6 +12,7 @@ public static class SidebarGlyphs
         "Notifications" => "\uEA8F",
         "List:favorites" => "\uEB51",
         "List:watchlist" => "\uE8FD",
+        "WatchParty" => "\uE716",
         "Collections" => "\uE838",
         "List:history" => "\uE81C",
         _ => Library(kind),

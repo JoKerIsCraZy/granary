@@ -31,6 +31,7 @@ public sealed partial class SidebarLayout : ObservableObject
         new("Notifications", "Notifications", SidebarSection.Discover, "Notifications"),
         new("List:favorites", "Favorites", SidebarSection.YourStuff, "List:favorites"),
         new("List:watchlist", "Watchlist", SidebarSection.YourStuff, "List:watchlist"),
+        new("WatchParty", "Watch Party", SidebarSection.YourStuff, "WatchParty"),
         new("Collections", "Collections", SidebarSection.YourStuff, "Collections"),
         new("List:history", "History", SidebarSection.YourStuff, "List:history"),
     ];

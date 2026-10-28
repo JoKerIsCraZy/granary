@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The Watch Party hub, as Silo's web shows it: what a party is, Start a party (an empty room the host picks for) beside
+    Join a party (a code or an invite link), and how it works. In a room already, a line leads back to it.
+-->
+<Page
+    x:Class="Granary.App.Views.WatchPartyPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    NavigationCacheMode="Enabled">
+
+    <Page.Resources>
+        <Style x:Key="CardStyle" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource SiloSurfaceBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource SiloBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="16" />
+            <Setter Property="Padding" Value="24" />
+        </Style>
+        <Style x:Key="CardTitleStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="18" />
+            <Setter Property="FontFamily" Value="{StaticResource SiloFontSemiBold}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{StaticResource SiloForegroundBrush}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style x:Key="CardTextStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="LineHeight" Value="22" />
+            <Setter Property="Foreground" Value="{StaticResource SiloMutedBrush}" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+        <Style x:Key="BadgeStyle" TargetType="Border">
+            <Setter Property="Width" Value="32" />
+            <Setter Property="Height" Value="32" />
+            <Setter Property="CornerRadius" Value="8" />
+        </Style>
+    </Page.Resources>
+
+    <ScrollViewer x:Name="Scroller" XYFocusKeyboardNavigation="Enabled" SizeChanged="OnScrollerSizeChanged">
+        <StackPanel x:Name="Column" Padding="24,48,24,48" Spacing="40" HorizontalAlignment="Center">
+            <StackPanel Spacing="12">
+                <TextBlock Text="WATCH PARTY" Style="{StaticResource SiloOverlineTextStyle}" Foreground="{StaticResource SiloMutedBrush}" />
+                <TextBlock Text="Watch together, wherever everyone is." Style="{StaticResource SiloDisplayTextStyle}" TextWrapping="Wrap"
+                           MaxWidth="672" HorizontalAlignment="Left" AutomationProperties.HeadingLevel="Level1" />
+                <TextBlock MaxWidth="576" HorizontalAlignment="Left" Style="{StaticResource CardTextStyle}" FontSize="16" LineHeight="28"
+                           Text="Open a room, share the code, and everyone plays in sync. The host picks what's on." />
+            </StackPanel>
+
+            <!-- Already in a room: back to it. -->
+            <Border Style="{StaticResource CardStyle}" Padding="16,12" Visibility="{x:Bind ViewModel.IsInRoom, Mode=OneWay}">
+                <Grid ColumnSpacing="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{x:Bind ViewModel.CurrentRoomText, Mode=OneWay}" FontSize="14" Foreground="{StaticResource SiloForegroundBrush}"
+                               VerticalAlignment="Center" />
+                    <Button Grid.Column="1" Content="Back to the room" Style="{StaticResource SiloPrimaryButtonStyle}" Command="{x:Bind ViewModel.OpenRoomCommand}" />
+                </Grid>
+            </Border>
+
+            <Border Visibility="{x:Bind ViewModel.HasError, Mode=OneWay}" CornerRadius="8" Padding="16,12" BorderThickness="1"
+                    BorderBrush="#4DEF4444" Background="#1AEF4444">
+                <TextBlock Text="{x:Bind ViewModel.Error, Mode=OneWay}" FontSize="14" Foreground="#FFFECACA" TextWrapping="Wrap" />
+            </Border>
+
+            <Grid x:Name="Cards" ColumnSpacing="16" RowSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1.15*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Border Style="{StaticResource CardStyle}">
+                    <StackPanel Spacing="20">
+                        <StackPanel Spacing="8">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Border Style="{StaticResource BadgeStyle}" Background="#26EF4444">
+                                    <FontIcon Glyph="&#xE734;" FontSize="16" Foreground="{StaticResource SiloPrimaryBrush}" />
+                                </Border>
+                                <TextBlock Text="Start a party" Style="{StaticResource CardTitleStyle}" AutomationProperties.HeadingLevel="Level2" />
+                            </StackPanel>
+                            <TextBlock Text="Open an empty room now and pick what to watch once people arrive." Style="{StaticResource CardTextStyle}" />
+                        </StackPanel>
+                        <Button Content="{x:Bind ViewModel.CreateLabel, Mode=OneWay}" Style="{StaticResource SiloPrimaryButtonStyle}" HorizontalAlignment="Stretch"
+                                MinHeight="48" FontSize="16" Command="{x:Bind ViewModel.CreateCommand}" />
+                    </StackPanel>
+                </Border>
+                <Border x:Name="JoinCard" Grid.Column="1" Style="{StaticResource CardStyle}">
+                    <StackPanel Spacing="20">
+                        <StackPanel Spacing="8">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Border Style="{StaticResource BadgeStyle}" Background="{StaticResource SiloSurfaceRaisedBrush}">
+                                    <FontIcon Glyph="&#xE8C0;" FontSize="16" Foreground="{StaticResource SiloMutedBrush}" />
+                                </Border>
+                                <TextBlock Text="Join a party" Style="{StaticResource CardTitleStyle}" AutomationProperties.HeadingLevel="Level2" />
+                            </StackPanel>
+                            <TextBlock Text="Got a code from the host? Enter it here, or paste the invite link." Style="{StaticResource CardTextStyle}" />
+                        </StackPanel>
+                        <StackPanel Spacing="8">
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox Text="{x:Bind ViewModel.Code, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="ABCD1234"
+                                         AutomationProperties.Name="Room code" MinHeight="48" FontSize="18" CharacterSpacing="200" VerticalContentAlignment="Center"
+                                         IsSpellCheckEnabled="False" KeyDown="OnCodeKeyDown" />
+                                <Button Grid.Column="1" Style="{StaticResource SiloSecondaryButtonStyle}" MinHeight="48" Click="OnPasteClick"
+                                        AutomationProperties.Name="Paste room code">
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <FontIcon Glyph="&#xE77F;" FontSize="14" />
+                                        <TextBlock Text="Paste" />
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+                            <Button Content="{x:Bind ViewModel.JoinLabel, Mode=OneWay}" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Stretch"
+                                    MinHeight="48" Command="{x:Bind ViewModel.JoinCommand}" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <StackPanel Spacing="0" BorderBrush="{StaticResource SiloBorderBrush}" BorderThickness="0,1,0,0" Padding="0,32,0,0">
+                <Grid ColumnSpacing="24">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <Border Width="28" Height="28" CornerRadius="14" Background="{StaticResource SiloSurfaceRaisedBrush}" VerticalAlignment="Top">
+                            <TextBlock Text="1" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource SiloMutedBrush}" />
+                        </Border>
+                        <StackPanel Spacing="4" MaxWidth="220">
+                            <TextBlock Text="Open a room" FontSize="14" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" />
+                            <TextBlock Text="Create one here; the host picks what plays." Style="{StaticResource CardTextStyle}" />
+                        </StackPanel>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12">
+                        <Border Width="28" Height="28" CornerRadius="14" Background="{StaticResource SiloSurfaceRaisedBrush}" VerticalAlignment="Top">
+                            <TextBlock Text="2" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource SiloMutedBrush}" />
+                        </Border>
+                        <StackPanel Spacing="4" MaxWidth="220">
+                            <TextBlock Text="Share the code" FontSize="14" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" />
+                            <TextBlock Text="Send the invite link or the eight-letter code to whoever is watching." Style="{StaticResource CardTextStyle}" />
+                        </StackPanel>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="12">
+                        <Border Width="28" Height="28" CornerRadius="14" Background="{StaticResource SiloSurfaceRaisedBrush}" VerticalAlignment="Top">
+                            <TextBlock Text="3" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource SiloMutedBrush}" />
+                        </Border>
+                        <StackPanel Spacing="4" MaxWidth="220">
+                            <TextBlock Text="Watch in sync" FontSize="14" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" />
+                            <TextBlock Text="Play, pause, and seek together. The room ends two minutes after the host drops off." Style="{StaticResource CardTextStyle}" />
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

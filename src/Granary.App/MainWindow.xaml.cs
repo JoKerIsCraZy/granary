@@ -55,7 +55,7 @@ public sealed partial class MainWindow : Window
 
     public MainWindow(NavigationService navigation, ShellViewModel shell, SidebarViewModel sidebar, SidebarSections sections,
         SidebarLayout layout, NotificationBadge notifications, RequestsFeature requests, PlaybackStops stops, AppUpdatesViewModel updates,
-        ILogger<MainWindow> logger)
+        Granary.Core.WatchParty.WatchPartyFeature watchParty, ILogger<MainWindow> logger)
     {
         Layout = layout;
         Updates = updates;
@@ -67,6 +67,7 @@ public sealed partial class MainWindow : Window
         Sections = sections;
         Notifications = notifications;
         Requests = requests;
+        WatchParty = watchParty;
         InitializeComponent();
         _railHover = DispatcherQueue.CreateTimer();
         _railHover.Interval = RailHoverDelay;
@@ -120,6 +121,13 @@ public sealed partial class MainWindow : Window
                 ShowSections();
             }
         };
+        WatchParty.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(Granary.Core.WatchParty.WatchPartyFeature.IsAvailable))
+            {
+                ShowSections();
+            }
+        };
         Notifications.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(NotificationBadge.IsAvailable))
@@ -153,6 +161,9 @@ public sealed partial class MainWindow : Window
 
     /// <summary>Whether the sidebar shows Requests.</summary>
     public RequestsFeature Requests { get; }
+
+    /// <summary>Whether the sidebar shows Watch Party.</summary>
+    public Granary.Core.WatchParty.WatchPartyFeature WatchParty { get; }
 
     /// <summary>Granary's own updates: the notice of one that is ready (docs/release.md).</summary>
     public AppUpdatesViewModel Updates { get; }
@@ -454,6 +465,7 @@ public sealed partial class MainWindow : Window
     private bool IsOffered(NavigationViewItem item) => item.Tag switch
     {
         nameof(AppRoute.Requests) => Requests.IsEnabled,
+        nameof(AppRoute.WatchParty) => WatchParty.IsAvailable,
         nameof(AppRoute.Notifications) => Notifications.IsAvailable,
         _ => true,
     };
@@ -490,7 +502,7 @@ public sealed partial class MainWindow : Window
     {
         try
         {
-            await Task.WhenAll(Notifications.RefreshAsync(), Requests.RefreshAsync());
+            await Task.WhenAll(Notifications.RefreshAsync(), Requests.RefreshAsync(), WatchParty.RefreshAsync());
         }
         catch (Exception ex)
         {
@@ -517,7 +529,7 @@ public sealed partial class MainWindow : Window
         // a row in full, a collection, the servers); the sidebar's own pages have none, Back (Alt+Left) still leads home.
         _showsPageBack = _navigation.CanGoBack && route is not (null or AppRoute.Player or AppRoute.Settings or AppRoute.Admin or AppRoute.Home
             or AppRoute.Search or AppRoute.Library or AppRoute.List or AppRoute.Collections or AppRoute.ForYou or AppRoute.Calendar
-            or AppRoute.Notifications or AppRoute.Requests);
+            or AppRoute.Notifications or AppRoute.Requests or AppRoute.WatchParty);
         // Clear of the page's heading, which starts 48 px in: just right of the pane, a little further beside the rail, and
         // near the window's edge where there is no sidebar (signing in).
         bool paneShown = Shell.IsSignedIn && !hidesPane;
@@ -605,7 +617,7 @@ public sealed partial class MainWindow : Window
                 break;
             case string tag when Enum.TryParse<AppRoute>(tag, out var route)
                 && route is AppRoute.Home or AppRoute.Search or AppRoute.Collections or AppRoute.ForYou or AppRoute.Calendar or AppRoute.Notifications
-                    or AppRoute.Requests:
+                    or AppRoute.Requests or AppRoute.WatchParty:
                 _navigation.ShowSection(route);
                 break;
             // Settings and Admin open over the page they were opened from, and go back to it.
@@ -626,6 +638,8 @@ public sealed partial class MainWindow : Window
             AppRoute.RecommendationSection => nameof(AppRoute.ForYou),
             // A title from TMDB, a Discover row and a studio's titles open from the Requests hub.
             AppRoute.Title or AppRoute.RequestTitles => nameof(AppRoute.Requests),
+            // The room opens from the Watch Party hub, which stays picked.
+            AppRoute.WatchPartyRoom => nameof(AppRoute.WatchParty),
             _ => route.ToString(),
         };
         var item = Navigation.MenuItems.Concat(Navigation.FooterMenuItems).OfType<NavigationViewItem>()

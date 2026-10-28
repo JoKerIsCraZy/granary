@@ -53,6 +53,11 @@ public sealed partial class PlayerViewModel
     /// <summary>The viewer's speed: at once, and kept for this device.</summary>
     public void SetSpeed(double speed)
     {
+        // A Watch Party plays at the room's speed, with the room's corrections.
+        if (IsWatchParty)
+        {
+            return;
+        }
         if (_playback is { } playback)
         {
             playback.SetSpeed(speed);

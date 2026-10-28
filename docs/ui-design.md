@@ -126,8 +126,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
 
 - Sidebar (260 px): server name, Home, Search (`Ctrl+K`), "LIBRARIES" with the libraries the profile browses (its hidden
   ones left out, in its library order: the web's Settings → Libraries), "DISCOVER" (For
-  You, Requests while the server takes them, Calendar, Notifications with the unread count in red), "YOUR STUFF" (Favorites, Watchlist, Collections,
-  History; the web's Watch Party to come); Admin (an administrator's only, a shield), Settings and the profile menu at the bottom (the servers are in Settings → Servers). Favorites, Watchlist and History are one page (`PersonalListPage`, the web's `pages/Catalog.tsx` for those
+  You, Requests while the server takes them, Calendar, Notifications with the unread count in red), "YOUR STUFF" (Favorites, Watchlist, Watch
+  Party while the server offers rooms, Collections, History); Admin (an administrator's only, a shield), Settings and the profile menu at the bottom (the servers are in Settings → Servers). Favorites, Watchlist and History are one page (`PersonalListPage`, the web's `pages/Catalog.tsx` for those
   sources): the list's name, what it holds and its count, the media menu (All Media, Movies & Series, Movies, Series,
   Episodes), the list's own order ("List Order", History's "Watch History") or a sort, Filters (the library page's
   `CatalogFiltersButton`: genre, content ratings and a year range, their options read for the list with
@@ -275,6 +275,25 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   ratings, overview with "More", red Play/Resume pill, secondary actions, then rows (seasons, episodes,
   cast, more like this). The hero takes 60 % of the window's height (a season's 50 %), the web's value below its `lg`
   width: its 72 % above put the title low on a wide screen.
+- Watch Party (`WatchPartyPage`, the web's `pages/watchtogether/WatchPartyHub.tsx`): "WATCH PARTY", "Watch together,
+  wherever everyone is." and what a party is; beside each other "Start a party" (Create Watch Party opens an empty room
+  the host picks for) and "Join a party" (the code in a wide spaced box, Paste, Join Watch Party; a pasted invite link
+  joins by its token); an error in the web's red box ("Room not found.", "That room is no longer active."); in a room
+  already, a line back to it; "How it works" in three steps. Voting rooms, recent parties and invite links opened from
+  outside the app are not there yet.
+- The room (`WatchPartyRoomPage`, the web's `WatchTogetherRoomPage.tsx`): the status strip (the code, copied by a
+  click; Invite link copies the web link; Leave; End room for the host, asked first), then the stage beside "People ·
+  N" (initial, name, the host's star, Connected, Ready / Not ready, Watching, Buffering, Away). The stage is the web's:
+  "ROOM IS OPEN / Nothing on yet" with the host's or guests' words; "UP NEXT" with the poster and title, "2 of 3
+  ready", the host's "Start for everyone · 2/3 ready" ("Start alone anyway") and the guests' "I'm ready" / "Ready ✓";
+  "NOW PLAYING" with the room's clock ("12:04 · Playing · 3 here"), Rejoin playback, and the host's Stop for everyone.
+  In the lobby the host searches movies and shows (a show by the episode it would play next) and queues one; the
+  invite bar has the guests' pause switch. When the room starts a title the player opens by itself, once per start.
+  The room's end ("The room has ended.") or another device taking it over (Rejoin Watch Party) replaces the page.
+- The player in a room plays the room's file from the start; play, pause and seek go to the room and the player
+  follows its commands; a guest's seek, or pause while the host controls playback, shows the web's words as the
+  player's notice ("Only the host can seek the room."). The speed and version settings are the room's, not offered.
+  When the host stops, the title finishes or the room ends, the player closes onto the room.
 - Back: the navigation view's back arrow, `Alt+Left`, and the mouse back button. The sidebar's sections (Home,
   Search, each library) are the apps' tabs: picking one does not stack on the pages visited before, only Home stays
   under it, so Back walks the pages opened within a section and then goes Home (Android's tab switch pops to the
