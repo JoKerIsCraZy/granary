@@ -227,6 +227,11 @@
                                         <FontIcon Glyph="{x:Bind controls:DetailHero.WatchlistGlyph(ViewModel.IsInWatchlist), Mode=OneWay}" />
                                     </MenuFlyoutItem.Icon>
                                 </MenuFlyoutItem>
+                                <MenuFlyoutItem Text="Add to Collection" Click="OnAddToCollectionClick">
+                                    <MenuFlyoutItem.Icon>
+                                        <FontIcon Glyph="&#xE8F4;" />
+                                    </MenuFlyoutItem.Icon>
+                                </MenuFlyoutItem>
                             </MenuFlyout>
                         </Button.Flyout>
                     </Button>

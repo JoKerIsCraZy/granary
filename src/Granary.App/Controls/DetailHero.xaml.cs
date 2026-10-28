@@ -1,5 +1,8 @@
 using System.ComponentModel;
 using Granary.Core.ViewModels;
+using Granary.Core.ViewModels.Collections;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Granary.Core.ViewModels.Detail;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -128,4 +131,33 @@ public sealed partial class DetailHero : UserControl
     }
 
     private void OnActionErrorClosed(InfoBar sender, object args) => ViewModel?.DismissActionError();
+
+    // The web's "Add to a collection": the profile's own manual collections, ticked where the title is in them.
+    private async void OnAddToCollectionClick(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel is not { ContentId.Length: > 0 } item)
+        {
+            return;
+        }
+        try
+        {
+            var collections = App.Services.GetRequiredService<AddToCollectionViewModel>();
+            var dialog = new ContentDialog
+            {
+                XamlRoot = XamlRoot,
+                Title = "Add to a collection",
+                Content = new AddToCollectionPanel(collections),
+                CloseButtonText = "Done",
+                DefaultButton = ContentDialogButton.Close,
+            };
+            var shown = dialog.ShowAsync();
+            await collections.LoadAsync(item.ContentId, item.DisplayTitle);
+            await shown;
+        }
+        catch (Exception ex)
+        {
+            // async void: nothing may escape. A failed read or tick is the dialog's to say; this is anything else.
+            App.Services.GetRequiredService<ILogger<DetailHero>>().LogError(ex, "Add to collection could not be shown");
+        }
+    }
 }

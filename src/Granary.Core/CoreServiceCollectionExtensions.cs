@@ -136,6 +136,7 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<LibraryViewModel>();
         services.AddTransient<PersonalListViewModel>();
         services.AddTransient<ViewModels.Collections.CollectionEditorViewModel>();
+        services.AddTransient<ViewModels.Collections.AddToCollectionViewModel>();
         services.AddTransient<WatchlistTitlesViewModel>();
         services.AddTransient<CollectionsViewModel>();
         services.AddTransient<ForYouViewModel>();

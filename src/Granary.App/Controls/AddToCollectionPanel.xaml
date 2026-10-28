@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The body of "Add to a collection", as the web's dialog: the title as a chip, the profile's own manual collections with
+    a tick each (found by name), a new manual collection made with the title in it, and the count at the foot.
+-->
+<UserControl
+    x:Class="Granary.App.Controls.AddToCollectionPanel"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Granary.App.Controls"
+    xmlns:vm="using:Granary.Core.ViewModels.Collections">
+
+    <StackPanel Width="420" Spacing="14">
+        <Border HorizontalAlignment="Left" Background="#1FFFFFFF" CornerRadius="9" Padding="10,3,10,4">
+            <TextBlock Text="{x:Bind ViewModel.ItemTitle, Mode=OneWay}" FontSize="12" Foreground="{StaticResource SiloForegroundBrush}" />
+        </Border>
+
+        <ProgressRing IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay}"
+                      Width="24" Height="24" HorizontalAlignment="Center" AutomationProperties.Name="Loading collections" />
+        <StackPanel Visibility="{x:Bind ViewModel.HasError, Mode=OneWay}" Spacing="10">
+            <TextBlock Text="Couldn't load your collections" FontSize="14" Foreground="{StaticResource SiloForegroundBrush}" />
+            <Button Content="Try again" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.LoadCommand}" />
+        </StackPanel>
+
+        <!-- None yet: the first one, named here. -->
+        <StackPanel Visibility="{x:Bind ViewModel.HasNoCollections, Mode=OneWay}" Spacing="6">
+            <TextBlock Text="Start your first collection" FontSize="15" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
+                       Foreground="{StaticResource SiloForegroundBrush}" />
+            <TextBlock Text="{x:Bind ViewModel.FirstCollectionText, Mode=OneWay}" FontSize="13" TextWrapping="Wrap" Foreground="{StaticResource SiloMutedBrush}" />
+        </StackPanel>
+
+        <StackPanel Visibility="{x:Bind ViewModel.HasCollections, Mode=OneWay}" Spacing="8">
+            <TextBox Text="{x:Bind ViewModel.Search, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="Find one of your collections"
+                     AutomationProperties.Name="Find one of your collections" CornerRadius="8" />
+            <ScrollViewer MaxHeight="300" VerticalScrollBarVisibility="Auto">
+                <ItemsRepeater ItemsSource="{x:Bind ViewModel.Shown}">
+                    <ItemsRepeater.Layout>
+                        <StackLayout Spacing="2" />
+                    </ItemsRepeater.Layout>
+                    <ItemsRepeater.ItemTemplate>
+                        <DataTemplate x:DataType="vm:CollectionChoiceRow">
+                            <CheckBox IsChecked="{x:Bind IsIn, Mode=OneWay}" IsEnabled="{x:Bind controls:AddToCollectionPanel.Not(IsBusy), Mode=OneWay}"
+                                      Command="{x:Bind ToggleCommand}" CommandParameter="{x:Bind}" HorizontalAlignment="Stretch"
+                                      HorizontalContentAlignment="Stretch" Padding="8,4,4,4" AutomationProperties.Name="{x:Bind Name}">
+                                <Grid ColumnSpacing="10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border Width="28" Height="42" CornerRadius="4" Background="#1AFFFFFF">
+                                        <Image Source="{x:Bind controls:AddToCollectionPanel.Poster(PosterUrl)}" Stretch="UniformToFill" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1">
+                                        <TextBlock Text="{x:Bind Name}" FontSize="14" TextTrimming="CharacterEllipsis" Foreground="{StaticResource SiloForegroundBrush}" />
+                                        <TextBlock Text="{x:Bind Meta}" FontSize="12" Foreground="{StaticResource SiloMutedBrush}" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                        <TextBlock Text="{x:Bind Flash, Mode=OneWay}" FontSize="12" Foreground="{StaticResource SiloMutedBrush}"
+                                                   Visibility="{x:Bind HasFlash, Mode=OneWay}" />
+                                        <Border Background="#1FFFFFFF" CornerRadius="8" Padding="7,1,7,2" Visibility="{x:Bind IsShared}">
+                                            <TextBlock Text="Shared" FontSize="10" Foreground="{StaticResource SiloMutedBrush}" />
+                                        </Border>
+                                    </StackPanel>
+                                </Grid>
+                            </CheckBox>
+                        </DataTemplate>
+                    </ItemsRepeater.ItemTemplate>
+                </ItemsRepeater>
+            </ScrollViewer>
+            <TextBlock Text="{x:Bind ViewModel.NoMatchText, Mode=OneWay}" Visibility="{x:Bind ViewModel.HasNoMatch, Mode=OneWay}" FontSize="13"
+                       Foreground="{StaticResource SiloMutedBrush}" />
+        </StackPanel>
+
+        <!-- A new manual collection with the title in it. -->
+        <StackPanel Spacing="6" Visibility="{x:Bind ViewModel.IsReady, Mode=OneWay}">
+            <TextBlock Text="New manual collection" FontSize="13" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
+                       Foreground="{StaticResource SiloForegroundBrush}" />
+            <Grid ColumnSpacing="8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBox Text="{x:Bind ViewModel.NewName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="e.g. Ghibli Night"
+                         AutomationProperties.Name="New manual collection" CornerRadius="8" />
+                <Button Grid.Column="1" Content="Create and add" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.CreateCommand}" />
+            </Grid>
+        </StackPanel>
+
+        <TextBlock Text="{x:Bind ViewModel.Notice, Mode=OneWay}" Visibility="{x:Bind ViewModel.HasNotice, Mode=OneWay}" FontSize="13" TextWrapping="Wrap"
+                   Foreground="{StaticResource SiloPrimaryBrush}" />
+        <TextBlock Text="Only manual collections take titles by hand. Ticking saves right away." FontSize="12" TextWrapping="Wrap"
+                   Foreground="{StaticResource SiloMutedBrush}" Visibility="{x:Bind ViewModel.HasCollections, Mode=OneWay}" />
+        <TextBlock Text="{x:Bind ViewModel.FooterText, Mode=OneWay}" FontSize="12" Foreground="{StaticResource SiloMutedBrush}"
+                   Visibility="{x:Bind ViewModel.HasCollections, Mode=OneWay}" />
+    </StackPanel>
+</UserControl>

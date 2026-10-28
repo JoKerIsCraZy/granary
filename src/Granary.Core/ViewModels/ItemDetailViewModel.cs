@@ -225,6 +225,9 @@ public sealed partial class ItemDetailViewModel : ObservableObject
 
     public string WatchedLabel => DetailFacts.WatchedLabel(Type, IsWatched);
 
+    /// <summary>The title's catalog content id, as a collection keeps it.</summary>
+    public string ContentId => _contentId;
+
     /// <summary>Movies and series have a favourite heart and a watchlist entry, as on the web.</summary>
     [ObservableProperty]
     public partial bool CanFavorite { get; private set; }
