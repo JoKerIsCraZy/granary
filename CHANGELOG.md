@@ -34,3 +34,6 @@ release's section is what its update says it changes (docs/release.md).
   with the other profiles on your account, and delete it; and Add to Collection from a movie's or series' page.
 - A person's page from cast, crew and Search: their photo, life, and the titles they're in.
 - Adding a server that is already signed in opens it at the profile picker again.
+- Smart collections: titles that match your rules, with a live preview of what they find.
+- Filters on Favorites, Watchlist, History and a collection's page; a library keeps its sort and filters.
+- Watch Party: open a room, share its code or invite link, and play, pause and seek together.

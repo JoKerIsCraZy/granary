@@ -2042,7 +2042,7 @@ handshake (v2)"), the web's `player/hooks/usePlaybackRealtime.ts` and `player/re
   terminate. Stop and terminate answer first and then end playback with the administrator's words ("An administrator
   stopped / ended this playback session.", or their own message); a message shows as the web's notice for 8 s.
 
-### 12.4 Watch Party rooms
+### 12.2 Watch Party rooms
 
 A room plays one title for its members in sync; the server keeps the room's clock and position and sends each member
 the commands its player runs. Sources: `silo-server/docs/realtime-api.md` ("Watch Together" sections),
