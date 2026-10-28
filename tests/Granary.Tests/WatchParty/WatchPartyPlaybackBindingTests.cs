@@ -117,6 +117,49 @@ public sealed class WatchPartyPlaybackBindingTests : IDisposable
     }
 
     [Fact]
+    public void AWaitingCommand_RunBeforeTheNextTickSawItsEpoch_IsStillAcknowledged()
+    {
+        Advance(0.25);
+        _room.Deliver(Command("c1", "seek", 600, serverSecondsFromStart: 0.4, state: "waiting", revision: 2));
+        Advance(0.1);
+        // The snapshot of the new epoch lands just before the command runs, and before the binding's next tick.
+        _room.Room = Room(state: "waiting", revision: 2);
+        Advance(0.05);
+        Assert.Equal(600, Assert.Single(_player.Seeks), 2);
+        _player.Observation = _player.Observation with { PositionSeconds = 600.2, IntendsToPlay = false, IsAdvancing = false };
+
+        Advance(1);
+
+        var ready = Frames("ready");
+        Assert.NotEmpty(ready);
+        Assert.All(ready, frame => Assert.Equal("c1", frame.GetProperty("command_id").GetString()));
+    }
+
+    [Fact]
+    public void ACommandThatNeverGetsItsSnapshot_IsDropped_After30Seconds()
+    {
+        _player.Observation = _player.Observation with { IntendsToPlay = false, IsAdvancing = false };
+        _room.Deliver(Command("c1", "play", 12, serverSecondsFromStart: 0, revision: 2));
+
+        Advance(30.25);
+        _room.Room = Room(revision: 2);
+        Advance(1);
+
+        Assert.Empty(_player.Playing);
+    }
+
+    [Fact]
+    public void ARequestTheConnectionDidNotTake_SaysSo_AndLetsTheTimelineGo()
+    {
+        _room.Takes = false;
+
+        Assert.Equal(RoomTransportResult.Sent, _binding.RequestSeek(90));
+
+        Assert.Null(_binding.PendingSeekSeconds);
+        Assert.Equal([WatchPartyPlaybackBinding.ReconnectingText], _notices);
+    }
+
+    [Fact]
     public void ACommand_ThatCameBeforeItsSnapshot_RunsOnceTheSnapshotLands()
     {
         _player.Observation = _player.Observation with { IntendsToPlay = false, IsAdvancing = false };
@@ -293,10 +336,13 @@ public sealed class WatchPartyPlaybackBindingTests : IDisposable
 
         public event EventHandler<WatchPartyDelivery>? CommandReceived;
 
+        /// <summary>The connection takes frames; false while it is renewed, though it still counts as connected.</summary>
+        public bool Takes { get; set; } = true;
+
         public Task<bool> SendAsync(string frame)
         {
             Sent.Add(frame);
-            return Task.FromResult(IsConnected);
+            return Task.FromResult(IsConnected && Takes);
         }
 
         public void Deliver(WatchPartyCommand command, long? epoch = null) =>

@@ -50,8 +50,9 @@ public sealed class WatchPartyConnection : IAsyncDisposable
     private readonly ILogger<WatchPartyConnection> _logger;
     private readonly SemaphoreSlim _sending = new(1, 1);
     private CancellationTokenSource? _run;
-    private IRealtimeSocket? _socket;
-    private CancellationToken _socketToken;
+    // The open connection's socket and token, written on the socket's thread and read by senders on others as one.
+    private volatile Live? _live;
+    private volatile WatchPartyConnectionState _state;
     private long _epoch;
     private int _pongs;
 
@@ -69,7 +70,7 @@ public sealed class WatchPartyConnection : IAsyncDisposable
     /// <summary>Which connection is open: each new one counts up, and a command belongs to the one that delivered it.</summary>
     public long Epoch => Interlocked.Read(ref _epoch);
 
-    public WatchPartyConnectionState State { get; private set; }
+    public WatchPartyConnectionState State => _state;
 
     public Task Running { get; private set; } = Task.CompletedTask;
 
@@ -95,22 +96,22 @@ public sealed class WatchPartyConnection : IAsyncDisposable
     /// <summary>Sends <paramref name="frame"/> on the open connection; false when none is open or it failed.</summary>
     public async Task<bool> SendAsync(string frame)
     {
-        if (_socket is not { } socket || State != WatchPartyConnectionState.Connected)
+        // None while a connection is renewed or lost: the caller hears false.
+        if (_live is not { } live || State != WatchPartyConnectionState.Connected)
         {
             return false;
         }
         // The connection's own token: a frame for a connection that closed is not sent on the next.
-        var token = _socketToken;
         bool entered = false;
         try
         {
-            await _sending.WaitAsync(token).ConfigureAwait(false);
+            await _sending.WaitAsync(live.Token).ConfigureAwait(false);
             entered = true;
-            if (!ReferenceEquals(socket, _socket))
+            if (!ReferenceEquals(live, _live))
             {
                 return false;
             }
-            await socket.SendAsync(frame, token).ConfigureAwait(false);
+            await live.Socket.SendAsync(frame, live.Token).ConfigureAwait(false);
             return true;
         }
         catch (Exception ex) when (ex is WebSocketException or OperationCanceledException or ObjectDisposedException or InvalidOperationException)
@@ -214,7 +215,7 @@ public sealed class WatchPartyConnection : IAsyncDisposable
             }
             finally
             {
-                _socket = null;
+                _live = null;
             }
             if (end is not null)
             {
@@ -272,8 +273,7 @@ public sealed class WatchPartyConnection : IAsyncDisposable
         // The five minutes are up, by this side's clock or the server's close just before it.
         bool Renews() => !cancellationToken.IsCancellationRequested
             && (lifetime.IsCancellationRequested || _time.GetUtcNow() - openedAt >= maxConnection - RenewMargin);
-        _socketToken = connection.Token;
-        _socket = socket;
+        _live = new Live(socket, connection.Token);
         Interlocked.Increment(ref _epoch);
         opened();
         SetState(WatchPartyConnectionState.Connected);
@@ -286,7 +286,7 @@ public sealed class WatchPartyConnection : IAsyncDisposable
                 {
                     case WatchPartyFrame.Pong pong:
                         Clock.Record(pong.ClientSentAt, pong.ServerReceivedAt, pong.ServerSentAt, _time.GetUtcNow());
-                        _pongs++;
+                        Interlocked.Increment(ref _pongs);
                         break;
                     case WatchPartyFrame.Closed closed:
                         return (new WatchPartyEnd(closed.Reason), false);
@@ -304,7 +304,7 @@ public sealed class WatchPartyConnection : IAsyncDisposable
         }
         finally
         {
-            _socket = null;
+            _live = null;
             await connection.CancelAsync().ConfigureAwait(false);
             try
             {
@@ -325,11 +325,11 @@ public sealed class WatchPartyConnection : IAsyncDisposable
     // Pings come fast until the clock has a few samples of this connection, then slowly.
     private async Task PingAsync(CancellationToken cancellationToken)
     {
-        _pongs = 0;
+        Interlocked.Exchange(ref _pongs, 0);
         while (!cancellationToken.IsCancellationRequested)
         {
             await SendAsync(WatchPartyFrames.Ping(_time.GetUtcNow())).ConfigureAwait(false);
-            await Task.Delay(_pongs < RoomClock.FastSamples ? RoomClock.FastPing : RoomClock.SlowPing, _time, cancellationToken).ConfigureAwait(false);
+            await Task.Delay(Volatile.Read(ref _pongs) < RoomClock.FastSamples ? RoomClock.FastPing : RoomClock.SlowPing, _time, cancellationToken).ConfigureAwait(false);
         }
     }
 
@@ -339,7 +339,9 @@ public sealed class WatchPartyConnection : IAsyncDisposable
         {
             return;
         }
-        State = state;
+        _state = state;
         StateChanged?.Invoke(this, state);
     }
+
+    private sealed record Live(IRealtimeSocket Socket, CancellationToken Token);
 }

@@ -82,7 +82,10 @@ public sealed class WatchPartyApiTests
 
         Assert.Equal(new Uri($"wss://nas.example/silo/api/v2/watch-together/rooms/{WatchPartyPayloads.RoomId}/ws"),
             WatchPartyApi.SocketUri(ScriptedSilo.Base, WatchPartyPayloads.RoomId));
-        Assert.Equal(new Uri("https://nas.example/silo/rooms?token=invite-secret"), WatchPartyApi.InviteLink(ScriptedSilo.Base, room));
+        var invite = WatchPartyApi.InviteLink(ScriptedSilo.Base, room);
+        Assert.Equal(new Uri("https://nas.example/silo/rooms/join?token=invite-secret"), invite);
+        // The link it shares joins the room again here.
+        Assert.Equal("invite-secret", WatchPartySession.ParseJoin(invite!.AbsoluteUri, ScriptedSilo.Base)?.JoinToken);
         Assert.Null(WatchPartyApi.InviteLink(ScriptedSilo.Base, room with { InvitePath = "//evil.example/x" }));
     }
 
@@ -98,9 +101,11 @@ public sealed class WatchPartyApiTests
     [Theory]
     [InlineData("abcd1234", "ABCD1234", null)]
     [InlineData(" ABCD-1234 ", "ABCD1234", null)]
-    [InlineData("https://nas.example/silo/rooms?token=abc%2B1", null, "abc+1")]
-    [InlineData("HTTPS://NAS.EXAMPLE/silo/rooms/?x=1&token=tok-3", null, "tok-3")]
-    [InlineData("/rooms?x=1&token=tok-2#frag", null, "tok-2")]
+    [InlineData("https://nas.example/silo/rooms/join?token=abc%2B1", null, "abc+1")]
+    [InlineData("HTTPS://NAS.EXAMPLE/silo/rooms/join/?x=1&token=tok-3", null, "tok-3")]
+    [InlineData("/rooms/join?token=tok-2#frag", null, "tok-2")]
+    [InlineData("https://nas.example/silo/rooms?token=tok-4", null, "tok-4")]
+    [InlineData("/rooms?x=1&token=tok-5", null, "tok-5")]
     public void AJoin_TakesACodeOrAnInvitationLinkOfThisServer(string input, string? code, string? token)
     {
         var join = WatchPartySession.ParseJoin(input, ScriptedSilo.Base);
@@ -112,13 +117,15 @@ public sealed class WatchPartyApiTests
     [InlineData("")]
     [InlineData("ab")]
     [InlineData("hello there!")]
-    [InlineData("https://evil.example/silo/rooms?token=secret")]
-    [InlineData("http://nas.example/silo/rooms?token=secret")]
-    [InlineData("https://nas.example:8443/silo/rooms?token=secret")]
+    [InlineData("https://evil.example/silo/rooms/join?token=secret")]
+    [InlineData("http://nas.example/silo/rooms/join?token=secret")]
+    [InlineData("https://nas.example:8443/silo/rooms/join?token=secret")]
     [InlineData("https://nas.example/silo/login?token=secret")]
-    [InlineData("https://nas.example/rooms?token=secret")]
-    [InlineData("//evil.example/silo/rooms?token=secret")]
+    [InlineData("https://nas.example/silo/rooms/abc?token=secret")]
+    [InlineData("https://nas.example/silo/rooms/join/x?token=secret")]
+    [InlineData("https://nas.example/rooms/join?token=secret")]
+    [InlineData("//evil.example/silo/rooms/join?token=secret")]
     [InlineData("token=secret")]
-    [InlineData("https://nas.example/silo/rooms?token=")]
+    [InlineData("https://nas.example/silo/rooms/join?token=")]
     public void Neither_IsNoJoin_AndATokenGoesNowhereElse(string input) => Assert.Null(WatchPartySession.ParseJoin(input, ScriptedSilo.Base));
 }

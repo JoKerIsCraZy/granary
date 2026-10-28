@@ -137,6 +137,18 @@ public sealed class PlayerViewModelWatchPartyTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AnIntroTheProfileNeverSkips_IsNotOfferedInARoomEither()
+    {
+        var viewModel = await PlayingAsync(markers: MarkerSettings.Default with { IntroSkipMode = MarkerSettings.Never });
+        Playback.RaiseMarkers([new PlaybackMarker(WatchMarkerKinds.Intro, 60, 120)]);
+
+        At(61);
+
+        Assert.False(viewModel.HasSkipPrompt);
+        Assert.Empty(Playback.Seeks);
+    }
+
+    [Fact]
     public async Task AGuest_IsNotOfferedASkip_TheyCouldNotMake()
     {
         var viewModel = await PlayingAsync(role: "guest");

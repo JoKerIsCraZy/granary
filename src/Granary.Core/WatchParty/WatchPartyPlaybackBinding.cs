@@ -82,6 +82,7 @@ public sealed class WatchPartyPlaybackBinding : IDisposable
     private static readonly TimeSpan BusyDefer = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan MaxLead = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan EarlySlack = TimeSpan.FromMilliseconds(1);
+    private static readonly TimeSpan HoldMax = TimeSpan.FromSeconds(30);
     private static readonly TimeSpan ReportHoldMax = TimeSpan.FromSeconds(3);
     private static readonly TimeSpan PendingSeekTimeout = TimeSpan.FromSeconds(5);
     private const double GuestSeekTolerance = 5;
@@ -167,11 +168,14 @@ public sealed class WatchPartyPlaybackBinding : IDisposable
             Notice?.Invoke(this, HostSeeksText);
             return RoomTransportResult.Denied;
         }
+        // The timeline holds the target from the request on; a request that does not go lets it go again.
+        var (previous, previousAt) = (PendingSeekSeconds, _pendingSeekAt);
+        PendingSeekSeconds = sourceSeconds;
+        _pendingSeekAt = _time.GetUtcNow();
         var result = Request(WatchPartyCommand.Seek, sourceSeconds, room.IsPaused);
-        if (result == RoomTransportResult.Sent)
+        if (result != RoomTransportResult.Sent)
         {
-            PendingSeekSeconds = sourceSeconds;
-            _pendingSeekAt = _time.GetUtcNow();
+            (PendingSeekSeconds, _pendingSeekAt) = (previous, previousAt);
         }
         return result;
     }
@@ -196,8 +200,30 @@ public sealed class WatchPartyPlaybackBinding : IDisposable
             Notice?.Invoke(this, ReconnectingText);
             return RoomTransportResult.Reconnecting;
         }
-        _ = _room.SendAsync(WatchPartyFrames.TransportRequest(action, position, isPaused));
+        _ = SendRequestAsync(WatchPartyFrames.TransportRequest(action, position, isPaused), action == WatchPartyCommand.Seek ? position : null);
         return RoomTransportResult.Sent;
+    }
+
+    // A request the connection did not take after all (it went between the check and the send, or was being renewed)
+    // never reached the room: the viewer hears so, and a seek's target stops holding the timeline.
+    private async Task SendRequestAsync(string frame, double? seekTarget)
+    {
+        if (await _room.SendAsync(frame))
+        {
+            return;
+        }
+        _dispatcher.Post(() =>
+        {
+            if (_disposed)
+            {
+                return;
+            }
+            if (seekTarget is not null && Nullable.Equals(PendingSeekSeconds, seekTarget))
+            {
+                PendingSeekSeconds = null;
+            }
+            Notice?.Invoke(this, ReconnectingText);
+        });
     }
 
     private void OnCommandReceived(object? sender, WatchPartyDelivery delivery)
@@ -220,7 +246,7 @@ public sealed class WatchPartyPlaybackBinding : IDisposable
         }
         _readiness = null;
         // The player keeps what it does until the command runs: without the server's clock yet, it waits for one.
-        var pending = new Pending(++_nextToken, command, delivery.Epoch);
+        var pending = new Pending(++_nextToken, command, delivery.Epoch, _time.GetUtcNow());
         _pending = pending;
         Schedule(pending);
     }
@@ -237,7 +263,14 @@ public sealed class WatchPartyPlaybackBinding : IDisposable
 
     private void Execute(long token)
     {
-        if (_disposed || _pending is not { } pending || pending.Token != token)
+        if (_disposed)
+        {
+            return;
+        }
+        // A snapshot of a new epoch that landed since the last tick starts the binding over first, or it would undo what
+        // this command sets (the room's reference, the readiness it waits for) on the next tick.
+        FollowRevision();
+        if (_pending is not { } pending || pending.Token != token)
         {
             return;
         }
@@ -251,6 +284,13 @@ public sealed class WatchPartyPlaybackBinding : IDisposable
         // The room's snapshot of the command's epoch is still on its way, or the server's clock is not known yet: it waits.
         if (command.SelectionRevision > room.SelectionRevision || !room.IsPlaying || ServerNow() is not { } serverNow)
         {
+            if (_time.GetUtcNow() - pending.Received >= HoldMax)
+            {
+                _pending = null;
+                _logger.LogInformation("A Watch Party command waited {Seconds} s for its room or the server's clock and is dropped",
+                    HoldMax.TotalSeconds);
+                return;
+            }
             Arm(token, Tick);
             return;
         }
@@ -538,9 +578,11 @@ public sealed class WatchPartyPlaybackBinding : IDisposable
 
     private static TimeSpan Clamp(TimeSpan value, TimeSpan min, TimeSpan max) => value < min ? min : value > max ? max : value;
 
-    private sealed class Pending(long token, WatchPartyCommand command, long epoch)
+    private sealed class Pending(long token, WatchPartyCommand command, long epoch, DateTimeOffset received)
     {
         public long Token { get; } = token;
+
+        public DateTimeOffset Received { get; } = received;
 
         public WatchPartyCommand Command { get; } = command;
 

@@ -20,7 +20,7 @@ internal static class WatchPartyPayloads
           "anchor_updated_at": "2026-10-01T12:00:00.000Z", "is_paused": true, "host_connected": true, "member_count": 2,
           {{(selected is null ? "" : $"\"selected_content_id\": \"{selected}\", \"selected_file_id\": \"77\",")}}
           "self_can_control_transport": true, "self_can_manage_room": true, "self_ignore_wait": false,
-          "invite_path": "/rooms?token=invite-secret",
+          "invite_path": "/rooms/join?token=invite-secret",
           "members": [
             { "user_id": "1", "profile_id": "7", "display_name": "Elena", "is_host": true, "is_self": {{(role == "host" ? "true" : "false")}}, "connected": true, "lobby_ready": false },
             { "user_id": "2", "profile_id": "9", "display_name": "Maya", "is_host": false, "is_self": {{(role == "host" ? "false" : "true")}}, "connected": true, "lobby_ready": true }

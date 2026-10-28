@@ -92,6 +92,29 @@ public sealed class WatchPartyPagesTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AJoinAnsweredAfterTheProfileChanged_ShowsNothing()
+    {
+        var hub = Hub();
+        var answered = new TaskCompletionSource();
+        _silo.On(HttpMethod.Post, "api/v2/watch-together/join", async () =>
+        {
+            await answered.Task;
+            return await ScriptedSilo.Json(HttpStatusCode.OK, WatchPartyPayloads.Answer(WatchPartyPayloads.Room(role: "guest")))();
+        });
+        hub.Code = "ABCD1234";
+
+        var joining = hub.JoinCommand.ExecuteAsync(null);
+        _session.ProfileId = "8";
+        _session.RaiseChanged();
+        answered.SetResult();
+        await joining;
+
+        Assert.Equal("", hub.Error);
+        Assert.False(hub.IsInRoom);
+        Assert.DoesNotContain(_navigation.Navigations, n => n.Route == AppRoute.WatchPartyRoom);
+    }
+
+    [Fact]
     public async Task ATitleUpNext_CountsTheReadyGuests()
     {
         await JoinAsync(WatchPartyPayloads.Room(selected: "movie:heat"));

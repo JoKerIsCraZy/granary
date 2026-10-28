@@ -94,6 +94,16 @@ public sealed partial class PlayerViewModel
         ShowSkipPrompt();
     }
 
+    // The skip settings changed under known markers (a room's ended): the pills follow the profile's own again.
+    private void RetakeMarkerSettings()
+    {
+        if (_playback is { } playback && Markers.Count > 0)
+        {
+            _markerPrompts.Reset(Markers, RoomMarkers(playback.Preferences.Markers));
+            ShowSkipPrompt();
+        }
+    }
+
     // The pills follow the position while the title plays and can be sought; a part that skips itself is passed here.
     private void FollowMarkers(PlaybackSnapshot state)
     {

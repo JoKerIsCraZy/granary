@@ -77,6 +77,11 @@ public sealed partial class WatchPartyHubViewModel : ObservableObject
             await _party.CreateAsync();
             _navigation.NavigateTo(AppRoute.WatchPartyRoom);
         }
+        catch (WatchPartyStaleException)
+        {
+            // The profile or server changed meanwhile: the room it asked for is no longer this page's to show.
+            _logger.LogDebug("A Watch Party opened for the profile before was not entered");
+        }
         catch (Exception ex) when (LibraryErrors.IsExpected(ex) || ex is InvalidOperationException)
         {
             _logger.LogWarning(ex, "Could not open a Watch Party");
@@ -98,6 +103,11 @@ public sealed partial class WatchPartyHubViewModel : ObservableObject
             await _party.JoinAsync(Code);
             Code = "";
             _navigation.NavigateTo(AppRoute.WatchPartyRoom);
+        }
+        catch (WatchPartyStaleException)
+        {
+            // The profile or server changed meanwhile: the room it asked for is no longer this page's to show.
+            _logger.LogDebug("A Watch Party joined for the profile before was not entered");
         }
         catch (ArgumentException ex)
         {

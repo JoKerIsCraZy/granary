@@ -75,7 +75,7 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
     public long? StartedRevision { get; set; }
 
     /// <summary>Opens a room this profile hosts and goes in.</summary>
-    /// <exception cref="OperationCanceledException">The profile or server changed meanwhile: the room is not entered.</exception>
+    /// <exception cref="WatchPartyStaleException">The room was left, or the profile or server changed, meanwhile: it is not entered.</exception>
     public async Task<WatchPartyRoom> CreateAsync(CancellationToken cancellationToken = default)
     {
         var server = Server();
@@ -88,7 +88,7 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
 
     /// <summary>Goes into the room of a code (<c>ABCD1234</c>) or an invitation link of this server.</summary>
     /// <exception cref="ArgumentException">The text is neither.</exception>
-    /// <exception cref="OperationCanceledException">The profile or server changed meanwhile: the room is not entered.</exception>
+    /// <exception cref="WatchPartyStaleException">The room was left, or the profile or server changed, meanwhile: it is not entered.</exception>
     public async Task<WatchPartyRoom> JoinAsync(string codeOrLink, CancellationToken cancellationToken = default)
     {
         var server = Server();
@@ -101,9 +101,9 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
     }
 
     /// <summary>
-    /// A code, or an invitation's token from a link to <paramref name="server"/>'s own Watch Party (<c>…/rooms?token=</c>,
-    /// as the web shares it); null for anything else. A token is a credential: one in a link to another host, or to
-    /// another page, is not sent anywhere.
+    /// A code, or an invitation's token from a link to <paramref name="server"/>'s own Watch Party (the room's
+    /// <c>invite_path</c> <c>/rooms/join?token=</c>, or <c>/rooms?token=</c> the web forwards it to); null for anything
+    /// else. A token is a credential: one in a link to another host, or to another page, is not sent anywhere.
     /// </summary>
     public static WatchPartyJoin? ParseJoin(string? text, Uri server)
     {
@@ -119,8 +119,8 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
             : null;
     }
 
-    // The token of a link to this server's Watch Party page: same scheme and host (and port), its path the server's own
-    // path followed by "/rooms". A path alone ("/rooms?token=…") is taken as the server's.
+    // The token of a link to this server's Watch Party: same scheme and host (and port), its path the server's own path
+    // followed by "/rooms/join" (the invite_path) or "/rooms". A path alone ("/rooms/join?token=…") is taken as the server's.
     private static string? InviteToken(string input, Uri server)
     {
         // A path alone is the room's invite_path, which follows the server's own path as WatchPartyApi.InviteLink puts it.
@@ -130,8 +130,10 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
             return null;
         }
         string basePath = server.AbsolutePath.TrimEnd('/');
+        string path = link.AbsolutePath.TrimEnd('/');
         if (link.Scheme != server.Scheme || !string.Equals(link.Host, server.Host, StringComparison.OrdinalIgnoreCase) || link.Port != server.Port
-            || !string.Equals(link.AbsolutePath.TrimEnd('/'), basePath + "/rooms", StringComparison.OrdinalIgnoreCase))
+            || !(string.Equals(path, basePath + "/rooms/join", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(path, basePath + "/rooms", StringComparison.OrdinalIgnoreCase)))
         {
             return null;
         }
@@ -233,7 +235,7 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
     {
         if (generation != _generation)
         {
-            throw new OperationCanceledException("The profile left or changed while the room was asked for.");
+            throw new WatchPartyStaleException();
         }
     }
 

@@ -300,8 +300,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
 - The player in a room plays the room's file from the start; play, pause and seek go to the room and the player
   follows its commands; a guest's seek, or pause while the host controls playback, shows the web's words as the
   player's notice ("Only the host can seek the room."). The speed and version settings are the room's, not offered.
-  No marked part skips itself: the host is offered Skip Intro (a room seek), guests see no skip pill. When the host
-  stops, the title finishes or the room ends, the player closes onto the room.
+  No marked part skips itself: the host is offered Skip Intro (a room seek) unless the profile never skips intros,
+  guests see no skip pill. When the host stops, the title finishes or the room ends, the player closes onto the room.
 - Back: the navigation view's back arrow, `Alt+Left`, and the mouse back button. The sidebar's sections (Home,
   Search, each library) are the apps' tabs: picking one does not stack on the pages visited before, only Home stays
   under it, so Back walks the pages opened within a section and then goes Home (Android's tab switch pops to the

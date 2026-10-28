@@ -49,8 +49,9 @@ public sealed partial class PlayerViewModel
             _watchParty.PropertyChanged -= OnPartyChanged;
         }
         IsWatchParty = false;
-        // A correction rate never outlives the room.
+        // A correction rate never outlives the room, nor do the room's skip settings.
         _engine.SetSpeed(1);
+        RetakeMarkerSettings();
     }
 
     // The viewer's play or pause in a room: asked of the room (refused, or held while it reconnects); the room's command
@@ -62,10 +63,15 @@ public sealed partial class PlayerViewModel
     private bool RequestRoomSeek(double seconds) =>
         _party is { } party && party.RequestSeek(seconds) != RoomTransportResult.NotInRoom;
 
-    // In a room an intro never skips itself, nor do credits or a recap: the pill only offers it (to whoever may seek), as
-    // in Silo's apps.
+    // In a room nothing skips itself, as in Silo's apps: an intro the profile skips always is offered instead (to whoever
+    // may seek), one it never skips stays unoffered, and credits and recaps play.
     private MarkerSettings RoomMarkers(MarkerSettings settings) => IsWatchParty
-        ? settings with { IntroSkipMode = MarkerSettings.Ask, AutoSkipCredits = false, AutoSkipRecap = false }
+        ? settings with
+        {
+            IntroSkipMode = settings.IntroSkipMode == MarkerSettings.Always ? MarkerSettings.Ask : settings.IntroSkipMode,
+            AutoSkipCredits = false,
+            AutoSkipRecap = false,
+        }
         : settings;
 
     private void OnPartyNotice(object? sender, string text)

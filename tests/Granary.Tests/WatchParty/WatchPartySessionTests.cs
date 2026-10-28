@@ -150,7 +150,7 @@ public sealed class WatchPartySessionTests : IAsyncDisposable
         _session.RaiseChanged();
         answered.SetResult();
 
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => creating);
+        await Assert.ThrowsAsync<WatchPartyStaleException>(() => creating);
         Assert.Null(_party.Room);
         Assert.Empty(_sockets);
     }
