@@ -36,6 +36,7 @@ public sealed class ArtworkCompositionTests : IDisposable
         services.AddLogging();
         services.AddSingleton<IUiDispatcher, ImmediateDispatcher>();
         services.AddSingleton<INavigationService, RecordingNavigation>();
+        services.AddSingleton<IConfirmation, FakeConfirmation>();
         services.AddGranaryCore();
         services.AddHttpClient(ArtworkLoader.HttpClientName).ConfigurePrimaryHttpMessageHandler(() => network);
         services.AddSingleton(sp => new ArtworkDiskCache(_directory, 1024 * 1024, sp.GetRequiredService<ILogger<ArtworkDiskCache>>()));

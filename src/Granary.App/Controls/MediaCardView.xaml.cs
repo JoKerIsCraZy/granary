@@ -51,6 +51,10 @@ public sealed partial class MediaCardView : UserControl
     private CardOverlayPrefs? _badgedPrefs;
     private bool _reservesEpisodeLine;
     private ButtonBase? _host;
+    // The entries the card's list adds to its menu, and the menu items made for them.
+    private IReadOnlyList<CardMenuEntry> _entries = [];
+    private readonly List<MenuFlyoutItemBase> _entryItems = [];
+    private bool _hasOwnEntries;
 
     public MediaCardView()
     {
@@ -225,12 +229,15 @@ public sealed partial class MediaCardView : UserControl
         MenuNotInterested.Text = state.IsNotInterested ? "Show in Recommendations" : "Not Interested";
         MenuNotInterested.Visibility = Visible(notInterested);
         var row = card is null ? null : RowOf(this);
+        var grid = card is null || row is not null ? null : GridOf(this);
         bool canRemove = card is not null && row?.CardRemoveCommand is { } remove && remove.CanExecute(card);
         MenuRemove.Text = row?.CardRemoveLabel ?? "";
         MenuRemove.Visibility = Visible(canRemove);
         bool others = canWatch || canCollect || fromBeginning || resetProgress || notInterested;
         MenuRemoveSeparator.Visibility = Visible(canRemove && others);
-        MoreButton.Visibility = Visible(others || canRemove);
+        _entries = card is not null && grid?.CardMenu is { } source ? source.EntriesFor(card) : [];
+        _hasOwnEntries = others || canRemove;
+        MoreButton.Visibility = Visible(others || canRemove || _entries.Count > 0);
     }
 
     // The row a card sits in offers the cards' removal (Continue Watching, Next Up).
@@ -244,6 +251,47 @@ public sealed partial class MediaCardView : UserControl
             }
         }
         return null;
+    }
+
+    // The grid a card sits in adds its list's own entries (a collection's Edit and Delete).
+    private static MediaGrid? GridOf(DependencyObject element)
+    {
+        for (var parent = VisualTreeHelper.GetParent(element); parent is not null; parent = VisualTreeHelper.GetParent(parent))
+        {
+            if (parent is MediaGrid grid)
+            {
+                return grid;
+            }
+        }
+        return null;
+    }
+
+    // The list's entries at the menu's foot, after a line when the card's own are there too.
+    private void ShowEntries()
+    {
+        foreach (var item in _entryItems)
+        {
+            MoreMenu.Items.Remove(item);
+        }
+        _entryItems.Clear();
+        if (_entries.Count == 0 || Card is not { } card)
+        {
+            return;
+        }
+        if (_hasOwnEntries)
+        {
+            _entryItems.Add(new MenuFlyoutSeparator());
+        }
+        foreach (var entry in _entries)
+        {
+            _entryItems.Add(entry.IsChecked is { } isChecked
+                ? new ToggleMenuFlyoutItem { Text = entry.Label, IsChecked = isChecked, Command = entry.Command, CommandParameter = card }
+                : new MenuFlyoutItem { Text = entry.Label, Command = entry.Command, CommandParameter = card });
+        }
+        foreach (var item in _entryItems)
+        {
+            MoreMenu.Items.Add(item);
+        }
     }
 
     private static Visibility Visible(bool visible) => visible ? Visibility.Visible : Visibility.Collapsed;
@@ -559,7 +607,11 @@ public sealed partial class MediaCardView : UserControl
         }
     }
 
-    private void OnMoreOpening(object? sender, object e) => ShowState();
+    private void OnMoreOpening(object? sender, object e)
+    {
+        ShowState();
+        ShowEntries();
+    }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {

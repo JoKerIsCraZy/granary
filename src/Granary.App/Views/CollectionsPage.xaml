@@ -86,8 +86,17 @@
                         <TextBlock Text="{x:Bind ViewModel.OwnErrorMessage, Mode=OneWay}" Style="{StaticResource SiloCaptionTextStyle}" VerticalAlignment="Center" />
                         <Button Content="Retry" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.LoadCommand}" />
                     </StackPanel>
+                    <!-- "Shown to other profiles", "Collection deleted", or what failed, after a card's ⋯ entry. -->
+                    <StackPanel Orientation="Horizontal" Spacing="8" Visibility="{x:Bind ViewModel.HasNotice, Mode=OneWay}">
+                        <TextBlock Text="{x:Bind ViewModel.Notice, Mode=OneWay}" FontSize="13" VerticalAlignment="Center"
+                                   Foreground="{x:Bind NoticeBrush(ViewModel.NoticeFailed), Mode=OneWay}" />
+                        <Button Style="{StaticResource SiloIconButtonStyle}" Command="{x:Bind ViewModel.DismissNoticeCommand}"
+                                AutomationProperties.Name="Dismiss" ToolTipService.ToolTip="Dismiss">
+                            <FontIcon Glyph="&#xE711;" FontSize="11" />
+                        </Button>
+                    </StackPanel>
                     <controls:MediaGrid ItemsSource="{x:Bind ViewModel.Own}" CardInvokedCommand="{x:Bind ViewModel.OpenCommand}"
-                                        Visibility="{x:Bind ViewModel.HasOwn, Mode=OneWay}" />
+                                        x:Name="OwnGrid" Visibility="{x:Bind ViewModel.HasOwn, Mode=OneWay}" />
                 </StackPanel>
 
                 <!-- Shared with me: each owner's collections under "by Name". -->

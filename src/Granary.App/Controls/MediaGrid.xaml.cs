@@ -104,6 +104,10 @@ public sealed partial class MediaGrid : UserControl
         set => SetValue(LoadMoreCommandProperty, value);
     }
 
+    /// <summary>Entries of the list's own in its cards' ⋯ menu (a collection's Edit and Delete); null adds none.</summary>
+    // Set from code, not XAML: the page's own list (the XAML compiler stumbles on an interface-typed property here).
+    public ICardMenuSource? CardMenu { get; set; }
+
     /// <summary>
     /// The picks while the grid selects (History's Select): the cards show their pick marks, and a click picks a card
     /// instead of invoking it. Null for a grid that never selects.

@@ -1,8 +1,13 @@
+using System.Net;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
 using Granary.Core.Abstractions;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Profiles;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Cards;
+using Granary.Tests.Fakes;
 using Granary.Tests.Profiles;
 
 namespace Granary.Tests.Browse;
@@ -17,6 +22,7 @@ public sealed class CollectionsViewModelTests
     private const string SerienTabPath = "api/v2/library/2/collections";
 
     private readonly LibraryHarness _harness = new();
+    private readonly FakeConfirmation _confirmation = new();
 
     public CollectionsViewModelTests()
     {
@@ -33,6 +39,7 @@ public sealed class CollectionsViewModelTests
         new LibraryPageApi(_harness.Silo.Http),
         new ProfilesApi(_harness.Silo.Http),
         _harness.Navigation,
+        _confirmation,
         _harness.Logs.For<CollectionsViewModel>());
 
     private async Task<CollectionsViewModel> LoadedAsync()
@@ -337,5 +344,84 @@ public sealed class CollectionsViewModelTests
             await Task.Delay(5, TestContext.Current.CancellationToken);
         }
         Assert.True(condition());
+    }
+    private static Func<Task<HttpResponseMessage>> Versioned(string json, string etag) => () =>
+    {
+        var response = new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(json, Encoding.UTF8, "application/json") };
+        response.Headers.ETag = EntityTagHeaderValue.Parse(etag);
+        return Task.FromResult(response);
+    };
+
+    private const string RainyDays = """
+        { "id": "u1", "name": "Rainy days", "description": "", "collection_type": "manual", "creator_profile_id": "7", "is_shared": true,
+          "include_in_server_collections": false, "item_count": 4 }
+        """;
+
+    [Fact]
+    public async Task OwnCards_OfferEdit_Sharing_AndDelete()
+    {
+        var page = await LoadedAsync();
+
+        var manual = page.EntriesFor(page.Own[0]);
+        Assert.Equal(["Edit collection", "Show to other profiles", "Delete…"], manual.Select(e => e.Label));
+        Assert.Equal([null, true, null], manual.Select(e => e.IsChecked));
+        Assert.Equal(["Show to other profiles", "Delete…"], page.EntriesFor(page.Own[1]).Select(e => e.Label));
+        Assert.Empty(page.EntriesFor(page.Shared[0].Cards[0]));
+    }
+
+    [Fact]
+    public async Task EditCollection_OpensTheEditor()
+    {
+        var page = await LoadedAsync();
+
+        page.EditCollectionCommand.Execute(page.Own[0]);
+
+        Assert.Equal((AppRoute.CollectionEditor, (object?)new CollectionEditorRouteParameter("u1")), _harness.Navigation.Navigations[^1]);
+    }
+
+    [Fact]
+    public async Task StopSharing_AsksFirst_ThenSavesAtTheVersion()
+    {
+        _harness.Silo.On(HttpMethod.Get, "api/v2/collections/u1", Versioned(RainyDays, "\"r1\""));
+        _harness.Silo.On(HttpMethod.Patch, "api/v2/collections/u1", Versioned(RainyDays.Replace("\"is_shared\": true", "\"is_shared\": false", StringComparison.Ordinal), "\"r2\""));
+        var page = await LoadedAsync();
+
+        await page.ToggleSharingCommand.ExecuteAsync(page.Own[0]);
+
+        Assert.Equal(("Stop sharing Rainy days?", "Mara loses it, including rows they made from it.", "Stop sharing"), Assert.Single(_confirmation.Asked));
+        var sent = Assert.Single(_harness.Silo.SentTo(HttpMethod.Patch, "api/v2/collections/u1"));
+        Assert.Equal("\"r1\"", sent.IfMatch);
+        Assert.False(JsonDocument.Parse(sent.Body!).RootElement.GetProperty("is_shared").GetBoolean());
+        Assert.Equal("Only you see it now", page.Notice);
+        Assert.Null(page.Own[0].StatusBadge);
+        Assert.Equal([null, false, null], page.EntriesFor(page.Own[0]).Select(e => e.IsChecked));
+    }
+
+    [Fact]
+    public async Task ACancelledQuestion_ChangesNothing()
+    {
+        _confirmation.Answer = false;
+        var page = await LoadedAsync();
+
+        await page.ToggleSharingCommand.ExecuteAsync(page.Own[0]);
+
+        Assert.Empty(_harness.Silo.SentTo(HttpMethod.Patch, "api/v2/collections/u1"));
+        Assert.False(page.HasNotice);
+    }
+
+    [Fact]
+    public async Task Delete_AsksAtTheCurrentVersion_AndTheCardGoes()
+    {
+        _harness.Silo.On(HttpMethod.Get, "api/v2/collections/u1", Versioned(RainyDays, "\"r1\""));
+        _harness.Silo.On(HttpMethod.Delete, "api/v2/collections/u1", ScriptedSilo.NoContent());
+        var page = await LoadedAsync();
+
+        await page.DeleteCollectionCommand.ExecuteAsync(page.Own[0]);
+
+        Assert.Equal("Delete “Rainy days”?", _confirmation.Asked[0].Title);
+        Assert.Equal("It's removed for you and every profile you share it with. This can't be undone.", _confirmation.Asked[0].Message);
+        Assert.Equal("\"r1\"", Assert.Single(_harness.Silo.SentTo(HttpMethod.Delete, "api/v2/collections/u1")).IfMatch);
+        Assert.Equal(["Top Picks"], Titles(page.Own));
+        Assert.Equal("Collection deleted", page.Notice);
     }
 }

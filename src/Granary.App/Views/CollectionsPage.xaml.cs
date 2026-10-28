@@ -15,6 +15,8 @@ public sealed partial class CollectionsPage : Page
     {
         ViewModel = App.Services.GetRequiredService<CollectionsViewModel>();
         InitializeComponent();
+        // The own collections' cards carry Edit, sharing and Delete in their menu.
+        OwnGrid.CardMenu = ViewModel;
     }
 
     public CollectionsViewModel ViewModel { get; }
@@ -36,6 +38,11 @@ public sealed partial class CollectionsPage : Page
 
     // Instance methods because x:Bind function bindings call them on the page.
     public Visibility ServerSectionShown(bool isShown, bool hasError) => isShown || hasError ? Visibility.Visible : Visibility.Collapsed;
+
+    /// <summary>A card's ⋯ entry's outcome: muted, or the web's destructive red when it failed.</summary>
+    public Microsoft.UI.Xaml.Media.Brush NoticeBrush(bool failed) => failed
+        ? new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0xEF, 0x44, 0x44))
+        : (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["SiloMutedBrush"];
 
     public Visibility HasPills(IReadOnlyList<SettingChoice> choices) => choices.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
 }

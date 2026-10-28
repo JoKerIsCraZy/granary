@@ -617,6 +617,7 @@ public sealed class ItemDetailViewModelTests
         services.AddLogging();
         services.AddSingleton<IUiDispatcher, ImmediateDispatcher>();
         services.AddSingleton<INavigationService, RecordingNavigation>();
+        services.AddSingleton<IConfirmation, FakeConfirmation>();
         services.AddGranaryCore();
         using var provider = services.BuildServiceProvider();
 

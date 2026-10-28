@@ -35,17 +35,19 @@ public sealed partial class CollectionsViewModel : ObservableObject
     private readonly CollectionsApi _collections;
     private readonly ProfilesApi _profiles;
     private readonly INavigationService _navigation;
+    private readonly IConfirmation _confirmation;
     private readonly ILogger<CollectionsViewModel> _logger;
     private (string? ServerId, string? ProfileId)? _loadedFor;
     private CancellationTokenSource _run = new();
 
     public CollectionsViewModel(ISessionManager session, CollectionsApi collections, LibraryPageApi pages, ProfilesApi profiles,
-        INavigationService navigation, ILogger<CollectionsViewModel> logger)
+        INavigationService navigation, IConfirmation confirmation, ILogger<CollectionsViewModel> logger)
     {
         _session = session;
         _collections = collections;
         _profiles = profiles;
         _navigation = navigation;
+        _confirmation = confirmation;
         _logger = logger;
         Server = new ServerCollectionsViewModel(pages, navigation, logger);
     }
@@ -125,6 +127,8 @@ public sealed partial class CollectionsViewModel : ObservableObject
         previous.Dispose();
         var token = _run.Token;
         Own.Clear();
+        _ownCollections.Clear();
+        Notice = "";
         Shared.Clear();
         OwnCount = 0;
         SharedCount = 0;
@@ -157,6 +161,7 @@ public sealed partial class CollectionsViewModel : ObservableObject
             return;
         }
         var others = profileList?.Items.Where(p => p.Id != _session.ProfileId).ToList() ?? [];
+        _otherProfiles = [.. others.Select(p => p.Name)];
         if (personalList is not null)
         {
             ShowPersonal(personalList, profileList?.Items ?? [], server.BaseUri);
@@ -218,6 +223,7 @@ public sealed partial class CollectionsViewModel : ObservableObject
         var valid = list.Items.Where(c => !string.IsNullOrWhiteSpace(c.Id)).ToList();
         foreach (var collection in valid.Where(c => c.CreatorProfileId == self))
         {
+            _ownCollections[collection.Id] = collection;
             Own.Add(CollectionCards.Of(collection, server, isOwn: true));
         }
         int Position(string owner)

@@ -31,10 +31,13 @@ public static class CollectionEditorText
         : JoinNames([labels[0], .. labels.Skip(1).Select(l => char.ToLowerInvariant(l[0]) + l[1..])]) + " not saved";
 
     /// <summary>"When you save, Maya and Leo lose it, including rows they made from it."</summary>
-    public static string UnshareWarning(IReadOnlyList<string> profiles)
+    public static string UnshareWarning(IReadOnlyList<string> profiles) => "When you save, " + UnshareConsequence(profiles);
+
+    /// <summary>What turning sharing off costs: "Maya and Leo lose it, including rows they made from it."</summary>
+    public static string UnshareConsequence(IReadOnlyList<string> profiles)
     {
         string who = profiles.Count > 0 ? JoinNames(profiles) : "Other profiles";
-        return $"When you save, {who} {(profiles.Count == 1 ? "loses" : "lose")} it, including rows they made from it.";
+        return $"{who} {(profiles.Count == 1 ? "loses" : "lose")} it, including rows they made from it.";
     }
 
     /// <summary>"Name and show only changed in both places."</summary>
