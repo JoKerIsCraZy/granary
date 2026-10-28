@@ -1,10 +1,10 @@
 # Granary
 
-A native Windows client for [Silo](https://siloserver.org), the self-hosted media server.
+A native Windows client for [Silo Server](https://siloserver.org), the self-hosted media server.
 
 Granary is an independent project. It is not made, endorsed or supported by Silo Media L.L.C. "Silo" is a
 trademark of Silo Media L.L.C.; Granary uses the name only to say which server it works with, as Silo's
-[trademark policy](https://github.com/Silo-Server/silo-server/blob/main/TRADEMARK.md) allows.
+[trademark policy](https://github.com/Silo-Server/siloserver.org/blob/main/TRADEMARK.md) allows.
 
 Granary is built with C# / .NET 10, WinUI 3 (Windows App SDK) and libmpv. It plays as much as possible with
 Direct Play, so the server rarely has to transcode. Its look follows Silo's web app and its behaviour follows
@@ -46,7 +46,7 @@ Profiles hide libraries the same way they do on the web. The full description of
 ## Requirements
 
 - Windows 10 version 2004 (build 19041) or later, or Windows 11, on x64
-- A Silo server
+- A server running Silo Server
 
 ## Install
 
@@ -61,11 +61,18 @@ You need the .NET 10 SDK (`global.json` pins the version) and PowerShell. No Vis
 `dotnet` CLI builds everything. VS Code users get tasks and launch configurations in `.vscode/`.
 
 ```powershell
-./scripts/fetch-native.ps1          # downloads libmpv pinned in native.lock.json into native/libmpv and checks its SHA-256
+./scripts/fetch-native.ps1 -ZipPath <the pinned libmpv zip>   # libmpv into native/libmpv; see the note below
 dotnet build Granary.slnx
 dotnet test --solution Granary.slnx
 dotnet run --project src/Granary.App
 ```
+
+**libmpv:** `native.lock.json` pins one libmpv build by URL and SHA-256, and `scripts/fetch-native.ps1` puts it
+into `native/libmpv` after checking the hash. The pinned upstream asset has since been replaced by a newer mpv build
+and its URL answers 404, so the script cannot download it until the pin points at a mirror. Until then, get the
+exact pinned archive (file name and SHA-256 in `native.lock.json`) from a mirror or a copy you have, and pass it with
+`-ZipPath`; the script still checks the hash. Without libmpv everything builds (the app build warns) and the tests
+run, with the libmpv integration tests skipped, but playback fails at runtime.
 
 The app is x64 only. To build only the app project, pass the platform:
 `dotnet build src/Granary.App/Granary.App.csproj -p:Platform=x64`. Warnings fail the build

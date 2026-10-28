@@ -22,7 +22,7 @@ release's section is what its update says it changes (docs/release.md).
 - The sidebar's entries can be hidden and put in another order, for each profile, under Settings → Navigation & Cards.
 - Installing and updating with Velopack: a setup without administrator rights, and updates in the background.
 - The player minimizes to a bar at the bottom of the window that keeps playing while you browse.
-- An administrator's pause, seek, stop and messages from Silo's Activity page reach Granary's player.
+- An administrator's pause, stop and messages reach Granary's player.
 - Admin: the server's Dashboard and Activity, with the streams playing now, for its administrators.
 - History: Select titles and remove their watch data.
 - Notifications: the Series view shows which series notify you and why, with search, reasons, sort and Mute.

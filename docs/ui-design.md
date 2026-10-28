@@ -340,7 +340,7 @@ says why above the sections.
   once.
 - **Servers** (`ServersSettingsView` on `ServersViewModel`; the apps keep the server under Settings too): the title and
   its line with Add server (outline) on the right; then a line per saved server between hairlines: a 40 px disc, the
-  name (15 px semibold) and "https://silo.example · Signed in as elena" (13 px muted, trimmed), the red Active pill or
+  name (15 px semibold) and "https://silo.example · Signed in as alex" (13 px muted, trimmed), the red Active pill or
   Switch, and More (…) with Sign out and Remove… (asks first). The sign-in screen's "Use another server" still opens the
   standalone servers page, which shares the question before removing.
 - **About** (`AboutSettingsView` on `AboutViewModel`, as the apps' About with Version and Acknowledgements): Granary's
@@ -378,7 +378,7 @@ stream's commands on Activity.
   profiles · last 7 d: eight rows each, the rank, the name (a title opens), the plays and watch time over a bar of the
   busiest row's share. Libraries (an icon box, the name, "movies · 1 path", a green or grey dot) and Users (the eight
   most recently active: initial, name, an "owner" or "admin" badge, the email, "Last active", Active or a red Disabled).
-  Recent Activity: "elena (Kids) started watching Dark", "5m ago · Granary 0.3.0". Each card says its own failure in red.
+  Recent Activity: "alex (Kids) started watching Dark", "5m ago · Granary 0.3.0". Each card says its own failure in red.
 - **Activity** (`AdminActivityView` on `AdminActivityViewModel`, the web's Activity): "Activity", "2 active streams across
   1 node", the live badge, Refresh, and "AUTO REFRESH · Every 10 s" where the web says its realtime state (Granary
   reads the streams again every ten seconds). A notice bar for what a command or Refresh answered. IP Lookup (an

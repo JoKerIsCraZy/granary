@@ -16,7 +16,7 @@ Please report security problems privately. Do not open a public issue, pull requ
 Please include:
 
 - what the problem is and what an attacker could do with it
-- the steps to reproduce it, and the Granary, Windows and Silo server versions involved
+- the steps to reproduce it, and the Granary, Windows and Silo Server versions involved
 - any proof-of-concept, logs or screenshots. Remove tokens, passwords and other private data, and mark what you
   removed.
 
@@ -26,8 +26,9 @@ credited unless you ask otherwise.
 ## Scope
 
 - **In scope:** this repository: the Granary app, its installer and updater, and the release workflow.
-- **Out of scope:** the Silo server and Silo's own apps. Report problems in them to Silo, as
-  [Silo's security policy](https://github.com/Silo-Server/silo-server/security) describes.
+- **Out of scope:** Silo Server and Silo's own apps. Report problems in them to Silo privately with **Report a
+  vulnerability** on the Security tab of [Silo's repository](https://github.com/Silo-Server/silo-server), as Silo's
+  CONTRIBUTING.md asks.
 - **Third-party components:** report problems in libmpv, FFmpeg, the Windows App SDK or Velopack to their
   projects. Tell us as well if they affect Granary.
 

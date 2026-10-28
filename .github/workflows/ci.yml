@@ -24,7 +24,15 @@ jobs:
         with:
           global-json-file: global.json
 
-      # The pinned libmpv must stay downloadable: mirror it before the upstream asset is replaced (docs/release.md).
+      # This step fails until libmpv is mirrored and re-pinned: the upstream asset pinned in native.lock.json was
+      # replaced by a newer mpv build and answers 404 (docs/release.md). The cache keeps the verified archive once a
+      # download worked; its key follows native.lock.json, so a new pin (url and sha256) starts a new cache.
+      - name: Cache libmpv
+        uses: actions/cache@v4
+        with:
+          path: native/cache
+          key: libmpv-${{ hashFiles('native.lock.json') }}
+
       - name: Fetch libmpv
         shell: pwsh
         run: ./scripts/fetch-native.ps1

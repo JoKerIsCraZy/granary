@@ -6,10 +6,10 @@ the decisions behind it. The API it talks to is described in [api-contract.md](a
 ## Projects
 
 ```
-src/Granary.Core     net10.0           API client, auth, models, repositories, view models
-src/Granary.Player   net10.0           libmpv interop and the playback engine
-src/Granary.App      net10.0-windows   WinUI 3 shell: windows, pages, controls, platform services
-tests/Granary.Tests  net10.0-windows   unit tests and libmpv integration tests
+src/Granary.Core     net10.0                       API client, auth, models, repositories, view models
+src/Granary.Player   net10.0                       libmpv interop and the playback engine
+src/Granary.App      net10.0-windows10.0.22621.0   WinUI 3 shell: windows, pages, controls, platform services
+tests/Granary.Tests  net10.0-windows               unit tests and libmpv integration tests
 spike/               Phase 1 spike (outside the product build)
 ```
 
@@ -294,7 +294,9 @@ SiloHttp ─▶ ClientIdentityHandler ─▶ AuthenticationHandler ─▶ Socket
 
 `libmpv-2.dll` is the official mpv CI build (LGPL variant), pinned with its SHA-256 in
 `native.lock.json` and fetched by `scripts/fetch-native.ps1` into `native/libmpv/` (not committed). The
-upstream asset is replaced on every mpv master update, so a release must mirror the pinned archive.
+upstream asset is replaced on every mpv master update, so a release must mirror the pinned archive. The pinned
+asset has already been replaced upstream (its URL answers 404): until the pin points at a mirror, pass the pinned
+archive with `./scripts/fetch-native.ps1 -ZipPath <zip>`, which still checks its SHA-256.
 Licensing is in [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).
 
 ## Decisions

@@ -1,6 +1,6 @@
 # Granary
 
-Granary is a native Windows client for Silo, the self-hosted media server. It is written in C# on .NET 10 with
+Granary is a native Windows client for Silo Server, the self-hosted media server. It is written in C# on .NET 10 with
 WinUI 3 (Windows App SDK) and plays media with libmpv. It is an independent project, not an official Silo app.
 Read [README.md](README.md) for what it does and [docs/architecture.md](docs/architecture.md) for how it is
 built.
@@ -8,10 +8,10 @@ built.
 ## Layers
 
 ```
-src/Granary.Core     net10.0           API client, auth, models, playback logic, view models
-src/Granary.Player   net10.0           libmpv interop and the playback engine (IPlaybackEngine)
-src/Granary.App      net10.0-windows   WinUI 3: windows, pages, controls, platform services
-tests/Granary.Tests  net10.0-windows   unit tests and libmpv integration tests
+src/Granary.Core     net10.0                         API client, auth, models, playback logic, view models
+src/Granary.Player   net10.0                         libmpv interop and the playback engine (IPlaybackEngine)
+src/Granary.App      net10.0-windows10.0.22621.0     WinUI 3: windows, pages, controls, platform services
+tests/Granary.Tests  net10.0-windows                 unit tests and libmpv integration tests
 ```
 
 - Dependencies point inward only: `App → Player → Core` and `App → Core`. Core has no UI dependency.
@@ -56,7 +56,7 @@ tests/Granary.Tests  net10.0-windows   unit tests and libmpv integration tests
 ## Building and testing
 
 ```powershell
-./scripts/fetch-native.ps1                                       # libmpv into native/libmpv (git-ignored)
+./scripts/fetch-native.ps1 -ZipPath <the pinned libmpv zip>     # libmpv into native/libmpv (git-ignored); see below
 dotnet build Granary.slnx
 dotnet build src/Granary.App/Granary.App.csproj -p:Platform=x64  # the app project alone
 dotnet test --solution Granary.slnx
@@ -64,12 +64,18 @@ dotnet test --solution Granary.slnx
 
 - Warnings are errors (`TreatWarningsAsErrors`, analyzers included). A change must build with 0 warnings.
 - Package versions live in `Directory.Packages.props` (central package management).
+- libmpv: the upstream asset pinned in `native.lock.json` was replaced by a newer mpv build and answers 404, so
+  `fetch-native.ps1` cannot download it until the pin points at a mirror. Pass the exact pinned archive with
+  `-ZipPath` (the hash is still checked). Do not re-pin `native.lock.json` on the side: a new pin also changes
+  THIRD_PARTY_NOTICES.md. Without libmpv, builds and tests still run and the libmpv integration tests skip
+  themselves.
 
 Tests run on xUnit v3 with Microsoft Testing Platform. There is no mocking library: fakes are small hand-written
 classes in `tests/Granary.Tests/Fakes`.
 
 - **`ScriptedSilo`** (`tests/Granary.Tests/Profiles`) answers HTTP requests scripted by method and path. It records
-  what was sent: URI, body, credentials and `If-Match`.
+  each request as a `SentRequest`: `Method`, `Uri`, `Body`, `Auth` (the `SiloAuth` level the call asked for),
+  `SavedAddressOnly` and `IfMatch`.
 - **`LibraryHarness`** (`tests/Granary.Tests/Browse`) sets up a ready session on profile `7` with the usual
   answers.
 - **`ManualTimeProvider`** drives delays, debounces and polling. View models take a `TimeProvider` for this;
@@ -95,16 +101,19 @@ classes in `tests/Granary.Tests/Fakes`.
 
 ## Gotchas
 
-- **x:Bind functions:** in a page's own markup they must be instance methods (a static one fails with
-  CS0176). Inside a `DataTemplate`, call static methods on the page type, for example
-  `views:NotificationsPage.Poster(PosterUrl)`.
-- **x:Bind compiler limits:** an `x:Bind` function inside a `Run` fails with WMC0615. An indexer inside a function
-  argument (`Fn(List[0].X)`) crashes the XAML compiler with WMC9999 and no message.
+- **x:Bind functions:** in a page's or control's own markup they are instance methods, called on the page or
+  control (see the comment in `Controls/AddSubtitlesPanel.xaml.cs`). Inside a `DataTemplate`, call static methods
+  on the page type, for example `views:NotificationsPage.Poster(PosterUrl)`.
+- **x:Bind function limits:** give each target type its own function; one function feeding both a `bool` and a
+  `Visibility` generates broken code (`Controls/AddSubtitlesPanel.xaml.cs`). Do not put an `x:Bind` function inside
+  a `Run` (use separate `TextBlock`s), and do not pass an indexer into a function (`Fn(List[0].X)`): both break the
+  XAML compiler.
 - **UserControls made in code** do not get the page's merged dictionaries. Merge `Themes/SiloSettings.xaml`
   into their resources, as `Views/Admin/AdminDashboardView.xaml` does, or their `StaticResource` lookups fail
   at runtime.
 - **ClientWebSocket:** a `ReceiveAsync` cancelled through its token aborts the socket. Close it through a token
-  registration and `CloseAsync` instead (see `PlaybackControlSocket`).
+  registration and `CloseAsync` instead, as `WebSocketRealtimeSocket` (`IRealtimeSocket`, in
+  `src/Granary.Core/Realtime/RealtimeSocket.cs`) does for both the playback control lane and the events lane.
 - **JSON source generation:** a member missing from the JSON sets an `init` property to its default, not to its
   initializer. When absence must mean something else, use a nullable and a computed fallback (see
   `CollectionCapabilities.Artwork` and `TakesArtwork`).
@@ -127,6 +136,9 @@ classes in `tests/Granary.Tests/Fakes`.
 ## Branding
 
 - Granary has its own name, logo and app icon.
-- Silo's name and mark are used only to refer to Silo, as Silo's trademark policy allows: "a client for Silo",
-  "Connect to your Silo server".
-- Write the name as **Silo**, never SILO. Do not change Silo's brand files in `src/Granary.App/Assets/Brand`.
+- Silo's name and mark are used only to refer to Silo, as
+  [Silo's trademark policy](https://github.com/Silo-Server/siloserver.org/blob/main/TRADEMARK.md) allows: "a client for Silo
+  Server", "Connect to your Silo server".
+- Write the name as **Silo**, with one capital S, never in capitals. The server software is **Silo Server**; a
+  user's own instance is "your Silo server".
+- Do not change Silo's brand files in `src/Granary.App/Assets/Brand`.

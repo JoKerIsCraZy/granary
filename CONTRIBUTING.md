@@ -1,6 +1,6 @@
 # Contributing to Granary
 
-Thanks for helping. Granary is a native Windows client for Silo, built by volunteers. This guide covers how to
+Thanks for helping. Granary is a native Windows client for Silo Server, built by volunteers. This guide covers how to
 report a problem, how to propose and make a change, and the rules that come with the name and the license.
 
 Everyone taking part follows the [Code of Conduct](CODE_OF_CONDUCT.md).
@@ -19,7 +19,7 @@ Everyone taking part follows the [Code of Conduct](CODE_OF_CONDUCT.md).
   but check anyway, and remove server addresses, account names and anything private you would rather not share.
   Mark what you removed.
 - Report a security vulnerability privately, as [SECURITY.md](SECURITY.md) describes, never in a public issue.
-- A problem in the Silo server or its web app belongs in
+- A problem in Silo Server or its web app belongs in
   [Silo's issue tracker](https://github.com/Silo-Server/silo-server/issues), not here. If Silo's web app does the
   same thing, the problem is probably the server's.
 
@@ -36,8 +36,9 @@ clients:
 
 1. For anything bigger than a small fix, open or comment on an issue first, so the approach is agreed before you
    spend time on it.
-2. Set up your machine as the [README](README.md#building-from-source) describes: the .NET 10 SDK, then
-   `./scripts/fetch-native.ps1`.
+2. Set up your machine as the [README](README.md#building-from-source) describes: the .NET 10 SDK, then libmpv
+   with `./scripts/fetch-native.ps1 -ZipPath <the pinned libmpv zip>`. The pinned download URL answers 404 until the
+   pin points at a mirror; the README's note says how to get the archive.
 3. Branch from `main`. Keep one change per branch and pull request.
 4. Read [AGENTS.md](AGENTS.md): the layers, the code style, the test helpers and the known pitfalls. It is
    written for coding agents but applies to everyone.
@@ -67,11 +68,12 @@ submit, and for having run it.
 ## Silo's name and logo
 
 Granary is not an official Silo app. Silo's code is open source, but its name and brand are protected by
-[Silo's trademark policy](https://github.com/Silo-Server/silo-server/blob/main/TRADEMARK.md).
+[Silo's trademark policy](https://github.com/Silo-Server/siloserver.org/blob/main/TRADEMARK.md).
 
 - **The name:** use "Silo" only to refer to Silo ("a client for Silo", "Connect to your Silo server"). Never use it
   as Granary's name, or in a way that suggests Silo made or endorses Granary.
-- **Spelling:** write the name as **Silo**, never SILO.
+- **Spelling:** write the name as **Silo**, with one capital S, never in capitals. The server software is
+  **Silo Server**; someone's own instance is "your Silo server".
 - **The logo:** Silo's logo files in `src/Granary.App/Assets/Brand` are Silo's, unmodified, and used only to refer
   to Silo. Do not change them or build them into Granary's own logo or icons.
 

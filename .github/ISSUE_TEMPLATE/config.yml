@@ -4,6 +4,6 @@ contact_links:
   - name: Report a security vulnerability
     url: https://github.com/OWNER/granary/security/advisories/new
     about: Report it privately, as SECURITY.md describes. Do not open a public issue.
-  - name: Problem in the Silo server or its web app
+  - name: Problem in Silo Server or its web app
     url: https://github.com/Silo-Server/silo-server/issues/new/choose
     about: If Silo's web app shows the problem too, report it to Silo.
