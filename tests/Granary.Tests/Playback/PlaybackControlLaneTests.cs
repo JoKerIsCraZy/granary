@@ -216,8 +216,9 @@ public sealed class PlaybackControlLaneTests
 
         lane.Follow(ScriptedSilo.Base, other, PlaybackPayloads.InstallationId, _ => Task.FromResult(PlaybackControlReply.Done));
         await ServerPlaybackFixture.Until(() => _sockets.Count == 2 && Socket(1).Sent.Count == 1, "the new session's hello");
+        // The old run lets go of its socket as it ends, which may come after the new one's hello.
+        await ServerPlaybackFixture.Until(() => Socket(0).Disposed, "the old socket let go");
 
-        Assert.True(Socket(0).Disposed);
         Assert.Equal(other, lane.SessionId);
         Assert.Contains(other, Socket(1).Uri!.AbsoluteUri, StringComparison.Ordinal);
     }
