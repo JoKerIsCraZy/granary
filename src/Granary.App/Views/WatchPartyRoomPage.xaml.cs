@@ -109,6 +109,12 @@ public sealed partial class WatchPartyRoomPage : Page
 
     private void OnRailTabChecked(object sender, RoutedEventArgs e)
     {
+        // People starts checked, so this runs while the page is still being built, before the panels exist; they
+        // start as People shows them.
+        if (PeoplePanel is null || ActivityPanel is null)
+        {
+            return;
+        }
         bool activity = ReferenceEquals(sender, ActivityTab);
         PeoplePanel.Visibility = activity ? Visibility.Collapsed : Visibility.Visible;
         ActivityPanel.Visibility = activity ? Visibility.Visible : Visibility.Collapsed;
