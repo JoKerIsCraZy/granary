@@ -242,6 +242,11 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   title on this page is already in your library."; a later page that fails says "Couldn’t load page 2." beside Retry
   and a ghost Back to page 1. An opened person hides it; the cards open the title's page, or the library's title.
 - Pages: 48 px side margins, 32 px top; rows 40 px apart.
+- What happens on another device shows without a visit (`RealtimeEvents`, docs/api-contract.md 12): a title watched,
+  favourited, put on the watchlist or taken off Home there, or a title the server added or changed, reloads Home in
+  place once the changes have been quiet for 2 s (rows keep where they were scrolled to; other pages reload on their
+  next visit); another device's playback moves Continue Watching at most every 30 s; a new or read notification sets
+  the sidebar's count. Nothing shows the connection itself.
 - Detail pages: full-bleed backdrop fading into the background, logo (or display title), chips,
   ratings, overview with "More", red Play/Resume pill, secondary actions, then rows (seasons, episodes,
   cast, more like this). The hero takes 60 % of the window's height (a season's 50 %), the web's value below its `lg`

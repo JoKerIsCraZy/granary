@@ -36,7 +36,7 @@ to the root of the named repository.
 9. [Media delivery and stream authentication](#9-media-delivery-and-stream-authentication)
 10. [Progress, resume, and completion](#10-progress-resume-and-completion)
 11. [Markers, intro skip, chapters, and trickplay](#11-markers-intro-skip-chapters-and-trickplay)
-12. [Realtime events](#12-realtime-events-optional-for-the-mvp)
+12. [Realtime events](#12-realtime-events)
 13. [Consequences for the Windows client](#13-consequences-for-the-windows-client)
 - [Appendix: where docs and code disagree](#appendix-where-docs-and-code-disagree)
 
@@ -64,7 +64,7 @@ serves its exact contract at `/api/v2/openapi.json` and a Swagger UI at `/api/v2
 ### How to read this document
 
 Sections 2–6 cover the rules every request follows and how a user gets signed in. Section 7 covers
-browsing. Sections 8–11 cover playback end to end. Section 12 is optional realtime. Section 13
+browsing. Sections 8–11 cover playback end to end. Section 12 covers the realtime sockets. Section 13
 turns all of it into concrete decisions for the Windows client. The appendix lists every place
 where docs and code disagree.
 
@@ -1908,7 +1908,7 @@ presigned S3 URL. Refetch after `expires_at`. Thumbnail `i` is on sheet
 `i / (cols·rows)`, column `i % cols`, row `(i % (cols·rows)) / cols`
 (`silo-server/internal/apiv2/watch_trickplay.go:60-110`). Android does not implement trickplay.
 
-## 12. Realtime events (optional for the MVP)
+## 12. Realtime events
 
 `/api/v2/events/ws` keeps Home and detail views fresh; a minimal client can skip it and refetch on
 navigation.
@@ -1935,10 +1935,35 @@ navigation.
   changes after a refetch.
 
 Android uses it only to refresh Home: it subscribes to `user_state` and `catalog` and refetches Home
-on `subscribed`, on any catalog event, and on a `user_state` event for the active profile
-(`silo-android/shared/.../network/HomeRealtimeClient.kt`). Sources:
-`silo-server/docs/realtime-api.md:23-106`,
+on `subscribed`, on any catalog event, and on a `user_state` event for the active profile, behind a 2 s
+debounce, reconnecting after 1 s doubling to 30 s (`silo-android/shared/.../network/HomeRealtimeClient.kt`,
+`repository/HomeRealtimeCoordinator.kt`). The web (`components/RealtimeEventsProvider.tsx`) subscribes
+`catalog`, `user_state` and `notifications` (plus `user_settings` and the administrator channels) after
+`hello`, refreshes Home at once on a membership change but once per 30 s window on `progress`, batches
+catalog events over 2 s, keeps the unread badge from the `notifications` snapshot (≤ 25 unread rows, a
+lower bound) and from `notification.created` / `notification.read`, and reconnects after 1 s (at once
+after `access_changed`). Sources: `silo-server/docs/realtime-api.md:23-106`,
 `silo-server/internal/api/handlers/events_ws.go:735-739`.
+
+Granary (`Realtime/EventsLane`, `Realtime/RealtimeEvents`): one connection per signed-in profile, opened
+with the window and replaced on a profile or server switch, none while signed out. A profile-bound
+ticket (bearer and profile headers, no body), the protocol and `silo.ticket.<ticket>` offered, `subscribe`
+to `catalog`, `user_state`, `notifications` after `hello`; frames up to 1 MiB. The connection ends with
+`max_connection_seconds`; a lost one comes back after 1 s, doubling to 30 s until one subscribes again, at
+once after `access_changed` or close code 4001; a server answering the ticket with 404 or 501 has none.
+What it does:
+- `user_state.changed` for the profile (`progress` aside), any `catalog` event, `access_changed`, and a
+  connection back after more than 5 s without one: `ViewerStateChanges.Report()` once the burst has been
+  quiet for 2 s, at most 30 s after its first change. Home reloads in place while shown; other pages
+  compare the version on their next visit.
+- `user_state.changed` with `progress`: one report per 30 s window.
+- Any `notifications` event or snapshot: the sidebar's unread count is read again after 1 s of quiet
+  (`GET /notifications/unread-count`), rather than counted locally.
+- Left out: `user_settings` (card badges and other profile settings are read on sign-in and profile
+  switch), the web's toasts for new notifications, the open inbox's own list (only the count follows),
+  the request lists, the administrator channels (`jobs`, `sessions`, `tasks`, `scans`, `settings`,
+  `download_preparations`, `history_import`; Admin → Activity polls), and the web's reconnect with a
+  growing wait when `notifications` is rejected with `profile_required` (logged; the other channels go on).
 
 ### 12.1 Playback control lane
 

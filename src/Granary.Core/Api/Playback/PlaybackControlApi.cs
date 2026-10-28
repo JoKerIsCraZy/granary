@@ -26,24 +26,8 @@ public sealed class PlaybackControlApi(SiloHttp http)
     /// The socket's address on <paramref name="server"/>: <c>wss://</c> for https. No credential belongs in it; the ticket
     /// travels as a protocol.
     /// </summary>
-    public static Uri SocketUri(Uri server, string sessionId)
-    {
-        ArgumentNullException.ThrowIfNull(server);
-        var builder = new UriBuilder(new Uri(server.AbsoluteUri.TrimEnd('/') + "/"))
-        {
-            Scheme = server.Scheme == Uri.UriSchemeHttps ? "wss" : "ws",
-            Query = "",
-            Fragment = "",
-            UserName = "",
-            Password = "",
-        };
-        builder.Path = builder.Path.TrimEnd('/') + $"/api/v2/playback/sessions/{Uri.EscapeDataString(sessionId)}/control/ws";
-        if (builder.Uri.IsDefaultPort)
-        {
-            builder.Port = -1;
-        }
-        return builder.Uri;
-    }
+    public static Uri SocketUri(Uri server, string sessionId) =>
+        WebSocketAddress.For(server, $"api/v2/playback/sessions/{Uri.EscapeDataString(sessionId)}/control/ws");
 }
 
 /// <param name="InstallationId">The value playback capabilities named; null for a session this server did not start through v2.</param>

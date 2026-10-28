@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json;
 using Granary.Core.Api.Playback;
 using Granary.Core.Playback;
+using Granary.Core.Realtime;
 using Granary.Tests.Fakes;
 using Granary.Tests.Profiles;
 
@@ -38,7 +39,7 @@ public sealed class PlaybackControlSocketTests : IAsyncDisposable
     {
         var token = TestContext.Current.CancellationToken;
         var carried = new TaskCompletionSource<PlaybackControlCommand>(TaskCreationOptions.RunContinuationsAsynchronously);
-        await using var lane = new PlaybackControlLane(new PlaybackControlApi(_silo.Http), () => new WebSocketPlaybackControlSocket(), TimeProvider.System,
+        await using var lane = new PlaybackControlLane(new PlaybackControlApi(_silo.Http), () => new WebSocketRealtimeSocket(), TimeProvider.System,
             _logs.For<PlaybackControlLane>());
 
         lane.Follow(_server, Session, PlaybackPayloads.InstallationId, command =>

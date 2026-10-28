@@ -7,6 +7,7 @@ using Granary.Core.Abstractions;
 using Granary.Core.Diagnostics;
 using Granary.Core.Overlays;
 using Granary.Core.Playback;
+using Granary.Core.Realtime;
 using Granary.Core.Servers;
 using Granary.Core.Theme;
 using Granary.Core.ViewModels;
@@ -73,6 +74,10 @@ public partial class App : Application
         _ = accent.StartAsync();
         // The profile's card badges, read with every sign-in and profile switch.
         _ = Services.GetRequiredService<CardOverlaySettings>().StartAsync();
+        // Home and the sidebar's count follow what happens on other devices (docs/api-contract.md, 12).
+        var realtime = Services.GetRequiredService<RealtimeEvents>();
+        realtime.Start();
+        _window.Closed += (_, _) => _ = realtime.StopAsync();
 
         // Developer shortcuts: --play <file or URL> plays it without the server; --play-item <content id> plays a
         // title of the signed-in server.

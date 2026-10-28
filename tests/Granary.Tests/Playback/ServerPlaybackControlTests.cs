@@ -14,7 +14,7 @@ public sealed class ServerPlaybackControlTests
     private const string TicketPath = "api/v2/playback/sessions/" + Session + "/control/ws-ticket";
 
     private readonly ServerPlaybackFixture _fixture = new();
-    private readonly List<FakeControlSocket> _sockets = [];
+    private readonly List<FakeRealtimeSocket> _sockets = [];
     private readonly List<PlaybackNotice> _notices = [];
 
     public ServerPlaybackControlTests()
@@ -23,13 +23,13 @@ public sealed class ServerPlaybackControlTests
             ScriptedSilo.Json(HttpStatusCode.OK, """{ "ticket": "t0k3n", "expires_in": 30, "max_connection_seconds": 14400, "protocol": "silo.playback-control.v2" }"""));
         _fixture.ControlLane = new PlaybackControlLane(new PlaybackControlApi(_fixture.Silo.Http), () =>
         {
-            var socket = new FakeControlSocket();
+            var socket = new FakeRealtimeSocket();
             _sockets.Add(socket);
             return socket;
         }, _fixture.Time, _fixture.Logs.For<PlaybackControlLane>());
     }
 
-    private FakeControlSocket Socket => _sockets[^1];
+    private FakeRealtimeSocket Socket => _sockets[^1];
 
     private async Task<ServerPlayback> PlayingAsync()
     {
@@ -43,7 +43,7 @@ public sealed class ServerPlaybackControlTests
     private async Task<JsonElement> SendAsync(string commandId, string name, string payload = "{}", string? issuedBy = "admin")
     {
         int answered = Socket.Sent.Count + 2;
-        Socket.Push(FakeControlSocket.Command(Session, commandId, name, payload, issuedBy));
+        Socket.Push(FakeRealtimeSocket.Command(Session, commandId, name, payload, issuedBy));
         await ServerPlaybackFixture.Until(() => Socket.Sent.Count >= answered, "the result of " + name);
         return JsonDocument.Parse(Socket.Sent.ToArray()[answered - 1]).RootElement;
     }

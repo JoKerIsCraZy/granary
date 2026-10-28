@@ -1,6 +1,7 @@
 using System.Net.WebSockets;
 using Granary.Core.Api;
 using Granary.Core.Api.Playback;
+using Granary.Core.Realtime;
 using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.Playback;
@@ -34,12 +35,12 @@ public sealed class PlaybackControlLane : IAsyncDisposable
     private static readonly TimeSpan SteadyAfter = TimeSpan.FromSeconds(30);
 
     private readonly PlaybackControlApi _api;
-    private readonly Func<IPlaybackControlSocket> _sockets;
+    private readonly Func<IRealtimeSocket> _sockets;
     private readonly TimeProvider _time;
     private readonly ILogger<PlaybackControlLane> _logger;
     private CancellationTokenSource? _run;
 
-    public PlaybackControlLane(PlaybackControlApi api, Func<IPlaybackControlSocket> sockets, TimeProvider time, ILogger<PlaybackControlLane> logger)
+    public PlaybackControlLane(PlaybackControlApi api, Func<IRealtimeSocket> sockets, TimeProvider time, ILogger<PlaybackControlLane> logger)
     {
         _api = api;
         _sockets = sockets;

@@ -4,6 +4,7 @@ using Granary.Core.Api;
 using Granary.Core.Artwork;
 using Granary.Core.Auth;
 using Granary.Core.Playback;
+using Granary.Core.Realtime;
 using Granary.Core.Servers;
 using Granary.Core.ViewModels;
 using Granary.Player;
@@ -41,6 +42,8 @@ public sealed class CompositionRootTests
         Assert.NotNull(provider.GetRequiredService<ItemDetailViewModel>());
         Assert.IsType<MpvDeviceProbe>(provider.GetRequiredService<IPlaybackDeviceProbe>());
         Assert.IsType<ServerPlayback>(provider.GetRequiredService<Func<IServerPlayback>>()());
+        Assert.Same(provider.GetRequiredService<RealtimeEvents>(), provider.GetRequiredService<RealtimeEvents>());
+        Assert.NotSame(provider.GetRequiredService<Func<EventsLane>>()(), provider.GetRequiredService<Func<EventsLane>>()());
         using var player = provider.GetRequiredService<PlayerViewModel>();
         Assert.Same(provider.GetRequiredService<IPlaybackEngine>(), provider.GetRequiredService<ICompositionVideoOutput>());
     }

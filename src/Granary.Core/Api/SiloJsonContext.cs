@@ -4,6 +4,7 @@ using Granary.Core.Api.Accounts;
 using Granary.Core.Api.Auth;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Discovery;
+using Granary.Core.Api.Events;
 using Granary.Core.Api.Images;
 using Granary.Core.Api.Notifications;
 using Granary.Core.Api.Profiles;
@@ -22,6 +23,7 @@ namespace Granary.Core.Api;
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     PropertyNameCaseInsensitive = false)]
 [JsonSerializable(typeof(ApiProblem))]
+[JsonSerializable(typeof(EventsTicket))]
 [JsonSerializable(typeof(EffectiveSettings))]
 [JsonSerializable(typeof(OverlayConfig))]
 [JsonSerializable(typeof(SettingsContractCapabilities))]

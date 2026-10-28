@@ -20,7 +20,7 @@ public sealed class PlaybackControlLaneTests
     private readonly ScriptedSilo _silo = new();
     private readonly ManualTimeProvider _time = new();
     private readonly LogSink _logs = new();
-    private readonly List<FakeControlSocket> _sockets = [];
+    private readonly List<FakeRealtimeSocket> _sockets = [];
     private readonly List<PlaybackControlCommand> _commands = [];
     private Func<PlaybackControlCommand, PlaybackControlReply> _reply = _ => PlaybackControlReply.Done;
 
@@ -31,7 +31,7 @@ public sealed class PlaybackControlLaneTests
 
     private PlaybackControlLane Lane() => new(new PlaybackControlApi(_silo.Http), () =>
     {
-        var socket = new FakeControlSocket();
+        var socket = new FakeRealtimeSocket();
         lock (_sockets)
         {
             _sockets.Add(socket);
@@ -39,7 +39,7 @@ public sealed class PlaybackControlLaneTests
         return socket;
     }, _time, _logs.For<PlaybackControlLane>());
 
-    private FakeControlSocket Socket(int index) => _sockets[index];
+    private FakeRealtimeSocket Socket(int index) => _sockets[index];
 
     private void Follow(PlaybackControlLane lane) => lane.Follow(ScriptedSilo.Base, Session, PlaybackPayloads.InstallationId, command =>
     {
@@ -50,7 +50,7 @@ public sealed class PlaybackControlLaneTests
         return Task.FromResult(_reply(command));
     });
 
-    private static List<JsonElement> Frames(FakeControlSocket socket) => [.. socket.Sent.Select(text => JsonDocument.Parse(text).RootElement)];
+    private static List<JsonElement> Frames(FakeRealtimeSocket socket) => [.. socket.Sent.Select(text => JsonDocument.Parse(text).RootElement)];
 
     [Fact]
     public async Task Opening_MintsATicket_OffersItAsAProtocol_AndSaysHello()
@@ -79,7 +79,7 @@ public sealed class PlaybackControlLaneTests
         Follow(lane);
         await ServerPlaybackFixture.Until(() => _sockets.Count == 1 && Socket(0).Sent.Count == 1, "the hello");
 
-        Socket(0).Push(FakeControlSocket.Command(Session, "c1", "pause"));
+        Socket(0).Push(FakeRealtimeSocket.Command(Session, "c1", "pause"));
         await ServerPlaybackFixture.Until(() => Socket(0).Sent.Count == 3 && order.Count == 1, "the answer");
 
         var frames = Frames(Socket(0));
@@ -101,12 +101,12 @@ public sealed class PlaybackControlLaneTests
         Follow(lane);
         await ServerPlaybackFixture.Until(() => _sockets.Count == 1 && Socket(0).Sent.Count == 1, "the hello");
 
-        Socket(0).Push(FakeControlSocket.Command(Session, "c1", "play_media"));
-        Socket(0).Push(FakeControlSocket.Command(Session, "c1", "play_media"));
-        Socket(0).Push(FakeControlSocket.Command("another-session", "c2", "pause"));
+        Socket(0).Push(FakeRealtimeSocket.Command(Session, "c1", "play_media"));
+        Socket(0).Push(FakeRealtimeSocket.Command(Session, "c1", "play_media"));
+        Socket(0).Push(FakeRealtimeSocket.Command("another-session", "c2", "pause"));
         Socket(0).Push("""{ "type": "event", "session_id": "x", "name": "markers_updated", "payload": {} }""");
         Socket(0).Push("not json");
-        Socket(0).Push(FakeControlSocket.Command(Session, "c3", "pause"));
+        Socket(0).Push(FakeRealtimeSocket.Command(Session, "c3", "pause"));
         await ServerPlaybackFixture.Until(() => Socket(0).Sent.Count == 5, "the answers");
 
         var result = Frames(Socket(0))[2];
@@ -138,7 +138,7 @@ public sealed class PlaybackControlLaneTests
         Follow(lane);
         await ServerPlaybackFixture.Until(() => _sockets.Count == 1 && Socket(0).Sent.Count == 1, "the hello");
 
-        Socket(0).Push(FakeControlSocket.Command(Session, "c1", "terminate"));
+        Socket(0).Push(FakeRealtimeSocket.Command(Session, "c1", "terminate"));
 
         await lane.Running.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         Assert.Single(_sockets);
@@ -179,7 +179,7 @@ public sealed class PlaybackControlLaneTests
     {
         await using var lane = new PlaybackControlLane(new PlaybackControlApi(_silo.Http), () =>
         {
-            var socket = new FakeControlSocket { Picks = "silo.events.v2" };
+            var socket = new FakeRealtimeSocket { Picks = "silo.events.v2" };
             _sockets.Add(socket);
             return socket;
         }, _time, _logs.For<PlaybackControlLane>());
@@ -227,13 +227,13 @@ public sealed class PlaybackControlLaneTests
     {
         await using var lane = new PlaybackControlLane(new PlaybackControlApi(_silo.Http), () =>
         {
-            var socket = new FakeControlSocket();
+            var socket = new FakeRealtimeSocket();
             _sockets.Add(socket);
             return socket;
         }, _time, _logs.For<PlaybackControlLane>());
         lane.Follow(ScriptedSilo.Base, Session, PlaybackPayloads.InstallationId, _ => new TaskCompletionSource<PlaybackControlReply>().Task);
         await ServerPlaybackFixture.Until(() => _sockets.Count == 1 && Socket(0).Sent.Count == 1, "the hello");
-        Socket(0).Push(FakeControlSocket.Command(Session, "c1", "pause"));
+        Socket(0).Push(FakeRealtimeSocket.Command(Session, "c1", "pause"));
         await ServerPlaybackFixture.Until(() => Socket(0).Sent.Count == 2, "the ack");
 
         await lane.StopAsync().WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
@@ -251,7 +251,7 @@ public sealed class PlaybackControlLaneTests
             {
                 throw new InvalidOperationException("secret-AbC-123_xyz");
             }
-            var socket = new FakeControlSocket();
+            var socket = new FakeRealtimeSocket();
             _sockets.Add(socket);
             return socket;
         }, _time, _logs.For<PlaybackControlLane>());

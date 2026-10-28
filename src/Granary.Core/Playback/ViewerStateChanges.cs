@@ -1,9 +1,10 @@
 namespace Granary.Core.Playback;
 
 /// <summary>
-/// The viewer's state on the server changed through this app: a watched mark, a favourite, the watchlist, a card taken
-/// off Home, or playback (where the viewer left off, Continue Watching, Next Up). Rows built from that state are stale
-/// after it. Silo's web client learns this from the server's events; this app tells itself.
+/// The viewer's state on the server changed: a watched mark, a favourite, the watchlist, a card taken off Home, or
+/// playback (where the viewer left off, Continue Watching, Next Up). Rows built from that state are stale after it. This
+/// app tells itself of its own changes; the server's events (<see cref="Realtime.RealtimeEvents"/>) tell it of another
+/// device's, and of titles the catalog gained or changed.
 /// </summary>
 /// <remarks>
 /// A page that is away compares <see cref="Version"/> with the one it loaded at when it shows again, so it need not

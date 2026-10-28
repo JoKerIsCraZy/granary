@@ -6,6 +6,7 @@ using Granary.Core.Api.Admin;
 using Granary.Core.Api.Auth;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Discovery;
+using Granary.Core.Api.Events;
 using Granary.Core.Api.Images;
 using Granary.Core.Api.Notifications;
 using Granary.Core.Api.Playback;
@@ -21,6 +22,7 @@ using Granary.Core.Auth;
 using Granary.Core.Http;
 using Granary.Core.Overlays;
 using Granary.Core.Playback;
+using Granary.Core.Realtime;
 using Granary.Core.Security;
 using Granary.Core.Servers;
 using Granary.Core.Theme;
@@ -93,6 +95,7 @@ public static class CoreServiceCollectionExtensions
 
         services.AddSingleton(_ => ClientIdentity.Load(ClientIdentity.DefaultDeviceIdFile));
         AddPlayback(services);
+        AddRealtimeEvents(services);
 
         if (OperatingSystem.IsWindows())
         {
@@ -161,9 +164,9 @@ public static class CoreServiceCollectionExtensions
         // Made outside the container, as the playback is: a transient disposable resolved from the root provider would be
         // kept until the app exits.
         services.AddTransient<PlaybackControlApi>();
-        services.AddSingleton<Func<IPlaybackControlSocket>>(() => new WebSocketPlaybackControlSocket());
+        services.AddSingleton<Func<IRealtimeSocket>>(() => new WebSocketRealtimeSocket());
         services.AddSingleton<Func<PlaybackControlLane>>(sp => () => new PlaybackControlLane(sp.GetRequiredService<PlaybackControlApi>(),
-            sp.GetRequiredService<Func<IPlaybackControlSocket>>(), sp.GetRequiredService<TimeProvider>(), sp.GetRequiredService<ILogger<PlaybackControlLane>>()));
+            sp.GetRequiredService<Func<IRealtimeSocket>>(), sp.GetRequiredService<TimeProvider>(), sp.GetRequiredService<ILogger<PlaybackControlLane>>()));
         services.AddSingleton<PlaybackStops>();
         services.AddSingleton<ViewerStateChanges>();
         // Media of the saved address takes its local route too.
@@ -176,6 +179,16 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<IUpNextSource, UpNextSource>();
         // The episodes that started by themselves count across player pages, as long as the app runs.
         services.AddSingleton<AutoPlayStreak>();
+    }
+
+    // The server's events for the signed-in profile (docs/api-contract.md, 12): one connection for as long as the app runs.
+    // Its lanes are made outside the container, as the playback control lanes are.
+    private static void AddRealtimeEvents(IServiceCollection services)
+    {
+        services.AddTransient<EventsApi>();
+        services.AddSingleton<Func<EventsLane>>(sp => () => new EventsLane(sp.GetRequiredService<EventsApi>(),
+            () => new WebSocketRealtimeSocket(EventsLane.MaxFrameBytes), sp.GetRequiredService<TimeProvider>(), sp.GetRequiredService<ILogger<EventsLane>>()));
+        services.AddSingleton<RealtimeEvents>();
     }
 
     // Settings → Test speed. A run outlives the page that started it, so a second press joins it. The probe may redirect

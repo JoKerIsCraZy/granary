@@ -2,13 +2,16 @@ using System.Buffers;
 using System.Net.WebSockets;
 using System.Text;
 
-namespace Granary.Core.Playback;
+namespace Granary.Core.Realtime;
 
-/// <summary>One connection of the playback control socket: text frames in and out.</summary>
-public interface IPlaybackControlSocket : IAsyncDisposable
+/// <summary>One connection of a server socket that speaks JSON text frames: the playback control lane, the events stream.</summary>
+public interface IRealtimeSocket : IAsyncDisposable
 {
     /// <summary>The protocol the server chose; null before the connection opened.</summary>
     string? SubProtocol { get; }
+
+    /// <summary>The code the server closed the connection with (4001: access changed); null while it is open.</summary>
+    int? CloseStatus { get; }
 
     /// <summary>Opens the connection offering <paramref name="subProtocols"/> in order.</summary>
     Task ConnectAsync(Uri uri, IReadOnlyList<string> subProtocols, CancellationToken cancellationToken);
@@ -19,20 +22,29 @@ public interface IPlaybackControlSocket : IAsyncDisposable
     Task<string?> ReceiveAsync(CancellationToken cancellationToken);
 }
 
-/// <summary>The control socket over <see cref="ClientWebSocket"/>. Frames above 64 KiB close it, as the server's limit does.</summary>
-public sealed class WebSocketPlaybackControlSocket : IPlaybackControlSocket
+/// <summary>
+/// A socket over <see cref="ClientWebSocket"/>. Frames above <c>maxFrameBytes</c> close it: 64 KiB by default, the
+/// playback control lane's limit.
+/// </summary>
+public sealed class WebSocketRealtimeSocket : IRealtimeSocket
 {
-    private const int MaxFrameBytes = 64 * 1024;
+    public const int DefaultMaxFrameBytes = 64 * 1024;
+
     private static readonly TimeSpan CloseTimeout = TimeSpan.FromSeconds(2);
 
     private readonly ClientWebSocket _socket = new();
+    private readonly int _maxFrameBytes;
 
-    public WebSocketPlaybackControlSocket()
+    public WebSocketRealtimeSocket(int maxFrameBytes = DefaultMaxFrameBytes)
     {
+        ArgumentOutOfRangeException.ThrowIfLessThan(maxFrameBytes, 1);
+        _maxFrameBytes = maxFrameBytes;
         _socket.Options.KeepAliveInterval = TimeSpan.FromSeconds(20);
     }
 
     public string? SubProtocol => _socket.SubProtocol;
+
+    public int? CloseStatus => (int?)_socket.CloseStatus;
 
     public Task ConnectAsync(Uri uri, IReadOnlyList<string> subProtocols, CancellationToken cancellationToken)
     {
@@ -62,7 +74,7 @@ public sealed class WebSocketPlaybackControlSocket : IPlaybackControlSocket
             {
                 return null;
             }
-            if (message.WrittenCount + received.Count > MaxFrameBytes)
+            if (message.WrittenCount + received.Count > _maxFrameBytes)
             {
                 await _socket.CloseOutputAsync(WebSocketCloseStatus.MessageTooBig, null, cancellationToken).ConfigureAwait(false);
                 return null;
