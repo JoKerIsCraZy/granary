@@ -12,6 +12,24 @@
     xmlns:controls="using:Granary.App.Controls"
     NavigationCacheMode="Enabled">
 
+    <Page.Resources>
+        <!-- The web's small buttons of the History panel: outline, ghost, and the destructive Remove Selected. -->
+        <Style x:Key="HistoryButtonStyle" TargetType="Button" BasedOn="{StaticResource SiloSecondaryButtonStyle}">
+            <Setter Property="MinHeight" Value="34" />
+            <Setter Property="Padding" Value="12,4" />
+            <Setter Property="FontSize" Value="13" />
+        </Style>
+        <Style x:Key="HistoryGhostButtonStyle" TargetType="Button" BasedOn="{StaticResource HistoryButtonStyle}">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+        </Style>
+        <Style x:Key="HistoryRemoveButtonStyle" TargetType="Button" BasedOn="{StaticResource HistoryButtonStyle}">
+            <Setter Property="Background" Value="#FFDC2626" />
+            <Setter Property="BorderBrush" Value="#FFDC2626" />
+            <Setter Property="Foreground" Value="White" />
+        </Style>
+    </Page.Resources>
+
     <ScrollViewer x:Name="Scroller" XYFocusKeyboardNavigation="Enabled">
         <StackPanel Padding="48,32,48,48" Spacing="24">
             <Grid ColumnSpacing="24">
@@ -96,6 +114,62 @@
                     </DropDownButton>
                 </StackPanel>
 
+                <!--
+                    History's watch data, as the web's panel: what removing does, and Select; while selecting, the count,
+                    Select Loaded, Clear, Remove Selected (asks first) and Done. The cards then pick on a click.
+                -->
+                <Border Visibility="{x:Bind ViewModel.IsHistory, Mode=OneWay}" CornerRadius="16" Padding="16" Background="#E61C1C20"
+                        BorderBrush="{StaticResource SiloBorderBrush}" BorderThickness="1">
+                    <Grid ColumnSpacing="16" RowSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <StackPanel Spacing="4" VerticalAlignment="Center">
+                            <TextBlock Text="Watch History" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="14"
+                                       Foreground="{StaticResource SiloForegroundBrush}" AutomationProperties.HeadingLevel="Level2" />
+                            <TextBlock Text="Removing items clears watch history, watched status, and resume progress for this profile." FontSize="13"
+                                       Foreground="{StaticResource SiloMutedBrush}" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                            <Button Style="{StaticResource HistoryButtonStyle}" Command="{x:Bind ViewModel.StartSelectingCommand}"
+                                    Visibility="{x:Bind Unless(ViewModel.Selection.IsActive), Mode=OneWay}" AutomationProperties.Name="Select">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <FontIcon Glyph="&#xE73A;" FontSize="13" />
+                                    <TextBlock Text="Select" />
+                                </StackPanel>
+                            </Button>
+                            <StackPanel Orientation="Horizontal" Spacing="8" Visibility="{x:Bind ViewModel.Selection.IsActive, Mode=OneWay}">
+                                <TextBlock Text="{x:Bind ViewModel.Selection.CountText, Mode=OneWay}" FontSize="13" VerticalAlignment="Center"
+                                           Foreground="{StaticResource SiloMutedBrush}" AutomationProperties.LiveSetting="Polite" />
+                                <Button Content="Select Loaded" Style="{StaticResource HistoryButtonStyle}" Command="{x:Bind ViewModel.SelectLoadedCommand}" />
+                                <Button Content="Clear" Style="{StaticResource HistoryGhostButtonStyle}" Command="{x:Bind ViewModel.ClearSelectionCommand}" />
+                                <Button Style="{StaticResource HistoryRemoveButtonStyle}" Click="OnRemoveSelectedClick"
+                                        IsEnabled="{x:Bind ViewModel.Selection.HasPicks, Mode=OneWay}" AutomationProperties.Name="Remove Selected">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <FontIcon Glyph="&#xE74D;" FontSize="13" />
+                                        <TextBlock Text="Remove Selected" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource HistoryGhostButtonStyle}" Command="{x:Bind ViewModel.StopSelectingCommand}"
+                                        AutomationProperties.Name="Done">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <FontIcon Glyph="&#xE711;" FontSize="12" />
+                                        <TextBlock Text="Done" />
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </StackPanel>
+                        <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{x:Bind ViewModel.RemovalNotice, Mode=OneWay}" FontSize="13" TextWrapping="Wrap"
+                                   Visibility="{x:Bind ViewModel.HasRemovalNotice, Mode=OneWay}" AutomationProperties.LiveSetting="Assertive"
+                                   Foreground="{x:Bind NoticeBrush(ViewModel.RemovalFailed), Mode=OneWay}" />
+                    </Grid>
+                </Border>
+
                 <ProgressRing IsActive="{x:Bind ViewModel.Grid.IsLoading, Mode=OneWay}" Visibility="{x:Bind ViewModel.Grid.IsLoading, Mode=OneWay}"
                               Width="32" Height="32" Margin="0,48" HorizontalAlignment="Center" AutomationProperties.Name="Loading titles" />
                 <StackPanel Visibility="{x:Bind ViewModel.Grid.HasError, Mode=OneWay}" Spacing="16" Margin="0,48" HorizontalAlignment="Center">
@@ -107,7 +181,7 @@
                            Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}" Text="Nothing here yet." />
 
                 <controls:MediaGrid x:Name="ListGrid" ItemsSource="{x:Bind ViewModel.Grid.Cards, Mode=OneWay}"
-                                    CardInvokedCommand="{x:Bind ViewModel.OpenItemCommand}"
+                                    CardInvokedCommand="{x:Bind ViewModel.OpenItemCommand}" Selection="{x:Bind ViewModel.Selection}"
                                     ViewportCommand="{x:Bind ViewModel.Grid.ShowViewportCommand}"
                                     Visibility="{x:Bind ViewModel.Grid.IsReady, Mode=OneWay}" />
 

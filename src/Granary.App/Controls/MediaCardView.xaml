@@ -83,6 +83,17 @@
                          Maximum="1" Foreground="{StaticResource SiloPrimaryBrush}" Background="#66000000"
                          AutomationProperties.Name="Progress" />
 
+            <!--
+                While its grid selects (History's Select): the web's pick mark top left, an empty ring or the accent with a
+                check. Made on first need; the card's click then picks it (MediaGrid).
+            -->
+            <Border x:Name="PickMark" x:Load="False" Width="32" Height="32" CornerRadius="16" Margin="10" HorizontalAlignment="Left"
+                    VerticalAlignment="Top" Background="#8C000000" BorderBrush="#33FFFFFF" BorderThickness="1" IsHitTestVisible="False">
+                <Border x:Name="PickDot" Width="16" Height="16" CornerRadius="8" BorderThickness="1" BorderBrush="#B3FFFFFF">
+                    <FontIcon x:Name="PickCheck" Glyph="&#xE73E;" FontSize="9" Foreground="{StaticResource SiloOnPrimaryBrush}" />
+                </Border>
+            </Border>
+
             <!-- Under the pointer only: play in the middle, the card's buttons along the foot. -->
             <Grid x:Name="HoverLayer" x:Load="False" Opacity="0" IsHitTestVisible="False">
                 <Grid.OpacityTransition>

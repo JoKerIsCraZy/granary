@@ -164,6 +164,17 @@ public sealed class CatalogApi(SiloHttp http)
     public Task SetWatchedAsync(Uri server, string itemId, bool watched, CancellationToken cancellationToken = default) =>
         http.SendAsync(watched ? HttpMethod.Post : HttpMethod.Delete, server, $"api/v2/watched/{Segment(itemId)}", SiloAuth.Profile, cancellationToken);
 
+    /// <summary>
+    /// Clears the watch data of <paramref name="targets"/> for the acting profile: their history, watched state and resume
+    /// position, up to now (the History page's Remove). Answers 204.
+    /// </summary>
+    public Task RemoveHistoryAsync(Uri server, IReadOnlyList<HistoryRemovalTarget> targets, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(targets);
+        return http.SendAsync(HttpMethod.Post, server, "api/v2/history/remove", SiloAuth.Profile, new HistoryRemoval(targets),
+            SiloJsonContext.Default.HistoryRemoval, cancellationToken);
+    }
+
     private static string DismissalPath(HomeDismissal dismissal)
     {
         ArgumentNullException.ThrowIfNull(dismissal);

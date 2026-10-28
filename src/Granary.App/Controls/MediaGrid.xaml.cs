@@ -36,6 +36,9 @@ public sealed partial class MediaGrid : UserControl
     public static readonly DependencyProperty ViewportCommandProperty =
         DependencyProperty.Register(nameof(ViewportCommand), typeof(ICommand), typeof(MediaGrid), new PropertyMetadata(null));
 
+    public static readonly DependencyProperty SelectionProperty =
+        DependencyProperty.Register(nameof(Selection), typeof(CardSelection), typeof(MediaGrid), new PropertyMetadata(null, OnSelectionChanged));
+
     // The next page is asked for this many rows before the last realized card (which is about a screen below
     // the visible ones), so its artwork is prefetched before the user scrolls there.
     private const int LoadMoreRowsAhead = 4;
@@ -99,6 +102,16 @@ public sealed partial class MediaGrid : UserControl
     {
         get => (ICommand?)GetValue(LoadMoreCommandProperty);
         set => SetValue(LoadMoreCommandProperty, value);
+    }
+
+    /// <summary>
+    /// The picks while the grid selects (History's Select): the cards show their pick marks, and a click picks a card
+    /// instead of invoking it. Null for a grid that never selects.
+    /// </summary>
+    public CardSelection? Selection
+    {
+        get => (CardSelection?)GetValue(SelectionProperty);
+        set => SetValue(SelectionProperty, value);
     }
 
     /// <summary>Gets a <see cref="GridViewport"/> whenever what the grid shows of its list changes.</summary>
@@ -209,6 +222,7 @@ public sealed partial class MediaGrid : UserControl
         if (args.Element is Button { Content: MediaCardView card })
         {
             card.ReservesEpisodeLine = _reservesEpisodeLine;
+            ShowPick(card);
         }
         int count = sender.ItemsSourceView?.Count ?? 0;
         if (count > 0 && args.Index >= count - Columns() * LoadMoreRowsAhead && LoadMoreCommand is { } command && command.CanExecute(null))
@@ -275,9 +289,49 @@ public sealed partial class MediaGrid : UserControl
     private void OnCardClick(object sender, RoutedEventArgs e)
     {
         // The card comes from the button's content: x:Bind templates in an ItemsRepeater set no DataContext.
-        if (sender is Button { Content: MediaCardView { Card: { } card } } && CardInvokedCommand is { } command && command.CanExecute(card))
+        if (sender is not Button { Content: MediaCardView { Card: { } card } })
+        {
+            return;
+        }
+        if (Selection is { IsActive: true } selection)
+        {
+            selection.Toggle(card);
+            return;
+        }
+        if (CardInvokedCommand is { } command && command.CanExecute(card))
         {
             command.Execute(card);
         }
     }
+
+    private static void OnSelectionChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        var grid = (MediaGrid)d;
+        if (e.OldValue is CardSelection old)
+        {
+            old.Changed -= grid.OnPicksChanged;
+        }
+        if (e.NewValue is CardSelection selection)
+        {
+            selection.Changed += grid.OnPicksChanged;
+        }
+        grid.ShowPicks();
+    }
+
+    private void OnPicksChanged(object? sender, EventArgs e) => ShowPicks();
+
+    // The realized cards' marks; a card realized later takes its own (OnElementPrepared).
+    private void ShowPicks()
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(Items); i++)
+        {
+            if (VisualTreeHelper.GetChild(Items, i) is Button { Content: MediaCardView card })
+            {
+                ShowPick(card);
+            }
+        }
+    }
+
+    private void ShowPick(MediaCardView card) =>
+        card.Pick = Selection is { IsActive: true } selection && card.Card is { IsPlaceholder: false } shown ? selection.Contains(shown.Id) : null;
 }

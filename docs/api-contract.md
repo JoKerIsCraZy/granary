@@ -792,6 +792,9 @@ tracks ([8.8.1](#881-initial-track-selection-before-start)) → `POST /api/v2/pl
   (gate on `GET /api/v2/capabilities/personal-lists` → `membership_supported`). Avoid the older
   entry-or-404 `GET /api/v2/favorites/{item_id}`: bursts of 404s can trip intrusion detection.
 - `POST` / `DELETE /api/v2/watched/{id}` → `204` (movie, episode, season or series; non-retryable).
+- `POST /api/v2/history/remove` `{ targets: [{ content_id, scope }] }` → `204`: clears the titles' watch history,
+  watched state and resume progress for the profile. `scope` is `show` for a series or season, else `item`
+  (the web's `lib/historyRemoval.ts`).
 
 ### 7.12 Recommendations (For You)
 

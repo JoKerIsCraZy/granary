@@ -30,7 +30,7 @@ public sealed record ListMediaScope(string? Type, string Label)
 /// a collection's "Collection Order"); the other sorts and a media scope narrow it. The grid loads by window. A visit
 /// after the viewer's state changed (<see cref="ViewerStateChanges"/>: a favourite, a watched mark, playback) loads it
 /// again. The watchlist also shows "Not in your library yet" (<see cref="Titles"/>) as a second tab, while the server keeps
-/// titles the library does not have.
+/// titles the library does not have. On History the viewer can pick titles and clear their watch data (Selection).
 /// </summary>
 public sealed partial class PersonalListViewModel : ObservableObject
 {
@@ -48,6 +48,7 @@ public sealed partial class PersonalListViewModel : ObservableObject
     private const string CollectionOrder = "Collection Order";
 
     private readonly ISessionManager _session;
+    private readonly CatalogApi _catalog;
     private readonly ImageParameterCache _images;
     private readonly INavigationService _navigation;
     private readonly ILogger<PersonalListViewModel> _logger;
@@ -61,6 +62,7 @@ public sealed partial class PersonalListViewModel : ObservableObject
         WatchlistTitlesViewModel titles, ILogger<PersonalListViewModel> logger, ViewerStateChanges? changes = null)
     {
         _session = session;
+        _catalog = catalog;
         _images = images;
         _navigation = navigation;
         _logger = logger;
@@ -192,6 +194,7 @@ public sealed partial class PersonalListViewModel : ObservableObject
     {
         _collection = collection;
         Source = source;
+        LeaveHistory();
         IsTitlesTab = false;
         Title = title;
         Description = description;

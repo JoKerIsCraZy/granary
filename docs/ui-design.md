@@ -129,7 +129,10 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   Retry; or, empty, the web's dashed box: a bookmark, "Nothing waiting for the library", what goes there and Browse
   Discover. The titles are read on every visit, every 30 s while one downloads, and after a watchlist change; one that
   left (arrived, or taken off) reloads the library's list. Unlike the web source, the cards offer no Request action:
-  requesting is the title page's, as on Discover's cards. History's select-and-remove comes later. Detail pages shrink
+  requesting is the title page's, as on Discover's cards. History carries the web's Watch History panel: Select turns a
+  card's click into a pick (a 32 px dark circle top left, the accent dot with a check once picked), with the count,
+  Select Loaded, Clear, the red Remove Selected and Done; Remove asks first in the web's words ("Remove selected watch
+  data?") and, done, says "Removed watch data for N items" and loads the list again. Detail pages shrink
   it to icons; the player hides it.
   LIBRARIES, DISCOVER and YOUR STUFF fold away by their headers, a chevron before the capitals as on the web's
   LIBRARIES (down while open, right while folded, brighter under the pointer); unlike the web, all three fold and stay

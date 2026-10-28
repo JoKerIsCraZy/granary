@@ -19,6 +19,9 @@ public sealed partial class MediaCardView : UserControl
     public static readonly DependencyProperty CardProperty =
         DependencyProperty.Register(nameof(Card), typeof(MediaCard), typeof(MediaCardView), new PropertyMetadata(null, OnCardChanged));
 
+    public static readonly DependencyProperty PickProperty =
+        DependencyProperty.Register(nameof(Pick), typeof(bool?), typeof(MediaCardView), new PropertyMetadata(null, (d, _) => ((MediaCardView)d).ShowPick()));
+
     // Artwork is decoded as large as its box shows it; until the card has been laid out, as a row's cards are.
     private const double PosterHeight = 320;
     private const double LandscapeWidth = 400;
@@ -60,6 +63,16 @@ public sealed partial class MediaCardView : UserControl
     {
         get => (MediaCard?)GetValue(CardProperty);
         set => SetValue(CardProperty, value);
+    }
+
+    /// <summary>
+    /// While the card's grid selects: true when the card is picked, false when not; null when the grid does not select.
+    /// A selecting card shows its pick mark and no play disc or buttons, as the web's.
+    /// </summary>
+    public bool? Pick
+    {
+        get => (bool?)GetValue(PickProperty);
+        set => SetValue(PickProperty, value);
     }
 
     /// <summary>
@@ -377,6 +390,27 @@ public sealed partial class MediaCardView : UserControl
         }
     }
 
+    private void ShowPick()
+    {
+        if (Pick is not { } picked)
+        {
+            if (PickMark is not null)
+            {
+                PickMark.Visibility = Visibility.Collapsed;
+            }
+            return;
+        }
+        if (PickMark is null)
+        {
+            FindName(nameof(PickMark));
+        }
+        SetHovered(false);
+        PickMark!.Visibility = Visibility.Visible;
+        PickDot.Background = picked ? Brush("SiloPrimaryBrush") : null;
+        PickDot.BorderBrush = picked ? Brush("SiloPrimaryBrush") : new SolidColorBrush(Windows.UI.Color.FromArgb(0xB3, 0xFF, 0xFF, 0xFF));
+        PickCheck.Visibility = Visible(picked);
+    }
+
     // The buttons take the foot, where the rating was.
     private void SetHovered(bool hovered)
     {
@@ -393,7 +427,7 @@ public sealed partial class MediaCardView : UserControl
     // after the card showed. The keyboard reaches them through focus.
     private void OnPointerEntered(object sender, PointerRoutedEventArgs e)
     {
-        if (Card is null)
+        if (Card is null || Pick is not null)
         {
             SetHovered(false);
             return;

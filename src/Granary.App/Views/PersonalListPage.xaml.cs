@@ -56,6 +56,39 @@ public sealed partial class PersonalListPage : Page
 
     public Visibility Both(bool first, bool second) => first && second ? Visibility.Visible : Visibility.Collapsed;
 
+    public Visibility Unless(bool value) => value ? Visibility.Collapsed : Visibility.Visible;
+
+    /// <summary>A removal's word: muted, or the web's destructive red when it failed.</summary>
+    public Microsoft.UI.Xaml.Media.Brush NoticeBrush(bool failed) => failed
+        ? new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0xEF, 0x44, 0x44))
+        : (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["SiloMutedBrush"];
+
+    // The web's ConfirmDialog: what goes, then Remove or Cancel; the panel says how the removal went.
+    private async void OnRemoveSelectedClick(object sender, RoutedEventArgs e)
+    {
+        var dialog = new ContentDialog
+        {
+            XamlRoot = XamlRoot,
+            Title = ViewModel.RemovalTitle,
+            Content = new TextBlock { Text = ViewModel.RemovalDescription, TextWrapping = TextWrapping.Wrap },
+            PrimaryButtonText = "Remove",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Close,
+        };
+        try
+        {
+            if (await dialog.ShowAsync() == ContentDialogResult.Primary)
+            {
+                await ViewModel.RemoveSelectedCommand.ExecuteAsync(null);
+            }
+        }
+        catch (Exception ex)
+        {
+            // async void: nothing may escape. A refused removal is the panel's to say; this is anything else.
+            App.Services.GetRequiredService<ILogger<PersonalListPage>>().LogError(ex, "Watch history could not be removed");
+        }
+    }
+
     /// <summary>"Not in your library yet, 3 titles, some need attention", as the web reads the tab out.</summary>
     public string TitlesTabName(int count, bool needsAttention) => "Not in your library yet"
         + (count > 0 ? $", {count.ToString(CultureInfo.InvariantCulture)} {(count == 1 ? "title" : "titles")}" : "")

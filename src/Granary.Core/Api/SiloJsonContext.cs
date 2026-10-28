@@ -57,6 +57,7 @@ namespace Granary.Core.Api;
 [JsonSerializable(typeof(CatalogItemCollection))]
 [JsonSerializable(typeof(PageInfo))]
 [JsonSerializable(typeof(HomeDismissalRequest))]
+[JsonSerializable(typeof(HistoryRemoval))]
 [JsonSerializable(typeof(LibraryCollection))]
 [JsonSerializable(typeof(Library))]
 [JsonSerializable(typeof(CatalogBrowseCollection))]
