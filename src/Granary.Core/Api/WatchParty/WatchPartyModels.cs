@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Granary.Core.Api.WatchParty;
 
 /// <summary>
@@ -81,7 +83,8 @@ public sealed record WatchPartyRoom
     /// <summary>The staged or playing title; absent in an empty lobby.</summary>
     public string? SelectedContentId { get; init; }
 
-    /// <summary>The one file every viewer plays.</summary>
+    /// <summary>The one file every viewer plays (a number on the socket, a string over HTTP).</summary>
+    [JsonConverter(typeof(FlexibleIdConverter))]
     public string? SelectedFileId { get; init; }
 
     /// <summary>The playback session this member attached, as the server has it.</summary>
@@ -121,6 +124,8 @@ public sealed record WatchPartyRoom
 
 public sealed record WatchPartyMember
 {
+    /// <summary>A number on the socket, a string over HTTP.</summary>
+    [JsonConverter(typeof(FlexibleIdConverter))]
     public string UserId { get; init => field = value ?? ""; } = "";
 
     public string ProfileId { get; init => field = value ?? ""; } = "";
@@ -143,6 +148,9 @@ public sealed record WatchPartyMember
 
     /// <summary>Attached and still holding the room's readiness barrier.</summary>
     public bool IsSyncing { get; init; }
+
+    /// <summary>The member as suggestions and picker rows name it: <c>user:profile</c>.</summary>
+    public string Key => UserId + ":" + ProfileId;
 }
 
 public static class WatchPartyPhases

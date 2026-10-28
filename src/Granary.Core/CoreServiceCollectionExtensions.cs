@@ -188,6 +188,7 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<WatchPartyApi>();
         services.AddSingleton<Func<WatchPartyConnection>>(sp => () => new WatchPartyConnection(sp.GetRequiredService<WatchPartyApi>(),
             sp.GetRequiredService<Func<IRealtimeSocket>>(), sp.GetRequiredService<TimeProvider>(), sp.GetRequiredService<ILogger<WatchPartyConnection>>()));
+        services.AddSingleton<WatchPartyRecentRooms>();
         services.AddSingleton<WatchPartySession>();
         // Media of the saved address takes its local route too.
         services.AddSingleton<MediaProxy>(sp => new MediaProxy(

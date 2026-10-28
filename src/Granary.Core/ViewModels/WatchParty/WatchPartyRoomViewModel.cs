@@ -1,5 +1,3 @@
-using System.Collections.ObjectModel;
-using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
@@ -13,25 +11,17 @@ using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.ViewModels.WatchParty;
 
-/// <summary>A member in the room's list: "Elena · Host · Watching".</summary>
-public sealed record WatchPartyMemberRow(string Name, bool IsHost, bool IsSelf, string Status)
-{
-    public string Initial => Name.Length > 0 ? Name[..1].ToUpperInvariant() : "?";
-}
-
-/// <summary>A title the host can put up next: a movie, an episode, or a series by the episode it would play next.</summary>
-public sealed record WatchPartyPick(string ContentId, string Title, string Meta, Uri? PosterUrl);
-
 /// <summary>
-/// The room page, as the web's (<c>pages/watchtogether/WatchTogetherRoomPage.tsx</c> and its stages): the code and invite
-/// link, who is here, and the stage: an empty lobby, a title up next (the host starts it, guests mark themselves ready),
-/// or what plays (back into the player, or the host stops it for everyone). The host finds titles to put up next by
-/// searching. When the room starts a title, the player opens by itself, once per start: the start is kept on the session,
-/// so the page shown again (a new page each time, it is not cached) after the viewer left the player does not reopen it.
+/// The room page, as the web's (<c>pages/watchtogether/WatchTogetherRoomPage.tsx</c>): the status strip (live state and
+/// count, the code and invite link, the host's choice between host picks and everyone votes, the connection, Leave and
+/// End room); the stage, which changes with the room (a candidate from the shelf, what plays, the vote, the title up
+/// next, or the open lobby), with the suggestions under it; the browse shelf; and the people and activity rail. When the
+/// room starts a title the player opens by itself, once per start: the start is kept on the session, so the page shown
+/// again (a new page each time, it is not cached) after the viewer left the player does not reopen it.
 /// </summary>
 public sealed partial class WatchPartyRoomViewModel : ObservableObject
 {
-    public static readonly TimeSpan SearchDelay = TimeSpan.FromMilliseconds(300);
+    public static readonly TimeSpan MessageFor = TimeSpan.FromSeconds(4);
 
     private readonly WatchPartySession _party;
     private readonly WatchPartyFeature _feature;
@@ -43,9 +33,9 @@ public sealed partial class WatchPartyRoomViewModel : ObservableObject
     private readonly TimeProvider _time;
     private readonly ILogger<WatchPartyRoomViewModel> _logger;
     private bool _active;
-    private string? _stagedShown;
     private ITimer? _clock;
-    private CancellationTokenSource? _search;
+    private ITimer? _messageTimer;
+    private string _phaseKey = "";
 
     public WatchPartyRoomViewModel(WatchPartySession party, WatchPartyFeature feature, ISessionManager session, CatalogApi catalog,
         ImageParameterCache images, INavigationService navigation, IUiDispatcher dispatcher, TimeProvider time, ILogger<WatchPartyRoomViewModel> logger)
@@ -59,44 +49,34 @@ public sealed partial class WatchPartyRoomViewModel : ObservableObject
         _dispatcher = dispatcher;
         _time = time;
         _logger = logger;
+        Shelf = new WatchPartyShelfViewModel(party, session, catalog, images, time, logger);
+        Shelf.CardChosen += OnCardChosen;
+        Candidate = new WatchPartyCandidateViewModel(party, session, catalog, images, logger);
+        Candidate.Confirmed += OnCandidateConfirmed;
+        Candidate.Dismissed += (_, _) => DismissCandidate();
     }
 
-    public ObservableCollection<WatchPartyMemberRow> Members { get; } = [];
+    public WatchPartyShelfViewModel Shelf { get; }
 
-    /// <summary>The host's search results to put up next.</summary>
-    public ObservableCollection<WatchPartyPick> Picks { get; } = [];
+    public WatchPartyCandidateViewModel Candidate { get; }
 
     [ObservableProperty]
     public partial WatchPartyRoom? Room { get; private set; }
 
-    /// <summary>The title up next or playing.</summary>
-    [ObservableProperty]
-    public partial string StagedTitle { get; private set; } = "";
-
-    [ObservableProperty]
-    public partial string StagedMeta { get; private set; } = "";
-
-    [ObservableProperty]
-    public partial Uri? StagedPoster { get; private set; }
-
-    /// <summary>"1:02:13 · Playing · 3 here" while a title plays.</summary>
-    [ObservableProperty]
-    public partial string PlayingCaption { get; private set; } = "";
-
-    [ObservableProperty]
-    public partial string Search { get; set; } = "";
-
-    [ObservableProperty]
-    public partial string SearchState { get; private set; } = "";
-
-    /// <summary>A host action that failed, or a copy the viewer made.</summary>
+    /// <summary>A copy the viewer made, a suggestion that went in, or a host action that failed; it goes after a few seconds.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasMessage))]
     public partial string Message { get; private set; } = "";
 
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(StartCommand), nameof(StopCommand), nameof(QueueCommand))]
+    [NotifyCanExecuteChangedFor(nameof(StartCommand), nameof(StopCommand), nameof(PlayLeaderCommand))]
     public partial bool IsBusy { get; private set; }
+
+    /// <summary>A card from the shelf is on the stage.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowsPlaying), nameof(ShowsVoting), nameof(ShowsStaged), nameof(ShowsEmptyLobby), nameof(ShowsHero),
+        nameof(ShowsVotingEmpty), nameof(HeroEyebrow), nameof(HeroTone), nameof(HeroLine), nameof(ShowsSuggestions), nameof(ShowsInvite))]
+    public partial bool HasCandidate { get; private set; }
 
     public bool HasMessage => Message.Length > 0;
 
@@ -105,6 +85,8 @@ public sealed partial class WatchPartyRoomViewModel : ObservableObject
     public bool IsHost => Room?.IsHost == true;
 
     public bool IsGuest => Room is not null && !Room.IsHost;
+
+    public bool IsVote => Room?.SelectionMode == WatchPartySelectionModes.Vote;
 
     public string Code => Room?.Code ?? "";
 
@@ -122,6 +104,18 @@ public sealed partial class WatchPartyRoomViewModel : ObservableObject
 
     public bool IsClosed => IsEnded && !IsReplaced;
 
+    /// <summary>The stage: what plays.</summary>
+    public bool ShowsPlaying => !HasCandidate && Room is { IsPlaying: true, SelectedContentId: not null };
+
+    /// <summary>The stage: the vote's leader, or that voting is open.</summary>
+    public bool ShowsVoting => !HasCandidate && !IsPlaying && IsVote && Room is not null;
+
+    /// <summary>The stage: the title up next in a host-pick lobby.</summary>
+    public bool ShowsStaged => !HasCandidate && !IsPlaying && !IsVote && IsStaged;
+
+    /// <summary>The stage: "ROOM IS OPEN / Nothing on yet".</summary>
+    public bool ShowsEmptyLobby => !HasCandidate && !IsPlaying && !IsVote && IsLobbyEmpty;
+
     /// <summary>The room's end in the web's words.</summary>
     public string EndedText => _party.End?.Reason switch
     {
@@ -135,10 +129,38 @@ public sealed partial class WatchPartyRoomViewModel : ObservableObject
 
     public string HostName => Room?.Host?.DisplayName is { Length: > 0 } name ? name : "The host";
 
-    /// <summary>The empty lobby's words: the host's moves, or what guests wait for.</summary>
+    /// <summary>"Live · 1 here", "Voting · 1 here" or "Playing · 3 here".</summary>
+    public string PhaseLabel => Room is not { } room ? "Connecting…"
+        : room.IsPlaying ? $"Playing · {room.MemberCount} here"
+        : IsVote ? $"Voting · {room.MemberCount} here"
+        : $"Live · {room.MemberCount} here";
+
+    /// <summary>"Host picks" or "Everyone votes".</summary>
+    public string ModeLabel => IsVote ? "Everyone votes" : "Host picks";
+
+    /// <summary>The host switches how the room picks while nothing plays.</summary>
+    public bool CanSwitchMode => IsHost && !IsPlaying;
+
+    public bool ShowsModeLabel => Room is not null && !CanSwitchMode;
+
+    /// <summary>"Connected", "Connecting…", "Reconnecting…" or "Disconnected".</summary>
+    public string ConnectionLabel => _party.ConnectionState switch
+    {
+        _ when _party.End is not null => "Disconnected",
+        WatchPartyConnectionState.Connected => "Connected",
+        WatchPartyConnectionState.Connecting when _wasConnected => "Reconnecting…",
+        WatchPartyConnectionState.Connecting => "Connecting…",
+        _ => _wasConnected ? "Reconnecting…" : "Disconnected",
+    };
+
+    public bool IsLive => _party.IsConnected;
+
+    private bool _wasConnected;
+
+    /// <summary>The empty lobby's words: the host's moves, or what guests do meanwhile.</summary>
     public string LobbyText => IsHost
-        ? "Pick something below and it lands here for everyone to see."
-        : $"{HostName} is deciding what to watch.";
+        ? "Pick something below and it lands here for everyone to see. Or let the room decide."
+        : $"{HostName} is deciding. Anything you pick below goes in as a suggestion.";
 
     public string StagedEyebrow => IsHost ? "Up next" : $"Up next · {HostName} queued this";
 
@@ -163,7 +185,7 @@ public sealed partial class WatchPartyRoomViewModel : ObservableObject
     }
 
     /// <summary>Guests mark themselves ready in the lobby (the server's <c>lobby_ready</c>).</summary>
-    public bool CanMarkReady => IsGuest && IsStaged && _feature.Capabilities?.LobbyReady != false;
+    public bool CanMarkReady => IsGuest && IsStaged && !IsVote && _feature.Capabilities?.LobbyReady != false;
 
     public bool IsSelfReady => Room?.Self?.LobbyReady == true;
 
@@ -179,10 +201,16 @@ public sealed partial class WatchPartyRoomViewModel : ObservableObject
 
     public string PolicyText => GuestsCanPause ? "Guests can pause" : "Host controls playback";
 
-    /// <summary>The host picks while nothing plays.</summary>
-    public bool ShowsPicker => IsHost && Room is { IsLobby: true };
+    /// <summary>The invitation as a link to the server's web client, for the Link copy.</summary>
+    public Uri? InviteLink => Room is { } room && _session.ActiveServer is { } server ? WatchPartyApi.InviteLink(server.BaseUri, room) : null;
 
-    public string MembersHeading => Room is { } room ? $"People · {room.MemberCount}" : "People";
+    /// <summary>The invite row's link as the web shows it, without its scheme.</summary>
+    public string InviteText => InviteLink is { } link ? link.AbsoluteUri[(link.Scheme.Length + 3)..] : "";
+
+    public bool HasInviteLink => InviteLink is not null;
+
+    /// <summary>The invite row stands under a vote or a title up next.</summary>
+    public bool ShowsInvite => ShowsVoting || ShowsStaged;
 
     /// <summary>Shows the room, follows it while the page shows, and opens the player when the room starts a title.</summary>
     public void Activate()
@@ -194,9 +222,10 @@ public sealed partial class WatchPartyRoomViewModel : ObservableObject
         _active = true;
         _party.PropertyChanged += OnPartyChanged;
         _feature.PropertyChanged += OnFeatureChanged;
-        _clock = _time.CreateTimer(_ => _dispatcher.Post(ShowPlaying), null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+        _clock = _time.CreateTimer(_ => _dispatcher.Post(Tick), null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
         _ = _feature.RefreshAsync();
         Show();
+        _ = Shelf.RefreshAsync();
     }
 
     public void Deactivate()
@@ -210,7 +239,9 @@ public sealed partial class WatchPartyRoomViewModel : ObservableObject
         _feature.PropertyChanged -= OnFeatureChanged;
         _clock?.Dispose();
         _clock = null;
-        _search?.Cancel();
+        _messageTimer?.Dispose();
+        _messageTimer = null;
+        Candidate.Clear();
     }
 
     [RelayCommand(CanExecute = nameof(CanAct))]
@@ -219,20 +250,15 @@ public sealed partial class WatchPartyRoomViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanAct))]
     private Task StopAsync() => HostAsync(_party.StopAsync, "Could not stop playback");
 
-    /// <summary>The host puts <paramref name="pick"/> up next; nothing plays until Start.</summary>
-    [RelayCommand(CanExecute = nameof(CanAct))]
-    private async Task QueueAsync(WatchPartyPick? pick)
-    {
-        if (pick is null)
-        {
-            return;
-        }
-        await HostAsync(() => _party.StageAsync(pick.ContentId), "That couldn't be queued");
-        if (!HasMessage)
-        {
-            Search = "";
-        }
-    }
+    /// <summary>The host switches the lobby to host picks or to voting.</summary>
+    [RelayCommand]
+    private Task SwitchModeAsync(string? mode) => mode is WatchPartySelectionModes.HostPick or WatchPartySelectionModes.Vote && mode != Room?.SelectionMode
+        ? HostAsync(() => _party.SetSelectionModeAsync(mode), "Could not change how the room picks")
+        : Task.CompletedTask;
+
+    /// <summary>"Open the floor to votes".</summary>
+    [RelayCommand]
+    private Task OpenVotingAsync() => SwitchModeAsync(WatchPartySelectionModes.Vote);
 
     [RelayCommand]
     private Task ToggleGuestsCanPauseAsync() => HostAsync(() => _party.SetGuestsCanPauseAsync(!GuestsCanPause), "Could not change who controls playback");
@@ -242,9 +268,13 @@ public sealed partial class WatchPartyRoomViewModel : ObservableObject
     {
         if (!await _party.SendAsync(WatchPartyFrames.LobbyReady(!IsSelfReady)))
         {
-            Message = WatchPartyPlaybackBinding.ReconnectingText;
+            Say(WatchPartyPlaybackBinding.ReconnectingText);
         }
     }
+
+    /// <summary>The host's "Change": the folded shelf opens.</summary>
+    [RelayCommand]
+    private void Change() => Shelf.IsOpen = true;
 
     /// <summary>Back into the room's playback, at its position.</summary>
     [RelayCommand]
@@ -276,7 +306,7 @@ public sealed partial class WatchPartyRoomViewModel : ObservableObject
         catch (Exception ex) when (LibraryErrors.IsExpected(ex) || ex is InvalidOperationException)
         {
             _logger.LogWarning(ex, "Could not end the Watch Party");
-            Message = "Could not end the room. " + LibraryErrors.Describe(ex);
+            Say("Could not end the room. " + LibraryErrors.Describe(ex));
         }
     }
 
@@ -285,95 +315,22 @@ public sealed partial class WatchPartyRoomViewModel : ObservableObject
     private void Rejoin() => _party.Rejoin();
 
     /// <summary>The page copied the code or link: it says so.</summary>
-    public void Copied(string what) => Message = what;
+    public void Copied(string what) => Say(what);
 
-    /// <summary>The invitation link, for the page's Copy.</summary>
-    public Uri? InviteLink => Room is { } room && _session.ActiveServer is { } server ? WatchPartyApi.InviteLink(server.BaseUri, room) : null;
-
-    partial void OnSearchChanged(string value)
-    {
-        _search?.Cancel();
-        _search = new CancellationTokenSource();
-        _ = SearchLaterAsync(value.Trim(), _search.Token);
-    }
-
-    private async Task SearchLaterAsync(string text, CancellationToken token)
-    {
-        if (text.Length == 0)
-        {
-            Picks.Clear();
-            SearchState = "";
-            return;
-        }
-        try
-        {
-            await Task.Delay(SearchDelay, _time, token);
-            if (_session is not { State: SessionState.Ready, ActiveServer: { } server })
-            {
-                return;
-            }
-            SearchState = "Searching…";
-            var images = await _images.GetAsync(server, ImageSizes.Default, token);
-            var found = await _catalog.BrowseAsync(server.BaseUri, new CatalogQuery { Q = text, Limit = 12, Images = images }, token);
-            if (token.IsCancellationRequested)
-            {
-                return;
-            }
-            Picks.Clear();
-            foreach (var item in found.Items)
-            {
-                if (Pick(item, server.BaseUri) is { } pick)
-                {
-                    Picks.Add(pick);
-                }
-            }
-            SearchState = Picks.Count == 0 ? "No titles match." : "";
-        }
-        catch (OperationCanceledException) when (token.IsCancellationRequested)
-        {
-            // A newer search took over.
-        }
-        catch (Exception ex) when (LibraryErrors.IsExpected(ex))
-        {
-            _logger.LogWarning(ex, "Could not search titles for the Watch Party");
-            SearchState = "The search didn't work.";
-        }
-    }
-
-    // A movie or an episode plays as it is; a series by the episode its card would play.
-    private static WatchPartyPick? Pick(CatalogItem item, Uri server)
-    {
-        string? content = item.Type switch
-        {
-            CatalogItemTypes.Movie or CatalogItemTypes.Episode => item.ContentId,
-            CatalogItemTypes.Series => item.PlayContentId,
-            _ => null,
-        };
-        if (string.IsNullOrEmpty(content))
-        {
-            return null;
-        }
-        string meta = string.Join(" · ", new[]
-        {
-            item.Year?.ToString(CultureInfo.InvariantCulture),
-            item.Type switch { CatalogItemTypes.Movie => "Movie", CatalogItemTypes.Series => "Show, next episode", _ => "Episode" },
-        }.Where(part => !string.IsNullOrEmpty(part)));
-        string title = item.Type == CatalogItemTypes.Episode && item.SeriesTitle is { Length: > 0 } series ? $"{series}: {item.Title}" : item.Title;
-        return new WatchPartyPick(content, title, meta, ArtworkUrl.Resolve(server, item.PosterUrl));
-    }
-
-    private async Task HostAsync(Func<Task> action, string failure)
+    // True when the room took it.
+    private async Task<bool> HostAsync(Func<Task> action, string failure)
     {
         IsBusy = true;
-        Message = "";
         try
         {
             await action();
+            return true;
         }
         catch (Exception ex) when (LibraryErrors.IsExpected(ex) || ex is InvalidOperationException)
         {
             _logger.LogWarning(ex, "{Failure}", failure);
-            Message = $"{failure}. {LibraryErrors.Describe(ex)}";
+            Say($"{failure}. {LibraryErrors.Describe(ex)}");
+            return false;
         }
         finally
         {
@@ -383,35 +340,80 @@ public sealed partial class WatchPartyRoomViewModel : ObservableObject
 
     private bool CanAct() => !IsBusy && IsHost;
 
-    private void OnPartyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => Show();
+    // A message stays a few seconds, as the web's toasts.
+    private void Say(string text)
+    {
+        Message = text;
+        _messageTimer?.Dispose();
+        _messageTimer = _time.CreateTimer(_ => _dispatcher.Post(() => Message = ""), null, MessageFor, Timeout.InfiniteTimeSpan);
+    }
+
+    private void OnPartyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(WatchPartySession.Activity))
+        {
+            ShowActivity();
+            return;
+        }
+        Show();
+    }
 
     private void OnFeatureChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => Show();
 
     private void Show()
     {
         Room = _party.Room;
-        Members.Clear();
-        foreach (var member in Room?.Members ?? [])
+        _wasConnected |= _party.IsConnected;
+        // A candidate belongs to one phase and mode: starting, stopping or switching changes what confirming means.
+        string phaseKey = $"{Room?.Phase}:{Room?.SelectionMode}";
+        if (phaseKey != _phaseKey)
         {
-            Members.Add(new WatchPartyMemberRow(member.DisplayName, member.IsHost, member.IsSelf, Status(member)));
+            _phaseKey = phaseKey;
+            DismissCandidate();
         }
-        foreach (string name in new[]
-        {
-            nameof(HasRoom), nameof(IsHost), nameof(IsGuest), nameof(Code), nameof(IsConnecting), nameof(IsLobbyEmpty), nameof(IsStaged),
-            nameof(IsPlaying), nameof(IsEnded), nameof(IsReplaced), nameof(IsClosed), nameof(EndedText), nameof(HostName), nameof(LobbyText),
-            nameof(StagedEyebrow), nameof(StagedCaption), nameof(StartLabel), nameof(CanMarkReady), nameof(IsSelfReady), nameof(ReadyLabel),
-            nameof(CanStop), nameof(StopHint), nameof(GuestsCanPause), nameof(PolicyText), nameof(ShowsPicker), nameof(MembersHeading),
-            nameof(InviteLink),
-        })
+        ShowMembers();
+        ShowSuggestions();
+        ShowActivity();
+        foreach (string name in RoomProperties)
         {
             OnPropertyChanged(name);
         }
         StartCommand.NotifyCanExecuteChanged();
         StopCommand.NotifyCanExecuteChanged();
-        QueueCommand.NotifyCanExecuteChanged();
-        ShowStaged();
+        PlayLeaderCommand.NotifyCanExecuteChanged();
+        FollowShelf();
+        ShowHero();
         ShowPlaying();
         AutoStart();
+    }
+
+    private static readonly string[] RoomProperties =
+    [
+        nameof(HasRoom), nameof(IsHost), nameof(IsGuest), nameof(IsVote), nameof(Code), nameof(IsConnecting), nameof(IsLobbyEmpty), nameof(IsStaged),
+        nameof(IsPlaying), nameof(IsEnded), nameof(IsReplaced), nameof(IsClosed), nameof(EndedText), nameof(HostName), nameof(LobbyText),
+        nameof(StagedEyebrow), nameof(StagedCaption), nameof(StartLabel), nameof(CanMarkReady), nameof(IsSelfReady), nameof(ReadyLabel),
+        nameof(CanStop), nameof(StopHint), nameof(GuestsCanPause), nameof(PolicyText), nameof(InviteLink), nameof(InviteText), nameof(HasInviteLink),
+        nameof(PhaseLabel), nameof(ModeLabel), nameof(CanSwitchMode), nameof(ShowsModeLabel), nameof(ConnectionLabel), nameof(IsLive),
+        nameof(ShowsPlaying), nameof(ShowsVoting), nameof(ShowsStaged), nameof(ShowsEmptyLobby), nameof(ShowsInvite), nameof(PeopleCount),
+        nameof(RailFooter), nameof(VotingEmptyText), nameof(LeaderCaption), nameof(ShowsHero), nameof(ShowsVotingEmpty), nameof(HeroEyebrow),
+        nameof(HeroTone), nameof(HeroLine),
+    ];
+
+    // The shelf picks in a host-pick lobby for its host and suggests everywhere else; it folds where the stage leads.
+    private void FollowShelf()
+    {
+        Shelf.Picks = IsHost && !IsVote && !IsPlaying;
+        Shelf.IsCollapsible = (IsStaged && !IsVote && IsHost) || IsPlaying;
+        if (!Shelf.IsCollapsible)
+        {
+            Shelf.IsOpen = false;
+        }
+        Shelf.FoldedLabel = IsPlaying ? "Suggest something for after" : "Change what's up next";
+        if (!HasCandidate)
+        {
+            Shelf.SelectedId = IsStaged ? Room?.SelectedContentId : null;
+        }
+        Shelf.FollowRoom();
     }
 
     // The room started a title (a new revision): the player opens once for it, as the web's room page does.
@@ -426,89 +428,15 @@ public sealed partial class WatchPartyRoomViewModel : ObservableObject
         _navigation.NavigateTo(AppRoute.Player, PlayRequest.WatchParty(content, room.SelectedFileId, room.SelectionRevision));
     }
 
-    private void ShowStaged()
+    private void Tick()
     {
-        string? content = Room?.SelectedContentId;
-        if (content == _stagedShown)
-        {
-            return;
-        }
-        _stagedShown = content;
-        StagedTitle = "";
-        StagedMeta = "";
-        StagedPoster = null;
-        if (content is not null)
-        {
-            _ = ReadStagedAsync(content);
-        }
-    }
-
-    private async Task ReadStagedAsync(string content)
-    {
-        if (_session is not { State: SessionState.Ready, ActiveServer: { } server })
-        {
-            return;
-        }
-        try
-        {
-            var images = await _images.GetAsync(server, ImageSizes.Default);
-            var item = await _catalog.GetItemAsync(server.BaseUri, content, images: images);
-            if (_stagedShown != content)
-            {
-                return;
-            }
-            StagedTitle = item.Type == CatalogItemTypes.Episode && item.SeriesTitle is { Length: > 0 } series ? series : item.Title;
-            StagedMeta = item.Type == CatalogItemTypes.Episode && item.SeasonNumber is { } season && item.EpisodeNumber is { } episode
-                ? $"S{season} · E{episode} — {item.Title}"
-                : item.Year?.ToString(CultureInfo.InvariantCulture) ?? "";
-            StagedPoster = ArtworkUrl.Resolve(server.BaseUri, item.PosterUrl);
-        }
-        catch (Exception ex) when (LibraryErrors.IsExpected(ex))
-        {
-            _logger.LogWarning(ex, "Could not read the title up next");
-            StagedTitle = "A title";
-        }
-    }
-
-    // The room's position from its anchor, advancing while it plays, on the server's clock.
-    private void ShowPlaying()
-    {
-        if (Room is not { IsPlaying: true } room)
-        {
-            PlayingCaption = "";
-            return;
-        }
-        double position = room.AnchorPositionSeconds;
-        if (room.PlaybackState == WatchPartyPlaybackStates.Playing && _party.ClockOffsetMs is { } offset)
-        {
-            position += Math.Max(0, (_time.GetUtcNow().AddMilliseconds(offset) - room.AnchorUpdatedAt).TotalSeconds);
-        }
-        string state = room.PlaybackState switch
-        {
-            WatchPartyPlaybackStates.Playing => "Playing",
-            WatchPartyPlaybackStates.Waiting => "Waiting for everyone to buffer",
-            _ => "Paused",
-        };
-        PlayingCaption = $"{Clock(position)} · {state} · {room.MemberCount} here";
+        ShowPlaying();
+        TickActivity();
     }
 
     private (int Ready, int Total) GuestsReady()
     {
-        var guests = Room?.Members.Where(m => !m.IsHost && m.Connected).ToList() ?? [];
+        var guests = Room?.Members.Where(m => !m.IsHost).ToList() ?? [];
         return (guests.Count(m => m.LobbyReady), guests.Count);
-    }
-
-    private string Status(WatchPartyMember member) =>
-        !member.Connected ? "Away"
-        : Room?.IsPlaying == true ? member.IsBuffering ? "Buffering" : member.IsSyncing ? "Syncing" : "Watching"
-        : Room?.IsStaged == true && !member.IsHost ? member.LobbyReady ? "Ready" : "Not ready"
-        : "Connected";
-
-    private static string Clock(double seconds)
-    {
-        var time = TimeSpan.FromSeconds(Math.Max(0, Math.Floor(seconds)));
-        return time.TotalHours >= 1
-            ? time.ToString(@"h\:mm\:ss", CultureInfo.InvariantCulture)
-            : time.ToString(@"mm\:ss", CultureInfo.InvariantCulture);
     }
 }

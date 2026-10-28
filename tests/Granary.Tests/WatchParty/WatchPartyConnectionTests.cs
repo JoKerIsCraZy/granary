@@ -104,7 +104,7 @@ public sealed class WatchPartyConnectionTests
         {
             Socket(0).Push("""{ "type": "pong", "client_sent_at": "2026-10-01T12:00:00.000Z", "server_received_at": "2026-10-01T12:00:10.000Z", "server_sent_at": "2026-10-01T12:00:10.000Z" }""");
         }
-        Socket(0).Push("""{ "type": "suggestions_update", "suggestions": [] }""");
+        Socket(0).Push("""{ "type": "reaction", "emoji": "x" }""");
         await Until(() => connection.Clock.OffsetMs is not null && _frames.Count == 2, "the frames");
 
         Assert.Equal(4, Assert.IsType<WatchPartyFrame.Snapshot>(_frames[0]).Room.Generation);

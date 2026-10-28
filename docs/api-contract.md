@@ -2073,12 +2073,32 @@ the commands its player runs. Sources: `silo-server/docs/realtime-api.md` ("Watc
   `self_role` (`host` | `guest`), `selection_revision` (the playback epoch), `generation` (every change; an older
   snapshot is stale), `anchor_position_seconds` at `anchor_updated_at`, `is_paused`, `selected_content_id`,
   `selected_file_id`, `attached_session_id` (this member's, as the server has it), `invite_path`, `self_ignore_wait`,
-  `members[]` (`display_name`, `is_host`, `is_self`, `connected`, `lobby_ready`, `is_ready`, `is_buffering`,
-  `is_syncing`).
+  `members[]` (`user_id`, `profile_id`, `display_name`, `is_host`, `is_self`, `connected`, `lobby_ready`, `is_ready`,
+  `is_buffering`, `is_syncing`). Over HTTP `user_id` and `selected_file_id` are strings; the socket's snapshot sends
+  them as numbers (the server's own snapshot struct), so both are read either way.
 - Host only (profile authority, no proof): `PUT …/{id}/staged-selection { content_id }` (the lobby shows it),
   `POST …/{id}/playback/start` (plays what is staged: phase `playing`, a new revision, the barrier `waiting`),
   `POST …/{id}/playback/stop` (back to the lobby, still staged), `PATCH …/{id}/policy { guest_control_policy }`,
-  `DELETE …/{id}` (ends it for everyone). Each answers the room and a renewed proof; none is retried.
+  `DELETE …/{id}` (ends it for everyone), `PATCH …/{id}/selection-mode { selection_mode: host_pick | vote }` (in the
+  lobby only: drops the staged title and every lobby ready; suggestions and votes stay). Each answers the room and a
+  renewed proof; none is retried.
+- Suggestions (every member, with `X-Room-Token`): `GET …/{id}/suggestions?limit=100&cursor=` → `{ items[], page {
+  has_more, next_cursor } }` in creation order, each `{ id, room_id, suggester_user_id, suggester_profile_id,
+  content_id, content_type (movie | episode), title, subtitle, poster_url, note, vote_count, voted_by_me, created_at
+  }`; clients rank them by votes, then the oldest. `POST …/suggestions { suggestion_id (a client UUID), content_id,
+  content_type, title, subtitle?, poster_url?, note? }` → `201 { suggestion_id }` (a series goes in as one of its
+  episodes: title the episode's, subtitle "Series · S1 E2"); `POST|DELETE …/suggestions/{sid}/vote` → 204 (an
+  existing state is no error; votes are per suggestion, not one per member); `DELETE …/suggestions/{sid}` (the
+  suggester's own, or any as the host) → 204. After each, the client reads the list again. The host's `POST
+  …/suggestions/promote { suggestion_id }` plays any suggestion for everyone (`vote_host_override`), answering the room.
+  The socket's `suggestions_update { suggestions[] }` carries the list with every `voted_by_me` false (and numeric
+  `suggester_user_id`): a client keeps its own votes from what it knew.
+- Picker (with `X-Room-Token`): `GET …/{id}/picker` → `{ members, continue_together[], watchlist_union[] }`, each
+  entry `{ item (a catalog card), members[] { user_id, profile_id, display_name, position_seconds?,
+  duration_seconds? }, next_up? { content_id, season_number, episode_number, title?, member_count } }`, computed over
+  the connected members. `POST …/{id}/member-state { content_ids (1–200) }` → `{ members, items[] { content_id,
+  members[] { user_id, profile_id, state (unseen | in_progress | watched), position_seconds?, duration_seconds?,
+  on_watchlist } } }`.
 - Socket: `POST …/{id}/ws-ticket` with `X-Room-Token` → `{ ticket (43 URL-safe characters), expires_in,
   max_connection_seconds (300), protocol }`; connect `GET …/{id}/ws` offering `silo.room.v2` then
   `silo.ticket.<ticket>`, nothing in the URL. The server closes it after five minutes; a fresh ticket opens the
@@ -2090,11 +2110,12 @@ the commands its player runs. Sources: `silo-server/docs/realtime-api.md` ("Watc
   action: play | pause | seek, position_seconds (the room's position at execute_at), execute_at, issued_at,
   playback_state } }`, `pong { client_sent_at, server_received_at, server_sent_at }`, `room_closed { reason }`,
   `connection_replaced { reason }` (this profile joined on another device: no reconnect until the viewer rejoins),
-  `error { code }` (`not_found`, `gone` end it), `suggestions_update`.
+  `error { code }` (`not_found`, `gone` end it), `suggestions_update { suggestions }`.
 - Client frames: `ping { client_sent_at }` (every 2 s for four samples, then every 15 s: an NTP-style clock offset,
   the median of the three shortest round trips of the last eight, known from three samples; a sample more than 12 h
   off or 5 s there and back is none, and one that cannot agree with the best starts the samples over),
-  `attach_session { session_id }` (each connection and session; attached once the snapshot echoes it), `state_report { session_id, command_id?, position_seconds, is_paused, is_ready? }` every 1.5 s
+  `attach_session { session_id }` (each connection and session; attached once the snapshot echoes it),
+  `state_report { session_id, command_id?, position_seconds, is_paused, is_ready? }` every 1.5 s
   (not while stalled or seeking), `ready { session_id, command_id, position_seconds, is_paused }` (every 500 ms while
   the room waits on this member's command, until its member entry is `is_ready`; also to end a catch-up), `buffering`
   after a 2 s stall while the room plays, `transport_request { action, position_seconds, is_paused }` (the player
@@ -2110,6 +2131,14 @@ the commands its player runs. Sources: `silo-server/docs/realtime-api.md` ("Watc
   profile skips always is offered instead (Ask), one it never skips is not offered, credits and recaps are not
   skipped, and only a member who may seek sees the pill, whose skip is a room seek. Without the room the profile's own
   settings apply again.
+- The room page (Granary, after the web's `WatchTogetherRoomPage.tsx`): the shelf reads the picker's rows, the first
+  four Home rows that are not one member's own (continue watching, next up, watchlist, favorites, recommendations and
+  Home's own "recently added" are left out), and the 24 newest movies and series (`GET /api/v2/catalog?type=…&sort=
+  added_at&order=desc`); search is the catalog's `q`, movies and series only. The activity feed is the client's own:
+  the server keeps no log, so it is the changes between two snapshots or suggestion lists seen while connected (the
+  first of each connection is the baseline). Recent rooms (the web keeps eight of the last 24 hours in the browser's
+  storage, with their proofs) go to Granary's DPAPI secret store, per server and profile; the hub asks each once with
+  `GET …/{id}` whether it is still on (403 forgets it, 404/409/410 mark it ended) and rejoins with the kept proof.
 
 ## 13. Consequences for the Windows client
 

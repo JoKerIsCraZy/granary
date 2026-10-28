@@ -285,18 +285,35 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   wherever everyone is." and what a party is; beside each other "Start a party" (Create Watch Party opens an empty room
   the host picks for) and "Join a party" (the code in a wide spaced box, Paste, Join Watch Party; a pasted invite link
   of this server joins by its token, a link to anywhere else not at all); an error in the web's red box ("Room not
-  found.", "That room is no longer active."); in a room already, a line back to it; "How it works" in three steps.
-  Voting rooms, recent parties and invite links opened from outside the app are not there yet.
-- The room (`WatchPartyRoomPage`, the web's `WatchTogetherRoomPage.tsx`): the status strip (the code, copied by a
-  click; Invite link copies the web link; Leave; End room for the host, asked first), then the stage beside "People ·
-  N" (initial, name, the host's star, Connected, Ready / Not ready, Watching, Buffering, Away). The stage is the web's:
-  "ROOM IS OPEN / Nothing on yet" with the host's or guests' words; "UP NEXT" with the poster and title, "2 of 3
-  ready", the host's "Start for everyone · 2/3 ready" ("Start alone anyway") and the guests' "I'm ready" / "Ready ✓";
-  "NOW PLAYING" with the room's clock ("12:04 · Playing · 3 here"), Rejoin playback, and the host's Stop for everyone.
-  In the lobby the host searches movies and shows (a show by the episode it would play next) and queues one; the
-  invite bar has the guests' pause switch. When the room starts a title the player opens by itself, once per start
-  (leaving the player and coming back to the room does not open it again). The room's end ("The room has ended.") or
-  another device taking it over (Rejoin Watch Party) replaces the page.
+  found.", "That room is no longer active."); in a room already, a line back to it; "YOUR RECENT PARTIES" (the rooms of
+  the last day: the title, Live / Checking… / Status unavailable / Ended, "Your room" or "Joined", the code, and
+  Rejoin while it is on); "How it works" in three steps. Invite links opened from outside the app are not there yet.
+- The room (`WatchPartyRoomPage`, the web's `WatchTogetherRoomPage.tsx`): the status strip ("● Live · 1 here", "Voting
+  · 1 here" or "Playing · 3 here"; the code chip, copied by a click; Invite link; the host's "Host picks · you ▾" menu
+  with Everyone votes, a plain "Host picks" / "Everyone votes" chip for guests and while playing; "● Connected",
+  Leave, and the host's red End room, asked first). The stage changes with the room: a card chosen from the shelf
+  (its facts and "WHO'S SEEN IT" for a movie, a season and episode to pick for a series; "Stage it for the room" in a
+  host-pick lobby for its host, "Suggest this" everywhere else, then "Suggested …" as the web's toast); "NOW PLAYING"
+  with the room's clock ("12:04 · Playing · 3 here"), Rejoin playback and the host's Stop for everyone; the vote's
+  hero ("FIRST SUGGESTION" or "LEADING · 2 OF 3 VOTES", "Evan Allmächtig (2007)", "1h 36m · PG · Fantasy, Komödie ·
+  Start the leader, or play any suggestion below", the host's "▶ Play … for everyone"), or "VOTING IS OPEN / No
+  suggestions yet"; "UP NEXT" with "2 of 3 ready", the host's "Start for everyone · 2/3 ready" and Change, the guests'
+  "I'm ready" / "Ready ✓"; or "ROOM IS OPEN / Nothing on yet" with the host's "Open the floor to votes". Under it the
+  suggestions ("SUGGESTIONS · RANKED BY VOTES" with "One vote each · change it any time": a round vote toggle, the
+  poster, title and subtitle, who suggested it, LEADING, a vote bar and "2 votes", the host's "Play this" and a remove
+  for the host or its suggester; in a host-pick lobby "SUGGESTIONS · 3" with the host's "Queue this"; while playing
+  "AFTER THIS · STILL OPEN FOR SUGGESTIONS"), and the invite row ("INVITE", the link without its scheme, Link, Code,
+  and the host's "Guests can pause" switch). Then the shelf: "Search movies, series, episodes…" with the pills All,
+  Movies, Series, Together, Watchlists and Recent; "CONTINUE WATCHING TOGETHER · in progress for 2+ of you" and "ON YOUR
+  WATCHLISTS · anyone in the room" with the members' badges (initials in their colour, two and "+n", the names on
+  hover), the episode the room is on and its progress; Home's discovery rows ("TRENDING THIS WEEK"…); and "RECENTLY
+  ADDED MOVIES / SERIES". It folds to one line ("Change what's up next", "Suggest something for after") for the host of
+  a staged lobby and while playing. At the side, People (initials in the member's colour, name, HOST, (you),
+  Connected / Ready ✓ / Watching / Buffering / Paused, a green or amber dot) and Activity ("now · Elena joined",
+  "2m · Maya suggested Heat"), with the footer "If you drop, the room waits 2 minutes for you before it ends." or
+  "Host: Elena · guests can pause". When the room starts a title the player opens by itself, once per start (leaving
+  the player and coming back to the room does not open it again). The room's end ("The room has ended.") or another
+  device taking it over (Rejoin Watch Party) replaces the page.
 - The player in a room plays the room's file from the start; play, pause and seek go to the room and the player
   follows its commands; a guest's seek, or pause while the host controls playback, shows the web's words as the
   player's notice ("Only the host can seek the room."). The speed and version settings are the room's, not offered.

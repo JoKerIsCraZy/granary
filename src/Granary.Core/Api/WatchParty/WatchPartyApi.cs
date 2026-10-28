@@ -1,12 +1,14 @@
 using System.Text.Json.Serialization;
+using Granary.Core.Api.Catalog;
 
 namespace Granary.Core.Api.WatchParty;
 
 /// <summary>
 /// Watch Party rooms (silo-server <c>docs/realtime-api.md</c>, "Watch Together"): made, joined by code or invitation,
-/// read, staged, started, stopped and ended over HTTP, and followed over the room socket. Reads and the socket ticket
-/// carry the room proof (<c>X-Room-Token</c>) every room answer renews; the host's operations go by its profile alone.
-/// Every write is sent once: an uncertain one is read back, never repeated.
+/// read, staged, started, stopped and ended over HTTP, and followed over the room socket; its suggestions and votes, and
+/// the picker's rows. Reads, the socket ticket and everything a member does with suggestions carry the room proof
+/// (<c>X-Room-Token</c>) every room answer renews; the host's room operations go by its profile alone. Every write is sent
+/// once: an uncertain one is read back, never repeated.
 /// </summary>
 public sealed class WatchPartyApi(SiloHttp http)
 {
@@ -69,6 +71,92 @@ public sealed class WatchPartyApi(SiloHttp http)
     public Task EndAsync(Uri server, string roomId, CancellationToken cancellationToken = default) =>
         http.SendAsync(HttpMethod.Delete, server, RoomPath(roomId), SiloAuth.Profile, cancellationToken);
 
+    /// <summary>The host switches a lobby between host picks and voting; the staged title and lobby readiness go.</summary>
+    public Task<WatchPartyRoomResponse> SetSelectionModeAsync(Uri server, string roomId, string mode, CancellationToken cancellationToken = default)
+    {
+        if (mode is not (WatchPartySelectionModes.HostPick or WatchPartySelectionModes.Vote))
+        {
+            throw new ArgumentOutOfRangeException(nameof(mode), mode, "A room picks by host_pick or vote.");
+        }
+        return http.SendAsync(HttpMethod.Patch, server, RoomPath(roomId) + "/selection-mode", SiloAuth.Profile, new WatchPartySelectionModeChange(mode),
+            WatchPartyJsonContext.Default.WatchPartySelectionModeChange, WatchPartyJsonContext.Default.WatchPartyRoomResponse, cancellationToken);
+    }
+
+    /// <summary>Every suggestion of the room, ranked as the server ranks them: most votes first, then the oldest.</summary>
+    public async Task<IReadOnlyList<WatchPartySuggestion>> ListSuggestionsAsync(Uri server, string roomId, string roomToken,
+        CancellationToken cancellationToken = default)
+    {
+        var suggestions = new List<WatchPartySuggestion>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        var cursors = new HashSet<string>(StringComparer.Ordinal);
+        string? cursor = null;
+        for (int page = 0; page < MaxSuggestionPages; page++)
+        {
+            string path = RoomPath(roomId) + "/suggestions?limit=" + SuggestionPageSize
+                + (cursor is null ? "" : "&cursor=" + Uri.EscapeDataString(cursor));
+            var answer = await http.SendWithHeadersAsync(HttpMethod.Get, server, path, SiloAuth.Profile, Proof(roomToken),
+                WatchPartyJsonContext.Default.WatchPartySuggestionPage, cancellationToken).ConfigureAwait(false);
+            suggestions.AddRange(answer.Items.Where(s => s.Id.Length > 0 && seen.Add(s.Id)));
+            if (answer.Page is not { HasMore: true, NextCursor: { Length: > 0 } next } || !cursors.Add(next))
+            {
+                return Rank(suggestions);
+            }
+            cursor = next;
+        }
+        return Rank(suggestions);
+    }
+
+    /// <summary>Puts a movie or an episode forward; the answer names the suggestion, the list comes from <see cref="ListSuggestionsAsync"/>.</summary>
+    public Task<WatchPartySuggestionReceipt> SuggestAsync(Uri server, string roomId, string roomToken, WatchPartySuggestionCreate suggestion,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(suggestion);
+        return http.SendWithHeadersAsync(HttpMethod.Post, server, RoomPath(roomId) + "/suggestions", SiloAuth.Profile, Proof(roomToken), suggestion,
+            WatchPartyJsonContext.Default.WatchPartySuggestionCreate, WatchPartyJsonContext.Default.WatchPartySuggestionReceipt, cancellationToken);
+    }
+
+    /// <summary>This profile's vote for a suggestion, on or off; either state already set is no error.</summary>
+    public Task SetVoteAsync(Uri server, string roomId, string roomToken, string suggestionId, bool vote, CancellationToken cancellationToken = default) =>
+        http.SendWithHeadersAsync(vote ? HttpMethod.Post : HttpMethod.Delete, server, SuggestionPath(roomId, suggestionId) + "/vote", SiloAuth.Profile,
+            Proof(roomToken), cancellationToken);
+
+    /// <summary>Takes a suggestion back: its suggester's, or any as the host.</summary>
+    public Task DeleteSuggestionAsync(Uri server, string roomId, string roomToken, string suggestionId, CancellationToken cancellationToken = default) =>
+        http.SendWithHeadersAsync(HttpMethod.Delete, server, SuggestionPath(roomId, suggestionId), SiloAuth.Profile, Proof(roomToken), cancellationToken);
+
+    /// <summary>The host plays a suggestion for everyone (any of them in a vote room, not only the leader).</summary>
+    public Task<WatchPartyRoomResponse> PromoteAsync(Uri server, string roomId, string roomToken, string suggestionId,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(suggestionId);
+        return http.SendWithHeadersAsync(HttpMethod.Post, server, RoomPath(roomId) + "/suggestions/promote", SiloAuth.Profile, Proof(roomToken),
+            new WatchPartyPromote(suggestionId), WatchPartyJsonContext.Default.WatchPartyPromote, WatchPartyJsonContext.Default.WatchPartyRoomResponse,
+            cancellationToken);
+    }
+
+    /// <summary>The picker's rows over the room's connected members: what they watch together, and their watchlists.</summary>
+    public Task<WatchPartyPicker> GetPickerAsync(Uri server, string roomId, string roomToken, CancellationToken cancellationToken = default) =>
+        http.SendWithHeadersAsync(HttpMethod.Get, server, RoomPath(roomId) + "/picker", SiloAuth.Profile, Proof(roomToken),
+            WatchPartyJsonContext.Default.WatchPartyPicker, cancellationToken);
+
+    /// <summary>What each connected member has watched of <paramref name="contentIds"/> (at most 200), and whose watchlist has them.</summary>
+    public Task<WatchPartyMemberStates> GetMemberStatesAsync(Uri server, string roomId, string roomToken, IReadOnlyList<string> contentIds,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(contentIds);
+        if (contentIds.Count is 0 or > MaxMemberStateIds)
+        {
+            throw new ArgumentOutOfRangeException(nameof(contentIds), contentIds.Count, "Ask for 1 to 200 titles at a time.");
+        }
+        return http.SendWithHeadersAsync(HttpMethod.Post, server, RoomPath(roomId) + "/member-state", SiloAuth.Profile, Proof(roomToken),
+            new WatchPartyMemberStateQuery(contentIds), WatchPartyJsonContext.Default.WatchPartyMemberStateQuery,
+            WatchPartyJsonContext.Default.WatchPartyMemberStates, cancellationToken);
+    }
+
+    /// <summary>Most votes first, then the oldest, then by id: the server's order.</summary>
+    public static IReadOnlyList<WatchPartySuggestion> Rank(IEnumerable<WatchPartySuggestion> suggestions) =>
+        [.. suggestions.OrderByDescending(s => s.VoteCount).ThenBy(s => s.CreatedAt).ThenBy(s => s.Id, StringComparer.Ordinal)];
+
     /// <summary>A ticket for one connection of the room socket; it needs the room proof.</summary>
     public Task<WatchPartySocketTicket> MintTicketAsync(Uri server, string roomId, string roomToken, CancellationToken cancellationToken = default) =>
         http.SendWithHeadersAsync(HttpMethod.Post, server, RoomPath(roomId) + "/ws-ticket", SiloAuth.Profile, Proof(roomToken),
@@ -106,7 +194,16 @@ public sealed class WatchPartyApi(SiloHttp http)
         return Uri.TryCreate(server.AbsoluteUri.TrimEnd('/') + path, UriKind.Absolute, out var link) ? link : null;
     }
 
+    private const int SuggestionPageSize = 100;
+    private const int MaxSuggestionPages = 100;
+
+    /// <summary>The most titles one member-state read takes.</summary>
+    public const int MaxMemberStateIds = 200;
+
     private static string RoomPath(string roomId) => "api/v2/watch-together/rooms/" + SiloHttp.PathSegment(roomId, nameof(roomId));
+
+    private static string SuggestionPath(string roomId, string suggestionId) =>
+        RoomPath(roomId) + "/suggestions/" + SiloHttp.PathSegment(suggestionId, nameof(suggestionId));
 
     private static Dictionary<string, string> Proof(string roomToken)
     {
@@ -129,4 +226,16 @@ public sealed class WatchPartyApi(SiloHttp http)
 [JsonSerializable(typeof(WatchPartyStage))]
 [JsonSerializable(typeof(WatchPartyPolicyChange))]
 [JsonSerializable(typeof(WatchPartySocketTicket))]
+[JsonSerializable(typeof(WatchPartySelectionModeChange))]
+[JsonSerializable(typeof(WatchPartySuggestion))]
+[JsonSerializable(typeof(IReadOnlyList<WatchPartySuggestion>))]
+[JsonSerializable(typeof(WatchPartySuggestionPage))]
+[JsonSerializable(typeof(WatchPartySuggestionCreate))]
+[JsonSerializable(typeof(WatchPartySuggestionReceipt))]
+[JsonSerializable(typeof(WatchPartyPromote))]
+[JsonSerializable(typeof(WatchPartyPicker))]
+[JsonSerializable(typeof(WatchPartyMemberStateQuery))]
+[JsonSerializable(typeof(WatchPartyMemberStates))]
+[JsonSerializable(typeof(CatalogItem))]
+[JsonSerializable(typeof(List<Granary.Core.WatchParty.WatchPartyRecentRoom>))]
 internal sealed partial class WatchPartyJsonContext : JsonSerializerContext;

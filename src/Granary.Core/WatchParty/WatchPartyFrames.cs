@@ -22,6 +22,9 @@ public abstract record WatchPartyFrame
 
     /// <summary>This profile joined the room on another device; this connection is over and does not come back by itself.</summary>
     public sealed record Replaced(string Reason) : WatchPartyFrame;
+
+    /// <summary>The room's suggestions and tallies as they are now; <c>voted_by_me</c> is false in every row.</summary>
+    public sealed record Suggestions(IReadOnlyList<WatchPartySuggestion> Items) : WatchPartyFrame;
 }
 
 /// <summary>
@@ -53,6 +56,8 @@ public static class WatchPartyFrames
                 "pong" when Instant(root, "client_sent_at") is { } sent && Instant(root, "server_received_at") is { } received
                     && Instant(root, "server_sent_at") is { } answered =>
                     new WatchPartyFrame.Pong(sent, received, answered),
+                "suggestions_update" when root.TryGetProperty("suggestions", out var list) && list.ValueKind == JsonValueKind.Array =>
+                    new WatchPartyFrame.Suggestions(list.Deserialize(WatchPartyJsonContext.Default.IReadOnlyListWatchPartySuggestion) ?? []),
                 "room_closed" => new WatchPartyFrame.Closed(Text(root, "reason") ?? "room_closed"),
                 "connection_replaced" => new WatchPartyFrame.Replaced(Text(root, "reason") is { Length: > 0 } reason ? reason : ReplacedText),
                 // Some server paths report the end as an error, before or instead of room_closed.

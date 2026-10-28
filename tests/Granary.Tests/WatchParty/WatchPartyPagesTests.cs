@@ -128,7 +128,7 @@ public sealed class WatchPartyPagesTests : IAsyncDisposable
         Assert.Equal("1 of 1 ready", page.StagedCaption);
         Assert.Equal("Start for everyone · 1/1 ready", page.StartLabel);
         Assert.Equal(["Elena", "Maya"], page.Members.Select(m => m.Name));
-        Assert.Equal("Ready", page.Members[1].Status);
+        Assert.Equal("Ready", page.Members[1].State);
         page.Deactivate();
     }
 
@@ -164,9 +164,9 @@ public sealed class WatchPartyPagesTests : IAsyncDisposable
         Assert.Single(_navigation.Navigations, n => n.Route == AppRoute.Player);
 
         _sockets[0].Push(WatchPartyPayloads.Snapshot(WatchPartyPayloads.Room("playing", "waiting", generation: 5, revision: 2, role: "guest", selected: "movie:heat")));
-        await ServerPlaybackFixture.Until(() => _party.Room!.SelectionRevision == 2, "the next start");
+        await ServerPlaybackFixture.Until(() => _navigation.Navigations.Count(n => n.Route == AppRoute.Player) == 2, "the next start");
 
-        Assert.Equal(2, _navigation.Navigations.Count(n => n.Route == AppRoute.Player));
+        Assert.Equal(2, _party.StartedRevision);
         again.Deactivate();
     }
 

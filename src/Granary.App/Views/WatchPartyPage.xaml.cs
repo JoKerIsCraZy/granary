@@ -22,6 +22,33 @@ public sealed partial class WatchPartyPage : Page
 
     public WatchPartyHubViewModel ViewModel { get; }
 
+    public static double Dim(bool dimmed) => dimmed ? 0.6 : 1;
+
+    public static string RejoinName(string title) => $"Rejoin {title}";
+
+    // The page is cached: each visit asks again which recent rooms are still on.
+    protected override async void OnNavigatedTo(Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
+    {
+        base.OnNavigatedTo(e);
+        try
+        {
+            await ViewModel.RefreshRecentAsync();
+        }
+        catch (Exception ex)
+        {
+            // async void: nothing may escape.
+            App.Services.GetRequiredService<ILogger<WatchPartyPage>>().LogError(ex, "The recent Watch Parties could not be shown");
+        }
+    }
+
+    private void OnRejoinRecentClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { Tag: WatchPartyRecentRow row } && ViewModel.RejoinRecentCommand.CanExecute(row))
+        {
+            ViewModel.RejoinRecentCommand.Execute(row);
+        }
+    }
+
     // A column capped by MaxWidth in a ScrollViewer ends up off centre, so its width is set here.
     private void OnScrollerSizeChanged(object sender, SizeChangedEventArgs e) => Column.Width = Math.Min(ColumnWidth, e.NewSize.Width);
 

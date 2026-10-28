@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Granary.Core.Abstractions;
+using Granary.Core.Api;
 using Granary.Core.Api.WatchParty;
 using Granary.Core.Auth;
 using Microsoft.Extensions.Logging;
@@ -13,8 +14,9 @@ public sealed record WatchPartyDelivery(WatchPartyCommand Command, long Epoch);
 /// <summary>
 /// The Watch Party this profile is in, for the whole app: the room page and the player both follow it. It joins or
 /// opens the room over HTTP, keeps the room socket (<see cref="WatchPartyConnection"/>) while it is in it, and passes on
-/// the room's snapshots and commands on the UI thread. Leaving closes the socket (the server has no leave message: a
-/// host who leaves ends the room two minutes later unless they come back); the host's End ends it for everyone.
+/// the room's snapshots, suggestions and commands on the UI thread, with the room's activity as this device saw it.
+/// Leaving closes the socket (the server has no leave message: a host who leaves ends the room two minutes later unless
+/// they come back); the host's End ends it for everyone. Every room it enters goes to the recent rooms the hub offers back.
 /// </summary>
 public sealed partial class WatchPartySession : ObservableObject, IRoomLink
 {
@@ -23,6 +25,9 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
     private readonly Func<WatchPartyConnection> _connections;
     private readonly IUiDispatcher _dispatcher;
     private readonly ILogger<WatchPartySession> _logger;
+    private readonly WatchPartyRecentRooms? _recent;
+    private readonly TimeProvider _time;
+    private readonly WatchPartyActivityFeed _activity = new();
     private WatchPartyConnection? _connection;
     private string? _roomToken;
     // The server and profile last seen: a change of either leaves the room.
@@ -31,13 +36,15 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
     private long _generation;
 
     public WatchPartySession(ISessionManager session, WatchPartyApi api, Func<WatchPartyConnection> connections, IUiDispatcher dispatcher,
-        ILogger<WatchPartySession> logger)
+        ILogger<WatchPartySession> logger, WatchPartyRecentRooms? recentRooms = null, TimeProvider? time = null)
     {
         _session = session;
         _api = api;
         _connections = connections;
         _dispatcher = dispatcher;
         _logger = logger;
+        _recent = recentRooms;
+        _time = time ?? TimeProvider.System;
         _seenAs = (_session.ActiveServer?.Id, _session.ProfileId);
         _session.Changed += (_, _) => _dispatcher.Post(OnSessionChanged);
     }
@@ -142,6 +149,32 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
             : null;
     }
 
+    /// <summary>Goes back into a recent room with the proof it kept.</summary>
+    /// <exception cref="WatchPartyStaleException">The room was left, or the profile or server changed, meanwhile: it is not entered.</exception>
+    public async Task<WatchPartyRoom> ReturnAsync(WatchPartyRecentRoom recent, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(recent);
+        var server = Server();
+        long generation = _generation;
+        var read = await _api.GetAsync(server, recent.RoomId, recent.Token, cancellationToken);
+        Stale(generation);
+        if (read.Room.IsEnded)
+        {
+            throw new SiloApiException(409, ApiProblem.FromStatus(409));
+        }
+        Enter(server, read);
+        return read.Room;
+    }
+
+    /// <summary>The title the room has up, for its entry among the recent rooms.</summary>
+    public void NoteTitle(string title)
+    {
+        if (Room is { } room && _roomToken is { } token && title.Length > 0)
+        {
+            Remember(room, token, title);
+        }
+    }
+
     /// <summary>Reads the room again (and renews this profile's proof for it).</summary>
     public async Task RefreshAsync(CancellationToken cancellationToken = default)
     {
@@ -178,6 +211,7 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
             return;
         }
         await _api.EndAsync(Server(), room.RoomId);
+        MarkEnded(room);
         await LeaveAsync();
     }
 
@@ -191,6 +225,7 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
         StartedRevision = null;
         Room = null;
         End = null;
+        Suggestions = [];
         ConnectionState = WatchPartyConnectionState.Disconnected;
         if (connection is not null)
         {
@@ -251,10 +286,28 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
         if (Room?.RoomId != response.Room.RoomId)
         {
             StartedRevision = null;
+            Suggestions = [];
         }
         End = null;
         Room = response.Room;
+        Remember(response.Room, response.RoomAccessToken, null);
         Connect(server, response.Room.RoomId, response.RoomAccessToken);
+    }
+
+    private void Remember(WatchPartyRoom room, string token, string? title)
+    {
+        if (_recent is { } recent && _session.ActiveServer?.Id is { } serverId && _session.ProfileId is { } profileId)
+        {
+            _ = recent.RememberAsync(new WatchPartyRecentRoom(serverId, profileId, room.RoomId, room.Code, token, room.IsHost, _time.GetUtcNow(), title));
+        }
+    }
+
+    private void MarkEnded(WatchPartyRoom room)
+    {
+        if (_recent is { } recent && _session.ActiveServer?.Id is { } serverId && _session.ProfileId is { } profileId)
+        {
+            _ = recent.MarkEndedAsync(serverId, profileId, room.RoomId);
+        }
     }
 
     private void Connect(Uri server, string roomId, string roomToken)
@@ -281,9 +334,16 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
 
     private void OnConnectionStateChanged(object? sender, WatchPartyConnectionState state) => _dispatcher.Post(() =>
     {
-        if (sender == _connection)
+        if (sender != _connection)
         {
-            ConnectionState = state;
+            return;
+        }
+        bool opened = state == WatchPartyConnectionState.Connected && ConnectionState != WatchPartyConnectionState.Connected;
+        ConnectionState = state;
+        ObserveActivity();
+        if (opened)
+        {
+            _ = LoadSuggestionsAsync();
         }
     });
 
@@ -304,6 +364,9 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
                 case WatchPartyFrame.Command command:
                     CommandReceived?.Invoke(this, new WatchPartyDelivery(command.Value, epoch));
                     break;
+                case WatchPartyFrame.Suggestions suggestions:
+                    TakeSuggestions(suggestions.Items);
+                    break;
             }
         });
     }
@@ -317,6 +380,10 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
         _logger.LogInformation("The Watch Party engagement ended: {Reason}", end.LoggedReason);
         ConnectionState = WatchPartyConnectionState.Disconnected;
         End = end;
+        if (!end.Replaced && Room is { } room)
+        {
+            MarkEnded(room);
+        }
     });
 
     // A snapshot of the same room older than the one shown says nothing new.
@@ -327,11 +394,14 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
             return;
         }
         Room = room;
-        if (room.IsEnded)
+        if (room.IsEnded && End is null)
         {
-            End ??= new WatchPartyEnd("ended");
+            End = new WatchPartyEnd("ended");
+            MarkEnded(room);
         }
     }
+
+    partial void OnRoomChanged(WatchPartyRoom? value) => ObserveActivity();
 
     // Another server or profile is not in this room, nor in a join or create still on its way.
     private void OnSessionChanged()

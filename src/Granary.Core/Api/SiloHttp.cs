@@ -93,13 +93,27 @@ public sealed class SiloHttp(HttpClient http)
     public async Task<TResponse> SendWithHeadersAsync<TResponse>(HttpMethod method, Uri server, string path, SiloAuth auth,
         IReadOnlyDictionary<string, string> headers, JsonTypeInfo<TResponse> responseType, CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(headers);
-        using var request = Create(method, server, path, auth);
-        foreach (var (name, value) in headers)
-        {
-            request.Headers.TryAddWithoutValidation(name, value);
-        }
+        using var request = Create(method, server, path, auth, headers);
         return await SendAsync(request, responseType, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>As the bodiless <c>SendWithHeadersAsync</c>, with a JSON body.</summary>
+    public async Task<TResponse> SendWithHeadersAsync<TRequest, TResponse>(HttpMethod method, Uri server, string path, SiloAuth auth,
+        IReadOnlyDictionary<string, string> headers, TRequest body, JsonTypeInfo<TRequest> requestType, JsonTypeInfo<TResponse> responseType,
+        CancellationToken cancellationToken)
+    {
+        using var request = Create(method, server, path, auth, headers);
+        request.Content = JsonContent.Create(body, requestType);
+        return await SendAsync(request, responseType, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>For a bodiless operation with headers of its own that answers 204 No Content.</summary>
+    public async Task SendWithHeadersAsync(HttpMethod method, Uri server, string path, SiloAuth auth, IReadOnlyDictionary<string, string> headers,
+        CancellationToken cancellationToken)
+    {
+        using var request = Create(method, server, path, auth, headers);
+        using var response = await http.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>As <see cref="GetAsync{TResponse}"/>, with the answer's version (its ETag) for a later write's <c>If-Match</c>.</summary>
@@ -154,6 +168,17 @@ public sealed class SiloHttp(HttpClient http)
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         request.SetAuth(auth);
         request.SetServer(server);
+        return request;
+    }
+
+    private static HttpRequestMessage Create(HttpMethod method, Uri server, string path, SiloAuth auth, IReadOnlyDictionary<string, string> headers)
+    {
+        ArgumentNullException.ThrowIfNull(headers);
+        var request = Create(method, server, path, auth);
+        foreach (var (name, value) in headers)
+        {
+            request.Headers.TryAddWithoutValidation(name, value);
+        }
         return request;
     }
 
