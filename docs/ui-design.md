@@ -108,8 +108,10 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
   "86 YEARS OLD" or "DIED FEB 28, 2005 (AGE 84)", the birthplace), and the bio in muted 14 px at most 672 px wide; a
   line under them says "Person refresh queued", "Person metadata refreshed" or why it failed. Under a hairline
   "Filmography" with All, Movies and Series as the web's small outlined boxes (the picked one lighter), then the posters
-  newest first, 60 at a time as the grid scrolls, or "No items found.". A read that fails says "Couldn't load this
-  person" with Retry; a person that is gone, "This person isn't available".
+  newest first, 60 at a time as the grid scrolls, or "No items found."; titles that fail say why with Retry (only the
+  titles are read again), and a later page that fails says so under the grid with Try again (scrolling asks no more
+  until then). A read that fails says "Couldn't load this person" with Retry; a person that is gone, "This person isn't
+  available".
 - `ItemsRepeater` sets no `DataContext` on elements of `x:Bind` templates: a click handler reads its item
   from the control it shows (`MediaCardView.Card`) or from `DataContext="{x:Bind}"` set on the element.
 - `x:Bind` function bindings skip null arguments, so a recycled element would keep stale values:

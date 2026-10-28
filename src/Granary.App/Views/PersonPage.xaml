@@ -154,11 +154,20 @@
                         <TextBlock Text="{x:Bind ViewModel.FilmographyError, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}"
                                    Foreground="{StaticResource SiloMutedBrush}" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" />
                         <Button Content="Retry" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
-                                Command="{x:Bind ViewModel.RetryCommand}" />
+                                Command="{x:Bind ViewModel.RetryFilmographyCommand}" />
                     </StackPanel>
 
                     <controls:MediaGrid ItemsSource="{x:Bind ViewModel.Cards, Mode=OneWay}" CardInvokedCommand="{x:Bind ViewModel.OpenCardCommand}"
                                         LoadMoreCommand="{x:Bind ViewModel.LoadMoreCommand}" />
+
+                    <!-- A later page that failed: the grid asks for no more until Try again. -->
+                    <StackPanel Visibility="{x:Bind ViewModel.HasLoadMoreError, Mode=OneWay}" Spacing="12" HorizontalAlignment="Center">
+                        <TextBlock Text="{x:Bind ViewModel.LoadMoreError, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}"
+                                   Foreground="{StaticResource SiloMutedBrush}" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"
+                                   AutomationProperties.LiveSetting="Polite" />
+                        <Button Content="Try again" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
+                                Command="{x:Bind ViewModel.LoadMoreAgainCommand}" />
+                    </StackPanel>
                 </StackPanel>
             </StackPanel>
         </StackPanel>

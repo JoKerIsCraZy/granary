@@ -48,6 +48,13 @@ public sealed partial class PersonPage : Page
         }
     }
 
+    // Cached, the page stays alive under the next one: its refresh reads stop until it is shown again.
+    protected override void OnNavigatedFrom(NavigationEventArgs e)
+    {
+        base.OnNavigatedFrom(e);
+        ViewModel.Pause();
+    }
+
     /// <summary>The facts as the web's badges write them: in capitals.</summary>
     public IReadOnlyList<string> Badges(IReadOnlyList<string> facts) => [.. facts.Select(f => f.ToUpper(CultureInfo.CurrentCulture))];
 

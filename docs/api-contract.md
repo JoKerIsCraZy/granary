@@ -726,7 +726,8 @@ sort `-added_at` (phone) / `title` (TV) (`silo-android/shared/.../apiv2/CatalogV
 - `POST /api/v2/catalog/people/{id}/refresh` → `202 { person_id, status: "queued" }`: a provider refresh, coalesced by
   the server. An administrator's `POST /api/v2/admin/people/{id}/refresh` waits for the provider and answers the
   `Person`. As the apps do, a person without a bio, photo or birth date is refreshed once per visit and read again every
-  3 s, for at most 2 minutes, 40 reads, or 5 reads that change nothing.
+  3 s, for at most 2 minutes, 40 reads, or 5 reads that change nothing (both apps' bound). Every read counts as a view,
+  so the reads stop while the page is not shown or the profile changes; Back to it goes on without another refresh.
 - Cast and crew carry `person_id` on a title (7.6); a TMDB title's cast (7.15) has none and opens no page.
 
 ### 7.6 Item detail: `GET /api/v2/catalog/items/{id}`

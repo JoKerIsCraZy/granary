@@ -18,13 +18,18 @@ namespace Granary.Core.ViewModels;
 /// were born (and died), the bio, and their titles newest first, All, Movies or Series, paged as the grid scrolls.
 /// Refresh metadata queues a provider refresh (an administrator's "Refresh now" waits for it). As the apps do, a person
 /// the provider has told little about (no bio, photo or birth date) is refreshed once per visit, and read again every
-/// few seconds until the details come, for two minutes at most and no longer than five reads that change nothing.
+/// few seconds until the details come. The reads stop while the page is not shown (<see cref="Pause"/>), and go on when
+/// it is shown again, without another refresh.
 /// </summary>
 public sealed partial class PersonViewModel : ObservableObject
 {
     public const int PageSize = 60;
 
-    /// <summary>Reads after a refresh that change nothing before the page stops waiting for it.</summary>
+    /// <summary>
+    /// Reads after a refresh that change nothing before the page stops waiting for it: five, 3 s apart, as both apps
+    /// (Android's <c>PersonDetailViewModel</c>, Apple's <c>metadataRefreshSettledPollCount</c>); a bound for the page,
+    /// not proof the server's queue is done.
+    /// </summary>
     public const int MaxUnchangedReads = 5;
 
     public const int MaxRefreshReads = 40;
@@ -41,20 +46,23 @@ public sealed partial class PersonViewModel : ObservableObject
     private readonly ImageParameterCache _images;
     private readonly AccountPermissions _permissions;
     private readonly INavigationService _navigation;
+    private readonly IUiDispatcher _dispatcher;
     private readonly TimeProvider _time;
     private readonly ILogger<PersonViewModel> _logger;
     private (string? ServerId, string? ProfileId, string PersonId)? _shownFor;
     private string? _personId;
     private BrowseCardPager? _pager;
+    // The page's reads while it is shown: Pause and another person cancel it.
     private CancellationTokenSource _run = new();
     private CancellationTokenSource _filmographyRun = new();
     private string? _refreshedFor;
     private Person? _shown;
     private bool _following;
     private bool _resetting;
+    private bool _isActive;
 
     public PersonViewModel(ISessionManager session, CatalogApi catalog, AdminApi admin, ImageParameterCache images, AccountPermissions permissions,
-        INavigationService navigation, TimeProvider time, ILogger<PersonViewModel> logger)
+        INavigationService navigation, IUiDispatcher dispatcher, TimeProvider time, ILogger<PersonViewModel> logger)
     {
         _session = session;
         _catalog = catalog;
@@ -62,6 +70,7 @@ public sealed partial class PersonViewModel : ObservableObject
         _images = images;
         _permissions = permissions;
         _navigation = navigation;
+        _dispatcher = dispatcher;
         _time = time;
         _logger = logger;
         Filter = All;
@@ -113,8 +122,14 @@ public sealed partial class PersonViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(IsFilmographyLoading), nameof(IsFilmographyEmpty), nameof(HasFilmographyError))]
     public partial LibraryLoadState FilmographyState { get; private set; }
 
+    /// <summary>Why the first page of titles did not come.</summary>
     [ObservableProperty]
     public partial string FilmographyError { get; private set; } = "";
+
+    /// <summary>Why a later page did not come; the grid asks for no more until Try again.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasLoadMoreError))]
+    public partial string LoadMoreError { get; private set; } = "";
 
     /// <summary>A refresh's new details are being waited for.</summary>
     [ObservableProperty]
@@ -158,6 +173,8 @@ public sealed partial class PersonViewModel : ObservableObject
 
     public bool HasFilmographyError => FilmographyState == LibraryLoadState.Error;
 
+    public bool HasLoadMoreError => LoadMoreError.Length > 0;
+
     public bool HasRefreshNotice => RefreshNotice.Length > 0;
 
     public string RefreshLabel => IsRefreshPending
@@ -170,57 +187,87 @@ public sealed partial class PersonViewModel : ObservableObject
     /// <summary>The filmography's load in flight (for tests).</summary>
     internal Task Loading { get; private set; } = Task.CompletedTask;
 
-    /// <summary>Shows the person; Back to the same one keeps the page as it was.</summary>
+    /// <summary>The refresh reads in flight (for tests).</summary>
+    internal Task Following { get; private set; } = Task.CompletedTask;
+
+    /// <summary>
+    /// Shows the person. Back to the same one keeps the page as it was, and goes on waiting for a refresh it was waiting
+    /// for (without asking for another); anything else reads them anew.
+    /// </summary>
     public async Task ShowAsync(string? personId, bool isReturn)
     {
+        Activate();
+        var token = NewRun();
         if (string.IsNullOrWhiteSpace(personId))
         {
             ShowGone();
             return;
         }
-        if (isReturn && _shownFor == Key(personId) && State == LibraryLoadState.Ready)
+        bool keeps = isReturn && _shownFor == Key(personId) && State == LibraryLoadState.Ready;
+        if (!keeps)
+        {
+            _personId = personId;
+            StartOver();
+        }
+        // The account or profile may have changed since the page was last shown.
+        await ReadAdminAsync(token);
+        if (token.IsCancellationRequested)
         {
             return;
         }
-        _personId = personId;
-        StartOver();
-        try
+        if (!keeps)
         {
-            IsActingAdmin = await _permissions.IsActingAdminAsync();
+            await LoadAsync(personId, token);
+            return;
         }
-        catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex))
+        if (_session is { State: SessionState.Ready, ActiveServer: { } server } && _refreshedFor == personId && _shown is { IsIncomplete: true })
         {
-            // Not knowing makes it a viewer's refresh, which the server takes from anyone.
-            _logger.LogInformation("Could not tell whether the account acts as an administrator: {Failure}", ApiFailureText.Describe(ex));
+            Following = FollowRefreshAsync(server.BaseUri, personId, token);
         }
-        await LoadAsync(personId);
     }
 
-    [RelayCommand]
-    private Task RetryAsync() => _personId is { } id ? LoadAsync(id) : Task.CompletedTask;
-
-    /// <summary>For the grid while it scrolls.</summary>
-    [RelayCommand]
-    private async Task LoadMoreAsync()
+    /// <summary>
+    /// The page is not shown: its reads stop, a refresh is no longer waited for, and the session is no longer followed.
+    /// What it shows stays for Back.
+    /// </summary>
+    public void Pause()
     {
-        if (_pager is not { HasMore: true } pager || FilmographyState != LibraryLoadState.Ready)
+        _run.Cancel();
+        _following = false;
+        IsRefreshing = false;
+        IsRefreshPending = false;
+        if (_isActive)
         {
-            return;
+            _isActive = false;
+            _session.Changed -= OnSessionChanged;
         }
-        var token = _filmographyRun.Token;
-        try
+    }
+
+    /// <summary>Reads the person again, after a failure.</summary>
+    [RelayCommand]
+    private Task RetryAsync() => _personId is { } id ? LoadAsync(id, _run.Token) : Task.CompletedTask;
+
+    /// <summary>Reads only the titles again, after their first page failed: the person stays.</summary>
+    [RelayCommand]
+    private Task RetryFilmographyAsync()
+    {
+        if (_personId is not { } id || _session is not { State: SessionState.Ready, ActiveServer: { } server })
         {
-            await pager.LoadNextPageAsync(token);
+            return Task.CompletedTask;
         }
-        catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex, token))
-        {
-            _logger.LogWarning("Loading more of a person's titles failed: {Failure}", ApiFailureText.Describe(ex));
-            FilmographyError = BrowseFailureText.Describe(ex, "Couldn't load more titles.");
-        }
-        catch (OperationCanceledException) when (token.IsCancellationRequested)
-        {
-            // Another filter or person took over.
-        }
+        return Loading = LoadFilmographyAsync(server, id, Filter);
+    }
+
+    /// <summary>For the grid while it scrolls; after a failure only <see cref="LoadMoreAgainCommand"/> asks again.</summary>
+    [RelayCommand]
+    private Task LoadMoreAsync() => HasLoadMoreError ? Task.CompletedTask : LoadNextPageAsync();
+
+    /// <summary>"Try again" under the grid after a later page failed.</summary>
+    [RelayCommand]
+    private Task LoadMoreAgainAsync()
+    {
+        LoadMoreError = "";
+        return LoadNextPageAsync();
     }
 
     [RelayCommand]
@@ -259,7 +306,7 @@ public sealed partial class PersonViewModel : ObservableObject
             {
                 await _catalog.RefreshPersonAsync(server.BaseUri, id, token);
                 RefreshNotice = "Person refresh queued";
-                _ = FollowRefreshAsync(server.BaseUri, id, token);
+                Following = FollowRefreshAsync(server.BaseUri, id, token);
             }
         }
         catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex, token))
@@ -270,7 +317,7 @@ public sealed partial class PersonViewModel : ObservableObject
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested)
         {
-            // Another person took over.
+            // The page went, or another person took over.
         }
         finally
         {
@@ -291,13 +338,14 @@ public sealed partial class PersonViewModel : ObservableObject
         }
     }
 
-    private async Task LoadAsync(string id)
+    private async Task LoadAsync(string id, CancellationToken token)
     {
         if (_session is not { State: SessionState.Ready, ActiveServer: { } server })
         {
+            // Never a blank page: signed out or switching, the person cannot be read now.
+            ShowFailure(LibraryErrors.Unreachable);
             return;
         }
-        var token = _run.Token;
         State = LibraryLoadState.Loading;
         Person person;
         try
@@ -312,15 +360,12 @@ public sealed partial class PersonViewModel : ObservableObject
                 ShowGone();
                 return;
             }
-            ErrorTitle = "Couldn't load this person";
-            ErrorText = "Something went wrong while loading them. Try again in a moment.";
-            CanRetry = true;
-            State = LibraryLoadState.Error;
+            ShowFailure(BrowseFailureText.Describe(ex, "Something went wrong while loading them. Try again in a moment."));
             return;
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested)
         {
-            // Another person took over.
+            // The page went, or another person took over.
             return;
         }
         if (token.IsCancellationRequested)
@@ -334,10 +379,39 @@ public sealed partial class PersonViewModel : ObservableObject
         if (person.IsIncomplete && _refreshedFor != id)
         {
             _refreshedFor = id;
-            _ = QueueRefreshAsync(server.BaseUri, id, token);
+            Following = QueueRefreshAsync(server.BaseUri, id, token);
         }
         Loading = LoadFilmographyAsync(server, id, Filter);
         await Loading;
+    }
+
+    private async Task LoadNextPageAsync()
+    {
+        if (_pager is not { HasMore: true } pager || FilmographyState != LibraryLoadState.Ready)
+        {
+            return;
+        }
+        var token = _filmographyRun.Token;
+        try
+        {
+            await pager.LoadNextPageAsync(token);
+            if (!token.IsCancellationRequested && ReferenceEquals(_pager, pager))
+            {
+                LoadMoreError = "";
+            }
+        }
+        catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex, token))
+        {
+            _logger.LogWarning("Loading more of a person's titles failed: {Failure}", ApiFailureText.Describe(ex));
+            if (ReferenceEquals(_pager, pager))
+            {
+                LoadMoreError = BrowseFailureText.Describe(ex, "Couldn't load more titles.");
+            }
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            // Another filter or person took over, or the page went.
+        }
     }
 
     private async Task LoadFilmographyAsync(ServerEntry server, string id, SettingChoice filter)
@@ -349,6 +423,8 @@ public sealed partial class PersonViewModel : ObservableObject
         var token = _filmographyRun.Token;
         FilmographyState = LibraryLoadState.Loading;
         FilmographyError = "";
+        LoadMoreError = "";
+        BrowseCardPager? pager = null;
         try
         {
             var images = await BrowseArtwork.ParametersAsync(_images, server, DisplayScale, _logger, token);
@@ -358,22 +434,35 @@ public sealed partial class PersonViewModel : ObservableObject
                 Limit = PageSize,
                 Images = images,
             };
-            var pager = new BrowseCardPager(_catalog, server.BaseUri, query,
+            pager = new BrowseCardPager(_catalog, server.BaseUri, query,
                 item => item.ContentId.Length > 0 ? MediaCardFactory.Poster(item, server.BaseUri) : null);
             _pager = pager;
             Cards = pager.Cards;
             await pager.LoadFirstPageAsync(token);
+            // A filter or person picked meanwhile owns the state now.
+            if (token.IsCancellationRequested || !ReferenceEquals(_pager, pager))
+            {
+                return;
+            }
             FilmographyState = pager.Cards.Count == 0 ? LibraryLoadState.Empty : LibraryLoadState.Ready;
-        }
-        catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex) && !token.IsCancellationRequested)
-        {
-            _logger.LogWarning("Loading a person's titles failed: {Failure}", ApiFailureText.Describe(ex));
-            FilmographyError = BrowseFailureText.Describe(ex, "Couldn't load the titles.");
-            FilmographyState = LibraryLoadState.Error;
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested)
         {
-            // Another filter or person took over.
+            // Another filter or person took over, or the page went.
+        }
+        catch (Exception ex) when (!token.IsCancellationRequested && (pager is null || ReferenceEquals(_pager, pager)))
+        {
+            // Whatever went wrong, the ring stops and Retry is offered.
+            if (ApiFailureText.IsRequestFailure(ex))
+            {
+                _logger.LogWarning("Loading a person's titles failed: {Failure}", ApiFailureText.Describe(ex));
+            }
+            else
+            {
+                _logger.LogError(ex, "Loading a person's titles failed");
+            }
+            FilmographyError = BrowseFailureText.Describe(ex, "Couldn't load the titles.");
+            FilmographyState = LibraryLoadState.Error;
         }
     }
 
@@ -394,10 +483,10 @@ public sealed partial class PersonViewModel : ObservableObject
         await FollowRefreshAsync(server, id, token);
     }
 
-    // Reads the person again until the refresh shows, the window closes, or reads stop changing anything.
+    // Reads the person again until the refresh shows, the window closes, reads stop changing anything, or the page goes.
     private async Task FollowRefreshAsync(Uri server, string id, CancellationToken token)
     {
-        if (_following)
+        if (_following || token.IsCancellationRequested)
         {
             return;
         }
@@ -438,13 +527,14 @@ public sealed partial class PersonViewModel : ObservableObject
                 }
             }
         }
-        catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex, token) || (ex is OperationCanceledException && token.IsCancellationRequested))
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            // The page went, or another person took over.
+        }
+        catch (Exception ex)
         {
             // A failed read ends the wait; the page keeps what it shows.
-            if (!token.IsCancellationRequested)
-            {
-                _logger.LogInformation("Reading a refreshed person failed: {Failure}", ApiFailureText.Describe(ex));
-            }
+            _logger.LogInformation("Reading a refreshed person failed: {Failure}", ApiFailureText.Describe(ex));
         }
         finally
         {
@@ -452,6 +542,27 @@ public sealed partial class PersonViewModel : ObservableObject
             {
                 _following = false;
                 IsRefreshing = false;
+            }
+        }
+    }
+
+    private async Task ReadAdminAsync(CancellationToken token)
+    {
+        try
+        {
+            bool isAdmin = await _permissions.IsActingAdminAsync(token);
+            if (!token.IsCancellationRequested)
+            {
+                IsActingAdmin = isAdmin;
+            }
+        }
+        catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex, token) || (ex is OperationCanceledException && token.IsCancellationRequested))
+        {
+            // Not knowing makes it a viewer's refresh, which the server takes from anyone.
+            if (!token.IsCancellationRequested)
+            {
+                IsActingAdmin = false;
+                _logger.LogInformation("Could not tell whether the account acts as an administrator: {Failure}", ApiFailureText.Describe(ex));
             }
         }
     }
@@ -474,14 +585,34 @@ public sealed partial class PersonViewModel : ObservableObject
         State = LibraryLoadState.Error;
     }
 
-    // Another person (or the same anew): nothing of the last one stays, and its reads and refresh stop.
-    private void StartOver()
+    private void ShowFailure(string why)
+    {
+        ErrorTitle = "Couldn't load this person";
+        ErrorText = why;
+        CanRetry = true;
+        State = LibraryLoadState.Error;
+    }
+
+    // A new run for this showing: the last one's reads stop, and the filmography's follow this one.
+    private CancellationToken NewRun()
     {
         var previous = _run;
         _run = new CancellationTokenSource();
         previous.Cancel();
         previous.Dispose();
+        var filmography = _filmographyRun;
+        _filmographyRun = CancellationTokenSource.CreateLinkedTokenSource(_run.Token);
+        filmography.Cancel();
+        filmography.Dispose();
         _following = false;
+        IsRefreshing = false;
+        IsRefreshPending = false;
+        return _run.Token;
+    }
+
+    // Another person (or the same anew): nothing of the last one stays.
+    private void StartOver()
+    {
         _refreshedFor = null;
         _shown = null;
         _shownFor = null;
@@ -495,10 +626,40 @@ public sealed partial class PersonViewModel : ObservableObject
         Bio = "";
         Cards = [];
         FilmographyState = LibraryLoadState.Idle;
-        IsRefreshing = false;
-        IsRefreshPending = false;
+        FilmographyError = "";
+        LoadMoreError = "";
         RefreshNotice = "";
         RefreshFailed = false;
+    }
+
+    private void Activate()
+    {
+        if (!_isActive)
+        {
+            _isActive = true;
+            _session.Changed += OnSessionChanged;
+        }
+    }
+
+    // Another profile or server, or signed out: this one's reads stop. Changed can come from a background thread.
+    private void OnSessionChanged(object? sender, EventArgs e)
+    {
+        if (_dispatcher.HasThreadAccess)
+        {
+            PauseForAnotherSession();
+        }
+        else
+        {
+            _dispatcher.Post(PauseForAnotherSession);
+        }
+    }
+
+    private void PauseForAnotherSession()
+    {
+        if (_isActive && (_session.State != SessionState.Ready || (_personId is { } id && _shownFor is { } shown && shown != Key(id))))
+        {
+            Pause();
+        }
     }
 
     // What a refresh can change; the photo URL is signed anew on every read, so only whether there is one counts.

@@ -38,8 +38,8 @@ public sealed class PersonViewModelTests
     }
 
     private PersonViewModel Create() => new(_session, _silo.Catalog, new AdminApi(_silo.Http), _silo.Images,
-        new AccountPermissions(_session, new ProfilesApi(_silo.Http), _silo.Logs.For<AccountPermissions>()), _navigation, _time,
-        _silo.Logs.For<PersonViewModel>());
+        new AccountPermissions(_session, new ProfilesApi(_silo.Http), _silo.Logs.For<AccountPermissions>()), _navigation,
+        new ImmediateDispatcher(), _time, _silo.Logs.For<PersonViewModel>());
 
     private async Task<PersonViewModel> ShownAsync(string id = "7")
     {
@@ -140,6 +140,7 @@ public sealed class PersonViewModelTests
         _silo.Map(PersonPath, _ => BrowseFakeSilo.Problem(503, "dependency_unavailable"));
         var person = await ShownAsync();
         Assert.Equal("Couldn't load this person", person.ErrorTitle);
+        Assert.Equal("The server is busy. Try again in a moment.", person.ErrorText);
         Assert.True(person.CanRetry);
 
         _silo.Map(PersonPath, AlPacino);
@@ -238,6 +239,141 @@ public sealed class PersonViewModelTests
 
         Assert.StartsWith("Refresh failed", person.RefreshNotice, StringComparison.Ordinal);
         Assert.True(person.RefreshFailed);
+    }
+
+    [Fact]
+    public async Task LeavingThePage_StopsTheReads_AndBackGoesOnWithoutAnotherRefresh()
+    {
+        _silo.Map(PersonPath, """{ "id": "7", "name": "Al Pacino" }""");
+        var person = await ShownAsync();
+        await AdvanceAsync(PersonViewModel.RefreshPollInterval);
+        Assert.Equal(2, _silo.To(PersonPath).Count);
+
+        person.Pause();
+        Assert.False(person.IsRefreshing);
+        for (int i = 0; i < 3; i++)
+        {
+            await AdvanceAsync(PersonViewModel.RefreshPollInterval);
+        }
+        Assert.Equal(2, _silo.To(PersonPath).Count);
+
+        await person.ShowAsync("7", isReturn: true);
+        Assert.True(person.IsRefreshing);
+        await AdvanceAsync(PersonViewModel.RefreshPollInterval);
+
+        Assert.Equal(3, _silo.To(PersonPath).Count);
+        Assert.Single(_silo.To(RefreshPath));
+    }
+
+    [Fact]
+    public async Task AnotherProfile_StopsTheReads()
+    {
+        _silo.Map(PersonPath, """{ "id": "7", "name": "Al Pacino" }""");
+        var person = await ShownAsync();
+
+        _session.ProfileId = "8";
+        _session.RaiseChanged();
+        for (int i = 0; i < 3; i++)
+        {
+            await AdvanceAsync(PersonViewModel.RefreshPollInterval);
+        }
+
+        Assert.Single(_silo.To(PersonPath));
+        Assert.False(person.IsRefreshing);
+    }
+
+    [Fact]
+    public async Task Back_AsksAgainWhetherTheAccountActsAsAdministrator()
+    {
+        var person = await ShownAsync();
+        Assert.Equal("Refresh metadata", person.RefreshLabel);
+        person.Pause();
+
+        _session.Account = new Account("1", "elena", "", "admin", [], true, false, null);
+        _silo.Map("api/v2/profiles", """{ "items": [ { "id": "7", "name": "Elena", "is_primary": true } ], "avatar_upload_enabled": false }""");
+        await person.ShowAsync("7", isReturn: true);
+
+        Assert.Equal("Refresh now", person.RefreshLabel);
+        Assert.Single(_silo.To(PersonPath));
+    }
+
+    [Fact]
+    public async Task ALaterPageThatFails_SaysSo_AndWaitsForTryAgain()
+    {
+        bool fails = true;
+        _silo.Map(CatalogPath, request => request.RequestUri!.Query.Contains("cursor=p2", StringComparison.Ordinal)
+            ? fails ? BrowseFakeSilo.Problem(503, "dependency_unavailable") : BrowseFakeSilo.Json(Page(null, Item("serpico-1973")))
+            : BrowseFakeSilo.Json(Page("p2", Item("irishman-2019"), Item("heat-1995"))));
+        var person = await ShownAsync();
+
+        await person.LoadMoreCommand.ExecuteAsync(null);
+        Assert.Equal("The server is busy. Try again in a moment.", person.LoadMoreError);
+        Assert.False(person.HasFilmographyError);
+        int asked = _silo.To(CatalogPath).Count;
+
+        await person.LoadMoreCommand.ExecuteAsync(null);
+        Assert.Equal(asked, _silo.To(CatalogPath).Count);
+
+        fails = false;
+        await person.LoadMoreAgainCommand.ExecuteAsync(null);
+        Assert.False(person.HasLoadMoreError);
+        Assert.Equal("serpico-1973", person.Cards[^1].Id);
+    }
+
+    [Fact]
+    public async Task TheTitlesRetry_ReadsOnlyTheTitles()
+    {
+        bool fails = true;
+        _silo.Map(CatalogPath, _ => fails ? BrowseFakeSilo.Problem(500, "internal") : BrowseFakeSilo.Json(Page(null, Item("heat-1995"))));
+        var person = await ShownAsync();
+        Assert.True(person.HasFilmographyError);
+        Assert.True(person.IsReady);
+
+        fails = false;
+        await person.RetryFilmographyCommand.ExecuteAsync(null);
+
+        Assert.Equal(["heat-1995"], person.Cards.Select(c => c.Id));
+        Assert.Single(_silo.To(PersonPath));
+    }
+
+    [Fact]
+    public async Task AnOlderFilmographyPage_ArrivingLate_IsDropped()
+    {
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _silo.Map(CatalogPath, async (request, _) =>
+        {
+            string query = request.RequestUri!.Query;
+            if (query.Contains("type=series", StringComparison.Ordinal))
+            {
+                // Series answers late, and with nothing.
+                await gate.Task;
+                return BrowseFakeSilo.Json(Page(null));
+            }
+            return BrowseFakeSilo.Json(query.Contains("type=movie", StringComparison.Ordinal) ? Page(null, Item("heat-1995")) : Page(null, Item("irishman-2019")));
+        });
+        var person = await ShownAsync();
+        person.Filter = person.Filters[2];
+        var held = person.Loading;
+
+        person.Filter = person.Filters[1];
+        await person.Loading;
+        gate.SetResult();
+        await held;
+
+        Assert.Equal(["heat-1995"], person.Cards.Select(c => c.Id));
+        Assert.True(person.IsReady);
+        Assert.False(person.IsFilmographyEmpty);
+    }
+
+    [Fact]
+    public async Task WithoutASession_ThePageSaysSo()
+    {
+        _session.State = SessionState.NoServer;
+
+        var person = await ShownAsync();
+
+        Assert.True(person.HasError);
+        Assert.Equal("Couldn't load this person", person.ErrorTitle);
     }
 
     // Waits for the page's next timer (none once it stopped following), moves the clock, and lets the read it set off answer.
