@@ -77,6 +77,66 @@ public sealed class PersonalListFiltersTests
     }
 
     [Fact]
+    public async Task HistorysPicks_GoWhenAFilterChangesWhatShows_AndSelectingGoesOn()
+    {
+        var list = await ShownAsync(CatalogSources.History);
+        list.StartSelectingCommand.Execute(null);
+        list.Selection.Toggle(list.Grid.Cards[0]);
+        Assert.Equal(1, list.Selection.Count);
+
+        list.Filters.BeginEdit();
+        list.Filters.DraftGenreIndex = 1;
+        await list.Filters.ApplyCommand.ExecuteAsync(null);
+
+        Assert.True(list.Selection.IsActive);
+        Assert.Equal(0, list.Selection.Count);
+    }
+
+    [Fact]
+    public async Task AnotherProfile_StartsTheSameListUnfiltered_WithItsOwnOptions()
+    {
+        var list = await ShownAsync(CatalogSources.Favorites);
+        list.Filters.BeginEdit();
+        list.Filters.DraftGenreIndex = 1;
+        await list.Filters.ApplyCommand.ExecuteAsync(null);
+        int asked = _harness.Queries(FiltersPath).Count;
+
+        _harness.Session.ProfileId = "8";
+        await list.ActivateAsync(CatalogSources.Favorites);
+
+        Assert.Equal(0, list.Filters.ActiveCount);
+        Assert.Equal(asked + 1, _harness.Queries(FiltersPath).Count);
+        Assert.DoesNotContain("genre=", LastQuery, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task OptionsThatFailed_AreAskedAgainOnTheNextVisit()
+    {
+        // A refusal no retry repeats on its own (a 503 the request pipeline would ask again).
+        _harness.Silo.On(HttpMethod.Get, FiltersPath, Profiles.ScriptedSilo.Problem(400, "invalid_request"),
+            Profiles.ScriptedSilo.Json(System.Net.HttpStatusCode.OK, LibraryPayloads.Filters));
+        var list = WatchlistTitlesViewModelTests.CreateList(_harness, new ViewerStateChanges(new PlaybackStops()));
+        await list.ActivateAsync(CatalogSources.Favorites);
+        await Auth.AuthPipeline.Eventually(() => list.Filters.HasOptionsError);
+
+        await list.ActivateAsync(CatalogSources.Favorites);
+        await Auth.AuthPipeline.Eventually(() => list.Filters.GenreChoices.Count > 1);
+
+        Assert.False(list.Filters.HasOptionsError);
+        Assert.Equal(2, _harness.Queries(FiltersPath).Count);
+    }
+
+    [Fact]
+    public async Task TheOptions_FollowTheKindOfTitlesShown()
+    {
+        var list = await ShownAsync(CatalogSources.Watchlist);
+
+        await list.SetScopeCommand.ExecuteAsync(ListMediaScope.All.Single(s => s.Label == "Movies"));
+
+        Assert.Contains("type=movie", _harness.Queries(FiltersPath)[^1], StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task ACollection_HasItsOwnOptions_AndFilters()
     {
         _harness.Silo.On(HttpMethod.Get, "api/v2/collections/u1", Profiles.ScriptedSilo.Problem(404, "not_found"));

@@ -219,6 +219,12 @@ public sealed partial class PersonalListViewModel : ObservableObject
 
     private Task LoadUnlessCurrentAsync()
     {
+        // Another profile or server: the last one's filters and their options are not this one's.
+        if (_loadedFor is { } loaded && (loaded.ServerId, loaded.ProfileId) != (_session.ActiveServer?.Id, _session.ProfileId))
+        {
+            ResetFilters();
+        }
+        EnsureFilterOptions();
         bool current = _loadedFor == Key() && _loadedVersion == (_changes?.Version ?? 0)
             && Grid.State is LibraryLoadState.Ready or LibraryLoadState.Empty or LibraryLoadState.Loading;
         return current ? Task.CompletedTask : StartAsync();
@@ -232,6 +238,8 @@ public sealed partial class PersonalListViewModel : ObservableObject
             return Task.CompletedTask;
         }
         Scope = scope;
+        // The genres and ratings follow the kind of titles shown.
+        EnsureFilterOptions();
         return StartAsync();
     }
 
@@ -288,6 +296,12 @@ public sealed partial class PersonalListViewModel : ObservableObject
         }
         int start = ++_starts;
         _loadedFor = Key();
+        // History's picks are of the titles shown before: another filter, scope or sort could hide some, and Remove would
+        // clear watch data the viewer can't see. Selecting goes on, with nothing picked.
+        if (Selection.HasPicks)
+        {
+            Selection.Clear();
+        }
         // Read before asking: a change while the answer is on its way leaves this list stale.
         _loadedVersion = _changes?.Version ?? 0;
         var images = await BrowseArtwork.ParametersAsync(_images, server, DisplayScale, _logger, CancellationToken.None);

@@ -243,6 +243,54 @@ public sealed class LibraryViewModelTests
     }
 
     [Fact]
+    public async Task ADamagedFile_LosesOnlyItsBadEntry_AndBadYearsAreTakenAsYears()
+    {
+        string directory = Path.Combine(Path.GetTempPath(), "granary-tests", Guid.NewGuid().ToString("N"));
+        try
+        {
+            string file = Path.Combine(directory, "library-tabs.json");
+            Directory.CreateDirectory(directory);
+            await File.WriteAllTextAsync(file, """
+                { "tabs": [
+                  { "server": "srv1", "profile": "7", "library": "2", "tab": "library", "descending": "yes" },
+                  { "server": "srv1", "profile": "7", "library": "1", "tab": "library", "sort": "year", "year_from": -5, "year_to": 20000 }
+                ] }
+                """, TestContext.Current.CancellationToken);
+            _harness.Tabs = new LibraryTabs(file, _harness.Logs.For<LibraryTabs>());
+
+            var library = _harness.Create();
+            await library.ActivateAsync("1");
+
+            Assert.Equal(LibraryTab.Library, library.SelectedTab);
+            Assert.Null(library.Browse.Filters.YearFrom);
+            Assert.Equal(LibraryFiltersViewModel.MaximumYear, library.Browse.Filters.YearTo);
+            Assert.Contains("year_max=9999", _harness.Queries(LibraryHarness.CatalogPath)[^1], StringComparison.Ordinal);
+            Assert.Null(_harness.Tabs.Recall("srv1", "7", "2"));
+        }
+        finally
+        {
+            if (Directory.Exists(directory))
+            {
+                Directory.Delete(directory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public void RememberedYears_AreTakenAsApplyTakesThem()
+    {
+        var filters = new LibraryFiltersViewModel(() => Task.CompletedTask, _harness.Logs.For<LibraryViewModel>());
+
+        filters.Restore(null, [], 2010, 1990);
+        Assert.Equal((1990, 2010), (filters.YearFrom!.Value, filters.YearTo!.Value));
+
+        filters.Restore(null, [], 0, -3);
+        Assert.Null(filters.YearFrom);
+        Assert.Null(filters.YearTo);
+        Assert.Equal(0, filters.ActiveCount);
+    }
+
+    [Fact]
     public async Task ASortOnlyKeptForAnotherProfile_LeavesThisOneByTitle()
     {
         string directory = Path.Combine(Path.GetTempPath(), "granary-tests", Guid.NewGuid().ToString("N"));

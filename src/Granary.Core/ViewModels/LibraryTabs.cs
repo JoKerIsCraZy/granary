@@ -94,8 +94,29 @@ public sealed class LibraryTabs
             {
                 return [];
             }
-            var file = JsonSerializer.Deserialize(File.ReadAllText(_filePath), LibraryTabsJsonContext.Default.LibraryTabsFile);
-            return file?.Tabs?.OfType<LibraryTabEntry>().ToList() ?? [];
+            using var document = JsonDocument.Parse(File.ReadAllText(_filePath));
+            if (document.RootElement.ValueKind != JsonValueKind.Object || !document.RootElement.TryGetProperty("tabs", out var tabs)
+                || tabs.ValueKind != JsonValueKind.Array)
+            {
+                return [];
+            }
+            // Entry by entry: one that doesn't read is the only one lost.
+            var entries = new List<LibraryTabEntry>();
+            foreach (var element in tabs.EnumerateArray())
+            {
+                try
+                {
+                    if (element.Deserialize(LibraryTabsJsonContext.Default.LibraryTabEntry) is { } entry)
+                    {
+                        entries.Add(entry);
+                    }
+                }
+                catch (JsonException ex)
+                {
+                    _logger.LogWarning(ex, "A library's last tab could not be read; that library opens on Recommended");
+                }
+            }
+            return entries;
         }
         catch (Exception ex)
         {
@@ -204,4 +225,5 @@ internal sealed record LibraryTabEntry(string? Server, string? Profile, string? 
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower, WriteIndented = true,
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
 [JsonSerializable(typeof(LibraryTabsFile))]
+[JsonSerializable(typeof(LibraryTabEntry))]
 internal sealed partial class LibraryTabsJsonContext : JsonSerializerContext;

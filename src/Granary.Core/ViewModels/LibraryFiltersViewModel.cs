@@ -113,12 +113,21 @@ public sealed partial class LibraryFiltersViewModel(Func<Task> applied, ILogger 
         ShowOptions(new CatalogFilters());
     }
 
-    /// <summary>Applies remembered filters without restarting anything; the options keep showing what they have.</summary>
+    /// <summary>
+    /// Applies remembered filters without restarting anything; the options keep showing what they have. Years are taken
+    /// as Apply takes them, so a damaged file can't make a query the server refuses.
+    /// </summary>
     public void Restore(string? genre, IReadOnlyList<string> ratings, int? from, int? to)
     {
         ArgumentNullException.ThrowIfNull(ratings);
+        int? first = Year(from);
+        int? last = Year(to);
+        if (first > last)
+        {
+            (first, last) = (last, first);
+        }
         Commit(string.IsNullOrWhiteSpace(genre) ? null : genre, [.. ratings.Where(r => !string.IsNullOrWhiteSpace(r)).Distinct(StringComparer.Ordinal)],
-            from, to);
+            first, last);
         BeginEdit();
     }
 
@@ -198,4 +207,7 @@ public sealed partial class LibraryFiltersViewModel(Func<Task> applied, ILogger 
 
     private static int? Year(double value) =>
         double.IsFinite(value) ? (int)Math.Clamp(Math.Round(value, MidpointRounding.AwayFromZero), MinimumYear, MaximumYear) : null;
+
+    // A remembered year: none when it isn't a year at all, else within the years a query takes.
+    private static int? Year(int? value) => value is > 0 ? Math.Clamp(value.Value, MinimumYear, MaximumYear) : null;
 }
