@@ -4,6 +4,8 @@ using Microsoft.UI.Composition;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
+using Microsoft.UI.Xaml.Automation.Peers;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Hosting;
 using Microsoft.UI.Xaml.Input;
@@ -11,36 +13,38 @@ using Microsoft.UI.Xaml.Input;
 namespace Granary.App.Controls;
 
 /// <summary>
-/// The top of Home: <see cref="Title"/>'s logo or name, its details and overview, over its backdrop, as Silage's home
-/// shows the card in focus. A new title's backdrop fades in over the last one, its blur first; the last one stays fully
-/// shown underneath until the fade is done. Once the rows below scroll, the hero folds into a compact header of the logo
-/// and the details, which stays at the top (<see cref="FollowScroll"/>); folded, a new title shows only its backdrop's blur.
+/// The top of a page of rows (Home, For You): <see cref="Title"/>'s logo or name, its details and overview, over its
+/// backdrop, as Silage's home shows the card in focus. A new title's backdrop fades in over the last one, its blur first;
+/// the last one stays fully shown underneath until the fade is done. Once the rows below scroll, the hero folds into a
+/// compact header of the logo and the details, which stays at the top (<see cref="FollowScroll"/>); folded, a new title
+/// shows only its backdrop's blur. The page lays its rows under it with <see cref="RowsViewMargin"/> and
+/// <see cref="RowsPadding"/>.
 /// </summary>
-public sealed partial class HomeHero : UserControl
+public sealed partial class BrowseHero : UserControl
 {
     public static readonly DependencyProperty TitleProperty =
-        DependencyProperty.Register(nameof(Title), typeof(HomeHeroTitle), typeof(HomeHero),
-            new PropertyMetadata(null, (sender, e) => ((HomeHero)sender).Show(e.NewValue as HomeHeroTitle)));
+        DependencyProperty.Register(nameof(Title), typeof(BrowseHeroTitle), typeof(BrowseHero),
+            new PropertyMetadata(null, (sender, e) => ((BrowseHero)sender).Show(e.NewValue as BrowseHeroTitle)));
 
     private const int LogoDecodeWidth = 400;
     private static readonly TimeSpan Crossfade = TimeSpan.FromMilliseconds(350);
     private static readonly TimeSpan LogoFade = TimeSpan.FromMilliseconds(200);
 
     private readonly Layer[] _layers;
-    private readonly CrossfadeLayers<HomeHeroTitle> _crossfade = new();
+    private readonly CrossfadeLayers<BrowseHeroTitle> _crossfade = new();
     private readonly DispatcherQueueTimer _fadeDone;
     private CancellationTokenSource? _logoLoading;
-    private HomeHeroTitle? _shown;
+    private BrowseHeroTitle? _shown;
     private string? _picturesOf;
     private ScrollViewer? _scroller;
     private double? _scrollTarget;
     private bool _isFolded;
 
-    public HomeHero()
+    public BrowseHero()
     {
         InitializeComponent();
-        Root.Height = HomeHeroLayout.RestHeight;
-        BottomFade.Height = HomeHeroLayout.RestHeight * HomeHeroLayout.FadeShare;
+        Root.Height = BrowseHeroLayout.RestHeight;
+        BottomFade.Height = BrowseHeroLayout.RestHeight * BrowseHeroLayout.FadeShare;
         _layers = [new Layer(LayerA, BlurA, ArtA), new Layer(LayerB, BlurB, ArtB)];
         foreach (var element in new UIElement[] { LayerA, LayerB, ArtA, ArtB })
         {
@@ -56,14 +60,34 @@ public sealed partial class HomeHero : UserControl
     }
 
     /// <summary>The title shown; null hides the hero and lets go of its pictures.</summary>
-    public HomeHeroTitle? Title
+    public BrowseHeroTitle? Title
     {
-        get => (HomeHeroTitle?)GetValue(TitleProperty);
+        get => (BrowseHeroTitle?)GetValue(TitleProperty);
         set => SetValue(TitleProperty, value);
     }
 
     /// <summary>
-    /// Folds the hero as <paramref name="scroller"/> scrolls its first <see cref="HomeHeroLayout.CollapseDistance"/>: the logo
+    /// The heading level the title's name is read at: the page's own heading on Home, which has no title of its own; under
+    /// the page's title elsewhere.
+    /// </summary>
+    public AutomationHeadingLevel HeadingLevel
+    {
+        get => AutomationProperties.GetHeadingLevel(HeadingText);
+        set => AutomationProperties.SetHeadingLevel(HeadingText, value);
+    }
+
+    // Static because the pages' x:Bind function bindings call them on the type. With a hero, the rows' view begins at the
+    // compact header and the rows a fold's length below it, so at rest they start under the full hero and scroll up under
+    // the header as it folds; without one (loading, empty, an error), as on any page.
+
+    /// <summary>Where the rows' scroller begins under a hero for <paramref name="hero"/>.</summary>
+    public static Thickness RowsViewMargin(BrowseHeroTitle? hero) => new(0, hero is null ? 0 : BrowseHeroLayout.CompactHeight, 0, 0);
+
+    /// <summary>The padding of the rows in that scroller: the pages' 48 px sides and bottom, and the fold's length on top.</summary>
+    public static Thickness RowsPadding(BrowseHeroTitle? hero) => new(48, hero is null ? 32 : BrowseHeroLayout.CollapseDistance, 48, 48);
+
+    /// <summary>
+    /// Folds the hero as <paramref name="scroller"/> scrolls its first <see cref="BrowseHeroLayout.CollapseDistance"/>: the logo
     /// shrinks, the details move up under it, the overview fades, and the backdrop shortens to the compact header. On the
     /// compositor, so a scroll costs the UI thread nothing. A wheel over the hero, or a touch drag on it, scrolls the rows.
     /// </summary>
@@ -77,12 +101,12 @@ public sealed partial class HomeHero : UserControl
         scroller.ViewChanged += OnScrolled;
         var scroll = ElementCompositionPreview.GetScrollViewerManipulationPropertySet(scroller);
         var compositor = scroll.Compositor;
-        var expressions = HomeHeroLayout.Expressions.ToDictionary(e => e.Target, e => e.Text, StringComparer.Ordinal);
+        var expressions = BrowseHeroLayout.Expressions.ToDictionary(e => e.Target, e => e.Text, StringComparer.Ordinal);
         ExpressionAnimation Expression(string target)
         {
             var animation = compositor.CreateExpressionAnimation(expressions[target]);
             animation.SetReferenceParameter("scroll", scroll);
-            foreach (var (name, value) in HomeHeroLayout.Parameters)
+            foreach (var (name, value) in BrowseHeroLayout.Parameters)
             {
                 animation.SetScalarParameter(name, value);
             }
@@ -114,7 +138,7 @@ public sealed partial class HomeHero : UserControl
 
     private static Visual Visual(UIElement element) => ElementCompositionPreview.GetElementVisual(element);
 
-    private void Show(HomeHeroTitle? title)
+    private void Show(BrowseHeroTitle? title)
     {
         _shown = title;
         if (title is null)
@@ -161,7 +185,7 @@ public sealed partial class HomeHero : UserControl
     }
 
     // A backdrop fades in on the layer not shown, on top; during a fade the newest title waits for it.
-    private void Begin(HomeHeroTitle title)
+    private void Begin(BrowseHeroTitle title)
     {
         if (_crossfade.Begin(title) is not int front)
         {
@@ -211,12 +235,12 @@ public sealed partial class HomeHero : UserControl
         _picturesOf = null;
     }
 
-    private int BackdropWidth() => HomeHeroLayout.BackdropDecodeWidth(BackdropBox.Width);
+    private int BackdropWidth() => BrowseHeroLayout.BackdropDecodeWidth(BackdropBox.Width);
 
     // The backdrop takes its share of the new width.
     private void OnWidthChanged(double width)
     {
-        BackdropBox.Width = Math.Round(width * HomeHeroLayout.BackdropShare);
+        BackdropBox.Width = Math.Round(width * BrowseHeroLayout.BackdropShare);
         FollowWidth();
     }
 
@@ -229,7 +253,7 @@ public sealed partial class HomeHero : UserControl
         }
         var front = _layers[_crossfade.Front];
         int needed = BackdropWidth();
-        switch (HomeHeroLayout.StepFor(front.WaitsForArt, _isFolded, _crossfade.IsFading, front.DecodedWidth, needed))
+        switch (BrowseHeroLayout.StepFor(front.WaitsForArt, _isFolded, _crossfade.IsFading, front.DecodedWidth, needed))
         {
             case BackdropStep.LoadArt:
                 front.LoadArt(needed);
@@ -251,7 +275,7 @@ public sealed partial class HomeHero : UserControl
         {
             _scrollTarget = null;
         }
-        bool folded = scroller.VerticalOffset > HomeHeroLayout.CollapseDistance / 2;
+        bool folded = scroller.VerticalOffset > BrowseHeroLayout.CollapseDistance / 2;
         if (folded == _isFolded)
         {
             return;
@@ -272,7 +296,7 @@ public sealed partial class HomeHero : UserControl
         {
             return;
         }
-        ScrollTo(scroller, HomeHeroLayout.WheelTarget(scroller.VerticalOffset, _scrollTarget, point.MouseWheelDelta, scroller.ScrollableHeight));
+        ScrollTo(scroller, BrowseHeroLayout.WheelTarget(scroller.VerticalOffset, _scrollTarget, point.MouseWheelDelta, scroller.ScrollableHeight));
         e.Handled = true;
     }
 
@@ -289,7 +313,7 @@ public sealed partial class HomeHero : UserControl
     {
         if (_scroller is { } scroller)
         {
-            ScrollTo(scroller, HomeHeroLayout.WheelTarget(scroller.VerticalOffset, _scrollTarget, (int)Math.Round(e.Delta.Translation.Y), scroller.ScrollableHeight));
+            ScrollTo(scroller, BrowseHeroLayout.WheelTarget(scroller.VerticalOffset, _scrollTarget, (int)Math.Round(e.Delta.Translation.Y), scroller.ScrollableHeight));
             e.Handled = true;
         }
     }
@@ -314,14 +338,14 @@ public sealed partial class HomeHero : UserControl
 
         public Grid Grid { get; } = grid;
 
-        public HomeHeroTitle? Title { get; private set; }
+        public BrowseHeroTitle? Title { get; private set; }
 
         /// <summary>The picture waits: the width was not known yet, or the hero was folded.</summary>
         public bool WaitsForArt { get; private set; }
 
         public int DecodedWidth { get; private set; }
 
-        public void Fill(HomeHeroTitle title, int width, bool folded)
+        public void Fill(BrowseHeroTitle title, int width, bool folded)
         {
             Clear();
             Title = title;

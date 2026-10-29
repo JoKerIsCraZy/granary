@@ -6,19 +6,19 @@ using Granary.Core.ViewModels.Detail;
 namespace Granary.Core.ViewModels;
 
 /// <summary>
-/// What the top of Home shows of a title (docs/ui-design.md, Home): its logo, or its name without one, a line of details,
-/// the overview and the backdrop behind them. An episode is headed by its series.
+/// What the top of a page of rows (Home, For You) shows of a title (docs/ui-design.md, Home): its logo, or its name without
+/// one, a line of details, the overview and the backdrop behind them. An episode is headed by its series.
 /// </summary>
 /// <param name="Key">The title's content id: the same title loaded again is the same hero.</param>
 /// <param name="Meta">"2008 · 2h 32m · PG-13", an episode's "S1 E1 · Kein Zufall · 25m · TV-14"; empty when nothing is known.</param>
-public sealed record HomeHeroTitle(string Key, string Heading, string Meta, string? Overview, Uri? LogoUrl, Uri? BackdropUrl, string? BackdropThumbhash)
+public sealed record BrowseHeroTitle(string Key, string Heading, string Meta, string? Overview, Uri? LogoUrl, Uri? BackdropUrl, string? BackdropThumbhash)
 {
-    public static HomeHeroTitle From(CatalogItemBase item, Uri server)
+    public static BrowseHeroTitle From(CatalogItemBase item, Uri server)
     {
         ArgumentNullException.ThrowIfNull(item);
         bool isEpisode = item.Type == CatalogItemTypes.Episode;
         string heading = isEpisode && !string.IsNullOrWhiteSpace(item.SeriesTitle) ? item.SeriesTitle : item.Title;
-        return new HomeHeroTitle(
+        return new BrowseHeroTitle(
             item.ContentId,
             heading,
             MetaOf(item),

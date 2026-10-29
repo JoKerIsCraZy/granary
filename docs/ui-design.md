@@ -299,8 +299,10 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   more; a later read that fails keeps what shows and says "Couldn’t load more titles." over Try again. The cards open
   the title's page, or the library's title.
 - Pages: 48 px side margins, 32 px top; rows 40 px apart.
-- Home's hero (`HomeHero`, `HomeHeroViewModel`), as Silage's home and so a deliberate departure from the web's Home,
-  which has none: the title of the card the pointer or the keyboard is on, in any row, at the top of the page.
+- Home's hero (`BrowseHero`, `BrowseHeroViewModel`), as Silage's home and so a deliberate departure
+  from the web's Home, which has none: the title of the card the pointer or the keyboard is on, in any row, at the top of
+  the page. A page lays its rows under it with `BrowseHero.RowsViewMargin` and `RowsPadding`, and feeds it its rows'
+  titles (`BrowseHeroViewModel.Follow`) and the card pointed at (`Point`).
   - What it shows: its logo, 80 px high and at most 400 px wide (its name in 40 px bold when it has none or the logo
     does not load); a 16 px grey line ("2008 · 2h 32m · PG-13", a series "2021 · TV-MA", an episode under its series'
     logo "S1 E1 · Kein Zufall · 25m · TV-14"); and the overview, at most three lines 570 px wide. All of it comes with
@@ -318,7 +320,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   - The rows begin 300 px down. Scrolling them folds the hero into a compact 150 px header that stays at the top and cuts
     the rows off at its edge: over the first 150 px of scrolling the logo shrinks to 45 px, the details move up under
     it, the overview fades and the backdrop shortens to the header. It follows the scroll on the compositor
-    (`HomeHeroLayout`; its numbers are expression parameters, never text in the user's culture). A wheel (not a tilt or
+    (`BrowseHeroLayout`; its numbers are expression parameters, never text in the user's culture). A wheel (not a tilt or
     Ctrl with it) or a touch or pen drag over the header scrolls the rows. Without a hero (loading, empty, an error) the
     rows sit as on other pages.
 - What happens on another device shows without a visit (`RealtimeEvents`, docs/api-contract.md 12): a title watched,

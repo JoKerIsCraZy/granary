@@ -46,7 +46,7 @@ public sealed class HomeHeroTests
     [Fact]
     public void AMovie_ReadsYearRuntimeAndRating()
     {
-        var title = HomeHeroTitle.From(Movie(), Server);
+        var title = BrowseHeroTitle.From(Movie(), Server);
 
         Assert.Equal("The Dark Knight", title.Heading);
         Assert.Equal("2008 · 2h 32m · PG-13", title.Meta);
@@ -72,7 +72,7 @@ public sealed class HomeHeroTests
             ContentRating = "TV-14",
         };
 
-        var title = HomeHeroTitle.From(episode, Server);
+        var title = BrowseHeroTitle.From(episode, Server);
 
         Assert.Equal("My Name Is Elena", title.Heading);
         Assert.Equal("S1 E1 · Kein Zufall · 25m · TV-14", title.Meta);
@@ -83,7 +83,7 @@ public sealed class HomeHeroTests
     {
         var series = new CatalogItem { ContentId = "s", Type = CatalogItemTypes.Series, Title = "Lupin", Year = 2021, Runtime = 45, ContentRating = "TV-MA" };
 
-        Assert.Equal("2021 · TV-MA", HomeHeroTitle.From(series, Server).Meta);
+        Assert.Equal("2021 · TV-MA", BrowseHeroTitle.From(series, Server).Meta);
     }
 
     [Fact]
@@ -91,7 +91,7 @@ public sealed class HomeHeroTests
     {
         var bare = new CatalogItem { ContentId = "x", Type = CatalogItemTypes.Movie, Title = "Maya", Overview = "   " };
 
-        var title = HomeHeroTitle.From(bare, Server);
+        var title = BrowseHeroTitle.From(bare, Server);
 
         Assert.Equal("", title.Meta);
         Assert.Null(title.Overview);
@@ -118,7 +118,7 @@ public sealed class HomeHeroTests
         Assert.Equal("r2", home.Hero.Shown?.Key);
 
         home.PointCardCommand.Execute(cards[2]);
-        _time.Advance(HomeHeroViewModel.SettleTime - TimeSpan.FromMilliseconds(1));
+        _time.Advance(BrowseHeroViewModel.SettleTime - TimeSpan.FromMilliseconds(1));
         Assert.Equal("r2", home.Hero.Shown?.Key);
 
         _time.Advance(TimeSpan.FromMilliseconds(1));
@@ -139,7 +139,7 @@ public sealed class HomeHeroTests
             home.PointCardCommand.Execute(card);
             _time.Advance(TimeSpan.FromMilliseconds(60));
         }
-        _time.Advance(HomeHeroViewModel.SettleTime);
+        _time.Advance(BrowseHeroViewModel.SettleTime);
 
         Assert.Equal(["r4"], shown);
     }
@@ -153,7 +153,7 @@ public sealed class HomeHeroTests
 
         home.PointCardCommand.Execute(cards[1]);
         home.PointCardCommand.Execute(cards[0]);
-        _time.Advance(HomeHeroViewModel.SettleTime);
+        _time.Advance(BrowseHeroViewModel.SettleTime);
 
         Assert.Equal("r1", home.Hero.Shown?.Key);
     }
@@ -193,7 +193,7 @@ public sealed class HomeHeroTests
         _silo.Map(SectionsPath, Sections(Section("recent", "recently_added", 1, Item("r1"))));
         changes.Report();
         await home.Loading;
-        _time.Advance(HomeHeroViewModel.SettleTime);
+        _time.Advance(BrowseHeroViewModel.SettleTime);
 
         Assert.Equal("r1", home.Hero.Shown?.Key);
     }
@@ -211,7 +211,7 @@ public sealed class HomeHeroTests
 
         changes.Report();
         await home.Loading;
-        _time.Advance(HomeHeroViewModel.SettleTime);
+        _time.Advance(BrowseHeroViewModel.SettleTime);
 
         Assert.Equal("r2", home.Hero.Shown?.Key);
     }
@@ -267,7 +267,7 @@ public sealed class HomeHeroTests
             ContentRating = "TV-14",
         };
 
-        Assert.Equal("Kein Zufall · 25m · TV-14", HomeHeroTitle.From(episode, Server).Meta);
+        Assert.Equal("Kein Zufall · 25m · TV-14", BrowseHeroTitle.From(episode, Server).Meta);
     }
 
     [Fact]
@@ -284,7 +284,7 @@ public sealed class HomeHeroTests
         var home = await HomeWithAsync(Section("recent", "recently_added", 1, Item("r1")));
 
         home.PointCardCommand.Execute(new MediaCard("elsewhere", "movie", "Elsewhere"));
-        _time.Advance(HomeHeroViewModel.SettleTime);
+        _time.Advance(BrowseHeroViewModel.SettleTime);
 
         Assert.Equal("r1", home.Hero.Shown?.Key);
     }
