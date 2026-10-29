@@ -42,5 +42,7 @@ release's section is what its update says it changes (docs/release.md).
 - Watch Party: open a room, share its code or invite link, and play, pause and seek together.
 - Watch Party in the player: a panel with the room's code, its viewers and who controls playback, and for the host
   Invite, Allow Pause, Stop and End, as on Silo's web player.
+- The keyboard's media keys and Windows' media overlay control the player: play and pause, skip, seek, and the previous
+  and next episode, with the title and its poster shown; in a Watch Party they go to the room.
 - Switching pages and scrolling fast through posters are much smoother, and paging a grid on a wide window no longer
   closes the app.

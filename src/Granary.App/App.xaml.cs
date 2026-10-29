@@ -135,6 +135,7 @@ public partial class App : Application
         services.AddSingleton<IAppUpdater, VelopackUpdater>();
         services.AddSingleton<IAppInfo, BuildInfo>();
         services.AddSingleton<IConfirmation, DialogConfirmation>();
+        services.AddSingleton<ISystemMediaControls, WindowsMediaControls>();
         services.AddGranaryCore();
         services.AddGranaryPlayer();
         services.AddSingleton<MainWindow>();

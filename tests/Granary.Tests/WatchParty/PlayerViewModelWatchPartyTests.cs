@@ -6,6 +6,7 @@ using Granary.Core.Api.WatchParty;
 using Granary.Core.Auth;
 using Granary.Core.Playback;
 using Granary.Core.ViewModels;
+using Granary.Core.ViewModels.Player;
 using Granary.Core.WatchParty;
 using Granary.Tests.Fakes;
 using Granary.Tests.Playback;
@@ -54,9 +55,9 @@ public sealed class PlayerViewModelWatchPartyTests : IAsyncDisposable
         _engine.RaiseState(new PlaybackSnapshot(true, false, TimeSpan.FromSeconds(seconds), TimeSpan.FromHours(2), null, HasStarted: true));
     }
 
-    private async Task<PlayerViewModel> PlayingAsync(string role = "host", MarkerSettings? markers = null)
+    private async Task<PlayerViewModel> PlayingAsync(string role = "host", MarkerSettings? markers = null, bool transport = true)
     {
-        string playing = WatchPartyPayloads.Room("playing", "playing", generation: 3, revision: 1, role: role, selected: "movie:heat");
+        string playing = WatchPartyPayloads.Room("playing", "playing", generation: 3, revision: 1, role: role, selected: "movie:heat", transport: transport);
         _silo.On(HttpMethod.Post, "api/v2/watch-together/join", ScriptedSilo.Json(HttpStatusCode.OK, WatchPartyPayloads.Answer(playing)));
         await _party.JoinAsync("ABCD1234", TestContext.Current.CancellationToken);
         await ServerPlaybackFixture.Until(() => _sockets.Count == 1 && _party.IsConnected, "the room connection");
@@ -239,6 +240,50 @@ public sealed class PlayerViewModelWatchPartyTests : IAsyncDisposable
 
         Assert.Equal(0, _navigation.PlayerLeaves);
         Assert.Equal(("Watch Party", "Failed to end room", true), (viewModel.NoticeTitle, viewModel.NoticeMessage, viewModel.IsNoticeWarning));
+    }
+
+    [Fact]
+    public async Task InARoom_WindowsMediaControlsOfferNoEpisodes_AndTheHostsPauseIsAskedOfTheRoom()
+    {
+        var viewModel = await PlayingAsync();
+        var controls = new FakeSystemMediaControls();
+        using var media = new PlayerSystemMedia(viewModel, controls, new ImmediateDispatcher(), _time);
+
+        Assert.Equal((true, true, false, false),
+            (controls.Current!.CanPlayPause, controls.Current.CanSeek, controls.Current.CanGoPrevious, controls.Current.CanGoNext));
+
+        controls.Press(SystemMediaButton.Pause);
+
+        Assert.False(_engine.Current.IsPaused);
+        await ServerPlaybackFixture.Until(() => Socket.Sent.Any(f => f.Contains("\"action\":\"pause\"", StringComparison.Ordinal)), "the request");
+    }
+
+    [Fact]
+    public async Task AGuestTheRoomDoesNotLetPause_HasNeitherPlayPauseNorSeekingOnWindowsMediaControls_AndAKeyIsRefusedAsTheButtonIs()
+    {
+        var viewModel = await PlayingAsync(role: "guest", transport: false);
+        var controls = new FakeSystemMediaControls();
+        using var media = new PlayerSystemMedia(viewModel, controls, new ImmediateDispatcher(), _time);
+
+        Assert.Equal((false, false), (controls.Current!.CanPlayPause, controls.Current.CanSeek));
+
+        controls.Press(SystemMediaButton.Pause);
+        controls.Press(SystemMediaButton.Seek, 600);
+
+        Assert.False(_engine.Current.IsPaused);
+        Assert.Empty(Playback.Seeks);
+        Assert.Equal(WatchPartyPlaybackBinding.HostSeeksText, viewModel.NoticeMessage);
+        Assert.DoesNotContain(Socket.Sent, f => f.Contains("\"transport_request\"", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task AGuestTheRoomLetsPause_HasPlayPauseButNoSeekingOnWindowsMediaControls()
+    {
+        var viewModel = await PlayingAsync(role: "guest");
+        var controls = new FakeSystemMediaControls();
+        using var media = new PlayerSystemMedia(viewModel, controls, new ImmediateDispatcher(), _time);
+
+        Assert.Equal((true, false), (controls.Current!.CanPlayPause, controls.Current.CanSeek));
     }
 
     public async ValueTask DisposeAsync() => await _party.LeaveAsync();

@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Globalization;
 using Granary.App.Controls;
+using Granary.Core.Abstractions;
 using Granary.Core.Playback;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Player;
@@ -40,6 +41,8 @@ public sealed partial class PlayerPage : Page
     private const double MiniViewWidth = 480;
 
     private AppWindow? _appWindow;
+    // Windows' media controls and keys, from the page's load on (a page never loaded never played) until it is left.
+    private PlayerSystemMedia? _systemMedia;
     private AppWindowPresenter? _windowedPresenter;
     private RectInt32? _windowedBounds;
 
@@ -113,6 +116,8 @@ public sealed partial class PlayerPage : Page
         IsFullScreen = _appWindow.Presenter.Kind == AppWindowPresenterKind.FullScreen;
         IsMiniView = _appWindow.Presenter.Kind == AppWindowPresenterKind.CompactOverlay;
         ViewModel.PropertyChanged += OnViewModelPropertyChanged;
+        _systemMedia ??= new PlayerSystemMedia(ViewModel, App.Services.GetRequiredService<ISystemMediaControls>(),
+            App.Services.GetRequiredService<IUiDispatcher>(), TimeProvider.System);
         ShowSkipIntervals();
         Focus(FocusState.Programmatic);
         ShowControls();
@@ -134,6 +139,8 @@ public sealed partial class PlayerPage : Page
         StopAutoHide();
         StopSubtitlePanels();
         StopPartyPanel();
+        _systemMedia?.Dispose();
+        _systemMedia = null;
         ViewModel.Dispose();
     }
 

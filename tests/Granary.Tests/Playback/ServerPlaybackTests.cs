@@ -49,6 +49,9 @@ public sealed class ServerPlaybackTests
         Assert.Equal(ServerPlaybackPhase.Preparing, playback.Status.Phase);
         Assert.Equal("Heat", playback.Title);
         Assert.Equal("1995", playback.Subtitle);
+        // Windows' media controls: the same lines for a movie, and its poster from the server (under its path prefix).
+        Assert.Equal(("Heat", "1995", "/silo/api/images/poster/heat.jpg"),
+            (playback.MediaInfo.Title, playback.MediaInfo.Subtitle, playback.MediaInfo.Artwork?.AbsolutePath));
     }
 
     [Theory]

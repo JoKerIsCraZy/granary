@@ -42,6 +42,9 @@ public interface IServerPlayback : IAsyncDisposable
     /// <summary>"S1 · E5 — Episode title" for an episode, the year for a movie; may be empty.</summary>
     string Subtitle { get; }
 
+    /// <summary>What Windows' media controls show for the title; <see cref="PlaybackMediaInfo.None"/> until it is known.</summary>
+    PlaybackMediaInfo MediaInfo { get; }
+
     /// <summary>Added to the engine's position to get the title's own time (source time).</summary>
     double TimelineOffsetSeconds { get; }
 

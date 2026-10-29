@@ -18,7 +18,9 @@ Dependencies point inward only: `App → Player → Core`, and `App → Core`.
 - **Core** has no UI dependency. View models use CommunityToolkit.Mvvm, which is UI-agnostic, so a
   later Avalonia front end could reuse Core unchanged (the role `shared` plays in the Android client).
   Core defines the ports the other layers implement: `IPlaybackEngine`, `IUiDispatcher`,
-  `INavigationService`, `ISecretStore`.
+  `INavigationService`, `ISecretStore`, and `ISystemMediaControls` for Windows' media keys and their overlay
+  (`PlayerSystemMedia` decides what they show and maps their buttons to the player's commands; the App's
+  `WindowsMediaControls` drives the main window's System Media Transport Controls).
 - **Player** implements `IPlaybackEngine` on libmpv and exposes the video side as
   `ICompositionVideoOutput`. It has no WinUI dependency either; the only Windows-specific code is the
   DXGI call in `Interop/DxgiSwapChain.cs`.

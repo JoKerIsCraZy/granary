@@ -34,6 +34,12 @@ internal static class Artwork
             ? Filled(new BitmapImage { DecodePixelHeight = decodeHeight, DecodePixelType = DecodePixelType.Logical }, url, cancellationToken)
             : null;
 
+    /// <summary>
+    /// The bytes of <paramref name="url"/> from the cache, as a stream for Windows to read itself (Windows' media controls):
+    /// the presigned address stays in the app. Null when the cache cannot get the image or the wait was cancelled.
+    /// </summary>
+    public static Task<InMemoryRandomAccessStream?> StreamAsync(Uri url, CancellationToken cancellationToken) => CopyAsync(url, cancellationToken);
+
     private static BitmapImage Filled(BitmapImage bitmap, Uri url, CancellationToken cancellationToken)
     {
         Fill(bitmap, url, cancellationToken);

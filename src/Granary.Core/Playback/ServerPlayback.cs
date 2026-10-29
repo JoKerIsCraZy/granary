@@ -141,6 +141,8 @@ public sealed partial class ServerPlayback : IServerPlayback
 
     public string Subtitle { get; private set; } = "";
 
+    public PlaybackMediaInfo MediaInfo { get; private set; } = PlaybackMediaInfo.None;
+
     public double TimelineOffsetSeconds => _plan?.Timeline.TimelineOffsetSeconds ?? 0;
 
     public double? DurationSeconds =>
@@ -269,6 +271,7 @@ public sealed partial class ServerPlayback : IServerPlayback
             return;
         }
         (Title, Subtitle) = PlaybackStarter.Titles(_context.Watch);
+        MediaInfo = PlaybackMediaInfo.Of(_context.Watch, _context.Server.BaseUri);
         _engine.SetSubtitleLook(_context.Preferences.Subtitles);
         _subtitleDelayMs = _context.Preferences.SubtitleDelayMs;
         // A Watch Party plays at the room's speed: 1x, with the room's own corrections.

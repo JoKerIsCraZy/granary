@@ -610,6 +610,16 @@ stream's commands on Activity.
   End Party and Cancel. One call at a time: the buttons wait while one is on its way. Invite and the policy say what they
   did as the player's notice in the web's toast words ("Invite copied. Room code ABCD1234", "Guests can now pause and
   resume"); Stop closes the player back to the room's lobby and End goes on to Watch Party, so they only say a failure.
+- **Media keys and Windows' media overlay** (System Media Transport Controls), while the player is open, minimized to the
+  bar or in the mini view too: two lines as Silo's apps write them for the system (an episode's own title over "Dark — S1
+  · E5", a movie's title over its year, a local file's name), the movie's poster or the episode's still (else the
+  backdrop), given to Windows as bytes from the artwork cache, and the timeline in the title's own time, shown again at
+  most every 2 seconds while it plays, at once on a pause or a seek. Play and Pause, Rewind and Fast forward (the skips
+  by the profile's seconds), a place on the timeline, and Previous and Next where the player has those episodes; no
+  Stop, as in the apps' video players. They are the player's own commands: in a Watch Party play and pause ask the room
+  and work for the host or a guest the room lets, seeking for the host only, and there are no episodes around; a key the
+  room refuses says so as the on-screen button does. Loading shows as changing, an ended or failed title as stopped,
+  and closing the player takes Granary off the overlay.
 - **Fill screen** (the web's video fit): the picture fills the page and is cut where it does not fit (mpv `panscan`);
   a new title shows its whole picture again.
 - **Mini view** (the web's Picture in Picture, P): the window becomes small (480 by 270), stays above the others

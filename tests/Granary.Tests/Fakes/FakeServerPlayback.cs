@@ -23,6 +23,8 @@ internal sealed class FakeServerPlayback : IServerPlayback
 
     public string Subtitle { get; set; } = "";
 
+    public PlaybackMediaInfo MediaInfo { get; set; } = PlaybackMediaInfo.None;
+
     public double TimelineOffsetSeconds { get; set; }
 
     public double? DurationSeconds { get; set; }

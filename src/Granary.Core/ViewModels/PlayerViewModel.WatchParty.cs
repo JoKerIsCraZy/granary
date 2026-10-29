@@ -24,6 +24,9 @@ public sealed partial class PlayerViewModel
     /// <summary>The viewer of a Watch Party may seek (the host).</summary>
     public bool CanSeekInRoom => !IsWatchParty || _watchParty?.Room?.IsHost == true;
 
+    /// <summary>The viewer of a Watch Party may play and pause: the host, or a guest the room lets.</summary>
+    public bool CanPauseInRoom => !IsWatchParty || _watchParty?.Room is { } room && (room.IsHost || room.SelfCanControlTransport);
+
     /// <summary>The Watch Party panel, while <see cref="IsWatchParty"/>; null in an app without Watch Party.</summary>
     public WatchPartyPanelViewModel? Party { get; }
 
@@ -119,6 +122,7 @@ public sealed partial class PlayerViewModel
             return;
         }
         OnPropertyChanged(nameof(CanSeekInRoom));
+        OnPropertyChanged(nameof(CanPauseInRoom));
         if (party.Room is { IsPlaying: true } room && room.SelectionRevision == _partyRevision && party.End is null)
         {
             return;

@@ -107,6 +107,10 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     public partial string Subtitle { get; private set; } = "";
 
+    /// <summary>What Windows' media controls show for the title: its lines as Silo's apps write them there, and its picture.</summary>
+    [ObservableProperty]
+    public partial PlaybackMediaInfo MediaInfo { get; private set; } = PlaybackMediaInfo.None;
+
     [ObservableProperty]
     public partial string ErrorMessage { get; private set; } = "";
 
@@ -212,6 +216,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         ErrorMessage = "";
         CanRetry = false;
         Phase = PlayerPhase.Preparing;
+        MediaInfo = PlaybackMediaInfo.None;
         LeavePlayback();
         ResetFill();
         ResetLook();
@@ -422,6 +427,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
             : MediaSource.Local(text);
         Title = Path.GetFileName(source.Url.IsFile ? source.Url.LocalPath : source.Url.AbsolutePath);
         Subtitle = "";
+        MediaInfo = new PlaybackMediaInfo(Title, "", null);
         _engine.Load(source);
         // mpv keeps a pause across files: a file opened plays.
         _engine.SetPaused(false);
@@ -442,6 +448,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         }
         Title = playback.Title;
         Subtitle = playback.Subtitle;
+        MediaInfo = playback.MediaInfo;
         SubtitleDelayMs = playback.SubtitleDelayMs;
         SkipBackSeconds = playback.Preferences.SkipBackSeconds;
         SkipForwardSeconds = playback.Preferences.SkipForwardSeconds;
