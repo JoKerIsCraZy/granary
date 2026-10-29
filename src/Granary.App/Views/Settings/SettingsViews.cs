@@ -172,8 +172,11 @@ public sealed partial class ServersSettingsView : UserControl, IDisposable
     }
 }
 
-/// <summary>Settings → Devices; it reads the account's sign-ins and the profile's devices when it is shown.</summary>
-public sealed partial class DevicesSettingsView : UserControl
+/// <summary>
+/// Settings → Devices; it reads the account's sign-ins and the profile's devices when it is shown, and the page disposes it
+/// as it leaves, so it stops following the server and profile in use.
+/// </summary>
+public sealed partial class DevicesSettingsView : UserControl, IDisposable
 {
     private static readonly SolidColorBrush ActiveBrush = new(Windows.UI.Color.FromArgb(0xFF, 0x34, 0xD3, 0x99));
 
@@ -186,6 +189,8 @@ public sealed partial class DevicesSettingsView : UserControl
     }
 
     public DevicesViewModel ViewModel { get; }
+
+    public void Dispose() => ViewModel.Dispose();
 
     // Static because x:Bind function bindings in the templates call them on the type.
     public static string SessionGlyph(SessionDeviceKind kind) => kind switch
@@ -223,7 +228,7 @@ public sealed partial class DevicesSettingsView : UserControl
     {
         if (sender is FrameworkElement { Tag: SignedInSessionRow row })
         {
-            await ViewModel.SignOutSessionCommand.ExecuteAsync(row);
+            await RunAsync(() => ViewModel.SignOutSessionCommand.ExecuteAsync(row));
         }
     }
 
@@ -231,7 +236,7 @@ public sealed partial class DevicesSettingsView : UserControl
     {
         if (sender is FrameworkElement { Tag: UserDeviceRow row })
         {
-            await ViewModel.SaveRenameCommand.ExecuteAsync(row);
+            await RunAsync(() => ViewModel.SaveRenameCommand.ExecuteAsync(row));
         }
     }
 
@@ -239,7 +244,7 @@ public sealed partial class DevicesSettingsView : UserControl
     {
         if (sender is FrameworkElement { Tag: UserDeviceRow row })
         {
-            await ViewModel.UseProfileSettingsCommand.ExecuteAsync(row);
+            await RunAsync(() => ViewModel.UseProfileSettingsCommand.ExecuteAsync(row));
         }
     }
 
@@ -247,7 +252,21 @@ public sealed partial class DevicesSettingsView : UserControl
     {
         if (sender is FrameworkElement { Tag: UserDeviceRow row })
         {
-            await ViewModel.ForgetCommand.ExecuteAsync(row);
+            await RunAsync(() => ViewModel.ForgetCommand.ExecuteAsync(row));
+        }
+    }
+
+    // The commands catch the server's failures; this keeps anything else, such as a question that could not open, from
+    // closing the app.
+    private static async Task RunAsync(Func<Task> action)
+    {
+        try
+        {
+            await action();
+        }
+        catch (Exception ex)
+        {
+            App.Services.GetRequiredService<ILogger<DevicesSettingsView>>().LogWarning("A device action failed: {Error}", ex.GetType().Name);
         }
     }
 }

@@ -367,7 +367,12 @@ Rules Granary follows, as the web does:
   (`POST /api/v2/auth/logout`, section 5), which also drops the saved credentials.
 - A session's name follows the web's `lib/loginSessionDevice.ts`: a client that named itself keeps its
   name; a User-Agent reads as "Chrome on Windows".
-- The device the request came from (`is_current_device`) is not offered for Forget.
+- The device the request came from is not offered for Forget: the one marked `is_current_device`, or the one whose
+  `device_id` is Granary's own (`X-Silo-Device-Id`).
+- A `404` on Forget means the device is gone already, so it leaves the list. A `404` on Rename or Use profile
+  settings reads the list again.
+- Granary's own addition: every action goes to the server, and as the profile, that the lists were read for. When
+  another server or profile is in use by then, it sends nothing and reads the lists again.
 - The household view (`scope=household`) and the per-device settings editor are left out.
 
 ## 5. Tokens and refresh

@@ -508,7 +508,10 @@ says why above the sections.
   changed here" for this PC); on the right Rename (while the server names devices; the name becomes a 260 px box with
   Save and Cancel, and an empty name shows the reported one again), Use profile settings (while something is set
   differently; asks first) and Forget (not on this PC; asks first). "No devices yet. They appear here as you sign in on
-  them." when the profile has none.
+  them." when the profile has none; a device the server no longer knows says "That device is no longer listed." and
+  the list is read again. When another server or profile is picked while the page is kept, both lists are read again
+  for it. An action started on the old lists sends nothing and says "The server or profile changed. The lists were read
+  again."
 - **Servers** (`ServersSettingsView` on `ServersViewModel`; the apps keep the server under Settings too): the title and
   its line with Add server (outline) on the right; then a line per saved server between hairlines: a 40 px disc, the
   name (15 px semibold) and "https://silo.example · Signed in as alex" (13 px muted, trimmed), the red Active pill or
