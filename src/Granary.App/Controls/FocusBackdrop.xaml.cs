@@ -30,6 +30,9 @@ public sealed partial class FocusBackdrop : UserControl
     private readonly DispatcherQueueTimer _fadedOut;
     private BrowseHeroTitle? _shown;
     private string? _picturesOf;
+    // The page was left: nothing loads into it until it shows again.
+    private bool _suspended;
+    private bool _showingPicture;
 
     public FocusBackdrop()
     {
@@ -40,10 +43,10 @@ public sealed partial class FocusBackdrop : UserControl
             element.OpacityTransition = new ScalarTransition { Duration = Crossfade };
         }
         _fadeDone = Timer(FinishFade);
-        _fadedOut = Timer(ClearHidden);
+        _fadedOut = Timer(FinishFadeOut);
         SizeChanged += (_, e) => OnSizeChanged(e.NewSize);
-        // As BrowseHero: a title shown while the page was out of the window gets its picture right after Loaded, not in it.
-        Loaded += (_, _) => DispatcherQueue.TryEnqueue(ShowPicture);
+        // As BrowseHero: a title shown while the page was out of the window gets its picture now that it is in it.
+        Loaded += (_, _) => ShowPicture();
     }
 
     /// <summary>The title whose backdrop shows; null fades it out and lets go of the pictures.</summary>
@@ -53,11 +56,19 @@ public sealed partial class FocusBackdrop : UserControl
         set => SetValue(TitleProperty, value);
     }
 
-    /// <summary>The page was left: lets go of the pictures (<see cref="Resume"/> brings them back).</summary>
-    public void Suspend() => Release();
+    /// <summary>The page was left: lets go of the pictures, and loads none until <see cref="Resume"/> brings them back.</summary>
+    public void Suspend()
+    {
+        _suspended = true;
+        Release();
+    }
 
     /// <summary>The page shows again: the picture of the title shown comes back.</summary>
-    public void Resume() => Show(Title);
+    public void Resume()
+    {
+        _suspended = false;
+        Show(Title);
+    }
 
     private DispatcherQueueTimer Timer(Action tick)
     {
@@ -79,21 +90,28 @@ public sealed partial class FocusBackdrop : UserControl
         ShowPicture();
     }
 
-    // Only while in the window (see BrowseHero.ShowPictures): a picture set before never raised ImageOpened.
+    // Only while in the window and the page is shown, and never from within itself (see BrowseHero.ShowPictures).
     private void ShowPicture()
     {
-        if (_shown is not { } title || !IsLoaded || title.Key == _picturesOf)
+        if (_showingPicture)
         {
             return;
         }
-        if (_fadedOut.IsRunning)
+        _showingPicture = true;
+        try
         {
-            // Pointed at again while the last picture fades out: that one goes at once.
-            _fadedOut.Stop();
-            ClearHidden();
+            while (!_suspended && IsLoaded && _shown is { } title && title.Key != _picturesOf)
+            {
+                // Pointed at again while the last picture fades out: the new one fades in over it.
+                _fadedOut.Stop();
+                _picturesOf = title.Key;
+                Begin(title);
+            }
         }
-        _picturesOf = title.Key;
-        Begin(title);
+        finally
+        {
+            _showingPicture = false;
+        }
     }
 
     // A picture fades in on the layer not shown, on top; during a fade the newest title waits for it.
@@ -128,11 +146,15 @@ public sealed partial class FocusBackdrop : UserControl
         FollowSize();
     }
 
-    // Nothing pointed at any more: the picture fades out, then goes.
+    // Nothing pointed at any more: the picture fades out, then goes. The layer in front stays the front one meanwhile, so
+    // a title that comes during the fade goes to the other layer and fades in over it.
     private void FadeOut()
     {
         _fadeDone.Stop();
-        _crossfade.Reset();
+        if (_crossfade.IsFading)
+        {
+            _crossfade.Complete();
+        }
         _picturesOf = null;
         foreach (var layer in _layers)
         {
@@ -141,10 +163,11 @@ public sealed partial class FocusBackdrop : UserControl
         _fadedOut.Start();
     }
 
-    // The layers faded out let go of their pictures.
-    private void ClearHidden()
+    // Faded out: the layers let go of their pictures.
+    private void FinishFadeOut()
     {
-        foreach (var layer in _layers.Where(layer => layer.Grid.Opacity == 0))
+        _crossfade.Reset();
+        foreach (var layer in _layers)
         {
             layer.Clear();
         }

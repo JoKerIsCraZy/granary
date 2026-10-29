@@ -65,6 +65,32 @@ public sealed class SearchBackdropTests
     }
 
     [Fact]
+    public async Task ASearchANewerOneReplaced_FeedsTheBackdropNothing_WhenItsAnswerComesLate()
+    {
+        var stale = new TaskCompletionSource();
+        _silo.Map("api/v2/catalog", async (request, _) =>
+        {
+            if (System.Web.HttpUtility.ParseQueryString(request.RequestUri!.Query)["q"] == "he")
+            {
+                // The older search's answer comes after the newer one's, and says other things of the same title.
+                await stale.Task;
+                return BrowseFakeSilo.Json(Page(null, new { content_id = "heat", type = "movie", title = "Heat as it was", status = "matched",
+                    genres = Array.Empty<string>(), keywords = Array.Empty<string>(), year = 1995 }));
+            }
+            return BrowseFakeSilo.Json(Page(null, Item("heat")));
+        });
+        var search = SearchRequestToAddTests.Create(_silo, _session, new RecordingNavigation(), _time);
+        var older = search.ActivateAsync("he");
+
+        await search.ActivateAsync("hea");
+        stale.SetResult();
+        await older;
+        search.PointCardCommand.Execute(Assert.Single(search.Cards));
+
+        Assert.Equal("Title heat", search.Backdrop.Shown?.Heading);
+    }
+
+    [Fact]
     public async Task ANewSearch_TakesTheBackdropAway()
     {
         var search = await SearchedAsync("he");
