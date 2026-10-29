@@ -252,6 +252,55 @@ public sealed class SearchRequestToAddTests
     }
 
     [Fact]
+    public async Task AFirstReadThatFailsOnALaterPage_KeepsWhatCame_AndTriesThatPageAgain()
+    {
+        _silo.Map(RequestSearchPath, request => Number(request, "page") == 1
+            ? BrowseFakeSilo.Json(Results(1, 5, (1, "none"), (2, "none")))
+            : BrowseFakeSilo.Problem(502, "upstream_error"));
+        var search = Create();
+
+        await search.ActivateAsync("borat");
+
+        Assert.True(search.ShowsRequests);
+        Assert.Equal(["Movie 1", "Movie 2"], Titles(search));
+        Assert.True(search.Requests.HasMoreError);
+        Assert.False(search.Requests.ShowsLoadMore);
+
+        Pages(totalPages: 5, perPage: 20);
+        await search.Requests.TryAgainCommand.ExecuteAsync(null);
+
+        Assert.Equal(["1", "2", "2"], PagesRead());
+        Assert.False(search.Requests.HasMoreError);
+        Assert.Equal(22, search.Requests.Cards.Count);
+    }
+
+    [Fact]
+    public async Task WhileTheFirstReadGoesOn_LoadMoreStartsNoSecond()
+    {
+        var heldPage = new TaskCompletionSource();
+        _silo.Map(RequestSearchPath, async (request, _) =>
+        {
+            int page = Number(request, "page");
+            if (page == 2)
+            {
+                await heldPage.Task;
+            }
+            return BrowseFakeSilo.Json(Results(page, 5, (page * 100 + 1, "none")));
+        });
+        var search = Create();
+
+        var searching = search.ActivateAsync("borat");
+        await WaitUntilAsync(() => PagesRead().Length == 2);
+        Assert.False(search.Requests.LoadMoreCommand.CanExecute(null));
+        await search.Requests.LoadMoreCommand.ExecuteAsync(null);
+        heldPage.SetResult();
+        await searching;
+
+        Assert.Equal(["1", "2", "3"], PagesRead());
+        Assert.Equal(["Movie 101", "Movie 201", "Movie 301"], Titles(search));
+    }
+
+    [Fact]
     public async Task PagesOfOnlyLibraryTitles_KeepTheSection_WhileTmdbHasMore()
     {
         _silo.Map(RequestSearchPath, request => BrowseFakeSilo.Json(Results(Number(request, "page"), 5, (Number(request, "page"), "available"))));
