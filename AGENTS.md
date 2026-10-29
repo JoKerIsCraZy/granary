@@ -56,7 +56,7 @@ tests/Granary.Tests  net10.0-windows                 unit tests and libmpv integ
 ## Building and testing
 
 ```powershell
-./scripts/fetch-native.ps1 -ZipPath <the pinned libmpv zip>     # libmpv into native/libmpv (git-ignored); see below
+./scripts/fetch-native.ps1                                        # libmpv into native/libmpv (git-ignored); see below
 dotnet build Granary.slnx
 dotnet build src/Granary.App/Granary.App.csproj -p:Platform=x64  # the app project alone
 dotnet test --solution Granary.slnx
@@ -64,11 +64,11 @@ dotnet test --solution Granary.slnx
 
 - Warnings are errors (`TreatWarningsAsErrors`, analyzers included). A change must build with 0 warnings.
 - Package versions live in `Directory.Packages.props` (central package management).
-- libmpv: the upstream asset pinned in `native.lock.json` was replaced by a newer mpv build and answers 404, so
-  `fetch-native.ps1` cannot download it until the pin points at a mirror. Pass the exact pinned archive with
-  `-ZipPath` (the hash is still checked). Do not re-pin `native.lock.json` on the side: a new pin also changes
-  THIRD_PARTY_NOTICES.md. Without libmpv, builds and tests still run and the libmpv integration tests skip
-  themselves.
+- libmpv: `native.lock.json` pins the build by SHA-256 and downloads it from this repository's mirror release
+  (`deps-libmpv-…`; upstream replaces its asset on every mpv master build). Until that release is uploaded
+  (docs/release.md), pass the exact pinned archive with `-ZipPath`; the hash is still checked. Do not re-pin
+  `native.lock.json` on the side: a new pin also needs a new mirror release and changes THIRD_PARTY_NOTICES.md.
+  Without libmpv, builds and tests still run and the libmpv integration tests skip themselves.
 
 Tests run on xUnit v3 with Microsoft Testing Platform. There is no mocking library: fakes are small hand-written
 classes in `tests/Granary.Tests/Fakes`.

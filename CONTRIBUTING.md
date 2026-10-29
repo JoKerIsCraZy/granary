@@ -37,8 +37,8 @@ clients:
 1. For anything bigger than a small fix, open or comment on an issue first, so the approach is agreed before you
    spend time on it.
 2. Set up your machine as the [README](README.md#building-from-source) describes: the .NET 10 SDK, then libmpv
-   with `./scripts/fetch-native.ps1 -ZipPath <the pinned libmpv zip>`. The pinned download URL answers 404 until the
-   pin points at a mirror; the README's note says how to get the archive.
+   with `./scripts/fetch-native.ps1`, which downloads the pinned build from this repository's mirror release and
+   checks its hash.
 3. Branch from `main`. Keep one change per branch and pull request.
 4. Read [AGENTS.md](AGENTS.md): the layers, the code style, the test helpers and the known pitfalls. It is
    written for coding agents but applies to everyone.

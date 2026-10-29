@@ -37,7 +37,7 @@ if (-not $ZipPath) {
             Invoke-WebRequest -Uri $entry.url -OutFile $ZipPath -UseBasicParsing
         }
         catch {
-            throw "Download failed ($($_.Exception.Message)). The pinned asset may have been replaced upstream; download the archive from a mirror and pass -ZipPath, or re-pin url and sha256 in native.lock.json."
+            throw "Download failed ($($_.Exception.Message)). The mirror release may not be uploaded yet (docs/release.md); pass a copy of the pinned archive with -ZipPath."
         }
     }
 }
