@@ -17,3 +17,5 @@ updates:
     groups:
       minor-and-patch:
         update-types: [minor, patch]
+        # Velopack comes on its own: signed updates rely on how it downloads and applies (VelopackUpdater).
+        exclude-patterns: ['Velopack', 'vpk']

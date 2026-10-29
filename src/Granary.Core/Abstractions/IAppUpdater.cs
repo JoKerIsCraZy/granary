@@ -14,7 +14,10 @@ public enum AppUpdateSupport
 }
 
 /// <summary>A newer release of Granary.</summary>
-/// <param name="Notes">What changed, in Markdown, as the release was packed with; null without.</param>
+/// <param name="Notes">
+/// What changed, in Markdown, as the release's signed package carries it; null without, and null before the download is
+/// verified. Notes from the unsigned feed are never shown.
+/// </param>
 public sealed record AppRelease(string Version, string? Notes);
 
 /// <summary>
@@ -29,8 +32,12 @@ public interface IAppUpdater
     /// <summary>Looks for a newer release than this copy; null when there is none.</summary>
     Task<AppRelease?> CheckAsync(CancellationToken cancellationToken);
 
-    /// <summary>Downloads the release <see cref="CheckAsync"/> found, telling how far it is in percent.</summary>
-    Task DownloadAsync(IProgress<int>? progress, CancellationToken cancellationToken);
+    /// <summary>
+    /// Downloads the release <see cref="CheckAsync"/> found, telling how far it is in percent. The release as verified,
+    /// with the notes its signed package carries, once it is ready to apply; null when it could not be verified, and then
+    /// nothing is applied.
+    /// </summary>
+    Task<AppRelease?> DownloadAsync(IProgress<int>? progress, CancellationToken cancellationToken);
 
     /// <summary>
     /// Has the downloaded release applied once this process has exited, and Granary started again afterwards when
@@ -46,7 +53,7 @@ public sealed class NoAppUpdater : IAppUpdater
 
     public Task<AppRelease?> CheckAsync(CancellationToken cancellationToken) => Task.FromResult<AppRelease?>(null);
 
-    public Task DownloadAsync(IProgress<int>? progress, CancellationToken cancellationToken) => Task.CompletedTask;
+    public Task<AppRelease?> DownloadAsync(IProgress<int>? progress, CancellationToken cancellationToken) => Task.FromResult<AppRelease?>(null);
 
     public void ApplyWhenExited(bool restart)
     {

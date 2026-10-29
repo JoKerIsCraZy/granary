@@ -1,3 +1,4 @@
+using Granary.Core.Updates;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Velopack;
@@ -13,7 +14,9 @@ public static class Program
     [STAThread]
     private static void Main(string[] args)
     {
-        VelopackApp.Build().Run();
+        // Velopack would otherwise apply any newer package it finds in its packages folder at start. Only an update the
+        // VelopackUpdater verified as signed is applied, as Granary exits.
+        VelopackApp.Build().SetAutoApplyOnStartup(UpdateSafety.ApplyPackagesAtStart).Run();
         WinRT.ComWrappersSupport.InitializeComWrappers();
         Application.Start(start =>
         {

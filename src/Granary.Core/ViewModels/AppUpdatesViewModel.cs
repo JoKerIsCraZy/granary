@@ -2,6 +2,7 @@ using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
+using Granary.Core.Updates;
 using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.ViewModels;
@@ -21,15 +22,18 @@ public enum AppUpdateState
     /// <summary>The last look failed; the next one tries again.</summary>
     Failed,
 
+    /// <summary>The release found could not be verified as signed, so nothing is applied; the next look tries again.</summary>
+    NotVerified,
+
     /// <summary>This copy does not update itself (<see cref="IAppUpdater.Support"/>).</summary>
     Unsupported,
 }
 
 /// <summary>
 /// Keeps an installed Granary up to date (docs/release.md): after the start, and every few hours while it runs, it looks
-/// for a newer release and downloads it in the background; Settings → About looks at once on Check for updates. One look
-/// runs at a time, whoever asked. Once a release is ready, a notice offers to restart into it; left alone, it is applied
-/// when Granary closes.
+/// for a newer release and downloads it in the background, keeping it only once it is verified as a signed release;
+/// Settings → About looks at once on Check for updates. One look runs at a time, whoever asked. Once a release is ready,
+/// a notice offers to restart into it; left alone, it is applied when Granary closes.
 /// </summary>
 public sealed partial class AppUpdatesViewModel : ObservableObject
 {
@@ -103,6 +107,8 @@ public sealed partial class AppUpdatesViewModel : ObservableObject
         AppUpdateState.UpToDate => "Granary is up to date.",
         AppUpdateState.Ready => $"Granary {Release?.Version} is ready. It installs when you restart or close Granary.",
         AppUpdateState.Failed => "Couldn't check for updates. Check the connection and try again.",
+        AppUpdateState.NotVerified =>
+            $"The update to Granary {Release?.Version} couldn't be verified, so it wasn't installed. Granary will try again later.",
         _ => "Granary looks for updates when it starts and every six hours.",
     };
 
@@ -158,7 +164,7 @@ public sealed partial class AppUpdatesViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanCheckNow))]
     private Task CheckNowAsync() => LookAsync(_stopping);
 
-    private bool CanCheckNow() => State is AppUpdateState.Idle or AppUpdateState.UpToDate or AppUpdateState.Failed;
+    private bool CanCheckNow() => State is AppUpdateState.Idle or AppUpdateState.UpToDate or AppUpdateState.Failed or AppUpdateState.NotVerified;
 
     /// <summary>Restarts into the downloaded release: the window closes as usual, the update is applied, Granary starts again.</summary>
     [RelayCommand(CanExecute = nameof(IsReady))]
@@ -210,8 +216,17 @@ public sealed partial class AppUpdatesViewModel : ObservableObject
             DownloadPercent = 0;
             State = AppUpdateState.Downloading;
             // Made here, on the caller's thread, so the updater's reports come back to it.
-            await _updater.DownloadAsync(new Progress<int>(percent => DownloadPercent = Math.Clamp(percent, 0, 100)), cancellationToken);
-            _logger.LogInformation("Granary {Version} is downloaded and ready to install", release.Version);
+            var verified = await _updater.DownloadAsync(new Progress<int>(percent => DownloadPercent = Math.Clamp(percent, 0, 100)),
+                cancellationToken);
+            if (verified is null)
+            {
+                // The updater logged why. Nothing is applied; the next look tries again.
+                State = AppUpdateState.NotVerified;
+                return;
+            }
+            // From here on, the notes shown are the ones the signed package carries.
+            Release = verified;
+            _logger.LogInformation("Granary {Version} is downloaded and ready to install", verified.Version);
             State = AppUpdateState.Ready;
             IsNoticeShown = true;
         }
@@ -221,8 +236,9 @@ public sealed partial class AppUpdatesViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            // Offline, rate-limited or a broken release: the app goes on as it is and looks again later.
-            _logger.LogWarning(ex, "Could not look for a Granary update");
+            // Offline, rate-limited or a broken release: the app goes on as it is and looks again later. The kind of
+            // failure only: Velopack's and HttpClient's messages can carry addresses.
+            _logger.LogWarning("Could not look for a Granary update: {Problem}", UpdateFailures.KindOf(ex));
             Release = null;
             State = AppUpdateState.Failed;
         }

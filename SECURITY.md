@@ -35,3 +35,6 @@ credited unless you ask otherwise.
 Granary keeps sign-in tokens in a file encrypted with Windows DPAPI for the current user, sends media
 credentials only in headers, and keeps tokens out of its logs. A weakness in any of these counts as a
 vulnerability.
+
+An installed copy applies only updates whose release is signed with Granary's update key (docs/release.md, "Signed
+releases"). A way to make it apply anything else counts as a vulnerability too.
