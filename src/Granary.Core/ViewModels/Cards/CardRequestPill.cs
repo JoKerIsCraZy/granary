@@ -44,7 +44,8 @@ public readonly record struct CardRequestPill(bool Shown, bool Enabled, bool Tab
             Shown: shown,
             Enabled: enabled,
             TabStop: keyboard && !requesting,
-            TakesPointer: enabled && (keyboard || (pointer && armed)),
+            // A pointer over the card takes it only once armed, also where the keyboard already shows it.
+            TakesPointer: enabled && (pointer ? armed : keyboard),
             InAccessibilityTree: shown,
             MoveFocusToCard: pill != CardFocus.None && !enabled,
             Arm: pointer && !requesting && !armed);

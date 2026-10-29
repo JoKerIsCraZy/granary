@@ -85,6 +85,8 @@ public sealed partial class MediaCardView : UserControl
     private string? _requestName;
     // The pill as screen readers see it; it starts out of the tree (the XAML's Raw).
     private bool _requestInTree;
+    // Request handed focus to the card while a key was down: that key's repeats are let go (OnHostPreviewKeyDown).
+    private bool _swallowKeyRepeats;
     private bool _followsHostFocus;
     private bool _sizedLandscape;
     private (double Width, bool Landscape, bool Lifted) _placed;
@@ -303,8 +305,30 @@ public sealed partial class MediaCardView : UserControl
             _followsHostFocus = true;
             _host.LostFocus += OnRequestLostFocus;
             _host.LosingFocus += OnHostLosingFocus;
+            _host.PreviewKeyDown += OnHostPreviewKeyDown;
+            _host.PreviewKeyUp += OnHostPreviewKeyUp;
         }
     }
+
+    // Enter held on Request: the pill hands focus to the card as its request starts, and the key's repeats would then
+    // press the card and open the title. They are let go until the key comes up.
+    private void OnHostPreviewKeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (!_swallowKeyRepeats)
+        {
+            return;
+        }
+        if (e.KeyStatus.WasKeyDown)
+        {
+            e.Handled = true;
+        }
+        else
+        {
+            _swallowKeyRepeats = false;
+        }
+    }
+
+    private void OnHostPreviewKeyUp(object sender, KeyRoutedEventArgs e) => _swallowKeyRepeats = false;
 
     // A row or grid takes Tab once and gives it on past its cards (the arrows move between them), so Tab from a card whose
     // Request shows goes to the pill first, and Shift+Tab from the pill back to the card. LosingFocus bubbles: the host
@@ -345,7 +369,9 @@ public sealed partial class MediaCardView : UserControl
         var pill = CardRequestPill.Decide(offered, requesting, FocusOf(_host), FocusOf(button), _hovered && _pointerMayRequest, _requestArmed);
         if (pill.MoveFocusToCard)
         {
-            _host?.Focus(button.FocusState == FocusState.Pointer ? FocusState.Pointer : FocusState.Keyboard);
+            bool byPointer = button.FocusState == FocusState.Pointer;
+            _swallowKeyRepeats = !byPointer;
+            _host?.Focus(byPointer ? FocusState.Pointer : FocusState.Keyboard);
         }
         button.Opacity = pill.Shown ? 1 : 0;
         button.IsEnabled = pill.Enabled;
@@ -983,6 +1009,8 @@ public sealed partial class MediaCardView : UserControl
                 _followsHostFocus = false;
                 _host.LostFocus -= OnRequestLostFocus;
                 _host.LosingFocus -= OnHostLosingFocus;
+                _host.PreviewKeyDown -= OnHostPreviewKeyDown;
+                _host.PreviewKeyUp -= OnHostPreviewKeyUp;
             }
             _host = null;
         }
