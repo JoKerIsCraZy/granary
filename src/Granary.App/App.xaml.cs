@@ -32,7 +32,7 @@ public partial class App : Application
         InitializeComponent();
         // A blocking full collection mid-scroll cost frames (up to 60 ms); while memory allows, collections run beside the app.
         GCSettings.LatencyMode = GCLatencyMode.SustainedLowLatency;
-        UnhandledException += (_, e) => _logger?.LogCritical(e.Exception, "Unhandled exception");
+        UnhandledException += (_, e) => ReportUnhandled(e.Exception);
     }
 
     /// <summary>The composition root. Pages resolve their view models from here.</summary>
@@ -51,6 +51,20 @@ public partial class App : Application
             File.AppendAllText(Path.Combine(FileLoggerProvider.DefaultDirectory, "startup-crash.log"),
                 $"{DateTime.Now:O} {LogRedactor.Redact(ex.ToString())}{Environment.NewLine}");
             throw;
+        }
+    }
+
+    // Never throws: WinUI reports a failing handler as one more unhandled exception from within, again and again, until the
+    // stack overflows. A log that could not be written did that, and hid what had gone wrong.
+    private void ReportUnhandled(Exception exception)
+    {
+        try
+        {
+            _logger?.LogCritical(exception, "Unhandled exception");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"An unhandled {exception.GetType().Name} could not be logged: {ex.GetType().Name}");
         }
     }
 
