@@ -4,8 +4,8 @@ using Microsoft.UI.Xaml.Controls;
 namespace Granary.App.Controls;
 
 /// <summary>
-/// One of the two layers a backdrop crossfades between (<see cref="BrowseHero"/>): its blur, its picture, and what it is
-/// loading.
+/// One of the two layers a backdrop crossfades between (<see cref="BrowseHero"/>, <see cref="FocusBackdrop"/>): its blur,
+/// its picture, and what it is loading.
 /// </summary>
 internal sealed class BackdropLayer(Grid grid, Image blur, Image art)
 {

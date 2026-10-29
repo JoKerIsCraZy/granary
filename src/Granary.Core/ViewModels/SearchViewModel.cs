@@ -54,6 +54,8 @@ public sealed partial class SearchViewModel : ObservableObject
     private bool _isSearchingTitles;
     // The last search found no titles, without failing.
     private bool _libraryEmpty;
+    // What the backdrop shows of each library result, by the card's id.
+    private readonly Dictionary<string, BrowseHeroTitle> _backdropTitles = new(StringComparer.Ordinal);
     private (bool IsReady, string? ServerId, string? ProfileId)? _sessionKey;
     private bool _isActive;
 
@@ -74,6 +76,7 @@ public sealed partial class SearchViewModel : ObservableObject
         _dispatcher = dispatcher;
         _time = time;
         _logger = logger;
+        Backdrop = new BrowseHeroViewModel(dispatcher, time);
         Requests = requests;
         Requests.PropertyChanged += (_, e) =>
         {
@@ -87,6 +90,12 @@ public sealed partial class SearchViewModel : ObservableObject
 
     /// <summary>"Request to add": what TMDB finds for the text that the library does not have.</summary>
     public RequestToAddViewModel Requests { get; }
+
+    /// <summary>
+    /// The dimmed backdrop behind the header: the result the pointer or the keyboard is on, in the titles or in "Request to
+    /// add"; nothing until one is pointed at, and nothing again for each new search.
+    /// </summary>
+    public BrowseHeroViewModel Backdrop { get; }
 
     /// <summary>The search box; every change searches again once typing pauses.</summary>
     [ObservableProperty]
@@ -271,8 +280,9 @@ public sealed partial class SearchViewModel : ObservableObject
             {
                 return;
             }
-            // What the last text found is no guide to this one's "Request to add".
+            // What the last text found is no guide to this one's "Request to add", nor to its backdrop.
             _libraryEmpty = false;
+            _backdropTitles.Clear();
             SetSearchingTitles(true);
             var people = FindPeopleAsync(server, text, cancellationToken);
             var requests = Requests.SearchAsync(text, scope);
@@ -383,7 +393,25 @@ public sealed partial class SearchViewModel : ObservableObject
         Requests.LibraryFoundNothing = _libraryEmpty;
         _isSearchingTitles = false;
         Cards = titles is null ? [] : titles.Cards;
+        ForgetBackdrop();
         ShowResultsState();
+    }
+
+    /// <summary>The pointer or the keyboard came to a result (a title, or one to request): the backdrop follows it.</summary>
+    [RelayCommand]
+    private void PointCard(MediaCard? card)
+    {
+        if (card is not null && (_backdropTitles.GetValueOrDefault(card.Id) ?? Requests.BackdropOf(card)) is { } title)
+        {
+            Backdrop.Point(title);
+        }
+    }
+
+    // New results: no backdrop until one of them is pointed at, and that one shows at once.
+    private void ForgetBackdrop()
+    {
+        Backdrop.Reset(null);
+        Backdrop.Forget();
     }
 
     /// <summary>
@@ -446,6 +474,7 @@ public sealed partial class SearchViewModel : ObservableObject
         ResultsQuery = "";
         People = [];
         Cards = [];
+        ForgetBackdrop();
         IsSearching = false;
         HasError = false;
         StatusText = "";
@@ -478,8 +507,16 @@ public sealed partial class SearchViewModel : ObservableObject
         _ => MediaScopes.Video,
     };
 
-    // An item without an id could not be opened.
-    private static MediaCard? CardFor(CatalogItem item, Uri server) => item.ContentId.Length > 0 ? MediaCardFactory.Poster(item, server) : null;
+    // An item without an id could not be opened. What the backdrop shows of it is kept with it.
+    private MediaCard? CardFor(CatalogItem item, Uri server)
+    {
+        if (item.ContentId.Length == 0)
+        {
+            return null;
+        }
+        _backdropTitles[item.ContentId] = BrowseHeroTitle.From(item, server);
+        return MediaCardFactory.Poster(item, server);
+    }
 
     private (bool IsReady, string? ServerId, string? ProfileId) SessionKey() =>
         (_session.State == SessionState.Ready, _session.ActiveServer?.Id, _session.ProfileId);

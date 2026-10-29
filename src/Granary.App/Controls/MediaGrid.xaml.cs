@@ -5,6 +5,7 @@ using Granary.Core.ViewModels.Cards;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Windows.Foundation;
 
@@ -29,6 +30,9 @@ public sealed partial class MediaGrid : UserControl
 
     public static readonly DependencyProperty CardInvokedCommandProperty =
         DependencyProperty.Register(nameof(CardInvokedCommand), typeof(ICommand), typeof(MediaGrid), new PropertyMetadata(null));
+
+    public static readonly DependencyProperty CardPointedCommandProperty =
+        DependencyProperty.Register(nameof(CardPointedCommand), typeof(ICommand), typeof(MediaGrid), new PropertyMetadata(null));
 
     public static readonly DependencyProperty LoadMoreCommandProperty =
         DependencyProperty.Register(nameof(LoadMoreCommand), typeof(ICommand), typeof(MediaGrid), new PropertyMetadata(null));
@@ -107,6 +111,13 @@ public sealed partial class MediaGrid : UserControl
     {
         get => (ICommand?)GetValue(CardInvokedCommandProperty);
         set => SetValue(CardInvokedCommandProperty, value);
+    }
+
+    /// <summary>Gets the <see cref="MediaCard"/> the pointer or the keyboard came to (Search's backdrop follows it).</summary>
+    public ICommand? CardPointedCommand
+    {
+        get => (ICommand?)GetValue(CardPointedCommandProperty);
+        set => SetValue(CardPointedCommandProperty, value);
     }
 
     public ICommand? LoadMoreCommand
@@ -383,6 +394,19 @@ public sealed partial class MediaGrid : UserControl
             return;
         }
         if (CardInvokedCommand is { } command && command.CanExecute(card))
+        {
+            command.Execute(card);
+        }
+    }
+
+    // Each card's own, as MediaRow's: a card's PointerEntered does not reach the grid.
+    private void OnCardPointerEntered(object sender, PointerRoutedEventArgs e) => TellPointed(sender);
+
+    private void OnCardGotFocus(object sender, RoutedEventArgs e) => TellPointed(sender);
+
+    private void TellPointed(object sender)
+    {
+        if (CardPointedCommand is { } command && sender is Button { Content: MediaCardView { Card: { } card } } && command.CanExecute(card))
         {
             command.Execute(card);
         }

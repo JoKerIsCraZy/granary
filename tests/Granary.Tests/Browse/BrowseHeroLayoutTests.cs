@@ -81,6 +81,16 @@ public sealed partial class BrowseHeroLayoutTests
     }
 
     [Theory]
+    [InlineData(2000, 700, 2000)]
+    [InlineData(1000, 700, 1245)]
+    [InlineData(1000, double.NaN, 1000)]
+    [InlineData(0, 700, 0)]
+    public void ABackdropInABoxOfAnyHeight_IsDecodedWideEnoughToFillIt(double boxWidth, double boxHeight, int expected)
+    {
+        Assert.Equal(expected, BrowseHeroLayout.BackdropDecodeWidth(boxWidth, boxHeight));
+    }
+
+    [Theory]
     [InlineData(1000, 1100, false)]
     [InlineData(1000, 1200, true)]
     [InlineData(1000, 600, false)]

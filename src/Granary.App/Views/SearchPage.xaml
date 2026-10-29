@@ -32,6 +32,9 @@
         <KeyboardAccelerator Modifiers="Control" Key="F" Invoked="OnFocusSearchAccelerator" />
     </Page.KeyboardAccelerators>
 
+    <Grid>
+    <!-- Behind the header: the dimmed backdrop of the result the pointer or the keyboard is on. -->
+    <controls:FocusBackdrop x:Name="Backdrop" Title="{x:Bind ViewModel.Backdrop.Shown, Mode=OneWay}" />
     <ScrollViewer x:Name="Scroller" XYFocusKeyboardNavigation="Enabled">
         <StackPanel Padding="48,32,48,48" Spacing="24">
             <TextBlock Text="{x:Bind ViewModel.Heading, Mode=OneWay}" Style="{StaticResource SiloDisplayTextStyle}" MaxLines="2"
@@ -81,7 +84,8 @@
                 <TextBlock Text="Titles" Style="{StaticResource SiloRowTitleTextStyle}" AutomationProperties.HeadingLevel="Level2"
                            Visibility="{x:Bind ViewModel.ShowsTitlesHeading, Mode=OneWay}" />
                 <controls:MediaGrid ItemsSource="{x:Bind ViewModel.Cards, Mode=OneWay}"
-                                    CardInvokedCommand="{x:Bind ViewModel.OpenCardCommand}" LoadMoreCommand="{x:Bind ViewModel.LoadMoreCommand}" />
+                                    CardInvokedCommand="{x:Bind ViewModel.OpenCardCommand}" LoadMoreCommand="{x:Bind ViewModel.LoadMoreCommand}"
+                                    CardPointedCommand="{x:Bind ViewModel.PointCardCommand}" />
             </StackPanel>
 
             <!-- No titles, a failure, or what is loading; also announced. -->
@@ -110,7 +114,7 @@
                            AutomationProperties.LiveSetting="Assertive" />
 
                 <controls:MediaGrid ItemsSource="{x:Bind ViewModel.Requests.Cards}" CardInvokedCommand="{x:Bind ViewModel.Requests.OpenCardCommand}"
-                                    LoadMoreCommand="{x:Bind ViewModel.Requests.LoadMoreCommand}" />
+                                    LoadMoreCommand="{x:Bind ViewModel.Requests.LoadMoreCommand}" CardPointedCommand="{x:Bind ViewModel.PointCardCommand}" />
 
                 <TextBlock Text="Every title found so far is already in your library." TextWrapping="Wrap" Style="{StaticResource SiloBodyTextStyle}"
                            Foreground="{StaticResource SiloMutedBrush}" Visibility="{x:Bind ViewModel.Requests.IsEmptySoFar, Mode=OneWay}" />
@@ -128,4 +132,5 @@
             </StackPanel>
         </StackPanel>
     </ScrollViewer>
+    </Grid>
 </Page>

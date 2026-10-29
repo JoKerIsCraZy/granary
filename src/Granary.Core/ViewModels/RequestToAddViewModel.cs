@@ -40,6 +40,8 @@ public sealed partial class RequestToAddViewModel : ObservableObject
     private readonly ILogger<RequestToAddViewModel> _logger;
     // Where each card opens: the library's title, or the title's own page; the titles shown, so each shows once.
     private readonly Dictionary<string, (AppRoute Route, object Parameter)> _destinations = new(StringComparer.Ordinal);
+    // What Search's backdrop shows of each card.
+    private readonly Dictionary<string, BrowseHeroTitle> _backdrops = new(StringComparer.Ordinal);
     private CancellationTokenSource? _run;
     private string _mediaType = "all";
     private int? _nextPage;
@@ -110,6 +112,9 @@ public sealed partial class RequestToAddViewModel : ObservableObject
 
     /// <summary>"Nothing in your library matches “heat”." under the heading, or empty.</summary>
     public string Note => LibraryFoundNothing && Query.Length > 0 ? $"Nothing in your library matches “{Query}”." : "";
+
+    /// <summary>What Search's backdrop shows of <paramref name="card"/>, one of the cards shown; null for another.</summary>
+    internal BrowseHeroTitle? BackdropOf(MediaCard card) => _backdrops.GetValueOrDefault(card.Id);
 
     /// <summary>The read in flight, for tests.</summary>
     internal Task Loading { get; private set; } = Task.CompletedTask;
@@ -249,6 +254,7 @@ public sealed partial class RequestToAddViewModel : ObservableObject
             if (!_destinations.ContainsKey(card.Id) && RequestCards.Destination(result) is { } destination)
             {
                 _destinations[card.Id] = destination;
+                _backdrops[card.Id] = BrowseHeroTitle.Of(result);
                 Cards.Add(card);
                 added++;
             }
@@ -260,6 +266,7 @@ public sealed partial class RequestToAddViewModel : ObservableObject
     {
         IsShown = false;
         _destinations.Clear();
+        _backdrops.Clear();
         Cards.Clear();
         _nextPage = null;
         CanLoadMore = false;

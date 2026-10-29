@@ -68,8 +68,15 @@ public static class BrowseHeroLayout
     /// How wide to decode a backdrop shown <paramref name="boxWidth"/> wide and <see cref="RestHeight"/> high: as wide as
     /// shown, or wider when the box's shape cuts its sides; 0 while the width is not known.
     /// </summary>
-    public static int BackdropDecodeWidth(double boxWidth) => boxWidth > 0
-        ? (int)Math.Ceiling(Math.Max(boxWidth, RestHeight * BackdropAspect))
+    public static int BackdropDecodeWidth(double boxWidth) => BackdropDecodeWidth(boxWidth, RestHeight);
+
+    /// <summary>
+    /// How wide to decode a backdrop filling a box <paramref name="boxWidth"/> by <paramref name="boxHeight"/> (Search's
+    /// backdrop): as wide as the box, or as wide as the box's height needs at the picture's shape; 0 while the width is not
+    /// known.
+    /// </summary>
+    public static int BackdropDecodeWidth(double boxWidth, double boxHeight) => boxWidth > 0
+        ? (int)Math.Ceiling(Math.Max(boxWidth, double.IsFinite(boxHeight) && boxHeight > 0 ? boxHeight * BackdropAspect : 0))
         : 0;
 
     /// <summary>A backdrop decoded <paramref name="decoded"/> wide is decoded again for <paramref name="needed"/> when it grew notably.</summary>

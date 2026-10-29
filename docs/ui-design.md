@@ -307,6 +307,14 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   pages of only library titles with more to come say "Every title found so far is already in your library." over Load
   more; a later read that fails keeps what shows and says "Couldn’t load more titles." over Try again. The cards open
   the title's page, or the library's title.
+- Search's backdrop (`FocusBackdrop`, `SearchViewModel.Backdrop`), as Silage's library page and so a departure from the
+  web, which has none: behind "Results for …" and the box, the backdrop of the result the pointer or the keyboard is on,
+  a library title or one to request (TMDB's, without a blur). It covers the right 75 % and the top 70 % of the page,
+  stays put while the results scroll and moves nothing: dark throughout (a quarter of the picture at most, at the top
+  right) and gone into the page toward the text on the left and toward the bottom. A new picture fades in over the last
+  one in 400 ms, its blur first, decoded as wide as its box needs; the first result pointed at shows at once, later ones
+  after 150 ms of rest, as on Home. Nothing shows until a result is pointed at, and each new search starts without one.
+  The pictures are let go while Search is not shown.
 - Pages: 48 px side margins, 32 px top; rows 40 px apart.
 - Home's hero (`BrowseHero`, `BrowseHeroViewModel`, also on For You), as Silage's home and so a deliberate departure
   from the web's Home, which has none: the title of the card the pointer or the keyboard is on, in any row, at the top of
