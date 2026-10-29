@@ -26,6 +26,11 @@ public sealed partial class SearchPage : Page
     protected override async void OnNavigatedTo(NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
+        if (e.NavigationMode != NavigationMode.Back)
+        {
+            // Back shows the backdrop as it was left; another visit starts without one, so the last search's does not flash.
+            ViewModel.ForgetBackdrop();
+        }
         Backdrop.Resume();
         ViewModel.DisplayScale = XamlRoot?.RasterizationScale ?? 1;
         // The page is cached: Back keeps the results where they were; Ctrl+K and the sidebar lead to the box.

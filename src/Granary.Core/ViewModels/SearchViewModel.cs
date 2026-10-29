@@ -54,8 +54,9 @@ public sealed partial class SearchViewModel : ObservableObject
     private bool _isSearchingTitles;
     // The last search found no titles, without failing.
     private bool _libraryEmpty;
-    // What the backdrop shows of each library result, by the card's id.
-    private readonly Dictionary<string, BrowseHeroTitle> _backdropTitles = new(StringComparer.Ordinal);
+    // What the backdrop shows of each library result, by the card's id. Each search has its own, so one a newer search
+    // replaced adds nothing to it.
+    private Dictionary<string, BrowseHeroTitle> _backdropTitles = new(StringComparer.Ordinal);
     private (bool IsReady, string? ServerId, string? ProfileId)? _sessionKey;
     private bool _isActive;
 
@@ -282,7 +283,8 @@ public sealed partial class SearchViewModel : ObservableObject
             }
             // What the last text found is no guide to this one's "Request to add", nor to its backdrop.
             _libraryEmpty = false;
-            _backdropTitles.Clear();
+            var backdrops = new Dictionary<string, BrowseHeroTitle>(StringComparer.Ordinal);
+            _backdropTitles = backdrops;
             SetSearchingTitles(true);
             var people = FindPeopleAsync(server, text, cancellationToken);
             var requests = Requests.SearchAsync(text, scope);
@@ -292,7 +294,7 @@ public sealed partial class SearchViewModel : ObservableObject
             {
                 var images = await BrowseArtwork.ParametersAsync(_images, server, DisplayScale, _logger, cancellationToken);
                 var query = new CatalogQuery { Q = text, Type = TypeOf(scope), Limit = PageSize, Images = images };
-                titles = new BrowseCardPager(_catalog, server.BaseUri, query, item => CardFor(item, server.BaseUri));
+                titles = new BrowseCardPager(_catalog, server.BaseUri, query, item => CardFor(item, server.BaseUri, backdrops));
                 await titles.LoadFirstPageAsync(cancellationToken);
             }
             catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex) && !cancellationToken.IsCancellationRequested)
@@ -407,8 +409,8 @@ public sealed partial class SearchViewModel : ObservableObject
         }
     }
 
-    // New results: no backdrop until one of them is pointed at, and that one shows at once.
-    private void ForgetBackdrop()
+    /// <summary>No backdrop until a result is pointed at, and that one shows at once: new results, or a visit that is not Back.</summary>
+    public void ForgetBackdrop()
     {
         Backdrop.Reset(null);
         Backdrop.Forget();
@@ -507,14 +509,14 @@ public sealed partial class SearchViewModel : ObservableObject
         _ => MediaScopes.Video,
     };
 
-    // An item without an id could not be opened. What the backdrop shows of it is kept with it.
-    private MediaCard? CardFor(CatalogItem item, Uri server)
+    // An item without an id could not be opened. What the backdrop shows of it is kept with its search's.
+    private static MediaCard? CardFor(CatalogItem item, Uri server, Dictionary<string, BrowseHeroTitle> backdrops)
     {
         if (item.ContentId.Length == 0)
         {
             return null;
         }
-        _backdropTitles[item.ContentId] = BrowseHeroTitle.From(item, server);
+        backdrops[item.ContentId] = BrowseHeroTitle.From(item, server);
         return MediaCardFactory.Poster(item, server);
     }
 
