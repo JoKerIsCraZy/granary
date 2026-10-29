@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
@@ -10,29 +11,38 @@ namespace Granary.Core.ViewModels;
 
 /// <summary>
 /// "Request to add" under Search's results, as the web's <c>RequestToAddSection</c> shows it on the catalog search: the
-/// movies and series TMDB finds for the text that the library does not have, 20 to a page with Previous and Next, while
-/// the server takes requests. A text of one character is not searched. A first page that fails, or that is the only page
-/// and holds nothing to add, leaves the section out; a later page that fails says so, with Retry and Back to page 1. A
+/// movies and series TMDB finds for the text that the library does not have, while the server takes requests. A text of
+/// one character is not searched. Unlike the web's grid, which pages TMDB's twenty a page with Previous and Next even
+/// when the library's titles leave six of them, the titles gather in one grid: a read takes TMDB's pages until a
+/// screenful is there (<see cref="Fill"/>) or <see cref="PagesPerRead"/> pages were read, and the grid's end coming into
+/// view (or Load more) reads on, to TMDB's last page. A title shows once. A first read that fails, or that finds nothing
+/// to add on TMDB's only pages, leaves the section out; a later one that fails keeps what shows and offers Try again. A
 /// card opens the library's title when the library has it, else the title's own page.
 /// </summary>
-/// <remarks>The commands take no cancellation token: a new text or page cancels the read in flight.</remarks>
+/// <remarks>The commands take no cancellation token: a new text cancels the read in flight.</remarks>
 public sealed partial class RequestToAddViewModel : ObservableObject
 {
-    /// <summary>The titles a page shows at most, as the web's grid.</summary>
-    internal const int PageLimit = 20;
+    /// <summary>A screenful: a read goes on to TMDB's next page until this many titles came, as the web's grid of twenty.</summary>
+    internal const int Fill = 20;
+
+    /// <summary>The pages one read takes at most, so a text whose pages the library mostly has does not read on and on.</summary>
+    internal const int PagesPerRead = 3;
 
     /// <summary>The shortest text searched.</summary>
     internal const int MinQueryLength = 2;
+
+    internal const string MoreFailedText = "Couldn’t load more titles.";
 
     private readonly ISessionManager _session;
     private readonly RequestsApi _requests;
     private readonly RequestsFeature _feature;
     private readonly INavigationService _navigation;
     private readonly ILogger<RequestToAddViewModel> _logger;
-    // Where each card opens: the library's title, or the title's own page.
+    // Where each card opens: the library's title, or the title's own page; the titles shown, so each shows once.
     private readonly Dictionary<string, (AppRoute Route, object Parameter)> _destinations = new(StringComparer.Ordinal);
     private CancellationTokenSource? _run;
     private string _mediaType = "all";
+    private int? _nextPage;
 
     public RequestToAddViewModel(ISessionManager session, RequestsApi requests, RequestsFeature feature, INavigationService navigation,
         ILogger<RequestToAddViewModel> logger, CardRequestNotice? requestNotice = null)
@@ -53,40 +63,41 @@ public sealed partial class RequestToAddViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(Note))]
     public partial string Query { get; private set; } = "";
 
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsPageEmpty))]
-    public partial IReadOnlyList<MediaCard> Cards { get; private set; } = [];
+    /// <summary>The titles found so far, in TMDB's order; later reads add to the end.</summary>
+    public ObservableCollection<MediaCard> Cards { get; } = [];
 
     /// <summary>The section is on the page: TMDB found titles to add, or has more pages to look through.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsPageEmpty))]
+    [NotifyPropertyChangedFor(nameof(IsEmptySoFar))]
     public partial bool IsShown { get; private set; }
 
-    /// <summary>A text's first page is being read; nothing is shown for it yet.</summary>
+    /// <summary>A text's first read is on its way; nothing is shown for it yet.</summary>
     [ObservableProperty]
     public partial bool IsSearching { get; private set; }
 
-    /// <summary>Another page is being read: the shown one stays, dimmed, and the pager waits.</summary>
+    /// <summary>A later read is on its way: what shows stays, and the grid's end waits.</summary>
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(PreviousPageCommand), nameof(NextPageCommand), nameof(RetryPageCommand), nameof(FirstPageCommand))]
-    public partial bool IsChangingPage { get; private set; }
+    [NotifyPropertyChangedFor(nameof(ShowsLoadMore))]
+    [NotifyCanExecuteChangedFor(nameof(LoadMoreCommand))]
+    public partial bool IsLoadingMore { get; private set; }
 
+    /// <summary>TMDB has another page to read.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(PagePosition), nameof(ShowsPager), nameof(PageErrorText))]
-    [NotifyCanExecuteChangedFor(nameof(PreviousPageCommand), nameof(NextPageCommand))]
-    public partial int Page { get; private set; } = 1;
+    [NotifyPropertyChangedFor(nameof(ShowsLoadMore), nameof(IsEmptySoFar))]
+    [NotifyCanExecuteChangedFor(nameof(LoadMoreCommand))]
+    public partial bool CanLoadMore { get; private set; }
 
-    /// <summary>The pages TMDB can be read to, at most 500; 0 while a page failed and the count is unknown.</summary>
+    /// <summary>The last later read failed: Try again reads it again; the grid's end no longer does.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(PagePosition), nameof(ShowsPager))]
-    [NotifyCanExecuteChangedFor(nameof(NextPageCommand))]
-    public partial int TotalPages { get; private set; }
+    [NotifyPropertyChangedFor(nameof(ShowsLoadMore))]
+    [NotifyCanExecuteChangedFor(nameof(LoadMoreCommand))]
+    public partial bool HasMoreError { get; private set; }
 
-    /// <summary>"Page 2 of 9", or "Page 2" while the count is unknown.</summary>
-    public string PagePosition => TotalPages > 0 ? $"Page {Page} of {TotalPages}" : $"Page {Page}";
+    /// <summary>Load more, for the keyboard, while TMDB has more and nothing failed or is on its way.</summary>
+    public bool ShowsLoadMore => CanLoadMore && !IsLoadingMore && !HasMoreError;
 
-    /// <summary>Previous and Next show while either leads somewhere.</summary>
-    public bool ShowsPager => Page > 1 || Page < TotalPages;
+    /// <summary>The pages read so far held only titles the library has, and TMDB has more: Load more looks further.</summary>
+    public bool IsEmptySoFar => IsShown && Cards.Count == 0 && CanLoadMore;
 
     /// <summary>The library search found nothing for the text, which <see cref="Note"/> then says.</summary>
     [ObservableProperty]
@@ -96,21 +107,10 @@ public sealed partial class RequestToAddViewModel : ObservableObject
     /// <summary>"Nothing in your library matches “heat”." under the heading, or empty.</summary>
     public string Note => LibraryFoundNothing && Query.Length > 0 ? $"Nothing in your library matches “{Query}”." : "";
 
-    /// <summary>The shown page failed to load; the section offers Retry and Back to page 1.</summary>
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(PageErrorText), nameof(IsPageEmpty))]
-    public partial bool HasPageError { get; private set; }
-
-    /// <summary>"Couldn’t load page 2." while <see cref="HasPageError"/>.</summary>
-    public string PageErrorText => HasPageError ? $"Couldn’t load page {Page}." : "";
-
-    /// <summary>Every title on the page is in the library already; other pages may hold some to add.</summary>
-    public bool IsPageEmpty => IsShown && !HasPageError && Cards.Count == 0;
-
     /// <summary>The read in flight, for tests.</summary>
     internal Task Loading { get; private set; } = Task.CompletedTask;
 
-    /// <summary>Reads the first page for <paramref name="query"/>, dropping what was shown for the last text.</summary>
+    /// <summary>Reads what TMDB finds for <paramref name="query"/>, dropping what was shown for the last text.</summary>
     public Task SearchAsync(string query, SearchScope scope)
     {
         Clear();
@@ -126,7 +126,8 @@ public sealed partial class RequestToAddViewModel : ObservableObject
             return Loading = Task.CompletedTask;
         }
         IsSearching = true;
-        return Loading = LoadAsync(1, Start());
+        _run = new CancellationTokenSource();
+        return Loading = ReadAsync(1, first: true, _run.Token);
     }
 
     /// <summary>No text, or another session: nothing shown, nothing in flight.</summary>
@@ -138,21 +139,20 @@ public sealed partial class RequestToAddViewModel : ObservableObject
         Query = "";
         LibraryFoundNothing = false;
         IsSearching = false;
-        IsChangingPage = false;
         Hide();
     }
 
-    [RelayCommand(CanExecute = nameof(CanGoBack))]
-    private Task PreviousPageAsync() => GoToAsync(Page - 1);
+    /// <summary>Reads on, when the grid's end comes into view or Load more is pressed.</summary>
+    [RelayCommand(CanExecute = nameof(ShowsLoadMore))]
+    private Task LoadMoreAsync() =>
+        ShowsLoadMore && _nextPage is int page && _run is { } run ? Loading = ReadAsync(page, first: false, run.Token) : Task.CompletedTask;
 
-    [RelayCommand(CanExecute = nameof(CanGoForward))]
-    private Task NextPageAsync() => GoToAsync(Page + 1);
-
-    [RelayCommand(CanExecute = nameof(CanChangePage))]
-    private Task RetryPageAsync() => GoToAsync(Page);
-
-    [RelayCommand(CanExecute = nameof(CanChangePage))]
-    private Task FirstPageAsync() => GoToAsync(1);
+    [RelayCommand]
+    private Task TryAgainAsync()
+    {
+        HasMoreError = false;
+        return LoadMoreAsync();
+    }
 
     [RelayCommand]
     private void OpenCard(MediaCard? card)
@@ -163,125 +163,97 @@ public sealed partial class RequestToAddViewModel : ObservableObject
         }
     }
 
-    private bool CanChangePage() => !IsChangingPage;
-
-    private bool CanGoBack() => !IsChangingPage && Page > 1;
-
-    private bool CanGoForward() => !IsChangingPage && Page < TotalPages;
-
-    private Task GoToAsync(int page)
+    // One read: TMDB's pages from page on, until a screenful came, PagesPerRead were read, or TMDB has no more.
+    private async Task ReadAsync(int page, bool first, CancellationToken cancellationToken)
     {
-        if (!IsShown || page < 1 || page > RequestsApi.TmdbMaxPage)
-        {
-            return Task.CompletedTask;
-        }
-        IsChangingPage = true;
-        return Loading = LoadAsync(page, Start());
-    }
-
-    private CancellationTokenSource Start()
-    {
-        _run?.Cancel();
-        var run = new CancellationTokenSource();
-        _run = run;
-        return run;
-    }
-
-    private async Task LoadAsync(int page, CancellationTokenSource run)
-    {
-        var cancellationToken = run.Token;
+        IsLoadingMore = !first;
         try
         {
             if (_session is not { State: SessionState.Ready, ActiveServer: { } server })
             {
                 return;
             }
-            // Read once per profile; a read in flight, the sidebar's, is waited for.
-            await _feature.RefreshAsync().WaitAsync(cancellationToken);
-            if (!_feature.IsEnabled)
+            if (first)
             {
-                return;
+                // Read once per profile; a read in flight, the sidebar's, is waited for.
+                await _feature.RefreshAsync().WaitAsync(cancellationToken);
+                if (!_feature.IsEnabled)
+                {
+                    return;
+                }
             }
-            var found = await _requests.SearchAsync(server.BaseUri, Query, _mediaType, page, cancellationToken);
-            cancellationToken.ThrowIfCancellationRequested();
-            Show(page, found);
+            int added = 0;
+            for (int read = 1; ; read++)
+            {
+                var found = await _requests.SearchAsync(server.BaseUri, Query, _mediaType, page, cancellationToken);
+                cancellationToken.ThrowIfCancellationRequested();
+                added += Add(found.Results);
+                int last = Math.Clamp(found.TotalPages, 0, RequestsApi.TmdbMaxPage);
+                _nextPage = page < last ? page + 1 : null;
+                CanLoadMore = _nextPage is not null;
+                if (_nextPage is not int next || added >= Fill || read >= PagesPerRead)
+                {
+                    break;
+                }
+                page = next;
+            }
+            // Nothing to add on TMDB's only pages leaves the section out; more pages to look through keep it.
+            IsShown = Cards.Count > 0 || CanLoadMore;
+            OnPropertyChanged(nameof(IsEmptySoFar));
         }
         catch (Exception ex) when (!cancellationToken.IsCancellationRequested && ApiFailureText.IsRequestFailure(ex))
         {
             _logger.LogWarning("Searching titles to request failed: {Failure}", ApiFailureText.Describe(ex));
-            // A failed first page leaves the section out; a later one keeps it, so the viewer can retry or go back.
-            if (page == 1)
+            // A failed first read leaves the section out; a later one keeps what shows, so the viewer can try again.
+            if (first)
             {
                 Hide();
             }
             else
             {
-                ShowFailedPage(page);
+                HasMoreError = true;
             }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            // A newer text or page replaced this read.
+            // A newer text replaced this read.
         }
         finally
         {
-            if (run == _run)
+            if (!cancellationToken.IsCancellationRequested)
             {
                 IsSearching = false;
-                IsChangingPage = false;
+                IsLoadingMore = false;
             }
         }
     }
 
-    private void Show(int page, RequestMediaPage found)
+    // The titles the library does not have, each once across the pages read.
+    private int Add(IEnumerable<RequestMediaResult> results)
     {
-        int totalPages = Math.Clamp(found.TotalPages, 0, RequestsApi.TmdbMaxPage);
-        var titles = found.Results
-            .Where(result => result.Availability != "available" && result.TmdbId > 0)
-            .DistinctBy(RequestCards.IdOf)
-            .Take(PageLimit)
-            .ToList();
-        // Any page can hold only titles the library has; it stays while TMDB has others, so the pager can reach them.
-        if (titles.Count == 0 && page == 1 && totalPages <= 1)
+        int added = 0;
+        foreach (var result in results.Where(r => r.Availability != "available" && r.TmdbId > 0))
         {
-            Hide();
-            return;
-        }
-        _destinations.Clear();
-        var cards = new List<MediaCard>(titles.Count);
-        foreach (var result in titles)
-        {
-            if (RequestCards.Destination(result) is { } destination)
+            var card = RequestCards.Of(result);
+            if (!_destinations.ContainsKey(card.Id) && RequestCards.Destination(result) is { } destination)
             {
-                var card = RequestCards.Of(result);
                 _destinations[card.Id] = destination;
-                cards.Add(card);
+                Cards.Add(card);
+                added++;
             }
         }
-        HasPageError = false;
-        TotalPages = totalPages;
-        Page = page;
-        Cards = cards;
-        IsShown = true;
-    }
-
-    private void ShowFailedPage(int page)
-    {
-        _destinations.Clear();
-        Cards = [];
-        TotalPages = 0;
-        Page = page;
-        HasPageError = true;
-        IsShown = true;
+        return added;
     }
 
     private void Hide()
     {
         IsShown = false;
         _destinations.Clear();
-        Cards = [];
-        HasPageError = false;
-        TotalPages = 0;
-        Page = 1;
+        Cards.Clear();
+        _nextPage = null;
+        CanLoadMore = false;
+        HasMoreError = false;
+        IsLoadingMore = false;
+        OnPropertyChanged(nameof(IsEmptySoFar));
     }
 }

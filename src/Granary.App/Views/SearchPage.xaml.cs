@@ -1,4 +1,3 @@
-using System.ComponentModel;
 using Granary.Core.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -13,12 +12,6 @@ namespace Granary.App.Views;
 /// <summary>Search; the parameter is an optional query text that is searched at once.</summary>
 public sealed partial class SearchPage : Page
 {
-    // Request to add's grid while another page loads, as the web's opacity-60.
-    private const double ChangingPageOpacity = 0.6;
-
-    // The space left above Request to add's heading when a page change brings it into view (the web's scroll-mt-4).
-    private const double SectionScrollMargin = 16;
-
     private bool _focusBoxWhenLoaded;
 
     public SearchPage()
@@ -26,7 +19,6 @@ public sealed partial class SearchPage : Page
         ViewModel = App.Services.GetRequiredService<SearchViewModel>();
         InitializeComponent();
         ScopeBar.SelectedItem = ScopeBar.Items[(int)ViewModel.Scope];
-        ViewModel.Requests.PropertyChanged += OnRequestsPropertyChanged;
     }
 
     public SearchViewModel ViewModel { get; }
@@ -68,8 +60,6 @@ public sealed partial class SearchPage : Page
     public Visibility HasText(string text) => string.IsNullOrEmpty(text) ? Visibility.Collapsed : Visibility.Visible;
 
     public Visibility Not(bool value) => value ? Visibility.Collapsed : Visibility.Visible;
-
-    public double Dimmed(bool isDimmed) => isDimmed ? ChangingPageOpacity : 1;
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
@@ -124,19 +114,4 @@ public sealed partial class SearchPage : Page
         }
     }
 
-    // The pager sits under the grid: another page brings Request to add's first row into view when its top is scrolled away.
-    private void OnRequestsPropertyChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        // A page that arrives while the cached page is off screen has no tree to measure.
-        if (e.PropertyName != nameof(RequestToAddViewModel.Page) || !ViewModel.Requests.IsShown || !IsLoaded || XamlRoot is null
-            || Scroller.Content is not UIElement content)
-        {
-            return;
-        }
-        double top = RequestSection.TransformToVisual(content).TransformPoint(default).Y;
-        if (top < Scroller.VerticalOffset)
-        {
-            Scroller.ChangeView(null, Math.Max(0, top - SectionScrollMargin), null);
-        }
-    }
 }

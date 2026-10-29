@@ -13,7 +13,8 @@ release's section is what its update says it changes (docs/release.md).
 - Silo servers on the local network show under "Found nearby" when you add a server, and their adverts give the
   local route at home another way in.
 - Home, the libraries, Search with people and Request to add, For You, Calendar, Notifications, Favorites, Watchlist,
-  History and Collections, in the look of Silo's web app.
+  History and Collections, in the look of Silo's web app. Search's Request to add shows TMDB's titles in one grid that
+  reads on as you scroll, instead of a few to a page.
 - Requests: Discover, studios, networks and genres, the titles from TMDB with their seasons, your requests and the
   watchlist's titles not in the library yet. A title from TMDB can be requested straight from its card: Request shows
   in the middle of the poster under the pointer.

@@ -24,7 +24,7 @@ public sealed class SearchRequestToAddTests
         // The library has nothing, unless a test says otherwise.
         _silo.Map(CatalogPath, Page(null));
         _silo.Map(StatusPath, """{ "requests_enabled": true }""");
-        _silo.Map(RequestSearchPath, request => BrowseFakeSilo.Json(Results(Number(request, "page"), 3, (10, "none"), (11, "available"), (12, "partial"))));
+        _silo.Map(RequestSearchPath, _ => BrowseFakeSilo.Json(Results(1, 1, (10, "none"), (11, "available"), (12, "partial"))));
     }
 
     internal static SearchViewModel Create(BrowseFakeSilo silo, FakeSessionManager session, RecordingNavigation navigation, ManualTimeProvider time)
@@ -50,11 +50,21 @@ public sealed class SearchRequestToAddTests
             """))}}] }
         """;
 
+    /// <summary>Every page of <paramref name="totalPages"/> holds <paramref name="perPage"/> new titles to add, ids page × 100 + 1, 2, ….</summary>
+    private void Pages(int totalPages, int perPage) =>
+        _silo.Map(RequestSearchPath, request =>
+        {
+            int page = Number(request, "page");
+            return BrowseFakeSilo.Json(Results(page, totalPages, [.. Enumerable.Range(1, perPage).Select(i => (page * 100 + i, "none"))]));
+        });
+
     private static int Number(HttpRequestMessage request, string name) => int.Parse(Read(request, name) ?? "0", System.Globalization.CultureInfo.InvariantCulture);
 
     private static string? Read(HttpRequestMessage request, string name) => new BrowseRequest(request.Method, request.RequestUri!, null).Query(name);
 
     private static string[] Titles(SearchViewModel search) => [.. search.Requests.Cards.Select(c => c.Title)];
+
+    private string[] PagesRead() => [.. _silo.To(RequestSearchPath).Select(r => r.Query("page") ?? "")];
 
     [Fact]
     public async Task ATextTheLibraryLacks_ShowsWhatTmdbFinds_WithoutTheTitlesTheLibraryHas()
@@ -72,8 +82,8 @@ public sealed class SearchRequestToAddTests
         Assert.True(search.IsLibraryRescued);
         Assert.Equal("", search.StatusText);
         Assert.False(search.ShowsTitlesHeading);
-        Assert.Equal("Page 1 of 3", search.Requests.PagePosition);
-        Assert.True(search.Requests.ShowsPager);
+        Assert.False(search.Requests.CanLoadMore);
+        Assert.False(search.Requests.ShowsLoadMore);
     }
 
     [Fact]
@@ -129,47 +139,79 @@ public sealed class SearchRequestToAddTests
         Assert.Equal("No titles found for \"z\"", search.StatusText);
     }
 
+    // The user's "Borat": six titles to add on TMDB's first page, and "Page 1 of 2" under a grid with room to spare.
     [Fact]
-    public async Task ThePager_GoesForwardAndBack_AndStopsAtTheLastPage()
+    public async Task AFewTitlesOnAPage_GatherTheNextPages_WithoutAPager()
     {
+        Pages(totalPages: 10, perPage: 6);
         var search = Create();
-        await search.ActivateAsync("zzz");
-        Assert.False(search.Requests.PreviousPageCommand.CanExecute(null));
 
-        await search.Requests.NextPageCommand.ExecuteAsync(null);
-        await search.Requests.NextPageCommand.ExecuteAsync(null);
+        await search.ActivateAsync("borat");
 
-        Assert.Equal(["1", "2", "3"], _silo.To(RequestSearchPath).Select(r => r.Query("page")));
-        Assert.Equal("Page 3 of 3", search.Requests.PagePosition);
-        Assert.False(search.Requests.NextPageCommand.CanExecute(null));
-
-        await search.Requests.PreviousPageCommand.ExecuteAsync(null);
-
-        Assert.Equal("Page 2 of 3", search.Requests.PagePosition);
-        Assert.Equal("2", _silo.To(RequestSearchPath)[^1].Query("page"));
+        Assert.Equal(["1", "2", "3"], PagesRead());
+        Assert.Equal(18, search.Requests.Cards.Count);
+        Assert.Equal(["Movie 101", "Movie 106", "Movie 201", "Movie 306"], new[] { 0, 5, 6, 17 }.Select(i => search.Requests.Cards[i].Title));
+        Assert.True(search.Requests.CanLoadMore);
+        Assert.True(search.Requests.ShowsLoadMore);
     }
 
     [Fact]
-    public async Task WhileAnotherPageLoads_TheShownOneStays_AndThePagerWaits()
+    public async Task AScreenful_EndsTheRead()
     {
-        var release = new TaskCompletionSource();
+        Pages(totalPages: 5, perPage: 20);
         var search = Create();
+
+        await search.ActivateAsync("heat");
+
+        Assert.Equal(["1"], PagesRead());
+        Assert.Equal(20, search.Requests.Cards.Count);
+        Assert.True(search.Requests.CanLoadMore);
+    }
+
+    [Fact]
+    public async Task TheGridsEnd_ReadsOn_ToTmdbsLastPage()
+    {
+        Pages(totalPages: 4, perPage: 20);
+        var search = Create();
+        await search.ActivateAsync("heat");
+
+        await search.Requests.LoadMoreCommand.ExecuteAsync(null);
+        await search.Requests.LoadMoreCommand.ExecuteAsync(null);
+        await search.Requests.LoadMoreCommand.ExecuteAsync(null);
+
+        Assert.Equal(["1", "2", "3", "4"], PagesRead());
+        Assert.Equal(80, search.Requests.Cards.Count);
+        Assert.False(search.Requests.CanLoadMore);
+        Assert.False(search.Requests.LoadMoreCommand.CanExecute(null));
+        await search.Requests.LoadMoreCommand.ExecuteAsync(null);
+        Assert.Equal(4, PagesRead().Length);
+    }
+
+    [Fact]
+    public async Task ATitleOnTwoPages_ShowsOnce()
+    {
+        _silo.Map(RequestSearchPath, request => Number(request, "page") == 1
+            ? BrowseFakeSilo.Json(Results(1, 2, (1, "none"), (2, "partial")))
+            : BrowseFakeSilo.Json(Results(2, 2, (2, "partial"), (3, "none"))));
+        var search = Create();
+
         await search.ActivateAsync("zzz");
-        _silo.Map(RequestSearchPath, async (_, _) =>
-        {
-            await release.Task;
-            return BrowseFakeSilo.Json(Results(2, 3, (20, "none")));
-        });
 
-        var next = search.Requests.NextPageCommand.ExecuteAsync(null);
+        Assert.Equal(["Movie 1", "Movie 2", "Movie 3"], Titles(search));
+        Assert.False(search.Requests.CanLoadMore);
+    }
 
-        Assert.True(search.Requests.IsChangingPage);
-        Assert.Equal(["Movie 10", "Movie 12"], Titles(search));
-        Assert.False(search.Requests.PreviousPageCommand.CanExecute(null));
-        release.SetResult();
-        await next;
-        Assert.False(search.Requests.IsChangingPage);
-        Assert.Equal(["Movie 20"], Titles(search));
+    [Fact]
+    public async Task TitlesAddedLater_CanBeRequestedFromTheirCards()
+    {
+        Pages(totalPages: 2, perPage: 20);
+        var search = Create();
+        await search.ActivateAsync("heat");
+
+        await search.Requests.LoadMoreCommand.ExecuteAsync(null);
+
+        Assert.All(search.Requests.Cards, card => Assert.NotNull(card.RequestOffer));
+        Assert.Equal(201, search.Requests.Cards[20].RequestOffer!.TmdbId);
     }
 
     [Fact]
@@ -186,45 +228,41 @@ public sealed class SearchRequestToAddTests
     }
 
     [Fact]
-    public async Task AFailedLaterPage_SaysSo_AndOffersRetryAndBackToPageOne()
+    public async Task AFailedLaterRead_KeepsWhatShows_AndOffersTryAgain()
     {
+        Pages(totalPages: 3, perPage: 20);
         var search = Create();
-        await search.ActivateAsync("zzz");
+        await search.ActivateAsync("heat");
         _silo.Map(RequestSearchPath, _ => BrowseFakeSilo.Problem(502, "upstream_error"));
 
-        await search.Requests.NextPageCommand.ExecuteAsync(null);
+        await search.Requests.LoadMoreCommand.ExecuteAsync(null);
 
         Assert.True(search.ShowsRequests);
-        Assert.True(search.Requests.HasPageError);
-        Assert.Equal("Couldn’t load page 2.", search.Requests.PageErrorText);
-        Assert.Equal("Page 2", search.Requests.PagePosition);
-        Assert.Empty(search.Requests.Cards);
-        Assert.False(search.Requests.IsPageEmpty);
-        Assert.True(search.Requests.PreviousPageCommand.CanExecute(null));
-        Assert.False(search.Requests.NextPageCommand.CanExecute(null));
+        Assert.True(search.Requests.HasMoreError);
+        Assert.Equal(20, search.Requests.Cards.Count);
+        Assert.False(search.Requests.ShowsLoadMore);
+        Assert.False(search.Requests.LoadMoreCommand.CanExecute(null));
 
-        _silo.Map(RequestSearchPath, request => BrowseFakeSilo.Json(Results(Number(request, "page"), 3, (30, "none"))));
-        await search.Requests.RetryPageCommand.ExecuteAsync(null);
+        Pages(totalPages: 3, perPage: 20);
+        await search.Requests.TryAgainCommand.ExecuteAsync(null);
 
-        Assert.False(search.Requests.HasPageError);
-        Assert.Equal("Page 2 of 3", search.Requests.PagePosition);
-        Assert.Equal(["Movie 30"], Titles(search));
-
-        await search.Requests.FirstPageCommand.ExecuteAsync(null);
-        Assert.Equal("1", _silo.To(RequestSearchPath)[^1].Query("page"));
+        Assert.False(search.Requests.HasMoreError);
+        Assert.Equal(40, search.Requests.Cards.Count);
+        Assert.Equal("2", PagesRead()[^1]);
     }
 
     [Fact]
-    public async Task APageOfOnlyLibraryTitles_StaysWhileTmdbHasOtherPages()
+    public async Task PagesOfOnlyLibraryTitles_KeepTheSection_WhileTmdbHasMore()
     {
-        _silo.Map(RequestSearchPath, _ => BrowseFakeSilo.Json(Results(1, 2, (11, "available"))));
+        _silo.Map(RequestSearchPath, request => BrowseFakeSilo.Json(Results(Number(request, "page"), 5, (Number(request, "page"), "available"))));
         var search = Create();
 
         await search.ActivateAsync("zzz");
 
+        Assert.Equal(["1", "2", "3"], PagesRead());
         Assert.True(search.ShowsRequests);
-        Assert.True(search.Requests.IsPageEmpty);
-        Assert.True(search.Requests.NextPageCommand.CanExecute(null));
+        Assert.True(search.Requests.IsEmptySoFar);
+        Assert.True(search.Requests.ShowsLoadMore);
     }
 
     [Fact]
@@ -290,6 +328,36 @@ public sealed class SearchRequestToAddTests
         Assert.Equal(["Movie 50"], Titles(search));
         Assert.Equal("second", search.Requests.Query);
         Assert.False(search.Requests.IsSearching);
+    }
+
+    [Fact]
+    public async Task ANewText_DropsTheLaterReadOfTheLastOne()
+    {
+        Pages(totalPages: 3, perPage: 20);
+        var search = Create();
+        await search.ActivateAsync("first");
+        var heldPage = new TaskCompletionSource();
+        _silo.Map(RequestSearchPath, async (request, _) =>
+        {
+            if (Read(request, "q") == "first")
+            {
+                await heldPage.Task;
+                return BrowseFakeSilo.Json(Results(2, 3, (999, "none")));
+            }
+            return BrowseFakeSilo.Json(Results(1, 1, (50, "none")));
+        });
+        var more = search.Requests.LoadMoreCommand.ExecuteAsync(null);
+        Assert.True(search.Requests.IsLoadingMore);
+
+        search.Query = "second";
+        _time.Advance(SearchViewModel.DebounceDelay);
+        await search.Searching;
+        heldPage.SetResult();
+        await more;
+
+        Assert.Equal(["Movie 50"], Titles(search));
+        Assert.False(search.Requests.IsLoadingMore);
+        Assert.False(search.Requests.CanLoadMore);
     }
 
     [Fact]
