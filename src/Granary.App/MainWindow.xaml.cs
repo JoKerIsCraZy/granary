@@ -544,18 +544,24 @@ public sealed partial class MainWindow : Window
         // A pane comes back visible before its mode changes: a mode changed while it was hidden (the player) left the
         // rail drawing the open pane's layout, the server's name and labels cut off at its edge. A pane that goes away
         // takes its new mode first. Either way, visibility before IsPaneOpen: a pane that becomes visible opens again.
+        // Each is set only when it changes: NavigationView lays itself out again for every mode it is given, the same one
+        // too, and that took longer than a page switch's cards.
         if (visible)
         {
-            Navigation.IsPaneVisible = true;
-            Navigation.PaneDisplayMode = mode;
+            SetPaneVisible(true);
+            SetPaneMode(mode);
         }
         else
         {
-            Navigation.PaneDisplayMode = mode;
-            Navigation.IsPaneVisible = false;
+            SetPaneMode(mode);
+            SetPaneVisible(false);
         }
         bool wasOpen = Navigation.IsPaneOpen;
-        Navigation.IsPaneOpen = Shell.IsSignedIn && !IsDetail(route) && route != AppRoute.Player;
+        bool open = Shell.IsSignedIn && !IsDetail(route) && route != AppRoute.Player;
+        if (wasOpen != open)
+        {
+            Navigation.IsPaneOpen = open;
+        }
         if (_revealPending && wasOpen == Navigation.IsPaneOpen)
         {
             // The pane was already where it goes (the rail had opened under the mouse): nothing to wait for.
@@ -565,6 +571,22 @@ public sealed partial class MainWindow : Window
         Grid.SetRowSpan(Navigation, isPlayer ? 2 : 1);
         AppTitle.Visibility = isPlayer ? Visibility.Collapsed : Visibility.Visible;
         ShowPaneParts(Navigation.IsPaneOpen);
+    }
+
+    private void SetPaneMode(NavigationViewPaneDisplayMode mode)
+    {
+        if (Navigation.PaneDisplayMode != mode)
+        {
+            Navigation.PaneDisplayMode = mode;
+        }
+    }
+
+    private void SetPaneVisible(bool visible)
+    {
+        if (Navigation.IsPaneVisible != visible)
+        {
+            Navigation.IsPaneVisible = visible;
+        }
     }
 
     // A title's page and a person's, the web's detail pages: the sidebar narrows to its rail beside them.
