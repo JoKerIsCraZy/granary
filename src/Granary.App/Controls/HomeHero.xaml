@@ -10,9 +10,12 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     VerticalAlignment="Top">
 
-    <Grid x:Name="Root" Height="440" Background="Transparent" PointerWheelChanged="OnWheel">
+    <!-- Heights from HomeHeroLayout; a wheel or a touch drag on the header scrolls the rows. -->
+    <Grid x:Name="Root" Background="Transparent" PointerWheelChanged="OnWheel"
+          ManipulationMode="TranslateY,TranslateInertia" ManipulationStarted="OnDragStarting" ManipulationDelta="OnDrag">
         <Grid x:Name="BackdropBox" HorizontalAlignment="Right" IsHitTestVisible="False" AutomationProperties.AccessibilityView="Raw">
-            <!-- Two layers, so a new title's backdrop fades in over the last one; cut to the box around its middle. -->
+            <!-- Two layers, so a new title's backdrop fades in over the last one; cut to the box around its middle. Their order
+                 changes only among themselves, under the fades. -->
             <Grid>
                 <Grid x:Name="LayerA">
                     <Image x:Name="BlurA" Stretch="UniformToFill" VerticalAlignment="Center" />
@@ -32,7 +35,7 @@
                     </LinearGradientBrush>
                 </Rectangle.Fill>
             </Rectangle>
-            <Rectangle x:Name="BottomFade" Height="242" VerticalAlignment="Bottom">
+            <Rectangle x:Name="BottomFade" VerticalAlignment="Bottom">
                 <Rectangle.Fill>
                     <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
                         <GradientStop Offset="0" Color="#00141417" />

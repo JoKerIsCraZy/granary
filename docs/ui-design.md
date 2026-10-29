@@ -292,14 +292,20 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     the rows; nothing is read for the hero.
   - The backdrop covers the right 65 % of the page, from the top to behind the first row (440 px), cut around its
     middle, fading into the page toward the text and the rows. A new title's backdrop shows its blur at once and fades
-    in over the last one in 350 ms, decoded as wide as it is shown.
+    in over the last one in 350 ms, which stays fully shown underneath until then; a title picked during a fade follows
+    it. It is decoded as wide as it is shown (at least 783 px, where the box's shape cuts its sides), and again when the
+    window grows it by more than 15 %. Folded, a new title shows only its blur until the hero unfolds. The pictures are
+    let go while Home is not shown.
   - Which title: the first card of the first row until a card is pointed at. The first card pointed at shows at once;
     after that a card has to keep the pointer for 150 ms, so a sweep across a row loads one backdrop, not one per
-    card. The pointer leaving the rows keeps the title; a reload keeps it while its rows still have it.
+    card. The pointer leaving the rows keeps the title; a reload keeps it, and a card the pointer rests on, while the rows
+    still have them. Another profile starts afresh.
   - The rows begin 300 px down. Scrolling them folds the hero into a compact 150 px header that stays at the top and cuts
     the rows off at its edge: over the first 150 px of scrolling the logo shrinks to 45 px, the details move up under
-    it, the overview fades and the backdrop shortens to the header. It follows the scroll on the compositor. A wheel
-    over the header scrolls the rows.
+    it, the overview fades and the backdrop shortens to the header. It follows the scroll on the compositor
+    (`HomeHeroLayout`; its numbers are expression parameters, never text in the user's culture). A wheel (not a tilt or
+    Ctrl with it) or a touch or pen drag over the header scrolls the rows. Without a hero (loading, empty, an error) the
+    rows sit as on other pages.
 - What happens on another device shows without a visit (`RealtimeEvents`, docs/api-contract.md 12): a title watched,
   favourited, put on the watchlist or taken off Home there, or a title the server added or changed, reloads Home in
   place once the changes have been quiet for 2 s (rows keep where they were scrolled to; other pages reload on their

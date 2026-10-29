@@ -15,9 +15,10 @@ public sealed class HomeHeroTests
 
     private readonly BrowseFakeSilo _silo = new();
     private readonly ManualTimeProvider _time = new();
+    private readonly FakeSessionManager _session = BrowseFakeSilo.ReadySession();
 
     private HomeViewModel Create() =>
-        new(BrowseFakeSilo.ReadySession(), _silo.Catalog, _silo.Images, new RecordingNavigation(), new ImmediateDispatcher(), _time,
+        new(_session, _silo.Catalog, _silo.Images, new RecordingNavigation(), new ImmediateDispatcher(), _time,
             _silo.Logs.For<HomeViewModel>(), new ViewerStateChanges(new PlaybackStops()));
 
     private async Task<HomeViewModel> HomeWithAsync(params object[] sections)
@@ -162,7 +163,7 @@ public sealed class HomeHeroTests
     {
         var changes = new ViewerStateChanges(new PlaybackStops());
         _silo.Map(SectionsPath, Sections(Section("recent", "recently_added", 2, Item("r1"), Item("r2"))));
-        var home = new HomeViewModel(BrowseFakeSilo.ReadySession(), _silo.Catalog, _silo.Images, new RecordingNavigation(), new ImmediateDispatcher(),
+        var home = new HomeViewModel(_session, _silo.Catalog, _silo.Images, new RecordingNavigation(), new ImmediateDispatcher(),
             _time, _silo.Logs.For<HomeViewModel>(), changes);
         await home.ActivateAsync();
         home.PointCardCommand.Execute(home.Rows[0].Cards[1]);
@@ -183,7 +184,7 @@ public sealed class HomeHeroTests
     {
         var changes = new ViewerStateChanges(new PlaybackStops());
         _silo.Map(SectionsPath, Sections(Section("recent", "recently_added", 2, Item("r1"), Item("r2"))));
-        var home = new HomeViewModel(BrowseFakeSilo.ReadySession(), _silo.Catalog, _silo.Images, new RecordingNavigation(), new ImmediateDispatcher(),
+        var home = new HomeViewModel(_session, _silo.Catalog, _silo.Images, new RecordingNavigation(), new ImmediateDispatcher(),
             _time, _silo.Logs.For<HomeViewModel>(), changes);
         await home.ActivateAsync();
         home.PointCardCommand.Execute(home.Rows[0].Cards[0]);
@@ -195,6 +196,78 @@ public sealed class HomeHeroTests
         _time.Advance(HomeHeroViewModel.SettleTime);
 
         Assert.Equal("r1", home.Hero.Shown?.Key);
+    }
+
+    [Fact]
+    public async Task APointResting_SurvivesAReloadThatKeepsItsCard()
+    {
+        var changes = new ViewerStateChanges(new PlaybackStops());
+        _silo.Map(SectionsPath, Sections(Section("recent", "recently_added", 2, Item("r1"), Item("r2"))));
+        var home = new HomeViewModel(_session, _silo.Catalog, _silo.Images, new RecordingNavigation(), new ImmediateDispatcher(),
+            _time, _silo.Logs.For<HomeViewModel>(), changes);
+        await home.ActivateAsync();
+        home.PointCardCommand.Execute(home.Rows[0].Cards[0]);
+        home.PointCardCommand.Execute(home.Rows[0].Cards[1]);
+
+        changes.Report();
+        await home.Loading;
+        _time.Advance(HomeHeroViewModel.SettleTime);
+
+        Assert.Equal("r2", home.Hero.Shown?.Key);
+    }
+
+    [Fact]
+    public async Task RemovingTheShownTitle_ShowsTheFirstCardLeft()
+    {
+        _silo.Map("api/v2/home/dismissals/continue_watching/m1", _ => BrowseFakeSilo.NoContent());
+        var home = await HomeWithAsync(Section("cw", "continue_watching", 1, Item("m1", progressUpdatedAt: "2026-10-25T10:00:00Z")),
+            Section("recent", "recently_added", 1, Item("r1")));
+        Assert.Equal("m1", home.Hero.Shown?.Key);
+
+        await home.RemoveCommand.ExecuteAsync(home.Rows[0].Cards[0]);
+
+        Assert.Equal("r1", home.Hero.Shown?.Key);
+    }
+
+    [Fact]
+    public async Task AnotherProfile_StartsAfresh_ItsFirstPointShowingAtOnce()
+    {
+        var home = await HomeWithAsync(Section("recent", "recently_added", 2, Item("r1"), Item("r2")));
+        home.PointCardCommand.Execute(home.Rows[0].Cards[1]);
+        _silo.Map(SectionsPath, Sections(Section("recent", "recently_added", 2, Item("k1"), Item("k2"))));
+
+        _session.ProfileId = "8";
+        _session.RaiseChanged();
+        await home.Loading;
+        Assert.Equal("k1", home.Hero.Shown?.Key);
+
+        home.PointCardCommand.Execute(home.Rows[0].Cards[1]);
+        Assert.Equal("k2", home.Hero.Shown?.Key);
+    }
+
+    [Fact]
+    public async Task AProfileWithoutRows_HidesTheHero()
+    {
+        var home = await HomeWithAsync(Section("recent", "recently_added", 1, Item("r1")));
+        _silo.Map(SectionsPath, Sections(Section("nothing", "genre", 0)));
+
+        _session.ProfileId = "8";
+        _session.RaiseChanged();
+        await home.Loading;
+
+        Assert.Null(home.Hero.Shown);
+    }
+
+    [Fact]
+    public void AnEpisodeWithoutItsNumbers_LeavesTheCodeOut()
+    {
+        var episode = new CatalogItem
+        {
+            ContentId = "e1", Type = CatalogItemTypes.Episode, Title = "Kein Zufall", SeriesTitle = "Elena", SeasonNumber = 1, Runtime = 25,
+            ContentRating = "TV-14",
+        };
+
+        Assert.Equal("Kein Zufall · 25m · TV-14", HomeHeroTitle.From(episode, Server).Meta);
     }
 
     [Fact]
