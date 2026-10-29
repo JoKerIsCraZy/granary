@@ -290,12 +290,14 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   under Search's titles while the server takes requests, the movies and series TMDB finds for a text of two characters
   or more that the library does not have, following the type switch. A heading like People's, "Nothing in your library
   matches “text”." under it when the library found nothing (its empty grid and "Titles" then go, and "No titles found"
-  shows only once TMDB found nothing to add either; the ring turns until it knows), up to 20 TMDB posters, and under
-  them Previous, "Page 2 of 9" and Next (TMDB's pages, at most 500). Another page dims the shown one to 60 % until it
-  arrives and brings the heading back into view when it was scrolled away. A first page that fails, or that is the only
-  page and holds only library titles, leaves the section out; a page of only library titles among others says "Every
-  title on this page is already in your library."; a later page that fails says "Couldn’t load page 2." beside Retry
-  and a ghost Back to page 1. The cards open the title's page, or the library's title.
+  shows only once TMDB found nothing to add either; the ring turns until it knows), then TMDB's posters in one grid. The
+  web pages TMDB's twenty a page with Previous, "Page 1 of 2" and Next, even when the library's titles leave six of them;
+  here the pages gather: a read takes TMDB's next pages until 20 titles came or 3 pages were read, and the grid's end
+  coming into view reads on (Load more for the keyboard, a ring meanwhile), to TMDB's last page (at most 500). A title
+  shows once. A first read that fails, or that finds only library titles on TMDB's only pages, leaves the section out;
+  pages of only library titles with more to come say "Every title found so far is already in your library." over Load
+  more; a later read that fails keeps what shows and says "Couldn’t load more titles." over Try again. The cards open
+  the title's page, or the library's title.
 - Pages: 48 px side margins, 32 px top; rows 40 px apart.
 - Home's hero (`HomeHero`, `HomeHeroViewModel`), as Silage's home and so a deliberate departure from the web's Home,
   which has none: the title of the card the pointer or the keyboard is on, in any row, at the top of the page.

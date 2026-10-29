@@ -93,8 +93,9 @@
             </StackPanel>
 
             <!--
-                Request to add, as the web's RequestToAddSection: what TMDB finds that the library does not have, 20 to a
-                page. Laid out like People above: a plain heading over the titles, the pager under them.
+                Request to add, as the web's RequestToAddSection: what TMDB finds that the library does not have. Laid out
+                like People above: a plain heading over the titles. Unlike the web's pager, TMDB's pages gather in one grid
+                that reads on as its end comes into view, as Explore all does.
             -->
             <StackPanel x:Name="RequestSection" Spacing="14" Visibility="{x:Bind ViewModel.ShowsRequests, Mode=OneWay}">
                 <StackPanel Spacing="4">
@@ -103,42 +104,26 @@
                                Foreground="{StaticResource SiloMutedBrush}" Visibility="{x:Bind HasText(ViewModel.Requests.Note), Mode=OneWay}" />
                 </StackPanel>
 
-                <!-- A later page that failed: try it again, or go back to the first. -->
-                <StackPanel Orientation="Horizontal" Spacing="12" Visibility="{x:Bind ViewModel.Requests.HasPageError, Mode=OneWay}">
-                    <TextBlock Text="{x:Bind ViewModel.Requests.PageErrorText, Mode=OneWay}" VerticalAlignment="Center"
-                               Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
-                               AutomationProperties.LiveSetting="Assertive" />
-                    <Button Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.Requests.RetryPageCommand}" AutomationProperties.Name="Retry">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <FontIcon Glyph="&#xE72C;" FontSize="14" />
-                            <TextBlock Text="Retry" />
-                        </StackPanel>
-                    </Button>
-                    <!-- The web's ghost button: no fill or border until the pointer is over it. -->
-                    <Button Content="Back to page 1" Style="{StaticResource SiloSecondaryButtonStyle}" Background="Transparent" BorderThickness="0"
-                            Command="{x:Bind ViewModel.Requests.FirstPageCommand}" />
-                </StackPanel>
-
                 <!-- A card's Request that failed, in the web's toast words. -->
                 <TextBlock Text="{x:Bind ViewModel.Requests.RequestNotice.Text, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}"
                            Foreground="{StaticResource SiloPrimaryBrush}" Visibility="{x:Bind ViewModel.Requests.RequestNotice.HasText, Mode=OneWay}"
                            AutomationProperties.LiveSetting="Assertive" />
 
-                <!-- Dimmed while another page loads; it stays until that page is there. -->
-                <controls:MediaGrid ItemsSource="{x:Bind ViewModel.Requests.Cards, Mode=OneWay}"
-                                    CardInvokedCommand="{x:Bind ViewModel.Requests.OpenCardCommand}"
-                                    Opacity="{x:Bind Dimmed(ViewModel.Requests.IsChangingPage), Mode=OneWay}" />
+                <controls:MediaGrid ItemsSource="{x:Bind ViewModel.Requests.Cards}" CardInvokedCommand="{x:Bind ViewModel.Requests.OpenCardCommand}"
+                                    LoadMoreCommand="{x:Bind ViewModel.Requests.LoadMoreCommand}" />
 
-                <TextBlock Text="Every title on this page is already in your library." TextWrapping="Wrap" Style="{StaticResource SiloBodyTextStyle}"
-                           Foreground="{StaticResource SiloMutedBrush}" Visibility="{x:Bind ViewModel.Requests.IsPageEmpty, Mode=OneWay}" />
-
-                <!-- Previous · Page 2 of 9 · Next -->
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="12" Padding="0,8,0,0"
-                            AutomationProperties.Name="Request to add pages" Visibility="{x:Bind ViewModel.Requests.ShowsPager, Mode=OneWay}">
-                    <Button Content="Previous" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.Requests.PreviousPageCommand}" />
-                    <TextBlock Text="{x:Bind ViewModel.Requests.PagePosition, Mode=OneWay}" VerticalAlignment="Center"
-                               Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}" />
-                    <Button Content="Next" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.Requests.NextPageCommand}" />
+                <TextBlock Text="Every title found so far is already in your library." TextWrapping="Wrap" Style="{StaticResource SiloBodyTextStyle}"
+                           Foreground="{StaticResource SiloMutedBrush}" Visibility="{x:Bind ViewModel.Requests.IsEmptySoFar, Mode=OneWay}" />
+                <ProgressRing IsActive="{x:Bind ViewModel.Requests.IsLoadingMore, Mode=OneWay}" Visibility="{x:Bind ViewModel.Requests.IsLoadingMore, Mode=OneWay}"
+                              Width="24" Height="24" HorizontalAlignment="Center" AutomationProperties.Name="Loading more titles to request" />
+                <!-- The grid's end coming into view presses it; it stays for the keyboard. -->
+                <Button Content="Load more" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
+                        Command="{x:Bind ViewModel.Requests.LoadMoreCommand}" Visibility="{x:Bind ViewModel.Requests.ShowsLoadMore, Mode=OneWay}" />
+                <StackPanel Spacing="12" HorizontalAlignment="Center" Visibility="{x:Bind ViewModel.Requests.HasMoreError, Mode=OneWay}">
+                    <TextBlock Text="Couldn’t load more titles." Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
+                               HorizontalAlignment="Center" AutomationProperties.LiveSetting="Assertive" />
+                    <Button Content="Try again" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
+                            Command="{x:Bind ViewModel.Requests.TryAgainCommand}" />
                 </StackPanel>
             </StackPanel>
         </StackPanel>
