@@ -143,7 +143,7 @@ public sealed class SubtitleSyncTracker : IDisposable
             _server = server;
             _fileId = fileId;
             _keys = keys;
-            _ = ProbeAsync(_generation);
+            Start(ProbeAsync(_generation));
             return;
         }
         if (keys != _keys)
@@ -172,7 +172,7 @@ public sealed class SubtitleSyncTracker : IDisposable
         if (!IsAvailable)
         {
             // The first probe may have failed: a menu opened later asks again.
-            _ = ProbeAsync(_generation);
+            Start(ProbeAsync(_generation));
             return;
         }
         List(force: true);
@@ -208,7 +208,7 @@ public sealed class SubtitleSyncTracker : IDisposable
             _knownTiming[key] = TimingDirty;
             TimingChanged?.Invoke(this, key);
         }
-        _ = ReadOneAsync(key);
+        Start(ReadOneAsync(key));
     }
 
     /// <summary>The server reported a step of <paramref name="key"/>'s sync job (control lane).</summary>
@@ -235,11 +235,11 @@ public sealed class SubtitleSyncTracker : IDisposable
         Observe(entry.State with { Timing = timing, Sync = job }, pushed: true);
     }
 
-    /// <summary>"Sync to audio": starts a job, or joins the running one, and follows it.</summary>
+    /// <summary>"Sync to audio": starts a job, or joins the running one, and follows it. Not while one is asked for or runs.</summary>
     public async Task RequestSyncAsync(string key)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(key);
-        if (_server is not { } server || _fileId is not { } fileId || !_entries.ContainsKey(key))
+        if (_server is not { } server || _fileId is not { } fileId || EntryOf(key) is not { IsBusy: false, IsInProgress: false })
         {
             return;
         }
@@ -249,31 +249,27 @@ public sealed class SubtitleSyncTracker : IDisposable
         long sentAt = _observation;
         using var limit = new CancellationTokenSource(ActionTimeout, _time);
         using var request = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token, limit.Token);
-        try
+        var (state, failure) = await AnswerOf(_api.StartAsync(server, fileId, key, request.Token)).ConfigureAwait(false);
+        await _dispatcher.ResumeOnUi();
+        // An answer for a file no longer followed is nobody's: a command that waits for it ends quietly.
+        if (generation != _generation)
         {
-            var state = await _api.StartAsync(server, fileId, key, request.Token);
-            if (generation != _generation)
-            {
-                return;
-            }
-            Observe(state, watch: state.Sync?.Id, sentAt: sentAt);
-            Patch(key, e => e with { IsBusy = false });
+            return;
         }
-        catch (Exception ex) when (LibraryErrors.IsExpected(ex))
+        if (failure is not null)
         {
-            // An answer for a file no longer followed is nobody's: a command that waits for it ends quietly.
-            if (generation == _generation)
-            {
-                Refused(key, ex, "Sync failed");
-            }
+            Refused(key, failure, "Sync failed");
+            return;
         }
+        Observe(state!, watch: state!.Sync?.Id, sentAt: sentAt);
+        Patch(key, e => e with { IsBusy = false });
     }
 
-    /// <summary>"Reset timing": the original timing again, written at the version just read.</summary>
+    /// <summary>"Reset timing": the original timing again, written at the version just read. Not while a request or a job runs.</summary>
     public async Task ResetTimingAsync(string key)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(key);
-        if (_server is not { } server || _fileId is not { } fileId || !_entries.ContainsKey(key))
+        if (_server is not { } server || _fileId is not { } fileId || EntryOf(key) is not { IsBusy: false, IsInProgress: false })
         {
             return;
         }
@@ -281,29 +277,32 @@ public sealed class SubtitleSyncTracker : IDisposable
         Patch(key, e => e with { IsBusy = true, Error = null });
         using var limit = new CancellationTokenSource(ActionTimeout, _time);
         using var request = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token, limit.Token);
-        try
+        var (read, readFailure) = await AnswerOf(_api.ReadAsync(server, fileId, key, request.Token)).ConfigureAwait(false);
+        await _dispatcher.ResumeOnUi();
+        if (generation != _generation)
         {
-            var read = await _api.ReadAsync(server, fileId, key, request.Token);
-            if (generation != _generation)
-            {
-                return;
-            }
-            long sentAt = _observation;
-            var state = await _api.SetTimingAsync(server, fileId, key, read.Version, SubtitleTiming.Identity, request.Token);
-            if (generation != _generation)
-            {
-                return;
-            }
-            Observe(state, sentAt: sentAt);
-            Patch(key, e => e with { IsBusy = false });
+            return;
         }
-        catch (Exception ex) when (LibraryErrors.IsExpected(ex))
+        if (readFailure is not null)
         {
-            if (generation == _generation)
-            {
-                Refused(key, ex, "Couldn't reset timing");
-            }
+            Refused(key, readFailure, "Couldn't reset timing");
+            return;
         }
+        long sentAt = _observation;
+        var (state, failure) = await AnswerOf(_api.SetTimingAsync(server, fileId, key, read!.Version, SubtitleTiming.Identity, request.Token))
+            .ConfigureAwait(false);
+        await _dispatcher.ResumeOnUi();
+        if (generation != _generation)
+        {
+            return;
+        }
+        if (failure is not null)
+        {
+            Refused(key, failure, "Couldn't reset timing");
+            return;
+        }
+        Observe(state!, sentAt: sentAt);
+        Patch(key, e => e with { IsBusy = false });
     }
 
     public void Dispose()
@@ -313,14 +312,36 @@ public sealed class SubtitleSyncTracker : IDisposable
         _lifetime.Dispose();
     }
 
+    // A server call's answer or its failure, never thrown: the caller takes either on the UI thread (ResumeOnUi), whatever
+    // thread the answer completed on, so nothing a command or a read nobody awaits does can escape it.
+    private static async Task<(T? Value, Exception? Failure)> AnswerOf<T>(Task<T> call)
+    {
+        try
+        {
+            return (await call.ConfigureAwait(false), null);
+        }
+        catch (Exception ex)
+        {
+            return (default, ex);
+        }
+    }
+
     // The web words a refusal by its status; anything else by what it was asked to do. A subtitle that changed meanwhile
-    // (412) is read again, so what shows, and the buttons, are its current state.
+    // (412) is read again, so what shows, and the buttons, are its current state. A failure that is no refusal at all is a
+    // fault of this app's, logged as one.
     private void Refused(string key, Exception ex, string fallback)
     {
-        _logger.LogWarning("A subtitle sync request was refused: {Failure}", ApiFailureText.Describe(ex));
+        if (LibraryErrors.IsExpected(ex))
+        {
+            _logger.LogWarning("A subtitle sync request was refused: {Failure}", ApiFailureText.Describe(ex));
+        }
+        else
+        {
+            _logger.LogError(ex, "A subtitle sync request failed");
+        }
         if (ex is SiloApiException { Status: 412 })
         {
-            _ = ReadOneAsync(key);
+            Start(ReadOneAsync(key));
         }
         Patch(key, e => ex is SiloApiException api ? api.Status switch
         {
@@ -366,29 +387,41 @@ public sealed class SubtitleSyncTracker : IDisposable
         {
             return;
         }
-        try
+        var (status, failure) = await AnswerOf(_api.GetStatusAsync(server, _lifetime.Token)).ConfigureAwait(false);
+        await _dispatcher.ResumeOnUi();
+        if (generation != _generation)
         {
-            var status = await _api.GetStatusAsync(server, _lifetime.Token);
-            if (generation != _generation)
-            {
-                return;
-            }
-            IsAvailable = status.IsAvailable;
-            IsExternalAvailable = status.IsAvailable && status.External;
-            Changed?.Invoke(this, EventArgs.Empty);
-            if (IsAvailable)
-            {
-                List(force: true);
-            }
+            return;
         }
-        catch (Exception ex) when (LibraryErrors.IsExpected(ex))
+        if (failure is not null)
         {
-            if (generation != _generation)
-            {
-                return;
-            }
             // Sync is decoration: the tracks play without it.
-            _logger.LogInformation("Subtitle sync status could not be read: {Failure}", ApiFailureText.Describe(ex));
+            LogReadFailure("Subtitle sync status could not be read", failure);
+            return;
+        }
+        IsAvailable = status!.IsAvailable;
+        IsExternalAvailable = status.IsAvailable && status.External;
+        Changed?.Invoke(this, EventArgs.Empty);
+        if (IsAvailable)
+        {
+            List(force: true);
+        }
+    }
+
+    // Work nobody awaits: whatever it throws is logged, never left unobserved.
+    private void Start(Task work) => _ = work.ContinueWith(task => _logger.LogError(task.Exception, "Subtitle sync failed"), CancellationToken.None,
+        TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+
+    // A read that failed: the server's refusal or an unreachable server is expected, anything else a fault of this app's.
+    private void LogReadFailure(string what, Exception failure)
+    {
+        if (LibraryErrors.IsExpected(failure))
+        {
+            _logger.LogInformation("{What}: {Failure}", what, ApiFailureText.Describe(failure));
+        }
+        else
+        {
+            _logger.LogError(failure, "{What}", what);
         }
     }
 
@@ -405,7 +438,7 @@ public sealed class SubtitleSyncTracker : IDisposable
             _listAgain = true;
             return;
         }
-        _ = ListAsync(_generation);
+        Start(ListAsync(_generation));
     }
 
     private async Task ListAsync(int generation)
@@ -417,25 +450,18 @@ public sealed class SubtitleSyncTracker : IDisposable
             {
                 _listAgain = false;
                 long sentAt = _observation;
-                IReadOnlyList<SubtitleSyncState> states;
-                try
-                {
-                    states = await _api.ListAsync(_server!, _fileId!, _lifetime.Token);
-                }
-                catch (Exception ex) when (LibraryErrors.IsExpected(ex))
-                {
-                    if (generation != _generation)
-                    {
-                        return;
-                    }
-                    _logger.LogInformation("Subtitle sync states could not be read: {Failure}", ApiFailureText.Describe(ex));
-                    return;
-                }
+                var (states, failure) = await AnswerOf(_api.ListAsync(_server!, _fileId!, _lifetime.Token)).ConfigureAwait(false);
+                await _dispatcher.ResumeOnUi();
                 if (generation != _generation)
                 {
                     return;
                 }
-                foreach (var state in states)
+                if (failure is not null)
+                {
+                    LogReadFailure("Subtitle sync states could not be read", failure);
+                    return;
+                }
+                foreach (var state in states!)
                 {
                     Observe(state, sentAt: sentAt, notify: false);
                 }
@@ -480,30 +506,23 @@ public sealed class SubtitleSyncTracker : IDisposable
             do
             {
                 long sentAt = _observation;
-                try
+                var (read, failure) = await AnswerOf(_api.ReadAsync(server, fileId, key, _lifetime.Token)).ConfigureAwait(false);
+                await _dispatcher.ResumeOnUi();
+                if (generation != _generation)
                 {
-                    var read = await _api.ReadAsync(server, fileId, key, _lifetime.Token);
-                    if (generation != _generation)
-                    {
-                        return;
-                    }
-                    Observe(read.Value, sentAt: sentAt);
+                    return;
                 }
-                catch (Exception ex) when (LibraryErrors.IsExpected(ex))
+                if (failure is SiloApiException { Status: 404 })
                 {
-                    if (generation != _generation)
-                    {
-                        return;
-                    }
-                    if (ex is SiloApiException { Status: 404 })
-                    {
-                        // The subtitle is gone, and its jobs with it.
-                        Forget(key, sentAt);
-                        return;
-                    }
+                    // The subtitle is gone, and its jobs with it.
+                    Forget(key, sentAt);
+                    return;
+                }
+                if (failure is not null)
+                {
                     // Any other failure stops polling; opening the menu re-arms it. A timing event's reload was taken without
                     // knowing the timing it loaded: the next timing seen reloads again rather than none.
-                    _logger.LogInformation("A subtitle's sync state could not be read: {Failure}", ApiFailureText.Describe(ex));
+                    LogReadFailure("A subtitle's sync state could not be read", failure);
                     if (_knownTiming.TryGetValue(key, out string? known) && known == TimingDirty)
                     {
                         _knownTiming[key] = TimingUnknown;
@@ -511,6 +530,7 @@ public sealed class SubtitleSyncTracker : IDisposable
                     Patch(key, e => e with { PollExpired = true });
                     return;
                 }
+                Observe(read!.Value, sentAt: sentAt);
             }
             while (rereads.Remove(key) && generation == _generation);
         }
@@ -650,7 +670,7 @@ public sealed class SubtitleSyncTracker : IDisposable
             }
             else if (!_pushedAt.TryGetValue(key, out var pushed) || now - pushed >= PushFresh)
             {
-                _ = ReadOneAsync(key);
+                Start(ReadOneAsync(key));
             }
         }
     }
