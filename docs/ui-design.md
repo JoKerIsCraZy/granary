@@ -158,8 +158,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   approved", amber for a lost one), and the watchlist toggle to take it off; "Could not load these titles." with
   Retry; or, empty, the web's dashed box: a bookmark, "Nothing waiting for the library", what goes there and Browse
   Discover. The titles are read on every visit, every 30 s while one downloads, and after a watchlist change; one that
-  left (arrived, or taken off) reloads the library's list. Unlike the web source, the cards offer no Request action:
-  requesting is the title page's, as on Discover's cards. History carries the web's Watch History panel: Select turns a
+  left (arrived, or taken off) reloads the library's list. Unlike the web source, these cards offer no Request action:
+  requesting them is the title page's. History carries the web's Watch History panel: Select turns a
   card's click into a pick (a 32 px dark circle top left, the accent dot with a check once picked), with the count,
   Select Loaded, Clear, the red Remove Selected and Done; Remove asks first in the web's words ("Remove selected watch
   data?") and, done, says "Removed watch data for N items" and loads the list again. Detail pages shrink
@@ -259,8 +259,14 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   studio's page, More like this) has the web's watchlist toggle where library cards keep their menu, while the server
   keeps TMDB titles on the watchlist: the web's bookmark, red with a check when on it (the TMDB title page's Add to
   Watchlist too; a library title keeps + and ✓); an add that requested the title shows the request's state on the card
-  at once. Unlike the web source, the server's web shows no Request action on these cards; requesting is the title
-  page's.
+  at once. While the viewer may request the title (`request.requestable`) and the server takes requests, the card has
+  the web source's Request in its middle, where library cards keep Play (`RequestPosterCard`'s `RequestAction`): under
+  the pointer a 36 px pill in the accent, "+ Request", that grows a little under the pointer; a click sends the title as
+  TMDB gave it (a series without seasons, so the server takes its aired seasons still missing; the title page asks
+  which), the pill then says "Sending" with a spinner and stays in view after the pointer leaves, and once the server
+  answers the card shows the request's state (PENDING, APPROVED, …) and offers Request no more. One that fails offers
+  Request again, and Discover says "Failed to submit request" above its rows (the web's toast); one that went through
+  reads Yours again. The deployed web of some servers shows no Request on these cards yet.
 - A Discover row in full and a studio's, network's or genre's titles (`RequestTitlesPage`, the web's
   `RequestDiscoverSection.tsx` / `RequestBrowse.tsx`): the name (the row's key in words until the server names it), for a
   browse page a 112 × 64 tile with the logo or name and "Studio" under the name, Movies | Series pills for a genre and

@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Globalization;
 using Granary.Core.Abstractions;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Requests;
@@ -14,18 +15,25 @@ namespace Granary.Core.ViewModels.Cards;
 /// cleared where the viewer left off.
 /// </summary>
 /// <param name="StatusBadge">
-/// A TMDB title's request state since this session put it on the watchlist and that requested it; it stands while the
-/// card's own badge is still <paramref name="StatusBadgeOver"/>, the one it replaced.
+/// A TMDB title's request state since this session requested it, or put it on the watchlist and that requested it; it
+/// stands while the card's own badge is still <paramref name="StatusBadgeOver"/>, the one it replaced.
 /// </param>
+/// <param name="IsRequested">This session requested the TMDB title from its card: it offers Request no more.</param>
 public sealed record MediaCardState(bool IsWatched, bool IsFavorite, bool InWatchlist, bool IsNotInterested = false, bool IsProgressCleared = false,
-    string? StatusBadge = null, string? StatusBadgeOver = null);
+    string? StatusBadge = null, string? StatusBadgeOver = null, bool IsRequested = false);
+
+/// <summary>How a card's Request answered, in the web's toast words.</summary>
+public sealed record CardRequestAnswer(string CardId, string Title, bool Succeeded)
+{
+    public string Text => Succeeded ? "Request submitted" : "Failed to submit request";
+}
 
 /// <summary>
 /// What a card's own buttons and its menu do, as Silo's web card menu: play, play from the beginning, mark watched,
 /// reset progress, favourite, watchlist and Not interested. Changes show at once and go back when the server refuses them. Cards are records of what the server said, and a scrolled list
 /// shows them again in recycled containers, so the changes of this session are kept here by content id until the
-/// session or profile changes. A title from TMDB (a Requests card) has one action, the web's watchlist toggle in its
-/// corner, while the server keeps a watchlist of TMDB titles.
+/// session or profile changes. A title from TMDB (a Requests card) has the web's watchlist toggle in its corner, while
+/// the server keeps a watchlist of TMDB titles, and Request in its middle while the viewer may request it.
 /// </summary>
 public sealed class MediaCardActions
 {
@@ -39,6 +47,8 @@ public sealed class MediaCardActions
     private readonly ConcurrentDictionary<string, MediaCardState> _changed = new(StringComparer.Ordinal);
     // TMDB titles whose watchlist change is on its way: an add can request the title, so it is not sent twice.
     private readonly ConcurrentDictionary<string, bool> _sending = new(StringComparer.Ordinal);
+    // TMDB titles whose request is on its way.
+    private readonly ConcurrentDictionary<string, bool> _requesting = new(StringComparer.Ordinal);
     // Counts the session and profile changes: an answer for an earlier profile changes nothing of the next one's.
     private int _profiles;
 
@@ -62,6 +72,9 @@ public sealed class MediaCardActions
 
     /// <summary>Raised with the content id whose state changed (and when a change went back).</summary>
     public event EventHandler<string>? Changed;
+
+    /// <summary>A card's Request answered, for the page to say so as the web's toast does; not for an earlier profile's.</summary>
+    public event EventHandler<CardRequestAnswer>? RequestAnswered;
 
     public MediaCardState StateOf(MediaCard card)
     {
@@ -99,6 +112,31 @@ public sealed class MediaCardActions
 
     /// <summary>A TMDB title's watchlist change is on its way; the toggle waits for it.</summary>
     public bool IsSending(MediaCard card) => _sending.ContainsKey(card.Id);
+
+    /// <summary>
+    /// A title from TMDB the viewer may request, while the server takes requests and this session has not requested it yet:
+    /// the web's <c>RequestAction</c>, shown for <c>request.requestable</c>.
+    /// </summary>
+    public bool CanRequest(MediaCard card) =>
+        card.Type == RequestsViewModel.CardType && card.RequestOffer is not null && _requests is not null
+        && _requestsFeature?.Status is { RequestsEnabled: true } && !StateOf(card).IsRequested;
+
+    /// <summary>A TMDB title's request is on its way: the action says Sending and waits, also after the pointer left.</summary>
+    public bool IsRequesting(MediaCard card) => _requesting.ContainsKey(card.Id);
+
+    /// <summary>"Request", or "Sending" while the request is on its way.</summary>
+    public string RequestActionText(MediaCard card) => IsRequesting(card) ? "Sending" : "Request";
+
+    /// <summary>"Request The Matrix (Movie · 1999)", or "Sending request for …" while on its way, as the web's label.</summary>
+    public string RequestActionName(MediaCard card)
+    {
+        ArgumentNullException.ThrowIfNull(card);
+        var offer = card.RequestOffer;
+        string kind = RequestText.MediaTypeLabel(offer?.MediaType ?? "");
+        string meta = offer?.Year is int year ? $"{kind} · {year.ToString(CultureInfo.InvariantCulture)}" : kind;
+        string title = $"{card.Title} ({meta})";
+        return IsRequesting(card) ? $"Sending request for {title}" : $"Request {title}";
+    }
 
     /// <summary>
     /// The card's request badge: its own, or the state its watchlist add requested in this session, until a newer answer
@@ -206,6 +244,54 @@ public sealed class MediaCardActions
         finally
         {
             _sending.TryRemove(card.Id, out _);
+            Changed?.Invoke(this, card.Id);
+        }
+    }
+
+    /// <summary>
+    /// Requests a title from TMDB from its card, as the web's hover Request: the title as TMDB gave it, a series whole (only
+    /// the title page asks for seasons). The card then shows the request's state and offers Request no more. Not retried: a
+    /// second POST after a lost answer would request it twice.
+    /// </summary>
+    public async Task<bool> RequestAsync(MediaCard card)
+    {
+        ArgumentNullException.ThrowIfNull(card);
+        if (!CanRequest(card) || card.RequestOffer is not { } offer || _session.ActiveServer is not { } server || !_requesting.TryAdd(card.Id, true))
+        {
+            return false;
+        }
+        int profiles = Volatile.Read(ref _profiles);
+        Changed?.Invoke(this, card.Id);
+        try
+        {
+            var request = await _requests!.CreateAsync(server.BaseUri, offer);
+            if (profiles == Volatile.Read(ref _profiles))
+            {
+                Show(card.Id, StateOf(card) with { IsRequested = true, StatusBadge = RequestCards.Badge(request), StatusBadgeOver = card.StatusBadge });
+                RequestAnswered?.Invoke(this, new CardRequestAnswer(card.Id, card.Title, Succeeded: true));
+            }
+            return true;
+        }
+        catch (Exception ex)
+        {
+            // Whatever went wrong, the card offers Request again; the button's click must not fail.
+            if (ApiFailureText.IsRequestFailure(ex))
+            {
+                _logger.LogWarning("Requesting {CardId} from its card failed: {Failure}", card.Id, ApiFailureText.Describe(ex));
+            }
+            else
+            {
+                _logger.LogError(ex, "Requesting {CardId} from its card failed", card.Id);
+            }
+            if (profiles == Volatile.Read(ref _profiles))
+            {
+                RequestAnswered?.Invoke(this, new CardRequestAnswer(card.Id, card.Title, Succeeded: false));
+            }
+            return false;
+        }
+        finally
+        {
+            _requesting.TryRemove(card.Id, out _);
             Changed?.Invoke(this, card.Id);
         }
     }

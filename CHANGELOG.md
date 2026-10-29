@@ -15,7 +15,8 @@ release's section is what its update says it changes (docs/release.md).
 - Home, the libraries, Search with people and Request to add, For You, Calendar, Notifications, Favorites, Watchlist,
   History and Collections, in the look of Silo's web app.
 - Requests: Discover, studios, networks and genres, the titles from TMDB with their seasons, your requests and the
-  watchlist's titles not in the library yet.
+  watchlist's titles not in the library yet. A title from TMDB can be requested straight from its card: Request shows
+  in the middle of the poster under the pointer.
 - The player, built on mpv: direct play and the server's streams, audio and subtitle tracks with their look, intro and
   credits skipping, the next episode, chapters, trickplay previews and a mini view.
 - Settings for playback and subtitles, the servers, and About with Check for updates.

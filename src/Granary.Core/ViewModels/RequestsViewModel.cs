@@ -51,6 +51,8 @@ public sealed partial class RequestsViewModel : ObservableObject
     private readonly TimeProvider _time;
     private readonly IUiDispatcher _dispatcher;
     private readonly ILogger<RequestsViewModel> _logger;
+    private readonly MediaCardActions? _cardActions;
+    private bool _hearsCards;
     // Where each Discover card opens: the library's title, or the title's own page.
     private readonly Dictionary<string, (AppRoute Route, object Parameter)> _destinations = new(StringComparer.Ordinal);
     private (string? ServerId, string? ProfileId)? _loadedFor;
@@ -62,7 +64,7 @@ public sealed partial class RequestsViewModel : ObservableObject
     private ITimer? _poll;
 
     public RequestsViewModel(ISessionManager session, RequestsApi requests, INavigationService navigation, TimeProvider time,
-        IUiDispatcher dispatcher, ILogger<RequestsViewModel> logger)
+        IUiDispatcher dispatcher, ILogger<RequestsViewModel> logger, MediaCardActions? cardActions = null)
     {
         _session = session;
         _requests = requests;
@@ -70,6 +72,7 @@ public sealed partial class RequestsViewModel : ObservableObject
         _time = time;
         _dispatcher = dispatcher;
         _logger = logger;
+        _cardActions = cardActions;
         BrandRows =
         [
             new(DiscoverBrowseKind.Studio, "Studios", RetryBrandsAsync),
@@ -129,6 +132,13 @@ public sealed partial class RequestsViewModel : ObservableObject
 
     public bool HasNotice => Notice.Length > 0;
 
+    /// <summary>A Discover card's Request that failed, in the web's toast words; a request that went through shows on its card.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasDiscoverNotice))]
+    public partial string DiscoverNotice { get; private set; } = "";
+
+    public bool HasDiscoverNotice => DiscoverNotice.Length > 0;
+
     /// <summary>What each state means, as the web's "What the statuses mean".</summary>
     public IReadOnlyList<RequestStatusHelp> StatusHelp { get; } =
     [
@@ -150,6 +160,11 @@ public sealed partial class RequestsViewModel : ObservableObject
     public Task ActivateAsync(bool isReturn)
     {
         _poll ??= _time.CreateTimer(_ => _dispatcher.Post(OnPoll), null, DownloadPollInterval, DownloadPollInterval);
+        if (_cardActions is not null && !_hearsCards)
+        {
+            _hearsCards = true;
+            _cardActions.RequestAnswered += OnCardRequestAnswered;
+        }
         bool shown = _loadedFor == Key() && DiscoverState != LibraryLoadState.Idle && YoursState != LibraryLoadState.Idle;
         if (!isReturn || !shown)
         {
@@ -158,12 +173,32 @@ public sealed partial class RequestsViewModel : ObservableObject
         return _time.GetUtcNow() - _mineReadAt >= DownloadPollInterval ? RefreshYoursAsync() : Task.CompletedTask;
     }
 
-    /// <summary>Stops following downloads when the page goes.</summary>
+    /// <summary>Stops following downloads, and the cards' requests, when the page goes.</summary>
     public void Deactivate()
     {
         _poll?.Dispose();
         _poll = null;
+        if (_hearsCards)
+        {
+            _hearsCards = false;
+            _cardActions!.RequestAnswered -= OnCardRequestAnswered;
+        }
     }
+
+    // A card's Request answered (on any thread): a failure says so, as the web's toast; a request that went through is
+    // read into Yours, as the web reads its requests again.
+    private void OnCardRequestAnswered(object? sender, CardRequestAnswer answer) => _dispatcher.Post(() =>
+    {
+        if (!_hearsCards)
+        {
+            return;
+        }
+        DiscoverNotice = answer.Succeeded ? "" : answer.Text;
+        if (answer.Succeeded)
+        {
+            _ = RefreshYoursAsync();
+        }
+    });
 
     [RelayCommand]
     private void SelectTab(RequestsTab tab) => Tab = tab;
@@ -253,6 +288,7 @@ public sealed partial class RequestsViewModel : ObservableObject
         previous.Dispose();
         var token = _run.Token;
         Notice = "";
+        DiscoverNotice = "";
         bool another = _loadedFor != Key();
         if (another || _session is not { State: SessionState.Ready })
         {

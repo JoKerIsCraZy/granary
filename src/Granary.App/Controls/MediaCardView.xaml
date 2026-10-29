@@ -141,6 +141,24 @@
                 </Button>
             </Grid>
 
+            <!--
+                A title from TMDB the viewer may request: the web's Request where library cards keep Play. Made on first need, and
+                apart from the hover layer: while its request is on its way it stays in view, saying Sending, as the web's does.
+            -->
+            <Button x:Name="RequestButton" x:Load="False" Style="{StaticResource SiloCardRequestButtonStyle}" Opacity="0" IsHitTestVisible="False"
+                    HorizontalAlignment="Center" VerticalAlignment="Center" Click="OnRequestClick">
+                <Button.OpacityTransition>
+                    <ScalarTransition Duration="0:0:0.15" />
+                </Button.OpacityTransition>
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <FontIcon x:Name="RequestPlus" Glyph="&#xE710;" FontSize="12" VerticalAlignment="Center" />
+                    <ProgressRing x:Name="RequestSpinner" Width="14" Height="14" MinWidth="14" MinHeight="14" IsActive="False" Visibility="Collapsed"
+                                  Foreground="{StaticResource SiloOnPrimaryBrush}" VerticalAlignment="Center" />
+                    <TextBlock x:Name="RequestLabel" FontSize="12" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
+                               VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
+
             <!-- The faint light along the top edge, as on the web. -->
             <Border BorderBrush="#0DFFFFFF" BorderThickness="0,1,0,0" CornerRadius="{StaticResource SiloCardCornerRadius}" IsHitTestVisible="False" />
         </Grid>

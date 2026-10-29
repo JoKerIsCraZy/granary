@@ -1173,6 +1173,52 @@
     </Style>
 
     <!--
+        A TMDB title's Request in the middle of its card, as the web's RequestAction: a pill in the accent, 36 high, that grows
+        a little under the pointer (hover:scale-105) and gives under a press. Disabled while its request is on its way, in
+        the same colours (the web's pending state).
+    -->
+    <Style x:Key="SiloCardRequestButtonStyle" TargetType="Button">
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="Height" Value="36" />
+        <Setter Property="Padding" Value="14,0" />
+        <Setter Property="Foreground" Value="{StaticResource SiloOnPrimaryBrush}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Pill" CornerRadius="18" Background="{StaticResource SiloPrimaryBrush}" Padding="{TemplateBinding Padding}"
+                            RenderTransformOrigin="0.5,0.5">
+                        <Border.RenderTransform>
+                            <ScaleTransform x:Name="PillScale" />
+                        </Border.RenderTransform>
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup x:Name="CommonStates">
+                                <VisualState x:Name="Normal" />
+                                <VisualState x:Name="PointerOver">
+                                    <VisualState.Setters>
+                                        <Setter Target="Pill.Background" Value="{StaticResource SiloPrimaryHoverBrush}" />
+                                        <Setter Target="PillScale.ScaleX" Value="1.05" />
+                                        <Setter Target="PillScale.ScaleY" Value="1.05" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Pressed">
+                                    <VisualState.Setters>
+                                        <Setter Target="Pill.Background" Value="{StaticResource SiloPrimaryPressedBrush}" />
+                                        <Setter Target="PillScale.ScaleX" Value="0.95" />
+                                        <Setter Target="PillScale.ScaleY" Value="0.95" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Disabled" />
+                            </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Content="{TemplateBinding Content}"
+                                          Foreground="{TemplateBinding Foreground}" />
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--
         A whole card as one button: keyboard focus and Enter work, and the system focus ring shows. Under the pointer
         the card itself reacts (MediaCardView: the artwork grows, its buttons appear), as on Silo's web.
     -->
