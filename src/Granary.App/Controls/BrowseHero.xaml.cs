@@ -9,6 +9,7 @@ using Microsoft.UI.Xaml.Automation.Peers;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Hosting;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
 
 namespace Granary.App.Controls;
 
@@ -17,14 +18,17 @@ namespace Granary.App.Controls;
 /// backdrop, as Silage's home shows the card in focus. A new title's backdrop fades in over the last one, its blur first;
 /// the last one stays fully shown underneath until the fade is done. Once the rows below scroll, the hero folds into a
 /// compact header of the logo and the details, which stays at the top (<see cref="FollowScroll"/>); folded, a new title
-/// shows only its backdrop's blur. The page lays its rows under it with <see cref="RowsViewMargin"/> and
-/// <see cref="RowsPadding"/>.
+/// shows only its backdrop's blur. On a taller page the hero is taller (<see cref="Sizes"/>, <see cref="BrowseHeroLayout.For"/>).
+/// The page lays its rows under it with <see cref="RowsViewMargin"/> and <see cref="RowsPadding"/>.
 /// </summary>
 public sealed partial class BrowseHero : UserControl
 {
     public static readonly DependencyProperty TitleProperty =
         DependencyProperty.Register(nameof(Title), typeof(BrowseHeroTitle), typeof(BrowseHero),
             new PropertyMetadata(null, (sender, e) => ((BrowseHero)sender).Show(e.NewValue as BrowseHeroTitle)));
+
+    public static readonly DependencyProperty SizesProperty =
+        DependencyProperty.Register(nameof(Sizes), typeof(BrowseHeroSizes), typeof(BrowseHero), new PropertyMetadata(BrowseHeroLayout.For(0)));
 
     private const int LogoDecodeWidth = 400;
     private static readonly TimeSpan Crossfade = TimeSpan.FromMilliseconds(350);
@@ -33,6 +37,11 @@ public sealed partial class BrowseHero : UserControl
     private readonly BackdropLayer[] _layers;
     private readonly CrossfadeLayers<BrowseHeroTitle> _crossfade = new();
     private readonly DispatcherQueueTimer _fadeDone;
+    // The text's sizes as the markup gives them, for a 1080 px window; a taller one grows them.
+    private readonly (double LogoWidth, double Name, double Meta, double Overview, double OverviewLine, double OverviewWidth, double Width, double Top) _textAt1080;
+    private FrameworkElement? _page;
+    // The fold's numbers, which its expressions read: a page of another height sets them anew, the expressions run on.
+    private CompositionPropertySet? _fold;
     private CancellationTokenSource? _logoLoading;
     private BrowseHeroTitle? _shown;
     private string? _picturesOf;
@@ -46,8 +55,9 @@ public sealed partial class BrowseHero : UserControl
     public BrowseHero()
     {
         InitializeComponent();
-        Root.Height = BrowseHeroLayout.RestHeight;
-        BottomFade.Height = BrowseHeroLayout.RestHeight * BrowseHeroLayout.FadeShare;
+        _textAt1080 = (Logo.MaxWidth, HeadingText.FontSize, MetaText.FontSize, OverviewText.FontSize, OverviewText.LineHeight, OverviewText.MaxWidth,
+            Texts.MaxWidth, Texts.Margin.Top);
+        ApplySizes(Sizes);
         _layers = [new BackdropLayer(LayerA, BlurA, ArtA), new BackdropLayer(LayerB, BlurB, ArtB)];
         foreach (var element in new UIElement[] { LayerA, LayerB, ArtA, ArtB })
         {
@@ -59,8 +69,13 @@ public sealed partial class BrowseHero : UserControl
         _fadeDone.IsRepeating = false;
         _fadeDone.Tick += (_, _) => FinishFade();
         SizeChanged += (_, e) => OnWidthChanged(e.NewSize.Width);
-        // A title shown while the page was out of the window gets its pictures now that it is in it.
-        Loaded += (_, _) => ShowPictures();
+        // A title shown while the page was out of the window gets its pictures now that it is in it. The page's height sets
+        // the hero's.
+        Loaded += (_, _) =>
+        {
+            FollowPage();
+            ShowPictures();
+        };
         Visibility = Visibility.Collapsed;
     }
 
@@ -69,6 +84,13 @@ public sealed partial class BrowseHero : UserControl
     {
         get => (BrowseHeroTitle?)GetValue(TitleProperty);
         set => SetValue(TitleProperty, value);
+    }
+
+    /// <summary>The hero's sizes on its page now, for the page's rows (<see cref="RowsViewMargin"/>, <see cref="RowsPadding"/>).</summary>
+    public BrowseHeroSizes Sizes
+    {
+        get => (BrowseHeroSizes)GetValue(SizesProperty);
+        private set => SetValue(SizesProperty, value);
     }
 
     /// <summary>
@@ -85,14 +107,14 @@ public sealed partial class BrowseHero : UserControl
     // compact header and the rows a fold's length below it, so at rest they start under the full hero and scroll up under
     // the header as it folds; without one (loading, empty, an error), as on any page.
 
-    /// <summary>Where the rows' scroller begins under a hero for <paramref name="hero"/>.</summary>
-    public static Thickness RowsViewMargin(BrowseHeroTitle? hero) => new(0, hero is null ? 0 : BrowseHeroLayout.CompactHeight, 0, 0);
+    /// <summary>Where the rows' scroller begins under a hero for <paramref name="hero"/> of <paramref name="sizes"/>.</summary>
+    public static Thickness RowsViewMargin(BrowseHeroTitle? hero, BrowseHeroSizes sizes) => new(0, hero is null ? 0 : sizes.CompactHeight, 0, 0);
 
     /// <summary>The padding of the rows in that scroller: the pages' 48 px sides and bottom, and the fold's length on top.</summary>
-    public static Thickness RowsPadding(BrowseHeroTitle? hero) => new(48, hero is null ? 32 : BrowseHeroLayout.CollapseDistance, 48, 48);
+    public static Thickness RowsPadding(BrowseHeroTitle? hero, BrowseHeroSizes sizes) => new(48, hero is null ? 32 : sizes.CollapseDistance, 48, 48);
 
     /// <summary>
-    /// Folds the hero as <paramref name="scroller"/> scrolls its first <see cref="BrowseHeroLayout.CollapseDistance"/>: the logo
+    /// Folds the hero as <paramref name="scroller"/> scrolls its first <see cref="BrowseHeroSizes.CollapseDistance"/>: the logo
     /// shrinks, the details move up under it, the overview fades, and the backdrop shortens to the compact header. On the
     /// compositor, so a scroll costs the UI thread nothing. A wheel over the hero, or a touch drag on it, scrolls the rows.
     /// </summary>
@@ -106,17 +128,18 @@ public sealed partial class BrowseHero : UserControl
         scroller.ViewChanged += OnScrolled;
         var scroll = ElementCompositionPreview.GetScrollViewerManipulationPropertySet(scroller);
         var compositor = scroll.Compositor;
+        var fold = compositor.CreatePropertySet();
+        _fold = fold;
         var expressions = BrowseHeroLayout.Expressions.ToDictionary(e => e.Target, e => e.Text, StringComparer.Ordinal);
         ExpressionAnimation Expression(string target)
         {
             var animation = compositor.CreateExpressionAnimation(expressions[target]);
             animation.SetReferenceParameter("scroll", scroll);
-            foreach (var (name, value) in BrowseHeroLayout.Parameters)
-            {
-                animation.SetScalarParameter(name, value);
-            }
+            animation.SetReferenceParameter("p", fold);
             return animation;
         }
+
+        SetFoldNumbers();
 
         Visual(Heading).StartAnimation("Scale", Expression("Heading.Scale"));
         foreach (var text in new UIElement[] { MetaText, OverviewText })
@@ -130,9 +153,22 @@ public sealed partial class BrowseHero : UserControl
         Visual(BackdropBox).Clip = clip;
         ElementCompositionPreview.SetIsTranslationEnabled(BottomFade, true);
         var fade = Visual(BottomFade);
-        fade.CenterPoint = new Vector3(0, (float)BottomFade.Height, 0);
         fade.StartAnimation("Translation.Y", Expression("Fade.Translation.Y"));
         fade.StartAnimation("Scale", Expression("Fade.Scale"));
+    }
+
+    // The fold's numbers for the hero's sizes now; the bottom fade shrinks toward its own bottom.
+    private void SetFoldNumbers()
+    {
+        if (_fold is not { } fold)
+        {
+            return;
+        }
+        foreach (var (name, value) in BrowseHeroLayout.ParametersFor(Sizes))
+        {
+            fold.InsertScalar(name, value);
+        }
+        Visual(BottomFade).CenterPoint = new Vector3(0, (float)Sizes.FadeHeight, 0);
     }
 
     /// <summary>The page was left: lets go of the pictures, and loads none until <see cref="Resume"/> brings them back.</summary>
@@ -269,13 +305,61 @@ public sealed partial class BrowseHero : UserControl
         _picturesOf = null;
     }
 
-    private int BackdropWidth() => BrowseHeroLayout.BackdropDecodeWidth(BackdropBox.Width);
+    private int BackdropWidth() => BrowseHeroLayout.BackdropDecodeWidth(BackdropBox.Width, Sizes.RestHeight);
 
     // The backdrop takes its share of the new width.
     private void OnWidthChanged(double width)
     {
-        BackdropBox.Width = Math.Round(width * BrowseHeroLayout.BackdropShare);
+        BackdropBox.Width = BrowseHeroLayout.BackdropBoxWidth(width, Sizes);
         FollowWidth();
+    }
+
+    // The page the hero is on: its height sets the hero's sizes. It must be the page's own full-height grid: a parent sized
+    // to its content would take its height from the hero's, which the sizes set, and lay itself out in a loop.
+    private void FollowPage()
+    {
+        if (_page is null && VisualTreeHelper.GetParent(this) is FrameworkElement page)
+        {
+            _page = page;
+            page.SizeChanged += (_, e) => FollowPageHeight(e.NewSize.Height);
+        }
+        if (_page is not null)
+        {
+            FollowPageHeight(_page.ActualHeight);
+        }
+    }
+
+    // A page of another height (in steps, BrowseHeroLayout.For): the hero takes its sizes, the backdrop its box (decoded
+    // again when it grew notably), the fold its new numbers and where it counts as folded, and the page lays its rows under
+    // it again (Sizes).
+    private void FollowPageHeight(double height)
+    {
+        var sizes = BrowseHeroLayout.For(height);
+        if (sizes == Sizes)
+        {
+            return;
+        }
+        Sizes = sizes;
+        ApplySizes(sizes);
+        OnWidthChanged(ActualWidth);
+        SetFoldNumbers();
+        FollowFold();
+    }
+
+    private void ApplySizes(BrowseHeroSizes sizes)
+    {
+        var text = _textAt1080;
+        Root.Height = sizes.RestHeight;
+        BottomFade.Height = sizes.FadeHeight;
+        Heading.Height = sizes.HeadingHeight;
+        Logo.MaxWidth = BrowseHeroLayout.Scaled(text.LogoWidth, sizes.Grow);
+        HeadingText.FontSize = BrowseHeroLayout.Scaled(text.Name, sizes.Grow);
+        Texts.MaxWidth = BrowseHeroLayout.Scaled(text.Width, sizes.Grow);
+        Texts.Margin = Texts.Margin with { Top = BrowseHeroLayout.Scaled(text.Top, sizes.Grow) };
+        MetaText.FontSize = BrowseHeroLayout.Scaled(text.Meta, sizes.TextGrow);
+        OverviewText.FontSize = BrowseHeroLayout.Scaled(text.Overview, sizes.TextGrow);
+        OverviewText.LineHeight = BrowseHeroLayout.Scaled(text.OverviewLine, sizes.TextGrow);
+        OverviewText.MaxWidth = BrowseHeroLayout.Scaled(text.OverviewWidth, sizes.Grow);
     }
 
     // A picture not decoded yet is decoded now, fade or not; one decoded notably narrower fades in again at the new width.
@@ -298,18 +382,23 @@ public sealed partial class BrowseHero : UserControl
         }
     }
 
-    // Folded past half the way, a new backdrop shows only its blur; unfolding brings the picture.
     private void OnScrolled(object? sender, ScrollViewerViewChangedEventArgs e)
+    {
+        if (!e.IsIntermediate)
+        {
+            _scrollTarget = null;
+        }
+        FollowFold();
+    }
+
+    // Folded past half the way, a new backdrop shows only its blur; unfolding brings the picture.
+    private void FollowFold()
     {
         if (_scroller is not { } scroller)
         {
             return;
         }
-        if (!e.IsIntermediate)
-        {
-            _scrollTarget = null;
-        }
-        bool folded = scroller.VerticalOffset > BrowseHeroLayout.CollapseDistance / 2;
+        bool folded = scroller.VerticalOffset > Sizes.CollapseDistance / 2;
         if (folded == _isFolded)
         {
             return;

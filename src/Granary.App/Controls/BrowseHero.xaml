@@ -45,7 +45,8 @@
             </Rectangle>
         </Grid>
 
-        <StackPanel Margin="48,40,48,0" MaxWidth="640" HorizontalAlignment="Left" VerticalAlignment="Top" IsHitTestVisible="False">
+        <!-- The sizes here are a 1080 px window's; a taller one grows them (BrowseHero.ApplySizes). -->
+        <StackPanel x:Name="Texts" Margin="48,40,48,0" MaxWidth="640" HorizontalAlignment="Left" VerticalAlignment="Top" IsHitTestVisible="False">
             <!-- The logo stands in for the name; without one, or when it does not load, the name in large type. -->
             <Grid x:Name="Heading" Height="80" HorizontalAlignment="Left">
                 <Image x:Name="Logo" MaxWidth="400" Stretch="Uniform" HorizontalAlignment="Left" VerticalAlignment="Center" Opacity="0"

@@ -64,7 +64,8 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
   edge's two corners share its width only when they must (`BadgeEdge`, the web's `justify-between`), a label then ending
   in "…". A poster lays them out at the web's 185 px and scales them, insets and all, to its width; a wide card keeps
   them. Over a progress bar the bottom row rises 8 px clear of it. Icons are Segoe Fluent glyphs; HDR10, Atmos and AV1
-  are heavy words, as Silo writes them. Cards show no badges until the profile's are known, so no defaults flash. Without artwork, or when it fails (expired signature), the title stands in. An episode's poster
+  are heavy words, as Silo writes them. Cards show no badges until the profile's are known, so no defaults flash.
+  Without artwork, or when it fails (expired signature), the title stands in. An episode's poster
   reads as the web's grid card (`lib/episodeCardLabels.ts`): the series ("Tracker"), the episode's own title
   ("Safe Harbor"), then "S04E01". The play disc, the card's buttons and its menu are made on first need (the pointer,
   focus on the card's button, the context menu), the progress bar only for a card with progress (`x:Load`): made for
@@ -317,20 +318,28 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   after 150 ms of rest, as on Home. Nothing shows until a result is pointed at, and each new search starts without one,
   as does every visit but Back. The pictures are let go while Search is not shown.
 - Pages: 48 px side margins, 32 px top; rows 40 px apart.
-- Home's hero (`BrowseHero`, `BrowseHeroViewModel`, also on For You), as Silage's home and so a deliberate departure
-  from the web's Home, which has none: the title of the card the pointer or the keyboard is on, in any row, at the top of
-  the page. A page lays its rows under it with `BrowseHero.RowsViewMargin` and `RowsPadding`, and feeds it its rows'
-  titles (`BrowseHeroViewModel.Follow`) and the card pointed at (`Point`).
+- Home's hero (`BrowseHero`, `BrowseHeroViewModel`, also on For You and Requests), as Silage's home and so a deliberate
+  departure from the web's Home, which has none: the title of the card the pointer or the keyboard is on, in any row, at
+  the top of the page. A page lays its rows under it with `BrowseHero.RowsViewMargin` and `RowsPadding` (with the hero's
+  `Sizes`), and feeds it its rows' titles (`BrowseHeroViewModel.Follow`) and the card pointed at (`Point`).
+  - Its sizes below are a page up to 1040 px high (a 1080 px window). A taller page has a taller hero, as Silage's grows
+    with the window (`BrowseHeroLayout.For`, in 8 px steps of the page's height): the hero keeps its share of the page's
+    height, up to 720 px (643 px on a 3840 × 1600 screen), and the first row moves down with it; the compact header, the
+    logo and the text block grow half as much (on 3840 × 1600: header 185, logo 98 high and 492 wide), and the details
+    and the overview a quarter (18 and 17 px). A page of another height lays the hero out again and gives the running
+    fold its new numbers.
   - What it shows: its logo, 80 px high and at most 400 px wide (its name in 40 px bold when it has none or the logo
     does not load); a 16 px grey line ("2008 · 2h 32m · PG-13", a series "2021 · TV-MA", an episode under its series'
     logo "S1 E1 · Kein Zufall · 25m · TV-14"); and the overview, at most three lines 570 px wide. All of it comes with
     the rows; nothing is read for the hero.
   - The backdrop covers the right 65 % of the page, from the top to behind the first row (440 px), cut around its
-    middle, fading into the page toward the text and the rows. A new title's backdrop shows its blur at once and fades
-    in over the last one in 350 ms, which stays fully shown underneath until then; a title picked during a fade follows
-    it. It is decoded as wide as it is shown (at least 783 px, where the box's shape cuts its sides), and again when the
-    window grows it by more than 15 %. Folded, a new title shows only its blur until the hero unfolds. The pictures are
-    let go while Home is not shown.
+    middle, fading into the page toward the text and the rows. Its box is never wider than 2.5 times its height: on a
+    wide window it is narrowed from the left, so the picture is not blown up into a strip (1100 × 440 px on a
+    2560 × 1080 window, 1608 × 643 px on 3840 × 1600; a 1920 × 1080 window's box is just under the limit). A new
+    title's backdrop shows its blur at once and fades in over the last one in 350 ms, which stays fully shown underneath
+    until then; a title picked during a fade follows it. It is decoded as wide as it is shown, or as its height needs
+    where the box's shape cuts its sides (783 px at 440 high), and again when the window grows it by more than 15 %.
+    Folded, a new title shows only its blur until the hero unfolds. The pictures are let go while Home is not shown.
   - Which title: the first card of the first row until a card is pointed at. The first card pointed at shows at once;
     after that a card has to keep the pointer for 150 ms, so a sweep across a row loads one backdrop, not one per
     card. The pointer leaving the rows keeps the title; a reload keeps it, and a card the pointer rests on, while the rows
@@ -338,7 +347,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   - The rows begin 300 px down. Scrolling them folds the hero into a compact 150 px header that stays at the top and cuts
     the rows off at its edge: over the first 150 px of scrolling the logo shrinks to 45 px, the details move up under
     it, the overview fades and the backdrop shortens to the header. It follows the scroll on the compositor
-    (`BrowseHeroLayout`; its numbers are expression parameters, never text in the user's culture). A wheel (not a tilt or
+    (`BrowseHeroLayout`; its numbers are a property set's, never text in the user's culture). A wheel (not a tilt or
     Ctrl with it) or a touch or pen drag over the header scrolls the rows. Without a hero (loading, empty, an error) the
     rows sit as on other pages.
 - What happens on another device shows without a visit (`RealtimeEvents`, docs/api-contract.md 12): a title watched,
