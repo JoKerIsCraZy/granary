@@ -50,6 +50,12 @@ public sealed partial class RequestTitlesPage : Page
         }
     }
 
+    protected override void OnNavigatedFrom(NavigationEventArgs e)
+    {
+        ViewModel.Deactivate();
+        base.OnNavigatedFrom(e);
+    }
+
     // Static helpers because x:Bind function bindings call them.
     public static Brush TileBackground(bool isGenre, string tileText) => isGenre || tileText.Length == 0 ? Muted : Gray;
 

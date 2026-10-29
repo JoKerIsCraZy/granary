@@ -18,9 +18,12 @@ namespace Granary.Core.ViewModels.Cards;
 /// A TMDB title's request state since this session requested it, or put it on the watchlist and that requested it; it
 /// stands while the card's own badge is still <paramref name="StatusBadgeOver"/>, the one it replaced.
 /// </param>
-/// <param name="IsRequested">This session requested the TMDB title from its card: it offers Request no more.</param>
+/// <param name="RequestedOffer">
+/// What this session requested from the TMDB title's card. It holds for that very card (its <see cref="MediaCard.RequestOffer"/>):
+/// a card read again says where the title stands now, and offers Request again when the request was cancelled or declined.
+/// </param>
 public sealed record MediaCardState(bool IsWatched, bool IsFavorite, bool InWatchlist, bool IsNotInterested = false, bool IsProgressCleared = false,
-    string? StatusBadge = null, string? StatusBadgeOver = null, bool IsRequested = false);
+    string? StatusBadge = null, string? StatusBadgeOver = null, MediaRequestCreate? RequestedOffer = null);
 
 /// <summary>How a card's Request answered, in the web's toast words.</summary>
 public sealed record CardRequestAnswer(string CardId, string Title, bool Succeeded)
@@ -47,10 +50,12 @@ public sealed class MediaCardActions
     private readonly ConcurrentDictionary<string, MediaCardState> _changed = new(StringComparer.Ordinal);
     // TMDB titles whose watchlist change is on its way: an add can request the title, so it is not sent twice.
     private readonly ConcurrentDictionary<string, bool> _sending = new(StringComparer.Ordinal);
-    // TMDB titles whose request is on its way.
-    private readonly ConcurrentDictionary<string, bool> _requesting = new(StringComparer.Ordinal);
+    // TMDB titles whose request is on its way, with the profile count it was sent under.
+    private readonly ConcurrentDictionary<string, int> _requesting = new(StringComparer.Ordinal);
     // Counts the session and profile changes: an answer for an earlier profile changes nothing of the next one's.
     private int _profiles;
+    // Cancelled when the profile changes: its requests on their way are let go.
+    private CancellationTokenSource _profileRun = new();
 
     public MediaCardActions(CatalogApi catalog, ISessionManager session, INavigationService navigation, ILogger<MediaCardActions> logger,
         ViewerStateChanges? changes = null, RequestsApi? requests = null, RequestsFeature? requestsFeature = null)
@@ -62,11 +67,14 @@ public sealed class MediaCardActions
         _changes = changes;
         _requests = requests;
         _requestsFeature = requestsFeature;
-        // Another profile has its own state; the next pages show it as the server knows it.
+        // Another profile has its own state; the next pages show it as the server knows it. Its cards neither say Sending
+        // nor wait for the last profile's requests.
         _session.Changed += (_, _) =>
         {
             Interlocked.Increment(ref _profiles);
             _changed.Clear();
+            _requesting.Clear();
+            Interlocked.Exchange(ref _profileRun, new CancellationTokenSource()).Cancel();
         };
     }
 
@@ -118,11 +126,15 @@ public sealed class MediaCardActions
     /// the web's <c>RequestAction</c>, shown for <c>request.requestable</c>.
     /// </summary>
     public bool CanRequest(MediaCard card) =>
-        card.Type == RequestsViewModel.CardType && card.RequestOffer is not null && _requests is not null
-        && _requestsFeature?.Status is { RequestsEnabled: true } && !StateOf(card).IsRequested;
+        card.Type == RequestsViewModel.CardType && card.RequestOffer is { } offer && _requests is not null
+        && _requestsFeature?.Status is { RequestsEnabled: true } && !ReferenceEquals(StateOf(card).RequestedOffer, offer);
 
-    /// <summary>A TMDB title's request is on its way: the action says Sending and waits, also after the pointer left.</summary>
-    public bool IsRequesting(MediaCard card) => _requesting.ContainsKey(card.Id);
+    /// <summary>A TMDB title's request is on its way for this profile: the action says Sending and waits, also after the pointer left.</summary>
+    public bool IsRequesting(MediaCard card) =>
+        _requesting.TryGetValue(card.Id, out int profiles) && profiles == Volatile.Read(ref _profiles);
+
+    /// <summary>Some card's request is on its way: a card without one need not look itself up.</summary>
+    public bool HasRequestsInFlight => !_requesting.IsEmpty;
 
     /// <summary>"Request", or "Sending" while the request is on its way.</summary>
     public string RequestActionText(MediaCard card) => IsRequesting(card) ? "Sending" : "Request";
@@ -146,6 +158,11 @@ public sealed class MediaCardActions
     {
         ArgumentNullException.ThrowIfNull(card);
         var state = StateOf(card);
+        if (state.RequestedOffer is { } requested)
+        {
+            // A request made from the card holds for that card; one read again says where the title stands now.
+            return ReferenceEquals(card.RequestOffer, requested) && state.StatusBadge is { } made ? made : card.StatusBadge;
+        }
         return state.StatusBadge is { } badge && card.StatusBadge == state.StatusBadgeOver ? badge : card.StatusBadge;
     }
 
@@ -250,27 +267,34 @@ public sealed class MediaCardActions
 
     /// <summary>
     /// Requests a title from TMDB from its card, as the web's hover Request: the title as TMDB gave it, a series whole (only
-    /// the title page asks for seasons). The card then shows the request's state and offers Request no more. Not retried: a
-    /// second POST after a lost answer would request it twice.
+    /// the title page asks for seasons). The card then shows the request's state and offers Request no more, until the title
+    /// is read again. Not retried: a second POST after a lost answer would request it twice. Another profile taking over
+    /// lets the request go: its answer changes nothing.
     /// </summary>
     public async Task<bool> RequestAsync(MediaCard card)
     {
         ArgumentNullException.ThrowIfNull(card);
-        if (!CanRequest(card) || card.RequestOffer is not { } offer || _session.ActiveServer is not { } server || !_requesting.TryAdd(card.Id, true))
+        int profiles = Volatile.Read(ref _profiles);
+        var cancellationToken = Volatile.Read(ref _profileRun).Token;
+        if (!CanRequest(card) || card.RequestOffer is not { } offer || _session.ActiveServer is not { } server || !_requesting.TryAdd(card.Id, profiles))
         {
             return false;
         }
-        int profiles = Volatile.Read(ref _profiles);
         Changed?.Invoke(this, card.Id);
         try
         {
-            var request = await _requests!.CreateAsync(server.BaseUri, offer);
+            var request = await _requests!.CreateAsync(server.BaseUri, offer, cancellationToken);
             if (profiles == Volatile.Read(ref _profiles))
             {
-                Show(card.Id, StateOf(card) with { IsRequested = true, StatusBadge = RequestCards.Badge(request), StatusBadgeOver = card.StatusBadge });
+                Show(card.Id, StateOf(card) with { RequestedOffer = offer, StatusBadge = RequestCards.Badge(request), StatusBadgeOver = card.StatusBadge });
                 RequestAnswered?.Invoke(this, new CardRequestAnswer(card.Id, card.Title, Succeeded: true));
             }
             return true;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // Another profile took over.
+            return false;
         }
         catch (Exception ex)
         {
@@ -291,7 +315,8 @@ public sealed class MediaCardActions
         }
         finally
         {
-            _requesting.TryRemove(card.Id, out _);
+            // Only this profile's: the next profile may have sent its own for the title meanwhile.
+            _requesting.TryRemove(new KeyValuePair<string, int>(card.Id, profiles));
             Changed?.Invoke(this, card.Id);
         }
     }

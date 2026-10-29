@@ -64,7 +64,7 @@ public sealed partial class RequestsViewModel : ObservableObject
     private ITimer? _poll;
 
     public RequestsViewModel(ISessionManager session, RequestsApi requests, INavigationService navigation, TimeProvider time,
-        IUiDispatcher dispatcher, ILogger<RequestsViewModel> logger, MediaCardActions? cardActions = null)
+        IUiDispatcher dispatcher, ILogger<RequestsViewModel> logger, MediaCardActions? cardActions = null, CardRequestNotice? requestNotice = null)
     {
         _session = session;
         _requests = requests;
@@ -73,6 +73,7 @@ public sealed partial class RequestsViewModel : ObservableObject
         _dispatcher = dispatcher;
         _logger = logger;
         _cardActions = cardActions;
+        RequestNotice = requestNotice ?? CardRequestNotice.None;
         BrandRows =
         [
             new(DiscoverBrowseKind.Studio, "Studios", RetryBrandsAsync),
@@ -133,11 +134,7 @@ public sealed partial class RequestsViewModel : ObservableObject
     public bool HasNotice => Notice.Length > 0;
 
     /// <summary>A Discover card's Request that failed, in the web's toast words; a request that went through shows on its card.</summary>
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasDiscoverNotice))]
-    public partial string DiscoverNotice { get; private set; } = "";
-
-    public bool HasDiscoverNotice => DiscoverNotice.Length > 0;
+    public CardRequestNotice RequestNotice { get; }
 
     /// <summary>What each state means, as the web's "What the statuses mean".</summary>
     public IReadOnlyList<RequestStatusHelp> StatusHelp { get; } =
@@ -160,6 +157,7 @@ public sealed partial class RequestsViewModel : ObservableObject
     public Task ActivateAsync(bool isReturn)
     {
         _poll ??= _time.CreateTimer(_ => _dispatcher.Post(OnPoll), null, DownloadPollInterval, DownloadPollInterval);
+        RequestNotice.Attach();
         if (_cardActions is not null && !_hearsCards)
         {
             _hearsCards = true;
@@ -178,6 +176,7 @@ public sealed partial class RequestsViewModel : ObservableObject
     {
         _poll?.Dispose();
         _poll = null;
+        RequestNotice.Detach();
         if (_hearsCards)
         {
             _hearsCards = false;
@@ -185,16 +184,11 @@ public sealed partial class RequestsViewModel : ObservableObject
         }
     }
 
-    // A card's Request answered (on any thread): a failure says so, as the web's toast; a request that went through is
-    // read into Yours, as the web reads its requests again.
+    // A card's Request that went through (on any thread) is read into Yours, as the web reads its requests again; one that
+    // failed is the notice's.
     private void OnCardRequestAnswered(object? sender, CardRequestAnswer answer) => _dispatcher.Post(() =>
     {
-        if (!_hearsCards)
-        {
-            return;
-        }
-        DiscoverNotice = answer.Succeeded ? "" : answer.Text;
-        if (answer.Succeeded)
+        if (_hearsCards && answer.Succeeded)
         {
             _ = RefreshYoursAsync();
         }
@@ -288,7 +282,7 @@ public sealed partial class RequestsViewModel : ObservableObject
         previous.Dispose();
         var token = _run.Token;
         Notice = "";
-        DiscoverNotice = "";
+        RequestNotice.Clear();
         bool another = _loadedFor != Key();
         if (another || _session is not { State: SessionState.Ready })
         {

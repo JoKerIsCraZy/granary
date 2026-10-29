@@ -151,6 +151,7 @@ public sealed partial class SearchViewModel : ObservableObject
         {
             _isActive = true;
             _session.Changed += OnSessionChanged;
+            Requests.RequestNotice.Attach();
         }
         if (_sessionKey != SessionKey())
         {
@@ -172,6 +173,7 @@ public sealed partial class SearchViewModel : ObservableObject
         {
             _isActive = false;
             _session.Changed -= OnSessionChanged;
+            Requests.RequestNotice.Detach();
         }
     }
 

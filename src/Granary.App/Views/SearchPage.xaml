@@ -119,6 +119,11 @@
                             Command="{x:Bind ViewModel.Requests.FirstPageCommand}" />
                 </StackPanel>
 
+                <!-- A card's Request that failed, in the web's toast words. -->
+                <TextBlock Text="{x:Bind ViewModel.Requests.RequestNotice.Text, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}"
+                           Foreground="{StaticResource SiloPrimaryBrush}" Visibility="{x:Bind ViewModel.Requests.RequestNotice.HasText, Mode=OneWay}"
+                           AutomationProperties.LiveSetting="Assertive" />
+
                 <!-- Dimmed while another page loads; it stays until that page is there. -->
                 <controls:MediaGrid ItemsSource="{x:Bind ViewModel.Requests.Cards, Mode=OneWay}"
                                     CardInvokedCommand="{x:Bind ViewModel.Requests.OpenCardCommand}"

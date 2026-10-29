@@ -65,6 +65,9 @@
                        Visibility="{x:Bind views:RequestTitlesPage.ShowsMessage(ViewModel.IsEmpty, ViewModel.IsNotFound, ViewModel.Message), Mode=OneWay}"
                        TextWrapping="Wrap" />
 
+            <!-- A card's Request that failed, in the web's toast words. -->
+            <TextBlock Text="{x:Bind ViewModel.RequestNotice.Text, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloPrimaryBrush}"
+                       Visibility="{x:Bind ViewModel.RequestNotice.HasText, Mode=OneWay}" AutomationProperties.LiveSetting="Assertive" />
             <controls:MediaGrid ItemsSource="{x:Bind ViewModel.Cards}" CardInvokedCommand="{x:Bind ViewModel.OpenCardCommand}"
                                 LoadMoreCommand="{x:Bind ViewModel.LoadMoreCommand}" Visibility="{x:Bind ViewModel.IsReady, Mode=OneWay}" />
             <ProgressRing IsActive="{x:Bind ViewModel.IsLoadingMore, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsLoadingMore, Mode=OneWay}"

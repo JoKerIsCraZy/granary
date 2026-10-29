@@ -4,6 +4,8 @@ using Granary.Core.Overlays;
 using Granary.Core.ViewModels.Cards;
 using Granary.Core.ViewModels.Detail;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Dispatching;
+using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
@@ -27,6 +29,9 @@ public sealed partial class MediaCardView : UserControl
     private const double LandscapeWidth = 400;
     // A card's width changed by more than this share of the width its artwork was decoded for decodes it again.
     private const double RedecodeChange = 0.1;
+
+    // How long Request shows under a pointer before the pointer can take it: past its 150 ms fade-in.
+    private static readonly TimeSpan ArmTime = TimeSpan.FromMilliseconds(200);
 
     // Android's: artwork that comes this soon was never waited on and shows at once, later artwork fades in over its blur.
     private static readonly TimeSpan InstantReveal = TimeSpan.FromMilliseconds(100);
@@ -69,8 +74,15 @@ public sealed partial class MediaCardView : UserControl
     // they were last done for.
     private bool _landscape;
     private bool _lifted;
-    // Under the pointer: the hover layer and a TMDB title's Request show.
+    // Under the pointer: the hover layer shows.
     private bool _hovered;
+    // The pointer over the card may show Request: a mouse, or a touch or pen on a card that already had focus.
+    private bool _pointerMayRequest;
+    // Request has shown long enough for a pointer to take it (ArmTime).
+    private bool _requestArmed;
+    private DispatcherQueueTimer? _armTimer;
+    private string? _requestName;
+    private bool _followsHostFocus;
     private bool _sizedLandscape;
     private (double Width, bool Landscape, bool Lifted) _placed;
     // The badge views in each corner (top left, top right, bottom left, bottom right), ahead of its fixed children: a
@@ -229,43 +241,144 @@ public sealed partial class MediaCardView : UserControl
         ShowRequest(card);
     }
 
-    // A TMDB title's Request: under the pointer while the viewer may request it, and in view, saying Sending, while its
-    // request is on its way. Made only for a card hovered while it can be requested, or one whose request is on its way.
+    // A TMDB title's Request: under the mouse while the viewer may request it, with keyboard focus on the card (the web's
+    // focus-within), and in view, saying Sending, while its request is on its way. Made only for a card hovered or focused
+    // while it can be requested, or one whose request is on its way; none in a grid that selects.
     private void ShowRequest(MediaCard? card)
     {
-        bool requesting = card is not null && _actions.IsRequesting(card);
+        // Most cards are a library's or cannot be requested: nothing to look up for them.
+        bool requesting = card?.RequestOffer is not null && _actions.HasRequestsInFlight && _actions.IsRequesting(card);
         if (RequestButton is null)
         {
             if (!requesting)
             {
                 return;
             }
-            FindName(nameof(RequestButton));
+            MakeRequestButton();
         }
-        bool offered = card is not null && (requesting || _actions.CanRequest(card));
-        RequestButton!.Visibility = Visible(offered);
+        bool offered = Pick is null && card?.RequestOffer is not null && (requesting || _actions.CanRequest(card));
         if (!offered)
         {
+            // Requested from the keyboard: focus goes back to the card, not to nowhere.
+            if (RequestButton!.FocusState != FocusState.Unfocused)
+            {
+                _host?.Focus(FocusState.Programmatic);
+            }
+            RequestButton.Visibility = Visibility.Collapsed;
+            Disarm();
             return;
         }
+        RequestButton!.Visibility = Visibility.Visible;
         RequestButton.IsEnabled = !requesting;
         RequestLabel.Text = _actions.RequestActionText(card!);
-        AutomationProperties.SetName(RequestButton, _actions.RequestActionName(card!));
+        string name = _actions.RequestActionName(card!);
+        if (name != _requestName)
+        {
+            _requestName = name;
+            AutomationProperties.SetName(RequestButton, name);
+        }
         RequestPlus.Visibility = Visible(!requesting);
         RequestSpinner.Visibility = Visible(requesting);
         RequestSpinner.IsActive = requesting;
         ShowRequestPresence();
     }
 
+    private void MakeRequestButton()
+    {
+        FindName(nameof(RequestButton));
+        RequestButton!.GotFocus += OnRequestFocusChanged;
+        RequestButton.LostFocus += OnRequestFocusChanged;
+        RequestButton.LosingFocus += OnRequestLosingFocus;
+        FollowHostFocus();
+    }
+
+    // The card's own focus shows the pill too, and its Tab leads to it; followed only for a card that has one.
+    private void FollowHostFocus()
+    {
+        if (_host is not null && !_followsHostFocus)
+        {
+            _followsHostFocus = true;
+            _host.LostFocus += OnRequestFocusChanged;
+            _host.LosingFocus += OnHostLosingFocus;
+        }
+    }
+
+    // A row or grid takes Tab once and gives it on past its cards (the arrows move between them), so Tab from a card whose
+    // Request shows goes to the pill first, and Shift+Tab from the pill back to the card. LosingFocus bubbles: the host
+    // also hears the pill's, which must go on where Tab sends it.
+    private void OnHostLosingFocus(UIElement sender, LosingFocusEventArgs args)
+    {
+        if (ReferenceEquals(args.OldFocusedElement, sender) && args.Direction == FocusNavigationDirection.Next
+            && args.InputDevice == FocusInputDeviceKind.Keyboard
+            && RequestButton is { Visibility: Visibility.Visible, IsTabStop: true } pill && !ReferenceEquals(args.NewFocusedElement, pill))
+        {
+            args.TrySetNewFocusedElement(pill);
+        }
+    }
+
+    private void OnRequestLosingFocus(UIElement sender, LosingFocusEventArgs args)
+    {
+        if (ReferenceEquals(args.OldFocusedElement, sender) && args.Direction == FocusNavigationDirection.Previous
+            && args.InputDevice == FocusInputDeviceKind.Keyboard && _host is { } host && !ReferenceEquals(args.NewFocusedElement, host))
+        {
+            args.TrySetNewFocusedElement(host);
+        }
+    }
+
+    // Shown under the mouse, with keyboard focus on the card or the pill, or while its request is on its way. A pointer
+    // reaches it only once it has shown for ArmTime: a quick click as it fades in opens the card, as does the first tap of
+    // a touch or pen, which shows it only on a card that already had focus. The keyboard reaches it while it shows.
     private void ShowRequestPresence()
     {
-        if (RequestButton is null)
+        if (RequestButton is not { Visibility: Visibility.Visible } button)
         {
             return;
         }
-        bool requesting = Card is { } card && _actions.IsRequesting(card);
-        RequestButton.Opacity = _hovered || requesting ? 1 : 0;
-        RequestButton.IsHitTestVisible = _hovered && !requesting;
+        bool requesting = Card is { } card && _actions.HasRequestsInFlight && _actions.IsRequesting(card);
+        bool keyboard = HasKeyboardFocus();
+        bool pointer = _hovered && _pointerMayRequest;
+        button.Opacity = requesting || keyboard || pointer ? 1 : 0;
+        button.IsTabStop = keyboard && !requesting;
+        button.IsHitTestVisible = !requesting && (keyboard || (pointer && _requestArmed));
+        if (pointer && !_requestArmed)
+        {
+            ArmLater();
+        }
+        else if (!pointer)
+        {
+            Disarm();
+        }
+    }
+
+    private bool HasKeyboardFocus() =>
+        _host?.FocusState is FocusState.Keyboard or FocusState.Programmatic
+        || RequestButton?.FocusState is FocusState.Keyboard or FocusState.Programmatic;
+
+    private void OnRequestFocusChanged(object sender, RoutedEventArgs e) => ShowRequestPresence();
+
+    private void ArmLater()
+    {
+        if (_armTimer is null)
+        {
+            _armTimer = DispatcherQueue.CreateTimer();
+            _armTimer.Interval = ArmTime;
+            _armTimer.IsRepeating = false;
+            _armTimer.Tick += (_, _) =>
+            {
+                _requestArmed = true;
+                ShowRequestPresence();
+            };
+        }
+        if (!_armTimer.IsRunning)
+        {
+            _armTimer.Start();
+        }
+    }
+
+    private void Disarm()
+    {
+        _requestArmed = false;
+        _armTimer?.Stop();
     }
 
     // Makes the play disc, the card's buttons and its menu, for the pointer, the keyboard or the context menu. A row of
@@ -278,9 +391,9 @@ public sealed partial class MediaCardView : UserControl
             FindName(nameof(HoverLayer));
             SizeActions(Art.ActualWidth > 0 ? Art.ActualWidth : ActualWidth);
         }
-        if (RequestButton is null && Card is { } card && _actions.CanRequest(card))
+        if (RequestButton is null && Pick is null && Card is { RequestOffer: not null } card && _actions.CanRequest(card))
         {
-            FindName(nameof(RequestButton));
+            MakeRequestButton();
         }
     }
 
@@ -614,6 +727,11 @@ public sealed partial class MediaCardView : UserControl
 
     private void ShowPick()
     {
+        // A grid that selects offers no Request: a click there picks the card.
+        if (RequestButton is not null)
+        {
+            ShowRequest(Card);
+        }
         if (Pick is not { } picked)
         {
             if (PickMark is not null)
@@ -637,6 +755,10 @@ public sealed partial class MediaCardView : UserControl
     private void SetHovered(bool hovered)
     {
         _hovered = hovered;
+        if (!hovered)
+        {
+            _pointerMayRequest = false;
+        }
         ArtImage.Scale = hovered ? new Vector3(HoverScale, HoverScale, 1) : Vector3.One;
         BottomBadges.Opacity = hovered ? 0 : 1;
         if (HoverLayer is not null)
@@ -656,6 +778,8 @@ public sealed partial class MediaCardView : UserControl
             SetHovered(false);
             return;
         }
+        // A touch or pen comes in just before its tap: Request shows for it only on a card that already had focus.
+        _pointerMayRequest = e.Pointer.PointerDeviceType == PointerDeviceType.Mouse || _host?.FocusState is not (null or FocusState.Unfocused);
         EnsureActions();
         ShowState();
         SetHovered(true);
@@ -663,14 +787,16 @@ public sealed partial class MediaCardView : UserControl
 
     private void OnGotFocus(object sender, RoutedEventArgs e) => ShowState();
 
-    // The card's own button takes focus before Tab moves on to the buttons on the card, so they are made then.
+    // The card's own button takes focus before Tab moves on to the buttons on the card, so they are made then; a TMDB
+    // title's Request shows while the card has keyboard focus.
     private void OnHostGotFocus(object sender, RoutedEventArgs e)
     {
-        if (Card is not null && HoverLayer is null)
+        if (Card is not null && (HoverLayer is null || (RequestButton is null && Card.RequestOffer is not null)))
         {
             EnsureActions();
             ShowState();
         }
+        ShowRequestPresence();
     }
 
     // The button around the card, where there is one (a card in a row or grid).
@@ -808,6 +934,10 @@ public sealed partial class MediaCardView : UserControl
         if (_host is not null)
         {
             _host.GotFocus += OnHostGotFocus;
+            if (RequestButton is not null)
+            {
+                FollowHostFocus();
+            }
         }
         ShowState();
     }
@@ -824,6 +954,12 @@ public sealed partial class MediaCardView : UserControl
         if (_host is not null)
         {
             _host.GotFocus -= OnHostGotFocus;
+            if (_followsHostFocus)
+            {
+                _followsHostFocus = false;
+                _host.LostFocus -= OnRequestFocusChanged;
+                _host.LosingFocus -= OnHostLosingFocus;
+            }
             _host = null;
         }
     }

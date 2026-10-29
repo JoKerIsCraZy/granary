@@ -37,6 +37,12 @@ public sealed partial class TitlePage : Page
         }
     }
 
+    protected override void OnNavigatedFrom(NavigationEventArgs e)
+    {
+        ViewModel.Deactivate();
+        base.OnNavigatedFrom(e);
+    }
+
     // Segoe Fluent Icons: Add, Library, Accept (a state).
     public static string PrimaryGlyph(TitlePrimaryAction action) => action switch
     {

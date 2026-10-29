@@ -58,7 +58,7 @@ public sealed partial class TitleViewModel : ObservableObject
     private CancellationTokenSource _run = new();
 
     public TitleViewModel(ISessionManager session, RequestsApi requests, RequestsFeature feature, INavigationService navigation, TimeProvider time,
-        ILogger<TitleViewModel> logger)
+        ILogger<TitleViewModel> logger, CardRequestNotice? requestNotice = null)
     {
         _session = session;
         _requests = requests;
@@ -66,7 +66,11 @@ public sealed partial class TitleViewModel : ObservableObject
         _navigation = navigation;
         _time = time;
         _logger = logger;
+        RequestNotice = requestNotice ?? CardRequestNotice.None;
     }
+
+    /// <summary>A More like this card's Request that failed, in the web's toast words.</summary>
+    public CardRequestNotice RequestNotice { get; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsLoading), nameof(IsReady), nameof(HasError), nameof(IsNotFound))]
@@ -222,9 +226,13 @@ public sealed partial class TitleViewModel : ObservableObject
             return;
         }
         _title = title;
+        RequestNotice.Attach();
         await _feature.RefreshAsync();
         await LoadAsync(quiet: false);
     }
+
+    /// <summary>The page goes: its cards' requests are no longer its to tell.</summary>
+    public void Deactivate() => RequestNotice.Detach();
 
     /// <summary>"Request seasons" for this series, from the detail shown.</summary>
     public RequestSeasonsViewModel? SeasonPicker() =>
@@ -381,6 +389,7 @@ public sealed partial class TitleViewModel : ObservableObject
         {
             _detail = null;
             Notice = "";
+            RequestNotice.Clear();
             Title = title.Title;
             State = LibraryLoadState.Loading;
         }

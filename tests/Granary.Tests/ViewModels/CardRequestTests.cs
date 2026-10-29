@@ -238,6 +238,143 @@ public sealed class CardRequestTests
     }
 
     [Fact]
+    public async Task AnotherProfile_SeesNoSending_AndMayRequestTheTitleItself()
+    {
+        var release = new TaskCompletionSource();
+        _silo.On(HttpMethod.Post, CreatePath, async () =>
+        {
+            await release.Task;
+            return await ScriptedSilo.Json(HttpStatusCode.Created, Pending)();
+        });
+        var actions = await CreateAsync();
+
+        var request = actions.RequestAsync(Matrix);
+        Assert.True(actions.IsRequesting(Matrix));
+        _session.ProfileId = "8";
+        _session.RaiseChanged();
+
+        Assert.False(actions.IsRequesting(Matrix));
+        Assert.False(actions.HasRequestsInFlight);
+        Assert.True(actions.CanRequest(Matrix));
+        Assert.Equal("Request", actions.RequestActionText(Matrix));
+        release.SetResult();
+        await request;
+        Assert.False(actions.IsRequesting(Matrix));
+        Assert.True(actions.CanRequest(Matrix));
+    }
+
+    [Theory]
+    [InlineData("cancelled")]
+    [InlineData("declined")]
+    public async Task ATitleReadAgain_AfterItsRequestEnded_OffersRequestAgain(string ended)
+    {
+        _silo.On(HttpMethod.Post, CreatePath, ScriptedSilo.Json(HttpStatusCode.Created, Pending));
+        var actions = await CreateAsync();
+        await actions.RequestAsync(Matrix);
+        Assert.False(actions.CanRequest(Matrix));
+
+        var readAgain = RequestCards.Of(new RequestMediaResult
+        {
+            TmdbId = 603,
+            MediaType = "movie",
+            Title = "The Matrix",
+            Year = 1999,
+            Request = new RequestMediaState { Requestable = true, Status = "pending", State = ended },
+        });
+
+        Assert.Equal(Matrix.Id, readAgain.Id);
+        Assert.True(actions.CanRequest(readAgain));
+        Assert.Equal(ended.ToUpperInvariant(), actions.StatusBadgeOf(readAgain));
+    }
+
+    [Fact]
+    public async Task ATitleReadAgain_AfterItsRequest_SaysWhereItStandsNow()
+    {
+        _silo.On(HttpMethod.Post, CreatePath, ScriptedSilo.Json(HttpStatusCode.Created, Pending));
+        var actions = await CreateAsync();
+        await actions.RequestAsync(Matrix);
+
+        var approved = RequestCards.Of(new RequestMediaResult
+        {
+            TmdbId = 603,
+            MediaType = "movie",
+            Title = "The Matrix",
+            Request = new RequestMediaState { Requestable = false, Reason = "already_requested", Status = "approved", State = "approved" },
+        });
+
+        Assert.False(actions.CanRequest(approved));
+        Assert.Equal("APPROVED", actions.StatusBadgeOf(approved));
+    }
+
+    [Fact]
+    public async Task AnAlreadyRequestedAnswer_FailsLikeAnyOther_AndOffersRequestAgain()
+    {
+        _silo.On(HttpMethod.Post, CreatePath, ScriptedSilo.Problem(409, "already_requested"));
+        var actions = await CreateAsync();
+
+        Assert.False(await actions.RequestAsync(Matrix));
+
+        Assert.True(actions.CanRequest(Matrix));
+        Assert.Null(actions.StatusBadgeOf(Matrix));
+        Assert.False(Assert.Single(_answers).Succeeded);
+    }
+
+    [Fact]
+    public async Task ASurpriseFailure_IsCaught_AndOffersRequestAgain()
+    {
+        _silo.On(HttpMethod.Post, CreatePath, () => throw new InvalidOperationException("The handler broke."));
+        var actions = await CreateAsync();
+
+        Assert.False(await actions.RequestAsync(Matrix));
+
+        Assert.True(actions.CanRequest(Matrix));
+        Assert.False(actions.IsRequesting(Matrix));
+        Assert.False(Assert.Single(_answers).Succeeded);
+    }
+
+    [Fact]
+    public void WhatTheCardSends_LeavesOutWhatTmdbLeftBlank()
+    {
+        var card = RequestCards.Of(new RequestMediaResult
+        {
+            TmdbId = 7,
+            MediaType = "series",
+            Title = "Untitled",
+            Year = 0,
+            Overview = "  ",
+            PosterPath = "",
+            BackdropPath = " ",
+            Request = new RequestMediaState { Requestable = true },
+        });
+
+        var offer = Assert.IsType<MediaRequestCreate>(card.RequestOffer);
+        Assert.Equal(("series", 7L, "Untitled"), (offer.MediaType, offer.TmdbId, offer.Title));
+        Assert.Null(offer.Year);
+        Assert.Null(offer.Overview);
+        Assert.Null(offer.PosterPath);
+        Assert.Null(offer.BackdropPath);
+        Assert.Null(offer.Seasons);
+    }
+
+    [Theory]
+    [InlineData(0L, "movie")]
+    [InlineData(-1L, "movie")]
+    [InlineData(5L, "person")]
+    [InlineData(5L, "")]
+    public void ATitleThatIsNotOne_OffersNothingToRequest(long tmdbId, string mediaType)
+    {
+        var card = RequestCards.Of(new RequestMediaResult
+        {
+            TmdbId = tmdbId,
+            MediaType = mediaType,
+            Title = "Odd",
+            Request = new RequestMediaState { Requestable = true },
+        });
+
+        Assert.Null(card.RequestOffer);
+    }
+
+    [Fact]
     public async Task AnAnswerAfterAnotherProfileTookOver_ChangesNothingOfIt()
     {
         var release = new TaskCompletionSource();

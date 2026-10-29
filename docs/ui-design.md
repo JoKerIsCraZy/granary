@@ -260,13 +260,17 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   keeps TMDB titles on the watchlist: the web's bookmark, red with a check when on it (the TMDB title page's Add to
   Watchlist too; a library title keeps + and ✓); an add that requested the title shows the request's state on the card
   at once. While the viewer may request the title (`request.requestable`) and the server takes requests, the card has
-  the web source's Request in its middle, where library cards keep Play (`RequestPosterCard`'s `RequestAction`): under
-  the pointer a 36 px pill in the accent, "+ Request", that grows a little under the pointer; a click sends the title as
-  TMDB gave it (a series without seasons, so the server takes its aired seasons still missing; the title page asks
-  which), the pill then says "Sending" with a spinner and stays in view after the pointer leaves, and once the server
-  answers the card shows the request's state (PENDING, APPROVED, …) and offers Request no more. One that fails offers
-  Request again, and Discover says "Failed to submit request" above its rows (the web's toast); one that went through
-  reads Yours again. The deployed web of some servers shows no Request on these cards yet.
+  the web source's Request in its middle, where library cards keep Play (`RequestPosterCard`'s `RequestAction`): a 36 px
+  pill in the accent, "+ Request", that grows a little under the pointer. It shows under the mouse, taking clicks once
+  it has shown for 200 ms (past its fade, so a quick click opens the card), and with keyboard focus on the card, the
+  web's focus-within, when Tab reaches it; a touch or pen shows it only on a card that already had focus, so a first tap
+  opens the card. A click sends the title as TMDB gave it (a series without seasons, so the server takes its aired
+  seasons still missing; the title page asks which), the pill then says "Sending" with a spinner and stays in view, and
+  once the server answers the card shows the request's state (PENDING, APPROVED, …) and offers Request no more, until
+  the title is read again (a cancelled or declined request offers it again). One that fails offers Request again, and the
+  page says "Failed to submit request" above its cards for 4 s, the web's toast (`CardRequestNotice`: Discover, a row in
+  full or a studio's titles, Search's Request to add, More Like This); another card's success does not hide it. One
+  that went through reads Yours again. The deployed web of some servers shows no Request on these cards yet.
 - A Discover row in full and a studio's, network's or genre's titles (`RequestTitlesPage`, the web's
   `RequestDiscoverSection.tsx` / `RequestBrowse.tsx`): the name (the row's key in words until the server names it), for a
   browse page a 112 × 64 tile with the logo or name and "Studio" under the name, Movies | Series pills for a genre and
