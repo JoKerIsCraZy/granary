@@ -8,10 +8,13 @@ Window chrome stays Windows: caption buttons, keyboard and focus behaviour, acce
 
 | Token | Value | Use |
 |---|---|---|
-| `SiloBackgroundBrush` | `#141417` | Window, pages, sidebar |
-| `SiloSurfaceBrush` | `#1C1C20` | Card and artwork placeholders, inputs |
-| `SiloSurfaceRaisedBrush` | `#232328` | Hover and selected surfaces |
-| `SiloBorderBrush` | `#2A2A2F` at 70 % | Dividers, outlines |
+| `SiloBackgroundBrush` | `#0E0E10` | Window, pages, sidebar |
+| `SiloSurfaceBrush` | `#161619` | Card and artwork placeholders, inputs |
+| `SiloSurfaceRaisedBrush` | `#1C1C20` | Hover and selected surfaces |
+| `SiloBorderBrush` | `#242428` at 70 % | Dividers, outlines |
+
+The greys are a step darker than the web's (`#141417`, `#1C1C20`, `#232328`, `#2A2A2F`), as the user asked for a darker
+app; the steps between them stay the web's. Gradients that fade to the page name `SiloBackgroundColor` rather than repeat it.
 | `SiloForegroundBrush` | `#E8E8EC` | Text |
 | `SiloMutedBrush` | `#A4A4AE` | Secondary text, overlines, section labels |
 | `SiloPrimaryBrush` | `#EF4444`, or the server's accent | The only accent: Play, progress, selection, focus. The server's branding accent replaces it, as on the web (`ServerAccent`, `AccentPainter`); its shades (`SiloPrimaryHoverBrush`, `SiloPrimaryPressedBrush`), tints (`SiloPrimaryTint15/60/75Brush`), labels (`SiloOnPrimaryBrush` dark on buttons, `SiloOnPrimaryBadgeBrush` white on badges) and the sign-in glow follow it. Errors stay red. |

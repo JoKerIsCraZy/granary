@@ -12,24 +12,24 @@
     <SolidColorBrush x:Key="SiloSettingsHairlineBrush" Color="#14FFFFFF" />
 
     <!-- Selects: the web's 36 px trigger on the page, a faint outline that brightens under the pointer. -->
-    <SolidColorBrush x:Key="ComboBoxBackground" Color="#FF141417" />
-    <SolidColorBrush x:Key="ComboBoxBackgroundPointerOver" Color="#FF1A1A1E" />
-    <SolidColorBrush x:Key="ComboBoxBackgroundPressed" Color="#FF1A1A1E" />
-    <SolidColorBrush x:Key="ComboBoxBackgroundFocused" Color="#FF141417" />
-    <SolidColorBrush x:Key="ComboBoxBackgroundUnfocused" Color="#FF141417" />
-    <SolidColorBrush x:Key="ComboBoxBackgroundDisabled" Color="#FF141417" />
+    <SolidColorBrush x:Key="ComboBoxBackground" Color="#FF0E0E10" />
+    <SolidColorBrush x:Key="ComboBoxBackgroundPointerOver" Color="#FF141417" />
+    <SolidColorBrush x:Key="ComboBoxBackgroundPressed" Color="#FF141417" />
+    <SolidColorBrush x:Key="ComboBoxBackgroundFocused" Color="#FF0E0E10" />
+    <SolidColorBrush x:Key="ComboBoxBackgroundUnfocused" Color="#FF0E0E10" />
+    <SolidColorBrush x:Key="ComboBoxBackgroundDisabled" Color="#FF0E0E10" />
     <SolidColorBrush x:Key="ComboBoxBorderBrush" Color="#FF28282E" />
     <SolidColorBrush x:Key="ComboBoxBorderBrushPointerOver" Color="#FF3A3A42" />
     <SolidColorBrush x:Key="ComboBoxBorderBrushPressed" Color="#FF3A3A42" />
     <StaticResource x:Key="ComboBoxBorderBrushFocused" ResourceKey="SiloPrimaryBrush" />
     <SolidColorBrush x:Key="ComboBoxBorderBrushUnfocused" Color="#FF28282E" />
-    <SolidColorBrush x:Key="ComboBoxBorderBrushDisabled" Color="#FF202024" />
+    <SolidColorBrush x:Key="ComboBoxBorderBrushDisabled" Color="#FF1A1A1E" />
     <SolidColorBrush x:Key="ComboBoxForeground" Color="#FFE8E8EC" />
     <SolidColorBrush x:Key="ComboBoxForegroundFocused" Color="#FFE8E8EC" />
     <SolidColorBrush x:Key="ComboBoxForegroundDisabled" Color="#66E8E8EC" />
     <SolidColorBrush x:Key="ComboBoxDropDownGlyphForeground" Color="#FFA4A4AE" />
-    <SolidColorBrush x:Key="ComboBoxDropDownBackground" Color="#FF1C1C20" />
-    <SolidColorBrush x:Key="ComboBoxDropDownBorderBrush" Color="#FF2A2A2F" />
+    <SolidColorBrush x:Key="ComboBoxDropDownBackground" Color="#FF161619" />
+    <SolidColorBrush x:Key="ComboBoxDropDownBorderBrush" Color="#FF242428" />
 
     <!-- Switches: red when on, a dark track with a light knob when off, as the web's Switch. -->
     <!-- Without text beside it, the switch is only its track, right-aligned in its row. -->
@@ -53,9 +53,9 @@
     <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPressed" Color="#FFFFFFFF" />
 
     <!-- Number fields (opacity): the select's look. -->
-    <SolidColorBrush x:Key="TextControlBackground" Color="#FF141417" />
-    <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="#FF141417" />
-    <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="#FF141417" />
+    <SolidColorBrush x:Key="TextControlBackground" Color="#FF0E0E10" />
+    <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="#FF0E0E10" />
+    <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="#FF0E0E10" />
     <SolidColorBrush x:Key="TextControlBorderBrush" Color="#FF28282E" />
     <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="#FF3A3A42" />
     <StaticResource x:Key="TextControlBorderBrushFocused" ResourceKey="SiloPrimaryBrush" />
@@ -66,7 +66,7 @@
     <!-- The settings' own sidebar: the page open is white 6 % with red text and a red mark, as on the web. -->
     <!-- A disabled button (Reset with nothing to reset) keeps the page's background. -->
     <SolidColorBrush x:Key="ButtonBackgroundDisabled" Color="Transparent" />
-    <SolidColorBrush x:Key="ButtonBorderBrushDisabled" Color="#FF202024" />
+    <SolidColorBrush x:Key="ButtonBorderBrushDisabled" Color="#FF1A1A1E" />
 
     <SolidColorBrush x:Key="ListViewItemBackgroundPointerOver" Color="#0AFFFFFF" />
     <SolidColorBrush x:Key="ListViewItemBackgroundSelected" Color="#0FFFFFFF" />
@@ -171,8 +171,8 @@
 
     <!-- A settings popover (a badge's Adjust), in the colours of the settings' drop-downs. -->
     <Style x:Key="SiloSettingsPopoverStyle" TargetType="FlyoutPresenter">
-        <Setter Property="Background" Value="#FF1C1C20" />
-        <Setter Property="BorderBrush" Value="#FF2A2A2F" />
+        <Setter Property="Background" Value="#FF161619" />
+        <Setter Property="BorderBrush" Value="#FF242428" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CornerRadius" Value="12" />
         <Setter Property="Padding" Value="16" />
