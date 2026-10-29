@@ -52,6 +52,13 @@ public sealed partial class BrowseHeroViewModel : ObservableObject
         Reset(title, Find);
     }
 
+    /// <summary>As <see cref="Follow(IReadOnlyList{CatalogItemBase}, Uri?)"/>, for rows whose titles are made already (TMDB's).</summary>
+    internal void Follow(IReadOnlyList<BrowseHeroTitle> titles)
+    {
+        BrowseHeroTitle? Find(string key) => titles.FirstOrDefault(t => t.Key == key);
+        Reset((Shown is { } shown ? Find(shown.Key) : null) ?? titles.FirstOrDefault(), Find);
+    }
+
     /// <summary>The pointer or the keyboard came to a card of <paramref name="title"/>.</summary>
     internal void Point(BrowseHeroTitle title)
     {

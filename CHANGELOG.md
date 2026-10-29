@@ -50,8 +50,8 @@ release's section is what its update says it changes (docs/release.md).
   name, and a card that follows a sync until the new timing shows, as on Silo's web player.
 - Switching pages and scrolling fast through posters are much smoother, and paging a grid on a wide window no longer
   closes the app.
-- Home and For You open with a large picture of a title, its logo, details and overview, and follow the card under the
-  mouse or in focus; while you scroll it folds into a slim header that stays at the top.
+- Home, For You and Requests' Discover open with a large picture of a title, its logo (or name), details and overview,
+  and follow the card under the mouse or in focus; while you scroll it folds into a slim header that stays at the top.
 - A new layout for title pages: the backdrop stays put behind a large logo, one line of facts, the overview and bigger
   buttons; Info shows the full details, cast, crew and files.
 - Settings → Devices: see where your account is signed in and sign out any session, and see the devices your profile

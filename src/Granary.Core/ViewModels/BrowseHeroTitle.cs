@@ -1,6 +1,7 @@
 using System.Globalization;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
+using Granary.Core.Api.Requests;
 using Granary.Core.ViewModels.Detail;
 
 namespace Granary.Core.ViewModels;
@@ -27,6 +28,32 @@ public sealed record BrowseHeroTitle(string Key, string Heading, string Meta, st
             ArtworkUrl.Resolve(server, item.BackdropUrl),
             item.BackdropThumbhash);
     }
+
+    /// <summary>
+    /// A title from TMDB, as Requests' Discover lists it: its name for a logo (TMDB gives none here), "2026 · Movie" and
+    /// where a request for it stands, in the words of its card's badge ("Approved", "Available", "Blocked"), and its backdrop.
+    /// </summary>
+    public static BrowseHeroTitle Of(RequestMediaResult result)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        string?[] parts =
+        [
+            result.Year is int year and > 0 ? year.ToString(CultureInfo.InvariantCulture) : null,
+            result.MediaType == "series" ? "Series" : "Movie",
+            RequestCards.StateText(result.Request, result.Availability),
+        ];
+        return new BrowseHeroTitle(
+            RequestCards.IdOf(result),
+            result.Title,
+            string.Join(" · ", parts.Where(part => !string.IsNullOrWhiteSpace(part))),
+            string.IsNullOrWhiteSpace(result.Overview) ? null : result.Overview.Trim(),
+            null,
+            TmdbImages.Poster(result.BackdropPath, BackdropSize),
+            null);
+    }
+
+    // TMDB's backdrop at the width the hero decodes it (BrowseHeroLayout.BackdropDecodeWidth, 1280 at most on a 1920 window).
+    private const string BackdropSize = "w1280";
 
     // A movie its year, length and rating; a series its year and rating (its length is an episode's); an episode where it
     // sits in its series, its own title, its length and rating.

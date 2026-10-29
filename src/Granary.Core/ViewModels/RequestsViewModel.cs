@@ -20,7 +20,9 @@ public enum RequestsTab
 /// <summary>A Discover row of titles from TMDB.</summary>
 /// <param name="OpenCommand">Takes a card.</param>
 /// <param name="ExploreAllCommand">The row in full; null for a row of one page.</param>
-public sealed record RequestDiscoverRow(string Title, IReadOnlyList<MediaCard> Cards, ICommand OpenCommand, ICommand? ExploreAllCommand = null);
+/// <param name="PointCardCommand">The pointer or the keyboard came to a card (the parameter): the hero follows it.</param>
+public sealed record RequestDiscoverRow(string Title, IReadOnlyList<MediaCard> Cards, ICommand OpenCommand, ICommand? ExploreAllCommand = null,
+    ICommand? PointCardCommand = null);
 
 /// <summary>
 /// The Requests hub, as Silo's web shows it (<c>pages/Requests.tsx</c>): Discover, rows of titles from TMDB with their
@@ -55,6 +57,8 @@ public sealed partial class RequestsViewModel : ObservableObject
     private bool _hearsCards;
     // Where each Discover card opens: the library's title, or the title's own page.
     private readonly Dictionary<string, (AppRoute Route, object Parameter)> _destinations = new(StringComparer.Ordinal);
+    // What the hero shows of each Discover card.
+    private readonly Dictionary<string, BrowseHeroTitle> _heroTitles = new(StringComparer.Ordinal);
     private (string? ServerId, string? ProfileId)? _loadedFor;
     private CancellationTokenSource _run = new();
     // Each read of Yours; an answer shows only while its read is the latest.
@@ -74,6 +78,7 @@ public sealed partial class RequestsViewModel : ObservableObject
         _logger = logger;
         _cardActions = cardActions;
         RequestNotice = requestNotice ?? CardRequestNotice.None;
+        Hero = new BrowseHeroViewModel(dispatcher, time);
         BrandRows =
         [
             new(DiscoverBrowseKind.Studio, "Studios", RetryBrandsAsync),
@@ -91,6 +96,9 @@ public sealed partial class RequestsViewModel : ObservableObject
     public bool IsYoursTab => Tab == RequestsTab.Yours;
 
     public ObservableCollection<RequestDiscoverRow> DiscoverRows { get; } = [];
+
+    /// <summary>The title at the top of Discover, following the card the pointer or the keyboard is on, as Home's.</summary>
+    public BrowseHeroViewModel Hero { get; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsDiscoverLoading), nameof(HasDiscoverError), nameof(IsDiscoverEmpty))]
@@ -290,11 +298,14 @@ public sealed partial class RequestsViewModel : ObservableObject
             RequestGroups.Clear();
             YoursCount = "";
             _downloading = false;
+            // Its first card pointed at leads the hero at once again.
+            Hero.Forget();
         }
         if (_session is not { State: SessionState.Ready, ActiveServer: { } server })
         {
             _loadedFor = null;
             DiscoverRows.Clear();
+            FollowRowsWithHero();
             DiscoverState = YoursState = LibraryLoadState.Idle;
             foreach (var row in BrandRows)
             {
@@ -320,14 +331,21 @@ public sealed partial class RequestsViewModel : ObservableObject
             {
                 return;
             }
+            _heroTitles.Clear();
             foreach (var section in discover.Items)
             {
-                var cards = section.Results.Where(r => r.TmdbId > 0).Select(CardOf).DistinctBy(c => c.Id, StringComparer.Ordinal).ToList();
+                var results = section.Results.Where(r => r.TmdbId > 0).ToList();
+                var cards = results.Select(CardOf).DistinctBy(c => c.Id, StringComparer.Ordinal).ToList();
+                foreach (var result in results)
+                {
+                    _heroTitles.TryAdd(RequestCards.IdOf(result), BrowseHeroTitle.Of(result));
+                }
                 if (cards.Count > 0)
                 {
-                    DiscoverRows.Add(new RequestDiscoverRow(section.Title, cards, OpenCardCommand, ExploreAll(section)));
+                    DiscoverRows.Add(new RequestDiscoverRow(section.Title, cards, OpenCardCommand, ExploreAll(section), PointCardCommand));
                 }
             }
+            FollowRowsWithHero();
             DiscoverState = DiscoverRows.Count == 0 ? LibraryLoadState.Empty : LibraryLoadState.Ready;
         }
         catch (Exception ex)
@@ -337,9 +355,24 @@ public sealed partial class RequestsViewModel : ObservableObject
                 return;
             }
             Log(ex, "Could not load the request discovery rows");
+            FollowRowsWithHero();
             DiscoverState = LibraryLoadState.Error;
         }
     }
+
+    /// <summary>The pointer or the keyboard came to a Discover card: the hero follows it.</summary>
+    [RelayCommand]
+    private void PointCard(MediaCard? card)
+    {
+        if (card is not null && _heroTitles.TryGetValue(card.Id, out var title))
+        {
+            Hero.Point(title);
+        }
+    }
+
+    // The rows changed: the hero keeps its title while a row still has it, else shows the first card.
+    private void FollowRowsWithHero() =>
+        Hero.Follow([.. DiscoverRows.SelectMany(row => row.Cards).Select(card => _heroTitles.GetValueOrDefault(card.Id)).OfType<BrowseHeroTitle>()]);
 
     // The web offers a row in full when it has more than its first page.
     private RelayCommand? ExploreAll(DiscoverSection section)

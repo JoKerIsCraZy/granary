@@ -25,6 +25,7 @@ public sealed partial class RequestsPage : Page
     {
         ViewModel = App.Services.GetRequiredService<RequestsViewModel>();
         InitializeComponent();
+        Loaded += (_, _) => Hero.FollowScroll(Scroller);
     }
 
     public RequestsViewModel ViewModel { get; }
@@ -35,6 +36,7 @@ public sealed partial class RequestsPage : Page
     protected override async void OnNavigatedTo(NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
+        Hero.Resume();
         try
         {
             // Back keeps the hub as it was; the sidebar reads it again.
@@ -51,7 +53,17 @@ public sealed partial class RequestsPage : Page
     {
         base.OnNavigatedFrom(e);
         ViewModel.Deactivate();
+        // The page stays cached: its hero lets go of its pictures until it shows again.
+        Hero.Suspend();
     }
+
+    // The hero belongs to Discover: Yours shows its title and tabs at the top, as before. Static because the x:Bind function
+    // bindings call them on the type.
+    public static BrowseHeroTitle? DiscoverHero(BrowseHeroTitle? hero, bool isDiscover) => isDiscover ? hero : null;
+
+    public static Thickness RowsViewMargin(BrowseHeroTitle? hero, bool isDiscover) => BrowseHero.RowsViewMargin(DiscoverHero(hero, isDiscover));
+
+    public static Thickness RowsPadding(BrowseHeroTitle? hero, bool isDiscover) => BrowseHero.RowsPadding(DiscoverHero(hero, isDiscover));
 
     // The web's badge variants: Available filled red, Failed filled in the destructive red, approved and on their way in
     // the secondary fill, Pending outlined, closed ones outlined and muted.
