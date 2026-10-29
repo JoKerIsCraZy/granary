@@ -43,6 +43,8 @@ public sealed partial class RequestToAddViewModel : ObservableObject
     private CancellationTokenSource? _run;
     private string _mediaType = "all";
     private int? _nextPage;
+    // A read is on its way: another never starts beside it, whatever asks.
+    private bool _reading;
 
     public RequestToAddViewModel(ISessionManager session, RequestsApi requests, RequestsFeature feature, INavigationService navigation,
         ILogger<RequestToAddViewModel> logger, CardRequestNotice? requestNotice = null)
@@ -73,6 +75,8 @@ public sealed partial class RequestToAddViewModel : ObservableObject
 
     /// <summary>A text's first read is on its way; nothing is shown for it yet.</summary>
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowsLoadMore))]
+    [NotifyCanExecuteChangedFor(nameof(LoadMoreCommand))]
     public partial bool IsSearching { get; private set; }
 
     /// <summary>A later read is on its way: what shows stays, and the grid's end waits.</summary>
@@ -94,7 +98,7 @@ public sealed partial class RequestToAddViewModel : ObservableObject
     public partial bool HasMoreError { get; private set; }
 
     /// <summary>Load more, for the keyboard, while TMDB has more and nothing failed or is on its way.</summary>
-    public bool ShowsLoadMore => CanLoadMore && !IsLoadingMore && !HasMoreError;
+    public bool ShowsLoadMore => CanLoadMore && !IsSearching && !IsLoadingMore && !HasMoreError;
 
     /// <summary>The pages read so far held only titles the library has, and TMDB has more: Load more looks further.</summary>
     public bool IsEmptySoFar => IsShown && Cards.Count == 0 && CanLoadMore;
@@ -134,7 +138,9 @@ public sealed partial class RequestToAddViewModel : ObservableObject
     public void Clear()
     {
         _run?.Cancel();
+        _run?.Dispose();
         _run = null;
+        _reading = false;
         RequestNotice.Clear();
         Query = "";
         LibraryFoundNothing = false;
@@ -145,7 +151,7 @@ public sealed partial class RequestToAddViewModel : ObservableObject
     /// <summary>Reads on, when the grid's end comes into view or Load more is pressed.</summary>
     [RelayCommand(CanExecute = nameof(ShowsLoadMore))]
     private Task LoadMoreAsync() =>
-        ShowsLoadMore && _nextPage is int page && _run is { } run ? Loading = ReadAsync(page, first: false, run.Token) : Task.CompletedTask;
+        ShowsLoadMore && !_reading && _nextPage is int page && _run is { } run ? Loading = ReadAsync(page, first: false, run.Token) : Task.CompletedTask;
 
     [RelayCommand]
     private Task TryAgainAsync()
@@ -166,6 +172,7 @@ public sealed partial class RequestToAddViewModel : ObservableObject
     // One read: TMDB's pages from page on, until a screenful came, PagesPerRead were read, or TMDB has no more.
     private async Task ReadAsync(int page, bool first, CancellationToken cancellationToken)
     {
+        _reading = true;
         IsLoadingMore = !first;
         try
         {
@@ -204,14 +211,17 @@ public sealed partial class RequestToAddViewModel : ObservableObject
         catch (Exception ex) when (!cancellationToken.IsCancellationRequested && ApiFailureText.IsRequestFailure(ex))
         {
             _logger.LogWarning("Searching titles to request failed: {Failure}", ApiFailureText.Describe(ex));
-            // A failed first read leaves the section out; a later one keeps what shows, so the viewer can try again.
-            if (first)
+            // A first read that failed before anything came leaves the section out; otherwise what came stays, and Try
+            // again reads the page that failed.
+            if (first && Cards.Count == 0)
             {
                 Hide();
             }
             else
             {
+                IsShown = true;
                 HasMoreError = true;
+                OnPropertyChanged(nameof(IsEmptySoFar));
             }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -222,6 +232,7 @@ public sealed partial class RequestToAddViewModel : ObservableObject
         {
             if (!cancellationToken.IsCancellationRequested)
             {
+                _reading = false;
                 IsSearching = false;
                 IsLoadingMore = false;
             }
