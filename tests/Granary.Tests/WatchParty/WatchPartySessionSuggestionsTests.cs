@@ -102,7 +102,9 @@ public sealed class WatchPartySessionSuggestionsTests : IAsyncDisposable
         Assert.Empty(_party.Activity);
 
         Socket.Push(WatchPartyPayloads.Snapshot(WatchPartyPayloads.Room(generation: 2, mode: "vote")));
-        await ServerPlaybackFixture.Until(() => _party.Room!.Generation == 2, "the snapshot");
+        // The entry, not only the room: the session sets the room before it notes what changed, and this polls from
+        // another thread.
+        await ServerPlaybackFixture.Until(() => _party.Room!.Generation == 2 && _party.Activity.Count > 0, "the snapshot and its entry");
 
         var entry = Assert.Single(_party.Activity);
         Assert.Equal((WatchPartyActivityKinds.Mode, "Elena", "vote"), (entry.Kind, entry.Who, entry.Detail));
