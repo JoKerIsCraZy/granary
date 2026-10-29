@@ -351,14 +351,15 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   - On black, the backdrop stands at the top right, 85 % of the page's height, and stays put while the hero and rows
     scroll over it. It fades to black toward the left (100 % → 92 % at a quarter → 25 % at 65 % → clear) and
     down (clear at 35 % → black at 82 %). Its thumbhash shows first, then the image fades in.
-  - Hero, 48 px in, 120 from the top, 18 apart: season and episode breadcrumbs; the logo at most 170 high and 630 wide,
-    taking no room until it is in (or the title in 60 Bold); a season's own name; one meta line in 20 at 60 % white ("2026 · 1h 58m ·
-    R · Mystery, Thriller", a series' air years, rating, regular seasons and genres, an episode's "S2 E7 · 54m · 30 Oct
-    2026"); the tagline in 20 italic; the overview in 19/29, four lines at most and 900 wide.
+  - Hero, 48 px in, 100 from the top, 14 apart (a step smaller than Silage's, as the user asked): season and episode
+    breadcrumbs; the logo at most 140 high and 520 wide, taking no room until it is in (or the title in 50 Bold); a
+    season's own name; one meta line in 17 at 60 % white ("2026 · 1h 58m · R · Mystery, Thriller", a series' air years,
+    rating, regular seasons and genres, an episode's "S2 E7 · 54m · 30 Oct 2026"); the tagline in 17 italic; the overview
+    in 16/25, four lines at most and 820 wide.
   - Granary's own buttons one size up: the red Play pill ("Resume from 1:02:33" for a movie or episode), Start over,
-    "Mark Watched", "Info", the heart and ⋮ (Watchlist, Add to Collection). Pills 60 high with 20 px labels, round
-    buttons 60, 16 apart. Under them "Available version: 1080P · H264 · EAC3 · 6.6 GB" (or the qualities of several
-    files) in 16 at 45 % white.
+    "Mark Watched", "Info", the heart and ⋮ (Watchlist, Add to Collection). Pills 50 high with 17 px labels, round
+    buttons 50, 14 apart. Under them "Available version: 1080P · H264 · EAC3 · 6.6 GB" (or the qualities of several
+    files) in 14 at 45 % white.
   - Info opens a 980 wide dialog: Details (with the full overview, ratings, countries, studios, a series' regular seasons
     and episodes, a season's number and episodes), Cast, Crew by job and each file's facts (the played file's audio as
     its badge words it), never a file's name or path. The web's chips, ratings, credits and version lines are there
@@ -367,8 +368,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   - Granary's rows follow, 56 apart: a series' seasons, all at once in a grid that wraps at the page's width (185 px
     posters, a season opens its own page), or a season's episode grid, more episodes, trailers, cast and crew, more like
     this.
-  - Below a 1400 px window everything steps down (hero 96 from the top and 14 apart, logo 136, meta 16, overview 15/23,
-    buttons 48, rows 44 apart), so a 1280×800 window keeps it whole. The step sets sizes, not styles, so a focused
+  - Below a 1400 px window everything steps down (hero 84 from the top and 12 apart, logo 116, meta 15, overview 14/22,
+    buttons 44, rows 44 apart), so a 1280×800 window keeps it whole. The step sets sizes, not styles, so a focused
     button keeps its focus when the window crosses it.
   - An episode without a backdrop of its own shows its thumbhash or black, never its poster stretched across.
 - Watch Party (`WatchPartyPage`, the web's `pages/watchtogether/WatchPartyHub.tsx`): "WATCH PARTY", "Watch together,
