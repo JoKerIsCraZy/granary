@@ -11,16 +11,16 @@ dependency changes.
 | Component | libmpv (`libmpv-2.dll`), part of mpv |
 | Version | `v0.41.0-dev-ga39482e7a` (mpv commit `a39482e7a`), FFmpeg `git-2026-10-24-1d83e71` |
 | Variant | **LGPL** (`-Dgpl=false`) |
-| Origin | Official mpv CI build, release `git-release` of `mpv-player/mpv`, asset `libmpv-v0.41.0-dev-ga39482e7a-40099161509-x86_64-w64-mingw32-lgpl.zip`, SHA-256 `9a084eab0b0b04e82f5f4b3cdd314fcc91eddae4ca1756d3ce24aa3718e1fb72` (pinned in `native.lock.json`) |
+| Origin | Official mpv CI build, release `git-release` of `mpv-player/mpv`, asset `libmpv-v0.41.0-dev-ga39482e7a-40099161509-x86_64-w64-mingw32-lgpl.zip`, SHA-256 `9a084eab0b0b04e82f5f4b3cdd314fcc91eddae4ca1756d3ce24aa3718e1fb72` (pinned in `native.lock.json`). Mirrored unchanged as the prerelease `deps-libmpv-v0.41.0-dev-ga39482e7a` of Granary's repository, since upstream replaces that asset on every mpv master update |
 | Build | `ci/build-mingw64-full.sh` in the BtbN `win64-lgpl` FFmpeg build container; `-Dlibmpv=true -Dgpl=false`, dependencies linked statically |
 | License | mpv: LGPL-2.1-or-later (`-Dgpl=false`); FFmpeg and its libraries in the BtbN LGPL variant are LGPL or more permissive. The library ships with its `LICENSE.LGPL`. |
 | Enabled mpv dependencies | From `mpv-configuration`: LuaJIT, MuJS, lcms2, libbluray, libcurl, shaderc, SPIRV-Cross, Vulkan, zimg, VapourSynth, AMF, libsixel, plus libass and libplacebo. The complete per-library list follows the BtbN `win64-lgpl` recipe and is generated before the first release. |
-| Source | mpv: <https://github.com/mpv-player/mpv> (commit `a39482e7a`). FFmpeg: <https://git.ffmpeg.org/ffmpeg.git> (commit `1d83e71`). Build recipe: <https://github.com/BtbN/FFmpeg-Builds> |
+| Source | mpv: <https://github.com/mpv-player/mpv> (commit `a39482e7a`). FFmpeg: <https://git.ffmpeg.org/ffmpeg.git> (commit `1d83e71`). Build recipe: <https://github.com/BtbN/FFmpeg-Builds>. The mpv and FFmpeg sources at those commits are offered beside the library in the same mirror release (`mpv-a39482e7a.tar.gz`, `ffmpeg-1d83e71.tar.gz`) |
 
 Granary loads the library dynamically (`libmpv-2.dll` next to the executable), so users can replace it
-as the LGPL requires. Distributing builds requires offering the corresponding source; a release must
-pin and mirror the exact archive and sources it ships, because the upstream asset is replaced on every
-mpv master update.
+as the LGPL requires. Distributing builds requires offering the corresponding source, so the exact
+archive Granary ships and its sources live in the mirror release above, because the upstream asset is
+replaced on every mpv master update.
 
 The Phase 1 spike also ran the GPL variant of the same build (GPL-3.0-or-later, compatible with
 AGPL-3.0-or-later via GPLv3/AGPLv3 section 13). Granary ships the LGPL variant: it is 30 MB smaller

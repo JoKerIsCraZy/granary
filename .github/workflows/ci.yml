@@ -24,9 +24,9 @@ jobs:
         with:
           global-json-file: global.json
 
-      # This step fails until libmpv is mirrored and re-pinned: the upstream asset pinned in native.lock.json was
-      # replaced by a newer mpv build and answers 404 (docs/release.md). The cache keeps the verified archive once a
-      # download worked; its key follows native.lock.json, so a new pin (url and sha256) starts a new cache.
+      # libmpv comes from this repository's own mirror release (native.lock.json), which docs/release.md uploads once:
+      # until it exists this step fails. The cache keeps the verified archive once a download worked; its key follows
+      # native.lock.json, so a new pin (url and sha256) starts a new cache.
       - name: Cache libmpv
         uses: actions/cache@v4
         with:

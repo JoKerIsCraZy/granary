@@ -58,9 +58,26 @@ a build that looks for updates.
 - The repository must be public: installed copies read its releases without credentials.
 - Security reports: turn on **Private vulnerability reporting** under the repository's Settings → Code security, since
   `SECURITY.md` sends every report there and names no other channel.
-- libmpv: the pinned upstream asset in `native.lock.json` disappears with the next mpv master build. Mirror the zip
-  (for example as an asset of a release in this repository) and point `url` and `sha256` at the mirror, or the
-  workflow's fetch fails. `THIRD_PARTY_NOTICES.md` also asks to offer the matching sources.
+- libmpv: `native.lock.json` already points at this repository's mirror release
+  `deps-libmpv-v0.41.0-dev-ga39482e7a`, which holds the exact upstream zip (same SHA-256; upstream's `git-release`
+  asset is gone) and the mpv and FFmpeg sources the LGPL asks to offer. Upload it once, right after the first push
+  (a release needs a commit to tag), then run the CI job again; until then its libmpv step fails. From the
+  repository's root, with the pinned zip in `native\dl-libmpv` where `fetch-native.ps1 -ZipPath` used it:
+
+  ```powershell
+  $dl = "native\dl-libmpv"
+  Invoke-WebRequest https://github.com/mpv-player/mpv/archive/a39482e7a.tar.gz -OutFile "$dl\mpv-a39482e7a.tar.gz"
+  Invoke-WebRequest https://github.com/FFmpeg/FFmpeg/archive/1d83e71.tar.gz -OutFile "$dl\ffmpeg-1d83e71.tar.gz"
+  # A prerelease: the app's updater (GithubSource, prerelease: false) and the "latest release" badge skip it.
+  gh release create deps-libmpv-v0.41.0-dev-ga39482e7a --repo JoKeRIsCraZy/granary --prerelease `
+      --title "libmpv v0.41.0-dev-ga39482e7a (mirror)" `
+      --notes "The mpv CI build Granary bundles, unchanged, with the mpv and FFmpeg sources it was built from. Not an app release." `
+      "$dl\libmpv-v0.41.0-dev-ga39482e7a-40099161509-x86_64-w64-mingw32-lgpl.zip" "$dl\mpv-a39482e7a.tar.gz" "$dl\ffmpeg-1d83e71.tar.gz"
+  Remove-Item native\libmpv\.sha256; ./scripts/fetch-native.ps1   # downloads from the mirror and checks the SHA-256
+  ```
+
+  A new libmpv later is a new mirror release with its own tag, and `url`, `sha256`, `version` and
+  `THIRD_PARTY_NOTICES.md` change together.
 - Signing: nothing is signed yet, so Windows SmartScreen warns about an unknown publisher on the first download.
   `vpk pack` signs with `--signParams` (a code-signing certificate) or `--azureTrustedSignFile` (Azure Trusted
   Signing).

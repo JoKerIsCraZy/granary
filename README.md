@@ -78,18 +78,18 @@ You need the .NET 10 SDK (`global.json` pins the version) and PowerShell. No Vis
 `dotnet` CLI builds everything. VS Code users get tasks and launch configurations in `.vscode/`.
 
 ```powershell
-./scripts/fetch-native.ps1 -ZipPath <the pinned libmpv zip>   # libmpv into native/libmpv; see the note below
+./scripts/fetch-native.ps1                                     # libmpv into native/libmpv; see the note below
 dotnet build Granary.slnx
 dotnet test --solution Granary.slnx
 dotnet run --project src/Granary.App
 ```
 
 **libmpv:** `native.lock.json` pins one libmpv build by URL and SHA-256, and `scripts/fetch-native.ps1` puts it
-into `native/libmpv` after checking the hash. The pinned upstream asset has since been replaced by a newer mpv build
-and its URL answers 404, so the script cannot download it until the pin points at a mirror. Until then, get the
-exact pinned archive (file name and SHA-256 in `native.lock.json`) from a mirror or a copy you have, and pass it with
-`-ZipPath`; the script still checks the hash. Without libmpv everything builds (the app build warns) and the tests
-run, with the libmpv integration tests skipped, but playback fails at runtime.
+into `native/libmpv` after checking the hash. The URL is this repository's own mirror of the official mpv CI build,
+next to the mpv and FFmpeg sources it was built from, because upstream replaces that asset on every mpv update. With
+a copy of the archive at hand, pass it with `-ZipPath` instead; the script still checks the hash. Without libmpv
+everything builds (the app build warns) and the tests run, with the libmpv integration tests skipped, but playback
+fails at runtime.
 
 The app is x64 only. To build only the app project, pass the platform:
 `dotnet build src/Granary.App/Granary.App.csproj -p:Platform=x64`. Warnings fail the build
