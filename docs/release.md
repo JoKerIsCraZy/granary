@@ -56,6 +56,8 @@ a build that looks for updates.
 ## Before the first public release
 
 - The repository must be public: installed copies read its releases without credentials.
+- Security reports: turn on **Private vulnerability reporting** under the repository's Settings → Code security, since
+  `SECURITY.md` sends every report there and names no other channel.
 - libmpv: the pinned upstream asset in `native.lock.json` disappears with the next mpv master build. Mirror the zip
   (for example as an asset of a release in this repository) and point `url` and `sha256` at the mirror, or the
   workflow's fetch fails. `THIRD_PARTY_NOTICES.md` also asks to offer the matching sources.
