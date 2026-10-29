@@ -24,7 +24,8 @@ public sealed class ForYouViewModelTests
     private ImageParameterCache Images() => new(new ImagesApi(_harness.Silo.Http), _harness.Logs.For<ImageParameterCache>());
 
     private ForYouViewModel Create() => new(
-        _harness.Session, new RecommendationsApi(_harness.Silo.Http), Images(), _harness.Navigation, _harness.Logs.For<ForYouViewModel>());
+        _harness.Session, new RecommendationsApi(_harness.Silo.Http), Images(), _harness.Navigation, new Fakes.ImmediateDispatcher(),
+        new Fakes.ManualTimeProvider(), _harness.Logs.For<ForYouViewModel>());
 
     private RecommendationSectionViewModel CreateSection() => new(
         _harness.Session, new RecommendationsApi(_harness.Silo.Http), Images(), _harness.Navigation, _harness.Logs.For<RecommendationSectionViewModel>());
