@@ -52,6 +52,7 @@ release's section is what its update says it changes (docs/release.md).
   closes the app.
 - Home, For You and Requests' Discover open with a large picture of a title, its logo (or name), details and overview,
   and follow the card under the mouse or in focus; while you scroll it folds into a slim header that stays at the top.
+- Search shows the result under the mouse or in focus as a dark picture behind its title and search box.
 - A new layout for title pages: the backdrop stays put behind a large logo, one line of facts, the overview and bigger
   buttons; Info shows the full details, cast, crew and files.
 - Settings → Devices: see where your account is signed in and sign out any session, and see the devices your profile

@@ -26,6 +26,7 @@ public sealed partial class SearchPage : Page
     protected override async void OnNavigatedTo(NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
+        Backdrop.Resume();
         ViewModel.DisplayScale = XamlRoot?.RasterizationScale ?? 1;
         // The page is cached: Back keeps the results where they were; Ctrl+K and the sidebar lead to the box.
         if (e.NavigationMode != NavigationMode.Back)
@@ -53,6 +54,8 @@ public sealed partial class SearchPage : Page
     protected override void OnNavigatedFrom(NavigationEventArgs e)
     {
         ViewModel.Deactivate();
+        // The page stays cached: its backdrop lets go of its pictures until it shows again.
+        Backdrop.Suspend();
         base.OnNavigatedFrom(e);
     }
 
