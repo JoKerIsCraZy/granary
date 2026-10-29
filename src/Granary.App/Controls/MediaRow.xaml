@@ -35,8 +35,9 @@
             <ScrollView x:Name="Scroller" ContentOrientation="Horizontal" HorizontalScrollMode="Enabled" HorizontalScrollBarVisibility="Hidden"
                         VerticalScrollMode="Disabled" VerticalScrollBarVisibility="Hidden" ViewChanged="OnViewChanged"
                         controls:WheelScrollsPage.IsEnabled="True">
-                <!-- A card's width follows the profile's poster size at the window's breakpoint (MediaRow.OnElementPrepared). -->
-                <ItemsRepeater x:Name="Items" ItemsSource="{x:Bind ItemsSource, Mode=OneWay}" ElementPrepared="OnElementPrepared">
+                <!-- A card's width follows the profile's poster size at the window's breakpoint (MediaRow.OnElementPrepared). Cards are made
+                     half a row's width past each end, not a whole one (MediaGrid). -->
+                <ItemsRepeater x:Name="Items" ItemsSource="{x:Bind ItemsSource, Mode=OneWay}" ElementPrepared="OnElementPrepared" HorizontalCacheLength="1">
                     <ItemsRepeater.Layout>
                         <StackLayout Orientation="Horizontal" Spacing="20" />
                     </ItemsRepeater.Layout>

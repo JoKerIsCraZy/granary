@@ -18,7 +18,8 @@
                 <TextBlock Text="{x:Bind ViewModel.Notice, Mode=OneWay}" Visibility="{x:Bind HasText(ViewModel.Notice), Mode=OneWay}"
                            Style="{StaticResource SiloCaptionTextStyle}" Foreground="{StaticResource SiloPrimaryBrush}" TextWrapping="Wrap"
                            AutomationProperties.LiveSetting="Polite" />
-                <ItemsRepeater ItemsSource="{x:Bind ViewModel.Rows, Mode=OneWay}">
+                <!-- Rows are made half a screen past the view, as a grid's cards (MediaGrid). -->
+                <ItemsRepeater ItemsSource="{x:Bind ViewModel.Rows, Mode=OneWay}" VerticalCacheLength="1">
                     <ItemsRepeater.Layout>
                         <StackLayout Spacing="40" />
                     </ItemsRepeater.Layout>

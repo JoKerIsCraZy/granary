@@ -23,7 +23,9 @@
         <controls:MediaCardTemplateSelector x:Key="CardTemplateSelector" Card="{StaticResource CardTemplate}" Skeleton="{StaticResource SkeletonTemplate}" />
     </UserControl.Resources>
 
-    <ItemsRepeater x:Name="Items" ItemsSource="{x:Bind ItemsSource, Mode=OneWay}" ItemTemplate="{StaticResource CardTemplateSelector}"
+    <!-- Cards are made half a screen above and below the view, not ItemsRepeater's whole screen: fewer live cards make the
+         collector's full pauses shorter, most on a wide window. -->
+    <ItemsRepeater x:Name="Items" ItemsSource="{x:Bind ItemsSource, Mode=OneWay}" ItemTemplate="{StaticResource CardTemplateSelector}" VerticalCacheLength="1"
                    ElementPrepared="OnElementPrepared" EffectiveViewportChanged="OnEffectiveViewportChanged" SizeChanged="OnItemsSizeChanged">
         <ItemsRepeater.Layout>
             <!-- The columns and gap follow the profile's poster size at the window's breakpoint (MediaGrid.ApplyLook). -->
