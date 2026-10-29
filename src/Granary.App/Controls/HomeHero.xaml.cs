@@ -177,6 +177,7 @@ public sealed partial class HomeHero : UserControl
     }
 
     // The new layer is fully shown: the one under it hides and lets go of its picture, and a title that waited follows.
+    // Otherwise the width that came during the fade is taken now.
     private void FinishFade()
     {
         var (hide, next) = _crossfade.Complete();
@@ -188,7 +189,9 @@ public sealed partial class HomeHero : UserControl
         if (next is not null && next.Key == _picturesOf)
         {
             Begin(next);
+            return;
         }
+        FollowWidth();
     }
 
     // A layer's picture fades in over its blur once it is decoded.
@@ -210,24 +213,30 @@ public sealed partial class HomeHero : UserControl
 
     private int BackdropWidth() => HomeHeroLayout.BackdropDecodeWidth(BackdropBox.Width);
 
-    // The backdrop takes its share of the new width; a picture not decoded yet, or decoded notably narrower, is decoded now.
+    // The backdrop takes its share of the new width.
     private void OnWidthChanged(double width)
     {
         BackdropBox.Width = Math.Round(width * HomeHeroLayout.BackdropShare);
-        if (_crossfade.Front < 0 || _crossfade.IsFading || _shown is null)
+        FollowWidth();
+    }
+
+    // A picture not decoded yet is decoded now, fade or not; one decoded notably narrower fades in again at the new width.
+    private void FollowWidth()
+    {
+        if (_crossfade.Front < 0 || _shown is null)
         {
             return;
         }
         var front = _layers[_crossfade.Front];
         int needed = BackdropWidth();
-        if (front.WaitsForArt && !_isFolded)
+        switch (HomeHeroLayout.StepFor(front.WaitsForArt, _isFolded, _crossfade.IsFading, front.DecodedWidth, needed))
         {
-            front.LoadArt(needed);
-        }
-        else if (HomeHeroLayout.DecodesAgain(front.DecodedWidth, needed) && front.Title is { } title)
-        {
-            // Fades in again at the new width over the narrow one.
-            Begin(title);
+            case BackdropStep.LoadArt:
+                front.LoadArt(needed);
+                break;
+            case BackdropStep.DecodeAgain when front.Title is { } title:
+                Begin(title);
+                break;
         }
     }
 
