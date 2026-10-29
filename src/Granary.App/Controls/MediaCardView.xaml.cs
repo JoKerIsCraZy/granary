@@ -51,6 +51,8 @@ public sealed partial class MediaCardView : UserControl
     private long _artworkShownAt;
     private bool _sizedByMeasure;
     private double _artWidth;
+    // Done at the card's first size, which a card just made waits for before it decodes its artwork.
+    private TaskCompletionSource? _sized;
     // The card and badges the corners show, so a card loaded again keeps its badges rather than making them anew.
     private MediaCard? _badgedCard;
     private CardOverlayPrefs? _badgedPrefs;
@@ -532,6 +534,11 @@ public sealed partial class MediaCardView : UserControl
         double height = _landscape ? width * 9 / 16 : width * 3 / 2;
         Art.Height = height;
         _artWidth = width;
+        if (_sized is { } sized)
+        {
+            _sized = null;
+            sized.TrySetResult();
+        }
         PlaceBadges();
         ArtImage.CenterPoint = new Vector3((float)(width / 2), (float)(height / 2), 0);
         SizeActions(width);
@@ -771,11 +778,18 @@ public sealed partial class MediaCardView : UserControl
         }
     }
 
-    // While the page scrolls fast, the artwork waits for it to slow down (ScrollMotion): cards rushing by decode nothing.
+    // While the page scrolls fast, the artwork waits for it to slow down (ScrollMotion): cards rushing by decode nothing. A
+    // card just made also waits for its first measure, so its artwork is decoded at the size it shows, not a guess: a grid's
+    // new cards were decoded half again as large.
     private async Task ShowArtworkAsync(MediaCard card, Uri url, CancellationToken cancellationToken)
     {
         _artworkShownAt = Stopwatch.GetTimestamp();
         await ScrollMotion.WhenSlowAsync();
+        if (_artWidth <= 0 && !cancellationToken.IsCancellationRequested)
+        {
+            _sized ??= new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            await _sized.Task;
+        }
         if (cancellationToken.IsCancellationRequested)
         {
             return;
