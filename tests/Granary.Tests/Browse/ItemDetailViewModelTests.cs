@@ -27,18 +27,16 @@ public sealed class ItemDetailViewModelTests
         Assert.Equal(ItemDetailState.Ready, detail.State);
         Assert.True(detail.IsReady);
         Assert.Equal("Masterplan", detail.DisplayTitle);
-        Assert.Equal("MOVIE · AMAZON MGM STUDIOS", detail.Overline);
         Assert.Equal("One plan. No second chances.", detail.Tagline);
-        Assert.Equal(
-            [new DetailChip("2026"), new DetailChip("R"), new DetailChip("1H 49M"), new DetailChip("1080P", true), new DetailChip("EAC3", true)],
-            detail.Chips);
-        Assert.Equal([new DetailRating("IMDb", "5.4"), new DetailRating("TMDB", "7.1")], detail.Ratings);
-        Assert.Equal("Directed by David Ayer · Written by Sylvester Stallone, David Ayer · Action · Thriller", detail.CreditsLine);
+        Assert.Equal("2026 · 1h 49m · R · Action, Thriller", detail.MetaLine);
         Assert.Equal("A former soldier takes one last job.", detail.Overview);
-        Assert.Empty(detail.VersionLines);
         Assert.Empty(detail.Breadcrumbs);
-        Assert.True(detail.ShowsPoster);
-        Assert.Equal(Art("/api/v2/artwork/movies/1001/poster/w342.ab12.webp?exp=1767225600&sig=poster-sig"), detail.PosterUrl);
+        // What the hero leaves out is in the Info dialog: the ratings, the crew by job, the played file's audio badge.
+        var info = detail.InfoSections.ToDictionary(s => s.Title, s => s.Rows.ToDictionary(r => r.Label, r => r.Value));
+        Assert.Equal("IMDb 5.4 · TMDB 7.1", info["Details"]["Ratings"]);
+        Assert.Equal("David Ayer", info["Crew"]["Director"]);
+        Assert.Equal("Sylvester Stallone", info["Crew"]["Screenplay"]);
+        Assert.Equal("EAC3", info["File"]["Audio"]);
         Assert.Equal(Art("/api/v2/artwork/movies/1001/backdrop/w1280.cd34.webp?exp=1767225600&sig=backdrop-sig"), detail.BackdropUrl);
         Assert.Equal(Art("/api/v2/artwork/movies/1001/logo/w500.ef56.webp?exp=1767225600&sig=logo-sig"), detail.LogoUrl);
         Assert.True(detail.ShowsLogo);
@@ -134,6 +132,8 @@ public sealed class ItemDetailViewModelTests
         detail.StartOverCommand.Execute(null);
 
         Assert.Equal((AppRoute.Player, (object?)PlayRequest.FromStart(MovieId)), _fixture.Navigation.Navigations[^1]);
+        // Starting over changes nothing here until the player saves a new position.
+        Assert.Equal("Resume from 21:52", detail.PlayButtonText);
     }
 
     [Fact]
@@ -164,12 +164,13 @@ public sealed class ItemDetailViewModelTests
     {
         var detail = await _fixture.Series().LoadAsync(SeriesId);
 
-        Assert.Equal("SERIES · NETFLIX", detail.Overline);
         Assert.Equal("Every story has its gentleman thief.", detail.Tagline);
+        Assert.Equal("2021–2026 · TV-MA · 3 seasons · Crime, Drama, Mystery", detail.MetaLine);
         // Specials do not count as a season; the regular seasons hold 10 + 7 + 8 episodes.
-        Assert.Equal(["2021–2026", "TV-MA", "3 SEASONS", "25 EPISODES"], detail.Chips.Select(c => c.Text));
-        Assert.Equal(["IMDb 7.5", "TMDB 7.7", "Rotten Tomatoes 98%"], detail.Ratings.Select(r => r.AccessibleName));
-        Assert.Equal("Created by George Kay, François Uzan · Crime · Drama · Mystery", detail.CreditsLine);
+        var details = detail.InfoSections[0].Rows.ToDictionary(r => r.Label, r => r.Value);
+        Assert.Equal(("3 seasons", "25 episodes"), (details["Seasons"], details["Episodes"]));
+        Assert.Equal("IMDb 7.5 · TMDB 7.7 · Rotten Tomatoes 98%", details["Ratings"]);
+        Assert.Equal("George Kay, François Uzan", detail.InfoSections.Single(s => s.Title == "Crew").Rows.Single(r => r.Label == "Creator").Value);
         Assert.Equal([("George Kay", "Creator"), ("François Uzan", "Creator"), ("Omar Sy", "Assane Diop")], detail.People.Select(p => (p.Name, p.Role ?? "")));
         Assert.Equal(new Uri("https://cdn.example/lupin-logo.png"), detail.LogoUrl);
         Assert.Equal(["Money Heist"], detail.Similar.Select(c => c.Title));
@@ -187,6 +188,31 @@ public sealed class ItemDetailViewModelTests
     }
 
     [Fact]
+    public async Task TheBackdropsPlaceholder_ShowsWithItsTitle_AndIsLeftBehindWithIt()
+    {
+        const string Hash = "1QcSHQRnh493V4dIh4eXh1h4kJUI";
+        _fixture.Movie().Get(ItemPath(MovieId), Ok(Movie.Replace("\"backdrop_url\":", $"\"backdrop_thumbhash\": \"{Hash}\", \"backdrop_url\":", StringComparison.Ordinal)))
+            .Episode();
+        var detail = await _fixture.LoadAsync(MovieId);
+        Assert.Equal(Hash, detail.BackdropThumbhash);
+
+        await detail.LoadCommand.ExecuteAsync(EpisodeId);
+
+        Assert.Equal("", detail.BackdropThumbhash);
+    }
+
+    [Fact]
+    public async Task ASeasonsMetaLine_CountsItsListedEpisodes_WhenItSaysNoNumber()
+    {
+        _fixture.Season().Get(ItemPath(Season3Id), Ok(Season.Replace("\"episode_count\": 8,", "", StringComparison.Ordinal)));
+
+        var detail = await _fixture.LoadAsync(Season3Id);
+
+        Assert.Equal("2026 · 2 episodes", detail.MetaLine);
+        Assert.Equal("2 episodes", detail.InfoSections[0].Rows.Single(r => r.Label == "Episodes").Value);
+    }
+
+    [Fact]
     public async Task Series_MetaLine_CountsItsRegularSeasonsOnceTheyAreRead()
     {
         var detail = await _fixture.Series().LoadAsync(SeriesId);
@@ -194,6 +220,7 @@ public sealed class ItemDetailViewModelTests
         Assert.Equal("2021–2026 · TV-MA · 3 seasons · Crime, Drama, Mystery", detail.MetaLine);
         Assert.False(detail.HasAvailableVersionLine);
     }
+
     [Fact]
     public async Task Series_ListsSeasonsWithTheSpecialsLast()
     {
@@ -260,7 +287,9 @@ public sealed class ItemDetailViewModelTests
         Assert.True(detail.HasSimilar);
         Assert.True(detail.HasPeople);
         // The counts fall back to the detail's own.
-        Assert.Equal(["2021–2026", "TV-MA", "3 SEASONS", "25 EPISODES"], detail.Chips.Select(c => c.Text));
+        Assert.Equal("2021–2026 · TV-MA · 3 seasons · Crime, Drama, Mystery", detail.MetaLine);
+        var details = detail.InfoSections[0].Rows.ToDictionary(r => r.Label, r => r.Value);
+        Assert.Equal(("3 seasons", "25 episodes"), (details["Seasons"], details["Episodes"]));
         Assert.Contains(_fixture.Logs.Lines, l => l.StartsWith("Warning", StringComparison.Ordinal) && l.Contains("seasons", StringComparison.Ordinal));
         Assert.DoesNotContain("sig=", _fixture.Logs.All, StringComparison.Ordinal);
     }
@@ -340,7 +369,9 @@ public sealed class ItemDetailViewModelTests
         Assert.True(detail.ShowsEpisodesSection);
         Assert.Equal(["S03E01 · Chapter 1", "S03E02 · Chapter 2"], detail.Episodes.Select(e => e.Card.Title));
         Assert.Equal("2 total", detail.EpisodesTotalText);
-        Assert.Equal(["2021–2026", "TV-MA", "1 SEASON", "2 EPISODES"], detail.Chips.Select(c => c.Text));
+        Assert.Equal("2021–2026 · TV-MA · 1 season · Crime, Drama, Mystery", detail.MetaLine);
+        var details = detail.InfoSections[0].Rows.ToDictionary(r => r.Label, r => r.Value);
+        Assert.Equal(("1 season", "2 episodes"), (details["Seasons"], details["Episodes"]));
     }
 
     [Fact]
@@ -361,14 +392,14 @@ public sealed class ItemDetailViewModelTests
 
         Assert.Equal("Lupin", detail.DisplayTitle);
         Assert.Equal("Staffel 3", detail.Subtitle);
-        Assert.Equal("", detail.Overline);
         Assert.True(detail.ShowsTitleText);
         Assert.Equal([new DetailCrumb("Lupin", SeriesId, true), new DetailCrumb("Season 3", null, false)], detail.Breadcrumbs);
-        Assert.Equal(["2026", "SEASON 3", "8 EPISODES"], detail.Chips.Select(c => c.Text));
+        Assert.Equal("2026 · 8 episodes", detail.MetaLine);
+        var details = detail.InfoSections[0].Rows.ToDictionary(r => r.Label, r => r.Value);
+        Assert.Equal(("Season 3", "8 episodes"), (details["Season"], details["Episodes"]));
         Assert.Equal("Assane faces his most personal heist yet.", detail.Overview);
         Assert.Equal("Mark Season Watched", detail.WatchedLabel);
         Assert.False(detail.CanFavorite);
-        Assert.Empty(detail.CreditParts);
         Assert.Equal("Cast", detail.PeopleTitle);
         Assert.Equal(["Omar Sy"], detail.People.Select(p => p.Name));
 
@@ -403,7 +434,7 @@ public sealed class ItemDetailViewModelTests
 
         Assert.True(detail.IsReady);
         Assert.False(detail.ShowsEpisodesSection);
-        Assert.Equal(["2026", "SEASON 3", "8 EPISODES"], detail.Chips.Select(c => c.Text));
+        Assert.Equal("2026 · 8 episodes", detail.MetaLine);
         Assert.Equal(EpisodeId, detail.PlayTargetId);
     }
 
@@ -426,16 +457,15 @@ public sealed class ItemDetailViewModelTests
 
         Assert.Equal("S03E01 · Chapter 1", detail.DisplayTitle);
         Assert.Equal("Chapter 1", detail.Title);
-        Assert.False(detail.ShowsPoster);
         // The series' logo would hide which episode this is.
         Assert.Null(detail.LogoUrl);
         Assert.True(detail.ShowsTitleText);
         Assert.Equal(Art("/api/v2/artwork/episodes/1/still/w1280.webp?exp=1&sig=still"), detail.BackdropUrl);
-        Assert.Equal(
-            [new DetailChip("52M"), new DetailChip("23 OCT 2026"), new DetailChip("4K HDR", true), new DetailChip("TRUEHD", true)],
-            detail.Chips);
-        Assert.Equal(["4K HDR · HEVC · TRUEHD", "DIRECTOR'S CUT · 1080P · H264 · EAC3"], detail.VersionLines);
-        Assert.Equal("Directed by Ludovic Bernard · Written by George Kay", detail.CreditsLine);
+        Assert.Equal("S3 E1 · 52m · 23 Oct 2026", detail.MetaLine);
+        Assert.Equal("Available versions: 4K HDR · 1080P", detail.AvailableVersionLine);
+        Assert.Equal(["Details", "Cast", "Crew", "File 1", "File 2"], detail.InfoSections.Select(s => s.Title));
+        var second = detail.InfoSections[4].Rows.ToDictionary(r => r.Label, r => r.Value);
+        Assert.Equal(("Director's Cut", "1080P", "H264", "EAC3"), (second["Edition"], second["Resolution"], second["Video"], second["Audio"]));
         Assert.Equal(["Ludovic Bernard", "George Kay", "Omar Sy", "Guest Star"], detail.People.Select(p => p.Name));
         Assert.Equal("Play", detail.PlayLabel);
         Assert.Equal(EpisodeId, detail.PlayTargetId);
@@ -613,18 +643,6 @@ public sealed class ItemDetailViewModelTests
         Assert.False(detail.ShowsLogo);
         Assert.True(detail.ShowsTitleText);
         Assert.Contains(nameof(ItemDetailViewModel.ShowsTitleText), changed);
-    }
-
-    [Fact]
-    public async Task Overview_TogglesBetweenMoreAndLess()
-    {
-        var detail = await _fixture.Movie().LoadAsync(MovieId);
-        Assert.Equal("More", detail.OverviewToggleText);
-
-        detail.ToggleOverviewCommand.Execute(null);
-
-        Assert.True(detail.IsOverviewExpanded);
-        Assert.Equal("Less", detail.OverviewToggleText);
     }
 
     [Fact]

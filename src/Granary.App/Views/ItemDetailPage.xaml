@@ -13,10 +13,14 @@
     xmlns:cards="using:Granary.Core.ViewModels.Cards"
     xmlns:detail="using:Granary.Core.ViewModels.Detail"
     xmlns:local="using:Granary.App.Views"
-    xmlns:vm="using:Granary.Core.ViewModels"
-    Background="Black">
+    xmlns:vm="using:Granary.Core.ViewModels">
 
-    <Grid>
+    <Page.Resources>
+        <!-- The page's black, under the standing backdrop and its fades. -->
+        <SolidColorBrush x:Key="DetailPageBrush" Color="#FF000000" />
+    </Page.Resources>
+
+    <Grid Background="{StaticResource DetailPageBrush}">
         <VisualStateManager.VisualStateGroups>
             <VisualStateGroup x:Name="SizeStates">
                 <VisualState x:Name="Wide">

@@ -28,7 +28,8 @@ public sealed partial class ItemDetailPage : Page
     // Static because x:Bind function bindings in item templates call them without the page.
     public static string SeasonName(string title, string caption, bool isWatched) => isWatched ? $"{title}, {caption}, watched" : $"{title}, {caption}";
 
-    // The backdrop's placeholder; never null, so a page shown again for another title does not keep the last one's.
+    // The backdrop's placeholder. The view model passes "" for none rather than null: x:Bind skips a function whose
+    // argument is null, and a page shown again for another title would keep the last one's picture.
     public static ImageSource? Blur(string hash) => Thumbhashes.Get(hash);
 
     protected override void OnNavigatedTo(NavigationEventArgs e)

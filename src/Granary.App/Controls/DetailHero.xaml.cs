@@ -67,22 +67,27 @@ public sealed partial class DetailHero : UserControl
     // Everything the hero leaves out: the full overview, ratings, cast and crew by job, and each file's facts.
     private async void OnInfoClick(object sender, RoutedEventArgs e)
     {
-        if (ViewModel is not { } item || XamlRoot is null)
+        if (ViewModel is not { } item || XamlRoot is not { } root)
         {
             return;
         }
+        var panel = new DetailInfoPanel(item.InfoSections);
+        // A resized window resizes the open dialog's list.
+        void Fit(XamlRoot sender, XamlRootChangedEventArgs args) => panel.MaxHeight = PanelHeight(sender);
         try
         {
+            panel.MaxHeight = PanelHeight(root);
             var dialog = new ContentDialog
             {
-                XamlRoot = XamlRoot,
+                XamlRoot = root,
                 Title = item.DisplayTitle,
-                Content = new DetailInfoPanel(item.InfoSections) { MaxHeight = Math.Max(240, XamlRoot.Size.Height * InfoHeightShare - InfoChrome) },
+                Content = panel,
                 CloseButtonText = "Close",
                 DefaultButton = ContentDialogButton.Close,
             };
             dialog.Resources["ContentDialogMaxWidth"] = InfoWidth;
-            dialog.Resources["ContentDialogMaxHeight"] = XamlRoot.Size.Height * InfoHeightShare;
+            dialog.Resources["ContentDialogMaxHeight"] = root.Size.Height * InfoHeightShare;
+            root.Changed += Fit;
             await dialog.ShowAsync();
         }
         catch (Exception ex)
@@ -90,7 +95,13 @@ public sealed partial class DetailHero : UserControl
             // async void: nothing may escape (another dialog may already be open).
             App.Services.GetRequiredService<ILogger<DetailHero>>().LogWarning("The Info dialog could not be shown: {Error}", ex.GetType().Name);
         }
+        finally
+        {
+            root.Changed -= Fit;
+        }
     }
+
+    private static double PanelHeight(XamlRoot root) => Math.Max(240, root.Size.Height * InfoHeightShare - InfoChrome);
 
     // The web's "Add to a collection": the profile's own manual collections, ticked where the title is in them.
     private async void OnAddToCollectionClick(object sender, RoutedEventArgs e)

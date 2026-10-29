@@ -772,8 +772,11 @@ device-specific audio/subtitle preferences). Accepts movie, series, season and e
 `duration_seconds?`, `last_file_id?`), `play_content_id`, `play_season_number` (next episode for a
 series/season), `versions[]` (`FileVersion`: `file_id`, `resolution`, `codec_video`, `codec_audio`,
 `container`, `hdr`, `file_size`, `duration` (s), `bitrate` (kbps), `audio_tracks[]`,
-`subtitle_tracks[]`, `video_tracks[]`, `chapters[]`, `edition_key?`), `playback_variants[]`,
-`subtitles[]`, `videos[]` (trailers), `extras[]`.
+`subtitle_tracks[]`, `video_tracks[]`, `chapters[]`, `edition_key?`, `edition_raw?`), `playback_variants[]`,
+`subtitles[]`, `videos[]` (trailers), `extras[]`. `edition_raw` is an edition's label, not a file name: the scanner
+sets it only when it recognises an edition (the text of a `{edition-…}` tag in a folder or file name, or edition words
+it matches to an `edition_key`, `internal/naming/variants.go`), so the Info dialog may show it; `file_path` and
+`file_name` are administrator data and are never shown.
 
 ### 7.7 Series → seasons → episodes
 

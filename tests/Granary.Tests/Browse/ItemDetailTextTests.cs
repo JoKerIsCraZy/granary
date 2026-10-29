@@ -129,17 +129,8 @@ public sealed class ItemDetailTextTests
             crew.Add(new CrewCredit("Cy Ng", "Director", "3", null, null));
         });
 
-        Assert.Equal("Directed by Ann Lee, Bo Kim · Drama · Mystery", string.Join(" · ", DetailCredits.Line(series)));
         // Two director cards at most.
         Assert.Equal(["Ann Lee", "Bo Kim"], DetailCredits.People(series, Server).Select(p => p.Name));
-    }
-
-    [Fact]
-    public void EpisodeCredits_LeaveTheGenresOut_AndSeasonsHaveNone()
-    {
-        Assert.Empty(DetailCredits.Line(Item(CatalogItemTypes.Episode)));
-        Assert.Empty(DetailCredits.Line(Item(CatalogItemTypes.Season, crew => crew.Add(new CrewCredit("Ann Lee", "Director", null, null, null)))));
-        Assert.Equal("Drama · Mystery", string.Join(" · ", DetailCredits.Line(Item(CatalogItemTypes.Movie))));
     }
 
     [Fact]
@@ -157,7 +148,7 @@ public sealed class ItemDetailTextTests
         };
 
         Assert.Equal(["Ann Lee"], DetailCredits.People(movie, Server).Select(p => p.Name));
-        Assert.Equal("Directed by Ann Lee · Drama · Mystery", string.Join(" · ", DetailCredits.Line(movie)));
+        Assert.Equal([("Director", "Ann Lee")], DetailFacts.InfoSections(movie).Single(s => s.Title == "Crew").Rows.Select(r => (r.Label, r.Value)));
         Assert.Equal(["IMDb 5.0"], DetailFacts.Ratings(movie).Select(r => r.AccessibleName));
     }
 
@@ -216,7 +207,7 @@ public sealed class ItemDetailTextTests
     public void TrailerKinds_AreWordedLikeTheWeb(string kind, string expected) => Assert.Equal(expected, DetailTrailer.KindText(kind));
 
     [Fact]
-    public void VersionLines_NeedSeveralFilesAndNeverShowPaths()
+    public void Files_NeverShowTheirNamesOrPaths()
     {
         var one = Item(CatalogItemTypes.Movie) with { Versions = [new FileVersion { FileId = "1", FileName = "secret/path.mkv", Resolution = "1080p" }] };
         var two = one with
@@ -228,18 +219,22 @@ public sealed class ItemDetailTextTests
             ],
         };
 
-        Assert.Empty(DetailFacts.VersionLines(one));
-        Assert.Equal(["4K HDR · HEVC · TRUEHD", "720P · H264"], DetailFacts.VersionLines(two));
+        Assert.Equal("Available version: 1080P", DetailFacts.AvailableVersionLine(one));
+        Assert.Equal("Available versions: 4K HDR · 720P", DetailFacts.AvailableVersionLine(two));
+        Assert.DoesNotContain(DetailFacts.InfoSections(one).Concat(DetailFacts.InfoSections(two)).SelectMany(s => s.Rows),
+            r => r.Value.Contains("secret", StringComparison.Ordinal) || r.Value.Contains("Heat.", StringComparison.Ordinal));
     }
 
-    [Fact]
-    public void Overline_UsesTheFirstStudioOrNetwork()
-    {
-        Assert.Equal("MOVIE", DetailFacts.Overline(Item(CatalogItemTypes.Movie)));
-        Assert.Equal("SERIES · HBO", DetailFacts.Overline(Item(CatalogItemTypes.Series) with { Networks = ["", "HBO"] }));
-        Assert.Null(DetailFacts.Overline(Item(CatalogItemTypes.Episode)));
-        Assert.Equal("PODCAST EPISODE", DetailFacts.Overline(Item(CatalogItemTypes.PodcastEpisode)));
-    }
+    [Theory]
+    [InlineData(1_073_741_823L, "1.0 GB")]
+    [InlineData(1_048_575L, "1 MB")]
+    [InlineData(2_048L, "2 KB")]
+    [InlineData(500L, "1 KB")]
+    public void FileSizes_PickTheirUnitAfterRounding(long bytes, string expected) =>
+        Assert.Equal("Available version: " + expected, DetailFacts.AvailableVersionLine(Item(CatalogItemTypes.Movie) with
+        {
+            Versions = [new FileVersion { FileId = "1", FileSize = bytes }],
+        }));
 
     [Fact]
     public void MovieRuntime_PrefersThePlayedFile()
@@ -339,6 +334,18 @@ public sealed class ItemDetailTextTests
         Assert.Equal(expected, DetailFacts.PlayButtonText(movie, watch, DetailFacts.PlayAction(movie, watch)));
     }
 
+    [Theory]
+    [InlineData(125.0, true, "Resume from 2:05")]
+    [InlineData(0.4, true, "Resume")]
+    [InlineData(360_061.0, true, "Resume from 100:01:01")]
+    public void PlayButton_OfAnEpisode_SaysWhereItResumes_FromASecondOn(double position, bool inProgress, string expected)
+    {
+        var episode = Item(CatalogItemTypes.Episode);
+        var watch = new WatchRollup { PositionSeconds = position, IsInProgress = inProgress };
+
+        Assert.Equal(expected, DetailFacts.PlayButtonText(episode, watch, DetailFacts.PlayAction(episode, watch)));
+    }
+
     [Fact]
     public void PlayButton_OfASeries_KeepsItsAction()
     {
@@ -378,6 +385,55 @@ public sealed class ItemDetailTextTests
         Assert.Equal("9.3 GB", file["Size"]);
         Assert.Equal("8 Mb/s", file["Bitrate"]);
         Assert.DoesNotContain(sections.SelectMany(s => s.Rows), r => r.Value.Contains("secret", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Info_OfASeries_CountsItsRegularSeasonsAndEpisodes()
+    {
+        var series = Item(CatalogItemTypes.Series) with { FirstAirDate = "2021-01-08", SeasonCount = 3, EpisodeCount = 25 };
+        Season[] seasons = [new() { SeasonNumber = 0, IsSpecials = true, EpisodeCount = 2 }, new() { SeasonNumber = 1, EpisodeCount = 10 }];
+
+        var before = DetailFacts.InfoSections(series)[0].Rows.ToDictionary(r => r.Label, r => r.Value);
+        var after = DetailFacts.InfoSections(series, seasons)[0].Rows.ToDictionary(r => r.Label, r => r.Value);
+
+        Assert.Equal(("2021", "3 seasons", "25 episodes"), (before["Aired"], before["Seasons"], before["Episodes"]));
+        Assert.Equal(("1 season", "10 episodes"), (after["Seasons"], after["Episodes"]));
+        Assert.DoesNotContain("Runtime", before.Keys);
+    }
+
+    [Fact]
+    public void Info_OfASeason_NamesItsNumberAndListedEpisodes()
+    {
+        var season = Item(CatalogItemTypes.Season) with { SeasonNumber = 3, AirDate = "2026-10-23" };
+
+        var details = DetailFacts.InfoSections(season, listedEpisodes: 8)[0].Rows.ToDictionary(r => r.Label, r => r.Value);
+
+        Assert.Equal(("Season 3", "8 episodes", "23 Oct 2026"), (details["Season"], details["Episodes"], details["Released"]));
+    }
+
+    [Fact]
+    public void Info_OfAnEpisode_HasNoSeasonCounts_AndItsPlayedFileTakesTheAudioBadge()
+    {
+        var episode = Item(CatalogItemTypes.Episode) with
+        {
+            AirDate = "2026-10-23",
+            OverlaySummary = new CatalogItemOverlay { Audio = "eac3" },
+            UserData = new WatchRollup { LastFileId = "2" },
+            Versions = [new FileVersion { FileId = "1", CodecAudio = "truehd" }, new FileVersion { FileId = "2", CodecAudio = "aac" }],
+        };
+
+        var sections = DetailFacts.InfoSections(episode);
+
+        Assert.DoesNotContain(sections[0].Rows, r => r.Label is "Season" or "Seasons" or "Episodes");
+        Assert.Equal(["TRUEHD", "EAC3"], sections.Where(s => s.Title.StartsWith("File", StringComparison.Ordinal)).Select(s => s.Rows.Single(r => r.Label == "Audio").Value));
+    }
+
+    [Fact]
+    public void Info_OfAMovieWithoutCastOrCrew_HasNoSuchSections()
+    {
+        var movie = Item(CatalogItemTypes.Movie) with { Versions = [new FileVersion { FileId = "1", Resolution = "1080p" }] };
+
+        Assert.Equal(["Details", "File"], DetailFacts.InfoSections(movie).Select(s => s.Title));
     }
 
     [Fact]

@@ -11,12 +11,6 @@ public sealed record DetailRating(string Name, string Display)
     public string AccessibleName => $"{Name} {Display}";
 }
 
-/// <summary>One part of the credits line: "Directed by" and the names, or a genre without a label.</summary>
-public sealed record DetailCreditPart(string? Label, string Text)
-{
-    public override string ToString() => Label is null ? Text : $"{Label} {Text}";
-}
-
 /// <summary>A cast or crew card: photo (initials without one), name and role or character.</summary>
 /// <param name="PersonId">The catalog person the card opens; null for one known only from TMDB.</param>
 public sealed record DetailPerson(string Name, string? Role, Uri? PhotoUrl, string? PersonId, bool IsCrew = false)
