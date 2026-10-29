@@ -226,7 +226,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   the posters); the sidebar keeps For You picked. The sidebar reads the rows again behind the ones shown. Above it all
   the same hero as Home's (`BrowseHero`, below), fed by the recommendation rows: the first card of the first row until a
   card is pointed at. The title, the subtitle and the taste profile stay, under the hero and above the rows, and scroll up
-  under its compact header with them; the hero's name is read as a level 2 heading, under the page's "For You". Its
+  under its compact header with them; the hero's name is not read as a heading, so the page's "For You" stays first. Its
   cards are library titles, so they carry the same logo, backdrop and details as Home's; one without a logo shows its
   name in large type, one without a backdrop only the page's fade.
 - Calendar (`CalendarPage`, the web's `pages/Calendar.tsx`): the title with the presets Following, Trending, All (the

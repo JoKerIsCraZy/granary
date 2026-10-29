@@ -57,6 +57,8 @@ public sealed partial class ForYouViewModel : ObservableObject
     private readonly ILogger<ForYouViewModel> _logger;
     private (string? ServerId, string? ProfileId)? _loadedFor;
     private CancellationTokenSource _run = new();
+    // The newest read's title of each card, by the card's id: rows kept on screen by a reload get its fresh picture addresses.
+    private readonly Dictionary<string, CatalogItem> _items = new(StringComparer.Ordinal);
 
     public ForYouViewModel(ISessionManager session, RecommendationsApi recommendations, ImageParameterCache images,
         INavigationService navigation, IUiDispatcher dispatcher, TimeProvider time, ILogger<ForYouViewModel> logger)
@@ -137,7 +139,7 @@ public sealed partial class ForYouViewModel : ObservableObject
     [RelayCommand]
     private void PointCard(MediaCard? card)
     {
-        if (card is not null && _session.ActiveServer is { } server && Rows.Select(r => r.ItemOf(card)).FirstOrDefault(i => i is not null) is { } item)
+        if (card is not null && _session.ActiveServer is { } server && _items.TryGetValue(card.Id, out var item))
         {
             Hero.Point(item, server.BaseUri);
         }
@@ -264,7 +266,8 @@ public sealed partial class ForYouViewModel : ObservableObject
     }
 
     // The same rows again stay as they are, scrolled where the viewer left them; others replace them. Either way the hero
-    // keeps its title while a row still has it, else shows the first card.
+    // follows the titles as read now (their picture addresses are signed anew): it keeps its title while a row still has
+    // it, else shows the first card.
     private void ShowRows(IReadOnlyList<RecommendationRowViewModel> rows)
     {
         if (rows.Count != Rows.Count || !rows.Zip(Rows).All(pair => pair.First.ShowsTheSameAs(pair.Second)))
@@ -275,7 +278,19 @@ public sealed partial class ForYouViewModel : ObservableObject
                 Rows.Add(row);
             }
         }
-        Hero.Follow([.. Rows.SelectMany(row => row.Cards.Select(row.ItemOf)).OfType<CatalogItem>()], _session.ActiveServer?.BaseUri);
+        _items.Clear();
+        foreach (var row in rows)
+        {
+            foreach (var card in row.Cards)
+            {
+                if (row.ItemOf(card) is { } item)
+                {
+                    _items.TryAdd(card.Id, item);
+                }
+            }
+        }
+        Hero.Follow([.. Rows.SelectMany(row => row.Cards).Select(card => _items.GetValueOrDefault(card.Id)).OfType<CatalogItem>()],
+            _session.ActiveServer?.BaseUri);
     }
 
     private void ShowTaste(TasteProfile? taste)
