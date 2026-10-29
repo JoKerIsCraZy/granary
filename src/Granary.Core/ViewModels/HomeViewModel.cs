@@ -67,10 +67,14 @@ public sealed partial class HomeViewModel : ObservableObject
         _time = time;
         _logger = logger;
         _changes = changes;
+        Hero = new HomeHeroViewModel(dispatcher, time);
     }
 
     [ObservableProperty]
     public partial IReadOnlyList<HomeRowViewModel> Rows { get; private set; } = [];
+
+    /// <summary>The title at the top of Home, following the card the pointer or the keyboard is on.</summary>
+    public HomeHeroViewModel Hero { get; }
 
     /// <summary>The first answer is on its way and there is nothing to show yet.</summary>
     [ObservableProperty]
@@ -139,6 +143,31 @@ public sealed partial class HomeViewModel : ObservableObject
         }
     }
 
+    /// <summary>The pointer or the keyboard came to a card: the top of Home follows it.</summary>
+    [RelayCommand]
+    private void PointCard(MediaCard? card)
+    {
+        if (card is not null && _session.ActiveServer is { } server && Rows.Select(r => r.ItemOf(card)).FirstOrDefault(i => i is not null) is { } item)
+        {
+            Hero.Point(HomeHeroTitle.From(item, server.BaseUri));
+        }
+    }
+
+    // The rows changed: the top of Home keeps its title while a row still has it, else shows the first card.
+    private void FollowRowsWithHero()
+    {
+        if (_session.ActiveServer is not { } server)
+        {
+            Hero.Reset(null);
+            return;
+        }
+        var items = Rows.SelectMany(row => row.Cards.Select(row.ItemOf)).OfType<CatalogItem>();
+        var item = (Hero.Shown is { } shown ? items.FirstOrDefault(i => i.ContentId == shown.Key) : null) ?? items.FirstOrDefault();
+        Hero.Reset(item is null ? null : HomeHeroTitle.From(item, server.BaseUri));
+    }
+
+    partial void OnRowsChanged(IReadOnlyList<HomeRowViewModel> value) => FollowRowsWithHero();
+
     /// <summary>
     /// Removes the card's title from Continue Watching and Next Up. The server drops the whole show from
     /// both rows, so every card of that series goes locally too.
@@ -181,6 +210,7 @@ public sealed partial class HomeViewModel : ObservableObject
             Rows = [.. Rows.Where(r => r.Cards.Count > 0)];
             ShowLoaded();
         }
+        FollowRowsWithHero();
     }
 
     // Other pages' rows change with a removal; these are changed in place below, and a reload of their own would only
@@ -349,7 +379,7 @@ public sealed partial class HomeViewModel : ObservableObject
                 ? new RelayCommand(() => _navigation.NavigateTo(AppRoute.Section,
                     new SectionRouteParameter(section.Id, section.Title, SectionType: section.SectionType)))
                 : null;
-            rows.Add(new HomeRowViewModel(section, cards, OpenCardCommand, exploreAll, RemoveCommand));
+            rows.Add(new HomeRowViewModel(section, cards, OpenCardCommand, exploreAll, RemoveCommand, PointCardCommand));
         }
         return rows;
     }
@@ -371,6 +401,7 @@ public sealed partial class HomeViewModel : ObservableObject
         {
             row.Take(next);
         }
+        FollowRowsWithHero();
     }
 
     private void ShowLoaded()

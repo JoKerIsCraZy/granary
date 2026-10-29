@@ -46,3 +46,5 @@ release's section is what its update says it changes (docs/release.md).
   and next episode, with the title and its poster shown; in a Watch Party they go to the room.
 - Switching pages and scrolling fast through posters are much smoother, and paging a grid on a wide window no longer
   closes the app.
+- Home opens with a large picture of a title, its logo, details and overview, and follows the card under the mouse or
+  in focus; while you scroll it folds into a slim header that stays at the top.
