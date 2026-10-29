@@ -67,14 +67,14 @@ public sealed partial class HomeViewModel : ObservableObject
         _time = time;
         _logger = logger;
         _changes = changes;
-        Hero = new HomeHeroViewModel(dispatcher, time);
+        Hero = new BrowseHeroViewModel(dispatcher, time);
     }
 
     [ObservableProperty]
     public partial IReadOnlyList<HomeRowViewModel> Rows { get; private set; } = [];
 
     /// <summary>The title at the top of Home, following the card the pointer or the keyboard is on.</summary>
-    public HomeHeroViewModel Hero { get; }
+    public BrowseHeroViewModel Hero { get; }
 
     /// <summary>The first answer is on its way and there is nothing to show yet.</summary>
     [ObservableProperty]
@@ -149,24 +149,13 @@ public sealed partial class HomeViewModel : ObservableObject
     {
         if (card is not null && _session.ActiveServer is { } server && Rows.Select(r => r.ItemOf(card)).FirstOrDefault(i => i is not null) is { } item)
         {
-            Hero.Point(HomeHeroTitle.From(item, server.BaseUri));
+            Hero.Point(item, server.BaseUri);
         }
     }
 
     // The rows changed: the top of Home keeps its title while a row still has it, else shows the first card.
-    private void FollowRowsWithHero()
-    {
-        if (_session.ActiveServer is not { } server)
-        {
-            Hero.Reset(null);
-            return;
-        }
-        var items = Rows.SelectMany(row => row.Cards.Select(row.ItemOf)).OfType<CatalogItem>().ToList();
-        HomeHeroTitle? Find(string key) => items.FirstOrDefault(i => i.ContentId == key) is { } found ? HomeHeroTitle.From(found, server.BaseUri) : null;
-        var title = (Hero.Shown is { } shown ? Find(shown.Key) : null)
-            ?? (items.Count > 0 ? HomeHeroTitle.From(items[0], server.BaseUri) : null);
-        Hero.Reset(title, Find);
-    }
+    private void FollowRowsWithHero() =>
+        Hero.Follow([.. Rows.SelectMany(row => row.Cards.Select(row.ItemOf)).OfType<CatalogItem>()], _session.ActiveServer?.BaseUri);
 
     partial void OnRowsChanged(IReadOnlyList<HomeRowViewModel> value) => FollowRowsWithHero();
 

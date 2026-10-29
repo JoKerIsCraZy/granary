@@ -56,12 +56,6 @@ public sealed partial class HomePage : Page, IStartupContent
     // Instance methods because x:Bind function bindings call them on the page.
     public Visibility HasText(string text) => string.IsNullOrEmpty(text) ? Visibility.Collapsed : Visibility.Visible;
 
-    // With a hero, the rows' view begins at the compact header and the rows a fold's length below it, so at rest they start
-    // under the full hero and scroll up under the header as it folds; without one (loading, empty, an error), as other pages.
-    public Thickness RowsViewMargin(HomeHeroTitle? hero) => new(0, hero is null ? 0 : HomeHeroLayout.CompactHeight, 0, 0);
-
-    public Thickness RowsPadding(HomeHeroTitle? hero) => new(48, hero is null ? 32 : HomeHeroLayout.CollapseDistance, 48, 48);
-
     public Style StatusStyle(bool hasError) =>
         (Style)Application.Current.Resources[hasError ? "SiloBodyTextStyle" : "SiloRowTitleTextStyle"];
 }

@@ -1,11 +1,11 @@
 namespace Granary.Core.ViewModels;
 
 /// <summary>
-/// The sizes of Home's hero and how it folds as the rows scroll (docs/ui-design.md, Home). The fold runs on the compositor as
+/// The sizes of the hero of a page of rows (Home, For You) and how it folds as the rows scroll (docs/ui-design.md, Home). The fold runs on the compositor as
 /// expressions over the scroll's translation; their numbers are named parameters, so no number is ever written into the
 /// expression text in the user's culture (a German "0,4375" would not parse).
 /// </summary>
-public static class HomeHeroLayout
+public static class BrowseHeroLayout
 {
     /// <summary>The hero's height at rest; its backdrop reaches down behind the first row.</summary>
     public const double RestHeight = 440;
@@ -88,7 +88,7 @@ public static class HomeHeroLayout
         : BackdropStep.None;
 }
 
-/// <summary>What <see cref="HomeHeroLayout.StepFor"/> asks of the backdrop shown.</summary>
+/// <summary>What <see cref="BrowseHeroLayout.StepFor"/> asks of the backdrop shown.</summary>
 public enum BackdropStep
 {
     None,

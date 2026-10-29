@@ -4,7 +4,7 @@ using Granary.Core.ViewModels;
 
 namespace Granary.Tests.Browse;
 
-public sealed partial class HomeHeroLayoutTests
+public sealed partial class BrowseHeroLayoutTests
 {
     [GeneratedRegex(@"\d[.,]\d")]
     private static partial Regex DecimalNumber();
@@ -16,9 +16,9 @@ public sealed partial class HomeHeroLayoutTests
         try
         {
             CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("de-DE");
-            var german = HomeHeroLayout.Expressions.Select(e => e.Text).ToList();
+            var german = BrowseHeroLayout.Expressions.Select(e => e.Text).ToList();
             CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
-            var invariant = HomeHeroLayout.Expressions.Select(e => e.Text).ToList();
+            var invariant = BrowseHeroLayout.Expressions.Select(e => e.Text).ToList();
 
             Assert.Equal(invariant, german);
             Assert.All(german, text => Assert.DoesNotMatch(DecimalNumber(), text));
@@ -32,17 +32,17 @@ public sealed partial class HomeHeroLayoutTests
     [Fact]
     public void EveryParameterAnExpressionNames_HasAValue()
     {
-        foreach (var (_, text) in HomeHeroLayout.Expressions)
+        foreach (var (_, text) in BrowseHeroLayout.Expressions)
         {
-            foreach (var name in HomeHeroLayout.Parameters.Keys.Where(name => text.Contains(name, StringComparison.Ordinal)))
+            foreach (var name in BrowseHeroLayout.Parameters.Keys.Where(name => text.Contains(name, StringComparison.Ordinal)))
             {
-                Assert.True(float.IsFinite(HomeHeroLayout.Parameters[name]), name);
+                Assert.True(float.IsFinite(BrowseHeroLayout.Parameters[name]), name);
             }
         }
-        Assert.Equal(150f, HomeHeroLayout.Parameters["distance"]);
-        Assert.Equal(1 - 45f / 80, HomeHeroLayout.Parameters["shrink"], 0.0001f);
-        Assert.Equal(35f, HomeHeroLayout.Parameters["rise"], 0.0001f);
-        Assert.Equal(290f, HomeHeroLayout.Parameters["cut"]);
+        Assert.Equal(150f, BrowseHeroLayout.Parameters["distance"]);
+        Assert.Equal(1 - 45f / 80, BrowseHeroLayout.Parameters["shrink"], 0.0001f);
+        Assert.Equal(35f, BrowseHeroLayout.Parameters["rise"], 0.0001f);
+        Assert.Equal(290f, BrowseHeroLayout.Parameters["cut"]);
     }
 
     [Theory]
@@ -53,7 +53,7 @@ public sealed partial class HomeHeroLayoutTests
     [InlineData(0, null, 0, 1000, 0)]
     public void AWheelNotch_ScrollsFromWhereTheLastOneWasGoing_WithinTheRows(double offset, double? pending, int delta, double scrollable, double expected)
     {
-        Assert.Equal(expected, HomeHeroLayout.WheelTarget(offset, pending, delta, scrollable));
+        Assert.Equal(expected, BrowseHeroLayout.WheelTarget(offset, pending, delta, scrollable));
     }
 
     [Theory]
@@ -67,7 +67,7 @@ public sealed partial class HomeHeroLayoutTests
     [InlineData(false, false, false, 1150, 1200, BackdropStep.None)]
     public void AKnownWidth_LoadsAWaitingPicture_EvenDuringItsFade(bool waits, bool folded, bool fading, int decoded, int needed, BackdropStep step)
     {
-        Assert.Equal(step, HomeHeroLayout.StepFor(waits, folded, fading, decoded, needed));
+        Assert.Equal(step, BrowseHeroLayout.StepFor(waits, folded, fading, decoded, needed));
     }
 
     [Theory]
@@ -77,7 +77,7 @@ public sealed partial class HomeHeroLayoutTests
     [InlineData(0, 0)]
     public void TheBackdrop_IsDecodedAsWideAsItIsShown_CutToTheHerosHeight(double boxWidth, int expected)
     {
-        Assert.Equal(expected, HomeHeroLayout.BackdropDecodeWidth(boxWidth));
+        Assert.Equal(expected, BrowseHeroLayout.BackdropDecodeWidth(boxWidth));
     }
 
     [Theory]
@@ -87,7 +87,7 @@ public sealed partial class HomeHeroLayoutTests
     [InlineData(0, 900, true)]
     public void AWiderBackdrop_IsDecodedAgain_OnlyWhenItGrewNotably(int decoded, int needed, bool again)
     {
-        Assert.Equal(again, HomeHeroLayout.DecodesAgain(decoded, needed));
+        Assert.Equal(again, BrowseHeroLayout.DecodesAgain(decoded, needed));
     }
 }
 

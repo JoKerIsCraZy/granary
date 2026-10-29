@@ -2,15 +2,15 @@
 <!--
     The top of Home (docs/ui-design.md, Home): the title the pointer or the keyboard is on, with its backdrop on the right,
     fading into the page toward the text and the rows. It stays at the top while the rows scroll, folding to a compact
-    header (HomeHero.FollowScroll).
+    header (BrowseHero.FollowScroll).
 -->
 <UserControl
-    x:Class="Granary.App.Controls.HomeHero"
+    x:Class="Granary.App.Controls.BrowseHero"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     VerticalAlignment="Top">
 
-    <!-- Heights from HomeHeroLayout; a wheel or a touch drag on the header scrolls the rows. -->
+    <!-- Heights from BrowseHeroLayout; a wheel or a touch drag on the header scrolls the rows. -->
     <Grid x:Name="Root" Background="Transparent" PointerWheelChanged="OnWheel"
           ManipulationMode="TranslateY,TranslateInertia" ManipulationStarted="OnDragStarting" ManipulationDelta="OnDrag">
         <Grid x:Name="BackdropBox" HorizontalAlignment="Right" IsHitTestVisible="False" AutomationProperties.AccessibilityView="Raw">
