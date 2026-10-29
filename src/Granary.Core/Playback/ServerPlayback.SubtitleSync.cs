@@ -81,31 +81,59 @@ public sealed partial class ServerPlayback
             return;
         }
         SubtitleTimingChanged?.Invoke(this, key);
-        int? showing = null;
+        Task<int?>? showing = null;
         foreach (var item in plan.Subtitle.Inventory.Where(i => i.SyncKey == key))
         {
-            if (_loadedSubtitles.Remove(item.TrackId, out var read) && item.TrackId == SubtitleTrack && read.IsCompletedSuccessfully)
+            if (_loadedSubtitles.Remove(item.TrackId, out var read) && item.TrackId == SubtitleTrack)
             {
-                showing = read.Result;
+                showing = read;
             }
         }
-        if (showing is { } stream && plan.Subtitle.Mode != SubtitleModes.BurnIn)
+        if (showing is not null && plan.Subtitle.Mode != SubtitleModes.BurnIn)
         {
-            _ = ReloadSubtitleAsync(key, stream, _loadId);
+            _ = ReloadSubtitleAsync(key, showing, _loadId);
         }
     }
 
-    private async Task ReloadSubtitleAsync(string key, int oldStream, long loadId)
+    // A read still on its way may bring the cues from before the change: it is waited for, then the subtitle is read again
+    // through a route of its own, so mpv reads it anew. The old track goes whatever shows by then (another pick, none, or a
+    // read that failed), as long as its load plays; the screen hears of the new cues only when they show.
+    private async Task ReloadSubtitleAsync(string key, Task<int?> previous, long loadId)
+    {
+        try
+        {
+            await ReloadSubtitleCoreAsync(key, previous, loadId);
+        }
+        catch (Exception ex)
+        {
+            // Subtitles are not playback: the stream plays on with what it has.
+            _logger.LogError(ex, "Reading the subtitle again failed");
+        }
+    }
+
+    private async Task ReloadSubtitleCoreAsync(string key, Task<int?> previous, long loadId)
     {
         _logger.LogInformation("Reading the subtitle again: its timing changed");
+        int? oldStream = await previous;
+        if (_stopping || loadId != _loadId)
+        {
+            // That load ended, and its tracks with it.
+            return;
+        }
         await ShowSubtitlesAsync(loadId);
-        if (_stopping || loadId != _loadId || SubtitleSyncKey != key || SubtitleTrack is not { } track)
+        if (_stopping || loadId != _loadId)
         {
             return;
         }
-        if (_loadedSubtitles.TryGetValue(track, out var read) && read.IsCompletedSuccessfully && read.Result is { } stream && stream != oldStream)
+        int? newStream = SubtitleTrack is { } track && _loadedSubtitles.TryGetValue(track, out var read) && read.IsCompletedSuccessfully
+            ? read.Result
+            : null;
+        if (oldStream is { } old && old != newStream)
         {
-            _engine.RemoveSubtitle(oldStream);
+            _engine.RemoveSubtitle(old);
+        }
+        if (newStream is { } stream && stream != oldStream && SubtitleSyncKey == key)
+        {
             SubtitleCuesReloaded?.Invoke(this, key);
         }
     }

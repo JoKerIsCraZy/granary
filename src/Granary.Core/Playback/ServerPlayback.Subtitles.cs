@@ -309,6 +309,11 @@ public sealed partial class ServerPlayback
             // Another load or another pick by now; that one shows its own.
             return;
         }
+        if (!_loadedSubtitles.TryGetValue(selected.TrackId, out var current) || current != read)
+        {
+            // Its timing changed while it was read: the read after that one shows (ReloadSubtitleAsync).
+            return;
+        }
         if (added is not { } stream)
         {
             _logger.LogWarning("The subtitle {Track} could not be read", selected.TrackId);

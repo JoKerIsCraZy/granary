@@ -220,28 +220,43 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
     internal string? PlayingAudioStream => _mpv.GetString("current-tracks/audio/id");
 
     // sub-add reads the whole file before it returns; "auto" adds it without selecting it, so a file that arrives after
-    // another load cannot take over that one's subtitles. Its stream number is read back from the track list.
+    // another load cannot take over that one's subtitles. Its stream number is read back from the track list: the track of
+    // that file that was not there before, as a file read again (its timing changed) is a track beside the old one.
     public Task<int?> AddSubtitleAsync(Uri url, long loadId)
     {
         ArgumentNullException.ThrowIfNull(url);
         string target = url.IsFile ? url.LocalPath : url.OriginalString;
         return Task.Run(() =>
         {
-            if (!IsCurrentLoad(loadId) || _mpv.Command("sub-add", target, "auto") < 0 || !IsCurrentLoad(loadId))
+            if (!IsCurrentLoad(loadId))
             {
                 return null;
             }
-            int? stream = null;
-            long count = _mpv.GetInt64("track-list/count") ?? 0;
-            for (long i = 0; i < count; i++)
+            var before = SubtitleTracksOf(target);
+            if (_mpv.Command("sub-add", target, "auto") < 0 || !IsCurrentLoad(loadId))
             {
-                if (_mpv.GetString($"track-list/{i}/type") == "sub" && _mpv.GetString($"track-list/{i}/external-filename") == target)
-                {
-                    stream = (int?)_mpv.GetInt64($"track-list/{i}/id");
-                }
+                return null;
             }
-            return stream;
+            var after = SubtitleTracksOf(target);
+            int? added = after.Where(id => !before.Contains(id)).Select(id => (int?)id).Max();
+            return added ?? (after.Count > 0 ? after.Max() : null);
         });
+    }
+
+    // The ids of the subtitle tracks read in from target.
+    private List<int> SubtitleTracksOf(string target)
+    {
+        var ids = new List<int>();
+        long count = _mpv.GetInt64("track-list/count") ?? 0;
+        for (long i = 0; i < count; i++)
+        {
+            if (_mpv.GetString($"track-list/{i}/type") == "sub" && _mpv.GetString($"track-list/{i}/external-filename") == target
+                && _mpv.GetInt64($"track-list/{i}/id") is { } id)
+            {
+                ids.Add((int)id);
+            }
+        }
+        return ids;
     }
 
     public void RemoveSubtitle(int stream)
