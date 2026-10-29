@@ -1,6 +1,8 @@
+using System.Net;
 using Granary.Core.Api.Requests;
 using Granary.Core.ViewModels;
 using Granary.Tests.Fakes;
+using Granary.Tests.Profiles;
 
 namespace Granary.Tests.Browse;
 
@@ -85,6 +87,45 @@ public sealed class RequestsHeroTests
         Assert.Equal("Got It", hub.Hero.Shown?.Heading);
         _harness.Clock.Advance(BrowseHeroViewModel.SettleTime);
         Assert.Equal("Asked For", hub.Hero.Shown?.Heading);
+    }
+
+    [Fact]
+    public async Task AnotherProfile_HidesTheHero_UntilItsOwnRowsCome()
+    {
+        var hub = await LoadedAsync();
+        Point(hub, "Got It");
+        var rows = new TaskCompletionSource();
+        _harness.Answer("api/v2/requests/discover", async () =>
+        {
+            await rows.Task;
+            return await ScriptedSilo.Json(HttpStatusCode.OK, """
+                { "items": [ { "key": "trending", "title": "Trending", "page": 1, "total_pages": 1, "total_results": 1,
+                  "results": [ { "tmdb_id": 20, "media_type": "movie", "title": "Theirs", "year": 2024, "availability": "none",
+                                 "request": { "requestable": true } } ] } ] }
+                """)();
+        });
+
+        _harness.Session.ProfileId = "8";
+        var loading = hub.ActivateAsync(isReturn: false);
+        Assert.Null(hub.Hero.Shown);
+        rows.SetResult();
+        await loading;
+
+        Assert.Equal("Theirs", hub.Hero.Shown?.Heading);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("wide.jpg")]
+    [InlineData("https://elsewhere.example/wide.jpg")]
+    public void ATitleWithoutAUsableBackdropPath_ShowsNoBackdrop(string? path)
+    {
+        var title = BrowseHeroTitle.Of(new RequestMediaResult { TmdbId = 5, MediaType = "movie", Title = "Five", BackdropPath = path,
+            Request = new RequestMediaState { Requestable = true } });
+
+        Assert.Equal(("tmdb:movie:5", "Five", "Movie"), (title.Key, title.Heading, title.Meta));
+        Assert.Null(title.BackdropUrl);
     }
 
     [Fact]

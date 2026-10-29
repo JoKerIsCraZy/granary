@@ -36,11 +36,18 @@ public sealed record BrowseHeroTitle(string Key, string Heading, string Meta, st
     public static BrowseHeroTitle Of(RequestMediaResult result)
     {
         ArgumentNullException.ThrowIfNull(result);
+        return Of(result, RequestCards.StateText(result.Request, result.Availability));
+    }
+
+    /// <summary>As <see cref="Of(RequestMediaResult)"/>, saying where its request stands now (<paramref name="state"/>, "Pending").</summary>
+    public static BrowseHeroTitle Of(RequestMediaResult result, string? state)
+    {
+        ArgumentNullException.ThrowIfNull(result);
         string?[] parts =
         [
             result.Year is int year and > 0 ? year.ToString(CultureInfo.InvariantCulture) : null,
             result.MediaType == "series" ? "Series" : "Movie",
-            RequestCards.StateText(result.Request, result.Availability),
+            state,
         ];
         return new BrowseHeroTitle(
             RequestCards.IdOf(result),

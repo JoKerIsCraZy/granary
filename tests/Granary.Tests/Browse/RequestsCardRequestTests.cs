@@ -86,6 +86,29 @@ public sealed class RequestsCardRequestTests
     }
 
     [Fact]
+    public async Task ARequestFromACard_PutsItsStateInTheHerosLine()
+    {
+        _harness.Silo.On(HttpMethod.Post, CreatePath, ScriptedSilo.Json(HttpStatusCode.Created, Created));
+        var hub = await LoadedAsync();
+        Assert.Equal("2026 · Movie", hub.Hero.Shown?.Meta);
+
+        Assert.True(await _actions!.RequestAsync(Card(hub)));
+
+        Assert.Equal(("New One", "2026 · Movie · Pending"), (hub.Hero.Shown?.Heading, hub.Hero.Shown?.Meta));
+    }
+
+    [Fact]
+    public async Task AFailedRequestFromACard_LeavesTheHerosLine()
+    {
+        _harness.Silo.On(HttpMethod.Post, CreatePath, ScriptedSilo.Problem(502, "bad_gateway"));
+        var hub = await LoadedAsync();
+
+        Assert.False(await _actions!.RequestAsync(Card(hub)));
+
+        Assert.Equal("2026 · Movie", hub.Hero.Shown?.Meta);
+    }
+
+    [Fact]
     public async Task AFailedRequestFromACard_SaysSoOnDiscover()
     {
         _harness.Silo.On(HttpMethod.Post, CreatePath, ScriptedSilo.Problem(502, "bad_gateway"));

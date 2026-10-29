@@ -22,7 +22,8 @@ public sealed record MediaCardState(bool IsWatched, bool IsFavorite, bool InWatc
     string? StatusBadge = null, string? StatusBadgeOver = null);
 
 /// <summary>How a card's Request answered, in the web's toast words.</summary>
-public sealed record CardRequestAnswer(string CardId, string Title, bool Succeeded)
+/// <param name="State">The request's state in words ("Pending") once it went through; null when it failed or the server named none.</param>
+public sealed record CardRequestAnswer(string CardId, string Title, bool Succeeded, string? State = null)
 {
     public string Text => Succeeded ? "Request submitted" : "Failed to submit request";
 }
@@ -336,7 +337,7 @@ public sealed class MediaCardActions
             string? badge = RequestCards.Badge(request);
             if (StillOwner(owners, () => _requested[card.Id] = (offer, badge)))
             {
-                RequestAnswered?.Invoke(this, new CardRequestAnswer(card.Id, card.Title, Succeeded: true));
+                RequestAnswered?.Invoke(this, new CardRequestAnswer(card.Id, card.Title, Succeeded: true, RequestCards.StateText(request)));
             }
             return true;
         }
