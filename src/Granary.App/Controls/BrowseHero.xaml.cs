@@ -56,6 +56,9 @@ public sealed partial class BrowseHero : UserControl
         _fadeDone.IsRepeating = false;
         _fadeDone.Tick += (_, _) => FinishFade();
         SizeChanged += (_, e) => OnWidthChanged(e.NewSize.Width);
+        // A title shown while the page was out of the window gets its pictures now: right after Loaded, not in it, as
+        // setting them while the page was being put in the window overflowed the stack in WinUI.
+        Loaded += (_, _) => DispatcherQueue.TryEnqueue(ShowPictures);
         Visibility = Visibility.Collapsed;
     }
 
@@ -153,7 +156,15 @@ public sealed partial class BrowseHero : UserControl
         MetaText.Visibility = title.Meta.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
         OverviewText.Text = title.Overview ?? "";
         OverviewText.Visibility = title.Overview is null ? Visibility.Collapsed : Visibility.Visible;
-        if (title.Key == _picturesOf)
+        ShowPictures();
+    }
+
+    // The logo and the backdrop of the title shown. Only while the hero is in the window: a cached page shows its title
+    // again before it is back in the window (Resume from OnNavigatedTo), and a picture set then never raised ImageOpened,
+    // so the logo and the backdrop stayed hidden behind the name and the blur. Loaded calls this again.
+    private void ShowPictures()
+    {
+        if (_shown is not { } title || !IsLoaded || title.Key == _picturesOf)
         {
             // The same title loaded again (its picture addresses are signed anew): the pictures shown stay.
             return;
