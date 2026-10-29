@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using Granary.Core.Abstractions;
 using Granary.Core.Api.Playback;
 using Granary.Core.Api.Subtitles;
 using Microsoft.Extensions.Logging;
@@ -114,13 +115,16 @@ public sealed partial class ServerPlayback
     private async Task ReloadSubtitleCoreAsync(string key, Task<int?> previous, long loadId)
     {
         _logger.LogInformation("Reading the subtitle again: its timing changed");
-        int? oldStream = await previous;
+        // mpv answers on a thread of its own; what plays is changed on the UI thread.
+        int? oldStream = await previous.ConfigureAwait(false);
+        await _dispatcher.ResumeOnUi();
         if (_stopping || loadId != _loadId)
         {
             // That load ended, and its tracks with it.
             return;
         }
-        await ShowSubtitlesAsync(loadId);
+        await ShowSubtitlesAsync(loadId).ConfigureAwait(false);
+        await _dispatcher.ResumeOnUi();
         if (_stopping || loadId != _loadId)
         {
             return;

@@ -109,6 +109,22 @@ public sealed class PlayerViewModelSubtitleSyncTests : IDisposable
     }
 
     [Fact]
+    public async Task ASecondPress_WhileASyncIsAsked_IsIgnored()
+    {
+        var viewModel = await ShowingGermanAsync();
+        var gate = new TaskCompletionSource();
+        _silo.On(HttpMethod.Post, KeyPath, After(gate.Task, ScriptedSilo.Json(HttpStatusCode.Accepted, One(State(Key, Job("j1", "pending"))))));
+
+        var first = viewModel.SyncSubtitleToAudioCommand.ExecuteAsync(null);
+        Assert.False(viewModel.SyncSubtitleToAudioCommand.CanExecute(null));
+        viewModel.SyncSubtitleToAudioCommand.Execute(null);
+        gate.SetResult();
+        await first;
+
+        Assert.Single(_silo.SentTo(HttpMethod.Post, KeyPath));
+    }
+
+    [Fact]
     public async Task OpeningTheMenu_ReadsTheSubtitlesAgain()
     {
         var viewModel = await ShowingGermanAsync();
