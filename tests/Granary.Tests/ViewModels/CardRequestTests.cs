@@ -263,6 +263,72 @@ public sealed class CardRequestTests
         Assert.True(actions.CanRequest(Matrix));
     }
 
+    [Fact]
+    public async Task AnotherProfile_CancelsTheRequestOnItsWay()
+    {
+        var reached = new TaskCompletionSource();
+        _silo.OnCancellable(HttpMethod.Post, CreatePath, async cancellationToken =>
+        {
+            reached.SetResult();
+            await Task.Delay(Timeout.Infinite, cancellationToken);
+            return await ScriptedSilo.Json(HttpStatusCode.Created, Pending)();
+        });
+        var actions = await CreateAsync();
+
+        var request = actions.RequestAsync(Matrix);
+        await reached.Task;
+        _session.ProfileId = "8";
+        _session.RaiseChanged();
+
+        Assert.False(await request);
+        Assert.False(actions.IsRequesting(Matrix));
+        Assert.True(actions.CanRequest(Matrix));
+        Assert.Empty(_answers);
+    }
+
+    // The account read again, or the server's entry saved again, says Changed with the same server and profile: a request
+    // the server may already have taken is neither let go nor offered again.
+    [Fact]
+    public async Task TheSameProfileReadAgain_KeepsTheRequestOnItsWay_AndWhatItMade()
+    {
+        var release = new TaskCompletionSource();
+        _silo.OnCancellable(HttpMethod.Post, CreatePath, async cancellationToken =>
+        {
+            await release.Task.WaitAsync(cancellationToken);
+            return await ScriptedSilo.Json(HttpStatusCode.Created, Pending)();
+        });
+        var actions = await CreateAsync();
+
+        var request = actions.RequestAsync(Matrix);
+        _session.RaiseChanged();
+        Assert.True(actions.IsRequesting(Matrix));
+        release.SetResult();
+
+        Assert.True(await request);
+        Assert.Equal("PENDING", actions.StatusBadgeOf(Matrix));
+        Assert.True(Assert.Single(_answers).Succeeded);
+
+        _session.RaiseChanged();
+        Assert.False(actions.CanRequest(Matrix));
+        Assert.Equal("PENDING", actions.StatusBadgeOf(Matrix));
+        Assert.False(await actions.RequestAsync(Matrix));
+        Assert.Single(_silo.SentTo(HttpMethod.Post, CreatePath));
+    }
+
+    [Fact]
+    public async Task AnotherServer_LetsWhatWasRequestedGo()
+    {
+        _silo.On(HttpMethod.Post, CreatePath, ScriptedSilo.Json(HttpStatusCode.Created, Pending));
+        var actions = await CreateAsync();
+        await actions.RequestAsync(Matrix);
+
+        _session.ActiveServer = ScriptedSilo.Entry("srv2", new Uri("https://other.example/"));
+        _session.RaiseChanged();
+
+        Assert.True(actions.CanRequest(Matrix));
+        Assert.Null(actions.StatusBadgeOf(Matrix));
+    }
+
     [Theory]
     [InlineData("cancelled")]
     [InlineData("declined")]

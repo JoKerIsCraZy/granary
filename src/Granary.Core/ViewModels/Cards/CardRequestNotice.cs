@@ -100,7 +100,22 @@ public sealed partial class CardRequestNotice : ObservableObject
         _timer?.Dispose();
         int shown = ++_shown;
         _failedCard = answer.CardId;
-        Text = answer.Text;
+        if (Text.Length > 0)
+        {
+            // The same words again are said again: gone first, back on the next turn, so screen readers hear a change.
+            Text = "";
+            _dispatcher!.Post(() =>
+            {
+                if (shown == _shown)
+                {
+                    Text = answer.Text;
+                }
+            });
+        }
+        else
+        {
+            Text = answer.Text;
+        }
         _timer = _time.CreateTimer(_ => _dispatcher!.Post(() =>
         {
             if (shown == _shown)
