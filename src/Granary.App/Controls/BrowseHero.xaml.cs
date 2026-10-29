@@ -30,7 +30,7 @@ public sealed partial class BrowseHero : UserControl
     private static readonly TimeSpan Crossfade = TimeSpan.FromMilliseconds(350);
     private static readonly TimeSpan LogoFade = TimeSpan.FromMilliseconds(200);
 
-    private readonly Layer[] _layers;
+    private readonly BackdropLayer[] _layers;
     private readonly CrossfadeLayers<BrowseHeroTitle> _crossfade = new();
     private readonly DispatcherQueueTimer _fadeDone;
     private CancellationTokenSource? _logoLoading;
@@ -45,7 +45,7 @@ public sealed partial class BrowseHero : UserControl
         InitializeComponent();
         Root.Height = BrowseHeroLayout.RestHeight;
         BottomFade.Height = BrowseHeroLayout.RestHeight * BrowseHeroLayout.FadeShare;
-        _layers = [new Layer(LayerA, BlurA, ArtA), new Layer(LayerB, BlurB, ArtB)];
+        _layers = [new BackdropLayer(LayerA, BlurA, ArtA), new BackdropLayer(LayerB, BlurB, ArtB)];
         foreach (var element in new UIElement[] { LayerA, LayerB, ArtA, ArtB })
         {
             element.OpacityTransition = new ScalarTransition { Duration = Crossfade };
@@ -177,7 +177,7 @@ public sealed partial class BrowseHero : UserControl
     // The name shows until the logo is there; a logo that fails leaves the name.
     private void ShowLogo(Uri? url)
     {
-        Replace(ref _logoLoading);
+        BackdropLayer.Replace(ref _logoLoading);
         Logo.Opacity = 0;
         Logo.Source = Artwork.Load(url, LogoDecodeWidth, _logoLoading!.Token);
         HeadingText.Opacity = 1;
@@ -241,7 +241,7 @@ public sealed partial class BrowseHero : UserControl
             layer.Grid.Opacity = 0;
             layer.Clear();
         }
-        Replace(ref _logoLoading, renew: false);
+        BackdropLayer.Replace(ref _logoLoading, renew: false);
         Logo.Source = null;
         _picturesOf = null;
     }
@@ -333,63 +333,5 @@ public sealed partial class BrowseHero : UserControl
     {
         _scrollTarget = offset;
         scroller.ChangeView(null, offset, null, disableAnimation: true);
-    }
-
-    private static void Replace(ref CancellationTokenSource? loading, bool renew = true)
-    {
-        loading?.Cancel();
-        loading?.Dispose();
-        loading = renew ? new CancellationTokenSource() : null;
-    }
-
-    /// <summary>One backdrop layer: its blur, its picture, and what it is loading.</summary>
-    private sealed class Layer(Grid grid, Image blur, Image art)
-    {
-        private CancellationTokenSource? _loading;
-
-        public Grid Grid { get; } = grid;
-
-        public BrowseHeroTitle? Title { get; private set; }
-
-        /// <summary>The picture waits: the width was not known yet, or the hero was folded.</summary>
-        public bool WaitsForArt { get; private set; }
-
-        public int DecodedWidth { get; private set; }
-
-        public void Fill(BrowseHeroTitle title, int width, bool folded)
-        {
-            Clear();
-            Title = title;
-            blur.Source = Thumbhashes.Get(title.BackdropThumbhash);
-            WaitsForArt = title.BackdropUrl is not null;
-            if (!folded)
-            {
-                LoadArt(width);
-            }
-        }
-
-        public void LoadArt(int width)
-        {
-            if (Title?.BackdropUrl is not { } url || width <= 0)
-            {
-                return;
-            }
-            Replace(ref _loading);
-            art.Opacity = 0;
-            art.Source = Artwork.Load(url, width, _loading!.Token);
-            DecodedWidth = width;
-            WaitsForArt = false;
-        }
-
-        public void Clear()
-        {
-            Replace(ref _loading, renew: false);
-            blur.Source = null;
-            art.Source = null;
-            art.Opacity = 0;
-            Title = null;
-            WaitsForArt = false;
-            DecodedWidth = 0;
-        }
     }
 }
