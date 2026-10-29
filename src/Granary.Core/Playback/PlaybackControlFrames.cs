@@ -45,6 +45,20 @@ public sealed record PlaybackControlCommand(string CommandId, string Name, JsonE
     }
 }
 
+/// <summary>An event the server sent the player on its control socket: something about the file changed. Not answered.</summary>
+/// <param name="Name">One of <see cref="PlaybackControlEvents"/>, or one this player does not follow.</param>
+public sealed record PlaybackControlEvent(string Name, JsonElement Payload);
+
+/// <summary>The event names the player follows (the web's <c>realtime-protocol.ts</c>).</summary>
+public static class PlaybackControlEvents
+{
+    /// <summary>A subtitle of the file was retimed: its URL serves the new timing.</summary>
+    public const string SubtitleTimingChanged = "subtitle_timing_changed";
+
+    /// <summary>A sync job of one of the file's subtitles moved on: queued, a step of its progress, or how it ended.</summary>
+    public const string SubtitleSyncUpdated = "subtitle_sync_updated";
+}
+
 /// <summary>The command names of the control socket (the web's <c>realtime-protocol.ts</c>).</summary>
 public static class PlaybackControlCommands
 {
@@ -89,6 +103,27 @@ public static class PlaybackControlFrames
             var payload = root.TryGetProperty("payload", out var value) && value.ValueKind == JsonValueKind.Object ? value.Clone() : default;
             string? issuedBy = root.TryGetProperty("issued_by", out var issuer) && issuer.ValueKind == JsonValueKind.Object ? String(issuer, "kind") : null;
             return new PlaybackControlCommand(commandId, name, payload, issuedBy);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>The event a frame carries for <paramref name="sessionId"/>; null for a command, another session's frame, or anything malformed.</summary>
+    public static PlaybackControlEvent? ParseEvent(string text, string sessionId)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(text);
+            var root = document.RootElement;
+            if (root.ValueKind != JsonValueKind.Object || String(root, "type") != "event" || String(root, "session_id") != sessionId
+                || String(root, "name") is not { Length: > 0 } name)
+            {
+                return null;
+            }
+            var payload = root.TryGetProperty("payload", out var value) && value.ValueKind == JsonValueKind.Object ? value.Clone() : default;
+            return new PlaybackControlEvent(name, payload);
         }
         catch (JsonException)
         {

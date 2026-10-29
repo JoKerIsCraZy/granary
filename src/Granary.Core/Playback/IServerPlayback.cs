@@ -97,6 +97,21 @@ public interface IServerPlayback : IAsyncDisposable
     /// </summary>
     void ShowAddedSubtitle(string storedSubtitleId);
 
+    /// <summary>
+    /// The timing and sync of the playing file's syncable subtitles (docs/api-contract.md, 9.8); null where the app does not
+    /// sync. Its timing changes reach the screen through <see cref="SubtitleTimingChanged"/> and <see cref="SubtitleCuesReloaded"/>.
+    /// </summary>
+    SubtitleSyncTracker? SubtitleSync { get; }
+
+    /// <summary>The sync key of the subtitle that shows; null for none, or one the server cannot sync.</summary>
+    string? SubtitleSyncKey { get; }
+
+    /// <summary>Raised on the UI thread with a sync key whose timing changed, before the subtitle that shows reads its new cues.</summary>
+    event EventHandler<string>? SubtitleTimingChanged;
+
+    /// <summary>Raised on the UI thread once the subtitle that shows reads with its new timing.</summary>
+    event EventHandler<string>? SubtitleCuesReloaded;
+
     /// <summary>The profile's subtitle delay in milliseconds, positive later; the setting's value until changed here.</summary>
     int SubtitleDelayMs { get; }
 

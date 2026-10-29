@@ -238,6 +238,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         playback.MarkersChanged += OnMarkersChanged;
         playback.TrickplayChanged += OnTrickplayChanged;
         playback.NoticeRaised += OnNoticeRaised;
+        FollowSubtitleSync(playback);
         BeginWatchParty(request);
         await playback.StartAsync(request, CancellationToken.None);
     }
@@ -384,6 +385,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         playback.MarkersChanged -= OnMarkersChanged;
         playback.TrickplayChanged -= OnTrickplayChanged;
         playback.NoticeRaised -= OnNoticeRaised;
+        ForgetSubtitleSync(playback);
         ResetNotice();
         AudioTracks = [];
         HasSubtitleMenu = false;
@@ -548,6 +550,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         Leave();
         ResetNextUp();
         StopPlaybackInfo();
+        _syncFeedback?.Dispose();
         _engine.StateChanged -= OnStateChanged;
         _engine.Ended -= OnEnded;
     }

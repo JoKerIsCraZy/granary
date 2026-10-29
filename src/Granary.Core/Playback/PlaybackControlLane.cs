@@ -54,8 +54,12 @@ public sealed class PlaybackControlLane : IAsyncDisposable
     /// <summary>The run that keeps the lane, for a caller that waits for it to end.</summary>
     public Task Running { get; private set; } = Task.CompletedTask;
 
-    /// <summary>Keeps the lane of <paramref name="sessionId"/>, ending the one of an earlier session.</summary>
-    public void Follow(Uri server, string sessionId, string installationId, Func<PlaybackControlCommand, Task<PlaybackControlReply>> onCommand)
+    /// <summary>
+    /// Keeps the lane of <paramref name="sessionId"/>, ending the one of an earlier session. <paramref name="onEvent"/> gets the
+    /// server's events, on the lane's thread.
+    /// </summary>
+    public void Follow(Uri server, string sessionId, string installationId, Func<PlaybackControlCommand, Task<PlaybackControlReply>> onCommand,
+        Action<PlaybackControlEvent>? onEvent = null)
     {
         ArgumentNullException.ThrowIfNull(server);
         ArgumentException.ThrowIfNullOrWhiteSpace(sessionId);
@@ -67,7 +71,7 @@ public sealed class PlaybackControlLane : IAsyncDisposable
         Cancel();
         SessionId = sessionId;
         _run = new CancellationTokenSource();
-        Running = RunAsync(server, sessionId, installationId, onCommand, _run.Token);
+        Running = RunAsync(server, sessionId, installationId, onCommand, onEvent, _run.Token);
     }
 
     /// <summary>Ends the lane and waits until its connection closed. Never throws: whatever ended the run was logged.</summary>
@@ -100,7 +104,7 @@ public sealed class PlaybackControlLane : IAsyncDisposable
     }
 
     private async Task RunAsync(Uri server, string sessionId, string installationId, Func<PlaybackControlCommand, Task<PlaybackControlReply>> onCommand,
-        CancellationToken cancellationToken)
+        Action<PlaybackControlEvent>? onEvent, CancellationToken cancellationToken)
     {
         int attempt = 0;
         while (!cancellationToken.IsCancellationRequested)
@@ -109,7 +113,7 @@ public sealed class PlaybackControlLane : IAsyncDisposable
             DateTimeOffset? openedAt = null;
             try
             {
-                ending = await ConnectOnceAsync(server, sessionId, installationId, onCommand, () => openedAt = _time.GetUtcNow(), cancellationToken)
+                ending = await ConnectOnceAsync(server, sessionId, installationId, onCommand, onEvent, () => openedAt = _time.GetUtcNow(), cancellationToken)
                     .ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -156,7 +160,8 @@ public sealed class PlaybackControlLane : IAsyncDisposable
     }
 
     private async Task<Ending> ConnectOnceAsync(Uri server, string sessionId, string installationId,
-        Func<PlaybackControlCommand, Task<PlaybackControlReply>> onCommand, Action opened, CancellationToken cancellationToken)
+        Func<PlaybackControlCommand, Task<PlaybackControlReply>> onCommand, Action<PlaybackControlEvent>? onEvent, Action opened,
+        CancellationToken cancellationToken)
     {
         var ticket = await _api.MintTicketAsync(server, sessionId, installationId, cancellationToken).ConfigureAwait(false);
         if (!ticket.IsValid)
@@ -181,7 +186,16 @@ public sealed class PlaybackControlLane : IAsyncDisposable
         var seen = new HashSet<string>(StringComparer.Ordinal);
         while (await socket.ReceiveAsync(connection.Token).ConfigureAwait(false) is { } text)
         {
-            if (PlaybackControlFrames.ParseCommand(text, sessionId) is not { } command || !seen.Add(command.CommandId))
+            if (PlaybackControlFrames.ParseCommand(text, sessionId) is not { } command)
+            {
+                // An event is not answered; the player takes the ones it follows.
+                if (onEvent is not null && PlaybackControlFrames.ParseEvent(text, sessionId) is { } controlEvent)
+                {
+                    onEvent(controlEvent);
+                }
+                continue;
+            }
+            if (!seen.Add(command.CommandId))
             {
                 continue;
             }

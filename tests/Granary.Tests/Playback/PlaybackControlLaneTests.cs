@@ -345,6 +345,23 @@ public sealed class PlaybackControlFramesTests
     public void AnythingButThisSessionsCommand_IsNone(string text) => Assert.Null(PlaybackControlFrames.ParseCommand(text, "s1"));
 
     [Fact]
+    public void AnEventOfThisSession_IsReadWithItsPayload()
+    {
+        var controlEvent = PlaybackControlFrames.ParseEvent(
+            """{ "type": "event", "session_id": "s1", "name": "subtitle_timing_changed", "payload": { "file_id": 42, "sync_key": "stored-12" } }""", "s1")!;
+
+        Assert.Equal(PlaybackControlEvents.SubtitleTimingChanged, controlEvent.Name);
+        Assert.Equal("stored-12", controlEvent.Payload.GetProperty("sync_key").GetString());
+    }
+
+    [Theory]
+    [InlineData("""{ "type": "command", "command_id": "c1", "session_id": "s1", "name": "pause" }""")]
+    [InlineData("""{ "type": "event", "session_id": "s2", "name": "subtitle_sync_updated" }""")]
+    [InlineData("""{ "type": "event", "session_id": "s1" }""")]
+    [InlineData("""{ broken""")]
+    public void AnythingButThisSessionsEvent_IsNone(string text) => Assert.Null(PlaybackControlFrames.ParseEvent(text, "s1"));
+
+    [Fact]
     public void CommandWithoutPayload_HasNoValues()
     {
         var command = PlaybackControlFrames.ParseCommand("""{ "type": "command", "command_id": "c1", "session_id": "s1", "name": "pause" }""", "s1")!;

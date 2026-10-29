@@ -369,6 +369,9 @@
                                                             </Grid>
                                                             <TextBlock Text="{x:Bind Detail}" FontSize="12" Foreground="#66FFFFFF" TextTrimming="CharacterEllipsis"
                                                                        Visibility="{x:Bind controls:PlayerMenus.Shows(Detail)}" />
+                                                            <!-- The web's sync line: "Syncing… 40%", "Synced −3.0 s". -->
+                                                            <TextBlock Text="{x:Bind SyncStatus}" FontSize="12" Foreground="#80FFFFFF" TextTrimming="CharacterEllipsis"
+                                                                       Visibility="{x:Bind controls:PlayerMenus.Shows(SyncStatus)}" />
                                                         </StackPanel>
                                                     </Grid>
                                                 </Button>
@@ -405,6 +408,58 @@
                                             </Button>
                                         </StackPanel>
                                     </Grid>
+                                    <!--
+                                        Silo's web: TIMING for the subtitle that shows, stored or a file next to the media: Sync to audio and
+                                        Reset timing, a running sync's progress, and the last result; a refusal says why instead.
+                                    -->
+                                    <StackPanel Padding="12,8" Spacing="4" BorderBrush="#1AFFFFFF" BorderThickness="0,1,0,0"
+                                                Visibility="{x:Bind ViewModel.SubtitleTiming.IsVisible, Mode=OneWay}">
+                                        <Grid ColumnSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="TIMING" FontSize="12" CharacterSpacing="25" Foreground="#80FFFFFF" VerticalAlignment="Center"
+                                                       AutomationProperties.AccessibilityView="Raw" />
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center"
+                                                        Visibility="{x:Bind ViewModel.SubtitleTiming.ShowsActions, Mode=OneWay}">
+                                                <Button Style="{StaticResource SiloPlayerMenuStepButtonStyle}" Width="Auto" Padding="8,0" Foreground="#B3FFFFFF"
+                                                        Command="{x:Bind ViewModel.SyncSubtitleToAudioCommand}"
+                                                        IsEnabled="{x:Bind ViewModel.SubtitleTiming.AreActionsEnabled, Mode=OneWay}"
+                                                        Visibility="{x:Bind ViewModel.SubtitleTiming.ShowsSync, Mode=OneWay}"
+                                                        AutomationProperties.Name="{x:Bind ViewModel.SubtitleTiming.SyncLabel, Mode=OneWay}">
+                                                    <TextBlock Text="{x:Bind ViewModel.SubtitleTiming.SyncLabel, Mode=OneWay}" FontSize="12" />
+                                                </Button>
+                                                <Button Style="{StaticResource SiloPlayerMenuStepButtonStyle}" Width="Auto" Padding="8,0" Foreground="#B3FFFFFF"
+                                                        Command="{x:Bind ViewModel.ResetSubtitleTimingCommand}"
+                                                        IsEnabled="{x:Bind ViewModel.SubtitleTiming.AreActionsEnabled, Mode=OneWay}"
+                                                        Visibility="{x:Bind ViewModel.SubtitleTiming.ShowsReset, Mode=OneWay}"
+                                                        AutomationProperties.Name="Reset timing">
+                                                    <TextBlock Text="Reset timing" FontSize="12" />
+                                                </Button>
+                                            </StackPanel>
+                                        </Grid>
+                                        <StackPanel Margin="0,4,0,0" Spacing="4" Visibility="{x:Bind ViewModel.SubtitleTiming.IsRunning, Mode=OneWay}">
+                                            <ProgressBar Height="4" MinHeight="4" CornerRadius="2" Maximum="100" Foreground="#CCFFFFFF" Background="#26FFFFFF"
+                                                         Value="{x:Bind ViewModel.SubtitleTiming.PercentValue, Mode=OneWay}"
+                                                         AutomationProperties.Name="Subtitle sync progress" />
+                                            <Grid>
+                                                <TextBlock Text="{x:Bind ViewModel.SubtitleTiming.PhaseText, Mode=OneWay}" FontSize="12" Foreground="#80FFFFFF" />
+                                                <TextBlock Text="{x:Bind ViewModel.SubtitleTiming.PercentText, Mode=OneWay}" FontSize="12" Foreground="#80FFFFFF"
+                                                           HorizontalAlignment="Right" Typography.NumeralAlignment="Tabular" />
+                                            </Grid>
+                                        </StackPanel>
+                                        <TextBlock Text="{x:Bind ViewModel.SubtitleTiming.ResultText, Mode=OneWay}" FontSize="12" Foreground="#80FFFFFF" TextWrapping="Wrap"
+                                                   Visibility="{x:Bind ViewModel.SubtitleTiming.ShowsResult, Mode=OneWay}" />
+                                        <TextBlock Text="{x:Bind ViewModel.SubtitleTiming.ResultText, Mode=OneWay}" FontSize="12" Foreground="#CCFDE68A" TextWrapping="Wrap"
+                                                   Visibility="{x:Bind ViewModel.SubtitleTiming.ShowsWarning, Mode=OneWay}" />
+                                        <TextBlock Text="{x:Bind ViewModel.SubtitleTiming.HintText, Mode=OneWay}" FontSize="12" Foreground="#66FFFFFF" TextWrapping="Wrap"
+                                                   Visibility="{x:Bind ViewModel.SubtitleTiming.HasHint, Mode=OneWay}" />
+                                        <TextBlock Text="This server doesn't allow changing subtitle timing." FontSize="12" Foreground="#80FFFFFF" TextWrapping="Wrap"
+                                                   Visibility="{x:Bind ViewModel.SubtitleTiming.IsForbidden, Mode=OneWay}" />
+                                        <TextBlock Text="{x:Bind ViewModel.SubtitleTiming.ErrorText, Mode=OneWay}" FontSize="12" Foreground="#FFFCA5A5" TextWrapping="Wrap"
+                                                   Visibility="{x:Bind ViewModel.SubtitleTiming.HasError, Mode=OneWay}" AutomationProperties.LiveSetting="Assertive" />
+                                    </StackPanel>
                                     <!-- The web's footer: add a file or search for one, and the look. -->
                                     <StackPanel Padding="0,4" BorderBrush="#1AFFFFFF" BorderThickness="0,1,0,0">
                                         <Button x:Name="AddSubtitlesButton" Style="{StaticResource SiloPlayerMenuItemStyle}" Foreground="#B3FFFFFF"
@@ -690,6 +745,54 @@
                     </Grid>
                 </Border>
             </StackPanel>
+        </Border>
+
+        <!--
+            The web player's SubtitleSyncIndicator: a small card that follows a subtitle sync this viewer started, its progress
+            while it runs, then how it ended. Under Exit on the right, whether the controls show or not; a finished one leaves
+            on its own (PlayerPage.SubtitleSync.cs).
+        -->
+        <Border x:Name="SyncIndicator" Width="288" HorizontalAlignment="Right" VerticalAlignment="Top" Padding="16,12" CornerRadius="12"
+                Background="#CC000000" BorderThickness="1" BorderBrush="{x:Bind SyncToneBorder(ViewModel.SyncNoticeTone), Mode=OneWay}"
+                Margin="{x:Bind PartyPanelMargin(IsFullScreen), Mode=OneWay}"
+                Visibility="{x:Bind ShowsInWindow(ViewModel.HasSyncNotice, IsCompact), Mode=OneWay}"
+                AutomationProperties.LiveSetting="Polite" AutomationProperties.Name="{x:Bind ViewModel.SyncNoticeTitle, Mode=OneWay}">
+            <Grid ColumnSpacing="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Grid Width="16" Height="16" Margin="0,2,0,0" VerticalAlignment="Top">
+                    <ProgressRing Width="16" Height="16" MinWidth="16" MinHeight="16" Foreground="White"
+                                  IsActive="{x:Bind ViewModel.IsSyncNoticeRunning, Mode=OneWay}"
+                                  Visibility="{x:Bind ViewModel.IsSyncNoticeRunning, Mode=OneWay}" />
+                    <FontIcon Glyph="{x:Bind SyncToneGlyph(ViewModel.SyncNoticeTone), Mode=OneWay}" FontSize="16"
+                              Foreground="{x:Bind SyncToneForeground(ViewModel.SyncNoticeTone), Mode=OneWay}"
+                              Visibility="{x:Bind Not(ViewModel.IsSyncNoticeRunning), Mode=OneWay}" />
+                </Grid>
+                <StackPanel Grid.Column="1" Spacing="4">
+                    <TextBlock Text="{x:Bind ViewModel.SyncNoticeTitle, Mode=OneWay}" FontSize="14" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium"
+                               Foreground="White" TextWrapping="Wrap" />
+                    <TextBlock Text="{x:Bind ViewModel.SyncNoticeDetail, Mode=OneWay}" FontSize="12" Foreground="#B3FFFFFF" TextWrapping="Wrap"
+                               Visibility="{x:Bind ViewModel.HasSyncNoticeDetail, Mode=OneWay}" />
+                    <Grid Margin="0,4,0,0" ColumnSpacing="8" Visibility="{x:Bind ViewModel.IsSyncNoticeRunning, Mode=OneWay}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="36" />
+                        </Grid.ColumnDefinitions>
+                        <ProgressBar Height="4" MinHeight="4" CornerRadius="2" Maximum="100" VerticalAlignment="Center" Foreground="#CCFFFFFF" Background="#26FFFFFF"
+                                     Value="{x:Bind ViewModel.SyncNoticePercentValue, Mode=OneWay}" AutomationProperties.Name="Subtitle sync progress" />
+                        <TextBlock Grid.Column="1" Text="{x:Bind ViewModel.SyncNoticePercentText, Mode=OneWay}" FontSize="11" Foreground="#99FFFFFF"
+                                   TextAlignment="Right" Typography.NumeralAlignment="Tabular" />
+                    </Grid>
+                </StackPanel>
+                <Button Grid.Column="2" Width="24" Height="24" Margin="0,-4,-8,0" Padding="0" VerticalAlignment="Top" CornerRadius="4"
+                        Style="{StaticResource SiloPlayerIconButtonStyle}" Foreground="#80FFFFFF" Command="{x:Bind ViewModel.DismissSyncNoticeCommand}"
+                        Visibility="{x:Bind Not(ViewModel.IsSyncNoticeRunning), Mode=OneWay}" AutomationProperties.Name="Dismiss">
+                    <FontIcon Glyph="&#xE711;" FontSize="10" />
+                </Button>
+            </Grid>
         </Border>
 
         <!--

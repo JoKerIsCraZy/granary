@@ -4,19 +4,24 @@ namespace Granary.Core.ViewModels.Player;
 
 /// <summary>
 /// One row of the player's subtitle menu, as Silo's web player draws it (SubtitleMenu): Off first, then each track by
-/// its language, with chips for its format and where it comes from, and its own label under it when that says more.
+/// its language, with chips for its format and where it comes from, its own label under it when that says more, and its
+/// timing when it was synced or adjusted.
 /// </summary>
 /// <param name="TrackId">The inventory <c>track_id</c> a pick passes on; null for Off.</param>
-public sealed record SubtitleTrackOption(string? TrackId, string Title, string Format, string Source, string Detail, bool IsSelected)
+/// <param name="SyncStatus">"Syncing… 40%", "Synced −3.0 s"; empty when there is nothing to say.</param>
+public sealed record SubtitleTrackOption(string? TrackId, string Title, string Format, string Source, string Detail, bool IsSelected,
+    string SyncStatus = "")
 {
     /// <summary>For screen readers: the row as one sentence.</summary>
-    public string AccessibleName => string.Join(", ", new[] { Title, Format, Source, Detail }.Where(part => part.Length > 0));
+    public string AccessibleName => string.Join(", ", new[] { Title, Format, Source, Detail, SyncStatus }.Where(part => part.Length > 0));
 
     /// <summary>
     /// Off, then <paramref name="tracks"/> embedded first, external next, downloaded last (each in inventory order),
-    /// with the row of <paramref name="selected"/> checked, or Off without one.
+    /// with the row of <paramref name="selected"/> checked, or Off without one. <paramref name="syncStatus"/> words a
+    /// track's timing.
     /// </summary>
-    public static IReadOnlyList<SubtitleTrackOption> For(IReadOnlyList<SubtitleInventoryItem> tracks, string? selected)
+    public static IReadOnlyList<SubtitleTrackOption> For(IReadOnlyList<SubtitleInventoryItem> tracks, string? selected,
+        Func<SubtitleInventoryItem, string?>? syncStatus = null)
     {
         ArgumentNullException.ThrowIfNull(tracks);
         var rows = new List<SubtitleTrackOption>(tracks.Count + 1) { new(null, "Off", "", "", "", selected is null) };
@@ -26,7 +31,8 @@ public sealed record SubtitleTrackOption(string? TrackId, string Title, string F
             {
                 string language = TrackText.SubtitleLanguage(track.Language);
                 return new SubtitleTrackOption(track.TrackId, language, TrackText.SubtitleFormat(track.Codec), TrackText.SubtitleSource(track.Source),
-                    TrackText.SubtitleDetail(track.Label, track.Language, language, track.Codec), track.TrackId == selected);
+                    TrackText.SubtitleDetail(track.Label, track.Language, language, track.Codec), track.TrackId == selected,
+                    syncStatus?.Invoke(track) ?? "");
             }));
         return rows;
     }

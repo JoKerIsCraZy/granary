@@ -572,6 +572,26 @@ stream's commands on Activity.
   and the profile's `player.subtitle_sync_ms` is saved once the nudges settle for 600 ms, as the web's, or at the
   stop; a value this device kept for itself is cleared, so the profile's counts, as the web does. Under a line
   "Add Subtitles…" and "Appearance…" (palette glyph), white 70 %.
+  Subtitle sync (`SubtitleSyncTracker`, `SubtitleTimingPanel`, the web's `TimingControls`; api-contract 9.8), where the
+  server offers it: a stored or external track's row gets its timing as a third line (12 px, white 50 %): "Syncing… 40%",
+  "Synced −3.0 s", "Timing adjusted +1.0 s · 25→23.976 fps", "Already in sync", "Doesn't match this video", "Sync
+  failed". Under DELAY, for the subtitle that shows, a TIMING row with "Sync to audio" ("Syncing…" while it runs) and
+  "Reset timing" once its timing was changed (12 px, white 70 %, held while a request or a job runs); under it a running
+  job's 4 px bar (white 80 % on white 15 %) with its phase ("Listening to the audio…") and percentage, else the last
+  result ("Synced to the audio: −3.0 s"; a mismatch or failure in amber), else what Sync does ("Matches the timing to
+  the audio for everyone watching.", for a file next to the media "… The file itself isn't changed."). A refusal says
+  "This server doesn't allow changing subtitle timing."; an error shows in red. Opening the menu reads the subtitles'
+  sync again.
+- **Subtitle sync indicator** (the web's `SubtitleSyncIndicator`, `SubtitleSyncFeedback`): a 288 px card under Exit on
+  the right (radius 12, black 80 %, 1 px edge: white 15 % while running, emerald for a success, sky for a note, amber for
+  a warning), whether the controls show or not, hidden in the mini view and the bar. A spinner or the tone's icon, the
+  title (14 px medium), a detail (12 px, white 70 %), and while a job runs a 4 px bar with its percentage; ✕ dismisses a
+  finished one. It follows a sync this viewer started (Sync to audio, or the automatic sync of a subtitle they just
+  added): "Syncing German subtitles", then "Applying new timing…" until the subtitle that shows reads its new cues
+  (8 s at most), "Subtitles synced"; for another subtitle "German subtitles synced", "… already match the audio",
+  "… don't match the audio", "Couldn't sync … subtitles". Someone else's change to the subtitle that shows says
+  "Subtitle timing updated" once it shows; an automatic sync lines up without a word. Notices leave after 6 s,
+  warnings after 9 s.
 - **Add Subtitles** (`AddSubtitlesPanel`, `AddSubtitlesViewModel`, the web's `SubtitleSearchModal` with the player's
   `SubtitleUploadForm`): a 480 px card (neutral 900, radius 8) on black 80 %, over everything; a click beside it, ✕
   or Esc closes it, Tab stays inside. "Upload subtitle" with the web's help line, a dashed drop zone (white 20 %,

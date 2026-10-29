@@ -89,6 +89,11 @@ internal sealed class FakePlaybackEngine : IPlaybackEngine
         return ReadSubtitle(url);
     }
 
+    /// <summary>Every subtitle stream taken out again, in order.</summary>
+    public List<int> RemovedSubtitles { get; } = [];
+
+    public void RemoveSubtitle(int stream) => RemovedSubtitles.Add(stream);
+
     public int? SubtitleStreamOf(int ffmpegIndex) => EmbeddedSubtitles.TryGetValue(ffmpegIndex, out int stream) ? stream : null;
 
     public bool SetSubtitleStream(int stream)

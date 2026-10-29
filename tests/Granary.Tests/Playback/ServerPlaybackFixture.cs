@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using Granary.Core.Api.Playback;
 using Granary.Core.Api.Settings;
+using Granary.Core.Api.Subtitles;
 using Granary.Core.Auth;
 using Granary.Core.Playback;
 using Granary.Core.Servers;
@@ -65,6 +66,9 @@ internal sealed class ServerPlaybackFixture
     /// <summary>The session's control lane, when a test talks to the player through it.</summary>
     public PlaybackControlLane? ControlLane { get; set; }
 
+    /// <summary>The playback follows subtitle sync (<see cref="ServerPlayback.SubtitleSync"/>); off, it asks the server nothing about it.</summary>
+    public bool SyncsSubtitles { get; set; }
+
     public static Uri StreamUrl(string session = Session) => new(ScriptedSilo.Base.AbsoluteUri + "/api/v2/stream/" + session);
 
     public static Func<Task<HttpResponseMessage>> Ok(string json) => ScriptedSilo.Json(HttpStatusCode.OK, json);
@@ -96,7 +100,8 @@ internal sealed class ServerPlaybackFixture
             Time,
             Logs.AsFactory(),
             new ServerPlaybackOptions(new PlaybackRetryPolicy(TimeSpan.Zero, TimeSpan.Zero, TimeSpan.FromSeconds(5))),
-            ControlLane is { } lane ? () => lane : null);
+            ControlLane is { } lane ? () => lane : null,
+            SyncsSubtitles ? new SubtitleSyncApi(Silo.Http) : null);
         playback.StatusChanged += (_, status) => Statuses.Add(status);
         return playback;
     }
