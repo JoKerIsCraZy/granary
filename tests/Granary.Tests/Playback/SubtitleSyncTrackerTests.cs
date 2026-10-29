@@ -228,6 +228,99 @@ public sealed class SubtitleSyncTrackerTests : IDisposable
     }
 
     [Fact]
+    public async Task AResetRefusedAsStale_ReadsTheSubtitleAgain()
+    {
+        await FollowAsync();
+        _silo.On(HttpMethod.Get, StoredPath,
+            Versioned(One(State(Stored, timing: Timing(900))), "\"v1\""),
+            Versioned(One(State(Stored, timing: Timing(1200))), "\"v2\""));
+        _silo.On(HttpMethod.Put, TimingPath, ScriptedSilo.Problem(412, "precondition-failed"));
+
+        await _tracker.ResetTimingAsync(Stored);
+
+        await Until(() => _tracker.EntryOf(Stored)!.State.Timing.OffsetMs == 1200, "the subtitle was read again");
+        Assert.Equal("The subtitle changed. Try again.", _tracker.EntryOf(Stored)!.Error);
+        Assert.False(_tracker.EntryOf(Stored)!.IsBusy);
+    }
+
+    [Fact]
+    public async Task AFailedReadAfterATimingEvent_DoesNotHideTheNextChange()
+    {
+        await FollowAsync();
+        _silo.On(HttpMethod.Get, StoredPath, ScriptedSilo.Problem(500, "internal"));
+        _tracker.OnTimingChanged(Stored);
+        await Until(() => _silo.SentTo(HttpMethod.Get, StoredPath).Count == 1, "the read after the event");
+        await Task.Delay(30, TestContext.Current.CancellationToken);
+
+        var running = new SubtitleSyncJob { Id = "j2", Status = "synced", Trigger = "manual", CreatedAt = "2026-10-29T11:00:00.000Z" };
+        _tracker.OnSyncUpdated(Stored, new SubtitleTiming { OffsetMs = 700, RawScale = 1 }, running);
+
+        Assert.Equal([Stored, Stored], _timingChanges);
+    }
+
+    [Fact]
+    public async Task ARequestThatHangs_FreesItsButtons_AfterItsTimeLimit()
+    {
+        var hung = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var handler = new FakeHttpMessageHandler(async (request, cancellationToken) =>
+        {
+            string path = request.RequestUri!.AbsolutePath;
+            if (request.Method == HttpMethod.Post)
+            {
+                using var registration = cancellationToken.Register(() => hung.TrySetResult(true));
+                await Task.Delay(Timeout.Infinite, cancellationToken);
+            }
+            string json = path.EndsWith("/status", StringComparison.Ordinal) ? Status() : List(State(Stored));
+            return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(json, Encoding.UTF8, "application/json") };
+        });
+        using var tracker = new SubtitleSyncTracker(new SubtitleSyncApi(new Granary.Core.Api.SiloHttp(new HttpClient(handler))), new ImmediateDispatcher(),
+            _time, new LogSink().For<SubtitleSyncTracker>());
+        tracker.Follow(ScriptedSilo.Base, FileId, [Stored]);
+        await Until(() => tracker.EntryOf(Stored) is not null, "the subtitle was read");
+
+        var sync = tracker.RequestSyncAsync(Stored);
+        Assert.True(tracker.EntryOf(Stored)!.IsBusy);
+        _time.Advance(SubtitleSyncTracker.ActionTimeout);
+        await sync;
+
+        Assert.True(await hung.Task);
+        Assert.False(tracker.EntryOf(Stored)!.IsBusy);
+        Assert.Equal("Sync failed", tracker.EntryOf(Stored)!.Error);
+    }
+
+    [Fact]
+    public async Task ARefusalThatArrivesAfterAnotherFile_IsDropped_WithoutAnError()
+    {
+        await FollowAsync();
+        var gate = new TaskCompletionSource();
+        _silo.On(HttpMethod.Post, StoredPath, After(gate.Task, ScriptedSilo.Problem(500, "internal")));
+        _silo.On(HttpMethod.Get, "api/v2/subtitles/42/sync", Ok(List()));
+        var sync = _tracker.RequestSyncAsync(Stored);
+
+        _tracker.Follow(ScriptedSilo.Base, "42", []);
+        gate.SetResult();
+
+        await sync;
+        Assert.Empty(_tracker.Entries);
+    }
+
+    [Fact]
+    public async Task PollingGivesUp_FiveMinutesAfterItBegan()
+    {
+        await FollowAsync();
+        _silo.On(HttpMethod.Post, StoredPath, ScriptedSilo.Json(HttpStatusCode.Accepted, One(State(Stored, Job("j1", "running", 0.1)))));
+        _silo.On(HttpMethod.Get, StoredPath, Versioned(One(State(Stored, Job("j1", "running", 0.1))), "\"v1\""));
+        await _tracker.RequestSyncAsync(Stored);
+
+        for (int tick = 0; tick < 100; tick++)
+        {
+            _time.Advance(SubtitleSyncTracker.PollInterval);
+        }
+
+        await Until(() => _tracker.EntryOf(Stored)!.PollExpired, "polling gave up at five minutes");
+    }
+
+    [Fact]
     public async Task ASubtitleTheServerNoLongerHas_IsForgotten_WithItsRunningJob()
     {
         await FollowAsync();

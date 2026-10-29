@@ -199,6 +199,39 @@ public sealed class MpvPlaybackEngineTests : IDisposable
     }
 
     [Fact]
+    public async Task TheSameSubtitleFileReadAgain_IsANewTrack_AndTheOldOneCanBeTakenOut()
+    {
+        using var engine = CreateEngine();
+        var playing = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        engine.StateChanged += (_, s) =>
+        {
+            if (s is { IsLoaded: true, HasStarted: true })
+            {
+                playing.TrySetResult();
+            }
+        };
+        long load = engine.Load(MediaSource.Local(TempWav(6.0)) with { SubtitleStream = 0 });
+        await playing.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken);
+        string srt = Path.Combine(Path.GetTempPath(), $"granary-{Guid.NewGuid():N}.srt");
+        _files.Add(srt);
+        await File.WriteAllTextAsync(srt, "1\n00:00:00,000 --> 00:00:05,000\nHello\n", TestContext.Current.CancellationToken);
+        int? first = await engine.AddSubtitleAsync(new Uri(srt), load);
+        Assert.True(engine.SetSubtitleStream(first!.Value));
+
+        // A timing change: the server serves the same subtitle anew, read in again beside the one that shows.
+        await File.WriteAllTextAsync(srt, "1\n00:00:01,000 --> 00:00:06,000\nHello\n", TestContext.Current.CancellationToken);
+        int? second = await engine.AddSubtitleAsync(new Uri(srt), load);
+
+        Assert.NotNull(second);
+        Assert.NotEqual(first, second);
+        Assert.True(engine.SetSubtitleStream(second.Value));
+        engine.RemoveSubtitle(first.Value);
+        await Task.Delay(100, TestContext.Current.CancellationToken);
+        Assert.False(engine.SetSubtitleStream(first.Value));
+        Assert.True(engine.SetSubtitleStream(second.Value));
+    }
+
+    [Fact]
     public async Task Loads_AreCounted_AndTheirStatesSayWhichOne()
     {
         using var engine = CreateEngine();

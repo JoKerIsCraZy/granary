@@ -77,6 +77,58 @@ public sealed class ServerPlaybackSubtitleSyncTests
     }
 
     [Fact]
+    public async Task ThePickChangingDuringTheReload_StillTakesTheOldTrackOut()
+    {
+        await using var playback = await ShowingTheSidecarAsync();
+        var reread = new TaskCompletionSource<int?>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _fixture.Engine.ReadSubtitle = _ => reread.Task;
+
+        playback.SubtitleSync!.OnTimingChanged(Key);
+        await Until(() => _fixture.Engine.SubtitleFiles.Count == 2, "the subtitle is read again");
+        playback.SelectSubtitle(null);
+        reread.SetResult(4);
+
+        await Until(() => _fixture.Engine.RemovedSubtitles.Contains(3), "the old track went");
+        Assert.Empty(_reloads);
+        Assert.Equal(0, _fixture.Engine.SubtitleStreams[^1]);
+    }
+
+    [Fact]
+    public async Task AReloadThatCannotBeRead_StillTakesTheOldTrackOut()
+    {
+        await using var playback = await ShowingTheSidecarAsync();
+        _fixture.Engine.ReadSubtitle = _ => Task.FromResult<int?>(null);
+
+        playback.SubtitleSync!.OnTimingChanged(Key);
+
+        await Until(() => _fixture.Engine.RemovedSubtitles.Contains(3), "the old track went");
+        Assert.Empty(_reloads);
+        Assert.Null(playback.SubtitleTrack);
+    }
+
+    [Fact]
+    public async Task ATimingChangeWhileTheSubtitleIsStillBeingRead_ReadsItAgainAfterward()
+    {
+        var playback = await _fixture.PlayingAsync();
+        await using var _ = playback;
+        playback.SubtitleCuesReloaded += (_, key) => _reloads.Add(key);
+        await Until(() => playback.SubtitleSync!.EntryOf(Key) is not null, "the sync state was read");
+        var first = new TaskCompletionSource<int?>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _fixture.Engine.ReadSubtitle = _ => first.Task;
+        playback.SelectSubtitle(Track);
+        await Until(() => _fixture.Engine.SubtitleFiles.Count == 1, "the subtitle is being read");
+
+        playback.SubtitleSync!.OnTimingChanged(Key);
+        _fixture.Engine.ReadSubtitle = _ => Task.FromResult<int?>(4);
+        first.SetResult(3);
+
+        await Until(() => _reloads.Count == 1, "the new cues show");
+        Assert.Equal(2, _fixture.Engine.SubtitleFiles.Count);
+        Assert.Equal(4, _fixture.Engine.SubtitleStreams[^1]);
+        Assert.Equal([3], _fixture.Engine.RemovedSubtitles);
+    }
+
+    [Fact]
     public async Task ASubtitleThatDoesNotShow_IsReadAgainOnlyWhenPicked()
     {
         var playback = await _fixture.PlayingAsync();
