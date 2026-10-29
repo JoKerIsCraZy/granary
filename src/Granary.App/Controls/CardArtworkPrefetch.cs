@@ -8,7 +8,8 @@ namespace Granary.App.Controls;
 
 /// <summary>
 /// Prefetches the artwork of a card list, and of cards added to it later, so a row or grid shows images the
-/// moment they scroll into view. A new list, a reset list or <see cref="Follow"/>(null) drops what is still queued.
+/// moment they scroll into view, and works out their thumbhash blurs ahead. A new list, a reset list or
+/// <see cref="Follow"/>(null) drops what is still queued.
 /// </summary>
 /// <remarks>The owner follows its list only while loaded: the list's event would otherwise keep it alive.</remarks>
 internal sealed class CardArtworkPrefetch
@@ -63,10 +64,13 @@ internal sealed class CardArtworkPrefetch
         {
             return;
         }
-        List<Uri> urls = [.. items.OfType<MediaCard>().Select(c => c.ImageUrl).OfType<Uri>()];
+        List<MediaCard> cards = [.. items.OfType<MediaCard>()];
+        List<Uri> urls = [.. cards.Select(c => c.ImageUrl).OfType<Uri>()];
         if (urls.Count > 0)
         {
             Prefetcher.Prefetch(urls, _batch.Token);
         }
+        // Their blurs too, off the UI thread: a card scrolled in then only makes its bitmap.
+        Thumbhashes.Warm(cards.Select(c => c.ImageThumbhash));
     }
 }

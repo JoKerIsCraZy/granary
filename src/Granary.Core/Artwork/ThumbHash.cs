@@ -55,16 +55,16 @@ public static class ThumbHash
         int acIndex = 0;
         double[] DecodeChannel(ReadOnlySpan<byte> bytes, int nx, int ny, double scale)
         {
-            var ac = new List<double>();
-            for (int cy = 0; cy < ny; cy++)
+            var ac = new double[FactorCount(nx, ny)];
+            for (int cy = 0, k = 0; cy < ny; cy++)
             {
-                for (int cx = cy != 0 ? 0 : 1; cx * ny < nx * (ny - cy); cx++, acIndex++)
+                for (int cx = cy != 0 ? 0 : 1; cx * ny < nx * (ny - cy); cx++, acIndex++, k++)
                 {
                     int nibble = (bytes[acStart + (acIndex >> 1)] >> ((acIndex & 1) << 2)) & 15;
-                    ac.Add((nibble / 7.5 - 1) * scale);
+                    ac[k] = (nibble / 7.5 - 1) * scale;
                 }
             }
-            return [.. ac];
+            return ac;
         }
         double[] lAc = DecodeChannel(hash, lx, ly, lScale);
         double[] pAc = DecodeChannel(hash, 3, 3, pScale * 1.25);
@@ -80,45 +80,49 @@ public static class ThumbHash
         {
             throw new ArgumentException("The hash names no picture size.", nameof(hash));
         }
+        // Flat rows of cosines, a pixel's own row and column read as spans: the same products in the same order as the
+        // reference, without a two-dimensional array's checks on every one of them.
         int nfx = Math.Max(lx, hasAlpha ? 5 : 3);
         int nfy = Math.Max(ly, hasAlpha ? 5 : 3);
-        var fxs = new double[w, nfx];
-        var fys = new double[h, nfy];
+        var fxs = new double[w * nfx];
+        var fys = new double[h * nfy];
         for (int x = 0; x < w; x++)
         {
             for (int cx = 0; cx < nfx; cx++)
             {
-                fxs[x, cx] = Math.Cos(Math.PI / w * (x + 0.5) * cx);
+                fxs[x * nfx + cx] = Math.Cos(Math.PI / w * (x + 0.5) * cx);
             }
         }
         for (int y = 0; y < h; y++)
         {
             for (int cy = 0; cy < nfy; cy++)
             {
-                fys[y, cy] = Math.Cos(Math.PI / h * (y + 0.5) * cy);
+                fys[y * nfy + cy] = Math.Cos(Math.PI / h * (y + 0.5) * cy);
             }
         }
 
         var rgba = new byte[w * h * 4];
         for (int y = 0, i = 0; y < h; y++)
         {
+            var fy = fys.AsSpan(y * nfy, nfy);
             for (int x = 0; x < w; x++, i += 4)
             {
+                var fx = fxs.AsSpan(x * nfx, nfx);
                 double l = lDc, p = pDc, q = qDc, a = aDc;
                 for (int cy = 0, j = 0; cy < ly; cy++)
                 {
-                    double fy2 = fys[y, cy] * 2;
+                    double fy2 = fy[cy] * 2;
                     for (int cx = cy != 0 ? 0 : 1; cx * ly < lx * (ly - cy); cx++, j++)
                     {
-                        l += lAc[j] * fxs[x, cx] * fy2;
+                        l += lAc[j] * fx[cx] * fy2;
                     }
                 }
                 for (int cy = 0, j = 0; cy < 3; cy++)
                 {
-                    double fy2 = fys[y, cy] * 2;
+                    double fy2 = fy[cy] * 2;
                     for (int cx = cy != 0 ? 0 : 1; cx < 3 - cy; cx++, j++)
                     {
-                        double f = fxs[x, cx] * fy2;
+                        double f = fx[cx] * fy2;
                         p += pAc[j] * f;
                         q += qAc[j] * f;
                     }
@@ -127,10 +131,10 @@ public static class ThumbHash
                 {
                     for (int cy = 0, j = 0; cy < 5; cy++)
                     {
-                        double fy2 = fys[y, cy] * 2;
+                        double fy2 = fy[cy] * 2;
                         for (int cx = cy != 0 ? 0 : 1; cx < 5 - cy; cx++, j++)
                         {
-                            a += aAc[j] * fxs[x, cx] * fy2;
+                            a += aAc[j] * fx[cx] * fy2;
                         }
                     }
                 }
@@ -172,6 +176,20 @@ public static class ThumbHash
         int lx = isLandscape ? hasAlpha ? 5 : 7 : header & 7;
         int ly = isLandscape ? header & 7 : hasAlpha ? 5 : 7;
         return (double)lx / ly;
+    }
+
+    // How many varying factors a channel of nx by ny has: the reference's loop, counted.
+    private static int FactorCount(int nx, int ny)
+    {
+        int count = 0;
+        for (int cy = 0; cy < ny; cy++)
+        {
+            for (int cx = cy != 0 ? 0 : 1; cx * ny < nx * (ny - cy); cx++)
+            {
+                count++;
+            }
+        }
+        return count;
     }
 
     // JavaScript's Math.round: halves go up.

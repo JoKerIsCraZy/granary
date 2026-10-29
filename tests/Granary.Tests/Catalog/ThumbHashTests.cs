@@ -55,6 +55,30 @@ public sealed class ThumbHashTests
     }
 
     [Fact]
+    public void Decode_GivesEveryPixelOfTheReferencesOwnLoops()
+    {
+        var random = new Random(29);
+        int compared = 0;
+        for (int run = 0; run < 5000; run++)
+        {
+            var bytes = new byte[random.Next(5, 40)];
+            random.NextBytes(bytes);
+
+            var expected = Try(() => StraightPort(bytes));
+            var actual = Try(() => ThumbHash.Decode(bytes));
+
+            Assert.Equal(expected is null, actual is null);
+            if (expected is not null && actual is not null)
+            {
+                Assert.Equal((expected.Width, expected.Height), (actual.Width, actual.Height));
+                Assert.Equal(expected.Rgba, actual.Rgba);
+                compared++;
+            }
+        }
+        Assert.True(compared > 1000, $"only {compared} hashes decoded");
+    }
+
+    [Fact]
     public void Bgra_IsPremultiplied()
     {
         var picture = new ThumbHash.Picture(2, 1, [200, 100, 50, 255, 200, 100, 50, 0]);
@@ -68,5 +92,111 @@ public sealed class ThumbHashTests
     {
         int i = (y * picture.Width + x) * 4;
         return string.Join(",", picture.Rgba[i..(i + 4)]);
+    }
+
+    private static ThumbHash.Picture? Try(Func<ThumbHash.Picture> decode)
+    {
+        try
+        {
+            return decode();
+        }
+        catch (Exception ex) when (ex is IndexOutOfRangeException or ArgumentException)
+        {
+            return null;
+        }
+    }
+
+    // The reference's thumbHashToRGBA as written, loop for loop, which Decode works out faster: the same products in the
+    // same order, so the same bytes.
+    private static ThumbHash.Picture StraightPort(byte[] hash)
+    {
+        int header24 = hash[0] | (hash[1] << 8) | (hash[2] << 16);
+        int header16 = hash[3] | (hash[4] << 8);
+        double lDc = (header24 & 63) / 63.0;
+        double pDc = ((header24 >> 6) & 63) / 31.5 - 1;
+        double qDc = ((header24 >> 12) & 63) / 31.5 - 1;
+        double lScale = ((header24 >> 18) & 31) / 31.0;
+        bool hasAlpha = (header24 >> 23) != 0;
+        double pScale = ((header16 >> 3) & 63) / 63.0;
+        double qScale = ((header16 >> 9) & 63) / 63.0;
+        bool isLandscape = (header16 >> 15) != 0;
+        int lx = Math.Max(3, isLandscape ? hasAlpha ? 5 : 7 : header16 & 7);
+        int ly = Math.Max(3, isLandscape ? header16 & 7 : hasAlpha ? 5 : 7);
+        double aDc = hasAlpha ? (hash[5] & 15) / 15.0 : 1;
+        double aScale = hasAlpha ? (hash[5] >> 4) / 15.0 : 0;
+        int acStart = hasAlpha ? 6 : 5;
+        int acIndex = 0;
+        List<double> Channel(int nx, int ny, double scale)
+        {
+            var ac = new List<double>();
+            for (int cy = 0; cy < ny; cy++)
+            {
+                for (int cx = cy != 0 ? 0 : 1; cx * ny < nx * (ny - cy); cx++, acIndex++)
+                {
+                    ac.Add((((hash[acStart + (acIndex >> 1)] >> ((acIndex & 1) << 2)) & 15) / 7.5 - 1) * scale);
+                }
+            }
+            return ac;
+        }
+        var lAc = Channel(lx, ly, lScale);
+        var pAc = Channel(3, 3, pScale * 1.25);
+        var qAc = Channel(3, 3, qScale * 1.25);
+        var aAc = hasAlpha ? Channel(5, 5, aScale) : [];
+        int headerLx = (hash[4] & 0x80) != 0 ? (hash[2] & 0x80) != 0 ? 5 : 7 : hash[3] & 7;
+        int headerLy = (hash[4] & 0x80) != 0 ? hash[3] & 7 : (hash[2] & 0x80) != 0 ? 5 : 7;
+        double ratio = (double)headerLx / headerLy;
+        int w = (int)Math.Floor((ratio > 1 ? 32 : 32 * ratio) + 0.5);
+        int h = (int)Math.Floor((ratio > 1 ? 32 / ratio : 32) + 0.5);
+        if (w is < 1 or > 32 || h is < 1 or > 32)
+        {
+            throw new ArgumentException("no size");
+        }
+        var rgba = new byte[w * h * 4];
+        for (int y = 0, i = 0; y < h; y++)
+        {
+            for (int x = 0; x < w; x++, i += 4)
+            {
+                double l = lDc, p = pDc, q = qDc, a = aDc;
+                double Fx(int cx) => Math.Cos(Math.PI / w * (x + 0.5) * cx);
+                double Fy(int cy) => Math.Cos(Math.PI / h * (y + 0.5) * cy);
+                for (int cy = 0, j = 0; cy < ly; cy++)
+                {
+                    double fy2 = Fy(cy) * 2;
+                    for (int cx = cy != 0 ? 0 : 1; cx * ly < lx * (ly - cy); cx++, j++)
+                    {
+                        l += lAc[j] * Fx(cx) * fy2;
+                    }
+                }
+                for (int cy = 0, j = 0; cy < 3; cy++)
+                {
+                    double fy2 = Fy(cy) * 2;
+                    for (int cx = cy != 0 ? 0 : 1; cx < 3 - cy; cx++, j++)
+                    {
+                        double f = Fx(cx) * fy2;
+                        p += pAc[j] * f;
+                        q += qAc[j] * f;
+                    }
+                }
+                if (hasAlpha)
+                {
+                    for (int cy = 0, j = 0; cy < 5; cy++)
+                    {
+                        double fy2 = Fy(cy) * 2;
+                        for (int cx = cy != 0 ? 0 : 1; cx < 5 - cy; cx++, j++)
+                        {
+                            a += aAc[j] * Fx(cx) * fy2;
+                        }
+                    }
+                }
+                double b = l - 2.0 / 3 * p;
+                double r = (3 * l - b + q) / 2;
+                double g = r - q;
+                rgba[i] = (byte)Math.Max(0, 255 * Math.Min(1, r));
+                rgba[i + 1] = (byte)Math.Max(0, 255 * Math.Min(1, g));
+                rgba[i + 2] = (byte)Math.Max(0, 255 * Math.Min(1, b));
+                rgba[i + 3] = (byte)Math.Max(0, 255 * Math.Min(1, a));
+            }
+        }
+        return new ThumbHash.Picture(w, h, rgba);
     }
 }
