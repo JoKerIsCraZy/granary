@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Settings → Devices: the web's Signed-in sessions (this device, then the others, each with Sign out and Details) for
+    the household's primary profile, and its Your Devices list (grouped by when each was used, with Rename, Use profile
+    settings and Forget). Lines between hairlines, as Settings → Servers draws its list.
+-->
+<UserControl
+    x:Class="Granary.App.Views.Settings.DevicesSettingsView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Granary.App.Controls"
+    xmlns:views="using:Granary.App.Views.Settings"
+    xmlns:settings="using:Granary.Core.ViewModels.Settings">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <!-- Its own copy: the view is made before it joins the page, whose resources it cannot see then. -->
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="ms-appx:///Themes/SiloSettings.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- A sign-in: its device, when it was last seen, Sign out, and Details below when opened. -->
+            <DataTemplate x:Key="SessionTemplate" x:DataType="settings:SignedInSessionRow">
+                <StackPanel Padding="4,16" BorderBrush="{StaticResource SiloSettingsHairlineBrush}" BorderThickness="0,0,0,1">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Border Width="36" Height="36" CornerRadius="10" BorderThickness="1" BorderBrush="{StaticResource SiloSettingsHairlineBrush}"
+                                VerticalAlignment="Center" AutomationProperties.AccessibilityView="Raw">
+                            <FontIcon Glyph="{x:Bind views:DevicesSettingsView.SessionGlyph(Kind)}" FontSize="15" Foreground="{StaticResource SiloMutedBrush}" />
+                        </Border>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="3">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Text="{x:Bind Name}" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="15"
+                                           Foreground="{StaticResource SiloForegroundBrush}" TextTrimming="CharacterEllipsis" />
+                                <Border Visibility="{x:Bind IsCurrent}" Padding="8,1" CornerRadius="9" BorderThickness="1"
+                                        BorderBrush="{StaticResource SiloSettingsHairlineBrush}" VerticalAlignment="Center">
+                                    <TextBlock Text="This device" FontSize="11" Foreground="{StaticResource SiloForegroundBrush}" />
+                                </Border>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <TextBlock Text="{x:Bind LastSeenText}" FontSize="13" Foreground="{x:Bind views:DevicesSettingsView.SeenBrush(IsActiveNow)}" />
+                                <TextBlock Text="{x:Bind SignedInLine}" FontSize="13" Foreground="{StaticResource SiloMutedBrush}" TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                        </StackPanel>
+                        <Button Grid.Column="2" VerticalAlignment="Center" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Tag="{x:Bind}"
+                                Click="OnSignOutClick" AutomationProperties.Name="{x:Bind SignOutName}"
+                                IsEnabled="{x:Bind controls:SettingsText.Not(IsBusy), Mode=OneWay}">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xF3B1;" FontSize="12" Visibility="{x:Bind IsCurrent}" />
+                                <TextBlock Text="{x:Bind SignOutLabel}" />
+                            </StackPanel>
+                        </Button>
+                        <Button Grid.Column="3" VerticalAlignment="Center" Background="Transparent" BorderThickness="0" Padding="10,6"
+                                Command="{x:Bind ToggleDetailsCommand}" AutomationProperties.Name="{x:Bind DetailsName}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <TextBlock Text="Details" FontSize="13" Foreground="{StaticResource SiloMutedBrush}" />
+                                <FontIcon Glyph="{x:Bind views:DevicesSettingsView.Chevron(IsExpanded), Mode=OneWay}" FontSize="10"
+                                          Foreground="{StaticResource SiloMutedBrush}" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+                    <Grid Margin="52,14,0,0" ColumnSpacing="32" RowSpacing="12" Visibility="{x:Bind IsExpanded, Mode=OneWay}"
+                          BorderBrush="{StaticResource SiloSettingsHairlineBrush}" BorderThickness="0,1,0,0" Padding="0,12,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Last seen" FontSize="12" Foreground="{StaticResource SiloMutedBrush}" />
+                            <TextBlock Text="{x:Bind LastSeenDetail}" FontSize="12" Foreground="{StaticResource SiloForegroundBrush}" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Spacing="4">
+                            <TextBlock Text="Signed in" FontSize="12" Foreground="{StaticResource SiloMutedBrush}" />
+                            <TextBlock Text="{x:Bind SignedInDetail}" FontSize="12" Foreground="{StaticResource SiloForegroundBrush}" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="1" Spacing="4">
+                            <TextBlock Text="IP address at sign-in" FontSize="12" Foreground="{StaticResource SiloMutedBrush}" />
+                            <TextBlock Text="{x:Bind IpAddress}" FontSize="12" Foreground="{StaticResource SiloForegroundBrush}" IsTextSelectionEnabled="True" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="1" Grid.Column="1" Spacing="4">
+                            <TextBlock Text="Expires" FontSize="12" Foreground="{StaticResource SiloMutedBrush}" />
+                            <TextBlock Text="{x:Bind ExpiresDetail}" FontSize="12" Foreground="{StaticResource SiloForegroundBrush}" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Spacing="4">
+                            <TextBlock Text="User-Agent" FontSize="12" Foreground="{StaticResource SiloMutedBrush}" />
+                            <TextBlock Text="{x:Bind UserAgent}" FontSize="12" FontFamily="Consolas" Foreground="{StaticResource SiloForegroundBrush}"
+                                       TextWrapping="Wrap" IsTextSelectionEnabled="True" />
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </DataTemplate>
+
+            <!-- A device: its name (or the name being typed), what it reports and what is set differently, and its actions. -->
+            <DataTemplate x:Key="DeviceTemplate" x:DataType="settings:UserDeviceRow">
+                <Grid Padding="4,16" ColumnSpacing="16" BorderBrush="{StaticResource SiloSettingsHairlineBrush}" BorderThickness="0,0,0,1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Border Width="40" Height="40" CornerRadius="12" Background="#FF2A2A30" VerticalAlignment="Center"
+                            AutomationProperties.AccessibilityView="Raw">
+                        <FontIcon Glyph="{x:Bind views:DevicesSettingsView.DeviceGlyph(Kind), Mode=OneWay}" FontSize="16"
+                                  Foreground="{StaticResource SiloForegroundBrush}" />
+                    </Border>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="3">
+                        <TextBlock Text="{x:Bind Name, Mode=OneWay}" Visibility="{x:Bind IsNotRenaming, Mode=OneWay}" FontFamily="{StaticResource SiloFontSemiBold}"
+                                   FontWeight="SemiBold" FontSize="15" Foreground="{StaticResource SiloForegroundBrush}" TextWrapping="Wrap" />
+                        <StackPanel Orientation="Horizontal" Spacing="8" Visibility="{x:Bind IsRenaming, Mode=OneWay}">
+                            <TextBox Text="{x:Bind EditName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="260" MaxLength="120"
+                                     PlaceholderText="{x:Bind Device.DeviceName, Mode=OneWay}" AutomationProperties.Name="Device name" />
+                            <Button Content="Save" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Tag="{x:Bind}" Click="OnSaveRenameClick"
+                                    IsEnabled="{x:Bind controls:SettingsText.Not(IsBusy), Mode=OneWay}" />
+                            <Button Content="Cancel" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Command="{x:Bind CancelRenameCommand}"
+                                    IsEnabled="{x:Bind controls:SettingsText.Not(IsBusy), Mode=OneWay}" />
+                        </StackPanel>
+                        <TextBlock Text="{x:Bind ReportedName, Mode=OneWay}" Visibility="{x:Bind HasReportedName, Mode=OneWay}" FontSize="13"
+                                   Foreground="{StaticResource SiloMutedBrush}" TextWrapping="Wrap" />
+                        <TextBlock Text="{x:Bind Line, Mode=OneWay}" FontSize="13" Foreground="{StaticResource SiloMutedBrush}" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <Button Style="{StaticResource SiloSettingsOutlineButtonStyle}" Visibility="{x:Bind ShowsRename, Mode=OneWay}"
+                                Command="{x:Bind StartRenameCommand}" AutomationProperties.Name="{x:Bind RenameName, Mode=OneWay}">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE70F;" FontSize="12" />
+                                <TextBlock Text="Rename" />
+                            </StackPanel>
+                        </Button>
+                        <Button Content="Use profile settings" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Tag="{x:Bind}"
+                                Visibility="{x:Bind CanUseProfileSettings, Mode=OneWay}" Click="OnUseProfileSettingsClick"
+                                IsEnabled="{x:Bind controls:SettingsText.Not(IsBusy), Mode=OneWay}" />
+                        <Button Style="{StaticResource SiloSettingsOutlineButtonStyle}" Tag="{x:Bind}" Visibility="{x:Bind CanForget}"
+                                Click="OnForgetClick" AutomationProperties.Name="{x:Bind ForgetName, Mode=OneWay}"
+                                IsEnabled="{x:Bind controls:SettingsText.Not(IsBusy), Mode=OneWay}">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE74D;" FontSize="12" />
+                                <TextBlock Text="Forget" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </DataTemplate>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <StackPanel HorizontalAlignment="Stretch" Spacing="0">
+        <Grid ColumnSpacing="24">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Spacing="8">
+                <TextBlock Text="Devices" Style="{StaticResource SiloSettingsPageTitleStyle}" AutomationProperties.HeadingLevel="Level1" />
+                <TextBlock Style="{StaticResource SiloSettingsMutedTextStyle}" FontSize="14" TextWrapping="Wrap"
+                           Text="Where your account is signed in, and the devices this profile watches on." />
+            </StackPanel>
+            <Button Grid.Column="1" VerticalAlignment="Top" Margin="0,4,0,0" Style="{StaticResource SiloSettingsOutlineButtonStyle}"
+                    Command="{x:Bind ViewModel.RefreshCommand}" AutomationProperties.Name="Refresh sessions">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <FontIcon Glyph="&#xE72C;" FontSize="12" />
+                    <TextBlock Text="Refresh" />
+                </StackPanel>
+            </Button>
+        </Grid>
+
+        <TextBlock Margin="0,16,0,0" Text="{x:Bind ViewModel.Status, Mode=OneWay}" Style="{StaticResource SiloSettingsMutedTextStyle}"
+                   Visibility="{x:Bind controls:SettingsText.Shows(ViewModel.Status), Mode=OneWay}" AutomationProperties.LiveSetting="Polite" />
+
+        <!-- The account's sign-ins: the household's primary profile only, as on the web. -->
+        <StackPanel Margin="0,32,0,0" Visibility="{x:Bind ViewModel.ShowsSessions, Mode=OneWay}">
+            <TextBlock Text="Signed-in sessions" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="18"
+                       Foreground="{StaticResource SiloForegroundBrush}" AutomationProperties.HeadingLevel="Level2" />
+            <TextBlock Margin="0,6,0,0" Style="{StaticResource SiloSettingsMutedTextStyle}" TextWrapping="Wrap"
+                       Text="See where your account is signed in, and sign out any session you don't recognize." />
+
+            <StackPanel Margin="0,16,0,0" Orientation="Horizontal" Spacing="16" Visibility="{x:Bind ViewModel.HasSessionsMessage, Mode=OneWay}">
+                <TextBlock Text="{x:Bind ViewModel.SessionsMessage, Mode=OneWay}" Style="{StaticResource SiloSettingsMutedTextStyle}"
+                           VerticalAlignment="Center" AutomationProperties.LiveSetting="Polite" />
+                <Button Content="Retry" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Command="{x:Bind ViewModel.RefreshCommand}"
+                        Visibility="{x:Bind ViewModel.CanRetrySessions, Mode=OneWay}" />
+            </StackPanel>
+
+            <StackPanel Visibility="{x:Bind ViewModel.HasCurrentSession, Mode=OneWay}">
+                <TextBlock Margin="0,24,0,0" Text="This device" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="15"
+                           Foreground="{StaticResource SiloForegroundBrush}" AutomationProperties.HeadingLevel="Level3" />
+                <TextBlock Margin="0,4,0,8" Style="{StaticResource SiloSettingsMutedTextStyle}" Text="The session you're using right now." />
+                <Border BorderBrush="{StaticResource SiloSettingsHairlineBrush}" BorderThickness="0,1,0,0">
+                    <ContentControl Content="{x:Bind ViewModel.CurrentSession, Mode=OneWay}" ContentTemplate="{StaticResource SessionTemplate}"
+                                    HorizontalContentAlignment="Stretch" IsTabStop="False" />
+                </Border>
+            </StackPanel>
+
+            <StackPanel Visibility="{x:Bind controls:SettingsText.Hidden(ViewModel.HasSessionsMessage), Mode=OneWay}">
+                <TextBlock Margin="0,24,0,0" Text="Other signed-in sessions" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
+                           FontSize="15" Foreground="{StaticResource SiloForegroundBrush}" AutomationProperties.HeadingLevel="Level3" />
+                <TextBlock Margin="0,4,0,8" Style="{StaticResource SiloSettingsMutedTextStyle}" Text="Other browsers and apps with access to your account." />
+                <Border BorderBrush="{StaticResource SiloSettingsHairlineBrush}" BorderThickness="0,1,0,0">
+                    <ItemsControl ItemsSource="{x:Bind ViewModel.OtherSessions}" ItemTemplate="{StaticResource SessionTemplate}" IsTabStop="False"
+                                  HorizontalContentAlignment="Stretch" />
+                </Border>
+                <StackPanel Orientation="Horizontal" Spacing="12" Padding="4,16" Visibility="{x:Bind ViewModel.HasNoOtherSessions, Mode=OneWay}">
+                    <FontIcon Glyph="&#xEA18;" FontSize="18" Foreground="{StaticResource SiloMutedBrush}" />
+                    <TextBlock Text="No other signed-in sessions." Style="{StaticResource SiloSettingsMutedTextStyle}" VerticalAlignment="Center" />
+                </StackPanel>
+                <Button Margin="0,12,0,0" Content="Load more sessions" Style="{StaticResource SiloSettingsOutlineButtonStyle}"
+                        Command="{x:Bind ViewModel.LoadMoreSessionsCommand}" Visibility="{x:Bind ViewModel.CanLoadMoreSessions, Mode=OneWay}" />
+            </StackPanel>
+
+            <TextBlock Margin="0,16,0,0" Style="{StaticResource SiloSettingsMutedTextStyle}" FontSize="12" TextWrapping="Wrap"
+                       Text="Last seen records authenticated activity, updated at most once a minute. Older sessions may have no recorded activity yet. Signing out keeps the password and saved device settings." />
+        </StackPanel>
+
+        <!-- The profile's devices: what each is, when it was used, and what is set differently there. -->
+        <TextBlock Margin="0,40,0,0" Text="Your Devices" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="18"
+                   Foreground="{StaticResource SiloForegroundBrush}" AutomationProperties.HeadingLevel="Level2" />
+        <TextBlock Margin="0,6,0,0" Style="{StaticResource SiloSettingsMutedTextStyle}" TextWrapping="Wrap"
+                   Text="Every phone, tablet, TV and browser you watch on, and how many settings are set differently there." />
+        <TextBlock Margin="0,16,0,0" Text="{x:Bind ViewModel.DevicesMessage, Mode=OneWay}" Style="{StaticResource SiloSettingsMutedTextStyle}"
+                   Visibility="{x:Bind ViewModel.HasDevicesMessage, Mode=OneWay}" AutomationProperties.LiveSetting="Polite" />
+        <TextBlock Margin="0,16,0,0" Style="{StaticResource SiloSettingsMutedTextStyle}" Visibility="{x:Bind ViewModel.HasNoDevices, Mode=OneWay}"
+                   Text="No devices yet. They appear here as you sign in on them." />
+        <ItemsControl Margin="0,8,0,0" ItemsSource="{x:Bind ViewModel.DeviceGroups}" IsTabStop="False" HorizontalContentAlignment="Stretch">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="settings:UserDeviceGroup">
+                    <StackPanel Margin="0,16,0,0">
+                        <TextBlock Text="{x:Bind views:DevicesSettingsView.Upper(Title)}" Margin="4,0,0,8" FontFamily="{StaticResource SiloFontSemiBold}"
+                                   FontWeight="SemiBold" FontSize="11" CharacterSpacing="150" Foreground="{StaticResource SiloMutedBrush}"
+                                   AutomationProperties.HeadingLevel="Level3" />
+                        <Border BorderBrush="{StaticResource SiloSettingsHairlineBrush}" BorderThickness="0,1,0,0">
+                            <ItemsControl ItemsSource="{x:Bind Devices}" ItemTemplate="{StaticResource DeviceTemplate}" IsTabStop="False"
+                                          HorizontalContentAlignment="Stretch" />
+                        </Border>
+                    </StackPanel>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+    </StackPanel>
+</UserControl>

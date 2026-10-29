@@ -36,7 +36,9 @@ public static class SettingScopes
 public sealed record OverlayConfig(string? Defaults, bool Enabled);
 
 /// <summary><c>GET /api/v2/settings/contract/capabilities</c>: which settings the server knows.</summary>
-public sealed record SettingsContractCapabilities(int ApiVersion, int ManifestRevision, IReadOnlyList<string>? ClientFamilies);
+/// <param name="SupportsDeviceRename">A device can be given a name of the profile's own (<c>PATCH /api/v2/devices/{device_id}</c>).</param>
+public sealed record SettingsContractCapabilities(int ApiVersion, int ManifestRevision, IReadOnlyList<string>? ClientFamilies,
+    bool SupportsDeviceRename = false);
 
 /// <summary>The profile and device settings stored on the server (docs/api-contract.md, 6.6).</summary>
 public sealed class SettingsApi(SiloHttp http)

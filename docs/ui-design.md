@@ -444,7 +444,7 @@ title prepares or buffers. With Windows' animations off the mark stands still.
 
 Opened from the sidebar's Settings; as on Silo's web the app's sidebar gives way to the settings' own (260 px, a shade
 darker, a hairline at its edge): "← Back to App", "Settings", the current profile (its initial in a 32 px disc), then
-the pages by group: PLAYBACK (the profile's), APPEARANCE (Navigation & Cards) and APP (Servers, About). The page open is white 6 % with red text and a
+the pages by group: PLAYBACK (the profile's), APPEARANCE (Navigation & Cards), ACCOUNT (Devices) and APP (Servers, About). The page open is white 6 % with red text and a
 red mark. Pages scroll on the right in a centred column of at most 1120 px, padded 50 px (a column, not MaxWidth on the
 host, which pushed a page of short lines off the right edge): the title (32 px bold) and its line, then sections between hairlines (`SettingsGroup`), their title
 (15 px semibold) and description (13 px muted) in a 256 px column and their rows (`SettingsRow`: label 14 px medium,
@@ -489,6 +489,26 @@ says why above the sections.
   hairlines of the entry's icon and name (Requests and Notifications: "Shows while your server offers it."), up and down
   as 32 px ghost buttons (off at the ends), and the switch; a hidden entry is dimmed. Changes show in the sidebar at
   once.
+- **Devices** (`DevicesSettingsView` on `DevicesViewModel`; the web's Signed-in sessions and Your Devices on one page,
+  without the household view and the per-device settings editor): the title and its line with Refresh (outline) on the
+  right, then what the last action did in 13 px muted text ("Session signed out", "Couldn't forget"). **Signed-in
+  sessions** (only for the household's primary profile, or an administrator without a profile, as on the web): "This
+  device" with Granary's own sign-in, then "Other signed-in sessions", each a line between hairlines: a 36 px outlined
+  icon by kind (computer, phone, TV, unknown), the name ("Chrome on Windows", or the name a client sent) with a "This
+  device" pill on Granary's own, and "Active now" (green) or "Last seen 3 hr ago" · "Signed in Oct 1, 2026, 8:00 AM";
+  on the right Sign out (outline; "Sign out this device" on Granary's own) and Details with a chevron, which opens the
+  last seen, signed in, IP address at sign-in, expiry and User-Agent below. Sign out asks first in the web's words
+  ("Sign out Chrome on Windows?" … "This client will lose access on its next authenticated request."); on Granary's own
+  it signs Granary out of the server and back to sign-in. "No other signed-in sessions." when there are none, "Load more
+  sessions" while the server has more, and the web's line on what Last seen records. The server without session
+  management says "Signed-in session management is unavailable on this server."; a failed read "Couldn't load sessions.
+  Try again." with Retry. **Your Devices**: grouped as the web's list, USING NOW, THIS WEEK and EARLIER, a line per device:
+  a 40 px disc with its kind's icon, its name (the profile's own, else the reported one), "Reports itself as Apple TV"
+  under a name of the profile's own, and "TV · 2 days ago · 3 things set differently" ("Desktop · using now · nothing
+  changed here" for this PC); on the right Rename (while the server names devices; the name becomes a 260 px box with
+  Save and Cancel, and an empty name shows the reported one again), Use profile settings (while something is set
+  differently; asks first) and Forget (not on this PC; asks first). "No devices yet. They appear here as you sign in on
+  them." when the profile has none.
 - **Servers** (`ServersSettingsView` on `ServersViewModel`; the apps keep the server under Settings too): the title and
   its line with Add server (outline) on the right; then a line per saved server between hairlines: a 40 px disc, the
   name (15 px semibold) and "https://silo.example · Signed in as alex" (13 px muted, trimmed), the red Active pill or
