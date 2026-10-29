@@ -40,6 +40,9 @@ public sealed partial class MediaCardView : UserControl
     // Between the artwork and the title.
     private const double CaptionGap = 11;
 
+    // The resources cards use, by key (Resource). UI thread only.
+    private static readonly Dictionary<string, object> SharedResources = new(StringComparer.Ordinal);
+
     private readonly MediaCardActions _actions = App.Services.GetRequiredService<MediaCardActions>();
     private readonly CardOverlaySettings _overlays = App.Services.GetRequiredService<CardOverlaySettings>();
 
@@ -52,6 +55,15 @@ public sealed partial class MediaCardView : UserControl
     private MediaCard? _badgedCard;
     private CardOverlayPrefs? _badgedPrefs;
     private OverlayPreset? _badgedPreset;
+    // What the subtitle's style and the caption's colour are set for: null before the first card.
+    private bool? _subtitleLandscape;
+    private bool _captionAttention;
+    // The shown card's shape and whether its progress bar shows, which size the artwork and place the badges; and what
+    // they were last done for.
+    private bool _landscape;
+    private bool _lifted;
+    private bool _sizedLandscape;
+    private (double Width, bool Landscape, bool Lifted) _placed;
     // The badge views in each corner (top left, top right, bottom left, bottom right), ahead of its fixed children: a
     // recycled card compares them here rather than asking the corner for its children.
     private readonly List<BadgeView>[] _cornerViews = [[], [], [], []];
@@ -130,6 +142,7 @@ public sealed partial class MediaCardView : UserControl
     // Every part is set for every card: containers are recycled, so nothing of the previous card may stay.
     private void Show(MediaCard? card)
     {
+        _landscape = card?.Shape == MediaCardShape.Landscape;
         // The thumbhash's blur shows at once; the title stands in only without one.
         var blur = Thumbhashes.Get(card?.ImageThumbhash);
         BlurImage.Source = blur;
@@ -149,17 +162,26 @@ public sealed partial class MediaCardView : UserControl
         ShowBadges(card);
 
         TitleText.Text = card?.Title ?? "";
-        SubtitleText.Style = (Style)Application.Current.Resources[
-            card?.Shape == MediaCardShape.Landscape ? "SiloCaptionTextStyle" : "SiloOverlineTextStyle"];
-        ShowCaption(card);
-        if (card?.IsCaptionAttention == true)
+        // A recycled card mostly shows the same shape and colours: each is set only when it changes.
+        if (_subtitleLandscape != _landscape)
         {
-            CaptionText.Foreground = (Brush)Application.Current.Resources["SiloAttentionBrush"];
+            _subtitleLandscape = _landscape;
+            SubtitleText.Style = Resource<Style>(_landscape ? "SiloCaptionTextStyle" : "SiloOverlineTextStyle");
         }
-        else
+        ShowCaption(card);
+        bool attention = card?.IsCaptionAttention == true;
+        if (_captionAttention != attention)
         {
-            // The style's colour again, for a recycled card.
-            CaptionText.ClearValue(TextBlock.ForegroundProperty);
+            _captionAttention = attention;
+            if (attention)
+            {
+                CaptionText.Foreground = Brush("SiloAttentionBrush");
+            }
+            else
+            {
+                // The style's colour again, for a recycled card.
+                CaptionText.ClearValue(TextBlock.ForegroundProperty);
+            }
         }
 
         SetHovered(false);
@@ -175,6 +197,7 @@ public sealed partial class MediaCardView : UserControl
 
         WatchedMark.Visibility = card?.ShowsWatchedMark == true && state.IsWatched ? Visibility.Visible : Visibility.Collapsed;
         bool hasProgress = card?.Progress is > 0 && !state.IsProgressCleared;
+        _lifted = hasProgress;
         if (hasProgress && Progress is null)
         {
             FindName(nameof(Progress));
@@ -328,7 +351,19 @@ public sealed partial class MediaCardView : UserControl
 
     private static Visibility Visible(bool visible) => visible ? Visibility.Visible : Visibility.Collapsed;
 
-    private static Brush Brush(string key) => (Brush)Application.Current.Resources[key];
+    private static Brush Brush(string key) => Resource<Brush>(key);
+
+    // The app's styles and brushes, looked up once: each lookup made a new wrapper of the resource, and with it work for
+    // the collector, for every card shown. The accent recolours its brushes in place (AccentPainter), so they stay right.
+    private static T Resource<T>(string key) where T : class
+    {
+        if (!SharedResources.TryGetValue(key, out object? value))
+        {
+            value = Application.Current.Resources[key];
+            SharedResources[key] = value;
+        }
+        return (T)value;
+    }
 
     private static void Label(Button button, string label)
     {
@@ -403,10 +438,17 @@ public sealed partial class MediaCardView : UserControl
         {
             return;
         }
-        double scale = Card?.Shape == MediaCardShape.Landscape ? 1 : width / OverlayPreset.ReferenceWidth;
+        // A recycled card of the same size and progress keeps them where they are.
+        var placed = (width, _landscape, _lifted);
+        if (placed == _placed)
+        {
+            return;
+        }
+        _placed = placed;
+        double scale = _landscape ? 1 : width / OverlayPreset.ReferenceWidth;
         double inset = EdgeInset * scale;
         double edgeWidth = Math.Max(0, (width - 2 * inset) / scale);
-        bool lifted = Progress?.Visibility == Visibility.Visible;
+        bool lifted = _lifted;
         // The layout slot holds the edge at its unscaled width, and on a poster wider than the web's also as drawn: a slot
         // narrower than either clips the right corner. On a small poster the margin goes negative on purpose, so the slot
         // is the unscaled width; on a big one it is the inset, so the slot is the scaled-up edge.
@@ -481,11 +523,13 @@ public sealed partial class MediaCardView : UserControl
 
     private void UpdateSize(double width)
     {
-        if (width <= 0)
+        // Measured again at the same width, as every card is while its grid lays out, it is already sized.
+        if (width <= 0 || (width == _artWidth && _landscape == _sizedLandscape))
         {
             return;
         }
-        double height = Card?.Shape == MediaCardShape.Landscape ? width * 9 / 16 : width * 3 / 2;
+        _sizedLandscape = _landscape;
+        double height = _landscape ? width * 9 / 16 : width * 3 / 2;
         Art.Height = height;
         _artWidth = width;
         PlaceBadges();

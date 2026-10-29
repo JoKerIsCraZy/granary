@@ -40,6 +40,10 @@ public static class CardBadgeViews
         ["ribbon"] = "\uE734",
     };
 
+    // A badge's brushes, shared by every badge of the same colour: a scrolled grid made three for each badge it showed. UI
+    // thread only.
+    private static readonly Dictionary<BadgeColor, SolidColorBrush> Brushes = [];
+
     /// <summary>
     /// <paramref name="shown"/> showing <paramref name="badge"/> when it is drawn the same way and only its word differs (a
     /// recycled card's "IMDB 7.4" becoming "IMDB 6.8"), else a new view. What a view draws is kept beside it, so a reuse
@@ -134,7 +138,15 @@ public static class CardBadgeViews
         return word;
     }
 
-    private static SolidColorBrush Brush(BadgeColor color) => new(Color.FromArgb(color.A, color.R, color.G, color.B));
+    private static SolidColorBrush Brush(BadgeColor color)
+    {
+        if (!Brushes.TryGetValue(color, out var brush))
+        {
+            brush = new SolidColorBrush(Color.FromArgb(color.A, color.R, color.G, color.B));
+            Brushes[color] = brush;
+        }
+        return brush;
+    }
 
     // What a badge's view draws apart from its word.
     internal sealed record Look(OverlayPresetId Preset, string? IconId, string? Accent, bool AlignRight, bool HasText);
