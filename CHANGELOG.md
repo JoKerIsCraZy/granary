@@ -54,3 +54,5 @@ release's section is what its update says it changes (docs/release.md).
   in focus; while you scroll it folds into a slim header that stays at the top.
 - A new layout for title pages: the backdrop stays put behind a large logo, one line of facts, the overview and bigger
   buttons; Info shows the full details, cast, crew and files.
+- Settings → Devices: see where your account is signed in and sign out any session, and see the devices your profile
+  watches on, rename them, set them back to your profile settings, or forget them.

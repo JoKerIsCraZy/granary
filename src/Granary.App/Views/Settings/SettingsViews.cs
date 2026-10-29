@@ -172,6 +172,86 @@ public sealed partial class ServersSettingsView : UserControl, IDisposable
     }
 }
 
+/// <summary>Settings → Devices; it reads the account's sign-ins and the profile's devices when it is shown.</summary>
+public sealed partial class DevicesSettingsView : UserControl
+{
+    private static readonly SolidColorBrush ActiveBrush = new(Windows.UI.Color.FromArgb(0xFF, 0x34, 0xD3, 0x99));
+
+    public DevicesSettingsView()
+    {
+        ViewModel = ActivatorUtilities.CreateInstance<DevicesViewModel>(App.Services);
+        InitializeComponent();
+        // Once: the page keeps the view, and Refresh reads the lists again.
+        Loaded += OnFirstLoaded;
+    }
+
+    public DevicesViewModel ViewModel { get; }
+
+    // Static because x:Bind function bindings in the templates call them on the type.
+    public static string SessionGlyph(SessionDeviceKind kind) => kind switch
+    {
+        SessionDeviceKind.Tv => "",
+        SessionDeviceKind.Phone => "",
+        SessionDeviceKind.Desktop => "",
+        _ => "",
+    };
+
+    /// <summary>The icon of a device by its kind: TV, Tablet, Mobile, Desktop or Other.</summary>
+    public static string DeviceGlyph(string kind) => kind switch
+    {
+        "TV" => "",
+        "Tablet" => "",
+        "Mobile" => "",
+        "Desktop" => "",
+        _ => "",
+    };
+
+    public static string Chevron(bool expanded) => expanded ? "" : "";
+
+    /// <summary>"Active now" in green, as the web shows a sign-in seen in the last two minutes.</summary>
+    public static Brush SeenBrush(bool activeNow) => activeNow ? ActiveBrush : (Brush)Application.Current.Resources["SiloMutedBrush"];
+
+    public static string Upper(string text) => text.ToUpperInvariant();
+
+    private async void OnFirstLoaded(object sender, RoutedEventArgs e)
+    {
+        Loaded -= OnFirstLoaded;
+        await SettingsViewLoad.RunAsync(ViewModel.LoadAsync);
+    }
+
+    private async void OnSignOutClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { Tag: SignedInSessionRow row })
+        {
+            await ViewModel.SignOutSessionCommand.ExecuteAsync(row);
+        }
+    }
+
+    private async void OnSaveRenameClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { Tag: UserDeviceRow row })
+        {
+            await ViewModel.SaveRenameCommand.ExecuteAsync(row);
+        }
+    }
+
+    private async void OnUseProfileSettingsClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { Tag: UserDeviceRow row })
+        {
+            await ViewModel.UseProfileSettingsCommand.ExecuteAsync(row);
+        }
+    }
+
+    private async void OnForgetClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { Tag: UserDeviceRow row })
+        {
+            await ViewModel.ForgetCommand.ExecuteAsync(row);
+        }
+    }
+}
+
 /// <summary>Settings → About; the page detaches it as it leaves, so the app's updates let go of it.</summary>
 public sealed partial class AboutSettingsView : UserControl, IDisposable
 {

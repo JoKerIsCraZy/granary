@@ -74,6 +74,18 @@
                         </StackPanel>
                     </ListViewItem>
                 </ListView>
+                <!-- The account's: where it is signed in, and the devices it watches on. -->
+                <TextBlock Text="ACCOUNT" Margin="8,20,0,6" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="11"
+                           CharacterSpacing="150" Foreground="{StaticResource SiloMutedBrush}" AutomationProperties.HeadingLevel="Level2" />
+                <ListView x:Name="AccountPages" SelectionMode="Single" SelectionChanged="OnPageSelected" IsItemClickEnabled="False"
+                          AutomationProperties.Name="Account pages">
+                    <ListViewItem Tag="devices" AutomationProperties.Name="Devices">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <FontIcon Glyph="&#xE8EA;" FontSize="14" />
+                            <TextBlock Text="Devices" FontSize="14" />
+                        </StackPanel>
+                    </ListViewItem>
+                </ListView>
                 <!-- The app's own: its servers, and what it is. One page is open across all the lists. -->
                 <TextBlock Text="APP" Margin="8,20,0,6" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="11"
                            CharacterSpacing="150" Foreground="{StaticResource SiloMutedBrush}" AutomationProperties.HeadingLevel="Level2" />

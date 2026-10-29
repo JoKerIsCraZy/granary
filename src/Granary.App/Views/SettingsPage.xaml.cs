@@ -9,8 +9,9 @@ using Microsoft.UI.Xaml.Navigation;
 namespace Granary.App.Views;
 
 /// <summary>
-/// The settings (docs/ui-design.md, Settings): the profile's, and the app's own servers and About. The parameter names the
-/// page to open first (<c>playback</c>, <c>subtitles</c>, <c>interface</c>, <c>servers</c>, <c>about</c>).
+/// The settings (docs/ui-design.md, Settings): the profile's, the account's devices, and the app's own servers and About. The
+/// parameter names the page to open first (<c>playback</c>, <c>subtitles</c>, <c>interface</c>, <c>devices</c>, <c>servers</c>,
+/// <c>about</c>).
 /// </summary>
 public sealed partial class SettingsPage : Page, IDockSpace
 {
@@ -76,6 +77,7 @@ public sealed partial class SettingsPage : Page, IDockSpace
             {
                 "subtitles" => new LanguageSettingsView(),
                 "interface" => new InterfaceSettingsView(),
+                "devices" => new DevicesSettingsView(),
                 "servers" => new ServersSettingsView(),
                 "about" => new AboutSettingsView(),
                 _ => new PlaybackSettingsView(),
@@ -86,7 +88,7 @@ public sealed partial class SettingsPage : Page, IDockSpace
         PageScroller.ChangeView(null, 0, null, disableAnimation: true);
     }
 
-    private ListView[] Lists() => [Pages, AppearancePages, AppPages];
+    private ListView[] Lists() => [Pages, AppearancePages, AccountPages, AppPages];
 
     // The settings' sidebar runs on beside the minimized player's bar; only the page ends above it.
     void IDockSpace.ReserveBottom(double height) => PageScroller.Margin = new Thickness(0, 0, 0, height);

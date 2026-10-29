@@ -344,6 +344,32 @@ spaced code.
 External sign-in (OIDC via the system browser: `/auth/oauth/*`), network-identity sign-in, signup,
 invitations, password reset and first-run setup exist in v2 but are out of scope.
 
+### 4.4 Signed-in sessions and devices
+
+Settings → Devices (`DevicesApi`) shows two lists, as the web shows them on two pages: the account's live
+sign-ins (the web's Signed-in sessions) and the profile's devices (its Your Devices).
+
+| Call | Auth | What it does |
+|---|---|---|
+| `GET /api/v2/auth/sessions/capabilities` | account | `available`: the server lists and signs out sign-ins at all. |
+| `GET /api/v2/auth/sessions?limit=50&cursor=` | account | One page of the account's live sign-ins, newest first: `id`, `device_name` (`X-Silo-Device-Name` at sign-in, else the User-Agent), `ip_address`, `created_at`, `expires_at`, `device_platform`, `last_seen_at` (at most once a minute; null until recorded), `current`. `current_session` is the caller's own, even on another page. |
+| `DELETE /api/v2/auth/sessions/{id}` | account | Signs that sign-in out: it loses access on its next request (204; 404 when it is gone already). |
+| `GET /api/v2/devices?scope=profile&limit=200&cursor=` | profile | The profile's devices: `device_id`, `device_name`, `custom_name`, `device_platform`, `last_seen_at`, `profile_id`, `profile_name`, `is_current_device` (by `X-Silo-Device-Id`), `changed_count`. Read page by page to the end. |
+| `PATCH /api/v2/devices/{device_id}` | profile | `{"custom_name": "Living Room"}` names the device; `{"custom_name": null}` shows the reported name again. Returns the device. Offered only while `supports_device_rename` in `GET /api/v2/settings/contract/capabilities` is true. |
+| `DELETE /api/v2/devices/{device_id}/settings` | profile | Removes the settings changed on the device; it stays listed (204). |
+| `DELETE /api/v2/devices/{device_id}` | profile | Forgets the device: its settings go and it leaves the list until it is used again. Its sign-in stays (204). |
+
+Rules Granary follows, as the web does:
+
+- The sign-ins belong to the whole account, so only the household's primary profile, or an administrator
+  without a profile, sees them (the web's `RequirePrimaryOrAdmin`).
+- Granary's own sign-in is not signed out with `DELETE`: Sign out this device runs the ordinary sign-out
+  (`POST /api/v2/auth/logout`, section 5), which also drops the saved credentials.
+- A session's name follows the web's `lib/loginSessionDevice.ts`: a client that named itself keeps its
+  name; a User-Agent reads as "Chrome on Windows".
+- The device the request came from (`is_current_device`) is not offered for Forget.
+- The household view (`scope=household`) and the per-device settings editor are left out.
+
 ## 5. Tokens and refresh
 
 ### 5.1 Server behaviour
