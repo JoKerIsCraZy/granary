@@ -57,8 +57,9 @@ public sealed partial class RequestsViewModel : ObservableObject
     private bool _hearsCards;
     // Where each Discover card opens: the library's title, or the title's own page.
     private readonly Dictionary<string, (AppRoute Route, object Parameter)> _destinations = new(StringComparer.Ordinal);
-    // What the hero shows of each Discover card.
+    // What the hero shows of each Discover card, and the title it was made of, to say where a new request stands.
     private readonly Dictionary<string, BrowseHeroTitle> _heroTitles = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, RequestMediaResult> _heroResults = new(StringComparer.Ordinal);
     private (string? ServerId, string? ProfileId)? _loadedFor;
     private CancellationTokenSource _run = new();
     // Each read of Yours; an answer shows only while its read is the latest.
@@ -192,12 +193,17 @@ public sealed partial class RequestsViewModel : ObservableObject
         }
     }
 
-    // A card's Request that went through (on any thread) is read into Yours, as the web reads its requests again; one that
-    // failed is the notice's.
+    // A card's Request that went through (on any thread) is read into Yours, as the web reads its requests again, and the
+    // hero says where it stands now; one that failed is the notice's.
     private void OnCardRequestAnswered(object? sender, CardRequestAnswer answer) => _dispatcher.Post(() =>
     {
         if (_hearsCards && answer.Succeeded)
         {
+            if (answer.State is { } state && _heroResults.TryGetValue(answer.CardId, out var result))
+            {
+                _heroTitles[answer.CardId] = BrowseHeroTitle.Of(result, state);
+                FollowRowsWithHero();
+            }
             _ = RefreshYoursAsync();
         }
     });
@@ -298,8 +304,10 @@ public sealed partial class RequestsViewModel : ObservableObject
             RequestGroups.Clear();
             YoursCount = "";
             _downloading = false;
-            // Its first card pointed at leads the hero at once again.
+            // Its first card pointed at leads the hero at once again; until its rows come, the last profile's title goes.
             Hero.Forget();
+            DiscoverRows.Clear();
+            FollowRowsWithHero();
         }
         if (_session is not { State: SessionState.Ready, ActiveServer: { } server })
         {
@@ -332,13 +340,17 @@ public sealed partial class RequestsViewModel : ObservableObject
                 return;
             }
             _heroTitles.Clear();
+            _heroResults.Clear();
             foreach (var section in discover.Items)
             {
                 var results = section.Results.Where(r => r.TmdbId > 0).ToList();
                 var cards = results.Select(CardOf).DistinctBy(c => c.Id, StringComparer.Ordinal).ToList();
                 foreach (var result in results)
                 {
-                    _heroTitles.TryAdd(RequestCards.IdOf(result), BrowseHeroTitle.Of(result));
+                    if (_heroResults.TryAdd(RequestCards.IdOf(result), result))
+                    {
+                        _heroTitles[RequestCards.IdOf(result)] = BrowseHeroTitle.Of(result);
+                    }
                 }
                 if (cards.Count > 0)
                 {

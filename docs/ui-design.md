@@ -255,8 +255,9 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   (AVAILABLE, APPROVED, …, or why they cannot be requested); a title in the library opens there. Above Discover, the
   same hero as Home's (`BrowseHero`): the first card of the first row until a card is pointed at. TMDB gives these titles
   no logo, so the name shows in large type; the line under it is the year, "Movie" or "Series", and where a request
-  stands in the card badge's words ("2026 · Movie · Available"); the backdrop is TMDB's. The title and the tabs scroll
-  up under its compact header with the rows; Yours shows no hero. Yours, up to the web's
+  stands in the card badge's words ("2026 · Movie · Available", and "Pending" once a card's Request went through); the
+  backdrop is TMDB's. The name is not read as a heading, so the page's "Requests" stays first. The title and the tabs
+  scroll up under its compact header with the rows; Yours shows no hero. Another profile's Discover starts without one. Yours, up to the web's
   1024 px: "What the statuses mean", then Needs attention, On the way, In your library, Cancelled with their counts,
   each request a row with its poster, title and state badge (the web's variants: Available red, Failed destructive,
   approved and on their way filled, Pending outlined, closed ones outlined and muted), "Series · 2022 · Seasons 1–3",

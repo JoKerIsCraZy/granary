@@ -31,8 +31,11 @@ internal static class RequestCards
     }
 
     /// <summary>"PENDING", "APPROVED", … for a request just made; null when the server named no state.</summary>
-    public static string? Badge(MediaRequest request) =>
-        RequestText.DisplayState(request.Status, request.Outcome, request.State) is { } state ? RequestText.StateLabel(state).ToUpperInvariant() : null;
+    public static string? Badge(MediaRequest request) => StateText(request)?.ToUpperInvariant();
+
+    /// <summary>The badge's words as written: "Pending", "Approved", …; null when the server named no state.</summary>
+    public static string? StateText(MediaRequest request) =>
+        RequestText.DisplayState(request.Status, request.Outcome, request.State) is { } state ? RequestText.StateLabel(state) : null;
 
     // The web's requestInputFromMediaResult: the title as TMDB gave it, a series without seasons (so all of it).
     private static MediaRequestCreate? OfferOf(RequestMediaResult result) =>

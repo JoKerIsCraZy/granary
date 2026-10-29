@@ -16,7 +16,7 @@
 
     <Grid>
     <!-- Behind the rows: they scroll under the compact header and are cut off at its edge. Discover only. -->
-    <controls:BrowseHero x:Name="Hero" HeadingLevel="Level2"
+    <controls:BrowseHero x:Name="Hero" HeadingLevel="None"
                          Title="{x:Bind views:RequestsPage.DiscoverHero(ViewModel.Hero.Shown, ViewModel.IsDiscoverTab), Mode=OneWay}" />
 
     <ScrollViewer x:Name="Scroller" XYFocusKeyboardNavigation="Enabled"
