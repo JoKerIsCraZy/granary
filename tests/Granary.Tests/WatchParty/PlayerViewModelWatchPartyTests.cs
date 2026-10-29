@@ -259,7 +259,7 @@ public sealed class PlayerViewModelWatchPartyTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task AGuestTheRoomDoesNotLetPause_HasNeitherPlayPauseNorSeekingOnWindowsMediaControls_AndAKeyIsRefusedAsTheButtonIs()
+    public async Task AGuestTheRoomDoesNotLetPause_HasNeitherPlayPauseNorSeekingOnWindowsMediaControls_AndTheirKeysDoNothing()
     {
         var viewModel = await PlayingAsync(role: "guest", transport: false);
         var controls = new FakeSystemMediaControls();
@@ -269,11 +269,56 @@ public sealed class PlayerViewModelWatchPartyTests : IAsyncDisposable
 
         controls.Press(SystemMediaButton.Pause);
         controls.Press(SystemMediaButton.Seek, 600);
+        controls.Press(SystemMediaButton.FastForward);
 
         Assert.False(_engine.Current.IsPaused);
         Assert.Empty(Playback.Seeks);
-        Assert.Equal(WatchPartyPlaybackBinding.HostSeeksText, viewModel.NoticeMessage);
+        Assert.Null(viewModel.Notice);
         Assert.DoesNotContain(Socket.Sent, f => f.Contains("\"transport_request\"", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task AKeyPressedBeforeTheRoomTookAGuestsPauseAway_AsksNothingWhenItIsHandled()
+    {
+        var viewModel = await PlayingAsync(role: "guest");
+        var controls = new FakeSystemMediaControls();
+        var dispatcher = new QueuedDispatcher();
+        using var media = new PlayerSystemMedia(viewModel, controls, dispatcher, _time);
+        controls.Press(SystemMediaButton.Pause);
+
+        Socket.Push(WatchPartyPayloads.Snapshot(WatchPartyPayloads.Room("playing", "playing", generation: 4, revision: 1, role: "guest",
+            selected: "movie:heat", transport: false)));
+        await ServerPlaybackFixture.Until(() => !viewModel.CanPauseInRoom, "the room's new policy");
+        dispatcher.RunAll();
+
+        Assert.False(_engine.Current.IsPaused);
+        Assert.DoesNotContain(Socket.Sent, f => f.Contains("\"transport_request\"", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task APauseInTheMomentTheRoomStopsPlaying_IsNotDoneHereAlone()
+    {
+        bool armed = false;
+        bool? changedHere = null;
+        PlayerViewModel? player = null;
+        // Runs before the player hears of the room: the room plays nothing, and the player has not left yet.
+        _party.PropertyChanged += (_, e) =>
+        {
+            if (armed && changedHere is null && e.PropertyName == nameof(WatchPartySession.Room) && _party.Room is not { IsPlaying: true })
+            {
+                bool paused = _engine.Current.IsPaused;
+                player!.TogglePauseCommand.Execute(null);
+                changedHere = _engine.Current.IsPaused != paused;
+            }
+        };
+        player = await PlayingAsync(role: "guest");
+        armed = true;
+
+        Socket.Push(WatchPartyPayloads.Snapshot(WatchPartyPayloads.Room("lobby", "idle", generation: 4, revision: 1, role: "guest",
+            selected: "movie:heat")));
+        await ServerPlaybackFixture.Until(() => changedHere is not null, "the room's stop");
+
+        Assert.False(changedHere);
     }
 
     [Fact]

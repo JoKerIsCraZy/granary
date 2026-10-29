@@ -12,8 +12,12 @@ namespace Granary.App.Services;
 /// </summary>
 internal sealed class WindowsMediaControls(MainWindow window, ILogger<WindowsMediaControls> logger) : ISystemMediaControls
 {
+    // Failures in a row after which the player goes on without the controls.
+    private const int FailuresAllowed = 3;
+
     private SystemMediaTransportControls? _controls;
     private bool _unavailable;
+    private int _failures;
     private SystemMediaState? _shown;
     private CancellationTokenSource? _artwork;
     // The picture Windows reads; kept until another one replaces it.
@@ -21,7 +25,33 @@ internal sealed class WindowsMediaControls(MainWindow window, ILogger<WindowsMed
 
     public event EventHandler<SystemMediaRequest>? Requested;
 
-    public void Show(SystemMediaState state)
+    // Called from the player's property changes and from its page's unload: a failure of Windows' controls must neither end
+    // the app nor keep the page from letting go of the player.
+    public void Show(SystemMediaState state) => Guarded(() => ShowState(state));
+
+    public void Clear() => Guarded(ClearState);
+
+    private void Guarded(Action action)
+    {
+        if (_unavailable)
+        {
+            return;
+        }
+        try
+        {
+            action();
+            _failures = 0;
+        }
+        catch (Exception ex)
+        {
+            // A state shown in part is shown again whole next time.
+            _shown = null;
+            _unavailable = ++_failures >= FailuresAllowed;
+            logger.LogWarning("Windows' media controls failed: {Failure}{GivenUp}", ex.GetType().Name, _unavailable ? "; the player goes on without them" : "");
+        }
+    }
+
+    private void ShowState(SystemMediaState state)
     {
         if (Controls is not { } controls)
         {
@@ -53,7 +83,7 @@ internal sealed class WindowsMediaControls(MainWindow window, ILogger<WindowsMed
         }
     }
 
-    public void Clear()
+    private void ClearState()
     {
         _shown = null;
         StopArtwork();
@@ -145,18 +175,20 @@ internal sealed class WindowsMediaControls(MainWindow window, ILogger<WindowsMed
         _artwork = null;
     }
 
-    // The title's own time; seeking off while the player cannot seek (a guest of a Watch Party).
+    // The title's own time; seeking off while the player cannot seek (a guest of a Watch Party). Only finite times reach
+    // TimeSpan; without a known length the timeline ends where playback is.
     private static void ShowTimeline(SystemMediaTransportControls controls, SystemMediaState state)
     {
-        var duration = TimeSpan.FromSeconds(Math.Max(0, state.DurationSeconds));
-        var position = TimeSpan.FromSeconds(Math.Clamp(state.PositionSeconds, 0, duration.TotalSeconds));
+        double position = double.IsFinite(state.PositionSeconds) ? Math.Max(0, state.PositionSeconds) : 0;
+        double duration = double.IsFinite(state.DurationSeconds) && state.DurationSeconds > 0 ? state.DurationSeconds : position;
+        var end = TimeSpan.FromSeconds(duration);
         controls.UpdateTimelineProperties(new SystemMediaTransportControlsTimelineProperties
         {
             StartTime = TimeSpan.Zero,
-            EndTime = duration,
-            Position = position,
+            EndTime = end,
+            Position = TimeSpan.FromSeconds(Math.Min(position, duration)),
             MinSeekTime = TimeSpan.Zero,
-            MaxSeekTime = state.CanSeek ? duration : TimeSpan.Zero,
+            MaxSeekTime = state.CanSeek && state.DurationSeconds > 0 ? end : TimeSpan.Zero,
         });
     }
 

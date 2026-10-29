@@ -50,7 +50,6 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     private PlaybackSnapshot _engineState = PlaybackSnapshot.Idle;
     private double? _seekTarget;
     private long _seekTargetAt;
-    private bool _left;
 
     public PlayerViewModel(
         IPlaybackEngine engine,
@@ -98,6 +97,10 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     public bool IsFailed => Phase == PlayerPhase.Failed;
 
     public bool IsEnded => Phase == PlayerPhase.Ended;
+
+    /// <summary>The viewer left the player (<see cref="Leave"/>): nothing plays here any more, until a new start.</summary>
+    [ObservableProperty]
+    public partial bool HasLeft { get; private set; }
 
     /// <summary>The movie, or the series of an episode.</summary>
     [ObservableProperty]
@@ -210,7 +213,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     {
         EndWatchParty();
         _request = request;
-        _left = false;
+        HasLeft = false;
         // A seek on its way belongs to the title before.
         _seekTarget = null;
         ErrorMessage = "";
@@ -296,11 +299,11 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     /// </summary>
     public void Leave()
     {
-        if (_left)
+        if (HasLeft)
         {
             return;
         }
-        _left = true;
+        HasLeft = true;
         EndWatchParty();
         LeavePlayback();
         _engine.Stop();

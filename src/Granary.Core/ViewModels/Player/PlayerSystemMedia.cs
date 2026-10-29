@@ -24,12 +24,22 @@ public sealed class PlayerSystemMedia : IDisposable
     // A position this far from where the last one shown has played on to is a jump, a seek, and shows at once.
     private const double JumpSeconds = 3;
 
+    // What the controls show is read from these; the player's other changes (its menus, the next-up card) leave them alone.
+    private static readonly HashSet<string> Shown =
+    [
+        nameof(PlayerViewModel.Phase), nameof(PlayerViewModel.IsPaused), nameof(PlayerViewModel.IsBuffering), nameof(PlayerViewModel.HasLeft),
+        nameof(PlayerViewModel.PositionSeconds), nameof(PlayerViewModel.DurationSeconds), nameof(PlayerViewModel.CanSeek),
+        nameof(PlayerViewModel.MediaInfo), nameof(PlayerViewModel.HasPreviousEpisode), nameof(PlayerViewModel.HasNextEpisode),
+        nameof(PlayerViewModel.IsWatchParty), nameof(PlayerViewModel.CanSeekInRoom), nameof(PlayerViewModel.CanPauseInRoom),
+    ];
+
     private readonly PlayerViewModel _player;
     private readonly ISystemMediaControls _controls;
     private readonly IUiDispatcher _dispatcher;
     private readonly TimeProvider _time;
     private SystemMediaState? _shown;
     private long _shownAt;
+    private bool _cleared;
     private bool _disposed;
 
     public PlayerSystemMedia(PlayerViewModel player, ISystemMediaControls controls, IUiDispatcher dispatcher, TimeProvider time)
@@ -52,10 +62,19 @@ public sealed class PlayerSystemMedia : IDisposable
         _disposed = true;
         _player.PropertyChanged -= OnPlayerChanged;
         _controls.Requested -= OnRequested;
-        _controls.Clear();
+        if (!_cleared)
+        {
+            _controls.Clear();
+        }
     }
 
-    private void OnPlayerChanged(object? sender, PropertyChangedEventArgs e) => Update();
+    private void OnPlayerChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (string.IsNullOrEmpty(e.PropertyName) || Shown.Contains(e.PropertyName))
+        {
+            Update();
+        }
+    }
 
     private void Update()
     {
@@ -63,6 +82,18 @@ public sealed class PlayerSystemMedia : IDisposable
         {
             return;
         }
+        // Left, nothing plays here any more: off the controls at once, not when the page goes.
+        if (_player.HasLeft)
+        {
+            if (!_cleared)
+            {
+                _cleared = true;
+                _shown = null;
+                _controls.Clear();
+            }
+            return;
+        }
+        _cleared = false;
         var state = Read();
         if (state == _shown || (_shown is { } shown && state == shown with { PositionSeconds = state.PositionSeconds } && !TimelineDue(shown, state)))
         {
@@ -91,22 +122,32 @@ public sealed class PlayerSystemMedia : IDisposable
             _ => SystemMediaStatus.Stopped,
         };
         var info = player.MediaInfo;
-        return new SystemMediaState(info.Title, info.Subtitle, info.Artwork, status, player.PositionSeconds, player.DurationSeconds,
-            CanPlayPause: player.IsPlaying && player.CanPauseInRoom,
-            CanSeek: Seeks && player.CanSeekInRoom,
-            // In a Watch Party the room decides what plays next, so the player has no episodes around.
-            CanGoPrevious: player.HasPreviousEpisode && !player.IsWatchParty,
-            CanGoNext: player.HasNextEpisode && !player.IsWatchParty);
+        // An unknown or endless length is none: the controls take only finite times.
+        double duration = double.IsFinite(player.DurationSeconds) && player.DurationSeconds > 0 ? player.DurationSeconds : 0;
+        double position = double.IsFinite(player.PositionSeconds) ? Math.Max(0, player.PositionSeconds) : 0;
+        return new SystemMediaState(info.Title, info.Subtitle, info.Artwork, status, position, duration,
+            CanPlayPause, CanSeek, CanGoPrevious, CanGoNext);
     }
 
-    // The player itself can move: the room may still refuse a guest, and says so.
-    private bool Seeks => _player.IsPlaying && _player.CanSeek;
+    // What the buttons may do now, the same for what the controls show and for a press: Windows shows a change a moment
+    // later, and a press it queued before (a room that took a guest's pause away, a player just left) must not act on the
+    // state that was. In a Watch Party play and pause are the host's and those of a guest the room lets, seeking the host's.
+    private bool CanPlayPause => !_player.HasLeft && _player.IsPlaying && _player.CanPauseInRoom;
+
+    private bool CanSeek => !_player.HasLeft && _player.IsPlaying && _player.CanSeek && _player.CanSeekInRoom;
+
+    // Settled, not loading nor buffering or replanning, so presses start one load, not one each; and in a Watch Party the
+    // room decides what plays next, so the player has no episodes around.
+    private bool CanChangeEpisode => !_player.HasLeft && _player.IsPlaying && !_player.IsBuffering && !_player.IsWatchParty;
+
+    private bool CanGoPrevious => CanChangeEpisode && _player.HasPreviousEpisode;
+
+    private bool CanGoNext => CanChangeEpisode && _player.HasNextEpisode;
 
     // Windows raises the buttons on a thread of its own.
     private void OnRequested(object? sender, SystemMediaRequest request) => _dispatcher.Post(() => Handle(request));
 
-    // Each goes where the player's own button goes. In a Watch Party play, pause and the skips ask the room, which refuses a
-    // guest it does not let with the web's words, as for the on-screen buttons; the controls show those buttons off.
+    // Each goes where the player's own button goes, so in a Watch Party play, pause and the skips ask the room.
     private void Handle(SystemMediaRequest request)
     {
         if (_disposed)
@@ -116,23 +157,23 @@ public sealed class PlayerSystemMedia : IDisposable
         var player = _player;
         switch (request.Button)
         {
-            case SystemMediaButton.Play when player.IsPlaying && player.IsPaused:
-            case SystemMediaButton.Pause when player.IsPlaying && !player.IsPaused:
+            case SystemMediaButton.Play when CanPlayPause && player.IsPaused:
+            case SystemMediaButton.Pause when CanPlayPause && !player.IsPaused:
                 player.TogglePauseCommand.Execute(null);
                 break;
-            case SystemMediaButton.Rewind when Seeks:
+            case SystemMediaButton.Rewind when CanSeek:
                 player.SkipBackCommand.Execute(null);
                 break;
-            case SystemMediaButton.FastForward when Seeks:
+            case SystemMediaButton.FastForward when CanSeek:
                 player.SkipForwardCommand.Execute(null);
                 break;
-            case SystemMediaButton.Seek when Seeks && double.IsFinite(request.PositionSeconds):
+            case SystemMediaButton.Seek when CanSeek && double.IsFinite(request.PositionSeconds):
                 player.SeekTo(request.PositionSeconds);
                 break;
-            case SystemMediaButton.Previous when player.HasPreviousEpisode && !player.IsWatchParty:
+            case SystemMediaButton.Previous when CanGoPrevious:
                 player.PlayPreviousEpisodeCommand.Execute(null);
                 break;
-            case SystemMediaButton.Next when player.HasNextEpisode && !player.IsWatchParty:
+            case SystemMediaButton.Next when CanGoNext:
                 player.PlayNextEpisodeCommand.Execute(null);
                 break;
         }

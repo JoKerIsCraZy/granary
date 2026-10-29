@@ -615,11 +615,12 @@ stream's commands on Activity.
   · E5", a movie's title over its year, a local file's name), the movie's poster or the episode's still (else the
   backdrop), given to Windows as bytes from the artwork cache, and the timeline in the title's own time, shown again at
   most every 2 seconds while it plays, at once on a pause or a seek. Play and Pause, Rewind and Fast forward (the skips
-  by the profile's seconds), a place on the timeline, and Previous and Next where the player has those episodes; no
-  Stop, as in the apps' video players. They are the player's own commands: in a Watch Party play and pause ask the room
-  and work for the host or a guest the room lets, seeking for the host only, and there are no episodes around; a key the
-  room refuses says so as the on-screen button does. Loading shows as changing, an ended or failed title as stopped,
-  and closing the player takes Granary off the overlay.
+  by the profile's seconds), a place on the timeline, and Previous and Next where the player has those episodes and is
+  neither loading nor buffering (one press, one load); no Stop, as in the apps' video players. They are the player's own
+  commands: in a Watch Party play and pause ask the room and work for the host or a guest the room lets, seeking for the
+  host only, and there are no episodes around. A key whose button is off does nothing, also one Windows sent before the
+  room took a right away. Loading shows as changing, a failed title as stopped, and leaving the player (Exit, a movie's
+  end, the room moving on) takes Granary off the overlay at once.
 - **Fill screen** (the web's video fit): the picture fills the page and is cut where it does not fit (mpv `panscan`);
   a new title shows its whole picture again.
 - **Mini view** (the web's Picture in Picture, P): the window becomes small (480 by 270), stays above the others

@@ -77,13 +77,28 @@ public sealed partial class PlayerViewModel
     }
 
     // The viewer's play or pause in a room: asked of the room (refused, or held while it reconnects); the room's command
-    // changes the player. Only a room that plays nothing leaves it to the player.
-    private bool RequestRoomPlayPause() =>
-        _party is { } party && party.RequestPlayPause(pause: !_engine.Current.IsPaused) != RoomTransportResult.NotInRoom;
+    // changes the player. A room that plays nothing for the moment, before the player leaves it, gets nothing either: the
+    // title is the room's, and a pause here alone would part this viewer from it.
+    private bool RequestRoomPlayPause()
+    {
+        if (_party is not { } party)
+        {
+            return false;
+        }
+        party.RequestPlayPause(pause: !_engine.Current.IsPaused);
+        return true;
+    }
 
-    // The viewer's seek in a room: the host's goes to the room, a guest's is refused with the web's words.
-    private bool RequestRoomSeek(double seconds) =>
-        _party is { } party && party.RequestSeek(seconds) != RoomTransportResult.NotInRoom;
+    // The viewer's seek in a room: the host's goes to the room, a guest's is refused with the web's words; never one here alone.
+    private bool RequestRoomSeek(double seconds)
+    {
+        if (_party is not { } party)
+        {
+            return false;
+        }
+        party.RequestSeek(seconds);
+        return true;
+    }
 
     // In a room nothing skips itself, as in Silo's apps: an intro the profile skips always is offered instead (to whoever
     // may seek), one it never skips stays unoffered, and credits and recaps play.

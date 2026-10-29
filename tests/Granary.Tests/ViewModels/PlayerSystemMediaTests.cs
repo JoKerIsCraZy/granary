@@ -176,11 +176,11 @@ public sealed class PlayerSystemMediaTests
     }
 
     [Fact]
-    public async Task AnEndedTitle_IsStopped_AndClosingThePlayerTakesItOffTheControls()
+    public async Task AFailedTitle_IsStopped_AndClosingThePlayerTakesItOffTheControls()
     {
         var (_, media) = await PlayingAsync();
 
-        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Ended));
+        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Failed, "The server stopped answering.", CanRetry: true));
         Assert.Equal((SystemMediaStatus.Stopped, false, false), (_controls.Current!.Status, _controls.Current.CanPlayPause, _controls.Current.CanSeek));
 
         media.Dispose();
@@ -189,6 +189,65 @@ public sealed class PlayerSystemMediaTests
         Assert.Null(_controls.Current);
         _controls.Press(SystemMediaButton.Seek, 100);
         Assert.Empty(Playback.Seeks);
+    }
+
+    [Fact]
+    public async Task AMovieThatEnded_ClosesThePlayer_AndSoLeavesTheControls()
+    {
+        var (_, media) = await PlayingAsync();
+
+        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Ended));
+        Assert.Null(_controls.Current);
+
+        media.Dispose();
+        Assert.Equal(1, _controls.Clears);
+    }
+
+    [Theory]
+    [InlineData(double.PositiveInfinity)]
+    [InlineData(double.NaN)]
+    [InlineData(0)]
+    public async Task ALengthTheControlsCannotShow_GivesThemNone_AndTheirTimelineStaysFinite(double length)
+    {
+        await PlayingAsync();
+
+        Playback.DurationSeconds = length;
+        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));
+        _engine.RaiseState(new PlaybackSnapshot(true, false, TimeSpan.FromSeconds(31), null, null, HasStarted: true));
+
+        Assert.Equal(0, _controls.Current!.DurationSeconds);
+        Assert.All(_controls.Shown, shown => Assert.True(double.IsFinite(shown.PositionSeconds) && double.IsFinite(shown.DurationSeconds)));
+    }
+
+    [Fact]
+    public async Task APlayerLeft_IsTakenOffTheControlsAtOnce_AndItsKeysDoNothing()
+    {
+        _episodes.Next = new NextEpisode("episode-1-4", 1, 4, "Double Lives");
+        var (player, _) = await PlayingAsync(Pilot);
+
+        player.Leave();
+
+        Assert.Equal(1, _controls.Clears);
+        Assert.Null(_controls.Current);
+        _controls.Press(SystemMediaButton.Next);
+        _controls.Press(SystemMediaButton.Play);
+        Assert.Single(_playbacks);
+        Assert.Null(_controls.Current);
+    }
+
+    [Fact]
+    public async Task DuringAReplan_PreviousAndNextWait_SoAPressDoesNotStartAnotherLoad()
+    {
+        _episodes.Next = new NextEpisode("episode-1-4", 1, 4, "Double Lives");
+        await PlayingAsync(Pilot);
+
+        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Reconnecting));
+        Assert.False(_controls.Current!.CanGoNext);
+        _controls.Press(SystemMediaButton.Next);
+        Assert.Single(_playbacks);
+
+        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));
+        Assert.True(_controls.Current!.CanGoNext);
     }
 
     [Fact]
