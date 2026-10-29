@@ -28,7 +28,8 @@ public sealed partial class ServerPlayback
             return;
         }
         string sessionId = progress.SessionId;
-        _controlLane.Follow(context.Server.BaseUri, sessionId, context.InstallationId, command => OnControlCommandAsync(sessionId, command));
+        _controlLane.Follow(context.Server.BaseUri, sessionId, context.InstallationId, command => OnControlCommandAsync(sessionId, command),
+            controlEvent => OnControlEvent(sessionId, controlEvent));
     }
 
     private void StopControlLane()

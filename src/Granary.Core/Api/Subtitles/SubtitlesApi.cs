@@ -155,6 +155,29 @@ public sealed record StoredSubtitle
     public string ReleaseName { get; init => field = value ?? ""; } = "";
 
     public bool HearingImpaired { get; init; }
+
+    /// <summary>Its timing correction; the original timing until it is synced or adjusted.</summary>
+    public SubtitleTiming Timing { get; init => field = value ?? SubtitleTiming.Identity; } = SubtitleTiming.Identity;
+
+    /// <summary>Its latest sync job, as the automatic sync of a new download; null without one.</summary>
+    public SubtitleSyncJob? Sync { get; init; }
+
+    /// <summary>
+    /// What the player knows of its timing and sync, keyed as the plan's inventory names it, as the web's
+    /// <c>storedSyncState</c>.
+    /// </summary>
+    public SubtitleSyncState SyncState() => new()
+    {
+        Key = "stored-" + Id,
+        MediaFileId = MediaFileId,
+        Source = "downloaded",
+        StoredSubtitleId = Id,
+        Language = Language,
+        Format = Format,
+        Label = ReleaseName.Length > 0 ? ReleaseName : Provider,
+        Timing = Timing,
+        Sync = Sync,
+    };
 }
 
 /// <summary>A file's language, and where it was read: <c>filename</c>, <c>metadata</c>, <c>content</c> or <c>manual</c>.</summary>

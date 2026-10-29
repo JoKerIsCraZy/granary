@@ -244,6 +244,14 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
         });
     }
 
+    public void RemoveSubtitle(int stream)
+    {
+        if (stream > 0)
+        {
+            _mpv.Command("sub-remove", stream.ToString(CultureInfo.InvariantCulture));
+        }
+    }
+
     public int? SubtitleStreamOf(int ffmpegIndex)
     {
         long count = _mpv.GetInt64("track-list/count") ?? 0;

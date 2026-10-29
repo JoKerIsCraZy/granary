@@ -117,6 +117,9 @@ public interface IPlaybackEngine : IDisposable
     /// </summary>
     Task<int?> AddSubtitleAsync(Uri url, long loadId);
 
+    /// <summary>Takes subtitle stream <paramref name="stream"/>, read in by <see cref="AddSubtitleAsync"/>, out of the load again.</summary>
+    void RemoveSubtitle(int stream);
+
     /// <summary>The subtitle stream that is the file's FFmpeg stream <paramref name="ffmpegIndex"/>; null when there is none.</summary>
     int? SubtitleStreamOf(int ffmpegIndex);
 

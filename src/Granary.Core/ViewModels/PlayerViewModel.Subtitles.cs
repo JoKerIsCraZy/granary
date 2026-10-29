@@ -52,12 +52,18 @@ public sealed partial class PlayerViewModel
     private void TakeSubtitles(Playback.IServerPlayback playback)
     {
         // Off is a row even without tracks: the menu still offers to add some.
-        SubtitleTracks = Player.SubtitleTrackOption.For(playback.SubtitleTracks, playback.SubtitleTrack);
+        // A sync's progress reads the tracks again every few seconds: rows that say the same stay, so an open menu keeps its focus.
+        var rows = Player.SubtitleTrackOption.For(playback.SubtitleTracks, playback.SubtitleTrack, SyncStatusOf);
+        if (!rows.SequenceEqual(SubtitleTracks))
+        {
+            SubtitleTracks = rows;
+        }
         IsSubtitleOn = playback.SubtitleTrack is not null;
         if (playback.SubtitleTrack is { } showing)
         {
             _lastSubtitle = showing;
         }
+        TakeSubtitleSync(playback);
     }
 
     private void ResetSubtitles()
@@ -65,5 +71,6 @@ public sealed partial class PlayerViewModel
         SubtitleTracks = [];
         IsSubtitleOn = false;
         _lastSubtitle = null;
+        SubtitleTiming = Player.SubtitleTimingPanel.Hidden;
     }
 }

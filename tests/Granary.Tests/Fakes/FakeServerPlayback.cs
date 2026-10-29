@@ -103,6 +103,20 @@ internal sealed class FakeServerPlayback : IServerPlayback
         return SaveMarkers(changes);
     }
 
+    public SubtitleSyncTracker? SubtitleSync { get; set; }
+
+    public string? SubtitleSyncKey { get; set; }
+
+    public event EventHandler<string>? SubtitleTimingChanged;
+
+    public event EventHandler<string>? SubtitleCuesReloaded;
+
+    /// <summary>As the playback does when a subtitle's timing changed: the cues of <paramref name="key"/> are read again.</summary>
+    public void RaiseSubtitleTimingChanged(string key) => SubtitleTimingChanged?.Invoke(this, key);
+
+    /// <summary>As the playback does once the subtitle that shows reads with its new timing.</summary>
+    public void RaiseSubtitleCuesReloaded(string key) => SubtitleCuesReloaded?.Invoke(this, key);
+
     public int SubtitleDelayMs { get; set; }
 
     public void SetSubtitleDelay(int milliseconds) => SubtitleDelayMs = Math.Clamp(milliseconds, -10_000, 10_000);

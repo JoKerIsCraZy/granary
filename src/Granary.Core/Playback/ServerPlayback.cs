@@ -4,6 +4,7 @@ using Granary.Core.Abstractions;
 using Granary.Core.Api;
 using Granary.Core.Api.Playback;
 using Granary.Core.Api.Settings;
+using Granary.Core.Api.Subtitles;
 using Granary.Core.ViewModels;
 using Microsoft.Extensions.Logging;
 
@@ -113,7 +114,8 @@ public sealed partial class ServerPlayback : IServerPlayback
         TimeProvider time,
         ILoggerFactory loggers,
         ServerPlaybackOptions? options = null,
-        Func<PlaybackControlLane>? controlLanes = null)
+        Func<PlaybackControlLane>? controlLanes = null,
+        SubtitleSyncApi? subtitleSync = null)
     {
         _starter = starter;
         _api = api;
@@ -129,6 +131,11 @@ public sealed partial class ServerPlayback : IServerPlayback
         _logger = loggers.CreateLogger<ServerPlayback>();
         _options = options ?? ServerPlaybackOptions.Default;
         _controlLane = controlLanes?.Invoke();
+        if (subtitleSync is not null)
+        {
+            SubtitleSync = new SubtitleSyncTracker(subtitleSync, dispatcher, time, loggers.CreateLogger<SubtitleSyncTracker>());
+            SubtitleSync.TimingChanged += OnSyncedTimingChanged;
+        }
         _engine.StateChanged += OnEngineStateChanged;
         _engine.Ended += OnEngineEnded;
     }
@@ -229,6 +236,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         StopTimers();
         StopTrickplay();
         StopControlLane();
+        SubtitleSync?.Clear();
         // Read now: the engine stops right after this call, and its idle state would read as position 0. Closing the
         // app waits for the stop, and for a pick still being saved.
         _stop = Task.WhenAll(StopSessionsAsync(StopPosition, _paused), _trackSaves);
@@ -245,6 +253,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         // Saves still waiting go with the stop; without one there is nobody left to save for.
         _speedSave?.Dispose();
         _subtitleDelaySave?.Dispose();
+        SubtitleSync?.Dispose();
         CloseRoute();
         if (_controlLane is { } lane)
         {
@@ -367,6 +376,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         _plan = plan;
         TakeTracks(plan);
         TakeAddedSubtitle(plan);
+        FollowSubtitleSync(plan);
         _planAttemptId = Guid.NewGuid().ToString();
         _firstFrameReported = false;
         if (plan.RequiresClientExecution)

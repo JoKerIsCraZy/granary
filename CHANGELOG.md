@@ -44,6 +44,8 @@ release's section is what its update says it changes (docs/release.md).
   Invite, Allow Pause, Stop and End, as on Silo's web player.
 - The keyboard's media keys and Windows' media overlay control the player: play and pause, skip, seek, and the previous
   and next episode, with the title and its poster shown; in a Watch Party they go to the room.
+- Subtitle timing in the player: Sync to audio and Reset timing in the subtitle menu, each track's timing under its
+  name, and a card that follows a sync until the new timing shows, as on Silo's web player.
 - Switching pages and scrolling fast through posters are much smoother, and paging a grid on a wide window no longer
   closes the app.
 - Home opens with a large picture of a title, its logo, details and overview, and follows the card under the mouse or

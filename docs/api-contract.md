@@ -1715,6 +1715,44 @@ media; FFmpeg never sees the pinned connection. The server keys connection state
 path a request came over (`local` for a private client address, else a keyed hash of it), and it builds absolute
 URLs such as `bandwidth_probe_url` from the address it was reached at.
 
+### 9.8 Subtitle timing and sync
+
+The server can align a subtitle to its file's audio and store a correction that every delivery path applies: original
+time t plays at `t * scale + offset_ms`. It works on stored subtitles and on subtitle files next to the media (sidecars,
+which it never modifies), named by the inventory's `sync_key` (`stored-{id}` | `external-{sha256}`); embedded tracks
+have none. Sources: `silo-server/internal/apiv2/subtitle_sync.go`, `subtitle_sync_targets.go`; the web's
+`player/hooks/useSubtitleSync.ts`, `useSubtitleSyncFeedback.ts`, `components/SubtitleMenu.tsx` (TimingControls),
+`SubtitleSyncIndicator.tsx`; Apple's `Screens/Player/Subtitles/SubtitleSync.swift`.
+
+- `GET /api/v2/subtitles/sync/status` → `{ "state": "available" | "disabled" | "not_configured" | "unsupported",
+  "allowed", "auto_sync", "external", "revision" }`. Sync is offered when `allowed` and `available` (Apple); a sidecar
+  only with `external`.
+- `GET /api/v2/subtitles/{media_file_id}/sync` → `{ "subtitles": [SubtitleSyncState] }`: every SRT, WebVTT, ASS or SSA
+  subtitle of the file that can be synced. `SubtitleSyncState`: `key`, `media_file_id`, `source` (`downloaded` |
+  `external`), `stored_subtitle_id`?, `language`, `format`, `label`, `timing` (`{ offset_ms, scale }`), `sync`?
+  (the latest job).
+- `GET /api/v2/subtitles/{media_file_id}/sync/{key}` → `{ "subtitle" }` with an `ETag` that follows the timing only.
+- `POST /api/v2/subtitles/{media_file_id}/sync/{key}` → `202 { "subtitle" }` with a new or the running job
+  (coalescing).
+- `PUT /api/v2/subtitles/{media_file_id}/sync/{key}/timing` with `If-Match` and `{ offset_ms, scale }` → `{ "subtitle" }`;
+  `{ 0, 1 }` restores the original timing. 412 when the subtitle changed since the read.
+- A job (`SubtitleSyncJobState`): `id`, `status` (`pending`, `running`, then `synced`, `already_synced`, `no_match`,
+  `failed`), `trigger` (`auto` | `manual`), `phase`? (`queued`, `analyzing`, `matching`), `progress`? (0 to 1),
+  `failure`? (`subtitle_changed`, `no_audio`, `unavailable`, `error`), `confidence`, `result`? (the timing found),
+  `created_at`, `finished_at`. `no_match` leaves the timing alone: the subtitle is most likely for another release.
+- Errors: 503 when sync is unavailable, 404 for a subtitle gone, 403 for a viewer the server refuses (demo), 422 for a
+  format that cannot be synced, 412 as above.
+- Stored subtitles answer `timing` and `sync` too (`StoredSubtitle`), so a new download's automatic sync can be followed.
+- The control lane (12.1) sends every session of the file `subtitle_sync_updated` (`file_id`, `sync_key`, `timing`, `job`)
+  as a job moves on, and `subtitle_timing_changed` (`file_id`, `sync_key`, or only `subtitle_id` from an older server)
+  once a timing changed: the subtitle's URL then serves the new timing.
+
+Granary (`SubtitleSyncApi`, `SubtitleSyncTracker`): follows the playing file, as Apple does, not the session; reads the
+list when the inventory gains or loses a sync key and when the subtitle menu opens; polls a running job every 3 s while
+no lane event came in the last 4 s, for at most 5 minutes; reset reads the ETag and writes `{ 0, 1 }` with `If-Match`.
+A timing change reads the sidecar that shows again from a fresh route and drops the old stream (`sub-remove`); a
+burned-in subtitle keeps its timing until the next plan.
+
 ## 10. Progress, resume, and completion
 
 All positions in this section are **source-timeline seconds** (see [8.6 Timeline](#86-timeline-model)).
@@ -2069,7 +2107,8 @@ handshake (v2)"), the web's `player/hooks/usePlaybackRealtime.ts` and `player/re
 - Commands: `pause`, `unpause`, `play_pause`, `seek` (`position` | `position_seconds` | `seconds`), `set_volume`
   (`volume` | `level`, 0 to 1), `stop`, `terminate`, `display_message` (`title`?, `message`), `server_restarting`,
   `server_shutting_down`; also `play_media`, `set_audio_track`, `set_subtitle_track`, `plan_invalidated`, which
-  Granary does not announce. Events (`type: "event"`: `markers_updated`, `subtitle_ready`, …) Granary ignores.
+  Granary does not announce. Events (`type: "event"`: `markers_updated`, `subtitle_ready`, …) Granary follows `subtitle_sync_updated` and `subtitle_timing_changed` (9.8)
+  and ignores the rest.
 - Granary (`PlaybackControlLane`): a lane per session that plays, a fresh ticket per connection, back after 0.5, 1, 2,
   5, 10, then 30 s; none on a server that answers the ticket with 404, 501 or 503, and none after an administrator's
   terminate. Stop and terminate answer first and then end playback with the administrator's words ("An administrator

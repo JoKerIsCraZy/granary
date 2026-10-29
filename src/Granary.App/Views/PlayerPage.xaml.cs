@@ -313,8 +313,12 @@ public sealed partial class PlayerPage : Page
     private void OnAudioMenuOpened(object? sender, object e) =>
         FocusRow(AudioRows, ViewModel.AudioTracks.ToList().FindIndex(option => option.IsSelected));
 
-    private void OnSubtitleMenuOpened(object? sender, object e) =>
+    // Opening also reads the subtitles' sync again, so a job that ended while the menu was closed shows.
+    private void OnSubtitleMenuOpened(object? sender, object e)
+    {
+        ViewModel.SubtitleMenuOpened();
         FocusRow(SubtitleRows, ViewModel.SubtitleTracks.ToList().FindIndex(option => option.IsSelected));
+    }
 
     private void OnChaptersMenuOpened(object? sender, object e) =>
         FocusRow(ChapterRows, Math.Max(0, ViewModel.Chapters.ToList().FindIndex(option => option.IsCurrent)));

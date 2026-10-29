@@ -70,6 +70,8 @@ public sealed partial class PlayerPage
     {
         if (subtitle.MediaFileId.Length == 0 || subtitle.MediaFileId == ViewModel.SubtitleFileId)
         {
+            // Its automatic sync is followed, and the indicator reports it.
+            ViewModel.RememberAddedSubtitle(subtitle);
             ViewModel.ShowAddedSubtitle(subtitle.Id);
         }
     }
