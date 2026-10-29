@@ -91,6 +91,7 @@ public sealed class PlayerViewModelSubtitleSyncTests : IDisposable
         Assert.Equal("Syncing German subtitles", viewModel.SyncNoticeTitle);
         Assert.True(viewModel.IsSyncNoticeRunning);
         Assert.Equal(25, viewModel.SyncNoticePercent);
+        Assert.Equal("Syncing German subtitles, Listening to the audio…, 25%", viewModel.SyncNoticeAccessibleName);
         Assert.True(viewModel.SubtitleTiming.IsRunning);
         Assert.False(viewModel.SubtitleTiming.AreActionsEnabled);
 
@@ -109,6 +110,35 @@ public sealed class PlayerViewModelSubtitleSyncTests : IDisposable
     }
 
     [Fact]
+    public async Task SyncStateThatChangesNoRow_LeavesTheRowsAsTheyAre()
+    {
+        var viewModel = await ShowingGermanAsync();
+        var rows = viewModel.SubtitleTracks;
+        var changed = new List<string?>();
+        viewModel.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+
+        _tracker.Reload();
+        await Until(() => _silo.SentTo(HttpMethod.Get, ListPath).Count == 2, "the list was read again");
+        await Task.Delay(30, TestContext.Current.CancellationToken);
+
+        Assert.Same(rows, viewModel.SubtitleTracks);
+        Assert.DoesNotContain(nameof(PlayerViewModel.SubtitleTracks), changed);
+    }
+
+    [Fact]
+    public async Task SyncAndReset_AskNothing_WhileNoSyncableSubtitleShows()
+    {
+        var viewModel = await ShowingGermanAsync();
+        Playback.SubtitleSyncKey = null;
+
+        await viewModel.SyncSubtitleToAudioCommand.ExecuteAsync(null);
+        await viewModel.ResetSubtitleTimingCommand.ExecuteAsync(null);
+
+        Assert.Empty(_silo.SentTo(HttpMethod.Post, KeyPath));
+        Assert.Empty(_silo.SentTo(HttpMethod.Get, KeyPath));
+    }
+
+    [Fact]
     public async Task ASecondPress_WhileASyncIsAsked_IsIgnored()
     {
         var viewModel = await ShowingGermanAsync();
@@ -123,6 +153,31 @@ public sealed class PlayerViewModelSubtitleSyncTests : IDisposable
 
         Assert.Single(_silo.SentTo(HttpMethod.Post, KeyPath));
     }
+
+    [Fact]
+    public async Task ASyncThatOutlastsItsPolling_LeavesTheCard_WithANote()
+    {
+        var viewModel = await ShowingGermanAsync();
+        _silo.On(HttpMethod.Post, KeyPath, ScriptedSilo.Json(HttpStatusCode.Accepted, One(State(Key, Job("j1", "running", 0.2), Timing(-3000)))));
+        _silo.On(HttpMethod.Get, KeyPath, Versioned(One(State(Key, Job("j1", "running", 0.2), Timing(-3000)))));
+        await viewModel.SyncSubtitleToAudioCommand.ExecuteAsync(null);
+        Assert.True(viewModel.IsSyncNoticeRunning);
+
+        for (int tick = 0; tick < 100; tick++)
+        {
+            _time.Advance(SubtitleSyncTracker.PollInterval);
+        }
+
+        await Until(() => viewModel.SyncNoticeTitle == "Still syncing German subtitles", "the card ended its spinner");
+        Assert.False(viewModel.IsSyncNoticeRunning);
+    }
+
+    private static Func<Task<HttpResponseMessage>> Versioned(string json) => () =>
+    {
+        var response = new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json") };
+        response.Headers.ETag = System.Net.Http.Headers.EntityTagHeaderValue.Parse("\"v1\"");
+        return Task.FromResult(response);
+    };
 
     [Fact]
     public async Task OpeningTheMenu_ReadsTheSubtitlesAgain()

@@ -22,7 +22,8 @@ public sealed record SubtitleSyncNotice(string Id, SubtitleSyncTone Tone, string
 }
 
 /// <summary>The latest job this viewer started, with its subtitle's name ("German") and timing.</summary>
-public sealed record WatchedSubtitleSync(string Key, string Name, SubtitleSyncJob Job, SubtitleTiming Timing);
+/// <param name="PollExpired">Following the job gave up while it still ran; opening the subtitle menu follows it again.</param>
+public sealed record WatchedSubtitleSync(string Key, string Name, SubtitleSyncJob Job, SubtitleTiming Timing, bool PollExpired = false);
 
 /// <summary>
 /// Turns subtitle sync into one notice at a time, as Silo's web player does (<c>useSubtitleSyncFeedback</c>): the progress
@@ -129,7 +130,20 @@ public sealed class SubtitleSyncFeedback : IDisposable
         {
             var job = watched.Job;
             _startRevision.TryAdd(job.Id, Revision(watched.Key));
-            if (job.IsInProgress)
+            if (job.IsInProgress && watched.PollExpired)
+            {
+                // Nobody follows the job any more: its spinner would never end. A note says so once, and leaves.
+                if (_announced.Add(job.Id + ":unfollowed"))
+                {
+                    Show(new SubtitleSyncNotice(job.Id + ":unfollowed", SubtitleSyncTone.Info, $"Still syncing {watched.Name} subtitles",
+                        "Open the subtitle menu later to see how it ended."));
+                }
+                else if (Notice is { IsRunning: true } running && running.Id == job.Id)
+                {
+                    Show(null);
+                }
+            }
+            else if (job.IsInProgress)
             {
                 Show(new SubtitleSyncNotice(job.Id, SubtitleSyncTone.Progress, $"Syncing {watched.Name} subtitles", SubtitleSyncText.Phase(job),
                     SubtitleSyncText.Percent(job) ?? 0));

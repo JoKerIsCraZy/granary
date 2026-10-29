@@ -137,6 +137,53 @@ public sealed class SubtitleSyncFeedbackTests : IDisposable
     }
 
     [Fact]
+    public void ASyncThatOutlastsItsPolling_EndsItsSpinner_WithANoteThatLeavesOnItsOwn()
+    {
+        _feedback.Update(Watched(Job("running", 0.3)), Key, null);
+        Assert.True(_feedback.Notice!.IsRunning);
+
+        _feedback.Update(Watched(Job("running", 0.3)) with { PollExpired = true }, Key, null);
+
+        Assert.False(_feedback.Notice!.IsRunning);
+        Assert.Equal(SubtitleSyncTone.Info, _feedback.Notice.Tone);
+        Assert.Equal("Still syncing German subtitles", _feedback.Notice.Title);
+        _time.Advance(SubtitleSyncFeedback.NoticeVisible);
+        Assert.Null(_feedback.Notice);
+
+        _feedback.Update(Watched(Job("running", 0.4)), Key, null);
+        Assert.True(_feedback.Notice!.IsRunning);
+        _feedback.Update(Watched(Job("running", 0.4)) with { PollExpired = true }, Key, null);
+        Assert.Null(_feedback.Notice);
+    }
+
+    [Fact]
+    public void Dismiss_PutsTheNoticeAway()
+    {
+        _feedback.Update(Watched(Job("failed")), null, null);
+
+        _feedback.Dismiss();
+
+        Assert.Null(_feedback.Notice);
+    }
+
+    [Fact]
+    public void ResetAndDispose_StopTheTimers()
+    {
+        _feedback.Update(Watched(Job("running")), Key, Entry(Job("running"), watched: "j1"));
+        var synced = Job("synced", result: Timing(500));
+        _feedback.Update(Watched(synced, Timing(500)), Key, Entry(synced, Timing(500), "j1"));
+        Assert.NotNull(_time.NextDue);
+
+        _feedback.Reset();
+
+        Assert.Null(_time.NextDue);
+        _feedback.Update(Watched(Job("no_match", id: "j2")), null, null);
+        Assert.NotNull(_time.NextDue);
+        _feedback.Dispose();
+        Assert.Null(_time.NextDue);
+    }
+
+    [Fact]
     public void AnotherFile_LeavesNothingOfTheOldOne()
     {
         _feedback.Update(Watched(Job("running", 0.5)), Key, null);

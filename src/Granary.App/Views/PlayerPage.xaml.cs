@@ -177,7 +177,8 @@ public sealed partial class PlayerPage : Page
                 AnnounceSkipCaption();
                 break;
             case nameof(PlayerViewModel.HasSkipPrompt):
-                // A pill that had the keyboard is gone.
+            case nameof(PlayerViewModel.HasSyncNotice) when !ViewModel.HasSyncNotice:
+                // A pill or the sync card that had the keyboard is gone.
                 KeepFocusInPage();
                 break;
         }
