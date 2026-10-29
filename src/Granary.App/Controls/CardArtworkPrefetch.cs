@@ -71,6 +71,6 @@ internal sealed class CardArtworkPrefetch
             Prefetcher.Prefetch(urls, _batch.Token);
         }
         // Their blurs too, off the UI thread: a card scrolled in then only makes its bitmap.
-        Thumbhashes.Warm(cards.Select(c => c.ImageThumbhash));
+        Thumbhashes.Warm(cards.Select(c => c.ImageThumbhash), _batch.Token);
     }
 }

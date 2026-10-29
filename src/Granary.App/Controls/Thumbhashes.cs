@@ -25,6 +25,8 @@ internal static class Thumbhashes
     private static readonly LinkedList<(string Hash, ImageSource? Picture)> Recent = new();
     private static readonly ConcurrentDictionary<string, Pixels?> Warmed = new(StringComparer.Ordinal);
     private static readonly ConcurrentQueue<string> WarmedOrder = new();
+    // Hashes on their way to Warmed, so a list followed again meanwhile does not decode them twice.
+    private static readonly ConcurrentDictionary<string, byte> Warming = new(StringComparer.Ordinal);
 
     /// <summary>The blurred picture of <paramref name="hash"/>; null for none or one that does not decode.</summary>
     public static ImageSource? Get(string? hash)
@@ -50,12 +52,16 @@ internal static class Thumbhashes
         return picture;
     }
 
-    /// <summary>Works out the pictures of <paramref name="hashes"/> on the thread pool, ahead of the cards that show them.</summary>
-    public static void Warm(IEnumerable<string?> hashes)
+    /// <summary>
+    /// Works out the pictures of <paramref name="hashes"/> on the thread pool, ahead of the cards that show them. A hash
+    /// already on its way is not taken again; a cancelled list (another one followed) leaves the rest undone.
+    /// </summary>
+    public static void Warm(IEnumerable<string?> hashes, CancellationToken cancellationToken = default)
     {
         List<string> todo = [.. hashes.OfType<string>()
             .Where(hash => !string.IsNullOrWhiteSpace(hash) && !Pictures.ContainsKey(hash) && !Warmed.ContainsKey(hash))
             .Distinct(StringComparer.Ordinal)
+            .Where(hash => Warming.TryAdd(hash, 0))
             .Take(WarmCapacity)];
         if (todo.Count == 0)
         {
@@ -65,10 +71,11 @@ internal static class Thumbhashes
         {
             foreach (string hash in todo)
             {
-                if (Warmed.TryAdd(hash, Decode(hash)))
+                if (!cancellationToken.IsCancellationRequested && Warmed.TryAdd(hash, Decode(hash)))
                 {
                     WarmedOrder.Enqueue(hash);
                 }
+                Warming.TryRemove(hash, out _);
             }
             while (Warmed.Count > WarmCapacity && WarmedOrder.TryDequeue(out string? oldest))
             {
