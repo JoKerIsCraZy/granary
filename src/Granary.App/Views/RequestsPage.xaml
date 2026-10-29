@@ -20,8 +20,8 @@
                          Title="{x:Bind views:RequestsPage.DiscoverHero(ViewModel.Hero.Shown, ViewModel.IsDiscoverTab), Mode=OneWay}" />
 
     <ScrollViewer x:Name="Scroller" XYFocusKeyboardNavigation="Enabled"
-                  Margin="{x:Bind views:RequestsPage.RowsViewMargin(ViewModel.Hero.Shown, ViewModel.IsDiscoverTab), Mode=OneWay}">
-        <StackPanel Padding="{x:Bind views:RequestsPage.RowsPadding(ViewModel.Hero.Shown, ViewModel.IsDiscoverTab), Mode=OneWay}" Spacing="24">
+                  Margin="{x:Bind views:RequestsPage.RowsViewMargin(ViewModel.Hero.Shown, ViewModel.IsDiscoverTab, Hero.Sizes), Mode=OneWay}">
+        <StackPanel Padding="{x:Bind views:RequestsPage.RowsPadding(ViewModel.Hero.Shown, ViewModel.IsDiscoverTab, Hero.Sizes), Mode=OneWay}" Spacing="24">
             <StackPanel Spacing="6">
                 <TextBlock Text="Requests" Style="{StaticResource SiloDisplayTextStyle}" AutomationProperties.HeadingLevel="Level1" />
                 <TextBlock Text="Ask for movies and series that aren’t in the library yet, and follow your requests." Style="{StaticResource SiloBodyTextStyle}"

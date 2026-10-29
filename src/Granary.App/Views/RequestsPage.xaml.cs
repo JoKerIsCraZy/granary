@@ -61,9 +61,11 @@ public sealed partial class RequestsPage : Page
     // bindings call them on the type.
     public static BrowseHeroTitle? DiscoverHero(BrowseHeroTitle? hero, bool isDiscover) => isDiscover ? hero : null;
 
-    public static Thickness RowsViewMargin(BrowseHeroTitle? hero, bool isDiscover) => BrowseHero.RowsViewMargin(DiscoverHero(hero, isDiscover));
+    public static Thickness RowsViewMargin(BrowseHeroTitle? hero, bool isDiscover, BrowseHeroSizes sizes) =>
+        BrowseHero.RowsViewMargin(DiscoverHero(hero, isDiscover), sizes);
 
-    public static Thickness RowsPadding(BrowseHeroTitle? hero, bool isDiscover) => BrowseHero.RowsPadding(DiscoverHero(hero, isDiscover));
+    public static Thickness RowsPadding(BrowseHeroTitle? hero, bool isDiscover, BrowseHeroSizes sizes) =>
+        BrowseHero.RowsPadding(DiscoverHero(hero, isDiscover), sizes);
 
     // The web's badge variants: Available filled red, Failed filled in the destructive red, approved and on their way in
     // the secondary fill, Pending outlined, closed ones outlined and muted.

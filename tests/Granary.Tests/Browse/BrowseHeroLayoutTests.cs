@@ -29,20 +29,143 @@ public sealed partial class BrowseHeroLayoutTests
         }
     }
 
+    [GeneratedRegex(@"\bp\.([A-Za-z]+)")]
+    private static partial Regex FoldNumber();
+
     [Fact]
-    public void EveryParameterAnExpressionNames_HasAValue()
+    public void TheExpressions_ReadEveryNumberOfTheFold_AndNoOther()
     {
-        foreach (var (_, text) in BrowseHeroLayout.Expressions)
+        var read = BrowseHeroLayout.Expressions.SelectMany(e => FoldNumber().Matches(e.Text)).Select(match => match.Groups[1].Value).Distinct();
+
+        Assert.Equal(BrowseHeroLayout.ParameterNames.Order(StringComparer.Ordinal), read.Order(StringComparer.Ordinal));
+    }
+
+    [Theory]
+    [InlineData(1000)]
+    [InlineData(1520)]
+    [InlineData(2160)]
+    public void EveryNumberOfTheFold_HasAValue(double pageHeight)
+    {
+        var parameters = BrowseHeroLayout.ParametersFor(BrowseHeroLayout.For(pageHeight));
+
+        Assert.Equal(BrowseHeroLayout.ParameterNames.Order(StringComparer.Ordinal), parameters.Keys.Order(StringComparer.Ordinal));
+        Assert.All(parameters.Values, value => Assert.True(float.IsFinite(value)));
+    }
+
+    [Fact]
+    public void AtAPageUnderA1080Window_TheFoldIsAsBefore()
+    {
+        var parameters = BrowseHeroLayout.ParametersFor(BrowseHeroLayout.For(1000));
+
+        Assert.Equal(150f, parameters["distance"]);
+        Assert.Equal(1 - 45f / 80, parameters["shrink"], 0.0001f);
+        Assert.Equal(35f, parameters["rise"], 0.0001f);
+        Assert.Equal(290f, parameters["cut"]);
+        Assert.Equal(288f, parameters["fadeRise"]);
+        Assert.Equal(1 - 150f / 440, parameters["fadeShrink"], 0.0001f);
+    }
+
+    [Fact]
+    public void OnATallerPage_TheFoldFollowsItsSizes()
+    {
+        var parameters = BrowseHeroLayout.ParametersFor(BrowseHeroLayout.For(1520));
+
+        Assert.Equal(253f, parameters["distance"]);
+        Assert.Equal(1 - 55f / 98, parameters["shrink"], 0.0001f);
+        Assert.Equal(43f, parameters["rise"], 0.0001f);
+        Assert.Equal(458f, parameters["cut"]);
+        Assert.Equal(456f, parameters["fadeRise"]);
+        Assert.Equal(1 - 185f / 643, parameters["fadeShrink"], 0.0001f);
+    }
+
+    [Theory]
+    [InlineData(900, 440)]
+    [InlineData(1040, 440)]
+    [InlineData(1047, 440)]
+    [InlineData(1048, 443)]
+    [InlineData(1300, 548)]
+    [InlineData(1520, 643)]
+    [InlineData(1700, 718)]
+    [InlineData(2160, 720)]
+    public void TheHerosHeight_FollowsThePagesHeight_FromTodaysUpToItsMost(double pageHeight, double restHeight)
+    {
+        Assert.Equal(restHeight, BrowseHeroLayout.For(pageHeight).RestHeight);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(double.NaN)]
+    [InlineData(double.NegativeInfinity)]
+    [InlineData(-1)]
+    [InlineData(500)]
+    [InlineData(1047)]
+    public void APageUpToA1080Window_OrOfNoKnownHeight_HasTodaysSizes(double pageHeight)
+    {
+        Assert.Equal(BrowseHeroLayout.For(1040), BrowseHeroLayout.For(pageHeight));
+    }
+
+    [Theory]
+    [InlineData(1712)]
+    [InlineData(2160)]
+    [InlineData(double.PositiveInfinity)]
+    public void ATallEnoughPage_HasTheLargestSizes(double pageHeight)
+    {
+        var sizes = BrowseHeroLayout.For(pageHeight);
+
+        Assert.Equal((720d, 198d, 491d, 105d, 59d, 396d), (sizes.RestHeight, sizes.CompactHeight, sizes.RowsTop, sizes.HeadingHeight,
+            sizes.CompactHeadingHeight, sizes.FadeHeight));
+    }
+
+    [Fact]
+    public void TheSizes_ChangeOnlyEvery8Px_AndNeverShrink_AsThePageGrows()
+    {
+        var last = BrowseHeroLayout.For(1040);
+        for (double height = 1041; height <= 1720; height++)
         {
-            foreach (var name in BrowseHeroLayout.Parameters.Keys.Where(name => text.Contains(name, StringComparison.Ordinal)))
+            var sizes = BrowseHeroLayout.For(height);
+            if (height % 8 != 0)
             {
-                Assert.True(float.IsFinite(BrowseHeroLayout.Parameters[name]), name);
+                Assert.Equal(last, sizes);
             }
+            Assert.True(sizes.RestHeight >= last.RestHeight && sizes.CompactHeight >= last.CompactHeight && sizes.RowsTop >= last.RowsTop
+                && sizes.HeadingHeight >= last.HeadingHeight && sizes.CompactHeadingHeight >= last.CompactHeadingHeight
+                && sizes.FadeHeight >= last.FadeHeight && sizes.Grow >= last.Grow && sizes.TextGrow >= last.TextGrow, $"{height}");
+            last = sizes;
         }
-        Assert.Equal(150f, BrowseHeroLayout.Parameters["distance"]);
-        Assert.Equal(1 - 45f / 80, BrowseHeroLayout.Parameters["shrink"], 0.0001f);
-        Assert.Equal(35f, BrowseHeroLayout.Parameters["rise"], 0.0001f);
-        Assert.Equal(290f, BrowseHeroLayout.Parameters["cut"]);
+    }
+
+    [Fact]
+    public void UpToAPageUnderA1080Window_EverySizeIsTodays()
+    {
+        var sizes = BrowseHeroLayout.For(1040);
+
+        Assert.Equal((440d, 150d, 300d, 150d, 80d, 45d, 242d), (sizes.RestHeight, sizes.CompactHeight, sizes.RowsTop, sizes.CollapseDistance,
+            sizes.HeadingHeight, sizes.CompactHeadingHeight, sizes.FadeHeight));
+        Assert.Equal((1d, 1d), (sizes.Grow, sizes.TextGrow));
+    }
+
+    [Fact]
+    public void OnATallerPage_TheRowsFollowTheHero_TheHeaderAndTheLogoGrowHalfAsMuch_AndTheTextLess()
+    {
+        var sizes = BrowseHeroLayout.For(1520);
+
+        Assert.Equal((643d, 185d, 438d, 253d, 98d, 55d), (sizes.RestHeight, sizes.CompactHeight, sizes.RowsTop, sizes.CollapseDistance,
+            sizes.HeadingHeight, sizes.CompactHeadingHeight));
+        Assert.Equal((492d, 18d, 17d, 25d), (BrowseHeroLayout.Scaled(400, sizes.Grow), BrowseHeroLayout.Scaled(16, sizes.TextGrow),
+            BrowseHeroLayout.Scaled(15, sizes.TextGrow), BrowseHeroLayout.Scaled(22, sizes.TextGrow)));
+    }
+
+    [Theory]
+    [InlineData(1660, 1000, 1079)]
+    [InlineData(1652, 1008, 1074)]
+    [InlineData(2300, 1360, 1438)]
+    [InlineData(3580, 1520, 1608)]
+    [InlineData(800, 1000, 520)]
+    [InlineData(2500, 1000, 1100)]
+    // Also on a page under a 1080 window: a 2560 x 1080 one's box was a strip of 1625 x 440 before.
+    public void TheBackdropBox_TakesItsShareOfTheWidth_ButNeverMoreThanTwoAndAHalfTimesItsHeight(double pageWidth, double pageHeight, double boxWidth)
+    {
+        Assert.Equal(boxWidth, BrowseHeroLayout.BackdropBoxWidth(pageWidth, BrowseHeroLayout.For(pageHeight)));
     }
 
     [Theory]
@@ -71,13 +194,16 @@ public sealed partial class BrowseHeroLayoutTests
     }
 
     [Theory]
-    [InlineData(1200, 1200)]
-    [InlineData(500, 783)]
-    [InlineData(double.NaN, 0)]
-    [InlineData(0, 0)]
-    public void TheBackdrop_IsDecodedAsWideAsItIsShown_CutToTheHerosHeight(double boxWidth, int expected)
+    [InlineData(1200, 440, 1200)]
+    [InlineData(500, 440, 783)]
+    [InlineData(1079, 440, 1079)]
+    [InlineData(1608, 643, 1608)]
+    [InlineData(1000, 720, 1280)]
+    [InlineData(double.NaN, 440, 0)]
+    [InlineData(0, 440, 0)]
+    public void TheHerosBackdrop_IsDecodedAsWideAsItIsShown_OrWiderWhereItsHeightCutsItsSides(double boxWidth, double height, int expected)
     {
-        Assert.Equal(expected, BrowseHeroLayout.BackdropDecodeWidth(boxWidth));
+        Assert.Equal(expected, BrowseHeroLayout.BackdropDecodeWidth(boxWidth, height));
     }
 
     [Theory]

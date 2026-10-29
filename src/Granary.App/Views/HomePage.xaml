@@ -17,8 +17,8 @@
         <!-- Behind the rows: they scroll under the compact header and are cut off at its edge (RowsViewMargin). -->
         <controls:BrowseHero x:Name="Hero" Title="{x:Bind ViewModel.Hero.Shown, Mode=OneWay}" />
 
-        <ScrollViewer x:Name="Scroller" XYFocusKeyboardNavigation="Enabled" Margin="{x:Bind controls:BrowseHero.RowsViewMargin(ViewModel.Hero.Shown), Mode=OneWay}">
-            <StackPanel Spacing="16" Padding="{x:Bind controls:BrowseHero.RowsPadding(ViewModel.Hero.Shown), Mode=OneWay}">
+        <ScrollViewer x:Name="Scroller" XYFocusKeyboardNavigation="Enabled" Margin="{x:Bind controls:BrowseHero.RowsViewMargin(ViewModel.Hero.Shown, Hero.Sizes), Mode=OneWay}">
+            <StackPanel Spacing="16" Padding="{x:Bind controls:BrowseHero.RowsPadding(ViewModel.Hero.Shown, Hero.Sizes), Mode=OneWay}">
                 <TextBlock Text="{x:Bind ViewModel.Notice, Mode=OneWay}" Visibility="{x:Bind HasText(ViewModel.Notice), Mode=OneWay}"
                            Style="{StaticResource SiloCaptionTextStyle}" Foreground="{StaticResource SiloPrimaryBrush}" TextWrapping="Wrap"
                            AutomationProperties.LiveSetting="Polite" />
