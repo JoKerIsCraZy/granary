@@ -102,6 +102,32 @@ minute (its renewed URL is), and the bitmap then tries the URL itself.
   series page queues the episode stills of every season, the season to play first. Four workers fetch
   them beside the downloads for images on screen, so a long queue never delays those.
 
+### Cards
+
+Rows and grids (`MediaRow`, `MediaGrid`) are `ItemsRepeater`s that recycle their cards (`MediaCardView`): a card
+scrolled out is given the next title, so what a card does per title is what scrolling costs. Every gen2 collection
+also walks all live XAML that .NET holds (the reference tracker), so its pause grows with the cards alive.
+
+- A card shows a title in this order: the thumbhash's blur at once, its badges, its texts, then its artwork. While a
+  scroller moves fast the artwork waits (`ScrollMotion`); a card just made also waits for its first measure, so the
+  artwork is decoded at the height it shows (`DecodePixelHeight`), never a guess.
+- A recycled card reuses what it has: badge views that draw the same badge only change their word
+  (`CardBadgeViews.Reuse`), brushes are shared per colour, styles and brushes are looked up once, and its size,
+  badge placement, subtitle style and caption colour are set only when they differ from the card before. Each new
+  WinRT object would add memory pressure toward a blocking full collection (see Decoding above).
+- Thumbhashes are decoded on the thread pool when a list arrives (`Thumbhashes.Warm`, from `CardArtworkPrefetch`);
+  the UI thread only makes the 32 px bitmap, and keeps the latest 256.
+- Repeaters make cards half a screen past the view on each side (`VerticalCacheLength`/`HorizontalCacheLength` 1, Home's
+  rows too), not ItemsRepeater's default whole screen: on an ultrawide window that halves several hundred live cards.
+- Switching pages sets the sidebar's pane mode only when it changes: NavigationView lays itself out again for every
+  mode it is given.
+
+Measured at 1920 px with compact posters, two runs each: share of time the UI thread stalled over 50 ms in fast
+sidebar switches 32 % to 9 %, paging down a 5,215-title grid 78 % to 5 % (19 to 125 frames a second), paging back up
+58 % to 3 %; GC pauses over the runs 4.1 s to 1.3 s, memory 760 to 565 MB. Maximized on a 3840 px ultrawide the
+gen2 pauses still take 0.7 to 1.8 s each (fast switches stall 79 % to 71 %, GC pauses 15.8 s to 8.4 s): the live
+cards of the cached pages are what each collection walks.
+
 ## Server playback
 
 A title plays through one `ServerPlayback` (Granary.Core) per start of the player page; the page's
