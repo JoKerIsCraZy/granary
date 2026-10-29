@@ -61,7 +61,7 @@ public sealed class ServerAccentTests
     [Fact]
     public async Task TheServersAccent_IsReadWithoutASignIn_AndPainted()
     {
-        _harness.Silo.On(HttpMethod.Get, BrandingPath, ScriptedSilo.Json(HttpStatusCode.OK, """{ "server_name": "JoKeR", "accent_color": "#1d4ed8" }"""));
+        _harness.Silo.On(HttpMethod.Get, BrandingPath, ScriptedSilo.Json(HttpStatusCode.OK, """{ "server_name": "Elena's Silo", "accent_color": "#1d4ed8" }"""));
         var accent = Create();
 
         await accent.StartAsync();
