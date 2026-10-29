@@ -14,10 +14,6 @@ public sealed partial class HomePage : Page, IStartupContent
     {
         ViewModel = App.Services.GetRequiredService<HomeViewModel>();
         InitializeComponent();
-        // The rows' view begins at the compact header, and the rows a fold's length below it, so at rest they start under
-        // the full hero and scroll up under the header as it folds.
-        Scroller.Margin = new Thickness(0, HomeHero.CompactHeight, 0, 0);
-        Column.Padding = new Thickness(48, HomeHero.CollapseDistance, 48, 48);
         Loaded += (_, _) => Hero.FollowScroll(Scroller);
     }
 
@@ -35,6 +31,7 @@ public sealed partial class HomePage : Page, IStartupContent
             Scroller.ChangeView(null, 0, null, disableAnimation: true);
         }
         ViewModel.DisplayScale = XamlRoot?.RasterizationScale ?? 1;
+        Hero.Resume();
         try
         {
             var activation = ViewModel.ActivateAsync();
@@ -51,11 +48,19 @@ public sealed partial class HomePage : Page, IStartupContent
     protected override void OnNavigatedFrom(NavigationEventArgs e)
     {
         ViewModel.Deactivate();
+        // The page stays cached: its hero lets go of its pictures until it shows again.
+        Hero.Suspend();
         base.OnNavigatedFrom(e);
     }
 
     // Instance methods because x:Bind function bindings call them on the page.
     public Visibility HasText(string text) => string.IsNullOrEmpty(text) ? Visibility.Collapsed : Visibility.Visible;
+
+    // With a hero, the rows' view begins at the compact header and the rows a fold's length below it, so at rest they start
+    // under the full hero and scroll up under the header as it folds; without one (loading, empty, an error), as other pages.
+    public Thickness RowsViewMargin(HomeHeroTitle? hero) => new(0, hero is null ? 0 : HomeHeroLayout.CompactHeight, 0, 0);
+
+    public Thickness RowsPadding(HomeHeroTitle? hero) => new(48, hero is null ? 32 : HomeHeroLayout.CollapseDistance, 48, 48);
 
     public Style StatusStyle(bool hasError) =>
         (Style)Application.Current.Resources[hasError ? "SiloBodyTextStyle" : "SiloRowTitleTextStyle"];

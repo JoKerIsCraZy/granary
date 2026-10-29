@@ -53,11 +53,28 @@ public sealed partial class HomeHeroViewModel : ObservableObject
         _settle = _time.CreateTimer(_ => _dispatcher.Post(() => Settle(generation)), null, SettleTime, Timeout.InfiniteTimeSpan);
     }
 
-    /// <summary>The rows changed: shows <paramref name="title"/> (the shown title loaded again, or the first card) at once.</summary>
-    internal void Reset(HomeHeroTitle? title)
+    /// <summary>
+    /// The rows changed: shows <paramref name="title"/> (the shown title loaded again, or the first card) at once. A card the
+    /// pointer rests on still settles when <paramref name="find"/> finds it in the new rows.
+    /// </summary>
+    internal void Reset(HomeHeroTitle? title, Func<string, HomeHeroTitle?>? find = null)
+    {
+        if (_pointed is { } pending && find?.Invoke(pending.Key) is { } fresh)
+        {
+            _pointed = fresh;
+        }
+        else
+        {
+            CancelPending();
+        }
+        Shown = title;
+    }
+
+    /// <summary>Another server or profile: its first card pointed at shows at once again.</summary>
+    internal void Forget()
     {
         CancelPending();
-        Shown = title;
+        _hasPointed = false;
     }
 
     private void Settle(int generation)

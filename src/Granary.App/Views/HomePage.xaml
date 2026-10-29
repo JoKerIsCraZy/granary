@@ -14,11 +14,11 @@
     AutomationProperties.Name="Home">
 
     <Grid>
-        <!-- Behind the rows: they scroll under the compact header and are cut off at its edge (HomePage's constructor). -->
+        <!-- Behind the rows: they scroll under the compact header and are cut off at its edge (RowsViewMargin). -->
         <controls:HomeHero x:Name="Hero" Title="{x:Bind ViewModel.Hero.Shown, Mode=OneWay}" />
 
-        <ScrollViewer x:Name="Scroller" XYFocusKeyboardNavigation="Enabled">
-            <StackPanel x:Name="Column" Spacing="16">
+        <ScrollViewer x:Name="Scroller" XYFocusKeyboardNavigation="Enabled" Margin="{x:Bind RowsViewMargin(ViewModel.Hero.Shown), Mode=OneWay}">
+            <StackPanel Spacing="16" Padding="{x:Bind RowsPadding(ViewModel.Hero.Shown), Mode=OneWay}">
                 <TextBlock Text="{x:Bind ViewModel.Notice, Mode=OneWay}" Visibility="{x:Bind HasText(ViewModel.Notice), Mode=OneWay}"
                            Style="{StaticResource SiloCaptionTextStyle}" Foreground="{StaticResource SiloPrimaryBrush}" TextWrapping="Wrap"
                            AutomationProperties.LiveSetting="Polite" />

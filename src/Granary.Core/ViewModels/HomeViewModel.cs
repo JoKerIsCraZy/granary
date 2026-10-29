@@ -161,9 +161,11 @@ public sealed partial class HomeViewModel : ObservableObject
             Hero.Reset(null);
             return;
         }
-        var items = Rows.SelectMany(row => row.Cards.Select(row.ItemOf)).OfType<CatalogItem>();
-        var item = (Hero.Shown is { } shown ? items.FirstOrDefault(i => i.ContentId == shown.Key) : null) ?? items.FirstOrDefault();
-        Hero.Reset(item is null ? null : HomeHeroTitle.From(item, server.BaseUri));
+        var items = Rows.SelectMany(row => row.Cards.Select(row.ItemOf)).OfType<CatalogItem>().ToList();
+        HomeHeroTitle? Find(string key) => items.FirstOrDefault(i => i.ContentId == key) is { } found ? HomeHeroTitle.From(found, server.BaseUri) : null;
+        var title = (Hero.Shown is { } shown ? Find(shown.Key) : null)
+            ?? (items.Count > 0 ? HomeHeroTitle.From(items[0], server.BaseUri) : null);
+        Hero.Reset(title, Find);
     }
 
     partial void OnRowsChanged(IReadOnlyList<HomeRowViewModel> value) => FollowRowsWithHero();
@@ -267,6 +269,8 @@ public sealed partial class HomeViewModel : ObservableObject
         Notice = "";
         if (!quietly)
         {
+            // Another server or profile, or the first load: the hero starts afresh with the new rows.
+            Hero.Forget();
             Rows = [];
             _loadedAt = null;
         }
