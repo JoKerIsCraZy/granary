@@ -29,19 +29,19 @@
             <SolidColorBrush x:Key="TextFillColorPrimaryBrush" Color="#FFE8E8EC" />
             <SolidColorBrush x:Key="TextFillColorSecondaryBrush" Color="#FFA4A4AE" />
             <SolidColorBrush x:Key="TextFillColorTertiaryBrush" Color="#FF7C7C86" />
-            <SolidColorBrush x:Key="ApplicationPageBackgroundThemeBrush" Color="#FF141417" />
-            <SolidColorBrush x:Key="NavigationViewDefaultPaneBackground" Color="#FF141417" />
-            <SolidColorBrush x:Key="NavigationViewExpandedPaneBackground" Color="#FF141417" />
-            <SolidColorBrush x:Key="NavigationViewContentBackground" Color="#FF141417" />
-            <SolidColorBrush x:Key="NavigationViewContentGridBorderBrush" Color="#B32A2A2F" />
+            <SolidColorBrush x:Key="ApplicationPageBackgroundThemeBrush" Color="#FF0E0E10" />
+            <SolidColorBrush x:Key="NavigationViewDefaultPaneBackground" Color="#FF0E0E10" />
+            <SolidColorBrush x:Key="NavigationViewExpandedPaneBackground" Color="#FF0E0E10" />
+            <SolidColorBrush x:Key="NavigationViewContentBackground" Color="#FF0E0E10" />
+            <SolidColorBrush x:Key="NavigationViewContentGridBorderBrush" Color="#B3242428" />
             <SolidColorBrush x:Key="NavigationViewItemBackgroundSelected" Color="#E61F1F23" />
-            <SolidColorBrush x:Key="NavigationViewItemBackgroundSelectedPointerOver" Color="#FF232328" />
+            <SolidColorBrush x:Key="NavigationViewItemBackgroundSelectedPointerOver" Color="#FF1C1C20" />
             <SolidColorBrush x:Key="NavigationViewItemBackgroundPointerOver" Color="#801F1F23" />
-            <SolidColorBrush x:Key="CardBackgroundFillColorDefaultBrush" Color="#FF1C1C20" />
-            <SolidColorBrush x:Key="CardStrokeColorDefaultBrush" Color="#B32A2A2F" />
-            <SolidColorBrush x:Key="ControlFillColorDefaultBrush" Color="#FF1C1C20" />
-            <SolidColorBrush x:Key="ControlFillColorSecondaryBrush" Color="#FF232328" />
-            <SolidColorBrush x:Key="ControlFillColorInputActiveBrush" Color="#FF1C1C20" />
+            <SolidColorBrush x:Key="CardBackgroundFillColorDefaultBrush" Color="#FF161619" />
+            <SolidColorBrush x:Key="CardStrokeColorDefaultBrush" Color="#B3242428" />
+            <SolidColorBrush x:Key="ControlFillColorDefaultBrush" Color="#FF161619" />
+            <SolidColorBrush x:Key="ControlFillColorSecondaryBrush" Color="#FF1C1C20" />
+            <SolidColorBrush x:Key="ControlFillColorInputActiveBrush" Color="#FF161619" />
         </ResourceDictionary>
         <ResourceDictionary x:Key="Dark">
             <Color x:Key="SystemAccentColor">#FFEF4444</Color>
@@ -62,19 +62,19 @@
             <SolidColorBrush x:Key="TextFillColorPrimaryBrush" Color="#FFE8E8EC" />
             <SolidColorBrush x:Key="TextFillColorSecondaryBrush" Color="#FFA4A4AE" />
             <SolidColorBrush x:Key="TextFillColorTertiaryBrush" Color="#FF7C7C86" />
-            <SolidColorBrush x:Key="ApplicationPageBackgroundThemeBrush" Color="#FF141417" />
-            <SolidColorBrush x:Key="NavigationViewDefaultPaneBackground" Color="#FF141417" />
-            <SolidColorBrush x:Key="NavigationViewExpandedPaneBackground" Color="#FF141417" />
-            <SolidColorBrush x:Key="NavigationViewContentBackground" Color="#FF141417" />
-            <SolidColorBrush x:Key="NavigationViewContentGridBorderBrush" Color="#B32A2A2F" />
+            <SolidColorBrush x:Key="ApplicationPageBackgroundThemeBrush" Color="#FF0E0E10" />
+            <SolidColorBrush x:Key="NavigationViewDefaultPaneBackground" Color="#FF0E0E10" />
+            <SolidColorBrush x:Key="NavigationViewExpandedPaneBackground" Color="#FF0E0E10" />
+            <SolidColorBrush x:Key="NavigationViewContentBackground" Color="#FF0E0E10" />
+            <SolidColorBrush x:Key="NavigationViewContentGridBorderBrush" Color="#B3242428" />
             <SolidColorBrush x:Key="NavigationViewItemBackgroundSelected" Color="#E61F1F23" />
-            <SolidColorBrush x:Key="NavigationViewItemBackgroundSelectedPointerOver" Color="#FF232328" />
+            <SolidColorBrush x:Key="NavigationViewItemBackgroundSelectedPointerOver" Color="#FF1C1C20" />
             <SolidColorBrush x:Key="NavigationViewItemBackgroundPointerOver" Color="#801F1F23" />
-            <SolidColorBrush x:Key="CardBackgroundFillColorDefaultBrush" Color="#FF1C1C20" />
-            <SolidColorBrush x:Key="CardStrokeColorDefaultBrush" Color="#B32A2A2F" />
-            <SolidColorBrush x:Key="ControlFillColorDefaultBrush" Color="#FF1C1C20" />
-            <SolidColorBrush x:Key="ControlFillColorSecondaryBrush" Color="#FF232328" />
-            <SolidColorBrush x:Key="ControlFillColorInputActiveBrush" Color="#FF1C1C20" />
+            <SolidColorBrush x:Key="CardBackgroundFillColorDefaultBrush" Color="#FF161619" />
+            <SolidColorBrush x:Key="CardStrokeColorDefaultBrush" Color="#B3242428" />
+            <SolidColorBrush x:Key="ControlFillColorDefaultBrush" Color="#FF161619" />
+            <SolidColorBrush x:Key="ControlFillColorSecondaryBrush" Color="#FF1C1C20" />
+            <SolidColorBrush x:Key="ControlFillColorInputActiveBrush" Color="#FF161619" />
         </ResourceDictionary>
     </ResourceDictionary.ThemeDictionaries>
 
@@ -91,10 +91,10 @@
     <CornerRadius x:Key="NavigationViewContentGridCornerRadius">0</CornerRadius>
 
     <!-- Palette -->
-    <Color x:Key="SiloBackgroundColor">#FF141417</Color>
-    <Color x:Key="SiloSurfaceColor">#FF1C1C20</Color>
-    <Color x:Key="SiloSurfaceRaisedColor">#FF232328</Color>
-    <Color x:Key="SiloBorderColor">#B32A2A2F</Color>
+    <Color x:Key="SiloBackgroundColor">#FF0E0E10</Color>
+    <Color x:Key="SiloSurfaceColor">#FF161619</Color>
+    <Color x:Key="SiloSurfaceRaisedColor">#FF1C1C20</Color>
+    <Color x:Key="SiloBorderColor">#B3242428</Color>
     <Color x:Key="SiloForegroundColor">#FFE8E8EC</Color>
     <Color x:Key="SiloMutedColor">#FFA4A4AE</Color>
     <Color x:Key="SiloPrimaryColor">#FFEF4444</Color>
@@ -129,7 +129,7 @@
     <SolidColorBrush x:Key="SiloPrimaryTint60Brush" Color="#99EF4444" />
     <SolidColorBrush x:Key="SiloPrimaryTint75Brush" Color="#BFEF4444" />
     <!-- Labels on an accent fill: dark on buttons and the play disc, white on small badges (for a custom accent, the web's choice). -->
-    <SolidColorBrush x:Key="SiloOnPrimaryBrush" Color="#FF141417" />
+    <SolidColorBrush x:Key="SiloOnPrimaryBrush" Color="#FF0E0E10" />
     <SolidColorBrush x:Key="SiloOnPrimaryBadgeBrush" Color="#FFFFFFFF" />
     <!-- The signed-out screens' glow at the top left. -->
     <RadialGradientBrush x:Key="SiloAccentGlowBrush" Center="0.18,0.18" GradientOrigin="0.18,0.18" RadiusX="0.26" RadiusY="0.52">

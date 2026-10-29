@@ -29,7 +29,7 @@
             <Rectangle>
                 <Rectangle.Fill>
                     <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                        <GradientStop Offset="0" Color="#FF141417" />
+                        <GradientStop Offset="0" Color="{StaticResource SiloBackgroundColor}" />
                         <GradientStop Offset="0.42" Color="#59141417" />
                         <GradientStop Offset="1" Color="#00141417" />
                     </LinearGradientBrush>
@@ -39,7 +39,7 @@
                 <Rectangle.Fill>
                     <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
                         <GradientStop Offset="0" Color="#00141417" />
-                        <GradientStop Offset="1" Color="#FF141417" />
+                        <GradientStop Offset="1" Color="{StaticResource SiloBackgroundColor}" />
                     </LinearGradientBrush>
                 </Rectangle.Fill>
             </Rectangle>

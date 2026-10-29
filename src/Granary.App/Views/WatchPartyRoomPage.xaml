@@ -55,7 +55,7 @@
                     <Grid Width="112" Height="168" CornerRadius="8" Background="{StaticResource SiloSurfaceRaisedBrush}"
                           BorderBrush="{x:Bind views:WatchPartyRoomPage.Ring(IsSelected), Mode=OneWay}" BorderThickness="2">
                         <Image Source="{x:Bind views:WatchPartyRoomPage.Poster(PosterUrl)}" Stretch="UniformToFill" />
-                        <Border HorizontalAlignment="Left" VerticalAlignment="Top" Margin="6" Padding="2" CornerRadius="12" Background="#FF18181B"
+                        <Border HorizontalAlignment="Left" VerticalAlignment="Top" Margin="6" Padding="2" CornerRadius="12" Background="#FF121214"
                                 BorderBrush="#33FFFFFF" BorderThickness="1" Visibility="{x:Bind HasBadges}">
                             <StackPanel Orientation="Horizontal" Spacing="2">
                                 <ItemsRepeater ItemsSource="{x:Bind Badges}">
