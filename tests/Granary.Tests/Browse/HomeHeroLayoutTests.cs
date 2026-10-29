@@ -57,6 +57,20 @@ public sealed partial class HomeHeroLayoutTests
     }
 
     [Theory]
+    // The first title of a start shows before its width is known, and its fade still runs when the width comes.
+    [InlineData(true, false, true, 0, 1200, BackdropStep.LoadArt)]
+    [InlineData(true, false, false, 0, 1200, BackdropStep.LoadArt)]
+    [InlineData(true, true, false, 0, 1200, BackdropStep.None)]
+    [InlineData(true, false, true, 0, 0, BackdropStep.None)]
+    [InlineData(false, false, true, 800, 1200, BackdropStep.None)]
+    [InlineData(false, false, false, 800, 1200, BackdropStep.DecodeAgain)]
+    [InlineData(false, false, false, 1150, 1200, BackdropStep.None)]
+    public void AKnownWidth_LoadsAWaitingPicture_EvenDuringItsFade(bool waits, bool folded, bool fading, int decoded, int needed, BackdropStep step)
+    {
+        Assert.Equal(step, HomeHeroLayout.StepFor(waits, folded, fading, decoded, needed));
+    }
+
+    [Theory]
     [InlineData(1200, 1200)]
     [InlineData(500, 783)]
     [InlineData(double.NaN, 0)]
