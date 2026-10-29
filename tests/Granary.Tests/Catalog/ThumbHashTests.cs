@@ -23,6 +23,25 @@ public sealed class ThumbHashTests
         Assert.Equal(last, Pixel(picture, width - 1, height - 1));
     }
 
+    // Every byte of four pictures as the decoder gave them before it moved to flat arrays (98de803): with alpha, landscape,
+    // portrait, and five pixels high. The hashes are seeded random bytes, so the pictures are loud, but each byte counts.
+    [Theory]
+    [InlineData("s1WjfDSPaRVX5WlUrhBqpM6hYSxgvYIIEbE=", 26, 32, "DE6D3574C2DFF03CB25AD1789361F386F247AC7B4CF81A1E2E87CB475B56F469", "127,0,255,0", "255,72,120,255", "255,255,255,145")]
+    [InlineData("K11Is9inClG2XRVRNXpIts9ncHtskz8A7tw=", 32, 14, "B67ED072A7E9BFB9F83DC044C37ED238A669FC9AFD25977586B921CC0F495AB9", "0,0,0,255", "38,255,0,255", "153,0,0,255")]
+    [InlineData("aQkJlTA1iJZiwK+y+y3Au4OSWlxIFCqgswE=", 23, 32, "1313E277C07CB682B80FC73C88C259562CE33FB8EBB203CE045D373A56B7C455", "47,255,255,255", "129,255,228,255", "255,255,0,255")]
+    [InlineData("T1EIEaFDZljHbjgaAf865rmUzA==", 32, 5, "E44EE3F204DC0463724B369AEAB1B148C59C3E338093C362FE2B5CC19F20CDCB", "0,37,85,255", "0,207,52,255", "0,30,101,255")]
+    public void Decode_GivesEveryByteItGaveBefore(string hash, int width, int height, string sha256, string first, string middle, string last)
+    {
+        var picture = ThumbHash.FromBase64(hash);
+
+        Assert.NotNull(picture);
+        Assert.Equal((width, height), (picture.Width, picture.Height));
+        Assert.Equal(sha256, Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(picture.Rgba)));
+        Assert.Equal(first, Pixel(picture, 0, 0));
+        Assert.Equal(middle, Pixel(picture, width / 2, height / 2));
+        Assert.Equal(last, Pixel(picture, width - 1, height - 1));
+    }
+
     [Theory]
     [InlineData(null)]
     [InlineData("")]
