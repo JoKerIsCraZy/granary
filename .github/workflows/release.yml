@@ -1,9 +1,9 @@
 name: Release
 
-# Builds Granary's setup, portable zip and update packages with Velopack and publishes them as a GitHub release
+# Builds Granary's setup, portable zip and update package with Velopack, signs them and publishes them as a GitHub release
 # (docs/release.md). Run it by hand on main with a version; it tags the commit it built as it publishes. The build job can
-# only read the repository and sees no secret. The publish job alone may write, and it waits for a reviewer's approval
-# in the "release" environment, which takes runs from main only.
+# only read the repository and sees no secret. The publish job alone may write and gets the update signing key, and it
+# waits for a reviewer's approval in the "release" environment, which takes runs from main only.
 on:
   workflow_dispatch:
     inputs:
@@ -64,17 +64,8 @@ jobs:
       - name: Test
         run: dotnet test tests/Granary.Tests -c Release -p:Platform=x64
 
-      # The previous release lets Velopack make a delta package; the first release has none. vpk comes as
-      # scripts/get-vpk.ps1 pins it by SHA-256, and reads its token from VPK_TOKEN, so the token is on no command line.
-      - name: Download the previous release
-        shell: pwsh
-        continue-on-error: true
-        env:
-          VPK_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          $vpk = ./scripts/get-vpk.ps1
-          dotnet $vpk download github --repoUrl "https://github.com/$env:GITHUB_REPOSITORY" --outputDir artifacts/releases
-
+      # vpk comes as scripts/get-vpk.ps1 pins it by SHA-256. Fails while src/Granary.Core/Updates/update-key.pub is the
+      # placeholder: such a build could never apply an update.
       - name: Pack
         shell: pwsh
         env:
@@ -91,7 +82,7 @@ jobs:
   publish:
     needs: build
     runs-on: windows-latest
-    # Waits for a required reviewer before anything is published (docs/release.md).
+    # Waits for a required reviewer, and only then gets UPDATE_SIGNING_KEY (docs/release.md, "Signed releases").
     environment: release
     permissions:
       contents: write
@@ -131,16 +122,36 @@ jobs:
           name: release
           path: artifacts/releases
 
-      # Publishing tags the commit this run built. vpk reads its token from VPK_TOKEN, so the token is on no command line.
+      # Before anything is uploaded. The script stops unless the key is the pair of the public key the app carries, so
+      # no release goes out that installed copies would refuse.
+      - name: Sign
+        shell: pwsh
+        env:
+          UPDATE_SIGNING_KEY: ${{ secrets.UPDATE_SIGNING_KEY }}
+          VERSION: ${{ needs.build.outputs.version }}
+        run: ./scripts/sign-release.ps1 -Version $env:VERSION
+
+      # A draft first, published only once SHA256SUMS and its signature are on it: no client ever sees the release
+      # without them. Publishing tags the commit this run built. vpk reads its token from VPK_TOKEN, so the token is on
+      # no command line.
       - name: Publish the release
         shell: pwsh
         env:
           VPK_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ needs.build.outputs.version }}
         run: |
           $vpk = ./scripts/get-vpk.ps1
           dotnet $vpk upload github --repoUrl "https://github.com/$env:GITHUB_REPOSITORY" --outputDir artifacts/releases `
-            --publish --releaseName "Granary $env:VERSION" --tag "v$env:VERSION" --targetCommitish $env:GITHUB_SHA
+            --releaseName "Granary $env:VERSION" --tag "v$env:VERSION" --targetCommitish $env:GITHUB_SHA
           if ($LASTEXITCODE -ne 0) {
             throw "vpk upload failed with exit code $LASTEXITCODE"
+          }
+          gh release upload "v$env:VERSION" artifacts/signed/SHA256SUMS artifacts/signed/SHA256SUMS.sig --repo $env:GITHUB_REPOSITORY
+          if ($LASTEXITCODE -ne 0) {
+            throw "Adding SHA256SUMS failed with exit code $LASTEXITCODE; the release stays a draft."
+          }
+          gh release edit "v$env:VERSION" --draft=false --repo $env:GITHUB_REPOSITORY
+          if ($LASTEXITCODE -ne 0) {
+            throw "Publishing failed with exit code $LASTEXITCODE; the release stays a draft."
           }

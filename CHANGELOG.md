@@ -58,3 +58,9 @@ release's section is what its update says it changes (docs/release.md).
   buttons; Info shows the full details, cast, crew and files.
 - Settings → Devices: see where your account is signed in and sign out any session, and see the devices your profile
   watches on, rename them, set them back to your profile settings, or forget them.
+
+### Security
+
+- Signed updates: Granary installs an update only when its release is signed with Granary's own key and the download
+  is the file the release signed, and the notes it shows for an update are the ones that file carries. Settings → About
+  says when an update couldn't be verified, and Granary tries again later.

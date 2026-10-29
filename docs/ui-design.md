@@ -551,9 +551,10 @@ says why above the sections.
 - **About** (`AboutSettingsView` on `AboutViewModel`, as the apps' About with Version and Acknowledgements): Granary's
   mark (64 px), name and "Version 0.2.0", what it is and that it is not an official Silo app. Updates: the state in one
   line ("Granary is up to date.", "Downloading Granary 0.3.0… 43%", "Granary 0.3.0 is ready. It installs when you
-  restart or close Granary.", why a copy does not update) over "Last checked today at 14:05", Check for updates (off
+  restart or close Granary.", "The update to Granary 0.3.0 couldn't be verified, so it wasn't installed. Granary will
+  try again later.", why a copy does not update) over "Last checked today at 14:05", Check for updates (off
   while it looks, or when the copy cannot update) or Restart now once a release is ready, and "What's new in 0.3.0"
-  from the release's notes. What's new: CHANGELOG.md as shipped, a release per heading ("0.2.0 · Oct 27, 2026"), its
+  from the notes its signed package carries. What's new: CHANGELOG.md as shipped, a release per heading ("0.2.0 · Oct 27, 2026"), its
   groups in small muted capitals and bulleted items. License and source: View opens LICENSE and THIRD_PARTY_NOTICES.md
   in Notepad, Open the repository. Troubleshooting: the data and logs folders in Explorer.
 

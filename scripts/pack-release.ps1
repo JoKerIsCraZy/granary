@@ -4,9 +4,10 @@
 
 .DESCRIPTION
     Fetches libmpv, publishes the app self-contained for win-x64 and packs it into artifacts/releases:
-    GranaryApp-win-Setup.exe, GranaryApp-win-Portable.zip, the .nupkg update packages and releases.win.json.
-    Pass -Repository for builds that look for updates there; without it the build never looks. To make delta
-    updates against the previous release, download it into the output folder first (the release workflow does).
+    GranaryApp-win-Setup.exe, GranaryApp-win-Portable.zip, the full .nupkg update package and releases.win.json.
+    Pass -Repository for builds that look for updates there; without it the build never looks. With it, the script
+    stops until src/Granary.Core/Updates/update-key.pub holds the update signing key (scripts/new-update-key.ps1).
+    Updates take the full package only, as only that is signed byte for byte (docs/release.md, "Signed releases").
 
 .EXAMPLE
     ./scripts/pack-release.ps1 -Version 0.2.0
@@ -26,6 +27,13 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
+
+# A build that looks for updates must carry the key they are checked with, or it could never apply one: stop while
+# update-key.pub is the placeholder (docs/release.md, "Signed releases").
+if ($Repository) {
+    . (Join-Path $PSScriptRoot 'lib/update-signing.ps1')
+    $null = Read-UpdatePublicKey
+}
 
 # The package id names the install folder, %LOCALAPPDATA%\GranaryApp: not "Granary", which is the data folder
 # (servers, sign-ins, logs) that uninstalling would otherwise take with it. It must never change.
@@ -65,9 +73,10 @@ try {
         Write-Warning "CHANGELOG.md has no section for $Version; the release goes out without notes."
     }
 
+    # No delta packages: Granary takes only the full package, the one the release signs byte for byte.
     dotnet $vpk pack --packId $packId --packVersion $Version --packDir $publish --mainExe Granary.exe `
         --packTitle Granary --packAuthors 'Granary contributors' --icon src/Granary.App/Assets/Logo/granary.ico --runtime win-x64 `
-        --outputDir $OutputDir @notesArgs
+        --delta None --outputDir $OutputDir @notesArgs
     if ($LASTEXITCODE -ne 0) {
         throw "vpk pack failed with exit code $LASTEXITCODE"
     }

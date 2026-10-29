@@ -20,7 +20,9 @@ Dependencies point inward only: `App → Player → Core`, and `App → Core`.
   Core defines the ports the other layers implement: `IPlaybackEngine`, `IUiDispatcher`,
   `INavigationService`, `ISecretStore`, and `ISystemMediaControls` for Windows' media keys and their overlay
   (`PlayerSystemMedia` decides what they show and maps their buttons to the player's commands; the App's
-  `WindowsMediaControls` drives the main window's System Media Transport Controls).
+  `WindowsMediaControls` drives the main window's System Media Transport Controls). `IReleaseFiles` gives
+  `SignedReleaseVerifier` a release's SHA256SUMS and its signature, and the package on disk to hash and read; Core's own
+  `HttpReleaseFiles` implements it, and the tests fake it (docs/release.md, "Signed releases").
 - **Player** implements `IPlaybackEngine` on libmpv and exposes the video side as
   `ICompositionVideoOutput`. It has no WinUI dependency either; the only Windows-specific code is the
   DXGI call in `Interop/DxgiSwapChain.cs`.

@@ -125,9 +125,11 @@ public sealed class ChangelogTests
         public AppUpdateSupport Support => AppUpdateSupport.Supported;
 
         public Task<AppRelease?> CheckAsync(CancellationToken cancellationToken) =>
-            Task.FromResult<AppRelease?>(new AppRelease("0.2.0", "### Fixed\n- Posters load faster.\n"));
+            Task.FromResult<AppRelease?>(new AppRelease("0.2.0", null));
 
-        public Task DownloadAsync(IProgress<int>? progress, CancellationToken cancellationToken) => Task.CompletedTask;
+        // The notes come with the verified download, from the signed package.
+        public Task<AppRelease?> DownloadAsync(IProgress<int>? progress, CancellationToken cancellationToken) =>
+            Task.FromResult<AppRelease?>(new AppRelease("0.2.0", "### Fixed\n- Posters load faster.\n"));
 
         public void ApplyWhenExited(bool restart)
         {

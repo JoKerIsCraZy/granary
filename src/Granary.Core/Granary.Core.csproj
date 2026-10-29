@@ -19,4 +19,9 @@
     <InternalsVisibleTo Include="Granary.Tests" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The public key updates are checked with (docs/release.md, "Signed releases"). -->
+    <EmbeddedResource Include="Updates\update-key.pub" LogicalName="Granary.Core.Updates.update-key.pub" />
+  </ItemGroup>
+
 </Project>

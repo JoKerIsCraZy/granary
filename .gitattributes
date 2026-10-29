@@ -13,6 +13,8 @@
 *.sln text eol=crlf
 *.ps1 text eol=crlf
 *.sh text eol=lf
+# The update signing key, embedded as is: the same bytes on every machine.
+*.pub text eol=lf
 
 *.png binary
 *.ico binary

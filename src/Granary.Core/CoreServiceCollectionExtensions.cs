@@ -27,6 +27,7 @@ using Granary.Core.Realtime;
 using Granary.Core.Security;
 using Granary.Core.Servers;
 using Granary.Core.Theme;
+using Granary.Core.Updates;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Admin;
 using Granary.Core.ViewModels.Cards;
@@ -129,8 +130,25 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton(sp => new SidebarLayout(SidebarLayout.DefaultPath, sp.GetRequiredService<ISessionManager>(),
             sp.GetRequiredService<IUiDispatcher>(), sp.GetRequiredService<ILogger<SidebarLayout>>()));
         services.AddSingleton(sp => new LibraryTabs(LibraryTabs.DefaultPath, sp.GetRequiredService<ILogger<LibraryTabs>>()));
-        // The app brings its own updater (Velopack); without it nothing updates.
+        // The app brings its own updater (Velopack); without it nothing updates. It applies an update only once
+        // SignedReleaseVerifier has verified its release as signed. Release files come on a client of their own, with
+        // nothing of this device or of a server's sign-in, following GitHub's redirect to where downloads are served.
         services.TryAddSingleton<IAppUpdater, NoAppUpdater>();
+        // HttpReleaseFiles bounds each file, body included, to HttpReleaseFiles.Timeout; the client's own timeout only backs it.
+        services.AddHttpClient(HttpReleaseFiles.HttpClientName, client =>
+            {
+                client.Timeout = 2 * HttpReleaseFiles.Timeout;
+                client.DefaultRequestHeaders.UserAgent.ParseAdd("Granary");
+            })
+            .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
+            {
+                MaxAutomaticRedirections = 5,
+                PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+            })
+            .RemoveAllLoggers();
+        services.TryAddSingleton<IReleaseFiles, HttpReleaseFiles>();
+        services.AddSingleton(sp => new SignedReleaseVerifier(sp.GetRequiredService<IReleaseFiles>(), UpdateSigningKey.Embedded,
+            sp.GetRequiredService<ILogger<SignedReleaseVerifier>>()));
         services.AddSingleton<AppUpdatesViewModel>();
         services.AddTransient<SignInViewModel>();
         services.AddSingleton<MediaCardActions>();

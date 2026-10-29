@@ -48,10 +48,11 @@ public sealed class AppUpdatesViewModelTests
     }
 
     [Fact]
-    public async Task CheckNow_DownloadsWhatItFinds_AndOffersItWithItsNotes()
+    public async Task CheckNow_DownloadsWhatItFinds_AndOffersItWithTheNotesOfItsSignedPackage()
     {
         var download = new TaskCompletionSource();
         _updater.Answers.Enqueue(() => "0.3.0");
+        _updater.FeedNotes = "Notes from the unsigned feed, never shown.";
         _updater.Notes = "### Fixed\n- Posters load faster.";
         _updater.HoldDownload = download;
         var updates = Create();
@@ -86,6 +87,66 @@ public sealed class AppUpdatesViewModelTests
 
         await updates.CheckNowCommand.ExecuteAsync(null);
         Assert.Equal(AppUpdateState.UpToDate, updates.State);
+    }
+
+    [Fact]
+    public async Task AFailedLook_IsLoggedByItsKind_NeverWithAMessageThatCouldCarryAnAddress()
+    {
+        _updater.Answers.Enqueue(() => throw new HttpRequestException("failed at https://objects.example/x?token=abc123"));
+        var updates = Create();
+
+        await updates.CheckNowCommand.ExecuteAsync(null);
+
+        Assert.Contains("Could not look for a Granary update: HttpRequestException", _logs.All, StringComparison.Ordinal);
+        Assert.DoesNotContain("token=", _logs.All, StringComparison.Ordinal);
+        Assert.DoesNotContain("https://", _logs.All, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AnUpdateThatCannotBeVerified_IsNeitherOfferedNorApplied_AndCanBeTriedAgain()
+    {
+        _updater.Answers.Enqueue(() => "0.3.0");
+        _updater.Answers.Enqueue(() => "0.3.0");
+        _updater.Notes = "### Fixed\n- Posters load faster.";
+        _updater.Verifies = false;
+        var updates = Create();
+
+        await updates.CheckNowCommand.ExecuteAsync(null);
+
+        Assert.Equal(AppUpdateState.NotVerified, updates.State);
+        Assert.Equal("The update to Granary 0.3.0 couldn't be verified, so it wasn't installed. Granary will try again later.",
+            updates.StatusText);
+        Assert.False(updates.IsNoticeShown);
+        Assert.Null(updates.ReadyVersion);
+        Assert.Equal("", updates.ReleaseNotes);
+        Assert.False(updates.RestartNowCommand.CanExecute(null));
+        Assert.True(updates.CheckNowCommand.CanExecute(null));
+        updates.OnExiting();
+        Assert.Empty(_updater.Applied);
+
+        _updater.Verifies = true;
+        await updates.CheckNowCommand.ExecuteAsync(null);
+        Assert.Equal(AppUpdateState.Ready, updates.State);
+    }
+
+    [Fact]
+    public async Task AnUnverifiedUpdate_IsLookedForAgainSixHoursLater()
+    {
+        _updater.Answers.Enqueue(() => "0.3.0");
+        _updater.Answers.Enqueue(() => "0.3.0");
+        _updater.Verifies = false;
+        var updates = Create();
+        var ct = TestContext.Current.CancellationToken;
+
+        var run = updates.RunAsync(ct);
+        await _clock.WaitForTimerAsync(ct);
+        Assert.Equal(AppUpdateState.NotVerified, updates.State);
+        _updater.Verifies = true;
+        Assert.Equal(AppUpdatesViewModel.CheckEvery, await _clock.FireNextTimerAsync(ct));
+        await run;
+
+        Assert.Equal(2, _updater.Downloads);
+        Assert.Equal("0.3.0", updates.ReadyVersion);
     }
 
     [Fact]
@@ -187,15 +248,24 @@ public sealed class AppUpdatesViewModelTests
 
     private sealed class FakeUpdater : IAppUpdater
     {
+        private string? _found;
+
         public AppUpdateSupport Support { get; set; } = AppUpdateSupport.Supported;
 
         /// <summary>Each look's answer: the version found, or null for none.</summary>
         public Queue<Func<string?>> Answers { get; } = new();
 
+        /// <summary>The notes the signed package carries.</summary>
         public string? Notes { get; set; }
+
+        /// <summary>Notes the unsigned feed gives with the look.</summary>
+        public string? FeedNotes { get; set; }
 
         /// <summary>Holds the download until set.</summary>
         public TaskCompletionSource? HoldDownload { get; set; }
+
+        /// <summary>Whether a download turns out to be the signed release.</summary>
+        public bool Verifies { get; set; } = true;
 
         public int Checks { get; private set; }
 
@@ -206,16 +276,18 @@ public sealed class AppUpdatesViewModelTests
         public Task<AppRelease?> CheckAsync(CancellationToken cancellationToken)
         {
             Checks++;
-            return Task.FromResult(Answers.Dequeue()() is { } version ? new AppRelease(version, Notes) : null);
+            _found = Answers.Dequeue()();
+            return Task.FromResult(_found is { } version ? new AppRelease(version, FeedNotes) : null);
         }
 
-        public async Task DownloadAsync(IProgress<int>? progress, CancellationToken cancellationToken)
+        public async Task<AppRelease?> DownloadAsync(IProgress<int>? progress, CancellationToken cancellationToken)
         {
             Downloads++;
             if (HoldDownload is { } hold)
             {
                 await hold.Task;
             }
+            return Verifies && _found is { } version ? new AppRelease(version, Notes) : null;
         }
 
         public void ApplyWhenExited(bool restart) => Applied.Add(restart);
