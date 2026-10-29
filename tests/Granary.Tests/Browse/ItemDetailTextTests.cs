@@ -254,4 +254,141 @@ public sealed class ItemDetailTextTests
         Assert.Equal(109, DetailFacts.RuntimeMinutes(movie));
         Assert.Equal(120, DetailFacts.RuntimeMinutes(movie with { Versions = [] }));
     }
+
+    [Fact]
+    public void MetaLine_OfAMovie_IsYearRuntimeRatingAndGenres()
+    {
+        var movie = Item(CatalogItemTypes.Movie) with { Year = 2026, Runtime = 118, ContentRating = "R", Genres = ["Mystery", "Thriller"] };
+
+        Assert.Equal("2026 · 1h 58m · R · Mystery, Thriller", DetailFacts.MetaLine(movie));
+    }
+
+    [Fact]
+    public void MetaLine_OfASeries_CountsItsRegularSeasons_AndKeepsThreeGenres()
+    {
+        var series = Item(CatalogItemTypes.Series) with
+        {
+            FirstAirDate = "2021-01-08",
+            LastAirDate = "2026-10-23",
+            ContentRating = "TV-MA",
+            SeasonCount = 3,
+            Genres = ["Crime", "Drama", "Mystery", "Thriller"],
+        };
+        Season[] seasons = [new() { SeasonNumber = 0, IsSpecials = true }, new() { SeasonNumber = 1 }, new() { SeasonNumber = 2 }];
+
+        Assert.Equal("2021–2026 · TV-MA · 3 seasons · Crime, Drama, Mystery", DetailFacts.MetaLine(series));
+        Assert.Equal("2021–2026 · TV-MA · 2 seasons · Crime, Drama, Mystery", DetailFacts.MetaLine(series, seasons));
+    }
+
+    [Fact]
+    public void MetaLine_OfAnEpisode_IsItsCodeRuntimeAirDateAndRating()
+    {
+        var episode = Item(CatalogItemTypes.Episode) with { SeasonNumber = 3, EpisodeNumber = 1, Runtime = 47, AirDate = "2021-01-08", ContentRating = "TV-MA" };
+
+        Assert.Equal("S3 E1 · 47m · 8 Jan 2021 · TV-MA", DetailFacts.MetaLine(episode));
+    }
+
+    [Fact]
+    public void MetaLine_OfASeason_IsItsYearAndEpisodes_AndLeavesOutWhatIsUnknown()
+    {
+        Assert.Equal("2021 · 10 episodes", DetailFacts.MetaLine(Item(CatalogItemTypes.Season) with { AirDate = "2021-01-08", EpisodeCount = 10, Genres = [] }));
+        Assert.Equal("", DetailFacts.MetaLine(Item(CatalogItemTypes.Movie) with { Genres = [] }));
+    }
+
+    [Fact]
+    public void AvailableVersion_NamesTheOneFile_WithoutItsPath()
+    {
+        var movie = Item(CatalogItemTypes.Movie) with
+        {
+            Versions = [new FileVersion { FileId = "1", FileName = "secret/path.mkv", Resolution = "720p", CodecVideo = "h264", CodecAudio = "eac3", FileSize = 9_985_769_062 }],
+        };
+
+        Assert.Equal("Available version: 720P · H264 · EAC3 · 9.3 GB", DetailFacts.AvailableVersionLine(movie));
+        Assert.Equal("Available version: 720P · 700 MB", DetailFacts.AvailableVersionLine(movie with
+        {
+            Versions = [new FileVersion { FileId = "1", Resolution = "720p", FileSize = 734_003_200 }],
+        }));
+    }
+
+    [Fact]
+    public void AvailableVersions_ListTheirQualities_AndASeriesHasNone()
+    {
+        var movie = Item(CatalogItemTypes.Movie) with
+        {
+            Versions =
+            [
+                new FileVersion { FileId = "1", Resolution = "2160p", Hdr = true },
+                new FileVersion { FileId = "2", Resolution = "1080p" },
+                new FileVersion { FileId = "3", Resolution = "1080p" },
+            ],
+        };
+
+        Assert.Equal("Available versions: 4K HDR · 1080P", DetailFacts.AvailableVersionLine(movie));
+        Assert.Null(DetailFacts.AvailableVersionLine(Item(CatalogItemTypes.Series)));
+    }
+
+    [Theory]
+    [InlineData(3753.4, "Resume from 1:02:33")]
+    [InlineData(725.0, "Resume from 12:05")]
+    [InlineData(null, "Play")]
+    public void PlayButton_SaysWhereAMovieResumes(double? position, string expected)
+    {
+        var movie = Item(CatalogItemTypes.Movie);
+        var watch = new WatchRollup { PositionSeconds = position, IsInProgress = position is not null };
+
+        Assert.Equal(expected, DetailFacts.PlayButtonText(movie, watch, DetailFacts.PlayAction(movie, watch)));
+    }
+
+    [Fact]
+    public void PlayButton_OfASeries_KeepsItsAction()
+    {
+        var series = Item(CatalogItemTypes.Series) with { PlayContentId = "next" };
+        var watch = new WatchRollup { InProgressCount = 1, PositionSeconds = 600 };
+
+        Assert.Equal("Resume", DetailFacts.PlayButtonText(series, watch, DetailFacts.PlayAction(series, watch)));
+    }
+
+    [Fact]
+    public void Info_HasTheDetailsCastCrewAndFile_WithoutPaths()
+    {
+        var movie = Item(CatalogItemTypes.Movie, crew => crew.Add(new CrewCredit("Ann Lee", "Director", null, null, null))) with
+        {
+            Title = "Elena",
+            Year = 2026,
+            Runtime = 118,
+            ContentRating = "R",
+            Overview = "A long story.",
+            Countries = ["France"],
+            Ratings = [new CatalogRating("imdb", "IMDb", 70, "7.0")],
+            Cast = [new CastCredit("Maya Stone", "Elena", 0, null, null, null)],
+            Versions = [new FileVersion { FileId = "1", FileName = "secret/path.mkv", Resolution = "720p", CodecVideo = "h264", CodecAudio = "eac3", Container = "mkv", FileSize = 9_985_769_062, Bitrate = 8000 }],
+        };
+
+        var sections = DetailFacts.InfoSections(movie);
+
+        Assert.Equal(["Details", "Cast", "Crew", "File"], sections.Select(s => s.Title));
+        var details = sections[0].Rows.ToDictionary(r => r.Label, r => r.Value);
+        Assert.Equal("1h 58m", details["Runtime"]);
+        Assert.Equal("Drama, Mystery", details["Genres"]);
+        Assert.Equal("IMDb 7.0", details["Ratings"]);
+        Assert.Equal("A long story.", details["Overview"]);
+        Assert.Equal(("Maya Stone", "Elena"), (sections[1].Rows[0].Label, sections[1].Rows[0].Value));
+        Assert.Equal(("Director", "Ann Lee"), (sections[2].Rows[0].Label, sections[2].Rows[0].Value));
+        var file = sections[3].Rows.ToDictionary(r => r.Label, r => r.Value);
+        Assert.Equal("9.3 GB", file["Size"]);
+        Assert.Equal("8 Mb/s", file["Bitrate"]);
+        Assert.DoesNotContain(sections.SelectMany(s => s.Rows), r => r.Value.Contains("secret", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Info_NumbersSeveralFiles_AndLeavesOutEmptySections()
+    {
+        var movie = Item(CatalogItemTypes.Movie) with
+        {
+            Genres = [],
+            Versions = [new FileVersion { FileId = "1", Resolution = "2160p" }, new FileVersion { FileId = "2", Resolution = "1080p" }],
+        };
+
+        Assert.Equal(["Details", "File 1", "File 2"], DetailFacts.InfoSections(movie).Select(s => s.Title));
+    }
 }

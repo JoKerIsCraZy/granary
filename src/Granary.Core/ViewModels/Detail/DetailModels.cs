@@ -41,5 +41,11 @@ public sealed record DetailEpisode(MediaCard Card, string? Overview)
     public string AccessibleName => Card.IsWatched ? $"{Card.AccessibleName}, watched" : Card.AccessibleName;
 }
 
+/// <summary>A part of the Info dialog: "Details", "Cast", "Crew", "File".</summary>
+public sealed record DetailInfoSection(string Title, IReadOnlyList<DetailInfoRow> Rows);
+
+/// <summary>A label and its value in the Info dialog: "Runtime" and "1h 58m", or an actor and their role.</summary>
+public sealed record DetailInfoRow(string Label, string Value);
+
 /// <summary>What the primary button says and which item it would play.</summary>
 public sealed record DetailPlayAction(string Label, string? TargetId);
