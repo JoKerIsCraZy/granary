@@ -40,8 +40,32 @@ public static class CardBadgeViews
         ["ribbon"] = "\uE734",
     };
 
-    public static FrameworkElement Create(CardBadge badge, OverlayPreset preset, bool alignRight)
+    /// <summary>
+    /// <paramref name="shown"/> showing <paramref name="badge"/> when it is drawn the same way and only its word differs (a
+    /// recycled card's "IMDB 7.4" becoming "IMDB 6.8"), else a new view. What a view draws is kept beside it, so a reuse
+    /// asks the view nothing.
+    /// </summary>
+    internal static BadgeView Reuse(BadgeView? shown, CardBadge badge, OverlayPreset preset, bool alignRight)
     {
+        var look = new Look(preset.Id, badge.IconId, badge.Accent, alignRight, badge.Text.Length > 0);
+        if (shown is not null && shown.Look == look)
+        {
+            if (shown.Label is { } label && shown.Text != badge.Text)
+            {
+                label.Text = badge.Text;
+                shown.Text = badge.Text;
+            }
+            return shown;
+        }
+        var view = Create(badge, preset, alignRight, out var made);
+        return new BadgeView(view, look, made, badge.Text);
+    }
+
+    public static FrameworkElement Create(CardBadge badge, OverlayPreset preset, bool alignRight) => Create(badge, preset, alignRight, out _);
+
+    private static FrameworkElement Create(CardBadge badge, OverlayPreset preset, bool alignRight, out TextBlock? label)
+    {
+        label = null;
         var (background, foreground, border, leftOnly) = preset.Colors(badge.Accent);
         var text = Brush(foreground);
         // A grid, not a row: the label takes the width left beside the icon and ends in an ellipsis when its corner is short.
@@ -59,7 +83,8 @@ public static class CardBadgeViews
         }
         if (badge.Text.Length > 0)
         {
-            Add(Word(badge.Text, preset, text, preset.IsBold ? "SiloFontBold" : "SiloFontSemiBold"), new GridLength(1, GridUnitType.Star));
+            label = Word(badge.Text, preset, text, preset.IsBold ? "SiloFontBold" : "SiloFontSemiBold");
+            Add(label, new GridLength(1, GridUnitType.Star));
         }
         var view = new Border
         {
@@ -110,4 +135,20 @@ public static class CardBadgeViews
     }
 
     private static SolidColorBrush Brush(BadgeColor color) => new(Color.FromArgb(color.A, color.R, color.G, color.B));
+
+    // What a badge's view draws apart from its word.
+    internal sealed record Look(OverlayPresetId Preset, string? IconId, string? Accent, bool AlignRight, bool HasText);
+}
+
+/// <summary>A badge's view as <see cref="CardBadgeViews"/> made it, with what it draws, for a recycled card to reuse.</summary>
+internal sealed class BadgeView(FrameworkElement view, CardBadgeViews.Look look, TextBlock? label, string text)
+{
+    public FrameworkElement View { get; } = view;
+
+    public CardBadgeViews.Look Look { get; } = look;
+
+    /// <summary>The badge's word, where it has one.</summary>
+    public TextBlock? Label { get; } = label;
+
+    public string Text { get; set; } = text;
 }

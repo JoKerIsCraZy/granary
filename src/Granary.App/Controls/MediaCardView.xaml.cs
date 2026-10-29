@@ -51,6 +51,10 @@ public sealed partial class MediaCardView : UserControl
     // The card and badges the corners show, so a card loaded again keeps its badges rather than making them anew.
     private MediaCard? _badgedCard;
     private CardOverlayPrefs? _badgedPrefs;
+    private OverlayPreset? _badgedPreset;
+    // The badge views in each corner (top left, top right, bottom left, bottom right), ahead of its fixed children: a
+    // recycled card compares them here rather than asking the corner for its children.
+    private readonly List<BadgeView>[] _cornerViews = [[], [], [], []];
     private bool _reservesEpisodeLine;
     private CardCaption _caption = CardCaption.TitleMetadata;
     private ButtonBase? _host;
@@ -66,6 +70,7 @@ public sealed partial class MediaCardView : UserControl
     {
         InitializeComponent();
         ArtImage.ScaleTransition = new Vector3Transition { Duration = ZoomDuration };
+        TopBadges.Gap = BottomBadges.Gap = EdgeInset;
         Show(null);
     }
 
@@ -343,24 +348,48 @@ public sealed partial class MediaCardView : UserControl
         _badgedPrefs = _overlays.Shown;
         var badges = card?.Overlay is { } overlay && _overlays.Shown is { } prefs ? CardBadges.Resolve(overlay, prefs) : [];
         var preset = OverlayPreset.Of(_overlays.Shown?.Preset ?? OverlayPresetId.Classic);
-        TopBadges.Gap = BottomBadges.Gap = EdgeInset;
-        Fill(TopLeftBadges, OverlayPosition.TopLeft, keep: 0);
-        Fill(TopRightBadges, OverlayPosition.TopRight, keep: 2);
-        Fill(BottomLeftBadges, OverlayPosition.BottomLeft, keep: 0);
-        Fill(BottomRightBadges, OverlayPosition.BottomRight, keep: 0);
+        bool restyled = !ReferenceEquals(preset, _badgedPreset);
+        _badgedPreset = preset;
+        Fill(TopLeftBadges, _cornerViews[0], OverlayPosition.TopLeft);
+        Fill(TopRightBadges, _cornerViews[1], OverlayPosition.TopRight);
+        Fill(BottomLeftBadges, _cornerViews[2], OverlayPosition.BottomLeft);
+        Fill(BottomRightBadges, _cornerViews[3], OverlayPosition.BottomRight);
 
-        // Replaces the badges before the corner's fixed children (StatusBadge and WatchedMark top right).
-        void Fill(StackPanel corner, OverlayPosition position, int keep)
+        // Shows the corner's badges before its fixed children (StatusBadge and WatchedMark top right), in the views already
+        // there where they draw the same: a recycled card mostly shows the same kinds of badge, and making them anew for
+        // each card took most of a scrolled card's time. The corner itself is touched only where its badges change.
+        void Fill(StackPanel corner, List<BadgeView> views, OverlayPosition position)
         {
-            corner.Spacing = preset.StackGap;
-            while (corner.Children.Count > keep)
+            if (restyled)
             {
-                corner.Children.RemoveAt(0);
+                corner.Spacing = preset.StackGap;
             }
+            bool alignRight = position is OverlayPosition.TopRight or OverlayPosition.BottomRight;
             int at = 0;
-            foreach (var badge in badges.Where(b => b.Position == position))
+            foreach (var badge in badges)
             {
-                corner.Children.Insert(at++, CardBadgeViews.Create(badge, preset, position is OverlayPosition.TopRight or OverlayPosition.BottomRight));
+                if (badge.Position != position)
+                {
+                    continue;
+                }
+                var shown = at < views.Count ? views[at] : null;
+                var view = CardBadgeViews.Reuse(shown, badge, preset, alignRight);
+                if (shown is null)
+                {
+                    corner.Children.Insert(at, view.View);
+                    views.Add(view);
+                }
+                else if (!ReferenceEquals(view, shown))
+                {
+                    corner.Children[at] = view.View;
+                    views[at] = view;
+                }
+                at++;
+            }
+            while (views.Count > at)
+            {
+                corner.Children.RemoveAt(at);
+                views.RemoveAt(at);
             }
         }
     }
