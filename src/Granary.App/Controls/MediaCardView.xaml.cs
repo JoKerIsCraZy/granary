@@ -25,6 +25,8 @@ public sealed partial class MediaCardView : UserControl
     // Artwork is decoded as large as its box shows it; until the card has been laid out, as a row's cards are.
     private const double PosterHeight = 320;
     private const double LandscapeWidth = 400;
+    // A card's width changed by more than this share of the width its artwork was decoded for decodes it again.
+    private const double RedecodeChange = 0.1;
 
     // Android's: artwork that comes this soon was never waited on and shows at once, later artwork fades in over its blur.
     private static readonly TimeSpan InstantReveal = TimeSpan.FromMilliseconds(100);
@@ -53,6 +55,9 @@ public sealed partial class MediaCardView : UserControl
     private double _artWidth;
     // Done at the card's first size, which a card just made waits for before it decodes its artwork.
     private TaskCompletionSource? _sized;
+    // The shown card's artwork, and the width it was decoded for (0 before it was), to decode it again at another width.
+    private Uri? _artworkUrl;
+    private double _decodedWidth;
     // The card and badges the corners show, so a card loaded again keeps its badges rather than making them anew.
     private MediaCard? _badgedCard;
     private CardOverlayPrefs? _badgedPrefs;
@@ -152,13 +157,15 @@ public sealed partial class MediaCardView : UserControl
         Placeholder.Visibility = Visible(blur is null);
         _artwork?.Cancel();
         _artwork = null;
+        _artworkUrl = card?.ImageUrl;
+        _decodedWidth = 0;
         ArtImage.OpacityTransition = null;
         ArtImage.Opacity = 0;
         ArtImage.Source = null;
-        if (card?.ImageUrl is { } url)
+        if (_artworkUrl is { } url)
         {
             _artwork = new CancellationTokenSource();
-            _ = ShowArtworkAsync(card, url, _artwork.Token);
+            _ = ShowArtworkAsync(url, _artwork.Token);
         }
 
         ShowBadges(card);
@@ -539,6 +546,7 @@ public sealed partial class MediaCardView : UserControl
             _sized = null;
             sized.TrySetResult();
         }
+        RedecodeIfResized();
         PlaceBadges();
         ArtImage.CenterPoint = new Vector3((float)(width / 2), (float)(height / 2), 0);
         SizeActions(width);
@@ -781,22 +789,52 @@ public sealed partial class MediaCardView : UserControl
     // While the page scrolls fast, the artwork waits for it to slow down (ScrollMotion): cards rushing by decode nothing. A
     // card just made also waits for its first measure, so its artwork is decoded at the size it shows, not a guess: a grid's
     // new cards were decoded half again as large.
-    private async Task ShowArtworkAsync(MediaCard card, Uri url, CancellationToken cancellationToken)
+    private async Task ShowArtworkAsync(Uri url, CancellationToken cancellationToken)
     {
         _artworkShownAt = Stopwatch.GetTimestamp();
         await ScrollMotion.WhenSlowAsync();
-        if (_artWidth <= 0 && !cancellationToken.IsCancellationRequested)
+        // A card of another shape than the last one it showed is not sized for this one yet either.
+        if ((_artWidth <= 0 || _landscape != _sizedLandscape) && !cancellationToken.IsCancellationRequested)
         {
             _sized ??= new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-            await _sized.Task;
+            try
+            {
+                // A card that never gets a size (scrolled away before it was laid out) lets go of the wait with its card.
+                await _sized.Task.WaitAsync(cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
         }
-        if (cancellationToken.IsCancellationRequested)
+        if (!cancellationToken.IsCancellationRequested)
+        {
+            LoadArtwork(url, cancellationToken);
+        }
+    }
+
+    // The artwork decoded as large as the card shows it now: a poster as high, a wide card as wide.
+    private void LoadArtwork(Uri url, CancellationToken cancellationToken)
+    {
+        _decodedWidth = _artWidth;
+        ArtImage.Source = _landscape
+            ? Artwork.Load(url, DecodeSize(_artWidth, LandscapeWidth), cancellationToken)
+            : Artwork.LoadAtHeight(url, DecodeSize(_artWidth * 3 / 2, PosterHeight), cancellationToken);
+    }
+
+    // A card whose artwork is in, or on its way, and whose width then changed by more than a tenth (another poster size, a
+    // breakpoint crossed, a row's card given its width after it was filled) decodes it again at the new size: smaller would
+    // show it blurred, larger would hold memory for nothing. A smaller change, as a window resized by a few pixels, keeps it.
+    private void RedecodeIfResized()
+    {
+        if (_decodedWidth <= 0 || _artworkUrl is not { } url || Math.Abs(_artWidth - _decodedWidth) <= _decodedWidth * RedecodeChange)
         {
             return;
         }
-        ArtImage.Source = card.Shape == MediaCardShape.Poster
-            ? Artwork.LoadAtHeight(url, DecodeSize(double.IsNaN(Art.Height) ? Art.ActualHeight : Art.Height, PosterHeight), cancellationToken)
-            : Artwork.Load(url, DecodeSize(Art.ActualWidth, LandscapeWidth), cancellationToken);
+        _artwork?.Cancel();
+        _artwork = new CancellationTokenSource();
+        _artworkShownAt = Stopwatch.GetTimestamp();
+        LoadArtwork(url, _artwork.Token);
     }
 
     private static int DecodeSize(double shown, double fallback) => (int)Math.Ceiling(shown > 0 ? shown : fallback);

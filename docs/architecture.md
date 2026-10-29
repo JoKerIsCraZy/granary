@@ -110,7 +110,8 @@ also walks all live XAML that .NET holds (the reference tracker), so its pause g
 
 - A card shows a title in this order: the thumbhash's blur at once, its badges, its texts, then its artwork. While a
   scroller moves fast the artwork waits (`ScrollMotion`); a card just made also waits for its first measure, so the
-  artwork is decoded at the height it shows (`DecodePixelHeight`), never a guess.
+  artwork is decoded at the height it shows (`DecodePixelHeight`), never a guess; a card whose width then changes by
+  more than a tenth (another poster size, a breakpoint, a row's card given its width) decodes it again.
 - A recycled card reuses what it has: badge views that draw the same badge only change their word
   (`CardBadgeViews.Reuse`), brushes are shared per colour, styles and brushes are looked up once, and its size,
   badge placement, subtitle style and caption colour are set only when they differ from the card before. Each new
