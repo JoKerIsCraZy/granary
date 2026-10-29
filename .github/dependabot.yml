@@ -1,0 +1,19 @@
+# Keeps the actions the workflows pin by commit (with their version beside it) and the NuGet packages up to date, as
+# pull requests that CI checks (docs/release.md).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ['*']
+
+  - package-ecosystem: nuget
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
