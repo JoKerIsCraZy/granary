@@ -5,8 +5,9 @@ using Granary.Core.ViewModels.Cards;
 namespace Granary.Core.ViewModels.Detail;
 
 /// <summary>
-/// The hero's texts per item type, worded like Silo's web client (web/src/pages/ItemDetail/*Content.tsx):
-/// overline, title, chips, ratings, versions, breadcrumbs and the labels of the primary actions.
+/// The detail page's texts per item type: the title, breadcrumbs, the meta line, the file's line, the Info dialog and
+/// the labels of the primary actions, worded like Silo's web client (web/src/pages/ItemDetail/*Content.tsx) where it
+/// has them.
 /// </summary>
 public static class DetailFacts
 {
@@ -20,24 +21,6 @@ public static class DetailFacts
     {
         ArgumentNullException.ThrowIfNull(season);
         return season.IsSpecials == true || season.SeasonNumber == 0;
-    }
-
-    /// <summary>"MOVIE · AMAZON MGM STUDIOS", "SERIES · NETFLIX"; null for seasons and episodes, which show breadcrumbs.</summary>
-    public static string? Overline(CatalogItemDetail item)
-    {
-        ArgumentNullException.ThrowIfNull(item);
-        string? label = item.Type switch
-        {
-            CatalogItemTypes.Season or CatalogItemTypes.Episode => null,
-            CatalogItemTypes.Movie => With("MOVIE", item.Studios),
-            CatalogItemTypes.Series => With("SERIES", item.Networks),
-            { Length: > 0 } other => other.Replace('_', ' ').ToUpperInvariant(),
-            _ => null,
-        };
-        return label;
-
-        static string With(string type, IReadOnlyList<string> companies) =>
-            companies.FirstOrDefault(c => !string.IsNullOrWhiteSpace(c)) is { } company ? $"{type} · {company.Trim().ToUpperInvariant()}" : type;
     }
 
     /// <summary>The title the hero shows: a season shows its series, an episode "S03E01 · Chapter 1".</summary>
@@ -65,71 +48,6 @@ public static class DetailFacts
         return title == DetailText.SeasonLabel(item.SeasonNumber ?? 0) ? null : title;
     }
 
-    /// <summary>
-    /// Movie: year, rating, runtime, then resolution and audio. Series: air years, rating, seasons and
-    /// episodes (from the season list once it is there). Season: year, "SEASON 3", episodes. Episode: runtime,
-    /// air date, resolution and audio. All upper-cased like the web's chips.
-    /// </summary>
-    public static IReadOnlyList<DetailChip> Chips(CatalogItemDetail item, IReadOnlyList<Season>? seasons = null, int? listedEpisodes = null)
-    {
-        ArgumentNullException.ThrowIfNull(item);
-        var chips = new List<DetailChip>();
-        switch (item.Type)
-        {
-            case CatalogItemTypes.Series:
-                Add(DetailText.AirYears(item.FirstAirDate, item.LastAirDate, item.Year));
-                Add(item.ContentRating);
-                // Counted like the server's season_count: regular seasons, without the specials.
-                var regular = seasons?.Where(s => !IsSpecials(s)).ToList();
-                int? seasonCount = regular is { Count: > 0 } ? regular.Count : item.SeasonCount;
-                int? episodeCount = regular is { Count: > 0 } ? regular.Sum(s => s.EpisodeCount) : item.EpisodeCount;
-                AddCount(seasonCount, "season", "seasons");
-                AddCount(episodeCount, "episode", "episodes");
-                break;
-            case CatalogItemTypes.Season:
-                Add(DetailText.YearOf(item.AirDate) ?? DetailText.YearOf(item.ReleaseDate) ?? DetailText.Year(item.Year));
-                Add(DetailText.SeasonLabel(item.SeasonNumber ?? 0));
-                AddCount(item.EpisodeCount ?? listedEpisodes, "episode", "episodes");
-                break;
-            case CatalogItemTypes.Episode:
-                Add(DetailText.Runtime(RuntimeMinutes(item)));
-                Add(DetailText.Date(item.AirDate ?? item.ReleaseDate));
-                AddQuality();
-                break;
-            default:
-                Add(DetailText.Year(item.Year) ?? DetailText.YearOf(item.ReleaseDate));
-                Add(item.ContentRating);
-                Add(DetailText.Runtime(RuntimeMinutes(item)));
-                AddQuality();
-                break;
-        }
-        return chips;
-
-        void Add(string? text, bool isAccent = false)
-        {
-            if (!string.IsNullOrWhiteSpace(text))
-            {
-                chips.Add(new DetailChip(text.Trim().ToUpperInvariant(), isAccent));
-            }
-        }
-
-        void AddCount(int? count, string singular, string plural)
-        {
-            if (count is > 0 and var n)
-            {
-                Add(DetailText.Count(n, singular, plural));
-            }
-        }
-
-        void AddQuality()
-        {
-            var version = PlayedVersion(item);
-            var overlay = item.OverlaySummary ?? (version is null ? null : OverlayOf(version));
-            Add(MediaCardFactory.ResolutionText(overlay), isAccent: true);
-            Add(MediaCardFactory.AudioText(overlay) ?? version?.CodecAudio, isAccent: true);
-        }
-    }
-
     /// <summary>The runtime in minutes: the played (or first) file's duration, else the metadata runtime (web: selectedMediaSummary).</summary>
     public static int? RuntimeMinutes(CatalogItemDetail item)
     {
@@ -145,26 +63,6 @@ public static class DetailFacts
             .Where(r => r is not null && !string.IsNullOrWhiteSpace(r.Display) && !(string.IsNullOrWhiteSpace(r.Name) && string.IsNullOrWhiteSpace(r.Source)))
             .Take(MaximumRatings)
             .Select(r => new DetailRating(string.IsNullOrWhiteSpace(r.Name) ? r.Source.Trim().ToUpperInvariant() : r.Name.Trim(), r.Display.Trim()))];
-    }
-
-    /// <summary>
-    /// One short line per file when there are several: "DIRECTOR'S CUT · 4K HDR · HEVC · TRUEHD". File names
-    /// and paths are left out: they are administrator data.
-    /// </summary>
-    public static IReadOnlyList<string> VersionLines(CatalogItemDetail item)
-    {
-        ArgumentNullException.ThrowIfNull(item);
-        if (item.Versions.Count < 2)
-        {
-            return [];
-        }
-        return [.. item.Versions.Select(v => string.Join(" · ", new[]
-        {
-            v.EditionRaw?.Trim().ToUpperInvariant(),
-            MediaCardFactory.ResolutionText(OverlayOf(v)),
-            v.CodecVideo.Trim().ToUpperInvariant(),
-            v.CodecAudio.Trim().ToUpperInvariant(),
-        }.Where(part => !string.IsNullOrEmpty(part)))).Where(line => line.Length > 0)];
     }
 
     /// <summary>
@@ -245,6 +143,7 @@ public static class DetailFacts
     private const int InfoCast = 25;
     private const double Gigabyte = 1024d * 1024 * 1024;
     private const double Megabyte = 1024d * 1024;
+    private const double Kilobyte = 1024d;
 
     /// <summary>
     /// The one line under the title (as Silage's title page): a movie's "2026 · 1h 58m · R · Mystery, Thriller", a
@@ -322,17 +221,24 @@ public static class DetailFacts
         ArgumentNullException.ThrowIfNull(item);
         ArgumentNullException.ThrowIfNull(action);
         bool leaf = item.Type is not (CatalogItemTypes.Series or CatalogItemTypes.Season);
-        return leaf && action.Label == ResumeLabel && watch?.PositionSeconds is > 0 and var position
+        return leaf && action.Label == ResumeLabel && watch?.PositionSeconds is >= 1 and var position
             ? "Resume from " + Clock(position)
             : action.Label;
     }
 
     /// <summary>
-    /// The Info dialog: the details (with the full overview), the cast, the crew by job, and each file's facts. File
-    /// names and paths are left out: they are administrator data. Sections without rows are left out.
+    /// The Info dialog: the details (with the full overview, a series' regular seasons and episodes once its season list
+    /// is read, a season's number and episodes), the cast, the crew by job, and each file's facts with the played file's
+    /// audio as its badge words it ("EAC3 5.1"). File names and paths are left out: they are administrator data.
+    /// Sections without rows are left out.
     /// </summary>
-    public static IReadOnlyList<DetailInfoSection> InfoSections(CatalogItemDetail item)
+    public static IReadOnlyList<DetailInfoSection> InfoSections(CatalogItemDetail item, IReadOnlyList<Season>? seasons = null, int? listedEpisodes = null)
     {
+        // Counted like the server's season_count: regular seasons, without the specials.
+        var regular = seasons?.Where(s => !IsSpecials(s)).ToList();
+        int? seasonCount = regular is { Count: > 0 } ? regular.Count : item.SeasonCount;
+        int? episodeCount = regular is { Count: > 0 } ? regular.Sum(s => s.EpisodeCount) : item.EpisodeCount;
+        var played = PlayedVersion(item);
         ArgumentNullException.ThrowIfNull(item);
         var sections = new List<DetailInfoSection>();
         Add("Details",
@@ -344,6 +250,14 @@ public static class DetailFacts
                 CatalogItemTypes.Series => DetailText.AirYears(item.FirstAirDate, item.LastAirDate, item.Year),
                 CatalogItemTypes.Movie => DetailText.Date(item.ReleaseDate) ?? DetailText.Year(item.Year),
                 _ => DetailText.Date(item.AirDate ?? item.ReleaseDate),
+            }),
+            Row("Season", item.Type == CatalogItemTypes.Season ? DetailText.SeasonLabel(item.SeasonNumber ?? 0) : null),
+            Row("Seasons", item.Type == CatalogItemTypes.Series ? Counted(seasonCount, "season", "seasons") : null),
+            Row("Episodes", item.Type switch
+            {
+                CatalogItemTypes.Series => Counted(episodeCount, "episode", "episodes"),
+                CatalogItemTypes.Season => Counted(item.EpisodeCount ?? listedEpisodes, "episode", "episodes"),
+                _ => null,
             }),
             Row("Runtime", DetailText.Runtime(RuntimeMinutes(item))),
             Row("Rating", item.ContentRating),
@@ -372,7 +286,9 @@ public static class DetailFacts
                 Row("Edition", version.EditionRaw),
                 Row("Resolution", MediaCardFactory.ResolutionText(OverlayOf(version))),
                 Row("Video", Upper(version.CodecVideo)),
-                Row("Audio", Upper(version.CodecAudio)),
+                Row("Audio", ReferenceEquals(version, played)
+                    ? MediaCardFactory.AudioText(item.OverlaySummary) ?? Upper(version.CodecAudio)
+                    : Upper(version.CodecAudio)),
                 Row("Container", Upper(version.Container)),
                 Row("Size", SizeText(version.FileSize)),
                 Row("Bitrate", version.Bitrate > 0 ? string.Create(CultureInfo.InvariantCulture, $"{version.Bitrate / 1000d:0.#} Mb/s") : null),
@@ -402,13 +318,24 @@ public static class DetailFacts
 
     private static string? Upper(string? text) => string.IsNullOrWhiteSpace(text) ? null : text.Trim().ToUpperInvariant();
 
-    // "9.3 GB", "700 MB" (binary units, as file managers count them).
-    private static string? SizeText(long bytes) => bytes switch
+    // "9.3 GB", "700 MB", "12 KB": binary units under Windows' names, as Explorer shows them. The unit is picked after
+    // rounding, so a file a byte short of 1 GB reads "1.0 GB", not "1024 MB".
+    private static string? SizeText(long bytes)
     {
-        <= 0 => null,
-        >= (long)Gigabyte => string.Create(CultureInfo.InvariantCulture, $"{bytes / Gigabyte:0.0} GB"),
-        _ => string.Create(CultureInfo.InvariantCulture, $"{bytes / Megabyte:0} MB"),
-    };
+        if (bytes <= 0)
+        {
+            return null;
+        }
+        if (Math.Round(bytes / Megabyte) >= 1024)
+        {
+            return string.Create(CultureInfo.InvariantCulture, $"{bytes / Gigabyte:0.0} GB");
+        }
+        if (Math.Round(bytes / Kilobyte) >= 1024)
+        {
+            return string.Create(CultureInfo.InvariantCulture, $"{bytes / Megabyte:0} MB");
+        }
+        return string.Create(CultureInfo.InvariantCulture, $"{Math.Max(1, Math.Round(bytes / Kilobyte)):0} KB");
+    }
 
     // "1:02:33", "12:05".
     private static string Clock(double seconds)

@@ -126,10 +126,6 @@ public sealed partial class ItemDetailViewModel : ObservableObject
     // Texts the hero may leave out are empty rather than null: x:Bind skips a function binding whose
     // argument is null, so a null would never hide its line.
 
-    /// <summary>"MOVIE · AMAZON MGM STUDIOS"; empty for seasons and episodes, which show breadcrumbs.</summary>
-    [ObservableProperty]
-    public partial string Overline { get; private set; } = "";
-
     [ObservableProperty]
     public partial string Tagline { get; private set; } = "";
 
@@ -145,13 +141,6 @@ public sealed partial class ItemDetailViewModel : ObservableObject
     public partial string BackdropThumbhash { get; private set; } = "";
 
     [ObservableProperty]
-    public partial Uri? PosterUrl { get; private set; }
-
-    /// <summary>Episodes show their still as the backdrop and no poster.</summary>
-    [ObservableProperty]
-    public partial bool ShowsPoster { get; private set; }
-
-    [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowsLogo), nameof(ShowsTitleText))]
     public partial Uri? LogoUrl { get; private set; }
 
@@ -165,14 +154,6 @@ public sealed partial class ItemDetailViewModel : ObservableObject
 
     public bool HasBreadcrumbs => Breadcrumbs.Count > 0;
 
-    [ObservableProperty]
-    public partial IReadOnlyList<DetailChip> Chips { get; private set; } = [];
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasRatings))]
-    public partial IReadOnlyList<DetailRating> Ratings { get; private set; } = [];
-
-    public bool HasRatings => Ratings.Count > 0;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasOverview))]
@@ -180,26 +161,8 @@ public sealed partial class ItemDetailViewModel : ObservableObject
 
     public bool HasOverview => Overview.Length > 0;
 
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(OverviewToggleText))]
-    public partial bool IsOverviewExpanded { get; private set; }
 
-    public string OverviewToggleText => IsOverviewExpanded ? "Less" : "More";
 
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasCredits), nameof(CreditsLine))]
-    public partial IReadOnlyList<DetailCreditPart> CreditParts { get; private set; } = [];
-
-    public bool HasCredits => CreditParts.Count > 0;
-
-    /// <summary>"Directed by … · Written by … · Action · Thriller".</summary>
-    public string CreditsLine => string.Join(" · ", CreditParts);
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasVersionLines))]
-    public partial IReadOnlyList<string> VersionLines { get; private set; } = [];
-
-    public bool HasVersionLines => VersionLines.Count > 0;
 
     /// <summary>The one line under the title: "2026 · 1h 58m · R · Mystery, Thriller".</summary>
     [ObservableProperty]
@@ -404,9 +367,6 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         }
     }
 
-    [RelayCommand]
-    private void ToggleOverview() => IsOverviewExpanded = !IsOverviewExpanded;
-
     [RelayCommand(CanExecute = nameof(CanPlay))]
     private void Play()
     {
@@ -442,12 +402,10 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         LoadErrorText = "";
         ActionError = "";
         Breadcrumbs = [];
-        Chips = [];
-        Ratings = [];
         Overview = "";
-        CreditParts = [];
-        VersionLines = [];
         MetaLine = "";
+        BackdropUrl = null;
+        BackdropThumbhash = "";
         AvailableVersionLine = "";
         InfoSections = [];
         LogoUrl = null;
@@ -470,22 +428,14 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         Type = item.Type;
         Title = item.Title;
         DisplayTitle = DetailFacts.DisplayTitle(item);
-        Overline = DetailFacts.Overline(item) ?? "";
         Tagline = item.Tagline?.Trim() ?? "";
         Subtitle = DetailFacts.Subtitle(item) ?? "";
-        BackdropUrl = ArtworkUrl.Resolve(server, item.BackdropUrl) ?? (isEpisode ? ArtworkUrl.Resolve(server, item.PosterUrl) : null);
-        BackdropThumbhash = (item.BackdropUrl is not null ? item.BackdropThumbhash : isEpisode ? item.PosterThumbhash : null) ?? "";
-        PosterUrl = ArtworkUrl.Resolve(server, item.PosterUrl);
-        ShowsPoster = !isEpisode;
+        BackdropUrl = ArtworkUrl.Resolve(server, item.BackdropUrl);
+        BackdropThumbhash = item.BackdropThumbhash ?? "";
         // An episode's logo would be its series': the episode's own title stays visible instead.
         LogoUrl = isEpisode ? null : ArtworkUrl.Resolve(server, item.LogoUrl);
         Breadcrumbs = DetailFacts.Breadcrumbs(item);
-        Chips = DetailFacts.Chips(item);
-        Ratings = DetailFacts.Ratings(item);
         Overview = item.Overview?.Trim() ?? "";
-        IsOverviewExpanded = false;
-        CreditParts = DetailCredits.Line(item);
-        VersionLines = DetailFacts.VersionLines(item);
         MetaLine = DetailFacts.MetaLine(item);
         AvailableVersionLine = DetailFacts.AvailableVersionLine(item) ?? "";
         InfoSections = DetailFacts.InfoSections(item);
@@ -520,8 +470,8 @@ public sealed partial class ItemDetailViewModel : ObservableObject
             return;
         }
         var seasons = OrderSeasons(collection.Items);
-        Chips = DetailFacts.Chips(item, seasons);
         MetaLine = DetailFacts.MetaLine(item, seasons);
+        InfoSections = DetailFacts.InfoSections(item, seasons);
         if (seasons is [{ ContentId.Length: > 0 }])
         {
             // A single-season show lists its episodes right here, as on the web.
@@ -582,8 +532,8 @@ public sealed partial class ItemDetailViewModel : ObservableObject
             return;
         }
         ShowEpisodes(collection.Items, item.EpisodeCount);
-        Chips = DetailFacts.Chips(item, listedEpisodes: collection.Items.Count);
         MetaLine = DetailFacts.MetaLine(item, listedEpisodes: collection.Items.Count);
+        InfoSections = DetailFacts.InfoSections(item, listedEpisodes: collection.Items.Count);
         ShowPlayAction();
     }
 

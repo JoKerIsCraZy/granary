@@ -3,7 +3,8 @@
     The top of the detail page (docs/ui-design.md): laid out as Silage's title page, on the backdrop the page itself draws
     behind its scrolling content. The logo (or the title), one line of facts, the tagline and four lines of overview, then
     Granary's own buttons at a larger size and the file's short facts. Chips, ratings, credits and the files' details are
-    in the Info dialog. Below 1400 px of window everything steps down a size, so a 1280 window keeps it whole.
+    in the Info dialog. Below 1400 px of window everything steps down a size, so a 1280 window keeps it whole; the step
+    sets sizes rather than styles, so a button keeps its focus when the window crosses it.
 -->
 <UserControl
     x:Class="Granary.App.Controls.DetailHero"
@@ -34,20 +35,6 @@
             <Setter Property="Width" Value="60" />
             <Setter Property="Height" Value="60" />
         </Style>
-        <Style x:Key="HeroPrimaryCompactButtonStyle" TargetType="Button" BasedOn="{StaticResource SiloPrimaryButtonStyle}">
-            <Setter Property="MinHeight" Value="48" />
-            <Setter Property="Padding" Value="16,6,22,6" />
-            <Setter Property="FontSize" Value="16" />
-        </Style>
-        <Style x:Key="HeroSecondaryCompactButtonStyle" TargetType="Button" BasedOn="{StaticResource SiloSecondaryButtonStyle}">
-            <Setter Property="MinHeight" Value="48" />
-            <Setter Property="Padding" Value="16,6,22,6" />
-            <Setter Property="FontSize" Value="16" />
-        </Style>
-        <Style x:Key="HeroIconCompactButtonStyle" TargetType="Button" BasedOn="{StaticResource SiloIconButtonStyle}">
-            <Setter Property="Width" Value="48" />
-            <Setter Property="Height" Value="48" />
-        </Style>
     </UserControl.Resources>
 
     <Grid>
@@ -65,7 +52,7 @@
                     <VisualState.Setters>
                         <Setter Target="Column.Padding" Value="48,96,48,0" />
                         <Setter Target="Column.Spacing" Value="14" />
-                        <Setter Target="Logo.Height" Value="136" />
+                        <Setter Target="Logo.MaxHeight" Value="136" />
                         <Setter Target="Logo.MaxWidth" Value="504" />
                         <Setter Target="TitleText.FontSize" Value="48" />
                         <Setter Target="TitleText.LineHeight" Value="52" />
@@ -79,17 +66,26 @@
                         <Setter Target="OverviewText.MaxWidth" Value="720" />
                         <Setter Target="Buttons.Spacing" Value="12" />
                         <Setter Target="Buttons.Margin" Value="0,6,0,0" />
-                        <Setter Target="PlayButton.Style" Value="{StaticResource HeroPrimaryCompactButtonStyle}" />
+                        <Setter Target="PlayButton.MinHeight" Value="48" />
+                        <Setter Target="PlayButton.Padding" Value="16,6,22,6" />
+                        <Setter Target="PlayButton.FontSize" Value="16" />
+                        <Setter Target="WatchedButton.MinHeight" Value="48" />
+                        <Setter Target="WatchedButton.Padding" Value="16,6,22,6" />
+                        <Setter Target="WatchedButton.FontSize" Value="16" />
+                        <Setter Target="InfoButton.MinHeight" Value="48" />
+                        <Setter Target="InfoButton.Padding" Value="16,6,22,6" />
+                        <Setter Target="InfoButton.FontSize" Value="16" />
+                        <Setter Target="StartOverButton.Width" Value="48" />
+                        <Setter Target="StartOverButton.Height" Value="48" />
+                        <Setter Target="FavoriteButton.Width" Value="48" />
+                        <Setter Target="FavoriteButton.Height" Value="48" />
+                        <Setter Target="MoreButton.Width" Value="48" />
+                        <Setter Target="MoreButton.Height" Value="48" />
                         <Setter Target="PlayIcon.FontSize" Value="18" />
-                        <Setter Target="StartOverButton.Style" Value="{StaticResource HeroIconCompactButtonStyle}" />
                         <Setter Target="StartOverIcon.FontSize" Value="18" />
-                        <Setter Target="WatchedButton.Style" Value="{StaticResource HeroSecondaryCompactButtonStyle}" />
                         <Setter Target="WatchedIcon.FontSize" Value="18" />
-                        <Setter Target="InfoButton.Style" Value="{StaticResource HeroSecondaryCompactButtonStyle}" />
                         <Setter Target="InfoIcon.FontSize" Value="18" />
-                        <Setter Target="FavoriteButton.Style" Value="{StaticResource HeroIconCompactButtonStyle}" />
                         <Setter Target="FavoriteIcon.FontSize" Value="18" />
-                        <Setter Target="MoreButton.Style" Value="{StaticResource HeroIconCompactButtonStyle}" />
                         <Setter Target="MoreIcon.FontSize" Value="18" />
                         <Setter Target="VersionText.FontSize" Value="13" />
                     </VisualState.Setters>
@@ -119,8 +115,11 @@
                 </ItemsRepeater.ItemTemplate>
             </ItemsRepeater>
 
-            <!-- The logo stands in for the title, as high as its box and at most 70 % of the text's width; screen readers still get the title. -->
-            <Image x:Name="Logo" Height="170" MaxWidth="630" HorizontalAlignment="Left" Stretch="Uniform"
+            <!--
+                The logo stands in for the title, at most 170 high and 70 % of the text's width, and takes no room until it is
+                in (or when it fails and the title takes its place); screen readers still get the title.
+            -->
+            <Image x:Name="Logo" MaxHeight="170" MaxWidth="630" HorizontalAlignment="Left" Stretch="Uniform"
                    Source="{x:Bind controls:DetailHero.LoadImage(ViewModel.LogoUrl, 640), Mode=OneWay}" ImageFailed="OnLogoFailed"
                    Visibility="{x:Bind ViewModel.ShowsLogo, Mode=OneWay}"
                    AutomationProperties.Name="{x:Bind ViewModel.DisplayTitle, Mode=OneWay}" AutomationProperties.HeadingLevel="Level1" />
