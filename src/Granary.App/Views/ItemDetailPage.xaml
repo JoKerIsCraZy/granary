@@ -88,24 +88,32 @@
                 <controls:DetailHero x:Name="Hero" ViewModel="{x:Bind ViewModel}" />
 
                 <StackPanel x:Name="Sections" Padding="48,56,48,96" Spacing="56">
-                    <controls:DetailShelf Title="Seasons" Caption="{x:Bind ViewModel.SeasonsTotalText, Mode=OneWay}"
-                                          Visibility="{x:Bind ViewModel.HasSeasons, Mode=OneWay}">
-                        <controls:DetailShelf.ShelfContent>
-                            <ItemsRepeater ItemsSource="{x:Bind ViewModel.Seasons, Mode=OneWay}">
-                                <ItemsRepeater.Layout>
-                                    <StackLayout Orientation="Horizontal" Spacing="20" />
-                                </ItemsRepeater.Layout>
-                                <ItemsRepeater.ItemTemplate>
-                                    <DataTemplate x:DataType="cards:MediaCard">
-                                        <Button Width="185" Style="{StaticResource SiloCardButtonStyle}" Click="OnSeasonClick" DataContext="{x:Bind}"
-                                                AutomationProperties.Name="{x:Bind local:ItemDetailPage.SeasonName(Title, Caption, IsWatched)}">
-                                            <controls:MediaCardView Card="{x:Bind}" />
-                                        </Button>
-                                    </DataTemplate>
-                                </ItemsRepeater.ItemTemplate>
-                            </ItemsRepeater>
-                        </controls:DetailShelf.ShelfContent>
-                    </controls:DetailShelf>
+                    <!-- Every season at once, wrapping at the page's width: a series rarely has more than a few rows of them. -->
+                    <StackPanel Spacing="14" Visibility="{x:Bind ViewModel.HasSeasons, Mode=OneWay}">
+                        <Grid ColumnSpacing="16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Seasons" Style="{StaticResource SiloRowTitleTextStyle}" AutomationProperties.HeadingLevel="Level2" />
+                            <TextBlock Grid.Column="1" VerticalAlignment="Center" Text="{x:Bind ViewModel.SeasonsTotalText, Mode=OneWay}"
+                                       Style="{StaticResource SiloCaptionTextStyle}" FontSize="13" />
+                        </Grid>
+                        <ItemsRepeater ItemsSource="{x:Bind ViewModel.Seasons, Mode=OneWay}">
+                            <ItemsRepeater.Layout>
+                                <UniformGridLayout MinItemWidth="185" MinColumnSpacing="20" MinRowSpacing="28" ItemsStretch="None"
+                                                   ItemsJustification="Start" />
+                            </ItemsRepeater.Layout>
+                            <ItemsRepeater.ItemTemplate>
+                                <DataTemplate x:DataType="cards:MediaCard">
+                                    <Button Width="185" VerticalAlignment="Top" Style="{StaticResource SiloCardButtonStyle}" Click="OnSeasonClick"
+                                            DataContext="{x:Bind}" AutomationProperties.Name="{x:Bind local:ItemDetailPage.SeasonName(Title, Caption, IsWatched)}">
+                                        <controls:MediaCardView Card="{x:Bind}" />
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsRepeater.ItemTemplate>
+                        </ItemsRepeater>
+                    </StackPanel>
 
                     <StackPanel Spacing="14" Visibility="{x:Bind ViewModel.ShowsEpisodesSection, Mode=OneWay}">
                         <Grid ColumnSpacing="16">
