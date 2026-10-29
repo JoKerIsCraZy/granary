@@ -152,6 +152,39 @@ public sealed class CardRequestNoticeTests
     }
 
     [Fact]
+    public async Task APageThatCameBack_SaysFailuresAgain()
+    {
+        var (actions, notice) = await CreateAsync();
+        Fails();
+        notice.Detach();
+
+        notice.Attach();
+        await actions.RequestAsync(Matrix);
+
+        Assert.Equal("Failed to submit request", notice.Text);
+    }
+
+    [Fact]
+    public async Task TheSameFailureAgain_IsSaidAgain()
+    {
+        var (actions, notice) = await CreateAsync();
+        Fails();
+        await actions.RequestAsync(Matrix);
+        var said = new List<string>();
+        notice.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(CardRequestNotice.Text))
+            {
+                said.Add(notice.Text);
+            }
+        };
+
+        await actions.RequestAsync(Matrix);
+
+        Assert.Equal(["", "Failed to submit request"], said);
+    }
+
+    [Fact]
     public void APageWithoutCardRequests_HasOneThatSaysNothing()
     {
         var none = CardRequestNotice.None;

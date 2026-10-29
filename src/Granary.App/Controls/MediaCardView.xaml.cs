@@ -8,6 +8,7 @@ using Microsoft.UI.Dispatching;
 using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
+using Microsoft.UI.Xaml.Automation.Peers;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
@@ -82,6 +83,8 @@ public sealed partial class MediaCardView : UserControl
     private bool _requestArmed;
     private DispatcherQueueTimer? _armTimer;
     private string? _requestName;
+    // The pill as screen readers see it; it starts out of the tree (the XAML's Raw).
+    private bool _requestInTree;
     private bool _followsHostFocus;
     private bool _sizedLandscape;
     private (double Width, bool Landscape, bool Lifted) _placed;
@@ -163,6 +166,10 @@ public sealed partial class MediaCardView : UserControl
     // Every part is set for every card: containers are recycled, so nothing of the previous card may stay.
     private void Show(MediaCard? card)
     {
+        // A container given another card under a resting pointer starts unarmed: its Request takes no click until the
+        // pointer comes in again and it has shown long enough.
+        _pointerMayRequest = false;
+        Disarm();
         _landscape = card?.Shape == MediaCardShape.Landscape;
         // The thumbhash's blur shows at once; the title stands in only without one.
         var blur = Thumbhashes.Get(card?.ImageThumbhash);
@@ -259,17 +266,13 @@ public sealed partial class MediaCardView : UserControl
         bool offered = Pick is null && card?.RequestOffer is not null && (requesting || _actions.CanRequest(card));
         if (!offered)
         {
-            // Requested from the keyboard: focus goes back to the card, not to nowhere.
-            if (RequestButton!.FocusState != FocusState.Unfocused)
-            {
-                _host?.Focus(FocusState.Programmatic);
-            }
-            RequestButton.Visibility = Visibility.Collapsed;
+            // Requested, or gone: focus it held goes back to the card, not to nowhere.
+            Present(offered: false, requesting: false);
+            RequestButton!.Visibility = Visibility.Collapsed;
             Disarm();
             return;
         }
         RequestButton!.Visibility = Visibility.Visible;
-        RequestButton.IsEnabled = !requesting;
         RequestLabel.Text = _actions.RequestActionText(card!);
         string name = _actions.RequestActionName(card!);
         if (name != _requestName)
@@ -286,8 +289,8 @@ public sealed partial class MediaCardView : UserControl
     private void MakeRequestButton()
     {
         FindName(nameof(RequestButton));
-        RequestButton!.GotFocus += OnRequestFocusChanged;
-        RequestButton.LostFocus += OnRequestFocusChanged;
+        RequestButton!.GotFocus += OnRequestGotFocus;
+        RequestButton.LostFocus += OnRequestLostFocus;
         RequestButton.LosingFocus += OnRequestLosingFocus;
         FollowHostFocus();
     }
@@ -298,7 +301,7 @@ public sealed partial class MediaCardView : UserControl
         if (_host is not null && !_followsHostFocus)
         {
             _followsHostFocus = true;
-            _host.LostFocus += OnRequestFocusChanged;
+            _host.LostFocus += OnRequestLostFocus;
             _host.LosingFocus += OnHostLosingFocus;
         }
     }
@@ -325,36 +328,57 @@ public sealed partial class MediaCardView : UserControl
         }
     }
 
-    // Shown under the mouse, with keyboard focus on the card or the pill, or while its request is on its way. A pointer
-    // reaches it only once it has shown for ArmTime: a quick click as it fades in opens the card, as does the first tap of
-    // a touch or pen, which shows it only on a card that already had focus. The keyboard reaches it while it shows.
+    // Where the viewer is decides how the pill shows (CardRequestPill): under a pointer, armed after ArmTime; with keyboard
+    // focus; in view while sending. A pill that holds focus and is about to go off hands it to the card first.
     private void ShowRequestPresence()
     {
-        if (RequestButton is not { Visibility: Visibility.Visible } button)
+        if (RequestButton is { Visibility: Visibility.Visible })
         {
-            return;
+            bool requesting = Card is { } card && _actions.HasRequestsInFlight && _actions.IsRequesting(card);
+            Present(offered: true, requesting);
         }
-        bool requesting = Card is { } card && _actions.HasRequestsInFlight && _actions.IsRequesting(card);
-        bool keyboard = HasKeyboardFocus();
-        bool pointer = _hovered && _pointerMayRequest;
-        button.Opacity = requesting || keyboard || pointer ? 1 : 0;
-        button.IsTabStop = keyboard && !requesting;
-        button.IsHitTestVisible = !requesting && (keyboard || (pointer && _requestArmed));
-        if (pointer && !_requestArmed)
+    }
+
+    private void Present(bool offered, bool requesting)
+    {
+        var button = RequestButton!;
+        var pill = CardRequestPill.Decide(offered, requesting, FocusOf(_host), FocusOf(button), _hovered && _pointerMayRequest, _requestArmed);
+        if (pill.MoveFocusToCard)
+        {
+            _host?.Focus(button.FocusState == FocusState.Pointer ? FocusState.Pointer : FocusState.Keyboard);
+        }
+        button.Opacity = pill.Shown ? 1 : 0;
+        button.IsEnabled = pill.Enabled;
+        button.IsTabStop = pill.TabStop;
+        button.IsHitTestVisible = pill.TakesPointer;
+        if (pill.InAccessibilityTree != _requestInTree)
+        {
+            _requestInTree = pill.InAccessibilityTree;
+            AutomationProperties.SetAccessibilityView(button, pill.InAccessibilityTree ? AccessibilityView.Content : AccessibilityView.Raw);
+        }
+        if (pill.Arm)
         {
             ArmLater();
         }
-        else if (!pointer)
+        else if (!(offered && _hovered && _pointerMayRequest))
         {
             Disarm();
         }
     }
 
-    private bool HasKeyboardFocus() =>
-        _host?.FocusState is FocusState.Keyboard or FocusState.Programmatic
-        || RequestButton?.FocusState is FocusState.Keyboard or FocusState.Programmatic;
+    private static CardFocus FocusOf(Control? control) => control?.FocusState switch
+    {
+        FocusState.Keyboard => CardFocus.Keyboard,
+        FocusState.Programmatic => CardFocus.Programmatic,
+        FocusState.Pointer => CardFocus.Pointer,
+        _ => CardFocus.None,
+    };
 
-    private void OnRequestFocusChanged(object sender, RoutedEventArgs e) => ShowRequestPresence();
+    private void OnRequestGotFocus(object sender, RoutedEventArgs e) => ShowRequestPresence();
+
+    // Later, once focus has settled: Tab between the card and its pill loses one before the other gets it, and the pill
+    // would blink.
+    private void OnRequestLostFocus(object sender, RoutedEventArgs e) => DispatcherQueue.TryEnqueue(ShowRequestPresence);
 
     private void ArmLater()
     {
@@ -957,7 +981,7 @@ public sealed partial class MediaCardView : UserControl
             if (_followsHostFocus)
             {
                 _followsHostFocus = false;
-                _host.LostFocus -= OnRequestFocusChanged;
+                _host.LostFocus -= OnRequestLostFocus;
                 _host.LosingFocus -= OnHostLosingFocus;
             }
             _host = null;

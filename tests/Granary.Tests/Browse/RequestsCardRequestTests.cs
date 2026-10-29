@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using Granary.Core.Abstractions;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Requests;

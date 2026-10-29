@@ -146,6 +146,7 @@
                 apart from the hover layer: while its request is on its way it stays in view, saying Sending, as the web's does.
             -->
             <Button x:Name="RequestButton" x:Load="False" Style="{StaticResource SiloCardRequestButtonStyle}" Opacity="0" IsHitTestVisible="False"
+                    IsEnabled="False" AutomationProperties.AccessibilityView="Raw"
                     HorizontalAlignment="Center" VerticalAlignment="Center" Click="OnRequestClick">
                 <Button.OpacityTransition>
                     <ScalarTransition Duration="0:0:0.15" />
