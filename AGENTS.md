@@ -111,6 +111,11 @@ classes in `tests/Granary.Tests/Fakes`.
 - **UserControls made in code** do not get the page's merged dictionaries. Merge `Themes/SiloSettings.xaml`
   into their resources, as `Views/Admin/AdminDashboardView.xaml` does, or their `StaticResource` lookups fail
   at runtime.
+- **Items of an ItemsRepeater** size their parts in `MeasureOverride`, from the width they are measured at, never from
+  `SizeChanged`: the repeater parks recycled elements at 0×0 and lays them out again, and a size set after each arrange
+  can keep layout from settling (a `LayoutCycleException`; see `MediaCardView` and `MediaCardSkeleton`). To find the
+  element behind a layout cycle, set `DebugSettings.LayoutCycleTracingLevel = LayoutCycleTracingLevel.High` for a run
+  and record the trace with `scripts/capture-debug-output.ps1`.
 - **ClientWebSocket:** a `ReceiveAsync` cancelled through its token aborts the socket. Close it through a token
   registration and `CloseAsync` instead, as `WebSocketRealtimeSocket` (`IRealtimeSocket`, in
   `src/Granary.Core/Realtime/RealtimeSocket.cs`) does for both the playback control lane and the events lane.
