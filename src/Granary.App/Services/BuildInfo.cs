@@ -1,7 +1,7 @@
 using System.Reflection;
-using Granary.App.Logging;
 using Granary.Core;
 using Granary.Core.Abstractions;
+using Granary.Core.Diagnostics;
 
 namespace Granary.App.Services;
 

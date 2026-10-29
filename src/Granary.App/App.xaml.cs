@@ -1,5 +1,4 @@
 using System.Runtime;
-using Granary.App.Logging;
 using Granary.App.Services;
 using Granary.App.Themes;
 using Granary.Core;
