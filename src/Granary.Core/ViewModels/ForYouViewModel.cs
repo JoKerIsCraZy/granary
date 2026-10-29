@@ -14,19 +14,35 @@ namespace Granary.Core.ViewModels;
 /// <summary>A For You row: its cards, and "Explore all" when a section lists the row in full.</summary>
 /// <param name="OpenCardCommand">Takes the card's <see cref="MediaCard"/>.</param>
 /// <param name="Section">The section Explore all opens; null when none lists the row.</param>
+/// <param name="Items">The cards' titles, in the cards' order, for the page's hero.</param>
+/// <param name="PointCardCommand">The pointer or the keyboard came to a card (the parameter): the hero follows it.</param>
 public sealed record RecommendationRowViewModel(string Title, IReadOnlyList<MediaCard> Cards, ICommand OpenCardCommand, ICommand? ExploreAllCommand,
-    RecommendationSectionRouteParameter? Section = null)
+    RecommendationSectionRouteParameter? Section = null, IReadOnlyList<CatalogItem>? Items = null, ICommand? PointCardCommand = null)
 {
     /// <summary>Whether <paramref name="other"/> shows the same: the rows on screen can stay, and keep where they are scrolled to.</summary>
     internal bool ShowsTheSameAs(RecommendationRowViewModel other) =>
         Title == other.Title && Section == other.Section && Cards.Select(c => c.Id).SequenceEqual(other.Cards.Select(c => c.Id), StringComparer.Ordinal);
+
+    /// <summary>The title of <paramref name="card"/>, one of this row's own cards; null for another.</summary>
+    internal CatalogItem? ItemOf(MediaCard card)
+    {
+        for (int i = 0; i < Cards.Count && i < (Items?.Count ?? 0); i++)
+        {
+            if (ReferenceEquals(Cards[i], card))
+            {
+                return Items![i];
+            }
+        }
+        return null;
+    }
 }
 
 /// <summary>
 /// For You, as Silo's web shows it (<c>pages/Recommendations.tsx</c>): the profile's recommendation rows
 /// (<c>GET /api/v2/recommendations/discover</c>) and, beside the title, its taste profile (top genres and favourite
 /// directors). The subtitle says the rows are personal only when one comes from the profile's own history. A visit
-/// from the sidebar reads the rows again and shows them once they are there; Back keeps the page as it was.
+/// from the sidebar reads the rows again and shows them once they are there; Back keeps the page as it was. Above them, as
+/// on Home, a hero shows the card the pointer or the keyboard is on.
 /// </summary>
 public sealed partial class ForYouViewModel : ObservableObject
 {
@@ -43,16 +59,20 @@ public sealed partial class ForYouViewModel : ObservableObject
     private CancellationTokenSource _run = new();
 
     public ForYouViewModel(ISessionManager session, RecommendationsApi recommendations, ImageParameterCache images,
-        INavigationService navigation, ILogger<ForYouViewModel> logger)
+        INavigationService navigation, IUiDispatcher dispatcher, TimeProvider time, ILogger<ForYouViewModel> logger)
     {
         _session = session;
         _recommendations = recommendations;
         _images = images;
         _navigation = navigation;
         _logger = logger;
+        Hero = new BrowseHeroViewModel(dispatcher, time);
     }
 
     public ObservableCollection<RecommendationRowViewModel> Rows { get; } = [];
+
+    /// <summary>The title at the top of the page, following the card the pointer or the keyboard is on.</summary>
+    public BrowseHeroViewModel Hero { get; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsLoading), nameof(IsEmpty), nameof(HasError), nameof(IsReady))]
@@ -113,6 +133,16 @@ public sealed partial class ForYouViewModel : ObservableObject
         }
     }
 
+    /// <summary>The pointer or the keyboard came to a card: the hero follows it.</summary>
+    [RelayCommand]
+    private void PointCard(MediaCard? card)
+    {
+        if (card is not null && _session.ActiveServer is { } server && Rows.Select(r => r.ItemOf(card)).FirstOrDefault(i => i is not null) is { } item)
+        {
+            Hero.Point(item, server.BaseUri);
+        }
+    }
+
     private async Task LoadAsync(bool quiet)
     {
         var previous = _run;
@@ -126,6 +156,11 @@ public sealed partial class ForYouViewModel : ObservableObject
             Show([], null);
             State = LibraryLoadState.Idle;
             return;
+        }
+        if (_loadedFor != Key())
+        {
+            // Another server or profile: its first card pointed at leads the hero at once again.
+            Hero.Forget();
         }
         if (!quiet || _loadedFor != Key())
         {
@@ -201,19 +236,19 @@ public sealed partial class ForYouViewModel : ObservableObject
         var rows = new List<RecommendationRowViewModel>();
         foreach (var row in discover.Items)
         {
-            var cards = row.Items.Where(i => !string.IsNullOrWhiteSpace(i.ContentId))
+            var items = row.Items.Where(i => !string.IsNullOrWhiteSpace(i.ContentId))
                 .DistinctBy(i => i.ContentId, StringComparer.Ordinal)
-                .Select(i => MediaCardFactory.Poster(i, server))
                 .ToList();
-            if (cards.Count == 0)
+            if (items.Count == 0)
             {
                 continue;
             }
+            var cards = items.Select(i => MediaCardFactory.Poster(i, server)).ToList();
             var section = RecommendationSectionKinds.IsKnown(row.Kind)
                 ? new RecommendationSectionRouteParameter(row.Kind!, row.Key, row.Title)
                 : null;
             var exploreAll = section is null ? null : new RelayCommand(() => _navigation.NavigateTo(AppRoute.RecommendationSection, section));
-            rows.Add(new RecommendationRowViewModel(row.Title, cards, OpenCardCommand, exploreAll, section));
+            rows.Add(new RecommendationRowViewModel(row.Title, cards, OpenCardCommand, exploreAll, section, items, PointCardCommand));
         }
         return rows;
     }
@@ -228,18 +263,19 @@ public sealed partial class ForYouViewModel : ObservableObject
         }
     }
 
-    // The same rows again stay as they are, scrolled where the viewer left them; others replace them.
+    // The same rows again stay as they are, scrolled where the viewer left them; others replace them. Either way the hero
+    // keeps its title while a row still has it, else shows the first card.
     private void ShowRows(IReadOnlyList<RecommendationRowViewModel> rows)
     {
-        if (rows.Count == Rows.Count && rows.Zip(Rows).All(pair => pair.First.ShowsTheSameAs(pair.Second)))
+        if (rows.Count != Rows.Count || !rows.Zip(Rows).All(pair => pair.First.ShowsTheSameAs(pair.Second)))
         {
-            return;
+            Rows.Clear();
+            foreach (var row in rows)
+            {
+                Rows.Add(row);
+            }
         }
-        Rows.Clear();
-        foreach (var row in rows)
-        {
-            Rows.Add(row);
-        }
+        Hero.Follow([.. Rows.SelectMany(row => row.Cards.Select(row.ItemOf)).OfType<CatalogItem>()], _session.ActiveServer?.BaseUri);
     }
 
     private void ShowTaste(TasteProfile? taste)

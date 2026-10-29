@@ -223,7 +223,12 @@ View models build `MediaCard`s with the texts already worded; the controls only 
 - For You (`ForYouPage`, the web's `pages/Recommendations.tsx`): the title, "Personalized picks…" only when a row comes
   from the profile's history, the taste profile card on the right (top genres filled, favourite directors outlined),
   then a row per recommendation. A row's Explore all opens it in full (`RecommendationSectionPage`: name, "60 titles",
-  the posters); the sidebar keeps For You picked. The sidebar reads the rows again behind the ones shown.
+  the posters); the sidebar keeps For You picked. The sidebar reads the rows again behind the ones shown. Above it all
+  the same hero as Home's (`BrowseHero`, below), fed by the recommendation rows: the first card of the first row until a
+  card is pointed at. The title, the subtitle and the taste profile stay, under the hero and above the rows, and scroll up
+  under its compact header with them; the hero's name is read as a level 2 heading, under the page's "For You". Its
+  cards are library titles, so they carry the same logo, backdrop and details as Home's; one without a logo shows its
+  name in large type, one without a backdrop only the page's fade.
 - Calendar (`CalendarPage`, the web's `pages/Calendar.tsx`): the title with the presets Following, Trending, All (the
   chosen one red) and "All Libraries" when there are several; the week strip pinned above the days (arrows, "Oct 19 –
   25, 2026", Today, a button per day with a dot on days with airings, today tinted red, the picked day filled red,
@@ -299,7 +304,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   more; a later read that fails keeps what shows and says "Couldn’t load more titles." over Try again. The cards open
   the title's page, or the library's title.
 - Pages: 48 px side margins, 32 px top; rows 40 px apart.
-- Home's hero (`BrowseHero`, `BrowseHeroViewModel`), as Silage's home and so a deliberate departure
+- Home's hero (`BrowseHero`, `BrowseHeroViewModel`, also on For You), as Silage's home and so a deliberate departure
   from the web's Home, which has none: the title of the card the pointer or the keyboard is on, in any row, at the top of
   the page. A page lays its rows under it with `BrowseHero.RowsViewMargin` and `RowsPadding`, and feeds it its rows'
   titles (`BrowseHeroViewModel.Follow`) and the card pointed at (`Point`).

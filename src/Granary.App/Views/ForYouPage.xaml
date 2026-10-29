@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     For You, as Silo's web shows it: the title and what the rows are based on, the profile's taste (top genres and
-    favourite directors) on the right, then a row per recommendation. The page is cached: Back keeps its place.
+    favourite directors) on the right, then a row per recommendation. Above them, as on Home, a hero for the card the
+    pointer or the keyboard is on (BrowseHero); the title and the taste profile scroll up under its compact header with
+    the rows. The page is cached: Back keeps its place.
 -->
 <Page
     x:Class="Granary.App.Views.ForYouPage"
@@ -11,86 +13,92 @@
     xmlns:vm="using:Granary.Core.ViewModels"
     NavigationCacheMode="Enabled">
 
-    <ScrollViewer x:Name="Scroller" XYFocusKeyboardNavigation="Enabled">
-        <StackPanel Padding="48,32,48,48" Spacing="32">
-            <Grid ColumnSpacing="32">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <StackPanel Spacing="6">
-                    <TextBlock Text="For You" Style="{StaticResource SiloDisplayTextStyle}" AutomationProperties.HeadingLevel="Level1" />
-                    <TextBlock Text="{x:Bind ViewModel.Subtitle, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}"
-                               Foreground="{StaticResource SiloMutedBrush}" TextWrapping="Wrap" />
+    <Grid>
+        <!-- Behind the rows: they scroll under the compact header and are cut off at its edge. -->
+        <controls:BrowseHero x:Name="Hero" Title="{x:Bind ViewModel.Hero.Shown, Mode=OneWay}" HeadingLevel="Level2" />
+
+        <ScrollViewer x:Name="Scroller" XYFocusKeyboardNavigation="Enabled" Margin="{x:Bind controls:BrowseHero.RowsViewMargin(ViewModel.Hero.Shown), Mode=OneWay}">
+            <StackPanel Padding="{x:Bind controls:BrowseHero.RowsPadding(ViewModel.Hero.Shown), Mode=OneWay}" Spacing="32">
+                <Grid ColumnSpacing="32">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="For You" Style="{StaticResource SiloDisplayTextStyle}" AutomationProperties.HeadingLevel="Level1" />
+                        <TextBlock Text="{x:Bind ViewModel.Subtitle, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}"
+                                   Foreground="{StaticResource SiloMutedBrush}" TextWrapping="Wrap" />
+                    </StackPanel>
+
+                    <!-- Your Taste Profile: genres as filled pills, directors as outlined ones. -->
+                    <Border Grid.Column="1" MaxWidth="420" Padding="20" CornerRadius="12" Background="#0AFFFFFF"
+                            BorderBrush="{StaticResource SiloBorderBrush}" BorderThickness="1" VerticalAlignment="Top"
+                            Visibility="{x:Bind ViewModel.HasTasteProfile, Mode=OneWay}">
+                        <StackPanel Spacing="16">
+                            <TextBlock Text="Your Taste Profile" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="16"
+                                       Foreground="{StaticResource SiloForegroundBrush}" AutomationProperties.HeadingLevel="Level2" />
+                            <StackPanel Spacing="8" Visibility="{x:Bind ViewModel.HasTopGenres, Mode=OneWay}">
+                                <TextBlock Text="TOP GENRES" Style="{StaticResource SiloOverlineTextStyle}" />
+                                <ItemsRepeater ItemsSource="{x:Bind ViewModel.TopGenres, Mode=OneWay}">
+                                    <ItemsRepeater.Layout>
+                                        <controls:WrapLayout />
+                                    </ItemsRepeater.Layout>
+                                    <ItemsRepeater.ItemTemplate>
+                                        <DataTemplate x:DataType="x:String">
+                                            <Border Padding="10,2,10,3" CornerRadius="10" Background="#1FFFFFFF">
+                                                <TextBlock Text="{x:Bind}" FontSize="12" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium"
+                                                           Foreground="{StaticResource SiloForegroundBrush}" />
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsRepeater.ItemTemplate>
+                                </ItemsRepeater>
+                            </StackPanel>
+                            <StackPanel Spacing="8" Visibility="{x:Bind ViewModel.HasFavoriteDirectors, Mode=OneWay}">
+                                <TextBlock Text="FAVORITE DIRECTORS" Style="{StaticResource SiloOverlineTextStyle}" />
+                                <ItemsRepeater ItemsSource="{x:Bind ViewModel.FavoriteDirectors, Mode=OneWay}">
+                                    <ItemsRepeater.Layout>
+                                        <controls:WrapLayout />
+                                    </ItemsRepeater.Layout>
+                                    <ItemsRepeater.ItemTemplate>
+                                        <DataTemplate x:DataType="x:String">
+                                            <Border Padding="10,2,10,3" CornerRadius="10" BorderBrush="{StaticResource SiloBorderBrush}" BorderThickness="1">
+                                                <TextBlock Text="{x:Bind}" FontSize="12" Foreground="{StaticResource SiloForegroundBrush}" />
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsRepeater.ItemTemplate>
+                                </ItemsRepeater>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <ProgressRing IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay}"
+                              Width="32" Height="32" Margin="0,48" HorizontalAlignment="Center" AutomationProperties.Name="Loading recommendations" />
+                <StackPanel Visibility="{x:Bind ViewModel.HasError, Mode=OneWay}" Spacing="16" Margin="0,48" HorizontalAlignment="Center">
+                    <TextBlock Text="Failed to load recommendations." Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
+                               TextAlignment="Center" />
+                    <Button Content="Retry" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
+                            Command="{x:Bind ViewModel.RetryCommand}" />
+                </StackPanel>
+                <StackPanel Visibility="{x:Bind ViewModel.IsEmpty, Mode=OneWay}" Spacing="6" Margin="0,48" HorizontalAlignment="Center">
+                    <TextBlock Text="Nothing to show yet" Style="{StaticResource SiloRowTitleTextStyle}" HorizontalAlignment="Center" />
+                    <TextBlock Text="Movies and series appear here once your libraries have titles you can watch." Style="{StaticResource SiloBodyTextStyle}"
+                               Foreground="{StaticResource SiloMutedBrush}" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" />
                 </StackPanel>
 
-                <!-- Your Taste Profile: genres as filled pills, directors as outlined ones. -->
-                <Border Grid.Column="1" MaxWidth="420" Padding="20" CornerRadius="12" Background="#0AFFFFFF"
-                        BorderBrush="{StaticResource SiloBorderBrush}" BorderThickness="1" VerticalAlignment="Top"
-                        Visibility="{x:Bind ViewModel.HasTasteProfile, Mode=OneWay}">
-                    <StackPanel Spacing="16">
-                        <TextBlock Text="Your Taste Profile" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="16"
-                                   Foreground="{StaticResource SiloForegroundBrush}" AutomationProperties.HeadingLevel="Level2" />
-                        <StackPanel Spacing="8" Visibility="{x:Bind ViewModel.HasTopGenres, Mode=OneWay}">
-                            <TextBlock Text="TOP GENRES" Style="{StaticResource SiloOverlineTextStyle}" />
-                            <ItemsRepeater ItemsSource="{x:Bind ViewModel.TopGenres, Mode=OneWay}">
-                                <ItemsRepeater.Layout>
-                                    <controls:WrapLayout />
-                                </ItemsRepeater.Layout>
-                                <ItemsRepeater.ItemTemplate>
-                                    <DataTemplate x:DataType="x:String">
-                                        <Border Padding="10,2,10,3" CornerRadius="10" Background="#1FFFFFFF">
-                                            <TextBlock Text="{x:Bind}" FontSize="12" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium"
-                                                       Foreground="{StaticResource SiloForegroundBrush}" />
-                                        </Border>
-                                    </DataTemplate>
-                                </ItemsRepeater.ItemTemplate>
-                            </ItemsRepeater>
-                        </StackPanel>
-                        <StackPanel Spacing="8" Visibility="{x:Bind ViewModel.HasFavoriteDirectors, Mode=OneWay}">
-                            <TextBlock Text="FAVORITE DIRECTORS" Style="{StaticResource SiloOverlineTextStyle}" />
-                            <ItemsRepeater ItemsSource="{x:Bind ViewModel.FavoriteDirectors, Mode=OneWay}">
-                                <ItemsRepeater.Layout>
-                                    <controls:WrapLayout />
-                                </ItemsRepeater.Layout>
-                                <ItemsRepeater.ItemTemplate>
-                                    <DataTemplate x:DataType="x:String">
-                                        <Border Padding="10,2,10,3" CornerRadius="10" BorderBrush="{StaticResource SiloBorderBrush}" BorderThickness="1">
-                                            <TextBlock Text="{x:Bind}" FontSize="12" Foreground="{StaticResource SiloForegroundBrush}" />
-                                        </Border>
-                                    </DataTemplate>
-                                </ItemsRepeater.ItemTemplate>
-                            </ItemsRepeater>
-                        </StackPanel>
-                    </StackPanel>
-                </Border>
-            </Grid>
-
-            <ProgressRing IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay}"
-                          Width="32" Height="32" Margin="0,48" HorizontalAlignment="Center" AutomationProperties.Name="Loading recommendations" />
-            <StackPanel Visibility="{x:Bind ViewModel.HasError, Mode=OneWay}" Spacing="16" Margin="0,48" HorizontalAlignment="Center">
-                <TextBlock Text="Failed to load recommendations." Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
-                           TextAlignment="Center" />
-                <Button Content="Retry" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
-                        Command="{x:Bind ViewModel.RetryCommand}" />
+                <ItemsRepeater ItemsSource="{x:Bind ViewModel.Rows}">
+                    <ItemsRepeater.Layout>
+                        <StackLayout Spacing="40" />
+                    </ItemsRepeater.Layout>
+                    <ItemsRepeater.ItemTemplate>
+                        <DataTemplate x:DataType="vm:RecommendationRowViewModel">
+                            <controls:MediaRow Title="{x:Bind Title}" ItemsSource="{x:Bind Cards}"
+                                               CardInvokedCommand="{x:Bind OpenCardCommand}" CardPointedCommand="{x:Bind PointCardCommand}"
+                                               ExploreAllCommand="{x:Bind ExploreAllCommand}" />
+                        </DataTemplate>
+                    </ItemsRepeater.ItemTemplate>
+                </ItemsRepeater>
             </StackPanel>
-            <StackPanel Visibility="{x:Bind ViewModel.IsEmpty, Mode=OneWay}" Spacing="6" Margin="0,48" HorizontalAlignment="Center">
-                <TextBlock Text="Nothing to show yet" Style="{StaticResource SiloRowTitleTextStyle}" HorizontalAlignment="Center" />
-                <TextBlock Text="Movies and series appear here once your libraries have titles you can watch." Style="{StaticResource SiloBodyTextStyle}"
-                           Foreground="{StaticResource SiloMutedBrush}" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" />
-            </StackPanel>
-
-            <ItemsRepeater ItemsSource="{x:Bind ViewModel.Rows}">
-                <ItemsRepeater.Layout>
-                    <StackLayout Spacing="40" />
-                </ItemsRepeater.Layout>
-                <ItemsRepeater.ItemTemplate>
-                    <DataTemplate x:DataType="vm:RecommendationRowViewModel">
-                        <controls:MediaRow Title="{x:Bind Title}" ItemsSource="{x:Bind Cards}"
-                                           CardInvokedCommand="{x:Bind OpenCardCommand}" ExploreAllCommand="{x:Bind ExploreAllCommand}" />
-                    </DataTemplate>
-                </ItemsRepeater.ItemTemplate>
-            </ItemsRepeater>
-        </StackPanel>
-    </ScrollViewer>
+        </ScrollViewer>
+    </Grid>
 </Page>
