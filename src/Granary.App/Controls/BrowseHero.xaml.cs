@@ -39,6 +39,9 @@ public sealed partial class BrowseHero : UserControl
     private ScrollViewer? _scroller;
     private double? _scrollTarget;
     private bool _isFolded;
+    // The page was left: nothing loads into it until it shows again.
+    private bool _suspended;
+    private bool _showingPictures;
 
     public BrowseHero()
     {
@@ -56,9 +59,8 @@ public sealed partial class BrowseHero : UserControl
         _fadeDone.IsRepeating = false;
         _fadeDone.Tick += (_, _) => FinishFade();
         SizeChanged += (_, e) => OnWidthChanged(e.NewSize.Width);
-        // A title shown while the page was out of the window gets its pictures now: right after Loaded, not in it, as
-        // setting them while the page was being put in the window overflowed the stack in WinUI.
-        Loaded += (_, _) => DispatcherQueue.TryEnqueue(ShowPictures);
+        // A title shown while the page was out of the window gets its pictures now that it is in it.
+        Loaded += (_, _) => ShowPictures();
         Visibility = Visibility.Collapsed;
     }
 
@@ -70,8 +72,8 @@ public sealed partial class BrowseHero : UserControl
     }
 
     /// <summary>
-    /// The heading level the title's name is read at: the page's own heading on Home, which has no title of its own; under
-    /// the page's title elsewhere.
+    /// The heading level the title's name is read at: the page's own heading on Home, which has no title of its own; none
+    /// on a page with its own title, which the hero comes before.
     /// </summary>
     public AutomationHeadingLevel HeadingLevel
     {
@@ -133,11 +135,19 @@ public sealed partial class BrowseHero : UserControl
         fade.StartAnimation("Scale", Expression("Fade.Scale"));
     }
 
-    /// <summary>The page was left: lets go of the pictures (<see cref="Resume"/> brings them back).</summary>
-    public void Suspend() => Release();
+    /// <summary>The page was left: lets go of the pictures, and loads none until <see cref="Resume"/> brings them back.</summary>
+    public void Suspend()
+    {
+        _suspended = true;
+        Release();
+    }
 
     /// <summary>The page shows again: the pictures of the title shown come back.</summary>
-    public void Resume() => Show(Title);
+    public void Resume()
+    {
+        _suspended = false;
+        Show(Title);
+    }
 
     private static Visual Visual(UIElement element) => ElementCompositionPreview.GetElementVisual(element);
 
@@ -161,17 +171,30 @@ public sealed partial class BrowseHero : UserControl
 
     // The logo and the backdrop of the title shown. Only while the hero is in the window: a cached page shows its title
     // again before it is back in the window (Resume from OnNavigatedTo), and a picture set then never raised ImageOpened,
-    // so the logo and the backdrop stayed hidden behind the name and the blur. Loaded calls this again.
+    // so the logo and the backdrop stayed hidden behind the name and the blur. Loaded calls this again. Not while the page
+    // is away either: a title that settles or reloads then would load into a page nothing lets go of. The same title
+    // loaded again (its picture addresses are signed anew) keeps the pictures shown; one that comes while the pictures
+    // are being set follows them, rather than starting over from within.
     private void ShowPictures()
     {
-        if (_shown is not { } title || !IsLoaded || title.Key == _picturesOf)
+        if (_showingPictures)
         {
-            // The same title loaded again (its picture addresses are signed anew): the pictures shown stay.
             return;
         }
-        _picturesOf = title.Key;
-        ShowLogo(title.LogoUrl);
-        Begin(title);
+        _showingPictures = true;
+        try
+        {
+            while (!_suspended && IsLoaded && _shown is { } title && title.Key != _picturesOf)
+            {
+                _picturesOf = title.Key;
+                ShowLogo(title.LogoUrl);
+                Begin(title);
+            }
+        }
+        finally
+        {
+            _showingPictures = false;
+        }
     }
 
     // The name shows until the logo is there; a logo that fails leaves the name.
