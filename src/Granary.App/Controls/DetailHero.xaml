@@ -22,18 +22,18 @@
 
         <!-- Granary's own buttons, one size class up: 60 high pills and 60 round icons, 20 px labels. -->
         <Style x:Key="HeroPrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource SiloPrimaryButtonStyle}">
-            <Setter Property="MinHeight" Value="60" />
-            <Setter Property="Padding" Value="22,8,28,8" />
-            <Setter Property="FontSize" Value="20" />
+            <Setter Property="MinHeight" Value="50" />
+            <Setter Property="Padding" Value="18,6,24,6" />
+            <Setter Property="FontSize" Value="17" />
         </Style>
         <Style x:Key="HeroSecondaryButtonStyle" TargetType="Button" BasedOn="{StaticResource SiloSecondaryButtonStyle}">
-            <Setter Property="MinHeight" Value="60" />
-            <Setter Property="Padding" Value="22,8,28,8" />
-            <Setter Property="FontSize" Value="20" />
+            <Setter Property="MinHeight" Value="50" />
+            <Setter Property="Padding" Value="18,6,24,6" />
+            <Setter Property="FontSize" Value="17" />
         </Style>
         <Style x:Key="HeroIconButtonStyle" TargetType="Button" BasedOn="{StaticResource SiloIconButtonStyle}">
-            <Setter Property="Width" Value="60" />
-            <Setter Property="Height" Value="60" />
+            <Setter Property="Width" Value="50" />
+            <Setter Property="Height" Value="50" />
         </Style>
     </UserControl.Resources>
 
@@ -50,50 +50,50 @@
                         <AdaptiveTrigger MinWindowWidth="0" />
                     </VisualState.StateTriggers>
                     <VisualState.Setters>
-                        <Setter Target="Column.Padding" Value="48,96,48,0" />
-                        <Setter Target="Column.Spacing" Value="14" />
-                        <Setter Target="Logo.MaxHeight" Value="136" />
-                        <Setter Target="Logo.MaxWidth" Value="504" />
-                        <Setter Target="TitleText.FontSize" Value="48" />
-                        <Setter Target="TitleText.LineHeight" Value="52" />
+                        <Setter Target="Column.Padding" Value="48,84,48,0" />
+                        <Setter Target="Column.Spacing" Value="12" />
+                        <Setter Target="Logo.MaxHeight" Value="116" />
+                        <Setter Target="Logo.MaxWidth" Value="430" />
+                        <Setter Target="TitleText.FontSize" Value="42" />
+                        <Setter Target="TitleText.LineHeight" Value="46" />
                         <Setter Target="TitleText.MaxWidth" Value="720" />
-                        <Setter Target="SubtitleText.FontSize" Value="16" />
-                        <Setter Target="MetaText.FontSize" Value="16" />
-                        <Setter Target="TaglineText.FontSize" Value="16" />
+                        <Setter Target="SubtitleText.FontSize" Value="15" />
+                        <Setter Target="MetaText.FontSize" Value="15" />
+                        <Setter Target="TaglineText.FontSize" Value="15" />
                         <Setter Target="TaglineText.MaxWidth" Value="720" />
-                        <Setter Target="OverviewText.FontSize" Value="15" />
-                        <Setter Target="OverviewText.LineHeight" Value="23" />
+                        <Setter Target="OverviewText.FontSize" Value="14" />
+                        <Setter Target="OverviewText.LineHeight" Value="22" />
                         <Setter Target="OverviewText.MaxWidth" Value="720" />
                         <Setter Target="Buttons.Spacing" Value="12" />
                         <Setter Target="Buttons.Margin" Value="0,6,0,0" />
-                        <Setter Target="PlayButton.MinHeight" Value="48" />
-                        <Setter Target="PlayButton.Padding" Value="16,6,22,6" />
-                        <Setter Target="PlayButton.FontSize" Value="16" />
-                        <Setter Target="WatchedButton.MinHeight" Value="48" />
-                        <Setter Target="WatchedButton.Padding" Value="16,6,22,6" />
-                        <Setter Target="WatchedButton.FontSize" Value="16" />
-                        <Setter Target="InfoButton.MinHeight" Value="48" />
-                        <Setter Target="InfoButton.Padding" Value="16,6,22,6" />
-                        <Setter Target="InfoButton.FontSize" Value="16" />
-                        <Setter Target="StartOverButton.Width" Value="48" />
-                        <Setter Target="StartOverButton.Height" Value="48" />
-                        <Setter Target="FavoriteButton.Width" Value="48" />
-                        <Setter Target="FavoriteButton.Height" Value="48" />
-                        <Setter Target="MoreButton.Width" Value="48" />
-                        <Setter Target="MoreButton.Height" Value="48" />
-                        <Setter Target="PlayIcon.FontSize" Value="18" />
-                        <Setter Target="StartOverIcon.FontSize" Value="18" />
-                        <Setter Target="WatchedIcon.FontSize" Value="18" />
-                        <Setter Target="InfoIcon.FontSize" Value="18" />
-                        <Setter Target="FavoriteIcon.FontSize" Value="18" />
-                        <Setter Target="MoreIcon.FontSize" Value="18" />
-                        <Setter Target="VersionText.FontSize" Value="13" />
+                        <Setter Target="PlayButton.MinHeight" Value="44" />
+                        <Setter Target="PlayButton.Padding" Value="14,5,20,5" />
+                        <Setter Target="PlayButton.FontSize" Value="15" />
+                        <Setter Target="WatchedButton.MinHeight" Value="44" />
+                        <Setter Target="WatchedButton.Padding" Value="14,5,20,5" />
+                        <Setter Target="WatchedButton.FontSize" Value="15" />
+                        <Setter Target="InfoButton.MinHeight" Value="44" />
+                        <Setter Target="InfoButton.Padding" Value="14,5,20,5" />
+                        <Setter Target="InfoButton.FontSize" Value="15" />
+                        <Setter Target="StartOverButton.Width" Value="44" />
+                        <Setter Target="StartOverButton.Height" Value="44" />
+                        <Setter Target="FavoriteButton.Width" Value="44" />
+                        <Setter Target="FavoriteButton.Height" Value="44" />
+                        <Setter Target="MoreButton.Width" Value="44" />
+                        <Setter Target="MoreButton.Height" Value="44" />
+                        <Setter Target="PlayIcon.FontSize" Value="16" />
+                        <Setter Target="StartOverIcon.FontSize" Value="16" />
+                        <Setter Target="WatchedIcon.FontSize" Value="16" />
+                        <Setter Target="InfoIcon.FontSize" Value="16" />
+                        <Setter Target="FavoriteIcon.FontSize" Value="16" />
+                        <Setter Target="MoreIcon.FontSize" Value="16" />
+                        <Setter Target="VersionText.FontSize" Value="12" />
                     </VisualState.Setters>
                 </VisualState>
             </VisualStateGroup>
         </VisualStateManager.VisualStateGroups>
 
-        <StackPanel x:Name="Column" Padding="48,120,48,0" Spacing="18" HorizontalAlignment="Left">
+        <StackPanel x:Name="Column" Padding="48,100,48,0" Spacing="14" HorizontalAlignment="Left">
             <ItemsRepeater Margin="-4,0,0,0" ItemsSource="{x:Bind ViewModel.Breadcrumbs, Mode=OneWay}"
                            Visibility="{x:Bind ViewModel.HasBreadcrumbs, Mode=OneWay}" AutomationProperties.Name="Breadcrumb">
                 <ItemsRepeater.Layout>
@@ -119,52 +119,52 @@
                 The logo stands in for the title, at most 170 high and 70 % of the text's width, and takes no room until it is
                 in (or when it fails and the title takes its place); screen readers still get the title.
             -->
-            <Image x:Name="Logo" MaxHeight="170" MaxWidth="630" HorizontalAlignment="Left" Stretch="Uniform"
+            <Image x:Name="Logo" MaxHeight="140" MaxWidth="520" HorizontalAlignment="Left" Stretch="Uniform"
                    Source="{x:Bind controls:DetailHero.LoadImage(ViewModel.LogoUrl, 640), Mode=OneWay}" ImageFailed="OnLogoFailed"
                    Visibility="{x:Bind ViewModel.ShowsLogo, Mode=OneWay}"
                    AutomationProperties.Name="{x:Bind ViewModel.DisplayTitle, Mode=OneWay}" AutomationProperties.HeadingLevel="Level1" />
             <TextBlock x:Name="TitleText" MaxWidth="900" HorizontalAlignment="Left" Text="{x:Bind ViewModel.DisplayTitle, Mode=OneWay}"
-                       FontFamily="{StaticResource SiloFontBold}" FontWeight="Bold" FontSize="60" LineHeight="64" TextWrapping="Wrap"
+                       FontFamily="{StaticResource SiloFontBold}" FontWeight="Bold" FontSize="50" LineHeight="54" TextWrapping="Wrap"
                        MaxLines="2" TextTrimming="CharacterEllipsis" Visibility="{x:Bind ViewModel.ShowsTitleText, Mode=OneWay}"
                        AutomationProperties.HeadingLevel="Level1" />
 
             <TextBlock x:Name="SubtitleText" Text="{x:Bind ViewModel.Subtitle, Mode=OneWay}" FontFamily="{StaticResource SiloFontMedium}"
-                       FontWeight="Medium" FontSize="20" Foreground="{StaticResource DetailMetaBrush}"
+                       FontWeight="Medium" FontSize="17" Foreground="{StaticResource DetailMetaBrush}"
                        Visibility="{x:Bind controls:DetailHero.Shows(ViewModel.Subtitle), Mode=OneWay}" />
-            <TextBlock x:Name="MetaText" Text="{x:Bind ViewModel.MetaLine, Mode=OneWay}" FontSize="20" Foreground="{StaticResource DetailMetaBrush}"
+            <TextBlock x:Name="MetaText" Text="{x:Bind ViewModel.MetaLine, Mode=OneWay}" FontSize="17" Foreground="{StaticResource DetailMetaBrush}"
                        TextWrapping="Wrap" Visibility="{x:Bind controls:DetailHero.Shows(ViewModel.MetaLine), Mode=OneWay}" />
             <TextBlock x:Name="TaglineText" MaxWidth="900" HorizontalAlignment="Left" Text="{x:Bind ViewModel.Tagline, Mode=OneWay}"
-                       FontFamily="{StaticResource SiloFontItalic}" FontStyle="Italic" FontSize="20" Foreground="{StaticResource DetailTextBrush}"
+                       FontFamily="{StaticResource SiloFontItalic}" FontStyle="Italic" FontSize="17" Foreground="{StaticResource DetailTextBrush}"
                        TextWrapping="Wrap" Visibility="{x:Bind controls:DetailHero.Shows(ViewModel.Tagline), Mode=OneWay}" />
             <TextBlock x:Name="OverviewText" MaxWidth="900" HorizontalAlignment="Left" Text="{x:Bind ViewModel.Overview, Mode=OneWay}"
-                       FontSize="19" LineHeight="29" Foreground="{StaticResource DetailTextBrush}" TextWrapping="Wrap" MaxLines="4"
+                       FontSize="16" LineHeight="25" Foreground="{StaticResource DetailTextBrush}" TextWrapping="Wrap" MaxLines="4"
                        TextTrimming="CharacterEllipsis" Visibility="{x:Bind ViewModel.HasOverview, Mode=OneWay}" />
 
-            <StackPanel x:Name="Buttons" Margin="0,8,0,0" Orientation="Horizontal" Spacing="16">
+            <StackPanel x:Name="Buttons" Margin="0,6,0,0" Orientation="Horizontal" Spacing="14">
                 <Button x:Name="PlayButton" Style="{StaticResource HeroPrimaryButtonStyle}" Command="{x:Bind ViewModel.PlayCommand}"
                         AutomationProperties.Name="{x:Bind ViewModel.PlayButtonText, Mode=OneWay}">
                     <StackPanel Orientation="Horizontal" Spacing="12">
-                        <FontIcon x:Name="PlayIcon" Glyph="&#xF5B0;" FontSize="24" />
+                        <FontIcon x:Name="PlayIcon" Glyph="&#xF5B0;" FontSize="20" />
                         <TextBlock Text="{x:Bind ViewModel.PlayButtonText, Mode=OneWay}" />
                     </StackPanel>
                 </Button>
                 <Button x:Name="StartOverButton" Style="{StaticResource HeroIconButtonStyle}" Command="{x:Bind ViewModel.StartOverCommand}"
                         Visibility="{x:Bind ViewModel.CanStartOver, Mode=OneWay}"
                         AutomationProperties.Name="Start over" ToolTipService.ToolTip="Start over">
-                    <FontIcon x:Name="StartOverIcon" Glyph="&#xE72C;" FontSize="22" />
+                    <FontIcon x:Name="StartOverIcon" Glyph="&#xE72C;" FontSize="19" />
                 </Button>
                 <Button x:Name="WatchedButton" Style="{StaticResource HeroSecondaryButtonStyle}" Command="{x:Bind ViewModel.ToggleWatchedCommand}"
                         Visibility="{x:Bind ViewModel.ShowsWatchedAction, Mode=OneWay}"
                         AutomationProperties.Name="{x:Bind ViewModel.WatchedLabel, Mode=OneWay}">
                     <StackPanel Orientation="Horizontal" Spacing="10">
-                        <FontIcon x:Name="WatchedIcon" Glyph="&#xE73E;" FontSize="24" />
+                        <FontIcon x:Name="WatchedIcon" Glyph="&#xE73E;" FontSize="20" />
                         <TextBlock Text="{x:Bind ViewModel.WatchedLabel, Mode=OneWay}" />
                     </StackPanel>
                 </Button>
                 <Button x:Name="InfoButton" Style="{StaticResource HeroSecondaryButtonStyle}" Click="OnInfoClick"
                         AutomationProperties.Name="Info: details, cast, crew and files">
                     <StackPanel Orientation="Horizontal" Spacing="10">
-                        <FontIcon x:Name="InfoIcon" Glyph="&#xE946;" FontSize="24" />
+                        <FontIcon x:Name="InfoIcon" Glyph="&#xE946;" FontSize="20" />
                         <TextBlock Text="Info" />
                     </StackPanel>
                 </Button>
@@ -172,12 +172,12 @@
                         Visibility="{x:Bind ViewModel.CanFavorite, Mode=OneWay}"
                         AutomationProperties.Name="{x:Bind ViewModel.FavoriteLabel, Mode=OneWay}"
                         ToolTipService.ToolTip="{x:Bind ViewModel.FavoriteLabel, Mode=OneWay}">
-                    <FontIcon x:Name="FavoriteIcon" Glyph="{x:Bind controls:DetailHero.HeartGlyph(ViewModel.IsFavorite), Mode=OneWay}" FontSize="24"
+                    <FontIcon x:Name="FavoriteIcon" Glyph="{x:Bind controls:DetailHero.HeartGlyph(ViewModel.IsFavorite), Mode=OneWay}" FontSize="20"
                               Foreground="{x:Bind controls:DetailHero.ActiveForeground(ViewModel.IsFavorite), Mode=OneWay}" />
                 </Button>
                 <Button x:Name="MoreButton" Style="{StaticResource HeroIconButtonStyle}" Visibility="{x:Bind ViewModel.CanFavorite, Mode=OneWay}"
                         AutomationProperties.Name="More actions" ToolTipService.ToolTip="More actions">
-                    <FontIcon x:Name="MoreIcon" Glyph="&#xE712;" FontSize="22" RenderTransformOrigin="0.5,0.5">
+                    <FontIcon x:Name="MoreIcon" Glyph="&#xE712;" FontSize="19" RenderTransformOrigin="0.5,0.5">
                         <FontIcon.RenderTransform>
                             <RotateTransform Angle="90" />
                         </FontIcon.RenderTransform>
@@ -199,7 +199,7 @@
                 </Button>
             </StackPanel>
 
-            <TextBlock x:Name="VersionText" Text="{x:Bind ViewModel.AvailableVersionLine, Mode=OneWay}" FontSize="16"
+            <TextBlock x:Name="VersionText" Text="{x:Bind ViewModel.AvailableVersionLine, Mode=OneWay}" FontSize="14"
                        Foreground="{StaticResource DetailFaintBrush}" TextWrapping="Wrap"
                        Visibility="{x:Bind ViewModel.HasAvailableVersionLine, Mode=OneWay}" />
 
