@@ -80,6 +80,20 @@ public sealed class CardRequestPillTests
         Assert.False(armed.Arm);
     }
 
+    // A pointer coming over a card the keyboard already shows Request on waits for the arming too: its click on the way
+    // in opens the card.
+    [Fact]
+    public void APointerOverACardWithKeyboardFocus_StillWaitsForTheArming()
+    {
+        var coming = Decide(card: CardFocus.Keyboard, pointerOver: true);
+        Assert.True(coming.Shown);
+        Assert.True(coming.TabStop);
+        Assert.False(coming.TakesPointer);
+        Assert.True(coming.Arm);
+
+        Assert.True(Decide(card: CardFocus.Keyboard, pointerOver: true, armed: true).TakesPointer);
+    }
+
     [Fact]
     public void Unseen_IsOff_AndOutOfTheAccessibilityTree()
     {

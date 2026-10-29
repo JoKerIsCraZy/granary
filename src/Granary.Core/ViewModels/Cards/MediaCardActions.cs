@@ -84,11 +84,14 @@ public sealed class MediaCardActions
 
     private (string? ServerId, string? ProfileId) OwnerNow() => (_session.ActiveServer?.Id, _session.ProfileId);
 
+    // The state is swapped under the lock; the old owner's requests are cancelled after it, since cancelling runs their
+    // callbacks, which must not run while the lock is held.
     private void ForgetRequestsOfAnotherOwner()
     {
-        var owner = OwnerNow();
+        CancellationTokenSource replaced;
         lock (_ownerLock)
         {
+            var owner = OwnerNow();
             if (owner == _owner)
             {
                 return;
@@ -97,9 +100,25 @@ public sealed class MediaCardActions
             Interlocked.Increment(ref _owners);
             _requesting.Clear();
             _requested.Clear();
-            var replaced = Interlocked.Exchange(ref _ownerRun, new CancellationTokenSource());
-            replaced.Cancel();
-            replaced.Dispose();
+            replaced = _ownerRun;
+            _ownerRun = new CancellationTokenSource();
+        }
+        replaced.Cancel();
+        replaced.Dispose();
+    }
+
+    // Whether the owner a request was sent for is still the one, and if so what it made, at once: another owner taking
+    // over in between clears what was requested, and must not find this owner's answer written after it.
+    private bool StillOwner(int owners, Action? whileOwner = null)
+    {
+        lock (_ownerLock)
+        {
+            if (owners != _owners)
+            {
+                return false;
+            }
+            whileOwner?.Invoke();
+            return true;
         }
     }
 
@@ -314,9 +333,9 @@ public sealed class MediaCardActions
         try
         {
             var request = await _requests!.CreateAsync(server.BaseUri, offer, cancellationToken);
-            if (owners == Volatile.Read(ref _owners))
+            string? badge = RequestCards.Badge(request);
+            if (StillOwner(owners, () => _requested[card.Id] = (offer, badge)))
             {
-                _requested[card.Id] = (offer, RequestCards.Badge(request));
                 RequestAnswered?.Invoke(this, new CardRequestAnswer(card.Id, card.Title, Succeeded: true));
             }
             return true;
@@ -337,7 +356,7 @@ public sealed class MediaCardActions
             {
                 _logger.LogError(ex, "Requesting {CardId} from its card failed", card.Id);
             }
-            if (owners == Volatile.Read(ref _owners))
+            if (StillOwner(owners))
             {
                 RequestAnswered?.Invoke(this, new CardRequestAnswer(card.Id, card.Title, Succeeded: false));
             }
