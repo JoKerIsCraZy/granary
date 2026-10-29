@@ -33,6 +33,9 @@ public sealed partial class MediaRow : UserControl
     public static readonly DependencyProperty ExploreAllCommandProperty =
         DependencyProperty.Register(nameof(ExploreAllCommand), typeof(ICommand), typeof(MediaRow), new PropertyMetadata(null));
 
+    public static readonly DependencyProperty CardPointedCommandProperty =
+        DependencyProperty.Register(nameof(CardPointedCommand), typeof(ICommand), typeof(MediaRow), new PropertyMetadata(null));
+
     public static readonly DependencyProperty CardRemoveCommandProperty =
         DependencyProperty.Register(nameof(CardRemoveCommand), typeof(ICommand), typeof(MediaRow), new PropertyMetadata(null));
 
@@ -105,6 +108,13 @@ public sealed partial class MediaRow : UserControl
     {
         get => (ICommand?)GetValue(ExploreAllCommandProperty);
         set => SetValue(ExploreAllCommandProperty, value);
+    }
+
+    /// <summary>Gets the <see cref="MediaCard"/> the pointer or the keyboard came to (Home's hero follows it); null for none.</summary>
+    public ICommand? CardPointedCommand
+    {
+        get => (ICommand?)GetValue(CardPointedCommandProperty);
+        set => SetValue(CardPointedCommandProperty, value);
     }
 
     /// <summary>Takes a card (the parameter) off the row, for Continue Watching and Next Up; the cards' menus offer it.</summary>
@@ -193,6 +203,20 @@ public sealed partial class MediaRow : UserControl
     {
         // The card comes from the button's content: x:Bind templates in an ItemsRepeater set no DataContext.
         if (sender is Button { Content: MediaCardView { Card: { } card } } && CardInvokedCommand is { } command && command.CanExecute(card))
+        {
+            command.Execute(card);
+        }
+    }
+
+    // Each card's own: a card's PointerEntered does not reach the row (it does not bubble), and a row without
+    // CardPointedCommand does nothing more than the check.
+    private void OnCardPointerEntered(object sender, PointerRoutedEventArgs e) => TellPointed(sender);
+
+    private void OnCardGotFocus(object sender, RoutedEventArgs e) => TellPointed(sender);
+
+    private void TellPointed(object sender)
+    {
+        if (CardPointedCommand is { } command && sender is Button { Content: MediaCardView { Card: { } card } } && command.CanExecute(card))
         {
             command.Execute(card);
         }

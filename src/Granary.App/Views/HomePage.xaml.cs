@@ -1,3 +1,4 @@
+using Granary.App.Controls;
 using Granary.Core.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -13,6 +14,11 @@ public sealed partial class HomePage : Page, IStartupContent
     {
         ViewModel = App.Services.GetRequiredService<HomeViewModel>();
         InitializeComponent();
+        // The rows' view begins at the compact header, and the rows a fold's length below it, so at rest they start under
+        // the full hero and scroll up under the header as it folds.
+        Scroller.Margin = new Thickness(0, HomeHero.CompactHeight, 0, 0);
+        Column.Padding = new Thickness(48, HomeHero.CollapseDistance, 48, 48);
+        Loaded += (_, _) => Hero.FollowScroll(Scroller);
     }
 
     public HomeViewModel ViewModel { get; }

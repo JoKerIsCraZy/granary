@@ -284,6 +284,22 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   title on this page is already in your library."; a later page that fails says "Couldn’t load page 2." beside Retry
   and a ghost Back to page 1. The cards open the title's page, or the library's title.
 - Pages: 48 px side margins, 32 px top; rows 40 px apart.
+- Home's hero (`HomeHero`, `HomeHeroViewModel`), as Silage's home and so a deliberate departure from the web's Home,
+  which has none: the title of the card the pointer or the keyboard is on, in any row, at the top of the page.
+  - What it shows: its logo, 80 px high and at most 400 px wide (its name in 40 px bold when it has none or the logo
+    does not load); a 16 px grey line ("2008 · 2h 32m · PG-13", a series "2021 · TV-MA", an episode under its series'
+    logo "S1 E1 · Kein Zufall · 25m · TV-14"); and the overview, at most three lines 570 px wide. All of it comes with
+    the rows; nothing is read for the hero.
+  - The backdrop covers the right 65 % of the page, from the top to behind the first row (440 px), cut around its
+    middle, fading into the page toward the text and the rows. A new title's backdrop shows its blur at once and fades
+    in over the last one in 350 ms, decoded as wide as it is shown.
+  - Which title: the first card of the first row until a card is pointed at. The first card pointed at shows at once;
+    after that a card has to keep the pointer for 150 ms, so a sweep across a row loads one backdrop, not one per
+    card. The pointer leaving the rows keeps the title; a reload keeps it while its rows still have it.
+  - The rows begin 300 px down. Scrolling them folds the hero into a compact 150 px header that stays at the top and cuts
+    the rows off at its edge: over the first 150 px of scrolling the logo shrinks to 45 px, the details move up under
+    it, the overview fades and the backdrop shortens to the header. It follows the scroll on the compositor. A wheel
+    over the header scrolls the rows.
 - What happens on another device shows without a visit (`RealtimeEvents`, docs/api-contract.md 12): a title watched,
   favourited, put on the watchlist or taken off Home there, or a title the server added or changed, reloads Home in
   place once the changes have been quiet for 2 s (rows keep where they were scrolled to; other pages reload on their

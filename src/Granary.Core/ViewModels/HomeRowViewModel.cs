@@ -11,12 +11,13 @@ public sealed class HomeRowViewModel
     private readonly Dictionary<MediaCard, CatalogItem> _items = [];
 
     internal HomeRowViewModel(Section section, IEnumerable<(MediaCard Card, CatalogItem Item)> cards, ICommand openCard, ICommand? exploreAll,
-        ICommand? removeCard = null)
+        ICommand? removeCard = null, ICommand? pointCard = null)
     {
         SectionId = section.Id;
         SectionType = section.SectionType;
         Title = section.Title;
         OpenCardCommand = openCard;
+        PointCardCommand = pointCard;
         ExploreAllCommand = exploreAll;
         RemoveCardCommand = CanRemoveCards ? removeCard : null;
         // As the web words it, by the surface rather than the row's own title.
@@ -40,6 +41,9 @@ public sealed class HomeRowViewModel
 
     /// <summary>Opens a card; the parameter is the <see cref="MediaCard"/>.</summary>
     public ICommand OpenCardCommand { get; }
+
+    /// <summary>The pointer or the keyboard came to a card (the parameter): the top of Home follows it.</summary>
+    public ICommand? PointCardCommand { get; }
 
     /// <summary>Null when the row already shows every card it has.</summary>
     public ICommand? ExploreAllCommand { get; }

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Home: the server's rows as on Silo's web client (docs/ui-design.md). No page title, as on the web; the
+    Home: the server's rows as on Silo's web client (docs/ui-design.md), under a hero for the card the pointer or the
+    keyboard is on, as Silage's home (a deliberate departure from the web's Home). No page title, as on the web; the
     sidebar shows the server and the profile. Cached, so Back returns to the same scroll position.
 -->
 <Page
@@ -13,8 +14,11 @@
     AutomationProperties.Name="Home">
 
     <Grid>
+        <!-- Behind the rows: they scroll under the compact header and are cut off at its edge (HomePage's constructor). -->
+        <controls:HomeHero x:Name="Hero" Title="{x:Bind ViewModel.Hero.Shown, Mode=OneWay}" />
+
         <ScrollViewer x:Name="Scroller" XYFocusKeyboardNavigation="Enabled">
-            <StackPanel Padding="48,32,48,48" Spacing="16">
+            <StackPanel x:Name="Column" Spacing="16">
                 <TextBlock Text="{x:Bind ViewModel.Notice, Mode=OneWay}" Visibility="{x:Bind HasText(ViewModel.Notice), Mode=OneWay}"
                            Style="{StaticResource SiloCaptionTextStyle}" Foreground="{StaticResource SiloPrimaryBrush}" TextWrapping="Wrap"
                            AutomationProperties.LiveSetting="Polite" />
@@ -26,7 +30,8 @@
                     <ItemsRepeater.ItemTemplate>
                         <DataTemplate x:DataType="vm:HomeRowViewModel">
                             <controls:MediaRow DataContext="{x:Bind}" Title="{x:Bind Title}" ItemsSource="{x:Bind Cards}"
-                                               CardInvokedCommand="{x:Bind OpenCardCommand}" ExploreAllCommand="{x:Bind ExploreAllCommand}"
+                                               CardInvokedCommand="{x:Bind OpenCardCommand}" CardPointedCommand="{x:Bind PointCardCommand}"
+                                               ExploreAllCommand="{x:Bind ExploreAllCommand}"
                                                CardRemoveCommand="{x:Bind RemoveCardCommand}" CardRemoveLabel="{x:Bind RemoveLabel}" />
                         </DataTemplate>
                     </ItemsRepeater.ItemTemplate>
