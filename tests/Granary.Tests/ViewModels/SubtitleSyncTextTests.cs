@@ -130,10 +130,30 @@ public sealed class SubtitleSyncTextTests
 
         Assert.Equal("Synced to the audio: −3.0 s", synced.ResultText);
         Assert.False(synced.IsResultWarning);
+        Assert.True(synced.ShowsResult);
+        Assert.False(synced.ShowsWarning);
         Assert.Equal("Doesn't match this video's audio; probably for another release.", noMatch.ResultText);
         Assert.True(noMatch.IsResultWarning);
+        Assert.False(noMatch.ShowsResult);
+        Assert.True(noMatch.ShowsWarning);
         Assert.Equal("This video has no audio Silo can read.", failed.ResultText);
         Assert.False(synced.HasHint);
+    }
+
+    [Fact]
+    public void AFormatThatCannotBeSynced_OffersNoSync_AndSaysWhy()
+    {
+        var entry = new SubtitleSyncEntry(State(timing: Timing(400)), IsUnsupported: true, Error: "This format can't be synced.");
+
+        var panel = SubtitleTimingPanel.For(entry, isAvailable: true, canSync: false);
+
+        Assert.True(panel.IsVisible);
+        Assert.True(panel.ShowsActions);
+        Assert.False(panel.ShowsSync);
+        Assert.True(panel.ShowsReset);
+        Assert.Equal("This format can't be synced.", panel.ErrorText);
+        Assert.False(panel.HasHint);
+        Assert.False(panel.HasResult);
     }
 
     [Fact]

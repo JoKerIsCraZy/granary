@@ -584,14 +584,18 @@ stream's commands on Activity.
   sync again.
 - **Subtitle sync indicator** (the web's `SubtitleSyncIndicator`, `SubtitleSyncFeedback`): a 288 px card under Exit on
   the right (radius 12, black 80 %, 1 px edge: white 15 % while running, emerald for a success, sky for a note, amber for
-  a warning), whether the controls show or not, hidden in the mini view and the bar. A spinner or the tone's icon, the
+  a warning), whether the controls show or not. It and the Watch Party panel stack under Exit, the card first, 8 px
+  apart, so neither covers the other; like the panel it is hidden in the mini view and when the player is docked as the
+  bar. Screen readers hear its title, detail and percentage as one; when it goes while it had the keyboard, the player
+  takes the focus back. A spinner or the tone's icon, the
   title (14 px medium), a detail (12 px, white 70 %), and while a job runs a 4 px bar with its percentage; ✕ dismisses a
   finished one. It follows a sync this viewer started (Sync to audio, or the automatic sync of a subtitle they just
   added): "Syncing German subtitles", then "Applying new timing…" until the subtitle that shows reads its new cues
   (8 s at most), "Subtitles synced"; for another subtitle "German subtitles synced", "… already match the audio",
   "… don't match the audio", "Couldn't sync … subtitles". Someone else's change to the subtitle that shows says
   "Subtitle timing updated" once it shows; an automatic sync lines up without a word. Notices leave after 6 s,
-  warnings after 9 s.
+  warnings after 9 s. A job still running when following it gave up (5 minutes) ends its spinner with "Still syncing
+  German subtitles" ("Open the subtitle menu later to see how it ended."), once; opening the menu follows it again.
 - **Add Subtitles** (`AddSubtitlesPanel`, `AddSubtitlesViewModel`, the web's `SubtitleSearchModal` with the player's
   `SubtitleUploadForm`): a 480 px card (neutral 900, radius 8) on black 80 %, over everything; a click beside it, ✕
   or Esc closes it, Tab stays inside. "Upload subtitle" with the web's help line, a dashed drop zone (white 20 %,

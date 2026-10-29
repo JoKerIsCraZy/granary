@@ -20,7 +20,8 @@ public sealed partial class PlayerViewModel
     /// <summary>What the sync indicator shows; null while it is away.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasSyncNotice), nameof(SyncNoticeTitle), nameof(SyncNoticeDetail), nameof(HasSyncNoticeDetail),
-        nameof(SyncNoticeTone), nameof(IsSyncNoticeRunning), nameof(SyncNoticePercent), nameof(SyncNoticePercentValue), nameof(SyncNoticePercentText))]
+        nameof(SyncNoticeTone), nameof(IsSyncNoticeRunning), nameof(SyncNoticePercent), nameof(SyncNoticePercentValue), nameof(SyncNoticePercentText),
+        nameof(SyncNoticeAccessibleName))]
     public partial SubtitleSyncNotice? SyncNotice { get; private set; }
 
     public bool HasSyncNotice => SyncNotice is not null;
@@ -41,6 +42,10 @@ public sealed partial class PlayerViewModel
     public double SyncNoticePercentValue => SyncNoticePercent;
 
     public string SyncNoticePercentText => $"{SyncNoticePercent}%";
+
+    /// <summary>For screen readers: the card as one sentence, its detail and a running job's percentage included.</summary>
+    public string SyncNoticeAccessibleName => string.Join(", ",
+        new[] { SyncNoticeTitle, SyncNoticeDetail, IsSyncNoticeRunning ? SyncNoticePercentText : "" }.Where(part => part.Length > 0));
 
     /// <summary>The subtitle menu opened: a job that ended meanwhile shows, and expired polls start again.</summary>
     public void SubtitleMenuOpened() => _syncTracker?.Reload();
@@ -147,6 +152,6 @@ public sealed partial class PlayerViewModel
         string name = TrackText.LanguageName(track?.Language) is { Length: > 0 } language ? language
             : track?.Label is { Length: > 0 } label ? label
             : "Subtitles";
-        return new WatchedSubtitleSync(entry.Key, name, job, entry.State.Timing);
+        return new WatchedSubtitleSync(entry.Key, name, job, entry.State.Timing, entry.PollExpired);
     }
 }
