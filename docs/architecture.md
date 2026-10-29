@@ -125,9 +125,10 @@ also walks all live XAML that .NET holds (the reference tracker), so its pause g
 
 Measured at 1920 px with compact posters, two runs each: share of time the UI thread stalled over 50 ms in fast
 sidebar switches 32 % to 9 %, paging down a 5,215-title grid 78 % to 5 % (19 to 125 frames a second), paging back up
-58 % to 3 %; GC pauses over the runs 4.1 s to 1.3 s, memory 760 to 565 MB. Maximized on a 3840 px ultrawide the
-gen2 pauses still take 0.7 to 1.8 s each (fast switches stall 79 % to 71 %, GC pauses 15.8 s to 8.4 s): the live
-cards of the cached pages are what each collection walks.
+58 % to 3 %; GC pauses over the runs 4.1 s to 1.3 s, memory 760 to 565 MB. Maximized on a 3840 px ultrawide it is
+not smooth yet: fast switches stall 81 % to 61 %, paging the grid 95 % to 89 %, GC pauses 50 s to 19 s over a run,
+memory 1.6 to 1.05 GB, and single gen2 pauses that XAML starts (DisconnectUnusedReferenceSources) still take up to
+5.5 s: the live cards of the cached pages are what each collection walks.
 
 ## Server playback
 
