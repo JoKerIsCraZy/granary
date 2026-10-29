@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    A movie, series, season or episode (docs/ui-design.md, "Detail pages"): the hero, then the rows that fit the
-    type: seasons or episodes, more episodes, trailers, cast and crew, more like this.
+    A movie, series, season or episode (docs/ui-design.md, "Detail pages"), laid out as Silage's title page: on black, the
+    backdrop stands at the top right behind everything and fades to the left and down while the hero and the rows scroll
+    over it. Then Granary's rows that fit the type: a series' seasons (opening a season's page) or a season's episodes,
+    more episodes, trailers, cast and crew, more like this.
 -->
 <Page
     x:Class="Granary.App.Views.ItemDetailPage"
@@ -12,15 +14,76 @@
     xmlns:detail="using:Granary.Core.ViewModels.Detail"
     xmlns:local="using:Granary.App.Views"
     xmlns:vm="using:Granary.Core.ViewModels"
-    Background="{StaticResource SiloBackgroundBrush}"
-    SizeChanged="OnSizeChanged">
+    Background="Black">
 
     <Grid>
-        <ScrollViewer x:Name="PageScroller" Visibility="{x:Bind ViewModel.IsReady, Mode=OneWay}">
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup x:Name="SizeStates">
+                <VisualState x:Name="Wide">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="1400" />
+                    </VisualState.StateTriggers>
+                </VisualState>
+                <VisualState x:Name="Compact">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="0" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="Sections.Spacing" Value="44" />
+                        <Setter Target="Sections.Padding" Value="48,44,48,72" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="85*" />
+            <RowDefinition Height="15*" />
+        </Grid.RowDefinitions>
+
+        <!--
+            The backdrop stands still while the page scrolls: 85 % of the height at the top right, its placeholder first.
+            Brushes, not Images: they fill the box the grid gives without asking for a height of their own.
+        -->
+        <Rectangle IsHitTestVisible="False" AutomationProperties.AccessibilityView="Raw">
+            <Rectangle.Fill>
+                <ImageBrush Stretch="UniformToFill" AlignmentX="Right" AlignmentY="Top"
+                            ImageSource="{x:Bind local:ItemDetailPage.Blur(ViewModel.BackdropThumbhash), Mode=OneWay}" />
+            </Rectangle.Fill>
+        </Rectangle>
+        <Rectangle x:Name="Backdrop" Opacity="0" IsHitTestVisible="False" AutomationProperties.AccessibilityView="Raw">
+            <Rectangle.Fill>
+                <ImageBrush Stretch="UniformToFill" AlignmentX="Right" AlignmentY="Top" ImageOpened="OnBackdropOpened"
+                            ImageSource="{x:Bind controls:DetailHero.LoadImage(ViewModel.BackdropUrl, 0), Mode=OneWay}" />
+            </Rectangle.Fill>
+            <Rectangle.OpacityTransition>
+                <ScalarTransition />
+            </Rectangle.OpacityTransition>
+        </Rectangle>
+        <!-- Black under the text on the left, and down into the page. -->
+        <Rectangle Grid.RowSpan="2" IsHitTestVisible="False">
+            <Rectangle.Fill>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                    <GradientStop Offset="0" Color="#FF000000" />
+                    <GradientStop Offset="0.25" Color="#EB000000" />
+                    <GradientStop Offset="0.65" Color="#40000000" />
+                    <GradientStop Offset="1" Color="#00000000" />
+                </LinearGradientBrush>
+            </Rectangle.Fill>
+        </Rectangle>
+        <Rectangle Grid.RowSpan="2" IsHitTestVisible="False">
+            <Rectangle.Fill>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Offset="0.35" Color="#00000000" />
+                    <GradientStop Offset="0.82" Color="#FF000000" />
+                </LinearGradientBrush>
+            </Rectangle.Fill>
+        </Rectangle>
+
+        <ScrollViewer x:Name="PageScroller" Grid.RowSpan="2" Visibility="{x:Bind ViewModel.IsReady, Mode=OneWay}">
             <StackPanel>
                 <controls:DetailHero x:Name="Hero" ViewModel="{x:Bind ViewModel}" />
 
-                <StackPanel Padding="48,8,48,56" Spacing="40">
+                <StackPanel x:Name="Sections" Padding="48,56,48,96" Spacing="56">
                     <controls:DetailShelf Title="Seasons" Caption="{x:Bind ViewModel.SeasonsTotalText, Mode=OneWay}"
                                           Visibility="{x:Bind ViewModel.HasSeasons, Mode=OneWay}">
                         <controls:DetailShelf.ShelfContent>
@@ -123,10 +186,10 @@
             </StackPanel>
         </ScrollViewer>
 
-        <ProgressRing Width="48" Height="48" IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}"
+        <ProgressRing Grid.RowSpan="2" Width="48" Height="48" IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}"
                       Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay}" AutomationProperties.Name="Loading the title" />
 
-        <StackPanel MaxWidth="520" Padding="48,0" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="14"
+        <StackPanel Grid.RowSpan="2" MaxWidth="520" Padding="48,0" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="14"
                     Visibility="{x:Bind ViewModel.HasLoadError, Mode=OneWay}">
             <TextBlock Text="Couldn't load this title" Style="{StaticResource SiloPageTitleTextStyle}" TextAlignment="Center"
                        AutomationProperties.HeadingLevel="Level1" />
@@ -136,7 +199,7 @@
                     Command="{x:Bind ViewModel.RetryCommand}" />
         </StackPanel>
 
-        <StackPanel MaxWidth="520" Padding="48,0" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="14"
+        <StackPanel Grid.RowSpan="2" MaxWidth="520" Padding="48,0" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="14"
                     Visibility="{x:Bind ViewModel.IsNotFound, Mode=OneWay}">
             <TextBlock Text="{x:Bind vm:ItemDetailViewModel.NotFoundTitle}" Style="{StaticResource SiloPageTitleTextStyle}"
                        TextAlignment="Center" AutomationProperties.HeadingLevel="Level1" />

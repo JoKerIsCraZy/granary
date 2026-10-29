@@ -140,16 +140,16 @@ public sealed partial class ItemDetailViewModel : ObservableObject
     [ObservableProperty]
     public partial Uri? BackdropUrl { get; private set; }
 
+    /// <summary>The backdrop's placeholder, shown blurred until the backdrop itself is in.</summary>
+    [ObservableProperty]
+    public partial string BackdropThumbhash { get; private set; } = "";
+
     [ObservableProperty]
     public partial Uri? PosterUrl { get; private set; }
 
     /// <summary>Episodes show their still as the backdrop and no poster.</summary>
     [ObservableProperty]
     public partial bool ShowsPoster { get; private set; }
-
-    /// <summary>A season's hero is shorter, as on the web.</summary>
-    [ObservableProperty]
-    public partial bool IsCompactHero { get; private set; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowsLogo), nameof(ShowsTitleText))]
@@ -201,7 +201,26 @@ public sealed partial class ItemDetailViewModel : ObservableObject
 
     public bool HasVersionLines => VersionLines.Count > 0;
 
+    /// <summary>The one line under the title: "2026 · 1h 58m · R · Mystery, Thriller".</summary>
+    [ObservableProperty]
+    public partial string MetaLine { get; private set; } = "";
+
+    /// <summary>"Available version: 720P · H264 · EAC3 · 9.3 GB" under the buttons; empty for a series or season.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasAvailableVersionLine))]
+    public partial string AvailableVersionLine { get; private set; } = "";
+
+    public bool HasAvailableVersionLine => AvailableVersionLine.Length > 0;
+
+    /// <summary>What the Info dialog lists: details, cast, crew and the files.</summary>
+    [ObservableProperty]
+    public partial IReadOnlyList<DetailInfoSection> InfoSections { get; private set; } = [];
+
     // Actions
+
+    /// <summary>The primary button's words: "Resume from 1:02:33" for a movie or episode, else <see cref="PlayLabel"/>.</summary>
+    [ObservableProperty]
+    public partial string PlayButtonText { get; private set; } = "Play";
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanStartOver))]
@@ -428,6 +447,9 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         Overview = "";
         CreditParts = [];
         VersionLines = [];
+        MetaLine = "";
+        AvailableVersionLine = "";
+        InfoSections = [];
         LogoUrl = null;
         Seasons = [];
         Episodes = [];
@@ -452,9 +474,9 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         Tagline = item.Tagline?.Trim() ?? "";
         Subtitle = DetailFacts.Subtitle(item) ?? "";
         BackdropUrl = ArtworkUrl.Resolve(server, item.BackdropUrl) ?? (isEpisode ? ArtworkUrl.Resolve(server, item.PosterUrl) : null);
+        BackdropThumbhash = (item.BackdropUrl is not null ? item.BackdropThumbhash : isEpisode ? item.PosterThumbhash : null) ?? "";
         PosterUrl = ArtworkUrl.Resolve(server, item.PosterUrl);
         ShowsPoster = !isEpisode;
-        IsCompactHero = item.Type == CatalogItemTypes.Season;
         // An episode's logo would be its series': the episode's own title stays visible instead.
         LogoUrl = isEpisode ? null : ArtworkUrl.Resolve(server, item.LogoUrl);
         Breadcrumbs = DetailFacts.Breadcrumbs(item);
@@ -464,6 +486,9 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         IsOverviewExpanded = false;
         CreditParts = DetailCredits.Line(item);
         VersionLines = DetailFacts.VersionLines(item);
+        MetaLine = DetailFacts.MetaLine(item);
+        AvailableVersionLine = DetailFacts.AvailableVersionLine(item) ?? "";
+        InfoSections = DetailFacts.InfoSections(item);
         People = DetailCredits.People(item, server);
         PeopleTitle = DetailCredits.PeopleTitle(People);
         Trailers = DetailTrailer.From(item.Videos);
@@ -496,6 +521,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         }
         var seasons = OrderSeasons(collection.Items);
         Chips = DetailFacts.Chips(item, seasons);
+        MetaLine = DetailFacts.MetaLine(item, seasons);
         if (seasons is [{ ContentId.Length: > 0 }])
         {
             // A single-season show lists its episodes right here, as on the web.
@@ -557,6 +583,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         }
         ShowEpisodes(collection.Items, item.EpisodeCount);
         Chips = DetailFacts.Chips(item, listedEpisodes: collection.Items.Count);
+        MetaLine = DetailFacts.MetaLine(item, listedEpisodes: collection.Items.Count);
         ShowPlayAction();
     }
 
@@ -657,6 +684,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         var action = DetailFacts.PlayAction(item, _watch, item.Type == CatalogItemTypes.Season ? _episodes.FirstOrDefault()?.ContentId : null);
         PlayLabel = action.Label;
         PlayTargetId = action.TargetId;
+        PlayButtonText = DetailFacts.PlayButtonText(item, _watch, action);
     }
 
     // Specials (season 0) go last, as in the Android client.

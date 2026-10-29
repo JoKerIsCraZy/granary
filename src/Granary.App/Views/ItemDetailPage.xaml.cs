@@ -1,5 +1,5 @@
-using System.ComponentModel;
 using System.Windows.Input;
+using Granary.App.Controls;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Cards;
 using Granary.Core.ViewModels.Detail;
@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using Windows.System;
 
@@ -15,24 +16,20 @@ namespace Granary.App.Views;
 /// <summary>Any catalog item; the navigation parameter is its content id (<see cref="Core.Abstractions.AppRoute.Item"/>).</summary>
 public sealed partial class ItemDetailPage : Page
 {
-    // The hero fills most of the window as on the web, never less than this: 60 % of the height (the web's below its lg
-    // width; its 72 % above put the title low on a wide screen), a season's 50 %.
-    private const double HeroShare = 0.5;
-    private const double CompactHeroShare = 0.5;
-    private const double MinimumHeroHeight = 440;
-
     public ItemDetailPage()
     {
         // Transient and not disposable: the root provider does not keep it alive.
         ViewModel = App.Services.GetRequiredService<ItemDetailViewModel>();
         InitializeComponent();
-        ViewModel.PropertyChanged += OnViewModelPropertyChanged;
     }
 
     public ItemDetailViewModel ViewModel { get; }
 
     // Static because x:Bind function bindings in item templates call them without the page.
     public static string SeasonName(string title, string caption, bool isWatched) => isWatched ? $"{title}, {caption}, watched" : $"{title}, {caption}";
+
+    // The backdrop's placeholder; never null, so a page shown again for another title does not keep the last one's.
+    public static ImageSource? Blur(string hash) => Thumbhashes.Get(hash);
 
     protected override void OnNavigatedTo(NavigationEventArgs e)
     {
@@ -47,23 +44,7 @@ public sealed partial class ItemDetailPage : Page
         ViewModel.LoadCommand.Cancel();
     }
 
-    private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName == nameof(ItemDetailViewModel.IsCompactHero))
-        {
-            UpdateHeroHeight(ActualHeight);
-        }
-    }
-
-    private void OnSizeChanged(object sender, SizeChangedEventArgs e) => UpdateHeroHeight(e.NewSize.Height);
-
-    private void UpdateHeroHeight(double pageHeight)
-    {
-        if (pageHeight > 0)
-        {
-            Hero.MinHeight = Math.Max(MinimumHeroHeight, pageHeight * (ViewModel.IsCompactHero ? CompactHeroShare : HeroShare));
-        }
-    }
+    private void OnBackdropOpened(object sender, RoutedEventArgs e) => Backdrop.Opacity = 1;
 
     private void OnSeasonClick(object sender, RoutedEventArgs e) =>
         Invoke(ViewModel.OpenCardCommand, (sender as FrameworkElement)?.DataContext as MediaCard);

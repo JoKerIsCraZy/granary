@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    The top of the detail page as on Silo's web client (docs/ui-design.md): the backdrop fades into the
-    background toward the left and the bottom; poster, overline or breadcrumbs, logo or display title, chips,
-    ratings, overview, credits and the actions sit on it, bottom-aligned.
+    The top of the detail page (docs/ui-design.md): laid out as Silage's title page, on the backdrop the page itself draws
+    behind its scrolling content. The logo (or the title), one line of facts, the tagline and four lines of overview, then
+    Granary's own buttons at a larger size and the file's short facts. Chips, ratings, credits and the files' details are
+    in the Info dialog. Below 1400 px of window everything steps down a size, so a 1280 window keeps it whole.
 -->
 <UserControl
     x:Class="Granary.App.Controls.DetailHero"
@@ -12,235 +13,200 @@
     xmlns:detail="using:Granary.Core.ViewModels.Detail">
 
     <UserControl.Resources>
-        <SolidColorBrush x:Key="DetailSoftTextBrush" Color="#B8E8E8EC" />
-        <SolidColorBrush x:Key="DetailCreditNameBrush" Color="#CCE8E8EC" />
+        <SolidColorBrush x:Key="DetailMetaBrush" Color="#99EDEDED" />
+        <SolidColorBrush x:Key="DetailTextBrush" Color="#F2EDEDED" />
+        <SolidColorBrush x:Key="DetailFaintBrush" Color="#73EDEDED" />
         <SolidColorBrush x:Key="DetailCreditLabelBrush" Color="#99A4A4AE" />
         <SolidColorBrush x:Key="DetailCreditSeparatorBrush" Color="#FF5C5C66" />
-        <Style x:Key="DetailChipTextStyle" TargetType="TextBlock">
-            <Setter Property="FontFamily" Value="{StaticResource SiloFontSemiBold}" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="FontSize" Value="11.2" />
-            <Setter Property="CharacterSpacing" Value="40" />
+
+        <!-- Granary's own buttons, one size class up: 60 high pills and 60 round icons, 20 px labels. -->
+        <Style x:Key="HeroPrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource SiloPrimaryButtonStyle}">
+            <Setter Property="MinHeight" Value="60" />
+            <Setter Property="Padding" Value="22,8,28,8" />
+            <Setter Property="FontSize" Value="20" />
+        </Style>
+        <Style x:Key="HeroSecondaryButtonStyle" TargetType="Button" BasedOn="{StaticResource SiloSecondaryButtonStyle}">
+            <Setter Property="MinHeight" Value="60" />
+            <Setter Property="Padding" Value="22,8,28,8" />
+            <Setter Property="FontSize" Value="20" />
+        </Style>
+        <Style x:Key="HeroIconButtonStyle" TargetType="Button" BasedOn="{StaticResource SiloIconButtonStyle}">
+            <Setter Property="Width" Value="60" />
+            <Setter Property="Height" Value="60" />
+        </Style>
+        <Style x:Key="HeroPrimaryCompactButtonStyle" TargetType="Button" BasedOn="{StaticResource SiloPrimaryButtonStyle}">
+            <Setter Property="MinHeight" Value="48" />
+            <Setter Property="Padding" Value="16,6,22,6" />
+            <Setter Property="FontSize" Value="16" />
+        </Style>
+        <Style x:Key="HeroSecondaryCompactButtonStyle" TargetType="Button" BasedOn="{StaticResource SiloSecondaryButtonStyle}">
+            <Setter Property="MinHeight" Value="48" />
+            <Setter Property="Padding" Value="16,6,22,6" />
+            <Setter Property="FontSize" Value="16" />
+        </Style>
+        <Style x:Key="HeroIconCompactButtonStyle" TargetType="Button" BasedOn="{StaticResource SiloIconButtonStyle}">
+            <Setter Property="Width" Value="48" />
+            <Setter Property="Height" Value="48" />
         </Style>
     </UserControl.Resources>
 
     <Grid>
-        <!--
-            A brush, not an Image: an Image would ask for its own height at the hero's width (16:9 of an ultrawide
-            window is taller than the screen) and push the content out of view. A brush only fills the space
-            the minimum height and the content give the hero. Anchored at the top, where faces usually are.
-        -->
-        <Rectangle x:Name="Backdrop" Opacity="0" IsHitTestVisible="False" AutomationProperties.AccessibilityView="Raw">
-            <Rectangle.Fill>
-                <ImageBrush Stretch="UniformToFill" AlignmentY="Top" ImageOpened="OnBackdropOpened"
-                            ImageSource="{x:Bind controls:DetailHero.LoadImage(ViewModel.BackdropUrl, 0), Mode=OneWay}" />
-            </Rectangle.Fill>
-            <Rectangle.OpacityTransition>
-                <ScalarTransition />
-            </Rectangle.OpacityTransition>
-        </Rectangle>
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup x:Name="SizeStates">
+                <VisualState x:Name="Wide">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="1400" />
+                    </VisualState.StateTriggers>
+                </VisualState>
+                <VisualState x:Name="Compact">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="0" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="Column.Padding" Value="48,96,48,0" />
+                        <Setter Target="Column.Spacing" Value="14" />
+                        <Setter Target="Logo.Height" Value="136" />
+                        <Setter Target="Logo.MaxWidth" Value="504" />
+                        <Setter Target="TitleText.FontSize" Value="48" />
+                        <Setter Target="TitleText.LineHeight" Value="52" />
+                        <Setter Target="TitleText.MaxWidth" Value="720" />
+                        <Setter Target="SubtitleText.FontSize" Value="16" />
+                        <Setter Target="MetaText.FontSize" Value="16" />
+                        <Setter Target="TaglineText.FontSize" Value="16" />
+                        <Setter Target="TaglineText.MaxWidth" Value="720" />
+                        <Setter Target="OverviewText.FontSize" Value="15" />
+                        <Setter Target="OverviewText.LineHeight" Value="23" />
+                        <Setter Target="OverviewText.MaxWidth" Value="720" />
+                        <Setter Target="Buttons.Spacing" Value="12" />
+                        <Setter Target="Buttons.Margin" Value="0,6,0,0" />
+                        <Setter Target="PlayButton.Style" Value="{StaticResource HeroPrimaryCompactButtonStyle}" />
+                        <Setter Target="PlayIcon.FontSize" Value="18" />
+                        <Setter Target="StartOverButton.Style" Value="{StaticResource HeroIconCompactButtonStyle}" />
+                        <Setter Target="StartOverIcon.FontSize" Value="18" />
+                        <Setter Target="WatchedButton.Style" Value="{StaticResource HeroSecondaryCompactButtonStyle}" />
+                        <Setter Target="WatchedIcon.FontSize" Value="18" />
+                        <Setter Target="InfoButton.Style" Value="{StaticResource HeroSecondaryCompactButtonStyle}" />
+                        <Setter Target="InfoIcon.FontSize" Value="18" />
+                        <Setter Target="FavoriteButton.Style" Value="{StaticResource HeroIconCompactButtonStyle}" />
+                        <Setter Target="FavoriteIcon.FontSize" Value="18" />
+                        <Setter Target="MoreButton.Style" Value="{StaticResource HeroIconCompactButtonStyle}" />
+                        <Setter Target="MoreIcon.FontSize" Value="18" />
+                        <Setter Target="VersionText.FontSize" Value="13" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
 
-        <!-- Darker toward the left (where the text sits), toward the bottom, and a little under the title bar. -->
-        <Rectangle IsHitTestVisible="False">
-            <Rectangle.Fill>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                    <GradientStop Offset="0" Color="#F2141417" />
-                    <GradientStop Offset="0.35" Color="#B3141417" />
-                    <GradientStop Offset="0.7" Color="#33141417" />
-                    <GradientStop Offset="1" Color="#00141417" />
-                </LinearGradientBrush>
-            </Rectangle.Fill>
-        </Rectangle>
-        <Rectangle IsHitTestVisible="False">
-            <Rectangle.Fill>
-                <LinearGradientBrush StartPoint="0,1" EndPoint="0,0">
-                    <GradientStop Offset="0" Color="{StaticResource SiloBackgroundColor}" />
-                    <GradientStop Offset="0.3" Color="#CC141417" />
-                    <GradientStop Offset="0.65" Color="#00141417" />
-                </LinearGradientBrush>
-            </Rectangle.Fill>
-        </Rectangle>
-        <Rectangle IsHitTestVisible="False">
-            <Rectangle.Fill>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                    <GradientStop Offset="0" Color="#99141417" />
-                    <GradientStop Offset="0.2" Color="#00141417" />
-                </LinearGradientBrush>
-            </Rectangle.Fill>
-        </Rectangle>
-
-        <Grid Padding="48,96,48,36" VerticalAlignment="Bottom">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
-
-            <!-- The gap is the poster's margin, so an episode (no poster) lines up with the rows below. -->
-            <Grid Width="220" Height="330" Margin="0,0,40,0" VerticalAlignment="Bottom" CornerRadius="{StaticResource SiloCardCornerRadius}"
-                  Background="{StaticResource SiloSurfaceBrush}" BorderBrush="#33FFFFFF" BorderThickness="1"
-                  Visibility="{x:Bind ViewModel.ShowsPoster, Mode=OneWay}">
-                <!-- Shown until the poster arrives, and instead of it when there is none. -->
-                <TextBlock Margin="20" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"
-                           MaxLines="5" Text="{x:Bind ViewModel.DisplayTitle, Mode=OneWay}" Style="{StaticResource SiloCaptionTextStyle}"
-                           AutomationProperties.AccessibilityView="Raw" />
-                <Image Stretch="UniformToFill" Source="{x:Bind controls:DetailHero.LoadImage(ViewModel.PosterUrl, 440), Mode=OneWay}"
-                       AutomationProperties.AccessibilityView="Raw" />
-            </Grid>
-
-            <StackPanel Grid.Column="1" MaxWidth="760" HorizontalAlignment="Left" VerticalAlignment="Bottom">
-                <ItemsRepeater Margin="-4,0,0,14" ItemsSource="{x:Bind ViewModel.Breadcrumbs, Mode=OneWay}"
-                               Visibility="{x:Bind ViewModel.HasBreadcrumbs, Mode=OneWay}" AutomationProperties.Name="Breadcrumb">
-                    <ItemsRepeater.Layout>
-                        <StackLayout Orientation="Horizontal" Spacing="2" />
-                    </ItemsRepeater.Layout>
-                    <ItemsRepeater.ItemTemplate>
-                        <DataTemplate x:DataType="detail:DetailCrumb">
-                            <StackPanel Orientation="Horizontal" Spacing="2">
-                                <FontIcon Glyph="&#xE76C;" FontSize="10" VerticalAlignment="Center" Foreground="{StaticResource DetailCreditSeparatorBrush}"
-                                          Visibility="{x:Bind controls:DetailHero.Not(IsFirst)}" AutomationProperties.AccessibilityView="Raw" />
-                                <HyperlinkButton Padding="4,2" Click="OnCrumbClick" Visibility="{x:Bind IsLink}" DataContext="{x:Bind}"
-                                                 Foreground="{StaticResource SiloMutedBrush}" FontSize="13">
-                                    <TextBlock Text="{x:Bind Label}" />
-                                </HyperlinkButton>
-                                <TextBlock Margin="4,0" VerticalAlignment="Center" Text="{x:Bind Label}" FontSize="13"
-                                           Foreground="{StaticResource DetailCreditLabelBrush}" Visibility="{x:Bind controls:DetailHero.Not(IsLink)}" />
-                            </StackPanel>
-                        </DataTemplate>
-                    </ItemsRepeater.ItemTemplate>
-                </ItemsRepeater>
-
-                <TextBlock Margin="0,0,0,12" Text="{x:Bind ViewModel.Overline, Mode=OneWay}" Style="{StaticResource SiloSectionLabelTextStyle}"
-                           FontSize="12" CharacterSpacing="160"
-                           Visibility="{x:Bind controls:DetailHero.Shows(ViewModel.Overline), Mode=OneWay}" />
-
-                <!-- The logo stands in for the title; screen readers still get the title as the page heading. -->
-                <Image x:Name="Logo" Margin="0,0,0,16" MaxWidth="480" MaxHeight="112" HorizontalAlignment="Left" Stretch="Uniform"
-                       Source="{x:Bind controls:DetailHero.LoadImage(ViewModel.LogoUrl, 480), Mode=OneWay}" ImageFailed="OnLogoFailed"
-                       Visibility="{x:Bind ViewModel.ShowsLogo, Mode=OneWay}"
-                       AutomationProperties.Name="{x:Bind ViewModel.DisplayTitle, Mode=OneWay}" AutomationProperties.HeadingLevel="Level1" />
-                <TextBlock Margin="0,0,0,12" Text="{x:Bind ViewModel.DisplayTitle, Mode=OneWay}" Style="{StaticResource SiloDisplayTextStyle}"
-                           MaxLines="3" TextTrimming="CharacterEllipsis" Visibility="{x:Bind ViewModel.ShowsTitleText, Mode=OneWay}"
-                           AutomationProperties.HeadingLevel="Level1" />
-
-                <TextBlock Margin="0,0,0,14" Text="{x:Bind ViewModel.Subtitle, Mode=OneWay}" FontFamily="{StaticResource SiloFontMedium}"
-                           FontWeight="Medium" FontSize="16" Foreground="{StaticResource SiloMutedBrush}"
-                           Visibility="{x:Bind controls:DetailHero.Shows(ViewModel.Subtitle), Mode=OneWay}" />
-                <TextBlock Margin="0,0,0,14" Text="{x:Bind ViewModel.Tagline, Mode=OneWay}" FontFamily="{StaticResource SiloFontItalic}"
-                           FontStyle="Italic" FontSize="13" Foreground="{StaticResource SiloMutedBrush}" TextWrapping="Wrap"
-                           Visibility="{x:Bind controls:DetailHero.Shows(ViewModel.Tagline), Mode=OneWay}" />
-
-                <ItemsRepeater Margin="0,0,0,14" ItemsSource="{x:Bind ViewModel.Chips, Mode=OneWay}">
-                    <ItemsRepeater.Layout>
-                        <StackLayout Orientation="Horizontal" Spacing="8" />
-                    </ItemsRepeater.Layout>
-                    <ItemsRepeater.ItemTemplate>
-                        <DataTemplate x:DataType="detail:DetailChip">
-                            <Border Style="{x:Bind controls:DetailHero.ChipStyle(IsAccent)}">
-                                <TextBlock Text="{x:Bind Text}" Style="{StaticResource DetailChipTextStyle}"
-                                           Foreground="{x:Bind controls:DetailHero.ChipForeground(IsAccent)}" />
-                            </Border>
-                        </DataTemplate>
-                    </ItemsRepeater.ItemTemplate>
-                </ItemsRepeater>
-
-                <ItemsRepeater Margin="0,0,0,14" ItemsSource="{x:Bind ViewModel.Ratings, Mode=OneWay}"
-                               Visibility="{x:Bind ViewModel.HasRatings, Mode=OneWay}">
-                    <ItemsRepeater.Layout>
-                        <StackLayout Orientation="Horizontal" Spacing="20" />
-                    </ItemsRepeater.Layout>
-                    <ItemsRepeater.ItemTemplate>
-                        <DataTemplate x:DataType="detail:DetailRating">
-                            <TextBlock Foreground="{StaticResource SiloPrimaryBrush}" AutomationProperties.Name="{x:Bind AccessibleName}">
-                                <Run Text="{x:Bind Name}" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="13"
-                                     Foreground="{StaticResource SiloPrimaryTint75Brush}" CharacterSpacing="-25" />
-                                <Run Text="{x:Bind Display}" FontFamily="{StaticResource SiloFontBold}" FontWeight="Bold" FontSize="15" />
-                            </TextBlock>
-                        </DataTemplate>
-                    </ItemsRepeater.ItemTemplate>
-                </ItemsRepeater>
-
-                <TextBlock x:Name="OverviewText" Text="{x:Bind ViewModel.Overview, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}"
-                           Foreground="{StaticResource SiloMutedBrush}" TextTrimming="CharacterEllipsis"
-                           MaxLines="{x:Bind controls:DetailHero.OverviewLines(ViewModel.IsOverviewExpanded), Mode=OneWay}"
-                           IsTextTrimmedChanged="OnOverviewTrimmedChanged" Visibility="{x:Bind ViewModel.HasOverview, Mode=OneWay}" />
-                <HyperlinkButton x:Name="OverviewToggle" Margin="-4,2,0,0" Padding="4,2" Visibility="Collapsed"
-                                 Command="{x:Bind ViewModel.ToggleOverviewCommand}" Foreground="{StaticResource SiloForegroundBrush}"
-                                 FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="14"
-                                 AutomationProperties.Name="{x:Bind OverviewToggleName(ViewModel.IsOverviewExpanded), Mode=OneWay}">
-                    <TextBlock Text="{x:Bind ViewModel.OverviewToggleText, Mode=OneWay}" />
-                </HyperlinkButton>
-
-                <TextBlock x:Name="CreditsText" Margin="0,12,0,0" FontSize="13" LineHeight="20" TextWrapping="Wrap"
-                           Visibility="{x:Bind ViewModel.HasCredits, Mode=OneWay}" />
-
-                <ItemsRepeater Margin="0,10,0,0" ItemsSource="{x:Bind ViewModel.VersionLines, Mode=OneWay}"
-                               Visibility="{x:Bind ViewModel.HasVersionLines, Mode=OneWay}" AutomationProperties.Name="Versions">
-                    <ItemsRepeater.Layout>
-                        <StackLayout Orientation="Vertical" Spacing="4" />
-                    </ItemsRepeater.Layout>
-                    <ItemsRepeater.ItemTemplate>
-                        <DataTemplate x:DataType="x:String">
-                            <TextBlock Text="{x:Bind}" Style="{StaticResource SiloOverlineTextStyle}" CharacterSpacing="60" />
-                        </DataTemplate>
-                    </ItemsRepeater.ItemTemplate>
-                </ItemsRepeater>
-
-                <StackPanel Margin="0,26,0,0" Orientation="Horizontal" Spacing="12">
-                    <Button Style="{StaticResource SiloPrimaryButtonStyle}" Command="{x:Bind ViewModel.PlayCommand}"
-                            AutomationProperties.Name="{x:Bind ViewModel.PlayLabel, Mode=OneWay}">
-                        <StackPanel Orientation="Horizontal" Spacing="10">
-                            <FontIcon Glyph="&#xF5B0;" FontSize="18" />
-                            <TextBlock Text="{x:Bind ViewModel.PlayLabel, Mode=OneWay}" />
+        <StackPanel x:Name="Column" Padding="48,120,48,0" Spacing="18" HorizontalAlignment="Left">
+            <ItemsRepeater Margin="-4,0,0,0" ItemsSource="{x:Bind ViewModel.Breadcrumbs, Mode=OneWay}"
+                           Visibility="{x:Bind ViewModel.HasBreadcrumbs, Mode=OneWay}" AutomationProperties.Name="Breadcrumb">
+                <ItemsRepeater.Layout>
+                    <StackLayout Orientation="Horizontal" Spacing="2" />
+                </ItemsRepeater.Layout>
+                <ItemsRepeater.ItemTemplate>
+                    <DataTemplate x:DataType="detail:DetailCrumb">
+                        <StackPanel Orientation="Horizontal" Spacing="2">
+                            <FontIcon Glyph="&#xE76C;" FontSize="10" VerticalAlignment="Center" Foreground="{StaticResource DetailCreditSeparatorBrush}"
+                                      Visibility="{x:Bind controls:DetailHero.Not(IsFirst)}" AutomationProperties.AccessibilityView="Raw" />
+                            <HyperlinkButton Padding="4,2" Click="OnCrumbClick" Visibility="{x:Bind IsLink}" DataContext="{x:Bind}"
+                                             Foreground="{StaticResource SiloMutedBrush}" FontSize="14">
+                                <TextBlock Text="{x:Bind Label}" />
+                            </HyperlinkButton>
+                            <TextBlock Margin="4,0" VerticalAlignment="Center" Text="{x:Bind Label}" FontSize="14"
+                                       Foreground="{StaticResource DetailCreditLabelBrush}" Visibility="{x:Bind controls:DetailHero.Not(IsLink)}" />
                         </StackPanel>
-                    </Button>
-                    <Button Style="{StaticResource SiloIconButtonStyle}" Command="{x:Bind ViewModel.StartOverCommand}"
-                            Visibility="{x:Bind ViewModel.CanStartOver, Mode=OneWay}"
-                            AutomationProperties.Name="Start over" ToolTipService.ToolTip="Start over">
-                        <FontIcon Glyph="&#xE72C;" FontSize="16" />
-                    </Button>
-                    <Button Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.ToggleWatchedCommand}"
-                            Visibility="{x:Bind ViewModel.ShowsWatchedAction, Mode=OneWay}"
-                            AutomationProperties.Name="{x:Bind ViewModel.WatchedLabel, Mode=OneWay}">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <FontIcon Glyph="&#xE73E;" FontSize="18" />
-                            <TextBlock Text="{x:Bind ViewModel.WatchedLabel, Mode=OneWay}" />
-                        </StackPanel>
-                    </Button>
-                    <Button Style="{StaticResource SiloIconButtonStyle}" Command="{x:Bind ViewModel.ToggleFavoriteCommand}"
-                            Visibility="{x:Bind ViewModel.CanFavorite, Mode=OneWay}"
-                            AutomationProperties.Name="{x:Bind ViewModel.FavoriteLabel, Mode=OneWay}"
-                            ToolTipService.ToolTip="{x:Bind ViewModel.FavoriteLabel, Mode=OneWay}">
-                        <FontIcon Glyph="{x:Bind controls:DetailHero.HeartGlyph(ViewModel.IsFavorite), Mode=OneWay}" FontSize="18"
-                                  Foreground="{x:Bind controls:DetailHero.ActiveForeground(ViewModel.IsFavorite), Mode=OneWay}" />
-                    </Button>
-                    <Button Style="{StaticResource SiloIconButtonStyle}" Visibility="{x:Bind ViewModel.CanFavorite, Mode=OneWay}"
-                            AutomationProperties.Name="More actions" ToolTipService.ToolTip="More actions">
-                        <FontIcon Glyph="&#xE712;" FontSize="16" RenderTransformOrigin="0.5,0.5">
-                            <FontIcon.RenderTransform>
-                                <RotateTransform Angle="90" />
-                            </FontIcon.RenderTransform>
-                        </FontIcon>
-                        <Button.Flyout>
-                            <MenuFlyout Placement="BottomEdgeAlignedLeft">
-                                <MenuFlyoutItem Text="{x:Bind ViewModel.WatchlistLabel, Mode=OneWay}" Command="{x:Bind ViewModel.ToggleWatchlistCommand}">
-                                    <MenuFlyoutItem.Icon>
-                                        <FontIcon Glyph="{x:Bind controls:DetailHero.WatchlistGlyph(ViewModel.IsInWatchlist), Mode=OneWay}" />
-                                    </MenuFlyoutItem.Icon>
-                                </MenuFlyoutItem>
-                                <MenuFlyoutItem Text="Add to Collection" Click="OnAddToCollectionClick">
-                                    <MenuFlyoutItem.Icon>
-                                        <FontIcon Glyph="&#xE8F4;" />
-                                    </MenuFlyoutItem.Icon>
-                                </MenuFlyoutItem>
-                            </MenuFlyout>
-                        </Button.Flyout>
-                    </Button>
-                </StackPanel>
+                    </DataTemplate>
+                </ItemsRepeater.ItemTemplate>
+            </ItemsRepeater>
 
-                <InfoBar Margin="0,16,0,0" MaxWidth="560" HorizontalAlignment="Left" Severity="Error" IsClosable="True"
-                         IsOpen="{x:Bind ViewModel.HasActionError, Mode=OneWay}" Message="{x:Bind ViewModel.ActionError, Mode=OneWay}"
-                         CloseButtonClick="OnActionErrorClosed" />
+            <!-- The logo stands in for the title, as high as its box and at most 70 % of the text's width; screen readers still get the title. -->
+            <Image x:Name="Logo" Height="170" MaxWidth="630" HorizontalAlignment="Left" Stretch="Uniform"
+                   Source="{x:Bind controls:DetailHero.LoadImage(ViewModel.LogoUrl, 640), Mode=OneWay}" ImageFailed="OnLogoFailed"
+                   Visibility="{x:Bind ViewModel.ShowsLogo, Mode=OneWay}"
+                   AutomationProperties.Name="{x:Bind ViewModel.DisplayTitle, Mode=OneWay}" AutomationProperties.HeadingLevel="Level1" />
+            <TextBlock x:Name="TitleText" MaxWidth="900" HorizontalAlignment="Left" Text="{x:Bind ViewModel.DisplayTitle, Mode=OneWay}"
+                       FontFamily="{StaticResource SiloFontBold}" FontWeight="Bold" FontSize="60" LineHeight="64" TextWrapping="Wrap"
+                       MaxLines="2" TextTrimming="CharacterEllipsis" Visibility="{x:Bind ViewModel.ShowsTitleText, Mode=OneWay}"
+                       AutomationProperties.HeadingLevel="Level1" />
+
+            <TextBlock x:Name="SubtitleText" Text="{x:Bind ViewModel.Subtitle, Mode=OneWay}" FontFamily="{StaticResource SiloFontMedium}"
+                       FontWeight="Medium" FontSize="20" Foreground="{StaticResource DetailMetaBrush}"
+                       Visibility="{x:Bind controls:DetailHero.Shows(ViewModel.Subtitle), Mode=OneWay}" />
+            <TextBlock x:Name="MetaText" Text="{x:Bind ViewModel.MetaLine, Mode=OneWay}" FontSize="20" Foreground="{StaticResource DetailMetaBrush}"
+                       TextWrapping="Wrap" Visibility="{x:Bind controls:DetailHero.Shows(ViewModel.MetaLine), Mode=OneWay}" />
+            <TextBlock x:Name="TaglineText" MaxWidth="900" HorizontalAlignment="Left" Text="{x:Bind ViewModel.Tagline, Mode=OneWay}"
+                       FontFamily="{StaticResource SiloFontItalic}" FontStyle="Italic" FontSize="20" Foreground="{StaticResource DetailTextBrush}"
+                       TextWrapping="Wrap" Visibility="{x:Bind controls:DetailHero.Shows(ViewModel.Tagline), Mode=OneWay}" />
+            <TextBlock x:Name="OverviewText" MaxWidth="900" HorizontalAlignment="Left" Text="{x:Bind ViewModel.Overview, Mode=OneWay}"
+                       FontSize="19" LineHeight="29" Foreground="{StaticResource DetailTextBrush}" TextWrapping="Wrap" MaxLines="4"
+                       TextTrimming="CharacterEllipsis" Visibility="{x:Bind ViewModel.HasOverview, Mode=OneWay}" />
+
+            <StackPanel x:Name="Buttons" Margin="0,8,0,0" Orientation="Horizontal" Spacing="16">
+                <Button x:Name="PlayButton" Style="{StaticResource HeroPrimaryButtonStyle}" Command="{x:Bind ViewModel.PlayCommand}"
+                        AutomationProperties.Name="{x:Bind ViewModel.PlayButtonText, Mode=OneWay}">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <FontIcon x:Name="PlayIcon" Glyph="&#xF5B0;" FontSize="24" />
+                        <TextBlock Text="{x:Bind ViewModel.PlayButtonText, Mode=OneWay}" />
+                    </StackPanel>
+                </Button>
+                <Button x:Name="StartOverButton" Style="{StaticResource HeroIconButtonStyle}" Command="{x:Bind ViewModel.StartOverCommand}"
+                        Visibility="{x:Bind ViewModel.CanStartOver, Mode=OneWay}"
+                        AutomationProperties.Name="Start over" ToolTipService.ToolTip="Start over">
+                    <FontIcon x:Name="StartOverIcon" Glyph="&#xE72C;" FontSize="22" />
+                </Button>
+                <Button x:Name="WatchedButton" Style="{StaticResource HeroSecondaryButtonStyle}" Command="{x:Bind ViewModel.ToggleWatchedCommand}"
+                        Visibility="{x:Bind ViewModel.ShowsWatchedAction, Mode=OneWay}"
+                        AutomationProperties.Name="{x:Bind ViewModel.WatchedLabel, Mode=OneWay}">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <FontIcon x:Name="WatchedIcon" Glyph="&#xE73E;" FontSize="24" />
+                        <TextBlock Text="{x:Bind ViewModel.WatchedLabel, Mode=OneWay}" />
+                    </StackPanel>
+                </Button>
+                <Button x:Name="InfoButton" Style="{StaticResource HeroSecondaryButtonStyle}" Click="OnInfoClick"
+                        AutomationProperties.Name="Info: details, cast, crew and files">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <FontIcon x:Name="InfoIcon" Glyph="&#xE946;" FontSize="24" />
+                        <TextBlock Text="Info" />
+                    </StackPanel>
+                </Button>
+                <Button x:Name="FavoriteButton" Style="{StaticResource HeroIconButtonStyle}" Command="{x:Bind ViewModel.ToggleFavoriteCommand}"
+                        Visibility="{x:Bind ViewModel.CanFavorite, Mode=OneWay}"
+                        AutomationProperties.Name="{x:Bind ViewModel.FavoriteLabel, Mode=OneWay}"
+                        ToolTipService.ToolTip="{x:Bind ViewModel.FavoriteLabel, Mode=OneWay}">
+                    <FontIcon x:Name="FavoriteIcon" Glyph="{x:Bind controls:DetailHero.HeartGlyph(ViewModel.IsFavorite), Mode=OneWay}" FontSize="24"
+                              Foreground="{x:Bind controls:DetailHero.ActiveForeground(ViewModel.IsFavorite), Mode=OneWay}" />
+                </Button>
+                <Button x:Name="MoreButton" Style="{StaticResource HeroIconButtonStyle}" Visibility="{x:Bind ViewModel.CanFavorite, Mode=OneWay}"
+                        AutomationProperties.Name="More actions" ToolTipService.ToolTip="More actions">
+                    <FontIcon x:Name="MoreIcon" Glyph="&#xE712;" FontSize="22" RenderTransformOrigin="0.5,0.5">
+                        <FontIcon.RenderTransform>
+                            <RotateTransform Angle="90" />
+                        </FontIcon.RenderTransform>
+                    </FontIcon>
+                    <Button.Flyout>
+                        <MenuFlyout Placement="BottomEdgeAlignedLeft">
+                            <MenuFlyoutItem Text="{x:Bind ViewModel.WatchlistLabel, Mode=OneWay}" Command="{x:Bind ViewModel.ToggleWatchlistCommand}">
+                                <MenuFlyoutItem.Icon>
+                                    <FontIcon Glyph="{x:Bind controls:DetailHero.WatchlistGlyph(ViewModel.IsInWatchlist), Mode=OneWay}" />
+                                </MenuFlyoutItem.Icon>
+                            </MenuFlyoutItem>
+                            <MenuFlyoutItem Text="Add to Collection" Click="OnAddToCollectionClick">
+                                <MenuFlyoutItem.Icon>
+                                    <FontIcon Glyph="&#xE8F4;" />
+                                </MenuFlyoutItem.Icon>
+                            </MenuFlyoutItem>
+                        </MenuFlyout>
+                    </Button.Flyout>
+                </Button>
             </StackPanel>
-        </Grid>
+
+            <TextBlock x:Name="VersionText" Text="{x:Bind ViewModel.AvailableVersionLine, Mode=OneWay}" FontSize="16"
+                       Foreground="{StaticResource DetailFaintBrush}" TextWrapping="Wrap"
+                       Visibility="{x:Bind ViewModel.HasAvailableVersionLine, Mode=OneWay}" />
+
+            <InfoBar MaxWidth="560" HorizontalAlignment="Left" Severity="Error" IsClosable="True"
+                     IsOpen="{x:Bind ViewModel.HasActionError, Mode=OneWay}" Message="{x:Bind ViewModel.ActionError, Mode=OneWay}"
+                     CloseButtonClick="OnActionErrorClosed" />
+        </StackPanel>
     </Grid>
 </UserControl>

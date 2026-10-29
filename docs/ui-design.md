@@ -114,7 +114,7 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
 - Page-specific pieces: `PersonCard` (search people, opening the person's page), `AlphabetJumpBar` (library A–Z: "#" and A–Z on a
   26 px round panel, letters without titles at 35 %, the top row's letter red with dark text; a letter
   scrolls the grid to its first title, as the web's `LetterBar`),
-  `DetailHero`, `DetailShelf`, `DetailEpisodeCard`, `DetailTrailerCard`, `PersonCreditCard`
+  `DetailHero`, `DetailShelf`, `DetailEpisodeCard`, `DetailInfoPanel`, `DetailTrailerCard`, `PersonCreditCard`
   (detail pages; a card with a person opens their page, one without, as a TMDB title's cast, is only a card),
   `SeekBar` and `MpvVideoHost` (player).
 - Person (`PersonPage`, the web's `pages/PersonDetail.tsx`): a detail page, so the sidebar narrows to its rail as beside
@@ -314,10 +314,25 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   place once the changes have been quiet for 2 s (rows keep where they were scrolled to; other pages reload on their
   next visit); another device's playback moves Continue Watching at most every 30 s; a new or read notification sets
   the sidebar's count. Nothing shows the connection itself.
-- Detail pages: full-bleed backdrop fading into the background, logo (or display title), chips,
-  ratings, overview with "More", red Play/Resume pill, secondary actions, then rows (seasons, episodes,
-  cast, more like this). The hero takes 60 % of the window's height (a season's 50 %), the web's value below its `lg`
-  width: its 72 % above put the title low on a wide screen.
+- Detail pages: laid out as Silage's title page, a deliberate departure from the web's look (the user preferred it;
+  only the layout and sizes are taken, the code is Granary's).
+  - On black, the backdrop stands at the top right, 85 % of the page's height, and stays put while the hero and rows
+    scroll over it. It fades to black toward the left (100 % → 92 % at a quarter → 25 % at 65 % → clear) and
+    down (clear at 35 % → black at 82 %). Its thumbhash shows first, then the image fades in.
+  - Hero, 48 px in, 120 from the top, 18 apart: season and episode breadcrumbs; the logo in a 170 px high box at
+    most 630 wide (or the title in 60 Bold); a season's own name; one meta line in 20 at 60 % white ("2026 · 1h 58m ·
+    R · Mystery, Thriller", a series' air years, rating, regular seasons and genres, an episode's "S2 E7 · 54m · 30 Oct
+    2026"); the tagline in 20 italic; the overview in 19/29, four lines at most and 900 wide.
+  - Granary's own buttons one size up: the red Play pill ("Resume from 1:02:33" for a movie or episode), Start over,
+    "Mark Watched", "Info", the heart and ⋮ (Watchlist, Add to Collection). Pills 60 high with 20 px labels, round
+    buttons 60, 16 apart. Under them "Available version: 1080P · H264 · EAC3 · 6.6 GB" (or the qualities of several
+    files) in 16 at 45 % white.
+  - Info opens a 980 wide dialog: Details (with the full overview, ratings, countries, studios), Cast, Crew by job and
+    each file's facts, never a file's name or path. Chips, ratings, credits and the version lines moved there.
+  - Granary's rows follow, 56 apart: a series' seasons in its sideways row (a season opens its own page) or a season's
+    episode grid, more episodes, trailers, cast and crew, more like this.
+  - Below a 1400 px window everything steps down (hero 96 from the top and 14 apart, logo 136, meta 16, overview 15/23,
+    buttons 48, rows 44 apart), so a 1280×800 window keeps it whole.
 - Watch Party (`WatchPartyPage`, the web's `pages/watchtogether/WatchPartyHub.tsx`): "WATCH PARTY", "Watch together,
   wherever everyone is." and what a party is; beside each other "Start a party" (Create Watch Party opens an empty room
   the host picks for) and "Join a party" (the code in a wide spaced box, Paste, Join Watch Party; a pasted invite link

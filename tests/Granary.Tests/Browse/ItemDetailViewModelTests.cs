@@ -38,7 +38,6 @@ public sealed class ItemDetailViewModelTests
         Assert.Empty(detail.VersionLines);
         Assert.Empty(detail.Breadcrumbs);
         Assert.True(detail.ShowsPoster);
-        Assert.False(detail.IsCompactHero);
         Assert.Equal(Art("/api/v2/artwork/movies/1001/poster/w342.ab12.webp?exp=1767225600&sig=poster-sig"), detail.PosterUrl);
         Assert.Equal(Art("/api/v2/artwork/movies/1001/backdrop/w1280.cd34.webp?exp=1767225600&sig=backdrop-sig"), detail.BackdropUrl);
         Assert.Equal(Art("/api/v2/artwork/movies/1001/logo/w500.ef56.webp?exp=1767225600&sig=logo-sig"), detail.LogoUrl);
@@ -176,6 +175,25 @@ public sealed class ItemDetailViewModelTests
         Assert.Equal(["Money Heist"], detail.Similar.Select(c => c.Title));
     }
 
+    [Fact]
+    public async Task Movie_HasOneMetaLine_TheResumePoint_AndItsFile()
+    {
+        var detail = await _fixture.Movie().LoadAsync(MovieId);
+
+        Assert.Equal("2026 · 1h 49m · R · Action, Thriller", detail.MetaLine);
+        Assert.Equal("Resume from 21:52", detail.PlayButtonText);
+        Assert.Equal("Available version: 1080P · H264 · EAC3 · 3.8 GB", detail.AvailableVersionLine);
+        Assert.Equal(["Details", "Cast", "Crew", "File"], detail.InfoSections.Select(s => s.Title));
+    }
+
+    [Fact]
+    public async Task Series_MetaLine_CountsItsRegularSeasonsOnceTheyAreRead()
+    {
+        var detail = await _fixture.Series().LoadAsync(SeriesId);
+
+        Assert.Equal("2021–2026 · TV-MA · 3 seasons · Crime, Drama, Mystery", detail.MetaLine);
+        Assert.False(detail.HasAvailableVersionLine);
+    }
     [Fact]
     public async Task Series_ListsSeasonsWithTheSpecialsLast()
     {
@@ -345,7 +363,6 @@ public sealed class ItemDetailViewModelTests
         Assert.Equal("Staffel 3", detail.Subtitle);
         Assert.Equal("", detail.Overline);
         Assert.True(detail.ShowsTitleText);
-        Assert.True(detail.IsCompactHero);
         Assert.Equal([new DetailCrumb("Lupin", SeriesId, true), new DetailCrumb("Season 3", null, false)], detail.Breadcrumbs);
         Assert.Equal(["2026", "SEASON 3", "8 EPISODES"], detail.Chips.Select(c => c.Text));
         Assert.Equal("Assane faces his most personal heist yet.", detail.Overview);
