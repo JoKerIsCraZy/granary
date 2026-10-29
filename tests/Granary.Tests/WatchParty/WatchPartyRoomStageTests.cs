@@ -265,7 +265,9 @@ public sealed class WatchPartyRoomStageTests : IAsyncDisposable
         var alien = page.SuggestionRows[1];
 
         _sockets[0].Push(WatchPartyPayloads.SuggestionsUpdate(("s2", "Alien", 3), ("s1", "Heat", 1)));
-        await ServerPlaybackFixture.Until(() => page.SuggestionRows[0].Title == "Alien", "the new order");
+        // The whole update, not only the move: the rows are reordered before their votes are set, and this polls from
+        // another thread.
+        await ServerPlaybackFixture.Until(() => page.SuggestionRows[0].Title == "Alien" && alien.IsLeading, "the new order and its votes");
 
         Assert.Same(alien, page.SuggestionRows[0]);
         Assert.Same(heat, page.SuggestionRows[1]);
