@@ -15,7 +15,7 @@ namespace Granary.Tests.ViewModels;
 /// <summary>The profile's sidebar: entries hidden and moved, kept on this PC for each server and profile.</summary>
 public sealed class SidebarLayoutTests : IDisposable
 {
-    private static readonly ServerEntry Server = new("srv1", new Uri("https://silo.test"), "JoKeR", null, default, default, null);
+    private static readonly ServerEntry Server = new("srv1", new Uri("https://silo.test"), "Elena's Silo", null, default, default, null);
     private static readonly string[] Discover = ["ForYou", "Requests", "Calendar", "Notifications"];
     private readonly string _directory = Path.Combine(Path.GetTempPath(), "granary-tests", Guid.NewGuid().ToString("N"));
     private readonly FakeSessionManager _session = new();

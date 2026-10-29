@@ -13,7 +13,7 @@ namespace Granary.Tests.ViewModels;
 
 public sealed class SidebarViewModelTests
 {
-    private static readonly ServerEntry Server = new("srv1", new Uri("https://silo.test"), "JoKeR", null, default, default, null);
+    private static readonly ServerEntry Server = new("srv1", new Uri("https://silo.test"), "Elena's Silo", null, default, default, null);
     private readonly FakeSessionManager _session = new();
     private readonly RecordingNavigation _navigation = new();
     private readonly LogSink _logs = new();
@@ -76,7 +76,7 @@ public sealed class SidebarViewModelTests
 
         await sidebar.RefreshAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal("JoKeR", sidebar.ServerName);
+        Assert.Equal("Elena's Silo", sidebar.ServerName);
         Assert.Equal("Elena Moreau", sidebar.ProfileName);
         Assert.Equal("EM", sidebar.ProfileInitials);
         Assert.Equal(new Uri("https://silo.test/api/v2/artwork/a.webp?sig=x"), sidebar.Profile!.AvatarUrl);
@@ -260,7 +260,7 @@ public sealed class SidebarViewModelTests
 
         await sidebar.RefreshAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal("JoKeR", sidebar.ServerName);
+        Assert.Equal("Elena's Silo", sidebar.ServerName);
         Assert.Null(sidebar.Profile);
         Assert.Empty(_requests);
     }
