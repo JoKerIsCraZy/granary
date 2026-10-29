@@ -45,17 +45,64 @@ out the app's resources (`Granary.pri`, the compiled XAML), and the published co
 1. Raise `Version` in `Directory.Build.props` (SemVer, for example `0.2.0`), and in CHANGELOG.md turn `## [Unreleased]`
    into `## [0.2.0] - 2026-11-01` (a new empty Unreleased above it). Without that section the release goes out without
    notes (the script warns).
-2. Commit, then tag and push: `git tag v0.2.0` and `git push origin v0.2.0`.
-3. `.github/workflows/release.yml` fetches libmpv, runs the tests, downloads the previous release (for the delta),
-   packs with the repository's URL and publishes the release with `GITHUB_TOKEN`. It can also be run by hand with a
-   version.
+2. Get that onto main. Do not tag it yourself: the workflow tags the commit it builds.
+3. Actions → Release → Run workflow, on `main`, with the version. `.github/workflows/release.yml` has two jobs:
+   - `build` can only read the repository and gets no secret. It runs only on main, fetches libmpv, runs the tests,
+     downloads the previous release (for the delta), packs with the repository's URL and hands the files on as an
+     artifact.
+   - `publish` runs in the `release` environment. It waits for approval under the run's "Review deployments", and
+     only then may write. It checks that no tag or release for the version exists yet, then publishes the release for
+     the commit the run built, which creates the tag `v0.2.0`.
+4. Approving releases a commit: everything in it ships. Before you approve, look at what changed since the last
+   release, for example `git log --stat v0.1.0..<the run's commit>` or the compare view between the two.
 
 Locally, `./scripts/pack-release.ps1 -Version 0.2.0` builds the same files without publishing; pass `-Repository` for
 a build that looks for updates.
 
+## Packing tools
+
+Every tool that touches a release is pinned by hash:
+
+- **vpk**, Velopack's packing tool, comes through `scripts/get-vpk.ps1`, in packing and in uploading. It downloads the
+  version `dotnet-tools.json` names from nuget.org and checks its SHA-256 against the value pinned in the script. It
+  unpacks the package afresh into `artifacts/tools` and runs `vpk.dll` from there, never a copy NuGet resolves.
+- **libmpv** is pinned by SHA-256 in `native.lock.json` (`fetch-native.ps1`).
+- **Actions** are pinned by commit, with their version beside each.
+
+When Dependabot raises vpk in `dotnet-tools.json`, `get-vpk.ps1` stops with "has no pinned SHA-256". To pin it:
+
+1. Download `https://api.nuget.org/v3-flatcontainer/vpk/<version>/vpk.<version>.nupkg`.
+2. Compare its SHA-512 (base64) with the `packageHash` of the version's entry in nuget.org's catalog
+   (`https://api.nuget.org/v3/registration5-semver1/vpk/<version>.json`, then its `catalogEntry`).
+3. If they agree, add its SHA-256 to the table in the script.
+
+Not pinned by hash: the .NET SDK that `setup-dotnet` installs (by the version in `global.json`), and the build's NuGet
+packages, which have no lock files yet.
+
 ## Before the first public release
 
 - The repository must be public: installed copies read its releases without credentials.
+- **The `release` environment** (Settings → Environments → New environment, named `release`):
+  - **Required reviewers:** yourself. Leave "Prevent self-review" off while there is one maintainer, or nobody can
+    approve. Add a second reviewer once there is a second maintainer.
+  - **Deployment branches and tags:** "Selected branches and tags" with the branch `main` only. A run from any other
+    branch would bring that branch's copy of the workflow; this rule keeps it away from the environment's secrets.
+- **Protect main:** a branch ruleset for `main` that requires a pull request and the CI check. Whatever reaches main
+  can be released.
+- **Protect release tags:** Settings → Rules → Rulesets → New tag ruleset, targeting `v*`. Restrict updates and
+  deletions, with only repository admins allowed to bypass, so nobody moves or removes a release's tag. Leave
+  creations open: the workflow creates the tag with its own token as it publishes, and GitHub does not let that token
+  bypass a ruleset. A `v*` tag someone else creates starts nothing, and the workflow refuses a version whose tag
+  exists already.
+- **Two-factor authentication** on every account with write access: an account takeover would otherwise approve its
+  own release. In an organization, require it under Settings → Authentication security.
+- **Actions defaults:** Settings → Actions → General → Workflow permissions: "Read repository contents and packages
+  permissions". Leave "Allow GitHub Actions to create and approve pull requests" off. The workflows ask for more only
+  where they need it.
+- **Release immutability:** Settings → General → Releases: once a release is published, nobody can swap its files. The
+  workflow uploads everything while the release is still a draft, so this does not get in its way.
+- **Dependabot** (`.github/dependabot.yml`) proposes new versions of the pinned actions and the NuGet packages. Review
+  an action's update like code, and pin a new vpk (see "Packing tools").
 - Security reports: turn on **Private vulnerability reporting** under the repository's Settings → Code security, since
   `SECURITY.md` sends every report there and names no other channel.
 - libmpv: `native.lock.json` already points at this repository's mirror release

@@ -1,43 +1,58 @@
 name: Release
 
 # Builds Granary's setup, portable zip and update packages with Velopack and publishes them as a GitHub release
-# (docs/release.md). Push a tag such as v0.2.0, or run the workflow by hand with a version.
+# (docs/release.md). Run it by hand on main with a version; it tags the commit it built as it publishes. The build job can
+# only read the repository and sees no secret. The publish job alone may write, and it waits for a reviewer's approval
+# in the "release" environment, which takes runs from main only.
 on:
-  push:
-    tags: ['v*.*.*']
   workflow_dispatch:
     inputs:
       version:
         description: Version to release, for example 0.2.0
         required: true
 
-permissions:
-  contents: write
+permissions: {}
 
 concurrency:
   group: release
   cancel-in-progress: false
 
 jobs:
-  release:
+  build:
     runs-on: windows-latest
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      # A run from another branch would bring that branch's copy of this file; the "release" environment refuses it anyway.
+      - name: Check the run is on main
+        shell: pwsh
+        env:
+          REF: ${{ github.ref }}
+        run: |
+          if ($env:REF -cne 'refs/heads/main') {
+            throw "Run the release workflow on main, not on $env:REF."
+          }
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           global-json-file: global.json
 
-      # Taken from an environment variable, never pasted into the script, so a tag or input cannot inject commands.
+      # Taken from an environment variable, never pasted into the script, so the input cannot inject commands. As the app
+      # takes a version: [0-9] (\d takes any script's digits) and \z (a $ allows a line end after it).
       - name: Read the version
         id: version
         shell: pwsh
         env:
           INPUT_VERSION: ${{ inputs.version }}
-          TAG: ${{ github.ref_name }}
         run: |
-          $version = if ($env:GITHUB_EVENT_NAME -eq 'workflow_dispatch') { $env:INPUT_VERSION } else { $env:TAG.TrimStart('v') }
-          if ($version -notmatch '^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$') {
+          $version = $env:INPUT_VERSION
+          if ($version -cnotmatch '\A[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?\z') {
             throw "Not a version: $version"
           }
           "version=$version" >> $env:GITHUB_OUTPUT
@@ -49,25 +64,83 @@ jobs:
       - name: Test
         run: dotnet test tests/Granary.Tests -c Release -p:Platform=x64
 
-      # The previous release lets Velopack make a delta package; the first release has none.
+      # The previous release lets Velopack make a delta package; the first release has none. vpk comes as
+      # scripts/get-vpk.ps1 pins it by SHA-256, and reads its token from VPK_TOKEN, so the token is on no command line.
       - name: Download the previous release
         shell: pwsh
         continue-on-error: true
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VPK_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          dotnet tool restore
-          dotnet vpk download github --repoUrl "https://github.com/$env:GITHUB_REPOSITORY" --outputDir artifacts/releases --token $env:GITHUB_TOKEN
+          $vpk = ./scripts/get-vpk.ps1
+          dotnet $vpk download github --repoUrl "https://github.com/$env:GITHUB_REPOSITORY" --outputDir artifacts/releases
 
       - name: Pack
         shell: pwsh
-        run: ./scripts/pack-release.ps1 -Version '${{ steps.version.outputs.version }}' -Repository "https://github.com/$env:GITHUB_REPOSITORY" -RequireNotes
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: ./scripts/pack-release.ps1 -Version $env:VERSION -Repository "https://github.com/$env:GITHUB_REPOSITORY" -RequireNotes
 
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release
+          path: artifacts/releases
+          if-no-files-found: error
+          retention-days: 1
+
+  publish:
+    needs: build
+    runs-on: windows-latest
+    # Waits for a required reviewer before anything is published (docs/release.md).
+    environment: release
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+
+      # A version goes out once: a tag that exists already would carry this release to whatever commit it names.
+      - name: Check the version is new
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          $tags = gh api "repos/$env:GITHUB_REPOSITORY/git/matching-refs/tags/v$env:VERSION" --jq '.[].ref'
+          if ($LASTEXITCODE -ne 0) {
+            throw "Could not read the repository's tags."
+          }
+          if (@($tags) -ccontains "refs/tags/v$env:VERSION") {
+            throw "The tag v$env:VERSION exists already. Release a new version."
+          }
+          $releases = gh api "repos/$env:GITHUB_REPOSITORY/releases" --paginate --jq '.[].tag_name'
+          if ($LASTEXITCODE -ne 0) {
+            throw "Could not read the repository's releases."
+          }
+          if (@($releases) -ccontains "v$env:VERSION") {
+            throw "A release or draft for v$env:VERSION exists already. Release a new version."
+          }
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release
+          path: artifacts/releases
+
+      # Publishing tags the commit this run built. vpk reads its token from VPK_TOKEN, so the token is on no command line.
       - name: Publish the release
         shell: pwsh
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ steps.version.outputs.version }}
+          VPK_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.build.outputs.version }}
         run: |
-          dotnet vpk upload github --repoUrl "https://github.com/$env:GITHUB_REPOSITORY" --outputDir artifacts/releases `
-            --token $env:GITHUB_TOKEN --publish --releaseName "Granary $env:VERSION" --tag "v$env:VERSION"
+          $vpk = ./scripts/get-vpk.ps1
+          dotnet $vpk upload github --repoUrl "https://github.com/$env:GITHUB_REPOSITORY" --outputDir artifacts/releases `
+            --publish --releaseName "Granary $env:VERSION" --tag "v$env:VERSION" --targetCommitish $env:GITHUB_SHA
+          if ($LASTEXITCODE -ne 0) {
+            throw "vpk upload failed with exit code $LASTEXITCODE"
+          }

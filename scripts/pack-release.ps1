@@ -15,7 +15,8 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)]
-    [ValidatePattern('^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$')]
+    # As the app takes a version: [0-9] (\d takes any script's digits) and \z (a $ allows a line end after it).
+    [ValidatePattern('\A[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?\z')]
     [string]$Version,
     [string]$Repository = '',
     [string]$OutputDir = 'artifacts/releases',
@@ -44,10 +45,8 @@ try {
         throw "dotnet publish failed with exit code $LASTEXITCODE"
     }
 
-    dotnet tool restore
-    if ($LASTEXITCODE -ne 0) {
-        throw "dotnet tool restore failed with exit code $LASTEXITCODE"
-    }
+    # vpk as pinned by SHA-256, not as NuGet resolves it (docs/release.md, "Packing tools").
+    $vpk = & (Join-Path $PSScriptRoot 'get-vpk.ps1')
 
     # The version's section of CHANGELOG.md, "## [0.2.0] - ..." up to the next release, is what its update says it changes
     # (Settings → About, "What's new in 0.2.0").
@@ -66,7 +65,7 @@ try {
         Write-Warning "CHANGELOG.md has no section for $Version; the release goes out without notes."
     }
 
-    dotnet vpk pack --packId $packId --packVersion $Version --packDir $publish --mainExe Granary.exe `
+    dotnet $vpk pack --packId $packId --packVersion $Version --packDir $publish --mainExe Granary.exe `
         --packTitle Granary --packAuthors 'Granary contributors' --icon src/Granary.App/Assets/Logo/granary.ico --runtime win-x64 `
         --outputDir $OutputDir @notesArgs
     if ($LASTEXITCODE -ne 0) {
