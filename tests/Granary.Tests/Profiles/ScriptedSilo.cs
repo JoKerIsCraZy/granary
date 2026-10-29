@@ -12,7 +12,7 @@ namespace Granary.Tests.Profiles;
 /// <paramref name="SavedAddressOnly"/>: it may not take a local route.
 /// </summary>
 internal sealed record SentRequest(HttpMethod Method, Uri Uri, string? Body, SiloAuth Auth, bool SavedAddressOnly = false, string? IfMatch = null,
-    string? RoomToken = null);
+    string? RoomToken = null, string? DeviceId = null);
 
 /// <summary>
 /// A Silo server behind a reverse-proxy path prefix, scripted per method and URL. Each route answers
@@ -95,7 +95,8 @@ internal sealed class ScriptedSilo
         bool savedOnly = request.Options.TryGetValue(SiloRequestOptions.SavedAddressOnly, out bool only) && only;
         string? ifMatch = request.Headers.TryGetValues("If-Match", out var versions) ? string.Join(",", versions) : null;
         string? roomToken = request.Headers.TryGetValues("X-Room-Token", out var proofs) ? string.Join(",", proofs) : null;
-        Sent.Add(new SentRequest(request.Method, uri, body, request.GetAuth(), savedOnly, ifMatch, roomToken));
+        string? deviceId = request.Headers.TryGetValues("X-Silo-Device-Id", out var devices) ? string.Join(",", devices) : null;
+        Sent.Add(new SentRequest(request.Method, uri, body, request.GetAuth(), savedOnly, ifMatch, roomToken, deviceId));
         if (_cancellable.TryGetValue(Key(request.Method, uri), out var cancellable))
         {
             return await cancellable(cancellationToken);

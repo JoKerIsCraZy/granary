@@ -200,7 +200,7 @@
                 </Border>
             </StackPanel>
 
-            <StackPanel Visibility="{x:Bind controls:SettingsText.Hidden(ViewModel.HasSessionsMessage), Mode=OneWay}">
+            <StackPanel Visibility="{x:Bind ViewModel.ShowsSessionList, Mode=OneWay}">
                 <TextBlock Margin="0,24,0,0" Text="Other signed-in sessions" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
                            FontSize="15" Foreground="{StaticResource SiloForegroundBrush}" AutomationProperties.HeadingLevel="Level3" />
                 <TextBlock Margin="0,4,0,8" Style="{StaticResource SiloSettingsMutedTextStyle}" Text="Other browsers and apps with access to your account." />

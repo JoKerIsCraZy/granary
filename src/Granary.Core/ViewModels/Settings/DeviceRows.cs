@@ -88,11 +88,12 @@ public sealed partial class UserDeviceRow : ObservableObject
 {
     private readonly DateTimeOffset _now;
 
-    internal UserDeviceRow(UserDevice device, DateTimeOffset now)
+    /// <param name="isCurrent">This PC: the server marks it, or it carries this installation's device id.</param>
+    internal UserDeviceRow(UserDevice device, bool isCurrent, DateTimeOffset now)
     {
         _now = now;
         DeviceId = device.DeviceId;
-        IsCurrent = device.IsCurrentDevice;
+        IsCurrent = isCurrent;
         Show(device);
     }
 
