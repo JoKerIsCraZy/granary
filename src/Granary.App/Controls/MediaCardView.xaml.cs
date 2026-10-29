@@ -69,6 +69,8 @@ public sealed partial class MediaCardView : UserControl
     // they were last done for.
     private bool _landscape;
     private bool _lifted;
+    // Under the pointer: the hover layer and a TMDB title's Request show.
+    private bool _hovered;
     private bool _sizedLandscape;
     private (double Width, bool Landscape, bool Lifted) _placed;
     // The badge views in each corner (top left, top right, bottom left, bottom right), ahead of its fixed children: a
@@ -224,6 +226,46 @@ public sealed partial class MediaCardView : UserControl
         {
             ShowActions(card, state, hasProgress);
         }
+        ShowRequest(card);
+    }
+
+    // A TMDB title's Request: under the pointer while the viewer may request it, and in view, saying Sending, while its
+    // request is on its way. Made only for a card hovered while it can be requested, or one whose request is on its way.
+    private void ShowRequest(MediaCard? card)
+    {
+        bool requesting = card is not null && _actions.IsRequesting(card);
+        if (RequestButton is null)
+        {
+            if (!requesting)
+            {
+                return;
+            }
+            FindName(nameof(RequestButton));
+        }
+        bool offered = card is not null && (requesting || _actions.CanRequest(card));
+        RequestButton!.Visibility = Visible(offered);
+        if (!offered)
+        {
+            return;
+        }
+        RequestButton.IsEnabled = !requesting;
+        RequestLabel.Text = _actions.RequestActionText(card!);
+        AutomationProperties.SetName(RequestButton, _actions.RequestActionName(card!));
+        RequestPlus.Visibility = Visible(!requesting);
+        RequestSpinner.Visibility = Visible(requesting);
+        RequestSpinner.IsActive = requesting;
+        ShowRequestPresence();
+    }
+
+    private void ShowRequestPresence()
+    {
+        if (RequestButton is null)
+        {
+            return;
+        }
+        bool requesting = Card is { } card && _actions.IsRequesting(card);
+        RequestButton.Opacity = _hovered || requesting ? 1 : 0;
+        RequestButton.IsHitTestVisible = _hovered && !requesting;
     }
 
     // Makes the play disc, the card's buttons and its menu, for the pointer, the keyboard or the context menu. A row of
@@ -235,6 +277,10 @@ public sealed partial class MediaCardView : UserControl
         {
             FindName(nameof(HoverLayer));
             SizeActions(Art.ActualWidth > 0 ? Art.ActualWidth : ActualWidth);
+        }
+        if (RequestButton is null && Card is { } card && _actions.CanRequest(card))
+        {
+            FindName(nameof(RequestButton));
         }
     }
 
@@ -590,6 +636,7 @@ public sealed partial class MediaCardView : UserControl
     // The buttons take the foot, where the rating was.
     private void SetHovered(bool hovered)
     {
+        _hovered = hovered;
         ArtImage.Scale = hovered ? new Vector3(HoverScale, HoverScale, 1) : Vector3.One;
         BottomBadges.Opacity = hovered ? 0 : 1;
         if (HoverLayer is not null)
@@ -597,6 +644,7 @@ public sealed partial class MediaCardView : UserControl
             HoverLayer.Opacity = hovered ? 1 : 0;
             HoverLayer.IsHitTestVisible = hovered;
         }
+        ShowRequestPresence();
     }
 
     // The buttons are brought up to date first: whether the server keeps TMDB titles on the watchlist may have been read
@@ -732,6 +780,15 @@ public sealed partial class MediaCardView : UserControl
         if (Card is { } card)
         {
             await _actions.ToggleTitleWatchlistAsync(card);
+        }
+    }
+
+    // RequestAsync catches every failure itself, so nothing escapes this async void.
+    private async void OnRequestClick(object sender, RoutedEventArgs e)
+    {
+        if (Card is { } card)
+        {
+            await _actions.RequestAsync(card);
         }
     }
 

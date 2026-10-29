@@ -68,6 +68,12 @@ public sealed record MediaCard(string Id, string Type, string Title)
     /// <summary>What Play starts for this card (the next episode of a series), when the server says.</summary>
     public string? PlayContentId { get; init; }
 
+    /// <summary>
+    /// A title from TMDB the viewer may request: what the card's Request sends, as the web's <c>requestInputFromMediaResult</c>.
+    /// Null for one that cannot be requested and for library titles.
+    /// </summary>
+    public Api.Requests.MediaRequestCreate? RequestOffer { get; init; }
+
     /// <summary>The name screen readers announce for the whole card.</summary>
     public string AccessibleName => string.Join(", ", new[] { Title, EpisodeTitle, Subtitle }.Where(text => !string.IsNullOrEmpty(text)));
 }

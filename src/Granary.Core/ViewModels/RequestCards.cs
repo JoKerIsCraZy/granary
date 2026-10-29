@@ -12,8 +12,9 @@ internal static class RequestCards
 
     /// <summary>
     /// The card: "2024" or "2024 SERIES" under the title, and its request state, Available for a title in the library, or
-    /// why it cannot be requested. Its id is "tmdb:movie:603", apart from every library id; its one action is the
-    /// watchlist (<see cref="MediaCardActions.ToggleTitleWatchlistAsync"/>).
+    /// why it cannot be requested. Its id is "tmdb:movie:603", apart from every library id; its actions are the watchlist
+    /// (<see cref="MediaCardActions.ToggleTitleWatchlistAsync"/>) and, while the viewer may request it, Request
+    /// (<see cref="MediaCardActions.RequestAsync"/>).
     /// </summary>
     public static MediaCard Of(RequestMediaResult result)
     {
@@ -25,8 +26,28 @@ internal static class RequestCards
             ImageUrl = TmdbImages.Poster(result.PosterPath),
             StatusBadge = Badge(result.Request, result.Availability),
             InWatchlist = result.InWatchlist,
+            RequestOffer = OfferOf(result),
         };
     }
+
+    /// <summary>"PENDING", "APPROVED", … for a request just made; null when the server named no state.</summary>
+    public static string? Badge(MediaRequest request) =>
+        RequestText.DisplayState(request.Status, request.Outcome, request.State) is { } state ? RequestText.StateLabel(state).ToUpperInvariant() : null;
+
+    // The web's requestInputFromMediaResult: the title as TMDB gave it, a series without seasons (so all of it).
+    private static MediaRequestCreate? OfferOf(RequestMediaResult result) =>
+        result.Request.Requestable && result.TmdbId > 0 && result.MediaType is "movie" or "series"
+            ? new MediaRequestCreate
+            {
+                MediaType = result.MediaType,
+                TmdbId = result.TmdbId,
+                Title = result.Title,
+                Year = result.Year is > 0 ? result.Year : null,
+                Overview = string.IsNullOrWhiteSpace(result.Overview) ? null : result.Overview,
+                PosterPath = string.IsNullOrWhiteSpace(result.PosterPath) ? null : result.PosterPath,
+                BackdropPath = string.IsNullOrWhiteSpace(result.BackdropPath) ? null : result.BackdropPath,
+            }
+            : null;
 
     /// <summary>"APPROVED", "AVAILABLE" for a title in the library, or why it cannot be requested; null for none.</summary>
     public static string? Badge(RequestMediaState request, string? availability)

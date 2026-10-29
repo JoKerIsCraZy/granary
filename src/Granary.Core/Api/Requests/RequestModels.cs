@@ -187,7 +187,13 @@ public sealed record RequestMediaResult
 
     public int? Year { get; init; }
 
+    /// <summary>TMDB's overview, sent along when the title is requested from its card.</summary>
+    public string? Overview { get; init; }
+
     public string? PosterPath { get; init; }
+
+    /// <summary>A TMDB image path, sent along when the title is requested from its card.</summary>
+    public string? BackdropPath { get; init; }
 
     /// <summary><c>available</c> when the library has it; see <see cref="LibraryContentId"/>.</summary>
     public string Availability { get; init => field = value ?? ""; } = "";
