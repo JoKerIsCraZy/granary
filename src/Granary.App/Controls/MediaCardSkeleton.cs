@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml.Automation.Peers;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Hosting;
 using Microsoft.UI.Xaml.Media;
+using Windows.Foundation;
 
 namespace Granary.App.Controls;
 
@@ -34,12 +35,20 @@ public sealed partial class MediaCardSkeleton : Grid
         Children.Add(_art);
         Children.Add(_title);
         AutomationProperties.SetAccessibilityView(this, AccessibilityView.Raw);
-        SizeChanged += (_, e) =>
-        {
-            _art.Height = e.NewSize.Width * 3 / 2;
-            _title.Width = e.NewSize.Width * 3 / 4;
-        };
         Loaded += (_, _) => Pulse();
+    }
+
+    // Sized by the width it is measured at, as MediaCardView: sized from SizeChanged, a skeleton the repeater parked at 0×0
+    // or laid out at another width changed its height after every arrange, and a page of them never settled (a layout
+    // cycle while paging a wide grid).
+    protected override Size MeasureOverride(Size availableSize)
+    {
+        if (double.IsFinite(availableSize.Width) && availableSize.Width > 0)
+        {
+            _art.Height = availableSize.Width * 3 / 2;
+            _title.Width = availableSize.Width * 3 / 4;
+        }
+        return base.MeasureOverride(availableSize);
     }
 
     /// <summary>The title bar shows: off while the profile has nothing written under posters, as the web's skeleton.</summary>
