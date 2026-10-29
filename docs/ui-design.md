@@ -252,7 +252,11 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   the web shows a toast, and the lists are read again, dimmed until they come.
 - Requests (`RequestsPage`, the web's `pages/Requests.tsx`): the title and what the page is for, Discover and "Yours 2"
   as line tabs (the picked one white with a white bar under it). Discover: rows of TMDB posters with their state
-  (AVAILABLE, APPROVED, …, or why they cannot be requested); a title in the library opens there. Yours, up to the web's
+  (AVAILABLE, APPROVED, …, or why they cannot be requested); a title in the library opens there. Above Discover, the
+  same hero as Home's (`BrowseHero`): the first card of the first row until a card is pointed at. TMDB gives these titles
+  no logo, so the name shows in large type; the line under it is the year, "Movie" or "Series", and where a request
+  stands in the card badge's words ("2026 · Movie · Available"); the backdrop is TMDB's. The title and the tabs scroll
+  up under its compact header with the rows; Yours shows no hero. Yours, up to the web's
   1024 px: "What the statuses mean", then Needs attention, On the way, In your library, Cancelled with their counts,
   each request a row with its poster, title and state badge (the web's variants: Available red, Failed destructive,
   approved and on their way filled, Pending outlined, closed ones outlined and muted), "Series · 2022 · Seasons 1–3",

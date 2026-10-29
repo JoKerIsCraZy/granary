@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     The Requests hub, as Silo's web shows it: the title, Discover and Yours as line tabs, then either rows of titles from
-    TMDB or the account's requests grouped by what happens next. The page is cached: Back keeps the tab and its place.
+    TMDB or the account's requests grouped by what happens next. On Discover, as on Home, a hero for the card the pointer
+    or the keyboard is on (BrowseHero) sits above it all; the title and the tabs scroll up under its compact header with
+    the rows. The page is cached: Back keeps the tab and its place.
 -->
 <Page
     x:Class="Granary.App.Views.RequestsPage"
@@ -12,8 +14,14 @@
     xmlns:vm="using:Granary.Core.ViewModels"
     NavigationCacheMode="Enabled">
 
-    <ScrollViewer x:Name="Scroller" XYFocusKeyboardNavigation="Enabled">
-        <StackPanel Padding="48,32,48,48" Spacing="24">
+    <Grid>
+    <!-- Behind the rows: they scroll under the compact header and are cut off at its edge. Discover only. -->
+    <controls:BrowseHero x:Name="Hero" HeadingLevel="Level2"
+                         Title="{x:Bind views:RequestsPage.DiscoverHero(ViewModel.Hero.Shown, ViewModel.IsDiscoverTab), Mode=OneWay}" />
+
+    <ScrollViewer x:Name="Scroller" XYFocusKeyboardNavigation="Enabled"
+                  Margin="{x:Bind views:RequestsPage.RowsViewMargin(ViewModel.Hero.Shown, ViewModel.IsDiscoverTab), Mode=OneWay}">
+        <StackPanel Padding="{x:Bind views:RequestsPage.RowsPadding(ViewModel.Hero.Shown, ViewModel.IsDiscoverTab), Mode=OneWay}" Spacing="24">
             <StackPanel Spacing="6">
                 <TextBlock Text="Requests" Style="{StaticResource SiloDisplayTextStyle}" AutomationProperties.HeadingLevel="Level1" />
                 <TextBlock Text="Ask for movies and series that aren’t in the library yet, and follow your requests." Style="{StaticResource SiloBodyTextStyle}"
@@ -61,7 +69,7 @@
                     <ItemsRepeater.ItemTemplate>
                         <DataTemplate x:DataType="vm:RequestDiscoverRow">
                             <controls:MediaRow Title="{x:Bind Title}" ItemsSource="{x:Bind Cards}" CardInvokedCommand="{x:Bind OpenCommand}"
-                                               ExploreAllCommand="{x:Bind ExploreAllCommand}" />
+                                               CardPointedCommand="{x:Bind PointCardCommand}" ExploreAllCommand="{x:Bind ExploreAllCommand}" />
                         </DataTemplate>
                     </ItemsRepeater.ItemTemplate>
                 </ItemsRepeater>
@@ -214,4 +222,5 @@
             </Grid>
         </StackPanel>
     </ScrollViewer>
+    </Grid>
 </Page>

@@ -951,10 +951,11 @@ tracks ([8.8.1](#881-initial-track-selection-before-start)) → `POST /api/v2/pl
 - `POST /api/v2/requests/{id}/cancel` with `{ "reason"? }` → the request; the owner can withdraw it while `outcome` is
   `active` and `status` is `pending`, or `approved` with no `targets` yet.
 - `GET /api/v2/requests/discover` → `{ "items": [{ "key", "title", "page", "total_pages", "results": RequestMediaResult[] }] }`.
-  `RequestMediaResult`: `tmdb_id`, `media_type`, `title`, `year`, `overview`, `poster_path`, `backdrop_path`,
-  `availability` (`available` when the library has it), `library_content_id`, `in_watchlist`, `request` (`requestable`,
-  `reason`, `status`, `state`, `following`, `requested_by_viewer`). A card's Request sends the result as it is, the
-  web's `requestInputFromMediaResult` (`POST /api/v2/requests` below, without `seasons`).
+  `RequestMediaResult`: `tmdb_id`, `media_type`, `title`, `year`, `overview`, `poster_path`, `backdrop_path` (the
+  Discover hero's picture, from TMDB at `w1280`), `availability` (`available` when the library has it),
+  `library_content_id`, `in_watchlist`, `request` (`requestable`, `reason`, `status`, `state`, `following`,
+  `requested_by_viewer`). It has no logo (the server's `logo_url` is a studio's or network's). A card's Request sends the
+  result as it is, the web's `requestInputFromMediaResult` (`POST /api/v2/requests` below, without `seasons`).
 - A title's page: `GET /api/v2/requests/detail/{media_type}/{tmdb_id}` → `RequestMediaDetail` (the result's members
   plus `tagline`, `overview`, `backdrop_path`, `content_rating`, `runtime`, `number_of_seasons`, `number_of_episodes`,
   `status`, `first_air_date`, `last_air_date`, `vote_average`, `vote_count`, `imdb_id`, `director`, `creators`, `genres`,

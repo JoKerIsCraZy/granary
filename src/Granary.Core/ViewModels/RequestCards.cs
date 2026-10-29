@@ -50,15 +50,17 @@ internal static class RequestCards
             : null;
 
     /// <summary>"APPROVED", "AVAILABLE" for a title in the library, or why it cannot be requested; null for none.</summary>
-    public static string? Badge(RequestMediaState request, string? availability)
+    public static string? Badge(RequestMediaState request, string? availability) => StateText(request, availability)?.ToUpperInvariant();
+
+    /// <summary>The badge's words as written: "Approved", "Available" for a title in the library, or why it cannot be requested.</summary>
+    public static string? StateText(RequestMediaState request, string? availability)
     {
         string? state = request.Status is { Length: > 0 }
             ? RequestText.DisplayState(request.Status, null, request.State)
             : availability == "available" ? RequestStates.Available : null;
-        string? badge = state is not null ? RequestText.StateLabel(state)
+        return state is not null ? RequestText.StateLabel(state)
             : !request.Requestable ? RequestText.ReasonLabel(request.Reason)
             : null;
-        return badge?.ToUpperInvariant();
     }
 
     /// <summary>
