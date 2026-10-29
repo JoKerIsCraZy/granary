@@ -49,15 +49,20 @@ public sealed partial class RequestTitlesViewModel : ObservableObject
     private bool _notFound;
     private bool _choosing;
 
-    public RequestTitlesViewModel(ISessionManager session, RequestsApi requests, INavigationService navigation, ILogger<RequestTitlesViewModel> logger)
+    public RequestTitlesViewModel(ISessionManager session, RequestsApi requests, INavigationService navigation, ILogger<RequestTitlesViewModel> logger,
+        CardRequestNotice? requestNotice = null)
     {
         _session = session;
         _requests = requests;
         _navigation = navigation;
         _logger = logger;
+        RequestNotice = requestNotice ?? CardRequestNotice.None;
     }
 
     public ObservableCollection<MediaCard> Cards { get; } = [];
+
+    /// <summary>A card's Request that failed, in the web's toast words.</summary>
+    public CardRequestNotice RequestNotice { get; }
 
     [ObservableProperty]
     public partial string Title { get; private set; } = "";
@@ -149,6 +154,7 @@ public sealed partial class RequestTitlesViewModel : ObservableObject
         {
             return Task.CompletedTask;
         }
+        RequestNotice.Attach();
         bool current = route == _route && _loadedFor == Key() && State is LibraryLoadState.Ready or LibraryLoadState.Empty or LibraryLoadState.Loading;
         if (isReturn && current)
         {
@@ -168,6 +174,9 @@ public sealed partial class RequestTitlesViewModel : ObservableObject
         }
         return LoadAsync(fresh: true);
     }
+
+    /// <summary>The page goes: its cards' requests are no longer its to tell.</summary>
+    public void Deactivate() => RequestNotice.Detach();
 
     [RelayCommand]
     private Task RetryAsync() => LoadAsync(fresh: false);
@@ -215,6 +224,7 @@ public sealed partial class RequestTitlesViewModel : ObservableObject
         var token = _run.Token;
         Cards.Clear();
         _destinations.Clear();
+        RequestNotice.Clear();
         _nextPage = null;
         _sawCursor = false;
         CanLoadMore = IsLoadingMore = HasMoreError = false;

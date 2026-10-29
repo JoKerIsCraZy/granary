@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using Granary.Core.Abstractions;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Requests;
@@ -64,7 +64,7 @@ public sealed class RequestsCardRequestTests
         _actions = new MediaCardActions(new CatalogApi(_harness.Silo.Http), _harness.Session, _harness.Navigation, _harness.Logs.For<MediaCardActions>(),
             new ViewerStateChanges(new PlaybackStops()), requests, feature);
         var hub = new RequestsViewModel(_harness.Session, requests, _harness.Navigation, _harness.Clock, new ImmediateDispatcher(),
-            _harness.Logs.For<RequestsViewModel>(), _actions);
+            _harness.Logs.For<RequestsViewModel>(), _actions, new CardRequestNotice(_actions, _harness.Session, _harness.Clock, new ImmediateDispatcher()));
         await hub.ActivateAsync(isReturn: false);
         return hub;
     }
@@ -82,7 +82,7 @@ public sealed class RequestsCardRequestTests
         Assert.True(await _actions!.RequestAsync(Card(hub)));
         await WaitUntilAsync(() => hub.YoursCount == "1");
 
-        Assert.Equal("", hub.DiscoverNotice);
+        Assert.Equal("", hub.RequestNotice.Text);
     }
 
     [Fact]
@@ -93,8 +93,8 @@ public sealed class RequestsCardRequestTests
 
         Assert.False(await _actions!.RequestAsync(Card(hub)));
 
-        Assert.Equal("Failed to submit request", hub.DiscoverNotice);
-        Assert.True(hub.HasDiscoverNotice);
+        Assert.Equal("Failed to submit request", hub.RequestNotice.Text);
+        Assert.True(hub.RequestNotice.HasText);
     }
 
     [Fact]
@@ -107,7 +107,7 @@ public sealed class RequestsCardRequestTests
 
         Assert.True(await _actions.RequestAsync(Card(hub)));
 
-        Assert.False(hub.HasDiscoverNotice);
+        Assert.False(hub.RequestNotice.HasText);
     }
 
     [Fact]
@@ -119,7 +119,7 @@ public sealed class RequestsCardRequestTests
 
         await _actions!.RequestAsync(Card(hub));
 
-        Assert.False(hub.HasDiscoverNotice);
+        Assert.False(hub.RequestNotice.HasText);
     }
 
     private static async Task WaitUntilAsync(Func<bool> condition)

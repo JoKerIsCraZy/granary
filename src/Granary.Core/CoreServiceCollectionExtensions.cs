@@ -133,6 +133,8 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<AppUpdatesViewModel>();
         services.AddTransient<SignInViewModel>();
         services.AddSingleton<MediaCardActions>();
+        // One per page that shows TMDB cards: each says its own cards' failed requests.
+        services.AddTransient<CardRequestNotice>();
         services.AddTransient<HomeViewModel>();
         services.AddTransient<SectionViewModel>();
         services.AddTransient<SearchViewModel>();

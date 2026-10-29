@@ -35,14 +35,18 @@ public sealed partial class RequestToAddViewModel : ObservableObject
     private string _mediaType = "all";
 
     public RequestToAddViewModel(ISessionManager session, RequestsApi requests, RequestsFeature feature, INavigationService navigation,
-        ILogger<RequestToAddViewModel> logger)
+        ILogger<RequestToAddViewModel> logger, CardRequestNotice? requestNotice = null)
     {
         _session = session;
         _requests = requests;
         _feature = feature;
         _navigation = navigation;
         _logger = logger;
+        RequestNotice = requestNotice ?? CardRequestNotice.None;
     }
+
+    /// <summary>A card's Request that failed, in the web's toast words; Search attaches it while it shows.</summary>
+    public CardRequestNotice RequestNotice { get; }
 
     /// <summary>The text searched, trimmed.</summary>
     [ObservableProperty]
@@ -130,6 +134,7 @@ public sealed partial class RequestToAddViewModel : ObservableObject
     {
         _run?.Cancel();
         _run = null;
+        RequestNotice.Clear();
         Query = "";
         LibraryFoundNothing = false;
         IsSearching = false;
