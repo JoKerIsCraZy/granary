@@ -344,8 +344,9 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     its badge words it), never a file's name or path. The web's chips, ratings, credits and version lines are there
     instead of in the hero. Its list is one keyboard stop that arrows and Page Down scroll; only the overview can be
     selected.
-  - Granary's rows follow, 56 apart: a series' seasons in its sideways row (a season opens its own page) or a season's
-    episode grid, more episodes, trailers, cast and crew, more like this.
+  - Granary's rows follow, 56 apart: a series' seasons, all at once in a grid that wraps at the page's width (185 px
+    posters, a season opens its own page), or a season's episode grid, more episodes, trailers, cast and crew, more like
+    this.
   - Below a 1400 px window everything steps down (hero 96 from the top and 14 apart, logo 136, meta 16, overview 15/23,
     buttons 48, rows 44 apart), so a 1280×800 window keeps it whole. The step sets sizes, not styles, so a focused
     button keeps its focus when the window crosses it.
