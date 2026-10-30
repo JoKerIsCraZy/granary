@@ -70,16 +70,48 @@ public sealed class JsonUpdatePreferencesTests : IDisposable
     }
 
     [Theory]
-    [InlineData("")]
-    [InlineData("null")]
-    [InlineData("{}")]
-    [InlineData("""{ "automatic": null }""")]
-    [InlineData("""{ "automatic": "no" }""")]
-    [InlineData("{ not json")]
-    public void AFileWithoutAChoice_LeavesUpdatesAutomatic(string json)
+    [InlineData("""{ "automatic": true }""", true)]
+    [InlineData("""{ "automatic": false }""", false)]
+    [InlineData("""{ "automatic": false, "later": 1 }""", false)]
+    public void AFileWithAChoice_IsReadBack(string json, bool automatic)
     {
         Directory.CreateDirectory(_directory);
         File.WriteAllText(FilePath, json);
+
+        Assert.Equal(automatic, Create().IsAutomatic);
+        Assert.Empty(_logs.Lines);
+    }
+
+    // The user may have turned them off before the file broke (a crash, a full disk): nothing installs without asking.
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("{ not json")]
+    [InlineData("{ \"automatic\": fal")]
+    [InlineData("\0\0\0\0")]
+    [InlineData("null")]
+    [InlineData("[false]")]
+    [InlineData("{}")]
+    [InlineData("""{ "automatic": null }""")]
+    [InlineData("""{ "automatic": "no" }""")]
+    [InlineData("""{ "automatic": 0 }""")]
+    public void AFileThatCannotBeRead_TurnsThemOff_AndSaysSo(string json)
+    {
+        Directory.CreateDirectory(_directory);
+        File.WriteAllText(FilePath, json);
+
+        Assert.False(Create().IsAutomatic);
+        Assert.Contains("off until they are switched on", _logs.All, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AFileThatCannotBeRead_IsWrittenAgainWhenTheSwitchIsUsed()
+    {
+        Directory.CreateDirectory(_directory);
+        File.WriteAllText(FilePath, "{ not json");
+        var preferences = Create();
+
+        await preferences.SetAutomaticAsync(true);
 
         Assert.True(Create().IsAutomatic);
     }
