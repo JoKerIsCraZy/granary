@@ -220,6 +220,14 @@ packages, which have no lock files yet.
 - **Dependabot** (`.github/dependabot.yml`) proposes new versions of the pinned actions and the NuGet packages. Review
   an action's update like code. A Velopack update comes on its own: check `VelopackUpdater`'s assumptions against it
   (apply-on-start, deltas, when Update.exe is taken out of the package), and pin a new vpk (see "Packing tools").
+- **Checks on every change:**
+  - `codeql.yml` scans the C# code and the workflows (Security → Code scanning).
+  - `dependency-review.yml` fails a pull request that brings a package with a known vulnerability.
+  - `workflow-checks.yml` runs actionlint and zizmor whenever a workflow changes.
+  - On GitHub's free plan, code scanning and dependency review need a public repository, so those two skip themselves
+    while it is private.
+  - With the repository public, also turn on Secret scanning with Push protection and Dependabot alerts under
+    Settings → Advanced Security.
 - Security reports: turn on **Private vulnerability reporting** under the repository's Settings → Code security, since
   `SECURITY.md` sends every report there and names no other channel.
 - libmpv: `native.lock.json` already points at this repository's mirror release
