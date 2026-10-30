@@ -332,32 +332,45 @@ breaks YouTube's terms.
 - **Runtime.** The WebView2 runtime is the system's: the Evergreen runtime that ships with Windows, not a fixed version
   bundled with Granary. Only the SDK's loader and projection come with the Windows App SDK (THIRD_PARTY_NOTICES.md).
   Without the runtime, a trailer offers "Open on YouTube".
-- **Data folder.** `WebView2` under the data directory (`AppPaths.WebView2Directory`), so it follows `GRANARY_DATA_DIR`;
-  one environment for the process, with `--autoplay-policy=no-user-gesture-required`, since the click that opened the
-  trailer was in Granary, not in the page. Each trailer's browser runs InPrivate: YouTube's cookies and storage last only
-  as long as the trailer and never reach the disk.
+- **Data folder.** `WebView2` under the data directory (`AppPaths.WebView2Directory`), so it follows `GRANARY_DATA_DIR`.
+  The runtime keeps its own files there (`EBWebView`). Each trailer's browser runs InPrivate, so YouTube's cookies, storage
+  and cache last only as long as the trailer and are not kept in that folder. An environment is made for each trailer
+  and let go with it, with `--autoplay-policy=no-user-gesture-required`, since the click that opened the trailer was in
+  Granary, not in the page. Once a trailer closes, none of its `msedgewebview2` processes is left (checked in the running
+  app).
 - **The page.** The WebView never goes to the embed itself: without a Referer YouTube refuses it (error 153). It goes to
   `https://trailer.granary.example/player`, which Granary answers through `WebResourceRequested` (anything else on that
   host is a 404; `.example` never resolves). `TrailerPage` builds it from the validated key alone: the
   `youtube-nocookie.com` embed in an iframe with `referrerpolicy="strict-origin-when-cross-origin"`, and a script that
   speaks the IFrame Player API's postMessage channel itself, so no script of YouTube's runs in the one document that can
   message Granary. Its policy runs only that script and style (by hash) and frames only YouTube's two embed hosts; the
-  page is not cached. No token, server address or title metadata goes into it.
+  page is not cached. No token, server address or title metadata goes into it. Its script and style have LF line ends
+  only, whatever the checkout's: the browser hashes them that way, and a hash over CR LF would block the page.
 - **Navigation.** `TrailerWebPolicy` decides, as pure functions: the WebView goes only to that page (`NavigationStarting`);
-  a frame loads only `https://www.youtube-nocookie.com/embed/<key>` or `https://www.youtube.com/embed/<key>`
-  (`FrameNavigationStarting`); everything else is cancelled. Addresses are taken only as https on the default port,
-  without userinfo, with the host compared whole, and refused outright with a backslash, a space, a control or
-  non-ASCII character.
-- **New windows.** Never a WebView window: a link the player opens (its YouTube logo, the title) goes to the browser when
-  it is https on `youtube.com`, `www.youtube.com`, `m.youtube.com` or `youtu.be`, and is dropped otherwise.
+  the page's iframe loads only `https://www.youtube-nocookie.com/embed/<key>` or `https://www.youtube.com/embed/<key>`
+  (the frame's own `NavigationStarting`, from `FrameCreated`); everything else is cancelled. Frames inside YouTube's player
+  (its own, an ad's) are YouTube's and load as in any browser: they cannot navigate the page, open a window or reach
+  Granary. Their hosts are logged at Debug. Addresses are taken only as https on the default port, without userinfo, with
+  the host compared whole, and refused outright with a backslash, a space, a control or non-ASCII character.
+- **New windows.** Never a WebView window: a link the viewer clicks in the player (its YouTube logo, the title) goes to the
+  browser when it is https on `youtube.com`, `www.youtube.com`, `m.youtube.com` or `youtu.be`, and anything else, or
+  anything the viewer did not click, is dropped.
 - **Settings.** Developer tools, the default context menus and script dialogs, the status bar, zoom, browser accelerator
   keys, swipe navigation, general autofill, password saving and host objects are off. Permissions are refused, all but
   autoplay; downloads, external URI schemes and basic authentication are cancelled.
-- **Messages.** Only from the page's own origin, in a fixed schema (`TrailerPageMessage`: ready, playing, or an error
-  code; 128 characters at most, no other member); anything else is ignored.
+- **Messages.** In a fixed schema (`TrailerPageMessage`: ready, playing, an error code, or close; 128 characters at most,
+  no other member). From the page's own origin all of them; from the page's iframe, only while it is YouTube's embed,
+  close alone (`TrailerWebPolicy.FromPage`, `FromEmbed`). Anything else is ignored.
+- **Keys.** Once the viewer clicks into the video, the keyboard belongs to the browser, and Granary's Esc and Back never see
+  it. So `TrailerPage.CloseKeysScript` is added to every document of the WebView
+  (`AddScriptToExecuteOnDocumentCreatedAsync`). Esc, the Back key, Alt+Left and the mouse's back button post
+  `{"kind":"close"}`; in full screen Esc only leaves full screen. Checked with synthetic events in the page and in
+  YouTube's frame; a frame can do no more with it than close the trailer.
 - **States.** `TrailerOverlayViewModel`: Loading, Playing (the player answered), Unavailable with its reason (the player's
-  errors 2, 5, 100, 101, 150, 153 and any other, no answer within 15 s through `TimeProvider`, no runtime, a failed
-  WebView2 process), Closed. Closing closes the WebView2, which stops the video and ends its processes.
+  errors 2, 5, 100, 101, 150, 153 and any other; no answer within 15 s of the page opening, or no page within 30 s of the
+  start, both through `TimeProvider`; no runtime; the browser's, the page's or a frame's process gone), Closed. Closing
+  closes the WebView2 once the WebView's own event that closed it has returned; that stops the video and ends its
+  processes.
 - **Full screen.** When the page asks for it (`ContainsFullScreenElementChanged`), the window goes full screen through its
   AppWindow presenter, as the player does (`WindowedPlacement`), and the app under the trailer is hidden meanwhile.
 - **Logs.** The outcome only ("The trailer plays", "can't play in Granary: EmbedRefused"); a blocked navigation is logged

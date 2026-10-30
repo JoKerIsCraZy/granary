@@ -32,6 +32,16 @@ public static partial class TrailerWebPolicy
     /// <summary>A web message comes from Granary's own page: any other sender is not listened to.</summary>
     public static bool IsOwnOrigin(string? source) => Parse(source) is { } uri && IsHost(uri, TrailerPage.Host);
 
+    /// <summary>What Granary's page says (<see cref="TrailerPageMessage"/>); null from any other sender or for anything else.</summary>
+    public static TrailerPageMessage? FromPage(string? source, string? json) => IsOwnOrigin(source) ? TrailerPageMessage.Parse(json) : null;
+
+    /// <summary>
+    /// What YouTube's player frame may say: only that Esc or Back was pressed in it (<see cref="TrailerPage.CloseKeysScript"/>).
+    /// Its state and errors come through Granary's page; other frames are not listened to.
+    /// </summary>
+    public static TrailerPageMessage? FromEmbed(string? source, string? json) =>
+        AllowsFrame(source) && TrailerPageMessage.Parse(json) is { Event: TrailerPageEvent.Close } close ? close : null;
+
     /// <summary>
     /// What a link the player opens in a new window (its YouTube logo, the video's title) opens in the browser: YouTube's
     /// own pages; null for anything else, which is dropped. A new window never opens in Granary.

@@ -13,11 +13,14 @@ public enum TrailerPageEvent
 
     /// <summary>The player's <c>onError</c>, with its code.</summary>
     Error,
+
+    /// <summary>Esc or Back in the page or the player (<see cref="TrailerPage.CloseKeysScript"/>).</summary>
+    Close,
 }
 
 /// <summary>
 /// A message from the trailer page (<see cref="TrailerPage"/>), in its fixed schema: <c>{"kind":"ready"}</c>,
-/// <c>{"kind":"playing"}</c> or <c>{"kind":"error","code":150}</c>. Anything else, malformed, longer than
+/// <c>{"kind":"playing"}</c>, <c>{"kind":"error","code":150}</c> or <c>{"kind":"close"}</c>. Anything else, malformed, longer than
 /// <see cref="MaximumLength"/>, with another member or a member twice, is not a message.
 /// </summary>
 public sealed record TrailerPageMessage(TrailerPageEvent Event, int ErrorCode)
@@ -74,6 +77,7 @@ public sealed record TrailerPageMessage(TrailerPageEvent Event, int ErrorCode)
         {
             ("ready", null) => new TrailerPageMessage(TrailerPageEvent.Ready, 0),
             ("playing", null) => new TrailerPageMessage(TrailerPageEvent.Playing, 0),
+            ("close", null) => new TrailerPageMessage(TrailerPageEvent.Close, 0),
             ("error", { } error) => new TrailerPageMessage(TrailerPageEvent.Error, error),
             _ => null,
         };

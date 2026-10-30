@@ -12,6 +12,7 @@ public sealed class TrailerOverlayViewModelTests
 
     private static readonly TrailerPageMessage Ready = new(TrailerPageEvent.Ready, 0);
     private static readonly TrailerPageMessage Playing = new(TrailerPageEvent.Playing, 0);
+    private static readonly TrailerPageMessage CloseKey = new(TrailerPageEvent.Close, 0);
 
     private readonly ManualTimeProvider _time = new();
     private readonly LogSink _logs = new();
@@ -120,6 +121,7 @@ public sealed class TrailerOverlayViewModelTests
     {
         var overlay = Create();
         overlay.Open(Official);
+        overlay.PageOpening();
 
         _time.Advance(TrailerOverlayViewModel.LoadTimeout - TimeSpan.FromMilliseconds(1));
         Assert.Equal(TrailerOverlayState.Loading, overlay.State);
@@ -128,6 +130,50 @@ public sealed class TrailerOverlayViewModelTests
 
         Assert.Equal(TrailerOverlayState.Unavailable, overlay.State);
         Assert.Equal(TrailerFailure.TimedOut, overlay.Failure);
+    }
+
+    [Fact]
+    public void TheBrowsersStart_HasABudgetOfItsOwn()
+    {
+        // A cold WebView2 start is not YouTube's to answer for.
+        var overlay = Create();
+        overlay.Open(Official);
+
+        _time.Advance(TrailerOverlayViewModel.LoadTimeout + TimeSpan.FromSeconds(1));
+        Assert.Equal(TrailerOverlayState.Loading, overlay.State);
+
+        _time.Advance(TrailerOverlayViewModel.StartupTimeout - TrailerOverlayViewModel.LoadTimeout);
+
+        Assert.Equal(TrailerOverlayState.Unavailable, overlay.State);
+        Assert.Equal(TrailerFailure.TimedOut, overlay.Failure);
+    }
+
+    [Fact]
+    public void YouTubesClock_StartsWithThePage()
+    {
+        var overlay = Create();
+        overlay.Open(Official);
+        _time.Advance(TimeSpan.FromSeconds(20));
+
+        overlay.PageOpening();
+        _time.Advance(TrailerOverlayViewModel.LoadTimeout - TimeSpan.FromMilliseconds(1));
+        Assert.Equal(TrailerOverlayState.Loading, overlay.State);
+
+        _time.Advance(TimeSpan.FromMilliseconds(1));
+        Assert.Equal(TrailerFailure.TimedOut, overlay.Failure);
+    }
+
+    [Fact]
+    public void ThePageOpeningOnceItPlays_StartsNoClock()
+    {
+        var overlay = Create();
+        overlay.Open(Official);
+        overlay.Receive(Ready);
+
+        overlay.PageOpening();
+
+        Assert.Null(_time.NextDue);
+        Assert.Equal(TrailerOverlayState.Playing, overlay.State);
     }
 
     [Fact]
@@ -175,24 +221,71 @@ public sealed class TrailerOverlayViewModelTests
     }
 
     [Fact]
-    public void Close_EndsIt_AndNothingLaterOpensItAgain()
+    public void Close_EndsIt_AndStopsTheClock()
     {
         var overlay = Create();
         overlay.Open(Official);
 
         overlay.CloseCommand.Execute(null);
-        overlay.Receive(Ready);
-        overlay.Fail(TrailerFailure.BrowserFailed);
-        _time.Advance(TrailerOverlayViewModel.LoadTimeout * 2);
 
         Assert.Equal(TrailerOverlayState.Closed, overlay.State);
         Assert.False(overlay.IsOpen);
         Assert.Null(overlay.Trailer);
-        Assert.Equal(TrailerFailure.None, overlay.Failure);
+        Assert.Null(_time.NextDue);
     }
 
     [Fact]
-    public void AnotherTrailer_StartsOver()
+    public void AfterClose_NeitherTheBrowserNorThePageOpensItAgain()
+    {
+        var overlay = Create();
+        overlay.Open(Official);
+        overlay.Close();
+
+        overlay.Receive(Ready);
+        overlay.Receive(Playing);
+        overlay.Receive(Error(150));
+        overlay.Receive(CloseKey);
+        overlay.Fail(TrailerFailure.BrowserFailed);
+        overlay.PageOpening();
+        _time.Advance(TrailerOverlayViewModel.StartupTimeout * 2);
+
+        Assert.Equal(TrailerOverlayState.Closed, overlay.State);
+        Assert.Equal(TrailerFailure.None, overlay.Failure);
+        Assert.Null(_time.NextDue);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void EscOrBackInThePlayer_ClosesIt(bool started)
+    {
+        var overlay = Create();
+        overlay.Open(Official);
+        if (started)
+        {
+            overlay.Receive(Ready);
+        }
+
+        overlay.Receive(CloseKey);
+
+        Assert.Equal(TrailerOverlayState.Closed, overlay.State);
+    }
+
+    [Fact]
+    public void Dispose_StopsTheClock()
+    {
+        var overlay = Create();
+        overlay.Open(Official);
+
+        overlay.Dispose();
+        _time.Advance(TrailerOverlayViewModel.StartupTimeout * 2);
+
+        Assert.Null(_time.NextDue);
+        Assert.Equal(TrailerOverlayState.Loading, overlay.State);
+    }
+
+    [Fact]
+    public void OpeningAgain_WhileUnavailable_StartsOver()
     {
         var overlay = Create();
         overlay.Open(Official);
@@ -212,6 +305,7 @@ public sealed class TrailerOverlayViewModelTests
         var dispatcher = new QueuedDispatcher();
         var overlay = Create(dispatcher);
         overlay.Open(Official);
+        overlay.PageOpening();
         _time.Advance(TrailerOverlayViewModel.LoadTimeout);
         overlay.Close();
         overlay.Open(Teaser);
@@ -229,6 +323,7 @@ public sealed class TrailerOverlayViewModelTests
         overlay.Receive(Ready);
         overlay.Receive(Error(150));
         overlay.Open(Teaser);
+        overlay.PageOpening();
         _time.Advance(TrailerOverlayViewModel.LoadTimeout);
 
         Assert.Contains(_logs.Lines, line => line.Contains("EmbedRefused", StringComparison.Ordinal));
