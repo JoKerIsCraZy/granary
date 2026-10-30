@@ -29,7 +29,10 @@ public enum TrailerOverlayState
 /// </summary>
 public sealed partial class TrailerOverlayViewModel : ObservableObject, IDisposable
 {
-    /// <summary>How long the player has to answer before the trailer counts as one that can't play here.</summary>
+    /// <summary>How long the browser has to start and go to the trailer's page (<see cref="PageOpening"/>); a cold start of WebView2 can take a while.</summary>
+    public static readonly TimeSpan StartupTimeout = TimeSpan.FromSeconds(30);
+
+    /// <summary>How long YouTube's player has to answer once the page opens, before the trailer counts as one that can't play here.</summary>
     public static readonly TimeSpan LoadTimeout = TimeSpan.FromSeconds(15);
 
     public const string UnavailableText = "This video can't play in Granary.";
@@ -81,19 +84,32 @@ public sealed partial class TrailerOverlayViewModel : ObservableObject, IDisposa
     public void Open(DetailTrailer trailer)
     {
         ArgumentNullException.ThrowIfNull(trailer);
-        StopTimeout();
-        int generation = ++_generation;
+        _generation++;
         Failure = TrailerFailure.None;
         Trailer = trailer;
         State = TrailerOverlayState.Loading;
-        _timeout = _time.CreateTimer(_ => _dispatcher.Post(() => TimeOut(generation)), null, LoadTimeout, Timeout.InfiniteTimeSpan);
+        StartTimeout(StartupTimeout);
         Opened?.Invoke(this, EventArgs.Empty);
     }
 
-    /// <summary>What the page reported of the player: it answered, started, or failed.</summary>
+    /// <summary>The browser is up and goes to the trailer's page: from here YouTube's player has <see cref="LoadTimeout"/> to answer.</summary>
+    public void PageOpening()
+    {
+        if (State == TrailerOverlayState.Loading)
+        {
+            StartTimeout(LoadTimeout);
+        }
+    }
+
+    /// <summary>What the page reported of the player: it answered, started, or failed; or Esc or Back was pressed in it.</summary>
     public void Receive(TrailerPageMessage message)
     {
         ArgumentNullException.ThrowIfNull(message);
+        if (message.Event == TrailerPageEvent.Close)
+        {
+            Close();
+            return;
+        }
         if (message.Event == TrailerPageEvent.Error)
         {
             Fail(PlayerFailure(message.ErrorCode));
@@ -137,7 +153,11 @@ public sealed partial class TrailerOverlayViewModel : ObservableObject, IDisposa
         Failure = TrailerFailure.None;
     }
 
-    public void Dispose() => StopTimeout();
+    public void Dispose()
+    {
+        StopTimeout();
+        _generation++;
+    }
 
     // The IFrame Player API's onError codes.
     private static TrailerFailure PlayerFailure(int code) => code switch
@@ -154,6 +174,13 @@ public sealed partial class TrailerOverlayViewModel : ObservableObject, IDisposa
         {
             Fail(TrailerFailure.TimedOut);
         }
+    }
+
+    private void StartTimeout(TimeSpan budget)
+    {
+        StopTimeout();
+        int generation = _generation;
+        _timeout = _time.CreateTimer(_ => _dispatcher.Post(() => TimeOut(generation)), null, budget, Timeout.InfiniteTimeSpan);
     }
 
     private void StopTimeout()

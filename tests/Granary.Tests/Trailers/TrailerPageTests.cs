@@ -53,11 +53,52 @@ public sealed partial class TrailerPageTests
 
         Assert.Contains("default-src 'none'", policy, StringComparison.Ordinal);
         Assert.Contains("frame-src https://www.youtube-nocookie.com https://www.youtube.com;", policy, StringComparison.Ordinal);
+        Assert.DoesNotContain('\r', policy);
         Assert.Contains("base-uri 'none'", policy, StringComparison.Ordinal);
         Assert.Contains("form-action 'none'", policy, StringComparison.Ordinal);
         Assert.DoesNotContain("unsafe", policy, StringComparison.Ordinal);
         Assert.Contains($"script-src 'sha256-{Hash(Scripts().Match(html).Groups[1].Value)}'", policy, StringComparison.Ordinal);
         Assert.Contains($"style-src 'sha256-{Hash(Styles().Match(html).Groups[1].Value)}'", policy, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ThePage_HasNoCarriageReturns_WhateverTheCheckoutsLineEndings()
+    {
+        // A CRLF checkout puts CR LF into the raw strings; the browser reads the page with LF only and hashes that, so a
+        // hash over CR LF would block the page's own script.
+        Assert.DoesNotContain('\r', TrailerPage.Html(Key));
+        Assert.DoesNotContain('\r', TrailerPage.Script);
+        Assert.DoesNotContain('\r', TrailerPage.Style);
+        Assert.DoesNotContain('\r', TrailerPage.CloseKeysScript);
+    }
+
+    [Fact]
+    public void ThePolicysHash_IsTheHashOfTheScriptAsTheBrowserReadsIt()
+    {
+        string html = TrailerPage.Html(Key);
+        string policy = Header(TrailerPage.Headers, "Content-Security-Policy");
+
+        // HTML's input stream turns CR LF and CR into LF before the script is hashed.
+        string script = Scripts().Match(html).Groups[1].Value.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n');
+        string style = Styles().Match(html).Groups[1].Value.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n');
+
+        Assert.Contains($"script-src 'sha256-{Hash(script)}'", policy, StringComparison.Ordinal);
+        Assert.Contains($"style-src 'sha256-{Hash(style)}'", policy, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TheKeyListener_AsksToCloseOnEscAndBack_ButLeavesFullScreenToEsc()
+    {
+        string listener = TrailerPage.CloseKeysScript;
+
+        Assert.Contains("\"Escape\"", listener, StringComparison.Ordinal);
+        Assert.Contains("\"BrowserBack\"", listener, StringComparison.Ordinal);
+        Assert.Contains("\"ArrowLeft\"", listener, StringComparison.Ordinal);
+        Assert.Contains("event.button === 3", listener, StringComparison.Ordinal);
+        Assert.Contains("document.fullscreenElement", listener, StringComparison.Ordinal);
+        // Its one message, in the page's own schema.
+        Assert.Contains("postMessage({ kind: \"close\" })", listener, StringComparison.Ordinal);
+        Assert.Equal(1, listener.Split("postMessage(").Length - 1);
     }
 
     [Fact]

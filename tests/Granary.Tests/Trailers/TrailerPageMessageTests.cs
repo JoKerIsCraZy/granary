@@ -7,6 +7,7 @@ public sealed class TrailerPageMessageTests
     [Theory]
     [InlineData("{\"kind\":\"ready\"}", TrailerPageEvent.Ready, 0)]
     [InlineData("{\"kind\":\"playing\"}", TrailerPageEvent.Playing, 0)]
+    [InlineData("{\"kind\":\"close\"}", TrailerPageEvent.Close, 0)]
     [InlineData("{\"kind\":\"error\",\"code\":150}", TrailerPageEvent.Error, 150)]
     [InlineData(" { \"code\": 153, \"kind\": \"error\" } ", TrailerPageEvent.Error, 153)]
     public void ThePagesMessages_AreRead(string json, TrailerPageEvent kind, int code) =>
@@ -21,7 +22,9 @@ public sealed class TrailerPageMessageTests
     [InlineData("[]")]
     [InlineData("{}")]
     [InlineData("{\"kind\":\"Ready\"}")]
-    [InlineData("{\"kind\":\"close\"}")]
+    [InlineData("{\"kind\":\"Close\"}")]
+    [InlineData("{\"close\":true}")]
+    [InlineData("{\"kind\":\"close\",\"code\":1}")]
     [InlineData("{\"kind\":\"navigate\",\"url\":\"https://evil.example\"}")]
     [InlineData("{\"kind\":\"ready\",\"extra\":1}")]
     [InlineData("{\"kind\":\"ready\",\"kind\":\"error\"}")]

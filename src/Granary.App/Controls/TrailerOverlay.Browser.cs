@@ -10,17 +10,15 @@ using Windows.System;
 namespace Granary.App.Controls;
 
 // The trailer's WebView2: made for each trailer and closed with it, which stops the video and lets its browser go. It is
-// locked down: it loads only Granary's own page and YouTube's embed (TrailerWebPolicy), opens no window of its own, grants
-// nothing but autoplay, and hears only Granary's page (docs/architecture.md, "Trailers").
+// locked down: it loads only Granary's own page with YouTube's player in it (TrailerWebPolicy), opens no window of its own,
+// grants nothing but autoplay, and hears only that page, and from the player only Esc and Back (docs/architecture.md,
+// "Trailers").
 public sealed partial class TrailerOverlay
 {
     // The player may play at once: the click that opened it was in Granary, not in the page.
     private const string BrowserArguments = "--autoplay-policy=no-user-gesture-required";
 
-    // One environment for the process, with its user data folder under Granary's data directory (GRANARY_DATA_DIR too), run
-    // by Windows' own Evergreen WebView2 runtime. Made again after a failure: a runtime installed meanwhile is found.
-    private static Task<CoreWebView2Environment>? _environment;
-
+    private readonly List<CoreWebView2Frame> _frames = [];
     private WebView2? _web;
     private CoreWebView2? _core;
     private CoreWebView2Environment? _coreEnvironment;
@@ -48,14 +46,25 @@ public sealed partial class TrailerOverlay
             var controller = environment.CreateCoreWebView2ControllerOptions();
             controller.IsInPrivateModeEnabled = true;
             await web.EnsureCoreWebView2Async(environment, controller);
-            // Closed while it started: TearDown has let it go.
-            if (!ReferenceEquals(_web, web) || web.CoreWebView2 is not { } core)
+            if (!ReferenceEquals(_web, web))
+            {
+                // Closed while it started: its browser came up after the control was closed, and goes now.
+                CloseBrowser(web);
+                return;
+            }
+            if (web.CoreWebView2 is not { } core)
             {
                 return;
             }
             _coreEnvironment = environment;
             _core = core;
             LockDown(core);
+            await core.AddScriptToExecuteOnDocumentCreatedAsync(TrailerPage.CloseKeysScript);
+            if (!ReferenceEquals(_core, core))
+            {
+                return;
+            }
+            ViewModel.PageOpening();
             core.Navigate(TrailerPage.Url.AbsoluteUri);
         }
         catch (Exception ex) when (!ReferenceEquals(_web, web))
@@ -71,14 +80,12 @@ public sealed partial class TrailerOverlay
         }
     }
 
+    // An environment for each trailer, let go with it, with the user data folder under Granary's data directory
+    // (GRANARY_DATA_DIR too), run by Windows' own Evergreen WebView2 runtime. A runtime installed meanwhile is found.
     private static Task<CoreWebView2Environment> EnvironmentAsync()
     {
-        if (_environment is { IsFaulted: false, IsCanceled: false } made)
-        {
-            return made;
-        }
         var options = new CoreWebView2EnvironmentOptions { AdditionalBrowserArguments = BrowserArguments };
-        return _environment = CoreWebView2Environment.CreateWithOptionsAsync("", AppPaths.WebView2Directory, options).AsTask();
+        return CoreWebView2Environment.CreateWithOptionsAsync("", AppPaths.WebView2Directory, options).AsTask();
     }
 
     private void Fail(WebView2 web, TrailerFailure failure)
@@ -90,7 +97,7 @@ public sealed partial class TrailerOverlay
     }
 
     // Nothing the page does reaches past it: no developer tools, menus, status bar, zoom, browser keys, autofill, saved
-    // passwords or host objects; only web messages, which carry the player's state.
+    // passwords or host objects; only web messages, which carry the player's state and Esc or Back.
     private void LockDown(CoreWebView2 core)
     {
         var settings = core.Settings;
@@ -111,7 +118,8 @@ public sealed partial class TrailerOverlay
         core.AddWebResourceRequestedFilter(TrailerPage.Filter, CoreWebView2WebResourceContext.All);
         core.WebResourceRequested += OnPageRequested;
         core.NavigationStarting += OnNavigationStarting;
-        core.FrameNavigationStarting += OnFrameNavigationStarting;
+        core.FrameCreated += OnFrameCreated;
+        core.FrameNavigationStarting += OnAnyFrameNavigationStarting;
         core.NewWindowRequested += OnNewWindowRequested;
         core.WebMessageReceived += OnWebMessageReceived;
         core.ProcessFailed += OnProcessFailed;
@@ -124,12 +132,18 @@ public sealed partial class TrailerOverlay
 
     private void TearDown()
     {
+        foreach (var frame in _frames)
+        {
+            Forget(frame);
+        }
+        _frames.Clear();
         if (_core is { } core)
         {
             _core = null;
             core.WebResourceRequested -= OnPageRequested;
             core.NavigationStarting -= OnNavigationStarting;
-            core.FrameNavigationStarting -= OnFrameNavigationStarting;
+            core.FrameCreated -= OnFrameCreated;
+            core.FrameNavigationStarting -= OnAnyFrameNavigationStarting;
             core.NewWindowRequested -= OnNewWindowRequested;
             core.WebMessageReceived -= OnWebMessageReceived;
             core.ProcessFailed -= OnProcessFailed;
@@ -144,7 +158,25 @@ public sealed partial class TrailerOverlay
         {
             _web = null;
             WebHost.Child = null;
+            // Closed once the WebView's own event that ended the trailer (a message, a failed process) has returned.
+            if (!DispatcherQueue.TryEnqueue(() => CloseBrowser(web)))
+            {
+                CloseBrowser(web);
+            }
+        }
+    }
+
+    // Stops the video and ends the WebView's processes.
+    private void CloseBrowser(WebView2 web)
+    {
+        try
+        {
             web.Close();
+            _logger.LogDebug("The trailer's browser closed");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning("The trailer's browser did not close: {Error} 0x{Code:X8}", ex.GetType().Name, ex.HResult);
         }
     }
 
@@ -171,20 +203,69 @@ public sealed partial class TrailerOverlay
         }
     }
 
-    private void OnFrameNavigationStarting(CoreWebView2 sender, CoreWebView2NavigationStartingEventArgs args)
+    // The frames of Granary's page: its one iframe, YouTube's player. Frames inside the player (YouTube's own, an ad's) are
+    // YouTube's: they cannot navigate the page, open a window or reach Granary, so they load as in any browser.
+    private void OnFrameCreated(CoreWebView2 sender, CoreWebView2FrameCreatedEventArgs args)
+    {
+        var frame = args.Frame;
+        frame.NavigationStarting += OnPlayerFrameNavigationStarting;
+        frame.WebMessageReceived += OnPlayerFrameMessage;
+        frame.Destroyed += OnFrameDestroyed;
+        _frames.Add(frame);
+    }
+
+    private void OnFrameDestroyed(CoreWebView2Frame sender, object args)
+    {
+        Forget(sender);
+        _frames.Remove(sender);
+    }
+
+    private void Forget(CoreWebView2Frame frame)
+    {
+        frame.NavigationStarting -= OnPlayerFrameNavigationStarting;
+        frame.WebMessageReceived -= OnPlayerFrameMessage;
+        frame.Destroyed -= OnFrameDestroyed;
+    }
+
+    // The page's iframe loads YouTube's embedded player, /embed/<key>, and nothing else (the page's policy holds it to
+    // YouTube's two hosts as well).
+    private void OnPlayerFrameNavigationStarting(CoreWebView2Frame sender, CoreWebView2NavigationStartingEventArgs args)
     {
         if (!TrailerWebPolicy.AllowsFrame(args.Uri))
         {
             args.Cancel = true;
             LogBlocked("A frame", args.Uri);
         }
+        else if (_logger.IsEnabled(LogLevel.Debug))
+        {
+            _logger.LogDebug("The trailer's frame goes to {Host}", HostOf(args.Uri));
+        }
     }
 
-    // The player's YouTube logo and title open a window: YouTube's pages go to the browser, nothing opens in Granary.
+    // Esc or Back once the video has the keyboard (TrailerPage.CloseKeysScript): all the player's frame may ask.
+    private void OnPlayerFrameMessage(CoreWebView2Frame sender, CoreWebView2WebMessageReceivedEventArgs args)
+    {
+        if (TrailerWebPolicy.FromEmbed(args.Source, args.WebMessageAsJson) is { } close)
+        {
+            ViewModel.Receive(close);
+        }
+    }
+
+    // Every frame, inside the player too: only noted, by its host.
+    private void OnAnyFrameNavigationStarting(CoreWebView2 sender, CoreWebView2NavigationStartingEventArgs args)
+    {
+        if (_logger.IsEnabled(LogLevel.Debug))
+        {
+            _logger.LogDebug("A frame of the trailer loads {Host}", HostOf(args.Uri));
+        }
+    }
+
+    // The player's YouTube logo and title open a window when clicked: YouTube's pages go to the browser, nothing opens in
+    // Granary, and nothing opens unless the viewer asked.
     private void OnNewWindowRequested(CoreWebView2 sender, CoreWebView2NewWindowRequestedEventArgs args)
     {
         args.Handled = true;
-        if (TrailerWebPolicy.BrowserTarget(args.Uri) is { } target)
+        if (args.IsUserInitiated && TrailerWebPolicy.BrowserTarget(args.Uri) is { } target)
         {
             OpenInBrowser(target);
         }
@@ -196,16 +277,22 @@ public sealed partial class TrailerOverlay
 
     private void OnWebMessageReceived(CoreWebView2 sender, CoreWebView2WebMessageReceivedEventArgs args)
     {
-        if (TrailerWebPolicy.IsOwnOrigin(args.Source) && TrailerPageMessage.Parse(args.WebMessageAsJson) is { } message)
+        if (TrailerWebPolicy.FromPage(args.Source, args.WebMessageAsJson) is { } message)
         {
             ViewModel.Receive(message);
         }
     }
 
+    // The browser, the page's or a frame's renderer gone: the trailer cannot go on. Other processes (GPU, utilities) come
+    // back by themselves, and an unresponsive page may still answer.
     private void OnProcessFailed(CoreWebView2 sender, CoreWebView2ProcessFailedEventArgs args)
     {
         _logger.LogWarning("A WebView2 process of the trailer failed: {Kind}", args.ProcessFailedKind);
-        ViewModel.Fail(TrailerFailure.BrowserFailed);
+        if (args.ProcessFailedKind is CoreWebView2ProcessFailedKind.BrowserProcessExited or CoreWebView2ProcessFailedKind.RenderProcessExited
+            or CoreWebView2ProcessFailedKind.FrameRenderProcessExited)
+        {
+            ViewModel.Fail(TrailerFailure.BrowserFailed);
+        }
     }
 
     // The player may play by itself; nothing else is granted.
@@ -243,10 +330,11 @@ public sealed partial class TrailerOverlay
         _logger.LogInformation("{What} of the trailer's page was blocked", what);
         if (_logger.IsEnabled(LogLevel.Debug))
         {
-            string host = Uri.TryCreate(url, UriKind.Absolute, out var uri) ? $"{uri.Scheme}://{uri.IdnHost}" : "(not a URL)";
-            _logger.LogDebug("{What} was blocked: {Host}", what, host);
+            _logger.LogDebug("{What} was blocked: {Host}", what, HostOf(url));
         }
     }
+
+    private static string HostOf(string? url) => Uri.TryCreate(url, UriKind.Absolute, out var uri) ? $"{uri.Scheme}://{uri.IdnHost}" : "(not a URL)";
 
     private async void OpenInBrowser(Uri target)
     {

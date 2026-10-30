@@ -58,6 +58,8 @@ public sealed partial class TrailerOverlay : UserControl
 
     private void OnOpened(object? sender, EventArgs e)
     {
+        // A trailer opened in place of another starts in the window, never in the other's full screen.
+        SetFullScreen(false);
         TearDown();
         _returnFocus ??= XamlRoot is { } root ? FocusManager.GetFocusedElement(root) as FrameworkElement : null;
         var web = new WebView2 { DefaultBackgroundColor = Colors.Black, Opacity = 0 };

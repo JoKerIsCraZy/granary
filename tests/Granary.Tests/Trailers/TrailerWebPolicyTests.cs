@@ -51,6 +51,9 @@ public sealed class TrailerWebPolicyTests
     [InlineData("https://www.youtube.com/embed")]
     [InlineData("https://www.youtube.com/embedded/xEQP4VVuyrY")]
     [InlineData("https://www.youtube.com/embed/xEQP4VVuyrY/extra")]
+    [InlineData("https://www.youtube.com/embed/xEQP4VVuyrY/x?autoplay=1")]
+    [InlineData("https://www.youtube.com/embed/xEQP4VVuyrY%3Fx")]
+    [InlineData("https://www.youtube.com/embed/xEQP4VVuyrY;x")]
     [InlineData("https://www.youtube.com/embed/../redirect?q=https://evil.example")]
     [InlineData("https://www.youtube.com/embed/%2e%2e/redirect")]
     [InlineData("https://www.youtube.com/embed/xEQP4VVuyrY%2F..%2Fredirect")]
@@ -119,4 +122,38 @@ public sealed class TrailerWebPolicyTests
     [InlineData("", false)]
     [InlineData(null, false)]
     public void OnlyGranarysOwnPage_SpeaksToGranary(string? source, bool own) => Assert.Equal(own, TrailerWebPolicy.IsOwnOrigin(source));
+
+    private const string Page = "https://trailer.granary.example/player";
+    private const string Embed = "https://www.youtube-nocookie.com/embed/xEQP4VVuyrY?autoplay=1&enablejsapi=1";
+
+    [Theory]
+    [InlineData("{\"kind\":\"ready\"}", TrailerPageEvent.Ready)]
+    [InlineData("{\"kind\":\"error\",\"code\":150}", TrailerPageEvent.Error)]
+    [InlineData("{\"kind\":\"close\"}", TrailerPageEvent.Close)]
+    public void ThePage_SaysAllItsMessages(string json, TrailerPageEvent kind) =>
+        Assert.Equal(kind, TrailerWebPolicy.FromPage(Page, json)?.Event);
+
+    [Theory]
+    [InlineData(Embed, "{\"kind\":\"ready\"}")]
+    [InlineData("https://evil.example/", "{\"kind\":\"ready\"}")]
+    [InlineData(Page, "{\"kind\":\"what\"}")]
+    [InlineData(Page, null)]
+    public void NothingElse_SpeaksForThePage(string source, string? json) => Assert.Null(TrailerWebPolicy.FromPage(source, json));
+
+    [Fact]
+    public void YouTubesPlayer_CanOnlyAskToClose() =>
+        // Granary's key listener runs in the player's frame too (Esc, Back): closing is all a frame may ask, and all a
+        // frame that is not the player may not.
+        Assert.Equal(TrailerPageEvent.Close, TrailerWebPolicy.FromEmbed(Embed, "{\"kind\":\"close\"}")?.Event);
+
+    [Theory]
+    [InlineData(Embed, "{\"kind\":\"ready\"}")]
+    [InlineData(Embed, "{\"kind\":\"playing\"}")]
+    [InlineData(Embed, "{\"kind\":\"error\",\"code\":150}")]
+    [InlineData(Embed, "{\"close\":true}")]
+    [InlineData("https://googleads.g.doubleclick.net/pagead/ads", "{\"kind\":\"close\"}")]
+    [InlineData("about:blank", "{\"kind\":\"close\"}")]
+    [InlineData(Page, "{\"kind\":\"close\"}")]
+    [InlineData(null, "{\"kind\":\"close\"}")]
+    public void AFrame_SaysNothingElse(string? source, string json) => Assert.Null(TrailerWebPolicy.FromEmbed(source, json));
 }

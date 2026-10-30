@@ -24,12 +24,20 @@ public static class TrailerPage
 
     private const string EmbedOrigin = "https://" + YouTubeVideo.EmbedHost;
 
-    private const string Style = "html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000}"
-        + "iframe{display:block;width:100%;height:100%;border:0}";
+    /// <summary>The page's style. With LF line ends only, as all of the page: see <see cref="Script"/>.</summary>
+    internal static readonly string Style = ("html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000}"
+        + "iframe{display:block;width:100%;height:100%;border:0}").ReplaceLineEndings("\n");
 
-    // Knocks ("listening") until the player answers, then subscribes to its state and errors, as YouTube's widget API does;
-    // reports only "ready", "playing" once each, and the player's error codes (TrailerPageMessage).
-    private const string Script = """
+    /// <summary>
+    /// The page's script. It knocks ("listening") until the player answers, then subscribes to its state and errors, as
+    /// YouTube's widget API does, and reports only "ready" and "playing" once each and the player's error codes
+    /// (<see cref="TrailerPageMessage"/>).
+    /// </summary>
+    /// <remarks>
+    /// Its line ends are made LF here: a raw string keeps the source file's, CR LF on a Windows checkout, while the browser
+    /// reads the page with LF only and hashes that. A hash over CR LF would block the page's own script.
+    /// </remarks>
+    internal static readonly string Script = """
         (() => {
           const embed = "https://www.youtube-nocookie.com";
           const frame = document.getElementById("player");
@@ -83,7 +91,45 @@ public static class TrailerPage
             }
           });
         })();
-        """;
+        """.ReplaceLineEndings("\n");
+
+    /// <summary>
+    /// Added to every document of the trailer's WebView, Granary's page and the frames in it (TrailerOverlay,
+    /// AddScriptToExecuteOnDocumentCreatedAsync): Esc, the Back key, Alt+Left and the mouse's back button ask Granary to
+    /// close the trailer. Once the viewer clicks into the video those keys go to the browser, not to Granary's window.
+    /// </summary>
+    /// <remarks>
+    /// In full screen Esc only leaves full screen, and the others do nothing. The one message is <c>{"kind":"close"}</c>,
+    /// and Granary takes it only from its page and from YouTube's player frame (<see cref="TrailerWebPolicy.FromEmbed"/>):
+    /// all a page could do with it is close the trailer. It reads nothing of the page and tells Granary of no other key.
+    /// </remarks>
+    public static readonly string CloseKeysScript = """
+        (() => {
+          const host = window.chrome && window.chrome.webview;
+          if (!host) {
+            return;
+          }
+          const close = () => host.postMessage({ kind: "close" });
+          window.addEventListener("keydown", (event) => {
+            const back = event.key === "BrowserBack" || (event.altKey && event.key === "ArrowLeft");
+            if (event.key !== "Escape" && !back) {
+              return;
+            }
+            if (document.fullscreenElement) {
+              if (event.key === "Escape") {
+                document.exitFullscreen().catch(() => {});
+              }
+              return;
+            }
+            close();
+          }, true);
+          window.addEventListener("mouseup", (event) => {
+            if (event.button === 3 && !document.fullscreenElement) {
+              close();
+            }
+          }, true);
+        })();
+        """.ReplaceLineEndings("\n");
 
     /// <summary>The page's own origin; the embed answers only it.</summary>
     public static readonly Uri Origin = new("https://" + Host);
@@ -122,7 +168,7 @@ public static class TrailerPage
             <script>{Script}</script>
             </body>
             </html>
-            """;
+            """.ReplaceLineEndings("\n");
     }
 
     private static string Hash(string content) => Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(content)));
