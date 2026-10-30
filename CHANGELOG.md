@@ -6,6 +6,8 @@ release's section is what its update says it changes (docs/release.md).
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-30
+
 ### Added
 
 - Signing in to Silo servers with a password or a code on the phone, profiles with their PINs, and several servers to
@@ -14,7 +16,7 @@ release's section is what its update says it changes (docs/release.md).
   local route at home another way in.
 - Home, the libraries, Search with people and Request to add, For You, Calendar, Notifications, Favorites, Watchlist,
   History and Collections, in the look of Silo's web app. Search's Request to add shows TMDB's titles in one grid that
-  reads on as you scroll, instead of a few to a page.
+  reads on as you scroll.
 - Requests: Discover, studios, networks and genres, the titles from TMDB with their seasons, your requests and the
   watchlist's titles not in the library yet. A title from TMDB can be requested straight from its card: Request shows
   in the middle of the poster under the pointer.
@@ -38,7 +40,6 @@ release's section is what its update says it changes (docs/release.md).
 - Collections of your own: make a manual collection, name it, fill it from a search, put its titles in order, share it
   with the other profiles on your account, and delete it; and Add to Collection from a movie's or series' page.
 - A person's page from cast, crew and Search: their photo, life, and the titles they're in.
-- Adding a server that is already signed in opens it at the profile picker again.
 - Smart collections: titles that match your rules, with a live preview of what they find.
 - Filters on Favorites, Watchlist, History and a collection's page; a library keeps its sort and filters.
 - Watch Party: open a room, share its code or invite link, and play, pause and seek together.
@@ -48,19 +49,17 @@ release's section is what its update says it changes (docs/release.md).
   and next episode, with the title and its poster shown; in a Watch Party they go to the room.
 - Subtitle timing in the player: Sync to audio and Reset timing in the subtitle menu, each track's timing under its
   name, and a card that follows a sync until the new timing shows, as on Silo's web player.
-- Switching pages and scrolling fast through posters are much smoother, and paging a grid on a wide window no longer
-  closes the app.
 - Home, For You and Requests' Discover open with a large picture of a title, its logo (or name), details and overview,
   and follow the card under the mouse or in focus; while you scroll it folds into a slim header that stays at the top.
-  On a tall window, such as an ultrawide, the picture grows with it instead of being stretched into a narrow strip.
+  On a tall window, such as an ultrawide, the picture grows with it.
 - Search shows the result under the mouse or in focus as a dark picture behind its title and search box.
-- A new layout for title pages: the backdrop stays put behind a large logo, one line of facts, the overview and bigger
+- Title pages: the backdrop stays put behind a large logo, one line of facts, the overview and bigger
   buttons; Info shows the full details, cast, crew and files.
 - Settings → Devices: see where your account is signed in and sign out any session, and see the devices your profile
   watches on, rename them, set them back to your profile settings, or forget them.
-- Trailers play in Granary, in YouTube's own player over the title's page, instead of opening the browser; full screen
-  works, Esc and Back close a trailer even after a click into the video, and a trailer that YouTube won't play here
-  offers "Open on YouTube". The minimized player pauses for it and stays paused, unless it plays a Watch Party.
+- Trailers play in Granary, in YouTube's own player over the title's page; full screen works, Esc and Back close a
+  trailer even after a click into the video, and a trailer that YouTube won't play here offers "Open on YouTube". The
+  minimized player pauses for it and stays paused, unless it plays a Watch Party.
 
 ### Security
 
