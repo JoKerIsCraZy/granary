@@ -5,9 +5,9 @@ using Granary.Core.Abstractions;
 namespace Granary.Core.ViewModels;
 
 /// <summary>
-/// Settings → About, as the apps' About (Version, Acknowledgements) with Granary's own: the version and Check for updates
-/// (<see cref="Updates"/>), what a ready update changes, the changelog shipped with the app, the licence and third-party
-/// notices, the source, and the folders Granary keeps its data and logs in.
+/// Settings → About, as the apps' About (Version, Acknowledgements) with Granary's own: the version, Check for updates and
+/// Automatic updates (<see cref="Updates"/>), what a ready update changes, the changelog shipped with the app, the licence
+/// and third-party notices, the source, and the folders Granary keeps its data and logs in.
 /// </summary>
 public sealed partial class AboutViewModel : ObservableObject
 {
@@ -41,6 +41,16 @@ public sealed partial class AboutViewModel : ObservableObject
 
     public Uri? SourceUrl => _app.SourceUrl;
 
+    /// <summary>
+    /// The GitHub page of the release found with automatic updates off (<c>…/releases/tag/v0.3.0</c>, as the release
+    /// workflow tags it), for what it changes before anything is downloaded; null otherwise.
+    /// </summary>
+    public Uri? AvailableReleaseUrl => SourceUrl is { } source && Updates.AvailableVersion is { Length: > 0 } version
+        ? new Uri($"{source.AbsoluteUri.TrimEnd('/')}/releases/tag/v{Uri.EscapeDataString(version)}")
+        : null;
+
+    public bool HasAvailableReleaseUrl => AvailableReleaseUrl is not null;
+
     public bool HasSource => SourceUrl is not null;
 
     public string LicensePath => _app.LicensePath;
@@ -61,6 +71,11 @@ public sealed partial class AboutViewModel : ObservableObject
             OnPropertyChanged(nameof(ReadyChanges));
             OnPropertyChanged(nameof(HasReadyChanges));
             OnPropertyChanged(nameof(ReadyChangesTitle));
+        }
+        if (e.PropertyName is nameof(AppUpdatesViewModel.AvailableVersion))
+        {
+            OnPropertyChanged(nameof(AvailableReleaseUrl));
+            OnPropertyChanged(nameof(HasAvailableReleaseUrl));
         }
     }
 }

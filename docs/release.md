@@ -41,6 +41,17 @@ out the app's resources (`Granary.pri`, the compiled XAML), and the published co
   closes as usual, playback stops first, Velopack applies the update and starts Granary again) or "Later" (it is
   applied silently once Granary closes). A failed look is logged, shown in About, and tried again at the next one, and
   so is an update that could not be verified.
+- Settings → About → Automatic updates (on by default) turns that schedule off. The choice is the app's, not a
+  server's or a profile's, and is kept in `updates.json` in the data directory (`JsonUpdatePreferences`, so
+  `GRANARY_DATA_DIR` moves it too). Off, Granary does not look at the start or every six hours. Check for updates only
+  checks: a newer release shows as available with its version only (the feed's notes are not signed, and the
+  verified package is not downloaded yet) and a link to its GitHub release. Nothing is downloaded until the user
+  chooses Download and install, which downloads and verifies it exactly as an automatic update; then it is ready,
+  with the verified notes, and applies on Restart to update or when Granary closes. An update already downloaded when
+  the switch is turned off is held back: it is not applied on close, and shows as available until Download and install
+  (no second download: it was verified, and is hashed once more as Granary closes) or until the switch is turned on
+  again. Turned on again, the schedule resumes: the next look is six hours after the last check, or at once if that
+  has passed or a release found meanwhile is waiting.
 - What a release changes comes from CHANGELOG.md ([Keep a Changelog](https://keepachangelog.com)): the app ships the
   file and shows it in Settings → About, and `pack-release.ps1` hands the version's section to `vpk pack
   --releaseNotes`, so a downloaded update says what's new in it before the restart. Those notes are read from the
@@ -113,7 +124,8 @@ Whatever the cause, nothing is applied. Settings → About says "The update to G
 wasn't installed. Granary will try again later." The log says "Granary 0.3.0 is not installed:" and the reason. For a
 network failure it gives only the kind of failure (an HTTP status, an exception type), never an address, since a
 redirect can carry a token. A downloaded package that is not the signed one is deleted; if it cannot be, the log says
-so, and it is still never applied. The next look, six hours later or on Check for updates, tries again.
+so, and it is still never applied. The next look, six hours later or on Check for updates, tries again; with automatic
+updates off, only Check for updates does, and About leaves out "Granary will try again later."
 
 **What this does not cover.** The check fails closed: whatever goes wrong, nothing unsigned is applied. Someone who
 can write to the releases can still freeze updates, though never install one:

@@ -149,6 +149,9 @@ public static class CoreServiceCollectionExtensions
         services.TryAddSingleton<IReleaseFiles, HttpReleaseFiles>();
         services.AddSingleton(sp => new SignedReleaseVerifier(sp.GetRequiredService<IReleaseFiles>(), UpdateSigningKey.Embedded,
             sp.GetRequiredService<ILogger<SignedReleaseVerifier>>()));
+        // Automatic updates, on or off: the app's choice, in the data directory.
+        services.AddSingleton<IUpdatePreferences>(sp =>
+            new JsonUpdatePreferences(JsonUpdatePreferences.DefaultPath, sp.GetRequiredService<ILogger<JsonUpdatePreferences>>()));
         services.AddSingleton<AppUpdatesViewModel>();
         services.AddTransient<SignInViewModel>();
         services.AddSingleton<MediaCardActions>();

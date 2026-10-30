@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     Settings → About, as the apps' About (Version, Acknowledgements) with Granary's own: the mark, name and version;
-    Updates with Check for updates, and what a downloaded release changes; the changelog shipped with the app; the licence,
-    third-party notices and source; the folders of Granary's data and logs.
+    Updates with Check for updates, Automatic updates, and what a downloaded release changes; the changelog shipped with the
+    app; the licence, third-party notices and source; the folders of Granary's data and logs.
 -->
 <UserControl
     x:Class="Granary.App.Views.Settings.AboutSettingsView"
@@ -57,20 +57,29 @@
         <TextBlock Margin="0,16,0,32" Style="{StaticResource SiloSettingsMutedTextStyle}" FontSize="14"
                    Text="A native Windows client for Silo, the self-hosted media server. Granary is an independent project, not an official Silo app." />
 
-        <controls:SettingsGroup Title="Updates"
-                                Description="Granary looks for a new release when it starts and every six hours, downloads it in the background, and installs it when it closes.">
+        <controls:SettingsGroup Title="Updates" Description="{x:Bind ViewModel.Updates.Summary, Mode=OneWay}">
             <StackPanel>
                 <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="{x:Bind ViewModel.Updates.StatusText, Mode=OneWay}"
                                       Description="{x:Bind ViewModel.Updates.LastCheckedText, Mode=OneWay}">
                     <StackPanel Orientation="Horizontal" Spacing="12">
                         <ProgressRing Width="16" Height="16" IsActive="{x:Bind ViewModel.Updates.IsBusy, Mode=OneWay}"
                                       Visibility="{x:Bind ViewModel.Updates.IsBusy, Mode=OneWay}" AutomationProperties.Name="Updating" />
+                        <!-- With automatic updates off, what a release found changes is on its GitHub page until it is verified. -->
+                        <HyperlinkButton Content="Release notes" NavigateUri="{x:Bind ViewModel.AvailableReleaseUrl, Mode=OneWay}"
+                                         Visibility="{x:Bind ViewModel.HasAvailableReleaseUrl, Mode=OneWay}"
+                                         ToolTipService.ToolTip="Opens the release on GitHub" AutomationProperties.Name="Open the release notes on GitHub" />
                         <Button Content="Check for updates" Style="{StaticResource SiloSettingsOutlineButtonStyle}"
-                                Command="{x:Bind ViewModel.Updates.CheckNowCommand}"
-                                Visibility="{x:Bind controls:SettingsText.Hidden(ViewModel.Updates.IsReady), Mode=OneWay}" />
-                        <Button Content="Restart now" Style="{StaticResource SiloSettingsOutlineButtonStyle}"
+                                Command="{x:Bind ViewModel.Updates.CheckNowCommand}" Visibility="{x:Bind ViewModel.Updates.ShowsCheckNow, Mode=OneWay}" />
+                        <Button Content="Download and install" Style="{StaticResource SiloSettingsOutlineButtonStyle}"
+                                Command="{x:Bind ViewModel.Updates.DownloadAndInstallCommand}" Visibility="{x:Bind ViewModel.Updates.IsAvailable, Mode=OneWay}" />
+                        <Button Content="{x:Bind ViewModel.Updates.RestartText, Mode=OneWay}" Style="{StaticResource SiloSettingsOutlineButtonStyle}"
                                 Command="{x:Bind ViewModel.Updates.RestartNowCommand}" Visibility="{x:Bind ViewModel.Updates.IsReady, Mode=OneWay}" />
                     </StackPanel>
+                </controls:SettingsRow>
+                <!-- Only for a copy that updates itself; the row's label names the switch. -->
+                <controls:SettingsRow Label="Automatic updates" Description="Look for new versions in the background and install them when Granary closes."
+                                      Visibility="{x:Bind ViewModel.Updates.CanUpdate}">
+                    <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.Updates.IsAutomatic, Mode=TwoWay}" />
                 </controls:SettingsRow>
 
                 <!-- What the downloaded release changes, as it was packed with. -->

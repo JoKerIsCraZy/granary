@@ -575,7 +575,15 @@ says why above the sections.
   restart or close Granary.", "The update to Granary 0.3.0 couldn't be verified, so it wasn't installed. Granary will
   try again later.", why a copy does not update) over "Last checked today at 14:05", Check for updates (off
   while it looks, or when the copy cannot update) or Restart now once a release is ready, and "What's new in 0.3.0"
-  from the notes its signed package carries. What's new: CHANGELOG.md as shipped, a release per heading ("0.2.0 · Oct 27, 2026"), its
+  from the notes its signed package carries. Below it the Automatic updates switch ("Look for new versions in the
+  background and install them when Granary closes.", on by default, named by its row for screen readers), only for a
+  copy that updates itself; a copy that doesn't shows what it showed before. Off, the section's description says
+  "Granary looks for a new release only when you check, and installs it only once you choose to.", the state reads
+  "Automatic updates are off." until a check, and a release found reads "Granary 0.3.0 is available." with Release
+  notes (a link to its GitHub release; nothing of it is shown in the app before it is verified) and Download and
+  install. Once downloaded and verified it reads as ready, with its notes and Restart to update. An update downloaded
+  before the switch was turned off is held back: it shows as available, and Download and install readies it without
+  a second download. What's new: CHANGELOG.md as shipped, a release per heading ("0.2.0 · Oct 27, 2026"), its
   groups in small muted capitals and bulleted items. License and source: View opens LICENSE and THIRD_PARTY_NOTICES.md
   in Notepad, Open the repository. Troubleshooting: the data and logs folders in Explorer.
 

@@ -76,7 +76,8 @@ Profiles hide libraries the same way they do on the web. The full description of
 ## Install
 
 Granary will ship as a per-user setup (no administrator rights) and as a portable zip. Both update
-themselves in the background with [Velopack](https://velopack.io). The packages will be on the
+themselves in the background with [Velopack](https://velopack.io), unless automatic updates are turned off in
+Settings → About. The packages will be on the
 [releases page](https://github.com/JoKeRIsCraZy/granary/releases/latest).
 [docs/release.md](docs/release.md) describes what a release contains and how updates work.
 
