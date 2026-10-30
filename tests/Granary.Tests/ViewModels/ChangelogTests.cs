@@ -80,7 +80,7 @@ public sealed class ChangelogTests
     public async Task About_ShowsTheVersionTheChangelogAndWhatAReadyUpdateChanges()
     {
         var updater = new ReadyUpdater();
-        var updates = new AppUpdatesViewModel(updater, new ManualTimeProvider(), new LogSink().For<AppUpdatesViewModel>());
+        var updates = new AppUpdatesViewModel(updater, new InMemoryUpdatePreferences(), new ManualTimeProvider(), new LogSink().For<AppUpdatesViewModel>());
         var about = new AboutViewModel(new FakeAppInfo(Markdown), updates);
         var changed = new List<string?>();
         about.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
@@ -103,9 +103,34 @@ public sealed class ChangelogTests
     }
 
     [Fact]
+    public async Task WithAutomaticUpdatesOff_AboutLinksTheAvailableReleasesPage_AndShowsNoNotesBeforeItIsVerified()
+    {
+        var updates = new AppUpdatesViewModel(new ReadyUpdater(), new InMemoryUpdatePreferences(isAutomatic: false), new ManualTimeProvider(),
+            new LogSink().For<AppUpdatesViewModel>());
+        var about = new AboutViewModel(new FakeAppInfo(Markdown), updates);
+        var changed = new List<string?>();
+        about.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+        Assert.Null(about.AvailableReleaseUrl);
+        Assert.False(about.HasAvailableReleaseUrl);
+
+        await updates.CheckNowCommand.ExecuteAsync(null);
+
+        Assert.Contains(nameof(AboutViewModel.AvailableReleaseUrl), changed);
+        Assert.Equal(new Uri("https://github.com/owner/granary/releases/tag/v0.2.0"), about.AvailableReleaseUrl);
+        Assert.True(about.HasAvailableReleaseUrl);
+        Assert.False(about.HasReadyChanges);
+
+        await updates.DownloadAndInstallCommand.ExecuteAsync(null);
+
+        Assert.Null(about.AvailableReleaseUrl);
+        Assert.Equal(["Posters load faster."], Assert.Single(about.ReadyChanges).Items);
+    }
+
+    [Fact]
     public void WithoutAChangelog_AboutSaysNothingOfIt()
     {
-        var updates = new AppUpdatesViewModel(new NoAppUpdater(), new ManualTimeProvider(), new LogSink().For<AppUpdatesViewModel>());
+        var updates = new AppUpdatesViewModel(new NoAppUpdater(), new InMemoryUpdatePreferences(), new ManualTimeProvider(),
+            new LogSink().For<AppUpdatesViewModel>());
 
         var about = new AboutViewModel(new FakeAppInfo(null), updates);
 
