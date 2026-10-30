@@ -32,8 +32,11 @@ Licenses as declared in each package's `.nuspec`:
 
 | Package | Version | License | Used by |
 |---|---|---|---|
-| Microsoft.WindowsAppSDK | 2.5.1 | Microsoft Software License Terms (`license.txt` in the package) | App; its runtime is redistributed because the app is self-contained |
-| Microsoft.Web.WebView2 | 1.0.3719.77 | BSD-3-Clause, © Microsoft Corporation (`LICENSE.txt` in the package; its `NOTICE.txt` lists the components it holds) | App (trailers, docs/architecture.md); comes with the Windows App SDK rather than as a package reference of Granary's. `WebView2Loader.dll` and `Microsoft.Web.WebView2.Core*.dll` ship with every build |
+| Microsoft.WindowsAppSDK.WinUI | 2.3.9 | Microsoft Software License Terms (`license.txt` in the package) | App (WinUI 3 and its XAML compiler); its runtime files are redistributed because the app is self-contained |
+| Microsoft.WindowsAppSDK.InteractiveExperiences | 2.1.9 | Microsoft Software License Terms (`license.txt` in the package) | App (composition, input, windowing, the DispatcherQueue); its runtime files are redistributed |
+| Microsoft.WindowsAppSDK.Foundation | 2.3.12 | Microsoft Software License Terms (`license.txt` in the package) | App (MRT Core resources, file pickers, the self-contained start-up); its runtime files are redistributed |
+| Microsoft.WindowsAppSDK.Base | 2.0.4 | Microsoft Software License Terms (`license.txt` in the package) | Build only: the MSBuild files of the self-contained build; nothing of it ships |
+| Microsoft.Web.WebView2 | 1.0.3719.77 | BSD-3-Clause, © Microsoft Corporation (`LICENSE.txt` in the package; its `NOTICE.txt` lists the components it holds) | App (trailers, docs/architecture.md); comes with Microsoft.WindowsAppSDK.WinUI rather than as a package reference of Granary's. `WebView2Loader.dll` and `Microsoft.Web.WebView2.Core*.dll` ship with every build |
 | CommunityToolkit.Mvvm | 8.4.2 | MIT | Core |
 | QRCoder | 1.8.1 | MIT | App (QR code for device sign-in) |
 | Velopack | 1.2.161 | MIT | App (setup and updates, docs/release.md); its setup, updater and launcher (`Setup.exe`, `Update.exe`) ship with every release |
@@ -47,11 +50,28 @@ The WebView2 runtime that trailers play in is not shipped: Granary uses the Ever
 as part of the operating system, and offers "Open on YouTube" where it is missing. Only the SDK's loader and projection
 above ship with Granary.
 
-Open point: the Windows App SDK runtime is proprietary and not a system library of Windows. Before
-the first release, decide how the AGPL-3.0-or-later licensing handles linking with it (for example an
-additional permission for the Windows App SDK, similar to the App Store permission in silo-apple). Only
-copyright holders can grant one: Granary's contributors for their code, Silo Media L.L.C. for the parts
-adapted from Silo (see Silo below).
+The four `Microsoft.WindowsAppSDK.*` packages are parts of the Windows App SDK 2.5.1, at the versions its metapackage
+`Microsoft.WindowsAppSDK` pins. Granary references them instead of the metapackage, so the other parts do not ship: AI
+(`Microsoft.Windows.AI.*`, `Microsoft.Graphics.Imaging`), ML (DirectML, ONNX Runtime), DWriteCore, Widgets, Search, and
+the Runtime package of framework-dependent apps. Each part's `license.txt` is the same text, the Microsoft Software
+License Terms for the Windows App SDK; it allows redistributing the files the packages place beside the app, also in a
+self-contained app. Microsoft publishes the source of each release under MIT: WinUI's at
+<https://github.com/microsoft/microsoft-ui-xaml> (tag `winui3/release/<version>`, here `winui3/release/2.5.1`) and
+Foundation's at <https://github.com/microsoft/WindowsAppSDK> (tag `v<version>`, here `v2.5.1`). WinUI's own build files
+at that tag (`src/eng/Version.Details.xml`, `src/eng/productmetadata.props`) take some binaries in prebuilt from outside
+that source, and they ship with Granary too: all of InteractiveExperiences (`CoreMessagingXP.dll`, `dcompi.dll`,
+`dwmcorei.dll`, `DwmSceneI.dll`, `marshal.dll`, `Microsoft.DirectManipulation.dll`, `Microsoft.Graphics.Display.dll`,
+`Microsoft.InputStateManager.dll`, `Microsoft.Internal.FrameworkUdk.dll`, `Microsoft.UI.Composition.OSSupport.dll`,
+`Microsoft.UI.Designer.dll`, `Microsoft.UI.dll`, `Microsoft.UI.Input.dll`, `Microsoft.UI.Windowing.Core.dll`,
+`Microsoft.UI.Windowing.dll`, `wuceffectsi.dll`), and WinUI's `Microsoft.UI.Xaml.Internal.dll` and `WinUIEdit.dll`,
+which come from a package those files call closed source (`Microsoft.Internal.WinUIDetails`).
+
+Open point: the Windows App SDK runtime is not a system library of Windows, and Granary ships three of its parts:
+WinUI, InteractiveExperiences and Foundation, under the Microsoft Software License Terms. The source of WinUI and
+Foundation is published under MIT; the binaries named in the paragraph above are not part of that source. Before the
+first release, decide how the AGPL-3.0-or-later licensing handles linking with it (for example an additional permission
+for the Windows App SDK, similar to the App Store permission in silo-apple). Only copyright holders can grant one:
+Granary's contributors for their code, Silo Media L.L.C. for the parts adapted from Silo (see Silo below).
 
 ## Plus Jakarta Sans (bundled font)
 

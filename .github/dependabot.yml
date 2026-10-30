@@ -20,6 +20,10 @@ updates:
     cooldown:
       default-days: 7
     groups:
+      # The Windows App SDK parts come out together, one set per release: they update in one pull request, whatever the
+      # kind of update. Check the set against that release's Microsoft.WindowsAppSDK .nuspec (Directory.Packages.props).
+      windows-app-sdk:
+        patterns: ['Microsoft.WindowsAppSDK.*']
       minor-and-patch:
         update-types: [minor, patch]
         # Velopack comes on its own: signed updates rely on how it downloads and applies (VelopackUpdater).

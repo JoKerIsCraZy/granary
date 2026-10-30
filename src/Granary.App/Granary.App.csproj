@@ -40,9 +40,23 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
-    <PackageReference Include="Microsoft.WindowsAppSDK" />
     <PackageReference Include="QRCoder" />
     <PackageReference Include="Velopack" />
+  </ItemGroup>
+
+  <!--
+    Only the Windows App SDK parts Granary uses, since a self-contained app ships every part it references
+    (docs/architecture.md, "Windows App SDK"). WinUI brings Microsoft.Web.WebView2 for the trailers.
+  -->
+  <ItemGroup>
+    <!-- The self-contained build: copies the parts' runtime files and registers their classes in the app manifest. -->
+    <PackageReference Include="Microsoft.WindowsAppSDK.Base" />
+    <!-- MRT Core for the app's resources, the file pickers, and the start-up that finds the parts' classes. -->
+    <PackageReference Include="Microsoft.WindowsAppSDK.Foundation" />
+    <!-- Composition, input, windowing and the DispatcherQueue. -->
+    <PackageReference Include="Microsoft.WindowsAppSDK.InteractiveExperiences" />
+    <!-- WinUI 3 and its XAML compiler. -->
+    <PackageReference Include="Microsoft.WindowsAppSDK.WinUI" />
   </ItemGroup>
 
   <!-- Plus Jakarta Sans (SIL OFL 1.1, Assets/Fonts/OFL.txt), the typeface of Silo's web client. -->
