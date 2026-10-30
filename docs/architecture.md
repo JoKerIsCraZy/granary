@@ -330,7 +330,8 @@ YouTube app or the browser; Granary does as Silo's web (`TrailerModal`) instead.
 breaks YouTube's terms.
 
 - **Runtime.** The WebView2 runtime is the system's: the Evergreen runtime that ships with Windows, not a fixed version
-  bundled with Granary. Only the SDK's loader and projection come with the Windows App SDK (THIRD_PARTY_NOTICES.md).
+  bundled with Granary. Only the SDK's loader and projection come with Granary, through the Windows App SDK's WinUI
+  package (THIRD_PARTY_NOTICES.md).
   Without the runtime, a trailer offers "Open on YouTube".
 - **Data folder.** `WebView2` under the data directory (`AppPaths.WebView2Directory`), so it follows `GRANARY_DATA_DIR`.
   The runtime keeps its own files there (`EBWebView`). Each trailer's browser runs InPrivate, so YouTube's cookies, storage
@@ -376,6 +377,27 @@ breaks YouTube's terms.
 - **Logs.** The outcome only ("The trailer plays", "can't play in Granary: EmbedRefused"); a blocked navigation is logged
   without its address, its host only at Debug. A YouTube address carries the video's key and stays out of the log.
 
+## Windows App SDK
+
+The App is unpackaged and self-contained (`WindowsPackageType=None`, `WindowsAppSDKSelfContained=true`): the Windows
+App SDK's runtime files ship beside `Granary.exe`, and the app needs neither an installed Windows App Runtime nor the
+bootstrapper. A self-contained build ships every part it references, so Granary references the parts it uses instead
+of the `Microsoft.WindowsAppSDK` metapackage:
+
+| Package | What Granary uses it for |
+|---|---|
+| `Microsoft.WindowsAppSDK.WinUI` | WinUI 3, its XAML compiler, and through it `Microsoft.Web.WebView2` for the trailers |
+| `Microsoft.WindowsAppSDK.InteractiveExperiences` | `Microsoft.UI.Composition`, `.Input`, `.Windowing` and `.Dispatching`, which WinUI is built on |
+| `Microsoft.WindowsAppSDK.Foundation` | MRT Core for the app's resources (`Granary.pri`), the file pickers (`Microsoft.Windows.Storage.Pickers`), and the start-up that lets the app find the parts' classes without a package (undocked reg-free WinRT) |
+| `Microsoft.WindowsAppSDK.Base` | The self-contained build: it copies each referenced part's runtime files and lists their classes in the app manifest. Nothing of it ships |
+
+Left out, and so not shipped: AI, ML (DirectML, ONNX Runtime), DWriteCore (WinUI draws text with the system's
+DirectWrite), Widgets, Search, and `Microsoft.WindowsAppSDK.Runtime`, whose framework packages only a
+framework-dependent app installs. That keeps 67 files and about 60 MB out of the build. The versions in
+`Directory.Packages.props` are the set one metapackage release pins in its `.nuspec`, and they move together (Dependabot
+proposes them in one pull request). Using another part, for example the AI APIs, means adding its package; until then
+its classes are missing at runtime ("class not registered"). Licenses and published source: THIRD_PARTY_NOTICES.md.
+
 ## Native dependency
 
 `libmpv-2.dll` is the official mpv CI build (LGPL variant), pinned with its SHA-256 in
@@ -399,6 +421,7 @@ Licensing is in [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).
 | xUnit v3 with built-in asserts, no mocking library | FluentAssertions 8 is commercially licensed; fakes are small hand-written classes. |
 | Trailers in YouTube's embedded player in WebView2 | YouTube's terms allow its player only; mpv or yt-dlp would break them. The web plays them the same way. |
 | Central package management, warnings as errors | One place for versions; analyzers (including AOT/trim and platform checks) are enforced. |
+| Windows App SDK parts instead of the metapackage | A self-contained app ships every part it references; the AI, ML, DWriteCore, Widgets and Search parts are about 60 MB Granary never calls. |
 
 ## Building and testing
 

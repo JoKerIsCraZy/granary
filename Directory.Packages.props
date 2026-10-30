@@ -12,7 +12,15 @@
     <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.13" />
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.13" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.13" />
-    <PackageVersion Include="Microsoft.WindowsAppSDK" Version="2.5.1" />
+    <!--
+      The Windows App SDK parts Granary uses, not the Microsoft.WindowsAppSDK metapackage: the app is self-contained, so
+      every part referenced ships with it (docs/architecture.md, "Windows App SDK"). The versions are the ones
+      Microsoft.WindowsAppSDK 2.5.1 pins in its .nuspec; update them together, to one release's set.
+    -->
+    <PackageVersion Include="Microsoft.WindowsAppSDK.Base" Version="2.0.4" />
+    <PackageVersion Include="Microsoft.WindowsAppSDK.Foundation" Version="2.3.12" />
+    <PackageVersion Include="Microsoft.WindowsAppSDK.InteractiveExperiences" Version="2.1.9" />
+    <PackageVersion Include="Microsoft.WindowsAppSDK.WinUI" Version="2.3.9" />
     <PackageVersion Include="QRCoder" Version="1.8.1" />
     <PackageVersion Include="System.Security.Cryptography.ProtectedData" Version="10.0.13" />
     <!-- Installer and updates; keep in step with the vpk tool in dotnet-tools.json. -->
