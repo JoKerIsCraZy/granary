@@ -3,8 +3,6 @@
 Thanks for helping. Granary is a native Windows client for Silo Server, built by volunteers. This guide covers how to
 report a problem, how to propose and make a change, and the rules that come with the name and the license.
 
-Everyone taking part follows the [Code of Conduct](CODE_OF_CONDUCT.md).
-
 ## Report a problem
 
 - Search the [open issues](https://github.com/JoKeRIsCraZy/granary/issues) first. If one covers your problem, add what is new there.
