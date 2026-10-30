@@ -31,9 +31,17 @@ Silo's Android and Apple apps.
 
 ## Screenshots
 
-<!-- TODO: add screenshots of Home, a title page and the player before the first release. -->
+![Home: the hero with the title's logo and picture, then Continue Watching and Trending This Week](docs/screenshots/home.jpg)
 
-Screenshots will follow with the first release.
+| | |
+|---|---|
+| ![A movie's title page with Play, Mark Watched, Info, Favorite and More](docs/screenshots/title.jpg) | ![For You: personalized rows under a hero, with the taste profile](docs/screenshots/foryou.jpg) |
+
+![The player, paused, with the seek bar, skip buttons, volume and the player's menus](docs/screenshots/player.jpg)
+
+<sub>The player shows the [Sintel](https://durian.blender.org) trailer, © Blender Foundation, under
+[CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). Posters and pictures come from the server the
+screenshots were taken on.</sub>
 
 ## Features
 
