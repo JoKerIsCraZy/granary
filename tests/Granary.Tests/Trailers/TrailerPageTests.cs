@@ -96,6 +96,8 @@ public sealed partial class TrailerPageTests
         Assert.Contains("\"ArrowLeft\"", listener, StringComparison.Ordinal);
         Assert.Contains("event.button === 3", listener, StringComparison.Ordinal);
         Assert.Contains("document.fullscreenElement", listener, StringComparison.Ordinal);
+        // A held Esc leaves full screen once and does not go on to close the trailer.
+        Assert.Contains("if (event.repeat)", listener, StringComparison.Ordinal);
         // Its one message, in the page's own schema.
         Assert.Contains("postMessage({ kind: \"close\" })", listener, StringComparison.Ordinal);
         Assert.Equal(1, listener.Split("postMessage(").Length - 1);

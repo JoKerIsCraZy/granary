@@ -111,6 +111,10 @@ public static class TrailerPage
           }
           const close = () => host.postMessage({ kind: "close" });
           window.addEventListener("keydown", (event) => {
+            // A held Esc repeats: the first press leaves full screen, the repeats must not close the trailer.
+            if (event.repeat) {
+              return;
+            }
             const back = event.key === "BrowserBack" || (event.altKey && event.key === "ArrowLeft");
             if (event.key !== "Escape" && !back) {
               return;
