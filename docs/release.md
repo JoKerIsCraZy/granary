@@ -199,6 +199,8 @@ packages, which have no lock files yet.
 - **The `release` environment** (Settings → Environments → New environment, named `release`):
   - **Required reviewers:** yourself. Leave "Prevent self-review" off while there is one maintainer, or nobody can
     approve. Add a second reviewer once there is a second maintainer.
+  - **"Allow administrators to bypass configured protection rules":** off, so the approval holds for an admin too and
+    every release is confirmed on purpose.
   - **Deployment branches and tags:** "Selected branches and tags" with the branch `main` only. A run from any other
     branch would bring that branch's copy of the workflow; this rule keeps it away from the signing key.
   - Then run the one-time key setup (see "Signed releases"). The workflow's other secret is `GITHUB_TOKEN`, which
