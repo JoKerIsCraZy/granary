@@ -1,0 +1,25 @@
+name: Dependency review
+
+# Checks the packages a pull request adds or updates against GitHub's advisory database and fails the pull request when
+# one has a known vulnerability of moderate severity or higher. Dependabot proposes updates; this catches a bad package
+# in anyone's pull request. On GitHub's free plan it needs a public repository, so the job skips itself while the
+# repository is private.
+on:
+  pull_request:
+
+permissions: {}
+
+concurrency:
+  group: dependency-review-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    if: ${{ !github.event.repository.private }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: moderate
