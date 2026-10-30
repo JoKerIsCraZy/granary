@@ -42,6 +42,15 @@ public sealed class ChangelogTests
     }
 
     [Fact]
+    public void AnEmptyUnreleasedSection_IsNotShown()
+    {
+        // Right after a release, the changelog keeps an empty Unreleased section for what comes next.
+        var release = Assert.Single(Changelog.Parse("## [Unreleased]\n\n## [0.1.0] - 2026-10-30\n\n### Added\n\n- A thing.\n"));
+
+        Assert.Equal("0.1.0 · Oct 30, 2026", release.Heading);
+    }
+
+    [Fact]
     public void ALinkedReleaseHeading_ReadsAsItsVersion()
     {
         var release = Assert.Single(Changelog.Parse("## [0.2.0](https://github.com/owner/granary/releases/tag/v0.2.0) - 2026-11-01\n- A thing.\n"));

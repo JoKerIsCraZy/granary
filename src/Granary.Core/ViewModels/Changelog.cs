@@ -63,8 +63,9 @@ public static partial class Changelog
         void EndRelease()
         {
             EndGroup();
-            // Notes without a release heading still are one release.
-            if (version is not null || groups.Count > 0)
+            // Notes without a release heading still are one release; a release with nothing in it, such as the empty
+            // Unreleased section right after a release, is not one.
+            if (groups.Count > 0)
             {
                 releases.Add(new ChangelogRelease(version ?? "", date, [.. groups]));
             }
