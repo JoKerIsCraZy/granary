@@ -17,6 +17,7 @@
 *.pub text eol=lf
 
 *.png binary
+*.jpg binary
 *.ico binary
 *.ttf binary
 *.dll binary
