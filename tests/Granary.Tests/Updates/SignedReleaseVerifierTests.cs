@@ -551,13 +551,14 @@ public sealed class SignedReleaseVerifierTests : IDisposable
     }
 
     [Fact]
-    public void TheKeyTheAppCarries_IsAPlaceholderOrAP256PublicKey()
+    public void TheKeyTheAppCarries_IsAP256PublicKey()
     {
-        // Once update-key.pub holds the real key, this should require UpdateSigningKey.Embedded.IsPresent.
+        // update-key.pub holds the real key: a build without it would trust no update at all.
         string text = UpdateSigningKey.EmbeddedText;
 
         Assert.DoesNotContain("PRIVATE", text, StringComparison.Ordinal);
-        Assert.True(UpdateSigningKey.Embedded.IsPresent || text.Contains("PLACEHOLDER", StringComparison.Ordinal), text);
+        Assert.DoesNotContain("PLACEHOLDER", text, StringComparison.Ordinal);
+        Assert.True(UpdateSigningKey.Embedded.IsPresent, text);
     }
 
     private static string Hex(byte[] content) => Convert.ToHexStringLower(SHA256.HashData(content));
