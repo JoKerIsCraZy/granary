@@ -124,17 +124,18 @@ public sealed partial class SignedReleaseVerifier(IReleaseFiles files, UpdateSig
         // Velopack takes a file already under the package's name for the download, so one left from before must be the
         // signed package too.
         string path = Path.Combine(packagesFolder, fileName);
-        var before = await CheckFileAsync(path, signedHash, cancellationToken);
+        var (before, _) = await CheckFileAsync(path, signedHash, readNotes: false, cancellationToken);
         if (before is not (FileCheck.Missing or FileCheck.Matches) && !Discard(path))
         {
             return new(before == FileCheck.Unreadable ? UpdateVerdict.PackageUnreadable : UpdateVerdict.HashMismatch);
         }
 
         await download(cancellationToken);
-        switch (await CheckFileAsync(path, signedHash, cancellationToken))
+        var (after, notes) = await CheckFileAsync(path, signedHash, readNotes: true, cancellationToken);
+        switch (after)
         {
             case FileCheck.Matches:
-                return new(UpdateVerdict.Verified, new SignedPackage(path, Convert.ToHexStringLower(signedHash)), ReadNotes(path));
+                return new(UpdateVerdict.Verified, new SignedPackage(path, Convert.ToHexStringLower(signedHash)), notes);
             case FileCheck.Missing:
             case FileCheck.Unreadable:
                 Discard(path);
@@ -145,33 +146,47 @@ public sealed partial class SignedReleaseVerifier(IReleaseFiles files, UpdateSig
         }
     }
 
-    private async Task<FileCheck> CheckFileAsync(string path, byte[] signedHash, CancellationToken cancellationToken)
+    /// <summary>
+    /// Hashes the file at <paramref name="path"/> and, when it is the signed package and <paramref name="readNotes"/>, reads
+    /// its notes from the same open stream: the notes come from the bytes just hashed, never from the path opened anew,
+    /// which another process could have swapped by then.
+    /// </summary>
+    private async Task<(FileCheck Check, string? Notes)> CheckFileAsync(string path, byte[] signedHash, bool readNotes,
+        CancellationToken cancellationToken)
     {
         try
         {
             await using var stream = files.OpenRead(path);
             if (stream is null)
             {
-                return FileCheck.Missing;
+                return (FileCheck.Missing, null);
             }
             var actual = await SHA256.HashDataAsync(stream, cancellationToken);
-            return CryptographicOperations.FixedTimeEquals(actual, signedHash) ? FileCheck.Matches : FileCheck.Differs;
+            if (!CryptographicOperations.FixedTimeEquals(actual, signedHash))
+            {
+                return (FileCheck.Differs, null);
+            }
+            return (FileCheck.Matches, readNotes ? ReadNotes(stream) : null);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            return FileCheck.Unreadable;
+            return (FileCheck.Unreadable, null);
         }
     }
 
-    /// <summary>The notes the verified package carries; none when they cannot be read, which does not undo the verdict.</summary>
-    private string? ReadNotes(string path)
+    /// <summary>The notes in the hashed package; none when they cannot be read, which does not undo the verdict.</summary>
+    private string? ReadNotes(Stream package)
     {
+        if (!package.CanSeek)
+        {
+            return null;
+        }
         try
         {
-            using var stream = files.OpenRead(path);
-            return stream is null ? null : PackageNotes.Read(stream, NotesLimit);
+            package.Position = 0;
+            return PackageNotes.Read(package, NotesLimit);
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException or System.Xml.XmlException)
+        catch (Exception ex) when (ex is IOException or InvalidDataException or System.Xml.XmlException)
         {
             logger.LogInformation("The update's notes could not be read from its package ({Problem})", UpdateFailures.KindOf(ex));
             return null;

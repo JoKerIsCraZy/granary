@@ -115,24 +115,31 @@ network failure it gives only the kind of failure (an HTTP status, an exception 
 redirect can carry a token. A downloaded package that is not the signed one is deleted; if it cannot be, the log says
 so, and it is still never applied. The next look, six hours later or on Check for updates, tries again.
 
-**What this does not cover.** The check fails closed, so an attacker who can write to the releases can still hold
-updates back, though never install one:
+**What this does not cover.** The check fails closed: whatever goes wrong, nothing unsigned is applied. Someone who
+can write to the releases can still freeze updates, though never install one:
 
 - An unsigned release with a higher version, or a feed entry that names one, makes every look fail until it is
   removed or a newer signed release replaces it.
 - Deleting or hiding releases withholds updates. Nothing in a signature expires, so a copy cannot tell that it is
   being kept on an old version.
-- A program running as the same Windows user could swap the package between the last check and Velopack's apply. It
-  could change Granary's files directly anyway.
+
+On the user's own PC:
+
+- A program running as the same Windows user could swap the package in the short window between its last hash, as
+  Granary closes, and Update.exe reading it. While Granary hashes the package and reads its notes it holds the file
+  open, so nobody can change it then. Such a program could change Granary's installed files directly anyway.
+- `new-update-key.ps1` sees PowerShell's logging policies, but not a `Start-Transcript` started by hand or by a profile.
+  Run it in a fresh `powershell -NoProfile` window.
 
 **One-time key setup** (the maintainer, once, before the first release):
 
 1. Create the `release` environment (see "Before the first public release").
 2. Sign in to the GitHub CLI with admin rights on the repository: `gh auth login`.
-3. Use a machine without PowerShell logging policies (module logging, script block logging, transcription) and a
-   session without `Start-Transcript`: module logging can keep what a pipeline carries. The script stops when such a
-   policy is on.
-4. From the repository's root: `./scripts/new-update-key.ps1 -Repository owner/granary`. It checks that the
+3. Use a machine without PowerShell logging policies (module logging, script block logging, transcription), since
+   module logging can keep what a pipeline carries. The script stops when such a policy is on. It cannot see a
+   transcript started by hand or by a profile, so open a fresh `powershell -NoProfile` window for it.
+4. In that window, from the repository's root:
+   `powershell -NoProfile -File ./scripts/new-update-key.ps1 -Repository owner/granary`. It checks that the
    environment exists and makes the key pair in memory. It stores the private key with
    `gh secret set UPDATE_SIGNING_KEY --env release`, reading it from standard input, never from a file or the command
    line. Only then does it write the public key to `update-key.pub`.

@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text;
@@ -444,6 +445,94 @@ public sealed class SignedReleaseVerifierTests : IDisposable
     }
 
     [Fact]
+    public async Task TheNotes_ComeFromTheBytesThatWereHashed_NotFromTheFileOpenedAgain()
+    {
+        byte[] swapped = Nupkg("Notes put in after the check.");
+        // Once the downloaded package has been opened for its check, the file on disk becomes another one.
+        _files.AfterOpen = path => _files.Disk[path] = swapped;
+
+        var result = await VerifyPackageAsync(Nupkg("### Fixed\n- Posters load faster."));
+
+        Assert.Equal(UpdateVerdict.Verified, result.Verdict);
+        Assert.Equal("### Fixed\n- Posters load faster.", result.Notes);
+        // The look for a file left from before, and the one check after the download.
+        Assert.Equal([PackagePath, PackagePath], _files.Opened);
+    }
+
+    [Fact]
+    public async Task ANuspecWithADoctype_GivesNoNotes_AndResolvesNothing_ButTheUpdateStaysVerified()
+    {
+        string folder = Directory.CreateTempSubdirectory("granary-nuspec-").FullName;
+        try
+        {
+            string secret = Path.Combine(folder, "secret.txt");
+            await File.WriteAllTextAsync(secret, "read from the disk", TestContext.Current.CancellationToken);
+            string external = $"""<!DOCTYPE package [<!ENTITY notes SYSTEM "{new Uri(secret).AbsoluteUri}">]>""";
+            const string inline = """<!DOCTYPE package [<!ENTITY notes "expanded">]>""";
+
+            foreach (string doctype in new[] { external, inline })
+            {
+                var result = await VerifyPackageAsync(Zip(("GranaryApp.nuspec", Nuspec("&notes;", doctype, escape: false))));
+
+                Assert.Equal(UpdateVerdict.Verified, result.Verdict);
+                Assert.Null(result.Notes);
+            }
+            Assert.DoesNotContain("read from the disk", _logs.All, StringComparison.Ordinal);
+            Assert.DoesNotContain("expanded", _logs.All, StringComparison.Ordinal);
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task OfTwoNuspecsAtThePackagesRoot_TheFirstGivesTheNotes()
+    {
+        var result = await VerifyPackageAsync(Zip(("First.nuspec", Nuspec("From the first.")), ("Second.nuspec", Nuspec("From the second."))));
+
+        Assert.Equal("From the first.", result.Notes);
+    }
+
+    [Fact]
+    public async Task ANuspecDeclaredOverAMebibyte_GivesNoNotes()
+    {
+        // The notes come first, and the reader would stop at them: only the declared size keeps them out.
+        var result = await VerifyPackageAsync(Zip(("GranaryApp.nuspec", Nuspec("Early notes.", tail: OverTheLimit()))));
+
+        Assert.Equal(UpdateVerdict.Verified, result.Verdict);
+        Assert.Null(result.Notes);
+    }
+
+    [Fact]
+    public async Task ANuspecThatUnderstatesItsLength_IsReadNoFurtherThanItSays()
+    {
+        // The notes come only after more than a mebibyte, which the header claims is 500 bytes. ZipArchive stops at the
+        // declared length, so the reader sees a cut-off nuspec.
+        byte[] package = Understated(Zip(("GranaryApp.nuspec", Nuspec("Late notes.", before: OverTheLimit()))), declared: 500);
+        using (var zip = new ZipArchive(new MemoryStream(package), ZipArchiveMode.Read))
+        {
+            Assert.Equal(500, zip.Entries[0].Length);
+        }
+
+        var result = await VerifyPackageAsync(package);
+
+        Assert.Equal(UpdateVerdict.Verified, result.Verdict);
+        Assert.Null(result.Notes);
+    }
+
+    [Fact]
+    public void ANuspecLongerThanItsHeaderSaid_IsStillCappedInCharacters()
+    {
+        // Whatever reader hands over the nuspec, more than a mebibyte of it is never read: these notes come after that.
+        using var past = new MemoryStream(Encoding.UTF8.GetBytes(Nuspec("Late notes.", before: OverTheLimit())));
+        using var within = new MemoryStream(Encoding.UTF8.GetBytes(Nuspec("Notes in time.", tail: OverTheLimit())));
+
+        Assert.Throws<System.Xml.XmlException>(() => PackageNotes.FromNuspec(past, SignedReleaseVerifier.NotesLimit));
+        Assert.Equal("Notes in time.", PackageNotes.FromNuspec(within, SignedReleaseVerifier.NotesLimit));
+    }
+
+    [Fact]
     public async Task ASignedPackage_IsCheckedOnceMoreBeforeItIsApplied()
     {
         var manifest = Manifest();
@@ -480,25 +569,64 @@ public sealed class SignedReleaseVerifierTests : IDisposable
             $"{Hex(Encoding.UTF8.GetBytes("portable"))}  GranaryApp-win-Portable.zip{newline}");
 
     /// <summary>A package as vpk pack writes one: the nuspec at its root, with the release's notes in it.</summary>
-    private static byte[] Nupkg(string? notes)
+    private static byte[] Nupkg(string? notes) => Zip(("GranaryApp.nuspec", Nuspec(notes)));
+
+    /// <summary>
+    /// A nuspec with <paramref name="notes"/>, and what a test puts before the package, before the notes, or after the
+    /// metadata (where a reader that has found the notes never gets to).
+    /// </summary>
+    private static string Nuspec(string? notes, string doctype = "", string before = "", string tail = "", bool escape = true)
+    {
+        string text = notes is null || !escape ? notes ?? "" : System.Security.SecurityElement.Escape(notes);
+        string release = notes is null ? "" : $"<releaseNotes>{text}</releaseNotes>";
+        return $"""
+            <?xml version="1.0" encoding="utf-8"?>{doctype}
+            <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+              <metadata><id>GranaryApp</id><version>0.2.0</version>{before}{release}</metadata>{tail}
+            </package>
+            """;
+    }
+
+    /// <summary>A comment just over the nuspec limit, in bytes and in characters.</summary>
+    private static string OverTheLimit() => $"<!--{new string('x', PackageNotes.NuspecLimit)}-->";
+
+    /// <summary>A package with these entries, in this order, and the app beside them.</summary>
+    private static byte[] Zip(params (string Name, string Content)[] entries)
     {
         using var buffer = new MemoryStream();
         using (var zip = new ZipArchive(buffer, ZipArchiveMode.Create, leaveOpen: true))
         {
-            using (var nuspec = new StreamWriter(zip.CreateEntry("GranaryApp.nuspec").Open()))
+            foreach (var (name, content) in entries.Append(("lib/app/Granary.exe", "the app")))
             {
-                string release = notes is null ? "" : $"<releaseNotes>{System.Security.SecurityElement.Escape(notes)}</releaseNotes>";
-                nuspec.Write($"""
-                    <?xml version="1.0" encoding="utf-8"?>
-                    <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
-                      <metadata><id>GranaryApp</id><version>0.2.0</version>{release}</metadata>
-                    </package>
-                    """);
+                using var writer = new StreamWriter(zip.CreateEntry(name).Open());
+                writer.Write(content);
             }
-            using var app = new StreamWriter(zip.CreateEntry("lib/app/Granary.exe").Open());
-            app.Write("the app");
         }
         return buffer.ToArray();
+    }
+
+    /// <summary>
+    /// The package with its first entry's uncompressed size, in its local header and the central directory, set to
+    /// <paramref name="declared"/> while its data stays as it is.
+    /// </summary>
+    private static byte[] Understated(byte[] package, int declared)
+    {
+        byte[] patched = (byte[])package.Clone();
+        int end = patched.AsSpan().LastIndexOf([(byte)0x50, (byte)0x4B, (byte)0x05, (byte)0x06]);
+        int central = BinaryPrimitives.ReadInt32LittleEndian(patched.AsSpan(end + 16));
+        int local = BinaryPrimitives.ReadInt32LittleEndian(patched.AsSpan(central + 42));
+        BinaryPrimitives.WriteInt32LittleEndian(patched.AsSpan(central + 24), declared);
+        BinaryPrimitives.WriteInt32LittleEndian(patched.AsSpan(local + 22), declared);
+        return patched;
+    }
+
+    /// <summary>Publishes <paramref name="package"/> as the signed one, downloads it and returns what the verifier made of it.</summary>
+    private async Task<SignedDownload> VerifyPackageAsync(byte[] package)
+    {
+        var manifest = Manifest(content: package);
+        Publish(manifest, Sign(manifest));
+        _download = package;
+        return await DownloadAsync(Create(), Feed(content: package));
     }
 
     private static FeedPackage Feed(byte[]? content = null) => new("0.2.0", FullName, Hex(content ?? Package));
@@ -558,6 +686,9 @@ public sealed class SignedReleaseVerifierTests : IDisposable
 
         public Action? BeforeDownload { get; set; }
 
+        /// <summary>Runs once a file that exists has been opened, with the stream already over its bytes.</summary>
+        public Action<string>? AfterOpen { get; set; }
+
         public List<Uri> Read { get; } = [];
 
         public List<int> Limits { get; } = [];
@@ -588,7 +719,13 @@ public sealed class SignedReleaseVerifierTests : IDisposable
             {
                 throw new IOException("locked");
             }
-            return Disk.TryGetValue(path, out var bytes) ? new MemoryStream(bytes, writable: false) : null;
+            if (!Disk.TryGetValue(path, out var bytes))
+            {
+                return null;
+            }
+            var stream = new MemoryStream(bytes, writable: false);
+            AfterOpen?.Invoke(path);
+            return stream;
         }
 
         public bool Remove(string path)
