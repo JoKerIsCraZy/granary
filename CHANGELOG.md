@@ -58,6 +58,9 @@ release's section is what its update says it changes (docs/release.md).
   buttons; Info shows the full details, cast, crew and files.
 - Settings → Devices: see where your account is signed in and sign out any session, and see the devices your profile
   watches on, rename them, set them back to your profile settings, or forget them.
+- Trailers play in Granary, in YouTube's own player over the title's page, instead of opening the browser; full screen
+  works, and a trailer that YouTube won't play here offers "Open on YouTube". The minimized player pauses for it,
+  unless it plays a Watch Party.
 
 ### Security
 

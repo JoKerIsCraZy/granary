@@ -117,6 +117,7 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
   scrolls the grid to its first title, as the web's `LetterBar`),
   `DetailHero`, `DetailShelf`, `DetailEpisodeCard`, `DetailInfoPanel`, `DetailTrailerCard`, `PersonCreditCard`
   (detail pages; a card with a person opens their page, one without, as a TMDB title's cast, is only a card),
+  `TrailerOverlay` (a trailer over the window, in YouTube's player),
   `SeekBar` and `MpvVideoHost` (player).
 - Person (`PersonPage`, the web's `pages/PersonDetail.tsx`): a detail page, so the sidebar narrows to its rail as beside
   a title. The 2:3 photo (180 px, initials without one) beside the name (30 px) with Refresh metadata (an administrator's
@@ -377,6 +378,23 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   - Granary's rows follow, 56 apart: a series' seasons, all at once in a grid that wraps at the page's width (185 px
     posters, a season opens its own page), or a season's episode grid, more episodes, trailers, cast and crew, more like
     this.
+  - "Trailers & More" (the web's `TrailersSection`): the title's YouTube videos in the server's order, each a 280 px card
+    with YouTube's thumbnail, a play mark, its name and "Trailer · Official"; other sites are left out. A card is read as
+    "Official Trailer, Trailer · Official, plays the trailer", and its tooltip says "Play trailer".
+  - A trailer plays over the window (`TrailerOverlay`, the web's `TrailerModal`), not in the browser: the web dialog's
+    black-at-half scrim over everything, title bar included, and on it a black dialog (16 px corners, a hairline border)
+    with the trailer's name in the player's title style and its caption above YouTube's own player, and a round ✕
+    (Close, Esc) at its right. The 16:9 frame is 896 px wide at most (the web's `max-w-4xl`) and shrinks with the window,
+    keeping 16 px from its edges and clear of the title bar. A spinner shows until YouTube's player answers; the player
+    then shows and plays at once. Esc, ✕, Back (Alt+Left, the mouse's back button) and a click on the scrim close it,
+    which stops the video; so does any other page, and a title that starts to play. Focus moves to ✕ as it opens and
+    back to the trailer's card as it closes; Tab stays inside. YouTube's full-screen button fills the screen with the
+    video alone (the window goes full screen, as the player's does), and Esc or the button bring the dialog back.
+  - A trailer that can't play here (its owner allows it only on YouTube, it is gone, YouTube refused the embed, the
+    player gave no answer within 15 seconds, or WebView2 is missing or failed) shows "This video can't play in
+    Granary." in the frame with a red "Open on YouTube" button, which opens YouTube's page in the browser and closes the
+    dialog.
+  - Granary's own player, minimized to its bar, pauses as a trailer opens; in a Watch Party it plays on.
   - Below a 1400 px window everything steps down (hero 84 from the top and 12 apart, logo 116, meta 15, overview 14/22,
     buttons 44, rows 44 apart), so a 1280×800 window keeps it whole. The step sets sizes, not styles, so a focused
     button keeps its focus when the window crosses it.

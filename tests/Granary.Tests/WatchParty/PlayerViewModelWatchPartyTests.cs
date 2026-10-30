@@ -101,6 +101,17 @@ public sealed class PlayerViewModelWatchPartyTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task ATrailer_LeavesTheRoomsPlaybackAlone()
+    {
+        var viewModel = await PlayingAsync();
+
+        Assert.False(viewModel.PauseForTrailer());
+
+        Assert.False(_engine.Current.IsPaused);
+        Assert.DoesNotContain(Socket.Sent, f => f.Contains("\"transport_request\"", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task AGuestsSeek_IsRefused_WithTheWebsWords()
     {
         var viewModel = await PlayingAsync(role: "guest");

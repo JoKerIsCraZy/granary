@@ -161,7 +161,7 @@
                                 <ItemsRepeater.ItemTemplate>
                                     <DataTemplate x:DataType="detail:DetailTrailer">
                                         <Button Style="{StaticResource SiloCardButtonStyle}" Click="OnTrailerClick" DataContext="{x:Bind}"
-                                                AutomationProperties.Name="{x:Bind AccessibleName}" ToolTipService.ToolTip="Opens YouTube in the browser">
+                                                AutomationProperties.Name="{x:Bind AccessibleName}" ToolTipService.ToolTip="Play trailer">
                                             <controls:DetailTrailerCard Trailer="{x:Bind}" />
                                         </Button>
                                     </DataTemplate>

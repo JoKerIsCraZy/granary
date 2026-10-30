@@ -164,14 +164,15 @@ public sealed class ItemDetailTextTests
     }
 
     [Fact]
-    public void YouTubeTrailer_OpensTheWatchPage()
+    public void YouTubeTrailer_PlaysByItsKey_AndKeepsTheWatchPageForTheBrowser()
     {
         var trailer = DetailTrailer.From(new ItemVideo("Trailer", "YouTube", "xEQP4VVuyrY", true, "Official Trailer", "en"));
 
         Assert.NotNull(trailer);
         Assert.Equal(new Uri("https://www.youtube.com/watch?v=xEQP4VVuyrY"), trailer.WatchUrl);
         Assert.Equal(new Uri("https://i.ytimg.com/vi/xEQP4VVuyrY/hqdefault.jpg"), trailer.ThumbnailUrl);
-        Assert.Equal("Official Trailer, Trailer · Official, opens YouTube", trailer.AccessibleName);
+        Assert.Equal("xEQP4VVuyrY", trailer.Key);
+        Assert.Equal("Official Trailer, Trailer · Official, plays the trailer", trailer.AccessibleName);
     }
 
     [Theory]

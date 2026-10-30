@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    A trailer over the window, as the web's TrailerModal: a black dialog on a dark scrim, its title and a close button on
+    top and YouTube's player in a 16:9 frame under them (896 px wide at most). Esc, Close, Back and a click on the scrim
+    close it; the player's own full-screen button fills the window with the frame alone. The WebView2 is made in code for
+    each trailer (TrailerOverlay.Browser.cs).
+-->
+<UserControl
+    x:Class="Granary.App.Controls.TrailerOverlay"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <UserControl.Resources>
+        <!-- The web dialog's overlay, black at half. -->
+        <SolidColorBrush x:Key="TrailerScrimBrush" Color="#80000000" />
+    </UserControl.Resources>
+
+    <Grid x:Name="Scrim" Background="{StaticResource TrailerScrimBrush}" Visibility="{x:Bind ViewModel.IsOpen, Mode=OneWay}" Tapped="OnScrimTapped"
+          TabFocusNavigation="Cycle" KeyboardAcceleratorPlacementMode="Hidden">
+        <Grid.KeyboardAccelerators>
+            <KeyboardAccelerator Key="Escape" Invoked="OnEscape" />
+        </Grid.KeyboardAccelerators>
+
+        <!-- Taps on the dialog are its own: only the scrim around it closes the trailer. -->
+        <Border x:Name="Dialog" Background="Black" HorizontalAlignment="Center" VerticalAlignment="Center"
+                CornerRadius="{StaticResource OverlayCornerRadius}" BorderBrush="{StaticResource SiloPlayerPopupBorderBrush}" BorderThickness="1">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <Grid x:Name="Header" Height="64" Padding="20,0,12,0" ColumnSpacing="16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel VerticalAlignment="Center" Spacing="2">
+                        <TextBlock Text="{x:Bind ViewModel.Title, Mode=OneWay}" Style="{StaticResource SiloPlayerTitleTextStyle}"
+                                   AutomationProperties.HeadingLevel="Level1" />
+                        <TextBlock Text="{x:Bind ViewModel.Caption, Mode=OneWay}" Style="{StaticResource SiloCaptionTextStyle}" />
+                    </StackPanel>
+                    <Button x:Name="CloseButton" Grid.Column="1" Width="40" Height="40" Style="{StaticResource SiloPlayerDiscButtonStyle}"
+                            Click="OnCloseClick" AutomationProperties.Name="Close trailer" AutomationProperties.AcceleratorKey="Escape"
+                            ToolTipService.ToolTip="Close (Esc)">
+                        <FontIcon Glyph="&#xE711;" FontSize="13" />
+                    </Button>
+                </Grid>
+
+                <Grid x:Name="Frame" Grid.Row="1" Background="Black">
+                    <ProgressRing Width="40" Height="40" Foreground="White" IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}"
+                                  AutomationProperties.Name="Loading the trailer" />
+                    <!-- The player, drawn clear until it answers, so neither a blank page nor YouTube's set-up flashes up. -->
+                    <Border x:Name="WebHost" />
+                    <StackPanel Visibility="{x:Bind ViewModel.IsUnavailable, Mode=OneWay}" Spacing="20" Padding="24"
+                                HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <TextBlock x:Name="FallbackText" Style="{StaticResource SiloBodyTextStyle}" TextAlignment="Center"
+                                   AutomationProperties.LiveSetting="Assertive" />
+                        <Button x:Name="OpenOnYouTubeButton" HorizontalAlignment="Center" Style="{StaticResource SiloPrimaryButtonStyle}"
+                                Click="OnOpenOnYouTubeClick" AutomationProperties.Name="Open on YouTube">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE8A7;" FontSize="14" />
+                                <TextBlock Text="Open on YouTube" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

@@ -33,6 +33,7 @@ Licenses as declared in each package's `.nuspec`:
 | Package | Version | License | Used by |
 |---|---|---|---|
 | Microsoft.WindowsAppSDK | 2.5.1 | Microsoft Software License Terms (`license.txt` in the package) | App; its runtime is redistributed because the app is self-contained |
+| Microsoft.Web.WebView2 | 1.0.3719.77 | BSD-3-Clause, © Microsoft Corporation (`LICENSE.txt` in the package; its `NOTICE.txt` lists the components it holds) | App (trailers, docs/architecture.md); comes with the Windows App SDK rather than as a package reference of Granary's. `WebView2Loader.dll` and `Microsoft.Web.WebView2.Core*.dll` ship with every build |
 | CommunityToolkit.Mvvm | 8.4.2 | MIT | Core |
 | QRCoder | 1.8.1 | MIT | App (QR code for device sign-in) |
 | Velopack | 1.2.161 | MIT | App (setup and updates, docs/release.md); its setup, updater and launcher (`Setup.exe`, `Update.exe`) ship with every release |
@@ -41,6 +42,10 @@ Licenses as declared in each package's `.nuspec`:
 | xunit.v3 | 4.0.2 | Apache-2.0 | Tests only |
 | Microsoft.Testing.Extensions.CodeCoverage | 18.12.0 | Microsoft .NET Library License (`License.txt`) | Tests only, not distributed |
 | Vortice.Direct3D11, Vortice.DXGI | 3.8.3 | MIT | Tests and spike only, not distributed |
+
+The WebView2 runtime that trailers play in is not shipped: Granary uses the Evergreen runtime that comes with Windows,
+as part of the operating system, and offers "Open on YouTube" where it is missing. Only the SDK's loader and projection
+above ship with Granary.
 
 Open point: the Windows App SDK runtime is proprietary and not a system library of Windows. Before
 the first release, decide how the AGPL-3.0-or-later licensing handles linking with it (for example an

@@ -66,6 +66,8 @@ public sealed partial class MainWindow : IPlayerOverlay
 
     private void Open(PlayRequest play)
     {
+        // A title that plays (from a Watch Party's room too) takes the window from a trailer.
+        Trailers.Close();
         var page = new PlayerPage();
         page.MinimizeRequested += (_, _) => Dock();
         page.ExpandRequested += (_, _) => Expand();

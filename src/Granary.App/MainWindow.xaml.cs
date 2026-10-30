@@ -56,9 +56,11 @@ public sealed partial class MainWindow : Window
 
     public MainWindow(NavigationService navigation, ShellViewModel shell, SidebarViewModel sidebar, SidebarSections sections,
         SidebarLayout layout, NotificationBadge notifications, RequestsFeature requests, PlaybackStops stops, AppUpdatesViewModel updates,
-        Granary.Core.WatchParty.WatchPartyFeature watchParty, Granary.Core.WatchParty.WatchPartySession room, ILogger<MainWindow> logger)
+        Granary.Core.WatchParty.WatchPartyFeature watchParty, Granary.Core.WatchParty.WatchPartySession room,
+        Granary.Core.ViewModels.Detail.TrailerOverlayViewModel trailers, ILogger<MainWindow> logger)
     {
         Layout = layout;
+        Trailers = trailers;
         Updates = updates;
         _navigation = navigation;
         _stops = stops;
@@ -71,6 +73,7 @@ public sealed partial class MainWindow : Window
         Requests = requests;
         WatchParty = watchParty;
         InitializeComponent();
+        InitializeTrailers();
         _railHover = DispatcherQueue.CreateTimer();
         _railHover.Interval = RailHoverDelay;
         _railHover.IsRepeating = false;
@@ -492,6 +495,8 @@ public sealed partial class MainWindow : Window
 
     private void OnNavigated(object? sender, AppRoute route)
     {
+        // A trailer belongs to the page it was opened from.
+        Trailers.Close();
         ShowChrome(route);
         ShowDockSpace();
         SelectItem(route, _navigation.CurrentParameter);
@@ -680,6 +685,11 @@ public sealed partial class MainWindow : Window
 
     private void OnBackAccelerator(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
     {
+        if (CloseTrailer())
+        {
+            args.Handled = true;
+            return;
+        }
         args.Handled = _navigation.CanGoBack;
         _navigation.GoBack();
     }
@@ -689,7 +699,10 @@ public sealed partial class MainWindow : Window
         if (e.GetCurrentPoint(Root).Properties.PointerUpdateKind == PointerUpdateKind.XButton1Pressed)
         {
             e.Handled = true;
-            _navigation.GoBack();
+            if (!CloseTrailer())
+            {
+                _navigation.GoBack();
+            }
         }
     }
 

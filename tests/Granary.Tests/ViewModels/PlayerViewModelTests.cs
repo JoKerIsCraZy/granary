@@ -133,6 +133,39 @@ public sealed class PlayerViewModelTests
     }
 
     [Fact]
+    public void ATrailer_PausesWhatPlays()
+    {
+        var viewModel = CreateViewModel();
+        _engine.RaiseState(Loaded());
+
+        Assert.True(viewModel.PauseForTrailer());
+
+        Assert.True(_engine.Current.IsPaused);
+    }
+
+    [Fact]
+    public void ATrailer_LeavesAPauseAsItIs()
+    {
+        var viewModel = CreateViewModel();
+        _engine.RaiseState(Loaded() with { IsPaused = true });
+
+        Assert.False(viewModel.PauseForTrailer());
+
+        Assert.True(_engine.Current.IsPaused);
+    }
+
+    [Fact]
+    public void ATrailer_DoesNotPauseALoadOnItsWay()
+    {
+        // As Pause: a pause set while preparing would hold the coming load at its first frame.
+        var viewModel = CreateViewModel();
+
+        Assert.False(viewModel.PauseForTrailer());
+
+        Assert.False(_engine.Current.IsPaused);
+    }
+
+    [Fact]
     public void Skips_UseTheProfileIntervals_WithinTheTitle()
     {
         var viewModel = CreateViewModel();
