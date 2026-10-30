@@ -137,9 +137,8 @@ docs/                architecture, API contract, UI design, releases
 
 ## Contributing
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md) first. Coding agents also read [AGENTS.md](AGENTS.md). Everyone
-taking part follows the [Code of Conduct](CODE_OF_CONDUCT.md). Report security problems privately as
-[SECURITY.md](SECURITY.md) describes, not in a public issue.
+Read [CONTRIBUTING.md](CONTRIBUTING.md) first. Coding agents also read [AGENTS.md](AGENTS.md). Report security
+problems privately as [SECURITY.md](SECURITY.md) describes, not in a public issue.
 
 ## License
 
