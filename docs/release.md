@@ -233,7 +233,8 @@ packages, which have no lock files yet.
 - libmpv: `native.lock.json` already points at this repository's mirror release
   `deps-libmpv-v0.41.0-dev-ga39482e7a`, which holds the exact upstream zip (same SHA-256; upstream's `git-release`
   asset is gone) and the mpv and FFmpeg sources the LGPL asks to offer. Upload it once, right after the first push
-  (a release needs a commit to tag), then run the CI job again; until then its libmpv step fails. From the
+  (a release needs a commit to tag), then run the CI job again; until then its libmpv step fails. The workflows fetch
+  it with their own read-only token through `gh`, so this works while the repository is still private. From the
   repository's root, with the pinned zip in `native\dl-libmpv` where `fetch-native.ps1 -ZipPath` used it:
 
   ```powershell
