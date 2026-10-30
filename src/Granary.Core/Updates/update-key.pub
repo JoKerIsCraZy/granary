@@ -1,5 +1,4 @@
-PLACEHOLDER: Granary has no update signing key yet.
-
-scripts/new-update-key.ps1 replaces this file with the public key that releases are signed with (docs/release.md,
-"Signed releases"). Until then an installed Granary applies no update, and pack-release.ps1 refuses to pack a build
-that looks for updates.
+-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE/QNC1ZASVkwMi3hNNzfFAISrUHH3
+dObaaT3wVbgEMl5FK7Z/7vW1A7VjrfwS+uTxXwPqeGqbVXGyHandwRNDaA==
+-----END PUBLIC KEY-----
