@@ -13,11 +13,12 @@
     case only: a key that was lost or leaked.
 
     Needs the GitHub CLI (gh), signed in with admin rights on the repository, and the "release" environment in place.
-    Run it on a machine without PowerShell logging policies (module logging, script block logging, transcription) and
-    outside Start-Transcript: they could keep what the script handles. It stops when such a policy is on.
+    Run it on a machine without PowerShell logging policies (module logging, script block logging, transcription): they
+    could keep what the script handles. It stops when such a policy is on, but it cannot see a Start-Transcript started
+    by hand or by a profile, so run it in a fresh window without a profile, as below.
 
 .EXAMPLE
-    ./scripts/new-update-key.ps1 -Repository owner/granary
+    powershell -NoProfile -File ./scripts/new-update-key.ps1 -Repository owner/granary
 #>
 [CmdletBinding()]
 param(
