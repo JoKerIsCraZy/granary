@@ -230,6 +230,12 @@
                                      Visibility="Collapsed" />
 
         <!--
+            A trailer, over everything but the start screen, title bar included, as a dialog: YouTube's player on a scrim
+            (Controls/TrailerOverlay, MainWindow.Trailer.cs).
+        -->
+        <controls:TrailerOverlay x:Name="TrailerLayer" Grid.RowSpan="2" />
+
+        <!--
             The start: Granary's mark plays its intro in the middle of the window while the app loads its first page, then
             its loading loop if that takes longer (MainWindow.ShowStartup). It lifts by the title bar's 32 px so it sits in the
             window's middle.

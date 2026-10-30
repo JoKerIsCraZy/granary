@@ -12,4 +12,7 @@ public static class AppPaths
         Environment.GetEnvironmentVariable(DataDirectoryVariable) is { Length: > 0 } custom
             ? Path.GetFullPath(custom)
             : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Granary");
+
+    /// <summary>The trailer player's browser profile (WebView2's user data folder), apart from everything else.</summary>
+    public static string WebView2Directory => Path.Combine(DataDirectory, "WebView2");
 }

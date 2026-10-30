@@ -324,13 +324,37 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
             {
                 return;
             }
-            if (!_engine.Current.IsPaused)
+            if (_engine.Current.IsPaused)
             {
-                _nextUp.Paused(Now);
-                ShowNextUp();
+                _engine.SetPaused(false);
             }
-            _engine.SetPaused(!_engine.Current.IsPaused);
+            else
+            {
+                Pause();
+            }
         }
+    }
+
+    /// <summary>
+    /// A trailer opens over the page while this plays in the bar (<see cref="Detail.TrailerOverlayViewModel"/>): it pauses,
+    /// so the two do not play over each other. A Watch Party's playback is the room's and goes on. True when it paused.
+    /// </summary>
+    public bool PauseForTrailer()
+    {
+        if (IsWatchParty || !IsPlaying || _engine.Current.IsPaused)
+        {
+            return false;
+        }
+        Pause();
+        return true;
+    }
+
+    // A pause also stops the next-up card's countdown.
+    private void Pause()
+    {
+        _nextUp.Paused(Now);
+        ShowNextUp();
+        _engine.SetPaused(true);
     }
 
     [RelayCommand]

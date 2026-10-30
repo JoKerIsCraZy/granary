@@ -322,6 +322,47 @@ SiloHttp ─▶ ClientIdentityHandler ─▶ AuthenticationHandler ─▶ Socket
 - `ShellViewModel` navigates on state changes. Pages change the session; they do not navigate after
   sign-in themselves.
 
+## Trailers
+
+A title's YouTube trailers play in Granary, in YouTube's own embedded player inside a WebView2 (`TrailerOverlay` in
+the App, `TrailerOverlayViewModel` and `Granary.Core.Trailers` in Core). Silo's Android and Apple apps hand trailers to the
+YouTube app or the browser; Granary does as Silo's web (`TrailerModal`) instead. Never through mpv or a downloader: that
+breaks YouTube's terms.
+
+- **Runtime.** The WebView2 runtime is the system's: the Evergreen runtime that ships with Windows, not a fixed version
+  bundled with Granary. Only the SDK's loader and projection come with the Windows App SDK (THIRD_PARTY_NOTICES.md).
+  Without the runtime, a trailer offers "Open on YouTube".
+- **Data folder.** `WebView2` under the data directory (`AppPaths.WebView2Directory`), so it follows `GRANARY_DATA_DIR`;
+  one environment for the process, with `--autoplay-policy=no-user-gesture-required`, since the click that opened the
+  trailer was in Granary, not in the page. Each trailer's browser runs InPrivate: YouTube's cookies and storage last only
+  as long as the trailer and never reach the disk.
+- **The page.** The WebView never goes to the embed itself: without a Referer YouTube refuses it (error 153). It goes to
+  `https://trailer.granary.example/player`, which Granary answers through `WebResourceRequested` (anything else on that
+  host is a 404; `.example` never resolves). `TrailerPage` builds it from the validated key alone: the
+  `youtube-nocookie.com` embed in an iframe with `referrerpolicy="strict-origin-when-cross-origin"`, and a script that
+  speaks the IFrame Player API's postMessage channel itself, so no script of YouTube's runs in the one document that can
+  message Granary. Its policy runs only that script and style (by hash) and frames only YouTube's two embed hosts; the
+  page is not cached. No token, server address or title metadata goes into it.
+- **Navigation.** `TrailerWebPolicy` decides, as pure functions: the WebView goes only to that page (`NavigationStarting`);
+  a frame loads only `https://www.youtube-nocookie.com/embed/<key>` or `https://www.youtube.com/embed/<key>`
+  (`FrameNavigationStarting`); everything else is cancelled. Addresses are taken only as https on the default port,
+  without userinfo, with the host compared whole, and refused outright with a backslash, a space, a control or
+  non-ASCII character.
+- **New windows.** Never a WebView window: a link the player opens (its YouTube logo, the title) goes to the browser when
+  it is https on `youtube.com`, `www.youtube.com`, `m.youtube.com` or `youtu.be`, and is dropped otherwise.
+- **Settings.** Developer tools, the default context menus and script dialogs, the status bar, zoom, browser accelerator
+  keys, swipe navigation, general autofill, password saving and host objects are off. Permissions are refused, all but
+  autoplay; downloads, external URI schemes and basic authentication are cancelled.
+- **Messages.** Only from the page's own origin, in a fixed schema (`TrailerPageMessage`: ready, playing, or an error
+  code; 128 characters at most, no other member); anything else is ignored.
+- **States.** `TrailerOverlayViewModel`: Loading, Playing (the player answered), Unavailable with its reason (the player's
+  errors 2, 5, 100, 101, 150, 153 and any other, no answer within 15 s through `TimeProvider`, no runtime, a failed
+  WebView2 process), Closed. Closing closes the WebView2, which stops the video and ends its processes.
+- **Full screen.** When the page asks for it (`ContainsFullScreenElementChanged`), the window goes full screen through its
+  AppWindow presenter, as the player does (`WindowedPlacement`), and the app under the trailer is hidden meanwhile.
+- **Logs.** The outcome only ("The trailer plays", "can't play in Granary: EmbedRefused"); a blocked navigation is logged
+  without its address, its host only at Debug. A YouTube address carries the video's key and stays out of the log.
+
 ## Native dependency
 
 `libmpv-2.dll` is the official mpv CI build (LGPL variant), pinned with its SHA-256 in
@@ -343,6 +384,7 @@ Licensing is in [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).
 | DPAPI file for tokens | The Credential Locker roams with the Microsoft account and is capped per app. |
 | Session state derived from registry and credentials | One source of truth; handler-initiated sign-outs and user actions take the same path to the UI. |
 | xUnit v3 with built-in asserts, no mocking library | FluentAssertions 8 is commercially licensed; fakes are small hand-written classes. |
+| Trailers in YouTube's embedded player in WebView2 | YouTube's terms allow its player only; mpv or yt-dlp would break them. The web plays them the same way. |
 | Central package management, warnings as errors | One place for versions; analyzers (including AOT/trim and platform checks) are enforced. |
 
 ## Building and testing

@@ -4,12 +4,10 @@ using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Cards;
 using Granary.Core.ViewModels.Detail;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
-using Windows.System;
 
 namespace Granary.App.Views;
 
@@ -64,23 +62,12 @@ public sealed partial class ItemDetailPage : Page
         }
     }
 
-    // The API names only YouTube's video key; the trailer plays on YouTube in the browser.
-    private async void OnTrailerClick(object sender, RoutedEventArgs e)
+    // The API names only YouTube's video key; the trailer plays over the window in YouTube's own player (TrailerOverlay).
+    private void OnTrailerClick(object sender, RoutedEventArgs e)
     {
-        if (sender is not FrameworkElement { DataContext: DetailTrailer trailer })
+        if (sender is FrameworkElement { DataContext: DetailTrailer trailer })
         {
-            return;
-        }
-        try
-        {
-            if (!await Launcher.LaunchUriAsync(trailer.WatchUrl))
-            {
-                App.Services.GetRequiredService<ILogger<ItemDetailPage>>().LogWarning("The browser did not open the trailer");
-            }
-        }
-        catch (Exception ex)
-        {
-            App.Services.GetRequiredService<ILogger<ItemDetailPage>>().LogWarning("The trailer could not be opened: {Error}", ex.GetType().Name);
+            App.Services.GetRequiredService<TrailerOverlayViewModel>().Open(trailer);
         }
     }
 }

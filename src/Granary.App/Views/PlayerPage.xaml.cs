@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Globalization;
 using Granary.App.Controls;
+using Granary.App.Services;
 using Granary.Core.Abstractions;
 using Granary.Core.Playback;
 using Granary.Core.ViewModels;
@@ -43,8 +44,7 @@ public sealed partial class PlayerPage : Page
     private AppWindow? _appWindow;
     // Windows' media controls and keys, from the page's load on (a page never loaded never played) until it is left.
     private PlayerSystemMedia? _systemMedia;
-    private AppWindowPresenter? _windowedPresenter;
-    private RectInt32? _windowedBounds;
+    private readonly WindowedPlacement _windowed = new();
 
     public PlayerPage()
     {
@@ -385,11 +385,11 @@ public sealed partial class PlayerPage : Page
         {
             // From the mini view to full screen, and back from there to the window it came from.
             SetMiniView(false);
-            KeepWindowed(window);
+            _windowed.Keep(window);
             window.SetPresenter(AppWindowPresenterKind.FullScreen);
             return;
         }
-        RestoreWindowed(window);
+        _windowed.Restore(window);
     }
 
     // The web player's Picture in Picture: the window itself, small and above the others (CompactOverlay).
@@ -402,7 +402,7 @@ public sealed partial class PlayerPage : Page
         if (mini)
         {
             SetFullScreen(false);
-            KeepWindowed(window);
+            _windowed.Keep(window);
             var presenter = CompactOverlayPresenter.Create();
             presenter.InitialSize = CompactOverlaySize.Medium;
             window.SetPresenter(presenter);
@@ -411,31 +411,7 @@ public sealed partial class PlayerPage : Page
             window.Resize(new SizeInt32((int)Math.Round(MiniViewWidth * scale), (int)Math.Round(MiniViewWidth * 9 / 16 * scale)));
             return;
         }
-        RestoreWindowed(window);
-    }
-
-    // Kept to return to: a new overlapped presenter would forget that the window was maximized, and the old one
-    // alone puts a restored window back a little off its place.
-    private void KeepWindowed(AppWindow window)
-    {
-        _windowedPresenter = window.Presenter;
-        _windowedBounds = new RectInt32(window.Position.X, window.Position.Y, window.Size.Width, window.Size.Height);
-    }
-
-    private void RestoreWindowed(AppWindow window)
-    {
-        if (_windowedPresenter is { } presenter)
-        {
-            window.SetPresenter(presenter);
-        }
-        else
-        {
-            window.SetPresenter(AppWindowPresenterKind.Overlapped);
-        }
-        if (window.Presenter is OverlappedPresenter { State: OverlappedPresenterState.Restored } && _windowedBounds is { } bounds)
-        {
-            window.MoveAndResize(bounds);
-        }
+        _windowed.Restore(window);
     }
 
     private void OnAppWindowChanged(AppWindow sender, AppWindowChangedEventArgs args)
