@@ -4,7 +4,7 @@
 
 # Granary
 
-A native Windows client for [Silo Server](https://siloserver.org), the self-hosted media server.
+A unofficial native Windows client for [Silo Server](https://siloserver.org), the self-hosted media server.
 
 [![CI](https://github.com/JoKeRIsCraZy/granary/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/JoKeRIsCraZy/granary/actions/workflows/ci.yml)
 [![Latest release](https://img.shields.io/github/v/release/JoKeRIsCraZy/granary?sort=semver)](https://github.com/JoKeRIsCraZy/granary/releases/latest)
