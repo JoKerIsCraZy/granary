@@ -43,15 +43,23 @@ out the app's resources (`Granary.pri`, the compiled XAML), and the published co
   so is an update that could not be verified.
 - Settings → About → Automatic updates (on by default) turns that schedule off. The choice is the app's, not a
   server's or a profile's, and is kept in `updates.json` in the data directory (`JsonUpdatePreferences`, so
-  `GRANARY_DATA_DIR` moves it too). Off, Granary does not look at the start or every six hours. Check for updates only
-  checks: a newer release shows as available with its version only (the feed's notes are not signed, and the
-  verified package is not downloaded yet) and a link to its GitHub release. Nothing is downloaded until the user
-  chooses Download and install, which downloads and verifies it exactly as an automatic update; then it is ready,
-  with the verified notes, and applies on Restart to update or when Granary closes. An update already downloaded when
-  the switch is turned off is held back: it is not applied on close, and shows as available until Download and install
-  (no second download: it was verified, and is hashed once more as Granary closes) or until the switch is turned on
-  again. Turned on again, the schedule resumes: the next look is six hours after the last check, or at once if that
-  has passed or a release found meanwhile is waiting.
+  `GRANARY_DATA_DIR` moves it too). Without the file updates are automatic; a file that is there but cannot be read
+  (cut short by a crash or a full disk) turns them off until they are switched on, since it may have said off. The
+  file is written off the UI thread, and closing waits up to two seconds for a save still running.
+- Off, Granary does not look at the start or every six hours. Check for updates only checks: a newer release shows as
+  available with its version only (the feed's notes are not signed, and the verified package is not downloaded yet)
+  and a link to its GitHub release. Nothing is downloaded until the user chooses Download and install, which
+  downloads and verifies it exactly as an automatic update; then it is ready, with the verified notes, and applies on
+  Restart to update or when Granary closes, whatever the switch does afterwards. A download that fails on the way
+  leaves the release available, so Download and install tries again.
+- An update already downloaded when the switch is turned off, and not chosen with Download and install, is held
+  back: it is not applied on close, and shows as available until Download and install (no second download: it was
+  verified, and is hashed once more as Granary closes) or until the switch is turned on again, which readies it with
+  the notice. Turned on again, the schedule resumes: the next look is six hours after the last check, or at once if
+  that has passed or a release found meanwhile is waiting.
+- The version shown and linked comes from the feed, which is not signed, so Granary takes only a plain one
+  (`FeedVersion`: "0.3.0", or "0.3.0-beta.1" with a label of at most 32 characters). Any other counts as a failed
+  check: nothing is shown, linked or downloaded, and the log does not repeat it.
 - What a release changes comes from CHANGELOG.md ([Keep a Changelog](https://keepachangelog.com)): the app ships the
   file and shows it in Settings → About, and `pack-release.ps1` hands the version's section to `vpk pack
   --releaseNotes`, so a downloaded update says what's new in it before the restart. Those notes are read from the

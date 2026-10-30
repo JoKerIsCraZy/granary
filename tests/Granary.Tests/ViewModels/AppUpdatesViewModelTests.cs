@@ -264,7 +264,7 @@ public sealed class AppUpdatesViewModelTests
     }
 
     [Fact]
-    public async Task Off_AFailedDownload_SaysSo_AndCanBeCheckedAgain()
+    public async Task Off_AFailedDownload_SaysSo_AndCanBeTriedAgainAtOnce()
     {
         _updater.Answers.Enqueue(() => "0.3.0");
         var updates = CreateOff();
@@ -273,11 +273,127 @@ public sealed class AppUpdatesViewModelTests
 
         await updates.DownloadAndInstallCommand.ExecuteAsync(null);
 
-        Assert.Equal(AppUpdateState.Failed, updates.State);
+        Assert.Equal(AppUpdateState.Available, updates.State);
+        Assert.Equal("Couldn't download Granary 0.3.0. Check the connection and try again.", updates.StatusText);
+        Assert.Equal("0.3.0", updates.AvailableVersion);
         Assert.Contains("Could not download the Granary update: HttpRequestException", _logs.All, StringComparison.Ordinal);
-        Assert.True(updates.CheckNowCommand.CanExecute(null));
+        Assert.True(updates.DownloadAndInstallCommand.CanExecute(null));
         updates.OnExiting();
         Assert.Empty(_updater.Applied);
+
+        _updater.DownloadFails = false;
+        await updates.DownloadAndInstallCommand.ExecuteAsync(null);
+
+        Assert.Equal(2, _updater.Downloads);
+        Assert.Equal(AppUpdateState.Ready, updates.State);
+        Assert.Equal("Granary 0.3.0 is ready. It installs when you restart or close Granary.", updates.StatusText);
+    }
+
+    [Fact]
+    public async Task AConfirmedUpdate_StaysReady_WhenTheSwitchIsFlipped()
+    {
+        _updater.Answers.Enqueue(() => "0.3.0");
+        var updates = CreateOff();
+        await updates.CheckNowCommand.ExecuteAsync(null);
+        await updates.DownloadAndInstallCommand.ExecuteAsync(null);
+
+        updates.IsAutomatic = true;
+        updates.IsAutomatic = false;
+
+        Assert.Equal(AppUpdateState.Ready, updates.State);
+        updates.OnExiting();
+        Assert.Equal([false], _updater.Applied);
+    }
+
+    [Fact]
+    public async Task AHeldBackUpdate_ConfirmedThenSwitchedOnAndOff_StaysReady()
+    {
+        _updater.Answers.Enqueue(() => "0.3.0");
+        var updates = Create();
+        await updates.RunAsync(TestContext.Current.CancellationToken);
+        updates.IsAutomatic = false;
+        await updates.DownloadAndInstallCommand.ExecuteAsync(null);
+
+        updates.IsAutomatic = true;
+        updates.IsAutomatic = false;
+
+        Assert.Equal(AppUpdateState.Ready, updates.State);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task AFeedVersionThatIsNotPlain_IsAFailedCheck_NeitherShownNorDownloaded(bool automatic)
+    {
+        const string hostile = "1.0.0/../x?y#";
+        _updater.Answers.Enqueue(() => hostile);
+        var updates = automatic ? Create() : CreateOff();
+
+        await updates.CheckNowCommand.ExecuteAsync(null);
+
+        Assert.Equal(AppUpdateState.Failed, updates.State);
+        Assert.Equal("Couldn't check for updates. Check the connection and try again.", updates.StatusText);
+        Assert.Null(updates.Release);
+        Assert.Null(updates.AvailableVersion);
+        Assert.Equal(0, _updater.Downloads);
+        Assert.Contains("Could not look for a Granary update: the feed names no plain version", _logs.All, StringComparison.Ordinal);
+        Assert.DoesNotContain(hostile, _logs.All, StringComparison.Ordinal);
+        Assert.True(updates.CheckNowCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public async Task AFeedVersionWithAVeryLongLabel_IsAFailedCheck()
+    {
+        _updater.Answers.Enqueue(() => "1.0.0-" + new string('a', 33));
+        _updater.Answers.Enqueue(() => "1.0.0-" + new string('a', 32));
+        var updates = CreateOff();
+
+        await updates.CheckNowCommand.ExecuteAsync(null);
+        Assert.Equal(AppUpdateState.Failed, updates.State);
+
+        await updates.CheckNowCommand.ExecuteAsync(null);
+        Assert.Equal(AppUpdateState.Available, updates.State);
+    }
+
+    [Fact]
+    public async Task Closing_WaitsForTheSwitchToBeSaved()
+    {
+        var saving = new TaskCompletionSource();
+        _preferences.Pending = saving;
+        var updates = Create();
+        var ct = TestContext.Current.CancellationToken;
+        updates.IsAutomatic = false;
+        // The save ends only once closing waits for it.
+        var disk = Task.Run(async () =>
+        {
+            await _clock.WaitForTimerAsync(ct);
+            saving.SetResult();
+        }, ct);
+
+        updates.OnExiting();
+
+        Assert.True(saving.Task.IsCompleted);
+        await disk;
+        Assert.DoesNotContain("before Granary closed", _logs.All, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Closing_WaitsForASaveOnlyBriefly()
+    {
+        _preferences.Pending = new TaskCompletionSource();
+        var updates = Create();
+        var ct = TestContext.Current.CancellationToken;
+        updates.IsAutomatic = false;
+        var clock = Task.Run(async () =>
+        {
+            await _clock.WaitForTimerAsync(ct);
+            _clock.Advance(AppUpdatesViewModel.SaveWaitAtExit);
+        }, ct);
+
+        updates.OnExiting();
+
+        await clock;
+        Assert.Contains("could not be saved before Granary closed", _logs.All, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -310,16 +426,18 @@ public sealed class AppUpdatesViewModelTests
     }
 
     [Fact]
-    public async Task SwitchedOnAgain_AHeldBackUpdate_IsReadyAgain()
+    public async Task SwitchedOnAgain_AHeldBackUpdate_IsReadyAgain_WithTheNotice()
     {
         _updater.Answers.Enqueue(() => "0.3.0");
         var updates = Create();
         await updates.RunAsync(TestContext.Current.CancellationToken);
+        updates.LaterCommand.Execute(null);
         updates.IsAutomatic = false;
 
         updates.IsAutomatic = true;
 
         Assert.Equal(AppUpdateState.Ready, updates.State);
+        Assert.True(updates.IsNoticeShown);
         Assert.Equal("Restart now", updates.RestartText);
         Assert.Equal(1, _updater.Downloads);
         updates.OnExiting();

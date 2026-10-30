@@ -48,6 +48,9 @@ public sealed partial class AppUpdatesViewModel : ObservableObject
     /// <summary>How often a running Granary looks again, as Plezy's six hours.</summary>
     public static readonly TimeSpan CheckEvery = TimeSpan.FromHours(6);
 
+    /// <summary>How long closing waits for the switch to be saved, when it was used just before.</summary>
+    public static readonly TimeSpan SaveWaitAtExit = TimeSpan.FromSeconds(2);
+
     private const string AutomaticSummary =
         "Granary looks for a new release when it starts and every six hours, downloads it in the background, and installs it when it closes.";
 
@@ -61,6 +64,12 @@ public sealed partial class AppUpdatesViewModel : ObservableObject
     private Task? _looking;
     // The release downloaded and verified, kept while it is held back so that confirming it needs no second download.
     private AppRelease? _downloaded;
+    // The user chose Download and install for it: it stays ready whatever the switch does.
+    private bool _confirmed;
+    // The last Download and install failed on the way; the release is still offered.
+    private bool _downloadFailed;
+    // The switch's last save, which closing waits for briefly.
+    private Task _saving = Task.CompletedTask;
     // Cancelled when the switch flips, which ends the schedule's wait.
     private CancellationTokenSource _switched = new();
     // The app's run, which ends as the window closes; a look asked for from the page stops with it too.
@@ -152,7 +161,9 @@ public sealed partial class AppUpdatesViewModel : ObservableObject
         AppUpdateState.Checking => "Checking for updates…",
         AppUpdateState.Downloading => $"Downloading Granary {Release?.Version}… {DownloadPercent.ToString(English)}%",
         AppUpdateState.UpToDate => "Granary is up to date.",
-        AppUpdateState.Available => $"Granary {Release?.Version} is available.",
+        AppUpdateState.Available => _downloadFailed
+            ? $"Couldn't download Granary {Release?.Version}. Check the connection and try again."
+            : $"Granary {Release?.Version} is available.",
         AppUpdateState.Ready => $"Granary {Release?.Version} is ready. It installs when you restart or close Granary.",
         AppUpdateState.Failed => "Couldn't check for updates. Check the connection and try again.",
         AppUpdateState.NotVerified => IsAutomatic
@@ -251,12 +262,33 @@ public sealed partial class AppUpdatesViewModel : ObservableObject
     [RelayCommand]
     private void Later() => IsNoticeShown = false;
 
-    /// <summary>For the window as it closes: hands a downloaded release to the updater, to apply once the app has exited.</summary>
+    /// <summary>
+    /// For the window as it closes: waits briefly for the switch to be saved, and hands a ready release to the updater, to
+    /// apply once the app has exited.
+    /// </summary>
     public void OnExiting()
     {
+        WaitForSave();
         if (IsReady)
         {
             _updater.ApplyWhenExited(_restart);
+        }
+    }
+
+    // Blocks the closing window at most SaveWaitAtExit; the save runs on the thread pool and never needs this thread.
+    private void WaitForSave()
+    {
+        if (_saving.IsCompleted)
+        {
+            return;
+        }
+        try
+        {
+            _saving.WaitAsync(SaveWaitAtExit, _time).GetAwaiter().GetResult();
+        }
+        catch (TimeoutException)
+        {
+            _logger.LogWarning("Whether updates are automatic could not be saved before Granary closed");
         }
     }
 
@@ -265,9 +297,9 @@ public sealed partial class AppUpdatesViewModel : ObservableObject
         if (value != _preferences.IsAutomatic)
         {
             // Never fails: a save that does not work is logged, and the choice holds for this run.
-            _ = _preferences.SetAutomaticAsync(value);
+            _saving = _preferences.SetAutomaticAsync(value);
         }
-        if (!value && IsReady)
+        if (!value && IsReady && !_confirmed)
         {
             // Off means nothing installs without asking: a downloaded update waits for Download and install.
             _logger.LogInformation("Automatic updates are off: Granary {Version} waits to be installed", Release?.Version);
@@ -276,8 +308,10 @@ public sealed partial class AppUpdatesViewModel : ObservableObject
         }
         else if (value && IsAvailable && _downloaded is { } held)
         {
+            // As an automatic download: ready, with the notice.
             Release = held;
             State = AppUpdateState.Ready;
+            IsNoticeShown = true;
         }
         // Last, after the state is settled: the schedule's wait ends and it looks at the switch again.
         var flipped = _switched;
@@ -294,6 +328,14 @@ public sealed partial class AppUpdatesViewModel : ObservableObject
         }
         var left = last + CheckEvery - _time.GetUtcNow();
         return left > TimeSpan.Zero ? left : TimeSpan.Zero;
+    }
+
+    partial void OnStateChanged(AppUpdateState value)
+    {
+        if (value != AppUpdateState.Available)
+        {
+            _downloadFailed = false;
+        }
     }
 
     // One look at a time: the timer's and the button's share it, and Download and install's.
@@ -314,6 +356,14 @@ public sealed partial class AppUpdatesViewModel : ObservableObject
             if (release is null)
             {
                 State = AppUpdateState.UpToDate;
+                return;
+            }
+            if (!FeedVersion.IsPlain(release.Version))
+            {
+                // The feed is not signed: a version that is not a plain one is neither shown, linked, downloaded nor logged.
+                _logger.LogWarning("Could not look for a Granary update: the feed names no plain version");
+                Release = null;
+                State = AppUpdateState.Failed;
                 return;
             }
             Release = release;
@@ -348,6 +398,7 @@ public sealed partial class AppUpdatesViewModel : ObservableObject
         if (_downloaded is { } held)
         {
             // Verified when it was downloaded, and hashed once more as Granary closes.
+            _confirmed = true;
             Release = held;
             State = AppUpdateState.Ready;
             return;
@@ -362,9 +413,10 @@ public sealed partial class AppUpdatesViewModel : ObservableObject
         }
         catch (Exception ex)
         {
+            // Offline or rate-limited: the release is still offered, and Download and install tries again.
             _logger.LogWarning("Could not download the Granary update: {Problem}", UpdateFailures.KindOf(ex));
-            Release = null;
-            State = AppUpdateState.Failed;
+            _downloadFailed = true;
+            State = AppUpdateState.Available;
         }
     }
 
@@ -373,12 +425,13 @@ public sealed partial class AppUpdatesViewModel : ObservableObject
     private async Task DownloadAsync(bool confirmed, CancellationToken cancellationToken)
     {
         _downloaded = null;
+        _confirmed = false;
         DownloadPercent = 0;
         State = AppUpdateState.Downloading;
         // Made here, on the caller's thread, so the updater's reports come back to it.
         var verified = await _updater.DownloadAsync(new Progress<int>(percent => DownloadPercent = Math.Clamp(percent, 0, 100)),
             cancellationToken);
-        if (verified is null)
+        if (verified is null || !FeedVersion.IsPlain(verified.Version))
         {
             // The updater logged why. Nothing is applied; the next look tries again.
             State = AppUpdateState.NotVerified;
@@ -393,6 +446,7 @@ public sealed partial class AppUpdatesViewModel : ObservableObject
             State = AppUpdateState.Available;
             return;
         }
+        _confirmed = confirmed;
         State = AppUpdateState.Ready;
         IsNoticeShown = true;
     }

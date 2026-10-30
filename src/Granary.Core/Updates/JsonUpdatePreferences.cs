@@ -5,8 +5,10 @@ using Microsoft.Extensions.Logging;
 namespace Granary.Core.Updates;
 
 /// <summary>
-/// <see cref="IUpdatePreferences"/> in <c>updates.json</c> in the data directory (<c>{ "automatic": false }</c>). A file that
-/// cannot be read leaves updates automatic; one that cannot be written is logged, and the choice still holds for this run.
+/// <see cref="IUpdatePreferences"/> in <c>updates.json</c> in the data directory (<c>{ "automatic": false }</c>). Without the
+/// file updates are automatic. A file that is there but cannot be read (cut short by a crash or a full disk) may have said
+/// off, so they are off until switched on: nothing installs without asking. One that cannot be written is logged, and the
+/// choice still holds for this run. Files are written off the caller's thread, which is the UI's.
 /// </summary>
 public sealed class JsonUpdatePreferences : IUpdatePreferences
 {
@@ -31,7 +33,7 @@ public sealed class JsonUpdatePreferences : IUpdatePreferences
     public Task SetAutomaticAsync(bool automatic)
     {
         _automatic = automatic;
-        return SaveAsync();
+        return Task.Run(SaveAsync);
     }
 
     private bool Load()
@@ -40,16 +42,22 @@ public sealed class JsonUpdatePreferences : IUpdatePreferences
         {
             if (!File.Exists(_filePath))
             {
+                // Never chosen: on, the default.
                 return true;
             }
             var file = JsonSerializer.Deserialize(File.ReadAllText(_filePath), UpdatesJsonContext.Default.UpdatesFile);
-            return file?.Automatic ?? true;
+            if (file?.Automatic is { } automatic)
+            {
+                return automatic;
+            }
+            _logger.LogWarning("The updates file names no choice; automatic updates are off until they are switched on");
+            return false;
         }
         catch (Exception ex)
         {
-            // Whatever the file or the disk does, the app starts, and updates as it does by default.
-            _logger.LogWarning(ex, "Whether updates are automatic could not be read; they are");
-            return true;
+            // Whatever the file or the disk does, the app starts; About says that automatic updates are off.
+            _logger.LogWarning(ex, "Whether updates are automatic could not be read; they are off until they are switched on");
+            return false;
         }
     }
 
@@ -91,7 +99,7 @@ public sealed class JsonUpdatePreferences : IUpdatePreferences
     }
 }
 
-/// <summary><c>updates.json</c>: whether updates are automatic; absent means they are.</summary>
+/// <summary><c>updates.json</c>: whether updates are automatic.</summary>
 internal sealed record UpdatesFile(bool? Automatic);
 
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower, WriteIndented = true)]
