@@ -485,7 +485,7 @@ one middle line; a 1 px line (the content's border colour) runs under it across 
 sidebar the content keeps only its left edge, square at the top. Left of the caption buttons the title bar has a button
 of its own, drawn as they are (`SiloTitleBarButtonStyle`, 46 by 32, the glyph light grey and dimmed with them while the
 window is inactive): Full screen ("Full screen (F11)"; see Full screen, below). It is not part of the drag area, so it
-takes clicks.
+takes clicks, and Tab reaches it first, as the top row, then the sidebar and the page.
 
 The mark moves (2026-10-26; drafts as SVG in `Assets/Logo`: `granary-mark-intro.svg`, `-loading.svg`, `-ambient.svg`).
 `GranaryMark` draws it on the compositor, so it stays smooth while the UI thread is busy: the ring is a circle trimmed

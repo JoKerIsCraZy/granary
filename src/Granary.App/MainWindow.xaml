@@ -33,6 +33,24 @@
         -->
         <Grid x:Name="AppTitleBar" />
 
+        <!--
+            Full screen for the whole window (MainWindow.FullScreen.cs), drawn as caption buttons: in a window Full screen,
+            left of Windows' own; in full screen, which has none, Exit full screen and Close in their place. First here, so
+            the keyboard reaches them first, as the top row; drawn over the rest (ZIndex), a trailer's scrim included, as the
+            caption buttons are. Hidden under the full player, which has its own, and while a trailer fills the screen.
+        -->
+        <StackPanel x:Name="WindowButtons" Canvas.ZIndex="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
+            <Button x:Name="FullScreenButton" Style="{StaticResource SiloTitleBarButtonStyle}" Click="OnFullScreenClick"
+                    AutomationProperties.AcceleratorKey="F11">
+                <FontIcon x:Name="FullScreenGlyph" FontSize="10" />
+            </Button>
+            <!-- Closes the window as Windows' Close does, through the same command, so playback stops as on any close. -->
+            <Button x:Name="CloseButton" Style="{StaticResource SiloTitleBarCloseButtonStyle}" Click="OnCloseClick"
+                    Visibility="Collapsed" AutomationProperties.Name="Close" ToolTipService.ToolTip="Close">
+                <FontIcon Glyph="&#xE8BB;" FontSize="10" />
+            </Button>
+        </StackPanel>
+
         <!-- The title bar's lower edge, across the whole window; the player, which reaches under the title bar, covers it. -->
         <Border Height="1" VerticalAlignment="Bottom" IsHitTestVisible="False"
                 Background="{ThemeResource NavigationViewContentGridBorderBrush}" />
@@ -240,24 +258,6 @@
             (Controls/TrailerOverlay, MainWindow.Trailer.cs).
         -->
         <controls:TrailerOverlay x:Name="TrailerLayer" Grid.RowSpan="2" />
-
-        <!--
-            Full screen for the whole window (MainWindow.FullScreen.cs), drawn as caption buttons: in a window Full screen,
-            left of Windows' own; in full screen, which has none, Exit full screen and Close in their place. Over a
-            trailer's scrim, as the caption buttons are; hidden under the full player, which has its own, and while a
-            trailer fills the screen.
-        -->
-        <StackPanel x:Name="WindowButtons" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
-            <Button x:Name="FullScreenButton" Style="{StaticResource SiloTitleBarButtonStyle}" Click="OnFullScreenClick"
-                    AutomationProperties.AcceleratorKey="F11">
-                <FontIcon x:Name="FullScreenGlyph" FontSize="10" />
-            </Button>
-            <!-- Closes the window as Windows' Close does, through the same command, so playback stops as on any close. -->
-            <Button x:Name="CloseButton" Style="{StaticResource SiloTitleBarCloseButtonStyle}" Click="OnCloseClick"
-                    Visibility="Collapsed" AutomationProperties.Name="Close" ToolTipService.ToolTip="Close">
-                <FontIcon Glyph="&#xE8BB;" FontSize="10" />
-            </Button>
-        </StackPanel>
 
         <!--
             The start: Granary's mark plays its intro in the middle of the window while the app loads its first page, then
