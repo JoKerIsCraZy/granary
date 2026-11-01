@@ -51,9 +51,9 @@ public sealed record PlaybackSnapshot(
 
     /// <summary>
     /// What the player holds of the loaded file, in the time of <see cref="Position"/>: mpv's cache of a network stream,
-    /// none for a local file. Empty from a load until the new file is open, and after a stop or a failure; at the end the
-    /// file stays open (keep-open), and so do its ranges. It changes at most four times a second, raised from a timer's
-    /// thread: a snapshot with ranges of one load can arrive after the first snapshot of the next.
+    /// none for a local file. Empty from a load until the new file is open. While keep-open holds the file at its end, its
+    /// ranges stay; they clear when the file ends: a stop, a failure, or mpv's own end of the file. They change at most
+    /// four times a second, raised from a timer's thread (see <see cref="Sequence"/>).
     /// </summary>
     public BufferedRanges Buffered { get; init; } = BufferedRanges.None;
 

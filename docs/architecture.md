@@ -51,12 +51,11 @@ the display refresh rate itself (Phase 3).
   (`TrailingThrottle`, always on a timer's thread, so mpv's event thread never waits for the read; a failure is
   logged), takes its `seekable-ranges` (`MpvCacheState`, which reads anything else as no ranges) and reports them in
   `PlaybackSnapshot.Buffered`, in the time of `time-pos` (mpv applies the same offset to both). A load empties them
-  at once, and a read of the file before is dropped by its load id; a stop or a failure leaves the idle snapshot,
-  which holds none. At the end the file stays open (`keep-open`) and so do its ranges, as on the web.
-  `PlayerViewModel.Buffered` moves them into the title's time with the timeline offset, as the position, and keeps
-  them within the title's length. It takes them only from the newest load it has seen (a timer's snapshot of the load
-  before can arrive after the next one's), and holds them back once the plan's offset differs from the one a load's
-  ranges were shown with: the plan is taken before its stream loads, and the engine plays the stream before
+  at once, and a read of the file before is dropped by its load id. While `keep-open` holds the file at its end, its
+  ranges stay, as on the web; they clear when the file ends (a stop, a failure or mpv's own end of the file), whose
+  idle snapshot holds none. `PlayerViewModel.Buffered` moves them into the title's time with the timeline offset, as
+  the position, and keeps them within the title's length. It holds them back once the plan's offset differs from the
+  one the load began with: the plan is taken before its stream loads, and the engine plays the stream before
   meanwhile.
 - The engine raises `StateChanged` from mpv's event thread, from the cache reads on a timer's thread and from the
   caller's thread of `Load`, each time after leaving its lock, so a snapshot can overtake another on the way. Every
