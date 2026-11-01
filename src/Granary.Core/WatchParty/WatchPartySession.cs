@@ -34,8 +34,10 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
     private (string? ServerId, string? ProfileId) _seenAs;
     // Counts every entry and leave: an answer to a call made before one is about a room this profile is no longer in.
     private long _generation;
-    // The host's End on its way.
-    private Task<bool>? _ending;
+    // The server and profile the room was entered as: its recent entry is theirs, whoever is signed in once it ends.
+    private (string ServerId, string ProfileId)? _owner;
+    // The host's End on its way, and the room it ends.
+    private (string RoomId, Task<bool> Ending)? _ending;
 
     public WatchPartySession(ISessionManager session, WatchPartyApi api, Func<WatchPartyConnection> connections, IUiDispatcher dispatcher,
         ILogger<WatchPartySession> logger, WatchPartyRecentRooms? recentRooms = null, TimeProvider? time = null)
@@ -222,60 +224,72 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
     /// <returns>True when a room ended; false when this device was in none, or in one already over.</returns>
     public async Task<bool> EndRoomAsync()
     {
-        // A second End while one is on its way waits for that one: the room is ended once.
-        if (_ending is { } pending)
-        {
-            return await pending;
-        }
-        if (Room is not { } room || End is not null)
+        if (Room is not { } room)
         {
             return false;
         }
-        var ending = EndAsync(room);
-        _ending = ending;
+        // A second End of the room while one is on its way waits for that one: the room is ended once. Another room (the
+        // first left meanwhile) is ended on its own.
+        if (_ending is { } pending && pending.RoomId == room.RoomId)
+        {
+            return await pending.Ending;
+        }
+        if (End is not null)
+        {
+            return false;
+        }
+        var ending = EndAsync(room, _owner);
+        _ending = (room.RoomId, ending);
         try
         {
             return await ending;
         }
         finally
         {
-            if (_ending == ending)
+            if (_ending?.Ending == ending)
             {
                 _ending = null;
             }
         }
     }
 
-    private async Task<bool> EndAsync(WatchPartyRoom room)
+    private async Task<bool> EndAsync(WatchPartyRoom room, (string ServerId, string ProfileId)? owner)
     {
         long generation = _generation;
+        string reason = "host_left";
         try
         {
             await _api.EndAsync(Server(), room.RoomId);
         }
-        catch (SiloApiException ex) when (ex.Status is 404 or 409 or 410 && generation == _generation && End is { Replaced: false })
+        catch (SiloApiException ex) when (AlreadyOver(ex) is { } over)
         {
-            // The room's own close came first, and the server has no room left to end: it ended all the same.
-            _logger.LogDebug("The Watch Party had closed before its end was answered: {Status}", ex.Status);
+            // The room ended before this End reached it (its own close, or the host's End on another device): it is over
+            // all the same, as Android's WatchTogetherRepository.closeRoom takes it.
+            _logger.LogDebug("The Watch Party was over before its end was answered: {Status}", ex.Status);
+            reason = over;
         }
         if (generation != _generation)
         {
             // Left, another room entered, or another profile or server meanwhile: the room ended, but nothing here is it.
-            MarkEnded(room);
+            MarkEnded(owner, room);
             return true;
         }
-        // The room's own close marked it already.
-        if (End is not { } closed || !RoomIsOver(closed))
+        // The room's own close came first: it said so and marked the room. An end that said less of the room (a refused
+        // proof, another device) gives way.
+        bool closed = End is { } said && RoomIsOver(said);
+        if (!closed)
         {
-            MarkEnded(room);
+            MarkEnded(owner, room);
         }
         _generation++;
         var connection = _connection;
         _connection = null;
         _roomToken = null;
         ConnectionState = WatchPartyConnectionState.Disconnected;
-        // The room's own close may have come first; it said the same.
-        End ??= new WatchPartyEnd("host_left");
+        if (!closed)
+        {
+            End = new WatchPartyEnd(reason);
+        }
         if (connection is not null)
         {
             Detach(connection);
@@ -284,6 +298,16 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
         return true;
     }
 
+    // The server's answer to an End of a room that is over already (closeWatchTogetherRoom): 409 conflict, "The room is
+    // closed.", or 404 not_found, no such room; named as a refused socket ticket names them. Any other 409 (a capability
+    // turned off) is a failure.
+    private static string? AlreadyOver(SiloApiException ex) => (ex.Status, ex.Code) switch
+    {
+        (409, ProblemCodes.Conflict) => "ended",
+        (404, ProblemCodes.NotFound) => "not_found",
+        _ => null,
+    };
+
     /// <summary>Leaves the room on this device: the socket closes, and nothing of the room stays.</summary>
     public async Task LeaveAsync()
     {
@@ -291,6 +315,7 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
         var connection = _connection;
         _connection = null;
         _roomToken = null;
+        _owner = null;
         StartedRevision = null;
         Room = null;
         End = null;
@@ -354,6 +379,7 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
         }
         _generation++;
         _roomToken = response.RoomAccessToken;
+        _owner = _session.ActiveServer?.Id is { } serverId && _session.ProfileId is { } profileId ? (serverId, profileId) : null;
         if (Room?.RoomId != response.Room.RoomId)
         {
             StartedRevision = null;
@@ -367,16 +393,17 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
 
     private void Remember(WatchPartyRoom room, string token, string? title)
     {
-        if (_recent is { } recent && _session.ActiveServer?.Id is { } serverId && _session.ProfileId is { } profileId)
+        if (_recent is { } recent && _owner is var (serverId, profileId))
         {
             Recent(recent.RememberAsync(new WatchPartyRecentRoom(serverId, profileId, room.RoomId, room.Code, token, room.IsHost, _time.GetUtcNow(),
                 title)));
         }
     }
 
-    private void MarkEnded(WatchPartyRoom room)
+    // Marked for the server and profile that were in the room, not whoever is signed in by now.
+    private void MarkEnded((string ServerId, string ProfileId)? owner, WatchPartyRoom room)
     {
-        if (_recent is { } recent && _session.ActiveServer?.Id is { } serverId && _session.ProfileId is { } profileId)
+        if (_recent is { } recent && owner is var (serverId, profileId))
         {
             Recent(recent.MarkEndedAsync(serverId, profileId, room.RoomId));
         }
@@ -463,7 +490,7 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
         End = end;
         if (RoomIsOver(end) && Room is { } room)
         {
-            MarkEnded(room);
+            MarkEnded(_owner, room);
         }
     });
 
@@ -478,7 +505,7 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
         if (room.IsEnded && End is null)
         {
             End = new WatchPartyEnd("ended");
-            MarkEnded(room);
+            MarkEnded(_owner, room);
         }
     }
 
