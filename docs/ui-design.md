@@ -487,7 +487,8 @@ window shows a start screen (`MainWindow.ShowStartup`): the intro in the middle,
 from its upper end with a quarter turn, play pops in, a glint runs round, 1.7 s), then the loading loop while the
 first page still loads (Home's rows, `IStartupContent`), at most 6 s in all, then the app fades in (300 ms). The
 player shows the loading loop (a stretch of the ring runs through the G, play breathes, 1.4 s) on a dark disc while a
-title prepares or buffers. With Windows' animations off the mark stands still.
+title prepares or buffers, and small in the corner while the stream is planned anew. With Windows' animations off the
+mark stands still.
 
 - In the card: the title (`SiloAuthTitleTextStyle`, 30 / ExtraBold) over a muted lead, labelled 36 px fields
   (`SiloAuthTextBoxStyle`, `SiloAuthPasswordBoxStyle`), full-width buttons rounded 10 (`SiloAuthButtonStyle` red,
@@ -767,8 +768,9 @@ stream's commands on Activity.
   open one 10 px with a white ring) with a white 6 by 16 px handle at each end of the open kind; dragging one moves that
   end, never past the other (0.5 s apart), with "Intro end 0:50" above it. A new part gets a minute on the other side.
   Esc closes the panel first; another title closes it.
-- **Settings menu** (the web's QualityMenu): a gear pill (white 8 %) that names the quality ("Auto", "720p Medium")
-  and, at a speed other than 1×, a white badge with it ("1.5×"). SPEED: the value at the right, the speeds 0.5× to 3×
+- **Settings menu** (the web's QualityMenu): a gear pill (white 8 %) that names the quality ("Auto", "720p Medium"),
+  "…" while the plan changes, and, at a speed other than 1×, a white badge with it ("1.5×"). Below 640 px (the web's
+  `sm`) the pill leaves the quality out. SPEED: the value at the right, the speeds 0.5× to 3×
   (0.25 apart up to 2×, then 2.5× and 3×) as stops on a track drawn like the seek bar, the fill from 1× to the
   chosen speed, 0.5×, 1×, 2× and 3× named under it (`SpeedTrack`); it applies at once and is saved as this device's
   `player.playback_speed`. VERSION with more than one file ("2160p HEVC HDR", "Playing" / "Requested" chips): a pick
@@ -832,6 +834,15 @@ stream's commands on Activity.
   in white 15 % over its 5 s; after an automatic skip "Watch Intro" with "Intro skipped" above it (12 px, white
   75 %, shaded so it reads on a bright picture, and read out). "Skip Recap", "Skip Credits" and "Skip Preview"
   stay while inside their part. Esc turns an intro pill away before it does anything else.
+- **Plan change** (Granary's own; `PlayerViewModel.PlanChange`): while the stream is planned anew, Granary's mark runs
+  its loading loop in the skip pill's corner: 32 px on a 44 px disc (black 45 %), 28 px off the corner, above the bar
+  while the controls show and above the skip pill or the next episode's card, 12 px apart, when one shows; hidden in the
+  mini view and the bar. It counts what the web counts as `replanning || replacing`: a quality, another file, an audio
+  or subtitle track the stream cannot switch to itself (leaving a burn-in, a subtitle the viewer added), a seek outside
+  what the stream holds, and a new attempt after the server lost the session. It shows from the request until the new
+  stream's first frame, and goes when the server refuses (the stream plays on), on a failure or when the player is left.
+  A reconnect is not one: it shows as buffering. Screen readers hear "Switching quality", "Switching version", "Switching
+  audio", "Switching subtitles", "Seeking" or "Restarting playback" as it starts.
 - **Next episode** (the web's NextEpisodeOverlay and PlayingNextScreen):
   - At the credits a card replaces the skip pill: black at 80 %, radius 8, "UP NEXT IN 34S" (12 px, white 60 %),
     "S1:E4 — Title" (14 px medium), Play Now (white, black text) and Cancel (outlined), both rounded 4. It counts the
@@ -844,9 +855,10 @@ stream's commands on Activity.
     right. The video plays on in a 320 px window top left (radius 16), a click on it returns to it; it fades out at
     the end. Enter plays the next episode.
   - Without a next episode the screen says "You've finished {series}" with Back. A movie's end goes back.
-- **States**: preparing shows Exit and a spinner, no transport. Buffering puts a spinner on a dark
-  disc over the picture. Failed shows the message, Retry when it can help and Back; keyboard focus moves
-  to them. Ended keeps the controls up.
+- **States**: preparing shows Exit and a spinner, no transport. Buffering, reconnecting and a plan change put a spinner
+  on a dark disc over the picture once they have lasted 500 ms, as the web delays its spinner so brief stalls do not
+  flash it; it goes as soon as the stream plays. Failed shows the message, Retry when it can help and Back; keyboard
+  focus moves to them. Ended keeps the controls up.
 - **Auto-hide**: during playback the controls fade (and slide a few pixels) after 3 s without pointer
   movement, and the cursor goes with them while it is over the picture. They stay while paused, preparing,
   buffering, failed or ended, while the pointer rests on them, during a seek drag, while a flyout is open or

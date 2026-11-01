@@ -22,6 +22,33 @@ public enum ServerPlaybackPhase
 public sealed record ServerPlaybackStatus(ServerPlaybackPhase Phase, string Message = "", bool CanRetry = false);
 
 /// <summary>
+/// What a plan change in flight is for: the stream that plays is being replaced by a new plan, as the web player's
+/// <c>replanning || replacing</c>. A reconnect is not one; it shows as <see cref="ServerPlaybackPhase.Reconnecting"/>.
+/// </summary>
+public enum PlanChange
+{
+    None,
+
+    /// <summary>The viewer's quality (<c>quality_change</c>).</summary>
+    Quality,
+
+    /// <summary>Another file of the title, in a new session.</summary>
+    Version,
+
+    /// <summary>An audio track the stream does not carry (<c>track_change</c>).</summary>
+    Audio,
+
+    /// <summary>A subtitle the player cannot show itself, or one the viewer added (<c>track_change</c>).</summary>
+    Subtitles,
+
+    /// <summary>A seek outside what the stream holds (<c>seek_reanchor</c>).</summary>
+    Seek,
+
+    /// <summary>The server lost the session while the title played: a new attempt from where the viewer is.</summary>
+    Restart,
+}
+
+/// <summary>
 /// One playback of a server title (docs/api-contract.md, 8 to 10): it asks the server for a plan, loads it
 /// into the engine with the media headers, reports progress, recovers what the protocol lets it recover,
 /// and stops the session at the end. The engine's own state (pause, volume, position) stays with the engine.
@@ -192,6 +219,15 @@ public interface IServerPlayback : IAsyncDisposable
 
     /// <summary>Moves to <paramref name="sourceSeconds"/>, asking the server for a new plan when the stream cannot get there itself.</summary>
     void Seek(double sourceSeconds);
+
+    /// <summary>
+    /// The plan change in flight: from the request for a new plan until the new stream shows its first frame, the server
+    /// refuses (the stream that plays goes on), or playback fails or stops; <see cref="PlanChange.None"/> otherwise.
+    /// </summary>
+    PlanChange PlanChange { get; }
+
+    /// <summary>Raised on the UI thread when <see cref="PlanChange"/> changes.</summary>
+    event EventHandler? PlanChangeChanged;
 
     /// <summary>Reports the final position and ends the server session; safe to call more than once.</summary>
     Task StopAsync();

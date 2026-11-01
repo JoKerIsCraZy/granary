@@ -6,6 +6,17 @@ release's section is what its update says it changes (docs/release.md).
 
 ## [Unreleased]
 
+### Added
+
+- While the player switches quality, version or a track, or moves to a part the stream does not hold yet, a small
+  loading ring shows at the bottom right until the new stream plays, the settings button shows "…" in place of the
+  quality, and the spinner in the middle shows once the switch takes longer than half a second.
+
+### Changed
+
+- The player's spinner waits half a second before it shows, as on Silo's web, so short stalls no longer flash it. The
+  settings button leaves the quality out in a narrow window.
+
 ## [0.1.0] - 2026-11-01
 
 ### Added

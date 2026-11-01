@@ -13,7 +13,7 @@ public sealed class ServerPlaybackSubtitleTests
 {
     private readonly ServerPlaybackFixture _fixture = new();
 
-    private static readonly string SubtitlePrefsPath = "api/v2/subtitle-prefs/" + SiloHttp.PathSegment("movie:heat-1995", "key");
+    internal static readonly string SubtitlePrefsPath = "api/v2/subtitle-prefs/" + SiloHttp.PathSegment("movie:heat-1995", "key");
 
     // The inventory of the direct play: 0 external SRT (English), 1 embedded ASS (English signs, forced), 2 embedded PGS (Japanese),
     // 3 embedded DVD (French, burn-in only), 4 downloaded SRT (Spanish). The file lists the embedded ones at FFmpeg
@@ -28,7 +28,7 @@ public sealed class ServerPlaybackSubtitleTests
         _fixture.Engine.EmbeddedSubtitles[4] = 8;
     }
 
-    private static string WithSubtitleTracks(string watch, string extra = "")
+    internal static string WithSubtitleTracks(string watch, string extra = "")
     {
         string tracks = new Regex(@"(""audio_tracks"":\s*\[[^\]]*\])").Replace(watch, "$1, \"subtitle_tracks\": ["
             + "{ \"index\": 3, \"language\": \"eng\", \"codec\": \"ass\", \"forced\": true },"
@@ -43,7 +43,7 @@ public sealed class ServerPlaybackSubtitleTests
     private static string ShowingTheSidecar(string decision = PlaybackPayloads.StartOpaqueIds) => Showing(decision, "render", 0,
         $"\"artifact\": {{ \"url\": \"{Sidecar0}\", \"mime_type\": \"text/vtt\", \"format\": \"vtt\", \"timing_origin_seconds\": 0 }},");
 
-    private static string Showing(string decision, string mode, int track, string extra = "")
+    internal static string Showing(string decision, string mode, int track, string extra = "")
     {
         string subtitle = new Regex(@"(""subtitle"":\s*\{\s*)""mode"":\s*""off"",").Replace(decision,
             $"$1\"mode\": \"{mode}\", \"track_id\": \"file:42:subtitle:{track}\", {extra}", 1);
@@ -297,7 +297,7 @@ public sealed class ServerPlaybackSubtitleTests
     }
 
     // The plan of a replan after a subtitle was stored: the Spanish download is stored subtitle 77.
-    private static string ListingStored(string naming) =>
+    internal static string ListingStored(string naming) =>
         PlaybackPayloads.StartOpaqueIds.Replace("\"label\": \"Spanish (downloaded)\",", "\"label\": \"Spanish (downloaded)\", " + naming, StringComparison.Ordinal);
 
     [Fact]

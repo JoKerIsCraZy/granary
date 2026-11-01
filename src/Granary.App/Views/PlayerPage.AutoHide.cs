@@ -138,11 +138,13 @@ public sealed partial class PlayerPage
         PlaceSkipPrompt();
     }
 
-    // The skip pill and the next episode's card sit 28 px off the corner, and above the bar while it shows.
+    // The skip pill and the next episode's card sit 28 px off the corner, and above the bar while it shows; the plan
+    // change's mark with them.
     private void PlaceSkipPrompt()
     {
         double above = _areControlsVisible && BottomBar.ActualHeight > 0 ? BottomBar.ActualHeight + SkipPromptGap - SkipPrompt.Margin.Bottom : 0;
         SkipPrompt.Translation = NextUpCard.Translation = new Vector3(0, -(float)Math.Max(0, above), 0);
+        PlacePlanChangeMark(Math.Max(0, above));
     }
 
     // Subtitles at the bottom move above the controls while they show, and back down when they fade. The bar's
