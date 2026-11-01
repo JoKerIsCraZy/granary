@@ -6,6 +6,11 @@ release's section is what its update says it changes (docs/release.md).
 
 ## [Unreleased]
 
+### Changed
+
+- HDR and Dolby Vision files, 4K among them, play directly from the server: Granary maps their picture onto your
+  display itself, so the server no longer has to transcode them to SDR.
+
 ## [0.1.0] - 2026-11-01
 
 ### Added

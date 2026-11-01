@@ -115,11 +115,21 @@ public sealed class PlaybackReportBuilderTests
     }
 
     [Fact]
+    public void OriginalHttp_TakesHdrOriginalsAndToneMapsThemOnAnSdrOutput()
+    {
+        var original = Report.ClientPlaybackContext.Deliveries[DeliveryClasses.OriginalHttp];
+
+        Assert.Contains(DeliveryClaims.ClientManagedDynamicRangeV1, original.ValidatedClaims);
+        Assert.False(Report.ClientCapabilities.Hdr);
+        Assert.Equal(new OutputContext(), Report.ClientPlaybackContext.Output);
+    }
+
+    [Fact]
     public void OriginalHttp_ClaimsAudioSelectionAndNativeEmbeddedSubtitles()
     {
         var original = Report.ClientPlaybackContext.Deliveries[DeliveryClasses.OriginalHttp];
 
-        Assert.Equal([DeliveryClaims.ClientSelectedAudioTrackV1], original.ValidatedClaims);
+        Assert.Equal([DeliveryClaims.ClientSelectedAudioTrackV1, DeliveryClaims.ClientManagedDynamicRangeV1], original.ValidatedClaims);
         Assert.Equal(Report.ClientCapabilities.Containers, original.Containers);
         var subtitles = original.Subtitles;
         Assert.Equal((true, true, true, true, false, true),

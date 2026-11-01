@@ -3,7 +3,8 @@ namespace Granary.Core.Api.Playback;
 // What the client reports at start and on every replan (docs/api-contract.md, 8.4). These bodies are strict:
 // only documented members are modelled, required ones are always written (lists as [], objects as {}), and
 // optional ones are left out when null. HDR details, audio passthrough and per-decoder video_decode entries
-// are not modelled yet: the client declares SDR output and decodes all audio itself.
+// are not modelled yet: the client declares SDR output (mpv tone-maps HDR originals on direct play) and decodes
+// all audio itself.
 
 /// <summary><c>client_capabilities</c>: what the device decodes, at an honest <see cref="CapabilityEvidence"/> tier.</summary>
 public sealed record ClientCapabilities

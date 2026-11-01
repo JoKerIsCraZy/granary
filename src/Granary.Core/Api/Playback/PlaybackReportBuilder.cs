@@ -9,7 +9,8 @@ public sealed record PlaybackClientReport(
 /// <summary>
 /// The capability report of the mpv engine (docs/api-contract.md, 13.2): FFmpeg decodes, in software or through
 /// D3D11VA, every audio codec and the video codecs the device facts name, from the containers mpv demuxes. It is
-/// an honest, conservative first report: <c>declared</c> evidence, SDR output, no passthrough, direct play and HLS.
+/// an honest, conservative first report: <c>declared</c> evidence, SDR output (HDR originals tone-mapped by mpv on
+/// direct play), no passthrough, direct play and HLS.
 /// </summary>
 public static class PlaybackReportBuilder
 {
@@ -114,7 +115,9 @@ public static class PlaybackReportBuilder
     /// <summary>
     /// Direct play: mpv opens the original file, so its lists are the top-level ones. It switches audio tracks
     /// itself (<c>client_selected_audio_track_v1</c>; without it a non-default track forces a remux) and selects
-    /// embedded subtitles natively.
+    /// embedded subtitles natively. It also tone-maps HDR10, HLG and Dolby Vision originals to the SDR output with
+    /// libplacebo (<c>client_managed_dynamic_range_v1</c>, as Silo's Apple app claims for its FFmpeg engine), so the
+    /// server sends a 4K HDR file as it is instead of tone-mapping it in a transcode.
     /// </summary>
     private static DeliveryCapability OriginalHttp(IReadOnlyList<string> video) => new()
     {
@@ -124,7 +127,7 @@ public static class PlaybackReportBuilder
         VideoCodecs = video,
         AudioDecodeCodecs = AudioCodecs,
         Subtitles = SubtitleCapabilities(NativeEmbeddedSubtitles),
-        ValidatedClaims = [DeliveryClaims.ClientSelectedAudioTrackV1],
+        ValidatedClaims = [DeliveryClaims.ClientSelectedAudioTrackV1, DeliveryClaims.ClientManagedDynamicRangeV1],
     };
 
     /// <summary>

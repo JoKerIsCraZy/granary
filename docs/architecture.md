@@ -38,7 +38,10 @@ inverse DPI scale. XAML controls draw over the video. The comparison with the re
 HWND is in [spike/README.md](../spike/README.md).
 
 Because there is no window, mpv cannot query the monitor: the app must pass HDR target settings and
-the display refresh rate itself (Phase 3).
+the display refresh rate itself (Phase 3). Until it does, the output is SDR, and mpv tone-maps HDR and
+Dolby Vision originals onto it. Granary claims that on direct play (`client_managed_dynamic_range_v1`,
+docs/api-contract.md 13.2), so the server sends HDR files as they are instead of tone-mapping them in a
+transcode.
 
 ## Threading
 
