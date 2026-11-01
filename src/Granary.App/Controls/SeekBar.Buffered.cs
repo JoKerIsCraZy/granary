@@ -6,8 +6,8 @@ using Windows.UI;
 
 namespace Granary.App.Controls;
 
-// What the player holds of the stream as Silo's web player draws a video's buffered ranges: white 30 % stretches of the
-// track, under the marked parts and the played part.
+// What the player holds of the stream as the web's web/src/player/components/SeekBar.tsx draws a video's buffered
+// ranges: a white 30 % stretch of the track for each, under the marked parts and the played part.
 public sealed partial class SeekBar
 {
     public static readonly DependencyProperty BufferedProperty = DependencyProperty.Register(nameof(Buffered),

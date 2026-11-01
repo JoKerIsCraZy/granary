@@ -3,7 +3,8 @@ using Granary.Core.Playback;
 
 namespace Granary.Core.ViewModels;
 
-// What the player holds of the stream, lighter on the seek bar, as Silo's web player draws a video's buffered ranges.
+// What the player holds of the stream, lighter on the seek bar: as the web's web/src/player/components/VideoPlayer.tsx
+// takes the video's buffered ranges at each progress event, and its SeekBar.tsx draws every one of them.
 public sealed partial class PlayerViewModel
 {
     // The engine's ranges, offset and length the shown ones were made from: a position update alone makes none anew.
