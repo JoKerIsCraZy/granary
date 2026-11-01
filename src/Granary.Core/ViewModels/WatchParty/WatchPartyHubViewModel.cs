@@ -3,14 +3,15 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
 using Granary.Core.Api;
+using Granary.Core.Api.WatchParty;
 using Granary.Core.WatchParty;
 using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.ViewModels.WatchParty;
 
 /// <summary>
-/// The Watch Party hub, as the web's (<c>pages/watchtogether/WatchPartyHub.tsx</c>): open an empty room the host picks
-/// for, or join one with its code or invite link. Back in a room already, it leads there; a room that is over is said at
+/// The Watch Party hub, as the web's (<c>pages/watchtogether/WatchPartyHub.tsx</c>): open an empty room in which the
+/// host picks or everyone votes, or join one with its code or invite link. Back in a room already, it leads there; a room that is over is said at
 /// the top, where the room page and the player bring the viewer once it is. "Your recent parties" offers the rooms of the
 /// last day back, each asked once whether it is still on.
 /// </summary>
@@ -42,6 +43,41 @@ public sealed partial class WatchPartyHubViewModel : ObservableObject
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(JoinCommand))]
     public partial string Code { get; set; } = "";
+
+    /// <summary>
+    /// How the room Start a party opens picks, as the web's hub offers it: Host picks ("You choose, everyone watches.") or
+    /// Everyone votes ("Anyone suggests, the room votes."). Host picks first on every visit, as the web's choice lives
+    /// with its page and the apps' plain "Start a party" is a host-pick room.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsHostPick), nameof(IsVoteMode))]
+    public partial string SelectionMode { get; private set; } = WatchPartySelectionModes.HostPick;
+
+    /// <summary>The Host picks card is chosen; choosing it is a radio's check (an uncheck says nothing).</summary>
+    public bool IsHostPick
+    {
+        get => SelectionMode == WatchPartySelectionModes.HostPick;
+        set
+        {
+            if (value)
+            {
+                SelectionMode = WatchPartySelectionModes.HostPick;
+            }
+        }
+    }
+
+    /// <summary>The Everyone votes card is chosen.</summary>
+    public bool IsVoteMode
+    {
+        get => SelectionMode == WatchPartySelectionModes.Vote;
+        set
+        {
+            if (value)
+            {
+                SelectionMode = WatchPartySelectionModes.Vote;
+            }
+        }
+    }
 
     /// <summary>Why the last create or join failed, in the web's words.</summary>
     [ObservableProperty]
@@ -83,6 +119,19 @@ public sealed partial class WatchPartyHubViewModel : ObservableObject
 
     /// <summary>Another device took this profile's place: it can claim the room back from here.</summary>
     public bool CanRejoin => _party.End?.Replaced == true;
+
+    /// <summary>The hub shows again: it starts from Host picks.</summary>
+    public void Arrive() => SelectionMode = WatchPartySelectionModes.HostPick;
+
+    /// <summary>
+    /// The join box's text as the web's box shows it: a code in capitals. An invite link keeps its case, since its token
+    /// is case-sensitive.
+    /// </summary>
+    public static string AsTyped(string text)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+        return text.Contains("token=", StringComparison.OrdinalIgnoreCase) || text.Contains('/') ? text : text.ToUpperInvariant();
+    }
 
     /// <summary>"Your recent parties": the rooms of the last day, newest first.</summary>
     public ObservableCollection<WatchPartyRecentRow> Recent { get; } = [];
@@ -168,7 +217,7 @@ public sealed partial class WatchPartyHubViewModel : ObservableObject
         Error = "";
         try
         {
-            await _party.CreateAsync();
+            await _party.CreateAsync(SelectionMode);
             _navigation.NavigateTo(AppRoute.WatchPartyRoom);
         }
         catch (WatchPartyStaleException)
