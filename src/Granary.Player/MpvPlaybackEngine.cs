@@ -27,6 +27,9 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
     private TimeSpan? _lastReportedPosition;
     private long _loads;
 
+    // The number of the last snapshot raised (PlaybackSnapshot.Sequence).
+    private long _sequence;
+
     // The audio stream the latest load asked for; checked once mpv opened the file.
     private int? _loadAudio;
 
@@ -525,7 +528,7 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
 
     // What mpv's cache holds, reported when it changed. The throttle calls this at most every 250 ms on a timer's thread,
     // so mpv's event thread, which carries the position, pause and end, never waits for the read; it logs a failure. A
-    // snapshot raised here can reach a consumer after the one of a load that followed: the view model drops it.
+    // snapshot raised here can reach a consumer after a newer one from another thread: its number tells.
     private void ReadBuffered()
     {
         if (TakeBuffered() is { } next)
@@ -555,9 +558,7 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
             {
                 return null;
             }
-            _current = _current with { Buffered = ranges };
-            _lastReportedPosition = _current.Position;
-            return _current;
+            return Number(_current with { Buffered = ranges });
         }
     }
 
@@ -620,15 +621,26 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
         lock (_gate)
         {
             next = change(_current);
-            _current = next;
             if (!force && _lastReportedPosition is { } last && (next.Position - last).Duration() < PositionThrottle)
             {
+                // Not raised, so not numbered: it carries the number of the last one raised.
+                _current = next;
                 return next;
             }
-            _lastReportedPosition = next.Position;
+            next = Number(next);
         }
         StateChanged?.Invoke(this, next);
         return next;
+    }
+
+    // Under the gate: the snapshot that holds from now on and is raised, numbered above every one raised before it. It is
+    // raised once the gate is open, from mpv's event thread, a timer's or the caller's of Load, so another thread's newer
+    // one can overtake it on the way: the number lets a consumer tell.
+    private PlaybackSnapshot Number(PlaybackSnapshot next)
+    {
+        _current = next with { Sequence = ++_sequence };
+        _lastReportedPosition = _current.Position;
+        return _current;
     }
 
     private static string SizeText((int Width, int Height) size) =>

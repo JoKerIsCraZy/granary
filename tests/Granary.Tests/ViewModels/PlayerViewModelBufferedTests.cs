@@ -116,15 +116,16 @@ public sealed class PlayerViewModelBufferedTests
     [Fact]
     public async Task ASnapshotOfAnEarlierLoad_ArrivingLate_ShowsNoRanges()
     {
-        // The engine reports what its cache holds from a timer's thread: a read of the load before can reach the UI
-        // thread after the new load's first snapshot.
+        // The engine reports what its cache holds from a timer's thread: a read of the load before, numbered before the
+        // new load's first snapshot, can reach the UI thread after it.
         var viewModel = CreateViewModel();
         await viewModel.StartAsync(PlayRequest.Direct("http://127.0.0.1:8080/clip.mp4"));
         long first = _engine.LoadId;
+        long read = _engine.Current.Sequence + 1;
         long second = _engine.Load(new MediaSource(new Uri("http://127.0.0.1:8080/clip.mp4"), []));
-        _engine.RaiseState(Playing() with { LoadId = second, IsLoaded = false, HasStarted = false });
+        _engine.RaiseState(Playing() with { LoadId = second, IsLoaded = false, HasStarted = false, Sequence = read + 1 });
 
-        _engine.RaiseState(Playing() with { LoadId = first, Buffered = BufferedRanges.Of([new(0, 20)]) });
+        _engine.RaiseState(Playing() with { LoadId = first, Buffered = BufferedRanges.Of([new(0, 20)]), Sequence = read });
 
         Assert.Empty(viewModel.Buffered);
         _engine.RaiseState(Playing() with { LoadId = second, Buffered = BufferedRanges.Of([new(0, 5)]) });

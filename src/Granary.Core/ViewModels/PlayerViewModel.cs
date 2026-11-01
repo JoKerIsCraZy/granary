@@ -524,6 +524,13 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
 
     private void OnStateChanged(object? sender, PlaybackSnapshot state) => _dispatcher.Post(() =>
     {
+        // The engine raises from mpv's event thread, a timer's (its cache reads) and the caller's of a load: a snapshot
+        // can arrive after a newer one, and would take the player back to a state it has left (a stopped file loaded
+        // again, the position back). The marker prompts and a Watch Party's view of the player read this one too.
+        if (state.Sequence < _engineState.Sequence)
+        {
+            return;
+        }
         _engineState = state;
         ShowEngineState();
         // A direct source plays as soon as the engine does; a server playback says so itself.

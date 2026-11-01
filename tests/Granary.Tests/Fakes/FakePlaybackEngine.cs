@@ -25,6 +25,9 @@ internal sealed class FakePlaybackEngine : IPlaybackEngine
     /// <summary>The id of the latest load; 0 before the first.</summary>
     public long LoadId { get; private set; }
 
+    // The newest snapshot number handed out, as the engine numbers its snapshots.
+    private long _sequence;
+
     public long Load(MediaSource source)
     {
         if (FailNextLoad is { } failure)
@@ -33,7 +36,10 @@ internal sealed class FakePlaybackEngine : IPlaybackEngine
             throw failure;
         }
         Loaded.Add(source);
-        Current = Current with { LoadId = ++LoadId, IsLoaded = false, HasStarted = false, IsAtEnd = false, Buffered = BufferedRanges.None };
+        Current = Current with
+        {
+            LoadId = ++LoadId, IsLoaded = false, HasStarted = false, IsAtEnd = false, Buffered = BufferedRanges.None, Sequence = ++_sequence,
+        };
         return LoadId;
     }
 
@@ -116,11 +122,21 @@ internal sealed class FakePlaybackEngine : IPlaybackEngine
 
     public void Stop() => Stops++;
 
-    /// <summary>Raises <paramref name="state"/>; without a load id of its own it belongs to the latest load.</summary>
+    /// <summary>
+    /// Raises <paramref name="state"/>; without a load id of its own it belongs to the latest load, and without a number
+    /// of its own it is the newest snapshot. One numbered below the newest arrives late, as the engine's threads can
+    /// deliver one: it is raised, but what the engine holds stays the newest.
+    /// </summary>
     public void RaiseState(PlaybackSnapshot state)
     {
-        Current = state.LoadId == 0 ? state with { LoadId = LoadId } : state;
-        StateChanged?.Invoke(this, Current);
+        var raised = state.LoadId == 0 ? state with { LoadId = LoadId } : state;
+        raised = raised.Sequence == 0 ? raised with { Sequence = ++_sequence } : raised;
+        if (raised.Sequence >= Current.Sequence)
+        {
+            Current = raised;
+            _sequence = Math.Max(_sequence, raised.Sequence);
+        }
+        StateChanged?.Invoke(this, raised);
     }
 
     /// <summary>Raises <paramref name="ended"/>; without a load id of its own it ends the latest load.</summary>

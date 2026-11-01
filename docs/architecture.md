@@ -58,6 +58,11 @@ the display refresh rate itself (Phase 3).
   before can arrive after the next one's), and holds them back once the plan's offset differs from the one a load's
   ranges were shown with: the plan is taken before its stream loads, and the engine plays the stream before
   meanwhile.
+- The engine raises `StateChanged` from mpv's event thread, from the cache reads on a timer's thread and from the
+  caller's thread of `Load`, each time after leaving its lock, so a snapshot can overtake another on the way. Every
+  snapshot it raises is numbered under the lock (`PlaybackSnapshot.Sequence`), and its consumers (`PlayerViewModel`,
+  `ServerPlayback`) drop one numbered below the newest they took: a cache read from before a stop never brings the
+  stopped file back, and the position never goes back.
 
 ## Networking and security
 

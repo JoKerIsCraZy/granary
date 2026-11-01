@@ -9,8 +9,9 @@ public sealed partial class PlayerViewModel
     // The engine's ranges, offset and length the shown ones were made from: a position update alone makes none anew.
     private (BufferedRanges From, double Offset, double Duration) _bufferedFrom = (BufferedRanges.None, 0, 0);
 
-    // The newest engine load seen, the offset it began with (null until its first snapshot), and whether it is held back:
-    // the same load with another offset still plays the stream before a new plan.
+    // The engine load of the snapshot that shows, the offset it began with (null until its first snapshot), and whether it
+    // is held back: the same load with another offset still plays the stream before a new plan. Snapshots come in the
+    // engine's order (OnStateChanged drops a stale one), so a load seen once never comes back.
     private long _bufferedLoad;
     private double? _bufferedLoadOffset;
     private bool _bufferedLoadHeld;
@@ -26,13 +27,7 @@ public sealed partial class PlayerViewModel
     // on its way, being replaced or reconnecting shows none: what the engine holds then is not the stream that will play.
     private void FollowBuffered(PlaybackSnapshot state, double offset)
     {
-        if (state.LoadId < _bufferedLoad)
-        {
-            // The engine reads its cache on a timer's thread: a read of an earlier load can arrive after the next load's
-            // first snapshot, and it holds a file that no longer plays.
-            return;
-        }
-        if (state.LoadId > _bufferedLoad)
+        if (state.LoadId != _bufferedLoad)
         {
             (_bufferedLoad, _bufferedLoadOffset, _bufferedLoadHeld) = (state.LoadId, null, false);
         }

@@ -428,6 +428,53 @@ public sealed class MpvPlaybackEngineTests : IDisposable
     }
 
     [Fact]
+    public async Task Snapshots_AreNumberedInTheOrderTheEngineMadeThem_AcrossItsThreads()
+    {
+        using var engine = CreateEngine();
+        await using var server = new TinyHttpServer(200, "OK", WavFile.Sine(20), "audio/wav");
+        var seen = new System.Collections.Concurrent.ConcurrentQueue<(PlaybackSnapshot State, string? Thread)>();
+        var held = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var stopped = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        engine.StateChanged += (_, s) =>
+        {
+            seen.Enqueue((s, Thread.CurrentThread.Name));
+            if (s.Buffered.Count > 0)
+            {
+                held.TrySetResult();
+            }
+            else if (held.Task.IsCompleted && !s.IsLoaded)
+            {
+                stopped.TrySetResult();
+            }
+        };
+        engine.Load(new MediaSource(server.Url("media.wav"), []));
+        await held.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken);
+
+        engine.Stop();
+        await stopped.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken);
+
+        var snapshots = seen.ToArray();
+        // Three raisers: the load (this thread), mpv's events, and the cache reads on a timer's thread, which raise only
+        // what the cache holds.
+        var load =Assert.Single(snapshots, s => s.Thread != "mpv-events" && !s.State.IsLoaded);
+        var events = snapshots.Where(s => s.Thread == "mpv-events").ToArray();
+        var reads = snapshots.Where(s => s.Thread != "mpv-events" && s != load).ToArray();
+        Assert.NotEmpty(events);
+        Assert.NotEmpty(reads);
+        Assert.All(reads, s => Assert.NotEmpty(s.State.Buffered));
+        // One count across all of them: every number once, the load's first, the events' on both sides of the reads',
+        // and the stop's above every one before.
+        Assert.Equal(snapshots.Length, snapshots.Select(s => s.State.Sequence).Distinct().Count());
+        Assert.All(snapshots.Where(s => s != load), s => Assert.True(s.State.Sequence > load.State.Sequence));
+        Assert.Contains(events, s => s.State.Sequence < reads.Min(r => r.State.Sequence));
+        Assert.Contains(events, s => s.State.Sequence > reads.Max(r => r.State.Sequence));
+        var stop = events.Where(s => !s.State.IsLoaded).MaxBy(s => s.State.Sequence);
+        Assert.Empty(stop.State.Buffered);
+        Assert.True(stop.State.Sequence > reads.Max(s => s.State.Sequence));
+        Assert.True(engine.Current.Sequence >= snapshots.Max(s => s.State.Sequence));
+    }
+
+    [Fact]
     public async Task HttpSource_ReportsAuthenticationFailedOn401()
     {
         using var engine = CreateEngine();

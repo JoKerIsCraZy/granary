@@ -56,6 +56,13 @@ public sealed record PlaybackSnapshot(
     /// thread: a snapshot with ranges of one load can arrive after the first snapshot of the next.
     /// </summary>
     public BufferedRanges Buffered { get; init; } = BufferedRanges.None;
+
+    /// <summary>
+    /// The order the engine made its snapshots in: each one it raises is numbered above every one before it (the
+    /// <see cref="Idle"/> template is 0). The engine raises from more than one thread, so a consumer can get one after a
+    /// newer one: a snapshot numbered below the newest it has seen is stale.
+    /// </summary>
+    public long Sequence { get; init; }
 }
 
 public enum PlaybackEndReason
