@@ -169,15 +169,19 @@ public sealed class WatchPartySessionTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task TheHostsEnd_EndsTheRoom_ForEveryone()
+    public async Task TheHostsEnd_EndsTheRoom_ForEveryone_AndThisDevicesEngagement()
     {
         _silo.On(HttpMethod.Delete, Room, ScriptedSilo.NoContent());
         await _party.CreateAsync(TestContext.Current.CancellationToken);
+        await Connected();
 
         await _party.EndRoomAsync();
 
         Assert.Single(_silo.SentTo(HttpMethod.Delete, Room));
-        Assert.Null(_party.Room);
+        // Ended as everyone's ends (the server tells the others host_left); the room stays to say so until it is left.
+        Assert.Equal(("host_left", false), (_party.End?.Reason, _party.End?.Replaced));
+        Assert.False(_party.IsInRoom);
+        Assert.True(Socket(0).Disposed);
     }
 
     [Fact]

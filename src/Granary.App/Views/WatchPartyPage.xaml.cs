@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.System;
 
@@ -13,6 +14,9 @@ namespace Granary.App.Views;
 public sealed partial class WatchPartyPage : Page
 {
     private const double ColumnWidth = 896;
+
+    // An input method is composing in the code box.
+    private bool _composing;
 
     public WatchPartyPage()
     {
@@ -26,10 +30,17 @@ public sealed partial class WatchPartyPage : Page
 
     public static string RejoinName(string title) => $"Rejoin {title}";
 
-    // The page is cached: each visit asks again which recent rooms are still on.
+    // A mode card's icon: the foreground when chosen, else muted at 60 %, as the web's.
+    public static Brush ModeIconBrush(bool chosen) =>
+        (Brush)Application.Current.Resources[chosen ? "SiloForegroundBrush" : "SiloMutedBrush"];
+
+    public static double ModeIconOpacity(bool chosen) => chosen ? 1 : 0.6;
+
+    // The page is cached: each visit starts from Host picks and asks again which recent rooms are still on.
     protected override async void OnNavigatedTo(Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
+        ViewModel.Arrive();
         try
         {
             await ViewModel.RefreshRecentAsync();
@@ -51,6 +62,35 @@ public sealed partial class WatchPartyPage : Page
 
     // A column capped by MaxWidth in a ScrollViewer ends up off centre, so its width is set here.
     private void OnScrollerSizeChanged(object sender, SizeChangedEventArgs e) => Column.Width = Math.Min(ColumnWidth, e.NewSize.Width);
+
+    // A code reads in capitals as it is typed, as in the web's box; the caret stays where it was. An input method's
+    // composition is left alone until it ends: rewriting the text under it would break it.
+    private void OnCodeTextChanging(TextBox sender, TextBoxTextChangingEventArgs args)
+    {
+        if (!_composing)
+        {
+            ShowAsTyped(sender);
+        }
+    }
+
+    private void OnCodeCompositionStarted(TextBox sender, TextCompositionStartedEventArgs args) => _composing = true;
+
+    private void OnCodeCompositionEnded(TextBox sender, TextCompositionEndedEventArgs args)
+    {
+        _composing = false;
+        ShowAsTyped(sender);
+    }
+
+    private static void ShowAsTyped(TextBox box)
+    {
+        string shown = WatchPartyHubViewModel.AsTyped(box.Text);
+        if (shown != box.Text)
+        {
+            int caret = box.SelectionStart;
+            box.Text = shown;
+            box.SelectionStart = caret;
+        }
+    }
 
     private void OnCodeKeyDown(object sender, KeyRoutedEventArgs e)
     {

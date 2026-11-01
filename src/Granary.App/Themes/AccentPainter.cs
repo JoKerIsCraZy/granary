@@ -33,6 +33,9 @@ internal static class AccentPainter
     // Granary's own lighter red for accent text (#F87171), kept for its own accent.
     private static readonly RgbColor DefaultLightText = new(0xf8, 0x71, 0x71);
 
+    // The accent's glows: the signed-out screens' and a card's.
+    private static readonly string[] GlowKeys = ["SiloAccentGlowBrush", "SiloCardGlowBrush"];
+
     public static void Apply(AccentPalette palette)
     {
         var dictionaries = AllDictionaries(Application.Current.Resources).ToList();
@@ -44,11 +47,14 @@ internal static class AccentPainter
         Paint(dictionaries, BadgeLabelKeys, palette.BadgeLabel);
         foreach (var dictionary in dictionaries)
         {
-            if (dictionary.TryGetValue("SiloAccentGlowBrush", out var glow) && glow is GradientBrush gradient)
+            foreach (string key in GlowKeys)
             {
-                foreach (var stop in gradient.GradientStops)
+                if (dictionary.TryGetValue(key, out var glow) && glow is GradientBrush gradient)
                 {
-                    stop.Color = WithAlpha(palette.Primary, stop.Color.A);
+                    foreach (var stop in gradient.GradientStops)
+                    {
+                        stop.Color = WithAlpha(palette.Primary, stop.Color.A);
+                    }
                 }
             }
         }

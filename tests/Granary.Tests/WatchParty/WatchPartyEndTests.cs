@@ -1,0 +1,669 @@
+using System.Net;
+using System.Text.Json;
+using Granary.Core.Abstractions;
+using Granary.Core.Api;
+using Granary.Core.Api.Catalog;
+using Granary.Core.Api.Images;
+using Granary.Core.Api.WatchParty;
+using Granary.Core.Auth;
+using Granary.Core.Playback;
+using Granary.Core.ViewModels;
+using Granary.Core.ViewModels.WatchParty;
+using Granary.Core.WatchParty;
+using Granary.Tests.Fakes;
+using Granary.Tests.Playback;
+using Granary.Tests.Profiles;
+
+namespace Granary.Tests.WatchParty;
+
+/// <summary>
+/// A room that is over, as Silo's apps take it: the room page gives way to the hub, which says why in the web's words
+/// (<c>WatchTogetherRoomPage.tsx</c>'s <c>RoomTerminalState</c>) and lists the room as ended among the recent parties.
+/// </summary>
+public sealed class WatchPartyEndTests : IAsyncDisposable
+{
+    private const string Room = "api/v2/watch-together/rooms/" + WatchPartyPayloads.RoomId;
+    private const string OtherRoomId = "0b7d9a52-3c1e-4f6a-8d2b-9e8f7a6b5c4d";
+    private const string OtherRoom = "api/v2/watch-together/rooms/" + OtherRoomId;
+    private const string StartNew = "Start a new watch party or join another room to keep watching together.";
+
+    private readonly ScriptedSilo _silo = new();
+    private readonly FakeSessionManager _session = new() { State = SessionState.Ready, ActiveServer = ScriptedSilo.Server, ProfileId = "7" };
+    private readonly LogSink _logs = new();
+    private readonly List<FakeRealtimeSocket> _sockets = [];
+    private readonly RecordingNavigation _navigation = new();
+    private readonly ManualTimeProvider _time = new();
+    private readonly InMemorySecretStore _secrets = new();
+    private readonly WatchPartySession _party;
+    private readonly WatchPartyApi _api;
+
+    public WatchPartyEndTests()
+    {
+        _silo.On(HttpMethod.Post, Room + "/ws-ticket", ScriptedSilo.Json(HttpStatusCode.OK, WatchPartyPayloads.TicketAnswer));
+        _silo.On(HttpMethod.Get, "api/v2/watch-together/capabilities", ScriptedSilo.Json(HttpStatusCode.OK,
+            """{ "state": "available", "allowed": true, "socket_protocol": "silo.room.v2", "lobby_ready": true, "stop_playback": true }"""));
+        _api = new WatchPartyApi(_silo.Http);
+        var recent = new WatchPartyRecentRooms(_secrets, _time, _logs.For<WatchPartyRecentRooms>());
+        _party = new WatchPartySession(_session, _api, () => new WatchPartyConnection(_api, () =>
+        {
+            var socket = new FakeRealtimeSocket { Picks = WatchPartyApi.Protocol };
+            lock (_sockets)
+            {
+                _sockets.Add(socket);
+            }
+            return socket;
+        }, TimeProvider.System, _logs.For<WatchPartyConnection>()), new ImmediateDispatcher(), _logs.For<WatchPartySession>(), recent, _time);
+    }
+
+    private FakeRealtimeSocket Socket => _sockets[^1];
+
+    private WatchPartyHubViewModel Hub() => new(_party, _navigation, _logs.For<WatchPartyHubViewModel>());
+
+    private WatchPartyRoomViewModel RoomPage() => new(_party, new WatchPartyFeature(_session, _api, _time, _logs.For<WatchPartyFeature>()), _session,
+        new CatalogApi(_silo.Http), new ImageParameterCache(new ImagesApi(_silo.Http), _logs.For<ImageParameterCache>()), _navigation,
+        new ImmediateDispatcher(), _time, _logs.For<WatchPartyRoomViewModel>());
+
+    private async Task<WatchPartyRoomViewModel> InTheRoomAsync(string role = "guest")
+    {
+        _silo.On(HttpMethod.Post, "api/v2/watch-together/join", ScriptedSilo.Json(HttpStatusCode.OK, WatchPartyPayloads.Answer(WatchPartyPayloads.Room(role: role))));
+        await _party.JoinAsync("ABCD1234", TestContext.Current.CancellationToken);
+        await ServerPlaybackFixture.Until(() => _sockets.Count == 1 && _party.IsConnected, "the room connection");
+        var page = RoomPage();
+        page.Activate();
+        return page;
+    }
+
+    // The same room entered again with its code, on a new connection.
+    private async Task InTheRoomAgainAsync()
+    {
+        int sockets = _sockets.Count;
+        await _party.JoinAsync("ABCD1234", TestContext.Current.CancellationToken);
+        await ServerPlaybackFixture.Until(() => _sockets.Count == sockets + 1 && _party.IsConnected, "the room entered again");
+    }
+
+    // Another room this profile hosts, entered with its code.
+    private async Task InTheOtherRoomAsync()
+    {
+        string room = WatchPartyPayloads.Room(role: "host").Replace(WatchPartyPayloads.RoomId, OtherRoomId, StringComparison.Ordinal)
+            .Replace("ABCD1234", "WXYZ5678", StringComparison.Ordinal);
+        _silo.On(HttpMethod.Post, OtherRoom + "/ws-ticket", ScriptedSilo.Json(HttpStatusCode.OK, WatchPartyPayloads.TicketAnswer));
+        _silo.On(HttpMethod.Post, "api/v2/watch-together/join", ScriptedSilo.Json(HttpStatusCode.OK, WatchPartyPayloads.Answer(room)));
+        _silo.On(HttpMethod.Delete, OtherRoom, ScriptedSilo.NoContent());
+        int sockets = _sockets.Count;
+        await _party.JoinAsync("WXYZ5678", TestContext.Current.CancellationToken);
+        await ServerPlaybackFixture.Until(() => _sockets.Count == sockets + 1 && _party.IsConnected, "the other room's connection");
+    }
+
+    private Task Marked() => ServerPlaybackFixture.Until(
+        () => _secrets.Values.TryGetValue(WatchPartyRecentRooms.SecretKey, out string? rooms) && rooms.Contains("\"ended\":true", StringComparison.Ordinal),
+        "the recent room marked as ended");
+
+    // The room is among this profile's recent rooms, as ended.
+    private bool MarkedFor(string profileId) =>
+        _secrets.Values.TryGetValue(WatchPartyRecentRooms.SecretKey, out string? json)
+        && (JsonSerializer.Deserialize(json, WatchPartyJsonContext.Default.ListWatchPartyRecentRoom) ?? [])
+            .Any(r => r.ProfileId == profileId && r.RoomId == WatchPartyPayloads.RoomId && r.Ended);
+
+    [Theory]
+    [InlineData("host_left", "The room has ended.")]
+    [InlineData("room_closed", "The room has ended.")]
+    [InlineData("ended", "That watch party is no longer active.")]
+    [InlineData("not_found", "Room not found.")]
+    [InlineData("forbidden", "You don't have access to this watch party.")]
+    [InlineData("something_new", "Room is unavailable.")]
+    public void AClosedRoom_IsSaidInTheWebsWords(string reason, string title)
+    {
+        var end = new WatchPartyEnd(reason);
+
+        Assert.Equal((title, StartNew), (WatchPartyText.EndedTitle(end), WatchPartyText.EndedText(end)));
+    }
+
+    [Fact]
+    public void AReplacement_IsSaidWithTheServersReason_OrTheWebsOwn()
+    {
+        var told = new WatchPartyEnd("replaced", Replaced: true, "Joined from the living room TV.");
+        var untold = new WatchPartyEnd("replaced", Replaced: true);
+
+        Assert.Equal(("Watch Party joined on another device", "Joined from the living room TV."), (WatchPartyText.EndedTitle(told), WatchPartyText.EndedText(told)));
+        Assert.Equal(WatchPartyFrames.ReplacedText, WatchPartyText.EndedText(untold));
+    }
+
+    [Fact]
+    public async Task TheRoomPage_HidesTheRoom_AndGivesWayToTheHub_WhenTheRoomCloses()
+    {
+        var page = await InTheRoomAsync();
+        Assert.True(page.ShowsRoom);
+
+        Socket.Push("""{ "type": "room_closed", "reason": "host_left" }""");
+        await ServerPlaybackFixture.Until(() => _navigation.Sections.Count == 1, "the way to the hub");
+
+        Assert.False(page.ShowsRoom);
+        Assert.Equal(AppRoute.WatchParty, _navigation.Sections[0]);
+        Assert.DoesNotContain(_navigation.Navigations, n => n.Route == AppRoute.WatchPartyRoom);
+        page.Deactivate();
+    }
+
+    [Fact]
+    public async Task TheHub_SaysTheRoomEnded_AndListsItAsEnded_InsteadOfTheRoomItWas()
+    {
+        var page = await InTheRoomAsync();
+        var hub = Hub();
+        Assert.True(hub.IsInRoom);
+
+        Socket.Push("""{ "type": "room_closed", "reason": "host_left" }""");
+        await ServerPlaybackFixture.Until(() => hub.HasEnded, "the end on the hub");
+        await Marked();
+        await hub.RefreshRecentAsync();
+
+        Assert.False(hub.IsInRoom);
+        Assert.Equal(("The room has ended.", StartNew, false), (hub.EndedTitle, hub.EndedText, hub.CanRejoin));
+        var row = Assert.Single(hub.Recent);
+        Assert.Equal(("Ended", "ENDED", false), (row.Status, row.EndLabel, row.CanRejoin));
+        // Ended in the list already: nobody asked the server again.
+        Assert.Empty(_silo.SentTo(HttpMethod.Get, Room));
+        page.Deactivate();
+    }
+
+    [Fact]
+    public async Task TheEndSaidOnTheHub_GoesWhenDismissed()
+    {
+        var page = await InTheRoomAsync();
+        var hub = Hub();
+        Socket.Push("""{ "type": "room_closed", "reason": "ended" }""");
+        await ServerPlaybackFixture.Until(() => hub.HasEnded, "the end on the hub");
+        Assert.Equal("That watch party is no longer active.", hub.EndedTitle);
+
+        await hub.DismissEndCommand.ExecuteAsync(null);
+
+        Assert.False(hub.HasEnded);
+        Assert.Null(_party.Room);
+        page.Deactivate();
+    }
+
+    [Fact]
+    public async Task TheHostsEnd_GoesToTheHub_WhichSaysTheRoomEnded()
+    {
+        _silo.On(HttpMethod.Delete, Room, ScriptedSilo.NoContent());
+        var page = await InTheRoomAsync(role: "host");
+        var hub = Hub();
+
+        await page.EndRoomAsync();
+
+        Assert.Single(_silo.SentTo(HttpMethod.Delete, Room));
+        Assert.Equal(AppRoute.WatchParty, _navigation.Navigations[^1].Route);
+        Assert.Equal(AppRoute.WatchParty, Assert.Single(_navigation.Sections));
+        Assert.True(Socket.Disposed);
+        Assert.Equal(("The room has ended.", StartNew), (hub.EndedTitle, hub.EndedText));
+        Assert.False(hub.IsInRoom);
+        await Marked();
+        page.Deactivate();
+    }
+
+    [Fact]
+    public async Task TheRoomsOwnClose_BeforeTheHostsEndIsAnswered_SaysTheSame()
+    {
+        var answered = new TaskCompletionSource();
+        _silo.On(HttpMethod.Delete, Room, async () =>
+        {
+            await answered.Task;
+            return await ScriptedSilo.NoContent()();
+        });
+        var page = await InTheRoomAsync(role: "host");
+        var hub = Hub();
+
+        var ending = page.EndRoomAsync();
+        Socket.Push("""{ "type": "room_closed", "reason": "host_left" }""");
+        await ServerPlaybackFixture.Until(() => hub.HasEnded, "the room's own close");
+        answered.SetResult();
+        await ending;
+
+        Assert.Equal("The room has ended.", hub.EndedTitle);
+        Assert.All(_navigation.Navigations, n => Assert.Equal(AppRoute.WatchParty, n.Route));
+        page.Deactivate();
+    }
+
+    [Fact]
+    public async Task AnEndRefusedAfterTheRoomsOwnClose_EndsAllTheSame()
+    {
+        var answered = new TaskCompletionSource();
+        _silo.On(HttpMethod.Delete, Room, async () =>
+        {
+            await answered.Task;
+            return await ScriptedSilo.Problem(409, "conflict")();
+        });
+        var page = await InTheRoomAsync(role: "host");
+        var hub = Hub();
+
+        var ending = page.EndRoomAsync();
+        Socket.Push("""{ "type": "room_closed", "reason": "host_left" }""");
+        await ServerPlaybackFixture.Until(() => hub.HasEnded, "the room's own close");
+        answered.SetResult();
+        await ending;
+
+        Assert.Equal("", page.Message);
+        Assert.Equal("The room has ended.", hub.EndedTitle);
+        Assert.True(Socket.Disposed);
+        page.Deactivate();
+    }
+
+    // Silo answers an End of a room that is over already with 409 conflict ("The room is closed.") or, for no room at
+    // all, 404 not_found (closeWatchTogetherRoom); the room's own close may not have reached this device yet.
+    [Theory]
+    [InlineData(409, "conflict", "That watch party is no longer active.")]
+    [InlineData(404, "not_found", "Room not found.")]
+    public async Task AnEndAnsweredThatTheRoomIsOver_BeforeItsOwnCloseArrives_EndsIt(int status, string code, string title)
+    {
+        _silo.On(HttpMethod.Delete, Room, ScriptedSilo.Problem(status, code));
+        var page = await InTheRoomAsync(role: "host");
+        var hub = Hub();
+
+        await page.EndRoomAsync();
+
+        Assert.Equal("", page.Message);
+        Assert.Equal((title, false, false), (hub.EndedTitle, hub.IsInRoom, hub.CanRejoin));
+        Assert.True(Socket.Disposed);
+        Assert.Equal(AppRoute.WatchParty, Assert.Single(_navigation.Sections));
+        await Marked();
+        page.Deactivate();
+    }
+
+    [Fact]
+    public async Task AnEndAnsweredThatTheRoomIsOver_AfterTheRoomWasLeft_MarksTheRoom()
+    {
+        var answered = new TaskCompletionSource();
+        _silo.On(HttpMethod.Delete, Room, async () =>
+        {
+            await answered.Task;
+            return await ScriptedSilo.Problem(409, "conflict")();
+        });
+        var page = await InTheRoomAsync(role: "host");
+
+        var ending = _party.EndRoomAsync();
+        await _party.LeaveAsync();
+        answered.SetResult();
+
+        Assert.True(await ending);
+        Assert.Null(_party.End);
+        await Marked();
+        page.Deactivate();
+    }
+
+    [Theory]
+    [InlineData(403, "permission_denied")]
+    [InlineData(409, "capability_disabled")]
+    public async Task AnEndRefusedForAnotherReason_IsAFailure(int status, string code)
+    {
+        _silo.On(HttpMethod.Delete, Room, ScriptedSilo.Problem(status, code));
+        var page = await InTheRoomAsync(role: "host");
+
+        await page.EndRoomAsync();
+
+        Assert.StartsWith("Could not end the room.", page.Message, StringComparison.Ordinal);
+        Assert.Null(_party.End);
+        Assert.True(_party.IsInRoom);
+        Assert.False(Socket.Disposed);
+        page.Deactivate();
+    }
+
+    [Fact]
+    public async Task TheHostsEnd_OutweighsAnEndThatSaidLess()
+    {
+        var answered = new TaskCompletionSource();
+        _silo.On(HttpMethod.Delete, Room, async () =>
+        {
+            await answered.Task;
+            return await ScriptedSilo.NoContent()();
+        });
+        var page = await InTheRoomAsync(role: "host");
+        var hub = Hub();
+
+        var ending = _party.EndRoomAsync();
+        Socket.Push("""{ "type": "connection_replaced", "reason": "This profile joined the Watch Party on another device." }""");
+        await ServerPlaybackFixture.Until(() => hub.CanRejoin, "the takeover");
+        answered.SetResult();
+        await ending;
+
+        Assert.Equal(("The room has ended.", false), (hub.EndedTitle, hub.CanRejoin));
+        Assert.Equal("host_left", _party.End?.Reason);
+        await Marked();
+        page.Deactivate();
+    }
+
+    [Fact]
+    public async Task TheHostsEnd_OutweighsARefusedProof()
+    {
+        var ticket = new TaskCompletionSource();
+        var answered = new TaskCompletionSource();
+        _silo.On(HttpMethod.Post, Room + "/ws-ticket", ServerPlaybackFixture.After(ticket.Task, ScriptedSilo.Problem(403, "forbidden")));
+        _silo.On(HttpMethod.Post, "api/v2/watch-together/join", ScriptedSilo.Json(HttpStatusCode.OK, WatchPartyPayloads.Answer(WatchPartyPayloads.Room())));
+        _silo.On(HttpMethod.Delete, Room, ServerPlaybackFixture.After(answered.Task, ScriptedSilo.NoContent()));
+        await _party.JoinAsync("ABCD1234", TestContext.Current.CancellationToken);
+        var hub = Hub();
+
+        var ending = _party.EndRoomAsync();
+        ticket.SetResult();
+        await ServerPlaybackFixture.Until(() => _party.End?.Reason == "forbidden", "the refused proof");
+        answered.SetResult();
+
+        Assert.True(await ending);
+        Assert.Equal(("host_left", "The room has ended."), (_party.End?.Reason, hub.EndedTitle));
+        await Marked();
+    }
+
+    [Fact]
+    public async Task WithoutAProfile_TheRoomIsNotRemembered_AndItsEndStillEndsIt()
+    {
+        _session.ProfileId = null;
+        _silo.On(HttpMethod.Delete, Room, ScriptedSilo.NoContent());
+        _silo.On(HttpMethod.Post, "api/v2/watch-together/join", ScriptedSilo.Json(HttpStatusCode.OK, WatchPartyPayloads.Answer(WatchPartyPayloads.Room())));
+        await _party.JoinAsync("ABCD1234", TestContext.Current.CancellationToken);
+        await ServerPlaybackFixture.Until(() => _party.IsConnected, "the room connection");
+        _party.NoteTitle("Heat");
+
+        Assert.True(await _party.EndRoomAsync());
+
+        Assert.Equal("host_left", _party.End?.Reason);
+        Assert.True(Socket.Disposed);
+        Assert.False(_secrets.Values.ContainsKey(WatchPartyRecentRooms.SecretKey));
+    }
+
+    [Theory]
+    [InlineData("""{ "type": "room_closed", "reason": "host_left" }""")]
+    [InlineData("""{ "type": "error", "code": "gone" }""")]
+    public async Task ATitleNotedAfterTheRoomClosed_DoesNotBringItBack(string close)
+    {
+        _silo.On(HttpMethod.Post, "api/v2/watch-together/join", ScriptedSilo.Json(HttpStatusCode.OK, WatchPartyPayloads.Answer(WatchPartyPayloads.Room())));
+        await _party.JoinAsync("ABCD1234", TestContext.Current.CancellationToken);
+        await ServerPlaybackFixture.Until(() => _party.IsConnected, "the room connection");
+        Socket.Push(close);
+        await ServerPlaybackFixture.Until(() => _party.End is not null, "the room's close");
+        await Marked();
+
+        _party.NoteTitle("Heat");
+
+        var row = Assert.Single(await _party.ListRecentAsync(TestContext.Current.CancellationToken));
+        Assert.Equal((true, ""), (row.Ended, row.Token));
+    }
+
+    [Fact]
+    public async Task AnEndOfAnotherRoom_WhileTheFirstRoomsEndIsOnItsWay_EndsThatRoom_Once()
+    {
+        var firstAnswered = new TaskCompletionSource();
+        var otherAnswered = new TaskCompletionSource();
+        _silo.On(HttpMethod.Delete, Room, ServerPlaybackFixture.After(firstAnswered.Task, ScriptedSilo.NoContent()));
+        var page = await InTheRoomAsync(role: "host");
+        var first = _party.EndRoomAsync();
+        await _party.LeaveAsync();
+        await InTheOtherRoomAsync();
+        _silo.On(HttpMethod.Delete, OtherRoom, ServerPlaybackFixture.After(otherAnswered.Task, ScriptedSilo.NoContent()));
+
+        var other = _party.EndRoomAsync();
+        await ServerPlaybackFixture.Until(() => _silo.SentTo(HttpMethod.Delete, OtherRoom).Count == 1, "the other room's end");
+        var otherAgain = _party.EndRoomAsync();
+        // The first room's End comes back first, and leaves the other room's End on its way alone.
+        firstAnswered.SetResult();
+        Assert.True(await first);
+        var otherOnceMore = _party.EndRoomAsync();
+        otherAnswered.SetResult();
+
+        Assert.Equal((true, true, true), (await other, await otherAgain, await otherOnceMore));
+        Assert.Equal("host_left", _party.End?.Reason);
+        Assert.Equal(OtherRoomId, _party.Room?.RoomId);
+        Assert.True(Socket.Disposed);
+        Assert.Single(_silo.SentTo(HttpMethod.Delete, Room));
+        Assert.Single(_silo.SentTo(HttpMethod.Delete, OtherRoom));
+        page.Deactivate();
+    }
+
+    [Fact]
+    public async Task AnEndAnsweredAfterTheProfileChanged_MarksTheRoomOfTheProfileThatWasInIt()
+    {
+        var answered = new TaskCompletionSource();
+        _silo.On(HttpMethod.Delete, Room, async () =>
+        {
+            await answered.Task;
+            return await ScriptedSilo.NoContent()();
+        });
+        var page = await InTheRoomAsync(role: "host");
+
+        var ending = _party.EndRoomAsync();
+        _session.ProfileId = "9";
+        _session.RaiseChanged();
+        answered.SetResult();
+
+        Assert.True(await ending);
+        await ServerPlaybackFixture.Until(() => MarkedFor("7"), "profile 7's room marked as ended");
+        page.Deactivate();
+    }
+
+    [Fact]
+    public async Task AnEndAnsweredThatTheRoomIsOver_AfterTheProfileChanged_MarksTheRoomOfTheProfileThatWasInIt()
+    {
+        var answered = new TaskCompletionSource();
+        _silo.On(HttpMethod.Delete, Room, async () =>
+        {
+            await answered.Task;
+            return await ScriptedSilo.Problem(409, "conflict")();
+        });
+        var page = await InTheRoomAsync(role: "host");
+
+        var ending = _party.EndRoomAsync();
+        _session.ProfileId = "9";
+        _session.RaiseChanged();
+        answered.SetResult();
+
+        Assert.True(await ending);
+        await ServerPlaybackFixture.Until(() => MarkedFor("7"), "profile 7's room marked as ended");
+        page.Deactivate();
+    }
+
+    [Fact]
+    public async Task ADoubleEnd_SendsOneEnd()
+    {
+        var answered = new TaskCompletionSource();
+        _silo.On(HttpMethod.Delete, Room, async () =>
+        {
+            await answered.Task;
+            return await ScriptedSilo.NoContent()();
+        });
+        var page = await InTheRoomAsync(role: "host");
+
+        var first = _party.EndRoomAsync();
+        var second = _party.EndRoomAsync();
+        answered.SetResult();
+
+        Assert.Equal((true, true), (await first, await second));
+        Assert.False(await _party.EndRoomAsync());
+        Assert.Single(_silo.SentTo(HttpMethod.Delete, Room));
+        Assert.Equal("host_left", _party.End?.Reason);
+        page.Deactivate();
+    }
+
+    [Fact]
+    public async Task AnEndAnsweredAfterTheRoomWasLeft_LeavesNothingBehind_ButMarksTheRoom()
+    {
+        var answered = new TaskCompletionSource();
+        _silo.On(HttpMethod.Delete, Room, async () =>
+        {
+            await answered.Task;
+            return await ScriptedSilo.NoContent()();
+        });
+        var page = await InTheRoomAsync(role: "host");
+        var hub = Hub();
+
+        var ending = _party.EndRoomAsync();
+        await _party.LeaveAsync();
+        answered.SetResult();
+
+        Assert.True(await ending);
+        Assert.Null(_party.End);
+        Assert.False(hub.HasEnded);
+        await Marked();
+        page.Deactivate();
+    }
+
+    [Fact]
+    public async Task AnEndAnsweredAfterTheRoomWasEnteredAgain_EndsItThere()
+    {
+        var answered = new TaskCompletionSource();
+        _silo.On(HttpMethod.Delete, Room, ServerPlaybackFixture.After(answered.Task, ScriptedSilo.NoContent()));
+        var page = await InTheRoomAsync(role: "host");
+        var hub = Hub();
+
+        var ending = _party.EndRoomAsync();
+        await _party.LeaveAsync();
+        await InTheRoomAgainAsync();
+        answered.SetResult();
+
+        Assert.True(await ending);
+        Assert.True(Socket.Disposed);
+        Assert.False(_party.IsInRoom);
+        Assert.Equal(("host_left", "The room has ended."), (_party.End?.Reason, hub.EndedTitle));
+        Assert.Single(_silo.SentTo(HttpMethod.Delete, Room));
+        await Marked();
+        page.Deactivate();
+    }
+
+    [Fact]
+    public async Task AnEndPressedAgainAfterTheRoomWasEnteredAgain_SendsItsOwnEnd()
+    {
+        var first = new TaskCompletionSource();
+        var second = new TaskCompletionSource();
+        _silo.On(HttpMethod.Delete, Room, ServerPlaybackFixture.After(first.Task, ScriptedSilo.NoContent()),
+            ServerPlaybackFixture.After(second.Task, ScriptedSilo.NoContent()));
+        var page = await InTheRoomAsync(role: "host");
+        var firstEnd = _party.EndRoomAsync();
+        await _party.LeaveAsync();
+        await InTheRoomAgainAsync();
+
+        var secondEnd = _party.EndRoomAsync();
+        await ServerPlaybackFixture.Until(() => _silo.SentTo(HttpMethod.Delete, Room).Count == 2, "the second End's own request");
+        second.SetResult();
+
+        Assert.True(await secondEnd);
+        Assert.Equal("host_left", _party.End?.Reason);
+        Assert.True(Socket.Disposed);
+        first.SetResult();
+        Assert.True(await firstEnd);
+        Assert.Equal("host_left", _party.End?.Reason);
+        page.Deactivate();
+    }
+
+    [Fact]
+    public async Task AFailedEnd_DoesNotFailAnEndPressedAfterTheRoomWasEnteredAgain()
+    {
+        var first = new TaskCompletionSource();
+        var second = new TaskCompletionSource();
+        _silo.On(HttpMethod.Delete, Room, ServerPlaybackFixture.After(first.Task, ScriptedSilo.Problem(403, "permission_denied")),
+            ServerPlaybackFixture.After(second.Task, ScriptedSilo.NoContent()));
+        var page = await InTheRoomAsync(role: "host");
+        var firstEnd = _party.EndRoomAsync();
+        await _party.LeaveAsync();
+        await InTheRoomAgainAsync();
+
+        var secondEnd = _party.EndRoomAsync();
+        await ServerPlaybackFixture.Until(() => _silo.SentTo(HttpMethod.Delete, Room).Count == 2, "the second End's own request");
+        first.SetResult();
+        await Assert.ThrowsAsync<SiloApiException>(() => firstEnd);
+        Assert.True(_party.IsInRoom);
+        second.SetResult();
+
+        Assert.True(await secondEnd);
+        Assert.Equal("host_left", _party.End?.Reason);
+        Assert.True(Socket.Disposed);
+        page.Deactivate();
+    }
+
+    [Fact]
+    public async Task AnEndThatFailed_IsNotJoined_TheNextEndTriesAgain()
+    {
+        _silo.On(HttpMethod.Delete, Room, ScriptedSilo.Problem(403, "permission_denied"), ScriptedSilo.NoContent());
+        var page = await InTheRoomAsync(role: "host");
+
+        await Assert.ThrowsAsync<SiloApiException>(() => _party.EndRoomAsync());
+
+        Assert.True(await _party.EndRoomAsync());
+        Assert.Equal(2, _silo.SentTo(HttpMethod.Delete, Room).Count);
+        Assert.Equal("host_left", _party.End?.Reason);
+        page.Deactivate();
+    }
+
+    [Fact]
+    public async Task TheRoomPageUnderThePlayer_AndThePlayer_GoToTheHubOnce()
+    {
+        _silo.On(HttpMethod.Post, "api/v2/watch-together/join", ScriptedSilo.Json(HttpStatusCode.OK, WatchPartyPayloads.Answer(
+            WatchPartyPayloads.Room("playing", "playing", generation: 3, revision: 1, role: "guest", selected: "movie:heat"))));
+        await _party.JoinAsync("ABCD1234", TestContext.Current.CancellationToken);
+        await ServerPlaybackFixture.Until(() => _sockets.Count == 1 && _party.IsConnected, "the room connection");
+        var page = RoomPage();
+        page.Activate();
+        Assert.Equal(AppRoute.Player, _navigation.Current);
+        var player = new PlayerViewModel(new FakePlaybackEngine(), new ImmediateDispatcher(), _navigation, () => new FakeServerPlayback(),
+            new PlaybackStops(), _time, watchParty: _party);
+        await player.StartAsync(PlayRequest.WatchParty("movie:heat", "77", 1));
+
+        Socket.Push("""{ "type": "room_closed", "reason": "host_left" }""");
+        await ServerPlaybackFixture.Until(() => _navigation.PlayerLeaves == 1, "the player leaving");
+
+        Assert.Equal(AppRoute.WatchParty, Assert.Single(_navigation.Sections));
+        page.Deactivate();
+    }
+
+    [Fact]
+    public async Task ATakeover_GoesToTheHub_WhichOffersTheRoomBack()
+    {
+        var page = await InTheRoomAsync();
+        var hub = Hub();
+
+        Socket.Push("""{ "type": "connection_replaced", "reason": "This profile joined the Watch Party on another device." }""");
+        await ServerPlaybackFixture.Until(() => _navigation.Sections.Count == 1, "the way to the hub");
+        page.Deactivate();
+
+        Assert.Equal(("Watch Party joined on another device", "This profile joined the Watch Party on another device.", true),
+            (hub.EndedTitle, hub.EndedText, hub.CanRejoin));
+
+        hub.RejoinCommand.Execute(null);
+        await ServerPlaybackFixture.Until(() => _sockets.Count == 2 && _party.IsConnected, "the room claimed back");
+
+        Assert.False(hub.HasEnded);
+        Assert.Equal(AppRoute.WatchPartyRoom, _navigation.Navigations[^1].Route);
+    }
+
+    [Fact]
+    public async Task ARoomPageOpenedOnARoomThatEnded_GoesStraightToTheHub()
+    {
+        var page = await InTheRoomAsync();
+        page.Deactivate();
+        Socket.Push("""{ "type": "room_closed", "reason": "host_left" }""");
+        await ServerPlaybackFixture.Until(() => _party.End is not null, "the end");
+        Assert.Empty(_navigation.Sections);
+
+        var again = RoomPage();
+        again.Activate();
+
+        Assert.Equal(AppRoute.WatchParty, Assert.Single(_navigation.Sections));
+        again.Deactivate();
+    }
+
+    [Fact]
+    public async Task ARoomPageOpenedOnARoomThatEndedWhilePlaying_NeverOpensThePlayer()
+    {
+        _silo.On(HttpMethod.Post, "api/v2/watch-together/join", ScriptedSilo.Json(HttpStatusCode.OK, WatchPartyPayloads.Answer(
+            WatchPartyPayloads.Room("playing", "playing", generation: 3, revision: 1, role: "guest", selected: "movie:heat"))));
+        await _party.JoinAsync("ABCD1234", TestContext.Current.CancellationToken);
+        await ServerPlaybackFixture.Until(() => _sockets.Count == 1 && _party.IsConnected, "the room connection");
+        Socket.Push("""{ "type": "room_closed", "reason": "host_left" }""");
+        await ServerPlaybackFixture.Until(() => _party.End is not null, "the end");
+        Assert.True(_party.Room?.IsPlaying);
+
+        var page = RoomPage();
+        page.Activate();
+
+        Assert.DoesNotContain(_navigation.Navigations, n => n.Route == AppRoute.Player);
+        Assert.Null(_party.StartedRevision);
+        Assert.Equal(AppRoute.WatchParty, Assert.Single(_navigation.Sections));
+        page.Deactivate();
+    }
+
+    public async ValueTask DisposeAsync() => await _party.LeaveAsync();
+}

@@ -2162,7 +2162,8 @@ the commands its player runs. Sources: `silo-server/docs/realtime-api.md` ("Watc
   staged_selection, stop_playback, lobby_ready, connection_replaced, picker, member_state, selection_mode_switch, … }`;
   rooms are offered only when `state` is `available`, `allowed`, and the protocol is `silo.room.v2`.
 - `POST /api/v2/watch-together/rooms` `{ room_id (a client UUID: a retry answers the same room), selection_mode:
-  "host_pick" | "vote" }` → `201 { room, room_access_token }`. `POST /api/v2/watch-together/join` `{ code }` or
+  "host_pick" | "vote" }` (both required, `WatchTogetherCreateInputBody`; Granary sends the hub's choice, `host_pick`
+  unless Everyone votes is chosen) → `201 { room, room_access_token }`. `POST /api/v2/watch-together/join` `{ code }` or
   `{ join_token }` (the token of an invitation link, which wins) → `{ room, room_access_token }`. The host's
   snapshot carries `invite_path` `/rooms/join?token=…` (`silo-server/internal/watchtogether/service.go`
   personalizeSnapshot), the web's invite route, which forwards to `/rooms?token=…` (`WatchPartyInvite.tsx`); Granary
@@ -2181,9 +2182,12 @@ the commands its player runs. Sources: `silo-server/docs/realtime-api.md` ("Watc
 - Host only (profile authority, no proof): `PUT …/{id}/staged-selection { content_id }` (the lobby shows it),
   `POST …/{id}/playback/start` (plays what is staged: phase `playing`, a new revision, the barrier `waiting`),
   `POST …/{id}/playback/stop` (back to the lobby, still staged), `PATCH …/{id}/policy { guest_control_policy }`,
-  `DELETE …/{id}` (ends it for everyone), `PATCH …/{id}/selection-mode { selection_mode: host_pick | vote }` (in the
-  lobby only: drops the staged title and every lobby ready; suggestions and votes stay). Each answers the room and a
-  renewed proof; none is retried.
+  `PATCH …/{id}/selection-mode { selection_mode: host_pick | vote }` (in the lobby only: drops the staged title and
+  every lobby ready; suggestions and votes stay). Each answers the room and a renewed proof; none is retried.
+  `DELETE …/{id}` ends it for everyone → `204`, not retried either. A room that had ended already answers `409
+  conflict`, one that is not there `404 not_found` (`silo-server/internal/apiv2/watch_together_close.go`); Granary
+  takes both as ended, as Android's `WatchTogetherRepository.closeRoom` takes the 409. Another 409
+  (`capability_disabled`) is a failure.
 - Suggestions (every member, with `X-Room-Token`): `GET …/{id}/suggestions?limit=100&cursor=` → `{ items[], page {
   has_more, next_cursor } }` in creation order, each `{ id, room_id, suggester_user_id, suggester_profile_id,
   content_id, content_type (movie | episode), title, subtitle, poster_url, note, vote_count, voted_by_me, created_at

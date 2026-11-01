@@ -92,6 +92,45 @@ public sealed class WatchPartyPagesTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task StartingAParty_HostPicksByDefault_AndSendsTheChosenMode()
+    {
+        var hub = Hub();
+        _silo.On(HttpMethod.Post, "api/v2/watch-together/rooms", ScriptedSilo.Json(HttpStatusCode.Created,
+            WatchPartyPayloads.Answer(WatchPartyPayloads.Room(mode: "vote"))));
+        Assert.Equal((WatchPartySelectionModes.HostPick, true, false), (hub.SelectionMode, hub.IsHostPick, hub.IsVoteMode));
+
+        hub.IsVoteMode = true;
+        await hub.CreateCommand.ExecuteAsync(null);
+
+        Assert.Equal((WatchPartySelectionModes.Vote, false, true), (hub.SelectionMode, hub.IsHostPick, hub.IsVoteMode));
+        Assert.Contains("\"selection_mode\":\"vote\"", Assert.Single(_silo.SentTo(HttpMethod.Post, "api/v2/watch-together/rooms")).Body,
+            StringComparison.Ordinal);
+        Assert.Equal(AppRoute.WatchPartyRoom, _navigation.Navigations[^1].Route);
+    }
+
+    [Fact]
+    public void TheModeChoice_IsNotKept_ForTheNextVisit()
+    {
+        var hub = Hub();
+        hub.IsVoteMode = true;
+        // The other card's radio unchecking says nothing of its own.
+        hub.IsHostPick = false;
+        Assert.Equal(WatchPartySelectionModes.Vote, hub.SelectionMode);
+
+        hub.Arrive();
+
+        Assert.Equal((WatchPartySelectionModes.HostPick, true), (hub.SelectionMode, hub.IsHostPick));
+    }
+
+    [Theory]
+    [InlineData("abcd1234", "ABCD1234")]
+    [InlineData("wxyz-98 ", "WXYZ-98 ")]
+    [InlineData("https://silo.example/rooms/join?token=AbC-xyz", "https://silo.example/rooms/join?token=AbC-xyz")]
+    [InlineData("/rooms/join?token=AbC", "/rooms/join?token=AbC")]
+    public void ACode_ReadsInCapitals_AndAnInviteLinkKeepsItsCase(string typed, string shown) =>
+        Assert.Equal(shown, WatchPartyHubViewModel.AsTyped(typed));
+
+    [Fact]
     public async Task AJoinAnsweredAfterTheProfileChanged_ShowsNothing()
     {
         var hub = Hub();
@@ -168,21 +207,6 @@ public sealed class WatchPartyPagesTests : IAsyncDisposable
 
         Assert.Equal(2, _party.StartedRevision);
         again.Deactivate();
-    }
-
-    [Fact]
-    public async Task TheRoomsEnd_ReplacesThePage_InTheWebsWords()
-    {
-        await JoinAsync(WatchPartyPayloads.Room());
-        var page = RoomPage(Feature());
-        page.Activate();
-
-        _sockets[0].Push("""{ "type": "room_closed", "reason": "host_left" }""");
-        await ServerPlaybackFixture.Until(() => page.IsEnded, "the end");
-
-        Assert.True(page.IsClosed);
-        Assert.Equal("The room has ended.", page.EndedText);
-        page.Deactivate();
     }
 
     public async ValueTask DisposeAsync() => await _party.LeaveAsync();

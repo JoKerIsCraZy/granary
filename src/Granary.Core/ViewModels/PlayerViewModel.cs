@@ -240,6 +240,11 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         playback.NoticeRaised += OnNoticeRaised;
         FollowSubtitleSync(playback);
         BeginWatchParty(request);
+        // The room was over, or had moved on, before the player bound to it: the player left already.
+        if (HasLeft)
+        {
+            return;
+        }
         await playback.StartAsync(request, CancellationToken.None);
     }
 

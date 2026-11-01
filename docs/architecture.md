@@ -377,6 +377,32 @@ breaks YouTube's terms.
 - **Logs.** The outcome only ("The trailer plays", "can't play in Granary: EmbedRefused"); a blocked navigation is logged
   without its address, its host only at Debug. A YouTube address carries the video's key and stays out of the log.
 
+## Watch Party
+
+`WatchPartySession` (Core) is the room this profile is in, for the whole app: the hub, the room page and the player's
+panel follow it. It joins or opens the room over HTTP and keeps the room socket (`WatchPartyConnection`) while it is in it.
+
+- **The end.** `End` says why the room is over for this device, and stays until the room is left or another entered.
+  The room's own close (`room_closed` with its reason: `host_left` when the host ended it or stayed away two minutes),
+  an ended snapshot (`ended`), a refused socket ticket (`ended` on 409, `not_found` on 404, `forbidden` otherwise) and
+  another device taking this profile's place (`connection_replaced`, `Replaced`) all end it. All but `forbidden` and a
+  takeover say the room itself is over: it is marked ended among the recent rooms, and a title noted after that does
+  not bring it back. A takeover can be claimed back (Rejoin).
+- **The host's End.** `DELETE …/rooms/{id}`; the socket closes and `End` is `host_left`, as the others hear it. An
+  answer that the room is over already (409 `conflict`, 404 `not_found`) ends it too, as `ended` or `not_found`, as
+  Android's `WatchTogetherRepository.closeRoom` takes the 409. The room's own close may arrive while the End is on its
+  way: an end that says the room is over is kept, one that said less (a refused proof, a takeover) gives way. Ends on
+  their way are kept by room and entry (the session's generation): a second End of the same entry waits for the first,
+  an End of another room or of the same room entered again goes out on its own, and a failed End is not waited for.
+  An End that goes through, or finds the room over, marks it ended for the server and profile that entered it. If this
+  device is in that room by then, entered again meanwhile included, that engagement ends too; if it left, or is in
+  another room, nothing else changes.
+- **To the hub.** A room that is over is not shown. The room page and the player each go on to the hub, unless it shows
+  already, as a section (`ShowSection`), so Back does not return to the room; the player first leaves as on any exit,
+  its position reported. The hub says why in the web's words (`WatchPartyText`) until it is dismissed, which leaves the
+  room on this device. A room that only stopped playing is still on: the player closes, and the room page under it shows
+  again.
+
 ## Windows App SDK
 
 The App is unpackaged and self-contained (`WindowsPackageType=None`, `WindowsAppSDKSelfContained=true`): the Windows

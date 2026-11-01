@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    The Watch Party hub, as Silo's web shows it: what a party is, Start a party (an empty room the host picks for) beside
-    Join a party (a code or an invite link), your recent parties, and how it works. In a room already, a line leads back.
+    The Watch Party hub, as Silo's web shows it: what a party is, Start a party (an empty room, Host picks or Everyone votes) beside
+    Join a party (a code or an invite link), your recent parties, and how it works. In a room already, a line leads back;
+    a room that is over says so at the top.
 -->
 <Page
     x:Class="Granary.App.Views.WatchPartyPage"
@@ -37,6 +38,72 @@
             <Setter Property="Height" Value="32" />
             <Setter Property="CornerRadius" Value="8" />
         </Style>
+        <!--
+            One of the web's two "How the room picks" cards (a radio): radius 12, a faint border; chosen, the accent surface
+            (#232328) with the foreground at half for its border; under the pointer, the muted surface at 60 %.
+        -->
+        <Style x:Key="ModeCardStyle" TargetType="RadioButton">
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalAlignment" Value="Stretch" />
+            <Setter Property="Padding" Value="12" />
+            <Setter Property="UseSystemFocusVisuals" Value="True" />
+            <Setter Property="FocusVisualMargin" Value="-3" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Grid x:Name="Card" CornerRadius="12" BorderThickness="1" BorderBrush="#99242428" Background="Transparent">
+                            <VisualStateManager.VisualStateGroups>
+                                <VisualStateGroup x:Name="CommonStates">
+                                    <VisualState x:Name="Normal" />
+                                    <VisualState x:Name="PointerOver">
+                                        <VisualState.Setters>
+                                            <Setter Target="Hover.Opacity" Value="1" />
+                                        </VisualState.Setters>
+                                    </VisualState>
+                                    <VisualState x:Name="Pressed">
+                                        <VisualState.Setters>
+                                            <Setter Target="Hover.Opacity" Value="1" />
+                                        </VisualState.Setters>
+                                    </VisualState>
+                                    <VisualState x:Name="Disabled">
+                                        <VisualState.Setters>
+                                            <Setter Target="Card.Opacity" Value="0.5" />
+                                        </VisualState.Setters>
+                                    </VisualState>
+                                </VisualStateGroup>
+                                <VisualStateGroup x:Name="CheckStates">
+                                    <VisualState x:Name="Checked">
+                                        <VisualState.Setters>
+                                            <Setter Target="Card.Background" Value="#FF232328" />
+                                            <Setter Target="Card.BorderBrush" Value="#80E8E8EC" />
+                                            <Setter Target="Hover.Visibility" Value="Collapsed" />
+                                        </VisualState.Setters>
+                                    </VisualState>
+                                    <VisualState x:Name="Unchecked" />
+                                    <VisualState x:Name="Indeterminate" />
+                                </VisualStateGroup>
+                            </VisualStateManager.VisualStateGroups>
+                            <Border x:Name="Hover" CornerRadius="11" Background="#991C1C20" Opacity="0" />
+                            <ContentPresenter Padding="{TemplateBinding Padding}" Content="{TemplateBinding Content}"
+                                              ContentTemplate="{TemplateBinding ContentTemplate}" HorizontalContentAlignment="Stretch" />
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="ModeTitleStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontFamily" Value="{StaticResource SiloFontMedium}" />
+            <Setter Property="FontWeight" Value="Medium" />
+            <Setter Property="Foreground" Value="{StaticResource SiloForegroundBrush}" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+        <Style x:Key="ModeCaptionStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{StaticResource SiloMutedBrush}" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
     </Page.Resources>
 
     <ScrollViewer x:Name="Scroller" XYFocusKeyboardNavigation="Enabled" SizeChanged="OnScrollerSizeChanged">
@@ -46,8 +113,38 @@
                 <TextBlock Text="Watch together, wherever everyone is." Style="{StaticResource SiloDisplayTextStyle}" TextWrapping="Wrap"
                            MaxWidth="672" HorizontalAlignment="Left" AutomationProperties.HeadingLevel="Level1" />
                 <TextBlock MaxWidth="576" HorizontalAlignment="Left" Style="{StaticResource CardTextStyle}" FontSize="16" LineHeight="28"
-                           Text="Open a room, share the code, and everyone plays in sync. The host picks what's on." />
+                           Text="Open a room, share the code, and everyone plays in sync. The host picks what's on, or the whole room votes." />
             </StackPanel>
+
+            <!--
+                The room this device was in is over: Silo's apps leave it for the hub and say so there. The words and the
+                tile are the web's end of a room (RoomTerminalState); after a takeover, Rejoin claims the room back.
+            -->
+            <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{x:Bind ViewModel.HasEnded, Mode=OneWay}">
+                <Grid ColumnSpacing="16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Border Width="48" Height="48" CornerRadius="12" Background="{StaticResource SiloSurfaceRaisedBrush}" BorderBrush="#1AFFFFFF"
+                            BorderThickness="1" VerticalAlignment="Center">
+                        <FontIcon Glyph="&#xE716;" FontSize="20" Foreground="{StaticResource SiloMutedBrush}" />
+                    </Border>
+                    <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                        <TextBlock Text="{x:Bind ViewModel.EndedTitle, Mode=OneWay}" FontSize="16" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
+                                   TextWrapping="Wrap" AutomationProperties.LiveSetting="Assertive" AutomationProperties.HeadingLevel="Level2" />
+                        <TextBlock Text="{x:Bind ViewModel.EndedText, Mode=OneWay}" Style="{StaticResource CardTextStyle}" />
+                    </StackPanel>
+                    <Button Grid.Column="2" Content="Rejoin Watch Party" Style="{StaticResource SiloPrimaryButtonStyle}" VerticalAlignment="Center"
+                            Command="{x:Bind ViewModel.RejoinCommand}" Visibility="{x:Bind ViewModel.CanRejoin, Mode=OneWay}" />
+                    <Button Grid.Column="3" Style="{StaticResource SiloIconButtonStyle}" VerticalAlignment="Center" Command="{x:Bind ViewModel.DismissEndCommand}"
+                            AutomationProperties.Name="Dismiss" ToolTipService.ToolTip="Dismiss">
+                        <FontIcon Glyph="&#xE711;" FontSize="12" />
+                    </Button>
+                </Grid>
+            </Border>
 
             <!-- Already in a room: back to it. -->
             <Border Style="{StaticResource CardStyle}" Padding="16,12" Visibility="{x:Bind ViewModel.IsInRoom, Mode=OneWay}">
@@ -72,20 +169,66 @@
                     <ColumnDefinition Width="1.15*" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-                <Border Style="{StaticResource CardStyle}">
-                    <StackPanel Spacing="20">
-                        <StackPanel Spacing="8">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <Border Style="{StaticResource BadgeStyle}" Background="#26EF4444">
-                                    <FontIcon Glyph="&#xE734;" FontSize="16" Foreground="{StaticResource SiloPrimaryBrush}" />
-                                </Border>
-                                <TextBlock Text="Start a party" Style="{StaticResource CardTitleStyle}" AutomationProperties.HeadingLevel="Level2" />
+                <!-- Start a party, with the web's accent glow at the top right and its choice of how the room picks. -->
+                <Border Style="{StaticResource CardStyle}" Padding="0">
+                    <Grid CornerRadius="15" Padding="24" Background="{StaticResource SiloCardGlowBrush}">
+                        <StackPanel Spacing="20">
+                            <StackPanel Spacing="8">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Border Style="{StaticResource BadgeStyle}" Background="{StaticResource SiloPrimaryTint15Brush}">
+                                        <FontIcon Glyph="&#xE734;" FontSize="16" Foreground="{StaticResource SiloPrimaryBrush}" />
+                                    </Border>
+                                    <TextBlock Text="Start a party" Style="{StaticResource CardTitleStyle}" AutomationProperties.HeadingLevel="Level2" />
+                                </StackPanel>
+                                <TextBlock Text="Open an empty room now and pick what to watch once people arrive." Style="{StaticResource CardTextStyle}" />
                             </StackPanel>
-                            <TextBlock Text="Open an empty room now and pick what to watch once people arrive." Style="{StaticResource CardTextStyle}" />
+                            <Grid ColumnSpacing="8" AutomationProperties.Name="How the room picks">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <RadioButton GroupName="HubSelectionMode" Style="{StaticResource ModeCardStyle}" IsChecked="{x:Bind ViewModel.IsHostPick, Mode=TwoWay}"
+                                             AutomationProperties.Name="Host picks" AutomationProperties.HelpText="You choose, everyone watches.">
+                                    <Grid ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <FontIcon Glyph="&#xE77B;" FontSize="16" VerticalAlignment="Top" Margin="0,2,0,0"
+                                                  Foreground="{x:Bind views:WatchPartyPage.ModeIconBrush(ViewModel.IsHostPick), Mode=OneWay}"
+                                                  Opacity="{x:Bind views:WatchPartyPage.ModeIconOpacity(ViewModel.IsHostPick), Mode=OneWay}" />
+                                        <StackPanel Grid.Column="1" Spacing="2">
+                                            <TextBlock Text="Host picks" Style="{StaticResource ModeTitleStyle}" />
+                                            <TextBlock Text="You choose, everyone watches." Style="{StaticResource ModeCaptionStyle}" />
+                                        </StackPanel>
+                                    </Grid>
+                                </RadioButton>
+                                <RadioButton Grid.Column="1" GroupName="HubSelectionMode" Style="{StaticResource ModeCardStyle}"
+                                             IsChecked="{x:Bind ViewModel.IsVoteMode, Mode=TwoWay}"
+                                             AutomationProperties.Name="Everyone votes" AutomationProperties.HelpText="Anyone suggests, the room votes.">
+                                    <Grid ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <FontIcon Glyph="&#xE9D5;" FontSize="16" VerticalAlignment="Top" Margin="0,2,0,0"
+                                                  Foreground="{x:Bind views:WatchPartyPage.ModeIconBrush(ViewModel.IsVoteMode), Mode=OneWay}"
+                                                  Opacity="{x:Bind views:WatchPartyPage.ModeIconOpacity(ViewModel.IsVoteMode), Mode=OneWay}" />
+                                        <StackPanel Grid.Column="1" Spacing="2">
+                                            <TextBlock Text="Everyone votes" Style="{StaticResource ModeTitleStyle}" />
+                                            <TextBlock Text="Anyone suggests, the room votes." Style="{StaticResource ModeCaptionStyle}" />
+                                        </StackPanel>
+                                    </Grid>
+                                </RadioButton>
+                            </Grid>
+                            <!--
+                                The web's hint under the button ("…choose Start a party with this from the menu.") is left out:
+                                Granary's title pages have no such entry yet.
+                            -->
+                            <Button Content="{x:Bind ViewModel.CreateLabel, Mode=OneWay}" Style="{StaticResource SiloPrimaryButtonStyle}" HorizontalAlignment="Stretch"
+                                    MinHeight="48" FontSize="16" Command="{x:Bind ViewModel.CreateCommand}" />
                         </StackPanel>
-                        <Button Content="{x:Bind ViewModel.CreateLabel, Mode=OneWay}" Style="{StaticResource SiloPrimaryButtonStyle}" HorizontalAlignment="Stretch"
-                                MinHeight="48" FontSize="16" Command="{x:Bind ViewModel.CreateCommand}" />
-                    </StackPanel>
+                    </Grid>
                 </Border>
                 <Border x:Name="JoinCard" Grid.Column="1" Style="{StaticResource CardStyle}">
                     <StackPanel Spacing="20">
@@ -104,9 +247,12 @@
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
+                                <!-- The web's code box (monospace, 18 px, 0.3 em apart, in capitals), its text kept in the middle. -->
                                 <TextBox Text="{x:Bind ViewModel.Code, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="ABCD1234"
-                                         AutomationProperties.Name="Room code" MinHeight="48" FontSize="18" CharacterSpacing="200" VerticalContentAlignment="Center"
-                                         IsSpellCheckEnabled="False" KeyDown="OnCodeKeyDown" />
+                                         AutomationProperties.Name="Room code" MinHeight="48" FontFamily="Consolas" FontSize="18" CharacterSpacing="300"
+                                         TextAlignment="Center" Padding="12,11,12,11"
+                                         IsSpellCheckEnabled="False" KeyDown="OnCodeKeyDown" TextChanging="OnCodeTextChanging"
+                                         TextCompositionStarted="OnCodeCompositionStarted" TextCompositionEnded="OnCodeCompositionEnded" />
                                 <Button Grid.Column="1" Style="{StaticResource SiloSecondaryButtonStyle}" MinHeight="48" Click="OnPasteClick"
                                         AutomationProperties.Name="Paste room code">
                                     <StackPanel Orientation="Horizontal" Spacing="6">
@@ -177,7 +323,7 @@
                         </Border>
                         <StackPanel Spacing="4" MaxWidth="220">
                             <TextBlock Text="Open a room" FontSize="14" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" />
-                            <TextBlock Text="Create one here; the host picks what plays." Style="{StaticResource CardTextStyle}" />
+                            <TextBlock Text="Create one here." Style="{StaticResource CardTextStyle}" />
                         </StackPanel>
                     </StackPanel>
                     <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12">
