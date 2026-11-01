@@ -66,12 +66,12 @@ that source, and they ship with Granary too: all of InteractiveExperiences (`Cor
 `Microsoft.UI.Windowing.dll`, `wuceffectsi.dll`), and WinUI's `Microsoft.UI.Xaml.Internal.dll` and `WinUIEdit.dll`,
 which come from a package those files call closed source (`Microsoft.Internal.WinUIDetails`).
 
-Open point: the Windows App SDK runtime is not a system library of Windows, and Granary ships three of its parts:
-WinUI, InteractiveExperiences and Foundation, under the Microsoft Software License Terms. The source of WinUI and
-Foundation is published under MIT; the binaries named in the paragraph above are not part of that source. Before the
-first release, decide how the AGPL-3.0-or-later licensing handles linking with it (for example an additional permission
-for the Windows App SDK, similar to the App Store permission in silo-apple). Only copyright holders can grant one:
-Granary's contributors for their code, Silo Media L.L.C. for the parts adapted from Silo (see Silo below).
+Licensing: the Windows App SDK is a Platform Library in the sense of the platform library exception, an additional
+permission under section 7 of the AGPL that lets Granary combine its code with it and ship the result. Granary's
+contributors grant it for their code in [PLATFORM-EXCEPTION.md](PLATFORM-EXCEPTION.md). The parts adapted from Silo carry
+Silo's own permission, in the `PLATFORM-EXCEPTION.md` of each Silo repository: Silo Media L.L.C. grants it for the code
+it holds copyright in, and Silo's contributors for their contributions, as that file sets out (see Silo below). Granary's
+Corresponding Source therefore need not include the Windows App SDK's source.
 
 ## Plus Jakarta Sans (bundled font)
 
@@ -120,8 +120,9 @@ parts of it are adapted from them: behaviour, interface texts, layouts and code 
 (<https://github.com/Silo-Server/silo-android>) and its Apple app
 (<https://github.com/Silo-Server/silo-apple>), translated to C# and XAML and changed for Windows since
 2026. Those repositories are Copyright (C) 2026 Silo Media L.L.C. and contributors and licensed under
-AGPL-3.0-or-later, as Granary is; the Apple app's additional App Store permission does not carry over
-to Granary.
+AGPL-3.0-or-later with Silo's platform library exception, as Granary is: the `PLATFORM-EXCEPTION.md` in each of
+those repositories lets their code be combined with platform SDKs such as the Windows App SDK, and the result
+shipped.
 
 "Silo", the Silo logo and the Silo wordmark are trademarks of Silo Media L.L.C. and are not covered by
 the AGPL (their `TRADEMARK.md`). Granary uses its own name and logo; the one Silo asset it includes, the

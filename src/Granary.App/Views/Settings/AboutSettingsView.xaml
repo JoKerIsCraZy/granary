@@ -112,8 +112,13 @@
         <controls:SettingsGroup Title="License and source" Description="Granary is free software. It may be shared and changed under its license.">
             <StackPanel>
                 <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="License"
-                                      Description="GNU Affero General Public License, version 3 or later.">
+                                      Description="GNU Affero General Public License, version 3 or later, with a platform library exception.">
                     <Button Content="View" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Click="OnViewLicenseClick" AutomationProperties.Name="View the license" />
+                </controls:SettingsRow>
+                <controls:SettingsRow Label="Platform library exception"
+                                      Description="The additional permission that lets Granary ship with platform SDKs such as the Windows App SDK.">
+                    <Button Content="View" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Click="OnViewExceptionClick"
+                            AutomationProperties.Name="View the platform library exception" />
                 </controls:SettingsRow>
                 <controls:SettingsRow Label="Third-party notices"
                                       Description="The components Granary uses and ships with their licenses, and the parts adapted from Silo's own apps.">

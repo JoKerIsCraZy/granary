@@ -147,6 +147,8 @@ public sealed class ChangelogTests
 
         public string LicensePath => @"C:\Granary\LICENSE";
 
+        public string ExceptionPath => @"C:\Granary\PLATFORM-EXCEPTION.md";
+
         public string NoticesPath => @"C:\Granary\THIRD_PARTY_NOTICES.md";
 
         public string DataDirectory => @"C:\Data\Granary";

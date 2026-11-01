@@ -30,6 +30,8 @@ internal sealed class BuildInfo : IAppInfo
 
     public string LicensePath => Path.Combine(AppContext.BaseDirectory, "LICENSE");
 
+    public string ExceptionPath => Path.Combine(AppContext.BaseDirectory, "PLATFORM-EXCEPTION.md");
+
     public string NoticesPath => Path.Combine(AppContext.BaseDirectory, "THIRD_PARTY_NOTICES.md");
 
     public string DataDirectory => AppPaths.DataDirectory;

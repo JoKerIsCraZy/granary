@@ -286,6 +286,8 @@ public sealed partial class AboutSettingsView : UserControl, IDisposable
 
     private void OnViewLicenseClick(object sender, RoutedEventArgs e) => OpenText(ViewModel.LicensePath);
 
+    private void OnViewExceptionClick(object sender, RoutedEventArgs e) => OpenText(ViewModel.ExceptionPath);
+
     private void OnViewNoticesClick(object sender, RoutedEventArgs e) => OpenText(ViewModel.NoticesPath);
 
     private void OnOpenDataClick(object sender, RoutedEventArgs e) => OpenFolder(ViewModel.DataDirectory);
