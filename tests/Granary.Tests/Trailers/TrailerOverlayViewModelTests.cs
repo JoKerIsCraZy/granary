@@ -293,6 +293,48 @@ public sealed class TrailerOverlayViewModelTests
     }
 
     [Fact]
+    public void AFloodOfF11FromThePage_TogglesOnce_AndOneAfterTheIntervalAgain()
+    {
+        // A frame could post the message in a loop: each toggle resizes the window, so they are spaced out.
+        var overlay = Create();
+        int asked = 0;
+        overlay.FullScreenToggleRequested += (_, _) => asked++;
+        overlay.Open(Official);
+
+        for (int i = 0; i < 50; i++)
+        {
+            overlay.Receive(FullScreenKey);
+        }
+        Assert.Equal(1, asked);
+
+        _time.Advance(TrailerOverlayViewModel.FullScreenInterval - TimeSpan.FromMilliseconds(1));
+        overlay.Receive(FullScreenKey);
+        Assert.Equal(1, asked);
+
+        _time.Advance(TimeSpan.FromMilliseconds(1));
+        overlay.Receive(FullScreenKey);
+        Assert.Equal(2, asked);
+    }
+
+    [Fact]
+    public void F11sIgnoredInAFlood_DoNotPushTheIntervalOn()
+    {
+        var overlay = Create();
+        int asked = 0;
+        overlay.FullScreenToggleRequested += (_, _) => asked++;
+        overlay.Open(Official);
+        overlay.Receive(FullScreenKey);
+
+        // Ignored ones on the way do not count: the interval runs from the last one taken.
+        _time.Advance(TrailerOverlayViewModel.FullScreenInterval / 2);
+        overlay.Receive(FullScreenKey);
+        _time.Advance(TrailerOverlayViewModel.FullScreenInterval / 2);
+        overlay.Receive(FullScreenKey);
+
+        Assert.Equal(2, asked);
+    }
+
+    [Fact]
     public void F11FromAClosedTrailer_AsksForNothing()
     {
         var overlay = Create();

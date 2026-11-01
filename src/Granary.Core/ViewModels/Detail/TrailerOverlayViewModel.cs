@@ -35,6 +35,12 @@ public sealed partial class TrailerOverlayViewModel : ObservableObject, IDisposa
     /// <summary>How long YouTube's player has to answer once the page opens, before the trailer counts as one that can't play here.</summary>
     public static readonly TimeSpan LoadTimeout = TimeSpan.FromSeconds(15);
 
+    /// <summary>
+    /// The least time between two F11s from the page that toggle full screen: the page's own script sends one per press, but
+    /// a frame could send them in a loop, and each toggle resizes the window.
+    /// </summary>
+    public static readonly TimeSpan FullScreenInterval = TimeSpan.FromMilliseconds(500);
+
     public const string UnavailableText = "This video can't play in Granary.";
 
     private readonly IUiDispatcher _dispatcher;
@@ -42,6 +48,7 @@ public sealed partial class TrailerOverlayViewModel : ObservableObject, IDisposa
     private readonly ILogger _logger;
     private ITimer? _timeout;
     private int _generation;
+    private DateTimeOffset? _lastFullScreen;
 
     public TrailerOverlayViewModel(IUiDispatcher dispatcher, TimeProvider time, ILogger<TrailerOverlayViewModel>? logger = null)
     {
@@ -113,10 +120,7 @@ public sealed partial class TrailerOverlayViewModel : ObservableObject, IDisposa
         ArgumentNullException.ThrowIfNull(message);
         if (message.Event == TrailerPageEvent.FullScreen)
         {
-            if (IsOpen)
-            {
-                FullScreenToggleRequested?.Invoke(this, EventArgs.Empty);
-            }
+            ToggleFullScreen();
             return;
         }
         if (message.Event == TrailerPageEvent.Close)
@@ -136,6 +140,18 @@ public sealed partial class TrailerOverlayViewModel : ObservableObject, IDisposa
         StopTimeout();
         State = TrailerOverlayState.Playing;
         _logger.LogInformation("The trailer plays");
+    }
+
+    // At most one toggle per FullScreenInterval, counted from the last one taken: the ones in between are dropped.
+    private void ToggleFullScreen()
+    {
+        var now = _time.GetUtcNow();
+        if (!IsOpen || (_lastFullScreen is { } last && now - last < FullScreenInterval))
+        {
+            return;
+        }
+        _lastFullScreen = now;
+        FullScreenToggleRequested?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>The trailer can't play here after all; only the first reason counts.</summary>

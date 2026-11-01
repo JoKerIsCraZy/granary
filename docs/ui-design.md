@@ -681,7 +681,7 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   In the app's full screen the window stays as it is either way, and leaving the trailer's full screen leaves the app
   in full screen. While a trailer fills the screen the title bar's buttons are away (YouTube's button and Esc leave it);
   F11 there leaves full screen for both. F11 works with the keyboard in the trailer's page or YouTube's player too: the
-  page hands it to the window (`TrailerPage.CloseKeysScript`), once per press.
+  page hands it to the window (`TrailerPage.CloseKeysScript`), once per press and at most twice a second.
 
 ## Player
 

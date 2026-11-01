@@ -366,7 +366,8 @@ breaks YouTube's terms.
   it. So `TrailerPage.CloseKeysScript` is added to every document of the WebView
   (`AddScriptToExecuteOnDocumentCreatedAsync`). Esc, the Back key, Alt+Left and the mouse's back button post
   `{"kind":"close"}`; in full screen Esc only leaves full screen. F11 posts `{"kind":"fullscreen"}`, which toggles the
-  window's full screen (Window modes); a held key's repeats post nothing. Checked with synthetic events in the page and in
+  window's full screen (Window modes); a held key's repeats post nothing, and whatever a frame posts, Granary takes at
+  most one every 500 ms (`TrailerOverlayViewModel.FullScreenInterval`), as each toggle resizes the window. Checked with synthetic events in the page and in
   YouTube's frame; a frame can do no more with them than close the trailer or toggle full screen. The script runs beside
   the page's own and is not part of its policy hash.
 - **States.** `TrailerOverlayViewModel`: Loading, Playing (the player answered), Unavailable with its reason (the player's
