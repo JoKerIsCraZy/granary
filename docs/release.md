@@ -67,9 +67,8 @@ out the app's resources (`Granary.pri`, the compiled XAML), and the published co
 
 ## Signed releases
 
-An installed copy applies an update only when its release is signed with Granary's update key.
-The GitHub release itself is not trusted: a leaked `GITHUB_TOKEN` or a swapped asset must not reach
-anyone's PC.
+An installed copy applies an update only when its release is signed with Granary's update key. The GitHub release
+itself is not trusted: a leaked `GITHUB_TOKEN` or a swapped asset must not reach anyone's PC.
 
 **What a release carries.** `SHA256SUMS` lists the SHA-256 of every file `vpk pack` made (the setup, the portable zip
 and the full package, as `assets.win.json` names them), one `hash  name` line each with LF line ends, as `sha256sum`

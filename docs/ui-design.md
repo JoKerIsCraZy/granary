@@ -311,8 +311,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   pages of only library titles with more to come say "Every title found so far is already in your library." over Load
   more; a later read that fails keeps what shows and says "Couldn’t load more titles." over Try again. The cards open
   the title's page, or the library's title.
-- Search's backdrop (`FocusBackdrop`, `SearchViewModel.Backdrop`), a departure from the
-  web, which has none: behind "Results for …" and the box, the backdrop of the result the pointer or the keyboard is on,
+- Search's backdrop (`FocusBackdrop`, `SearchViewModel.Backdrop`), a departure from the web, which has none: behind "Results for …" and the box, the backdrop of the result the pointer or the keyboard is on,
   a library title or one to request (TMDB's, without a blur). It covers the right 75 % and the top 70 % of the page,
   stays put while the results scroll and moves nothing: dark throughout (a quarter of the picture at most, at the top
   right) and gone into the page toward the text on the left and toward the bottom. A new picture fades in over the last
@@ -320,12 +319,12 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   after 150 ms of rest, as on Home. Nothing shows until a result is pointed at, and each new search starts without one,
   as does every visit but Back. The pictures are let go while Search is not shown.
 - Pages: 48 px side margins, 32 px top; rows 40 px apart.
-- Home's hero (`BrowseHero`, `BrowseHeroViewModel`, also on For You and Requests), a deliberate
-  departure from the web's Home, which has none: the title of the card the pointer or the keyboard is on, in any row, at
+- Home's hero (`BrowseHero`, `BrowseHeroViewModel`, also on For You and Requests), a deliberate departure from the web's
+  Home, which has none: the title of the card the pointer or the keyboard is on, in any row, at
   the top of the page. A page lays its rows under it with `BrowseHero.RowsViewMargin` and `RowsPadding` (with the hero's
   `Sizes`), and feeds it its rows' titles (`BrowseHeroViewModel.Follow`) and the card pointed at (`Point`).
-  - Its sizes below are a page up to 1040 px high (a 1080 px window). A taller page has a taller hero, which grows
-    with the window (`BrowseHeroLayout.For`, in 8 px steps of the page's height): the hero keeps its share of the page's
+  - Its sizes below are a page up to 1040 px high (a 1080 px window). A taller page has a taller hero, which grows with
+    the window (`BrowseHeroLayout.For`, in 8 px steps of the page's height): the hero keeps its share of the page's
     height, up to 720 px (643 px on a 3840 × 1600 screen), and the first row moves down with it; the compact header, the
     logo and the text block grow half as much (on 3840 × 1600: header 185, logo 98 high and 492 wide), and the details
     and the overview a quarter (18 and 17 px). A page of another height lays the hero out again and gives the running
