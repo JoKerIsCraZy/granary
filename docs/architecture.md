@@ -40,7 +40,9 @@ HWND is in [spike/README.md](../spike/README.md).
 The panel shows the last presented picture unscaled, from its top-left corner, and mpv resizes its
 buffers a little after the panel on its own thread. After a jump in size (the player minimized to its
 bar or brought back, full screen, the Playing Next corner), `MpvVideoHost` therefore hides the picture
-and passes the new size to mpv one frame later. It shows the picture again once mpv has presented
+in the layout pass that gives the panel its new size, and passes the new size to mpv only once the desktop
+compositor has drawn that frame (`DwmFlush`, twice): the hidden panel and mpv's pictures reach the compositor
+separately, and a heavy frame could otherwise arrive after mpv's first picture at the new size. It shows the picture again once mpv has presented
 after its buffer took that size, or has presented nothing for 100 ms since (paused), and after 300 ms
 at the latest (`CompositionResizeGate`, which reads the buffer size and the present count from DXGI).
 Small steps, as while the window's edge is dragged, are passed on at once and keep the picture.

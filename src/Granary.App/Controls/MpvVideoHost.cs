@@ -1,9 +1,11 @@
+using System.Runtime.InteropServices;
 using Granary.App.Interop;
 using Granary.Player;
 using Granary.Player.Interop;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using Windows.Foundation;
 
 namespace Granary.App.Controls;
 
@@ -19,7 +21,9 @@ public sealed partial class MpvVideoHost : UserControl
     private readonly CompositionResizeGate _resizeGate = new(TimeProvider.System);
     private ICompositionVideoOutput? _output;
     private nint _attached;
+    private PixelSize _panelSize;
     private PixelSize? _pendingResize;
+    private int _resizeTurn;
     private bool _isWatchingFrames;
 
     public MpvVideoHost()
@@ -46,6 +50,14 @@ public sealed partial class MpvVideoHost : UserControl
         }
     }
 
+    // The hide joins the very frame that first lays the panel out at its new size: SizeChanged can come after that
+    // frame has been drawn, which would show the old picture in the new place for a frame.
+    protected override Size ArrangeOverride(Size finalSize)
+    {
+        NotePanelSize(PhysicalSize(finalSize.Width, finalSize.Height));
+        return base.ArrangeOverride(finalSize);
+    }
+
     private void Connect()
     {
         if (_output is null)
@@ -62,6 +74,7 @@ public sealed partial class MpvVideoHost : UserControl
         StopWatchingFrames();
         _resizeGate.Reset();
         _pendingResize = null;
+        _resizeTurn++;
         _panel.Opacity = 1;
         if (_output is not null)
         {
@@ -91,25 +104,42 @@ public sealed partial class MpvVideoHost : UserControl
         DxgiSwapChain.SetInverseScale(swapChain, _panel.CompositionScaleX, _panel.CompositionScaleY);
     }
 
+    private PixelSize PhysicalSize(double width, double height) => new(
+        (int)Math.Round(width * _panel.CompositionScaleX),
+        (int)Math.Round(height * _panel.CompositionScaleY));
+
+    // A new size, from the layout pass or SizeChanged, whichever comes first: a jump hides the picture.
+    private void NotePanelSize(PixelSize size)
+    {
+        if (size.IsEmpty || size == _panelSize)
+        {
+            return;
+        }
+        _panelSize = size;
+        // Only a connected, loaded panel shows the picture; one that left the page passes the size on as before.
+        if (_output is null || !IsLoaded)
+        {
+            return;
+        }
+        _resizeGate.PanelResized(size, DxgiSwapChain.BufferSize(_attached));
+        if (_resizeGate.IsHidden)
+        {
+            _panel.Opacity = 0;
+            WatchFrames();
+        }
+    }
+
     private void ReportSize()
     {
         if (_output is null || _panel.ActualWidth < 1 || _panel.ActualHeight < 1)
         {
             return;
         }
-        var size = new PixelSize(
-            (int)Math.Round(_panel.ActualWidth * _panel.CompositionScaleX),
-            (int)Math.Round(_panel.ActualHeight * _panel.CompositionScaleY));
-        // Only a loaded panel shows the picture; one that left the page passes the size on as before.
-        if (IsLoaded)
-        {
-            _resizeGate.PanelResized(size, DxgiSwapChain.BufferSize(_attached));
-        }
+        var size = PhysicalSize(_panel.ActualWidth, _panel.ActualHeight);
+        NotePanelSize(size);
         if (_resizeGate.IsHidden)
         {
-            // The hidden picture reaches the screen with this frame; mpv gets the new size on the next one, so its
-            // first picture at that size cannot land in the panel before the panel is hidden.
-            _panel.Opacity = 0;
+            // mpv gets the new size only once the hidden panel is on the screen (ResizeAfterTheHideShows).
             _pendingResize = size;
             WatchFrames();
         }
@@ -146,7 +176,7 @@ public sealed partial class MpvVideoHost : UserControl
         if (_pendingResize is { } size)
         {
             _pendingResize = null;
-            _output?.Resize(size.Width, size.Height);
+            ResizeAfterTheHideShows(size, ++_resizeTurn);
             return;
         }
         if (_resizeGate.Frame(DxgiSwapChain.BufferSize(_attached), DxgiSwapChain.PresentCount(_attached)))
@@ -155,4 +185,28 @@ public sealed partial class MpvVideoHost : UserControl
             _panel.Opacity = 1;
         }
     }
+
+    // The hidden panel and mpv's pictures reach the desktop compositor separately: a heavy frame (the whole app laid out
+    // again as the player minimizes) can arrive after mpv's first picture at the new size, which then shows in the old
+    // place. This frame's commit has gone out; once the compositor has drawn twice more, it is on the screen, and only
+    // then does mpv get the new size. A newer size or a disconnect in the meantime takes the turn.
+    private void ResizeAfterTheHideShows(PixelSize size, int turn)
+    {
+        var queue = DispatcherQueue;
+        _ = Task.Run(() =>
+        {
+            _ = DwmFlush();
+            _ = DwmFlush();
+            queue.TryEnqueue(() =>
+            {
+                if (turn == _resizeTurn)
+                {
+                    _output?.Resize(size.Width, size.Height);
+                }
+            });
+        });
+    }
+
+    [LibraryImport("dwmapi.dll")]
+    private static partial int DwmFlush();
 }
