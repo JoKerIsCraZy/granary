@@ -218,7 +218,8 @@ packages, which have no lock files yet.
 Granary ships the official mpv CI build of libmpv (x86_64, LGPL variant). FFmpeg is compiled into `libmpv-2.dll`, so
 it changes only with libmpv. mpv's CI replaces the asset of its `git-release` release on every master commit, so
 `native.lock.json` pins one build by SHA-256 and points at a mirror of it in this repository: the prerelease
-`deps-libmpv-<version>`, which also holds the mpv and FFmpeg sources the LGPL asks to offer. Its `ffmpeg` field names
+`deps-libmpv-<version>-<CI run>` (the first one, `deps-libmpv-v0.41.0-dev-ga39482e7a`, has no run in its tag), which
+also holds the mpv and FFmpeg sources the LGPL asks to offer. Its `ffmpeg` field names
 the FFmpeg version in the DLL. Dependabot sees none of this.
 
 **Newer builds come as pull requests.** `.github/workflows/native-deps.yml` runs on the 1st of each month, and from

@@ -92,7 +92,9 @@ jobs:
           ASSET: ${{ needs.check.outputs.asset }}
         run: ./scripts/update-libmpv.ps1 -Publish -AssetName $env:ASSET -OutDir (Join-Path $env:RUNNER_TEMP 'libmpv')
 
-      # GitHub starts no pull_request workflows for a pull request this token opens, so the step starts CI itself.
+      # GitHub starts no pull_request workflows for a pull request this token opens, so the step starts CI itself. It
+      # does so before opening the pull request: if that start fails, there is no pull request yet, and the next run
+      # repeats the whole step instead of skipping a build that has one.
       - name: Push the branch and open the pull request
         if: steps.update.outputs.updated == 'true'
         shell: pwsh
@@ -112,12 +114,12 @@ jobs:
           gh auth setup-git
           # The branch is the workflow's own; a run that failed after pushing it left nothing to keep.
           git push --force origin "HEAD:refs/heads/$env:BRANCH"
+          gh workflow run ci.yml --repo $env:GITHUB_REPOSITORY --ref $env:BRANCH
           $url = gh pr create --repo $env:GITHUB_REPOSITORY --base main --head $env:BRANCH --title $env:TITLE --body-file $env:BODY_FILE
           if ("$url" -cnotmatch '/pull/(?<number>[0-9]{1,10})\s*\z') {
             throw "gh pr create gave no pull request: $url"
           }
           $number = $Matches['number']
-          gh workflow run ci.yml --repo $env:GITHUB_REPOSITORY --ref $env:BRANCH
           Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value "Pull request: $url"
           # The workflow's own earlier update pull requests that are still open are of older builds now. Closing one is
           # tidying up: a failure is reported, but the new pull request stands.

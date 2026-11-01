@@ -12,7 +12,7 @@
     - works out the new native.lock.json and THIRD_PARTY_NOTICES.md, and the text of the commit and pull request.
 
     Without -Publish that is all: a dry run that prints what would change and writes only to the download folder.
-    With -Publish it then creates the prerelease deps-libmpv-<version> on the mirror repository with the zip and both
+    With -Publish it then creates the prerelease deps-libmpv-<version>-<run> on the mirror repository with the zip and both
     source archives (or checks the one an earlier run made) and writes the two files. It commits nothing:
     .github/workflows/native-deps.yml commits, pushes and opens the pull request from the step outputs branch, title,
     commit-file and body-file.
@@ -128,7 +128,7 @@ function Get-RequiredCommit {
 
 <#
 Downloads the sources of a commit as GitHub packs them. There is no hash to check them against: the URL names the full
-commit, and the file must be a gzip archive of a plausible size.
+commit, and the file must be a gzip archive of a plausible size. The download stops at the size bound.
 #>
 function Save-SourceArchive {
     param([Parameter(Mandatory)][string]$Repository, [Parameter(Mandatory)][string]$Sha, [Parameter(Mandatory)][string]$Path)
@@ -136,8 +136,7 @@ function Save-SourceArchive {
         throw "Not a full commit: $Sha"
     }
     $url = "https://github.com/$Repository/archive/$Sha.tar.gz"
-    Write-Host "Downloading $url"
-    Invoke-WebRequest -UseBasicParsing -Uri $url -OutFile $Path
+    Save-Download -Url $url -Path $Path -MaxBytes $script:MaxSourceBytes -What "The sources of $Repository at $Sha"
     $length = (Get-Item -LiteralPath $Path).Length
     $head = New-Object byte[] 2
     $stream = [IO.File]::OpenRead($Path)
@@ -214,6 +213,7 @@ function New-NoticesText {
         [Parameter(Mandatory)]$FFmpeg
     )
     $pairs = @(
+        , @($Lock.MirrorTag, (Get-MirrorTag $Asset), 'mirror release')
         , @($Lock.Asset.Name, $Asset.Name, 'asset')
         , @($Lock.Version, $Asset.Version, 'version')
         , @($Lock.Sha256, $Sha256, 'SHA-256')
@@ -285,17 +285,17 @@ function New-CommitMessage {
 # The release for a tag, or $null. A draft (an interrupted upload) and a second release for the tag are reported as such.
 function Get-MirrorRelease {
     param([Parameter(Mandatory)][string]$Repository, [Parameter(Mandatory)][string]$Tag)
-    $lines = @(& gh api "repos/$Repository/releases?per_page=100" --paginate --jq '.[] | [.tag_name, (.draft | tostring), (.id | tostring)] | @tsv')
+    $lines = @(& gh api "repos/$Repository/releases?per_page=100" --paginate --jq '.[] | [.tag_name, (.draft | tostring), (.prerelease | tostring), (.id | tostring)] | @tsv')
     if ($LASTEXITCODE -ne 0) {
         throw "Could not list the releases of $Repository (gh api exit code $LASTEXITCODE)."
     }
     $found = @(foreach ($line in $lines) {
             $fields = ([string]$line).Split([char]9)
-            if ($fields.Count -eq 3 -and $fields[0] -ceq $Tag) {
-                if ($fields[2] -cnotmatch '\A[0-9]{1,20}\z') {
+            if ($fields.Count -eq 4 -and $fields[0] -ceq $Tag) {
+                if ($fields[3] -cnotmatch '\A[0-9]{1,20}\z') {
                     throw "GitHub lists the release $Tag without a valid id."
                 }
-                [pscustomobject]@{ Id = $fields[2]; Draft = ($fields[1] -ceq 'true') }
+                [pscustomobject]@{ Id = $fields[3]; Draft = ($fields[1] -ceq 'true'); Prerelease = ($fields[2] -ceq 'true') }
             }
         })
     if ($found.Count -gt 1) {
@@ -371,6 +371,9 @@ function Publish-Mirror {
     }
     if ($release.Draft) {
         throw "The release $tag of $Repository is a draft, left from an interrupted upload. Delete it under Releases, then run again."
+    }
+    if (-not $release.Prerelease) {
+        throw "The release $tag of $Repository is not a prerelease, so the app's updater would take it for an app release. Mark it as a prerelease, then run again."
     }
     Assert-MirrorAssets -Repository $Repository -Release $release -Tag $tag -Names $names -ZipName $Asset.Name -ZipSha256 $ZipSha256
     Write-Host "$tag holds this build."

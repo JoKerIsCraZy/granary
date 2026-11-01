@@ -110,9 +110,11 @@ function Read-LibmpvLock {
         throw "native.lock.json's libmpv.version ($version) is not the version of its upstream asset ($($asset.Version))."
     }
     $url = Get-LockString $entry 'url'
-    $mirror = [regex]::Match($url, '\Ahttps://github\.com/(?<repository>[^/]+/[^/]+)/releases/download/')
+    $mirror = [regex]::Match($url, '\Ahttps://github\.com/(?<repository>[^/]+/[^/]+)/releases/download/(?<tag>[^/]+)/')
+    $tags = @((Get-MirrorTag $asset), (Get-MirrorTag $asset -Legacy))
     if (-not $mirror.Success -or $mirror.Groups['repository'].Value -cnotmatch $script:RepositoryPattern -or
-        $url -cne (Get-MirrorAssetUrl -Repository $mirror.Groups['repository'].Value -Asset $asset)) {
+        $tags -cnotcontains $mirror.Groups['tag'].Value -or
+        $url -cne "https://github.com/$($mirror.Groups['repository'].Value)/releases/download/$($mirror.Groups['tag'].Value)/$($asset.Name)") {
         throw "native.lock.json's libmpv.url is not the mirror of its upstream asset: $url"
     }
     $sha256 = Get-LockString $entry 'sha256'
@@ -130,12 +132,20 @@ function Read-LibmpvLock {
         Asset      = $asset
         FFmpeg     = $ffmpeg
         Repository = $mirror.Groups['repository'].Value
+        MirrorTag  = $mirror.Groups['tag'].Value
     }
 }
 
+<#
+The mirror release's tag: deps-libmpv-<version>-<CI run>, so a rebuild of one mpv commit gets a release of its own. The
+first mirror was tagged before the run was part of it (-Legacy); native.lock.json may still point at it.
+#>
 function Get-MirrorTag {
-    param([Parameter(Mandatory)]$Asset)
-    return "deps-libmpv-$($Asset.Version)"
+    param([Parameter(Mandatory)]$Asset, [switch]$Legacy)
+    if ($Legacy) {
+        return "deps-libmpv-$($Asset.Version)"
+    }
+    return "deps-libmpv-$($Asset.Version)-$($Asset.Run)"
 }
 
 function Get-MirrorAssetUrl {
@@ -197,6 +207,78 @@ function Get-CommitInfo {
     return [pscustomobject]@{ Sha = $match.Groups['sha'].Value; Date = $match.Groups['date'].Value }
 }
 
+# Copies a stream and stops with an error as soon as more than MaxBytes have come, whatever the source claimed.
+function Copy-StreamCapped {
+    param(
+        [Parameter(Mandatory)][IO.Stream]$Source,
+        [Parameter(Mandatory)][IO.Stream]$Target,
+        [Parameter(Mandatory)][long]$MaxBytes,
+        [Parameter(Mandatory)][string]$What
+    )
+    $buffer = New-Object byte[] 1048576
+    $total = 0L
+    while (($read = $Source.Read($buffer, 0, $buffer.Length)) -gt 0) {
+        $total += $read
+        if ($total -gt $MaxBytes) {
+            throw "$What is larger than the $MaxBytes bytes it may have."
+        }
+        $Target.Write($buffer, 0, $read)
+    }
+}
+
+<#
+Downloads a URL to a new file and stops after MaxBytes, so a wrong or hostile answer cannot fill the disk. A download
+that fails leaves no file behind.
+#>
+function Save-Download {
+    param(
+        [Parameter(Mandatory)][string]$Url,
+        [Parameter(Mandatory)][string]$Path,
+        [Parameter(Mandatory)][long]$MaxBytes,
+        [Parameter(Mandatory)][string]$What
+    )
+    Write-Host "Downloading $Url"
+    Add-Type -AssemblyName System.Net.Http
+    $client = New-Object System.Net.Http.HttpClient
+    $created = $false
+    try {
+        $client.Timeout = [TimeSpan]::FromMinutes(10)
+        $client.DefaultRequestHeaders.UserAgent.ParseAdd('granary-libmpv-update')
+        $response = $client.GetAsync($Url, [System.Net.Http.HttpCompletionOption]::ResponseHeadersRead).GetAwaiter().GetResult()
+        try {
+            if (-not $response.IsSuccessStatusCode) {
+                throw "Downloading $What failed with HTTP $([int]$response.StatusCode)."
+            }
+            $source = $response.Content.ReadAsStreamAsync().GetAwaiter().GetResult()
+            try {
+                $target = [IO.File]::Open($Path, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::None)
+                $created = $true
+                try {
+                    Copy-StreamCapped -Source $source -Target $target -MaxBytes $MaxBytes -What $What
+                }
+                finally {
+                    $target.Dispose()
+                }
+            }
+            finally {
+                $source.Dispose()
+            }
+        }
+        finally {
+            $response.Dispose()
+        }
+    }
+    catch {
+        if ($created -and (Test-Path -LiteralPath $Path)) {
+            Remove-Item -LiteralPath $Path -Force
+        }
+        throw
+    }
+    finally {
+        $client.Dispose()
+    }
+}
+
 <#
 Downloads an upstream asset into a directory and checks its size and SHA-256 against GitHub's listing. The URL is built
 from the checked name, never taken from the API. Returns the file's path and SHA-256; a file that fails a check is
@@ -212,8 +294,7 @@ function Save-UpstreamAsset {
     }
     $path = Join-Path $Directory $Asset.Name
     $url = "https://github.com/$script:UpstreamRepository/releases/download/$script:UpstreamTag/$($Asset.Name)"
-    Write-Host "Downloading $url"
-    Invoke-WebRequest -UseBasicParsing -Uri $url -OutFile $path
+    Save-Download -Url $url -Path $path -MaxBytes $Asset.Size -What $Asset.Name
     $length = (Get-Item -LiteralPath $path).Length
     if ($length -ne $Asset.Size) {
         Remove-Item -LiteralPath $path -Force
@@ -260,15 +341,7 @@ function Export-LibmpvDll {
         try {
             $target = [IO.File]::Open($Destination, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::None)
             try {
-                $buffer = New-Object byte[] 1048576
-                $total = 0L
-                while (($read = $source.Read($buffer, 0, $buffer.Length)) -gt 0) {
-                    $total += $read
-                    if ($total -gt $script:MaxDllBytes) {
-                        throw "libmpv-2.dll in $([IO.Path]::GetFileName($ZipPath)) unpacks to more than 512 MB."
-                    }
-                    $target.Write($buffer, 0, $read)
-                }
+                Copy-StreamCapped -Source $source -Target $target -MaxBytes $script:MaxDllBytes -What "libmpv-2.dll in $([IO.Path]::GetFileName($ZipPath))"
             }
             finally {
                 $target.Dispose()
@@ -316,7 +389,8 @@ function Get-NewestUpstreamAsset {
 
 <#
 Whether an upstream build replaces the pinned one: a later CI run of another mpv commit. A rebuild of the pinned commit
-does not count, since its mirror tag (deps-libmpv-<version>) is taken.
+brings nothing new from mpv and waits for the next commit; the update branch (deps/libmpv-<version>) is named by the
+commit too.
 #>
 function Test-NewerBuild {
     param([Parameter(Mandatory)]$Lock, [Parameter(Mandatory)]$Asset)
