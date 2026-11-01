@@ -9,6 +9,12 @@ public sealed partial class PlayerViewModel
     // The engine's ranges, offset and length the shown ones were made from: a position update alone makes none anew.
     private (BufferedRanges From, double Offset, double Duration) _bufferedFrom = (BufferedRanges.None, 0, 0);
 
+    // The newest engine load seen, the offset its ranges were shown with (null until then), and whether it is held back:
+    // the same load with another offset still plays the stream before a new plan.
+    private long _bufferedLoad;
+    private double? _bufferedLoadOffset;
+    private bool _bufferedLoadHeld;
+
     /// <summary>
     /// The stretches of the title the player holds, in source seconds within <see cref="DurationSeconds"/>, as
     /// <see cref="PositionSeconds"/> is; none while the length is unknown and while the stream cannot be sought.
@@ -20,7 +26,34 @@ public sealed partial class PlayerViewModel
     // on its way, being replaced or reconnecting shows none: what the engine holds then is not the stream that will play.
     private void FollowBuffered(PlaybackSnapshot state, double offset)
     {
-        var ranges = CanSeek ? state.Buffered : BufferedRanges.None;
+        if (state.LoadId < _bufferedLoad)
+        {
+            // The engine reads its cache on a timer's thread: a read of an earlier load can arrive after the next load's
+            // first snapshot, and it holds a file that no longer plays.
+            return;
+        }
+        if (state.LoadId > _bufferedLoad)
+        {
+            (_bufferedLoad, _bufferedLoadOffset, _bufferedLoadHeld) = (state.LoadId, null, false);
+        }
+        bool shows = CanSeek && !_bufferedLoadHeld;
+        if (shows && _bufferedLoadOffset is { } shownWith && shownWith != offset)
+        {
+            // A new plan was taken (a re-anchored seek, another quality or track) and its stream is not loaded yet: the
+            // engine still holds the stream before, which the new offset would put in the wrong place. None until the
+            // engine reports the new load.
+            _bufferedLoadHeld = true;
+            shows = false;
+        }
+        else if (shows)
+        {
+            _bufferedLoadOffset = offset;
+        }
+        ShowBuffered(shows ? state.Buffered : BufferedRanges.None, offset);
+    }
+
+    private void ShowBuffered(BufferedRanges ranges, double offset)
+    {
         double duration = DurationSeconds;
         var (from, fromOffset, fromDuration) = _bufferedFrom;
         if (ReferenceEquals(ranges, from) && offset == fromOffset && duration == fromDuration)
@@ -31,6 +64,7 @@ public sealed partial class PlayerViewModel
         Buffered = ranges.OnTimeline(offset, duration);
     }
 
+    // The engine's loads go on counting across titles, so what is known of them stays.
     private void ResetBuffered()
     {
         _bufferedFrom = (BufferedRanges.None, 0, 0);

@@ -48,11 +48,16 @@ the display refresh rate itself (Phase 3).
 - Position updates are throttled to 4 per second; state changes are reported immediately.
 - What mpv's cache holds (`demuxer-cache-state`) is observed without its value: the engine reads the property's
   string form (the node as compact JSON) at most 4 times a second and once more after the last change
-  (`TrailingThrottle`, on mpv's event thread or a timer's), takes its `seekable-ranges` (`MpvCacheState`, which
-  reads anything else as no ranges) and reports them in `PlaybackSnapshot.Buffered`, in the time of `time-pos` (mpv
-  applies the same offset to both). A load empties them at once, and a read of the file before is dropped by its load
-  id; the file's end or a stop leaves the idle snapshot, which holds none. `PlayerViewModel.Buffered` moves them into
-  the title's time with the timeline offset, as the position, and keeps them within the title's length.
+  (`TrailingThrottle`, always on a timer's thread, so mpv's event thread never waits for the read; a failure is
+  logged), takes its `seekable-ranges` (`MpvCacheState`, which reads anything else as no ranges) and reports them in
+  `PlaybackSnapshot.Buffered`, in the time of `time-pos` (mpv applies the same offset to both). A load empties them
+  at once, and a read of the file before is dropped by its load id; a stop or a failure leaves the idle snapshot,
+  which holds none. At the end the file stays open (`keep-open`) and so do its ranges, as on the web.
+  `PlayerViewModel.Buffered` moves them into the title's time with the timeline offset, as the position, and keeps
+  them within the title's length. It takes them only from the newest load it has seen (a timer's snapshot of the load
+  before can arrive after the next one's), and holds them back once the plan's offset differs from the one a load's
+  ranges were shown with: the plan is taken before its stream loads, and the engine plays the stream before
+  meanwhile.
 
 ## Networking and security
 

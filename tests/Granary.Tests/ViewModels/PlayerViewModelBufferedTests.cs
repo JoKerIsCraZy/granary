@@ -78,6 +78,46 @@ public sealed class PlayerViewModelBufferedTests
     }
 
     [Fact]
+    public async Task ANewPlan_HidesTheRangesOfTheStreamBefore_UntilTheEngineLoadsIt()
+    {
+        // A seek outside a transcode's window: the server re-anchors it at 1800 s (docs/api-contract.md, 8.6). The plan is
+        // taken before its stream is loaded, and meanwhile the engine still reports the stream before, which plays on.
+        var viewModel = await PlayServerTitleAsync(offset: 120, duration: 5400);
+        var before = BufferedRanges.Of([new(0, 30)]);
+        _engine.RaiseState(Playing() with { Buffered = before });
+        Assert.Equal([new BufferedRange(120, 150)], viewModel.Buffered);
+
+        Playback.TimelineOffsetSeconds = 1800;
+        _engine.RaiseState(Playing() with { Position = TimeSpan.FromSeconds(13), Buffered = before });
+        Assert.Empty(viewModel.Buffered);
+        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));
+        Assert.Empty(viewModel.Buffered);
+
+        _engine.Load(new MediaSource(new Uri("http://127.0.0.1:9/reanchored"), []));
+        _engine.RaiseState(Playing() with { Position = TimeSpan.FromSeconds(0.5), Buffered = BufferedRanges.Of([new(0, 10)]) });
+
+        Assert.Equal([new BufferedRange(1800, 1810)], viewModel.Buffered);
+    }
+
+    [Fact]
+    public async Task ASnapshotOfAnEarlierLoad_ArrivingLate_ShowsNoRanges()
+    {
+        // The engine reports what its cache holds from a timer's thread: a read of the load before can reach the UI
+        // thread after the new load's first snapshot.
+        var viewModel = CreateViewModel();
+        await viewModel.StartAsync(PlayRequest.Direct("http://127.0.0.1:8080/clip.mp4"));
+        long first = _engine.LoadId;
+        long second = _engine.Load(new MediaSource(new Uri("http://127.0.0.1:8080/clip.mp4"), []));
+        _engine.RaiseState(Playing() with { LoadId = second, IsLoaded = false, HasStarted = false });
+
+        _engine.RaiseState(Playing() with { LoadId = first, Buffered = BufferedRanges.Of([new(0, 20)]) });
+
+        Assert.Empty(viewModel.Buffered);
+        _engine.RaiseState(Playing() with { LoadId = second, Buffered = BufferedRanges.Of([new(0, 5)]) });
+        Assert.Equal([new BufferedRange(0, 5)], viewModel.Buffered);
+    }
+
+    [Fact]
     public async Task AReconnect_HidesTheRanges()
     {
         var viewModel = await PlayServerTitleAsync(offset: 0, duration: 600);
@@ -95,7 +135,7 @@ public sealed class PlayerViewModelBufferedTests
         await viewModel.StartAsync(PlayRequest.Direct("http://127.0.0.1:8080/clip.mp4"));
         _engine.RaiseState(Playing() with { Buffered = BufferedRanges.Of([new(0, 20)]) });
 
-        // The engine's stop: the file ended, and the engine is idle.
+        // A stop or a failure: mpv closed the file, and the engine is idle.
         _engine.RaiseState(PlaybackSnapshot.Idle);
 
         Assert.Empty(viewModel.Buffered);
