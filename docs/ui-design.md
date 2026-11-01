@@ -841,8 +841,9 @@ stream's commands on Activity.
   or subtitle track the stream cannot switch to itself (leaving a burn-in, a subtitle the viewer added), a seek outside
   what the stream holds, and a new attempt after the server lost the session. It shows from the request until the new
   stream's first frame, and goes when the server refuses (the stream plays on), on a failure or when the player is left.
-  A reconnect is not one: it shows as buffering. Screen readers hear "Switching quality", "Switching version", "Switching
-  audio", "Switching subtitles", "Seeking" or "Restarting playback" as it starts.
+  A reconnect is not one: it shows as buffering. The old stream plays on until the new one loads; meanwhile only the mark
+  and the settings button's "…" show the change. Screen readers hear "Switching quality", "Switching version",
+  "Switching audio", "Switching subtitles", "Seeking" or "Restarting playback" as it starts.
 - **Next episode** (the web's NextEpisodeOverlay and PlayingNextScreen):
   - At the credits a card replaces the skip pill: black at 80 %, radius 8, "UP NEXT IN 34S" (12 px, white 60 %),
     "S1:E4 — Title" (14 px medium), Play Now (white, black text) and Cancel (outlined), both rounded 4. It counts the
@@ -855,10 +856,11 @@ stream's commands on Activity.
     right. The video plays on in a 320 px window top left (radius 16), a click on it returns to it; it fades out at
     the end. Enter plays the next episode.
   - Without a next episode the screen says "You've finished {series}" with Back. A movie's end goes back.
-- **States**: preparing shows Exit and a spinner, no transport. Buffering, reconnecting and a plan change put a spinner
-  on a dark disc over the picture once they have lasted 500 ms, as the web delays its spinner so brief stalls do not
-  flash it; it goes as soon as the stream plays. Failed shows the message, Retry when it can help and Back; keyboard
-  focus moves to them. Ended keeps the controls up.
+- **States**: preparing shows Exit and a spinner, no transport. A picture that stands still puts a spinner on a dark
+  disc over it once that has lasted 500 ms, as the web delays its spinner so brief stalls do not flash it: buffering,
+  reconnecting, and during a plan change the wait for the new stream (the web's spinner comes from the video's
+  `waiting` event, so a picture that still moves has none). It goes as soon as the picture moves. Failed shows the
+  message, Retry when it can help and Back; keyboard focus moves to them. Ended keeps the controls up.
 - **Auto-hide**: during playback the controls fade (and slide a few pixels) after 3 s without pointer
   movement, and the cursor goes with them while it is over the picture. They stay while paused, preparing,
   buffering, failed or ended, while the pointer rests on them, during a seek drag, while a flyout is open or

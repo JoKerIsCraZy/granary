@@ -30,8 +30,8 @@
               Visibility="{x:Bind ShowsUndocked(IsDocked), Mode=OneWay}" />
 
         <!--
-            Preparing, and waiting for data or a new stream later on, once the wait has lasted 500 ms as on the web: Granary's
-            mark runs its loading loop. The dark disc keeps it visible on a bright picture.
+            Preparing, and later while the picture stands still for data or a new stream, once that has lasted 500 ms as on
+            the web: Granary's mark runs its loading loop. The dark disc keeps it visible on a bright picture.
         -->
         <Grid HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False"
               Visibility="{x:Bind SpinnerVisibility(ViewModel.Phase, ViewModel.IsWaiting, IsDocked), Mode=OneWay}">

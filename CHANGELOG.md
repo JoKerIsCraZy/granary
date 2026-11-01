@@ -9,8 +9,9 @@ release's section is what its update says it changes (docs/release.md).
 ### Added
 
 - While the player switches quality, version or a track, or moves to a part the stream does not hold yet, a small
-  loading ring shows at the bottom right until the new stream plays, the settings button shows "…" in place of the
-  quality, and the spinner in the middle shows once the switch takes longer than half a second.
+  loading ring shows at the bottom right until the new stream plays and the settings button shows "…" in place of the
+  quality. The picture plays on meanwhile; once it stops for the new stream for more than half a second, the spinner in
+  the middle shows too.
 
 ### Changed
 

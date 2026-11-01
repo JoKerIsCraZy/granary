@@ -554,6 +554,8 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         ShowMarkerEdit();
         FollowChapters();
         FollowNextUp();
+        // During a plan change the spinner waits for the picture to stop.
+        FollowWait();
     }
 
     private void OnEnded(object? sender, PlaybackEnded ended) => _dispatcher.Post(() =>
@@ -582,9 +584,9 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         Leave();
         ResetNextUp();
         StopPlaybackInfo();
-        StopWaitTimer();
         _syncFeedback?.Dispose();
         _engine.StateChanged -= OnStateChanged;
         _engine.Ended -= OnEnded;
+        StopPlanChangeTimers();
     }
 }

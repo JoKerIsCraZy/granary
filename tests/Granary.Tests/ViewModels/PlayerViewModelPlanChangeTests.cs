@@ -7,7 +7,8 @@ namespace Granary.Tests.ViewModels;
 
 /// <summary>
 /// While a quality, version or track switch is planned anew: the settings button says "…" as the web's QualityMenu does,
-/// the centre spinner shows after the web's anti-flash delay, and the corner mark names the change.
+/// the centre spinner shows once the picture stops for the new stream (after the web's anti-flash delay), and the corner
+/// mark names the change.
 /// </summary>
 public sealed class PlayerViewModelPlanChangeTests
 {
@@ -17,18 +18,39 @@ public sealed class PlayerViewModelPlanChangeTests
 
     private FakeServerPlayback Playback => _playbacks[^1];
 
-    private async Task<PlayerViewModel> PlayingAsync()
-    {
-        var viewModel = new PlayerViewModel(_engine, new ImmediateDispatcher(), new RecordingNavigation(), () =>
+    private PlayerViewModel Create(Granary.Core.Abstractions.IUiDispatcher? dispatcher = null) =>
+        new(_engine, dispatcher ?? new ImmediateDispatcher(), new RecordingNavigation(), () =>
         {
             var playback = new FakeServerPlayback();
             _playbacks.Add(playback);
             return playback;
         }, new PlaybackStops(), _time);
+
+    private async Task<PlayerViewModel> PlayingAsync()
+    {
+        var viewModel = Create();
         await viewModel.StartAsync(PlayRequest.Resume("movie-1"));
         Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));
         _engine.RaiseState(new PlaybackSnapshot(true, false, TimeSpan.FromSeconds(30), TimeSpan.FromMinutes(90), null, HasStarted: true));
         return viewModel;
+    }
+
+    // The playback hands the engine the new stream: the picture stops until its first frame.
+    private void NewStreamLoads() => _engine.RaiseState(_engine.Current with { IsLoaded = false, HasStarted = false });
+
+    private void NewStreamPlays() => _engine.RaiseState(_engine.Current with { IsLoaded = true, HasStarted = true });
+
+    private static List<string> Changes(PlayerViewModel viewModel, string property)
+    {
+        var values = new List<string>();
+        viewModel.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == property)
+            {
+                values.Add(typeof(PlayerViewModel).GetProperty(property)!.GetValue(viewModel)!.ToString()!);
+            }
+        };
+        return values;
     }
 
     private static readonly AvailableQuality[] Rungs =
@@ -69,35 +91,44 @@ public sealed class PlayerViewModelPlanChangeTests
     }
 
     [Fact]
-    public async Task TheSpinner_ShowsOnceAChangeHasTakenHalfASecond()
+    public async Task WhileTheOldStreamPlaysOn_TheSpinnerStaysAway()
     {
         var viewModel = await PlayingAsync();
 
         Playback.RaisePlanChange(PlanChange.Version);
+        _time.Advance(TimeSpan.FromSeconds(3));
+
+        Assert.True(viewModel.IsChangingPlan);
+        Assert.False(viewModel.IsWaiting);
+    }
+
+    [Fact]
+    public async Task TheSpinner_ShowsHalfASecondAfterThePictureStopsForTheNewStream()
+    {
+        var viewModel = await PlayingAsync();
+        Playback.RaisePlanChange(PlanChange.Version);
+        _time.Advance(TimeSpan.FromSeconds(2));
+
+        NewStreamLoads();
         _time.Advance(TimeSpan.FromMilliseconds(499));
         Assert.False(viewModel.IsWaiting);
         _time.Advance(TimeSpan.FromMilliseconds(1));
         Assert.True(viewModel.IsWaiting);
 
-        Playback.RaisePlanChange(PlanChange.None);
+        NewStreamPlays();
         Assert.False(viewModel.IsWaiting);
     }
 
     [Fact]
-    public async Task ABriefChange_DoesNotFlashTheSpinner()
+    public async Task ANewStreamThatComesQuickly_DoesNotFlashTheSpinner()
     {
         var viewModel = await PlayingAsync();
-        var waits = new List<bool>();
-        viewModel.PropertyChanged += (_, e) =>
-        {
-            if (e.PropertyName == nameof(PlayerViewModel.IsWaiting))
-            {
-                waits.Add(viewModel.IsWaiting);
-            }
-        };
+        var waits = Changes(viewModel, nameof(PlayerViewModel.IsWaiting));
 
         Playback.RaisePlanChange(PlanChange.Audio);
+        NewStreamLoads();
         _time.Advance(TimeSpan.FromMilliseconds(300));
+        NewStreamPlays();
         Playback.RaisePlanChange(PlanChange.None);
         _time.Advance(TimeSpan.FromSeconds(2));
 
@@ -105,7 +136,19 @@ public sealed class PlayerViewModelPlanChangeTests
     }
 
     [Fact]
-    public async Task BufferingToo_ShowsTheSpinnerOnlyAfterHalfASecond()
+    public async Task AnOldStreamThatStallsDuringAChange_ShowsTheSpinner()
+    {
+        var viewModel = await PlayingAsync();
+        Playback.RaisePlanChange(PlanChange.Quality);
+
+        _engine.RaiseState(_engine.Current with { IsBuffering = true });
+        _time.Advance(TimeSpan.FromMilliseconds(500));
+
+        Assert.True(viewModel.IsWaiting);
+    }
+
+    [Fact]
+    public async Task Buffering_ShowsTheSpinnerOnlyAfterHalfASecond()
     {
         var viewModel = await PlayingAsync();
 
@@ -121,14 +164,14 @@ public sealed class PlayerViewModelPlanChangeTests
     }
 
     [Fact]
-    public async Task AChangeThatFollowsAStall_KeepsTheSpinner()
+    public async Task AStallThatTurnsIntoANewStream_KeepsTheSpinner()
     {
         var viewModel = await PlayingAsync();
         _engine.RaiseState(_engine.Current with { IsBuffering = true });
         _time.Advance(TimeSpan.FromMilliseconds(500));
 
         Playback.RaisePlanChange(PlanChange.Seek);
-        _engine.RaiseState(_engine.Current with { IsBuffering = false });
+        _engine.RaiseState(_engine.Current with { IsBuffering = false, IsLoaded = false, HasStarted = false });
 
         Assert.True(viewModel.IsWaiting);
     }
@@ -164,7 +207,9 @@ public sealed class PlayerViewModelPlanChangeTests
     {
         var viewModel = await PlayingAsync();
         Playback.RaisePlanChange(PlanChange.Quality);
+        NewStreamLoads();
         _time.Advance(TimeSpan.FromSeconds(1));
+        Assert.True(viewModel.IsWaiting);
 
         viewModel.Leave();
 
@@ -182,5 +227,19 @@ public sealed class PlayerViewModelPlanChangeTests
         left.RaisePlanChange(PlanChange.Quality);
 
         Assert.False(viewModel.IsChangingPlan);
+    }
+
+    [Fact]
+    public void AStatePostedBeforeDispose_StartsNoTimerAfterIt()
+    {
+        var dispatcher = new QueuedDispatcher();
+        var viewModel = Create(dispatcher);
+        Assert.Null(_time.NextDue);
+
+        _engine.RaiseState(PlaybackSnapshot.Idle with { IsBuffering = true });
+        viewModel.Dispose();
+        dispatcher.RunAll();
+
+        Assert.Null(_time.NextDue);
     }
 }
