@@ -2308,7 +2308,9 @@ HDR with libplacebo. An honest, conservative first report:
   decoding in composition mode against the same clip in SDR. Profile 7 is covered by the claim too and
   plays its base layer with the RPU (the enhancement layer is dropped); not checked with a sample yet.
   The claim is sent only when the GPU has an HEVC Main 10 decoder (`HardwareHevcMain10`): HDR is
-  10-bit, and without that decoder the CPU would decode a 4K original. Like the web's decode engine,
+  10-bit, and without that decoder the CPU would decode a 4K original. HDR in AV1 or VP9 needs no extra
+  gate, since those codecs are listed only with a hardware decoder; the one gap is HDR in H.264 High 10
+  (rare), which D3D11VA does not decode, so the CPU does. Like the web's decode engine,
   which claims it only with a hardware WebGPU adapter and an SDR display. Without the claim the server
   tone-maps an HDR original itself, in a transcode to H.264 (in software unless the server has hardware
   tone mapping), which is heavy at 2160p. HLS stays without the claim, so a server-made stream still has
