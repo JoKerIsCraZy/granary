@@ -100,6 +100,20 @@ public sealed class PlayerViewModelBufferedTests
     }
 
     [Fact]
+    public async Task ANewPlanBeforeTheStreamStarted_HidesTheRangesOfTheStreamBefore()
+    {
+        // A seek or another quality in the first moments, before the stream showed a frame: the offset the load began with,
+        // not the one its first frame came with, tells its stream from the new plan's.
+        var viewModel = await PlayServerTitleAsync(offset: 120, duration: 5400);
+        _engine.RaiseState(Playing() with { HasStarted = false });
+
+        Playback.TimelineOffsetSeconds = 1800;
+        _engine.RaiseState(Playing() with { Buffered = BufferedRanges.Of([new(0, 30)]) });
+
+        Assert.Empty(viewModel.Buffered);
+    }
+
+    [Fact]
     public async Task ASnapshotOfAnEarlierLoad_ArrivingLate_ShowsNoRanges()
     {
         // The engine reports what its cache holds from a timer's thread: a read of the load before can reach the UI

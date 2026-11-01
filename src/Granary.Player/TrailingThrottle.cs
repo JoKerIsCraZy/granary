@@ -78,8 +78,16 @@ internal sealed class TrailingThrottle : IDisposable
             }
             catch (Exception ex)
             {
-                // A timer's thread has nobody to throw to: an exception there would end the app.
-                _failed(ex);
+                // A timer's thread has nobody to throw to: an exception there would end the app, and so would one from
+                // the report of it.
+                try
+                {
+                    _failed(ex);
+                }
+                catch (Exception)
+                {
+                    // Nothing is left to tell: the run failed and so did its report; the next change runs again.
+                }
             }
         }
     }

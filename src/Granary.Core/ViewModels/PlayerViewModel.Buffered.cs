@@ -9,7 +9,7 @@ public sealed partial class PlayerViewModel
     // The engine's ranges, offset and length the shown ones were made from: a position update alone makes none anew.
     private (BufferedRanges From, double Offset, double Duration) _bufferedFrom = (BufferedRanges.None, 0, 0);
 
-    // The newest engine load seen, the offset its ranges were shown with (null until then), and whether it is held back:
+    // The newest engine load seen, the offset it began with (null until its first snapshot), and whether it is held back:
     // the same load with another offset still plays the stream before a new plan.
     private long _bufferedLoad;
     private double? _bufferedLoadOffset;
@@ -36,19 +36,17 @@ public sealed partial class PlayerViewModel
         {
             (_bufferedLoad, _bufferedLoadOffset, _bufferedLoadHeld) = (state.LoadId, null, false);
         }
-        bool shows = CanSeek && !_bufferedLoadHeld;
-        if (shows && _bufferedLoadOffset is { } shownWith && shownWith != offset)
+        // Taken from the load's first snapshot, not its first seekable one: a plan taken before the stream showed a frame
+        // must tell the two apart as well.
+        _bufferedLoadOffset ??= offset;
+        if (_bufferedLoadOffset != offset)
         {
             // A new plan was taken (a re-anchored seek, another quality or track) and its stream is not loaded yet: the
             // engine still holds the stream before, which the new offset would put in the wrong place. None until the
             // engine reports the new load.
             _bufferedLoadHeld = true;
-            shows = false;
         }
-        else if (shows)
-        {
-            _bufferedLoadOffset = offset;
-        }
+        bool shows = CanSeek && !_bufferedLoadHeld;
         ShowBuffered(shows ? state.Buffered : BufferedRanges.None, offset);
     }
 
