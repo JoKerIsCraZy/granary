@@ -1,7 +1,8 @@
 namespace Granary.Core.Playback;
 
-// A plan change in flight, as the web player's `replanning || replacing` (VideoPlayer's planChangeInFlight): a recovery
-// started for one names it, and it lasts until a stream plays again, so the viewer sees the wait for the new stream too.
+// A plan change in flight, as the web player's `replanning || replacing` (player/components/VideoPlayer.tsx,
+// planChangeInFlight): a recovery started for one names it, and it lasts until a stream plays again, so the viewer sees
+// the wait for the new stream too.
 public sealed partial class ServerPlayback
 {
     public event EventHandler? PlanChangeChanged;

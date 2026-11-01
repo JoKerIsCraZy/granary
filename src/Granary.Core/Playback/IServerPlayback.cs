@@ -23,7 +23,8 @@ public sealed record ServerPlaybackStatus(ServerPlaybackPhase Phase, string Mess
 
 /// <summary>
 /// What a plan change in flight is for: the stream that plays is being replaced by a new plan, as the web player's
-/// <c>replanning || replacing</c>. A reconnect is not one; it shows as <see cref="ServerPlaybackPhase.Reconnecting"/>.
+/// <c>replanning || replacing</c> (<c>player/components/VideoPlayer.tsx</c>). A reconnect is not one; it shows as
+/// <see cref="ServerPlaybackPhase.Reconnecting"/>.
 /// </summary>
 public enum PlanChange
 {

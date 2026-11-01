@@ -8,13 +8,14 @@ namespace Granary.App.Views;
 
 // While the stream is planned anew (PlayerViewModel.PlanChange): Granary's mark turns at the bottom right, where the skip
 // pill sits, above the pill or the next episode's card when one shows and above the bar while the controls show. The
-// settings button says "…" meanwhile; on a narrow page it shows only its gear, as the web's below its sm breakpoint.
+// settings button says "…" meanwhile; on a narrow page it shows only its gear, as the web's below its sm breakpoint
+// (player/components/QualityMenu.tsx).
 public sealed partial class PlayerPage
 {
     public static readonly DependencyProperty IsNarrowProperty =
         DependencyProperty.Register(nameof(IsNarrow), typeof(bool), typeof(PlayerPage), new PropertyMetadata(false));
 
-    // The web's sm breakpoint.
+    // Tailwind's sm breakpoint, below which the web's player/components/QualityMenu.tsx hides the quality.
     private const double NarrowWidth = 640;
 
     // Between the mark and the pill or card under it.

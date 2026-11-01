@@ -4,12 +4,15 @@ using Granary.Core.Playback;
 namespace Granary.Core.ViewModels;
 
 // While the stream is planned anew (a quality, file or track the stream cannot switch to, a seek it cannot reach), as the
-// web player shows it: the settings button says "…" (QualityMenu), and the spinner shows only while the picture stands
-// still, as the web's comes from the video's waiting event. Granary's own: its mark turns in the corner for the whole
-// change, named for it.
+// web player shows it: the settings button says "…" (player/components/QualityMenu.tsx), and the spinner shows only
+// while the picture stands still, as the web's comes from the video's waiting event
+// (player/components/VideoPlayer.tsx). Granary's own: its mark turns in the corner for the whole change, named for it.
 public sealed partial class PlayerViewModel
 {
-    /// <summary>How long a wait lasts before the spinner shows, so brief stalls and quick switches do not flash it (the web's 500 ms).</summary>
+    /// <summary>
+    /// How long a wait lasts before the spinner shows, so brief stalls and quick switches do not flash it (the web's
+    /// 500 ms, <c>onWaiting</c> in <c>player/components/VideoPlayer.tsx</c>).
+    /// </summary>
     public static readonly TimeSpan SpinnerDelay = TimeSpan.FromMilliseconds(500);
 
     private ITimer? _waitTimer;
