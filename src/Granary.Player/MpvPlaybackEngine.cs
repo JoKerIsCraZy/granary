@@ -45,7 +45,8 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
         _options = options;
         _logger = logger;
         _outputSize = options.InitialOutputSize;
-        _bufferedReads = new TrailingThrottle(BufferedThrottle, time ?? TimeProvider.System, ReadBuffered);
+        _bufferedReads = new TrailingThrottle(BufferedThrottle, time ?? TimeProvider.System, ReadBuffered,
+            ex => _logger.LogError(ex, "Reporting what mpv's cache holds failed"));
         _mpv = new MpvClient(logger);
         _mpv.PropertyChanged += OnPropertyChanged;
         _mpv.LogMessage += OnLogMessage;
@@ -522,21 +523,14 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
         }
     }
 
-    // What mpv's cache holds, reported when it changed; the throttle calls this at most every 250 ms, on mpv's event
-    // thread or a timer's.
+    // What mpv's cache holds, reported when it changed. The throttle calls this at most every 250 ms on a timer's thread,
+    // so mpv's event thread, which carries the position, pause and end, never waits for the read; it logs a failure. A
+    // snapshot raised here can reach a consumer after the one of a load that followed: the view model drops it.
     private void ReadBuffered()
     {
-        try
+        if (TakeBuffered() is { } next)
         {
-            if (TakeBuffered() is { } next)
-            {
-                StateChanged?.Invoke(this, next);
-            }
-        }
-        catch (Exception ex)
-        {
-            // On a timer's thread an exception would end the app: the bar keeps what it showed instead.
-            _logger.LogError(ex, "Reporting what mpv's cache holds failed");
+            StateChanged?.Invoke(this, next);
         }
     }
 
@@ -556,7 +550,7 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
         var ranges = MpvCacheState.SeekableRanges(_mpv.GetString(CacheStateProperty));
         lock (_gate)
         {
-            // A load or the file's end since: these ranges are the file's before.
+            // A load, a stop or a failure since: these ranges are of a file that is gone.
             if (_current.LoadId != loadId || !_current.IsLoaded || _current.Buffered.Equals(ranges))
             {
                 return null;
