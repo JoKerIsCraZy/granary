@@ -145,6 +145,8 @@ public sealed partial class MpvVideoHost : UserControl
         }
         else
         {
+            // A wait still out for an older size must not follow this one to mpv.
+            _resizeTurn++;
             _output.Resize(size.Width, size.Height);
         }
         if (_attached != 0)
