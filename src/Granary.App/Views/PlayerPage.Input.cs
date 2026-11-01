@@ -87,7 +87,8 @@ public sealed partial class PlayerPage
             return;
         }
         bool isRepeat = e.KeyStatus.WasKeyDown;
-        // The bar takes the transport's keys only: full screen, the mini view, subtitles and Esc are the full player's.
+        // The bar takes the transport's keys only: F, the mini view, subtitles and Esc are the full player's. F11 is the
+        // window's everywhere (MainWindow.FullScreen.cs).
         if (IsDocked && e.Key is VirtualKey.F or VirtualKey.P or VirtualKey.C or VirtualKey.Escape)
         {
             return;
@@ -116,7 +117,7 @@ public sealed partial class PlayerPage
                 ToggleFullScreen();
                 break;
             case VirtualKey.P when !isRepeat:
-                SetMiniView(!IsMiniViewNow);
+                SetMiniView(!_modes.IsMiniView);
                 break;
             case VirtualKey.M when !isRepeat:
                 ViewModel.ToggleMuteCommand.Execute(null);
@@ -135,11 +136,12 @@ public sealed partial class PlayerPage
                     ViewModel.MarkerEditor.Cancel();
                     break;
                 }
-                if (IsFullScreenNow)
+                // Full screen is the whole window's: Esc leaves it for the app too.
+                if (_modes.IsFullScreen)
                 {
-                    SetFullScreen(false);
+                    _modes.SetFullScreen(false);
                 }
-                else if (IsMiniViewNow)
+                else if (_modes.IsMiniView)
                 {
                     SetMiniView(false);
                 }

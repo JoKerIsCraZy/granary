@@ -79,6 +79,10 @@ public sealed partial class ServerPlayback : IServerPlayback
 
     // The engine load that is this playback's; 0 once it ended.
     private long _loadId;
+
+    // The number of the newest engine snapshot taken (PlaybackSnapshot.Sequence).
+    private long _engineSequence;
+
     private double _playerPosition;
     private bool _paused;
 
@@ -219,7 +223,7 @@ public sealed partial class ServerPlayback : IServerPlayback
             _engine.Seek(TimeSpan.FromSeconds(_playerPosition));
             return;
         }
-        Recover(() => ReanchorAsync(sourceSeconds));
+        Recover(() => ReanchorAsync(sourceSeconds), PlanChange.Seek);
     }
 
     public Task StopAsync()
@@ -230,6 +234,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         }
         _stopping = true;
         _generation++;
+        SetPlanChange(PlanChange.None);
         // A delay or a speed the viewer just set is saved now, not when its wait would have ended.
         SaveSubtitleDelayNow();
         SaveSpeedNow();
@@ -497,6 +502,13 @@ public sealed partial class ServerPlayback : IServerPlayback
 
     private void ShowEngineState(PlaybackSnapshot state)
     {
+        // The engine raises from more than one thread: one made before a newer one can arrive after it, and would move the
+        // viewer back or undo a pause.
+        if (state.Sequence < _engineSequence)
+        {
+            return;
+        }
+        _engineSequence = state.Sequence;
         if (_stopping || _loadId == 0 || state.LoadId != _loadId)
         {
             return;
@@ -555,6 +567,8 @@ public sealed partial class ServerPlayback : IServerPlayback
         }
         _ = ShowSubtitlesAsync(_loadId);
         ApplyPendingTracks();
+        // After the picks that waited: one that replans goes on with the change rather than ending it first.
+        SettlePlanChange();
     }
 
     private void OnEngineEnded(object? sender, PlaybackEnded ended) => _dispatcher.Post(() =>
@@ -658,7 +672,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         {
             case ProgressOutcome.SessionGone:
                 // Expired or forgotten (a server restart): the viewer is still here, so start again where they are.
-                Recover(() => RestartAsync());
+                Recover(() => RestartAsync(), PlanChange.Restart);
                 break;
             case ProgressOutcome.InstallationChanged:
                 Recover(async () =>
@@ -667,7 +681,7 @@ public sealed partial class ServerPlayback : IServerPlayback
                     {
                         await RestartAsync();
                     }
-                });
+                }, PlanChange.Restart);
                 break;
             case ProgressOutcome.SessionEnded:
                 EndedByServer();
@@ -773,6 +787,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         _started = false;
         _engine.Stop();
         CloseRoute();
+        SetPlanChange(PlanChange.None);
         SetStatus(new ServerPlaybackStatus(ServerPlaybackPhase.Failed, message, canRetry));
     }
 

@@ -43,7 +43,9 @@ face of the file it names, so use the `SiloFont<Weight>` resources together with
 | `SiloBadgeTextStyle` | 10 / SemiBold, white | Badge text |
 
 Buttons: `SiloPrimaryButtonStyle` (red pill: Play, Resume), `SiloSecondaryButtonStyle` (dark pill:
-Mark watched), `SiloIconButtonStyle` (round: favourite, more), `SiloLinkButtonStyle` ("EXPLORE ALL").
+Mark watched), `SiloIconButtonStyle` (round: favourite, more), `SiloLinkButtonStyle` ("EXPLORE ALL"). The title bar's
+own buttons are drawn as Windows' caption buttons: `SiloTitleBarButtonStyle` (Full screen) and
+`SiloTitleBarCloseButtonStyle` (Close in full screen, red under the pointer).
 Chips: `SiloChipStyle` (year, rating, runtime), `SiloAccentChipStyle` (1080P, EAC3).
 
 The player draws on the picture, not on these surfaces: `SiloPlayer*` brushes (white text, scrims, the
@@ -386,11 +388,13 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     (Close, Esc) at its right. The 16:9 frame is 896 px wide at most (the web's `max-w-4xl`) and shrinks with the window,
     keeping 16 px from its edges and clear of the title bar. A spinner shows until YouTube's player answers; the player
     then shows and plays at once. Esc, ✕, Back (Alt+Left, the Back key, the mouse's back button) and a click on the
-    scrim close it, which stops the video; so does any other page, and a title that starts to play. Esc and Back work
-    after a click into the video too, when the keyboard is the browser's (docs/architecture.md, "Trailers"). Focus
+    scrim close it, which stops the video; so does any other page, and a title that starts to play. Esc, Back and F11
+    (the window's full screen) work after a click into the video too, when the keyboard is the browser's
+    (docs/architecture.md, "Trailers"). Focus
     moves to ✕ as it opens and back to the trailer's card as it closes; Tab stays inside, ✕ first. YouTube's
-    full-screen button fills the screen with the video alone (the window goes full screen, as the player's does), and
-    Esc or the button bring the dialog back.
+    full-screen button fills the screen with the video alone (the window goes full screen, as the player's does, unless
+    the app is in full screen already, which it then stays in; see Full screen), and Esc or the button bring the dialog
+    back.
   - A trailer that can't play here (its owner allows it only on YouTube, it is gone, YouTube refused the embed, the
     player gave no answer within 15 seconds, or WebView2 is missing or failed) shows "This video can't play in
     Granary." in the frame with a red "Open on YouTube" button, which opens YouTube's page in the browser and closes the
@@ -478,7 +482,11 @@ triangle: no slanted bars, no stack. The app icon (`Assets/Logo/granary-icon.svg
 256 px) sets it on a dark rounded tile; the exe, the window and the taskbar carry it, and the title bar shows the mark
 at 16 px before "Granary". The title bar is 32 px high, as Windows' caption buttons, so the title and the buttons share
 one middle line; a 1 px line (the content's border colour) runs under it across the whole window, and beside the
-sidebar the content keeps only its left edge, square at the top.
+sidebar the content keeps only its left edge, square at the top. Left of the caption buttons the title bar has a button
+of its own, drawn as they are (`SiloTitleBarButtonStyle`, 46 by 32, the glyph light grey and dimmed with them while the
+window is inactive): Full screen ("Full screen (F11)"; see Full screen, below). It is not part of the drag area, so it
+takes clicks. Like the caption buttons it takes no keyboard focus, so it is never a page's first focus nor a Tab stop:
+F11 is the keyboard's way, and screen readers still reach it.
 
 The mark moves (2026-10-26; drafts as SVG in `Assets/Logo`: `granary-mark-intro.svg`, `-loading.svg`, `-ambient.svg`).
 `GranaryMark` draws it on the compositor, so it stays smooth while the UI thread is busy: the ring is a circle trimmed
@@ -486,8 +494,9 @@ to the G (composition's circles start at 12 o'clock, so the trimming is offset t
 window shows a start screen (`MainWindow.ShowStartup`): the intro in the middle, 132 px (the ring draws itself back
 from its upper end with a quarter turn, play pops in, a glint runs round, 1.7 s), then the loading loop while the
 first page still loads (Home's rows, `IStartupContent`), at most 6 s in all, then the app fades in (300 ms). The
-player shows the loading loop (a stretch of the ring runs through the G, play breathes, 1.4 s) on a dark disc while a
-title prepares or buffers. With Windows' animations off the mark stands still.
+player shows the loading loop (a stretch of the ring runs clockwise through the G, play breathes, 1.4 s) on a dark disc
+while a title prepares or buffers, and small in the corner while the stream is planned anew. With Windows' animations
+off the mark stands still.
 
 - In the card: the title (`SiloAuthTitleTextStyle`, 30 / ExtraBold) over a muted lead, labelled 36 px fields
   (`SiloAuthTextBoxStyle`, `SiloAuthPasswordBoxStyle`), full-width buttons rounded 10 (`SiloAuthButtonStyle` red,
@@ -647,16 +656,45 @@ stream's commands on Activity.
   route, client with its build, and the address with Look up. "No active streams" or "No streams match your filters"
   when nothing shows.
 
+## Full screen
+
+The whole app goes full screen (`WindowModeService` over Core's `WindowModes`, one state
+for the window that the app, the player and a trailer share; `AppWindow`'s full-screen presenter).
+
+- **On and off**: the title bar's Full screen button and F11 anywhere in the app, the player and its bar included, and
+  with a menu open (a key pressed in a flyout reaches the window; the menu closes as the window changes size); in the
+  player also F, its own full-screen button and a double click on the picture. A held F11 toggles once. Leaving full
+  screen returns to the window as it was: maximized stays maximized, a restored window gets its place and size back.
+  Each start begins in a window; full screen is not remembered.
+- **Look**: the title bar keeps its 32 px, the title on the left, so the pages keep their place under it. Windows shows
+  no caption buttons in full screen: in their corner the title bar shows Exit full screen ("Exit full screen (F11)", the
+  BackToWindow glyph) and Close (✕, "Close"; red under the pointer, as Windows' own). Close closes the window through the
+  same command as Windows' Close (`SC_CLOSE`), so playback stops as on any close. Nothing in full screen is a drag area:
+  the strip takes clicks as the page does.
+- **The player**: full screen is the window's. Minimizing the player keeps it, the bar at the bottom of the full-screen
+  app, and the bar's picture brings the full player back in full screen. Leaving the player (Exit, Stop, the bar's ✕,
+  Back) keeps it too. Over the full player the title bar's buttons are away; in full screen the corner shows Exit full
+  screen alone, fading with the player's controls and staying on the Playing Next screen, and the window's Close is left
+  out: the player's own ✕ Exit sits right under it, and two crosses, one quitting Granary and one only leaving the
+  player, would be mistaken for each other. The player's top bar, and the Playing Next screen's Close and small video,
+  keep the place below the 32 px strip in full screen too. The mini view (P) from full screen goes back to full screen, from a window back to that window.
+- **A trailer**: YouTube's full-screen button in a window takes the window full screen with the video and back with it.
+  In the app's full screen the window stays as it is either way, and leaving the trailer's full screen leaves the app
+  in full screen. While a trailer fills the screen the title bar's buttons are away (YouTube's button and Esc leave it);
+  F11 there leaves full screen for both. F11 works with the keyboard in the trailer's page or YouTube's player too: the
+  page hands it to the window (`TrailerPage.CloseKeysScript`), once per press and at most twice a second.
+
 ## Player
 
 `Views/PlayerPage` on `PlayerViewModel`, drawn as the server's web player (`web/src/player`, measured below).
 
 - **Window**: the player is not a page of the frame but lies over the whole window (`PlayerHost`, MainWindow.Player.cs,
   `IPlayerOverlay`), the title bar included: the caption buttons float over the video; the top 32 px stay the drag
-  area, so the top bar starts below them. The app under it is neither drawn nor reached and keeps the page the title
-  was played from. Full screen (`AppWindow`'s full-screen presenter) shows nothing but the player and returns to the
-  window as it was, maximized or not. Leaving the player leaves full screen and stops playback, whichever way it is
-  left (Exit, Back, `Alt+Left`, `Ctrl+K`, another page, a session change); the page under it shows again.
+  area, so the top bar starts below them. In full screen the top bar keeps that place, and the strip's corner shows Exit
+  full screen (see Full screen). The app under it is neither drawn nor reached and keeps the page the title was played
+  from. Full screen is the whole window's (see Full screen): leaving the player stops playback and ends the mini view,
+  whichever way it is left (Exit, Back, `Alt+Left`, `Ctrl+K`, another page, a session change), but keeps full screen;
+  the page under it shows again.
 - **Notices** (the web's PlaybackNoticeOverlay): a message from the server or an administrator (the control lane,
   api-contract 12.1) shows below the top bar, centred, at most 576 px wide: 16 px corners over dark glass, sky blue
   (`#0EA5E9` at 15 %, its edge `#38BDF8` at 50 %) or amber while the server restarts or shuts down, the title 14 px
@@ -672,7 +710,7 @@ stream's commands on Activity.
   and shows a chevron up). Then the title, the episode line and the times; previous episode, skip back,
   play/pause, skip forward and next episode; on the right mute and Stop playback (✕, as the web bar's). Along its top edge, right of the picture, the full player's seek bar (`DockSeekBar`): thin, thicker under
   the pointer with its thumb and the bubble with the picture, time and chapter above the bar; a click or drag seeks. The bar keeps its controls and the pointer, and leaves the keyboard to the page.
-  Minimizing leaves full screen and the mini view and closes the menus; a failure brings the full player back to
+  Minimizing keeps full screen, ends the mini view and closes the menus; a failure brings the full player back to
   say it. The rail of a title's page opens over the page: the bar's left edge moves aside with it (250 ms, easing
   out), so the pane is reached and the picture plays on beside it, and comes back as the rail closes. A new title replaces the one in the bar; Back and other pages work on the page under it; where the full player
   would leave at a title's end, the bar closes (`INavigationService.LeavePlayer`).
@@ -767,8 +805,9 @@ stream's commands on Activity.
   open one 10 px with a white ring) with a white 6 by 16 px handle at each end of the open kind; dragging one moves that
   end, never past the other (0.5 s apart), with "Intro end 0:50" above it. A new part gets a minute on the other side.
   Esc closes the panel first; another title closes it.
-- **Settings menu** (the web's QualityMenu): a gear pill (white 8 %) that names the quality ("Auto", "720p Medium")
-  and, at a speed other than 1×, a white badge with it ("1.5×"). SPEED: the value at the right, the speeds 0.5× to 3×
+- **Settings menu** (the web's QualityMenu): a gear pill (white 8 %) that names the quality ("Auto", "720p Medium"),
+  "…" while the plan changes, and, at a speed other than 1×, a white badge with it ("1.5×"). Below 640 px (the web's
+  `sm`) the pill leaves the quality out. SPEED: the value at the right, the speeds 0.5× to 3×
   (0.25 apart up to 2×, then 2.5× and 3×) as stops on a track drawn like the seek bar, the fill from 1× to the
   chosen speed, 0.5×, 1×, 2× and 3× named under it (`SpeedTrack`); it applies at once and is saved as this device's
   `player.playback_speed`. VERSION with more than one file ("2160p HEVC HDR", "Playing" / "Requested" chips): a pick
@@ -811,15 +850,22 @@ stream's commands on Activity.
 - **Mini view** (the web's Picture in Picture, P): the window becomes small (480 by 270), stays above the others
   (CompactOverlay) and shows only the picture, with play/pause in the middle and the way back top left, fading as the
   controls do; the pills, the playback info and the Playing Next screen wait for the full window, the countdown runs
-  on. Esc or P returns to the window as it was; full screen goes there from the mini view, and leaving the page
-  returns first.
+  on. Esc or P returns to where it was opened from: full screen, or the window as it was; full screen (F, F11) goes
+  there from the mini view, and leaving the page returns first.
 - **Subtitle look**: text subtitles follow the profile's `playback.subtitle_appearance` as the Android and Apple
   clients draw it (size at 1080 lines, font, colour and opacity, box, shadow or outline in the outline colour,
   bottom, lower third or top), mapped to mpv's `sub-*` options; styled ASS and image subtitles keep their own.
   While the controls show, subtitles at the bottom move up by the bar's height (`sub-pos`) and back when they fade.
 - **Seek bar**: 3 px track, the played part white as on the web, over the marked parts tinted sky (intro), violet
   (recap), amber (credits) and emerald (preview), and a 10 px tick (white 55 %) where each chapter after the first
-  starts. Under the pointer the track grows, a thumb appears and a bubble shows the time there, above it the part it
+  starts. Under the marked parts, what the player holds of the stream is lighter (white 30 %, rounded), one stretch
+  for each range mpv's cache keeps, as the web draws a video's buffered ranges: ahead of the position as the stream
+  reads, and after a seek ahead the part read before too, while mpv keeps it. mpv counts a stretch once it holds a
+  whole keyframe interval, so the ranges grow in those steps and a stretch left before that is dropped. They are in
+  the title's time like the position, within its length, follow at most four times a second, and show only while
+  the stream can be sought (none while one loads, is replaced or reconnects, nor without a known length); a local
+  file has no cache and shows none. The minimized bar's seek bar shows them too.
+  Under the pointer the track grows, a thumb appears and a bubble shows the time there, above it the part it
   lies in ("● Intro 0:03-0:12") and under it the chapter (11 px, white 50 %). With a picture the bubble is the web's
   176 px card (neutral 95 %, white 8 % edge, a caret under it): the trickplay thumbnail of that time, or while its
   sheet loads and without previews the part's or the chapter's picture, or a faint film frame on a gradient; the
@@ -832,6 +878,17 @@ stream's commands on Activity.
   in white 15 % over its 5 s; after an automatic skip "Watch Intro" with "Intro skipped" above it (12 px, white
   75 %, shaded so it reads on a bright picture, and read out). "Skip Recap", "Skip Credits" and "Skip Preview"
   stay while inside their part. Esc turns an intro pill away before it does anything else.
+- **Plan change** (Granary's own; `PlayerViewModel.PlanChange`): while the stream is planned anew, Granary's mark runs
+  its loading loop in the skip pill's corner: 32 px on a 44 px disc (black 45 %), 28 px off the corner, above the bar
+  while the controls show and above the skip pill or the next episode's card, 12 px apart, when one shows; hidden in the
+  mini view and the bar. It counts what the web counts as `replanning || replacing`: a quality, another file, an audio
+  or subtitle track the stream cannot switch to itself (leaving a burn-in, a subtitle the viewer added), a seek outside
+  what the stream holds, and a new attempt after the server lost the session. It shows from the request until the new
+  stream's first frame, and goes when the server refuses (the stream plays on), on a failure or when the player is left.
+  A reconnect is not one: it shows as buffering. The old stream plays on until the new one loads; meanwhile only the mark
+  and the settings button's "…" show the change. Screen readers hear "Switching quality", "Switching version",
+  "Switching audio", "Switching subtitles", "Seeking" or "Restarting playback" once per change, when it has lasted
+  500 ms, in the mini view and the bar too.
 - **Next episode** (the web's NextEpisodeOverlay and PlayingNextScreen):
   - At the credits a card replaces the skip pill: black at 80 %, radius 8, "UP NEXT IN 34S" (12 px, white 60 %),
     "S1:E4 — Title" (14 px medium), Play Now (white, black text) and Cancel (outlined), both rounded 4. It counts the
@@ -844,9 +901,11 @@ stream's commands on Activity.
     right. The video plays on in a 320 px window top left (radius 16), a click on it returns to it; it fades out at
     the end. Enter plays the next episode.
   - Without a next episode the screen says "You've finished {series}" with Back. A movie's end goes back.
-- **States**: preparing shows Exit and a spinner, no transport. Buffering puts a spinner on a dark
-  disc over the picture. Failed shows the message, Retry when it can help and Back; keyboard focus moves
-  to them. Ended keeps the controls up.
+- **States**: preparing shows Exit and a spinner, no transport. A picture that stands still puts a spinner on a dark
+  disc over it once that has lasted 500 ms, as the web delays its spinner so brief stalls do not flash it: buffering,
+  reconnecting, and during a plan change the wait for the new stream (the web's spinner comes from the video's
+  `waiting` event, so a picture that still moves has none). It goes as soon as the picture moves. Failed shows the
+  message, Retry when it can help and Back; keyboard focus moves to them. Ended keeps the controls up.
 - **Auto-hide**: during playback the controls fade (and slide a few pixels) after 3 s without pointer
   movement, and the cursor goes with them while it is over the picture. They stay while paused, preparing,
   buffering, failed or ended, while the pointer rests on them, during a seek drag, while a flyout is open or
@@ -855,7 +914,8 @@ stream's commands on Activity.
   `ShowCursor` does not reach WinUI content, whose cursor WinUI's input stack sets per element.
 - **Mouse**: a click on the picture plays or pauses (after 250 ms, so a double click does not), a double
   click toggles full screen. On touch a tap shows or hides the controls.
-- **Keyboard** (the web player's map, docs/api-contract.md 13.5): Space and K play/pause, F full screen,
+- **Keyboard** (the web player's map, docs/api-contract.md 13.5): Space and K play/pause, F full screen (the window's,
+  as F11, which works everywhere),
   P the mini view, Esc turns away an intro pill, else closes the marker panel, else leaves full screen or the mini
   view, else closes, M mute, C
   subtitles off and on, Left/Right skip, Up/Down volume ±5. Space wins over a focused button; arrows go to a focused

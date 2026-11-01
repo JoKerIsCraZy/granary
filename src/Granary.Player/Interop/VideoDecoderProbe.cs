@@ -3,6 +3,15 @@ using System.Runtime.Versioning;
 
 namespace Granary.Player.Interop;
 
+/// <summary>What the GPU decodes: codec names as ffprobe gives them, and those it decodes at 10 bits too.</summary>
+public sealed record HardwareVideoDecoders(IReadOnlyList<string> Codecs, IReadOnlyList<string> TenBitCodecs)
+{
+    public static readonly HardwareVideoDecoders None = new([], []);
+}
+
+/// <summary>A decoder profile of the GPU, and whether it writes the 10-bit output format (P010) that HDR needs.</summary>
+public readonly record struct DecoderProfile(Guid Id, bool OutputsP010);
+
 /// <summary>
 /// Which video codecs the GPU decodes (D3D11VA, which mpv's <c>hwdec=auto-safe</c> uses on Windows), read from
 /// the decoder profiles of a D3D11 video device on the default adapter (docs/api-contract.md, 13.2).
@@ -16,9 +25,14 @@ public static unsafe partial class VideoDecoderProbe
 
     private static readonly Guid VideoDeviceIid = new("10ec4d5b-975a-4689-b9e4-d0aac30fe333");
 
-    // IUnknown (3) + CreateVideoDecoder … CreateVideoProcessorEnumerator (8).
+    // IUnknown (3) + CreateVideoDecoder … CreateVideoProcessorEnumerator (8); then GetVideoDecoderProfileCount,
+    // GetVideoDecoderProfile, CheckVideoDecoderFormat.
     private const int GetVideoDecoderProfileCountSlot = 11;
     private const int GetVideoDecoderProfileSlot = 12;
+    private const int CheckVideoDecoderFormatSlot = 13;
+
+    // DXGI_FORMAT_P010: 10-bit 4:2:0, what a decoder writes a 10-bit picture to.
+    private const int FormatP010 = 104;
 
     // The DXVA decoder profiles (d3d11.h, dxva.h) by the codec names ffprobe and the server use.
     private static readonly Dictionary<Guid, string> Profiles = new()
@@ -39,14 +53,51 @@ public static unsafe partial class VideoDecoderProbe
         [new("90b899ea-3a62-4705-88b3-8df04b2744e7")] = "vp8", // VP8_VLD
     };
 
+    // The profiles that decode 10-bit video, the depth of HDR and Dolby Vision. AV1's Main profile includes 10-bit.
+    private static readonly Dictionary<Guid, string> TenBitProfiles = new()
+    {
+        [new("107af0e0-ef1a-4d19-aba8-67a163073d13")] = "hevc", // HEVC_VLD_MAIN10
+        [new("a4c749ef-6ecf-48aa-8448-50a7a1165ff7")] = "vp9", // VP9_VLD_10BIT_PROFILE2
+        [new("b8be4ccb-cf53-46ba-8d59-d6b8a6da5d2a")] = "av1", // AV1_VLD_PROFILE0
+    };
+
     /// <summary>The ffprobe codec name of a DXVA decoder profile; null for profiles Granary does not use.</summary>
     public static string? Codec(Guid profile) => Profiles.GetValueOrDefault(profile);
 
     /// <summary>
-    /// The codecs the default adapter decodes in hardware, each once; empty when there is no D3D11 video
-    /// device (no GPU, a remote session, a basic display driver).
+    /// What the default adapter decodes in hardware; nothing when there is no D3D11 video device (no GPU, a remote
+    /// session, a basic display driver).
     /// </summary>
-    public static IReadOnlyList<string> HardwareCodecs()
+    public static HardwareVideoDecoders HardwareDecoders() => Summarize(ReadProfiles());
+
+    /// <summary>
+    /// The codecs of <paramref name="profiles"/>, each once, and those among them with a 10-bit profile whose decoder
+    /// writes P010: the profile alone does not promise the output format.
+    /// </summary>
+    public static HardwareVideoDecoders Summarize(IEnumerable<DecoderProfile> profiles)
+    {
+        var codecs = new List<string>();
+        var tenBit = new List<string>();
+        foreach (var profile in profiles)
+        {
+            AddOnce(codecs, Codec(profile.Id));
+            if (profile.OutputsP010)
+            {
+                AddOnce(tenBit, TenBitProfiles.GetValueOrDefault(profile.Id));
+            }
+        }
+        return new HardwareVideoDecoders(codecs, tenBit);
+    }
+
+    private static void AddOnce(List<string> list, string? codec)
+    {
+        if (codec is not null && !list.Contains(codec))
+        {
+            list.Add(codec);
+        }
+    }
+
+    private static List<DecoderProfile> ReadProfiles()
     {
         int hr = D3D11CreateDevice(0, DriverTypeHardware, 0, CreateDeviceVideoSupport, 0, 0, SdkVersion,
             out nint device, out _, out nint context);
@@ -63,7 +114,7 @@ public static unsafe partial class VideoDecoderProbe
             }
             try
             {
-                return ReadCodecs(videoDevice);
+                return ReadProfiles(videoDevice);
             }
             finally
             {
@@ -80,22 +131,28 @@ public static unsafe partial class VideoDecoderProbe
         }
     }
 
-    private static List<string> ReadCodecs(nint videoDevice)
+    private static List<DecoderProfile> ReadProfiles(nint videoDevice)
     {
         nint* vtable = *(nint**)videoDevice;
         var getCount = (delegate* unmanaged[Stdcall]<nint, uint>)vtable[GetVideoDecoderProfileCountSlot];
         var getProfile = (delegate* unmanaged[Stdcall]<nint, uint, Guid*, int>)vtable[GetVideoDecoderProfileSlot];
-        var codecs = new List<string>();
+        var checkFormat = (delegate* unmanaged[Stdcall]<nint, Guid*, int, int*, int>)vtable[CheckVideoDecoderFormatSlot];
+        var profiles = new List<DecoderProfile>();
         uint count = getCount(videoDevice);
         for (uint i = 0; i < count; i++)
         {
             Guid profile;
-            if (getProfile(videoDevice, i, &profile) >= 0 && Codec(profile) is { } codec && !codecs.Contains(codec))
+            if (getProfile(videoDevice, i, &profile) < 0)
             {
-                codecs.Add(codec);
+                continue;
             }
+            // Only the 10-bit profiles are asked; a failed answer counts as no P010.
+            int supported = 0;
+            bool outputsP010 = TenBitProfiles.ContainsKey(profile)
+                && checkFormat(videoDevice, &profile, FormatP010, &supported) >= 0 && supported != 0;
+            profiles.Add(new DecoderProfile(profile, outputsP010));
         }
-        return codecs;
+        return profiles;
     }
 
     [LibraryImport("d3d11.dll")]

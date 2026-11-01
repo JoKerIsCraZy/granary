@@ -5,7 +5,7 @@ using Granary.Core.ViewModels.Player;
 namespace Granary.Core.ViewModels;
 
 // The settings menu of Silo's web player (QualityMenu): SPEED, VERSION when the title has several files, QUALITY when
-// the plan offers rungs; the gear names the quality, and a speed other than 1× shows beside it.
+// the plan offers rungs; the gear names the quality ("…" while the plan changes), and a speed other than 1× shows beside it.
 public sealed partial class PlayerViewModel
 {
     [ObservableProperty]
@@ -31,7 +31,7 @@ public sealed partial class PlayerViewModel
     [ObservableProperty]
     public partial string SpeedBadge { get; private set; } = "";
 
-    /// <summary>The quality on the gear ("Auto", "1080p High"); empty without a quality menu.</summary>
+    /// <summary>The quality on the gear ("Auto", "1080p High"), "…" while the plan changes; empty without a quality menu.</summary>
     [ObservableProperty]
     public partial string SettingsLabel { get; private set; } = "";
 
@@ -88,6 +88,8 @@ public sealed partial class PlayerViewModel
         HasVersionOptions = VersionOptions.Count > 0;
         SpeedText = PlaybackSpeeds.Format(Speed);
         SpeedBadge = Math.Abs(Speed - 1) < 0.001 ? "" : SpeedText;
-        SettingsLabel = HasQualityOptions ? QualityOptions.FirstOrDefault(o => o.IsSelected)?.Label ?? "Quality" : "";
+        SettingsLabel = !HasQualityOptions ? ""
+            : IsChangingPlan ? "…"
+            : QualityOptions.FirstOrDefault(o => o.IsSelected)?.Label ?? "Quality";
     }
 }

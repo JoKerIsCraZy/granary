@@ -48,7 +48,10 @@ at the latest (`CompositionResizeGate`, which reads the buffer size and the pres
 Small steps, as while the window's edge is dragged, are passed on at once and keep the picture.
 
 Because there is no window, mpv cannot query the monitor: the app must pass HDR target settings and
-the display refresh rate itself (Phase 3).
+the display refresh rate itself (Phase 3). Until it does, the output is SDR, and mpv tone-maps HDR and
+Dolby Vision originals onto it. Where the GPU decodes HDR video at 10 bits, Granary claims that on direct play
+(`client_managed_dynamic_range_v1`, docs/api-contract.md 13.2), so the server sends HDR files as they are
+instead of tone-mapping them in a transcode.
 
 ## Threading
 
@@ -56,6 +59,22 @@ the display refresh rate itself (Phase 3).
 - View models marshal to the UI thread through `IUiDispatcher`; they never block on it.
 - `MpvVideoHost` re-enters the UI thread through its `DispatcherQueue` when the swap chain changes.
 - Position updates are throttled to 4 per second; state changes are reported immediately.
+- What mpv's cache holds (`demuxer-cache-state`) is observed without its value: the engine reads the property's
+  string form (the node as compact JSON) at most 4 times a second and once more after the last change
+  (`TrailingThrottle`, always on a timer's thread, so mpv's event thread never waits for the read; a failure is
+  logged), takes its `seekable-ranges` (`MpvCacheState`, which reads anything else as no ranges) and reports them in
+  `PlaybackSnapshot.Buffered`, in the time of `time-pos` (mpv applies the same offset to both). A load empties them
+  at once, and a read of the file before is dropped by its load id. While `keep-open` holds the file at its end, its
+  ranges stay, as on the web; they clear when the file ends (a stop, a failure or mpv's own end of the file), whose
+  idle snapshot holds none. `PlayerViewModel.Buffered` moves them into the title's time with the timeline offset, as
+  the position, and keeps them within the title's length. It holds them back once the plan's offset differs from the
+  one the load began with: the plan is taken before its stream loads, and the engine plays the stream before
+  meanwhile.
+- The engine raises `StateChanged` from mpv's event thread, from the cache reads on a timer's thread and from the
+  caller's thread of `Load`, each time after leaving its lock, so a snapshot can overtake another on the way. Every
+  snapshot it raises is numbered under the lock (`PlaybackSnapshot.Sequence`), and its consumers (`PlayerViewModel`,
+  `ServerPlayback`) drop one numbered below the newest they took: a cache read from before a stop never brings the
+  stopped file back, and the position never goes back.
 
 ## Networking and security
 
@@ -279,6 +298,14 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   seek waits for that stream. Engine states and ends carry the id of their load (`PlaybackSnapshot.LoadId`):
   one raised before a reload can arrive after it and is ignored. A failure stops the engine; after the stop the
   playback leaves the engine alone, which may already play the next title.
+- **Plan change** (`IServerPlayback.PlanChange`, the web's `replanning || replacing`): a recovery that replaces the
+  stream that plays names what for (quality, version, audio, subtitles, seek, restart) as it starts; the recoveries
+  it leads to (a failed load's `failure_recovery`, a reconnect, a fresh attempt) carry it on, and so does one that
+  starts while its new stream is still on its way (a subtitle added meanwhile), so it keeps the name of the change the
+  viewer asked for. A request made once a stream plays names its own. It ends at the new
+  stream's first frame, when a recovery ends with no load on its way (a refusal leaves the old stream playing), on a
+  failure and at the stop, so no path leaves it on. A reconnect on its own is no plan change. The player shows it
+  (`PlayerViewModel.IsChangingPlan`, `IsWaiting`; docs/ui-design.md, Player).
 - After a refused request mpv runs to the end of what it had read and pauses there before it reports the end.
   The engine keeps the last real position and pause from the refusal until the next load, so the end of that
   data is never taken for the viewer's position.
@@ -369,21 +396,53 @@ breaks YouTube's terms.
 - **Settings.** Developer tools, the default context menus and script dialogs, the status bar, zoom, browser accelerator
   keys, swipe navigation, general autofill, password saving and host objects are off. Permissions are refused, all but
   autoplay; downloads, external URI schemes and basic authentication are cancelled.
-- **Messages.** In a fixed schema (`TrailerPageMessage`: ready, playing, an error code, or close; 128 characters at most,
-  no other member). From the page's own origin all of them; from the page's iframe, only while it is YouTube's embed,
-  close alone (`TrailerWebPolicy.FromPage`, `FromEmbed`). Anything else is ignored.
+- **Messages.** In a fixed schema (`TrailerPageMessage`: ready, playing, an error code, close, or fullscreen; 128
+  characters at most, no other member). From the page's own origin all of them; from the page's iframe, only while it is
+  YouTube's embed, close and fullscreen alone (`TrailerWebPolicy.FromPage`, `FromEmbed`). Anything else is ignored.
 - **Keys.** Once the viewer clicks into the video, the keyboard belongs to the browser, and Granary's Esc and Back never see
   it. So `TrailerPage.CloseKeysScript` is added to every document of the WebView
   (`AddScriptToExecuteOnDocumentCreatedAsync`). Esc, the Back key, Alt+Left and the mouse's back button post
-  `{"kind":"close"}`; in full screen Esc only leaves full screen. Checked with synthetic events in the page and in
-  YouTube's frame; a frame can do no more with it than close the trailer.
+  `{"kind":"close"}`; in full screen Esc only leaves full screen. F11 posts `{"kind":"fullscreen"}`, which toggles the
+  window's full screen (Window modes); a held key's repeats post nothing, and whatever a frame posts, Granary takes at
+  most one every 500 ms (`TrailerOverlayViewModel.FullScreenInterval`), as each toggle resizes the window. Checked with synthetic events in the page and in
+  YouTube's frame; a frame can do no more with them than close the trailer or toggle full screen. The script runs beside
+  the page's own and is not part of its policy hash.
 - **States.** `TrailerOverlayViewModel`: Loading, Playing (the player answered), Unavailable with its reason (the player's
   errors 2, 5, 100, 101, 150, 153 and any other; no answer within 15 s of the page opening, or no page within 30 s of the
   start, both through `TimeProvider`; no runtime; the browser's, the page's or a frame's process gone), Closed. Closing
   closes the WebView2 once the WebView's own event that closed it has returned; that stops the video and ends its
   processes.
-- **Full screen.** When the page asks for it (`ContainsFullScreenElementChanged`), the window goes full screen through its
-  AppWindow presenter, as the player does (`WindowedPlacement`), and the app under the trailer is hidden meanwhile.
+- **Full screen.** When the page asks for it (`ContainsFullScreenElementChanged`), the trailer tells `WindowModeService`
+  (see Window modes): from a window the window goes full screen with it and back, in the app's full screen it stays as it
+  is. The app under the trailer is hidden meanwhile. When the window leaves full screen another way (F11), the page is
+  asked to leave its own.
+
+## Window modes
+
+The main window is a window (maximized or not), full screen, or the player's mini view (CompactOverlay), and that is one
+state for the whole app: the title bar's button and F11, the player (F, its buttons, P, Esc) and a trailer's full
+screen all go through `WindowModeService` (App, a singleton that MainWindow attaches to itself).
+
+- **Decisions** are Core's `WindowModes`, without WinUI and unit-tested: which mode comes next. Leaving the mini view
+  returns to where it was opened from; leaving the player or minimizing it ends only the mini view; a trailer's full
+  screen takes the window only from a window and gives it back, and the viewer's own full screen outlasts it; leaving
+  full screen ends a trailer's.
+- **The window**: the service applies a change through the AppWindow presenters. It keeps the window as it is while it is
+  a window, on every move and resize, and once more as it leaves (`WindowedPlacement`: the presenter, so a maximized
+  window comes back maximized, and its place and size, but never a minimized window's); full screen and the mini view go
+  to each other without it, so either returns to the window as it was before both. Coming back, a restored window keeps
+  its place and size as long as its title bar (32 view px high, at least 120 wide) shows on some display's work area
+  (`WindowBounds.OnDisplays` over `DisplayArea.FindAll`): across two displays, on one left of or above the primary, or
+  flush with an edge. Only one whose title bar shows on none, its display unplugged or moved meanwhile, is moved onto
+  the nearest display and made smaller only if it does not fit. A presenter the window took by itself is followed, and
+  so is the window's real presenter when setting one fails (logged). Nothing is saved: each start begins as a window.
+- **Changed** tells MainWindow (its title bar buttons), the player (its `IsFullScreen` and `IsMiniView`) and the trailer.
+- **Drag area**: the title bar's own buttons lie outside `SetTitleBar`'s element, so they take clicks. In full screen the
+  window has no drag area at all (`InputNonClientPointerSource`'s caption region cleared); WinUI does not set it again
+  while its element keeps its size, so MainWindow sets it once from the element on the way back. Checked by hit-testing
+  the strip with `WM_NCHITTEST`.
+- **Close** in full screen posts `SC_CLOSE` to the window, the command Windows' Close sends, so `AppWindow.Closing` and
+  the player's stop run as on any close.
 - **Logs.** The outcome only ("The trailer plays", "can't play in Granary: EmbedRefused"); a blocked navigation is logged
   without its address, its host only at Debug. A YouTube address carries the video's key and stays out of the log.
 

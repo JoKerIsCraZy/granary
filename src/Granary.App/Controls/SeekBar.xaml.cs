@@ -356,6 +356,7 @@ public sealed partial class SeekBar : UserControl
         Thumb.Opacity = isActive ? 1 : 0;
         Track.Scale = isActive ? ActiveTrackScale : Vector3.One;
         Track.Opacity = IsEnabled ? 1 : 0.5;
+        PlaceBuffered(width);
         PlaceRegions(width);
         PlaceEditRegions(width);
         PlaceChapterTicks(width);

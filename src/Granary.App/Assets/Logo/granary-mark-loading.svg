@@ -3,7 +3,7 @@
     .gb .seg { stroke-dasharray: 28 72; animation: gb-run calc(1.4s * var(--rate, 1)) linear infinite; }
     .gb .play { transform-box: fill-box; transform-origin: 40% 50%;
       animation: gb-pulse calc(1.4s * var(--rate, 1)) ease-in-out infinite; }
-    @keyframes gb-run { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -100; } }
+    @keyframes gb-run { from { stroke-dashoffset: 0; } to { stroke-dashoffset: 100; } }
     @keyframes gb-pulse {
       0%, 100% { opacity: 1; transform: scale(1); }
       50% { opacity: .7; transform: scale(.88); }

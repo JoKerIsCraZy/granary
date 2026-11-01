@@ -114,12 +114,81 @@ public sealed class PlaybackReportBuilderTests
         });
     }
 
+    // As MpvDeviceProbe reports a GPU: HEVC, VP9 and AV1 only with a hardware decoder, never from the CPU's list.
+    private static readonly PlaybackDeviceFacts Gpu = PlaybackRequests.Facts with
+    {
+        HardwareVideoCodecs = ["h264", "hevc", "vp9", "av1"],
+        SoftwareVideoCodecs = ["h264", "mpeg2video"],
+    };
+
+    [Fact]
+    public void OriginalHttp_ClaimsToneMapping_WhenTheGpuDecodesEveryHdrCodecItListsAtTenBit()
+    {
+        var report = PlaybackReportBuilder.Build(Gpu with { HardwareTenBitVideoCodecs = ["hevc", "vp9", "av1"] }, "1.0.0");
+
+        var original = report.ClientPlaybackContext.Deliveries[DeliveryClasses.OriginalHttp];
+        Assert.Contains(DeliveryClaims.ClientManagedDynamicRangeV1, original.ValidatedClaims);
+        Assert.False(report.ClientCapabilities.Hdr);
+        Assert.Equal(new OutputContext(), report.ClientPlaybackContext.Output);
+    }
+
+    [Fact]
+    public void OriginalHttp_LeavesHdrToTheServer_WhenTheGpuDecodesEightBitHevcOnly()
+    {
+        // HDR is 10-bit; without a 10-bit decoder the CPU would decode a 4K HDR original, so the server tone-maps it.
+        var report = PlaybackReportBuilder.Build(Gpu with { HardwareTenBitVideoCodecs = ["vp9", "av1"] }, "1.0.0");
+
+        var original = report.ClientPlaybackContext.Deliveries[DeliveryClasses.OriginalHttp];
+        Assert.Equal([DeliveryClaims.ClientSelectedAudioTrackV1], original.ValidatedClaims);
+        Assert.Contains("hevc", report.ClientCapabilities.CodecsVideo);
+    }
+
+    [Fact]
+    public void OriginalHttp_LeavesHdrToTheServer_WhenAListedVp9DecoderIsEightBitOnly()
+    {
+        // The claim covers every codec the report lists: an 8-bit VP9 decoder would leave a VP9 HDR original to the CPU.
+        var report = PlaybackReportBuilder.Build(Gpu with { HardwareTenBitVideoCodecs = ["hevc", "av1"] }, "1.0.0");
+
+        var original = report.ClientPlaybackContext.Deliveries[DeliveryClasses.OriginalHttp];
+        Assert.DoesNotContain(DeliveryClaims.ClientManagedDynamicRangeV1, original.ValidatedClaims);
+    }
+
+    [Fact]
+    public void OriginalHttp_LeavesHdrToTheServer_WithoutAnyTenBitDecoderInTheGpu()
+    {
+        var report = PlaybackReportBuilder.Build(
+            PlaybackRequests.Facts with { HardwareVideoCodecs = [], HardwareTenBitVideoCodecs = [] }, "1.0.0");
+
+        var original = report.ClientPlaybackContext.Deliveries[DeliveryClasses.OriginalHttp];
+        Assert.DoesNotContain(DeliveryClaims.ClientManagedDynamicRangeV1, original.ValidatedClaims);
+    }
+
+    [Fact]
+    public void OriginalHttp_ClaimsToneMapping_ForAnHdrCodecTheCpuPlaysSmoothly()
+    {
+        var report = PlaybackReportBuilder.Build(
+            Gpu with { HardwareVideoCodecs = ["h264", "hevc"], SoftwareVideoCodecs = ["h264", "vp9"], HardwareTenBitVideoCodecs = ["hevc"] },
+            "1.0.0");
+
+        var original = report.ClientPlaybackContext.Deliveries[DeliveryClasses.OriginalHttp];
+        Assert.Contains(DeliveryClaims.ClientManagedDynamicRangeV1, original.ValidatedClaims);
+    }
+
+    [Fact]
+    public void StartBody_NamesTheClaimsAsTheServerSpellsThem()
+    {
+        var body = JsonNode.Parse(PlaybackRequests.Json(PlaybackRequests.Start()))!.AsObject();
+
+        var claims = body["client_playback_context"]!["deliveries"]!["original_http"]!["validated_claims"]!.AsArray();
+        Assert.Equal(["client_selected_audio_track_v1", "client_managed_dynamic_range_v1"], claims.Select(c => (string)c!));
+    }
+
     [Fact]
     public void OriginalHttp_ClaimsAudioSelectionAndNativeEmbeddedSubtitles()
     {
         var original = Report.ClientPlaybackContext.Deliveries[DeliveryClasses.OriginalHttp];
 
-        Assert.Equal([DeliveryClaims.ClientSelectedAudioTrackV1], original.ValidatedClaims);
+        Assert.Equal([DeliveryClaims.ClientSelectedAudioTrackV1, DeliveryClaims.ClientManagedDynamicRangeV1], original.ValidatedClaims);
         Assert.Equal(Report.ClientCapabilities.Containers, original.Containers);
         var subtitles = original.Subtitles;
         Assert.Equal((true, true, true, true, false, true),

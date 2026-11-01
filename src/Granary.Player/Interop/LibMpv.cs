@@ -7,6 +7,8 @@ internal static partial class LibMpv
 {
     public const string LibraryName = "libmpv-2.dll";
 
+    /// <summary>Observed with no value: the change notice alone.</summary>
+    public const int FormatNone = 0;
     public const int FormatString = 1;
     public const int FormatFlag = 3;
     public const int FormatInt64 = 4;

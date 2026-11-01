@@ -455,6 +455,22 @@ public sealed class ServerPlaybackTests
     }
 
     [Fact]
+    public async Task AnOlderEngineState_ArrivingLate_DoesNotMoveTheViewerBack()
+    {
+        // The engine raises from more than one thread: a state it made before the pause can arrive after it.
+        var playback = await _fixture.PlayingAsync();
+        _fixture.Engine.RaiseState(Frame(321.5, paused: true));
+        long newer = _fixture.Engine.Current.Sequence;
+
+        _fixture.Engine.RaiseState(Frame(300) with { Sequence = newer - 1 });
+        await playback.StopAsync();
+
+        var stop = _fixture.Body(HttpMethod.Delete, StopPath);
+        Assert.Equal(321.5, stop.GetProperty("position").GetDouble());
+        Assert.True(stop.GetProperty("is_paused").GetBoolean());
+    }
+
+    [Fact]
     public async Task AStopBeforeTheFirstFrame_LeavesTheResumePointAlone()
     {
         // The load starts at 12.5 s, but the viewer saw nothing: 0 is never stored, so the resume point stays.
