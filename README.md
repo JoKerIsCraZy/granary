@@ -27,7 +27,7 @@ Granary is built with C# / .NET 10, WinUI 3 (Windows App SDK) and libmpv. It pla
 Direct Play, so the server rarely has to transcode. Its look follows Silo's web app and its behaviour follows
 Silo's Android and Apple apps.
 
-**Status:** early development (version 0.1.0). There is no public release yet.
+**Status:** early development (version 0.1.1).
 
 ## Screenshots
 
@@ -80,9 +80,9 @@ Profiles hide libraries the same way they do on the web. The full description of
 
 ## Install
 
-Granary will ship as a per-user setup (no administrator rights) and as a portable zip. Both update
+Granary ships as a per-user setup (no administrator rights) and as a portable zip. Both update
 themselves in the background with [Velopack](https://velopack.io), unless automatic updates are turned off in
-Settings → About. The packages will be on the
+Settings → About. The packages are on the
 [releases page](https://github.com/JoKeRIsCraZy/granary/releases/latest).
 [docs/release.md](docs/release.md) describes what a release contains and how updates work.
 

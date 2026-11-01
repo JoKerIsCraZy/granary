@@ -6,6 +6,8 @@ release's section is what its update says it changes (docs/release.md).
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-01
+
 ### Added
 
 - The player's seek bar shows which parts of the video are loaded, lighter on the timeline, as on Silo's web player.
