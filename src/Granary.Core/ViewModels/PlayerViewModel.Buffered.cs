@@ -49,13 +49,18 @@ public sealed partial class PlayerViewModel
     {
         double duration = DurationSeconds;
         var (from, fromOffset, fromDuration) = _bufferedFrom;
-        if (ReferenceEquals(ranges, from) && offset == fromOffset && duration == fromDuration)
+        // By what they hold: an equal read is a new instance, and moving it would only give the same ranges again.
+        if (ranges.Equals(from) && offset == fromOffset && duration == fromDuration)
         {
             return;
         }
         _bufferedFrom = (ranges, offset, duration);
+        BufferedMappings++;
         Buffered = ranges.OnTimeline(offset, duration);
     }
+
+    /// <summary>How often the ranges were moved onto the title's timeline; the tests count them.</summary>
+    internal int BufferedMappings { get; private set; }
 
     // The engine's loads go on counting across titles, so what is known of them stays.
     private void ResetBuffered()

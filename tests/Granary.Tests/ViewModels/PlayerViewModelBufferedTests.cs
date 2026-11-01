@@ -181,18 +181,21 @@ public sealed class PlayerViewModelBufferedTests
     }
 
     [Fact]
-    public async Task ThePositionMovingOn_DoesNotSetTheRangesAgain()
+    public async Task ThePositionMovingOn_DoesNotMapTheRangesAgain()
     {
+        // Four position updates a second: the same ranges, or equal ones read anew, are neither moved again nor shown anew.
         var viewModel = await PlayServerTitleAsync(offset: 120, duration: 5400);
         var held = BufferedRanges.Of([new(0, 30)]);
         _engine.RaiseState(Playing() with { Buffered = held });
         var shown = viewModel.Buffered;
+        int mappings = viewModel.BufferedMappings;
         int changes = 0;
         ((INotifyPropertyChanged)viewModel).PropertyChanged += (_, e) => changes += e.PropertyName == nameof(PlayerViewModel.Buffered) ? 1 : 0;
 
         _engine.RaiseState(Playing() with { Position = TimeSpan.FromSeconds(13), Buffered = held });
         _engine.RaiseState(Playing() with { Position = TimeSpan.FromSeconds(13.5), Buffered = BufferedRanges.Of([new(0, 30)]) });
 
+        Assert.Equal(mappings, viewModel.BufferedMappings);
         Assert.Equal(0, changes);
         Assert.Same(shown, viewModel.Buffered);
     }
