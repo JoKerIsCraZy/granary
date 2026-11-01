@@ -105,7 +105,8 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <TextBox Text="{x:Bind ViewModel.Code, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="ABCD1234"
-                                         AutomationProperties.Name="Room code" MinHeight="48" FontSize="18" CharacterSpacing="200" VerticalContentAlignment="Center"
+                                         AutomationProperties.Name="Room code" MinHeight="48" FontSize="18" CharacterSpacing="200"
+                                         TextAlignment="Center" Padding="12,11,12,11"
                                          IsSpellCheckEnabled="False" KeyDown="OnCodeKeyDown" />
                                 <Button Grid.Column="1" Style="{StaticResource SiloSecondaryButtonStyle}" MinHeight="48" Click="OnPasteClick"
                                         AutomationProperties.Name="Paste room code">
