@@ -177,8 +177,9 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   it has no headers to open them by: the headers become the web's short dividers (20 × 1 px, `#2E2E35`). A mouse resting
   on the rail for 150 ms opens it over the page, which keeps its width, and leaving it closes it again. The sidebar has
   no back arrow, as on the web: a page opened from another (a title, a row in full, a collection, the servers) has the
-  web's PageBack, a 36 px glass disc with a chevron at its top left; the sidebar's own pages have none, and Back
-  (Alt+Left, the mouse's back button) still leads from them to Home.
+  web's PageBack, a 36 px glass disc with a chevron at its top left; the sidebar's own pages have none, and neither
+  has a Watch Party room, whose way out is Leave. Back (Alt+Left, the mouse's back button) still leads from them to
+  Home.
   Between a title's page and any other the sidebar changes its width with the page; the old page then goes at once,
   the pane moves over the empty page, and the new page fades in (160 ms) once the pane stands, instead of the old page
   squeezing while the pane moved and the new one sliding in after it.

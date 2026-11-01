@@ -534,9 +534,11 @@ public sealed partial class MainWindow : Window
         _railHover.Stop();
         // The way back is the web's: no arrow in the sidebar, a disc at the top left of a page opened from another (a title,
         // a row in full, a collection, the servers); the sidebar's own pages have none, Back (Alt+Left) still leads home.
+        // A Watch Party room has none either, as on the web: its status strip starts where the disc would sit, and Leave
+        // is its way out.
         _showsPageBack = _navigation.CanGoBack && route is not (null or AppRoute.Player or AppRoute.Settings or AppRoute.Admin or AppRoute.Home
             or AppRoute.Search or AppRoute.Library or AppRoute.List or AppRoute.Collections or AppRoute.ForYou or AppRoute.Calendar
-            or AppRoute.Notifications or AppRoute.Requests or AppRoute.WatchParty);
+            or AppRoute.Notifications or AppRoute.Requests or AppRoute.WatchParty or AppRoute.WatchPartyRoom);
         // Clear of the page's heading, which starts 48 px in: just right of the pane, a little further beside the rail, and
         // near the window's edge where there is no sidebar (signing in).
         bool paneShown = Shell.IsSignedIn && !hidesPane;
