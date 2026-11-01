@@ -6,7 +6,7 @@ release's section is what its update says it changes (docs/release.md).
 
 ## [Unreleased]
 
-## [0.1.0] - 2026-10-30
+## [0.1.0] - 2026-11-01
 
 ### Added
 
