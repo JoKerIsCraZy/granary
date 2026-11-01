@@ -14,6 +14,9 @@ public interface IAppInfo
 
     string LicensePath { get; }
 
+    /// <summary>PLATFORM-EXCEPTION.md, the license's additional permission for platform SDKs, shipped beside LICENSE.</summary>
+    string ExceptionPath { get; }
+
     string NoticesPath { get; }
 
     string DataDirectory { get; }
