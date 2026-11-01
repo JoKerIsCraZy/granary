@@ -13,6 +13,7 @@ public sealed partial class PlayerViewModel
     public static readonly TimeSpan SpinnerDelay = TimeSpan.FromMilliseconds(500);
 
     private ITimer? _waitTimer;
+    private ITimer? _announceTimer;
     private bool _disposed;
 
     /// <summary>The plan change in flight; <see cref="PlanChange.None"/> while none is.</summary>
@@ -42,6 +43,13 @@ public sealed partial class PlayerViewModel
     [ObservableProperty]
     public partial bool IsWaiting { get; private set; }
 
+    /// <summary>
+    /// What screen readers hear of the change in flight: its <see cref="PlanChangeText"/> once it has lasted
+    /// <see cref="SpinnerDelay"/>, set once per change; empty before and after.
+    /// </summary>
+    [ObservableProperty]
+    public partial string PlanChangeAnnouncement { get; private set; } = "";
+
     // The picture stands still for a reason the viewer did not choose: data that does not come, or the new stream of a
     // plan change once the old one no longer plays.
     private bool WaitsForPicture => IsBuffering || (IsChangingPlan && !(_engineState.IsLoaded && _engineState.HasStarted));
@@ -54,10 +62,27 @@ public sealed partial class PlayerViewModel
         }
     }
 
-    partial void OnPlanChangeChanged(PlanChange value)
+    partial void OnPlanChangeChanged(PlanChange oldValue, PlanChange newValue)
     {
         ShowSettings();
         FollowWait();
+        if (newValue == PlanChange.None)
+        {
+            StopTimer(ref _announceTimer);
+            PlanChangeAnnouncement = "";
+        }
+        else if (oldValue == PlanChange.None)
+        {
+            // One change, one announcement: a seek it leads to goes on with it. A change over before then says nothing.
+            _announceTimer = After(SpinnerDelay, timer =>
+            {
+                if (ReferenceEquals(timer, _announceTimer))
+                {
+                    StopTimer(ref _announceTimer);
+                    PlanChangeAnnouncement = PlanChangeText;
+                }
+            });
+        }
     }
 
     partial void OnIsBufferingChanged(bool value) => FollowWait();
@@ -109,5 +134,6 @@ public sealed partial class PlayerViewModel
     {
         _disposed = true;
         StopTimer(ref _waitTimer);
+        StopTimer(ref _announceTimer);
     }
 }

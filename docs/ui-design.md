@@ -843,7 +843,8 @@ stream's commands on Activity.
   stream's first frame, and goes when the server refuses (the stream plays on), on a failure or when the player is left.
   A reconnect is not one: it shows as buffering. The old stream plays on until the new one loads; meanwhile only the mark
   and the settings button's "…" show the change. Screen readers hear "Switching quality", "Switching version",
-  "Switching audio", "Switching subtitles", "Seeking" or "Restarting playback" as it starts.
+  "Switching audio", "Switching subtitles", "Seeking" or "Restarting playback" once per change, when it has lasted
+  500 ms.
 - **Next episode** (the web's NextEpisodeOverlay and PlayingNextScreen):
   - At the credits a card replaces the skip pill: black at 80 %, radius 8, "UP NEXT IN 34S" (12 px, white 60 %),
     "S1:E4 — Title" (14 px medium), Play Now (white, black text) and Cancel (outlined), both rounded 4. It counts the

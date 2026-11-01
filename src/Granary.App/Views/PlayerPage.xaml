@@ -884,7 +884,7 @@
             </Grid.TranslationTransition>
             <Ellipse Fill="#73000000" />
             <controls:GranaryMark Width="32" Height="32" IsLoading="{x:Bind RunsPlanChangeMark(ViewModel.IsChangingPlan, IsCompact), Mode=OneWay}"
-                                  AutomationProperties.Name="{x:Bind ViewModel.PlanChangeText, Mode=OneWay}" AutomationProperties.LiveSetting="Polite" />
+                                  AutomationProperties.Name="{x:Bind ViewModel.PlanChangeText, Mode=OneWay}" />
         </Grid>
 
         <!--

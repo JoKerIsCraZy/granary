@@ -40,13 +40,9 @@ public sealed partial class PlayerPage
     {
         switch (e.PropertyName)
         {
-            case nameof(PlayerViewModel.PlanChange):
-                // The mark appears with its name, so a live region would not speak yet: the change is read out.
-                if (ViewModel.IsChangingPlan && !IsCompact)
-                {
-                    Announcer.Announce(this, ViewModel.PlanChangeText, "PlanChange");
-                }
-                PlaceSkipPrompt();
+            case nameof(PlayerViewModel.PlanChangeAnnouncement) when ViewModel.PlanChangeAnnouncement.Length > 0 && !IsCompact:
+                // Once per change, as a notification only: the mark is no live region, so nothing says it twice.
+                Announcer.Announce(this, ViewModel.PlanChangeAnnouncement, "PlanChange");
                 break;
             case nameof(PlayerViewModel.HasSkipPrompt) or nameof(PlayerViewModel.IsNextUpCardShown):
                 PlaceSkipPrompt();

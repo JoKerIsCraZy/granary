@@ -203,6 +203,54 @@ public sealed class PlayerViewModelPlanChangeTests
     }
 
     [Fact]
+    public async Task AChange_IsAnnouncedOnce_WhenItHasLastedHalfASecond()
+    {
+        var viewModel = await PlayingAsync();
+        var announced = Changes(viewModel, nameof(PlayerViewModel.PlanChangeAnnouncement));
+
+        Playback.RaisePlanChange(PlanChange.Quality);
+        _time.Advance(TimeSpan.FromMilliseconds(499));
+        Assert.Equal("", viewModel.PlanChangeAnnouncement);
+        _time.Advance(TimeSpan.FromMilliseconds(1));
+        Assert.Equal("Switching quality", viewModel.PlanChangeAnnouncement);
+
+        // A seek the quality's stream led to goes on with the same change: nothing new to say.
+        Playback.RaisePlanChange(PlanChange.Seek);
+        _time.Advance(TimeSpan.FromSeconds(2));
+        Playback.RaisePlanChange(PlanChange.None);
+
+        Assert.Equal(["Switching quality", ""], announced);
+    }
+
+    [Fact]
+    public async Task AChangeThatEndsWithinHalfASecond_IsNotAnnounced()
+    {
+        var viewModel = await PlayingAsync();
+        var announced = Changes(viewModel, nameof(PlayerViewModel.PlanChangeAnnouncement));
+
+        Playback.RaisePlanChange(PlanChange.Subtitles);
+        _time.Advance(TimeSpan.FromMilliseconds(400));
+        Playback.RaisePlanChange(PlanChange.None);
+        _time.Advance(TimeSpan.FromSeconds(2));
+
+        Assert.Empty(announced);
+    }
+
+    [Fact]
+    public async Task ALaterChange_IsAnnouncedAgain()
+    {
+        var viewModel = await PlayingAsync();
+        Playback.RaisePlanChange(PlanChange.Quality);
+        _time.Advance(TimeSpan.FromSeconds(1));
+        Playback.RaisePlanChange(PlanChange.None);
+
+        Playback.RaisePlanChange(PlanChange.Version);
+        _time.Advance(TimeSpan.FromSeconds(1));
+
+        Assert.Equal("Switching version", viewModel.PlanChangeAnnouncement);
+    }
+
+    [Fact]
     public async Task Leaving_EndsTheChange_AndItsSpinner()
     {
         var viewModel = await PlayingAsync();
@@ -215,6 +263,7 @@ public sealed class PlayerViewModelPlanChangeTests
 
         Assert.False(viewModel.IsChangingPlan);
         Assert.False(viewModel.IsWaiting);
+        Assert.Equal("", viewModel.PlanChangeAnnouncement);
     }
 
     [Fact]
