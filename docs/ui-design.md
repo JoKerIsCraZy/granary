@@ -486,8 +486,8 @@ to the G (composition's circles start at 12 o'clock, so the trimming is offset t
 window shows a start screen (`MainWindow.ShowStartup`): the intro in the middle, 132 px (the ring draws itself back
 from its upper end with a quarter turn, play pops in, a glint runs round, 1.7 s), then the loading loop while the
 first page still loads (Home's rows, `IStartupContent`), at most 6 s in all, then the app fades in (300 ms). The
-player shows the loading loop (a stretch of the ring runs through the G, play breathes, 1.4 s) on a dark disc while a
-title prepares or buffers. With Windows' animations off the mark stands still.
+player shows the loading loop (a stretch of the ring runs clockwise through the G, play breathes, 1.4 s) on a dark disc
+while a title prepares or buffers. With Windows' animations off the mark stands still.
 
 - In the card: the title (`SiloAuthTitleTextStyle`, 30 / ExtraBold) over a muted lead, labelled 36 px fields
   (`SiloAuthTextBoxStyle`, `SiloAuthPasswordBoxStyle`), full-width buttons rounded 10 (`SiloAuthButtonStyle` red,
