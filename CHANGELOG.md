@@ -19,7 +19,7 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Changed
 
-- The loading animation turns clockwise.
+- The loading animation turns clockwise, at an even pace all the way round, instead of stopping at the G's opening.
 - The player's spinner waits half a second before it shows, as on Silo's web, so short stalls no longer flash it. The
   settings button leaves the quality out in a narrow window.
 - HDR and Dolby Vision files, 4K among them, play directly from the server when your graphics card decodes 10-bit

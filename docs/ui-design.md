@@ -494,7 +494,8 @@ to the G (composition's circles start at 12 o'clock, so the trimming is offset t
 window shows a start screen (`MainWindow.ShowStartup`): the intro in the middle, 132 px (the ring draws itself back
 from its upper end with a quarter turn, play pops in, a glint runs round, 1.7 s), then the loading loop while the
 first page still loads (Home's rows, `IStartupContent`), at most 6 s in all, then the app fades in (300 ms). The
-player shows the loading loop (a stretch of the ring runs clockwise through the G, play breathes, 1.4 s) on a dark disc
+player shows the loading loop (a stretch of the ring runs clockwise round at an even pace, unseen across the G's opening,
+so it slips out at the upper end as it comes back in at the lower one; play breathes; 1.4 s a round) on a dark disc
 while a title prepares or buffers, and small in the corner while the stream is planned anew. With Windows' animations
 off the mark stands still.
 

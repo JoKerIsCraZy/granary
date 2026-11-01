@@ -15,7 +15,8 @@ namespace Granary.App.Controls;
 /// <summary>
 /// Granary's mark (Assets/Logo/granary-mark.svg), the G ring from red to gold around the play triangle, drawn on the
 /// compositor: still, playing its intro (the ring draws itself with a quarter turn, play pops in, a glint runs round it)
-/// or, while <see cref="IsLoading"/>, its loading loop (a stretch of the ring runs through the G while play breathes).
+/// or, while <see cref="IsLoading"/>, its loading loop (a stretch of the ring runs round at an even pace while play
+/// breathes).
 /// The animations run on the compositor, so they stay smooth while the UI thread is busy, as it is at start and while a
 /// title loads. With Windows' animations off the mark stands still.
 /// </summary>
@@ -46,9 +47,11 @@ public sealed partial class GranaryMark : Grid
     private static readonly TimeSpan GlintDuration = TimeSpan.FromMilliseconds(700);
     private const float GlintLength = 0.07f;
 
-    // The loading loop, as granary-mark-loading.svg: a stretch of 28 % of the ring, once through clockwise in 1.4 s.
+    // The loading loop: a stretch as long as 28 % of the G runs clockwise round the whole circle once in 1.4 s, at an even
+    // pace. Through the G's opening on the right it runs on unseen, so it slips out at the G's upper end while it comes
+    // back in at the lower one, and never stops (it used to wait at the upper end, then start again at the lower one).
     private static readonly TimeSpan LoopDuration = TimeSpan.FromMilliseconds(1400);
-    private const float RunLength = 0.28f;
+    private const float RunLength = 0.28f * ArcHigh;
 
     // The triangle's pivot, 40 % across and half down it, and the pale grey of the SVG's play and track.
     private static readonly Vector3 PlayPivot = new(90, 88, 0);
@@ -60,6 +63,9 @@ public sealed partial class GranaryMark : Grid
     private readonly ShapeVisual _ringVisual;
     private readonly ShapeVisual _glintVisual;
     private readonly CompositionEllipseGeometry _ring;
+    private readonly CompositionSpriteShape _ringStroke;
+    private readonly CompositionEllipseGeometry _ringWrapped;
+    private readonly CompositionSpriteShape _ringWrappedStroke;
     private readonly CompositionEllipseGeometry _glint;
     private readonly CompositionSpriteShape _track;
     private readonly CompositionPropertySet _motion;
@@ -94,10 +100,13 @@ public sealed partial class GranaryMark : Grid
         gradient.ColorStops.Add(_compositor.CreateColorGradientStop(1, Color.FromArgb(0xFF, 0xF5, 0x9E, 0x0B)));
 
         _ring = Circle();
+        _ringStroke = Stroke(_ring, gradient, RingWidth);
+        _ringWrapped = Circle();
+        _ringWrappedStroke = Stroke(_ringWrapped, gradient, RingWidth);
         _track = Stroke(Circle(), _compositor.CreateColorBrush(Color.FromArgb(56, 0x8A, 0x8A, 0x96)), RingWidth);
         _ringVisual = _compositor.CreateShapeVisual();
         _ringVisual.Size = new Vector2(Units);
-        _ringVisual.Shapes.Add(Stroke(_ring, gradient, RingWidth));
+        _ringVisual.Shapes.Add(_ringStroke);
         _glint = Circle();
         _glintVisual = _compositor.CreateShapeVisual();
         _glintVisual.Size = new Vector2(Units);
@@ -164,7 +173,7 @@ public sealed partial class GranaryMark : Grid
     private Task PlayIntroNowAsync()
     {
         // The glint follows an expression, which never ends: it starts outside the batch that tells the intro is done.
-        RunAlong(_glint, "Glint", GlintLength, clockwise: false);
+        RunAlong(_glint, "Glint", GlintLength);
         var played = new TaskCompletionSource();
         var batch = _compositor.CreateScopedBatch(CompositionBatchTypes.Animation);
         var draw = _compositor.CreateCubicBezierEasingFunction(new Vector2(0.55f, 0), new Vector2(0.2f, 1));
@@ -238,10 +247,11 @@ public sealed partial class GranaryMark : Grid
             return;
         }
         _ringVisual.Shapes.Insert(0, _track);
-        RunAlong(_ring, "Run", RunLength, clockwise: true);
+        _ringVisual.Shapes.Add(_ringWrappedStroke);
+        RunRound();
         var run = Scalar(LoopDuration);
         run.InsertKeyFrame(0, 0);
-        run.InsertKeyFrame(1, 1 + RunLength, _compositor.CreateLinearEasingFunction());
+        run.InsertKeyFrame(1, 1, _compositor.CreateLinearEasingFunction());
         run.IterationBehavior = AnimationIterationBehavior.Forever;
         _motion.StartAnimation("Run", run);
 
@@ -260,13 +270,19 @@ public sealed partial class GranaryMark : Grid
     // The mark at rest: the whole G, play in place, no glint.
     private void ShowStill()
     {
-        foreach (var geometry in new[] { _ring, _glint })
+        foreach (var geometry in new[] { _ring, _ringWrapped, _glint })
         {
             geometry.StopAnimation(nameof(CompositionGeometry.TrimStart));
             geometry.StopAnimation(nameof(CompositionGeometry.TrimEnd));
         }
         _ring.TrimStart = ArcLow;
         _ring.TrimEnd = ArcHigh;
+        foreach (var stroke in new[] { _ringStroke, _ringWrappedStroke })
+        {
+            stroke.StopAnimation(nameof(CompositionSpriteShape.StrokeThickness));
+            stroke.StrokeThickness = RingWidth;
+        }
+        _ringVisual.Shapes.Remove(_ringWrappedStroke);
         _ringVisual.Shapes.Remove(_track);
         _motion.StopAnimation("Run");
         _motion.StopAnimation("Glint");
@@ -285,23 +301,44 @@ public sealed partial class GranaryMark : Grid
         _playVisual.Properties.InsertVector3("Translation", Vector3.Zero);
     }
 
-    // A stretch of the ring, the given share of it long, that moves along it as the property runs from 0 to 1 + length.
-    // Clockwise (the loading loop) it comes in at the G's lower end and goes out at its upper one; the other way (the
-    // intro's glint) in at the upper end and out at the lower one.
-    private void RunAlong(CompositionEllipseGeometry geometry, string property, float length, bool clockwise)
+    // The intro's glint: a stretch of the ring, the given share of it long, that comes in at the G's upper end and goes out
+    // at its lower one as the property runs from 0 to 1 + length.
+    private void RunAlong(CompositionEllipseGeometry geometry, string property, float length)
     {
-        var (startLag, endLag, expression) = clockwise
-            ? (length, 0f, $"Clamp(Low + (m.{property} - Lag) * (High - Low), Low, High)")
-            : (0f, length, $"Clamp(High - (m.{property} - Lag) * (High - Low), Low, High)");
-        foreach (var (end, lag) in new[] { (nameof(CompositionGeometry.TrimEnd), endLag), (nameof(CompositionGeometry.TrimStart), startLag) })
+        foreach (var (end, lag) in new[] { (nameof(CompositionGeometry.TrimEnd), length), (nameof(CompositionGeometry.TrimStart), 0f) })
         {
-            var along = _compositor.CreateExpressionAnimation(expression);
-            along.SetReferenceParameter("m", _motion);
-            along.SetScalarParameter("High", ArcHigh);
-            along.SetScalarParameter("Low", ArcLow);
-            along.SetScalarParameter("Lag", lag);
-            geometry.StartAnimation(end, along);
+            geometry.StartAnimation(end, Follow($"Clamp(High - (m.{property} - Lag) * (High - Low), Low, High)", lag));
         }
+    }
+
+    // The loading loop's stretch as "Run" goes once round, 0 to 1. Its head is Run, a share of the whole circle from the
+    // G's lower end: the G is Low to High, its opening High to 1. The stretch is the part of [Run - length, Run] on the G;
+    // while its head has come round past the opening, the rest of it, still at the G's upper end, is the wrapped ring's
+    // [Run - length + 1, High].
+    private void RunRound()
+    {
+        const string Head = "Clamp(m.Run, Low, High)";
+        const string Tail = "Clamp(m.Run - Lag, Low, High)";
+        const string WrappedTail = "Clamp(m.Run - Lag + 1, Low, High)";
+        _ring.StartAnimation(nameof(CompositionGeometry.TrimEnd), Follow(Head, RunLength));
+        _ring.StartAnimation(nameof(CompositionGeometry.TrimStart), Follow(Tail, RunLength));
+        _ringWrapped.TrimEnd = ArcHigh;
+        _ringWrapped.StartAnimation(nameof(CompositionGeometry.TrimStart), Follow(WrappedTail, RunLength));
+        // A stretch with nothing left on the G draws nothing: its round caps would leave a dot.
+        _ringStroke.StartAnimation(nameof(CompositionSpriteShape.StrokeThickness), Follow($"{Head} - {Tail} > Empty ? Width : 0", RunLength));
+        _ringWrappedStroke.StartAnimation(nameof(CompositionSpriteShape.StrokeThickness), Follow($"High - {WrappedTail} > Empty ? Width : 0", RunLength));
+    }
+
+    private ExpressionAnimation Follow(string expression, float lag)
+    {
+        var follow = _compositor.CreateExpressionAnimation(expression);
+        follow.SetReferenceParameter("m", _motion);
+        follow.SetScalarParameter("High", ArcHigh);
+        follow.SetScalarParameter("Low", ArcLow);
+        follow.SetScalarParameter("Lag", lag);
+        follow.SetScalarParameter("Width", RingWidth);
+        follow.SetScalarParameter("Empty", 0.0001f);
+        return follow;
     }
 
     private CompositionEllipseGeometry Circle()
