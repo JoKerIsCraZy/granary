@@ -67,4 +67,7 @@ public sealed partial class PlayerPage
     // Instance methods because x:Bind function bindings call them on the page.
     public Visibility ShowsSettingsLabel(string label, bool isNarrow) =>
         label.Length > 0 && !isNarrow ? Visibility.Visible : Visibility.Collapsed;
+
+    // The mark's loop runs only where the mark shows: not in the mini view nor the bar.
+    public bool RunsPlanChangeMark(bool isChangingPlan, bool isCompact) => isChangingPlan && !isCompact;
 }

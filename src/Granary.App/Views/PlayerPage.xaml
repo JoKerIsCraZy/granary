@@ -37,7 +37,7 @@
               Visibility="{x:Bind SpinnerVisibility(ViewModel.Phase, ViewModel.IsWaiting, IsDocked), Mode=OneWay}">
             <Ellipse Width="88" Height="88" Fill="#73000000" />
             <controls:GranaryMark Width="60" Height="60"
-                                  IsLoading="{x:Bind ShowsSpinner(ViewModel.Phase, ViewModel.IsWaiting), Mode=OneWay}"
+                                  IsLoading="{x:Bind ShowsSpinner(ViewModel.Phase, ViewModel.IsWaiting, IsDocked), Mode=OneWay}"
                                   AutomationProperties.Name="{x:Bind SpinnerName(ViewModel.Phase, ViewModel.IsChangingPlan), Mode=OneWay}" />
         </Grid>
 
@@ -883,7 +883,7 @@
                 <Vector3Transition Duration="0:0:0.3" />
             </Grid.TranslationTransition>
             <Ellipse Fill="#73000000" />
-            <controls:GranaryMark Width="32" Height="32" IsLoading="{x:Bind ViewModel.IsChangingPlan, Mode=OneWay}"
+            <controls:GranaryMark Width="32" Height="32" IsLoading="{x:Bind RunsPlanChangeMark(ViewModel.IsChangingPlan, IsCompact), Mode=OneWay}"
                                   AutomationProperties.Name="{x:Bind ViewModel.PlanChangeText, Mode=OneWay}" AutomationProperties.LiveSetting="Polite" />
         </Grid>
 
