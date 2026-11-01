@@ -81,7 +81,10 @@ public static class DeliveryClaims
     /// <summary>The player switches audio tracks itself; without it a non-default audio track forces a remux.</summary>
     public const string ClientSelectedAudioTrackV1 = "client_selected_audio_track_v1";
 
-    /// <summary>The player tone-maps HDR originals to the output itself (not claimed while output is SDR-only).</summary>
+    /// <summary>
+    /// The player maps an HDR or Dolby Vision original onto the output itself, so the server sends it on direct play
+    /// even to an SDR output. Only on <c>original_http</c>; HLS and remux stay gated by the output.
+    /// </summary>
     public const string ClientManagedDynamicRangeV1 = "client_managed_dynamic_range_v1";
 }
 

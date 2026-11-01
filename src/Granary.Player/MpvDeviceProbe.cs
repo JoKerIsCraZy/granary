@@ -10,7 +10,7 @@ namespace Granary.Player;
 /// What mpv on this machine decodes (docs/api-contract.md, 13.2), probed once: the GPU's D3D11VA codecs, plus the
 /// codecs FFmpeg decodes in software at any size a desktop CPU keeps up with. HEVC, VP9 and AV1 count only with a
 /// hardware decoder: at <c>declared</c> evidence the server bounds neither size nor bit depth, and 4K HEVC in
-/// software would stutter on many machines.
+/// software would stutter on many machines. For the same reason HDR originals come only where those decoders take 10-bit video too.
 /// </summary>
 [SupportedOSPlatform("windows")]
 public sealed class MpvDeviceProbe : IPlaybackDeviceProbe
@@ -21,25 +21,30 @@ public sealed class MpvDeviceProbe : IPlaybackDeviceProbe
 
     public PlaybackDeviceFacts Facts => _facts.Value;
 
-    private static PlaybackDeviceFacts Probe() => new()
+    private static PlaybackDeviceFacts Probe()
     {
-        Platform = "windows",
-        HardwareVideoCodecs = HardwareCodecs(),
-        SoftwareVideoCodecs = LightSoftwareCodecs,
-        OsVersion = Environment.OSVersion.Version.ToString(),
-        FormFactor = PlaybackDeviceFacts.Desktop,
-    };
+        var hardware = HardwareDecoders();
+        return new()
+        {
+            Platform = "windows",
+            HardwareVideoCodecs = hardware.Codecs,
+            HardwareTenBitVideoCodecs = hardware.TenBitCodecs,
+            SoftwareVideoCodecs = LightSoftwareCodecs,
+            OsVersion = Environment.OSVersion.Version.ToString(),
+            FormFactor = PlaybackDeviceFacts.Desktop,
+        };
+    }
 
     // Lazy keeps what the probe threw for good: a machine whose driver will not answer plays in software instead.
-    private static IReadOnlyList<string> HardwareCodecs()
+    private static HardwareVideoDecoders HardwareDecoders()
     {
         try
         {
-            return VideoDecoderProbe.HardwareCodecs();
+            return VideoDecoderProbe.HardwareDecoders();
         }
         catch (Exception ex) when (ex is ExternalException or DllNotFoundException or EntryPointNotFoundException)
         {
-            return [];
+            return HardwareVideoDecoders.None;
         }
     }
 }

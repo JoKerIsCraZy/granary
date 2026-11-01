@@ -9,7 +9,8 @@ public sealed record PlaybackClientReport(
 /// <summary>
 /// The capability report of the mpv engine (docs/api-contract.md, 13.2): FFmpeg decodes, in software or through
 /// D3D11VA, every audio codec and the video codecs the device facts name, from the containers mpv demuxes. It is
-/// an honest, conservative first report: <c>declared</c> evidence, SDR output, no passthrough, direct play and HLS.
+/// an honest, conservative first report: <c>declared</c> evidence, SDR output (HDR originals tone-mapped by mpv on
+/// direct play where the GPU decodes them), no passthrough, direct play and HLS.
 /// </summary>
 public static class PlaybackReportBuilder
 {
@@ -61,6 +62,9 @@ public static class PlaybackReportBuilder
         Native("mp4", "mov_text"),
     ];
 
+    // The codecs HDR and Dolby Vision video comes in, as ffprobe names them.
+    private static readonly string[] HdrCodecs = ["hevc", "vp9", "av1"];
+
     private const int MaxListLength = 64;
     private const int MaxPlatformLength = 32;
     private const int MaxDeviceValueLength = 128;
@@ -103,7 +107,7 @@ public static class PlaybackReportBuilder
             },
             Deliveries = new Dictionary<string, DeliveryCapability>
             {
-                [DeliveryClasses.OriginalHttp] = OriginalHttp(video),
+                [DeliveryClasses.OriginalHttp] = OriginalHttp(video, DecodesHdr(device, video)),
                 [DeliveryClasses.Hls] = Hls(video),
             },
         };
@@ -114,9 +118,12 @@ public static class PlaybackReportBuilder
     /// <summary>
     /// Direct play: mpv opens the original file, so its lists are the top-level ones. It switches audio tracks
     /// itself (<c>client_selected_audio_track_v1</c>; without it a non-default track forces a remux) and selects
-    /// embedded subtitles natively.
+    /// embedded subtitles natively. Where the GPU decodes HDR video (<see cref="DecodesHdr"/>) it also tone-maps HDR
+    /// and Dolby Vision originals to the SDR output with libplacebo (<c>client_managed_dynamic_range_v1</c>, as Silo's
+    /// Apple app claims for its FFmpeg engine and the web for its decode engine on a hardware GPU), so the server sends
+    /// a 4K HDR file as it is instead of tone-mapping it in a transcode.
     /// </summary>
-    private static DeliveryCapability OriginalHttp(IReadOnlyList<string> video) => new()
+    private static DeliveryCapability OriginalHttp(IReadOnlyList<string> video, bool toneMapsHdr) => new()
     {
         Enabled = true,
         SupportedOnDevice = true,
@@ -124,8 +131,24 @@ public static class PlaybackReportBuilder
         VideoCodecs = video,
         AudioDecodeCodecs = AudioCodecs,
         Subtitles = SubtitleCapabilities(NativeEmbeddedSubtitles),
-        ValidatedClaims = [DeliveryClaims.ClientSelectedAudioTrackV1],
+        ValidatedClaims = toneMapsHdr
+            ? [DeliveryClaims.ClientSelectedAudioTrackV1, DeliveryClaims.ClientManagedDynamicRangeV1]
+            : [DeliveryClaims.ClientSelectedAudioTrackV1],
     };
+
+    /// <summary>
+    /// The GPU decodes some HDR video at 10 bits, and every codec HDR comes in that the report lists plays without
+    /// stutter: decoded at 10 bits by the GPU, or on the CPU's list. The claim covers all of them at once (at
+    /// <c>declared</c> evidence the server checks codec names, not bit depth), so one 8-bit-only decoder, such as VP9
+    /// without Profile 2, leaves HDR to the server. H.264 High 10 is left out: no D3D11 decoder takes it and HDR in it is
+    /// rare (docs/api-contract.md, 13.2).
+    /// </summary>
+    private static bool DecodesHdr(PlaybackDeviceFacts device, IReadOnlyList<string> video)
+    {
+        var tenBit = CodecList(device.HardwareTenBitVideoCodecs);
+        var software = CodecList(device.SoftwareVideoCodecs);
+        return tenBit.Count > 0 && HdrCodecs.Where(video.Contains).All(c => tenBit.Contains(c) || software.Contains(c));
+    }
 
     /// <summary>
     /// HLS remux and transcode. FFmpeg's HLS demuxer reads both segment formats, so the container list stays empty

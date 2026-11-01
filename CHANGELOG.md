@@ -22,6 +22,9 @@ release's section is what its update says it changes (docs/release.md).
 - The loading animation turns clockwise.
 - The player's spinner waits half a second before it shows, as on Silo's web, so short stalls no longer flash it. The
   settings button leaves the quality out in a narrow window.
+- HDR and Dolby Vision files, 4K among them, play directly from the server when your graphics card decodes 10-bit
+  video: Granary maps their picture onto your display itself, so the server sends the file as it is instead of
+  converting it to SDR in a transcode.
 
 ### Fixed
 
