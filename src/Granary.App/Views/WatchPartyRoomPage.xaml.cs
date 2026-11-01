@@ -45,8 +45,6 @@ public sealed partial class WatchPartyRoomPage : Page
 
     public static Visibility Unless(bool value) => value ? Visibility.Collapsed : Visibility.Visible;
 
-    public static Visibility Live(bool hasRoom, bool ended) => hasRoom && !ended ? Visibility.Visible : Visibility.Collapsed;
-
     public static Visibility Both(bool first, bool second) => first && second ? Visibility.Visible : Visibility.Collapsed;
 
     public static bool Not(bool value) => !value;
@@ -54,8 +52,6 @@ public sealed partial class WatchPartyRoomPage : Page
     public static string Upper(string text) => text.ToUpperInvariant();
 
     public static string Hint(string hint) => "· " + hint;
-
-    public static string EndedTitle(bool replaced) => replaced ? "Watch Party joined on another device" : "This watch party has ended";
 
     public static string CopyCodeName(string code) => $"Copy room code {code}";
 

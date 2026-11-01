@@ -10,8 +10,8 @@ namespace Granary.Core.ViewModels;
 
 // A Watch Party's title (PlayRequest.WatchParty): the room plays, pauses and seeks it through its commands, and the
 // viewer's play, pause and seek become requests to the room (WatchPartyPlaybackBinding). The player leaves when the room
-// stops playing this title: the host stopped it, it finished, or the room ended. Meanwhile the panel (Party) shows the
-// room over the picture.
+// stops playing this title: the host stopped it or it finished (back to the room), or the room is over (on to the hub).
+// Meanwhile the panel (Party) shows the room over the picture.
 public sealed partial class PlayerViewModel
 {
     private WatchPartyPlaybackBinding? _party;
@@ -143,13 +143,16 @@ public sealed partial class PlayerViewModel
             return;
         }
         _logger.LogInformation("The Watch Party left the title; the player closes");
-        // The host ended the room from the panel: on to Watch Party, as the room page's End goes. Only here, once.
-        bool ended = party.Room is null && Party?.IsEndingRoom == true;
+        // The room is over (it ended, the host ended it from the panel, or another device took this profile's place): the
+        // player leaves as on any exit, its final position reported, and goes on to the hub, as the web's player and
+        // Silo's apps do; a section, so Back does not return to the room. A room that only stopped playing is still on,
+        // and the page under the player (its room) shows again.
+        bool over = party.End is not null;
         Leave();
         _navigation.LeavePlayer();
-        if (ended)
+        if (over)
         {
-            _navigation.NavigateTo(AppRoute.WatchParty);
+            _navigation.ShowSection(AppRoute.WatchParty);
         }
     }
 

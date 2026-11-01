@@ -208,7 +208,10 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
     /// <returns>True when the room's answer was taken; false when this device was in no room, or left it meanwhile.</returns>
     public Task<bool> SetGuestsCanPauseAsync(bool allowed) => HostAsync((server, id) => _api.SetPolicyAsync(server, id, allowed));
 
-    /// <summary>The host ends the room for everyone, and leaves it.</summary>
+    /// <summary>
+    /// The host ends the room for everyone. This device's engagement ends as the others' do (the server tells them
+    /// <c>host_left</c>): the socket closes, and <see cref="End"/> says so until the room is left or another entered.
+    /// </summary>
     /// <returns>True when a room ended; false when this device was in none.</returns>
     public async Task<bool> EndRoomAsync()
     {
@@ -218,7 +221,18 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
         }
         await _api.EndAsync(Server(), room.RoomId);
         MarkEnded(room);
-        await LeaveAsync();
+        _generation++;
+        var connection = _connection;
+        _connection = null;
+        _roomToken = null;
+        ConnectionState = WatchPartyConnectionState.Disconnected;
+        // The room's own close may have come first; it said the same.
+        End ??= new WatchPartyEnd("host_left");
+        if (connection is not null)
+        {
+            Detach(connection);
+            await connection.DisposeAsync();
+        }
         return true;
     }
 

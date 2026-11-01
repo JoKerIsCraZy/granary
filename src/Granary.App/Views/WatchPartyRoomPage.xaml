@@ -96,7 +96,7 @@
         </Grid.RowDefinitions>
 
         <!-- The status strip: "● Live · 1 here", the code, the invite link, how the room picks; the connection, Leave, End room. -->
-        <Border BorderBrush="{StaticResource SiloBorderBrush}" BorderThickness="0,0,0,1" Padding="24,10" Visibility="{x:Bind ViewModel.HasRoom, Mode=OneWay}">
+        <Border BorderBrush="{StaticResource SiloBorderBrush}" BorderThickness="0,0,0,1" Padding="24,10" Visibility="{x:Bind ViewModel.ShowsRoom, Mode=OneWay}">
             <Grid ColumnSpacing="12">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
@@ -164,411 +164,409 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <ScrollViewer x:Name="Scroller" XYFocusKeyboardNavigation="Enabled">
-                <StackPanel Padding="24,20,24,40" Spacing="20" MaxWidth="1180">
-                    <!-- A copy, a suggestion that went in, or what failed; it goes after a few seconds, as the web's toasts. -->
-                    <Border Style="{StaticResource PanelStyle}" Padding="14,10" Visibility="{x:Bind ViewModel.HasMessage, Mode=OneWay}">
-                        <TextBlock Text="{x:Bind ViewModel.Message, Mode=OneWay}" FontSize="13" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite" />
-                    </Border>
-
-                    <!-- The room ended, or this profile joined on another device. -->
-                    <Border Style="{StaticResource PanelStyle}" Visibility="{x:Bind ViewModel.IsEnded, Mode=OneWay}" HorizontalAlignment="Center" MaxWidth="560" Padding="32" Margin="0,48,0,0">
-                        <StackPanel Spacing="16" HorizontalAlignment="Center">
-                            <TextBlock Text="{x:Bind views:WatchPartyRoomPage.EndedTitle(ViewModel.IsReplaced), Mode=OneWay}" FontSize="22"
-                                       FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" />
-                            <TextBlock Text="{x:Bind ViewModel.EndedText, Mode=OneWay}" Style="{StaticResource MutedStyle}" HorizontalAlignment="Center" TextAlignment="Center" />
-                            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
-                                <Button Content="Rejoin Watch Party" Style="{StaticResource SiloPrimaryButtonStyle}" Command="{x:Bind ViewModel.RejoinCommand}"
-                                        Visibility="{x:Bind ViewModel.IsReplaced, Mode=OneWay}" />
-                                <Button Content="Back to Watch Party" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.LeaveCommand}" />
-                            </StackPanel>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- No room on this device. -->
-                    <StackPanel Spacing="12" Margin="0,64" HorizontalAlignment="Center" Visibility="{x:Bind views:WatchPartyRoomPage.Unless(ViewModel.HasRoom), Mode=OneWay}">
-                        <TextBlock Text="You're not in a Watch Party." Style="{StaticResource MutedStyle}" HorizontalAlignment="Center" />
-                        <Button Content="Back to Watch Party" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center" Command="{x:Bind ViewModel.LeaveCommand}" />
-                    </StackPanel>
-
-                    <StackPanel Spacing="20" Visibility="{x:Bind views:WatchPartyRoomPage.Live(ViewModel.HasRoom, ViewModel.IsEnded), Mode=OneWay}">
-                        <!-- A card from the shelf, previewed on the stage. -->
-                        <Border Style="{StaticResource PanelStyle}" Visibility="{x:Bind ViewModel.HasCandidate, Mode=OneWay}">
-                            <Grid ColumnSpacing="20">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <Border Width="112" Height="168" CornerRadius="8" Background="{StaticResource SiloSurfaceRaisedBrush}" VerticalAlignment="Top">
-                                    <Image Source="{x:Bind views:WatchPartyRoomPage.Poster(ViewModel.Candidate.Poster), Mode=OneWay}" Stretch="UniformToFill" />
-                                </Border>
-                                <StackPanel Grid.Column="1" Spacing="10">
-                                    <Grid>
-                                        <TextBlock Text="{x:Bind ViewModel.Candidate.Headline, Mode=OneWay}" FontSize="22" FontFamily="{StaticResource SiloFontSemiBold}"
-                                                   FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,40,0" AutomationProperties.HeadingLevel="Level2" />
-                                        <Button Style="{StaticResource SiloIconButtonStyle}" HorizontalAlignment="Right" VerticalAlignment="Top"
-                                                Command="{x:Bind ViewModel.Candidate.DismissCommand}" AutomationProperties.Name="Close" ToolTipService.ToolTip="Close">
-                                            <FontIcon Glyph="&#xE711;" FontSize="12" />
-                                        </Button>
-                                    </Grid>
-                                    <TextBlock Text="{x:Bind ViewModel.Candidate.Meta, Mode=OneWay}" Style="{StaticResource MutedStyle}" />
-                                    <TextBlock Text="{x:Bind ViewModel.Candidate.Overview, Mode=OneWay}" Style="{StaticResource MutedStyle}" MaxLines="3" TextTrimming="WordEllipsis" />
-                                    <!-- A movie: who in the room has seen it. -->
-                                    <StackPanel Spacing="8" Visibility="{x:Bind ViewModel.Candidate.IsMovie, Mode=OneWay}">
-                                        <Grid>
-                                            <TextBlock Text="WHO'S SEEN IT" Style="{StaticResource EyebrowStyle}" />
-                                            <TextBlock Text="{x:Bind ViewModel.Candidate.SeenSummary, Mode=OneWay}" Style="{StaticResource SmallMutedStyle}" HorizontalAlignment="Right" />
-                                        </Grid>
-                                        <ItemsRepeater ItemsSource="{x:Bind ViewModel.Candidate.Seen}">
-                                            <ItemsRepeater.Layout>
-                                                <StackLayout Spacing="6" />
-                                            </ItemsRepeater.Layout>
-                                            <ItemsRepeater.ItemTemplate>
-                                                <DataTemplate x:DataType="wp:WatchPartySeenRow">
-                                                    <Grid ColumnSpacing="10">
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="Auto" />
-                                                            <ColumnDefinition Width="*" />
-                                                            <ColumnDefinition Width="Auto" />
-                                                        </Grid.ColumnDefinitions>
-                                                        <Border Width="24" Height="24" CornerRadius="12" Background="{x:Bind views:WatchPartyRoomPage.TintBackground(Tint)}">
-                                                            <TextBlock Text="{x:Bind Initials}" FontSize="10" FontWeight="SemiBold" Foreground="{x:Bind views:WatchPartyRoomPage.TintForeground(Tint)}"
-                                                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                                        </Border>
-                                                        <TextBlock Grid.Column="1" Text="{x:Bind Name}" FontSize="13" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-                                                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                                                            <FontIcon Glyph="&#xE8A4;" FontSize="11" Foreground="{StaticResource SiloMutedBrush}" Visibility="{x:Bind OnWatchlist}"
-                                                                      AutomationProperties.Name="On their watchlist" />
-                                                            <TextBlock Text="{x:Bind State}" Style="{StaticResource SmallMutedStyle}" />
-                                                        </StackPanel>
-                                                    </Grid>
-                                                </DataTemplate>
-                                            </ItemsRepeater.ItemTemplate>
-                                        </ItemsRepeater>
-                                    </StackPanel>
-                                    <!-- A series: a season, then an episode. -->
-                                    <StackPanel Spacing="8" Visibility="{x:Bind ViewModel.Candidate.IsSeries, Mode=OneWay}">
-                                        <ComboBox ItemsSource="{x:Bind ViewModel.Candidate.Seasons}" SelectedItem="{x:Bind ViewModel.Candidate.SelectedSeason, Mode=TwoWay}"
-                                                  DisplayMemberPath="Label" MinWidth="180" AutomationProperties.Name="Season" />
-                                        <ListView ItemsSource="{x:Bind ViewModel.Candidate.Episodes}" SelectedItem="{x:Bind ViewModel.Candidate.SelectedEpisode, Mode=TwoWay}"
-                                                  SelectionMode="Single" MaxHeight="260" AutomationProperties.Name="Episodes">
-                                            <ListView.ItemTemplate>
-                                                <DataTemplate x:DataType="wp:WatchPartyEpisodeRow">
-                                                    <TextBlock Text="{x:Bind Label}" FontSize="13" TextTrimming="CharacterEllipsis" />
-                                                </DataTemplate>
-                                            </ListView.ItemTemplate>
-                                        </ListView>
-                                        <TextBlock Text="{x:Bind ViewModel.Candidate.PickedText, Mode=OneWay}" Style="{StaticResource SmallMutedStyle}" />
-                                    </StackPanel>
-                                    <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,4,0,0">
-                                        <Button Style="{StaticResource SiloPrimaryButtonStyle}" Command="{x:Bind ViewModel.Candidate.ConfirmCommand}">
-                                            <TextBlock Text="{x:Bind ViewModel.Candidate.ConfirmLabel, Mode=OneWay}" />
-                                        </Button>
-                                        <TextBlock Text="{x:Bind ViewModel.Candidate.Replaces, Mode=OneWay}" Style="{StaticResource SmallMutedStyle}" VerticalAlignment="Center"
-                                                   Visibility="{x:Bind ViewModel.Candidate.HasReplaces, Mode=OneWay}" />
-                                    </StackPanel>
-                                </StackPanel>
-                            </Grid>
+            <!--
+                The page in a column of at most 1180 px, as Settings holds its page. A column, not MaxWidth on the panel: the
+                scroller placed a panel held to MaxWidth by its narrower desired width and still drew it at full width, which
+                pushed the room to the right, under the rail.
+            -->
+            <ScrollViewer x:Name="Scroller" XYFocusKeyboardNavigation="Enabled" HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="1000*" MaxWidth="1180" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="1" Padding="24,20,24,40" Spacing="20">
+                        <!-- A copy, a suggestion that went in, or what failed; it goes after a few seconds, as the web's toasts. -->
+                        <Border Style="{StaticResource PanelStyle}" Padding="14,10" Visibility="{x:Bind ViewModel.HasMessage, Mode=OneWay}">
+                            <TextBlock Text="{x:Bind ViewModel.Message, Mode=OneWay}" FontSize="13" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite" />
                         </Border>
 
-                        <!-- The hero: what plays, what is up next, or the vote's leader. -->
-                        <Border Style="{StaticResource PanelStyle}" Padding="0" Visibility="{x:Bind ViewModel.ShowsHero, Mode=OneWay}">
-                            <Grid>
-                                <!-- A brush, not an Image: the backdrop fills the hero without setting its height, which the poster sets, as
-                                     the web's StagedHero draws it behind (absolute inset-0). -->
-                                <Grid.Background>
-                                    <ImageBrush ImageSource="{x:Bind views:WatchPartyRoomPage.Backdrop(ViewModel.HeroBackdrop), Mode=OneWay}" Stretch="UniformToFill" Opacity="0.22" />
-                                </Grid.Background>
-                                <Grid Padding="24" ColumnSpacing="22">
-                                    <Grid.Background>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                            <GradientStop Color="#F00B0B0E" Offset="0" />
-                                            <GradientStop Color="#C00B0B0E" Offset="0.6" />
-                                            <GradientStop Color="#000B0B0E" Offset="1" />
-                                        </LinearGradientBrush>
-                                    </Grid.Background>
+                        <!-- No room on this device. A room that is over shows nothing: the page goes on to the hub, which says why. -->
+                        <StackPanel Spacing="12" Margin="0,64" HorizontalAlignment="Center" Visibility="{x:Bind views:WatchPartyRoomPage.Unless(ViewModel.HasRoom), Mode=OneWay}">
+                            <TextBlock Text="You're not in a Watch Party." Style="{StaticResource MutedStyle}" HorizontalAlignment="Center" />
+                            <Button Content="Back to Watch Party" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center" Command="{x:Bind ViewModel.LeaveCommand}" />
+                        </StackPanel>
+
+                        <StackPanel Spacing="20" Visibility="{x:Bind ViewModel.ShowsRoom, Mode=OneWay}">
+                            <!-- A card from the shelf, previewed on the stage. -->
+                            <Border Style="{StaticResource PanelStyle}" Visibility="{x:Bind ViewModel.HasCandidate, Mode=OneWay}">
+                                <Grid ColumnSpacing="20">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
-                                    <Border Width="112" Height="168" CornerRadius="8" Background="{StaticResource SiloSurfaceRaisedBrush}">
-                                        <Image Source="{x:Bind views:WatchPartyRoomPage.Poster(ViewModel.HeroPoster), Mode=OneWay}" Stretch="UniformToFill" />
+                                    <Border Width="112" Height="168" CornerRadius="8" Background="{StaticResource SiloSurfaceRaisedBrush}" VerticalAlignment="Top">
+                                        <Image Source="{x:Bind views:WatchPartyRoomPage.Poster(ViewModel.Candidate.Poster), Mode=OneWay}" Stretch="UniformToFill" />
                                     </Border>
-                                    <StackPanel Grid.Column="1" Spacing="10" VerticalAlignment="Center">
-                                        <TextBlock Text="{x:Bind ViewModel.HeroEyebrow, Mode=OneWay}" Style="{StaticResource SiloOverlineTextStyle}"
-                                                   Foreground="{x:Bind views:WatchPartyRoomPage.ToneBrush(ViewModel.HeroTone), Mode=OneWay}" />
-                                        <TextBlock Text="{x:Bind ViewModel.HeroHeadline, Mode=OneWay}" FontSize="24" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
-                                                   TextWrapping="Wrap" AutomationProperties.HeadingLevel="Level2" />
-                                        <TextBlock Text="{x:Bind ViewModel.HeroLine, Mode=OneWay}" Style="{StaticResource MutedStyle}" />
-                                        <!-- Playing: back in, or the host stops it for everyone. -->
-                                        <StackPanel Spacing="10" Visibility="{x:Bind ViewModel.ShowsPlaying, Mode=OneWay}">
-                                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                                <Button Style="{StaticResource SiloPrimaryButtonStyle}" Command="{x:Bind ViewModel.RejoinPlaybackCommand}">
-                                                    <StackPanel Orientation="Horizontal" Spacing="8">
-                                                        <FontIcon Glyph="&#xE768;" FontSize="12" />
-                                                        <TextBlock Text="Rejoin playback" />
-                                                    </StackPanel>
-                                                </Button>
-                                                <Button Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.StopCommand}" Visibility="{x:Bind ViewModel.CanStop, Mode=OneWay}">
-                                                    <StackPanel Orientation="Horizontal" Spacing="8">
-                                                        <FontIcon Glyph="&#xE71A;" FontSize="11" />
-                                                        <TextBlock Text="Stop for everyone" />
-                                                    </StackPanel>
-                                                </Button>
-                                            </StackPanel>
-                                            <TextBlock Text="{x:Bind ViewModel.StopHint, Mode=OneWay}" Style="{StaticResource MutedStyle}" />
+                                    <StackPanel Grid.Column="1" Spacing="10">
+                                        <Grid>
+                                            <TextBlock Text="{x:Bind ViewModel.Candidate.Headline, Mode=OneWay}" FontSize="22" FontFamily="{StaticResource SiloFontSemiBold}"
+                                                       FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,40,0" AutomationProperties.HeadingLevel="Level2" />
+                                            <Button Style="{StaticResource SiloIconButtonStyle}" HorizontalAlignment="Right" VerticalAlignment="Top"
+                                                    Command="{x:Bind ViewModel.Candidate.DismissCommand}" AutomationProperties.Name="Close" ToolTipService.ToolTip="Close">
+                                                <FontIcon Glyph="&#xE711;" FontSize="12" />
+                                            </Button>
+                                        </Grid>
+                                        <TextBlock Text="{x:Bind ViewModel.Candidate.Meta, Mode=OneWay}" Style="{StaticResource MutedStyle}" />
+                                        <TextBlock Text="{x:Bind ViewModel.Candidate.Overview, Mode=OneWay}" Style="{StaticResource MutedStyle}" MaxLines="3" TextTrimming="WordEllipsis" />
+                                        <!-- A movie: who in the room has seen it. -->
+                                        <StackPanel Spacing="8" Visibility="{x:Bind ViewModel.Candidate.IsMovie, Mode=OneWay}">
+                                            <Grid>
+                                                <TextBlock Text="WHO'S SEEN IT" Style="{StaticResource EyebrowStyle}" />
+                                                <TextBlock Text="{x:Bind ViewModel.Candidate.SeenSummary, Mode=OneWay}" Style="{StaticResource SmallMutedStyle}" HorizontalAlignment="Right" />
+                                            </Grid>
+                                            <ItemsRepeater ItemsSource="{x:Bind ViewModel.Candidate.Seen}">
+                                                <ItemsRepeater.Layout>
+                                                    <StackLayout Spacing="6" />
+                                                </ItemsRepeater.Layout>
+                                                <ItemsRepeater.ItemTemplate>
+                                                    <DataTemplate x:DataType="wp:WatchPartySeenRow">
+                                                        <Grid ColumnSpacing="10">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="Auto" />
+                                                                <ColumnDefinition Width="*" />
+                                                                <ColumnDefinition Width="Auto" />
+                                                            </Grid.ColumnDefinitions>
+                                                            <Border Width="24" Height="24" CornerRadius="12" Background="{x:Bind views:WatchPartyRoomPage.TintBackground(Tint)}">
+                                                                <TextBlock Text="{x:Bind Initials}" FontSize="10" FontWeight="SemiBold" Foreground="{x:Bind views:WatchPartyRoomPage.TintForeground(Tint)}"
+                                                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                            </Border>
+                                                            <TextBlock Grid.Column="1" Text="{x:Bind Name}" FontSize="13" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                                            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                                                <FontIcon Glyph="&#xE8A4;" FontSize="11" Foreground="{StaticResource SiloMutedBrush}" Visibility="{x:Bind OnWatchlist}"
+                                                                          AutomationProperties.Name="On their watchlist" />
+                                                                <TextBlock Text="{x:Bind State}" Style="{StaticResource SmallMutedStyle}" />
+                                                            </StackPanel>
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </ItemsRepeater.ItemTemplate>
+                                            </ItemsRepeater>
                                         </StackPanel>
-                                        <!-- The vote: the host plays the leader for everyone. -->
-                                        <Button Style="{StaticResource SiloPrimaryButtonStyle}" Command="{x:Bind ViewModel.PlayLeaderCommand}" HorizontalAlignment="Left"
-                                                Visibility="{x:Bind views:WatchPartyRoomPage.Both(ViewModel.ShowsVoting, ViewModel.IsHost), Mode=OneWay}">
-                                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                                <FontIcon Glyph="&#xE768;" FontSize="12" />
-                                                <TextBlock Text="{x:Bind ViewModel.PlayLeaderLabel, Mode=OneWay}" />
-                                            </StackPanel>
-                                        </Button>
-                                        <!-- Up next: the host starts it or changes it; guests mark themselves ready. -->
-                                        <StackPanel Orientation="Horizontal" Spacing="8" Visibility="{x:Bind ViewModel.ShowsStaged, Mode=OneWay}">
-                                            <Button Style="{StaticResource SiloPrimaryButtonStyle}" Command="{x:Bind ViewModel.StartCommand}" Visibility="{x:Bind ViewModel.IsHost, Mode=OneWay}">
-                                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                                    <FontIcon Glyph="&#xE768;" FontSize="12" />
-                                                    <TextBlock Text="{x:Bind ViewModel.StartLabel, Mode=OneWay}" />
-                                                </StackPanel>
+                                        <!-- A series: a season, then an episode. -->
+                                        <StackPanel Spacing="8" Visibility="{x:Bind ViewModel.Candidate.IsSeries, Mode=OneWay}">
+                                            <ComboBox ItemsSource="{x:Bind ViewModel.Candidate.Seasons}" SelectedItem="{x:Bind ViewModel.Candidate.SelectedSeason, Mode=TwoWay}"
+                                                      DisplayMemberPath="Label" MinWidth="180" AutomationProperties.Name="Season" />
+                                            <ListView ItemsSource="{x:Bind ViewModel.Candidate.Episodes}" SelectedItem="{x:Bind ViewModel.Candidate.SelectedEpisode, Mode=TwoWay}"
+                                                      SelectionMode="Single" MaxHeight="260" AutomationProperties.Name="Episodes">
+                                                <ListView.ItemTemplate>
+                                                    <DataTemplate x:DataType="wp:WatchPartyEpisodeRow">
+                                                        <TextBlock Text="{x:Bind Label}" FontSize="13" TextTrimming="CharacterEllipsis" />
+                                                    </DataTemplate>
+                                                </ListView.ItemTemplate>
+                                            </ListView>
+                                            <TextBlock Text="{x:Bind ViewModel.Candidate.PickedText, Mode=OneWay}" Style="{StaticResource SmallMutedStyle}" />
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,4,0,0">
+                                            <Button Style="{StaticResource SiloPrimaryButtonStyle}" Command="{x:Bind ViewModel.Candidate.ConfirmCommand}">
+                                                <TextBlock Text="{x:Bind ViewModel.Candidate.ConfirmLabel, Mode=OneWay}" />
                                             </Button>
-                                            <Button Content="Change" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.ChangeCommand}"
-                                                    Visibility="{x:Bind ViewModel.IsHost, Mode=OneWay}" />
-                                            <Button Style="{StaticResource SiloPrimaryButtonStyle}" Command="{x:Bind ViewModel.ToggleReadyCommand}"
-                                                    Visibility="{x:Bind ViewModel.CanMarkReady, Mode=OneWay}">
-                                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                                    <FontIcon Glyph="&#xE73E;" FontSize="12" />
-                                                    <TextBlock Text="{x:Bind ViewModel.ReadyLabel, Mode=OneWay}" />
-                                                </StackPanel>
-                                            </Button>
+                                            <TextBlock Text="{x:Bind ViewModel.Candidate.Replaces, Mode=OneWay}" Style="{StaticResource SmallMutedStyle}" VerticalAlignment="Center"
+                                                       Visibility="{x:Bind ViewModel.Candidate.HasReplaces, Mode=OneWay}" />
                                         </StackPanel>
                                     </StackPanel>
                                 </Grid>
-                            </Grid>
-                        </Border>
+                            </Border>
 
-                        <!-- Voting, with nothing suggested yet. -->
-                        <Border Style="{StaticResource PanelStyle}" Padding="24,36" Visibility="{x:Bind ViewModel.ShowsVotingEmpty, Mode=OneWay}">
-                            <StackPanel Spacing="10" HorizontalAlignment="Center">
-                                <TextBlock Text="VOTING IS OPEN" Style="{StaticResource EyebrowStyle}" HorizontalAlignment="Center" />
-                                <TextBlock Text="No suggestions yet" FontSize="20" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" HorizontalAlignment="Center" />
-                                <TextBlock Text="{x:Bind ViewModel.VotingEmptyText, Mode=OneWay}" Style="{StaticResource MutedStyle}" MaxWidth="400" TextAlignment="Center" />
-                            </StackPanel>
-                        </Border>
-
-                        <!-- The open lobby. -->
-                        <Border Style="{StaticResource PanelStyle}" BorderBrush="#33FFFFFF" Padding="24,40" Visibility="{x:Bind ViewModel.ShowsEmptyLobby, Mode=OneWay}">
-                            <StackPanel Spacing="12" HorizontalAlignment="Center">
-                                <TextBlock Text="ROOM IS OPEN" Style="{StaticResource EyebrowStyle}" HorizontalAlignment="Center" />
-                                <TextBlock Text="Nothing on yet" FontSize="28" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" HorizontalAlignment="Center" />
-                                <TextBlock Text="{x:Bind ViewModel.LobbyText, Mode=OneWay}" Style="{StaticResource MutedStyle}" MaxWidth="448" TextAlignment="Center" />
-                                <Button Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center" Margin="0,4,0,0"
-                                        Command="{x:Bind ViewModel.OpenVotingCommand}" Visibility="{x:Bind ViewModel.IsHost, Mode=OneWay}">
-                                    <StackPanel Orientation="Horizontal" Spacing="8">
-                                        <FontIcon Glyph="&#xE8FB;" FontSize="13" />
-                                        <TextBlock Text="Open the floor to votes" />
-                                    </StackPanel>
-                                </Button>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- The suggestions: ranked by votes, the guests' ideas in a host-pick lobby, or what comes after. -->
-                        <Border Style="{StaticResource PanelStyle}" Padding="14,14" Visibility="{x:Bind ViewModel.ShowsSuggestions, Mode=OneWay}">
-                            <StackPanel Spacing="8">
-                                <Grid Padding="6,0">
-                                    <TextBlock Text="{x:Bind views:WatchPartyRoomPage.Upper(ViewModel.SuggestionsHeading), Mode=OneWay}" Style="{StaticResource EyebrowStyle}" />
-                                    <TextBlock Text="{x:Bind ViewModel.SuggestionsHint, Mode=OneWay}" Style="{StaticResource SmallMutedStyle}" HorizontalAlignment="Right" />
-                                </Grid>
-                                <TextBlock Text="{x:Bind ViewModel.SuggestionsEmptyText, Mode=OneWay}" Style="{StaticResource MutedStyle}" HorizontalAlignment="Center" Margin="0,16"
-                                           Visibility="{x:Bind ViewModel.HasNoSuggestions, Mode=OneWay}" />
-                                <ItemsRepeater ItemsSource="{x:Bind ViewModel.SuggestionRows}">
-                                    <ItemsRepeater.Layout>
-                                        <StackLayout Spacing="2" />
-                                    </ItemsRepeater.Layout>
-                                    <ItemsRepeater.ItemTemplate>
-                                        <DataTemplate x:DataType="wp:WatchPartySuggestionRow">
-                                            <Grid ColumnSpacing="12" Padding="6,6" CornerRadius="8">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="Auto" />
-                                                    <ColumnDefinition Width="Auto" />
-                                                    <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="Auto" />
-                                                    <ColumnDefinition Width="Auto" />
-                                                </Grid.ColumnDefinitions>
-                                                <Button Width="28" Height="28" Padding="0" CornerRadius="14" Click="OnVoteClick" Tag="{x:Bind}" Visibility="{x:Bind ShowsVotes, Mode=OneWay}"
-                                                        Background="{x:Bind views:WatchPartyRoomPage.VoteBackground(VotedByMe), Mode=OneWay}" BorderBrush="{x:Bind views:WatchPartyRoomPage.VoteBorder(VotedByMe), Mode=OneWay}"
-                                                        AutomationProperties.Name="{x:Bind VoteName, Mode=OneWay}" ToolTipService.ToolTip="{x:Bind VoteName, Mode=OneWay}">
-                                                    <TextBlock Text="&#x2713;" FontSize="12" Foreground="White" Opacity="{x:Bind views:WatchPartyRoomPage.Shown(VotedByMe), Mode=OneWay}" />
-                                                </Button>
-                                                <Border Grid.Column="1" Width="32" Height="48" CornerRadius="4" Background="{StaticResource SiloSurfaceRaisedBrush}">
-                                                    <Image Source="{x:Bind views:WatchPartyRoomPage.SmallPoster(PosterUrl), Mode=OneWay}" Stretch="UniformToFill" />
-                                                </Border>
-                                                <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="2">
-                                                    <StackPanel Orientation="Horizontal" Spacing="8">
-                                                        <TextBlock Text="{x:Bind Title, Mode=OneWay}" FontSize="14" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
-                                                        <TextBlock Text="{x:Bind Subtitle, Mode=OneWay}" Style="{StaticResource SmallMutedStyle}" TextTrimming="CharacterEllipsis" VerticalAlignment="Bottom" />
-                                                        <Border Padding="6,1" CornerRadius="8" Background="#26FBBF24" Visibility="{x:Bind IsLeading, Mode=OneWay}" VerticalAlignment="Center">
-                                                            <TextBlock Text="LEADING" FontSize="10" FontWeight="SemiBold" Foreground="#FFFCD34D" />
-                                                        </Border>
-                                                    </StackPanel>
-                                                    <TextBlock Text="{x:Bind By, Mode=OneWay}" Style="{StaticResource SmallMutedStyle}" TextTrimming="CharacterEllipsis" />
-                                                </StackPanel>
-                                                <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" Visibility="{x:Bind ShowsVotes, Mode=OneWay}">
-                                                    <ProgressBar Width="120" Value="{x:Bind SharePercent, Mode=OneWay}" Maximum="100" VerticalAlignment="Center" IsHitTestVisible="False" />
-                                                    <TextBlock Text="{x:Bind VotesText, Mode=OneWay}" Style="{StaticResource SmallMutedStyle}" Width="56" TextAlignment="Right" />
-                                                </StackPanel>
-                                                <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                                                    <Button Style="{StaticResource SmallButtonStyle}" Click="OnPromoteClick" Tag="{x:Bind}" Visibility="{x:Bind CanPromote, Mode=OneWay}">
-                                                        <StackPanel Orientation="Horizontal" Spacing="6">
-                                                            <FontIcon Glyph="&#xE768;" FontSize="10" />
-                                                            <TextBlock Text="{x:Bind PromoteLabel, Mode=OneWay}" />
+                            <!-- The hero: what plays, what is up next, or the vote's leader. -->
+                            <Border Style="{StaticResource PanelStyle}" Padding="0" Visibility="{x:Bind ViewModel.ShowsHero, Mode=OneWay}">
+                                <Grid>
+                                    <!-- A brush, not an Image: the backdrop fills the hero without setting its height, which the poster sets, as
+                                         the web's StagedHero draws it behind (absolute inset-0). -->
+                                    <Grid.Background>
+                                        <ImageBrush ImageSource="{x:Bind views:WatchPartyRoomPage.Backdrop(ViewModel.HeroBackdrop), Mode=OneWay}" Stretch="UniformToFill" Opacity="0.22" />
+                                    </Grid.Background>
+                                    <Grid Padding="24" ColumnSpacing="22">
+                                        <Grid.Background>
+                                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                                <GradientStop Color="#F00B0B0E" Offset="0" />
+                                                <GradientStop Color="#C00B0B0E" Offset="0.6" />
+                                                <GradientStop Color="#000B0B0E" Offset="1" />
+                                            </LinearGradientBrush>
+                                        </Grid.Background>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Border Width="112" Height="168" CornerRadius="8" Background="{StaticResource SiloSurfaceRaisedBrush}">
+                                            <Image Source="{x:Bind views:WatchPartyRoomPage.Poster(ViewModel.HeroPoster), Mode=OneWay}" Stretch="UniformToFill" />
+                                        </Border>
+                                        <StackPanel Grid.Column="1" Spacing="10" VerticalAlignment="Center">
+                                            <TextBlock Text="{x:Bind ViewModel.HeroEyebrow, Mode=OneWay}" Style="{StaticResource SiloOverlineTextStyle}"
+                                                       Foreground="{x:Bind views:WatchPartyRoomPage.ToneBrush(ViewModel.HeroTone), Mode=OneWay}" />
+                                            <TextBlock Text="{x:Bind ViewModel.HeroHeadline, Mode=OneWay}" FontSize="24" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
+                                                       TextWrapping="Wrap" AutomationProperties.HeadingLevel="Level2" />
+                                            <TextBlock Text="{x:Bind ViewModel.HeroLine, Mode=OneWay}" Style="{StaticResource MutedStyle}" />
+                                            <!-- Playing: back in, or the host stops it for everyone. -->
+                                            <StackPanel Spacing="10" Visibility="{x:Bind ViewModel.ShowsPlaying, Mode=OneWay}">
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <Button Style="{StaticResource SiloPrimaryButtonStyle}" Command="{x:Bind ViewModel.RejoinPlaybackCommand}">
+                                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                                            <FontIcon Glyph="&#xE768;" FontSize="12" />
+                                                            <TextBlock Text="Rejoin playback" />
                                                         </StackPanel>
                                                     </Button>
-                                                    <Button Style="{StaticResource SiloIconButtonStyle}" Click="OnDeleteSuggestionClick" Tag="{x:Bind}" Visibility="{x:Bind CanDelete, Mode=OneWay}"
-                                                            AutomationProperties.Name="{x:Bind DeleteName, Mode=OneWay}" ToolTipService.ToolTip="{x:Bind DeleteName, Mode=OneWay}">
-                                                        <FontIcon Glyph="&#xE74D;" FontSize="12" />
+                                                    <Button Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.StopCommand}" Visibility="{x:Bind ViewModel.CanStop, Mode=OneWay}">
+                                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                                            <FontIcon Glyph="&#xE71A;" FontSize="11" />
+                                                            <TextBlock Text="Stop for everyone" />
+                                                        </StackPanel>
                                                     </Button>
                                                 </StackPanel>
-                                            </Grid>
-                                        </DataTemplate>
-                                    </ItemsRepeater.ItemTemplate>
-                                </ItemsRepeater>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- The invite row: the link, Link and Code, and the guests' pause switch. -->
-                        <Border Style="{StaticResource PanelStyle}" Padding="16,10" Visibility="{x:Bind ViewModel.ShowsInvite, Mode=OneWay}">
-                            <Grid ColumnSpacing="12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Text="INVITE" Style="{StaticResource EyebrowStyle}" VerticalAlignment="Center" />
-                                <Border Grid.Column="1" Background="{StaticResource SiloSurfaceRaisedBrush}" CornerRadius="6" Padding="10,6"
-                                        Visibility="{x:Bind ViewModel.HasInviteLink, Mode=OneWay}">
-                                    <TextBlock Text="{x:Bind ViewModel.InviteText, Mode=OneWay}" FontFamily="Consolas" FontSize="12" Foreground="{StaticResource SiloMutedBrush}"
-                                               TextTrimming="CharacterEllipsis" IsTextSelectionEnabled="True" />
-                                </Border>
-                                <TextBlock Grid.Column="1" Text="Share the code to let people in." Style="{StaticResource SmallMutedStyle}" VerticalAlignment="Center"
-                                           Visibility="{x:Bind views:WatchPartyRoomPage.Unless(ViewModel.HasInviteLink), Mode=OneWay}" />
-                                <Button Grid.Column="2" Style="{StaticResource SmallButtonStyle}" Click="OnCopyLinkClick" Visibility="{x:Bind ViewModel.HasInviteLink, Mode=OneWay}">
-                                    <StackPanel Orientation="Horizontal" Spacing="6">
-                                        <FontIcon Glyph="&#xE71B;" FontSize="11" />
-                                        <TextBlock Text="Link" />
-                                    </StackPanel>
-                                </Button>
-                                <Button Grid.Column="3" Style="{StaticResource SmallButtonStyle}" Click="OnCopyCodeClick">
-                                    <StackPanel Orientation="Horizontal" Spacing="6">
-                                        <FontIcon Glyph="&#xE8C8;" FontSize="11" />
-                                        <TextBlock Text="Code" />
-                                    </StackPanel>
-                                </Button>
-                                <ToggleSwitch Grid.Column="4" MinWidth="0" IsOn="{x:Bind ViewModel.GuestsCanPause, Mode=OneWay}" Toggled="OnPolicyToggled"
-                                              OnContent="Guests can pause" OffContent="Guests can pause" AutomationProperties.Name="Guests can pause"
-                                              Visibility="{x:Bind ViewModel.IsHost, Mode=OneWay}" />
-                                <TextBlock Grid.Column="4" Text="{x:Bind ViewModel.PolicyText, Mode=OneWay}" Style="{StaticResource SmallMutedStyle}" VerticalAlignment="Center"
-                                           Visibility="{x:Bind ViewModel.IsGuest, Mode=OneWay}" />
-                            </Grid>
-                        </Border>
-
-                        <!-- The shelf, folded to one line where the stage leads. -->
-                        <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Padding="16,12" Style="{StaticResource SiloSecondaryButtonStyle}"
-                                Command="{x:Bind ViewModel.Shelf.OpenCommand}" Visibility="{x:Bind ViewModel.Shelf.IsFolded, Mode=OneWay}">
-                            <Grid ColumnSpacing="12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <FontIcon Glyph="&#xE721;" FontSize="14" Foreground="{StaticResource SiloMutedBrush}" />
-                                <StackPanel Grid.Column="1">
-                                    <TextBlock Text="{x:Bind ViewModel.Shelf.FoldedLabel, Mode=OneWay}" FontSize="14" FontWeight="SemiBold" />
-                                    <TextBlock Text="{x:Bind ViewModel.Shelf.FoldedHint, Mode=OneWay}" Style="{StaticResource SmallMutedStyle}" />
-                                </StackPanel>
-                                <FontIcon Grid.Column="2" Glyph="&#xE70D;" FontSize="12" Foreground="{StaticResource SiloMutedBrush}" />
-                            </Grid>
-                        </Button>
-                        <StackPanel Spacing="18" Visibility="{x:Bind ViewModel.Shelf.IsExpanded, Mode=OneWay}"
-                                    AutomationProperties.Name="{x:Bind ViewModel.Shelf.ShelfName, Mode=OneWay}">
-                            <Grid ColumnSpacing="12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" MinWidth="220" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <Grid>
-                                    <TextBox Text="{x:Bind ViewModel.Shelf.Query, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="Search movies, series, episodes&#x2026;"
-                                             AutomationProperties.Name="Search movies and series" MinHeight="40" Padding="36,9,8,8" CornerRadius="8" />
-                                    <FontIcon Glyph="&#xE721;" FontSize="14" Margin="12,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center"
-                                              Foreground="{StaticResource SiloMutedBrush}" IsHitTestVisible="False" />
-                                </Grid>
-                                <controls:PillChoices Grid.Column="1" ItemsSource="{x:Bind ViewModel.Shelf.Chips}" SelectedItem="{x:Bind ViewModel.Shelf.SelectedChip, Mode=TwoWay}"
-                                                      VerticalAlignment="Center" AutomationProperties.Name="Filter" />
-                                <Button Grid.Column="2" Style="{StaticResource SiloIconButtonStyle}" Command="{x:Bind ViewModel.Shelf.FoldCommand}"
-                                        Visibility="{x:Bind ViewModel.Shelf.IsCollapsible, Mode=OneWay}" AutomationProperties.Name="Hide browse" ToolTipService.ToolTip="Hide browse">
-                                    <FontIcon Glyph="&#xE70E;" FontSize="12" />
-                                </Button>
-                            </Grid>
-
-                            <!-- Search results: scanned, not flicked through. -->
-                            <StackPanel Spacing="10" Visibility="{x:Bind ViewModel.Shelf.IsSearching, Mode=OneWay}">
-                                <TextBlock Text="{x:Bind views:WatchPartyRoomPage.Upper(ViewModel.Shelf.ResultsHeading), Mode=OneWay}" Style="{StaticResource EyebrowStyle}" />
-                                <StackPanel Orientation="Horizontal" Spacing="10" Visibility="{x:Bind ViewModel.Shelf.HasSearchState, Mode=OneWay}">
-                                    <TextBlock Text="{x:Bind ViewModel.Shelf.SearchState, Mode=OneWay}" Style="{StaticResource MutedStyle}" VerticalAlignment="Center" />
-                                    <Button Content="Retry" Style="{StaticResource SmallButtonStyle}" Command="{x:Bind ViewModel.Shelf.RetrySearchCommand}"
-                                            Visibility="{x:Bind ViewModel.Shelf.SearchFailed, Mode=OneWay}" />
-                                </StackPanel>
-                                <TextBlock Text="{x:Bind ViewModel.Shelf.NoResultsText, Mode=OneWay}" Style="{StaticResource MutedStyle}"
-                                           Visibility="{x:Bind ViewModel.Shelf.HasNoResults, Mode=OneWay}" />
-                                <ItemsRepeater ItemsSource="{x:Bind ViewModel.Shelf.Results}" ItemTemplate="{StaticResource WatchPartyCardTemplate}">
-                                    <ItemsRepeater.Layout>
-                                        <UniformGridLayout MinItemWidth="112" MinColumnSpacing="14" MinRowSpacing="16" ItemsStretch="None" />
-                                    </ItemsRepeater.Layout>
-                                </ItemsRepeater>
-                            </StackPanel>
-
-                            <!-- The rows the room has in common. -->
-                            <StackPanel Spacing="20" Visibility="{x:Bind ViewModel.Shelf.IsBrowsing, Mode=OneWay}">
-                                <ItemsRepeater ItemsSource="{x:Bind ViewModel.Shelf.Rows}">
-                                    <ItemsRepeater.Layout>
-                                        <StackLayout Spacing="22" />
-                                    </ItemsRepeater.Layout>
-                                    <ItemsRepeater.ItemTemplate>
-                                        <DataTemplate x:DataType="wp:WatchPartyShelfRow">
-                                            <StackPanel Spacing="10">
-                                                <StackPanel Orientation="Horizontal" Spacing="6">
-                                                    <TextBlock Text="{x:Bind views:WatchPartyRoomPage.Upper(Title)}" Style="{StaticResource SiloOverlineTextStyle}" />
-                                                    <TextBlock Text="{x:Bind views:WatchPartyRoomPage.Hint(Hint)}" FontSize="11" Foreground="{StaticResource SiloMutedBrush}"
-                                                               VerticalAlignment="Center" Visibility="{x:Bind HasHint}" />
-                                                </StackPanel>
-                                                <ScrollView ContentOrientation="Horizontal" HorizontalScrollMode="Enabled" HorizontalScrollBarVisibility="Auto"
-                                                            VerticalScrollMode="Disabled" VerticalScrollBarVisibility="Hidden" controls:WheelScrollsPage.IsEnabled="True">
-                                                    <ItemsRepeater ItemsSource="{x:Bind Cards}" ItemTemplate="{StaticResource WatchPartyCardTemplate}" Margin="0,4,0,12">
-                                                        <ItemsRepeater.Layout>
-                                                            <StackLayout Orientation="Horizontal" Spacing="14" />
-                                                        </ItemsRepeater.Layout>
-                                                    </ItemsRepeater>
-                                                </ScrollView>
+                                                <TextBlock Text="{x:Bind ViewModel.StopHint, Mode=OneWay}" Style="{StaticResource MutedStyle}" />
                                             </StackPanel>
-                                        </DataTemplate>
-                                    </ItemsRepeater.ItemTemplate>
-                                </ItemsRepeater>
-                                <TextBlock Text="{x:Bind ViewModel.Shelf.EmptyText, Mode=OneWay}" Style="{StaticResource MutedStyle}" HorizontalAlignment="Center" Margin="0,24"
-                                           Visibility="{x:Bind ViewModel.Shelf.HasEmptyText, Mode=OneWay}" />
+                                            <!-- The vote: the host plays the leader for everyone. -->
+                                            <Button Style="{StaticResource SiloPrimaryButtonStyle}" Command="{x:Bind ViewModel.PlayLeaderCommand}" HorizontalAlignment="Left"
+                                                    Visibility="{x:Bind views:WatchPartyRoomPage.Both(ViewModel.ShowsVoting, ViewModel.IsHost), Mode=OneWay}">
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <FontIcon Glyph="&#xE768;" FontSize="12" />
+                                                    <TextBlock Text="{x:Bind ViewModel.PlayLeaderLabel, Mode=OneWay}" />
+                                                </StackPanel>
+                                            </Button>
+                                            <!-- Up next: the host starts it or changes it; guests mark themselves ready. -->
+                                            <StackPanel Orientation="Horizontal" Spacing="8" Visibility="{x:Bind ViewModel.ShowsStaged, Mode=OneWay}">
+                                                <Button Style="{StaticResource SiloPrimaryButtonStyle}" Command="{x:Bind ViewModel.StartCommand}" Visibility="{x:Bind ViewModel.IsHost, Mode=OneWay}">
+                                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                                        <FontIcon Glyph="&#xE768;" FontSize="12" />
+                                                        <TextBlock Text="{x:Bind ViewModel.StartLabel, Mode=OneWay}" />
+                                                    </StackPanel>
+                                                </Button>
+                                                <Button Content="Change" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.ChangeCommand}"
+                                                        Visibility="{x:Bind ViewModel.IsHost, Mode=OneWay}" />
+                                                <Button Style="{StaticResource SiloPrimaryButtonStyle}" Command="{x:Bind ViewModel.ToggleReadyCommand}"
+                                                        Visibility="{x:Bind ViewModel.CanMarkReady, Mode=OneWay}">
+                                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                                        <FontIcon Glyph="&#xE73E;" FontSize="12" />
+                                                        <TextBlock Text="{x:Bind ViewModel.ReadyLabel, Mode=OneWay}" />
+                                                    </StackPanel>
+                                                </Button>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Grid>
+                                </Grid>
+                            </Border>
+
+                            <!-- Voting, with nothing suggested yet. -->
+                            <Border Style="{StaticResource PanelStyle}" Padding="24,36" Visibility="{x:Bind ViewModel.ShowsVotingEmpty, Mode=OneWay}">
+                                <StackPanel Spacing="10" HorizontalAlignment="Center">
+                                    <TextBlock Text="VOTING IS OPEN" Style="{StaticResource EyebrowStyle}" HorizontalAlignment="Center" />
+                                    <TextBlock Text="No suggestions yet" FontSize="20" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                                    <TextBlock Text="{x:Bind ViewModel.VotingEmptyText, Mode=OneWay}" Style="{StaticResource MutedStyle}" MaxWidth="400" TextAlignment="Center" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- The open lobby. -->
+                            <Border Style="{StaticResource PanelStyle}" BorderBrush="#33FFFFFF" Padding="24,40" Visibility="{x:Bind ViewModel.ShowsEmptyLobby, Mode=OneWay}">
+                                <StackPanel Spacing="12" HorizontalAlignment="Center">
+                                    <TextBlock Text="ROOM IS OPEN" Style="{StaticResource EyebrowStyle}" HorizontalAlignment="Center" />
+                                    <TextBlock Text="Nothing on yet" FontSize="28" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                                    <TextBlock Text="{x:Bind ViewModel.LobbyText, Mode=OneWay}" Style="{StaticResource MutedStyle}" MaxWidth="448" TextAlignment="Center" />
+                                    <Button Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center" Margin="0,4,0,0"
+                                            Command="{x:Bind ViewModel.OpenVotingCommand}" Visibility="{x:Bind ViewModel.IsHost, Mode=OneWay}">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <FontIcon Glyph="&#xE8FB;" FontSize="13" />
+                                            <TextBlock Text="Open the floor to votes" />
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- The suggestions: ranked by votes, the guests' ideas in a host-pick lobby, or what comes after. -->
+                            <Border Style="{StaticResource PanelStyle}" Padding="14,14" Visibility="{x:Bind ViewModel.ShowsSuggestions, Mode=OneWay}">
+                                <StackPanel Spacing="8">
+                                    <Grid Padding="6,0">
+                                        <TextBlock Text="{x:Bind views:WatchPartyRoomPage.Upper(ViewModel.SuggestionsHeading), Mode=OneWay}" Style="{StaticResource EyebrowStyle}" />
+                                        <TextBlock Text="{x:Bind ViewModel.SuggestionsHint, Mode=OneWay}" Style="{StaticResource SmallMutedStyle}" HorizontalAlignment="Right" />
+                                    </Grid>
+                                    <TextBlock Text="{x:Bind ViewModel.SuggestionsEmptyText, Mode=OneWay}" Style="{StaticResource MutedStyle}" HorizontalAlignment="Center" Margin="0,16"
+                                               Visibility="{x:Bind ViewModel.HasNoSuggestions, Mode=OneWay}" />
+                                    <ItemsRepeater ItemsSource="{x:Bind ViewModel.SuggestionRows}">
+                                        <ItemsRepeater.Layout>
+                                            <StackLayout Spacing="2" />
+                                        </ItemsRepeater.Layout>
+                                        <ItemsRepeater.ItemTemplate>
+                                            <DataTemplate x:DataType="wp:WatchPartySuggestionRow">
+                                                <Grid ColumnSpacing="12" Padding="6,6" CornerRadius="8">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <Button Width="28" Height="28" Padding="0" CornerRadius="14" Click="OnVoteClick" Tag="{x:Bind}" Visibility="{x:Bind ShowsVotes, Mode=OneWay}"
+                                                            Background="{x:Bind views:WatchPartyRoomPage.VoteBackground(VotedByMe), Mode=OneWay}" BorderBrush="{x:Bind views:WatchPartyRoomPage.VoteBorder(VotedByMe), Mode=OneWay}"
+                                                            AutomationProperties.Name="{x:Bind VoteName, Mode=OneWay}" ToolTipService.ToolTip="{x:Bind VoteName, Mode=OneWay}">
+                                                        <TextBlock Text="&#x2713;" FontSize="12" Foreground="White" Opacity="{x:Bind views:WatchPartyRoomPage.Shown(VotedByMe), Mode=OneWay}" />
+                                                    </Button>
+                                                    <Border Grid.Column="1" Width="32" Height="48" CornerRadius="4" Background="{StaticResource SiloSurfaceRaisedBrush}">
+                                                        <Image Source="{x:Bind views:WatchPartyRoomPage.SmallPoster(PosterUrl), Mode=OneWay}" Stretch="UniformToFill" />
+                                                    </Border>
+                                                    <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="2">
+                                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                                            <TextBlock Text="{x:Bind Title, Mode=OneWay}" FontSize="14" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                                            <TextBlock Text="{x:Bind Subtitle, Mode=OneWay}" Style="{StaticResource SmallMutedStyle}" TextTrimming="CharacterEllipsis" VerticalAlignment="Bottom" />
+                                                            <Border Padding="6,1" CornerRadius="8" Background="#26FBBF24" Visibility="{x:Bind IsLeading, Mode=OneWay}" VerticalAlignment="Center">
+                                                                <TextBlock Text="LEADING" FontSize="10" FontWeight="SemiBold" Foreground="#FFFCD34D" />
+                                                            </Border>
+                                                        </StackPanel>
+                                                        <TextBlock Text="{x:Bind By, Mode=OneWay}" Style="{StaticResource SmallMutedStyle}" TextTrimming="CharacterEllipsis" />
+                                                    </StackPanel>
+                                                    <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" Visibility="{x:Bind ShowsVotes, Mode=OneWay}">
+                                                        <ProgressBar Width="120" Value="{x:Bind SharePercent, Mode=OneWay}" Maximum="100" VerticalAlignment="Center" IsHitTestVisible="False" />
+                                                        <TextBlock Text="{x:Bind VotesText, Mode=OneWay}" Style="{StaticResource SmallMutedStyle}" Width="56" TextAlignment="Right" />
+                                                    </StackPanel>
+                                                    <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                                        <Button Style="{StaticResource SmallButtonStyle}" Click="OnPromoteClick" Tag="{x:Bind}" Visibility="{x:Bind CanPromote, Mode=OneWay}">
+                                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                                <FontIcon Glyph="&#xE768;" FontSize="10" />
+                                                                <TextBlock Text="{x:Bind PromoteLabel, Mode=OneWay}" />
+                                                            </StackPanel>
+                                                        </Button>
+                                                        <Button Style="{StaticResource SiloIconButtonStyle}" Click="OnDeleteSuggestionClick" Tag="{x:Bind}" Visibility="{x:Bind CanDelete, Mode=OneWay}"
+                                                                AutomationProperties.Name="{x:Bind DeleteName, Mode=OneWay}" ToolTipService.ToolTip="{x:Bind DeleteName, Mode=OneWay}">
+                                                            <FontIcon Glyph="&#xE74D;" FontSize="12" />
+                                                        </Button>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsRepeater.ItemTemplate>
+                                    </ItemsRepeater>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- The invite row: the link, Link and Code, and the guests' pause switch. -->
+                            <Border Style="{StaticResource PanelStyle}" Padding="16,10" Visibility="{x:Bind ViewModel.ShowsInvite, Mode=OneWay}">
+                                <Grid ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="INVITE" Style="{StaticResource EyebrowStyle}" VerticalAlignment="Center" />
+                                    <Border Grid.Column="1" Background="{StaticResource SiloSurfaceRaisedBrush}" CornerRadius="6" Padding="10,6"
+                                            Visibility="{x:Bind ViewModel.HasInviteLink, Mode=OneWay}">
+                                        <TextBlock Text="{x:Bind ViewModel.InviteText, Mode=OneWay}" FontFamily="Consolas" FontSize="12" Foreground="{StaticResource SiloMutedBrush}"
+                                                   TextTrimming="CharacterEllipsis" IsTextSelectionEnabled="True" />
+                                    </Border>
+                                    <TextBlock Grid.Column="1" Text="Share the code to let people in." Style="{StaticResource SmallMutedStyle}" VerticalAlignment="Center"
+                                               Visibility="{x:Bind views:WatchPartyRoomPage.Unless(ViewModel.HasInviteLink), Mode=OneWay}" />
+                                    <Button Grid.Column="2" Style="{StaticResource SmallButtonStyle}" Click="OnCopyLinkClick" Visibility="{x:Bind ViewModel.HasInviteLink, Mode=OneWay}">
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <FontIcon Glyph="&#xE71B;" FontSize="11" />
+                                            <TextBlock Text="Link" />
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Grid.Column="3" Style="{StaticResource SmallButtonStyle}" Click="OnCopyCodeClick">
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <FontIcon Glyph="&#xE8C8;" FontSize="11" />
+                                            <TextBlock Text="Code" />
+                                        </StackPanel>
+                                    </Button>
+                                    <ToggleSwitch Grid.Column="4" MinWidth="0" IsOn="{x:Bind ViewModel.GuestsCanPause, Mode=OneWay}" Toggled="OnPolicyToggled"
+                                                  OnContent="Guests can pause" OffContent="Guests can pause" AutomationProperties.Name="Guests can pause"
+                                                  Visibility="{x:Bind ViewModel.IsHost, Mode=OneWay}" />
+                                    <TextBlock Grid.Column="4" Text="{x:Bind ViewModel.PolicyText, Mode=OneWay}" Style="{StaticResource SmallMutedStyle}" VerticalAlignment="Center"
+                                               Visibility="{x:Bind ViewModel.IsGuest, Mode=OneWay}" />
+                                </Grid>
+                            </Border>
+
+                            <!-- The shelf, folded to one line where the stage leads. -->
+                            <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Padding="16,12" Style="{StaticResource SiloSecondaryButtonStyle}"
+                                    Command="{x:Bind ViewModel.Shelf.OpenCommand}" Visibility="{x:Bind ViewModel.Shelf.IsFolded, Mode=OneWay}">
+                                <Grid ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <FontIcon Glyph="&#xE721;" FontSize="14" Foreground="{StaticResource SiloMutedBrush}" />
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock Text="{x:Bind ViewModel.Shelf.FoldedLabel, Mode=OneWay}" FontSize="14" FontWeight="SemiBold" />
+                                        <TextBlock Text="{x:Bind ViewModel.Shelf.FoldedHint, Mode=OneWay}" Style="{StaticResource SmallMutedStyle}" />
+                                    </StackPanel>
+                                    <FontIcon Grid.Column="2" Glyph="&#xE70D;" FontSize="12" Foreground="{StaticResource SiloMutedBrush}" />
+                                </Grid>
+                            </Button>
+                            <StackPanel Spacing="18" Visibility="{x:Bind ViewModel.Shelf.IsExpanded, Mode=OneWay}"
+                                        AutomationProperties.Name="{x:Bind ViewModel.Shelf.ShelfName, Mode=OneWay}">
+                                <Grid ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" MinWidth="220" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid>
+                                        <TextBox Text="{x:Bind ViewModel.Shelf.Query, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="Search movies, series, episodes&#x2026;"
+                                                 AutomationProperties.Name="Search movies and series" MinHeight="40" Padding="36,9,8,8" CornerRadius="8" />
+                                        <FontIcon Glyph="&#xE721;" FontSize="14" Margin="12,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                  Foreground="{StaticResource SiloMutedBrush}" IsHitTestVisible="False" />
+                                    </Grid>
+                                    <controls:PillChoices Grid.Column="1" ItemsSource="{x:Bind ViewModel.Shelf.Chips}" SelectedItem="{x:Bind ViewModel.Shelf.SelectedChip, Mode=TwoWay}"
+                                                          VerticalAlignment="Center" AutomationProperties.Name="Filter" />
+                                    <Button Grid.Column="2" Style="{StaticResource SiloIconButtonStyle}" Command="{x:Bind ViewModel.Shelf.FoldCommand}"
+                                            Visibility="{x:Bind ViewModel.Shelf.IsCollapsible, Mode=OneWay}" AutomationProperties.Name="Hide browse" ToolTipService.ToolTip="Hide browse">
+                                        <FontIcon Glyph="&#xE70E;" FontSize="12" />
+                                    </Button>
+                                </Grid>
+
+                                <!-- Search results: scanned, not flicked through. -->
+                                <StackPanel Spacing="10" Visibility="{x:Bind ViewModel.Shelf.IsSearching, Mode=OneWay}">
+                                    <TextBlock Text="{x:Bind views:WatchPartyRoomPage.Upper(ViewModel.Shelf.ResultsHeading), Mode=OneWay}" Style="{StaticResource EyebrowStyle}" />
+                                    <StackPanel Orientation="Horizontal" Spacing="10" Visibility="{x:Bind ViewModel.Shelf.HasSearchState, Mode=OneWay}">
+                                        <TextBlock Text="{x:Bind ViewModel.Shelf.SearchState, Mode=OneWay}" Style="{StaticResource MutedStyle}" VerticalAlignment="Center" />
+                                        <Button Content="Retry" Style="{StaticResource SmallButtonStyle}" Command="{x:Bind ViewModel.Shelf.RetrySearchCommand}"
+                                                Visibility="{x:Bind ViewModel.Shelf.SearchFailed, Mode=OneWay}" />
+                                    </StackPanel>
+                                    <TextBlock Text="{x:Bind ViewModel.Shelf.NoResultsText, Mode=OneWay}" Style="{StaticResource MutedStyle}"
+                                               Visibility="{x:Bind ViewModel.Shelf.HasNoResults, Mode=OneWay}" />
+                                    <ItemsRepeater ItemsSource="{x:Bind ViewModel.Shelf.Results}" ItemTemplate="{StaticResource WatchPartyCardTemplate}">
+                                        <ItemsRepeater.Layout>
+                                            <UniformGridLayout MinItemWidth="112" MinColumnSpacing="14" MinRowSpacing="16" ItemsStretch="None" />
+                                        </ItemsRepeater.Layout>
+                                    </ItemsRepeater>
+                                </StackPanel>
+
+                                <!-- The rows the room has in common. -->
+                                <StackPanel Spacing="20" Visibility="{x:Bind ViewModel.Shelf.IsBrowsing, Mode=OneWay}">
+                                    <ItemsRepeater ItemsSource="{x:Bind ViewModel.Shelf.Rows}">
+                                        <ItemsRepeater.Layout>
+                                            <StackLayout Spacing="22" />
+                                        </ItemsRepeater.Layout>
+                                        <ItemsRepeater.ItemTemplate>
+                                            <DataTemplate x:DataType="wp:WatchPartyShelfRow">
+                                                <StackPanel Spacing="10">
+                                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                                        <TextBlock Text="{x:Bind views:WatchPartyRoomPage.Upper(Title)}" Style="{StaticResource SiloOverlineTextStyle}" />
+                                                        <TextBlock Text="{x:Bind views:WatchPartyRoomPage.Hint(Hint)}" FontSize="11" Foreground="{StaticResource SiloMutedBrush}"
+                                                                   VerticalAlignment="Center" Visibility="{x:Bind HasHint}" />
+                                                    </StackPanel>
+                                                    <ScrollView ContentOrientation="Horizontal" HorizontalScrollMode="Enabled" HorizontalScrollBarVisibility="Auto"
+                                                                VerticalScrollMode="Disabled" VerticalScrollBarVisibility="Hidden" controls:WheelScrollsPage.IsEnabled="True">
+                                                        <ItemsRepeater ItemsSource="{x:Bind Cards}" ItemTemplate="{StaticResource WatchPartyCardTemplate}" Margin="0,4,0,12">
+                                                            <ItemsRepeater.Layout>
+                                                                <StackLayout Orientation="Horizontal" Spacing="14" />
+                                                            </ItemsRepeater.Layout>
+                                                        </ItemsRepeater>
+                                                    </ScrollView>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ItemsRepeater.ItemTemplate>
+                                    </ItemsRepeater>
+                                    <TextBlock Text="{x:Bind ViewModel.Shelf.EmptyText, Mode=OneWay}" Style="{StaticResource MutedStyle}" HorizontalAlignment="Center" Margin="0,24"
+                                               Visibility="{x:Bind ViewModel.Shelf.HasEmptyText, Mode=OneWay}" />
+                                </StackPanel>
                             </StackPanel>
                         </StackPanel>
                     </StackPanel>
-                </StackPanel>
+                </Grid>
             </ScrollViewer>
 
             <!-- People and Activity. -->
             <Border Grid.Column="1" Width="320" BorderBrush="{StaticResource SiloBorderBrush}" BorderThickness="1,0,0,0"
-                    Visibility="{x:Bind views:WatchPartyRoomPage.Live(ViewModel.HasRoom, ViewModel.IsEnded), Mode=OneWay}">
+                    Visibility="{x:Bind ViewModel.ShowsRoom, Mode=OneWay}">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />

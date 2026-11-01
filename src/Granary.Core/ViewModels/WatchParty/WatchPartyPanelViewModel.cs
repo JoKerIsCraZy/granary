@@ -16,7 +16,7 @@ namespace Granary.Core.ViewModels.WatchParty;
 /// the room code and how many watch, who controls playback, each viewer with what their player is doing, and for the
 /// host Invite, Allow Pause or Host Only, Stop and End. It acts through the room the app is in
 /// (<see cref="WatchPartySession"/>), as the room page does, and says what happened in the web's toast words while the
-/// player is there to show it: Stop and End close the player, the room's lobby or Watch Party then shows what they did.
+/// player is there to show it: Stop and End close the player, the room's lobby or the Watch Party hub then shows what they did.
 /// </summary>
 public sealed partial class WatchPartyPanelViewModel : ObservableObject
 {
@@ -49,9 +49,6 @@ public sealed partial class WatchPartyPanelViewModel : ObservableObject
 
     /// <summary>A host's call is on its way.</summary>
     public bool IsBusy => _calls > 0;
-
-    /// <summary>The host ended the room from here and this device is leaving it: the player goes on to Watch Party.</summary>
-    internal bool IsEndingRoom { get; private set; }
 
     /// <summary>The panel shows while the player plays the room's title and the room lasts, as on the web.</summary>
     public bool IsShown => _attached && Room is not null && _party.End is null;
@@ -177,15 +174,8 @@ public sealed partial class WatchPartyPanelViewModel : ObservableObject
         {
             return;
         }
-        IsEndingRoom = true;
-        try
-        {
-            await HostAsync(_party.EndRoomAsync, "Failed to end room", attachment);
-        }
-        finally
-        {
-            IsEndingRoom = false;
-        }
+        // Ended, the room is over for this device too: the player leaves for the hub, as on any end.
+        await HostAsync(_party.EndRoomAsync, "Failed to end room", attachment);
     }
 
     private bool CanAct() => !IsBusy && IsHost;

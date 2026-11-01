@@ -406,7 +406,12 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   wherever everyone is." and what a party is; beside each other "Start a party" (Create Watch Party opens an empty room
   the host picks for) and "Join a party" (the code in a wide spaced box, Paste, Join Watch Party; a pasted invite link
   of this server joins by its token, a link to anywhere else not at all); an error in the web's red box ("Room not
-  found.", "That room is no longer active."); in a room already, a line back to it; "YOUR RECENT PARTIES" (the rooms of
+  found.", "That room is no longer active."); in a room already, a line back to it; a room that is over, at the top in
+  the words of the web's end of a room: the people tile (48 px, radius 12) beside "The room has ended." ("That watch
+  party is no longer active.", "Room not found.", "You don't have access to this watch party.", "Room is unavailable.")
+  over "Start a new watch party or join another room to keep watching together.", or "Watch Party joined on another
+  device" over the server's reason with Rejoin Watch Party; its close button leaves the room on this device and puts it
+  away. "YOUR RECENT PARTIES" (the rooms of
   the last day: the title, Live / Checking… / Status unavailable / Ended, "Your room" or "Joined", the code, and
   Rejoin while it is on); "How it works" in three steps. Invite links opened from outside the app are not there yet.
 - The room (`WatchPartyRoomPage`, the web's `WatchTogetherRoomPage.tsx`): the status strip ("● Live · 1 here", "Voting
@@ -433,11 +438,15 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   Connected / Ready ✓ / Watching / Buffering / Paused, a green or amber dot) and Activity ("now · Elena joined",
   "2m · Maya suggested Heat"), with the footer "If you drop, the room waits 2 minutes for you before it ends." or
   "Host: Elena · guests can pause". When the room starts a title the player opens by itself, once per start (leaving
-  the player and coming back to the room does not open it again). The room's end ("The room has ended.") or another
-  device taking it over (Rejoin Watch Party) replaces the page.
+  the player and coming back to the room does not open it again). The page sits in a column of at most 1180 px, centred
+  beside the rail. A room that is over (it ended, its host ended it, or another device took this profile's place) is not
+  shown, not even its status strip: the page goes on to Watch Party, which says why, as Silo's apps go back to their hub
+  (the web shows its end in place of the room page instead).
 - The player in a room plays the room's file from the start; play, pause and seek go to the room and the player
   follows its commands; a guest's seek, or pause while the host controls playback, shows the web's words as the
   player's notice ("Only the host can seek the room."). The speed and version settings are the room's, not offered.
+  When the room stops the title the player closes back to the room; when the room is over, full or minimized to the
+  bar, it closes as any exit does (its position reported) and goes on to Watch Party, with no end card of its own.
   No marked part skips itself: the host is offered Skip Intro (a room seek) unless the profile never skips intros,
   guests see no skip pill. When the host stops, the title finishes or the room ends, the player closes onto the room.
 - Back: the navigation view's back arrow, `Alt+Left`, and the mouse back button. The sidebar's sections (Home,
