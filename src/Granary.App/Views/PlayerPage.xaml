@@ -56,7 +56,10 @@
             </StackPanel>
         </Grid>
 
-        <!-- Top bar: Minimize (the web's chevron) top left, Exit top right. In a window it starts below the title bar's drag area. -->
+        <!--
+            Top bar: Minimize (the web's chevron) top left, Exit top right. It starts below the title bar's 32 px strip, where
+            the caption buttons float in a window and Exit full screen sits in full screen.
+        -->
         <Grid x:Name="TopChrome" VerticalAlignment="Top" Visibility="{x:Bind ShowsTopChrome(ViewModel.IsNextUpScreenShown, IsCompact), Mode=OneWay}">
             <Grid.OpacityTransition>
                 <ScalarTransition Duration="0:0:0.3" />
@@ -65,7 +68,7 @@
                 <Vector3Transition Duration="0:0:0.3" />
             </Grid.TranslationTransition>
             <Border Background="{StaticResource SiloPlayerTopScrimBrush}" IsHitTestVisible="False" />
-            <Grid x:Name="TopBar" Padding="{x:Bind TopBarPadding(IsFullScreen), Mode=OneWay}">
+            <Grid x:Name="TopBar" Padding="24,40,24,40">
                 <Button x:Name="MinimizeButton" Style="{StaticResource SiloPlayerDiscButtonStyle}" HorizontalAlignment="Left"
                         Click="OnMinimizeClick" AutomationProperties.Name="Minimize player" ToolTipService.ToolTip="Minimize player">
                     <FontIcon Glyph="&#xE70D;" FontSize="16" />
@@ -79,6 +82,18 @@
                     </StackPanel>
                 </Button>
             </Grid>
+            <!--
+                In full screen, where Windows shows no caption buttons, the window's Exit full screen takes their corner and
+                fades with the controls (MainWindow.FullScreen.cs has the app's). The window's Close is left out here: the
+                player's own ✕ Exit sits right under it, and two crosses, one quitting Granary and one only leaving the
+                player, would be mistaken for each other.
+            -->
+            <Button x:Name="CornerFullScreenButton" Style="{StaticResource SiloTitleBarButtonStyle}" HorizontalAlignment="Right"
+                    VerticalAlignment="Top" Click="OnFullScreenClick" Visibility="{x:Bind IsFullScreen, Mode=OneWay}"
+                    AutomationProperties.Name="Exit full screen" AutomationProperties.AcceleratorKey="F11"
+                    ToolTipService.ToolTip="Exit full screen (F11)">
+                <FontIcon Glyph="&#xE73F;" FontSize="10" />
+            </Button>
         </Grid>
 
         <!-- Bottom bar: the seek bar, then the title with the times, the transport, and volume and full screen. -->
@@ -611,7 +626,7 @@
             controls fade, until it is closed.
         -->
         <Border x:Name="PlaybackInfoPanel" Width="320" HorizontalAlignment="Left" VerticalAlignment="Top" CornerRadius="8" Background="#D9000000"
-                Margin="{x:Bind PlaybackInfoMargin(IsFullScreen), Mode=OneWay}"
+                Margin="16,88,0,160"
                 Visibility="{x:Bind ShowsInWindow(ViewModel.IsPlaybackInfoShown, IsCompact), Mode=OneWay}">
             <Grid>
                 <Grid.RowDefinitions>
@@ -662,7 +677,7 @@
             card stays while the controls fade; the panel fades with them and keeps its place.
         -->
         <StackPanel x:Name="RightPanels" HorizontalAlignment="Right" VerticalAlignment="Top" Spacing="8"
-                    Margin="{x:Bind PartyPanelMargin(IsFullScreen), Mode=OneWay}">
+                    Margin="0,88,24,0">
         <!--
             The web player's SubtitleSyncIndicator: a small card that follows a subtitle sync this viewer started, its progress
             while it runs, then how it ended; a finished one leaves on its own (PlayerPage.SubtitleSync.cs). Hidden in the mini

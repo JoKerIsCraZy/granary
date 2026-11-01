@@ -58,8 +58,8 @@ public sealed partial class PlayerPage
         Root.Background = IsDocked ? NoBackground : PlayerBackground;
         if (IsDocked)
         {
-            // The bar belongs to the window as it is: not full screen, not the mini view.
-            SetFullScreen(false);
+            // The bar belongs to the window as the viewer set it, full screen or not, never to the mini view: leaving that
+            // returns to where it was opened from.
             SetMiniView(false);
             CloseMenus();
         }

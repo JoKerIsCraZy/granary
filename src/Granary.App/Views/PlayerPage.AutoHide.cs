@@ -101,6 +101,7 @@ public sealed partial class PlayerPage
 
     private bool IsPointerOverControls() =>
         PointerInPage() is { } point && (Contains(BottomBar, point) || Contains(ExitButton, point) || Contains(MinimizeButton, point)
+            || Contains(CornerFullScreenButton, point)
             || (PartyPanel is { Visibility: Visibility.Visible, IsHitTestVisible: true } && Contains(PartyPanel, point))
             || (IsMiniView && (Contains(MiniPlayPauseButton, point) || Contains(LeaveMiniViewButton, point))));
 

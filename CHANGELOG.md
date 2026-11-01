@@ -6,6 +6,16 @@ release's section is what its update says it changes (docs/release.md).
 
 ## [Unreleased]
 
+### Added
+
+- Full screen for the whole app, as in Plex: F11 or the button at the top right. In full screen the top right shows Exit
+  full screen and Close.
+
+### Fixed
+
+- Minimizing or leaving the player no longer drops the app out of full screen, and the mini view goes back to full screen
+  when it was opened from there.
+
 ## [0.1.0] - 2026-11-01
 
 ### Added

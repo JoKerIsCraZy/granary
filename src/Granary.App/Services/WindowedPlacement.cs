@@ -4,8 +4,7 @@ using Windows.Graphics;
 namespace Granary.App.Services;
 
 /// <summary>
-/// The window as it was before it went full screen or into the mini view, to go back to: the player's (PlayerPage) and a
-/// trailer's (TrailerOverlay).
+/// The window as it was before it went full screen or into the mini view, to go back to (<see cref="WindowModeService"/>).
 /// </summary>
 internal sealed class WindowedPlacement
 {

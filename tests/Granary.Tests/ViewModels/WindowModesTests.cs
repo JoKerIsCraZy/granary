@@ -1,0 +1,188 @@
+using Granary.Core.ViewModels;
+
+namespace Granary.Tests.ViewModels;
+
+/// <summary>The window's one full-screen state, shared by the app, the player and a trailer.</summary>
+public sealed class WindowModesTests
+{
+    [Fact]
+    public void AtStart_ItIsAWindow()
+    {
+        var modes = new WindowModes();
+
+        Assert.Equal(WindowMode.Window, modes.Mode);
+        Assert.False(modes.IsFullScreen);
+        Assert.False(modes.IsMiniView);
+        Assert.False(modes.IsTrailerFullScreen);
+    }
+
+    [Fact]
+    public void Toggling_GoesFullScreenAndBackToTheWindow()
+    {
+        var modes = new WindowModes();
+
+        modes.ToggleFullScreen();
+        Assert.Equal(WindowMode.FullScreen, modes.Mode);
+
+        modes.ToggleFullScreen();
+        Assert.Equal(WindowMode.Window, modes.Mode);
+    }
+
+    [Fact]
+    public void LeavingTheMiniView_FromFullScreen_GoesBackToFullScreen()
+    {
+        var modes = new WindowModes();
+        modes.SetFullScreen(true);
+
+        modes.SetMiniView(true);
+        Assert.Equal(WindowMode.MiniView, modes.Mode);
+
+        modes.SetMiniView(false);
+        Assert.Equal(WindowMode.FullScreen, modes.Mode);
+    }
+
+    [Fact]
+    public void LeavingTheMiniView_FromAWindow_GoesBackToTheWindow()
+    {
+        var modes = new WindowModes();
+
+        modes.SetMiniView(true);
+        modes.SetMiniView(false);
+
+        Assert.Equal(WindowMode.Window, modes.Mode);
+    }
+
+    [Fact]
+    public void FullScreenFromTheMiniView_GoesStraightThere_AndLeavingItGoesToTheWindow()
+    {
+        var modes = new WindowModes();
+        modes.SetMiniView(true);
+
+        modes.ToggleFullScreen();
+        Assert.Equal(WindowMode.FullScreen, modes.Mode);
+
+        modes.ToggleFullScreen();
+        Assert.Equal(WindowMode.Window, modes.Mode);
+    }
+
+    [Fact]
+    public void TheMiniViewOpenedAgain_RemembersOnlyWhereItCameFromThisTime()
+    {
+        var modes = new WindowModes();
+        modes.SetFullScreen(true);
+        modes.SetMiniView(true);
+        modes.SetMiniView(false);
+        modes.SetFullScreen(false);
+
+        modes.SetMiniView(true);
+        modes.SetMiniView(false);
+
+        Assert.Equal(WindowMode.Window, modes.Mode);
+    }
+
+    [Fact]
+    public void LeavingFullScreenInTheMiniView_KeepsTheMiniView_AndGoesBackToTheWindowAfterIt()
+    {
+        var modes = new WindowModes();
+        modes.SetFullScreen(true);
+        modes.SetMiniView(true);
+
+        modes.SetFullScreen(false);
+        Assert.Equal(WindowMode.MiniView, modes.Mode);
+
+        modes.SetMiniView(false);
+        Assert.Equal(WindowMode.Window, modes.Mode);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void LeavingTheMiniViewOutsideIt_KeepsTheWindowAsItIs(bool fullScreen)
+    {
+        // The player's Leave and its bar end the mini view only: the window stays as the viewer set it.
+        var modes = new WindowModes();
+        modes.SetFullScreen(fullScreen);
+
+        modes.SetMiniView(false);
+
+        Assert.Equal(fullScreen, modes.IsFullScreen);
+        Assert.False(modes.IsMiniView);
+    }
+
+    [Fact]
+    public void ATrailersFullScreen_InsideFullScreen_ChangesNothingAboutTheWindow()
+    {
+        var modes = new WindowModes();
+        modes.SetFullScreen(true);
+
+        modes.SetTrailerFullScreen(true);
+        Assert.True(modes.IsTrailerFullScreen);
+        Assert.Equal(WindowMode.FullScreen, modes.Mode);
+
+        modes.SetTrailerFullScreen(false);
+        Assert.False(modes.IsTrailerFullScreen);
+        Assert.Equal(WindowMode.FullScreen, modes.Mode);
+    }
+
+    [Fact]
+    public void ATrailersFullScreen_FromAWindow_GoesBackToTheWindowWithIt()
+    {
+        var modes = new WindowModes();
+
+        modes.SetTrailerFullScreen(true);
+        Assert.Equal(WindowMode.FullScreen, modes.Mode);
+
+        modes.SetTrailerFullScreen(false);
+        Assert.Equal(WindowMode.Window, modes.Mode);
+    }
+
+    [Fact]
+    public void LeavingFullScreen_EndsTheTrailersToo()
+    {
+        var modes = new WindowModes();
+        modes.SetFullScreen(true);
+        modes.SetTrailerFullScreen(true);
+
+        modes.ToggleFullScreen();
+
+        Assert.Equal(WindowMode.Window, modes.Mode);
+        Assert.False(modes.IsTrailerFullScreen);
+    }
+
+    [Fact]
+    public void FullScreenChosenDuringATrailersOwn_StaysAfterIt()
+    {
+        var modes = new WindowModes();
+        modes.SetTrailerFullScreen(true);
+
+        modes.SetFullScreen(true);
+        modes.SetTrailerFullScreen(false);
+
+        Assert.Equal(WindowMode.FullScreen, modes.Mode);
+    }
+
+    [Fact]
+    public void ATrailersFullScreenThatLeftWithTheWindow_DoesNotTakeTheWindowBackLater()
+    {
+        var modes = new WindowModes();
+        modes.SetTrailerFullScreen(true);
+        modes.SetFullScreen(false);
+        modes.SetFullScreen(true);
+
+        modes.SetTrailerFullScreen(false);
+
+        Assert.Equal(WindowMode.FullScreen, modes.Mode);
+    }
+
+    [Fact]
+    public void AChangeTheWindowMadeItself_IsFollowed()
+    {
+        var modes = new WindowModes();
+        modes.SetTrailerFullScreen(true);
+
+        modes.Follow(WindowMode.Window);
+
+        Assert.Equal(WindowMode.Window, modes.Mode);
+        Assert.False(modes.IsTrailerFullScreen);
+    }
+}

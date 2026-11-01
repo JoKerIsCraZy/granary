@@ -6,9 +6,12 @@
     xmlns:controls="using:Granary.App.Controls"
     Title="Granary">
 
-    <!-- The window-wide shortcuts must not show their tooltip ("Ctrl+K") wherever the pointer rests. -->
+    <!--
+        The window-wide shortcuts must not show their tooltip ("Ctrl+K") wherever the pointer rests. F11 is taken on its way
+        down (MainWindow.FullScreen.cs), so it works on every page and in the player.
+    -->
     <Grid x:Name="Root" Background="{StaticResource SiloBackgroundBrush}" PointerPressed="OnRootPointerPressed"
-          KeyboardAcceleratorPlacementMode="Hidden">
+          PreviewKeyDown="OnRootPreviewKeyDown" KeyboardAcceleratorPlacementMode="Hidden">
         <!-- The title bar is as high as Windows' caption buttons (32 px), so they and the title sit on one middle line. -->
         <Grid.RowDefinitions>
             <RowDefinition Height="32" />
@@ -20,12 +23,15 @@
             <KeyboardAccelerator Modifiers="Menu" Key="Left" Invoked="OnBackAccelerator" />
         </Grid.KeyboardAccelerators>
 
-        <Grid x:Name="AppTitleBar" Padding="16,0,0,0">
-            <StackPanel x:Name="AppTitle" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                <Image Source="ms-appx:///Assets/Logo/granary-mark.svg" Width="16" Height="16" AutomationProperties.AccessibilityView="Raw" />
-                <TextBlock Text="Granary" VerticalAlignment="Center" Style="{StaticResource SiloCaptionTextStyle}" />
-            </StackPanel>
-        </Grid>
+        <StackPanel x:Name="AppTitle" Orientation="Horizontal" Spacing="8" Margin="16,0,0,0" VerticalAlignment="Center">
+            <Image Source="ms-appx:///Assets/Logo/granary-mark.svg" Width="16" Height="16" AutomationProperties.AccessibilityView="Raw" />
+            <TextBlock Text="Granary" VerticalAlignment="Center" Style="{StaticResource SiloCaptionTextStyle}" />
+        </StackPanel>
+        <!--
+            The drag area (SetTitleBar): the title bar but its own buttons. Full screen has nothing to drag, and the strip
+            takes clicks as the page does (MainWindow.FullScreen.cs, FollowDragArea).
+        -->
+        <Grid x:Name="AppTitleBar" />
 
         <!-- The title bar's lower edge, across the whole window; the player, which reaches under the title bar, covers it. -->
         <Border Height="1" VerticalAlignment="Bottom" IsHitTestVisible="False"
@@ -234,6 +240,24 @@
             (Controls/TrailerOverlay, MainWindow.Trailer.cs).
         -->
         <controls:TrailerOverlay x:Name="TrailerLayer" Grid.RowSpan="2" />
+
+        <!--
+            Full screen for the whole window (MainWindow.FullScreen.cs), drawn as caption buttons: in a window Full screen,
+            left of Windows' own; in full screen, which has none, Exit full screen and Close in their place. Over a
+            trailer's scrim, as the caption buttons are; hidden under the full player, which has its own, and while a
+            trailer fills the screen.
+        -->
+        <StackPanel x:Name="WindowButtons" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
+            <Button x:Name="FullScreenButton" Style="{StaticResource SiloTitleBarButtonStyle}" Click="OnFullScreenClick"
+                    AutomationProperties.AcceleratorKey="F11">
+                <FontIcon x:Name="FullScreenGlyph" FontSize="10" />
+            </Button>
+            <!-- Closes the window as Windows' Close does, through the same command, so playback stops as on any close. -->
+            <Button x:Name="CloseButton" Style="{StaticResource SiloTitleBarCloseButtonStyle}" Click="OnCloseClick"
+                    Visibility="Collapsed" AutomationProperties.Name="Close" ToolTipService.ToolTip="Close">
+                <FontIcon Glyph="&#xE8BB;" FontSize="10" />
+            </Button>
+        </StackPanel>
 
         <!--
             The start: Granary's mark plays its intro in the middle of the window while the app loads its first page, then

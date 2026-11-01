@@ -16,7 +16,6 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
-using Windows.Graphics;
 
 namespace Granary.App.Views;
 
@@ -38,18 +37,17 @@ public sealed partial class PlayerPage : Page
     // MainWindow's title bar row. In a window the top bar starts below it: that strip is the drag area.
     private const double TitleBarHeight = 32;
 
-    // The mini view's width in view pixels.
-    private const double MiniViewWidth = 480;
-
     private AppWindow? _appWindow;
     // Windows' media controls and keys, from the page's load on (a page never loaded never played) until it is left.
     private PlayerSystemMedia? _systemMedia;
-    private readonly WindowedPlacement _windowed = new();
+    // The window's full screen and mini view, the app's too: the player toggles them, and the window keeps them.
+    private readonly WindowModeService _modes;
 
     public PlayerPage()
     {
         // Made outside the container: a disposable transient from the root provider would be kept until the app exits.
         ViewModel = ActivatorUtilities.CreateInstance<PlayerViewModel>(App.Services);
+        _modes = App.Services.GetRequiredService<WindowModeService>();
         InitializeComponent();
         VideoHost.VideoOutput = App.Services.GetRequiredService<ICompositionVideoOutput>();
         InitializeInput();
@@ -72,7 +70,7 @@ public sealed partial class PlayerPage : Page
 
     public PlayerViewModel ViewModel { get; }
 
-    /// <summary>The window shows the full-screen presenter.</summary>
+    /// <summary>The window is full screen (<see cref="WindowModeService"/>).</summary>
     public bool IsFullScreen
     {
         get => (bool)GetValue(IsFullScreenProperty);
@@ -100,11 +98,11 @@ public sealed partial class PlayerPage : Page
 
     /// <summary>
     /// Ends playback as the window takes the player away: Exit, Stop, Alt+Left, the mouse back button, Ctrl+K or a session
-    /// change; the sound must not go on behind another page nor the server session stay open.
+    /// change; the sound must not go on behind another page nor the server session stay open. The mini view ends with
+    /// it; full screen is the window's and stays as the viewer set it, as in Plex.
     /// </summary>
     public void Leave()
     {
-        SetFullScreen(false);
         SetMiniView(false);
         ViewModel.Leave();
     }
@@ -112,9 +110,8 @@ public sealed partial class PlayerPage : Page
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         _appWindow = AppWindow.GetFromWindowId(XamlRoot.ContentIslandEnvironment.AppWindowId);
-        _appWindow.Changed += OnAppWindowChanged;
-        IsFullScreen = _appWindow.Presenter.Kind == AppWindowPresenterKind.FullScreen;
-        IsMiniView = _appWindow.Presenter.Kind == AppWindowPresenterKind.CompactOverlay;
+        _modes.Changed += OnWindowModeChanged;
+        ShowWindowMode();
         ViewModel.PropertyChanged += OnViewModelPropertyChanged;
         _systemMedia ??= new PlayerSystemMedia(ViewModel, App.Services.GetRequiredService<ISystemMediaControls>(),
             App.Services.GetRequiredService<IUiDispatcher>(), TimeProvider.System);
@@ -130,10 +127,7 @@ public sealed partial class PlayerPage : Page
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
-        if (_appWindow is not null)
-        {
-            _appWindow.Changed -= OnAppWindowChanged;
-        }
+        _modes.Changed -= OnWindowModeChanged;
         ViewModel.PropertyChanged -= OnViewModelPropertyChanged;
         StopInput();
         StopAutoHide();
@@ -277,7 +271,7 @@ public sealed partial class PlayerPage : Page
 
     private void OnFullScreenClick(object sender, RoutedEventArgs e) => ToggleFullScreen();
 
-    private void OnMiniViewClick(object sender, RoutedEventArgs e) => SetMiniView(!IsMiniViewNow);
+    private void OnMiniViewClick(object sender, RoutedEventArgs e) => SetMiniView(!_modes.IsMiniView);
 
     // In pixels: the playback info shows the area the picture is drawn into.
     private void OnVideoHostSizeChanged(object sender, SizeChangedEventArgs e)
@@ -368,59 +362,19 @@ public sealed partial class PlayerPage : Page
         }
     }
 
-    // Read from the window, not from IsFullScreen, which follows the window's Changed event a moment later.
-    private bool IsFullScreenNow => _appWindow?.Presenter.Kind == AppWindowPresenterKind.FullScreen;
+    // The window's full screen, the whole app's (F, F11, the button, a double click); from the mini view straight there.
+    private void ToggleFullScreen() => _modes.ToggleFullScreen();
 
-    private void ToggleFullScreen() => SetFullScreen(!IsFullScreenNow);
+    // The web player's Picture in Picture: the window itself, small and above the others (CompactOverlay). Leaving it
+    // returns to full screen or to the window, wherever it was opened from.
+    private void SetMiniView(bool mini) => _modes.SetMiniView(mini);
 
-    private bool IsMiniViewNow => _appWindow?.Presenter.Kind == AppWindowPresenterKind.CompactOverlay;
+    private void OnWindowModeChanged(object? sender, EventArgs e) => ShowWindowMode();
 
-    private void SetFullScreen(bool fullScreen)
+    private void ShowWindowMode()
     {
-        if (_appWindow is not { } window || fullScreen == IsFullScreenNow)
-        {
-            return;
-        }
-        if (fullScreen)
-        {
-            // From the mini view to full screen, and back from there to the window it came from.
-            SetMiniView(false);
-            _windowed.Keep(window);
-            window.SetPresenter(AppWindowPresenterKind.FullScreen);
-            return;
-        }
-        _windowed.Restore(window);
-    }
-
-    // The web player's Picture in Picture: the window itself, small and above the others (CompactOverlay).
-    private void SetMiniView(bool mini)
-    {
-        if (_appWindow is not { } window || mini == IsMiniViewNow)
-        {
-            return;
-        }
-        if (mini)
-        {
-            SetFullScreen(false);
-            _windowed.Keep(window);
-            var presenter = CompactOverlayPresenter.Create();
-            presenter.InitialSize = CompactOverlaySize.Medium;
-            window.SetPresenter(presenter);
-            // 16:9, as the web's picture-in-picture window starts; the medium size alone keeps the window's shape.
-            double scale = XamlRoot?.RasterizationScale ?? 1;
-            window.Resize(new SizeInt32((int)Math.Round(MiniViewWidth * scale), (int)Math.Round(MiniViewWidth * 9 / 16 * scale)));
-            return;
-        }
-        _windowed.Restore(window);
-    }
-
-    private void OnAppWindowChanged(AppWindow sender, AppWindowChangedEventArgs args)
-    {
-        if (args.DidPresenterChange)
-        {
-            IsFullScreen = sender.Presenter.Kind == AppWindowPresenterKind.FullScreen;
-            IsMiniView = sender.Presenter.Kind == AppWindowPresenterKind.CompactOverlay;
-        }
+        IsFullScreen = _modes.IsFullScreen;
+        IsMiniView = _modes.IsMiniView;
     }
 
     // Instance methods because x:Bind function bindings call them on the page.
@@ -452,11 +406,6 @@ public sealed partial class PlayerPage : Page
     public string FullScreenName(bool isFullScreen) => isFullScreen ? "Exit full screen" : "Full screen";
 
     public string FullScreenToolTip(bool isFullScreen) => isFullScreen ? "Exit full screen (F or Esc)" : "Full screen (F)";
-
-    public Thickness TopBarPadding(bool isFullScreen) => new(24, isFullScreen ? 24 : TitleBarHeight + 8, 24, 40);
-
-    // Under Exit, and clear of the bottom bar, where it scrolls.
-    public Thickness PlaybackInfoMargin(bool isFullScreen) => new(16, (isFullScreen ? 24 : TitleBarHeight + 8) + 48, 0, 160);
 
     // A utility button that is on is white; off, the rail's 78 %.
     public Brush UtilityForeground(bool isOn) => new SolidColorBrush(isOn ? Microsoft.UI.Colors.White : Windows.UI.Color.FromArgb(0xC7, 0xFF, 0xFF, 0xFF));

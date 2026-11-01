@@ -57,9 +57,10 @@ public sealed partial class MainWindow : Window
     public MainWindow(NavigationService navigation, ShellViewModel shell, SidebarViewModel sidebar, SidebarSections sections,
         SidebarLayout layout, NotificationBadge notifications, RequestsFeature requests, PlaybackStops stops, AppUpdatesViewModel updates,
         Granary.Core.WatchParty.WatchPartyFeature watchParty, Granary.Core.WatchParty.WatchPartySession room,
-        Granary.Core.ViewModels.Detail.TrailerOverlayViewModel trailers, ILogger<MainWindow> logger)
+        Granary.Core.ViewModels.Detail.TrailerOverlayViewModel trailers, WindowModeService modes, ILogger<MainWindow> logger)
     {
         Layout = layout;
+        _modes = modes;
         Trailers = trailers;
         Updates = updates;
         _navigation = navigation;
@@ -93,6 +94,7 @@ public sealed partial class MainWindow : Window
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
         StyleCaptionButtons();
+        InitializeFullScreen();
         // The exe carries the icon too (ApplicationIcon); an unpackaged window still has to be given it.
         AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets", "Logo", "granary.ico"));
         AppWindow.Resize(new Windows.Graphics.SizeInt32(1440, 900));
@@ -485,8 +487,8 @@ public sealed partial class MainWindow : Window
         var titleBar = AppWindow.TitleBar;
         titleBar.ButtonBackgroundColor = Colors.Transparent;
         titleBar.ButtonInactiveBackgroundColor = Colors.Transparent;
-        titleBar.ButtonForegroundColor = Color.FromArgb(0xFF, 0xE8, 0xE8, 0xEC);
-        titleBar.ButtonInactiveForegroundColor = Color.FromArgb(0xFF, 0x7C, 0x7C, 0x86);
+        titleBar.ButtonForegroundColor = CaptionForeground;
+        titleBar.ButtonInactiveForegroundColor = CaptionInactiveForeground;
         titleBar.ButtonHoverBackgroundColor = Color.FromArgb(0x1A, 0xFF, 0xFF, 0xFF);
         titleBar.ButtonHoverForegroundColor = Colors.White;
         titleBar.ButtonPressedBackgroundColor = Color.FromArgb(0x29, 0xFF, 0xFF, 0xFF);

@@ -396,6 +396,80 @@
         <Setter Property="MinHeight" Value="0" />
         <Setter Property="Background" Value="#B31B1B1E" />
     </Style>
+    <!--
+        A button of the title bar's own, drawn as Windows' caption buttons beside it (MainWindow.StyleCaptionButtons): 46 by
+        32, square, a light glyph that turns white over a faint white highlight under the pointer, a stronger one pressed.
+    -->
+    <Style x:Key="SiloTitleBarButtonStyle" TargetType="Button">
+        <Setter Property="Width" Value="46" />
+        <Setter Property="Height" Value="32" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Foreground" Value="#E8E8EC" />
+        <Setter Property="UseSystemFocusVisuals" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid x:Name="Root" Background="{TemplateBinding Background}">
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup x:Name="CommonStates">
+                                <VisualState x:Name="Normal" />
+                                <VisualState x:Name="PointerOver">
+                                    <VisualState.Setters>
+                                        <Setter Target="Root.Background" Value="#1AFFFFFF" />
+                                        <Setter Target="Content.Foreground" Value="White" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Pressed">
+                                    <VisualState.Setters>
+                                        <Setter Target="Root.Background" Value="#29FFFFFF" />
+                                        <Setter Target="Content.Foreground" Value="White" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Disabled" />
+                            </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>
+                        <ContentPresenter x:Name="Content" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                          AutomationProperties.AccessibilityView="Raw" Content="{TemplateBinding Content}"
+                                          Foreground="{TemplateBinding Foreground}" />
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <!-- The title bar's Close in full screen, red under the pointer as Windows' own Close. -->
+    <Style x:Key="SiloTitleBarCloseButtonStyle" TargetType="Button" BasedOn="{StaticResource SiloTitleBarButtonStyle}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid x:Name="Root" Background="{TemplateBinding Background}">
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup x:Name="CommonStates">
+                                <VisualState x:Name="Normal" />
+                                <VisualState x:Name="PointerOver">
+                                    <VisualState.Setters>
+                                        <Setter Target="Root.Background" Value="#C42B1C" />
+                                        <Setter Target="Content.Foreground" Value="White" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Pressed">
+                                    <VisualState.Setters>
+                                        <Setter Target="Root.Background" Value="#E6C42B1C" />
+                                        <Setter Target="Content.Foreground" Value="#B3FFFFFF" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Disabled" />
+                            </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>
+                        <ContentPresenter x:Name="Content" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                          AutomationProperties.AccessibilityView="Raw" Content="{TemplateBinding Content}"
+                                          Foreground="{TemplateBinding Foreground}" />
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
     <!-- "EXPLORE ALL" next to a row title. -->
     <!--
         The web's line tabs (Requests' Discover and Yours, the watchlist's two): muted text, white once picked with a
