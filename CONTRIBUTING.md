@@ -77,8 +77,11 @@ Granary is not an official Silo app. Silo's code is open source, but its name an
 
 ## License
 
-Granary is licensed under the [GNU Affero General Public License v3.0 or later](LICENSE). By contributing you
-agree that your contribution is licensed under the same terms. There is no separate contributor agreement.
+Granary is licensed under the [GNU Affero General Public License v3.0 or later](LICENSE) with the platform library
+additional permission in [PLATFORM-EXCEPTION.md](PLATFORM-EXCEPTION.md). By contributing you agree that your
+contribution is licensed under those same terms, the AGPL including the additional permission. If you cannot agree to
+the additional permission, say so in your pull request before it is merged. There is no separate contributor
+agreement.
 
 - Code adapted from Silo's web, Android or Apple clients keeps its AGPL license. Name its origin in a comment, and
   add it to [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) if it is not listed yet.

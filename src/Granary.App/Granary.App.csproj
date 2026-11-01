@@ -73,6 +73,7 @@
   <!-- The AGPL asks that every copy carry the license; the notices name what else ships and whose work it holds. -->
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)..\..\LICENSE" Link="LICENSE" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(MSBuildThisFileDirectory)..\..\PLATFORM-EXCEPTION.md" Link="PLATFORM-EXCEPTION.md" CopyToOutputDirectory="PreserveNewest" />
     <None Include="$(MSBuildThisFileDirectory)..\..\THIRD_PARTY_NOTICES.md" Link="THIRD_PARTY_NOTICES.md" CopyToOutputDirectory="PreserveNewest" />
     <!-- Settings → About shows it. -->
     <None Include="$(MSBuildThisFileDirectory)..\..\CHANGELOG.md" Link="CHANGELOG.md" CopyToOutputDirectory="PreserveNewest" />

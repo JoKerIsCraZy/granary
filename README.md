@@ -143,9 +143,10 @@ problems privately as [SECURITY.md](SECURITY.md) describes, not in a public issu
 
 ## License
 
-AGPL-3.0-or-later, like the Silo repositories; see [LICENSE](LICENSE). Parts of Granary are adapted from
-Silo's web, Android and Apple clients (Copyright (C) 2026 Silo Media L.L.C. and contributors,
-AGPL-3.0-or-later). Those parts, and the third-party components with their licenses, are listed in
+AGPL-3.0-or-later with a platform library exception, like the Silo repositories; see [LICENSE](LICENSE) and
+[PLATFORM-EXCEPTION.md](PLATFORM-EXCEPTION.md). The exception lets Granary ship with platform SDKs such as the
+Windows App SDK. Parts of Granary are adapted from Silo's web, Android and Apple clients (Copyright (C) 2026 Silo
+Media L.L.C. and contributors, AGPL-3.0-or-later with the same exception). Those parts, and the third-party components with their licenses, are listed in
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Silo's name and logo are not covered by the AGPL; Granary
 shows Silo's mark only to refer to Silo.
 
