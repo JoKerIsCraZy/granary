@@ -82,18 +82,6 @@
                     </StackPanel>
                 </Button>
             </Grid>
-            <!--
-                In full screen, where Windows shows no caption buttons, the window's Exit full screen takes their corner and
-                fades with the controls (MainWindow.FullScreen.cs has the app's). The window's Close is left out here: the
-                player's own ✕ Exit sits right under it, and two crosses, one quitting Granary and one only leaving the
-                player, would be mistaken for each other.
-            -->
-            <Button x:Name="CornerFullScreenButton" Style="{StaticResource SiloTitleBarButtonStyle}" HorizontalAlignment="Right"
-                    VerticalAlignment="Top" Click="OnFullScreenClick" Visibility="{x:Bind IsFullScreen, Mode=OneWay}"
-                    AutomationProperties.Name="Exit full screen" AutomationProperties.AcceleratorKey="F11"
-                    ToolTipService.ToolTip="Exit full screen (F11)">
-                <FontIcon Glyph="&#xE73F;" FontSize="10" />
-            </Button>
         </Grid>
 
         <!-- Bottom bar: the seek bar, then the title with the times, the transport, and volume and full screen. -->
@@ -975,13 +963,30 @@
                                ItemsSource="{x:Bind ViewModel.OnDeck, Mode=OneWay}" CardInvokedCommand="{x:Bind ViewModel.PlayOnDeckCommand}"
                                Visibility="{x:Bind HasCards(ViewModel.OnDeck), Mode=OneWay}" />
 
+            <!-- Below the title bar's strip, in full screen too, where the window's Exit full screen sits above it. -->
             <Button x:Name="NextUpCloseButton" Style="{StaticResource SiloPlayerDiscButtonStyle}" Width="40" Height="40" Background="#1AFFFFFF"
-                    HorizontalAlignment="Right" VerticalAlignment="Top" Margin="{x:Bind CornerInset(IsFullScreen, 20), Mode=OneWay}"
+                    HorizontalAlignment="Right" VerticalAlignment="Top" Margin="20,40,20,0"
                     Command="{x:Bind ViewModel.CloseCommand}" AutomationProperties.Name="Close" AutomationProperties.AcceleratorKey="Escape"
                     ToolTipService.ToolTip="Close (Esc)">
                 <FontIcon Glyph="&#xE711;" FontSize="14" />
             </Button>
         </Grid>
+
+        <!--
+            In full screen, where Windows shows no caption buttons, the window's Exit full screen takes their corner
+            (MainWindow.FullScreen.cs has the app's): it fades with the controls, and stays on the Playing Next screen, whose
+            own Close sits below it. The window's Close is left out here: the player's own ✕ Exit sits right under it, and
+            two crosses, one quitting Granary and one only leaving the player, would be mistaken for each other.
+        -->
+        <Button x:Name="CornerFullScreenButton" Canvas.ZIndex="4" Style="{StaticResource SiloTitleBarButtonStyle}" HorizontalAlignment="Right"
+                VerticalAlignment="Top" Click="OnFullScreenClick" Visibility="{x:Bind ShowsInWindow(IsFullScreen, IsCompact), Mode=OneWay}"
+                AutomationProperties.Name="Exit full screen" AutomationProperties.AcceleratorKey="F11"
+                ToolTipService.ToolTip="Exit full screen (F11)">
+            <Button.OpacityTransition>
+                <ScalarTransition Duration="0:0:0.3" />
+            </Button.OpacityTransition>
+            <FontIcon Glyph="&#xE73F;" FontSize="10" />
+        </Button>
 
         <!-- The marker panel, bottom left above the controls; it can be moved by its header. -->
         <controls:MarkerEditPanel x:Name="MarkerPanel" Canvas.ZIndex="2" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="24,0,0,176"
@@ -1004,7 +1009,7 @@
         <!-- The small video: a click returns to it, until the episode has ended. -->
         <Button x:Name="MiniPlayerButton" Canvas.ZIndex="3" Style="{StaticResource SiloPlayerCardOutlineButtonStyle}" Padding="0" BorderThickness="0"
                 CornerRadius="16" HorizontalAlignment="Left" VerticalAlignment="Top" Width="320" Height="180"
-                Margin="{x:Bind CornerInset(IsFullScreen, 24), Mode=OneWay}"
+                Margin="24,40,24,0"
                 Visibility="{x:Bind ShowsMiniPlayer(ViewModel.IsNextUpScreenShown, ViewModel.Phase, IsCompact), Mode=OneWay}"
                 Command="{x:Bind ViewModel.KeepWatchingCommand}" AutomationProperties.Name="Keep watching" ToolTipService.ToolTip="Keep watching" />
 

@@ -92,7 +92,7 @@ public sealed partial class PlayerPage
             VideoFrame.Height = MiniPlayerWidth * 9 / 16;
             VideoFrame.HorizontalAlignment = HorizontalAlignment.Left;
             VideoFrame.VerticalAlignment = VerticalAlignment.Top;
-            VideoFrame.Margin = CornerInset(IsFullScreen, 24);
+            VideoFrame.Margin = CornerInset(24);
             VideoFrame.CornerRadius = new CornerRadius(16);
             VideoFrame.BorderThickness = new Thickness(1);
             VideoFrame.BorderBrush = MiniPlayerEdge;

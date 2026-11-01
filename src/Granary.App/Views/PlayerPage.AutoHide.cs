@@ -111,7 +111,8 @@ public sealed partial class PlayerPage
 
     private bool HasKeyboardFocusInControls() =>
         FocusManager.GetFocusedElement(XamlRoot) is Control { FocusState: FocusState.Keyboard } control
-        && (IsWithin(control, TopChrome) || IsWithin(control, BottomChrome) || IsWithin(control, MiniChrome) || IsWithin(control, PartyPanel));
+        && (IsWithin(control, TopChrome) || IsWithin(control, BottomChrome) || IsWithin(control, MiniChrome) || IsWithin(control, PartyPanel)
+            || ReferenceEquals(control, CornerFullScreenButton));
 
     private static bool IsWithin(DependencyObject element, DependencyObject container)
     {
@@ -135,8 +136,17 @@ public sealed partial class PlayerPage
         ShowPartyPanel(visible);
         TopChrome.Translation = visible ? Vector3.Zero : new Vector3(0, -ChromeSlide, 0);
         BottomChrome.Translation = visible ? Vector3.Zero : new Vector3(0, ChromeSlide, 0);
+        ShowCornerButton();
         LiftSubtitles();
         PlaceSkipPrompt();
+    }
+
+    // The window's Exit full screen fades with the controls, but stays on the Playing Next screen, as its Close does.
+    private void ShowCornerButton()
+    {
+        bool shown = _areControlsVisible || ShowsNextUpScreen;
+        CornerFullScreenButton.Opacity = shown ? 1 : 0;
+        CornerFullScreenButton.IsHitTestVisible = shown;
     }
 
     // The skip pill and the next episode's card sit 28 px off the corner, and above the bar while it shows.

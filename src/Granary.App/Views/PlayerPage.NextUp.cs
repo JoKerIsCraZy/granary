@@ -24,18 +24,10 @@ public sealed partial class PlayerPage
     // The screen is not for the mini view nor the bar: there the picture stays as it is, and the countdown runs on behind it.
     private bool ShowsNextUpScreen => ViewModel.IsNextUpScreenShown && !IsCompact;
 
-    private void InitializeNextUp() =>
-        RegisterPropertyChangedCallback(IsFullScreenProperty, (_, _) =>
-        {
-            if (ShowsNextUpScreen)
-            {
-                VideoFrame.Margin = CornerInset(IsFullScreen, 24);
-            }
-        });
-
     private void ShowNextUpScreen()
     {
         PlaceVideoFrame();
+        ShowCornerButton();
         if (ShowsNextUpScreen)
         {
             SizeNextUpStill();
@@ -77,8 +69,8 @@ public sealed partial class PlayerPage
 
     public Visibility HasCards(IReadOnlyList<MediaCard> cards) => cards.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
 
-    // A corner's distance, and below the title bar's drag area in a window.
-    public Thickness CornerInset(bool isFullScreen, double inset) => new(inset, isFullScreen ? inset : TitleBarHeight + 8, inset, 0);
+    // A corner's distance, and below the title bar's strip: the drag area in a window, Exit full screen's in full screen.
+    private static Thickness CornerInset(double inset) => new(inset, TitleBarHeight + 8, inset, 0);
 
     public Visibility ShowsMiniPlayer(bool isScreenShown, PlayerPhase phase, bool isCompact) =>
         isScreenShown && phase != PlayerPhase.Ended && !isCompact ? Visibility.Visible : Visibility.Collapsed;

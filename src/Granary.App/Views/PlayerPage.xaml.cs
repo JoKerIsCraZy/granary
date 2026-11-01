@@ -53,7 +53,6 @@ public sealed partial class PlayerPage : Page
         InitializeInput();
         InitializeAutoHide();
         InitializeSkipPrompt();
-        InitializeNextUp();
         InitializeSubtitlePanels();
         InitializeDock();
         InitializeNotices();

@@ -671,9 +671,10 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
 - **The player**: full screen is the window's. Minimizing the player keeps it, the bar at the bottom of the full-screen
   app, and the bar's picture brings the full player back in full screen. Leaving the player (Exit, Stop, the bar's ✕,
   Back) keeps it too. Over the full player the title bar's buttons are away; in full screen the corner shows Exit full
-  screen alone, fading with the player's controls, and the window's Close is left out: the player's own ✕ Exit sits
-  right under it, and two crosses, one quitting Granary and one only leaving the player, would be mistaken for each
-  other. The mini view (P) from full screen goes back to full screen, from a window back to that window.
+  screen alone, fading with the player's controls and staying on the Playing Next screen, and the window's Close is left
+  out: the player's own ✕ Exit sits right under it, and two crosses, one quitting Granary and one only leaving the
+  player, would be mistaken for each other. The player's top bar, and the Playing Next screen's Close and small video,
+  keep the place below the 32 px strip in full screen too. The mini view (P) from full screen goes back to full screen, from a window back to that window.
 - **A trailer**: YouTube's full-screen button in a window takes the window full screen with the video and back with it.
   In the app's full screen the window stays as it is either way, and leaving the trailer's full screen leaves the app
   in full screen. While a trailer fills the screen the title bar's buttons are away (YouTube's button and Esc leave it);
