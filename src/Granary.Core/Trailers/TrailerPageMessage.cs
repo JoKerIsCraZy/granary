@@ -16,12 +16,16 @@ public enum TrailerPageEvent
 
     /// <summary>Esc or Back in the page or the player (<see cref="TrailerPage.CloseKeysScript"/>).</summary>
     Close,
+
+    /// <summary>F11 in the page or the player: the window's full screen toggles, as F11 does everywhere in Granary.</summary>
+    FullScreen,
 }
 
 /// <summary>
 /// A message from the trailer page (<see cref="TrailerPage"/>), in its fixed schema: <c>{"kind":"ready"}</c>,
-/// <c>{"kind":"playing"}</c>, <c>{"kind":"error","code":150}</c> or <c>{"kind":"close"}</c>. Anything else, malformed, longer than
-/// <see cref="MaximumLength"/>, with another member or a member twice, is not a message.
+/// <c>{"kind":"playing"}</c>, <c>{"kind":"error","code":150}</c>, <c>{"kind":"close"}</c> or <c>{"kind":"fullscreen"}</c>.
+/// Anything else, malformed, longer than <see cref="MaximumLength"/>, with another member or a member twice, is not a
+/// message.
 /// </summary>
 public sealed record TrailerPageMessage(TrailerPageEvent Event, int ErrorCode)
 {
@@ -78,6 +82,7 @@ public sealed record TrailerPageMessage(TrailerPageEvent Event, int ErrorCode)
             ("ready", null) => new TrailerPageMessage(TrailerPageEvent.Ready, 0),
             ("playing", null) => new TrailerPageMessage(TrailerPageEvent.Playing, 0),
             ("close", null) => new TrailerPageMessage(TrailerPageEvent.Close, 0),
+            ("fullscreen", null) => new TrailerPageMessage(TrailerPageEvent.FullScreen, 0),
             ("error", { } error) => new TrailerPageMessage(TrailerPageEvent.Error, error),
             _ => null,
         };

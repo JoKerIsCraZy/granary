@@ -44,6 +44,8 @@ public sealed partial class TrailerOverlay : UserControl
         FallbackText.Text = TrailerOverlayViewModel.UnavailableText;
         ViewModel.Opened += OnOpened;
         ViewModel.PropertyChanged += OnViewModelChanged;
+        // F11 pressed in the trailer's page, which keeps the keyboard from the window: the window's full screen, as anywhere.
+        ViewModel.FullScreenToggleRequested += (_, _) => _modes.ToggleFullScreen();
         _modes.Changed += OnWindowModeChanged;
         SizeChanged += (_, _) => Fit();
         // The mouse's back button closes the trailer before the window would go back; the WebView marks its own handled.

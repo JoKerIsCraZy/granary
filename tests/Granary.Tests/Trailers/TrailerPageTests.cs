@@ -98,9 +98,21 @@ public sealed partial class TrailerPageTests
         Assert.Contains("document.fullscreenElement", listener, StringComparison.Ordinal);
         // A held Esc leaves full screen once and does not go on to close the trailer.
         Assert.Contains("if (event.repeat)", listener, StringComparison.Ordinal);
-        // Its one message, in the page's own schema.
+        // Its messages, in the page's own schema: close, and F11 for the window's full screen.
         Assert.Contains("postMessage({ kind: \"close\" })", listener, StringComparison.Ordinal);
-        Assert.Equal(1, listener.Split("postMessage(").Length - 1);
+        Assert.Contains("postMessage({ kind: \"fullscreen\" })", listener, StringComparison.Ordinal);
+        Assert.Equal(2, listener.Split("postMessage(").Length - 1);
+    }
+
+    [Fact]
+    public void TheKeyListener_HandsF11ToTheWindow_OncePerPress()
+    {
+        string listener = TrailerPage.CloseKeysScript;
+
+        Assert.Contains("event.key === \"F11\"", listener, StringComparison.Ordinal);
+        // The repeats of a held key are dropped before any key is looked at.
+        Assert.True(listener.IndexOf("if (event.repeat)", StringComparison.Ordinal)
+            < listener.IndexOf("event.key === \"F11\"", StringComparison.Ordinal));
     }
 
     [Fact]

@@ -53,6 +53,12 @@ public sealed partial class TrailerOverlayViewModel : ObservableObject, IDisposa
     /// <summary>A trailer opens: Granary's own player, minimized to its bar, pauses for it (MainWindow).</summary>
     public event EventHandler? Opened;
 
+    /// <summary>
+    /// F11 in the trailer's page or player, where Granary's window does not hear it: the window's full screen toggles
+    /// (TrailerOverlay).
+    /// </summary>
+    public event EventHandler? FullScreenToggleRequested;
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsOpen), nameof(IsLoading), nameof(IsPlaying), nameof(IsUnavailable))]
     public partial TrailerOverlayState State { get; private set; }
@@ -101,10 +107,18 @@ public sealed partial class TrailerOverlayViewModel : ObservableObject, IDisposa
         }
     }
 
-    /// <summary>What the page reported of the player: it answered, started, or failed; or Esc or Back was pressed in it.</summary>
+    /// <summary>What the page reported of the player: it answered, started, or failed; or Esc, Back or F11 was pressed in it.</summary>
     public void Receive(TrailerPageMessage message)
     {
         ArgumentNullException.ThrowIfNull(message);
+        if (message.Event == TrailerPageEvent.FullScreen)
+        {
+            if (IsOpen)
+            {
+                FullScreenToggleRequested?.Invoke(this, EventArgs.Empty);
+            }
+            return;
+        }
         if (message.Event == TrailerPageEvent.Close)
         {
             Close();

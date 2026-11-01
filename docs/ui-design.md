@@ -388,8 +388,9 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     (Close, Esc) at its right. The 16:9 frame is 896 px wide at most (the web's `max-w-4xl`) and shrinks with the window,
     keeping 16 px from its edges and clear of the title bar. A spinner shows until YouTube's player answers; the player
     then shows and plays at once. Esc, ✕, Back (Alt+Left, the Back key, the mouse's back button) and a click on the
-    scrim close it, which stops the video; so does any other page, and a title that starts to play. Esc and Back work
-    after a click into the video too, when the keyboard is the browser's (docs/architecture.md, "Trailers"). Focus
+    scrim close it, which stops the video; so does any other page, and a title that starts to play. Esc, Back and F11
+    (the window's full screen) work after a click into the video too, when the keyboard is the browser's
+    (docs/architecture.md, "Trailers"). Focus
     moves to ✕ as it opens and back to the trailer's card as it closes; Tab stays inside, ✕ first. YouTube's
     full-screen button fills the screen with the video alone (the window goes full screen, as the player's does, unless
     the app is in full screen already, which it then stays in; see Full screen), and Esc or the button bring the dialog
@@ -676,7 +677,8 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
 - **A trailer**: YouTube's full-screen button in a window takes the window full screen with the video and back with it.
   In the app's full screen the window stays as it is either way, and leaving the trailer's full screen leaves the app
   in full screen. While a trailer fills the screen the title bar's buttons are away (YouTube's button and Esc leave it);
-  F11 there leaves full screen for both.
+  F11 there leaves full screen for both. F11 works with the keyboard in the trailer's page or YouTube's player too: the
+  page hands it to the window (`TrailerPage.CloseKeysScript`), once per press.
 
 ## Player
 

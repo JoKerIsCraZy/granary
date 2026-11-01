@@ -8,8 +8,8 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Added
 
-- Full screen for the whole app, as in Plex: F11 or the button at the top right. In full screen the top right shows Exit
-  full screen and Close.
+- Full screen for the whole app, as in Plex: F11 (in a trailer too) or the button at the top right. In full screen the
+  top right shows Exit full screen and Close.
 
 ### Fixed
 
