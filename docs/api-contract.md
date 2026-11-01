@@ -2307,10 +2307,14 @@ HDR with libplacebo. An honest, conservative first report:
   (HDR10+ as HDR10), HLG and Dolby Vision Profile 5 and 8 to the SDR output, checked with d3d11va
   decoding in composition mode against the same clip in SDR. Profile 7 is covered by the claim too and
   plays its base layer with the RPU (the enhancement layer is dropped); not checked with a sample yet.
-  The claim is sent only when the GPU has an HEVC Main 10 decoder (`HardwareHevcMain10`): HDR is
-  10-bit, and without that decoder the CPU would decode a 4K original. HDR in AV1 or VP9 needs no extra
-  gate, since those codecs are listed only with a hardware decoder; the one gap is HDR in H.264 High 10
-  (rare), which D3D11VA does not decode, so the CPU does. Like the web's decode engine,
+  HDR is 10-bit, and the claim covers every codec the report lists, since the server checks codec names
+  and not bit depth at `declared` evidence. So it is sent only when the GPU decodes some HDR codec at 10
+  bits and every HDR codec listed (`hevc`, `vp9`, `av1`) is decoded at 10 bits by the GPU
+  (`HardwareTenBitVideoCodecs`: HEVC Main 10, VP9 Profile 2, AV1, whose Main profile includes 10-bit)
+  or is on the CPU's list. A GPU with an 8-bit-only HEVC or VP9 decoder leaves HDR to the server; else
+  the CPU would decode a 4K original. Two gaps stay: HDR in H.264 High 10, which D3D11VA does not decode,
+  and 12-bit HEVC, which no common decoder takes; both are rare, and the second already direct-plays as
+  SDR, which only `platform_attested` evidence with `bit_depths` can bound. Like the web's decode engine,
   which claims it only with a hardware WebGPU adapter and an SDR display. Without the claim the server
   tone-maps an HDR original itself, in a transcode to H.264 (in software unless the server has hardware
   tone mapping), which is heavy at 2160p. HLS stays without the claim, so a server-made stream still has

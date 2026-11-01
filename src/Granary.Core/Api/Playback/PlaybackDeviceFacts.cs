@@ -10,10 +10,10 @@ public sealed record PlaybackDeviceFacts
     public IReadOnlyList<string> HardwareVideoCodecs { get; init => field = value ?? []; } = [];
 
     /// <summary>
-    /// The GPU decodes 10-bit HEVC (Main 10), the format of nearly every HDR and Dolby Vision file. Without it the
-    /// CPU would decode an HDR original, so the report leaves HDR to the server.
+    /// The codecs whose 10-bit profile the GPU decodes too (HEVC Main 10, VP9 Profile 2, AV1): HDR video is 10-bit.
+    /// Without them the CPU would decode an HDR original, so the report leaves HDR to the server.
     /// </summary>
-    public bool HardwareHevcMain10 { get; init; }
+    public IReadOnlyList<string> HardwareTenBitVideoCodecs { get; init => field = value ?? []; } = [];
 
     /// <summary>
     /// Codecs the software decoder plays smoothly on this machine. At <c>declared</c> evidence the server bounds

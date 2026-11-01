@@ -3,10 +3,10 @@ using System.Runtime.Versioning;
 
 namespace Granary.Player.Interop;
 
-/// <summary>What the GPU decodes: codec names as ffprobe gives them, and whether HEVC includes 10-bit.</summary>
-public sealed record HardwareVideoDecoders(IReadOnlyList<string> Codecs, bool HevcMain10)
+/// <summary>What the GPU decodes: codec names as ffprobe gives them, and those it decodes at 10 bits too.</summary>
+public sealed record HardwareVideoDecoders(IReadOnlyList<string> Codecs, IReadOnlyList<string> TenBitCodecs)
 {
-    public static readonly HardwareVideoDecoders None = new([], false);
+    public static readonly HardwareVideoDecoders None = new([], []);
 }
 
 /// <summary>
@@ -45,8 +45,13 @@ public static unsafe partial class VideoDecoderProbe
         [new("90b899ea-3a62-4705-88b3-8df04b2744e7")] = "vp8", // VP8_VLD
     };
 
-    // HEVC_VLD_MAIN10: 10-bit HEVC, the format of nearly every HDR and Dolby Vision file.
-    private static readonly Guid HevcMain10Profile = new("107af0e0-ef1a-4d19-aba8-67a163073d13");
+    // The profiles that decode 10-bit video, the depth of HDR and Dolby Vision. AV1's Main profile includes 10-bit.
+    private static readonly Dictionary<Guid, string> TenBitProfiles = new()
+    {
+        [new("107af0e0-ef1a-4d19-aba8-67a163073d13")] = "hevc", // HEVC_VLD_MAIN10
+        [new("a4c749ef-6ecf-48aa-8448-50a7a1165ff7")] = "vp9", // VP9_VLD_10BIT_PROFILE2
+        [new("b8be4ccb-cf53-46ba-8d59-d6b8a6da5d2a")] = "av1", // AV1_VLD_PROFILE0
+    };
 
     /// <summary>The ffprobe codec name of a DXVA decoder profile; null for profiles Granary does not use.</summary>
     public static string? Codec(Guid profile) => Profiles.GetValueOrDefault(profile);
@@ -57,20 +62,25 @@ public static unsafe partial class VideoDecoderProbe
     /// </summary>
     public static HardwareVideoDecoders HardwareDecoders() => Summarize(ReadProfiles());
 
-    /// <summary>The codecs of <paramref name="profiles"/>, each once, and whether 10-bit HEVC is among them.</summary>
+    /// <summary>The codecs of <paramref name="profiles"/>, each once, and those among them with a 10-bit profile.</summary>
     public static HardwareVideoDecoders Summarize(IEnumerable<Guid> profiles)
     {
         var codecs = new List<string>();
-        bool hevcMain10 = false;
+        var tenBit = new List<string>();
         foreach (Guid profile in profiles)
         {
-            hevcMain10 |= profile == HevcMain10Profile;
-            if (Codec(profile) is { } codec && !codecs.Contains(codec))
-            {
-                codecs.Add(codec);
-            }
+            AddOnce(codecs, Codec(profile));
+            AddOnce(tenBit, TenBitProfiles.GetValueOrDefault(profile));
         }
-        return new HardwareVideoDecoders(codecs, hevcMain10);
+        return new HardwareVideoDecoders(codecs, tenBit);
+    }
+
+    private static void AddOnce(List<string> list, string? codec)
+    {
+        if (codec is not null && !list.Contains(codec))
+        {
+            list.Add(codec);
+        }
     }
 
     private static List<Guid> ReadProfiles()

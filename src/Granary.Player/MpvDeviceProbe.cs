@@ -10,7 +10,7 @@ namespace Granary.Player;
 /// What mpv on this machine decodes (docs/api-contract.md, 13.2), probed once: the GPU's D3D11VA codecs, plus the
 /// codecs FFmpeg decodes in software at any size a desktop CPU keeps up with. HEVC, VP9 and AV1 count only with a
 /// hardware decoder: at <c>declared</c> evidence the server bounds neither size nor bit depth, and 4K HEVC in
-/// software would stutter on many machines. For the same reason HDR originals come only with a 10-bit HEVC decoder.
+/// software would stutter on many machines. For the same reason HDR originals come only where those decoders take 10-bit video too.
 /// </summary>
 [SupportedOSPlatform("windows")]
 public sealed class MpvDeviceProbe : IPlaybackDeviceProbe
@@ -28,7 +28,7 @@ public sealed class MpvDeviceProbe : IPlaybackDeviceProbe
         {
             Platform = "windows",
             HardwareVideoCodecs = hardware.Codecs,
-            HardwareHevcMain10 = hardware.HevcMain10,
+            HardwareTenBitVideoCodecs = hardware.TenBitCodecs,
             SoftwareVideoCodecs = LightSoftwareCodecs,
             OsVersion = Environment.OSVersion.Version.ToString(),
             FormFactor = PlaybackDeviceFacts.Desktop,

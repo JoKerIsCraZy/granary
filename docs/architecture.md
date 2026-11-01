@@ -39,7 +39,7 @@ HWND is in [spike/README.md](../spike/README.md).
 
 Because there is no window, mpv cannot query the monitor: the app must pass HDR target settings and
 the display refresh rate itself (Phase 3). Until it does, the output is SDR, and mpv tone-maps HDR and
-Dolby Vision originals onto it. Where the GPU decodes 10-bit HEVC, Granary claims that on direct play
+Dolby Vision originals onto it. Where the GPU decodes HDR video at 10 bits, Granary claims that on direct play
 (`client_managed_dynamic_range_v1`, docs/api-contract.md 13.2), so the server sends HDR files as they are
 instead of tone-mapping them in a transcode.
 
