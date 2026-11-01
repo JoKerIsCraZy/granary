@@ -34,6 +34,8 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
     private (string? ServerId, string? ProfileId) _seenAs;
     // Counts every entry and leave: an answer to a call made before one is about a room this profile is no longer in.
     private long _generation;
+    // The host's End on its way.
+    private Task<bool>? _ending;
 
     public WatchPartySession(ISessionManager session, WatchPartyApi api, Func<WatchPartyConnection> connections, IUiDispatcher dispatcher,
         ILogger<WatchPartySession> logger, WatchPartyRecentRooms? recentRooms = null, TimeProvider? time = null)
@@ -217,15 +219,56 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
     /// The host ends the room for everyone. This device's engagement ends as the others' do (the server tells them
     /// <c>host_left</c>): the socket closes, and <see cref="End"/> says so until the room is left or another entered.
     /// </summary>
-    /// <returns>True when a room ended; false when this device was in none.</returns>
+    /// <returns>True when a room ended; false when this device was in none, or in one already over.</returns>
     public async Task<bool> EndRoomAsync()
     {
-        if (Room is not { } room)
+        // A second End while one is on its way waits for that one: the room is ended once.
+        if (_ending is { } pending)
+        {
+            return await pending;
+        }
+        if (Room is not { } room || End is not null)
         {
             return false;
         }
-        await _api.EndAsync(Server(), room.RoomId);
-        MarkEnded(room);
+        var ending = EndAsync(room);
+        _ending = ending;
+        try
+        {
+            return await ending;
+        }
+        finally
+        {
+            if (_ending == ending)
+            {
+                _ending = null;
+            }
+        }
+    }
+
+    private async Task<bool> EndAsync(WatchPartyRoom room)
+    {
+        long generation = _generation;
+        try
+        {
+            await _api.EndAsync(Server(), room.RoomId);
+        }
+        catch (SiloApiException ex) when (ex.Status is 404 or 409 or 410 && generation == _generation && End is { Replaced: false })
+        {
+            // The room's own close came first, and the server has no room left to end: it ended all the same.
+            _logger.LogDebug("The Watch Party had closed before its end was answered: {Status}", ex.Status);
+        }
+        if (generation != _generation)
+        {
+            // Left, another room entered, or another profile or server meanwhile: the room ended, but nothing here is it.
+            MarkEnded(room);
+            return true;
+        }
+        // The room's own close marked it already.
+        if (End is not { } closed || !RoomIsOver(closed))
+        {
+            MarkEnded(room);
+        }
         _generation++;
         var connection = _connection;
         _connection = null;

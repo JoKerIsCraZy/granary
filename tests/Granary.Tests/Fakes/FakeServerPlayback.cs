@@ -207,8 +207,12 @@ internal sealed class FakeServerPlayback : IServerPlayback
     public Task StopAsync()
     {
         Stops++;
+        Stopping?.Invoke();
         return StopResult;
     }
+
+    /// <summary>Runs as the stop is asked for: the moment the real playback reads its final position.</summary>
+    public Action? Stopping { get; set; }
 
     public void Raise(ServerPlaybackStatus status)
     {
