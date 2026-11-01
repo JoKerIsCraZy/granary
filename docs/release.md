@@ -199,7 +199,8 @@ Every tool that touches a release is pinned by hash:
 - **vpk**, Velopack's packing tool, comes through `scripts/get-vpk.ps1`, in packing and in uploading. It downloads the
   version `dotnet-tools.json` names from nuget.org and checks its SHA-256 against the value pinned in the script. It
   unpacks the package afresh into `artifacts/tools` and runs `vpk.dll` from there, never a copy NuGet resolves.
-- **libmpv** is pinned by SHA-256 in `native.lock.json` (`fetch-native.ps1`).
+- **libmpv** is pinned by SHA-256 in `native.lock.json` (`fetch-native.ps1`). Newer builds come as pull requests
+  (see "libmpv").
 - **Actions** are pinned by commit, with their version beside each.
 
 When Dependabot raises vpk in `dotnet-tools.json`, `get-vpk.ps1` stops with "has no pinned SHA-256". To pin it:
@@ -211,6 +212,54 @@ When Dependabot raises vpk in `dotnet-tools.json`, `get-vpk.ps1` stops with "has
 
 Not pinned by hash: the .NET SDK that `setup-dotnet` installs (by the version in `global.json`), and the build's NuGet
 packages, which have no lock files yet.
+
+## libmpv
+
+Granary ships the official mpv CI build of libmpv (x86_64, LGPL variant). FFmpeg is compiled into `libmpv-2.dll`, so
+it changes only with libmpv. mpv's CI replaces the asset of its `git-release` release on every master commit, so
+`native.lock.json` pins one build by SHA-256 and points at a mirror of it in this repository: the prerelease
+`deps-libmpv-<version>-<CI run>` (the first one, `deps-libmpv-v0.41.0-dev-ga39482e7a`, has no run in its tag), which
+also holds the mpv and FFmpeg sources the LGPL asks to offer. Its `ffmpeg` field names
+the FFmpeg version in the DLL. Dependabot sees none of this.
+
+**Newer builds come as pull requests.** `.github/workflows/native-deps.yml` runs on the 1st of each month, and from
+Actions → Native dependencies → Run workflow (on `main`):
+
+1. `scripts/check-libmpv.ps1` compares the pin with the newest upstream build. A later build of another mpv commit is
+   newer; a rebuild of the pinned commit is not.
+2. When there is a newer one and no pull request of it yet, open or closed, `scripts/update-libmpv.ps1 -Publish`:
+   - downloads that build and checks its size and SHA-256 against GitHub's listing;
+   - reads the FFmpeg version from its DLL, as bytes: nothing downloaded is ever run;
+   - downloads the mpv and FFmpeg sources at the commits the build names;
+   - creates the mirror prerelease with all three files, or checks the one an earlier run made;
+   - updates `native.lock.json` and the libmpv section of `THIRD_PARTY_NOTICES.md`.
+3. The workflow pushes the branch `deps/libmpv-<version>` and opens the pull request. It names both builds with their
+   mpv and FFmpeg versions, links to the changes in each and to FFmpeg's security fixes, and has a short checklist.
+   The workflow starts CI on the branch itself, because GitHub starts no `pull_request` workflows for a pull request
+   that the workflow's own token opens; to run every pull request check, close and reopen it. Then it closes its own
+   update pull requests of older builds that are still open.
+
+Review it like any update: CI green, a video plays from the branch (`./scripts/fetch-native.ps1`, then `--play`), and
+a CHANGELOG line when the update matters to users, such as an FFmpeg security fix
+([FFmpeg's security page](https://ffmpeg.org/security.html)). A pull request closed without merging leaves that build
+alone; the next newer one gets a pull request of its own.
+
+What a review cannot do is look inside a 127 MB DLL. The checks make sure the pin is exactly the build mpv's CI
+published, so the trust rests on mpv-player/mpv. CI runs on the branch before anyone has looked at it, and its libmpv
+tests load the new DLL: a compromised upstream build would run there, on a throwaway runner that can only read the
+repository and holds no secret. The signing key stays in the `release` environment, which takes runs from `main` only.
+
+The pull request needs **Settings → Actions → General → Workflow permissions → "Allow GitHub Actions to create and
+approve pull requests"**. Without it, the run makes the mirror release and the branch and then fails; turn the setting
+on and run the workflow again, which checks the release and opens the pull request.
+
+By hand, from the repository's root, signed in to the GitHub CLI:
+
+- `./scripts/check-libmpv.ps1` shows the pinned and the newest build. It downloads nothing.
+- `./scripts/update-libmpv.ps1` is a dry run of the whole update in `native/dl-libmpv`: it prints the new
+  `native.lock.json`, the FFmpeg version and the pull request's text, and changes nothing.
+- `./scripts/update-libmpv.ps1 -Publish` also creates the mirror release and updates the two files. The commit and
+  the pull request are then yours to make.
 
 ## Before the first public release
 
@@ -241,6 +290,8 @@ packages, which have no lock files yet.
 - **Dependabot** (`.github/dependabot.yml`) proposes new versions of the pinned actions and the NuGet packages. Review
   an action's update like code. A Velopack update comes on its own: check `VelopackUpdater`'s assumptions against it
   (apply-on-start, deltas, when Update.exe is taken out of the package), and pin a new vpk (see "Packing tools").
+- **native-deps** (`.github/workflows/native-deps.yml`) does the same for libmpv once a month (see "libmpv"). For its
+  pull requests, turn on "Allow GitHub Actions to create and approve pull requests" under Settings → Actions → General.
 - **Checks on every change:**
   - `codeql.yml` scans the C# code and the workflows (Security → Code scanning).
   - `dependency-review.yml` fails a pull request that brings a package with a known vulnerability.
@@ -251,27 +302,6 @@ packages, which have no lock files yet.
     Settings → Advanced Security.
 - Security reports: turn on **Private vulnerability reporting** under the repository's Settings → Code security, since
   `SECURITY.md` sends every report there and names no other channel.
-- libmpv: `native.lock.json` already points at this repository's mirror release
-  `deps-libmpv-v0.41.0-dev-ga39482e7a`, which holds the exact upstream zip (same SHA-256; upstream's `git-release`
-  asset is gone) and the mpv and FFmpeg sources the LGPL asks to offer. Upload it once, right after the first push
-  (a release needs a commit to tag), then run the CI job again; until then its libmpv step fails. The workflows fetch
-  it with their own read-only token through `gh`, so this works while the repository is still private. From the
-  repository's root, with the pinned zip in `native\dl-libmpv` where `fetch-native.ps1 -ZipPath` used it:
-
-  ```powershell
-  $dl = "native\dl-libmpv"
-  Invoke-WebRequest https://github.com/mpv-player/mpv/archive/a39482e7a.tar.gz -OutFile "$dl\mpv-a39482e7a.tar.gz"
-  Invoke-WebRequest https://github.com/FFmpeg/FFmpeg/archive/1d83e71.tar.gz -OutFile "$dl\ffmpeg-1d83e71.tar.gz"
-  # A prerelease: the app's updater (GithubSource, prerelease: false) and the "latest release" badge skip it.
-  gh release create deps-libmpv-v0.41.0-dev-ga39482e7a --repo JoKeRIsCraZy/granary --prerelease `
-      --title "libmpv v0.41.0-dev-ga39482e7a (mirror)" `
-      --notes "The mpv CI build Granary bundles, unchanged, with the mpv and FFmpeg sources it was built from. Not an app release." `
-      "$dl\libmpv-v0.41.0-dev-ga39482e7a-40099161509-x86_64-w64-mingw32-lgpl.zip" "$dl\mpv-a39482e7a.tar.gz" "$dl\ffmpeg-1d83e71.tar.gz"
-  Remove-Item native\libmpv\.sha256; ./scripts/fetch-native.ps1   # downloads from the mirror and checks the SHA-256
-  ```
-
-  A new libmpv later is a new mirror release with its own tag, and `url`, `sha256`, `version` and
-  `THIRD_PARTY_NOTICES.md` change together.
 - Code signing (Authenticode, apart from the update signing above): the exe and setup are not signed yet, so Windows
   SmartScreen warns about an unknown publisher on the first download. `vpk pack` signs with `--signParams` (a
   code-signing certificate) or `--azureTrustedSignFile` (Azure Trusted Signing).

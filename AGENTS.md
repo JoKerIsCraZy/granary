@@ -65,10 +65,11 @@ dotnet test --solution Granary.slnx
 - Warnings are errors (`TreatWarningsAsErrors`, analyzers included). A change must build with 0 warnings.
 - Package versions live in `Directory.Packages.props` (central package management).
 - libmpv: `native.lock.json` pins the build by SHA-256 and downloads it from this repository's mirror release
-  (`deps-libmpv-…`; upstream replaces its asset on every mpv master build). Until that release is uploaded
-  (docs/release.md), pass the exact pinned archive with `-ZipPath`; the hash is still checked. Do not re-pin
-  `native.lock.json` on the side: a new pin also needs a new mirror release and changes THIRD_PARTY_NOTICES.md.
-  Without libmpv, builds and tests still run and the libmpv integration tests skip themselves.
+  (`deps-libmpv-…`; upstream replaces its asset on every mpv master build). With a copy of the pinned archive, pass
+  it with `-ZipPath`; the hash is still checked. Do not re-pin `native.lock.json` by hand: a new pin also needs a new
+  mirror release and changes THIRD_PARTY_NOTICES.md. The monthly native-deps workflow does all of it and opens a pull
+  request (`scripts/update-libmpv.ps1`, docs/release.md "libmpv"). FFmpeg is compiled into `libmpv-2.dll` and moves
+  with it. Without libmpv, builds and tests still run and the libmpv integration tests skip themselves.
 
 Tests run on xUnit v3 with Microsoft Testing Platform. There is no mocking library: fakes are small hand-written
 classes in `tests/Granary.Tests/Fakes`.
