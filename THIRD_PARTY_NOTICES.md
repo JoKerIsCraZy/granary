@@ -68,8 +68,9 @@ which come from a package those files call closed source (`Microsoft.Internal.Wi
 
 Licensing: the Windows App SDK is a Platform Library in the sense of the platform library exception, an additional
 permission under section 7 of the AGPL that lets Granary combine its code with it and ship the result. Granary's
-contributors grant it for their code in [PLATFORM-EXCEPTION.md](PLATFORM-EXCEPTION.md), and Silo Media L.L.C. grants
-it for the parts adapted from Silo in the `PLATFORM-EXCEPTION.md` of each Silo repository (see Silo below). Granary's
+contributors grant it for their code in [PLATFORM-EXCEPTION.md](PLATFORM-EXCEPTION.md). The parts adapted from Silo carry
+Silo's own permission, in the `PLATFORM-EXCEPTION.md` of each Silo repository: Silo Media L.L.C. grants it for the code
+it holds copyright in, and Silo's contributors for their contributions, as that file sets out (see Silo below). Granary's
 Corresponding Source therefore need not include the Windows App SDK's source.
 
 ## Plus Jakarta Sans (bundled font)

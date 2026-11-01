@@ -41,9 +41,14 @@ remove this additional permission from their copy.
 ## Who grants this permission
 
 - Granary's contributors grant it for their contributions, by agreeing to
-  the licensing terms in [CONTRIBUTING.md](CONTRIBUTING.md).
-- Silo Media L.L.C. grants it for the parts of Granary adapted from Silo's
-  web, Android and Apple clients, in the `PLATFORM-EXCEPTION.md` of
-  <https://github.com/Silo-Server/silo-server>,
+  the licensing terms in [CONTRIBUTING.md](CONTRIBUTING.md). A contribution
+  another author made before this file was added is covered once that
+  author agrees to it.
+- The parts of Granary adapted from Silo's web, Android and Apple clients
+  carry Silo's own permission, not one Granary grants: the
+  `PLATFORM-EXCEPTION.md` of <https://github.com/Silo-Server/silo-server>,
   <https://github.com/Silo-Server/silo-android> and
-  <https://github.com/Silo-Server/silo-apple>.
+  <https://github.com/Silo-Server/silo-apple>. There, Silo Media L.L.C.
+  grants it for the code it holds copyright in, and Silo's contributors for
+  their contributions, as that file sets out. It covers those parts as far
+  as that file does.

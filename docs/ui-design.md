@@ -585,8 +585,9 @@ says why above the sections.
   try again." with Download and install still offered. An update downloaded before the switch was turned off is held
   back: it shows as available, Download and install readies it without a second download, and turning the switch on
   again readies it with the notice. What's new: CHANGELOG.md as shipped, a release per heading ("0.2.0 · Oct 27,
-  2026"), its groups in small muted capitals and bulleted items. License and source: View opens LICENSE and THIRD_PARTY_NOTICES.md
-  in Notepad, Open the repository. Troubleshooting: the data and logs folders in Explorer.
+  2026"), its groups in small muted capitals and bulleted items. License and source: the license row names the AGPL with its platform
+  library exception (`PLATFORM-EXCEPTION.md` ships beside LICENSE); View opens LICENSE and THIRD_PARTY_NOTICES.md in
+  Notepad, Open the repository. Troubleshooting: the data and logs folders in Explorer.
 
 ## Admin
 
