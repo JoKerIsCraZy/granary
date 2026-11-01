@@ -293,6 +293,100 @@ public sealed class ServerPlaybackPlanChangeTests
         Assert.Equal([PlanChange.Quality, PlanChange.None], _changes);
     }
 
+    // Off the usual paths
+
+    [Fact]
+    public async Task AnUnexpectedFailureDuringAChange_EndsIt_WithTheFailure()
+    {
+        _fixture.Silo.On(HttpMethod.Post, ReplanPath, () => Task.FromException<HttpResponseMessage>(new InvalidOperationException("not a request failure")));
+        var playback = await TranscodingAsync(ServerPlaybackSettingsTests.Transcode("720p-medium"));
+
+        playback.SelectQuality("1080p-high");
+        await playback.Recovery;
+
+        Assert.Equal(ServerPlaybackPhase.Failed, playback.Status.Phase);
+        Assert.Equal(PlanChange.None, playback.PlanChange);
+        Assert.Equal([PlanChange.Quality, PlanChange.None], _changes);
+    }
+
+    [Fact]
+    public async Task MediaHeadersRefusedForTheNewStream_EndTheChange_WithTheFailure()
+    {
+        _fixture.Silo.On(HttpMethod.Post, ReplanPath, Ok(ServerPlaybackSettingsTests.Transcode("1080p-high")));
+        var playback = await TranscodingAsync(ServerPlaybackSettingsTests.Transcode("720p-medium"));
+        _fixture.Auth.FailWith = new MediaAuthorizationException(MediaAuthorizationFailure.SignedOut, "Sign in to play from this server.");
+
+        playback.SelectQuality("1080p-high");
+        await playback.Recovery;
+
+        Assert.Equal(ServerPlaybackPhase.Failed, playback.Status.Phase);
+        Assert.Single(_fixture.Engine.Loaded);
+        Assert.Equal([PlanChange.Quality, PlanChange.None], _changes);
+    }
+
+    [Fact]
+    public async Task ANewStreamThatNeverShowsAPicture_KeepsTheChange_UntilPlaybackGivesUp()
+    {
+        // The transcode is another plan than the direct play: when it shows nothing, it is replanned as a failure.
+        _fixture.Silo.On(HttpMethod.Post, ReplanPath, Ok(PlaybackPayloads.TranscodeDecision.Replace(OtherSession, Session, StringComparison.Ordinal)));
+        var playback = await PlayingAsync();
+        playback.SelectQuality("1080p-high");
+        await playback.Recovery;
+
+        for (int load = 0; load < 20 && playback.Status.Phase != ServerPlaybackPhase.Failed; load++)
+        {
+            Assert.Equal(PlanChange.Quality, playback.PlanChange);
+            await _fixture.AdvanceAsync(TimeSpan.FromSeconds(90));
+            await playback.Recovery;
+        }
+
+        Assert.Equal(ServerPlaybackPhase.Failed, playback.Status.Phase);
+        Assert.True(_fixture.Engine.Loaded.Count > 3);
+        Assert.Equal([PlanChange.Quality, PlanChange.None], _changes);
+    }
+
+    [Fact]
+    public async Task FramesOfTheOldStream_DoNotEndTheChange()
+    {
+        var answer = Pending();
+        _fixture.Silo.On(HttpMethod.Post, ReplanPath, () => answer.Task);
+        var playback = await TranscodingAsync(ServerPlaybackSettingsTests.Transcode("720p-medium"));
+
+        playback.SelectQuality("1080p-high");
+        _fixture.Engine.RaiseState(Frame(31));
+        Assert.Equal(PlanChange.Quality, playback.PlanChange);
+        answer.SetResult(await ScriptedSilo.Json(HttpStatusCode.OK, ServerPlaybackSettingsTests.Transcode("1080p-high"))());
+        await playback.Recovery;
+        // A state of the first load, reported before the new load went out and arriving after it.
+        _fixture.Engine.RaiseState(Frame(32) with { LoadId = 1 });
+        Assert.Equal(PlanChange.Quality, playback.PlanChange);
+
+        _fixture.Engine.RaiseState(Frame(2));
+        Assert.Equal([PlanChange.Quality, PlanChange.None], _changes);
+    }
+
+    [Fact]
+    public async Task ASeekOutsideTheStreamDuringAQualityChange_FollowsIt_AsASeek()
+    {
+        var answer = Pending();
+        _fixture.Silo.On(HttpMethod.Post, ReplanPath, () => answer.Task, Ok(ServerPlaybackSettingsTests.Transcode("1080p-high")));
+        var playback = await TranscodingAsync(ServerPlaybackSettingsTests.Transcode("720p-medium"));
+
+        playback.SelectQuality("1080p-high");
+        playback.Seek(100);
+        answer.SetResult(await ScriptedSilo.Json(HttpStatusCode.OK, ServerPlaybackSettingsTests.Transcode("1080p-high"))());
+        await playback.Recovery;
+        // The quality's stream shows: the seek that waited for it goes outside it, and the server re-anchors.
+        _fixture.Engine.RaiseState(Frame(2));
+        await Until(() => _fixture.Silo.SentTo(HttpMethod.Post, ReplanPath).Count == 2, "the seek is replanned");
+        await playback.Recovery;
+
+        Assert.Equal("seek_reanchor", _fixture.Body(HttpMethod.Post, ReplanPath, 1).GetProperty("operation").GetString());
+        Assert.Equal(PlanChange.Seek, playback.PlanChange);
+        _fixture.Engine.RaiseState(Frame(2));
+        Assert.Equal([PlanChange.Quality, PlanChange.Seek, PlanChange.None], _changes);
+    }
+
     [Fact]
     public async Task AReconnect_IsNoPlanChange()
     {
