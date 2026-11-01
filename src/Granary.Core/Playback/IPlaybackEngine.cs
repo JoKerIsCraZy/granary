@@ -48,6 +48,22 @@ public sealed record PlaybackSnapshot(
     long LoadId = 0)
 {
     public static PlaybackSnapshot Idle { get; } = new(false, false, TimeSpan.Zero, null, null);
+
+    /// <summary>
+    /// What the player holds of the loaded file, in the time of <see cref="Position"/>: mpv's cache of a network stream,
+    /// none for a local file. Empty from a load until the new file is open. While keep-open holds the file at its end, its
+    /// ranges stay; they clear when the file ends: a stop, a failure, or mpv's own end of the file. They change at most
+    /// four times a second, raised from a timer's thread (see <see cref="Sequence"/>).
+    /// </summary>
+    public BufferedRanges Buffered { get; init; } = BufferedRanges.None;
+
+    /// <summary>
+    /// The order the engine made its snapshots in: each one it raises is numbered above every one before it (the
+    /// <see cref="Idle"/> template is 0). The engine raises from more than one thread, so a consumer can get one after a
+    /// newer one: a snapshot numbered below the newest it has seen is stale. The numbers belong to one engine, so only
+    /// numbers from the same engine compare.
+    /// </summary>
+    public long Sequence { get; init; }
 }
 
 public enum PlaybackEndReason

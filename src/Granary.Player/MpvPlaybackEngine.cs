@@ -13,13 +13,22 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
 {
     private static readonly TimeSpan PositionThrottle = TimeSpan.FromMilliseconds(250);
 
+    // What the cache holds reaches the seek bar at most this often.
+    private static readonly TimeSpan BufferedThrottle = TimeSpan.FromMilliseconds(250);
+
+    private const string CacheStateProperty = "demuxer-cache-state";
+
     private readonly MpvClient _mpv;
     private readonly ILogger<MpvPlaybackEngine> _logger;
     private readonly MpvEngineOptions _options;
+    private readonly TrailingThrottle _bufferedReads;
     private readonly object _gate = new();
     private PlaybackSnapshot _current = PlaybackSnapshot.Idle;
     private TimeSpan? _lastReportedPosition;
     private long _loads;
+
+    // The number of the last snapshot raised (PlaybackSnapshot.Sequence).
+    private long _sequence;
 
     // The audio stream the latest load asked for; checked once mpv opened the file.
     private int? _loadAudio;
@@ -34,11 +43,13 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
     private (int Width, int Height) _outputSize;
     private nint _swapChain;
 
-    public MpvPlaybackEngine(MpvEngineOptions options, ILogger<MpvPlaybackEngine> logger)
+    public MpvPlaybackEngine(MpvEngineOptions options, ILogger<MpvPlaybackEngine> logger, TimeProvider? time = null)
     {
         _options = options;
         _logger = logger;
         _outputSize = options.InitialOutputSize;
+        _bufferedReads = new TrailingThrottle(BufferedThrottle, time ?? TimeProvider.System, ReadBuffered,
+            ex => _logger.LogError(ex, "Reporting what mpv's cache holds failed"));
         _mpv = new MpvClient(logger);
         _mpv.PropertyChanged += OnPropertyChanged;
         _mpv.LogMessage += OnLogMessage;
@@ -55,6 +66,9 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
             ("paused-for-cache", LibMpv.FormatFlag),
             ("volume", LibMpv.FormatDouble),
             ("mute", LibMpv.FormatFlag),
+            // Only that it may have changed, several times a second while the stream loads: it is read when the
+            // throttle lets it (ReadBuffered), not with every notice.
+            (CacheStateProperty, LibMpv.FormatNone),
         ]);
         _logger.LogInformation("libmpv {Version} initialized ({Output})", _mpv.GetString("mpv-version"), options.VideoOutput);
         RefreshSwapChain();
@@ -138,8 +152,10 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
             _lastReportedPosition = null;
             _rejected = false;
         }
-        // The file before is still loaded until mpv replaces it: nothing of it may read as the new one's start.
-        Update(s => s with { LoadId = loadId, IsLoaded = false, HasStarted = false, IsAtEnd = false }, force: true);
+        // The file before is still loaded until mpv replaces it: nothing of it may read as the new one's start, nor its
+        // cache as the new one's. A read of it still waiting is dropped, and one under way finds another load.
+        _bufferedReads.Reset();
+        Update(s => s with { LoadId = loadId, IsLoaded = false, HasStarted = false, IsAtEnd = false, Buffered = BufferedRanges.None }, force: true);
         // The values, not the option string: whatever is added to it later never reaches the log by accident.
         _logger.LogInformation("Loading {Target} with {HeaderCount} header(s) at {Start} s, audio stream {Audio}, subtitle stream {Subtitle}",
             Describe(source.Url), source.Headers.Count, source.Start?.TotalSeconds ?? 0, source.AudioStream?.ToString(CultureInfo.InvariantCulture) ?? "auto",
@@ -504,6 +520,45 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
             case "eof-reached":
                 Update(s => s with { IsAtEnd = false }, force: true);
                 break;
+            case CacheStateProperty:
+                _bufferedReads.Signal();
+                break;
+        }
+    }
+
+    // What mpv's cache holds, reported when it changed. The throttle calls this at most every 250 ms on a timer's thread,
+    // so mpv's event thread, which carries the position, pause and end, never waits for the read; it logs a failure. A
+    // snapshot raised here can reach a consumer after a newer one from another thread: its number tells.
+    private void ReadBuffered()
+    {
+        if (TakeBuffered() is { } next)
+        {
+            StateChanged?.Invoke(this, next);
+        }
+    }
+
+    // The cache's ranges of the file that plays, when they differ from the snapshot's. mpv gives them in the time of
+    // time-pos already: demux.c adds the same offset (rebase-start-time) to both.
+    private PlaybackSnapshot? TakeBuffered()
+    {
+        long loadId;
+        lock (_gate)
+        {
+            if (!_current.IsLoaded)
+            {
+                return null;
+            }
+            loadId = _current.LoadId;
+        }
+        var ranges = MpvCacheState.SeekableRanges(_mpv.GetString(CacheStateProperty));
+        lock (_gate)
+        {
+            // A load, a stop or a failure since: these ranges are of a file that is gone.
+            if (_current.LoadId != loadId || !_current.IsLoaded || _current.Buffered.Equals(ranges))
+            {
+                return null;
+            }
+            return Number(_current with { Buffered = ranges });
         }
     }
 
@@ -566,15 +621,26 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
         lock (_gate)
         {
             next = change(_current);
-            _current = next;
             if (!force && _lastReportedPosition is { } last && (next.Position - last).Duration() < PositionThrottle)
             {
+                // Not raised, so not numbered: it carries the number of the last one raised.
+                _current = next;
                 return next;
             }
-            _lastReportedPosition = next.Position;
+            next = Number(next);
         }
         StateChanged?.Invoke(this, next);
         return next;
+    }
+
+    // Under the gate: the snapshot that holds from now on and is raised, numbered above every one raised before it. It is
+    // raised once the gate is open, from mpv's event thread, a timer's or the caller's of Load, so another thread's newer
+    // one can overtake it on the way: the number lets a consumer tell.
+    private PlaybackSnapshot Number(PlaybackSnapshot next)
+    {
+        _current = next with { Sequence = ++_sequence };
+        _lastReportedPosition = _current.Position;
+        return _current;
     }
 
     private static string SizeText((int Width, int Height) size) =>
@@ -585,6 +651,8 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
 
     public void Dispose()
     {
+        // First: a read waiting on its timer must not reach mpv once it is gone.
+        _bufferedReads.Dispose();
         _mpv.PropertyChanged -= OnPropertyChanged;
         _mpv.LogMessage -= OnLogMessage;
         _mpv.FileEnded -= OnFileEnded;

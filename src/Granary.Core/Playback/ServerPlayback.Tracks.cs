@@ -78,7 +78,7 @@ public sealed partial class ServerPlayback
             {
                 _pendingAudio = null;
             }
-        }));
+        }), PlanChange.Audio);
     }
 
     // Once a stream plays: picks made meanwhile apply to it, unless it plays them already or they are another file's.

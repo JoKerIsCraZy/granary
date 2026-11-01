@@ -46,7 +46,7 @@ public sealed partial class GranaryMark : Grid
     private static readonly TimeSpan GlintDuration = TimeSpan.FromMilliseconds(700);
     private const float GlintLength = 0.07f;
 
-    // The loading loop, as granary-mark-loading.svg: a stretch of 28 % of the ring, once through in 1.4 s.
+    // The loading loop, as granary-mark-loading.svg: a stretch of 28 % of the ring, once through clockwise in 1.4 s.
     private static readonly TimeSpan LoopDuration = TimeSpan.FromMilliseconds(1400);
     private const float RunLength = 0.28f;
 
@@ -164,7 +164,7 @@ public sealed partial class GranaryMark : Grid
     private Task PlayIntroNowAsync()
     {
         // The glint follows an expression, which never ends: it starts outside the batch that tells the intro is done.
-        RunAlong(_glint, "Glint", GlintLength);
+        RunAlong(_glint, "Glint", GlintLength, clockwise: false);
         var played = new TaskCompletionSource();
         var batch = _compositor.CreateScopedBatch(CompositionBatchTypes.Animation);
         var draw = _compositor.CreateCubicBezierEasingFunction(new Vector2(0.55f, 0), new Vector2(0.2f, 1));
@@ -238,7 +238,7 @@ public sealed partial class GranaryMark : Grid
             return;
         }
         _ringVisual.Shapes.Insert(0, _track);
-        RunAlong(_ring, "Run", RunLength);
+        RunAlong(_ring, "Run", RunLength, clockwise: true);
         var run = Scalar(LoopDuration);
         run.InsertKeyFrame(0, 0);
         run.InsertKeyFrame(1, 1 + RunLength, _compositor.CreateLinearEasingFunction());
@@ -285,13 +285,17 @@ public sealed partial class GranaryMark : Grid
         _playVisual.Properties.InsertVector3("Translation", Vector3.Zero);
     }
 
-    // A stretch of the ring, the given share of it long, that moves along it as the property runs from 0 to 1 + length:
-    // in at the G's upper end, out at its lower one.
-    private void RunAlong(CompositionEllipseGeometry geometry, string property, float length)
+    // A stretch of the ring, the given share of it long, that moves along it as the property runs from 0 to 1 + length.
+    // Clockwise (the loading loop) it comes in at the G's lower end and goes out at its upper one; the other way (the
+    // intro's glint) in at the upper end and out at the lower one.
+    private void RunAlong(CompositionEllipseGeometry geometry, string property, float length, bool clockwise)
     {
-        foreach (var (end, lag) in new[] { (nameof(CompositionGeometry.TrimEnd), length), (nameof(CompositionGeometry.TrimStart), 0f) })
+        var (startLag, endLag, expression) = clockwise
+            ? (length, 0f, $"Clamp(Low + (m.{property} - Lag) * (High - Low), Low, High)")
+            : (0f, length, $"Clamp(High - (m.{property} - Lag) * (High - Low), Low, High)");
+        foreach (var (end, lag) in new[] { (nameof(CompositionGeometry.TrimEnd), endLag), (nameof(CompositionGeometry.TrimStart), startLag) })
         {
-            var along = _compositor.CreateExpressionAnimation($"Clamp(High - (m.{property} - Lag) * (High - Low), Low, High)");
+            var along = _compositor.CreateExpressionAnimation(expression);
             along.SetReferenceParameter("m", _motion);
             along.SetScalarParameter("High", ArcHigh);
             along.SetScalarParameter("Low", ArcLow);

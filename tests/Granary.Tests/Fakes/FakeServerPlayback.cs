@@ -195,6 +195,17 @@ internal sealed class FakeServerPlayback : IServerPlayback
         TracksChanged?.Invoke(this, EventArgs.Empty);
     }
 
+    public PlanChange PlanChange { get; private set; }
+
+    public event EventHandler? PlanChangeChanged;
+
+    /// <summary>A plan change starts or ends, as a pick that replans and its new stream's first frame make it.</summary>
+    public void RaisePlanChange(PlanChange change)
+    {
+        PlanChange = change;
+        PlanChangeChanged?.Invoke(this, EventArgs.Empty);
+    }
+
     public IReadOnlyList<PlaybackMarker> Markers { get; set; } = [];
 
     /// <summary>Names <paramref name="markers"/> for the playing file, as a read that found more does.</summary>

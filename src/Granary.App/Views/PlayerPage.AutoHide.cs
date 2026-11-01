@@ -101,6 +101,7 @@ public sealed partial class PlayerPage
 
     private bool IsPointerOverControls() =>
         PointerInPage() is { } point && (Contains(BottomBar, point) || Contains(ExitButton, point) || Contains(MinimizeButton, point)
+            || Contains(CornerFullScreenButton, point)
             || (PartyPanel is { Visibility: Visibility.Visible, IsHitTestVisible: true } && Contains(PartyPanel, point))
             || (IsMiniView && (Contains(MiniPlayPauseButton, point) || Contains(LeaveMiniViewButton, point))));
 
@@ -134,15 +135,26 @@ public sealed partial class PlayerPage
         ShowPartyPanel(visible);
         TopChrome.Translation = visible ? Vector3.Zero : new Vector3(0, -ChromeSlide, 0);
         BottomChrome.Translation = visible ? Vector3.Zero : new Vector3(0, ChromeSlide, 0);
+        ShowCornerButton();
         LiftSubtitles();
         PlaceSkipPrompt();
     }
 
-    // The skip pill and the next episode's card sit 28 px off the corner, and above the bar while it shows.
+    // The window's Exit full screen fades with the controls, but stays on the Playing Next screen, as its Close does.
+    private void ShowCornerButton()
+    {
+        bool shown = _areControlsVisible || ShowsNextUpScreen;
+        CornerFullScreenButton.Opacity = shown ? 1 : 0;
+        CornerFullScreenButton.IsHitTestVisible = shown;
+    }
+
+    // The skip pill and the next episode's card sit 28 px off the corner, and above the bar while it shows; the plan
+    // change's mark with them.
     private void PlaceSkipPrompt()
     {
         double above = _areControlsVisible && BottomBar.ActualHeight > 0 ? BottomBar.ActualHeight + SkipPromptGap - SkipPrompt.Margin.Bottom : 0;
         SkipPrompt.Translation = NextUpCard.Translation = new Vector3(0, -(float)Math.Max(0, above), 0);
+        PlacePlanChangeMark(Math.Max(0, above));
     }
 
     // Subtitles at the bottom move above the controls while they show, and back down when they fade. The bar's

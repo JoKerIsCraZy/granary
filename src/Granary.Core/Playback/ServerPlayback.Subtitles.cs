@@ -142,7 +142,7 @@ public sealed partial class ServerPlayback
             return;
         }
         _addedSubtitleAsked = true;
-        Recover(RefreshSubtitlesAsync);
+        Recover(RefreshSubtitlesAsync, PlanChange.Subtitles);
     }
 
     private async Task RefreshSubtitlesAsync()
@@ -231,7 +231,7 @@ public sealed partial class ServerPlayback
             {
                 _pendingSubtitle = null;
             }
-        }));
+        }), PlanChange.Subtitles);
     }
 
     private void ApplyPendingSubtitle()

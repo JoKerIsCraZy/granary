@@ -118,7 +118,7 @@ public sealed partial class ServerPlayback
         }
         // Every later replan and attempt asks with it too (8.11).
         _context = context with { Preferences = context.Preferences with { Quality = preference } };
-        Recover(() => ChangeQualityAsync(preference, previous));
+        Recover(() => ChangeQualityAsync(preference, previous), PlanChange.Quality);
     }
 
     // The quality the viewer picked, from where the viewer is. A refusal leaves the stream that plays, and the
@@ -177,7 +177,7 @@ public sealed partial class ServerPlayback
             // A stop meanwhile waits for the start, as for any other, and ends the session it makes.
             _starting = Guarded(() => ChangeVersionAsync(context, position));
             return _starting;
-        });
+        }, PlanChange.Version);
     }
 
     // A new attempt with the other file; until the server gives one, the file that plays goes on, and stays the one

@@ -238,6 +238,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         playback.MarkersChanged += OnMarkersChanged;
         playback.TrickplayChanged += OnTrickplayChanged;
         playback.NoticeRaised += OnNoticeRaised;
+        playback.PlanChangeChanged += OnPlaybackPlanChanged;
         FollowSubtitleSync(playback);
         BeginWatchParty(request);
         // The room was over, or had moved on, before the player bound to it: the player left already.
@@ -404,6 +405,8 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     private void LeavePlayback()
     {
         ResetNextUp();
+        // A file played directly too: what it held is not the next title's.
+        ResetBuffered();
         if (_playback is not { } playback)
         {
             return;
@@ -414,7 +417,9 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         playback.MarkersChanged -= OnMarkersChanged;
         playback.TrickplayChanged -= OnTrickplayChanged;
         playback.NoticeRaised -= OnNoticeRaised;
+        playback.PlanChangeChanged -= OnPlaybackPlanChanged;
         ForgetSubtitleSync(playback);
+        PlanChange = PlanChange.None;
         ResetNotice();
         AudioTracks = [];
         HasSubtitleMenu = false;
@@ -522,6 +527,13 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
 
     private void OnStateChanged(object? sender, PlaybackSnapshot state) => _dispatcher.Post(() =>
     {
+        // The engine raises from mpv's event thread, a timer's (its cache reads) and the caller's of a load: a snapshot
+        // can arrive after a newer one, and would take the player back to a state it has left (a stopped file loaded
+        // again, the position back). The marker prompts and a Watch Party's view of the player read this one too.
+        if (state.Sequence < _engineState.Sequence)
+        {
+            return;
+        }
         _engineState = state;
         ShowEngineState();
         // A direct source plays as soon as the engine does; a server playback says so itself.
@@ -547,10 +559,13 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         IsMuted = state.IsMuted;
         Volume = state.Volume;
         CanSeek = state.IsLoaded && state.HasStarted && (_playback is null || _playback.Status.Phase == ServerPlaybackPhase.Playing);
+        FollowBuffered(state, offset);
         FollowMarkers(state);
         ShowMarkerEdit();
         FollowChapters();
         FollowNextUp();
+        // During a plan change the spinner waits for the picture to stop.
+        FollowWait();
     }
 
     private void OnEnded(object? sender, PlaybackEnded ended) => _dispatcher.Post(() =>
@@ -582,5 +597,6 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         _syncFeedback?.Dispose();
         _engine.StateChanged -= OnStateChanged;
         _engine.Ended -= OnEnded;
+        StopPlanChangeTimers();
     }
 }

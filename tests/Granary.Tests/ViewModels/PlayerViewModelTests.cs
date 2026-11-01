@@ -84,6 +84,36 @@ public sealed class PlayerViewModelTests
     }
 
     [Fact]
+    public async Task AStateFromBeforeTheStop_ArrivingAfterIt_ChangesNothing()
+    {
+        // The engine raises from mpv's event thread, from its cache reads on a timer's and from a load: a cache read taken
+        // before a stop can reach the page after the stop's idle state, which nothing would set right again.
+        var viewModel = CreateViewModel();
+        await viewModel.StartAsync(PlayRequest.Direct("http://127.0.0.1:8080/clip.mp4"));
+        _engine.RaiseState(Loaded());
+        long before = _engine.Current.Sequence;
+
+        _engine.RaiseState(PlaybackSnapshot.Idle with { Sequence = before + 2 });
+        _engine.RaiseState(Loaded() with { Buffered = BufferedRanges.Of([new(0, 20)]), Sequence = before + 1 });
+
+        Assert.False(viewModel.CanSeek);
+        Assert.Empty(viewModel.Buffered);
+        Assert.Equal(0, viewModel.PositionSeconds);
+    }
+
+    [Fact]
+    public void AnOlderPosition_ArrivingAfterANewerOne_DoesNotMoveTheBarBack()
+    {
+        var viewModel = CreateViewModel();
+
+        _engine.RaiseState(Loaded() with { Position = TimeSpan.FromSeconds(20), Sequence = 2 });
+        _engine.RaiseState(Loaded() with { Position = TimeSpan.FromSeconds(12.5), IsPaused = true, Sequence = 1 });
+
+        Assert.Equal(20, viewModel.PositionSeconds);
+        Assert.False(viewModel.IsPaused);
+    }
+
+    [Fact]
     public async Task TheEnd_IsEnded()
     {
         var viewModel = CreateViewModel();
