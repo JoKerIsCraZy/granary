@@ -387,7 +387,8 @@ public sealed partial class WatchPartyRoomViewModel : ObservableObject
 
     // The room is over: the page gives way to the hub, which says why, as Silo's apps go back to theirs (Android's
     // WatchPartyLobbyScreen, Apple's WatchPartyHubView). A section, so Back does not come back to a room that is gone.
-    // Posted: the page may be still arriving.
+    // Posted, since the page may be still arriving; asked again when it runs, since the player over the page may have
+    // gone to the hub meanwhile, or the room been left.
     private void LeaveIfOver()
     {
         if (!_active || !IsEnded || _leftForHub)
@@ -395,7 +396,13 @@ public sealed partial class WatchPartyRoomViewModel : ObservableObject
             return;
         }
         _leftForHub = true;
-        _dispatcher.Post(() => _navigation.ShowSection(AppRoute.WatchParty));
+        _dispatcher.Post(() =>
+        {
+            if (_active && IsEnded && _navigation.Current != AppRoute.WatchParty)
+            {
+                _navigation.ShowSection(AppRoute.WatchParty);
+            }
+        });
     }
 
     private static readonly string[] RoomProperties =

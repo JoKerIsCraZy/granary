@@ -54,6 +54,8 @@ public sealed partial class PlayerViewModel
         _party.Start();
         _watchParty.PropertyChanged += OnPartyChanged;
         Party?.Attach();
+        // The room may have ended, or moved on from this start, before the player got here: it leaves at once.
+        FollowRoom(_watchParty);
     }
 
     private void EndWatchParty()
@@ -138,6 +140,11 @@ public sealed partial class PlayerViewModel
         }
         OnPropertyChanged(nameof(CanSeekInRoom));
         OnPropertyChanged(nameof(CanPauseInRoom));
+        FollowRoom(party);
+    }
+
+    private void FollowRoom(WatchPartySession party)
+    {
         if (party.Room is { IsPlaying: true } room && room.SelectionRevision == _partyRevision && party.End is null)
         {
             return;
@@ -145,12 +152,12 @@ public sealed partial class PlayerViewModel
         _logger.LogInformation("The Watch Party left the title; the player closes");
         // The room is over (it ended, the host ended it from the panel, or another device took this profile's place): the
         // player leaves as on any exit, its final position reported, and goes on to the hub, as the web's player and
-        // Silo's apps do; a section, so Back does not return to the room. A room that only stopped playing is still on,
-        // and the page under the player (its room) shows again.
+        // Silo's apps do; a section, so Back does not return to the room. The room page may have gone there already. A
+        // room that only stopped playing is still on, and the page under the player (its room) shows again.
         bool over = party.End is not null;
         Leave();
         _navigation.LeavePlayer();
-        if (over)
+        if (over && _navigation.Current != AppRoute.WatchParty)
         {
             _navigation.ShowSection(AppRoute.WatchParty);
         }

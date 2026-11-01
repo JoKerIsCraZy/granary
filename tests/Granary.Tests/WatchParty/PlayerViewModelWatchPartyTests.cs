@@ -47,6 +47,24 @@ public sealed class PlayerViewModelWatchPartyTests : IAsyncDisposable
             new WatchPartyRecentRooms(_secrets, _time, _logs.For<WatchPartyRecentRooms>()), _time);
     }
 
+    // In the room, with a player that has not started yet.
+    private async Task<PlayerViewModel> JoinedAsync(string room, MarkerSettings? markers = null)
+    {
+        _silo.On(HttpMethod.Post, "api/v2/watch-together/join", ScriptedSilo.Json(HttpStatusCode.OK, WatchPartyPayloads.Answer(room)));
+        await _party.JoinAsync("ABCD1234", TestContext.Current.CancellationToken);
+        await ServerPlaybackFixture.Until(() => _sockets.Count == 1 && _party.IsConnected, "the room connection");
+        return new PlayerViewModel(_engine, new ImmediateDispatcher(), _navigation, () =>
+        {
+            var playback = new FakeServerPlayback
+            {
+                DurationSeconds = 7200,
+                Preferences = PlaybackPreferences.Default with { Markers = markers ?? MarkerSettings.Default },
+            };
+            _playbacks.Add(playback);
+            return playback;
+        }, new PlaybackStops(), _time, watchParty: _party, confirmation: _confirmation);
+    }
+
     private Task Marked() => ServerPlaybackFixture.Until(
         () => _secrets.Values.TryGetValue(WatchPartyRecentRooms.SecretKey, out string? rooms) && rooms.Contains("\"ended\":true", StringComparison.Ordinal),
         "the recent room marked as ended");
@@ -63,20 +81,8 @@ public sealed class PlayerViewModelWatchPartyTests : IAsyncDisposable
 
     private async Task<PlayerViewModel> PlayingAsync(string role = "host", MarkerSettings? markers = null, bool transport = true)
     {
-        string playing = WatchPartyPayloads.Room("playing", "playing", generation: 3, revision: 1, role: role, selected: "movie:heat", transport: transport);
-        _silo.On(HttpMethod.Post, "api/v2/watch-together/join", ScriptedSilo.Json(HttpStatusCode.OK, WatchPartyPayloads.Answer(playing)));
-        await _party.JoinAsync("ABCD1234", TestContext.Current.CancellationToken);
-        await ServerPlaybackFixture.Until(() => _sockets.Count == 1 && _party.IsConnected, "the room connection");
-        var viewModel = new PlayerViewModel(_engine, new ImmediateDispatcher(), _navigation, () =>
-        {
-            var playback = new FakeServerPlayback
-            {
-                DurationSeconds = 7200,
-                Preferences = PlaybackPreferences.Default with { Markers = markers ?? MarkerSettings.Default },
-            };
-            _playbacks.Add(playback);
-            return playback;
-        }, new PlaybackStops(), _time, watchParty: _party, confirmation: _confirmation);
+        var viewModel = await JoinedAsync(WatchPartyPayloads.Room("playing", "playing", generation: 3, revision: 1, role: role, selected: "movie:heat",
+            transport: transport), markers);
         await viewModel.StartAsync(PlayRequest.WatchParty("movie:heat", "77", 1));
         Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));
         _engine.RaiseState(new PlaybackSnapshot(true, false, TimeSpan.FromSeconds(30), TimeSpan.FromHours(2), null, HasStarted: true));
@@ -195,16 +201,48 @@ public sealed class PlayerViewModelWatchPartyTests : IAsyncDisposable
     public async Task TheRoomClosingDuringPlayback_LeavesThePlayerAsAnyExitDoes_ForTheHub()
     {
         var viewModel = await PlayingAsync(role: "guest");
+        (int EngineStops, double Position)? atStop = null;
+        Playback.Stopping = () => atStop = (_engine.Stops, viewModel.PositionSeconds);
 
         Socket.Push("""{ "type": "room_closed", "reason": "host_left" }""");
         await ServerPlaybackFixture.Until(() => _navigation.PlayerLeaves == 1, "the player leaving");
 
-        // The server playback stops as on any exit, with its final position.
+        // The server playback stops once, as on any exit: asked while the engine still holds the final position.
         Assert.True(viewModel.HasLeft);
         Assert.Equal(1, Playback.Stops);
+        Assert.Equal((0, 30d), atStop);
+        Assert.Equal(1, _engine.Stops);
         Assert.Equal(AppRoute.WatchParty, Assert.Single(_navigation.Sections));
         Assert.Equal([AppRoute.WatchParty], _navigation.Navigations.Select(n => n.Route));
         await Marked();
+    }
+
+    [Fact]
+    public async Task ARoomThatEndedBeforeThePlayerBound_LeavesAtOnce_ForTheHub()
+    {
+        var viewModel = await JoinedAsync(WatchPartyPayloads.Room("playing", "playing", generation: 3, revision: 1, role: "guest", selected: "movie:heat"));
+        Socket.Push("""{ "type": "room_closed", "reason": "host_left" }""");
+        await ServerPlaybackFixture.Until(() => _party.End is not null, "the end");
+
+        await viewModel.StartAsync(PlayRequest.WatchParty("movie:heat", "77", 1));
+
+        Assert.True(viewModel.HasLeft);
+        Assert.Null(Playback.Started);
+        Assert.Equal(1, _navigation.PlayerLeaves);
+        Assert.Equal(AppRoute.WatchParty, Assert.Single(_navigation.Sections));
+    }
+
+    [Fact]
+    public async Task ARoomThatMovedOnBeforeThePlayerBound_LeavesAtOnce_BackToTheRoom()
+    {
+        var viewModel = await JoinedAsync(WatchPartyPayloads.Room("playing", "playing", generation: 5, revision: 2, role: "guest", selected: "movie:heat"));
+
+        await viewModel.StartAsync(PlayRequest.WatchParty("movie:heat", "77", 1));
+
+        Assert.True(viewModel.HasLeft);
+        Assert.Null(Playback.Started);
+        Assert.Equal(1, _navigation.PlayerLeaves);
+        Assert.Empty(_navigation.Sections);
     }
 
     [Fact]
