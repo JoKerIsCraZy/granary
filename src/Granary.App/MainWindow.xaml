@@ -35,9 +35,10 @@
 
         <!--
             Full screen for the whole window (MainWindow.FullScreen.cs), drawn as caption buttons: in a window Full screen,
-            left of Windows' own; in full screen, which has none, Exit full screen and Close in their place. First here, so
-            the keyboard reaches them first, as the top row; drawn over the rest (ZIndex), a trailer's scrim included, as the
-            caption buttons are. Hidden under the full player, which has its own, and while a trailer fills the screen.
+            left of Windows' own; in full screen, which has none, Exit full screen and Close in their place. Like the caption
+            buttons they take no keyboard focus (SiloTitleBarButtonStyle): F11 is the keyboard's way. Drawn over the rest
+            (ZIndex), a trailer's scrim included, as the caption buttons are. Hidden under the full player, which has its
+            own, and while a trailer fills the screen.
         -->
         <StackPanel x:Name="WindowButtons" Canvas.ZIndex="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
             <Button x:Name="FullScreenButton" Style="{StaticResource SiloTitleBarButtonStyle}" Click="OnFullScreenClick"

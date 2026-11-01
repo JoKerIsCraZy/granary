@@ -111,8 +111,7 @@ public sealed partial class PlayerPage
 
     private bool HasKeyboardFocusInControls() =>
         FocusManager.GetFocusedElement(XamlRoot) is Control { FocusState: FocusState.Keyboard } control
-        && (IsWithin(control, TopChrome) || IsWithin(control, BottomChrome) || IsWithin(control, MiniChrome) || IsWithin(control, PartyPanel)
-            || ReferenceEquals(control, CornerFullScreenButton));
+        && (IsWithin(control, TopChrome) || IsWithin(control, BottomChrome) || IsWithin(control, MiniChrome) || IsWithin(control, PartyPanel));
 
     private static bool IsWithin(DependencyObject element, DependencyObject container)
     {

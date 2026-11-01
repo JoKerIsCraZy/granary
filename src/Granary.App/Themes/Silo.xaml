@@ -399,6 +399,8 @@
     <!--
         A button of the title bar's own, drawn as Windows' caption buttons beside it (MainWindow.StyleCaptionButtons): 46 by
         32, square, a light glyph that turns white over a faint white highlight under the pointer, a stronger one pressed.
+        Like them it takes no keyboard focus, so it is never a page's first focus nor a Tab stop: F11 is the keyboard's way,
+        and screen readers still reach it.
     -->
     <Style x:Key="SiloTitleBarButtonStyle" TargetType="Button">
         <Setter Property="Width" Value="46" />
@@ -407,7 +409,7 @@
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Foreground" Value="#E8E8EC" />
-        <Setter Property="UseSystemFocusVisuals" Value="True" />
+        <Setter Property="IsTabStop" Value="False" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
