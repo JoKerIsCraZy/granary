@@ -659,7 +659,8 @@ stream's commands on Activity.
 The whole app goes full screen, as Plex's app for Windows does (`WindowModeService` over Core's `WindowModes`, one state
 for the window that the app, the player and a trailer share; `AppWindow`'s full-screen presenter).
 
-- **On and off**: the title bar's Full screen button and F11 anywhere in the app, the player and its bar included; in the
+- **On and off**: the title bar's Full screen button and F11 anywhere in the app, the player and its bar included, and
+  with a menu open (a key pressed in a flyout reaches the window; the menu closes as the window changes size); in the
   player also F, its own full-screen button and a double click on the picture. A held F11 toggles once. Leaving full
   screen returns to the window as it was: maximized stays maximized, a restored window gets its place and size back.
   Each start begins in a window; full screen is not remembered.
