@@ -14,7 +14,7 @@ public sealed class ServerPlaybackSettingsTests
     private readonly ServerPlaybackFixture _fixture = new();
 
     // The transcode of the movie's file with its two rungs, as a plan of the first session.
-    private static string Transcode(string active) => PlaybackPayloads.TranscodeDecision
+    internal static string Transcode(string active) => PlaybackPayloads.TranscodeDecision
         .Replace(OtherSession, Session, StringComparison.Ordinal)
         .Replace("\"effective_media_file_id\": \"10\"", "\"effective_media_file_id\": \"42\"", StringComparison.Ordinal)
         .Replace("\"active_quality\": \"720p-medium\"", $"\"active_quality\": \"{active}\"", StringComparison.Ordinal);
@@ -224,7 +224,7 @@ public sealed class ServerPlaybackSettingsTests
     }
 
     // A second file after the one played last.
-    private static string TwoFiles
+    internal static string TwoFiles
     {
         get
         {

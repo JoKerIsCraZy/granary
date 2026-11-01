@@ -223,7 +223,7 @@ public sealed partial class ServerPlayback : IServerPlayback
             _engine.Seek(TimeSpan.FromSeconds(_playerPosition));
             return;
         }
-        Recover(() => ReanchorAsync(sourceSeconds));
+        Recover(() => ReanchorAsync(sourceSeconds), PlanChange.Seek);
     }
 
     public Task StopAsync()
@@ -234,6 +234,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         }
         _stopping = true;
         _generation++;
+        SetPlanChange(PlanChange.None);
         // A delay or a speed the viewer just set is saved now, not when its wait would have ended.
         SaveSubtitleDelayNow();
         SaveSpeedNow();
@@ -566,6 +567,8 @@ public sealed partial class ServerPlayback : IServerPlayback
         }
         _ = ShowSubtitlesAsync(_loadId);
         ApplyPendingTracks();
+        // After the picks that waited: one that replans goes on with the change rather than ending it first.
+        SettlePlanChange();
     }
 
     private void OnEngineEnded(object? sender, PlaybackEnded ended) => _dispatcher.Post(() =>
@@ -669,7 +672,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         {
             case ProgressOutcome.SessionGone:
                 // Expired or forgotten (a server restart): the viewer is still here, so start again where they are.
-                Recover(() => RestartAsync());
+                Recover(() => RestartAsync(), PlanChange.Restart);
                 break;
             case ProgressOutcome.InstallationChanged:
                 Recover(async () =>
@@ -678,7 +681,7 @@ public sealed partial class ServerPlayback : IServerPlayback
                     {
                         await RestartAsync();
                     }
-                });
+                }, PlanChange.Restart);
                 break;
             case ProgressOutcome.SessionEnded:
                 EndedByServer();
@@ -784,6 +787,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         _started = false;
         _engine.Stop();
         CloseRoute();
+        SetPlanChange(PlanChange.None);
         SetStatus(new ServerPlaybackStatus(ServerPlaybackPhase.Failed, message, canRetry));
     }
 

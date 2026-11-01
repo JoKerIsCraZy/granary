@@ -9,10 +9,17 @@ release's section is what its update says it changes (docs/release.md).
 ### Added
 
 - The player's seek bar shows which parts of the video are loaded, lighter on the timeline, as on Silo's web player.
+- While the player switches quality, version or a track, or moves to a part the stream does not hold yet, a small
+  loading ring shows at the bottom right until the new stream plays and the settings button shows "…" in place of the
+  quality. The picture plays on meanwhile; once it stops for the new stream for more than half a second, the spinner in
+  the middle shows too. Screen readers hear what the switch does ("Switching quality") once it has lasted half a second,
+  also in the mini view and the minimized player.
 
 ### Changed
 
 - The loading animation turns clockwise.
+- The player's spinner waits half a second before it shows, as on Silo's web, so short stalls no longer flash it. The
+  settings button leaves the quality out in a narrow window.
 
 ## [0.1.0] - 2026-11-01
 

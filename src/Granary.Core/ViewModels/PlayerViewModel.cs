@@ -238,6 +238,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         playback.MarkersChanged += OnMarkersChanged;
         playback.TrickplayChanged += OnTrickplayChanged;
         playback.NoticeRaised += OnNoticeRaised;
+        playback.PlanChangeChanged += OnPlaybackPlanChanged;
         FollowSubtitleSync(playback);
         BeginWatchParty(request);
         // The room was over, or had moved on, before the player bound to it: the player left already.
@@ -416,7 +417,9 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         playback.MarkersChanged -= OnMarkersChanged;
         playback.TrickplayChanged -= OnTrickplayChanged;
         playback.NoticeRaised -= OnNoticeRaised;
+        playback.PlanChangeChanged -= OnPlaybackPlanChanged;
         ForgetSubtitleSync(playback);
+        PlanChange = PlanChange.None;
         ResetNotice();
         AudioTracks = [];
         HasSubtitleMenu = false;
@@ -561,6 +564,8 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         ShowMarkerEdit();
         FollowChapters();
         FollowNextUp();
+        // During a plan change the spinner waits for the picture to stop.
+        FollowWait();
     }
 
     private void OnEnded(object? sender, PlaybackEnded ended) => _dispatcher.Post(() =>
@@ -592,5 +597,6 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         _syncFeedback?.Dispose();
         _engine.StateChanged -= OnStateChanged;
         _engine.Ended -= OnEnded;
+        StopPlanChangeTimers();
     }
 }

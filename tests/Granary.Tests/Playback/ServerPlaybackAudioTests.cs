@@ -14,7 +14,7 @@ public sealed class ServerPlaybackAudioTests
     private readonly ServerPlaybackFixture _fixture = new();
 
     // The movie's picks are kept under its content id.
-    private static readonly string AudioPrefsPath = "api/v2/audio-prefs/" + SiloHttp.PathSegment("movie:heat-1995", "key");
+    internal static readonly string AudioPrefsPath = "api/v2/audio-prefs/" + SiloHttp.PathSegment("movie:heat-1995", "key");
 
     public ServerPlaybackAudioTests()
     {
@@ -24,7 +24,7 @@ public sealed class ServerPlaybackAudioTests
     }
 
     // The transcode of the movie's file, as the answer to a replan of the first session.
-    private static string TranscodeOfTheMovie(int audio = 1) => PlaybackPayloads.TranscodeDecision
+    internal static string TranscodeOfTheMovie(int audio = 1) => PlaybackPayloads.TranscodeDecision
         .Replace(OtherSession, Session, StringComparison.Ordinal)
         .Replace("\"effective_media_file_id\": \"10\"", "\"effective_media_file_id\": \"42\"", StringComparison.Ordinal)
         .Replace("\"audio\": { \"id\": \"file:9:audio:1\" }", $"\"audio\": {{ \"id\": \"file:42:audio:{audio}\", \"index\": {audio} }}", StringComparison.Ordinal);
@@ -38,7 +38,7 @@ public sealed class ServerPlaybackAudioTests
         return selecting;
     }
 
-    private static string WithASecondAudioTrack(string watch)
+    internal static string WithASecondAudioTrack(string watch)
     {
         string twoTracks = new Regex(@"(""audio_tracks"":\s*\[\s*\{[^}]*\})")
             .Replace(watch, "$1, { \"language\": \"ger\", \"title\": \"Deutsch\", \"codec\": \"eac3\", \"layout\": \"5.1(side)\", \"channels\": 6, \"default\": false }", 1);

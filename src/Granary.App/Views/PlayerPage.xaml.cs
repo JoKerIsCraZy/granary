@@ -55,6 +55,7 @@ public sealed partial class PlayerPage : Page
         InitializeInput();
         InitializeAutoHide();
         InitializeSkipPrompt();
+        InitializePlanChange();
         InitializeNextUp();
         InitializeSubtitlePanels();
         InitializeDock();
@@ -482,14 +483,17 @@ public sealed partial class PlayerPage : Page
     public Visibility ShowsTransport(PlayerPhase phase, bool isNextUpScreenShown, bool isCompact) =>
         ShowsInWindow(phase is PlayerPhase.Playing or PlayerPhase.Ended && !isNextUpScreenShown, isCompact);
 
-    public bool ShowsSpinner(PlayerPhase phase, bool isBuffering) =>
-        phase == PlayerPhase.Preparing || (phase == PlayerPhase.Playing && isBuffering);
+    // Preparing at once; later a picture that stands still, once it has (PlayerViewModel.IsWaiting). The bar has no room
+    // for the mark: its picture shows the wait, and the loading loop does not run unseen.
+    public bool ShowsSpinner(PlayerPhase phase, bool isWaiting, bool isDocked) =>
+        !isDocked && (phase == PlayerPhase.Preparing || (phase == PlayerPhase.Playing && isWaiting));
 
-    // The bar has no room for the mark: its picture shows the wait.
-    public Visibility SpinnerVisibility(PlayerPhase phase, bool isBuffering, bool isDocked) =>
-        ShowsSpinner(phase, isBuffering) && !isDocked ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility SpinnerVisibility(PlayerPhase phase, bool isWaiting, bool isDocked) =>
+        ShowsSpinner(phase, isWaiting, isDocked) ? Visibility.Visible : Visibility.Collapsed;
 
-    public string SpinnerName(PlayerPhase phase) => phase == PlayerPhase.Preparing ? "Loading" : "Buffering";
+    // A new stream loads during a plan change; the corner mark names the change itself.
+    public string SpinnerName(PlayerPhase phase, bool isChangingPlan) =>
+        phase == PlayerPhase.Preparing || isChangingPlan ? "Loading" : "Buffering";
 
     public Visibility Shows(string text) => string.IsNullOrEmpty(text) ? Visibility.Collapsed : Visibility.Visible;
 }
