@@ -2310,8 +2310,8 @@ HDR with libplacebo. An honest, conservative first report:
   HDR is 10-bit, and the claim covers every codec the report lists, since the server checks codec names
   and not bit depth at `declared` evidence. So it is sent only when the GPU decodes some HDR codec at 10
   bits and every HDR codec listed (`hevc`, `vp9`, `av1`) is decoded at 10 bits by the GPU
-  (`HardwareTenBitVideoCodecs`: HEVC Main 10, VP9 Profile 2, AV1, whose Main profile includes 10-bit)
-  or is on the CPU's list. A GPU with an 8-bit-only HEVC or VP9 decoder leaves HDR to the server; else
+  (`HardwareTenBitVideoCodecs`: HEVC Main 10, VP9 Profile 2, AV1, whose Main profile includes 10-bit,
+  each only where `CheckVideoDecoderFormat` confirms the P010 output format) or is on the CPU's list. A GPU with an 8-bit-only HEVC or VP9 decoder leaves HDR to the server; else
   the CPU would decode a 4K original. Two gaps stay: HDR in H.264 High 10, which D3D11VA does not decode,
   and 12-bit HEVC, which no common decoder takes; both are rare, and the second already direct-plays as
   SDR, which only `platform_attested` evidence with `bit_depths` can bound. Like the web's decode engine,

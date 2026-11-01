@@ -9,6 +9,9 @@ public sealed record HardwareVideoDecoders(IReadOnlyList<string> Codecs, IReadOn
     public static readonly HardwareVideoDecoders None = new([], []);
 }
 
+/// <summary>A decoder profile of the GPU, and whether it writes the 10-bit output format (P010) that HDR needs.</summary>
+public readonly record struct DecoderProfile(Guid Id, bool OutputsP010);
+
 /// <summary>
 /// Which video codecs the GPU decodes (D3D11VA, which mpv's <c>hwdec=auto-safe</c> uses on Windows), read from
 /// the decoder profiles of a D3D11 video device on the default adapter (docs/api-contract.md, 13.2).
@@ -22,9 +25,14 @@ public static unsafe partial class VideoDecoderProbe
 
     private static readonly Guid VideoDeviceIid = new("10ec4d5b-975a-4689-b9e4-d0aac30fe333");
 
-    // IUnknown (3) + CreateVideoDecoder … CreateVideoProcessorEnumerator (8).
+    // IUnknown (3) + CreateVideoDecoder … CreateVideoProcessorEnumerator (8); then GetVideoDecoderProfileCount,
+    // GetVideoDecoderProfile, CheckVideoDecoderFormat.
     private const int GetVideoDecoderProfileCountSlot = 11;
     private const int GetVideoDecoderProfileSlot = 12;
+    private const int CheckVideoDecoderFormatSlot = 13;
+
+    // DXGI_FORMAT_P010: 10-bit 4:2:0, what a decoder writes a 10-bit picture to.
+    private const int FormatP010 = 104;
 
     // The DXVA decoder profiles (d3d11.h, dxva.h) by the codec names ffprobe and the server use.
     private static readonly Dictionary<Guid, string> Profiles = new()
@@ -62,15 +70,21 @@ public static unsafe partial class VideoDecoderProbe
     /// </summary>
     public static HardwareVideoDecoders HardwareDecoders() => Summarize(ReadProfiles());
 
-    /// <summary>The codecs of <paramref name="profiles"/>, each once, and those among them with a 10-bit profile.</summary>
-    public static HardwareVideoDecoders Summarize(IEnumerable<Guid> profiles)
+    /// <summary>
+    /// The codecs of <paramref name="profiles"/>, each once, and those among them with a 10-bit profile whose decoder
+    /// writes P010: the profile alone does not promise the output format.
+    /// </summary>
+    public static HardwareVideoDecoders Summarize(IEnumerable<DecoderProfile> profiles)
     {
         var codecs = new List<string>();
         var tenBit = new List<string>();
-        foreach (Guid profile in profiles)
+        foreach (var profile in profiles)
         {
-            AddOnce(codecs, Codec(profile));
-            AddOnce(tenBit, TenBitProfiles.GetValueOrDefault(profile));
+            AddOnce(codecs, Codec(profile.Id));
+            if (profile.OutputsP010)
+            {
+                AddOnce(tenBit, TenBitProfiles.GetValueOrDefault(profile.Id));
+            }
         }
         return new HardwareVideoDecoders(codecs, tenBit);
     }
@@ -83,7 +97,7 @@ public static unsafe partial class VideoDecoderProbe
         }
     }
 
-    private static List<Guid> ReadProfiles()
+    private static List<DecoderProfile> ReadProfiles()
     {
         int hr = D3D11CreateDevice(0, DriverTypeHardware, 0, CreateDeviceVideoSupport, 0, 0, SdkVersion,
             out nint device, out _, out nint context);
@@ -117,20 +131,26 @@ public static unsafe partial class VideoDecoderProbe
         }
     }
 
-    private static List<Guid> ReadProfiles(nint videoDevice)
+    private static List<DecoderProfile> ReadProfiles(nint videoDevice)
     {
         nint* vtable = *(nint**)videoDevice;
         var getCount = (delegate* unmanaged[Stdcall]<nint, uint>)vtable[GetVideoDecoderProfileCountSlot];
         var getProfile = (delegate* unmanaged[Stdcall]<nint, uint, Guid*, int>)vtable[GetVideoDecoderProfileSlot];
-        var profiles = new List<Guid>();
+        var checkFormat = (delegate* unmanaged[Stdcall]<nint, Guid*, int, int*, int>)vtable[CheckVideoDecoderFormatSlot];
+        var profiles = new List<DecoderProfile>();
         uint count = getCount(videoDevice);
         for (uint i = 0; i < count; i++)
         {
             Guid profile;
-            if (getProfile(videoDevice, i, &profile) >= 0)
+            if (getProfile(videoDevice, i, &profile) < 0)
             {
-                profiles.Add(profile);
+                continue;
             }
+            // Only the 10-bit profiles are asked; a failed answer counts as no P010.
+            int supported = 0;
+            bool outputsP010 = TenBitProfiles.ContainsKey(profile)
+                && checkFormat(videoDevice, &profile, FormatP010, &supported) >= 0 && supported != 0;
+            profiles.Add(new DecoderProfile(profile, outputsP010));
         }
         return profiles;
     }

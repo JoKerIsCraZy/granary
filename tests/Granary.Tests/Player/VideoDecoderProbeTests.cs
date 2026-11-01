@@ -44,8 +44,8 @@ public sealed class VideoDecoderProbeTests
     [Fact]
     public void Summarize_TellsAGpuWithTenBitHevcFromOneWithEightBitOnly()
     {
-        var eightBit = VideoDecoderProbe.Summarize([H264, HevcMain]);
-        var tenBit = VideoDecoderProbe.Summarize([H264, HevcMain, HevcMain10]);
+        var eightBit = VideoDecoderProbe.Summarize(Taking10Bit(H264, HevcMain));
+        var tenBit = VideoDecoderProbe.Summarize(Taking10Bit(H264, HevcMain, HevcMain10));
 
         Assert.Equal(["h264", "hevc"], eightBit.Codecs);
         Assert.Empty(eightBit.TenBitCodecs);
@@ -56,8 +56,8 @@ public sealed class VideoDecoderProbeTests
     [Fact]
     public void Summarize_CountsVp9AtTenBitOnlyWithProfile2()
     {
-        var profile0 = VideoDecoderProbe.Summarize([Vp9Profile0]);
-        var profile2 = VideoDecoderProbe.Summarize([Vp9Profile0, Vp9Profile2]);
+        var profile0 = VideoDecoderProbe.Summarize(Taking10Bit(Vp9Profile0));
+        var profile2 = VideoDecoderProbe.Summarize(Taking10Bit(Vp9Profile0, Vp9Profile2));
 
         Assert.Equal(["vp9"], profile0.Codecs);
         Assert.Empty(profile0.TenBitCodecs);
@@ -67,7 +67,7 @@ public sealed class VideoDecoderProbeTests
     [Fact]
     public void Summarize_CountsAv1AtTenBit_AsItsMainProfileIncludesTenBit()
     {
-        var decoders = VideoDecoderProbe.Summarize([Av1Profile0]);
+        var decoders = VideoDecoderProbe.Summarize(Taking10Bit(Av1Profile0));
 
         Assert.Equal(["av1"], decoders.Codecs);
         Assert.Equal(["av1"], decoders.TenBitCodecs);
@@ -76,9 +76,22 @@ public sealed class VideoDecoderProbeTests
     [Fact]
     public void Summarize_IgnoresProfilesItDoesNotKnow()
     {
-        var decoders = VideoDecoderProbe.Summarize([Guid.NewGuid(), H264]);
+        var decoders = VideoDecoderProbe.Summarize(Taking10Bit(Guid.NewGuid(), H264));
 
         Assert.Equal(["h264"], decoders.Codecs);
         Assert.Empty(decoders.TenBitCodecs);
     }
+
+    [Fact]
+    public void Summarize_CountsATenBitProfileOnlyWhenItsDecoderOutputsP010()
+    {
+        // A driver may list HEVC Main 10 without the 10-bit output format; the picture would then not decode in hardware.
+        var decoders = VideoDecoderProbe.Summarize([new DecoderProfile(HevcMain, OutputsP010: false), new DecoderProfile(HevcMain10, OutputsP010: false)]);
+
+        Assert.Equal(["hevc"], decoders.Codecs);
+        Assert.Empty(decoders.TenBitCodecs);
+    }
+
+    private static IEnumerable<DecoderProfile> Taking10Bit(params Guid[] profiles) =>
+        profiles.Select(id => new DecoderProfile(id, OutputsP010: true));
 }
