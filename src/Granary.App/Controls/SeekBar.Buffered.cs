@@ -15,6 +15,9 @@ public sealed partial class SeekBar
 
     private readonly SolidColorBrush _bufferedBrush = new(Color.FromArgb(0x4D, 0xFF, 0xFF, 0xFF));
 
+    // What the parts were last placed for. Render runs with every position tick, which leaves the ranges where they are.
+    private (BufferedRanges? Ranges, double Duration, double Width) _bufferedPlaced;
+
     /// <summary>The stretches the player holds, in seconds of <see cref="Duration"/>; they change a few times a second while it reads.</summary>
     public BufferedRanges? Buffered
     {
@@ -40,6 +43,12 @@ public sealed partial class SeekBar
 
     private void PlaceBuffered(double width)
     {
+        var (placedRanges, placedDuration, placedWidth) = _bufferedPlaced;
+        if (ReferenceEquals(Buffered, placedRanges) && Duration == placedDuration && width == placedWidth)
+        {
+            return;
+        }
+        _bufferedPlaced = (Buffered, Duration, width);
         var ranges = Buffered ?? BufferedRanges.None;
         var parts = BufferedParts.Children;
         for (int i = 0; i < parts.Count; i++)
