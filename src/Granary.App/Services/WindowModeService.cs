@@ -62,7 +62,7 @@ public sealed class WindowModeService(ILogger<WindowModeService> logger)
             {
                 // The state must not say what the window does not show: it follows what the window shows instead.
                 logger.LogWarning(ex, "The window did not go from {From} to {To}", from, _modes.Mode);
-                _modes.Follow(ModeOf(window.Presenter.Kind));
+                _modes.Follow(ShownMode(window));
             }
         }
         if (_modes.Mode != from || _modes.IsTrailerFullScreen != trailer)
@@ -112,6 +112,19 @@ public sealed class WindowModeService(ILogger<WindowModeService> logger)
         {
             _modes.Follow(mode);
             Changed?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    // What the window shows; a window that is closing may not say any more, and counts as a window.
+    private static WindowMode ShownMode(AppWindow window)
+    {
+        try
+        {
+            return ModeOf(window.Presenter.Kind);
+        }
+        catch (Exception)
+        {
+            return WindowMode.Window;
         }
     }
 
