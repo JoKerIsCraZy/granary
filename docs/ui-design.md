@@ -486,9 +486,9 @@ to the G (composition's circles start at 12 o'clock, so the trimming is offset t
 window shows a start screen (`MainWindow.ShowStartup`): the intro in the middle, 132 px (the ring draws itself back
 from its upper end with a quarter turn, play pops in, a glint runs round, 1.7 s), then the loading loop while the
 first page still loads (Home's rows, `IStartupContent`), at most 6 s in all, then the app fades in (300 ms). The
-player shows the loading loop (a stretch of the ring runs through the G, play breathes, 1.4 s) on a dark disc while a
-title prepares or buffers, and small in the corner while the stream is planned anew. With Windows' animations off the
-mark stands still.
+player shows the loading loop (a stretch of the ring runs clockwise through the G, play breathes, 1.4 s) on a dark disc
+while a title prepares or buffers, and small in the corner while the stream is planned anew. With Windows' animations
+off the mark stands still.
 
 - In the card: the title (`SiloAuthTitleTextStyle`, 30 / ExtraBold) over a muted lead, labelled 36 px fields
   (`SiloAuthTextBoxStyle`, `SiloAuthPasswordBoxStyle`), full-width buttons rounded 10 (`SiloAuthButtonStyle` red,
@@ -821,7 +821,14 @@ stream's commands on Activity.
   While the controls show, subtitles at the bottom move up by the bar's height (`sub-pos`) and back when they fade.
 - **Seek bar**: 3 px track, the played part white as on the web, over the marked parts tinted sky (intro), violet
   (recap), amber (credits) and emerald (preview), and a 10 px tick (white 55 %) where each chapter after the first
-  starts. Under the pointer the track grows, a thumb appears and a bubble shows the time there, above it the part it
+  starts. Under the marked parts, what the player holds of the stream is lighter (white 30 %, rounded), one stretch
+  for each range mpv's cache keeps, as the web draws a video's buffered ranges: ahead of the position as the stream
+  reads, and after a seek ahead the part read before too, while mpv keeps it. mpv counts a stretch once it holds a
+  whole keyframe interval, so the ranges grow in those steps and a stretch left before that is dropped. They are in
+  the title's time like the position, within its length, follow at most four times a second, and show only while
+  the stream can be sought (none while one loads, is replaced or reconnects, nor without a known length); a local
+  file has no cache and shows none. The minimized bar's seek bar shows them too.
+  Under the pointer the track grows, a thumb appears and a bubble shows the time there, above it the part it
   lies in ("● Intro 0:03-0:12") and under it the chapter (11 px, white 50 %). With a picture the bubble is the web's
   176 px card (neutral 95 %, white 8 % edge, a caret under it): the trickplay thumbnail of that time, or while its
   sheet loads and without previews the part's or the chapter's picture, or a faint film frame on a gradient; the

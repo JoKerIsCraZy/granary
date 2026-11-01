@@ -79,6 +79,10 @@ public sealed partial class ServerPlayback : IServerPlayback
 
     // The engine load that is this playback's; 0 once it ended.
     private long _loadId;
+
+    // The number of the newest engine snapshot taken (PlaybackSnapshot.Sequence).
+    private long _engineSequence;
+
     private double _playerPosition;
     private bool _paused;
 
@@ -498,6 +502,13 @@ public sealed partial class ServerPlayback : IServerPlayback
 
     private void ShowEngineState(PlaybackSnapshot state)
     {
+        // The engine raises from more than one thread: one made before a newer one can arrive after it, and would move the
+        // viewer back or undo a pause.
+        if (state.Sequence < _engineSequence)
+        {
+            return;
+        }
+        _engineSequence = state.Sequence;
         if (_stopping || _loadId == 0 || state.LoadId != _loadId)
         {
             return;

@@ -46,6 +46,22 @@ the display refresh rate itself (Phase 3).
 - View models marshal to the UI thread through `IUiDispatcher`; they never block on it.
 - `MpvVideoHost` re-enters the UI thread through its `DispatcherQueue` when the swap chain changes.
 - Position updates are throttled to 4 per second; state changes are reported immediately.
+- What mpv's cache holds (`demuxer-cache-state`) is observed without its value: the engine reads the property's
+  string form (the node as compact JSON) at most 4 times a second and once more after the last change
+  (`TrailingThrottle`, always on a timer's thread, so mpv's event thread never waits for the read; a failure is
+  logged), takes its `seekable-ranges` (`MpvCacheState`, which reads anything else as no ranges) and reports them in
+  `PlaybackSnapshot.Buffered`, in the time of `time-pos` (mpv applies the same offset to both). A load empties them
+  at once, and a read of the file before is dropped by its load id. While `keep-open` holds the file at its end, its
+  ranges stay, as on the web; they clear when the file ends (a stop, a failure or mpv's own end of the file), whose
+  idle snapshot holds none. `PlayerViewModel.Buffered` moves them into the title's time with the timeline offset, as
+  the position, and keeps them within the title's length. It holds them back once the plan's offset differs from the
+  one the load began with: the plan is taken before its stream loads, and the engine plays the stream before
+  meanwhile.
+- The engine raises `StateChanged` from mpv's event thread, from the cache reads on a timer's thread and from the
+  caller's thread of `Load`, each time after leaving its lock, so a snapshot can overtake another on the way. Every
+  snapshot it raises is numbered under the lock (`PlaybackSnapshot.Sequence`), and its consumers (`PlayerViewModel`,
+  `ServerPlayback`) drop one numbered below the newest they took: a cache read from before a stop never brings the
+  stopped file back, and the position never goes back.
 
 ## Networking and security
 
