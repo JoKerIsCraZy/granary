@@ -25,13 +25,26 @@ public sealed class WatchPartyApiTests
         var ct = TestContext.Current.CancellationToken;
         _silo.On(HttpMethod.Post, Rooms, ScriptedSilo.Json(HttpStatusCode.Created, WatchPartyPayloads.Answer(WatchPartyPayloads.Room())));
 
-        var opened = await Api.CreateAsync(ScriptedSilo.Base, WatchPartyPayloads.RoomId, ct);
+        var opened = await Api.CreateAsync(ScriptedSilo.Base, WatchPartyPayloads.RoomId, WatchPartySelectionModes.HostPick, ct);
 
         Assert.Equal("ABCD1234", opened.Room.Code);
         Assert.Equal(WatchPartyPayloads.Token, opened.RoomAccessToken);
         Assert.True(opened.Room.IsHost);
         Assert.Equal($$"""{"room_id":"{{WatchPartyPayloads.RoomId}}","selection_mode":"host_pick"}""", Only().Body);
         Assert.Equal(SiloAuth.Profile, Only().Auth);
+    }
+
+    [Fact]
+    public async Task Create_OpensAVotingRoom_WhenAsked_AndNoModeTheServerDoesNotKnow()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        _silo.On(HttpMethod.Post, Rooms, ScriptedSilo.Json(HttpStatusCode.Created, WatchPartyPayloads.Answer(WatchPartyPayloads.Room(mode: "vote"))));
+
+        await Api.CreateAsync(ScriptedSilo.Base, WatchPartyPayloads.RoomId, WatchPartySelectionModes.Vote, ct);
+
+        Assert.Equal($$"""{"room_id":"{{WatchPartyPayloads.RoomId}}","selection_mode":"vote"}""", Only().Body);
+        await Assert.ThrowsAsync<ArgumentException>(() => Api.CreateAsync(ScriptedSilo.Base, WatchPartyPayloads.RoomId, "everyone", ct));
+        Assert.Single(_silo.Sent);
     }
 
     [Fact]

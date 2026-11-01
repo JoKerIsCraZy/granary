@@ -2162,7 +2162,8 @@ the commands its player runs. Sources: `silo-server/docs/realtime-api.md` ("Watc
   staged_selection, stop_playback, lobby_ready, connection_replaced, picker, member_state, selection_mode_switch, … }`;
   rooms are offered only when `state` is `available`, `allowed`, and the protocol is `silo.room.v2`.
 - `POST /api/v2/watch-together/rooms` `{ room_id (a client UUID: a retry answers the same room), selection_mode:
-  "host_pick" | "vote" }` → `201 { room, room_access_token }`. `POST /api/v2/watch-together/join` `{ code }` or
+  "host_pick" | "vote" }` (both required, `WatchTogetherCreateInputBody`; Granary sends the hub's choice, `host_pick`
+  unless Everyone votes is chosen) → `201 { room, room_access_token }`. `POST /api/v2/watch-together/join` `{ code }` or
   `{ join_token }` (the token of an invitation link, which wins) → `{ room, room_access_token }`. The host's
   snapshot carries `invite_path` `/rooms/join?token=…` (`silo-server/internal/watchtogether/service.go`
   personalizeSnapshot), the web's invite route, which forwards to `/rooms?token=…` (`WatchPartyInvite.tsx`); Granary

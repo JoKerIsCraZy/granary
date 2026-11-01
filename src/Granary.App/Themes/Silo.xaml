@@ -136,6 +136,11 @@
         <GradientStop Offset="0" Color="#2EEF4444" />
         <GradientStop Offset="1" Color="#00EF4444" />
     </RadialGradientBrush>
+    <!-- A card's glow at its top right, as the web's Start a party card (a blurred accent circle at 20 %). -->
+    <RadialGradientBrush x:Key="SiloCardGlowBrush" Center="0.96,0.04" GradientOrigin="0.96,0.04" RadiusX="0.42" RadiusY="0.62">
+        <GradientStop Offset="0" Color="#33EF4444" />
+        <GradientStop Offset="1" Color="#00EF4444" />
+    </RadialGradientBrush>
     <SolidColorBrush x:Key="SiloBadgeBackgroundBrush" Color="{StaticResource SiloBadgeBackgroundColor}" />
     <SolidColorBrush x:Key="SiloBadgeBorderBrush" Color="{StaticResource SiloBadgeBorderColor}" />
     <SolidColorBrush x:Key="SiloRatingBadgeBrush" Color="{StaticResource SiloRatingBadgeColor}" />

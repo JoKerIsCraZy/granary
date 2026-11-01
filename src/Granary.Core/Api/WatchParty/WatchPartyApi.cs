@@ -21,12 +21,17 @@ public sealed class WatchPartyApi(SiloHttp http)
         http.GetAsync(server, "api/v2/watch-together/capabilities", SiloAuth.Profile, WatchPartyJsonContext.Default.WatchPartyCapabilities,
             cancellationToken);
 
-    /// <summary>Opens a room this profile hosts, in which the host picks.</summary>
+    /// <summary>Opens a room this profile hosts.</summary>
     /// <param name="roomId">A fresh UUID; retrying with it after a lost answer answers the same room.</param>
-    public Task<WatchPartyRoomResponse> CreateAsync(Uri server, string roomId, CancellationToken cancellationToken = default)
+    /// <param name="selectionMode">How the room picks: <see cref="WatchPartySelectionModes.HostPick"/> or <see cref="WatchPartySelectionModes.Vote"/>.</param>
+    public Task<WatchPartyRoomResponse> CreateAsync(Uri server, string roomId, string selectionMode, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(roomId);
-        return http.PostAsync(server, "api/v2/watch-together/rooms", SiloAuth.Profile, new WatchPartyCreate(roomId, "host_pick"),
+        if (selectionMode is not (WatchPartySelectionModes.HostPick or WatchPartySelectionModes.Vote))
+        {
+            throw new ArgumentException("A room picks by host_pick or vote.", nameof(selectionMode));
+        }
+        return http.PostAsync(server, "api/v2/watch-together/rooms", SiloAuth.Profile, new WatchPartyCreate(roomId, selectionMode),
             WatchPartyJsonContext.Default.WatchPartyCreate, WatchPartyJsonContext.Default.WatchPartyRoomResponse, cancellationToken);
     }
 

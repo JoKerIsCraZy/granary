@@ -403,17 +403,26 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     button keeps its focus when the window crosses it.
   - An episode without a backdrop of its own shows its thumbhash or black, never its poster stretched across.
 - Watch Party (`WatchPartyPage`, the web's `pages/watchtogether/WatchPartyHub.tsx`): "WATCH PARTY", "Watch together,
-  wherever everyone is." and what a party is; beside each other "Start a party" (Create Watch Party opens an empty room
-  the host picks for) and "Join a party" (the code in a wide spaced box, Paste, Join Watch Party; a pasted invite link
-  of this server joins by its token, a link to anywhere else not at all); an error in the web's red box ("Room not
-  found.", "That room is no longer active."); in a room already, a line back to it; a room that is over, at the top in
-  the words of the web's end of a room: the people tile (48 px, radius 12) beside "The room has ended." ("That watch
-  party is no longer active.", "Room not found.", "You don't have access to this watch party.", "Room is unavailable.")
-  over "Start a new watch party or join another room to keep watching together.", or "Watch Party joined on another
-  device" over the server's reason with Rejoin Watch Party; its close button leaves the room on this device and puts it
-  away. "YOUR RECENT PARTIES" (the rooms of
-  the last day: the title, Live / Checking… / Status unavailable / Ended, "Your room" or "Joined", the code, and
-  Rejoin while it is on); "How it works" in three steps. Invite links opened from outside the app are not there yet.
+  wherever everyone is." and "Open a room, share the code, and everyone plays in sync. The host picks what's on, or the
+  whole room votes."; beside each other "Start a party" and "Join a party". Start a party has the web's accent glow at
+  its top right and "How the room picks" as two cards: "Host picks" / "You choose, everyone watches." and "Everyone
+  votes" / "Anyone suggests, the room votes." (radius 12; the chosen one on #232328 with a half-foreground border, its
+  icon full, the other's muted at 60 %). Create Watch Party opens an empty room that picks so. Host picks is chosen on
+  every visit, as the web keeps the choice only on its page. The web's hint under the button ("…choose Start a party
+  with this from the menu.") is left out: Granary's title pages have no such entry. Join a party says "Got a code from
+  the host? Enter it here, or paste the invite link." (the web's second sentence, "Invite links open straight into the
+  room.", is not true here: links opened from outside the app do not reach it). Its code box is the web's (Consolas
+  18 px, 0.3 em apart, a code in capitals as it is typed, a pasted link as it is), its text kept in the middle; Paste and
+  Join Watch Party. A pasted invite link of this server joins by its token, a link to anywhere else not at all. An error
+  shows in the web's red box ("Room not found.", "That room is no longer active."). In a room already, a line leads back
+  to it. A room that is over shows at the top in the words of the web's end of a room: the people tile (48 px, radius
+  12) beside "The room has ended." ("That watch party is no longer active.", "Room not found.", "You don't have access
+  to this watch party.", "Room is unavailable.") over "Start a new watch party or join another room to keep watching
+  together.", or "Watch Party joined on another device" over the server's reason with Rejoin Watch Party; its close
+  button leaves the room on this device and puts it away. "YOUR RECENT PARTIES" lists the rooms of the last day: the
+  title, Live / Checking… / Status unavailable / Ended, "Your room" or "Joined", the code, and Rejoin while it is on or
+  ENDED once it is not. "How it works" has three steps ("Open a room / Create one here.", "Share the code", "Watch in
+  sync").
 - The room (`WatchPartyRoomPage`, the web's `WatchTogetherRoomPage.tsx`): the status strip ("● Live · 1 here", "Voting
   · 1 here" or "Playing · 3 here"; the code chip, copied by a click; Invite link; the host's "Host picks · you ▾" menu
   with Everyone votes, a plain "Host picks" / "Everyone votes" chip for guests and while playing; "● Connected",

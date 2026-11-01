@@ -84,13 +84,18 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
     /// </summary>
     public long? StartedRevision { get; set; }
 
-    /// <summary>Opens a room this profile hosts and goes in.</summary>
+    /// <summary>Opens a room this profile hosts, in which the host picks, and goes in.</summary>
     /// <exception cref="WatchPartyStaleException">The room was left, or the profile or server changed, meanwhile: it is not entered.</exception>
-    public async Task<WatchPartyRoom> CreateAsync(CancellationToken cancellationToken = default)
+    public Task<WatchPartyRoom> CreateAsync(CancellationToken cancellationToken = default) =>
+        CreateAsync(WatchPartySelectionModes.HostPick, cancellationToken);
+
+    /// <summary>Opens a room this profile hosts, picking by <paramref name="selectionMode"/>, and goes in.</summary>
+    /// <exception cref="WatchPartyStaleException">The room was left, or the profile or server changed, meanwhile: it is not entered.</exception>
+    public async Task<WatchPartyRoom> CreateAsync(string selectionMode, CancellationToken cancellationToken = default)
     {
         var server = Server();
         long generation = _generation;
-        var opened = await _api.CreateAsync(server, Guid.NewGuid().ToString(), cancellationToken);
+        var opened = await _api.CreateAsync(server, Guid.NewGuid().ToString(), selectionMode, cancellationToken);
         Stale(generation);
         Enter(server, opened);
         return opened.Room;
