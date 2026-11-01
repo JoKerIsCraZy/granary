@@ -72,6 +72,11 @@ Profiles hide libraries the same way they do on the web. The full description of
 
 - Windows 10 version 2004 (build 19041) or later, or Windows 11, on x64
 - A server running Silo Server
+- Microsoft's [WebP Image Extensions](https://apps.microsoft.com/detail/9pg2dk419drg) for posters and backdrops: Silo
+  sends its artwork as WebP. They come with Windows 10 and 11 where the Microsoft Store is installed. Elsewhere
+  (Windows LTSC, Windows Server, Windows Sandbox, a system whose Store apps were removed) install them with
+  `winget install --id 9PG2DK419DRG --source msstore` where winget is available. Without them Granary shows only
+  blurred placeholders.
 
 ## Install
 
