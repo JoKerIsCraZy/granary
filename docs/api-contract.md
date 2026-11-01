@@ -2182,9 +2182,12 @@ the commands its player runs. Sources: `silo-server/docs/realtime-api.md` ("Watc
 - Host only (profile authority, no proof): `PUT …/{id}/staged-selection { content_id }` (the lobby shows it),
   `POST …/{id}/playback/start` (plays what is staged: phase `playing`, a new revision, the barrier `waiting`),
   `POST …/{id}/playback/stop` (back to the lobby, still staged), `PATCH …/{id}/policy { guest_control_policy }`,
-  `DELETE …/{id}` (ends it for everyone), `PATCH …/{id}/selection-mode { selection_mode: host_pick | vote }` (in the
-  lobby only: drops the staged title and every lobby ready; suggestions and votes stay). Each answers the room and a
-  renewed proof; none is retried.
+  `PATCH …/{id}/selection-mode { selection_mode: host_pick | vote }` (in the lobby only: drops the staged title and
+  every lobby ready; suggestions and votes stay). Each answers the room and a renewed proof; none is retried.
+  `DELETE …/{id}` ends it for everyone → `204`, not retried either. A room that had ended already answers `409
+  conflict`, one that is not there `404 not_found` (`silo-server/internal/apiv2/watch_together_close.go`); Granary
+  takes both as ended, as Android's `WatchTogetherRepository.closeRoom` takes the 409. Another 409
+  (`capability_disabled`) is a failure.
 - Suggestions (every member, with `X-Room-Token`): `GET …/{id}/suggestions?limit=100&cursor=` → `{ items[], page {
   has_more, next_cursor } }` in creation order, each `{ id, room_id, suggester_user_id, suggester_profile_id,
   content_id, content_type (movie | episode), title, subtitle, poster_url, note, vote_count, voted_by_me, created_at
