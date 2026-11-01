@@ -154,20 +154,35 @@ public sealed class TrailingThrottleTests : IDisposable
     public async Task Dispose_WaitsForARunUnderWay_AndNothingRunsAfter()
     {
         using var gate = new RunGate();
-        _onRun = run => gate.HoldIf(run == 1);
+        var order = new System.Collections.Concurrent.ConcurrentQueue<string>();
+        _onRun = run =>
+        {
+            gate.HoldIf(run == 1);
+            order.Enqueue("run ended");
+        };
         _throttle.Signal();
         var firing = Task.Run(() => _time.Advance(TimeSpan.Zero), TestContext.Current.CancellationToken);
         await gate.Entered.WaitAsync(Hang, TestContext.Current.CancellationToken);
+        // A trailing run waits on the timer: Dispose takes that timer away before it waits for the run.
         _throttle.Signal();
+        Assert.NotNull(_time.NextDue);
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        var disposing = Task.Run(_throttle.Dispose, TestContext.Current.CancellationToken);
+        var disposing = Task.Run(() =>
+        {
+            started.SetResult();
+            _throttle.Dispose();
+            order.Enqueue("disposed");
+        }, TestContext.Current.CancellationToken);
 
-        // Held at the gate, the run cannot end, so a Dispose that waits for it cannot return either.
-        await Task.WhenAny(disposing, Task.Delay(100, TestContext.Current.CancellationToken));
+        // Dispose has begun and is past its timer: all that is left is the wait for the run, which the gate holds.
+        await started.Task.WaitAsync(Hang, TestContext.Current.CancellationToken);
+        await _time.WaitUntilAsync(() => _time.NextDue is null, TestContext.Current.CancellationToken);
         Assert.False(disposing.IsCompleted);
         gate.Release();
         await disposing.WaitAsync(Hang, TestContext.Current.CancellationToken);
         await firing.WaitAsync(Hang, TestContext.Current.CancellationToken);
+        Assert.Equal(["run ended", "disposed"], order);
         _time.Advance(TimeSpan.FromSeconds(1));
         _throttle.Signal();
         _time.Advance(TimeSpan.FromSeconds(1));
