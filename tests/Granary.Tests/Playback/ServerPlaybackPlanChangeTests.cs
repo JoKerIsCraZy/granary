@@ -293,6 +293,29 @@ public sealed class ServerPlaybackPlanChangeTests
         Assert.Equal([PlanChange.Quality, PlanChange.None], _changes);
     }
 
+    [Fact]
+    public async Task ASubtitleAddedDuringAQualityChange_GoesOnUnderTheQualityChange()
+    {
+        var answer = Pending();
+        _fixture.Silo.On(HttpMethod.Get, "api/v2/watch/" + MovieId,
+            Ok(ServerPlaybackSubtitleTests.WithSubtitleTracks(PlaybackPayloads.WatchStateOk)));
+        _fixture.Silo.On(HttpMethod.Put, ServerPlaybackSubtitleTests.SubtitlePrefsPath, ScriptedSilo.NoContent());
+        _fixture.Silo.On(HttpMethod.Post, ReplanPath, () => answer.Task,
+            Ok(ServerPlaybackSubtitleTests.ListingStored("\"sync_key\": \"stored-77\",")));
+        var playback = await PlayingAsync();
+
+        playback.SelectQuality("1080p-high");
+        playback.ShowAddedSubtitle("77");
+        answer.SetResult(await ScriptedSilo.Json(HttpStatusCode.OK, PlaybackPayloads.StartOpaqueIds)());
+        await playback.Recovery;
+
+        // The plan that lists the subtitle is asked for while the quality's stream still loads: one change, the viewer's.
+        Assert.Equal("track_change", _fixture.Body(HttpMethod.Post, ReplanPath, 1).GetProperty("operation").GetString());
+        Assert.Equal(PlanChange.Quality, playback.PlanChange);
+        _fixture.Engine.RaiseState(Frame(30));
+        Assert.Equal([PlanChange.Quality, PlanChange.None], _changes);
+    }
+
     // Off the usual paths
 
     [Fact]

@@ -53,7 +53,8 @@ public sealed partial class ServerPlayback
     // One recovery at a time: the server refuses a second replan of the session while one is open (8.7). What
     // happens meanwhile belongs to the stream being replaced, or happens again once the new one plays; a seek and the
     // viewer's picks wait. A recovery that leaves the stream playing (a refusal) hands them to it when it is done. One
-    // that replaces the stream for a plan change names it; the recoveries it leads to carry it on.
+    // that replaces the stream for a plan change names it; the recoveries it leads to carry it on, and so does one that
+    // starts while the change's stream is still on its way (a subtitle added meanwhile): it stays the change asked for.
     private void Recover(Func<Task> recovery, PlanChange change = PlanChange.None)
     {
         if (_recovering || _stopping || Status.Phase == ServerPlaybackPhase.Failed)
@@ -61,7 +62,7 @@ public sealed partial class ServerPlayback
             return;
         }
         _recovering = true;
-        if (change != PlanChange.None)
+        if (change != PlanChange.None && (PlanChange == PlanChange.None || _started))
         {
             SetPlanChange(change);
         }

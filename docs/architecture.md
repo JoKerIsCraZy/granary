@@ -271,7 +271,9 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   playback leaves the engine alone, which may already play the next title.
 - **Plan change** (`IServerPlayback.PlanChange`, the web's `replanning || replacing`): a recovery that replaces the
   stream that plays names what for (quality, version, audio, subtitles, seek, restart) as it starts; the recoveries
-  it leads to (a failed load's `failure_recovery`, a reconnect, a fresh attempt) carry it on. It ends at the new
+  it leads to (a failed load's `failure_recovery`, a reconnect, a fresh attempt) carry it on, and so does one that
+  starts while its new stream is still on its way (a subtitle added meanwhile), so it keeps the name of the change the
+  viewer asked for. A request made once a stream plays names its own. It ends at the new
   stream's first frame, when a recovery ends with no load on its way (a refusal leaves the old stream playing), on a
   failure and at the stop, so no path leaves it on. A reconnect on its own is no plan change. The player shows it
   (`PlayerViewModel.IsChangingPlan`, `IsWaiting`; docs/ui-design.md, Player).
