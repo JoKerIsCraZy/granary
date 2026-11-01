@@ -185,4 +185,104 @@ public sealed class WindowModesTests
         Assert.Equal(WindowMode.Window, modes.Mode);
         Assert.False(modes.IsTrailerFullScreen);
     }
+
+    [Fact]
+    public void FullScreenTheWindowTookItself_IsTheViewers_AndEndsWithTheirToggle()
+    {
+        var modes = new WindowModes();
+
+        modes.Follow(WindowMode.FullScreen);
+        Assert.True(modes.IsFullScreen);
+        Assert.False(modes.IsTrailerFullScreen);
+
+        // A trailer inside it does not take it over.
+        modes.SetTrailerFullScreen(true);
+        modes.SetTrailerFullScreen(false);
+        Assert.True(modes.IsFullScreen);
+
+        modes.ToggleFullScreen();
+        Assert.Equal(WindowMode.Window, modes.Mode);
+    }
+
+    [Fact]
+    public void AMiniViewTheWindowTookItself_GoesBackToTheWindow()
+    {
+        var modes = new WindowModes();
+        modes.SetFullScreen(true);
+
+        modes.Follow(WindowMode.MiniView);
+        Assert.True(modes.IsMiniView);
+
+        modes.SetMiniView(false);
+        Assert.Equal(WindowMode.Window, modes.Mode);
+    }
+
+    [Fact]
+    public void AMiniViewLeftByTheWindowItself_ForgetsItCameFromFullScreen()
+    {
+        var modes = new WindowModes();
+        modes.SetFullScreen(true);
+        modes.SetMiniView(true);
+
+        modes.Follow(WindowMode.Window);
+        modes.Follow(WindowMode.MiniView);
+        modes.SetMiniView(false);
+
+        Assert.Equal(WindowMode.Window, modes.Mode);
+    }
+
+    [Fact]
+    public void ATrailersFullScreen_FromTheMiniView_GoesBackToTheWindowWithIt()
+    {
+        var modes = new WindowModes();
+        modes.SetMiniView(true);
+
+        modes.SetTrailerFullScreen(true);
+        Assert.Equal(WindowMode.FullScreen, modes.Mode);
+        Assert.True(modes.IsTrailerFullScreen);
+
+        modes.SetTrailerFullScreen(false);
+        Assert.Equal(WindowMode.Window, modes.Mode);
+    }
+
+    [Fact]
+    public void ATrailersFullScreenAskedTwice_EndsWithOneLeave()
+    {
+        var modes = new WindowModes();
+        modes.SetTrailerFullScreen(true);
+        modes.SetTrailerFullScreen(true);
+
+        modes.SetTrailerFullScreen(false);
+        Assert.Equal(WindowMode.Window, modes.Mode);
+        Assert.False(modes.IsTrailerFullScreen);
+
+        modes.SetTrailerFullScreen(false);
+        Assert.Equal(WindowMode.Window, modes.Mode);
+    }
+
+    [Fact]
+    public void LeavingATrailersFullScreenAgain_InFullScreen_KeepsIt()
+    {
+        var modes = new WindowModes();
+        modes.SetFullScreen(true);
+        modes.SetTrailerFullScreen(false);
+        modes.SetTrailerFullScreen(true);
+        modes.SetTrailerFullScreen(false);
+
+        modes.SetTrailerFullScreen(false);
+
+        Assert.Equal(WindowMode.FullScreen, modes.Mode);
+    }
+
+    [Fact]
+    public void FullScreenAskedWhileATrailerHoldsIt_KeepsTheTrailersFullScreen()
+    {
+        var modes = new WindowModes();
+        modes.SetTrailerFullScreen(true);
+
+        modes.SetFullScreen(true);
+
+        Assert.Equal(WindowMode.FullScreen, modes.Mode);
+        Assert.True(modes.IsTrailerFullScreen);
+    }
 }

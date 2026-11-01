@@ -389,10 +389,14 @@ screen all go through `WindowModeService` (App, a singleton that MainWindow atta
   returns to where it was opened from; leaving the player or minimizing it ends only the mini view; a trailer's full
   screen takes the window only from a window and gives it back, and the viewer's own full screen outlasts it; leaving
   full screen ends a trailer's.
-- **The window**: the service applies a change through the AppWindow presenters. Leaving the window it keeps the window
-  as it was (`WindowedPlacement`: the presenter, so a maximized window comes back maximized, and its place and size);
-  full screen and the mini view go to each other without it, so either returns to the window as it was before both. A
-  presenter the window took by itself is followed. Nothing is saved: each start begins as a window.
+- **The window**: the service applies a change through the AppWindow presenters. It keeps the window as it is while it is
+  a window, on every move and resize, and once more as it leaves (`WindowedPlacement`: the presenter, so a maximized
+  window comes back maximized, and its place and size, but never a minimized window's); full screen and the mini view go
+  to each other without it, so either returns to the window as it was before both. Coming back, a restored window is
+  placed within the nearest display's work area (`WindowBounds.Within`), so a display unplugged or moved meanwhile cannot
+  leave it off-screen; a window flush with an edge, whose invisible resize frame reaches a few pixels past it, stays
+  where it was. A presenter the window took by itself is followed, and so is the window's real presenter when setting
+  one fails (logged). Nothing is saved: each start begins as a window.
 - **Changed** tells MainWindow (its title bar buttons), the player (its `IsFullScreen` and `IsMiniView`) and the trailer.
 - **Drag area**: the title bar's own buttons lie outside `SetTitleBar`'s element, so they take clicks. In full screen the
   window has no drag area at all (`InputNonClientPointerSource`'s caption region cleared); WinUI does not set it again

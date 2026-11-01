@@ -15,6 +15,7 @@ release's section is what its update says it changes (docs/release.md).
 
 - Minimizing or leaving the player no longer drops the app out of full screen, and the mini view goes back to full screen
   when it was opened from there.
+- Back from full screen or the mini view, the window lands on a display, also when its own was unplugged meanwhile.
 
 ## [0.1.0] - 2026-11-01
 

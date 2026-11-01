@@ -1,4 +1,5 @@
 using Granary.Core.ViewModels;
+using Microsoft.Extensions.Logging;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Windows.Graphics;
@@ -10,7 +11,7 @@ namespace Granary.App.Services;
 /// mini view) and a trailer's own full screen. Core's <see cref="WindowModes"/> decides; this puts it on the window through
 /// its AppWindow presenters and keeps the window as it was to go back to (<see cref="WindowedPlacement"/>).
 /// </summary>
-public sealed class WindowModeService
+public sealed class WindowModeService(ILogger<WindowModeService> logger)
 {
     // The mini view's width in view pixels; 16:9, as the web's picture-in-picture window starts.
     private const double MiniViewWidth = 480;
@@ -28,6 +29,8 @@ public sealed class WindowModeService
 
     /// <summary>A trailer's page fills the screen.</summary>
     public bool IsTrailerFullScreen => _modes.IsTrailerFullScreen;
+
+    private double Scale => _window?.Content?.XamlRoot?.RasterizationScale ?? 1;
 
     /// <summary>The main window, whose modes these are; MainWindow attaches itself as it is made.</summary>
     public void Attach(Window window)
@@ -49,9 +52,18 @@ public sealed class WindowModeService
         var from = _modes.Mode;
         bool trailer = _modes.IsTrailerFullScreen;
         decide();
-        if (_modes.Mode != from)
+        if (_modes.Mode != from && _window?.AppWindow is { } window)
         {
-            Present(from, _modes.Mode);
+            try
+            {
+                Present(window, from, _modes.Mode);
+            }
+            catch (Exception ex)
+            {
+                // The state must not say what the window does not show: it follows what the window shows instead.
+                logger.LogWarning(ex, "The window did not go from {From} to {To}", from, _modes.Mode);
+                _modes.Follow(ModeOf(window.Presenter.Kind));
+            }
         }
         if (_modes.Mode != from || _modes.IsTrailerFullScreen != trailer)
         {
@@ -59,12 +71,8 @@ public sealed class WindowModeService
         }
     }
 
-    private void Present(WindowMode from, WindowMode to)
+    private void Present(AppWindow window, WindowMode from, WindowMode to)
     {
-        if (_window?.AppWindow is not { } window)
-        {
-            return;
-        }
         if (from == WindowMode.Window)
         {
             // Kept to go back to: maximized, or restored with its place and size. Full screen and the mini view go to each
@@ -82,32 +90,35 @@ public sealed class WindowModeService
                 presenter.InitialSize = CompactOverlaySize.Medium;
                 window.SetPresenter(presenter);
                 // The medium size alone keeps the window's shape.
-                double scale = _window.Content?.XamlRoot?.RasterizationScale ?? 1;
-                window.Resize(new SizeInt32((int)Math.Round(MiniViewWidth * scale), (int)Math.Round(MiniViewWidth * 9 / 16 * scale)));
+                window.Resize(new SizeInt32((int)Math.Round(MiniViewWidth * Scale), (int)Math.Round(MiniViewWidth * 9 / 16 * Scale)));
                 break;
             default:
-                _windowed.Restore(window);
+                _windowed.Restore(window, Scale);
                 break;
         }
     }
 
-    // A presenter the window took by itself; the ones set here match the state already.
     private void OnAppWindowChanged(AppWindow sender, AppWindowChangedEventArgs args)
     {
-        if (!args.DidPresenterChange)
+        var mode = ModeOf(sender.Presenter.Kind);
+        if (mode == WindowMode.Window && _modes.Mode == WindowMode.Window
+            && (args.DidPositionChange || args.DidSizeChange || args.DidPresenterChange))
         {
-            return;
+            // Kept as it goes, so a full screen or mini view the window takes by itself still returns to it.
+            _windowed.Keep(sender);
         }
-        var mode = sender.Presenter.Kind switch
-        {
-            AppWindowPresenterKind.FullScreen => WindowMode.FullScreen,
-            AppWindowPresenterKind.CompactOverlay => WindowMode.MiniView,
-            _ => WindowMode.Window,
-        };
-        if (mode != _modes.Mode)
+        // A presenter the window took by itself; the ones set here match the state already.
+        if (args.DidPresenterChange && mode != _modes.Mode)
         {
             _modes.Follow(mode);
             Changed?.Invoke(this, EventArgs.Empty);
         }
     }
+
+    private static WindowMode ModeOf(AppWindowPresenterKind kind) => kind switch
+    {
+        AppWindowPresenterKind.FullScreen => WindowMode.FullScreen,
+        AppWindowPresenterKind.CompactOverlay => WindowMode.MiniView,
+        _ => WindowMode.Window,
+    };
 }
