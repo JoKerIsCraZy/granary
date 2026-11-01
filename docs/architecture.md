@@ -46,6 +46,22 @@ the display refresh rate itself (Phase 3).
 - View models marshal to the UI thread through `IUiDispatcher`; they never block on it.
 - `MpvVideoHost` re-enters the UI thread through its `DispatcherQueue` when the swap chain changes.
 - Position updates are throttled to 4 per second; state changes are reported immediately.
+- What mpv's cache holds (`demuxer-cache-state`) is observed without its value: the engine reads the property's
+  string form (the node as compact JSON) at most 4 times a second and once more after the last change
+  (`TrailingThrottle`, always on a timer's thread, so mpv's event thread never waits for the read; a failure is
+  logged), takes its `seekable-ranges` (`MpvCacheState`, which reads anything else as no ranges) and reports them in
+  `PlaybackSnapshot.Buffered`, in the time of `time-pos` (mpv applies the same offset to both). A load empties them
+  at once, and a read of the file before is dropped by its load id. While `keep-open` holds the file at its end, its
+  ranges stay, as on the web; they clear when the file ends (a stop, a failure or mpv's own end of the file), whose
+  idle snapshot holds none. `PlayerViewModel.Buffered` moves them into the title's time with the timeline offset, as
+  the position, and keeps them within the title's length. It holds them back once the plan's offset differs from the
+  one the load began with: the plan is taken before its stream loads, and the engine plays the stream before
+  meanwhile.
+- The engine raises `StateChanged` from mpv's event thread, from the cache reads on a timer's thread and from the
+  caller's thread of `Load`, each time after leaving its lock, so a snapshot can overtake another on the way. Every
+  snapshot it raises is numbered under the lock (`PlaybackSnapshot.Sequence`), and its consumers (`PlayerViewModel`,
+  `ServerPlayback`) drop one numbered below the newest they took: a cache read from before a stop never brings the
+  stopped file back, and the position never goes back.
 
 ## Networking and security
 
@@ -269,6 +285,14 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   seek waits for that stream. Engine states and ends carry the id of their load (`PlaybackSnapshot.LoadId`):
   one raised before a reload can arrive after it and is ignored. A failure stops the engine; after the stop the
   playback leaves the engine alone, which may already play the next title.
+- **Plan change** (`IServerPlayback.PlanChange`, the web's `replanning || replacing`): a recovery that replaces the
+  stream that plays names what for (quality, version, audio, subtitles, seek, restart) as it starts; the recoveries
+  it leads to (a failed load's `failure_recovery`, a reconnect, a fresh attempt) carry it on, and so does one that
+  starts while its new stream is still on its way (a subtitle added meanwhile), so it keeps the name of the change the
+  viewer asked for. A request made once a stream plays names its own. It ends at the new
+  stream's first frame, when a recovery ends with no load on its way (a refusal leaves the old stream playing), on a
+  failure and at the stop, so no path leaves it on. A reconnect on its own is no plan change. The player shows it
+  (`PlayerViewModel.IsChangingPlan`, `IsWaiting`; docs/ui-design.md, Player).
 - After a refused request mpv runs to the end of what it had read and pauses there before it reports the end.
   The engine keeps the last real position and pause from the refusal until the next load, so the end of that
   data is never taken for the viewer's position.

@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    The player's seek bar as Silo's web player draws it: a thin track with the played part in white over the tinted
-    marked parts (intro, recap, credits, preview), a tick where each chapter starts. Under the pointer the track
+    The player's seek bar as Silo's web player draws it: a thin track, lighter where the player holds the stream
+    (SeekBar.Buffered.cs), with the played part in white over the tinted marked parts (intro, recap, credits,
+    preview), a tick where each chapter starts. Under the pointer the track
     thickens, a thumb appears and a bubble above it shows a picture of that moment (SeekBar.Preview.cs), the part and
     its range, the time and the chapter; the part under the pointer stands out with a white ring. The whole row is the
     hit area.
@@ -22,6 +23,8 @@
             <Grid.ScaleTransition>
                 <Vector3Transition Duration="0:0:0.15" />
             </Grid.ScaleTransition>
+            <!-- The web's order: buffered ranges, marked parts, the played part. -->
+            <Grid x:Name="BufferedParts" />
             <Grid x:Name="Regions" />
             <Border x:Name="Progress" Width="0" HorizontalAlignment="Left" CornerRadius="1.5"
                     Background="{StaticResource SiloPlayerForegroundBrush}" />

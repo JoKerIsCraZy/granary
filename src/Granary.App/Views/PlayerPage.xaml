@@ -30,15 +30,16 @@
               Visibility="{x:Bind ShowsUndocked(IsDocked), Mode=OneWay}" />
 
         <!--
-            Preparing, and waiting for data later on: Granary's mark runs its loading loop. The dark disc keeps it visible on
-            a bright picture.
+            Preparing, and later while the picture stands still for data or a new stream, once that has lasted 500 ms
+            as in the web's player/components/VideoPlayer.tsx: Granary's mark runs its loading loop. The dark disc keeps
+            it visible on a bright picture.
         -->
         <Grid HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False"
-              Visibility="{x:Bind SpinnerVisibility(ViewModel.Phase, ViewModel.IsBuffering, IsDocked), Mode=OneWay}">
+              Visibility="{x:Bind SpinnerVisibility(ViewModel.Phase, ViewModel.IsWaiting, IsDocked), Mode=OneWay}">
             <Ellipse Width="88" Height="88" Fill="#73000000" />
             <controls:GranaryMark Width="60" Height="60"
-                                  IsLoading="{x:Bind ShowsSpinner(ViewModel.Phase, ViewModel.IsBuffering), Mode=OneWay}"
-                                  AutomationProperties.Name="{x:Bind SpinnerName(ViewModel.Phase), Mode=OneWay}" />
+                                  IsLoading="{x:Bind ShowsSpinner(ViewModel.Phase, ViewModel.IsWaiting, IsDocked), Mode=OneWay}"
+                                  AutomationProperties.Name="{x:Bind SpinnerName(ViewModel.Phase, ViewModel.IsChangingPlan), Mode=OneWay}" />
         </Grid>
 
         <!-- Failed: what went wrong, Retry when it can help, and Back. -->
@@ -109,6 +110,7 @@
                 <controls:SeekBar x:Name="SeekBar" AutomationProperties.Name="Seek"
                                   Position="{x:Bind ViewModel.PositionSeconds, Mode=OneWay}"
                                   Duration="{x:Bind ViewModel.DurationSeconds, Mode=OneWay}"
+                                  Buffered="{x:Bind ViewModel.Buffered, Mode=OneWay}"
                                   Markers="{x:Bind ViewModel.SeekBarMarkers, Mode=OneWay}"
                                   EditKind="{x:Bind EditKindOf(ViewModel.MarkerEditor.IsEditing, ViewModel.MarkerEditor.ActiveKind), Mode=OneWay}"
                                   MarkerEdgeDragged="OnMarkerEdgeDragged"
@@ -493,7 +495,8 @@
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <FontIcon Glyph="&#xE713;" FontSize="16" />
                                 <TextBlock Text="{x:Bind ViewModel.SettingsLabel, Mode=OneWay}" VerticalAlignment="Center" FontFamily="{StaticResource SiloFontMedium}"
-                                           FontWeight="Medium" FontSize="11" CharacterSpacing="25" Visibility="{x:Bind Shows(ViewModel.SettingsLabel), Mode=OneWay}" />
+                                           FontWeight="Medium" FontSize="11" CharacterSpacing="25"
+                                           Visibility="{x:Bind ShowsSettingsLabel(ViewModel.SettingsLabel, IsNarrow), Mode=OneWay}" />
                                 <Border Background="White" CornerRadius="7" Padding="5,0" Height="14" VerticalAlignment="Center"
                                         Visibility="{x:Bind Shows(ViewModel.SpeedBadge), Mode=OneWay}">
                                     <TextBlock Text="{x:Bind ViewModel.SpeedBadge, Mode=OneWay}" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
@@ -876,6 +879,20 @@
         </Border>
 
         <!--
+            Granary's own: while the stream is planned anew (a quality, file or track switch, a seek it cannot reach), its mark
+            turns in the skip pill's corner until the new stream plays, above the pill or the card (PlayerPage.PlanChange.cs).
+        -->
+        <Grid x:Name="PlanChangeMark" Width="44" Height="44" Margin="0,0,28,28" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+              IsHitTestVisible="False" Visibility="{x:Bind ShowsInWindow(ViewModel.IsChangingPlan, IsCompact), Mode=OneWay}">
+            <Grid.TranslationTransition>
+                <Vector3Transition Duration="0:0:0.3" />
+            </Grid.TranslationTransition>
+            <Ellipse Fill="#73000000" />
+            <controls:GranaryMark Width="32" Height="32" IsLoading="{x:Bind RunsPlanChangeMark(ViewModel.IsChangingPlan, IsCompact), Mode=OneWay}"
+                                  AutomationProperties.Name="{x:Bind ViewModel.PlanChangeText, Mode=OneWay}" />
+        </Grid>
+
+        <!--
             Playing Next (the web's PlayingNextScreen): 30 s before the end and at it. The next episode in the middle on a
             darkened, blurred copy of its still; Play Now with the countdown ring once the episode has ended; the
             auto-play switch; On Deck along the bottom. The video plays on small in the top left corner, above this.
@@ -1099,6 +1116,7 @@
                           Visibility="{x:Bind IsDocked, Mode=OneWay}" AutomationProperties.Name="Seek"
                           Position="{x:Bind ViewModel.PositionSeconds, Mode=OneWay}"
                           Duration="{x:Bind ViewModel.DurationSeconds, Mode=OneWay}"
+                          Buffered="{x:Bind ViewModel.Buffered, Mode=OneWay}"
                           Markers="{x:Bind ViewModel.SeekBarMarkers, Mode=OneWay}"
                           Chapters="{x:Bind ViewModel.ChapterMarks, Mode=OneWay}"
                           Trickplay="{x:Bind ViewModel.Trickplay, Mode=OneWay}"
