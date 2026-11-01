@@ -149,6 +149,8 @@ public partial class App : Application
         services.AddSingleton<IAppInfo, BuildInfo>();
         services.AddSingleton<IConfirmation, DialogConfirmation>();
         services.AddSingleton<ISystemMediaControls, WindowsMediaControls>();
+        // The main window's full screen and mini view, shared by the app, the player and a trailer.
+        services.AddSingleton<WindowModeService>();
         services.AddGranaryCore();
         services.AddGranaryPlayer();
         services.AddSingleton<MainWindow>();

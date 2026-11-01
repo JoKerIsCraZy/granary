@@ -36,11 +36,14 @@ public static partial class TrailerWebPolicy
     public static TrailerPageMessage? FromPage(string? source, string? json) => IsOwnOrigin(source) ? TrailerPageMessage.Parse(json) : null;
 
     /// <summary>
-    /// What YouTube's player frame may say: only that Esc or Back was pressed in it (<see cref="TrailerPage.CloseKeysScript"/>).
-    /// Its state and errors come through Granary's page; other frames are not listened to.
+    /// What YouTube's player frame may say: only that Esc or Back, or F11, was pressed in it
+    /// (<see cref="TrailerPage.CloseKeysScript"/>). Its state and errors come through Granary's page; other frames are not
+    /// listened to.
     /// </summary>
     public static TrailerPageMessage? FromEmbed(string? source, string? json) =>
-        AllowsFrame(source) && TrailerPageMessage.Parse(json) is { Event: TrailerPageEvent.Close } close ? close : null;
+        AllowsFrame(source) && TrailerPageMessage.Parse(json) is { Event: TrailerPageEvent.Close or TrailerPageEvent.FullScreen } key
+            ? key
+            : null;
 
     /// <summary>
     /// What a link the player opens in a new window (its YouTube logo, the video's title) opens in the browser: YouTube's

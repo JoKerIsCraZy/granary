@@ -96,12 +96,15 @@ public static class TrailerPage
     /// <summary>
     /// Added to every document of the trailer's WebView, Granary's page and the frames in it (TrailerOverlay,
     /// AddScriptToExecuteOnDocumentCreatedAsync): Esc, the Back key, Alt+Left and the mouse's back button ask Granary to
-    /// close the trailer. Once the viewer clicks into the video those keys go to the browser, not to Granary's window.
+    /// close the trailer, and F11 asks for the window's full screen. Once the viewer clicks into the video those keys go to
+    /// the browser, not to Granary's window.
     /// </summary>
     /// <remarks>
-    /// In full screen Esc only leaves full screen, and the others do nothing. The one message is <c>{"kind":"close"}</c>,
-    /// and Granary takes it only from its page and from YouTube's player frame (<see cref="TrailerWebPolicy.FromEmbed"/>):
-    /// all a page could do with it is close the trailer. It reads nothing of the page and tells Granary of no other key.
+    /// In full screen Esc only leaves full screen, and the close keys do nothing. The messages are <c>{"kind":"close"}</c>
+    /// and <c>{"kind":"fullscreen"}</c>, and Granary takes them only from its page and from YouTube's player frame
+    /// (<see cref="TrailerWebPolicy.FromEmbed"/>): all a page could do with them is close the trailer or toggle full screen.
+    /// It reads nothing of the page and tells Granary of no other key. Not part of the page's policy hash: WebView2 runs it
+    /// beside the page's scripts.
     /// </remarks>
     public static readonly string CloseKeysScript = """
         (() => {
@@ -111,8 +114,13 @@ public static class TrailerPage
           }
           const close = () => host.postMessage({ kind: "close" });
           window.addEventListener("keydown", (event) => {
-            // A held Esc repeats: the first press leaves full screen, the repeats must not close the trailer.
+            // A held key repeats: the first Esc leaves full screen, the repeats must not close the trailer; F11 toggles once.
             if (event.repeat) {
+              return;
+            }
+            if (event.key === "F11") {
+              event.preventDefault();
+              host.postMessage({ kind: "fullscreen" });
               return;
             }
             const back = event.key === "BrowserBack" || (event.altKey && event.key === "ArrowLeft");

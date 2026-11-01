@@ -51,9 +51,6 @@ public sealed partial class PlayerPage
         PartyInviteButton.IsTabStop = PartyPolicyButton.IsTabStop = PartyStopButton.IsTabStop = PartyEndButton.IsTabStop = visible;
     }
 
-    // Under Exit on the right, as the playback info sits under Minimize on the left.
-    public Thickness PartyPanelMargin(bool isFullScreen) => new(0, (isFullScreen ? 24 : TitleBarHeight + 8) + 48, 24, 0);
-
     // The web's dot: emerald while connected, amber while connecting, red when the room is gone.
     public Brush PartyDot(WatchPartyConnectionState state) => new SolidColorBrush(state switch
     {

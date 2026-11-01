@@ -5,7 +5,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI;
 using Microsoft.UI.Input;
-using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
@@ -31,7 +30,8 @@ public sealed partial class TrailerOverlay : UserControl
     private const double TitleBarHeight = 32;
 
     private readonly ILogger<TrailerOverlay> _logger;
-    private readonly WindowedPlacement _windowed = new();
+    // The window's full screen, the app's too: the trailer's own takes it only while the app is not in it already.
+    private readonly WindowModeService _modes;
     private bool _isFullScreen;
     private FrameworkElement? _returnFocus;
 
@@ -39,10 +39,14 @@ public sealed partial class TrailerOverlay : UserControl
     {
         ViewModel = App.Services.GetRequiredService<TrailerOverlayViewModel>();
         _logger = App.Services.GetRequiredService<ILogger<TrailerOverlay>>();
+        _modes = App.Services.GetRequiredService<WindowModeService>();
         InitializeComponent();
         FallbackText.Text = TrailerOverlayViewModel.UnavailableText;
         ViewModel.Opened += OnOpened;
         ViewModel.PropertyChanged += OnViewModelChanged;
+        // F11 pressed in the trailer's page, which keeps the keyboard from the window: the window's full screen, as anywhere.
+        ViewModel.FullScreenToggleRequested += (_, _) => _modes.ToggleFullScreen();
+        _modes.Changed += OnWindowModeChanged;
         SizeChanged += (_, _) => Fit();
         // The mouse's back button closes the trailer before the window would go back; the WebView marks its own handled.
         AddHandler(PointerPressedEvent, new PointerEventHandler(OnPointerPressed), handledEventsToo: true);
@@ -163,6 +167,9 @@ public sealed partial class TrailerOverlay : UserControl
         }
     }
 
+    // In the app's full screen the window stays as it is either way; from a window it goes full screen with the trailer
+    // and back with it. The app goes out of sight before the window grows and shows again once it is back, so the page
+    // under the trailer is never laid out at the screen's size.
     private void SetFullScreen(bool fullScreen)
     {
         if (fullScreen == _isFullScreen)
@@ -170,22 +177,14 @@ public sealed partial class TrailerOverlay : UserControl
             return;
         }
         _isFullScreen = fullScreen;
-        var window = XamlRoot?.ContentIslandEnvironment is { } island ? AppWindow.GetFromWindowId(island.AppWindowId) : null;
         if (fullScreen)
         {
             FullScreenChanged?.Invoke(this, true);
-            if (window is not null)
-            {
-                _windowed.Keep(window);
-                window.SetPresenter(AppWindowPresenterKind.FullScreen);
-            }
+            _modes.SetTrailerFullScreen(true);
         }
         else
         {
-            if (window is not null)
-            {
-                _windowed.Restore(window);
-            }
+            _modes.SetTrailerFullScreen(false);
             FullScreenChanged?.Invoke(this, false);
         }
         // Full screen is the frame alone, edge to edge.
@@ -194,6 +193,17 @@ public sealed partial class TrailerOverlay : UserControl
         Dialog.BorderThickness = fullScreen ? default : new Thickness(DialogBorder);
         Scrim.Background = fullScreen ? new SolidColorBrush(Colors.Black) : (Brush)Resources["TrailerScrimBrush"];
         Fit();
+    }
+
+    // The window left full screen (F11) while the trailer filled it: the trailer's page leaves it too, and the dialog
+    // comes back.
+    private void OnWindowModeChanged(object? sender, EventArgs e)
+    {
+        if (_isFullScreen && !_modes.IsTrailerFullScreen)
+        {
+            LeavePageFullScreen();
+            SetFullScreen(false);
+        }
     }
 
     // The 16:9 frame as large as the room allows (TrailerFrame), or the whole window in full screen.

@@ -383,21 +383,53 @@ breaks YouTube's terms.
 - **Settings.** Developer tools, the default context menus and script dialogs, the status bar, zoom, browser accelerator
   keys, swipe navigation, general autofill, password saving and host objects are off. Permissions are refused, all but
   autoplay; downloads, external URI schemes and basic authentication are cancelled.
-- **Messages.** In a fixed schema (`TrailerPageMessage`: ready, playing, an error code, or close; 128 characters at most,
-  no other member). From the page's own origin all of them; from the page's iframe, only while it is YouTube's embed,
-  close alone (`TrailerWebPolicy.FromPage`, `FromEmbed`). Anything else is ignored.
+- **Messages.** In a fixed schema (`TrailerPageMessage`: ready, playing, an error code, close, or fullscreen; 128
+  characters at most, no other member). From the page's own origin all of them; from the page's iframe, only while it is
+  YouTube's embed, close and fullscreen alone (`TrailerWebPolicy.FromPage`, `FromEmbed`). Anything else is ignored.
 - **Keys.** Once the viewer clicks into the video, the keyboard belongs to the browser, and Granary's Esc and Back never see
   it. So `TrailerPage.CloseKeysScript` is added to every document of the WebView
   (`AddScriptToExecuteOnDocumentCreatedAsync`). Esc, the Back key, Alt+Left and the mouse's back button post
-  `{"kind":"close"}`; in full screen Esc only leaves full screen. Checked with synthetic events in the page and in
-  YouTube's frame; a frame can do no more with it than close the trailer.
+  `{"kind":"close"}`; in full screen Esc only leaves full screen. F11 posts `{"kind":"fullscreen"}`, which toggles the
+  window's full screen (Window modes); a held key's repeats post nothing, and whatever a frame posts, Granary takes at
+  most one every 500 ms (`TrailerOverlayViewModel.FullScreenInterval`), as each toggle resizes the window. Checked with synthetic events in the page and in
+  YouTube's frame; a frame can do no more with them than close the trailer or toggle full screen. The script runs beside
+  the page's own and is not part of its policy hash.
 - **States.** `TrailerOverlayViewModel`: Loading, Playing (the player answered), Unavailable with its reason (the player's
   errors 2, 5, 100, 101, 150, 153 and any other; no answer within 15 s of the page opening, or no page within 30 s of the
   start, both through `TimeProvider`; no runtime; the browser's, the page's or a frame's process gone), Closed. Closing
   closes the WebView2 once the WebView's own event that closed it has returned; that stops the video and ends its
   processes.
-- **Full screen.** When the page asks for it (`ContainsFullScreenElementChanged`), the window goes full screen through its
-  AppWindow presenter, as the player does (`WindowedPlacement`), and the app under the trailer is hidden meanwhile.
+- **Full screen.** When the page asks for it (`ContainsFullScreenElementChanged`), the trailer tells `WindowModeService`
+  (see Window modes): from a window the window goes full screen with it and back, in the app's full screen it stays as it
+  is. The app under the trailer is hidden meanwhile. When the window leaves full screen another way (F11), the page is
+  asked to leave its own.
+
+## Window modes
+
+The main window is a window (maximized or not), full screen, or the player's mini view (CompactOverlay), and that is one
+state for the whole app: the title bar's button and F11, the player (F, its buttons, P, Esc) and a trailer's full
+screen all go through `WindowModeService` (App, a singleton that MainWindow attaches to itself).
+
+- **Decisions** are Core's `WindowModes`, without WinUI and unit-tested: which mode comes next. Leaving the mini view
+  returns to where it was opened from; leaving the player or minimizing it ends only the mini view; a trailer's full
+  screen takes the window only from a window and gives it back, and the viewer's own full screen outlasts it; leaving
+  full screen ends a trailer's.
+- **The window**: the service applies a change through the AppWindow presenters. It keeps the window as it is while it is
+  a window, on every move and resize, and once more as it leaves (`WindowedPlacement`: the presenter, so a maximized
+  window comes back maximized, and its place and size, but never a minimized window's); full screen and the mini view go
+  to each other without it, so either returns to the window as it was before both. Coming back, a restored window keeps
+  its place and size as long as its title bar (32 view px high, at least 120 wide) shows on some display's work area
+  (`WindowBounds.OnDisplays` over `DisplayArea.FindAll`): across two displays, on one left of or above the primary, or
+  flush with an edge. Only one whose title bar shows on none, its display unplugged or moved meanwhile, is moved onto
+  the nearest display and made smaller only if it does not fit. A presenter the window took by itself is followed, and
+  so is the window's real presenter when setting one fails (logged). Nothing is saved: each start begins as a window.
+- **Changed** tells MainWindow (its title bar buttons), the player (its `IsFullScreen` and `IsMiniView`) and the trailer.
+- **Drag area**: the title bar's own buttons lie outside `SetTitleBar`'s element, so they take clicks. In full screen the
+  window has no drag area at all (`InputNonClientPointerSource`'s caption region cleared); WinUI does not set it again
+  while its element keeps its size, so MainWindow sets it once from the element on the way back. Checked by hit-testing
+  the strip with `WM_NCHITTEST`.
+- **Close** in full screen posts `SC_CLOSE` to the window, the command Windows' Close sends, so `AppWindow.Closing` and
+  the player's stop run as on any close.
 - **Logs.** The outcome only ("The trailer plays", "can't play in Granary: EmbedRefused"); a blocked navigation is logged
   without its address, its host only at Debug. A YouTube address carries the video's key and stays out of the log.
 

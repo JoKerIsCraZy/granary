@@ -305,8 +305,8 @@ public sealed partial class TrailerOverlay
 
     private void OnBasicAuthenticationRequested(CoreWebView2 sender, CoreWebView2BasicAuthenticationRequestedEventArgs args) => args.Cancel = true;
 
-    // The player asked for full screen (its button, or a double-click): the window goes full screen with it, as Granary's
-    // own player does, and back when it leaves.
+    // The player asked for full screen (its button, or a double-click): the video fills the screen, and the window goes
+    // full screen with it unless the app is in full screen already (WindowModeService); back when it leaves.
     private void OnFullScreenChanged(CoreWebView2 sender, object args) => SetFullScreen(sender.ContainsFullScreenElement);
 
     private async void LeavePageFullScreen()

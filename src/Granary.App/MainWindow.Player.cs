@@ -100,6 +100,7 @@ public sealed partial class MainWindow : IPlayerOverlay
         ShowApp(true);
         ShowDockSpace();
         ShowDockNotice();
+        ShowWindowButtons();
     }
 
     private void Dock()
@@ -117,6 +118,7 @@ public sealed partial class MainWindow : IPlayerOverlay
         ShowApp(true);
         PlaceDock(animate: false);
         ShowDockNotice();
+        ShowWindowButtons();
         // Played from the start (--play), nothing is under the player yet.
         if (ContentFrame.Content is null)
         {
@@ -145,6 +147,7 @@ public sealed partial class MainWindow : IPlayerOverlay
         page.IsDocked = false;
         ShowDockSpace();
         ShowDockNotice();
+        ShowWindowButtons();
     }
 
     // A notice the server or an administrator sent while the player is the bar shows above the bar, so it is seen there

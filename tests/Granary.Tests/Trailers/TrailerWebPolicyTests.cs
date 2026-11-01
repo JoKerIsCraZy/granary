@@ -140,11 +140,13 @@ public sealed class TrailerWebPolicyTests
     [InlineData(Page, null)]
     public void NothingElse_SpeaksForThePage(string source, string? json) => Assert.Null(TrailerWebPolicy.FromPage(source, json));
 
-    [Fact]
-    public void YouTubesPlayer_CanOnlyAskToClose() =>
-        // Granary's key listener runs in the player's frame too (Esc, Back): closing is all a frame may ask, and all a
-        // frame that is not the player may not.
-        Assert.Equal(TrailerPageEvent.Close, TrailerWebPolicy.FromEmbed(Embed, "{\"kind\":\"close\"}")?.Event);
+    [Theory]
+    [InlineData("{\"kind\":\"close\"}", TrailerPageEvent.Close)]
+    [InlineData("{\"kind\":\"fullscreen\"}", TrailerPageEvent.FullScreen)]
+    public void YouTubesPlayer_CanOnlyAskToCloseOrForFullScreen(string json, TrailerPageEvent kind) =>
+        // Granary's key listener runs in the player's frame too (Esc, Back, F11): closing and the window's full screen are
+        // all a frame may ask, and all a frame that is not the player may not.
+        Assert.Equal(kind, TrailerWebPolicy.FromEmbed(Embed, json)?.Event);
 
     [Theory]
     [InlineData(Embed, "{\"kind\":\"ready\"}")]
@@ -155,5 +157,7 @@ public sealed class TrailerWebPolicyTests
     [InlineData("about:blank", "{\"kind\":\"close\"}")]
     [InlineData(Page, "{\"kind\":\"close\"}")]
     [InlineData(null, "{\"kind\":\"close\"}")]
+    [InlineData("https://googleads.g.doubleclick.net/pagead/ads", "{\"kind\":\"fullscreen\"}")]
+    [InlineData(null, "{\"kind\":\"fullscreen\"}")]
     public void AFrame_SaysNothingElse(string? source, string json) => Assert.Null(TrailerWebPolicy.FromEmbed(source, json));
 }
