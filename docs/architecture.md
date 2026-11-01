@@ -37,6 +37,14 @@ engine reads the swap chain from the `display-swapchain` property; `MpvVideoHost
 inverse DPI scale. XAML controls draw over the video. The comparison with the render API and a child
 HWND is in [spike/README.md](../spike/README.md).
 
+The panel shows the last presented picture unscaled, from its top-left corner, and mpv resizes its
+buffers a little after the panel on its own thread. After a jump in size (the player minimized to its
+bar or brought back, full screen, the Playing Next corner), `MpvVideoHost` therefore hides the picture
+and passes the new size to mpv one frame later. It shows the picture again once mpv has presented
+after its buffer took that size, or has presented nothing for 100 ms since (paused), and after 300 ms
+at the latest (`CompositionResizeGate`, which reads the buffer size and the present count from DXGI).
+Small steps, as while the window's edge is dragged, are passed on at once and keep the picture.
+
 Because there is no window, mpv cannot query the monitor: the app must pass HDR target settings and
 the display refresh rate itself (Phase 3).
 

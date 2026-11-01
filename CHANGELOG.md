@@ -6,6 +6,11 @@ release's section is what its update says it changes (docs/release.md).
 
 ## [Unreleased]
 
+### Fixed
+
+- Minimizing the player, bringing it back or switching full screen no longer flashes a corner of the picture for a
+  moment.
+
 ## [0.1.0] - 2026-11-01
 
 ### Added
