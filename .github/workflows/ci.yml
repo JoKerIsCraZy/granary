@@ -1,11 +1,13 @@
 name: CI
 
 # Builds the app and runs the tests on every push to main and every pull request, as the release workflow does
-# before it packs (docs/release.md).
+# before it packs (docs/release.md). The native-deps workflow starts it by hand on its update branch, since a pull
+# request its token opens starts no pull_request workflows.
 on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -26,9 +28,8 @@ jobs:
         with:
           global-json-file: global.json
 
-      # libmpv comes from this repository's own mirror release (native.lock.json), which docs/release.md uploads once:
-      # until it exists this step fails. The cache keeps the verified archive once a download worked; its key follows
-      # native.lock.json, so a new pin (url and sha256) starts a new cache.
+      # libmpv comes from this repository's own mirror release (native.lock.json). The cache keeps the verified archive
+      # once a download worked; its key follows native.lock.json, so a new pin (url and sha256) starts a new cache.
       - name: Cache libmpv
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:

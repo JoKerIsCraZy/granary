@@ -1,0 +1,128 @@
+name: Native dependencies
+
+# Once a month, and on demand, looks for a newer official mpv CI build than the libmpv native.lock.json pins. When there
+# is one, it mirrors that build with its mpv and FFmpeg sources as a prerelease, moves the pin and opens a pull request
+# for review (docs/release.md, "libmpv"). FFmpeg is compiled into libmpv-2.dll, so it changes only with libmpv.
+# Dependabot does not see either. Creating the pull request needs "Allow GitHub Actions to create and approve pull
+# requests" under Settings → Actions → General.
+on:
+  schedule:
+    - cron: '17 6 1 * *'
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: native-deps
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read # looks for an earlier pull request of the same build
+    outputs:
+      newer: ${{ steps.check.outputs.newer }}
+      asset: ${{ steps.check.outputs.asset }}
+      pending: ${{ steps.pull-request.outputs.pending }}
+    steps:
+      # The pull request goes to main, so it must start from main.
+      - name: Check the run is on main
+        shell: pwsh
+        env:
+          REF: ${{ github.ref }}
+        run: |
+          if ($env:REF -cne 'refs/heads/main') {
+            throw "Run the native-deps workflow on main, not on $env:REF."
+          }
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Compare the pin with upstream
+        id: check
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: ./scripts/check-libmpv.ps1
+
+      # A pull request of this build, open or closed, means it was proposed already: one closed without merging stays
+      # closed until upstream moves on.
+      - name: Look for a pull request of this build
+        id: pull-request
+        if: steps.check.outputs.newer == 'true'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.check.outputs.version }}
+        run: |
+          $count = gh pr list --repo $env:GITHUB_REPOSITORY --state all --head "deps/libmpv-$env:VERSION" --json isCrossRepository --jq '[.[] | select(.isCrossRepository | not)] | length'
+          if ($LASTEXITCODE -ne 0) {
+            throw "gh pr list failed with exit code $LASTEXITCODE."
+          }
+          $pending = ([int]$count -gt 0).ToString().ToLowerInvariant()
+          Add-Content -LiteralPath $env:GITHUB_OUTPUT -Value "pending=$pending"
+          if ($pending -eq 'true') {
+            Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value "deps/libmpv-$env:VERSION has a pull request already. Nothing to do."
+          }
+
+  update:
+    needs: check
+    if: needs.check.outputs.newer == 'true' && needs.check.outputs.pending == 'false'
+    runs-on: windows-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write # creates the mirror release and pushes the update branch
+      pull-requests: write # opens the pull request and closes the ones it supersedes
+      actions: write # starts CI on the branch
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Takes exactly the build the check found. Nothing it downloads is run: the DLL is only read as bytes.
+      - name: Mirror the build and move the pin
+        id: update
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ASSET: ${{ needs.check.outputs.asset }}
+        run: ./scripts/update-libmpv.ps1 -Publish -AssetName $env:ASSET -OutDir (Join-Path $env:RUNNER_TEMP 'libmpv')
+
+      # GitHub starts no pull_request workflows for a pull request this token opens, so the step starts CI itself.
+      - name: Push the branch and open the pull request
+        if: steps.update.outputs.updated == 'true'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ steps.update.outputs.branch }}
+          TITLE: ${{ steps.update.outputs.title }}
+          BODY_FILE: ${{ steps.update.outputs.body-file }}
+          COMMIT_FILE: ${{ steps.update.outputs.commit-file }}
+        run: |
+          $PSNativeCommandUseErrorActionPreference = $true
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git switch --create $env:BRANCH
+          git add -- native.lock.json THIRD_PARTY_NOTICES.md
+          git commit --file $env:COMMIT_FILE
+          gh auth setup-git
+          # The branch is the workflow's own; a run that failed after pushing it left nothing to keep.
+          git push --force origin "HEAD:refs/heads/$env:BRANCH"
+          $url = gh pr create --repo $env:GITHUB_REPOSITORY --base main --head $env:BRANCH --title $env:TITLE --body-file $env:BODY_FILE
+          if ("$url" -cnotmatch '/pull/(?<number>[0-9]{1,10})\s*\z') {
+            throw "gh pr create gave no pull request: $url"
+          }
+          $number = $Matches['number']
+          gh workflow run ci.yml --repo $env:GITHUB_REPOSITORY --ref $env:BRANCH
+          Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value "Pull request: $url"
+          # The workflow's own earlier update pull requests that are still open are of older builds now.
+          $older = @(gh pr list --repo $env:GITHUB_REPOSITORY --state open --json number,headRefName,isCrossRepository,author --jq '.[] | select(.isCrossRepository | not) | select(.author.login == "app/github-actions") | select(.headRefName | startswith("deps/libmpv-")) | select(.headRefName != env.BRANCH) | .number')
+          foreach ($old in $older) {
+            if ("$old" -cmatch '\A[0-9]{1,10}\z') {
+              gh pr close $old --repo $env:GITHUB_REPOSITORY --comment "Superseded by #$number, which moves to a newer build." --delete-branch
+            }
+          }

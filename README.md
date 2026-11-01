@@ -100,7 +100,8 @@ dotnet run --project src/Granary.App
 
 **libmpv:** `native.lock.json` pins one libmpv build by URL and SHA-256, and `scripts/fetch-native.ps1` puts it
 into `native/libmpv` after checking the hash. The URL is this repository's own mirror of the official mpv CI build,
-next to the mpv and FFmpeg sources it was built from, because upstream replaces that asset on every mpv update. With
+next to the mpv and FFmpeg sources it was built from, because upstream replaces that asset on every mpv update. A
+monthly workflow proposes newer builds, and with them the FFmpeg compiled into libmpv, as pull requests. With
 a copy of the archive at hand, pass it with `-ZipPath` instead; the script still checks the hash. Without libmpv
 everything builds (the app build warns) and the tests run, with the libmpv integration tests skipped, but playback
 fails at runtime.

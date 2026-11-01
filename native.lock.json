@@ -4,8 +4,9 @@
     "variant": "lgpl",
     "url": "https://github.com/JoKeRIsCraZy/granary/releases/download/deps-libmpv-v0.41.0-dev-ga39482e7a/libmpv-v0.41.0-dev-ga39482e7a-40099161509-x86_64-w64-mingw32-lgpl.zip",
     "sha256": "9a084eab0b0b04e82f5f4b3cdd314fcc91eddae4ca1756d3ce24aa3718e1fb72",
+    "ffmpeg": "git-2026-10-24-1d83e71",
     "files": [ "libmpv-2.dll", "LICENSE.LGPL" ],
     "upstream": "https://github.com/mpv-player/mpv/releases/download/git-release/libmpv-v0.41.0-dev-ga39482e7a-40099161509-x86_64-w64-mingw32-lgpl.zip",
-    "note": "The official mpv CI build, mirrored byte for byte (same sha256) as a prerelease of Granary's own repository, with the mpv and FFmpeg sources it was built from: upstream's git-release asset is replaced on every mpv master update. docs/release.md has the upload steps."
+    "note": "The official mpv CI build, mirrored byte for byte (same sha256) as a prerelease of Granary's own repository, with the mpv and FFmpeg sources it was built from: upstream's git-release asset is replaced on every mpv master update. ffmpeg is the FFmpeg version compiled into libmpv-2.dll. The native-deps workflow moves the pin by pull request (docs/release.md, \"libmpv\")."
   }
 }
