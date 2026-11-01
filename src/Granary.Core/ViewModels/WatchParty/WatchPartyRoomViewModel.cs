@@ -17,7 +17,8 @@ namespace Granary.Core.ViewModels.WatchParty;
 /// End room); the stage, which changes with the room (a candidate from the shelf, what plays, the vote, the title up
 /// next, or the open lobby), with the suggestions under it; the browse shelf; and the people and activity rail. When the
 /// room starts a title the player opens by itself, once per start: the start is kept on the session, so the page shown
-/// again (a new page each time, it is not cached) after the viewer left the player does not reopen it.
+/// again (a new page each time, it is not cached) after the viewer left the player does not reopen it. A room that is over
+/// (it ended, or this profile joined it on another device) is not shown: the page gives way to the hub, as in Silo's apps.
 /// </summary>
 public sealed partial class WatchPartyRoomViewModel : ObservableObject
 {
@@ -38,6 +39,7 @@ public sealed partial class WatchPartyRoomViewModel : ObservableObject
     private ITimer? _clock;
     private ITimer? _messageTimer;
     private string _phaseKey = "";
+    private bool _leftForHub;
 
     public WatchPartyRoomViewModel(WatchPartySession party, WatchPartyFeature feature, ISessionManager session, CatalogApi catalog,
         ImageParameterCache images, INavigationService navigation, IUiDispatcher dispatcher, TimeProvider time, ILogger<WatchPartyRoomViewModel> logger)
@@ -100,11 +102,11 @@ public sealed partial class WatchPartyRoomViewModel : ObservableObject
 
     public bool IsPlaying => Room?.IsPlaying == true;
 
+    /// <summary>The room is over for this device: it ended, or another device took this profile's place in it.</summary>
     public bool IsEnded => _party.End is not null;
 
-    public bool IsReplaced => _party.End?.Replaced == true;
-
-    public bool IsClosed => IsEnded && !IsReplaced;
+    /// <summary>The status strip, the stage and the people show: a room this device is in. One that is over shows none of them.</summary>
+    public bool ShowsRoom => HasRoom && !IsEnded;
 
     /// <summary>The stage: what plays.</summary>
     public bool ShowsPlaying => !HasCandidate && Room is { IsPlaying: true, SelectedContentId: not null };
@@ -117,17 +119,6 @@ public sealed partial class WatchPartyRoomViewModel : ObservableObject
 
     /// <summary>The stage: "ROOM IS OPEN / Nothing on yet".</summary>
     public bool ShowsEmptyLobby => !HasCandidate && !IsPlaying && !IsVote && IsLobbyEmpty;
-
-    /// <summary>The room's end in the web's words.</summary>
-    public string EndedText => _party.End?.Reason switch
-    {
-        null => "",
-        "not_found" => "Room not found.",
-        "ended" => "That watch party is no longer active.",
-        "forbidden" => "You don't have access to this watch party.",
-        "replaced" => _party.End?.Message ?? WatchPartyFrames.ReplacedText,
-        _ => "The room has ended.",
-    };
 
     public string HostName => Room?.Host?.DisplayName is { Length: > 0 } name ? name : "The host";
 
@@ -222,6 +213,7 @@ public sealed partial class WatchPartyRoomViewModel : ObservableObject
             return;
         }
         _active = true;
+        _leftForHub = false;
         if (_life.IsCancellationRequested)
         {
             _life.Dispose();
@@ -305,13 +297,12 @@ public sealed partial class WatchPartyRoomViewModel : ObservableObject
         _navigation.NavigateTo(AppRoute.WatchParty);
     }
 
-    /// <summary>The host ends the room for everyone (the page asked first).</summary>
+    /// <summary>The host ends the room for everyone (the page asked first); the page then goes to the hub, as on any end.</summary>
     public async Task EndRoomAsync()
     {
         try
         {
             await _party.EndRoomAsync();
-            _navigation.NavigateTo(AppRoute.WatchParty);
         }
         catch (Exception ex) when (LibraryErrors.IsExpected(ex) || ex is InvalidOperationException)
         {
@@ -319,10 +310,6 @@ public sealed partial class WatchPartyRoomViewModel : ObservableObject
             Say("Could not end the room. " + LibraryErrors.Describe(ex));
         }
     }
-
-    /// <summary>Claims the membership back after another device took it over.</summary>
-    [RelayCommand]
-    private void Rejoin() => _party.Rejoin();
 
     /// <summary>The page copied the code or link: it says so.</summary>
     public void Copied(string what) => Say(what);
@@ -395,12 +382,26 @@ public sealed partial class WatchPartyRoomViewModel : ObservableObject
         ShowHero();
         ShowPlaying();
         AutoStart();
+        LeaveIfOver();
+    }
+
+    // The room is over: the page gives way to the hub, which says why, as Silo's apps go back to theirs (Android's
+    // WatchPartyLobbyScreen, Apple's WatchPartyHubView). A section, so Back does not come back to a room that is gone.
+    // Posted: the page may be still arriving.
+    private void LeaveIfOver()
+    {
+        if (!_active || !IsEnded || _leftForHub)
+        {
+            return;
+        }
+        _leftForHub = true;
+        _dispatcher.Post(() => _navigation.ShowSection(AppRoute.WatchParty));
     }
 
     private static readonly string[] RoomProperties =
     [
         nameof(HasRoom), nameof(IsHost), nameof(IsGuest), nameof(IsVote), nameof(Code), nameof(IsConnecting), nameof(IsLobbyEmpty), nameof(IsStaged),
-        nameof(IsPlaying), nameof(IsEnded), nameof(IsReplaced), nameof(IsClosed), nameof(EndedText), nameof(HostName), nameof(LobbyText),
+        nameof(IsPlaying), nameof(IsEnded), nameof(ShowsRoom), nameof(HostName), nameof(LobbyText),
         nameof(StagedEyebrow), nameof(StagedCaption), nameof(StartLabel), nameof(CanMarkReady), nameof(IsSelfReady), nameof(ReadyLabel),
         nameof(CanStop), nameof(StopHint), nameof(GuestsCanPause), nameof(PolicyText), nameof(InviteLink), nameof(InviteText), nameof(HasInviteLink),
         nameof(PhaseLabel), nameof(ModeLabel), nameof(CanSwitchMode), nameof(ShowsModeLabel), nameof(ConnectionLabel), nameof(IsLive),

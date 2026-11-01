@@ -170,20 +170,5 @@ public sealed class WatchPartyPagesTests : IAsyncDisposable
         again.Deactivate();
     }
 
-    [Fact]
-    public async Task TheRoomsEnd_ReplacesThePage_InTheWebsWords()
-    {
-        await JoinAsync(WatchPartyPayloads.Room());
-        var page = RoomPage(Feature());
-        page.Activate();
-
-        _sockets[0].Push("""{ "type": "room_closed", "reason": "host_left" }""");
-        await ServerPlaybackFixture.Until(() => page.IsEnded, "the end");
-
-        Assert.True(page.IsClosed);
-        Assert.Equal("The room has ended.", page.EndedText);
-        page.Deactivate();
-    }
-
     public async ValueTask DisposeAsync() => await _party.LeaveAsync();
 }

@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     The Watch Party hub, as Silo's web shows it: what a party is, Start a party (an empty room the host picks for) beside
-    Join a party (a code or an invite link), your recent parties, and how it works. In a room already, a line leads back.
+    Join a party (a code or an invite link), your recent parties, and how it works. In a room already, a line leads back;
+    a room that is over says so at the top.
 -->
 <Page
     x:Class="Granary.App.Views.WatchPartyPage"
@@ -48,6 +49,36 @@
                 <TextBlock MaxWidth="576" HorizontalAlignment="Left" Style="{StaticResource CardTextStyle}" FontSize="16" LineHeight="28"
                            Text="Open a room, share the code, and everyone plays in sync. The host picks what's on." />
             </StackPanel>
+
+            <!--
+                The room this device was in is over: Silo's apps leave it for the hub and say so there. The words and the
+                tile are the web's end of a room (RoomTerminalState); after a takeover, Rejoin claims the room back.
+            -->
+            <Border Style="{StaticResource CardStyle}" Padding="16" Visibility="{x:Bind ViewModel.HasEnded, Mode=OneWay}">
+                <Grid ColumnSpacing="16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Border Width="48" Height="48" CornerRadius="12" Background="{StaticResource SiloSurfaceRaisedBrush}" BorderBrush="#1AFFFFFF"
+                            BorderThickness="1" VerticalAlignment="Center">
+                        <FontIcon Glyph="&#xE716;" FontSize="20" Foreground="{StaticResource SiloMutedBrush}" />
+                    </Border>
+                    <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                        <TextBlock Text="{x:Bind ViewModel.EndedTitle, Mode=OneWay}" FontSize="16" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
+                                   TextWrapping="Wrap" AutomationProperties.LiveSetting="Assertive" AutomationProperties.HeadingLevel="Level2" />
+                        <TextBlock Text="{x:Bind ViewModel.EndedText, Mode=OneWay}" Style="{StaticResource CardTextStyle}" />
+                    </StackPanel>
+                    <Button Grid.Column="2" Content="Rejoin Watch Party" Style="{StaticResource SiloPrimaryButtonStyle}" VerticalAlignment="Center"
+                            Command="{x:Bind ViewModel.RejoinCommand}" Visibility="{x:Bind ViewModel.CanRejoin, Mode=OneWay}" />
+                    <Button Grid.Column="3" Style="{StaticResource SiloIconButtonStyle}" VerticalAlignment="Center" Command="{x:Bind ViewModel.DismissEndCommand}"
+                            AutomationProperties.Name="Dismiss" ToolTipService.ToolTip="Dismiss">
+                        <FontIcon Glyph="&#xE711;" FontSize="12" />
+                    </Button>
+                </Grid>
+            </Border>
 
             <!-- Already in a room: back to it. -->
             <Border Style="{StaticResource CardStyle}" Padding="16,12" Visibility="{x:Bind ViewModel.IsInRoom, Mode=OneWay}">

@@ -28,6 +28,7 @@ public sealed class PlayerViewModelWatchPartyTests : IAsyncDisposable
     private readonly RecordingNavigation _navigation = new();
     private readonly List<FakeServerPlayback> _playbacks = [];
     private readonly FakeConfirmation _confirmation = new();
+    private readonly InMemorySecretStore _secrets = new();
     private readonly WatchPartySession _party;
 
     public PlayerViewModelWatchPartyTests()
@@ -42,8 +43,13 @@ public sealed class PlayerViewModelWatchPartyTests : IAsyncDisposable
                 _sockets.Add(socket);
             }
             return socket;
-        }, TimeProvider.System, _logs.For<WatchPartyConnection>()), new ImmediateDispatcher(), _logs.For<WatchPartySession>());
+        }, TimeProvider.System, _logs.For<WatchPartyConnection>()), new ImmediateDispatcher(), _logs.For<WatchPartySession>(),
+            new WatchPartyRecentRooms(_secrets, _time, _logs.For<WatchPartyRecentRooms>()), _time);
     }
+
+    private Task Marked() => ServerPlaybackFixture.Until(
+        () => _secrets.Values.TryGetValue(WatchPartyRecentRooms.SecretKey, out string? rooms) && rooms.Contains("\"ended\":true", StringComparison.Ordinal),
+        "the recent room marked as ended");
 
     private FakeServerPlayback Playback => _playbacks[^1];
 
@@ -186,6 +192,34 @@ public sealed class PlayerViewModelWatchPartyTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task TheRoomClosingDuringPlayback_LeavesThePlayerAsAnyExitDoes_ForTheHub()
+    {
+        var viewModel = await PlayingAsync(role: "guest");
+
+        Socket.Push("""{ "type": "room_closed", "reason": "host_left" }""");
+        await ServerPlaybackFixture.Until(() => _navigation.PlayerLeaves == 1, "the player leaving");
+
+        // The server playback stops as on any exit, with its final position.
+        Assert.True(viewModel.HasLeft);
+        Assert.Equal(1, Playback.Stops);
+        Assert.Equal(AppRoute.WatchParty, Assert.Single(_navigation.Sections));
+        Assert.Equal([AppRoute.WatchParty], _navigation.Navigations.Select(n => n.Route));
+        await Marked();
+    }
+
+    [Fact]
+    public async Task ATakeoverDuringPlayback_LeavesThePlayer_ForTheHub()
+    {
+        await PlayingAsync(role: "guest");
+
+        Socket.Push("""{ "type": "connection_replaced", "reason": "This profile joined the Watch Party on another device." }""");
+        await ServerPlaybackFixture.Until(() => _navigation.PlayerLeaves == 1, "the player leaving");
+
+        Assert.Equal(1, Playback.Stops);
+        Assert.Equal(AppRoute.WatchParty, Assert.Single(_navigation.Sections));
+    }
+
+    [Fact]
     public async Task ThePanel_FollowsTheRoom_AndSaysWhatItDid_AsTheNotice()
     {
         var viewModel = await PlayingAsync();
@@ -238,7 +272,10 @@ public sealed class PlayerViewModelWatchPartyTests : IAsyncDisposable
         Assert.False(_party.IsInRoom);
         Assert.Equal(1, _navigation.PlayerLeaves);
         Assert.Equal([AppRoute.WatchParty], _navigation.Navigations.Select(n => n.Route));
+        Assert.Equal(AppRoute.WatchParty, Assert.Single(_navigation.Sections));
         Assert.Equal(1, Playback.Stops);
+        Assert.Equal("host_left", _party.End?.Reason);
+        await Marked();
     }
 
     [Fact]
