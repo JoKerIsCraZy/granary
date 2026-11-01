@@ -40,8 +40,9 @@ public sealed partial class PlayerPage
     {
         switch (e.PropertyName)
         {
-            case nameof(PlayerViewModel.PlanChangeAnnouncement) when ViewModel.PlanChangeAnnouncement.Length > 0 && !IsCompact:
-                // Once per change, as a notification only: the mark is no live region, so nothing says it twice.
+            case nameof(PlayerViewModel.PlanChangeAnnouncement) when ViewModel.PlanChangeAnnouncement.Length > 0:
+                // Once per change, as a notification only: the mark is no live region, so nothing says it twice. Also in
+                // the mini view and the bar, which hide the mark, as the skip pill's caption is: the picture stops there too.
                 Announcer.Announce(this, ViewModel.PlanChangeAnnouncement, "PlanChange");
                 break;
             case nameof(PlayerViewModel.HasSkipPrompt) or nameof(PlayerViewModel.IsNextUpCardShown):
