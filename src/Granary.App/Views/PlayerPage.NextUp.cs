@@ -70,7 +70,7 @@ public sealed partial class PlayerPage
     public Visibility HasCards(IReadOnlyList<MediaCard> cards) => cards.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
 
     // A corner's distance, and below the title bar's strip: the drag area in a window, Exit full screen's in full screen.
-    private static Thickness CornerInset(double inset) => new(inset, TitleBarHeight + 8, inset, 0);
+    public Thickness CornerInset(double inset) => new(inset, TitleBarHeight + 8, inset, 0);
 
     public Visibility ShowsMiniPlayer(bool isScreenShown, PlayerPhase phase, bool isCompact) =>
         isScreenShown && phase != PlayerPhase.Ended && !isCompact ? Visibility.Visible : Visibility.Collapsed;

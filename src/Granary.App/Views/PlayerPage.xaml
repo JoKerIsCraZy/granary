@@ -965,7 +965,7 @@
 
             <!-- Below the title bar's strip, in full screen too, where the window's Exit full screen sits above it. -->
             <Button x:Name="NextUpCloseButton" Style="{StaticResource SiloPlayerDiscButtonStyle}" Width="40" Height="40" Background="#1AFFFFFF"
-                    HorizontalAlignment="Right" VerticalAlignment="Top" Margin="20,40,20,0"
+                    HorizontalAlignment="Right" VerticalAlignment="Top" Margin="{x:Bind CornerInset(20)}"
                     Command="{x:Bind ViewModel.CloseCommand}" AutomationProperties.Name="Close" AutomationProperties.AcceleratorKey="Escape"
                     ToolTipService.ToolTip="Close (Esc)">
                 <FontIcon Glyph="&#xE711;" FontSize="14" />
@@ -1009,7 +1009,7 @@
         <!-- The small video: a click returns to it, until the episode has ended. -->
         <Button x:Name="MiniPlayerButton" Canvas.ZIndex="3" Style="{StaticResource SiloPlayerCardOutlineButtonStyle}" Padding="0" BorderThickness="0"
                 CornerRadius="16" HorizontalAlignment="Left" VerticalAlignment="Top" Width="320" Height="180"
-                Margin="24,40,24,0"
+                Margin="{x:Bind CornerInset(24)}"
                 Visibility="{x:Bind ShowsMiniPlayer(ViewModel.IsNextUpScreenShown, ViewModel.Phase, IsCompact), Mode=OneWay}"
                 Command="{x:Bind ViewModel.KeepWatchingCommand}" AutomationProperties.Name="Keep watching" ToolTipService.ToolTip="Keep watching" />
 
