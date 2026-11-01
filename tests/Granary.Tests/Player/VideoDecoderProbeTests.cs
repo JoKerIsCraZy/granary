@@ -24,12 +24,38 @@ public sealed class VideoDecoderProbeTests
     }
 
     [Fact]
-    public void HardwareCodecs_AreKnownNames_WithoutDuplicates()
+    public void HardwareDecoders_AreKnownNames_WithoutDuplicates()
     {
         // Whatever this machine's GPU offers (nothing on a machine without one), the answer is a clean list.
-        var codecs = VideoDecoderProbe.HardwareCodecs();
+        var decoders = VideoDecoderProbe.HardwareDecoders();
 
-        Assert.All(codecs, c => Assert.Contains(c, new[] { "h264", "hevc", "vp9", "av1", "mpeg2video", "vc1", "mpeg4", "vp8" }));
-        Assert.Equal(codecs.Distinct().Count(), codecs.Count);
+        Assert.All(decoders.Codecs, c => Assert.Contains(c, new[] { "h264", "hevc", "vp9", "av1", "mpeg2video", "vc1", "mpeg4", "vp8" }));
+        Assert.Equal(decoders.Codecs.Distinct().Count(), decoders.Codecs.Count);
+        Assert.True(!decoders.HevcMain10 || decoders.Codecs.Contains("hevc"));
+    }
+
+    private static readonly Guid HevcMain = new("5b11d51b-2f4c-4452-bcc3-09f2a1160cc0");
+    private static readonly Guid HevcMain10 = new("107af0e0-ef1a-4d19-aba8-67a163073d13");
+    private static readonly Guid H264 = new("1b81be68-a0c7-11d3-b984-00c04f2e73c5");
+
+    [Fact]
+    public void Summarize_TellsAGpuWithTenBitHevcFromOneWithEightBitOnly()
+    {
+        var eightBit = VideoDecoderProbe.Summarize([H264, HevcMain]);
+        var tenBit = VideoDecoderProbe.Summarize([H264, HevcMain, HevcMain10]);
+
+        Assert.Equal(["h264", "hevc"], eightBit.Codecs);
+        Assert.False(eightBit.HevcMain10);
+        Assert.Equal(["h264", "hevc"], tenBit.Codecs);
+        Assert.True(tenBit.HevcMain10);
+    }
+
+    [Fact]
+    public void Summarize_IgnoresProfilesItDoesNotKnow()
+    {
+        var decoders = VideoDecoderProbe.Summarize([Guid.NewGuid(), H264]);
+
+        Assert.Equal(["h264"], decoders.Codecs);
+        Assert.False(decoders.HevcMain10);
     }
 }

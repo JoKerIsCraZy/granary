@@ -13,6 +13,7 @@ internal static class PlaybackRequests
         Platform = "windows",
         OsVersion = "10.0.26100",
         HardwareVideoCodecs = ["h264", "hevc"],
+        HardwareHevcMain10 = true,
         SoftwareVideoCodecs = ["h264", "hevc", "av1", "vp9"],
     };
 

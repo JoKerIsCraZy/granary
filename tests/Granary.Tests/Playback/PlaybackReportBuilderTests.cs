@@ -115,13 +115,34 @@ public sealed class PlaybackReportBuilderTests
     }
 
     [Fact]
-    public void OriginalHttp_TakesHdrOriginalsAndToneMapsThemOnAnSdrOutput()
+    public void OriginalHttp_ClaimsToneMapping_WhenTheGpuDecodesTenBitHevc()
     {
-        var original = Report.ClientPlaybackContext.Deliveries[DeliveryClasses.OriginalHttp];
+        var report = PlaybackReportBuilder.Build(PlaybackRequests.Facts with { HardwareHevcMain10 = true }, "1.0.0");
 
+        var original = report.ClientPlaybackContext.Deliveries[DeliveryClasses.OriginalHttp];
         Assert.Contains(DeliveryClaims.ClientManagedDynamicRangeV1, original.ValidatedClaims);
-        Assert.False(Report.ClientCapabilities.Hdr);
-        Assert.Equal(new OutputContext(), Report.ClientPlaybackContext.Output);
+        Assert.False(report.ClientCapabilities.Hdr);
+        Assert.Equal(new OutputContext(), report.ClientPlaybackContext.Output);
+    }
+
+    [Fact]
+    public void OriginalHttp_LeavesHdrToTheServer_WhenTheGpuDecodesEightBitHevcOnly()
+    {
+        // HDR is 10-bit; without a 10-bit decoder the CPU would decode a 4K HDR original, so the server tone-maps it.
+        var report = PlaybackReportBuilder.Build(PlaybackRequests.Facts with { HardwareHevcMain10 = false }, "1.0.0");
+
+        var original = report.ClientPlaybackContext.Deliveries[DeliveryClasses.OriginalHttp];
+        Assert.Equal([DeliveryClaims.ClientSelectedAudioTrackV1], original.ValidatedClaims);
+        Assert.Contains("hevc", report.ClientCapabilities.CodecsVideo);
+    }
+
+    [Fact]
+    public void StartBody_NamesTheClaimsAsTheServerSpellsThem()
+    {
+        var body = JsonNode.Parse(PlaybackRequests.Json(PlaybackRequests.Start()))!.AsObject();
+
+        var claims = body["client_playback_context"]!["deliveries"]!["original_http"]!["validated_claims"]!.AsArray();
+        Assert.Equal(["client_selected_audio_track_v1", "client_managed_dynamic_range_v1"], claims.Select(c => (string)c!));
     }
 
     [Fact]

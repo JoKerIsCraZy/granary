@@ -2303,11 +2303,16 @@ HDR with libplacebo. An honest, conservative first report:
   `wmv`, plus other ffprobe format names mpv plays (the scanner falls back to the first ffprobe
   format name, e.g. `mpeg` for .mpg/.vob).
 - `validated_claims` on `original_http`: `client_selected_audio_track_v1` (mpv switches audio
-  tracks itself) and `client_managed_dynamic_range_v1`: `gpu-next` (libplacebo) tone-maps HDR10, HLG
-  and Dolby Vision Profile 5 and 8 to the SDR output, checked with d3d11va decoding in composition
-  mode. Without the claim the server tone-maps an HDR original itself, in a software transcode to
-  H.264 that is heavy at 2160p. HLS stays without the claim, so a server-made stream still has to fit
-  the output.
+  tracks itself) and `client_managed_dynamic_range_v1`: `gpu-next` (libplacebo) tone-maps HDR10
+  (HDR10+ as HDR10), HLG and Dolby Vision Profile 5 and 8 to the SDR output, checked with d3d11va
+  decoding in composition mode against the same clip in SDR. Profile 7 is covered by the claim too and
+  plays its base layer with the RPU (the enhancement layer is dropped); not checked with a sample yet.
+  The claim is sent only when the GPU has an HEVC Main 10 decoder (`HardwareHevcMain10`): HDR is
+  10-bit, and without that decoder the CPU would decode a 4K original. Like the web's decode engine,
+  which claims it only with a hardware WebGPU adapter and an SDR display. Without the claim the server
+  tone-maps an HDR original itself, in a transcode to H.264 (in software unless the server has hardware
+  tone mapping), which is heavy at 2160p. HLS stays without the claim, so a server-made stream still has
+  to fit the output.
 - Subtitles: `sidecar_text`, `ass_styling`, `font_attachments`, `embedded_text`, `embedded_bitmap`
   true; `embedded_subtitles_v1` with `native_embedded` entries for mkv and mp4 using
   `track_identity: "ffmpeg_stream_index"` (mpv's `track-list/N/ff-index`), as Apple does.

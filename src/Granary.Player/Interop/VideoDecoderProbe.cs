@@ -3,6 +3,12 @@ using System.Runtime.Versioning;
 
 namespace Granary.Player.Interop;
 
+/// <summary>What the GPU decodes: codec names as ffprobe gives them, and whether HEVC includes 10-bit.</summary>
+public sealed record HardwareVideoDecoders(IReadOnlyList<string> Codecs, bool HevcMain10)
+{
+    public static readonly HardwareVideoDecoders None = new([], false);
+}
+
 /// <summary>
 /// Which video codecs the GPU decodes (D3D11VA, which mpv's <c>hwdec=auto-safe</c> uses on Windows), read from
 /// the decoder profiles of a D3D11 video device on the default adapter (docs/api-contract.md, 13.2).
@@ -39,14 +45,35 @@ public static unsafe partial class VideoDecoderProbe
         [new("90b899ea-3a62-4705-88b3-8df04b2744e7")] = "vp8", // VP8_VLD
     };
 
+    // HEVC_VLD_MAIN10: 10-bit HEVC, the format of nearly every HDR and Dolby Vision file.
+    private static readonly Guid HevcMain10Profile = new("107af0e0-ef1a-4d19-aba8-67a163073d13");
+
     /// <summary>The ffprobe codec name of a DXVA decoder profile; null for profiles Granary does not use.</summary>
     public static string? Codec(Guid profile) => Profiles.GetValueOrDefault(profile);
 
     /// <summary>
-    /// The codecs the default adapter decodes in hardware, each once; empty when there is no D3D11 video
-    /// device (no GPU, a remote session, a basic display driver).
+    /// What the default adapter decodes in hardware; nothing when there is no D3D11 video device (no GPU, a remote
+    /// session, a basic display driver).
     /// </summary>
-    public static IReadOnlyList<string> HardwareCodecs()
+    public static HardwareVideoDecoders HardwareDecoders() => Summarize(ReadProfiles());
+
+    /// <summary>The codecs of <paramref name="profiles"/>, each once, and whether 10-bit HEVC is among them.</summary>
+    public static HardwareVideoDecoders Summarize(IEnumerable<Guid> profiles)
+    {
+        var codecs = new List<string>();
+        bool hevcMain10 = false;
+        foreach (Guid profile in profiles)
+        {
+            hevcMain10 |= profile == HevcMain10Profile;
+            if (Codec(profile) is { } codec && !codecs.Contains(codec))
+            {
+                codecs.Add(codec);
+            }
+        }
+        return new HardwareVideoDecoders(codecs, hevcMain10);
+    }
+
+    private static List<Guid> ReadProfiles()
     {
         int hr = D3D11CreateDevice(0, DriverTypeHardware, 0, CreateDeviceVideoSupport, 0, 0, SdkVersion,
             out nint device, out _, out nint context);
@@ -63,7 +90,7 @@ public static unsafe partial class VideoDecoderProbe
             }
             try
             {
-                return ReadCodecs(videoDevice);
+                return ReadProfiles(videoDevice);
             }
             finally
             {
@@ -80,22 +107,22 @@ public static unsafe partial class VideoDecoderProbe
         }
     }
 
-    private static List<string> ReadCodecs(nint videoDevice)
+    private static List<Guid> ReadProfiles(nint videoDevice)
     {
         nint* vtable = *(nint**)videoDevice;
         var getCount = (delegate* unmanaged[Stdcall]<nint, uint>)vtable[GetVideoDecoderProfileCountSlot];
         var getProfile = (delegate* unmanaged[Stdcall]<nint, uint, Guid*, int>)vtable[GetVideoDecoderProfileSlot];
-        var codecs = new List<string>();
+        var profiles = new List<Guid>();
         uint count = getCount(videoDevice);
         for (uint i = 0; i < count; i++)
         {
             Guid profile;
-            if (getProfile(videoDevice, i, &profile) >= 0 && Codec(profile) is { } codec && !codecs.Contains(codec))
+            if (getProfile(videoDevice, i, &profile) >= 0)
             {
-                codecs.Add(codec);
+                profiles.Add(profile);
             }
         }
-        return codecs;
+        return profiles;
     }
 
     [LibraryImport("d3d11.dll")]

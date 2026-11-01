@@ -212,6 +212,7 @@ internal sealed class FakeDeviceProbe : IPlaybackDeviceProbe
     {
         Platform = "windows",
         HardwareVideoCodecs = ["h264", "hevc"],
+        HardwareHevcMain10 = true,
         SoftwareVideoCodecs = ["h264", "mpeg2video"],
         OsVersion = "10.0.26300",
     };
