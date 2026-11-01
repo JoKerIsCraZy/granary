@@ -60,7 +60,8 @@ public sealed record PlaybackSnapshot(
     /// <summary>
     /// The order the engine made its snapshots in: each one it raises is numbered above every one before it (the
     /// <see cref="Idle"/> template is 0). The engine raises from more than one thread, so a consumer can get one after a
-    /// newer one: a snapshot numbered below the newest it has seen is stale.
+    /// newer one: a snapshot numbered below the newest it has seen is stale. The numbers belong to one engine, so only
+    /// numbers from the same engine compare.
     /// </summary>
     public long Sequence { get; init; }
 }

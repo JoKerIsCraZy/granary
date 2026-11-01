@@ -456,7 +456,7 @@ public sealed class MpvPlaybackEngineTests : IDisposable
         var snapshots = seen.ToArray();
         // Three raisers: the load (this thread), mpv's events, and the cache reads on a timer's thread, which raise only
         // what the cache holds.
-        var load =Assert.Single(snapshots, s => s.Thread != "mpv-events" && !s.State.IsLoaded);
+        var load = Assert.Single(snapshots, s => s.Thread != "mpv-events" && !s.State.IsLoaded);
         var events = snapshots.Where(s => s.Thread == "mpv-events").ToArray();
         var reads = snapshots.Where(s => s.Thread != "mpv-events" && s != load).ToArray();
         Assert.NotEmpty(events);
