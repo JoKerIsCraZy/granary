@@ -338,6 +338,96 @@ public sealed class MpvPlaybackEngineTests : IDisposable
     }
 
     [Fact]
+    public async Task AnHttpStream_ReportsWhatTheCacheHolds_InThePositionsTime()
+    {
+        using var engine = CreateEngine();
+        await using var server = new TinyHttpServer(200, "OK", WavFile.Sine(20), "audio/wav");
+        var held = new TaskCompletionSource<PlaybackSnapshot>(TaskCreationOptions.RunContinuationsAsynchronously);
+        engine.StateChanged += (_, s) =>
+        {
+            if (s.Buffered.Count > 0 && s.Buffered[^1].EndSeconds > 15)
+            {
+                held.TrySetResult(s);
+            }
+        };
+
+        long load = engine.Load(new MediaSource(server.Url("media.wav"), []));
+
+        // A network stream gets mpv's cache, which reads the whole short file ahead; its range starts where time-pos does.
+        var state = await held.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken);
+        Assert.Equal(load, state.LoadId);
+        var range = Assert.Single(state.Buffered);
+        Assert.InRange(range.StartSeconds, 0, 0.1);
+        Assert.InRange(range.EndSeconds, 15, 20.1);
+    }
+
+    [Fact]
+    public async Task ANewLoad_ClearsWhatTheStreamBeforeHeld()
+    {
+        using var engine = CreateEngine();
+        await using var server = new TinyHttpServer(200, "OK", WavFile.Sine(20), "audio/wav");
+        var held = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        long second = 0;
+        var secondPlays = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        bool secondHeldAny = false;
+        engine.StateChanged += (_, s) =>
+        {
+            if (s.Buffered.Count > 0)
+            {
+                held.TrySetResult();
+            }
+            if (s.LoadId == Volatile.Read(ref second))
+            {
+                secondHeldAny |= s.Buffered.Count > 0;
+                if (s is { IsLoaded: true, HasStarted: true })
+                {
+                    secondPlays.TrySetResult();
+                }
+            }
+        };
+        engine.Load(new MediaSource(server.Url("media.wav"), []));
+        await held.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken);
+
+        Volatile.Write(ref second, engine.Load(MediaSource.Local(TempWav(6.0))));
+
+        Assert.Empty(engine.Current.Buffered);
+        await secondPlays.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken);
+        await Task.Delay(600, TestContext.Current.CancellationToken);
+        // A local file has no cache of mpv's: nothing shows for it, and nothing of the stream before.
+        Assert.False(secondHeldAny);
+        Assert.Empty(engine.Current.Buffered);
+    }
+
+    [Fact]
+    public async Task AStop_ClearsWhatTheStreamHeld()
+    {
+        using var engine = CreateEngine();
+        await using var server = new TinyHttpServer(200, "OK", WavFile.Sine(20), "audio/wav");
+        var held = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var stopped = new TaskCompletionSource<PlaybackSnapshot>(TaskCreationOptions.RunContinuationsAsynchronously);
+        engine.StateChanged += (_, s) =>
+        {
+            if (s.Buffered.Count > 0)
+            {
+                held.TrySetResult();
+            }
+            else if (held.Task.IsCompleted && !s.IsLoaded)
+            {
+                stopped.TrySetResult(s);
+            }
+        };
+        engine.Load(new MediaSource(server.Url("media.wav"), []));
+        await held.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken);
+
+        engine.Stop();
+
+        var state = await stopped.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken);
+        Assert.Empty(state.Buffered);
+        await Task.Delay(600, TestContext.Current.CancellationToken);
+        Assert.Empty(engine.Current.Buffered);
+    }
+
+    [Fact]
     public async Task HttpSource_ReportsAuthenticationFailedOn401()
     {
         using var engine = CreateEngine();

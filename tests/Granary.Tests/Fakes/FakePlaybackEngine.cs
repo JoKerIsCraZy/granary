@@ -33,7 +33,7 @@ internal sealed class FakePlaybackEngine : IPlaybackEngine
             throw failure;
         }
         Loaded.Add(source);
-        Current = Current with { LoadId = ++LoadId, IsLoaded = false, HasStarted = false, IsAtEnd = false };
+        Current = Current with { LoadId = ++LoadId, IsLoaded = false, HasStarted = false, IsAtEnd = false, Buffered = BufferedRanges.None };
         return LoadId;
     }
 

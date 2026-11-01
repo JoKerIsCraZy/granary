@@ -48,6 +48,13 @@ public sealed record PlaybackSnapshot(
     long LoadId = 0)
 {
     public static PlaybackSnapshot Idle { get; } = new(false, false, TimeSpan.Zero, null, null);
+
+    /// <summary>
+    /// What the player holds of the loaded file, in the time of <see cref="Position"/>: mpv's cache of a network stream,
+    /// none for a local file. Empty from a load until the new file is open, and once it ended or stopped; it changes at
+    /// most four times a second.
+    /// </summary>
+    public BufferedRanges Buffered { get; init; } = BufferedRanges.None;
 }
 
 public enum PlaybackEndReason

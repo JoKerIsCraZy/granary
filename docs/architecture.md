@@ -46,6 +46,13 @@ the display refresh rate itself (Phase 3).
 - View models marshal to the UI thread through `IUiDispatcher`; they never block on it.
 - `MpvVideoHost` re-enters the UI thread through its `DispatcherQueue` when the swap chain changes.
 - Position updates are throttled to 4 per second; state changes are reported immediately.
+- What mpv's cache holds (`demuxer-cache-state`) is observed without its value: the engine reads the property's
+  string form (the node as compact JSON) at most 4 times a second and once more after the last change
+  (`TrailingThrottle`, on mpv's event thread or a timer's), takes its `seekable-ranges` (`MpvCacheState`, which
+  reads anything else as no ranges) and reports them in `PlaybackSnapshot.Buffered`, in the time of `time-pos` (mpv
+  applies the same offset to both). A load empties them at once, and a read of the file before is dropped by its load
+  id; the file's end or a stop leaves the idle snapshot, which holds none. `PlayerViewModel.Buffered` moves them into
+  the title's time with the timeline offset, as the position, and keeps them within the title's length.
 
 ## Networking and security
 

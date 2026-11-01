@@ -404,6 +404,8 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     private void LeavePlayback()
     {
         ResetNextUp();
+        // A file played directly too: what it held is not the next title's.
+        ResetBuffered();
         if (_playback is not { } playback)
         {
             return;
@@ -547,6 +549,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         IsMuted = state.IsMuted;
         Volume = state.Volume;
         CanSeek = state.IsLoaded && state.HasStarted && (_playback is null || _playback.Status.Phase == ServerPlaybackPhase.Playing);
+        FollowBuffered(state, offset);
         FollowMarkers(state);
         ShowMarkerEdit();
         FollowChapters();
