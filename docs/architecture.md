@@ -393,11 +393,12 @@ screen all go through `WindowModeService` (App, a singleton that MainWindow atta
 - **The window**: the service applies a change through the AppWindow presenters. It keeps the window as it is while it is
   a window, on every move and resize, and once more as it leaves (`WindowedPlacement`: the presenter, so a maximized
   window comes back maximized, and its place and size, but never a minimized window's); full screen and the mini view go
-  to each other without it, so either returns to the window as it was before both. Coming back, a restored window is
-  placed within the nearest display's work area (`WindowBounds.Within`), so a display unplugged or moved meanwhile cannot
-  leave it off-screen; a window flush with an edge, whose invisible resize frame reaches a few pixels past it, stays
-  where it was. A presenter the window took by itself is followed, and so is the window's real presenter when setting
-  one fails (logged). Nothing is saved: each start begins as a window.
+  to each other without it, so either returns to the window as it was before both. Coming back, a restored window keeps
+  its place and size as long as its title bar (32 view px high, at least 120 wide) shows on some display's work area
+  (`WindowBounds.OnDisplays` over `DisplayArea.FindAll`): across two displays, on one left of or above the primary, or
+  flush with an edge. Only one whose title bar shows on none, its display unplugged or moved meanwhile, is moved onto
+  the nearest display and made smaller only if it does not fit. A presenter the window took by itself is followed, and
+  so is the window's real presenter when setting one fails (logged). Nothing is saved: each start begins as a window.
 - **Changed** tells MainWindow (its title bar buttons), the player (its `IsFullScreen` and `IsMiniView`) and the trailer.
 - **Drag area**: the title bar's own buttons lie outside `SetTitleBar`'s element, so they take clicks. In full screen the
   window has no drag area at all (`InputNonClientPointerSource`'s caption region cleared); WinUI does not set it again

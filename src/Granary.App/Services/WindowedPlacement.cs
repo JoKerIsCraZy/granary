@@ -9,9 +9,10 @@ namespace Granary.App.Services;
 /// </summary>
 internal sealed class WindowedPlacement
 {
-    // How far a window's invisible resize frame may reach past a display's edge, in view pixels: a window flush with the
-    // edge comes back where it was, not nudged inwards.
-    private const double FrameSlack = 16;
+    // In view pixels: the title bar's height (MainWindow's row), and how much of it has to show on a display for the window
+    // to stay where it was (WindowBounds.OnDisplays).
+    private const double TitleBarHeight = 32;
+    private const double MinimumVisibleTitleBar = 120;
 
     private AppWindowPresenter? _presenter;
     private RectInt32? _bounds;
@@ -47,16 +48,26 @@ internal sealed class WindowedPlacement
         }
         if (window.Presenter is OverlappedPresenter { State: OverlappedPresenterState.Restored } && bounds is { } kept)
         {
-            window.MoveAndResize(OnDisplay(kept, (int)Math.Ceiling(FrameSlack * scale)));
+            window.MoveAndResize(OnDisplay(kept, scale));
         }
     }
 
-    // A display unplugged or moved during full screen must not leave the window off-screen: the nearest one's work area.
-    private static RectInt32 OnDisplay(RectInt32 bounds, int slack)
+    // A display unplugged or moved during full screen must not leave the window off-screen; one whose title bar still shows
+    // on a display stays as it was, across two displays too.
+    private static RectInt32 OnDisplay(RectInt32 bounds, double scale)
     {
-        var area = DisplayArea.GetFromRect(bounds, DisplayAreaFallback.Nearest).WorkArea;
-        var fitted = new WindowBounds(bounds.X, bounds.Y, bounds.Width, bounds.Height)
-            .Within(new WindowBounds(area.X, area.Y, area.Width, area.Height), slack);
-        return new RectInt32(fitted.X, fitted.Y, fitted.Width, fitted.Height);
+        // By index: enumerating FindAll's list has failed in C# (a known fault of its projection).
+        var displays = DisplayArea.FindAll();
+        var workAreas = new List<WindowBounds>(displays.Count);
+        for (int i = 0; i < displays.Count; i++)
+        {
+            workAreas.Add(Of(displays[i].WorkArea));
+        }
+        var nearest = Of(DisplayArea.GetFromRect(bounds, DisplayAreaFallback.Nearest).WorkArea);
+        var placed = Of(bounds).OnDisplays(workAreas, nearest,
+            (int)Math.Round(TitleBarHeight * scale), (int)Math.Round(MinimumVisibleTitleBar * scale));
+        return new RectInt32(placed.X, placed.Y, placed.Width, placed.Height);
     }
+
+    private static WindowBounds Of(RectInt32 rect) => new(rect.X, rect.Y, rect.Width, rect.Height);
 }
