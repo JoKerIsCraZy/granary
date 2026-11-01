@@ -119,10 +119,16 @@ jobs:
           $number = $Matches['number']
           gh workflow run ci.yml --repo $env:GITHUB_REPOSITORY --ref $env:BRANCH
           Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value "Pull request: $url"
-          # The workflow's own earlier update pull requests that are still open are of older builds now.
+          # The workflow's own earlier update pull requests that are still open are of older builds now. Closing one is
+          # tidying up: a failure is reported, but the new pull request stands.
           $older = @(gh pr list --repo $env:GITHUB_REPOSITORY --state open --json number,headRefName,isCrossRepository,author --jq '.[] | select(.isCrossRepository | not) | select(.author.login == "app/github-actions") | select(.headRefName | startswith("deps/libmpv-")) | select(.headRefName != env.BRANCH) | .number')
           foreach ($old in $older) {
             if ("$old" -cmatch '\A[0-9]{1,10}\z') {
-              gh pr close $old --repo $env:GITHUB_REPOSITORY --comment "Superseded by #$number, which moves to a newer build." --delete-branch
+              try {
+                gh pr close $old --repo $env:GITHUB_REPOSITORY --comment "Superseded by #$number, which moves to a newer build." --delete-branch
+              }
+              catch {
+                Write-Warning "Could not close pull request #${old}: $($_.Exception.Message)"
+              }
             }
           }

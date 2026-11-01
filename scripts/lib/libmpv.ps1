@@ -24,9 +24,10 @@ $script:RepositoryPattern = '\A[A-Za-z0-9-]{1,39}/(?!\.{1,2}\z)[A-Za-z0-9._-]{1,
 $script:Sha256Pattern = '\A[0-9a-f]{64}\z'
 
 # Bounds for what is downloaded and read: today the zip is about 56 MB, its DLL about 127 MB, FFmpeg's sources 18 MB.
+# The DLL is read whole into one string, so its bound also keeps that string well inside .NET's limit.
 $script:MinDownloadBytes = 1MB
 $script:MaxZipBytes = 512MB
-$script:MaxDllBytes = 1GB
+$script:MaxDllBytes = 512MB
 $script:MaxSourceBytes = 512MB
 
 $script:Utf8NoBom = New-Object System.Text.UTF8Encoding $false
@@ -87,7 +88,11 @@ function Read-LibmpvLock {
     if (-not $Text) {
         $Text = [IO.File]::ReadAllText($script:LockPath, $script:Utf8NoBom)
     }
-    $entry = ($Text | ConvertFrom-Json).libmpv
+    $root = $Text | ConvertFrom-Json
+    $entry = $null
+    if ($root -and $root.PSObject.Properties['libmpv']) {
+        $entry = $root.libmpv
+    }
     if (-not $entry) {
         throw 'native.lock.json has no libmpv entry.'
     }
@@ -193,14 +198,17 @@ function Get-CommitInfo {
 }
 
 <#
-Downloads an upstream asset into a directory and checks it against GitHub's listing: the size always, the SHA-256 when
-GitHub gives one. The URL is built from the checked name, never taken from the API. Returns the file's path and SHA-256;
-a file that fails a check is deleted.
+Downloads an upstream asset into a directory and checks its size and SHA-256 against GitHub's listing. The URL is built
+from the checked name, never taken from the API. Returns the file's path and SHA-256; a file that fails a check is
+deleted. Without a SHA-256 in the listing nothing is downloaded, since the pin would then rest on whatever came.
 #>
 function Save-UpstreamAsset {
     param([Parameter(Mandatory)]$Asset, [Parameter(Mandatory)][string]$Directory)
     if ($Asset.Size -lt $script:MinDownloadBytes -or $Asset.Size -gt $script:MaxZipBytes) {
         throw "GitHub lists $($Asset.Name) with $($Asset.Size) bytes, outside the expected 1 MB to 512 MB."
+    }
+    if (-not $Asset.Sha256) {
+        throw "GitHub lists no SHA-256 for $($Asset.Name), so a download could not be checked. Run again later."
     }
     $path = Join-Path $Directory $Asset.Name
     $url = "https://github.com/$script:UpstreamRepository/releases/download/$script:UpstreamTag/$($Asset.Name)"
@@ -212,10 +220,7 @@ function Save-UpstreamAsset {
         throw "$($Asset.Name) came as $length bytes, not the $($Asset.Size) GitHub lists. Upstream may have replaced it meanwhile; run again."
     }
     $sha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $path).Hash.ToLowerInvariant()
-    if (-not $Asset.Sha256) {
-        Write-Warning "GitHub lists no SHA-256 for $($Asset.Name); only its size was checked."
-    }
-    elseif ($sha256 -cne $Asset.Sha256) {
+    if ($sha256 -cne $Asset.Sha256) {
         Remove-Item -LiteralPath $path -Force
         throw "$($Asset.Name) has the SHA-256 $sha256, not the $($Asset.Sha256) GitHub lists. It was deleted."
     }
@@ -249,7 +254,7 @@ function Export-LibmpvDll {
             throw "$([IO.Path]::GetFileName($ZipPath)) has $($entries.Count) entries named libmpv-2.dll, not one."
         }
         if ($entries[0].Length -gt $script:MaxDllBytes) {
-            throw "libmpv-2.dll in $([IO.Path]::GetFileName($ZipPath)) claims $($entries[0].Length) bytes, more than 1 GB."
+            throw "libmpv-2.dll in $([IO.Path]::GetFileName($ZipPath)) claims $($entries[0].Length) bytes, more than 512 MB."
         }
         $source = $entries[0].Open()
         try {
@@ -260,7 +265,7 @@ function Export-LibmpvDll {
                 while (($read = $source.Read($buffer, 0, $buffer.Length)) -gt 0) {
                     $total += $read
                     if ($total -gt $script:MaxDllBytes) {
-                        throw "libmpv-2.dll in $([IO.Path]::GetFileName($ZipPath)) unpacks to more than 1 GB."
+                        throw "libmpv-2.dll in $([IO.Path]::GetFileName($ZipPath)) unpacks to more than 512 MB."
                     }
                     $target.Write($buffer, 0, $read)
                 }

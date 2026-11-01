@@ -243,6 +243,11 @@ a CHANGELOG line when the update matters to users, such as an FFmpeg security fi
 ([FFmpeg's security page](https://ffmpeg.org/security.html)). A pull request closed without merging leaves that build
 alone; the next newer one gets a pull request of its own.
 
+What a review cannot do is look inside a 127 MB DLL. The checks make sure the pin is exactly the build mpv's CI
+published, so the trust rests on mpv-player/mpv. CI runs on the branch before anyone has looked at it, and its libmpv
+tests load the new DLL: a compromised upstream build would run there, on a throwaway runner that can only read the
+repository and holds no secret. The signing key stays in the `release` environment, which takes runs from `main` only.
+
 The pull request needs **Settings → Actions → General → Workflow permissions → "Allow GitHub Actions to create and
 approve pull requests"**. Without it, the run makes the mirror release and the branch and then fails; turn the setting
 on and run the workflow again, which checks the release and opens the pull request.

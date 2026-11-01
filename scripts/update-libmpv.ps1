@@ -381,6 +381,10 @@ if (-not $Repository) {
     $Repository = $lock.Repository
 }
 Assert-Repository $Repository
+# In a workflow the mirror is the repository it runs in, whatever native.lock.json says.
+if ($env:GITHUB_ACTIONS -eq 'true' -and $Repository -ne $env:GITHUB_REPOSITORY) {
+    throw "native.lock.json mirrors libmpv in $Repository, but the workflow runs in $env:GITHUB_REPOSITORY."
+}
 $asset = Select-UpstreamAsset -Name $AssetName
 Write-Host "Pinned: $($lock.Asset.Name), FFmpeg $($lock.FFmpeg.Version)"
 Write-Host "Taking: $($asset.Name)"
