@@ -36,8 +36,9 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
     private long _generation;
     // The server and profile the room was entered as: its recent entry is theirs, whoever is signed in once it ends.
     private (string ServerId, string ProfileId)? _owner;
-    // The host's End on its way, and the room it ends.
-    private (string RoomId, Task<bool> Ending)? _ending;
+    // The host's Ends on their way, by the room and the entry into it they began in: a second End of the same entry waits
+    // for its own, one of a room entered again (or of another room) is sent on its own. Each End takes its own away.
+    private readonly Dictionary<(string RoomId, long Generation), Task<bool>> _endings = [];
 
     public WatchPartySession(ISessionManager session, WatchPartyApi api, Func<WatchPartyConnection> connections, IUiDispatcher dispatcher,
         ILogger<WatchPartySession> logger, WatchPartyRecentRooms? recentRooms = null, TimeProvider? time = null)
@@ -181,10 +182,12 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
     /// <summary>The title the room has up, for its entry among the recent rooms.</summary>
     public void NoteTitle(string title)
     {
-        if (Room is { } room && _roomToken is { } token && title.Length > 0)
+        // A room that is over stays ended among the recent rooms: a title that comes after does not bring it back.
+        if (Room is not { } room || _roomToken is not { } token || title.Length == 0 || End is { } end && RoomIsOver(end))
         {
-            Remember(room, token, title);
+            return;
         }
+        Remember(room, token, title);
     }
 
     /// <summary>Reads the room again (and renews this profile's proof for it).</summary>
@@ -228,34 +231,33 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
         {
             return false;
         }
-        // A second End of the room while one is on its way waits for that one: the room is ended once. Another room (the
-        // first left meanwhile) is ended on its own.
-        if (_ending is { } pending && pending.RoomId == room.RoomId)
+        // A second End while one of this entry into the room is on its way waits for that one: the room is ended once.
+        var key = (room.RoomId, _generation);
+        if (_endings.TryGetValue(key, out var pending) && !pending.IsCompleted)
         {
-            return await pending.Ending;
+            return await pending;
         }
         if (End is not null)
         {
             return false;
         }
         var ending = EndAsync(room, _owner);
-        _ending = (room.RoomId, ending);
+        _endings[key] = ending;
         try
         {
             return await ending;
         }
         finally
         {
-            if (_ending?.Ending == ending)
+            if (_endings.TryGetValue(key, out var mine) && mine == ending)
             {
-                _ending = null;
+                _endings.Remove(key);
             }
         }
     }
 
     private async Task<bool> EndAsync(WatchPartyRoom room, (string ServerId, string ProfileId)? owner)
     {
-        long generation = _generation;
         string reason = "host_left";
         try
         {
@@ -268,19 +270,21 @@ public sealed partial class WatchPartySession : ObservableObject, IRoomLink
             _logger.LogDebug("The Watch Party was over before its end was answered: {Status}", ex.Status);
             reason = over;
         }
-        if (generation != _generation)
+        // The room is over for everyone: its recent entry is marked for the server and profile that entered it.
+        MarkEnded(owner, room);
+        if (Room?.RoomId != room.RoomId)
         {
-            // Left, another room entered, or another profile or server meanwhile: the room ended, but nothing here is it.
-            MarkEnded(owner, room);
+            // Left, or another room entered (or another profile or server) meanwhile: nothing here is the room any more.
             return true;
         }
-        // The room's own close came first: it said so and marked the room. An end that said less of the room (a refused
-        // proof, another device) gives way.
-        bool closed = End is { } said && RoomIsOver(said);
-        if (!closed)
+        // This device is in the room, as when the End began or entered again meanwhile (then perhaps as another profile):
+        // that engagement ends too. The room's own close may have come first, and what it said stays; an end that said
+        // less of the room (a refused proof, another device) gives way.
+        if (_owner != owner)
         {
-            MarkEnded(owner, room);
+            MarkEnded(_owner, room);
         }
+        bool closed = End is { } said && RoomIsOver(said);
         _generation++;
         var connection = _connection;
         _connection = null;

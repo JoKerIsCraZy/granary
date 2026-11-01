@@ -386,15 +386,17 @@ panel follow it. It joins or opens the room over HTTP and keeps the room socket 
   The room's own close (`room_closed` with its reason: `host_left` when the host ended it or stayed away two minutes),
   an ended snapshot (`ended`), a refused socket ticket (`ended` on 409, `not_found` on 404, `forbidden` otherwise) and
   another device taking this profile's place (`connection_replaced`, `Replaced`) all end it. All but `forbidden` and a
-  takeover say the room itself is over: it is marked ended among the recent rooms. A takeover can be claimed back
-  (Rejoin).
+  takeover say the room itself is over: it is marked ended among the recent rooms, and a title noted after that does
+  not bring it back. A takeover can be claimed back (Rejoin).
 - **The host's End.** `DELETE …/rooms/{id}`; the socket closes and `End` is `host_left`, as the others hear it. An
   answer that the room is over already (409 `conflict`, 404 `not_found`) ends it too, as `ended` or `not_found`, as
   Android's `WatchTogetherRepository.closeRoom` takes the 409. The room's own close may arrive while the End is on its
-  way: an end that says the room is over is kept, one that said less (a refused proof, a takeover) gives way. A second
-  End of the same room waits for the first; an End of another room (the first left meanwhile) goes out on its own. An
-  answer that comes after the room was left, another entered, or the profile or server changed leaves this device alone
-  and only marks the room ended, for the server and profile that entered it.
+  way: an end that says the room is over is kept, one that said less (a refused proof, a takeover) gives way. Ends on
+  their way are kept by room and entry (the session's generation): a second End of the same entry waits for the first,
+  an End of another room or of the same room entered again goes out on its own, and a failed End is not waited for.
+  An End that goes through, or finds the room over, marks it ended for the server and profile that entered it. If this
+  device is in that room by then, entered again meanwhile included, that engagement ends too; if it left, or is in
+  another room, nothing else changes.
 - **To the hub.** A room that is over is not shown. The room page and the player each go on to the hub, unless it shows
   already, as a section (`ShowSection`), so Back does not return to the room; the player first leaves as on any exit,
   its position reported. The hub says why in the web's words (`WatchPartyText`) until it is dismissed, which leaves the
