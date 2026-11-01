@@ -19,7 +19,8 @@ public sealed class CompositionResizeGate(TimeProvider time)
     /// </summary>
     public static readonly TimeSpan SettleTime = TimeSpan.FromMilliseconds(100);
 
-    // A jump: a side grows or shrinks by more than a quarter. Dragging the window's edge moves it by far less per frame.
+    // A jump: a side grows or shrinks by a quarter or more, as on a move from a 100 % to a 125 % display. Dragging the
+    // window's edge moves it by far less per frame.
     private const double JumpRatio = 1.25;
 
     // mpv sizes its buffer to the size it was given; a pixel either way is rounding, not a pending resize.
@@ -75,8 +76,15 @@ public sealed class CompositionResizeGate(TimeProvider time)
         return false;
     }
 
+    /// <summary>The picture shows and nothing is awaited: the panel let go of the swap chain or got another output.</summary>
+    public void Reset()
+    {
+        IsHidden = false;
+        _presentsAtNewSize = null;
+    }
+
     private static bool IsJump(PixelSize from, PixelSize to) =>
-        Ratio(from.Width, to.Width) > JumpRatio || Ratio(from.Height, to.Height) > JumpRatio;
+        Ratio(from.Width, to.Width) >= JumpRatio || Ratio(from.Height, to.Height) >= JumpRatio;
 
     private static double Ratio(int a, int b) => (double)Math.Max(a, b) / Math.Min(a, b);
 

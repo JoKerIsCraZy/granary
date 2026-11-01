@@ -129,6 +129,53 @@ public sealed class CompositionResizeGateTests
     }
 
     [Fact]
+    public void AQuarterLarger_AsOnA125PercentDisplay_CountsAsAJump()
+    {
+        var gate = new CompositionResizeGate(_time);
+
+        gate.PanelResized(new PixelSize(1250, 1000), buffer: new PixelSize(1000, 800));
+
+        Assert.True(gate.IsHidden);
+    }
+
+    [Fact]
+    public void APanelWithoutArea_NeverHidesThePicture()
+    {
+        var gate = new CompositionResizeGate(_time);
+
+        gate.PanelResized(new PixelSize(0, 90), buffer: Full);
+
+        Assert.False(gate.IsHidden);
+    }
+
+    [Fact]
+    public void ASecondJumpWhileHidden_DoesNotPutOffTheLongestWait()
+    {
+        var gate = new CompositionResizeGate(_time);
+        gate.PanelResized(Bar, buffer: Full);
+        _time.Advance(TimeSpan.FromMilliseconds(200));
+
+        gate.PanelResized(Full, buffer: Full);
+        _time.Advance(CompositionResizeGate.LongestHide - TimeSpan.FromMilliseconds(200));
+
+        Assert.True(gate.Frame(buffer: Bar, presents: 1));
+    }
+
+    [Fact]
+    public void Reset_ShowsThePictureAndForgetsTheWait()
+    {
+        var gate = new CompositionResizeGate(_time);
+        gate.PanelResized(Bar, buffer: Full);
+        _time.Advance(CompositionResizeGate.LongestHide);
+
+        gate.Reset();
+        gate.PanelResized(Full, buffer: Bar);
+
+        Assert.True(gate.IsHidden);
+        Assert.False(gate.Frame(buffer: Bar, presents: 1));
+    }
+
+    [Fact]
     public void AFrameWhileShown_ChangesNothing()
     {
         var gate = new CompositionResizeGate(_time);

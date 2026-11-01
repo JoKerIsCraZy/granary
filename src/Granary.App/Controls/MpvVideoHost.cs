@@ -60,6 +60,7 @@ public sealed partial class MpvVideoHost : UserControl
     private void Disconnect()
     {
         StopWatchingFrames();
+        _resizeGate.Reset();
         _pendingResize = null;
         _panel.Opacity = 1;
         if (_output is not null)
@@ -99,7 +100,11 @@ public sealed partial class MpvVideoHost : UserControl
         var size = new PixelSize(
             (int)Math.Round(_panel.ActualWidth * _panel.CompositionScaleX),
             (int)Math.Round(_panel.ActualHeight * _panel.CompositionScaleY));
-        _resizeGate.PanelResized(size, DxgiSwapChain.BufferSize(_attached));
+        // Only a loaded panel shows the picture; one that left the page passes the size on as before.
+        if (IsLoaded)
+        {
+            _resizeGate.PanelResized(size, DxgiSwapChain.BufferSize(_attached));
+        }
         if (_resizeGate.IsHidden)
         {
             // The hidden picture reaches the screen with this frame; mpv gets the new size on the next one, so its
