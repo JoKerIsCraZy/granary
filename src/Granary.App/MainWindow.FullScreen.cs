@@ -14,7 +14,7 @@ using Windows.UI;
 
 namespace Granary.App;
 
-// Full screen for the whole window, as Plex's app has it (WindowModeService, shared with the player and a trailer): the
+// Full screen for the whole window (WindowModeService, shared with the player and a trailer): the
 // title bar's Full screen left of the caption buttons; in full screen, where Windows shows none, Exit full screen and Close
 // in their place; F11 anywhere. The title bar keeps its 32 px in full screen, so the pages keep their place under it.
 public sealed partial class MainWindow

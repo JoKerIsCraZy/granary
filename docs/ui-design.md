@@ -657,7 +657,7 @@ stream's commands on Activity.
 
 ## Full screen
 
-The whole app goes full screen, as Plex's app for Windows does (`WindowModeService` over Core's `WindowModes`, one state
+The whole app goes full screen (`WindowModeService` over Core's `WindowModes`, one state
 for the window that the app, the player and a trailer share; `AppWindow`'s full-screen presenter).
 
 - **On and off**: the title bar's Full screen button and F11 anywhere in the app, the player and its bar included, and

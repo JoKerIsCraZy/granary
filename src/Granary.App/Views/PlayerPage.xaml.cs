@@ -98,7 +98,7 @@ public sealed partial class PlayerPage : Page
     /// <summary>
     /// Ends playback as the window takes the player away: Exit, Stop, Alt+Left, the mouse back button, Ctrl+K or a session
     /// change; the sound must not go on behind another page nor the server session stay open. The mini view ends with
-    /// it; full screen is the window's and stays as the viewer set it, as in Plex.
+    /// it; full screen is the window's and stays as the viewer set it.
     /// </summary>
     public void Leave()
     {
