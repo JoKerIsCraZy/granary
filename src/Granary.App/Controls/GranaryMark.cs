@@ -277,8 +277,11 @@ public sealed partial class GranaryMark : Grid
         }
         _ring.TrimStart = ArcLow;
         _ring.TrimEnd = ArcHigh;
-        _ringStroke.StopAnimation(nameof(CompositionSpriteShape.StrokeThickness));
-        _ringStroke.StrokeThickness = RingWidth;
+        foreach (var stroke in new[] { _ringStroke, _ringWrappedStroke })
+        {
+            stroke.StopAnimation(nameof(CompositionSpriteShape.StrokeThickness));
+            stroke.StrokeThickness = RingWidth;
+        }
         _ringVisual.Shapes.Remove(_ringWrappedStroke);
         _ringVisual.Shapes.Remove(_track);
         _motion.StopAnimation("Run");
