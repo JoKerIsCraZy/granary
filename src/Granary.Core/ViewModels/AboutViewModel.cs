@@ -55,6 +55,8 @@ public sealed partial class AboutViewModel : ObservableObject
 
     public string LicensePath => _app.LicensePath;
 
+    public string ExceptionPath => _app.ExceptionPath;
+
     public string NoticesPath => _app.NoticesPath;
 
     public string DataDirectory => _app.DataDirectory;
