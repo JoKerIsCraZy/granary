@@ -39,6 +39,10 @@ public sealed partial class MainWindow
     private bool _openedByKey;
     private bool _backByKey;
 
+    // A remote's Play/Pause (and the Play some remotes have): media keys, which Windows hands the focused window first.
+    private const VirtualKey MediaPlayPause = (VirtualKey)0xB3;
+    private const VirtualKey MediaPlay = (VirtualKey)0xFA;
+
     // Every key the window sees: a page waiting to place focus stops once the viewer presses one.
     private int _keysPressed;
 
@@ -76,6 +80,7 @@ public sealed partial class MainWindow
             VirtualKey.GoBack when !repeat => Back(BackKey.BrowserBack),
             VirtualKey.Left => EnterSidebar(repeat),
             VirtualKey.Right => LeaveSidebar(repeat),
+            MediaPlayPause or MediaPlay when !repeat => PlayFocused(),
             _ => false,
         };
     }
@@ -164,6 +169,22 @@ public sealed partial class MainWindow
         }
         var next = FocusManager.FindNextElement(FocusNavigationDirection.Right, new FindNextElementOptions { SearchRoot = root.Content });
         return next is null || !IsWithin(next, row);
+    }
+
+    // Play on a card plays it, as its play disc does; anywhere on a title's page, its Play. While something plays (the
+    // player full or as the bar), the key stays the media session's and pauses that.
+    private bool PlayFocused()
+    {
+        if (IsPlayerOpen)
+        {
+            return false;
+        }
+        var focused = FocusedElement();
+        if (focused is Button { Content: MediaCardView card })
+        {
+            return card.PlayFromKey();
+        }
+        return ContentFrame.Content is ItemDetailPage page && focused is not null && IsWithin(focused, page) && page.PlayFromKey();
     }
 
     private bool FocusSidebarEntry() =>

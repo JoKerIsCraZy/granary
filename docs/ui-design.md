@@ -481,6 +481,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     not quit. A menu, flyout or dialog closes on Browser Back and Backspace as on Esc.
   - A page opened with OK starts on its Play (a title, an episode) or Request (a TMDB title), else on its first card. A
     section picked in the sidebar keeps focus there, as the TV app's tabs do.
+  - Play/Pause (a media key) on a card plays it, as its play disc does; anywhere on a title's page it plays the title.
+    While something plays, full or as the bar, the key stays Windows' media session's and pauses that.
 
 ## Signed-out screens
 

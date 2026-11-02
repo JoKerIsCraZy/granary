@@ -865,6 +865,17 @@ public sealed partial class MediaCardView : UserControl
 
     private void OnPointerExited(object sender, PointerRoutedEventArgs e) => SetHovered(false);
 
+    /// <summary>Plays the card as its play disc does, for a remote's Play key; false for a card that cannot play.</summary>
+    public bool PlayFromKey()
+    {
+        if (Card is not { } card || !MediaCardActions.CanPlay(card))
+        {
+            return false;
+        }
+        _actions.Play(card);
+        return true;
+    }
+
     private void OnPlayClick(object sender, RoutedEventArgs e)
     {
         if (Card is { } card)

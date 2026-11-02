@@ -25,6 +25,17 @@ public sealed partial class ItemDetailPage : Page, IArrivalFocus
 
     Control? IArrivalFocus.ArrivalFocus => Hero.ArrivalFocus;
 
+    /// <summary>A remote's Play anywhere on the page plays the title as its Play does; false while it cannot.</summary>
+    internal bool PlayFromKey()
+    {
+        if (!ViewModel.PlayCommand.CanExecute(null))
+        {
+            return false;
+        }
+        ViewModel.PlayCommand.Execute(null);
+        return true;
+    }
+
     // Static because x:Bind function bindings in item templates call them without the page.
     public static string SeasonName(string title, string caption, bool isWatched) => isWatched ? $"{title}, {caption}, watched" : $"{title}, {caption}";
 
