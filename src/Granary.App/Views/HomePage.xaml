@@ -29,10 +29,13 @@
                     </ItemsRepeater.Layout>
                     <ItemsRepeater.ItemTemplate>
                         <DataTemplate x:DataType="vm:HomeRowViewModel">
-                            <controls:MediaRow DataContext="{x:Bind}" Title="{x:Bind Title}" ItemsSource="{x:Bind Cards}"
-                                               CardInvokedCommand="{x:Bind OpenCardCommand}" CardPointedCommand="{x:Bind PointCardCommand}"
-                                               ExploreAllCommand="{x:Bind ExploreAllCommand}"
-                                               CardRemoveCommand="{x:Bind RemoveCardCommand}" CardRemoveLabel="{x:Bind RemoveLabel}" />
+                            <!-- A plain Grid as the root, on purpose: see "ItemsRepeater templates" in AGENTS.md. -->
+                            <Grid>
+                                <controls:MediaRow DataContext="{x:Bind}" Title="{x:Bind Title}" ItemsSource="{x:Bind Cards}"
+                                                   CardInvokedCommand="{x:Bind OpenCardCommand}" CardPointedCommand="{x:Bind PointCardCommand}"
+                                                   ExploreAllCommand="{x:Bind ExploreAllCommand}"
+                                                   CardRemoveCommand="{x:Bind RemoveCardCommand}" CardRemoveLabel="{x:Bind RemoveLabel}" />
+                            </Grid>
                         </DataTemplate>
                     </ItemsRepeater.ItemTemplate>
                 </ItemsRepeater>

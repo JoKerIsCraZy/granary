@@ -67,7 +67,7 @@ public sealed partial class BrowseHero : UserControl
         _fadeDone = DispatcherQueue.CreateTimer();
         _fadeDone.Interval = Crossfade;
         _fadeDone.IsRepeating = false;
-        _fadeDone.Tick += (_, _) => FinishFade();
+        WeakTick.Subscribe(_fadeDone, this, static hero => hero.FinishFade());
         SizeChanged += (_, e) => OnWidthChanged(e.NewSize.Width);
         // A title shown while the page was out of the window gets its pictures now that it is in it. The page's height sets
         // the hero's.

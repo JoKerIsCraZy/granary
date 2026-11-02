@@ -72,7 +72,7 @@ public sealed partial class MediaGrid : UserControl
         _viewportTimer = DispatcherQueue.CreateTimer();
         _viewportTimer.Interval = ViewportInterval;
         _viewportTimer.IsRepeating = false;
-        _viewportTimer.Tick += (_, _) => TellViewport();
+        WeakTick.Subscribe(_viewportTimer, this, static grid => grid.TellViewport());
         Loaded += (_, _) =>
         {
             FollowItems();
@@ -224,7 +224,8 @@ public sealed partial class MediaGrid : UserControl
             case Button { Content: MediaCardView card }:
                 card.Caption = _look.Presentation.Caption;
                 break;
-            case MediaCardSkeleton skeleton:
+            // The skeleton template's plain root (MediaGrid.xaml).
+            case Grid { Children: [MediaCardSkeleton skeleton] }:
                 skeleton.ShowsTitle = _look.Presentation.ShowsCaption;
                 break;
         }

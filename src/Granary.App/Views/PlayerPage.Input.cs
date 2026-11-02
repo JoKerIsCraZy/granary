@@ -1,3 +1,4 @@
+using Granary.App.Controls;
 using Granary.Core.ViewModels;
 using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
@@ -28,11 +29,11 @@ public sealed partial class PlayerPage
         _clickTimer = DispatcherQueue.CreateTimer();
         _clickTimer.Interval = DoubleClickWindow;
         _clickTimer.IsRepeating = false;
-        _clickTimer.Tick += (_, _) =>
+        WeakTick.Subscribe(_clickTimer, this, static page =>
         {
-            _clickToggled = true;
-            TogglePause();
-        };
+            page._clickToggled = true;
+            page.TogglePause();
+        });
         PreviewKeyDown += OnPagePreviewKeyDown;
         KeyDown += OnPageKeyDown;
         PointerPressed += OnPagePointerPressed;
