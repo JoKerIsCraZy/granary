@@ -31,6 +31,31 @@ public sealed class WeakCallbackTests
         Assert.False(callback.TryInvoke());
     }
 
+    [Fact]
+    public void ACallbackHoldingItsOwner_IsRefused()
+    {
+        var owner = new Counter();
+
+        Assert.Throws<ArgumentException>(() => new WeakCallback<Counter>(owner, _ => owner.Count++));
+    }
+
+    [Fact]
+    public void ACallbackHoldingALocal_IsRefused()
+    {
+        var owner = new Counter();
+        int step = 2;
+
+        Assert.Throws<ArgumentException>(() => new WeakCallback<Counter>(owner, counter => counter.Count += step));
+    }
+
+    [Fact]
+    public void AnInstanceMethodOfTheOwner_IsRefused()
+    {
+        var owner = new Counter();
+
+        Assert.Throws<ArgumentException>(() => new WeakCallback<Counter>(owner, owner.Bump));
+    }
+
     // Made in a method of its own, so no local of the test keeps the owner alive.
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static (WeakCallback<Counter> Callback, WeakReference<Counter> Owner) CallbackForAnOwnerNobodyHolds()
@@ -42,5 +67,7 @@ public sealed class WeakCallbackTests
     private sealed class Counter
     {
         public int Count { get; set; }
+
+        public void Bump(Counter _) => Count++;
     }
 }
