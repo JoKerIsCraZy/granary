@@ -935,23 +935,31 @@ public sealed partial class MediaCardView : UserControl
     // Right-click, Shift+F10 or the menu key open the same menu as the card's ⋮, where the pointer is.
     private void OnContextRequested(UIElement sender, ContextRequestedEventArgs args)
     {
-        if (Card is null)
-        {
-            return;
-        }
-        EnsureActions();
-        ShowState();
-        if (MoreButton.Visibility != Visibility.Visible)
-        {
-            return;
-        }
-        args.Handled = true;
         var options = new FlyoutShowOptions();
         if (args.TryGetPosition(this, out var point))
         {
             options.Position = point;
         }
+        args.Handled = ShowMenu(options);
+    }
+
+    /// <summary>A remote's Menu key on the focused card: the card's menu, as its ⋮ opens it.</summary>
+    public bool ShowMenuFromKey() => ShowMenu(new FlyoutShowOptions());
+
+    private bool ShowMenu(FlyoutShowOptions options)
+    {
+        if (Card is null)
+        {
+            return false;
+        }
+        EnsureActions();
+        ShowState();
+        if (MoreButton.Visibility != Visibility.Visible)
+        {
+            return false;
+        }
         MoreMenu.ShowAt(this, options);
+        return true;
     }
 
     private async void OnWatchlistClick(object sender, RoutedEventArgs e)

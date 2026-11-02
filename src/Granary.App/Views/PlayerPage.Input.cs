@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Windows.Foundation;
 using Windows.System;
 using Windows.UI.Core;
 using DispatcherQueueTimer = Microsoft.UI.Dispatching.DispatcherQueueTimer;
@@ -23,6 +24,9 @@ public sealed partial class PlayerPage
     private DispatcherQueueTimer _clickTimer = null!;
     private bool _clickToggled;
 
+    // Whether the viewer last pressed a key rather than a mouse button: focus given back to a button shows then.
+    private bool _lastInputWasKey;
+
     private void InitializeInput()
     {
         _clickTimer = DispatcherQueue.CreateTimer();
@@ -36,6 +40,7 @@ public sealed partial class PlayerPage
         PreviewKeyDown += OnPagePreviewKeyDown;
         KeyDown += OnPageKeyDown;
         PointerPressed += OnPagePointerPressed;
+        AddHandler(PointerPressedEvent, new PointerEventHandler((_, _) => _lastInputWasKey = _movesThroughControls = false), handledEventsToo: true);
     }
 
     // A press on the picture, or anything else that does not take focus, would bubble up to the window's root
@@ -62,15 +67,23 @@ public sealed partial class PlayerPage
 
     // Any key shows the controls. Space is taken here, before a focused button would press itself with it:
     // on the player Space always plays or pauses, as on the web. In the bar a focused button keeps it. OK (Enter) on
-    // hidden controls only shows them, with focus on Play/Pause, as on Silo's TV app.
+    // hidden controls only shows them, with focus on Play/Pause, as on Silo's TV app, and a held OK does not go on to
+    // press the button it lands on.
     private void OnPagePreviewKeyDown(object sender, KeyRoutedEventArgs e)
     {
+        _lastInputWasKey = true;
+        _controlsShownBeforeKey = _areControlsVisible;
         bool wereHidden = !_areControlsVisible;
         ShowControls();
+        if (e.Key == VirtualKey.Enter && e.KeyStatus.WasKeyDown && FocusManager.GetFocusedElement(XamlRoot) is ButtonBase)
+        {
+            e.Handled = true;
+            return;
+        }
         if (e.Key == VirtualKey.Enter && wereHidden && !IsDocked && !ShowsNextUpScreen && AcceptsShortcut())
         {
             e.Handled = true;
-            PlayPauseButton.Focus(FocusState.Keyboard);
+            FocusTransport();
             return;
         }
         // On the Playing Next screen too, as long as the episode plays on in its corner; after its end Space presses
@@ -116,6 +129,11 @@ public sealed partial class PlayerPage
             }
             return;
         }
+        if (MovesThroughControls(e.Key, isRepeat))
+        {
+            e.Handled = true;
+            return;
+        }
         switch (e.Key)
         {
             case VirtualKey.K when !isRepeat:
@@ -145,8 +163,9 @@ public sealed partial class PlayerPage
                     ViewModel.MarkerEditor.Cancel();
                     break;
                 }
-                // Full screen is the whole window's: Esc leaves it for the app too.
-                if (_modes.IsFullScreen)
+                // Full screen is the whole window's: Esc leaves it for the app too. A remote's Back closes the player and
+                // keeps full screen, as a media PC on a TV runs in it.
+                if (_modes.IsFullScreen && e.Key == VirtualKey.Escape)
                 {
                     _modes.SetFullScreen(false);
                 }
@@ -175,6 +194,56 @@ public sealed partial class PlayerPage
                 return;
         }
         e.Handled = true;
+    }
+
+    // A remote's OK showed the controls (on hidden controls, or on the bar's picture): focus on Play/Pause, and the arrows
+    // move between the controls until they hide.
+    private void FocusTransport()
+    {
+        _movesThroughControls = true;
+        PlayPauseButton.Focus(FocusState.Keyboard);
+    }
+
+    // After a remote's OK showed the controls, with focus still on one of them, the arrows move between them and
+    // the remote's Back hides them unless paused, as on Silo's TV app; the seek bar keeps Left and Right, which it
+    // takes first. Otherwise, a tabbed-to button too, the arrows skip and change the volume and Back closes, as on the web
+    // player; Esc always does as there.
+    private bool MovesThroughControls(VirtualKey key, bool isRepeat)
+    {
+        if (!_movesThroughControls || !_controlsShownBeforeKey || !HasFocusInControls())
+        {
+            return false;
+        }
+        var direction = key switch
+        {
+            VirtualKey.Left => FocusNavigationDirection.Left,
+            VirtualKey.Right => FocusNavigationDirection.Right,
+            VirtualKey.Up => FocusNavigationDirection.Up,
+            VirtualKey.Down => FocusNavigationDirection.Down,
+            _ => FocusNavigationDirection.None,
+        };
+        if (direction != FocusNavigationDirection.None)
+        {
+            // The arrows pass the volume slider by: on it they would change the volume, and no remote could get past it to
+            // the buttons on its right. Tab still reaches it; a remote's volume is Up and Down with the controls hidden.
+            var options = new FindNextElementOptions { SearchRoot = this };
+            if (VolumeSlider.ActualWidth > 0)
+            {
+                options.ExclusionRect = VolumeSlider.TransformToVisual(null)
+                    .TransformBounds(new Rect(0, 0, VolumeSlider.ActualWidth, VolumeSlider.ActualHeight));
+            }
+            FocusManager.TryMoveFocus(direction, options);
+            return true;
+        }
+        // Not paused, as the TV app's ladder has it: a stream reloading for a subtitle just picked hides them too, and
+        // paused, hidden controls would only leave a still picture, so Back closes.
+        if ((key is VirtualKey.GoBack or VirtualKey.Back) && !isRepeat && !ViewModel.IsPaused)
+        {
+            _hideTimer.Stop();
+            SetControlsVisible(false);
+            return true;
+        }
+        return false;
     }
 
     // Esc, a remote's Back (Browser Back) and Backspace. Typing never gets here (AcceptsShortcut).

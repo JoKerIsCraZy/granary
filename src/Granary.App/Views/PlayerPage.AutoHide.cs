@@ -28,6 +28,11 @@ public sealed partial class PlayerPage
     private DispatcherQueueTimer _hideTimer = null!;
     private Point? _lastPointer;
     private bool _areControlsVisible = true;
+
+    // Whether the controls were shown before the key now being handled showed them, and whether a remote's OK showed
+    // them, so the arrows move between them until they hide (PlayerPage.Input.cs).
+    private bool _controlsShownBeforeKey;
+    private bool _movesThroughControls;
     private bool _isCursorHidden;
 
     private void InitializeAutoHide()
@@ -110,8 +115,13 @@ public sealed partial class PlayerPage
         && element.TransformToVisual(this).TransformBounds(new Rect(0, 0, element.ActualWidth, element.ActualHeight)).Contains(point);
 
     private bool HasKeyboardFocusInControls() =>
-        FocusManager.GetFocusedElement(XamlRoot) is Control { FocusState: FocusState.Keyboard } control
-        && (IsWithin(control, TopChrome) || IsWithin(control, BottomChrome) || IsWithin(control, MiniChrome) || IsWithin(control, PartyPanel));
+        FocusManager.GetFocusedElement(XamlRoot) is Control { FocusState: FocusState.Keyboard } control && IsInControls(control);
+
+    // Any focus: a menu that closes gives its button focus back as set in code, not as the keyboard's.
+    private bool HasFocusInControls() => FocusManager.GetFocusedElement(XamlRoot) is Control control && IsInControls(control);
+
+    private bool IsInControls(Control control) =>
+        IsWithin(control, TopChrome) || IsWithin(control, BottomChrome) || IsWithin(control, MiniChrome) || IsWithin(control, PartyPanel);
 
     private static bool IsWithin(DependencyObject element, DependencyObject container)
     {
@@ -130,6 +140,7 @@ public sealed partial class PlayerPage
     private void SetControlsVisible(bool visible)
     {
         _areControlsVisible = visible;
+        _movesThroughControls &= visible;
         TopChrome.Opacity = BottomChrome.Opacity = MiniChrome.Opacity = visible ? 1 : 0;
         TopChrome.IsHitTestVisible = BottomChrome.IsHitTestVisible = MiniChrome.IsHitTestVisible = visible;
         ShowPartyPanel(visible);

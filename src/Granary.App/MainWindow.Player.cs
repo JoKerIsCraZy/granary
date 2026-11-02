@@ -101,6 +101,7 @@ public sealed partial class MainWindow : IPlayerOverlay
         ShowDockSpace();
         ShowDockNotice();
         ShowWindowButtons();
+        ReturnFocusToPage();
     }
 
     private void Dock()
@@ -124,7 +125,12 @@ public sealed partial class MainWindow : IPlayerOverlay
         {
             _navigation.ShowSection(AppRoute.Home);
         }
-        // The keyboard goes back to the page: the player's keys were its own.
+        else
+        {
+            // Then to where it was on the page; the mark is read before the first element below takes focus.
+            ReturnFocusToPage();
+        }
+        // The keyboard goes back to the page at once: the player's keys were its own.
         if (FocusManager.FindFirstFocusableElement(ContentFrame) is UIElement first)
         {
             first.Focus(FocusState.Programmatic);

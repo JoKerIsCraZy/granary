@@ -468,9 +468,15 @@ View models build `MediaCard`s with the texts already worded; the controls only 
 - TV remote and keyboard alone (a media PC), the behaviour of Silo's TV app (`MainWindow.Remote.cs`): remotes send keys,
   the arrows, Enter for OK, and Esc, Backspace or Browser Back for their Back button.
   - The arrows move focus on every page. Left at a page's edge goes to the section's own sidebar entry, not the nearest
-    one; Right from the sidebar goes back to where focus was on the page, else its first card. A held arrow stops at the
-    edge, and a row's last card keeps focus on Right, as the TV app's rows end (the arrows used to jump to the next
-    "Explore all" link).
+    one (a title's page, which selects no entry, to the nearest); Right from the sidebar goes back to where focus was on
+    the page, else its first card. A held arrow stops at the edge, and a row's last card keeps focus on Right, as the TV
+    app's rows end (the arrows used to jump to the next "Explore all" link).
+  - Radio buttons (the library's Recommended / Library / Collections, the Watch Party's Host picks / Everyone votes)
+    keep only the arrows towards another of their group; the others leave the group where they point. A radio button
+    takes every arrow itself, so Down used to switch tabs and never reach the page under them.
+  - The Menu key on a card opens the card's menu, as its ⋮ does.
+  - With the player minimized, Down from the page's bottom goes to the bar's picture, OK on it brings the player back
+    (focus on Play/Pause); in the bar Left and Right move along it and Up returns to the page.
   - A card the keyboard moves to comes to the middle of the page, so the row above and below show and a card in the
     lowest row is never cut off. Its focus ring goes round the whole card, artwork and every line under it, 3 px and
     rounded, 8 px out (12 below); sideways rows reach that far past their first card and below their highest one
@@ -479,8 +485,11 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     it was opened from (the same title wherever it moved, else the same place). On a section's own page Back first moves
     focus to its sidebar entry, from there it goes Home, focus on Home's entry; on Home it does nothing, the app does
     not quit. A menu, flyout or dialog closes on Browser Back and Backspace as on Esc.
-  - A page opened with OK starts on its Play (a title, an episode) or Request (a TMDB title), else on its first card. A
-    section picked in the sidebar keeps focus there, as the TV app's tabs do.
+  - A page opened with OK starts on its Play (a title, an episode) or Request (a TMDB title), else on its first card; a
+    title's page returned to with Back, made again, starts there too. A section picked in the sidebar keeps focus on
+    its entry, as the TV app's tabs do (the sidebar changing width used to move it to the page's first link).
+  - The player closed, or minimized, gives focus back to where it was on the page (a title's Play), not the sidebar's
+    first entry; shown after a key, quiet after a click.
   - Play/Pause (a media key) on a card plays it, as its play disc does; anywhere on a title's page it plays the title.
     While something plays, full or as the bar, the key stays Windows' media session's and pauses that.
 
@@ -938,9 +947,14 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   P the mini view, Esc turns away an intro pill, else closes the marker panel, else leaves full screen or the mini
   view, else closes, M mute, C
   subtitles off and on, Left/Right skip, Up/Down volume ±5. A remote's Back (Browser Back) and Backspace do as Esc
-  does; OK (Enter) on hidden controls only shows them, focus on Play/Pause, as on Silo's TV app. Space wins over a
+  does, but leave full screen alone (a media PC runs in it); OK (Enter) on hidden controls only shows them, focus on
+  Play/Pause, as on Silo's TV app (so does OK on the minimized bar's picture). From then until the controls hide, with
+  keyboard focus on one of them, the arrows move between them (past the volume slider, which Tab still reaches; Down
+  from the seek bar lands on Play/Pause) and the remote's Back and Backspace hide them unless paused; Esc, and a button
+  reached with Tab, keep the web's keys. A held OK does not press the button it lands on. Space wins over a
   focused button; arrows go to a focused slider first. Nothing applies while a text field, an open menu or the Add Subtitles or appearance panel has focus
-  (Esc closes the panel), or with Ctrl, Alt, Shift or Windows held. The keys are handled on the page, not as keyboard
+  (Esc, Backspace and the remote's Back close the panel, focus back on Subtitles), or with Ctrl, Alt, Shift or Windows
+  held. The keys are handled on the page, not as keyboard
   accelerators, so no accelerator tooltip appears; the buttons announce them through
   `AutomationProperties.AcceleratorKey`.
 

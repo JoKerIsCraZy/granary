@@ -37,6 +37,7 @@ public sealed partial class MainWindow
 
     // Whether the page the frame is changing to was asked for with a key: then focus goes to it.
     private bool _openedByKey;
+    private bool _openedFromSidebar;
     private bool _backByKey;
 
     // A remote's Play/Pause (and the Play some remotes have): media keys, which Windows hands the focused window first.
@@ -46,12 +47,20 @@ public sealed partial class MainWindow
     // Every key the window sees: a page waiting to place focus stops once the viewer presses one.
     private int _keysPressed;
 
+    // Whether the viewer last pressed a key rather than a mouse button: focus given back after the player shows then.
+    private bool _lastInputWasKey;
+
     private void InitializeRemote()
     {
         Root.AddHandler(UIElement.KeyDownEvent, new KeyEventHandler(OnRootKeyDown), handledEventsToo: false);
         Root.AddHandler(UIElement.PreviewKeyDownEvent, new KeyEventHandler(OnRemotePreviewKeyDown), handledEventsToo: true);
+        Root.AddHandler(UIElement.PointerPressedEvent, new PointerEventHandler((_, _) => _lastInputWasKey = false), handledEventsToo: true);
         FocusManager.GotFocus += OnFocusMoved;
-        ContentFrame.Navigating += (_, _) => _openedByKey = FocusedElement() is UIElement { FocusState: FocusState.Keyboard };
+        ContentFrame.Navigating += (_, _) =>
+        {
+            _openedByKey = FocusedElement() is UIElement { FocusState: FocusState.Keyboard };
+            _openedFromSidebar = _openedByKey && AreaOf(FocusedElement()) == FocusArea.Sidebar;
+        };
         ContentFrame.Navigated += OnFrameNavigated;
     }
 
@@ -59,11 +68,64 @@ public sealed partial class MainWindow
     private void OnRemotePreviewKeyDown(object sender, KeyRoutedEventArgs e)
     {
         _keysPressed++;
-        if (!e.Handled && e.Key == VirtualKey.Right && !HasModifier() && StopsAtRowEnd())
+        _lastInputWasKey = true;
+        if (e.Handled || HasModifier())
         {
-            e.Handled = true;
+            return;
         }
+        bool repeat = e.KeyStatus.WasKeyDown;
+        e.Handled = e.Key switch
+        {
+            VirtualKey.Right => MovesAlongDock(FocusNavigationDirection.Right) || StopsAtRowEnd() || LeavesRadioGroup(FocusNavigationDirection.Right, repeat),
+            VirtualKey.Left => MovesAlongDock(FocusNavigationDirection.Left) || LeavesRadioGroup(FocusNavigationDirection.Left, repeat),
+            VirtualKey.Down => MovesAlongDock(FocusNavigationDirection.Down) || EntersDock(repeat) || LeavesRadioGroup(FocusNavigationDirection.Down, repeat),
+            VirtualKey.Up => MovesAlongDock(FocusNavigationDirection.Up) || LeavesRadioGroup(FocusNavigationDirection.Up, repeat),
+            _ => false,
+        };
     }
+
+    // The minimized player's bar lies below the page, outside it: Down from the page's bottom goes to its picture, which
+    // brings the player back, so a remote that minimized the player can return to it.
+    private bool EntersDock(bool repeat)
+    {
+        var focused = FocusedElement();
+        if (repeat || _player is not { IsDocked: true } player || AreaOf(focused) != FocusArea.Content || KeepsArrows(focused)
+            || Root.XamlRoot is not { } root)
+        {
+            return false;
+        }
+        var next = FocusManager.FindNextElement(FocusNavigationDirection.Down, new FindNextElementOptions { SearchRoot = root.Content });
+        return (next is null || AreaOf(next) != FocusArea.Content) && player.FocusDock();
+    }
+
+    // In the bar Left and Right move along it, except on its seek bar, which seeks with them; Up goes back to the page.
+    private bool MovesAlongDock(FocusNavigationDirection direction)
+    {
+        if (_player is not { IsDocked: true } || FocusedElement() is not DependencyObject focused || !IsWithin(focused, PlayerHost))
+        {
+            return false;
+        }
+        if (direction == FocusNavigationDirection.Up)
+        {
+            ReturnFocusToPage();
+            return true;
+        }
+        // Nothing lies below the bar.
+        if (direction == FocusNavigationDirection.Down)
+        {
+            return true;
+        }
+        if (KeepsArrows(focused))
+        {
+            return false;
+        }
+        FocusManager.TryMoveFocus(direction, new FindNextElementOptions { SearchRoot = PlayerHost });
+        return true;
+    }
+
+    // Controls that use the arrows themselves: a text field's caret, a list box's choice, a slider's or seek bar's value.
+    private static bool KeepsArrows(DependencyObject? element) =>
+        element is TextBox or PasswordBox or RichEditBox or ComboBox or RangeBase or SeekBar;
 
     // Keys no page or control took. Modifier combinations are the app's shortcuts (Alt+Left, Ctrl+K).
     private void OnRootKeyDown(object sender, KeyRoutedEventArgs e)
@@ -81,13 +143,15 @@ public sealed partial class MainWindow
             VirtualKey.Left => EnterSidebar(repeat),
             VirtualKey.Right => LeaveSidebar(repeat),
             MediaPlayPause or MediaPlay when !repeat => PlayFocused(),
+            VirtualKey.Application when !repeat => FocusedElement() is Button { Content: MediaCardView card } && card.ShowMenuFromKey(),
             _ => false,
         };
     }
 
     private bool Back(BackKey key)
     {
-        if (!BackLadder.IsBack(key, IsTyping()))
+        // The full player's Back keys are its own: one it lets pass (a panel or menu of its own is open) closes nothing more.
+        if (!BackLadder.IsBack(key, IsTyping()) || IsPlayerFull)
         {
             return false;
         }
@@ -127,7 +191,8 @@ public sealed partial class MainWindow
         {
             return false;
         }
-        return repeat || FocusSidebarEntry();
+        // A title's page has no entry selected: the nearest one then, as the arrow alone would.
+        return repeat || FocusSidebarEntry() || (next is NavigationViewItem nearest && nearest.Focus(FocusState.Keyboard));
     }
 
     // Right out of the sidebar goes back to where focus was on the page, else to its first element.
@@ -187,6 +252,42 @@ public sealed partial class MainWindow
         return ContentFrame.Content is ItemDetailPage page && focused is not null && IsWithin(focused, page) && page.PlayFromKey();
     }
 
+    // A radio button keeps every arrow to move along its group, and checks each one it comes to, so focus never left a row
+    // of tabs (the library's Recommended / Library / Collections) or the Watch Party's Host picks / Everyone votes, and
+    // Down switched tabs. An arrow towards another radio of the group still moves along it; any other way focus goes where
+    // the arrow points (Left at the page's edge into the sidebar), and with nothing that way it stays.
+    private bool LeavesRadioGroup(FocusNavigationDirection direction, bool repeat)
+    {
+        if (FocusedElement() is not RadioButton radio || AreaOf(radio) != FocusArea.Content || Root.XamlRoot is not { } root)
+        {
+            return false;
+        }
+        var next = FocusManager.FindNextElement(direction, new FindNextElementOptions { SearchRoot = root.Content });
+        if (next is RadioButton other && IsSameGroup(radio, other))
+        {
+            return false;
+        }
+        if (next is not null && AreaOf(next) != FocusArea.Content)
+        {
+            if (direction == FocusNavigationDirection.Left)
+            {
+                EnterSidebar(repeat);
+            }
+            return true;
+        }
+        if (next is UIElement target)
+        {
+            target.Focus(FocusState.Keyboard);
+        }
+        return true;
+    }
+
+    // Radio buttons with a group name go together by it, those without by their panel.
+    private static bool IsSameGroup(RadioButton radio, RadioButton other) =>
+        string.IsNullOrEmpty(radio.GroupName)
+            ? string.IsNullOrEmpty(other.GroupName) && ReferenceEquals(VisualTreeHelper.GetParent(radio), VisualTreeHelper.GetParent(other))
+            : radio.GroupName == other.GroupName;
+
     private bool FocusSidebarEntry() =>
         Navigation.IsPaneVisible && Navigation.SelectedItem is NavigationViewItem entry && entry.Focus(FocusState.Keyboard);
 
@@ -206,13 +307,15 @@ public sealed partial class MainWindow
     }
 
     // A page opened with a key starts on its arrival element (a title's Play), and a page Back returns to on the card it
-    // left from. Both wait for the page to show its parts (a title loads, a grid makes its cards), and hold the place
-    // against the focus XAML gives a page that comes in, until the viewer presses a key.
+    // left from; a section picked in the sidebar keeps focus on its entry, as the TV app's tabs do. All wait for the page
+    // to show its parts (a title loads, a grid makes its cards), and hold the place against the focus XAML gives a page
+    // that comes in (the sidebar changing width moved it to the page's first link), until the viewer presses a key.
     private async void OnFrameNavigated(object sender, NavigationEventArgs e)
     {
         bool back = e.NavigationMode == NavigationMode.Back && _backByKey;
         bool opened = e.NavigationMode == NavigationMode.New && _openedByKey;
-        _backByKey = _openedByKey = false;
+        bool picked = opened && _openedFromSidebar;
+        _backByKey = _openedByKey = _openedFromSidebar = false;
         if (e.Content is not Page page || !(back || opened))
         {
             return;
@@ -227,8 +330,9 @@ public sealed partial class MainWindow
             for (var waited = TimeSpan.Zero; waited < ArrivalPatience && held < HeldPolls; waited += ArrivalPoll)
             {
                 await Task.Delay(ArrivalPoll);
-                // Gone, or the viewer moved on (a section's own page keeps focus in the sidebar, as the TV app's tabs do).
-                if (!ReferenceEquals(ContentFrame.Content, page) || (opened && _navigation.IsAtSection) || _keysPressed != keys)
+                // Gone, or the viewer moved on; a section opened from elsewhere (Ctrl+K) places its own focus.
+                bool section = opened && _navigation.IsAtSection;
+                if (!ReferenceEquals(ContentFrame.Content, page) || _keysPressed != keys || (section && !picked))
                 {
                     return;
                 }
@@ -237,7 +341,9 @@ public sealed partial class MainWindow
                     held++;
                     continue;
                 }
-                placed = back ? RestoreFocus(page, mark) : FocusArrival(page);
+                // A page made again on the way back (a title's) has no mark: it starts as when it opened, on its Play.
+                placed = section ? (FocusSidebarEntry() ? Navigation.SelectedItem as UIElement : null)
+                    : back && mark is not null ? RestoreFocus(page, mark) : FocusArrival(page);
                 held = 0;
             }
             if (placed is null && ReferenceEquals(ContentFrame.Content, page) && _keysPressed == keys)
@@ -265,9 +371,33 @@ public sealed partial class MainWindow
 
     // The page's first card, as the TV app starts on the first row's first card; a page without cards on its first
     // element that takes focus.
-    private static UIElement? FocusFirst(Page page) =>
-        (FirstCard(page) ?? FocusManager.FindFirstFocusableElement(page)) is UIElement first && first.Focus(FocusState.Keyboard)
+    private static UIElement? FocusFirst(Page page, FocusState state = FocusState.Keyboard) =>
+        (FirstCard(page) ?? FocusManager.FindFirstFocusableElement(page)) is UIElement first && first.Focus(state)
             ? first : null;
+
+    // The player gave the window back (closed, or made the bar): focus returns to where it was on the page, as Back from a
+    // title returns to its card; it left for the sidebar's first entry. Shown after a key, quiet after a click.
+    private void ReturnFocusToPage()
+    {
+        if (ContentFrame.Content is not Page page)
+        {
+            return;
+        }
+        // Taken now: focus moved in the meantime would replace it.
+        _pageFocus.TryGetValue(page, out var mark);
+        var state = _lastInputWasKey ? FocusState.Keyboard : FocusState.Programmatic;
+        int keys = _keysPressed;
+        DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
+        {
+            // Not when the player closed for another page (a section picked from the bar), opened again, or the viewer
+            // pressed a key meanwhile.
+            if (IsPlayerFull || !ReferenceEquals(ContentFrame.Content, page) || _keysPressed != keys)
+            {
+                return;
+            }
+            _ = RestoreFocus(page, mark, state) ?? FocusFirst(page, state);
+        });
+    }
 
     // In the order the lists have their titles: a repeater's children are in the order it made them.
     private static Control? FirstCard(DependencyObject element)
@@ -295,7 +425,7 @@ public sealed partial class MainWindow
 
     // The element that last had focus on the page; a card that now shows another title, or is gone, is found again by its
     // title in its list, else by its place (ReturnTarget).
-    private static UIElement? RestoreFocus(Page page, FocusMark? mark)
+    private static UIElement? RestoreFocus(Page page, FocusMark? mark, FocusState state = FocusState.Keyboard)
     {
         if (mark is null)
         {
@@ -304,7 +434,7 @@ public sealed partial class MainWindow
         if (mark.Element.TryGetTarget(out var element) && element.XamlRoot is not null && IsWithin(element, page)
             && (mark.Card is null || element is Button { Content: MediaCardView { Card: { } shown } } && shown.Id == mark.Card.Id))
         {
-            return element.Focus(FocusState.Keyboard) ? element : null;
+            return element.Focus(state) ? element : null;
         }
         if (mark.Card is not { } card || mark.Repeater?.TryGetTarget(out var repeater) != true
             || repeater!.ItemsSourceView is not { Count: > 0 } items)
@@ -318,7 +448,7 @@ public sealed partial class MainWindow
             return null;
         }
         found.StartBringIntoView();
-        return found.Focus(FocusState.Keyboard) ? found : null;
+        return found.Focus(state) ? found : null;
     }
 
     // Menus, flyouts and dialogs close on Esc themselves, not on a remote's Back: their keys do not reach the window.
@@ -340,13 +470,8 @@ public sealed partial class MainWindow
 
     private void OnPopupKeyDown(object sender, KeyRoutedEventArgs e)
     {
-        var key = e.Key switch
-        {
-            VirtualKey.GoBack => BackKey.BrowserBack,
-            VirtualKey.Back => BackKey.Backspace,
-            _ => (BackKey?)null,
-        };
-        if (key is not { } back || e.KeyStatus.WasKeyDown || !BackLadder.IsBack(back, IsTyping())
+        // Esc they take themselves.
+        if (e.Key == VirtualKey.Escape || !BackKeys.IsBack(e.Key, Root.XamlRoot) || e.KeyStatus.WasKeyDown
             || sender is not UIElement child || !_followedPopups.TryGetValue(child, out var popup))
         {
             return;
@@ -371,7 +496,7 @@ public sealed partial class MainWindow
     private DependencyObject? FocusedElement() =>
         Root.XamlRoot is { } root ? FocusManager.GetFocusedElement(root) as DependencyObject : null;
 
-    private bool IsTyping() => FocusedElement() is TextBox or PasswordBox or RichEditBox;
+    private bool IsTyping() => BackKeys.IsTyping(Root.XamlRoot);
 
     private static bool HasModifier() =>
         IsDown(VirtualKey.Control) || IsDown(VirtualKey.Menu) || IsDown(VirtualKey.Shift)
