@@ -14,17 +14,19 @@ namespace Granary.App.Debugging;
 /// <summary>
 /// A TV remote on screen, to try the app's remote handling without one (debug builds, started with <c>--remote</c>). Its
 /// buttons send what a PC remote sends: the arrows, Enter for OK, Browser Back, Esc and Backspace as key messages to the
-/// main window's input window, so the main window keeps its focus; Play/Pause and the track keys as system media keys.
+/// main window's input window, so the main window keeps its focus; Play/Pause and the track keys as real media keys,
+/// which Windows gives the main window or, while something plays, its media session.
 /// The window does not take activation (and gives it back if it gets it), and a held arrow repeats as a held key does.
 /// </summary>
 internal sealed partial class RemoteWindow : Window
 {
     private const uint WmKeyDown = 0x0100;
     private const uint WmKeyUp = 0x0101;
-    private const int GwlExStyle = -20;
-    private const long ExNoActivate = 0x08000000;
+    private const uint MediaKey = 0;
     private const uint KeyEventExtended = 0x0001;
     private const uint KeyEventUp = 0x0002;
+    private const int GwlExStyle = -20;
+    private const long ExNoActivate = 0x08000000;
 
     private static readonly TimeSpan ActivationSettle = TimeSpan.FromMilliseconds(80);
 
@@ -140,17 +142,13 @@ internal sealed partial class RemoteWindow : Window
         return button;
     }
 
-    // Media keys go to Windows' media session, as a remote's do, wherever focus is.
-    private static Button Media(string label, string name, byte key)
+    // A media key as a remote sends it: real input, for the active window or Windows' media session.
+    private Button Media(string label, string name, uint key)
     {
         var button = new Button { Content = label, IsTabStop = false };
         AutomationProperties.SetName(button, name);
         ToolTipService.SetToolTip(button, name);
-        button.Click += (_, _) =>
-        {
-            KeybdEvent(key, 0, KeyEventExtended, 0);
-            KeybdEvent(key, 0, KeyEventExtended | KeyEventUp, 0);
-        };
+        button.Click += (_, _) => Send(MediaKey, key, repeat: false);
         return button;
     }
 
@@ -180,7 +178,12 @@ internal sealed partial class RemoteWindow : Window
             var site = InputSite(main);
             while (_pending.TryDequeue(out var press))
             {
-                if (site != 0)
+                if (press.Message == MediaKey)
+                {
+                    KeybdEvent((byte)press.Key, 0, KeyEventExtended, 0);
+                    KeybdEvent((byte)press.Key, 0, KeyEventExtended | KeyEventUp, 0);
+                }
+                else if (site != 0)
                 {
                     uint scan = MapVirtualKeyW(press.Key, 0);
                     long flags = 1 | ((long)scan << 16) | (press.Repeat ? 1L << 30 : 0) | (press.Message == WmKeyUp ? 1L << 31 : 0);
@@ -237,6 +240,9 @@ internal sealed partial class RemoteWindow : Window
     [LibraryImport("user32.dll", EntryPoint = "SetWindowLongPtrW")]
     private static partial nint SetWindowLongPtr(nint hwnd, int index, nint value);
 
+    [LibraryImport("user32.dll", EntryPoint = "keybd_event")]
+    private static partial void KeybdEvent(byte key, byte scan, uint flags, nuint extraInfo);
+
     [LibraryImport("user32.dll")]
     private static partial nint GetForegroundWindow();
 
@@ -244,7 +250,5 @@ internal sealed partial class RemoteWindow : Window
     [return: MarshalAs(UnmanagedType.Bool)]
     private static partial bool SetForegroundWindow(nint hwnd);
 
-    [LibraryImport("user32.dll", EntryPoint = "keybd_event")]
-    private static partial void KeybdEvent(byte key, byte scan, uint flags, nuint extraInfo);
 }
 #endif
