@@ -490,8 +490,12 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     its entry, as the TV app's tabs do (the sidebar changing width used to move it to the page's first link).
   - The player closed, or minimized, gives focus back to where it was on the page (a title's Play), not the sidebar's
     first entry; shown after a key, quiet after a click.
-  - Play/Pause (a media key) on a card plays it, as its play disc does; anywhere on a title's page it plays the title.
-    While something plays, full or as the bar, the key stays Windows' media session's and pauses that.
+  - Play/Pause (a media key) on a card plays it, as its play disc does, an episode on a title's page too; anywhere else
+    on a title's page it plays the title. A remote that sends Play as a window command (WM_APPCOMMAND, as Media Center
+    remotes do; `Interop/AppCommandHook.cs`) does the same. While something plays, full or as the bar, the key stays
+    Windows' media session's and pauses that.
+  - Episode cards on a title's page count as cards: they come to the middle, and Back returns to them. A title's page
+    is made again when Back returns to it; its mark goes with its history entry and finds the card in the new lists.
 
 ## Signed-out screens
 
@@ -950,10 +954,12 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   does, but leave full screen alone (a media PC runs in it); OK (Enter) on hidden controls only shows them, focus on
   Play/Pause, as on Silo's TV app (so does OK on the minimized bar's picture); while a skip pill shows, OK on hidden
   controls does what the pill says instead (Skip Intro, Recap, Credits, Preview, or Watch Intro) and the controls stay
-  away. From then until the controls hide, with
-  keyboard focus on one of them, the arrows move between them (past the volume slider, which Tab still reaches; Down
-  from the seek bar lands on Play/Pause) and the remote's Back and Backspace hide them unless paused; Esc, and a button
-  reached with Tab, keep the web's keys. A held OK does not press the button it lands on. Space wins over a
+  away; in the mini view OK lands on its own Play/Pause. From then until the controls hide, with focus on one of them,
+  the arrows move between them (past the volume slider, which Tab still reaches; Down from the seek bar lands on
+  Play/Pause); a button reached with Tab keeps the web's arrows. The remote's Back and Backspace with the controls shown
+  hide them, as the TV app's ladder has it, unless paused, a skip pill shows (Back turns it away) or the marker editor is
+  open; focus moves to the page, so the controls hide by themselves again after the next key. Esc keeps the web's
+  keys. A held OK does not press the button it lands on. Space wins over a
   focused button; arrows go to a focused slider first. Nothing applies while a text field, an open menu or the Add Subtitles or appearance panel has focus
   (Esc, Backspace and the remote's Back close the panel, focus back on Subtitles), or with Ctrl, Alt, Shift or Windows
   held. The keys are handled on the page, not as keyboard

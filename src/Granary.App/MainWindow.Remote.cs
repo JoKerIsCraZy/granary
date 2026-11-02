@@ -1,9 +1,12 @@
 using System.Runtime.CompilerServices;
 using Granary.App.Controls;
+using Granary.App.Interop;
 using Granary.App.Views;
 using Granary.Core.Abstractions;
 using Granary.Core.Navigation;
 using Granary.Core.ViewModels.Cards;
+using Granary.Core.ViewModels.Detail;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
@@ -29,8 +32,12 @@ public sealed partial class MainWindow
     // Focus that stays this many looks is the page's own.
     private const int HeldPolls = 3;
 
-    // Each page's last focused element.
+    // Each page's last focused element, and the same for the pages in the history: a title's page is made again when Back
+    // returns to it, and its mark goes with its history entry.
     private readonly ConditionalWeakTable<Page, FocusMark> _pageFocus = [];
+    private readonly ConditionalWeakTable<PageStackEntry, FocusMark> _entryFocus = [];
+    private Page? _leaving;
+    private PageStackEntry? _returning;
 
     // The open menus and dialogs whose keys the window follows, so the remote's Back closes them as Esc does.
     private readonly ConditionalWeakTable<UIElement, Popup> _followedPopups = [];
@@ -56,12 +63,31 @@ public sealed partial class MainWindow
         Root.AddHandler(UIElement.PreviewKeyDownEvent, new KeyEventHandler(OnRemotePreviewKeyDown), handledEventsToo: true);
         Root.AddHandler(UIElement.PointerPressedEvent, new PointerEventHandler((_, _) => _lastInputWasKey = false), handledEventsToo: true);
         FocusManager.GotFocus += OnFocusMoved;
-        ContentFrame.Navigating += (_, _) =>
+        ContentFrame.Navigating += (_, e) =>
         {
             _openedByKey = FocusedElement() is UIElement { FocusState: FocusState.Keyboard };
             _openedFromSidebar = _openedByKey && AreaOf(FocusedElement()) == FocusArea.Sidebar;
+            _leaving = ContentFrame.Content as Page;
+            _returning = e.NavigationMode == NavigationMode.Back ? ContentFrame.BackStack.LastOrDefault() : null;
         };
         ContentFrame.Navigated += OnFrameNavigated;
+        AppCommandHook.Install(WinRT.Interop.WindowNative.GetWindowHandle(this), TakeAppCommand);
+    }
+
+    // A remote's Play sent as a command, not as a key: on the focused card or title, as the Play key, while nothing plays;
+    // while something plays Windows hands it to the media session.
+    private bool TakeAppCommand(int command)
+    {
+        try
+        {
+            return command == AppCommandHook.MediaPlay && PlayFocused();
+        }
+        catch (Exception ex)
+        {
+            // Called from the window's message loop: nothing may escape.
+            _logger.LogError(ex, "A remote's Play command could not be handled");
+            return false;
+        }
     }
 
     // On the way down, before XAML moves focus with an arrow: once a key has reached the window, focus has moved.
@@ -211,7 +237,7 @@ public sealed partial class MainWindow
     // Asked after the scroll XAML starts for the focus itself, which would otherwise win.
     private void CenterRow(UIElement element)
     {
-        if (element is Button { Content: MediaCardView, FocusState: FocusState.Keyboard } card)
+        if (element is Button { FocusState: FocusState.Keyboard } card && IsCard(card))
         {
             DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
             {
@@ -227,7 +253,7 @@ public sealed partial class MainWindow
     // nearest, the "Explore all" link high up at the page's right edge.
     private bool StopsAtRowEnd()
     {
-        if (FocusedElement() is not Button { Content: MediaCardView } card || Root.XamlRoot is not { } root
+        if (FocusedElement() is not Button card || !IsCard(card) || Root.XamlRoot is not { } root
             || FindAncestorOrSelf<ItemsRepeater>(VisualTreeHelper.GetParent(card)) is not { Layout: StackLayout { Orientation: Orientation.Horizontal } } row)
         {
             return false;
@@ -236,8 +262,8 @@ public sealed partial class MainWindow
         return next is null || !IsWithin(next, row);
     }
 
-    // Play on a card plays it, as its play disc does; anywhere on a title's page, its Play. While something plays (the
-    // player full or as the bar), the key stays the media session's and pauses that.
+    // Play on a card plays it, as its play disc does, an episode of a title's page too; anywhere else on a title's page, its
+    // Play. While something plays (the player full or as the bar), the key stays the media session's and pauses that.
     private bool PlayFocused()
     {
         if (IsPlayerOpen)
@@ -245,12 +271,36 @@ public sealed partial class MainWindow
             return false;
         }
         var focused = FocusedElement();
-        if (focused is Button { Content: MediaCardView card })
+        if (IsCard(focused))
         {
-            return card.PlayFromKey();
+            if (CardOf(focused) is not { } card || !MediaCardActions.CanPlay(card))
+            {
+                return false;
+            }
+            App.Services.GetRequiredService<MediaCardActions>().Play(card);
+            return true;
         }
         return ContentFrame.Content is ItemDetailPage page && focused is not null && IsWithin(focused, page) && page.PlayFromKey();
     }
+
+    // A card button: a poster or episode card of a list, or an episode on a title's page.
+    private static bool IsCard(DependencyObject? element) => element is Button { Content: MediaCardView or DetailEpisodeCard };
+
+    // The title a card button shows; a placeholder still loading shows none.
+    private static MediaCard? CardOf(DependencyObject? element) => element switch
+    {
+        Button { Content: MediaCardView { Card: { IsPlaceholder: false } card } } => card,
+        Button { Content: DetailEpisodeCard { Episode: { } episode } } => episode.Card,
+        _ => null,
+    };
+
+    // A list's item as its title: the lists hold cards, a title's page its episodes.
+    private static MediaCard? CardOfItem(object? item) => item switch
+    {
+        MediaCard card => card,
+        DetailEpisode episode => episode.Card,
+        _ => null,
+    };
 
     // A radio button keeps every arrow to move along its group, and checks each one it comes to, so focus never left a row
     // of tabs (the library's Recommended / Library / Collections) or the Watch Party's Host picks / Everyone votes, and
@@ -316,12 +366,19 @@ public sealed partial class MainWindow
         bool opened = e.NavigationMode == NavigationMode.New && _openedByKey;
         bool picked = opened && _openedFromSidebar;
         _backByKey = _openedByKey = _openedFromSidebar = false;
+        RememberLeftPage(e.NavigationMode);
+        var returning = _returning;
+        _leaving = null;
+        _returning = null;
         if (e.Content is not Page page || !(back || opened))
         {
             return;
         }
         // Taken now: the focus XAML gives the page as it comes in would replace it.
-        _pageFocus.TryGetValue(page, out var mark);
+        if (!_pageFocus.TryGetValue(page, out var mark) && back && returning is not null)
+        {
+            _entryFocus.TryGetValue(returning, out mark);
+        }
         int keys = _keysPressed;
         try
         {
@@ -341,14 +398,13 @@ public sealed partial class MainWindow
                     held++;
                     continue;
                 }
-                // A page made again on the way back (a title's) has no mark: it starts as when it opened, on its Play.
                 placed = section ? (FocusSidebarEntry() ? Navigation.SelectedItem as UIElement : null)
-                    : back && mark is not null ? RestoreFocus(page, mark) : FocusArrival(page);
+                    : back ? PlaceOnReturn(page, mark) : FocusArrival(page);
                 held = 0;
             }
             if (placed is null && ReferenceEquals(ContentFrame.Content, page) && _keysPressed == keys)
             {
-                FocusFirst(page);
+                _ = FocusArrival(page) ?? FocusFirst(page);
             }
         }
         catch (Exception ex)
@@ -357,6 +413,21 @@ public sealed partial class MainWindow
             _logger.LogError(ex, "Focus could not be placed on the page");
         }
     }
+
+    // A page left for a new one keeps its mark with its history entry, for when it is made again.
+    private void RememberLeftPage(NavigationMode mode)
+    {
+        if (mode == NavigationMode.New && _leaving is { } left && ContentFrame.BackStack.LastOrDefault() is { } entry
+            && entry.SourcePageType == left.GetType() && _pageFocus.TryGetValue(left, out var mark))
+        {
+            _entryFocus.AddOrUpdate(entry, mark);
+        }
+    }
+
+    // Back to a page: where focus was on it. A page made again (a title's) finds the card it was left from in its lists;
+    // left from anything else, it starts as when it opened, on its Play.
+    private static UIElement? PlaceOnReturn(Page page, FocusMark? mark) =>
+        mark is null || (mark.Card is null && !mark.IsOn(page)) ? FocusArrival(page) : RestoreFocus(page, mark);
 
     // The element focused, or null while the page has none to take it yet.
     private static UIElement? FocusArrival(Page page)
@@ -406,7 +477,7 @@ public sealed partial class MainWindow
         {
             return null;
         }
-        if (element is Button { Content: MediaCardView, IsEnabled: true } card)
+        if (element is Button { IsEnabled: true } card && IsCard(card))
         {
             return card;
         }
@@ -424,7 +495,8 @@ public sealed partial class MainWindow
     }
 
     // The element that last had focus on the page; a card that now shows another title, or is gone, is found again by its
-    // title in its list, else by its place (ReturnTarget).
+    // title in its list, else by its place (ReturnTarget). A page made again on the way back (a title's) has new lists:
+    // the title is looked for in each of them.
     private static UIElement? RestoreFocus(Page page, FocusMark? mark, FocusState state = FocusState.Keyboard)
     {
         if (mark is null)
@@ -432,23 +504,82 @@ public sealed partial class MainWindow
             return null;
         }
         if (mark.Element.TryGetTarget(out var element) && element.XamlRoot is not null && IsWithin(element, page)
-            && (mark.Card is null || element is Button { Content: MediaCardView { Card: { } shown } } && shown.Id == mark.Card.Id))
+            && (mark.Card is null || CardOf(element)?.Id == mark.Card.Id))
         {
             return element.Focus(state) ? element : null;
         }
-        if (mark.Card is not { } card || mark.Repeater?.TryGetTarget(out var repeater) != true
-            || repeater!.ItemsSourceView is not { Count: > 0 } items)
+        if (mark.Card is not { } card)
         {
             return null;
         }
-        var cards = Enumerable.Range(0, items.Count).Select(i => items.GetAt(i) as MediaCard).ToList();
-        int index = ReturnTarget.IndexFor(cards, card, mark.Index, each => each?.Id);
-        if (index < 0 || repeater.GetOrCreateElement(index) is not Control found)
+        ItemsRepeater? repeater = null;
+        mark.Repeater?.TryGetTarget(out repeater);
+        var found = repeater is { XamlRoot: not null } && IsWithin(repeater, page)
+            ? CardInList(repeater, card, mark.Index)
+            : CardOnPage(page, card);
+        if (found is null)
         {
             return null;
         }
         found.StartBringIntoView();
         return found.Focus(state) ? found : null;
+    }
+
+    // The card for the title in a list, else the one now at its place.
+    private static Control? CardInList(ItemsRepeater repeater, MediaCard card, int previousIndex)
+    {
+        if (repeater.ItemsSourceView is not { Count: > 0 } items)
+        {
+            return null;
+        }
+        var cards = Enumerable.Range(0, items.Count).Select(i => CardOfItem(items.GetAt(i))).ToList();
+        int index = ReturnTarget.IndexFor(cards, card, previousIndex, each => each?.Id);
+        return index < 0 ? null : CardWithin(repeater.GetOrCreateElement(index));
+    }
+
+    // The card for the title in any of the page's lists, made if the list has not made it yet.
+    private static Control? CardOnPage(DependencyObject element, MediaCard card)
+    {
+        if (element is UIElement { Visibility: Visibility.Collapsed })
+        {
+            return null;
+        }
+        if (element is ItemsRepeater { ItemsSourceView: { Count: > 0 } items } repeater)
+        {
+            for (int i = 0; i < items.Count; i++)
+            {
+                if (CardOfItem(items.GetAt(i))?.Id == card.Id)
+                {
+                    return CardWithin(repeater.GetOrCreateElement(i));
+                }
+            }
+            return null;
+        }
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(element); i++)
+        {
+            if (CardOnPage(VisualTreeHelper.GetChild(element, i), card) is { } found)
+            {
+                return found;
+            }
+        }
+        return null;
+    }
+
+    // A list's item may wrap its card in a plain Grid (see "ItemsRepeater templates" in AGENTS.md).
+    private static Control? CardWithin(DependencyObject? element)
+    {
+        if (element is null || (element is Button button && IsCard(button)))
+        {
+            return element as Control;
+        }
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(element); i++)
+        {
+            if (CardWithin(VisualTreeHelper.GetChild(element, i)) is { } found)
+            {
+                return found;
+            }
+        }
+        return null;
     }
 
     // Menus, flyouts and dialogs close on Esc themselves, not on a remote's Back: their keys do not reach the window.
@@ -523,14 +654,26 @@ public sealed partial class MainWindow
     // Where focus was on a page; for a card, also the title it showed and its list and place, to find the title again.
     private sealed record FocusMark(WeakReference<UIElement> Element, MediaCard? Card, int Index, WeakReference<ItemsRepeater>? Repeater)
     {
+        public bool IsOn(Page page) => Element.TryGetTarget(out var element) && element.XamlRoot is not null && IsWithin(element, page);
+
         public static FocusMark Of(UIElement element)
         {
-            if (element is Button { Content: MediaCardView { Card: { IsPlaceholder: false } card } }
-                && FindAncestorOrSelf<ItemsRepeater>(VisualTreeHelper.GetParent(element)) is { } repeater)
+            if (CardOf(element) is not { } card)
             {
-                return new FocusMark(new(element), card, repeater.GetElementIndex(element), new(repeater));
+                return new FocusMark(new(element), null, -1, null);
             }
-            return new FocusMark(new(element), null, -1, null);
+            // The repeater knows the place of its own child, the item's root, which may hold the card.
+            UIElement item = element;
+            for (var parent = VisualTreeHelper.GetParent(item); parent is not null and not ItemsRepeater; parent = VisualTreeHelper.GetParent(parent))
+            {
+                if (parent is UIElement ancestor)
+                {
+                    item = ancestor;
+                }
+            }
+            return VisualTreeHelper.GetParent(item) is ItemsRepeater repeater
+                ? new FocusMark(new(element), card, repeater.GetElementIndex(item), new(repeater))
+                : new FocusMark(new(element), card, -1, null);
         }
     }
 }

@@ -168,6 +168,8 @@ public sealed class NavigationService : INavigationService
         {
             frame.GoBack();
         }
+        // Back from a section to Home leaves Home its own section: a page opened from it then is one level in.
+        _sectionDepth = Math.Min(_sectionDepth, frame.BackStack.Count);
         if (route is { } arrived)
         {
             Arrived(arrived, entry.Parameter);

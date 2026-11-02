@@ -135,7 +135,7 @@ public sealed partial class PlayerPage
             }
             return;
         }
-        if (MovesThroughControls(e.Key, isRepeat))
+        if (MovesThroughControls(e.Key) || HidesControls(e.Key, isRepeat))
         {
             e.Handled = true;
             return;
@@ -220,19 +220,15 @@ public sealed partial class PlayerPage
     private void FocusTransport()
     {
         _movesThroughControls = true;
-        PlayPauseButton.Focus(FocusState.Keyboard);
+        // The mini view shows only its own Play/Pause.
+        (IsMiniView ? MiniPlayPauseButton : PlayPauseButton).Focus(FocusState.Keyboard);
     }
 
-    // After a remote's OK showed the controls, with focus still on one of them, the arrows move between them and
-    // the remote's Back hides them unless paused, as on Silo's TV app; the seek bar keeps Left and Right, which it
-    // takes first. Otherwise, a tabbed-to button too, the arrows skip and change the volume and Back closes, as on the web
-    // player; Esc always does as there.
-    private bool MovesThroughControls(VirtualKey key, bool isRepeat)
+    // After a remote's OK showed the controls, with focus still on one of them, the arrows move between them, as on Silo's
+    // TV app; the seek bar keeps Left and Right, which it takes first. Otherwise, a tabbed-to button too, the arrows skip
+    // and change the volume, as on the web player.
+    private bool MovesThroughControls(VirtualKey key)
     {
-        if (!_movesThroughControls || !_controlsShownBeforeKey || !HasFocusInControls())
-        {
-            return false;
-        }
         var direction = key switch
         {
             VirtualKey.Left => FocusNavigationDirection.Left,
@@ -241,28 +237,37 @@ public sealed partial class PlayerPage
             VirtualKey.Down => FocusNavigationDirection.Down,
             _ => FocusNavigationDirection.None,
         };
-        if (direction != FocusNavigationDirection.None)
+        if (direction == FocusNavigationDirection.None || !_movesThroughControls || !_controlsShownBeforeKey || !HasFocusInControls())
         {
-            // The arrows pass the volume slider by: on it they would change the volume, and no remote could get past it to
-            // the buttons on its right. Tab still reaches it; a remote's volume is Up and Down with the controls hidden.
-            var options = new FindNextElementOptions { SearchRoot = this };
-            if (VolumeSlider.ActualWidth > 0)
-            {
-                options.ExclusionRect = VolumeSlider.TransformToVisual(null)
-                    .TransformBounds(new Rect(0, 0, VolumeSlider.ActualWidth, VolumeSlider.ActualHeight));
-            }
-            FocusManager.TryMoveFocus(direction, options);
-            return true;
+            return false;
         }
-        // Not paused, as the TV app's ladder has it: a stream reloading for a subtitle just picked hides them too, and
-        // paused, hidden controls would only leave a still picture, so Back closes.
-        if ((key is VirtualKey.GoBack or VirtualKey.Back) && !isRepeat && !ViewModel.IsPaused)
+        // The arrows pass the volume slider by: on it they would change the volume, and no remote could get past it to
+        // the buttons on its right. Tab still reaches it; a remote's volume is Up and Down with the controls hidden.
+        var options = new FindNextElementOptions { SearchRoot = this };
+        if (VolumeSlider.ActualWidth > 0)
         {
-            _hideTimer.Stop();
-            SetControlsVisible(false);
-            return true;
+            options.ExclusionRect = VolumeSlider.TransformToVisual(null)
+                .TransformBounds(new Rect(0, 0, VolumeSlider.ActualWidth, VolumeSlider.ActualHeight));
         }
-        return false;
+        FocusManager.TryMoveFocus(direction, options);
+        return true;
+    }
+
+    // The remote's Back (Browser Back, Backspace) with the controls shown hides them, as the TV app's ladder has it; Esc
+    // does as on the web player. Not while paused, where hidden controls would only leave a still picture, so Back closes;
+    // a skip pill and the marker editor take Back first (the switch below). A stream reloading for a subtitle just picked
+    // counts as playing. Focus leaves the hidden buttons for the page: kept, it would hold the controls up from then on.
+    private bool HidesControls(VirtualKey key, bool isRepeat)
+    {
+        if (key is not (VirtualKey.GoBack or VirtualKey.Back) || isRepeat || !_controlsShownBeforeKey || IsCompact
+            || ViewModel.IsPaused || ViewModel.HasSkipPrompt || ViewModel.MarkerEditor.IsEditing)
+        {
+            return false;
+        }
+        _hideTimer.Stop();
+        Focus(FocusState.Programmatic);
+        SetControlsVisible(false);
+        return true;
     }
 
     // Esc, a remote's Back (Browser Back) and Backspace. Typing never gets here (AcceptsShortcut).
