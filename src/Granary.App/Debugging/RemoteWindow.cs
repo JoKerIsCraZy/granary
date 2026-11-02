@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
+using Microsoft.UI.Xaml.Automation.Peers;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
@@ -80,6 +81,7 @@ internal sealed partial class RemoteWindow : Window
         root.Children.Add(Row(Key("Back", "Back (Browser Back)", 0xA6), Key("Esc", "Esc", 0x1B), Key("⌫", "Backspace", 0x08)));
         root.Children.Add(Row(Key("☰", "Menu (context key)", 0x5D), Key("Home", "Home", 0x24), Key("End", "End", 0x23)));
         root.Children.Add(Row(Media("⏮", "Previous track", 0xB1), Media("⏯", "Play/Pause", 0xB3), Media("⏭", "Next track", 0xB0)));
+        AutomationProperties.SetAutomationId(_focus, "RemoteFocus");
         root.Children.Add(_focus);
         return new Grid { Children = { root }, Background = (Brush)Application.Current.Resources["SiloBackgroundBrush"] };
     }
@@ -214,13 +216,14 @@ internal sealed partial class RemoteWindow : Window
         return 0;
     }
 
-    // What has focus in the main window, by the name screen readers hear.
+    // What has focus in the main window: its type and the name screen readers hear. Scripts read this line through UI
+    // Automation (by its automation id), since the system's focused element is elsewhere while the remote is in use.
     private void OnFocusMoved(object? sender, FocusManagerGotFocusEventArgs args)
     {
         if (args.NewFocusedElement is UIElement element && ReferenceEquals(element.XamlRoot, _main.Content?.XamlRoot))
         {
-            string name = AutomationProperties.GetName(element);
-            _focus.Text = $"Focus: {(string.IsNullOrEmpty(name) ? element.GetType().Name : name)}";
+            string name = FrameworkElementAutomationPeer.FromElement(element)?.GetName() ?? AutomationProperties.GetName(element);
+            _focus.Text = $"Focus: {element.GetType().Name} '{name}'";
         }
     }
 
