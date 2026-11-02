@@ -19,7 +19,10 @@
             </Button>
         </DataTemplate>
         <DataTemplate x:Key="SkeletonTemplate">
-            <controls:MediaCardSkeleton />
+            <!-- A plain Grid as the root, on purpose: see "ItemsRepeater templates" in AGENTS.md. -->
+            <Grid>
+                <controls:MediaCardSkeleton />
+            </Grid>
         </DataTemplate>
         <controls:MediaCardTemplateSelector x:Key="CardTemplateSelector" Card="{StaticResource CardTemplate}" Skeleton="{StaticResource SkeletonTemplate}" />
     </UserControl.Resources>

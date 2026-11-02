@@ -68,8 +68,11 @@
                     </ItemsRepeater.Layout>
                     <ItemsRepeater.ItemTemplate>
                         <DataTemplate x:DataType="vm:RequestDiscoverRow">
-                            <controls:MediaRow Title="{x:Bind Title}" ItemsSource="{x:Bind Cards}" CardInvokedCommand="{x:Bind OpenCommand}"
-                                               CardPointedCommand="{x:Bind PointCardCommand}" ExploreAllCommand="{x:Bind ExploreAllCommand}" />
+                            <!-- A plain Grid as the root, on purpose: see "ItemsRepeater templates" in AGENTS.md. -->
+                            <Grid>
+                                <controls:MediaRow Title="{x:Bind Title}" ItemsSource="{x:Bind Cards}" CardInvokedCommand="{x:Bind OpenCommand}"
+                                                   CardPointedCommand="{x:Bind PointCardCommand}" ExploreAllCommand="{x:Bind ExploreAllCommand}" />
+                            </Grid>
                         </DataTemplate>
                     </ItemsRepeater.ItemTemplate>
                 </ItemsRepeater>
@@ -80,7 +83,10 @@
                     </ItemsRepeater.Layout>
                     <ItemsRepeater.ItemTemplate>
                         <DataTemplate x:DataType="vm:RequestBrandRowViewModel">
-                            <controls:BrandRow Row="{x:Bind}" Visibility="{x:Bind IsShown, Mode=OneWay}" />
+                            <!-- A plain Grid as the root, on purpose: see "ItemsRepeater templates" in AGENTS.md. -->
+                            <Grid Visibility="{x:Bind IsShown, Mode=OneWay}">
+                                <controls:BrandRow Row="{x:Bind}" />
+                            </Grid>
                         </DataTemplate>
                     </ItemsRepeater.ItemTemplate>
                 </ItemsRepeater>

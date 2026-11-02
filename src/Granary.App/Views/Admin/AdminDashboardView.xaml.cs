@@ -3,6 +3,7 @@ using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Admin;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
@@ -25,13 +26,15 @@ public sealed partial class AdminDashboardView : UserControl
     private static readonly Color Warning = Color.FromArgb(0xFF, 0xE9, 0xB4, 0x4C);
     private static readonly Color Destructive = Color.FromArgb(0xFF, 0xEF, 0x44, 0x44);
 
-    private readonly DispatcherTimer _clock = new() { Interval = TimeSpan.FromSeconds(30) };
+    private readonly DispatcherQueueTimer _clock;
 
     public AdminDashboardView()
     {
         ViewModel = App.Services.GetRequiredService<AdminDashboardViewModel>();
         InitializeComponent();
-        _clock.Tick += OnClockTick;
+        _clock = DispatcherQueue.CreateTimer();
+        _clock.Interval = TimeSpan.FromSeconds(30);
+        WeakTick.Subscribe(_clock, this, static view => view.OnClockTick());
     }
 
     public AdminDashboardViewModel ViewModel { get; }
@@ -62,7 +65,7 @@ public sealed partial class AdminDashboardView : UserControl
     }
 
     // async void: nothing may escape a timer's handler.
-    private async void OnClockTick(object? sender, object e)
+    private async void OnClockTick()
     {
         try
         {

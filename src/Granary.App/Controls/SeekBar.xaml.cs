@@ -53,7 +53,7 @@ public sealed partial class SeekBar : UserControl
         _pendingTimer = DispatcherQueue.CreateTimer();
         _pendingTimer.Interval = TimeSpan.FromMilliseconds(PendingHoldMilliseconds + 50);
         _pendingTimer.IsRepeating = false;
-        _pendingTimer.Tick += (_, _) => OnTimelineChanged();
+        WeakTick.Subscribe(_pendingTimer, this, static bar => bar.OnTimelineChanged());
         Unloaded += (_, _) => _pendingTimer.Stop();
         SizeChanged += (_, _) => Render();
         IsEnabledChanged += (_, _) =>

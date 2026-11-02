@@ -6,6 +6,12 @@ release's section is what its update says it changes (docs/release.md).
 
 ## [Unreleased]
 
+### Fixed
+
+- Switching quickly between sections and scrolling freezes the app less often and for shorter, most of all in a large
+  window: the full memory clean-ups that Windows' UI framework asks for now and then no longer go through every loading
+  placeholder of every grid again and again. Pages you left no longer stay in memory.
+
 ## [0.1.1] - 2026-11-01
 
 ### Added

@@ -42,8 +42,10 @@ public sealed partial class FocusBackdrop : UserControl
         {
             element.OpacityTransition = new ScalarTransition { Duration = Crossfade };
         }
-        _fadeDone = Timer(FinishFade);
-        _fadedOut = Timer(FinishFadeOut);
+        _fadeDone = Timer();
+        WeakTick.Subscribe(_fadeDone, this, static backdrop => backdrop.FinishFade());
+        _fadedOut = Timer();
+        WeakTick.Subscribe(_fadedOut, this, static backdrop => backdrop.FinishFadeOut());
         SizeChanged += (_, e) => OnSizeChanged(e.NewSize);
         // As BrowseHero: a title shown while the page was out of the window gets its picture now that it is in it.
         Loaded += (_, _) => ShowPicture();
@@ -70,12 +72,11 @@ public sealed partial class FocusBackdrop : UserControl
         Show(Title);
     }
 
-    private DispatcherQueueTimer Timer(Action tick)
+    private DispatcherQueueTimer Timer()
     {
         var timer = DispatcherQueue.CreateTimer();
         timer.Interval = Crossfade;
         timer.IsRepeating = false;
-        timer.Tick += (_, _) => tick();
         return timer;
     }
 

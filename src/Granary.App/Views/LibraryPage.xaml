@@ -178,10 +178,12 @@
                     <ItemsRepeater ItemsSource="{x:Bind ViewModel.Recommended.Rows}">
                         <ItemsRepeater.ItemTemplate>
                             <DataTemplate x:DataType="vm:LibraryRowViewModel">
+                                <!-- A plain Grid as the root, on purpose: see "ItemsRepeater templates" in AGENTS.md. -->
                                 <!-- Margin, not layout spacing: a hidden row must not leave a gap. -->
-                                <controls:MediaRow Margin="0,0,0,40" Title="{x:Bind Title}" ItemsSource="{x:Bind Cards, Mode=OneWay}"
-                                                   CardInvokedCommand="{x:Bind OpenCardCommand}" ExploreAllCommand="{x:Bind ExploreAllCommand}"
-                                                   Visibility="{x:Bind HasCards, Mode=OneWay}" />
+                                <Grid Visibility="{x:Bind HasCards, Mode=OneWay}">
+                                    <controls:MediaRow Margin="0,0,0,40" Title="{x:Bind Title}" ItemsSource="{x:Bind Cards, Mode=OneWay}"
+                                                       CardInvokedCommand="{x:Bind OpenCardCommand}" ExploreAllCommand="{x:Bind ExploreAllCommand}" />
+                                </Grid>
                             </DataTemplate>
                         </ItemsRepeater.ItemTemplate>
                     </ItemsRepeater>

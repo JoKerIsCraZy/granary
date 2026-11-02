@@ -1,7 +1,9 @@
 using System.ComponentModel;
+using Granary.App.Controls;
 using Granary.Core.ViewModels.Admin;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
@@ -19,14 +21,16 @@ public sealed partial class AdminActivityView : UserControl
 {
     private const int MessageMaxLength = 500;
 
-    private readonly DispatcherTimer _clock = new() { Interval = TimeSpan.FromSeconds(1) };
+    private readonly DispatcherQueueTimer _clock;
 
     public AdminActivityView()
     {
         ViewModel = App.Services.GetRequiredService<AdminActivityViewModel>();
         Sidebar = App.Services.GetRequiredService<AdminSidebarViewModel>();
         InitializeComponent();
-        _clock.Tick += OnClockTick;
+        _clock = DispatcherQueue.CreateTimer();
+        _clock.Interval = TimeSpan.FromSeconds(1);
+        WeakTick.Subscribe(_clock, this, static view => view.OnClockTick());
         ViewModel.PropertyChanged += OnViewModelChanged;
     }
 
@@ -90,7 +94,7 @@ public sealed partial class AdminActivityView : UserControl
     public void Release() => Bindings.StopTracking();
 
     // async void: nothing may escape a timer's handler.
-    private async void OnClockTick(object? sender, object e)
+    private async void OnClockTick()
     {
         try
         {
