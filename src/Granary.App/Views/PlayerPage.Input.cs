@@ -68,25 +68,26 @@ public sealed partial class PlayerPage
 
     // Any key shows the controls. Space is taken here, before a focused button would press itself with it:
     // on the player Space always plays or pauses, as on the web. In the bar a focused button keeps it. OK (Enter) on
-    // hidden controls only shows them, with focus on Play/Pause, as on Silo's TV app, and a held OK does not go on to
-    // press the button it lands on.
+    // hidden controls only shows them, with focus on Play/Pause, as on Silo's TV app; a button that shows while they are
+    // hidden (the sync notice's ✕, the skip pill) keeps OK. A held OK acts once: its repeats neither press the button it
+    // landed on nor bring the controls back after a skip.
     private void OnPagePreviewKeyDown(object sender, KeyRoutedEventArgs e)
     {
         _lastInputWasKey = true;
-        if (e.Key == VirtualKey.Enter && !e.KeyStatus.WasKeyDown && !_areControlsVisible && SkipsFromKey())
+        if (e.Key == VirtualKey.Enter && e.KeyStatus.WasKeyDown)
+        {
+            e.Handled = true;
+            return;
+        }
+        bool okOnHidden = e.Key == VirtualKey.Enter && !_areControlsVisible && !HasShownButtonFocus();
+        if (okOnHidden && SkipsFromKey())
         {
             e.Handled = true;
             return;
         }
         _controlsShownBeforeKey = _areControlsVisible;
-        bool wereHidden = !_areControlsVisible;
         ShowControls();
-        if (e.Key == VirtualKey.Enter && e.KeyStatus.WasKeyDown && FocusManager.GetFocusedElement(XamlRoot) is ButtonBase)
-        {
-            e.Handled = true;
-            return;
-        }
-        if (e.Key == VirtualKey.Enter && wereHidden && !IsDocked && !ShowsNextUpScreen && AcceptsShortcut())
+        if (okOnHidden && !IsDocked && !ShowsNextUpScreen && AcceptsShortcut())
         {
             e.Handled = true;
             FocusTransport();
@@ -214,6 +215,9 @@ public sealed partial class PlayerPage
         ViewModel.SkipCommand.Execute(null);
         return true;
     }
+
+    // A button with focus that is not one of the controls, so shows while they are hidden.
+    private bool HasShownButtonFocus() => FocusManager.GetFocusedElement(XamlRoot) is ButtonBase button && !IsInControls(button);
 
     // A remote's OK showed the controls (on hidden controls, or on the bar's picture): focus on Play/Pause, and the arrows
     // move between the controls until they hide.
