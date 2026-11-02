@@ -45,10 +45,20 @@ public sealed partial class MainWindow
     private void InitializeRemote()
     {
         Root.AddHandler(UIElement.KeyDownEvent, new KeyEventHandler(OnRootKeyDown), handledEventsToo: false);
-        Root.AddHandler(UIElement.PreviewKeyDownEvent, new KeyEventHandler((_, _) => _keysPressed++), handledEventsToo: true);
+        Root.AddHandler(UIElement.PreviewKeyDownEvent, new KeyEventHandler(OnRemotePreviewKeyDown), handledEventsToo: true);
         FocusManager.GotFocus += OnFocusMoved;
         ContentFrame.Navigating += (_, _) => _openedByKey = FocusedElement() is UIElement { FocusState: FocusState.Keyboard };
         ContentFrame.Navigated += OnFrameNavigated;
+    }
+
+    // On the way down, before XAML moves focus with an arrow: once a key has reached the window, focus has moved.
+    private void OnRemotePreviewKeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        _keysPressed++;
+        if (!e.Handled && e.Key == VirtualKey.Right && !HasModifier() && StopsAtRowEnd())
+        {
+            e.Handled = true;
+        }
     }
 
     // Keys no page or control took. Modifier combinations are the app's shortcuts (Alt+Left, Ctrl+K).
@@ -141,6 +151,19 @@ public sealed partial class MainWindow
                 }
             });
         }
+    }
+
+    // A row's last card keeps focus on Right, as the TV app's rows stop at their end: the arrows went on to whatever lay
+    // nearest, the "Explore all" link high up at the page's right edge.
+    private bool StopsAtRowEnd()
+    {
+        if (FocusedElement() is not Button { Content: MediaCardView } card || Root.XamlRoot is not { } root
+            || FindAncestorOrSelf<ItemsRepeater>(VisualTreeHelper.GetParent(card)) is not { Layout: StackLayout { Orientation: Orientation.Horizontal } } row)
+        {
+            return false;
+        }
+        var next = FocusManager.FindNextElement(FocusNavigationDirection.Right, new FindNextElementOptions { SearchRoot = root.Content });
+        return next is null || !IsWithin(next, row);
     }
 
     private bool FocusSidebarEntry() =>

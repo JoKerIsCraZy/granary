@@ -469,7 +469,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   the arrows, Enter for OK, and Esc, Backspace or Browser Back for their Back button.
   - The arrows move focus on every page. Left at a page's edge goes to the section's own sidebar entry, not the nearest
     one; Right from the sidebar goes back to where focus was on the page, else its first card. A held arrow stops at the
-    edge.
+    edge, and a row's last card keeps focus on Right, as the TV app's rows end (the arrows used to jump to the next
+    "Explore all" link).
   - A card the keyboard moves to comes to the middle of the page, so the row above and below show and a card in the
     lowest row is never cut off. Its focus ring goes round the whole card, artwork and every line under it, 3 px and
     rounded, 8 px out (12 below); sideways rows reach that far past their first card and below their highest one
