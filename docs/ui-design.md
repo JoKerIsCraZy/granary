@@ -948,7 +948,9 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   view, else closes, M mute, C
   subtitles off and on, Left/Right skip, Up/Down volume ±5. A remote's Back (Browser Back) and Backspace do as Esc
   does, but leave full screen alone (a media PC runs in it); OK (Enter) on hidden controls only shows them, focus on
-  Play/Pause, as on Silo's TV app (so does OK on the minimized bar's picture). From then until the controls hide, with
+  Play/Pause, as on Silo's TV app (so does OK on the minimized bar's picture); while a skip pill shows, OK on hidden
+  controls does what the pill says instead (Skip Intro, Recap, Credits, Preview, or Watch Intro) and the controls stay
+  away. From then until the controls hide, with
   keyboard focus on one of them, the arrows move between them (past the volume slider, which Tab still reaches; Down
   from the seek bar lands on Play/Pause) and the remote's Back and Backspace hide them unless paused; Esc, and a button
   reached with Tab, keep the web's keys. A held OK does not press the button it lands on. Space wins over a

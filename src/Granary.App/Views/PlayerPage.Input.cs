@@ -72,6 +72,11 @@ public sealed partial class PlayerPage
     private void OnPagePreviewKeyDown(object sender, KeyRoutedEventArgs e)
     {
         _lastInputWasKey = true;
+        if (e.Key == VirtualKey.Enter && !e.KeyStatus.WasKeyDown && !_areControlsVisible && SkipsFromKey())
+        {
+            e.Handled = true;
+            return;
+        }
         _controlsShownBeforeKey = _areControlsVisible;
         bool wereHidden = !_areControlsVisible;
         ShowControls();
@@ -194,6 +199,19 @@ public sealed partial class PlayerPage
                 return;
         }
         e.Handled = true;
+    }
+
+    // OK while a skip pill shows and the controls are hidden does what the pill says (Skip Intro, Recap, Credits or
+    // Preview, or Watch Intro after it skipped itself), and the controls stay away, as on Silo's TV app. With the controls up
+    // the focused button keeps OK: taking it there made every OK skip for as long as the intro ran.
+    private bool SkipsFromKey()
+    {
+        if (IsCompact || ShowsNextUpScreen || !ViewModel.HasSkipPrompt || !AcceptsShortcut() || !ViewModel.SkipCommand.CanExecute(null))
+        {
+            return false;
+        }
+        ViewModel.SkipCommand.Execute(null);
+        return true;
     }
 
     // A remote's OK showed the controls (on hidden controls, or on the bar's picture): focus on Play/Pause, and the arrows

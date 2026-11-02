@@ -13,7 +13,8 @@ release's section is what its update says it changes (docs/release.md).
   card you came from, then to the section's sidebar entry, then Home. Menus and dialogs close on the remote's Back too.
   The focus ring is thicker and goes round the whole card, artwork and text.
   A title opened with OK starts on Play, and the remote's Play key plays the card or title that has focus; the Menu key
-  opens a card's menu. In the player OK shows the hidden controls, the arrows then move to subtitles, audio and the
+  opens a card's menu. In the player OK skips the intro (or recap, credits) while its pill shows, else shows the hidden
+  controls; the arrows then move to subtitles, audio and the
   settings, and Back closes their menus and panels, hides the controls, then closes the player, with focus back where
   it was. The minimized player is reachable with Down from the page.
 
