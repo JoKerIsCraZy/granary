@@ -26,7 +26,11 @@ internal sealed partial class RemoteWindow : Window
     private const uint KeyEventExtended = 0x0001;
     private const uint KeyEventUp = 0x0002;
 
+    private static readonly TimeSpan ActivationSettle = TimeSpan.FromMilliseconds(80);
+
     private readonly Window _main;
+    private readonly Queue<(uint Message, uint Key, bool Repeat)> _pending = new();
+    private bool _sending;
     private readonly TextBlock _focus = new() { TextWrapping = TextWrapping.Wrap, FontSize = 12, Opacity = 0.75 };
 
     public RemoteWindow(Window main)
@@ -100,7 +104,8 @@ internal sealed partial class RemoteWindow : Window
     // A key the main window gets as a key: once per click, and while an arrow is held, again as a held key repeats.
     private ButtonBase Key(string label, string name, uint key, bool repeats = false)
     {
-        ButtonBase button = repeats ? new RepeatButton { Delay = 400, Interval = 90 } : new Button();
+        // A held arrow repeats after 700 ms: a slow click must not move twice.
+        ButtonBase button = repeats ? new RepeatButton { Delay = 700, Interval = 110 } : new Button();
         button.Content = label;
         button.HorizontalAlignment = HorizontalAlignment.Stretch;
         button.VerticalAlignment = VerticalAlignment.Stretch;
@@ -151,20 +156,42 @@ internal sealed partial class RemoteWindow : Window
 
     private void Send(uint message, uint key, bool repeat)
     {
-        var main = WindowNative.GetWindowHandle(_main);
-        var site = InputSite(main);
-        if (site == 0)
+        _pending.Enqueue((message, key, repeat));
+        if (!_sending)
         {
-            return;
+            SendPending();
         }
-        // Keys reach the focused element only in the active window: give activation back if this one took it.
-        if (GetForegroundWindow() != main)
+    }
+
+    // Keys reach the focused element only in the active window. If this one took activation, the main window gets it
+    // back first, and the keys wait until XAML has put its focus back: sent at once, they went to no element. Waiting
+    // keys go in their order.
+    private async void SendPending()
+    {
+        _sending = true;
+        try
         {
-            _ = SetForegroundWindow(main);
+            var main = WindowNative.GetWindowHandle(_main);
+            if (GetForegroundWindow() != main)
+            {
+                _ = SetForegroundWindow(main);
+                await Task.Delay(ActivationSettle);
+            }
+            var site = InputSite(main);
+            while (_pending.TryDequeue(out var press))
+            {
+                if (site != 0)
+                {
+                    uint scan = MapVirtualKeyW(press.Key, 0);
+                    long flags = 1 | ((long)scan << 16) | (press.Repeat ? 1L << 30 : 0) | (press.Message == WmKeyUp ? 1L << 31 : 0);
+                    PostMessageW(site, press.Message, (nint)press.Key, (nint)flags);
+                }
+            }
         }
-        uint scan = MapVirtualKeyW(key, 0);
-        long flags = 1 | ((long)scan << 16) | (repeat ? 1L << 30 : 0) | (message == WmKeyUp ? 1L << 31 : 0);
-        PostMessageW(site, message, (nint)key, (nint)flags);
+        finally
+        {
+            _sending = false;
+        }
     }
 
     // WinUI takes the keyboard in a child window of the main window's, a level or two down.
