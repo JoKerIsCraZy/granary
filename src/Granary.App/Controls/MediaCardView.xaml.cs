@@ -413,11 +413,11 @@ public sealed partial class MediaCardView : UserControl
             _armTimer = DispatcherQueue.CreateTimer();
             _armTimer.Interval = ArmTime;
             _armTimer.IsRepeating = false;
-            _armTimer.Tick += (_, _) =>
+            WeakTick.Subscribe(_armTimer, this, static card =>
             {
-                _requestArmed = true;
-                ShowRequestPresence();
-            };
+                card._requestArmed = true;
+                card.ShowRequestPresence();
+            });
         }
         if (!_armTimer.IsRunning)
         {

@@ -204,7 +204,10 @@
                                 </ItemsRepeater.Layout>
                                 <ItemsRepeater.ItemTemplate>
                                     <DataTemplate x:DataType="detail:DetailPerson">
-                                        <controls:PersonCreditCard Person="{x:Bind}" />
+                                        <!-- A plain Grid as the root, on purpose: see "ItemsRepeater templates" in AGENTS.md. -->
+                                        <Grid>
+                                            <controls:PersonCreditCard Person="{x:Bind}" />
+                                        </Grid>
                                     </DataTemplate>
                                 </ItemsRepeater.ItemTemplate>
                             </ItemsRepeater>

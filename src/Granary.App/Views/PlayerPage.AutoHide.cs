@@ -51,7 +51,7 @@ public sealed partial class PlayerPage
         _hideTimer = DispatcherQueue.CreateTimer();
         _hideTimer.Interval = HideDelay;
         _hideTimer.IsRepeating = false;
-        _hideTimer.Tick += (_, _) => HideControlsWhenIdle();
+        WeakTick.Subscribe(_hideTimer, this, static page => page.HideControlsWhenIdle());
         PointerMoved += OnPagePointerMoved;
     }
 

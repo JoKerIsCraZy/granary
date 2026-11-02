@@ -118,6 +118,13 @@ classes in `tests/Granary.Tests/Fakes`.
   can keep layout from settling (a `LayoutCycleException`; see `MediaCardView` and `MediaCardSkeleton`). To find the
   element behind a layout cycle, set `DebugSettings.LayoutCycleTracingLevel = LayoutCycleTracingLevel.High` for a run
   and record the trace with `scripts/capture-debug-output.ps1`.
+- **ItemsRepeater templates:** a Granary control is never a template's root; put it in a plain `Grid`. WinUI ties each
+  element a repeater makes to its template, the template to its recycle pool and the pool to the repeater, so every full
+  collection's walk from a Granary control at the root took in the whole repeater: a pool of skeletons made over a
+  million references, and full collections took seconds (`TemplateRootTests`, docs/architecture.md "Cards").
+- **Timers:** a `DispatcherQueueTimer`'s Tick goes through `WeakTick.Subscribe` with a static lambda. The timer is not a
+  XAML object, so a handler holding its control is a cycle the collector cannot see through, and the page stays in
+  memory for good (`TimerTickTests`).
 - **ClientWebSocket:** a `ReceiveAsync` cancelled through its token aborts the socket. Close it through a token
   registration and `CloseAsync` instead, as `WebSocketRealtimeSocket` (`IRealtimeSocket`, in
   `src/Granary.Core/Realtime/RealtimeSocket.cs`) does for both the playback control lane and the events lane.

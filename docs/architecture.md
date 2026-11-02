@@ -155,13 +155,29 @@ also walks all live XAML that .NET holds (the reference tracker), so its pause g
   rows too), not ItemsRepeater's default whole screen: on an ultrawide window that halves several hundred live cards.
 - Switching pages sets the sidebar's pane mode only when it changes: NavigationView lays itself out again for every
   mode it is given.
+- No repeater template has a Granary control as its root: the skeleton, the rows and the credit cards sit in a plain
+  `Grid`. WinUI ties each element a repeater makes to its template (`RecyclePool.OriginTemplate`), the template to its
+  recycle pool and the pool to the repeater, so the walk from a Granary control at the root took in the whole repeater.
+  Placeholders never come back once their titles arrive, so each grid kept a pool of skeletons, and each of them walked
+  the grid's thousands of references: 1.15 of 1.6 million references per collection. Guarded by `TemplateRootTests`.
+- Timers tick through `WeakTick`: a `DispatcherQueueTimer` is not a XAML object, so a Tick handler holding its control
+  was a cycle the collector cannot see through. A grid's timer kept its page (through the page's scroller) after the
+  frame let it go: with a small page cache, nine copies of a list page were alive. Every control with a timer, the
+  player page's too, follows the same rule, guarded by `TimerTickTests`.
+- The full collections XAML asks for come from WinUI itself: whenever the process's working set has grown 50 MB, and
+  when XAML's own memory stops changing (`DisconnectUnusedReferenceSources`, microsoft-ui-xaml#12113); CsWinRT's memory
+  pressure (1,000 bytes per wrapper, CsWinRT#2594) starts more. An app cannot turn them off, so each one has to be cheap.
+  Nearly all of a pause is the walk before the collection starts, and it grows with the XAML objects .NET holds: about
+  25 per card (named parts, handlers), some 26,000 at a thousand cards.
 
 Measured at 1920 px with compact posters, two runs each: share of time the UI thread stalled over 50 ms in fast
 sidebar switches 32 % to 9 %, paging down a 5,215-title grid 78 % to 5 % (19 to 125 frames a second), paging back up
 58 % to 3 %; GC pauses over the runs 4.1 s to 1.3 s, memory 760 to 565 MB. Maximized on a 3840 px ultrawide it is
 not smooth yet: fast switches stall 81 % to 61 %, paging the grid 95 % to 89 %, GC pauses 50 s to 19 s over a run,
 memory 1.6 to 1.05 GB, and single gen2 pauses that XAML starts (DisconnectUnusedReferenceSources) still take up to
-5.5 s: the live cards of the cached pages are what each collection walks.
+5.5 s: the live cards of the cached pages are what each collection walks. With the plain template roots and the weak
+timer ticks, a minute of fast switches and scrolling, maximized on the ultrawide: UI thread silent over 0.7 s 8 times to
+4, the longest GC pause 2.8 to 1.9 s, GC pauses 20.8 to 13.3 s.
 
 ## Server playback
 

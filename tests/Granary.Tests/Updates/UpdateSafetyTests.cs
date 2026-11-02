@@ -24,7 +24,7 @@ public sealed class UpdateSafetyTests
     [InlineData("src/Granary.App/Services/VelopackUpdater.cs", DeltasSetting)]
     public void TheApp_HandsTheSettingsToVelopack(string file, string call)
     {
-        string source = File.ReadAllText(Path.Combine(RepositoryRoot(), file));
+        string source = File.ReadAllText(Path.Combine(RepositoryFiles.Root, file));
 
         Assert.True(Calls(source, call), $"{file} does not hand {call} to Velopack outside a comment.");
     }
@@ -93,17 +93,5 @@ public sealed class UpdateSafetyTests
             }
         }
         return code.ToString();
-    }
-
-    private static string RepositoryRoot()
-    {
-        for (var folder = new DirectoryInfo(AppContext.BaseDirectory); folder is not null; folder = folder.Parent)
-        {
-            if (File.Exists(Path.Combine(folder.FullName, "Granary.slnx")))
-            {
-                return folder.FullName;
-            }
-        }
-        throw new DirectoryNotFoundException("The tests run outside the repository.");
     }
 }
