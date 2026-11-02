@@ -61,10 +61,18 @@ public sealed partial class PlayerPage
     }
 
     // Any key shows the controls. Space is taken here, before a focused button would press itself with it:
-    // on the player Space always plays or pauses, as on the web. In the bar a focused button keeps it.
+    // on the player Space always plays or pauses, as on the web. In the bar a focused button keeps it. OK (Enter) on
+    // hidden controls only shows them, with focus on Play/Pause, as on Silo's TV app.
     private void OnPagePreviewKeyDown(object sender, KeyRoutedEventArgs e)
     {
+        bool wereHidden = !_areControlsVisible;
         ShowControls();
+        if (e.Key == VirtualKey.Enter && wereHidden && !IsDocked && !ShowsNextUpScreen && AcceptsShortcut())
+        {
+            e.Handled = true;
+            PlayPauseButton.Focus(FocusState.Keyboard);
+            return;
+        }
         // On the Playing Next screen too, as long as the episode plays on in its corner; after its end Space presses
         // the focused button.
         if (e.Key == VirtualKey.Space && AcceptsShortcut() && !(ShowsNextUpScreen && ViewModel.Phase == PlayerPhase.Ended)
@@ -89,14 +97,14 @@ public sealed partial class PlayerPage
         bool isRepeat = e.KeyStatus.WasKeyDown;
         // The bar takes the transport's keys only: F, the mini view, subtitles and Esc are the full player's. F11 is the
         // window's everywhere (MainWindow.FullScreen.cs).
-        if (IsDocked && e.Key is VirtualKey.F or VirtualKey.P or VirtualKey.C or VirtualKey.Escape)
+        if (IsDocked && (e.Key is VirtualKey.F or VirtualKey.P or VirtualKey.C || IsBack(e.Key)))
         {
             return;
         }
         if (ShowsNextUpScreen)
         {
             // The Playing Next screen's keys, as on the web: Esc closes, Enter plays the next episode.
-            if (e.Key == VirtualKey.Escape && !isRepeat)
+            if (IsBack(e.Key) && !isRepeat)
             {
                 e.Handled = true;
                 ViewModel.CloseCommand.Execute(null);
@@ -125,8 +133,9 @@ public sealed partial class PlayerPage
             case VirtualKey.C when !isRepeat:
                 ViewModel.ToggleSubtitles();
                 break;
-            case VirtualKey.Escape when !isRepeat:
-                // As on the web player, Esc first turns an intro pill away; the marker panel closes before the player.
+            case VirtualKey.Escape or VirtualKey.GoBack or VirtualKey.Back when !isRepeat:
+                // As on the web player, Esc first turns an intro pill away; the marker panel closes before the player. A
+                // remote's Back (Browser Back) and Backspace do as Esc does.
                 if (ViewModel.DismissSkipPrompt())
                 {
                     break;
@@ -167,6 +176,9 @@ public sealed partial class PlayerPage
         }
         e.Handled = true;
     }
+
+    // Esc, a remote's Back (Browser Back) and Backspace. Typing never gets here (AcceptsShortcut).
+    private static bool IsBack(VirtualKey key) => key is VirtualKey.Escape or VirtualKey.GoBack or VirtualKey.Back;
 
     // Modifier combinations belong to the app (Alt+Left, Ctrl+K); text fields, open menus and the subtitle panels keep
     // their keys.

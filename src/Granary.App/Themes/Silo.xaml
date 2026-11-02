@@ -1301,7 +1301,9 @@
 
     <!--
         A whole card as one button: keyboard focus and Enter work, and the system focus ring shows. Under the pointer
-        the card itself reacts (MediaCardView: the artwork grows, its buttons appear), as on Silo's web.
+        the card itself reacts (MediaCardView: the artwork grows, its buttons appear), as on Silo's web. The ring goes round
+        the whole card, artwork and texts, with room below the last line, thick and rounded enough to see from a sofa
+        with a TV remote; it stays inside the gap to the next card (12 px in grids, 20 px in rows).
     -->
     <Style x:Key="SiloCardButtonStyle" TargetType="Button">
         <Setter Property="Background" Value="Transparent" />
@@ -1310,7 +1312,10 @@
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="VerticalContentAlignment" Value="Top" />
         <Setter Property="UseSystemFocusVisuals" Value="True" />
-        <Setter Property="FocusVisualMargin" Value="-3" />
+        <Setter Property="FocusVisualMargin" Value="-8,-8,-8,-12" />
+        <Setter Property="FocusVisualPrimaryThickness" Value="3" />
+        <Setter Property="FocusVisualSecondaryThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="12" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">

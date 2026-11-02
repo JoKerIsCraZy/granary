@@ -465,6 +465,21 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   Search, each library) are the apps' tabs: picking one does not stack on the pages visited before, only Home stays
   under it, so Back walks the pages opened within a section and then goes Home (Android's tab switch pops to the
   anchor tab). Settings and Admin open over the page they came from and go back to it.
+- TV remote and keyboard alone (a media PC), the behaviour of Silo's TV app (`MainWindow.Remote.cs`): remotes send keys,
+  the arrows, Enter for OK, and Esc, Backspace or Browser Back for their Back button.
+  - The arrows move focus on every page. Left at a page's edge goes to the section's own sidebar entry, not the nearest
+    one; Right from the sidebar goes back to where focus was on the page, else its first card. A held arrow stops at the
+    edge.
+  - A card the keyboard moves to comes to the middle of the page, so the row above and below show and a card in the
+    lowest row is never cut off. Its focus ring goes round the whole card, artwork and every line under it, 3 px and
+    rounded, 8 px out (12 below); sideways rows reach that far past their first card and below their highest one
+    (`RowBleed`), so no ring is cut off.
+  - Back (Esc, Backspace outside a text field, Browser Back): a page opened within a section goes back, focus on the card
+    it was opened from (the same title wherever it moved, else the same place). On a section's own page Back first moves
+    focus to its sidebar entry, from there it goes Home, focus on Home's entry; on Home it does nothing, the app does
+    not quit. A menu, flyout or dialog closes on Browser Back and Backspace as on Esc.
+  - A page opened with OK starts on its Play (a title, an episode) or Request (a TMDB title), else on its first card. A
+    section picked in the sidebar keeps focus there, as the TV app's tabs do.
 
 ## Signed-out screens
 
@@ -919,8 +934,9 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   as F11, which works everywhere),
   P the mini view, Esc turns away an intro pill, else closes the marker panel, else leaves full screen or the mini
   view, else closes, M mute, C
-  subtitles off and on, Left/Right skip, Up/Down volume ±5. Space wins over a focused button; arrows go to a focused
-  slider first. Nothing applies while a text field, an open menu or the Add Subtitles or appearance panel has focus
+  subtitles off and on, Left/Right skip, Up/Down volume ±5. A remote's Back (Browser Back) and Backspace do as Esc
+  does; OK (Enter) on hidden controls only shows them, focus on Play/Pause, as on Silo's TV app. Space wins over a
+  focused button; arrows go to a focused slider first. Nothing applies while a text field, an open menu or the Add Subtitles or appearance panel has focus
   (Esc closes the panel), or with Ctrl, Alt, Shift or Windows held. The keys are handled on the page, not as keyboard
   accelerators, so no accelerator tooltip appears; the buttons announce them through
   `AutomationProperties.AcceleratorKey`.

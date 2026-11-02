@@ -115,7 +115,7 @@
 
                             <!-- Request in the Play pill's place; the request's state once there is one. -->
                             <StackPanel Margin="0,26,0,0" Orientation="Horizontal" Spacing="12">
-                                <Button Style="{StaticResource SiloPrimaryButtonStyle}" Click="OnPrimaryClick" IsEnabled="{x:Bind ViewModel.CanAct, Mode=OneWay}"
+                                <Button x:Name="PrimaryButton" Style="{StaticResource SiloPrimaryButtonStyle}" Click="OnPrimaryClick" IsEnabled="{x:Bind ViewModel.CanAct, Mode=OneWay}"
                                         AutomationProperties.Name="{x:Bind ViewModel.PrimaryLabel, Mode=OneWay}">
                                     <StackPanel Orientation="Horizontal" Spacing="10">
                                         <FontIcon Glyph="{x:Bind views:TitlePage.PrimaryGlyph(ViewModel.PrimaryAction), Mode=OneWay}" FontSize="16" />

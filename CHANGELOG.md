@@ -6,6 +6,14 @@ release's section is what its update says it changes (docs/release.md).
 
 ## [Unreleased]
 
+### Added
+
+- A TV remote on a media PC, or the keyboard alone: the arrows move focus on every page and between the sidebar and
+  the page, the focused card comes to the middle, and Back (Esc, Backspace or the remote's Back button) goes back to the
+  card you came from, then to the section's sidebar entry, then Home. Menus and dialogs close on the remote's Back too.
+  The focus ring is thicker and goes round the whole card, artwork and text.
+  A title opened with OK starts on Play; in the player OK shows the hidden controls and Back does as Esc.
+
 ## [0.1.1] - 2026-11-01
 
 ### Added
