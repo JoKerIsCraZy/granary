@@ -115,6 +115,8 @@ For development:
 - `--play <file or URL>` plays a video without a server:
   `dotnet run --project src/Granary.App -- --play C:\Videos\sample.mkv`.
 - `--play-item <content id>` plays a title of the signed-in server.
+- `--remote` (debug builds) shows a TV remote on screen beside the window, to try Granary without one; VS Code's
+  "Granary: with TV remote" starts it.
 - Set `GRANARY_DATA_DIR` to an empty folder to keep servers, sign-ins, cache and logs out of your own
   `%LOCALAPPDATA%\Granary`, for example when you run a second copy.
 

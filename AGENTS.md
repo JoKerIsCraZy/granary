@@ -91,7 +91,8 @@ classes in `tests/Granary.Tests/Fakes`.
 - Set `GRANARY_DATA_DIR` to an empty folder for any test run or second instance. Never run against a user's own
   `%LOCALAPPDATA%\Granary`: it holds their servers, sign-ins and device id.
 - `--play <file>` plays a local file without a server. `--play-item <content id>` plays a title of the
-  signed-in server.
+  signed-in server. `--remote` (debug builds) shows a TV remote on screen that sends the keys a PC remote sends
+  (`Debugging/RemoteWindow.cs`).
 - Drive the running app with UI Automation patterns, not simulated global mouse or keyboard input, which lands
   in whatever window is on top.
 - Never take actions on a real server that change someone's data, such as requests, watch state or settings,
