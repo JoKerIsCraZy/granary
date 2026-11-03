@@ -4,6 +4,7 @@ using Granary.Core.Abstractions;
 using Granary.Core.Api;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
+using Granary.Core.Api.Playback;
 using Granary.Core.Artwork;
 using Granary.Core.Auth;
 using Granary.Core.Playback;
@@ -53,6 +54,8 @@ public sealed partial class ItemDetailViewModel : ObservableObject
     private readonly IArtworkPrefetcher _artwork;
     private readonly ILogger<ItemDetailViewModel> _logger;
     private readonly ViewerStateChanges? _changes;
+    private readonly TrackPreferencesApi? _trackPreferences;
+    private readonly TrackChoiceWrites? _trackChoices;
 
     // A newer load makes the answers of older calls stale.
     private int _generation;
@@ -76,7 +79,9 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         INavigationService navigation,
         IArtworkPrefetcher artwork,
         ILogger<ItemDetailViewModel> logger,
-        ViewerStateChanges? changes = null)
+        ViewerStateChanges? changes = null,
+        TrackPreferencesApi? trackPreferences = null,
+        TrackChoiceWrites? trackChoices = null)
     {
         _session = session;
         _catalog = catalog;
@@ -85,6 +90,8 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         _artwork = artwork;
         _logger = logger;
         _changes = changes;
+        _trackPreferences = trackPreferences;
+        _trackChoices = trackChoices;
     }
 
     /// <summary>The display scale artwork is requested for (1.5 at 150 %); set it before loading.</summary>
@@ -168,7 +175,10 @@ public sealed partial class ItemDetailViewModel : ObservableObject
     [ObservableProperty]
     public partial string MetaLine { get; private set; } = "";
 
-    /// <summary>"Available version: 720P · H264 · EAC3 · 9.3 GB" under the buttons; empty for a series or season.</summary>
+    /// <summary>
+    /// "Available version: 720P · H264 · EAC3 · 9.3 GB" under the buttons; empty for a series or season, and for several
+    /// files, which the Version picker names instead.
+    /// </summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasAvailableVersionLine))]
     public partial string AvailableVersionLine { get; private set; } = "";
@@ -367,12 +377,13 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         }
     }
 
+    /// <summary>Plays the title, or resumes it, with the version, audio and subtitles picked under the buttons.</summary>
     [RelayCommand(CanExecute = nameof(CanPlay))]
     private void Play()
     {
         if (PlayTargetId is { } target)
         {
-            _navigation.NavigateTo(AppRoute.Player, PlayRequest.Resume(target));
+            _navigation.NavigateTo(AppRoute.Player, PlayRequest.Resume(target, ChoiceFor(target)));
         }
     }
 
@@ -381,7 +392,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
     {
         if (PlayTargetId is { } target)
         {
-            _navigation.NavigateTo(AppRoute.Player, PlayRequest.FromStart(target));
+            _navigation.NavigateTo(AppRoute.Player, PlayRequest.FromStart(target, ChoiceFor(target)));
         }
     }
 
@@ -407,6 +418,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         BackdropUrl = null;
         BackdropThumbhash = "";
         AvailableVersionLine = "";
+        ResetPrePlay();
         InfoSections = [];
         LogoUrl = null;
         Seasons = [];
@@ -438,6 +450,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         Overview = item.Overview?.Trim() ?? "";
         MetaLine = DetailFacts.MetaLine(item);
         AvailableVersionLine = DetailFacts.AvailableVersionLine(item) ?? "";
+        ShowPrePlay(item);
         InfoSections = DetailFacts.InfoSections(item);
         People = DetailCredits.People(item, server);
         PeopleTitle = DetailCredits.PeopleTitle(People);

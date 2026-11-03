@@ -189,20 +189,15 @@ public static class DetailFacts
     }
 
     /// <summary>
-    /// The small line under the buttons: "Available version: 720P · H264 · EAC3 · 9.3 GB" for one file, the qualities of
-    /// several ("Available versions: 4K HDR · 1080P"), null for a series or season. Never the file's name or path.
+    /// The small line under the buttons: "Available version: 720P · H264 · EAC3 · 9.3 GB" for one file; null for a series
+    /// or season, and for several files, which the Version picker lists instead. Never the file's name or path.
     /// </summary>
     public static string? AvailableVersionLine(CatalogItemDetail item)
     {
         ArgumentNullException.ThrowIfNull(item);
-        if (item.Versions.Count == 0)
+        if (item.Versions.Count != 1)
         {
             return null;
-        }
-        if (item.Versions.Count > 1)
-        {
-            var qualities = item.Versions.Select(v => MediaCardFactory.ResolutionText(OverlayOf(v))).OfType<string>().Distinct().ToList();
-            return qualities.Count > 0 ? "Available versions: " + string.Join(" · ", qualities) : null;
         }
         var version = item.Versions[0];
         string line = string.Join(" · ", new[]

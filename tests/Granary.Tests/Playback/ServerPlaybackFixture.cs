@@ -69,6 +69,9 @@ internal sealed class ServerPlaybackFixture
     /// <summary>The playback follows subtitle sync (<see cref="ServerPlayback.SubtitleSync"/>); off, it asks the server nothing about it.</summary>
     public bool SyncsSubtitles { get; set; }
 
+    /// <summary>The detail page's track choices on their way to the server, which the start waits for; none by default.</summary>
+    public TrackChoiceWrites? TrackChoices { get; set; }
+
     /// <summary>This PC's playback choices, read at each start.</summary>
     public InMemoryPlaybackDevicePreferences DevicePreferences { get; } = new();
 
@@ -81,18 +84,21 @@ internal sealed class ServerPlaybackFixture
     /// <summary>The direct-play decision with another session id, as a new start after the first session ended.</summary>
     public static string StartedAgain => PlaybackPayloads.StartOpaqueIds.Replace(Session, OtherSession, StringComparison.Ordinal);
 
+    /// <summary>The part before the plan, as the playback gets it.</summary>
+    public PlaybackStarter CreateStarter() => new(
+        new WatchApi(Silo.Http),
+        new PlaybackApi(Silo.Http),
+        new PlaybackPreferencesReader(new SettingsApi(Silo.Http), Logs.For<PlaybackPreferencesReader>()),
+        new FakeDeviceProbe(),
+        DevicePreferences,
+        AuthPipeline.Identity,
+        SessionManager,
+        TrackChoices);
+
     public ServerPlayback Create()
     {
-        var starter = new PlaybackStarter(
-            new WatchApi(Silo.Http),
-            new PlaybackApi(Silo.Http),
-            new PlaybackPreferencesReader(new SettingsApi(Silo.Http), Logs.For<PlaybackPreferencesReader>()),
-            new FakeDeviceProbe(),
-            DevicePreferences,
-            AuthPipeline.Identity,
-            SessionManager);
         var playback = new ServerPlayback(
-            starter,
+            CreateStarter(),
             new PlaybackApi(Silo.Http),
             new TrackPreferencesApi(Silo.Http),
             new SettingsApi(Silo.Http),

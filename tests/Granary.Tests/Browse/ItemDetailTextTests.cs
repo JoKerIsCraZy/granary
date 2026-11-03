@@ -221,7 +221,8 @@ public sealed class ItemDetailTextTests
         };
 
         Assert.Equal("Available version: 1080P", DetailFacts.AvailableVersionLine(one));
-        Assert.Equal("Available versions: 4K HDR · 720P", DetailFacts.AvailableVersionLine(two));
+        // Several files are named by the Version picker instead.
+        Assert.Null(DetailFacts.AvailableVersionLine(two));
         Assert.DoesNotContain(DetailFacts.InfoSections(one).Concat(DetailFacts.InfoSections(two)).SelectMany(s => s.Rows),
             r => r.Value.Contains("secret", StringComparison.Ordinal) || r.Value.Contains("Heat.", StringComparison.Ordinal));
     }
@@ -307,7 +308,7 @@ public sealed class ItemDetailTextTests
     }
 
     [Fact]
-    public void AvailableVersions_ListTheirQualities_AndASeriesHasNone()
+    public void SeveralFiles_AreLeftToTheVersionPicker_AndASeriesHasNone()
     {
         var movie = Item(CatalogItemTypes.Movie) with
         {
@@ -319,7 +320,7 @@ public sealed class ItemDetailTextTests
             ],
         };
 
-        Assert.Equal("Available versions: 4K HDR · 1080P", DetailFacts.AvailableVersionLine(movie));
+        Assert.Null(DetailFacts.AvailableVersionLine(movie));
         Assert.Null(DetailFacts.AvailableVersionLine(Item(CatalogItemTypes.Series)));
     }
 

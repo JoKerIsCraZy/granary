@@ -67,6 +67,78 @@ public sealed partial class DetailHero : UserControl
 
     private void OnActionErrorClosed(InfoBar sender, object args) => ViewModel?.DismissActionError();
 
+    // A picker's menu takes its rows as it opens and keeps them while it is open: the page reads the item again after a
+    // save, and new rows under an open menu would take the focus out of it. It opens on the chosen row, so the arrows
+    // start from there.
+    private void OnVersionMenuOpening(object? sender, object e) => VersionRows.ItemsSource = ViewModel?.Pickers.Versions;
+
+    private void OnAudioMenuOpening(object? sender, object e) => AudioRows.ItemsSource = ViewModel?.Pickers.Audio;
+
+    private void OnSubtitleMenuOpening(object? sender, object e) => SubtitleRows.ItemsSource = ViewModel?.Pickers.Subtitles;
+
+    private void OnVersionMenuOpened(object? sender, object e) =>
+        FocusRow(VersionRows, (VersionRows.ItemsSource as IReadOnlyList<DetailVersionOption>)?.ToList().FindIndex(option => option.IsSelected) ?? -1);
+
+    private void OnAudioMenuOpened(object? sender, object e) =>
+        FocusRow(AudioRows, (AudioRows.ItemsSource as IReadOnlyList<DetailAudioOption>)?.ToList().FindIndex(option => option.IsSelected) ?? -1);
+
+    private void OnSubtitleMenuOpened(object? sender, object e) =>
+        FocusRow(SubtitleRows, (SubtitleRows.ItemsSource as IReadOnlyList<DetailSubtitleOption>)?.ToList().FindIndex(option => option.IsSelected) ?? -1);
+
+    private void OnVersionClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { DataContext: DetailVersionOption option })
+        {
+            VersionMenu.Hide();
+            ViewModel?.SelectVersionCommand.Execute(option);
+        }
+    }
+
+    private void OnAudioClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { DataContext: DetailAudioOption option })
+        {
+            AudioMenu.Hide();
+            ViewModel?.SelectAudioCommand.Execute(option);
+        }
+    }
+
+    private void OnSubtitleClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { DataContext: DetailSubtitleOption option })
+        {
+            SubtitleMenu.Hide();
+            ViewModel?.SelectSubtitleCommand.Execute(option);
+        }
+    }
+
+    private static void FocusRow(ItemsControl rows, int index)
+    {
+        // The rows were handed over as the menu opened: lay them out before looking for one.
+        rows.UpdateLayout();
+        if (index >= 0 && rows.ContainerFromIndex(index) is DependencyObject row && FirstButton(row) is { } button)
+        {
+            button.Focus(FocusState.Programmatic);
+        }
+    }
+
+    // The row's button: the template's root, or under a subtitle section's heading.
+    private static Button? FirstButton(DependencyObject element)
+    {
+        if (element is Button button)
+        {
+            return button;
+        }
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(element); i++)
+        {
+            if (FirstButton(VisualTreeHelper.GetChild(element, i)) is { } found)
+            {
+                return found;
+            }
+        }
+        return null;
+    }
+
     // Everything the hero leaves out: the full overview, ratings, cast and crew by job, and each file's facts.
     private async void OnInfoClick(object sender, RoutedEventArgs e)
     {

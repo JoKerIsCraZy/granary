@@ -462,7 +462,8 @@ public sealed class ItemDetailViewModelTests
         Assert.True(detail.ShowsTitleText);
         Assert.Equal(Art("/api/v2/artwork/episodes/1/still/w1280.webp?exp=1&sig=still"), detail.BackdropUrl);
         Assert.Equal("S3 E1 · 52m · 23 Oct 2026", detail.MetaLine);
-        Assert.Equal("Available versions: 4K HDR · 1080P", detail.AvailableVersionLine);
+        Assert.Equal("", detail.AvailableVersionLine);
+        Assert.Equal("2160p · HEVC · HDR · TrueHD", detail.Pickers.VersionSummary);
         Assert.Equal(["Details", "Cast", "Crew", "File 1", "File 2"], detail.InfoSections.Select(s => s.Title));
         var second = detail.InfoSections[4].Rows.ToDictionary(r => r.Label, r => r.Value);
         Assert.Equal(("Director's Cut", "1080P", "H264", "EAC3"), (second["Edition"], second["Resolution"], second["Video"], second["Audio"]));
