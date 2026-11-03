@@ -4,6 +4,7 @@ using Granary.App.Views;
 using Granary.Core.Abstractions;
 using Granary.Core.Playback;
 using Granary.Core.ViewModels;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI;
 using Microsoft.UI.Input;
@@ -90,6 +91,7 @@ public sealed partial class MainWindow : Window
         {
             _updatesRun.Cancel();
             Updates.OnExiting();
+            WaitForPlaybackChoices();
         };
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
@@ -634,6 +636,17 @@ public sealed partial class MainWindow : Window
         sender.Hide();
         await stopped;
         Close();
+    }
+
+    // A playback choice changed just before closing is still written, waited for as briefly as the updates switch is.
+    // The save runs on the thread pool and never needs this thread.
+    private void WaitForPlaybackChoices()
+    {
+        var save = App.Services.GetRequiredService<IPlaybackDevicePreferences>().LatestSave;
+        if (!save.IsCompleted && !save.Wait(AppUpdatesViewModel.SaveWaitAtExit))
+        {
+            _logger.LogWarning("This PC's playback choices could not be saved before Granary closed");
+        }
     }
 
     private void OnItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)

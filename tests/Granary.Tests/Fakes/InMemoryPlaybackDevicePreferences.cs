@@ -19,6 +19,7 @@ internal sealed class InMemoryPlaybackDevicePreferences : IPlaybackDevicePrefere
         SavedUpDown.Add(upDown);
         return Task.CompletedTask;
     }
+    public Task LatestSave => Task.CompletedTask;
 
     public Task SetDecodesInSoftwareAsync(bool decodesInSoftware)
     {

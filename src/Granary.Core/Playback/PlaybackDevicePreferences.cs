@@ -17,6 +17,8 @@ public interface IPlaybackDevicePreferences
 
     /// <summary>What Up and Down do in the player while focus is on the picture.</summary>
     PlayerUpDown UpDown { get; }
+    /// <summary>The latest save: done once it is on disk, or failed and logged. The window waits for it briefly as it closes.</summary>
+    Task LatestSave { get; }
 
     Task SetDecodesInSoftwareAsync(bool decodesInSoftware);
 
@@ -53,6 +55,7 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
 
     private volatile bool _decodesInSoftware;
     private volatile PlayerUpDown _upDown;
+    private volatile Task _latestSave = Task.CompletedTask;
 
     public JsonPlaybackDevicePreferences(string filePath, ILogger<JsonPlaybackDevicePreferences> logger)
     {
@@ -69,17 +72,19 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
     public bool DecodesInSoftware => _decodesInSoftware;
 
     public PlayerUpDown UpDown => _upDown;
+    public Task LatestSave => _latestSave;
 
     public Task SetDecodesInSoftwareAsync(bool decodesInSoftware)
     {
         _decodesInSoftware = decodesInSoftware;
-        return Task.Run(SaveAsync);
+        // Saves run one at a time behind the gate, so the latest one ends after those before it.
+        return _latestSave = Task.Run(SaveAsync);
     }
 
     public Task SetUpDownAsync(PlayerUpDown upDown)
     {
         _upDown = upDown;
-        return Task.Run(SaveAsync);
+        return _latestSave = Task.Run(SaveAsync);
     }
 
     private PlaybackDeviceFile? Load()
@@ -101,7 +106,8 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
     private async Task SaveAsync()
     {
         await _gate.WaitAsync().ConfigureAwait(false);
-        string temp = _filePath + ".tmp";
+        // Its own temporary file: a second Granary on the same data folder saving at the same moment cannot write into it.
+        string temp = $"{_filePath}.{Guid.NewGuid():N}.tmp";
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(_filePath)!);
