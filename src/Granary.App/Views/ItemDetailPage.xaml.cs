@@ -12,7 +12,7 @@ using Microsoft.UI.Xaml.Navigation;
 namespace Granary.App.Views;
 
 /// <summary>Any catalog item; the navigation parameter is its content id (<see cref="Core.Abstractions.AppRoute.Item"/>).</summary>
-public sealed partial class ItemDetailPage : Page
+public sealed partial class ItemDetailPage : Page, IArrivalFocus
 {
     public ItemDetailPage()
     {
@@ -22,6 +22,19 @@ public sealed partial class ItemDetailPage : Page
     }
 
     public ItemDetailViewModel ViewModel { get; }
+
+    Control? IArrivalFocus.ArrivalFocus => Hero.ArrivalFocus;
+
+    /// <summary>A remote's Play anywhere on the page plays the title as its Play does; false while it cannot.</summary>
+    internal bool PlayFromKey()
+    {
+        if (!ViewModel.PlayCommand.CanExecute(null))
+        {
+            return false;
+        }
+        ViewModel.PlayCommand.Execute(null);
+        return true;
+    }
 
     // Static because x:Bind function bindings in item templates call them without the page.
     public static string SeasonName(string title, string caption, bool isWatched) => isWatched ? $"{title}, {caption}, watched" : $"{title}, {caption}";

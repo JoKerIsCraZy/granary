@@ -201,7 +201,8 @@
                 </NavigationViewItem>
             </NavigationView.FooterMenuItems>
 
-            <Frame x:Name="ContentFrame" />
+            <!-- The arrows move focus across every page, as a TV remote's do (MainWindow.Remote.cs). -->
+            <Frame x:Name="ContentFrame" XYFocusKeyboardNavigation="Enabled" />
         </NavigationView>
 
         <!--

@@ -49,12 +49,21 @@ public sealed class NavigationService : INavigationService
     private Frame? _frame;
     private IPlayerOverlay? _player;
 
+    // How many pages lay under the section's own page when it was shown: 0 under Home or a reset, 1 (Home) otherwise.
+    private int _sectionDepth;
+
     public AppRoute? Current { get; private set; }
 
     /// <summary>The parameter the current page was opened with.</summary>
     public object? CurrentParameter { get; private set; }
 
     public bool CanGoBack => _player?.IsPlayerFull == true || _frame?.CanGoBack == true;
+
+    /// <summary>
+    /// The page is a sidebar section's own page (or the page a reset showed), not one opened within it: Back from a remote
+    /// then moves focus to the sidebar first (MainWindow.Remote.cs).
+    /// </summary>
+    public bool IsAtSection => _frame is null || _frame.BackStack.Count <= _sectionDepth;
 
     /// <summary>Raised after every navigation, Back included, and after the history was reset.</summary>
     public event EventHandler<AppRoute>? Navigated;
@@ -115,6 +124,7 @@ public sealed class NavigationService : INavigationService
         {
             _frame.BackStack.Add(home ?? new PageStackEntry(typeof(HomePage), null, null));
         }
+        _sectionDepth = _frame.BackStack.Count;
         Arrived(route, parameter);
     }
 
@@ -131,6 +141,7 @@ public sealed class NavigationService : INavigationService
         }
         Navigate(route, parameter);
         _frame.BackStack.Clear();
+        _sectionDepth = 0;
         Arrived(route, parameter);
     }
 
@@ -157,6 +168,8 @@ public sealed class NavigationService : INavigationService
         {
             frame.GoBack();
         }
+        // Back from a section to Home leaves Home its own section: a page opened from it then is one level in.
+        _sectionDepth = Math.Min(_sectionDepth, frame.BackStack.Count);
         if (route is { } arrived)
         {
             Arrived(arrived, entry.Parameter);

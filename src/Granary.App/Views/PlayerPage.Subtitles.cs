@@ -83,7 +83,7 @@ public sealed partial class PlayerPage
             return;
         }
         AddSubtitlesPanel.Visibility = Visibility.Collapsed;
-        KeepFocusInPage();
+        KeepFocusInPage(SubtitleButton);
     }
 
     // The marker panel opens where the web puts it each time, and a button it had the keyboard on is gone with it.
@@ -105,7 +105,7 @@ public sealed partial class PlayerPage
                 CloseAddSubtitles();
                 break;
             case nameof(PlayerViewModel.IsAppearanceOpen) when !ViewModel.IsAppearanceOpen:
-                KeepFocusInPage();
+                KeepFocusInPage(SubtitleButton);
                 break;
         }
     }

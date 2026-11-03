@@ -92,5 +92,5 @@ public sealed partial class DetailShelf : UserControl
             : Visibility.Collapsed;
     }
 
-    private void ApplyBleed() => RowBleed.Apply(Bleed, Track, ShelfContent as FrameworkElement, PreviousButton, NextButton);
+    private void ApplyBleed() => RowBleed.Apply(Bleed, Track, Scroller, ShelfContent as FrameworkElement, PreviousButton, NextButton);
 }

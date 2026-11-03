@@ -62,6 +62,7 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject
         _logger = logger;
         _devicePreferences = devicePreferences;
         DecodesInSoftware = devicePreferences.DecodesInSoftware;
+        SelectedUpDown = UpDownChoices[devicePreferences.UpDown == PlayerUpDown.Volume ? 1 : 0];
         _saves = new SettingSaves(logger);
     }
 

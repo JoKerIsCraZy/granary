@@ -97,6 +97,7 @@ public sealed partial class MainWindow : Window
         SetTitleBar(AppTitleBar);
         StyleCaptionButtons();
         InitializeFullScreen();
+        InitializeRemote();
         // The exe carries the icon too (ApplicationIcon); an unpackaged window still has to be given it.
         AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets", "Logo", "granary.ico"));
         AppWindow.Resize(new Windows.Graphics.SizeInt32(1440, 900));

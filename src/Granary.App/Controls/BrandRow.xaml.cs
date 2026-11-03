@@ -85,7 +85,7 @@ public sealed partial class BrandRow : UserControl
         return Color.FromArgb(0xFF, (byte)(rgb >> 16), (byte)(rgb >> 8), (byte)rgb);
     }
 
-    private void ApplyBleed() => RowBleed.Apply(Bleed, Track, Tiles, PreviousButton, NextButton);
+    private void ApplyBleed() => RowBleed.Apply(Bleed, Track, Scroller, Tiles, PreviousButton, NextButton);
 
     private void OnPreviousClick(object sender, RoutedEventArgs e) => ScrollBy(-1);
 

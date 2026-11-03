@@ -19,6 +19,13 @@ internal static class RowBleed
     // How far the arrows sit outside the content's start and end.
     private const double ArrowOverhang = 18;
 
+    // How far the view reaches left of the first card and below the cards, for the focus ring that goes round a card
+    // (SiloCardButtonStyle's FocusVisualMargin, 8 px, 12 below): the view, as high as the row's highest card, cut off the
+    // first card's ring on its left and a three-line card's (Continue Watching, an episode) below. The content's margin
+    // keeps the cards where they were; scrolled, this much of the card before shows left of the gutter.
+    private const double FocusRoom = 12;
+    private const double FocusRoomBelow = 14;
+
     /// <summary>
     /// Pages the row by whole cards, as the web's carousel does: as many as show, so that afterwards a card starts right on
     /// the page's gutter again, the one before it cut off in the gutter. A row whose cards cannot be measured pages by
@@ -26,7 +33,7 @@ internal static class RowBleed
     /// </summary>
     public static void Page(ScrollView scroller, UIElement? content, double bleed, int direction)
     {
-        double viewport = scroller.ViewportWidth;
+        double viewport = scroller.ViewportWidth - FocusRoom;
         double target;
         if (content is ItemsRepeater { Layout: StackLayout { Orientation: Orientation.Horizontal } layout } items && CardWidth(items) is { } width)
         {
@@ -54,12 +61,13 @@ internal static class RowBleed
         return null;
     }
 
-    public static void Apply(double bleed, FrameworkElement track, FrameworkElement? content, Button previous, Button next)
+    public static void Apply(double bleed, FrameworkElement track, FrameworkElement scroller, FrameworkElement? content, Button previous, Button next)
     {
         track.Margin = new Thickness(0, 0, -bleed, 0);
+        scroller.Margin = new Thickness(-FocusRoom, 0, 0, -FocusRoomBelow);
         if (content is not null)
         {
-            content.Margin = new Thickness(0, 0, bleed, 0);
+            content.Margin = new Thickness(FocusRoom, 0, bleed, FocusRoomBelow);
         }
         previous.Margin = new Thickness(-ArrowOverhang, 0, 0, previous.Margin.Bottom);
         next.Margin = new Thickness(0, 0, bleed - ArrowOverhang, next.Margin.Bottom);

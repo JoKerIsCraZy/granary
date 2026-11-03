@@ -39,6 +39,9 @@ public sealed partial class PlayerPage
         set => SetValue(IsDockedProperty, value);
     }
 
+    /// <summary>A remote's way into the bar: its picture, which brings the player back.</summary>
+    public bool FocusDock() => IsDocked && DockVideoButton.Focus(FocusState.Keyboard);
+
     /// <summary>The full player's controls are away: in the mini view, or as the bar.</summary>
     public bool IsCompact
     {
@@ -141,7 +144,20 @@ public sealed partial class PlayerPage
 
     private void OnMinimizeClick(object sender, RoutedEventArgs e) => MinimizeRequested?.Invoke(this, EventArgs.Empty);
 
-    private void OnExpandClick(object sender, RoutedEventArgs e) => ExpandRequested?.Invoke(this, EventArgs.Empty);
+    // With a key (a remote's OK on the picture), the player comes back as OK shows its controls: focus on Play/Pause.
+    private void OnExpandClick(object sender, RoutedEventArgs e)
+    {
+        ExpandRequested?.Invoke(this, EventArgs.Empty);
+        if (_lastInputWasKey)
+        {
+            // Once the full player's controls are back in the layout.
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                ShowControls();
+                FocusTransport();
+            });
+        }
+    }
 
     private void OnDockStopClick(object sender, RoutedEventArgs e) => StopRequested?.Invoke(this, EventArgs.Empty);
 

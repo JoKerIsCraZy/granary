@@ -10,7 +10,7 @@ using Microsoft.UI.Xaml.Navigation;
 namespace Granary.App.Views;
 
 /// <summary>A title from TMDB; the parameter is a <see cref="TitleRouteParameter"/>.</summary>
-public sealed partial class TitlePage : Page
+public sealed partial class TitlePage : Page, IArrivalFocus
 {
     public TitlePage()
     {
@@ -19,6 +19,9 @@ public sealed partial class TitlePage : Page
     }
 
     public TitleViewModel ViewModel { get; }
+
+    // Request, or the request's state: the Play pill's place.
+    Control? IArrivalFocus.ArrivalFocus => PrimaryButton;
 
     /// <summary>"Request seasons" while it is open.</summary>
     public RequestSeasonsViewModel? Picker { get; private set; }
