@@ -286,8 +286,9 @@ public sealed class PrePlayPickers
     {
         public string LanguageLabel { get; } = TrackText.SubtitleLanguage(Track.Language);
 
-        // The track's own name: its title, the embedded one, else an external file's name (web: normalizeBuiltInTrack).
-        public string? Title { get; } = new[] { Track.Title, Track.EmbeddedTitle, Track.FileName }
+        // The track's own name: its title, the embedded one, else an external file's name without its folders (web:
+        // normalizeBuiltInTrack, which the server's own path would otherwise reach).
+        public string? Title { get; } = new[] { Track.Title, Track.EmbeddedTitle, TrackText.FileLabel(Track.FileName) }
             .FirstOrDefault(name => !string.IsNullOrWhiteSpace(name))?.Trim();
 
         public string Summary => PrePlayText.SubtitleSummary(LanguageLabel, Title, Track.Codec, Track.Forced, Track.HearingImpaired);

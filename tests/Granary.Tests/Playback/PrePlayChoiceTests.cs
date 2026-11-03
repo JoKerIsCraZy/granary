@@ -101,17 +101,35 @@ public sealed class PrePlayChoiceTests
     }
 
     [Fact]
-    public async Task AWatchPartysStart_IgnoresAChoice_ThePinnedFileWins()
+    public async Task AWatchPartysStart_PlaysTheRoomsFile_WithNoneOfAPagesPicks()
     {
+        // A room's request carries no choice at all (PlayRequest.WatchParty takes none).
         _fixture.Silo.On(HttpMethod.Get, WatchPath, Ok(ServerPlaybackSubtitleTests.WithSubtitleTracks(ServerPlaybackSettingsTests.TwoFiles)));
 
-        var context = await _fixture.CreateStarter().PrepareAsync(MovieId, TestContext.Current.CancellationToken, pinnedFileId: "42",
-            choice: new PrePlayChoice("43", IsVersionPicked: true, AudioTrack: 0, SubtitleTrack: -1));
+        var context = await _fixture.CreateStarter().PrepareAsync(PlayRequest.WatchParty(MovieId, "43", selectionRevision: 1),
+            TestContext.Current.CancellationToken);
 
-        Assert.Equal("42", context.Version.FileId);
+        Assert.Equal("43", context.Version.FileId);
         Assert.True(context.FilePinned);
         Assert.False(context.VersionPicked);
         Assert.Null(context.SubtitlePick);
+    }
+
+    [Fact]
+    public async Task ARoomsStartWithoutAFile_DoesNotWaitForADetailPagesSave()
+    {
+        var saved = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _fixture.TrackChoices = new TrackChoiceWrites(_fixture.Time, _fixture.Logs.For<TrackChoiceWrites>());
+        var saving = _fixture.TrackChoices.RunAsync("audio", _ => saved.Task);
+
+        // A room that has picked no file yet, or a rejoin before it says one: still the room's start.
+        await _fixture.StartAsync(PlayRequest.WatchParty(MovieId, fileId: null, selectionRevision: 1));
+
+        Assert.Single(_fixture.Silo.SentTo(HttpMethod.Get, WatchPath));
+        Assert.Single(_fixture.Silo.SentTo(HttpMethod.Post, StartPath));
+        Assert.False(saving.IsCompleted);
+        saved.SetResult();
+        Assert.True(await saving);
     }
 
     [Fact]

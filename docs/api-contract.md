@@ -1431,11 +1431,14 @@ an audio pick as above; a subtitle pick from the catalog's own track (its combin
 a signature with the track's raw codec and its title, embedded title or file name as `label`); Off as
 `{ "subtitle_track_index": -1, "subtitle_mode": "off" }`; Auto as `DELETE`. The writes go out one at a time in pick
 order, and a start reads the watch detail only once they are in (at most 10 s), as Apple's client settles them; a
-Watch Party's start, which takes none of the page's picks, does not wait. A start cannot say "no saved choice" itself
-(without `audio_track_index` the server resolves the audio from the saved preferences), so one that waited in vain may
-play the choice saved before, which is logged. Once the writes are done, a failed one too, the page reads the item
-again, so Auto shows what the server now picks (the web invalidates the item likewise); only the newest read begun
-after the last write counts. While the item still names a subtitle the viewer set back to Auto (its forgetting on the
+Watch Party's start (known by its request, also before the room names a file), which takes none of the page's picks,
+does not wait. A start cannot say "no saved choice" itself (without `audio_track_index` the server resolves the audio
+from the saved preferences), so one that waited in vain may play the choice saved before, which is logged. Once a
+page's own writes are done, a failed one too, it reads its item again, whatever other pages still have queued, so Auto
+shows what the server now picks (the web invalidates the item likewise); only the newest read begun after the page's
+last write counts, and a write's failure is reported only while its pick is the newest of its kind. An external
+subtitle's `file_name` may be a server path: only its last part is shown or saved as a label, as the server's
+inventory labels use `filepath.Base`. While the item still names a subtitle the viewer set back to Auto (its forgetting on the
 way, refused, or not read back), Play sends the automatic choice without it as the start's subtitle, so what plays is
 what the picker shows. Audio has no such remedy: what the server picks without the saved track comes from its own
 preference cascade, which no watch or item field names, so after a refused audio Auto the start plays the saved track

@@ -189,12 +189,12 @@ public sealed partial class ServerPlayback : IServerPlayback
     public async Task StartAsync(PlayRequest request, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
-        if (request.ContentId is not { } contentId)
+        if (request.ContentId is null)
         {
             throw new ArgumentException("A server playback plays a server title.", nameof(request));
         }
         SetStatus(new ServerPlaybackStatus(ServerPlaybackPhase.Preparing));
-        _starting = Guarded(() => PrepareAndStartAsync(contentId, request, cancellationToken));
+        _starting = Guarded(() => PrepareAndStartAsync(request, cancellationToken));
         await _starting;
     }
 
@@ -269,11 +269,11 @@ public sealed partial class ServerPlayback : IServerPlayback
         await _trackSaves.ConfigureAwait(false);
     }
 
-    private async Task PrepareAndStartAsync(string contentId, PlayRequest request, CancellationToken cancellationToken)
+    private async Task PrepareAndStartAsync(PlayRequest request, CancellationToken cancellationToken)
     {
         try
         {
-            _context = await _starter.PrepareAsync(contentId, cancellationToken, request.PinnedFileId, request.Choice);
+            _context = await _starter.PrepareAsync(request, cancellationToken);
         }
         catch (PlaybackUnavailableException ex)
         {

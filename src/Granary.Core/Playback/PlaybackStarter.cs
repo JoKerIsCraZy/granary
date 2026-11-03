@@ -58,13 +58,18 @@ public sealed class PlaybackStarter(
     private const double RewindFromSeconds = 30;
     private const double ResumeRewindSeconds = 7;
 
+    /// <summary>
+    /// Gathers what the start of <paramref name="request"/>'s title needs: its <see cref="PlayRequest.PinnedFileId"/> (a
+    /// Watch Party's file) or else its <see cref="PlayRequest.Choice"/> (the detail page's picks), or the client's choice.
+    /// </summary>
     /// <exception cref="PlaybackUnavailableException">The title, the profile or the server cannot play.</exception>
-    /// <param name="pinnedFileId">The one file to play (a Watch Party's); null lets the client choose.</param>
-    /// <param name="choice">The file and tracks picked on the detail page; ignored for a Watch Party's file.</param>
-    public async Task<PlaybackContext> PrepareAsync(string contentId, CancellationToken cancellationToken, string? pinnedFileId = null,
-        PrePlayChoice? choice = null)
+    public async Task<PlaybackContext> PrepareAsync(PlayRequest request, CancellationToken cancellationToken)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(contentId);
+        ArgumentNullException.ThrowIfNull(request);
+        string contentId = request.ContentId ?? throw new ArgumentException("The request plays no title of the server.", nameof(request));
+        string? pinnedFileId = request.PinnedFileId;
+        // A room plays the room's file, or with none named yet the client's choice, never a page's picks.
+        var choice = request.IsWatchParty ? null : request.Choice;
         var server = session.ActiveServer ?? throw new PlaybackUnavailableException("Choose a server to play from.", canRetry: false);
         string profileId = session.ProfileId ?? throw new PlaybackUnavailableException("Choose a profile to play from this server.", canRetry: false);
         var settings = preferences.ReadAsync(server.BaseUri, cancellationToken);
@@ -75,9 +80,9 @@ public sealed class PlaybackStarter(
         try
         {
             // A pick or an Auto made on the detail page a moment ago is in the watch detail's preferences (Apple's
-            // client settles its pending writes before this read too). A Watch Party's room plays its own file at once:
-            // it takes none of the page's picks, so it waits for none of their saves.
-            if (trackChoices is not null && pinnedFileId is null)
+            // client settles its pending writes before this read too). A Watch Party's start, with its file or before the
+            // room names one, takes none of the page's picks, so it waits for none of their saves.
+            if (trackChoices is not null && !request.IsWatchParty)
             {
                 await trackChoices.SettleAsync(cancellationToken).ConfigureAwait(false);
             }

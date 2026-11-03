@@ -27,6 +27,13 @@ public sealed partial class ItemDetailViewModel
     private int _trackSaves;
     private int _prePlayReads;
 
+    // This page's saves still on their way (other pages share the app's queue, and read their own items).
+    private int _savesOnTheWay;
+
+    // Picks made per kind: a save's failure speaks only while its pick is still the latest of its kind.
+    private int _audioPicks;
+    private int _subtitlePicks;
+
     /// <summary>The pickers' rows and words, and what Play passes on.</summary>
     [ObservableProperty]
     public partial PrePlayPickers Pickers { get; private set; } = PrePlayPickers.None;
@@ -114,6 +121,7 @@ public sealed partial class ItemDetailViewModel
     {
         _prePlayItem = null;
         _picks = PrePlayPicks.None;
+        _savesOnTheWay = 0;
         Pickers = PrePlayPickers.None;
     }
 
@@ -124,7 +132,8 @@ public sealed partial class ItemDetailViewModel
         _prePlayItem is not null && (target == _contentId || target == _item?.ContentId) ? Pickers.Choice : null;
 
     // In pick order through the app's one queue, which a start waits for; a failure costs only the remembered choice and
-    // says so. The last write of a burst reads the item again, a failed one too. A page the viewer has left is not touched.
+    // says so, unless a newer pick of its kind has been made since. Once this page's own saves are all done, a failed one
+    // too, it reads its item again, whatever other pages still have queued. A page the viewer has left is not touched.
     private async Task SaveTrackChoiceAsync(string kind, string failure, Func<TrackPreferencesApi, Uri, string, CancellationToken, Task> write)
     {
         if (_trackPreferences is not { } api || _trackChoices is not { } writes || _serverBase is not { } server || _prePlayItem is not { } item)
@@ -133,21 +142,24 @@ public sealed partial class ItemDetailViewModel
         }
         string key = TrackPreferencesApi.KeyFor(item.Type, item.SeriesId, _contentId);
         int generation = _generation;
+        int pick = kind == AudioKind ? ++_audioPicks : ++_subtitlePicks;
         _trackSaves++;
+        _savesOnTheWay++;
         ActionError = "";
         bool saved = await writes.RunAsync(kind, cancellationToken => write(api, server, key, cancellationToken));
         if (generation != _generation)
         {
             return;
         }
-        if (!saved)
+        _savesOnTheWay--;
+        if (!saved && pick == (kind == AudioKind ? _audioPicks : _subtitlePicks))
         {
             ActionError = failure;
             // The server keeps what it had: Auto shows what the item read last says it picks.
             _picks = kind == AudioKind ? _picks with { AudioAutoPending = false } : _picks with { SubtitleAutoPending = false };
             ShowPickers();
         }
-        if (writes.IsIdle)
+        if (_savesOnTheWay == 0)
         {
             await ReadPrePlayAgainAsync(server, generation);
         }
@@ -182,9 +194,9 @@ public sealed partial class ItemDetailViewModel
             };
             ShowPickers();
         }
-        catch (Exception ex) when (ex is ArgumentException || ApiFailureText.IsRequestFailure(ex))
+        catch (Exception ex) when (ex is ArgumentException || LibraryErrors.IsExpected(ex))
         {
-            _logger.LogWarning("Reading item {ItemId} again after a track choice failed: {Failure}", _contentId, ApiFailureText.Describe(ex));
+            _logger.LogWarning("Reading item {ItemId} again after a track choice failed: {Failure}", _contentId, LibraryErrors.Describe(ex));
             if (IsNewest())
             {
                 SettleAuto();

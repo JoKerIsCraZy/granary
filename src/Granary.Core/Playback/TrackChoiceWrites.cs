@@ -19,9 +19,6 @@ public sealed class TrackChoiceWrites(TimeProvider time, ILogger<TrackChoiceWrit
     private Task _tail = Task.CompletedTask;
     private int _waiting;
 
-    /// <summary>No write is queued or on its way.</summary>
-    public bool IsIdle => Volatile.Read(ref _waiting) == 0;
-
     /// <summary>Sends <paramref name="write"/> after the writes before it; true once the server took it.</summary>
     /// <param name="kind">What is saved, for the log: "audio" or "subtitle".</param>
     public Task<bool> RunAsync(string kind, Func<CancellationToken, Task> write)

@@ -386,15 +386,17 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     the highest resolution first. Audio rows: Auto with the track it picks, then each track's language with chips for
     codec, channels and DEFAULT and its own title and layout, bitrate, sample rate and bit depth under it. Subs rows:
     Auto, Off, then "Embedded" and "External" headings over their tracks, each by language (forced first, the file's
-    default first), with its format and FORCED, HI and DEFAULT chips, its own title under it. Downloaded subtitles and
+    default first), with its format and FORCED, HI and DEFAULT chips, its own title (an external file's name without its
+    folders) under it. Downloaded subtitles and
     "Search for Subtitles…" are left out before playback, as in Silo's apps; the player has them.
   - Play, Resume and Start over play the chosen file with the chosen tracks. Picking another file starts its audio and
     subtitles from Auto again. Audio and subtitle picks (Off included) are also saved for the title, for its series on an
     episode, and Auto forgets the saved one, as the web's detail page and Apple's client save them; the page then reads
     the item again. Until that answer is in, Auto shows as "Auto" alone (its row without a track), since what the server
-    picks then is not known yet; a failed save or read ends the wait, and Auto then names what the item last read picks. A save that fails says so in the hero's error bar in the web's words ("Failed to save
-    audio preference", "Failed to reset subtitle preference") and still applies to this visit's Play; an Auto over a
-    remembered subtitle the server kept stays Auto. An open menu keeps its rows while the item is read again; it shows
+    picks then is not known yet; a failed save or read ends the wait, and Auto then names what the item last read picks.
+    A save that fails says so in the hero's error bar in the web's words ("Failed to save audio preference", "Failed to
+    reset subtitle preference"), unless a newer pick of the same kind came after it, and still applies to this visit's
+    Play; an Auto over a remembered subtitle the server kept stays Auto. An open menu keeps its rows while the item is read again; it shows
     the new ones the next time it opens. A series or season page has no pickers: it plays an episode.
   - Info opens a 980 wide dialog: Details (with the full overview, ratings, countries, studios, a series' regular seasons
     and episodes, a season's number and episodes), Cast, Crew by job and each file's facts (the played file's audio as

@@ -95,6 +95,17 @@ public static partial class TrackText
         _ => "",
     };
 
+    /// <summary>
+    /// The name of a track's file without its folders, whichever separator the server's paths use, so a menu never shows
+    /// where the server keeps its media (as the server names its inventory's tracks: filepath.Base); null without one.
+    /// </summary>
+    public static string? FileLabel(string? fileName)
+    {
+        string name = fileName?.Trim() ?? "";
+        name = name[(name.LastIndexOfAny(['/', '\\']) + 1)..].Trim();
+        return name.Length > 0 ? name : null;
+    }
+
     /// <summary>"External", "Downloaded", else "Embedded".</summary>
     public static string SubtitleSource(string? source) => source switch
     {

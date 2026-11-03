@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using Granary.Core.Api.Playback;
+using Granary.Core.ViewModels.Player;
 
 namespace Granary.Core.Playback;
 
@@ -92,7 +93,7 @@ public static partial class SubtitleAutoSelection
     private static string? InventoryLabel(WatchSubtitleTrack track)
     {
         string?[] names = track.External
-            ? [track.Title, track.EmbeddedTitle, track.FileName is { } file ? Path.GetFileName(file) : null, track.Language]
+            ? [track.Title, track.EmbeddedTitle, TrackText.FileLabel(track.FileName), track.Language]
             : [track.Title, track.EmbeddedTitle, track.Language];
         return names.FirstOrDefault(name => !string.IsNullOrWhiteSpace(name))?.Trim();
     }

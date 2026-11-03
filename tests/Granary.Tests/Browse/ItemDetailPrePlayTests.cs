@@ -397,16 +397,84 @@ public sealed class ItemDetailPrePlayTests
         }
     }
 
-    [Fact]
-    public async Task AnEpisodesPick_IsSavedForItsSeries()
+    // The episode page with two audio tracks on its first file; its picks are kept for its series.
+    private const string SeriesAudioPrefs = "api/v2/audio-prefs/" + ItemDetailPayloads.SeriesId;
+
+    private Task<ItemDetailViewModel> LoadEpisodeWithAudioAsync()
     {
-        const string seriesPrefs = "api/v2/audio-prefs/" + ItemDetailPayloads.SeriesId;
         string episode = ItemDetailPayloads.Episode.Replace("\"file_id\": \"901\",",
             "\"file_id\": \"901\", \"audio_tracks\": [{ \"language\": \"fre\", \"codec\": \"truehd\", \"channels\": 8, \"default\": true }, { \"language\": \"eng\", \"codec\": \"eac3\", \"channels\": 6 }],",
             StringComparison.Ordinal);
         _fixture.Episode().Get(ItemPath(ItemDetailPayloads.EpisodeId), Ok(episode));
-        _fixture.Silo.On(HttpMethod.Put, seriesPrefs, ScriptedSilo.NoContent());
-        var detail = await _fixture.LoadAsync(ItemDetailPayloads.EpisodeId);
+        _fixture.Silo.On(HttpMethod.Put, SeriesAudioPrefs, ScriptedSilo.NoContent());
+        return _fixture.LoadAsync(ItemDetailPayloads.EpisodeId);
+    }
+
+    [Fact]
+    public async Task APageReadsItsOwnItemAgain_WhileAnotherPagesSaveIsQueued()
+    {
+        // A title page kept behind the one the viewer is on: both save through the app's one queue.
+        var behind = await LoadAsync();
+        var current = await LoadEpisodeWithAudioAsync();
+        var (held, gate) = Held();
+        _fixture.Silo.On(HttpMethod.Delete, AudioPrefs, held);
+
+        var reset = behind.SelectAudioCommand.ExecuteAsync(behind.Pickers.Audio[0]);
+        var pick = current.SelectAudioCommand.ExecuteAsync(current.Pickers.Audio[2]);
+        gate.SetResult(NoContentResponse());
+        await reset;
+        await pick;
+
+        Assert.Equal(2, _fixture.Silo.SentTo(HttpMethod.Get, ItemPath(Movie)).Count);
+        Assert.Equal("Auto: English · DTS · 5.1", behind.Pickers.AudioSummary);
+        Assert.Equal(2, _fixture.Silo.SentTo(HttpMethod.Get, ItemPath(ItemDetailPayloads.EpisodeId)).Count);
+    }
+
+    [Fact]
+    public async Task AnOlderSaveFailingLate_DoesNotSpeakForTheNewerPick()
+    {
+        var detail = await LoadAsync();
+        detail.SelectVersionCommand.Execute(detail.Pickers.Versions[0]);
+        var (held, gate) = Held();
+        _fixture.Silo.On(HttpMethod.Put, AudioPrefs, held, ScriptedSilo.NoContent());
+
+        var first = detail.SelectAudioCommand.ExecuteAsync(detail.Pickers.Audio[1]);
+        var second = detail.SelectAudioCommand.ExecuteAsync(detail.Pickers.Audio[2]);
+        gate.SetResult(await ScriptedSilo.Problem(500, "internal")());
+        await first;
+        await second;
+
+        Assert.Equal("", detail.ActionError);
+        Assert.Equal("German · AC3 · 5.1", detail.Pickers.AudioSummary);
+        Assert.Equal(new PrePlayChoice("501", true, AudioTrack: 1), detail.Pickers.Choice);
+    }
+
+    [Theory]
+    [InlineData("/media/movies/Night Harbor (2025)/Night.Harbor.2025.en.srt")]
+    [InlineData(@"D:\\Media\\Night Harbor (2025)\\Night.Harbor.2025.en.srt")]
+    public async Task AnExternalSubtitlesPath_ShowsAndSavesOnlyItsName(string path)
+    {
+        string movie = PrePlayPayloads.Movie.Replace("\"title\": \"SDH\", \"external\": true, \"file_name\": \"Night.Harbor.2025.en.sdh.srt\"",
+            $"\"external\": true, \"file_name\": \"{path}\"", StringComparison.Ordinal);
+        Assert.Contains("Media", movie, StringComparison.OrdinalIgnoreCase);
+        var detail = await LoadAsync(Ok(movie));
+        detail.SelectVersionCommand.Execute(detail.Pickers.Versions[0]);
+
+        var external = detail.Pickers.Subtitles.Single(r => r.Section == "External");
+        await detail.SelectSubtitleCommand.ExecuteAsync(external);
+
+        Assert.Equal("Night.Harbor.2025.en.srt", external.Description);
+        Assert.DoesNotContain("Media", external.AccessibleName, StringComparison.OrdinalIgnoreCase);
+        string saved = SentBody(HttpMethod.Put, SubtitlePrefs);
+        Assert.Contains("\"label\":\"Night.Harbor.2025.en.srt\"", saved, StringComparison.Ordinal);
+        Assert.DoesNotContain("Media", saved, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task AnEpisodesPick_IsSavedForItsSeries()
+    {
+        const string seriesPrefs = SeriesAudioPrefs;
+        var detail = await LoadEpisodeWithAudioAsync();
 
         await detail.SelectAudioCommand.ExecuteAsync(detail.Pickers.Audio[2]);
         detail.PlayCommand.Execute(null);

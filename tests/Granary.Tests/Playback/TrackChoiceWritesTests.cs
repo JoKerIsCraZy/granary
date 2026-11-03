@@ -23,13 +23,12 @@ public sealed class TrackChoiceWritesTests
 
         var pick = writes.RunAsync("audio", async _ => { await first.Task; order.Add("pick"); });
         var auto = writes.RunAsync("audio", _ => { order.Add("auto"); return Task.CompletedTask; });
-        Assert.False(writes.IsIdle);
+        Assert.Empty(order);
         first.SetResult();
 
         Assert.True(await pick);
         Assert.True(await auto);
         Assert.Equal(["pick", "auto"], order);
-        Assert.True(writes.IsIdle);
     }
 
     [Fact]
