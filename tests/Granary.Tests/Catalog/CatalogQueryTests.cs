@@ -11,6 +11,15 @@ public sealed class CatalogQueryTests
         new ImageSizes(Poster: 342).For(JsonSerializer.Deserialize(CatalogPayloads.ImageCapabilities, SiloJsonContext.Default.ImageCapabilities));
 
     [Fact]
+    public void AQueryWithRules_HasNoQueryString_SoTheRulesAreNeverLeftOut()
+    {
+        var hdr = new SmartRule { Field = "hdr", Op = "is", Value = JsonDocument.Parse("true").RootElement.Clone() };
+        var query = new CatalogQuery { LibraryId = "12", Rules = [new SmartRuleGroup("all", [hdr])] };
+
+        Assert.Throws<InvalidOperationException>(() => query.ToQueryString());
+    }
+
+    [Fact]
     public void EmptyQuery_SendsNothing()
     {
         Assert.Equal("", new CatalogQuery().ToQueryString());

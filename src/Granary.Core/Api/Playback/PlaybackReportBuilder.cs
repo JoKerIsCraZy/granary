@@ -78,8 +78,9 @@ public static class PlaybackReportBuilder
     /// The viewer chose direct play without full hardware decoding (Settings → Playback): HEVC, VP9 and AV1 are declared
     /// for direct play whatever the GPU does, and HDR is tone-mapped here, decoded on the CPU where the GPU cannot. A PC
     /// that decodes 4K HDR well enough in software then plays the original instead of a server transcode; a slower one
-    /// may stutter. HLS keeps the GPU's list, so a transcode the server still makes stays one the GPU decodes (the
-    /// server encodes HEVC only for an HLS delivery that lists it).
+    /// may stutter. HLS keeps the list without them, the codecs the GPU or the CPU decode smoothly, so a transcode the
+    /// server still makes stays one this PC decodes without strain (the server encodes HEVC only for an HLS delivery that
+    /// lists it).
     /// </param>
     public static PlaybackClientReport Build(PlaybackDeviceFacts device, string appVersion, string? appChannel = null, bool mediaOrigins = false,
         bool softwareDecoding = false)

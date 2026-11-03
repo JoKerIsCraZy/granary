@@ -64,8 +64,46 @@ public sealed class JsonPlaybackDevicePreferencesTests : IDisposable
         await preferences.SetDecodesInSoftwareAsync(true);
 
         Assert.True(preferences.DecodesInSoftware);
-        Assert.False(File.Exists(FilePath + ".tmp"));
+        Assert.Empty(Directory.GetFiles(_directory, "*.tmp"));
         Assert.Contains(_logs.Lines, line => line.StartsWith("Warning ", StringComparison.Ordinal) && line.Contains("could not be saved", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task TheLatestSave_IsOnDiskWhenItEnds_AsTheWindowWaitsForItOnClosing()
+    {
+        var preferences = Create();
+
+        var saves = new[]
+        {
+            preferences.SetDecodesInSoftwareAsync(true),
+            preferences.SetDecodesInSoftwareAsync(false),
+            preferences.SetDecodesInSoftwareAsync(true),
+        };
+        try
+        {
+            await preferences.LatestSave.WaitAsync(TestContext.Current.CancellationToken);
+
+            // Each save runs after the one before, so the latest ends last.
+            Assert.All(saves, save => Assert.True(save.IsCompleted));
+            Assert.True(Create().DecodesInSoftware);
+        }
+        finally
+        {
+            await Task.WhenAll(saves);
+        }
+    }
+
+    [Fact]
+    public void BeforeAnySave_TheLatestSaveIsDone() => Assert.True(Create().LatestSave.IsCompleted);
+
+    [Fact]
+    public async Task ASave_LeavesNoTemporaryFile()
+    {
+        var preferences = Create();
+
+        await preferences.SetDecodesInSoftwareAsync(true);
+
+        Assert.Equal(["playback-device.json"], Directory.GetFiles(_directory).Select(Path.GetFileName));
     }
 
     [Fact]

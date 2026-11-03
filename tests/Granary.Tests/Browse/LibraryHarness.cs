@@ -25,6 +25,11 @@ internal sealed class LibraryHarness
 
     public const string LettersPath = "api/v2/catalog/letters";
 
+    /// <summary>The listing with rule groups, a POST.</summary>
+    public const string QueryPath = "api/v2/catalog/query";
+
+    public const string RatingsPath = "api/v2/capabilities/ratings";
+
     public const string SettingsPath = "api/v2/settings/values/effective";
 
     /// <summary>The profile hides no library and keeps the server's order.</summary>
@@ -46,6 +51,8 @@ internal sealed class LibraryHarness
         Answer("api/v2/library/1/collections", LibraryPayloads.Collections);
         Answer("api/v2/catalog/filters", LibraryPayloads.Filters);
         Answer(CatalogPath, LibraryPayloads.OnlyPage);
+        Silo.On(HttpMethod.Post, QueryPath, ScriptedSilo.Json(HttpStatusCode.OK, LibraryPayloads.OnlyPage));
+        Answer(RatingsPath, LibraryPayloads.EveryRatingSource);
         AnswerLetters(ScriptedSilo.Json(HttpStatusCode.OK, LibraryPayloads.Letters));
     }
 
@@ -75,6 +82,9 @@ internal sealed class LibraryHarness
 
     /// <summary>The bodies sent to the letter index, oldest first.</summary>
     public List<string> LetterBodies() => [.. Silo.SentTo(HttpMethod.Post, LettersPath).Select(r => r.Body ?? "")];
+
+    /// <summary>The bodies sent to the rule query, oldest first.</summary>
+    public List<string> QueryBodies() => [.. Silo.SentTo(HttpMethod.Post, QueryPath).Select(r => r.Body ?? "")];
 
     /// <summary>The libraries the profile browses, read through <see cref="Silo"/>.</summary>
     public VisibleLibraries Libraries() => new(new CatalogApi(Silo.Http), new SettingsApi(Silo.Http), Logs.For<VisibleLibraries>());

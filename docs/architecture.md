@@ -239,7 +239,10 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
 - **Before the plan** (`PlaybackStarter`): watch detail, the file played last (else the first whole file), the
   start position (the resume point minus 7 s from 30 s on, 0 to start over, sent explicitly), the profile's
   quality and bitrate cap (`PlaybackPreferencesReader`), the server's capabilities, and the device report:
-  `MpvDeviceProbe` reads the GPU's D3D11VA decoder profiles; HEVC, VP9 and AV1 count only with hardware.
+  `MpvDeviceProbe` reads the GPU's D3D11VA decoder profiles, and logs them once; HEVC, VP9 and AV1 count only with
+  hardware, unless this PC's choice of direct play without hardware decoding (`IPlaybackDevicePreferences`, read at each
+  start) adds them for direct play and claims HDR tone mapping; HLS keeps the list without them. Each start logs what the
+  report declares, and each plan the server's reason (`ServerPlayback.Diagnostics.cs`).
 - **The plan**: its stream URL must lie beneath the saved server, or, where the server offers
   `authorized_media_origins_v1` and the start confirms it, be the session's own stream on a proxy node
   (`PlaybackUrl.ResolveStream`, Apple's rules). A node URL the client refuses, or a node stream that never

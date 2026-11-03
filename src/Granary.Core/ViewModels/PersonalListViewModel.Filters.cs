@@ -6,15 +6,15 @@ using Granary.Core.Auth;
 namespace Granary.Core.ViewModels;
 
 // The list's Filters, as the web's catalog page offers them over Favorites, Watchlist, History and a collection
-// (CatalogFiltersPanel): the library page's genre, content ratings and year range, with their options read for the list
-// and the kind of titles it shows.
+// (CatalogFiltersPanel): the library page's, with their options read for the list and the kind of titles it shows. The
+// rule filters go to the rule query with the list as its source.
 public sealed partial class PersonalListViewModel
 {
     private CancellationTokenSource _filterOptions = new();
     // The list, profile and kind of titles the options were last asked for.
     private (string? ServerId, string? ProfileId, string Source, CollectionRouteParameter? Collection, string? Type)? _optionsFor;
 
-    /// <summary>The Filters flyout: genre, content ratings and years, applied to the list.</summary>
+    /// <summary>The Filters flyout, applied to the list.</summary>
     public LibraryFiltersViewModel Filters { get; }
 
     /// <summary>Filters narrow the list; an empty result then offers to clear them.</summary>
@@ -32,6 +32,7 @@ public sealed partial class PersonalListViewModel
     // when the list loads (EnsureFilterOptions).
     private void ResetFilters()
     {
+        CancelFilterOptions();
         Filters.Reset();
         _optionsFor = null;
     }
@@ -50,10 +51,7 @@ public sealed partial class PersonalListViewModel
             return;
         }
         _optionsFor = key;
-        var previous = _filterOptions;
-        _filterOptions = new CancellationTokenSource();
-        previous.Cancel();
-        previous.Dispose();
+        CancelFilterOptions();
         _ = Filters.LoadOptionsAsync(_catalog, server.BaseUri, new CatalogQuery
         {
             Source = Source,
@@ -61,6 +59,15 @@ public sealed partial class PersonalListViewModel
             LibraryId = _collection?.LibraryId,
             Type = Scope.Type,
         }, _filterOptions.Token);
+    }
+
+    // A read for the list before must not fill this one's options when it arrives late.
+    private void CancelFilterOptions()
+    {
+        var previous = _filterOptions;
+        _filterOptions = new CancellationTokenSource();
+        previous.Cancel();
+        previous.Dispose();
     }
 
     private void OnFiltersChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
