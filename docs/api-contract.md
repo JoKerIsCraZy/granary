@@ -2324,7 +2324,7 @@ HDR with libplacebo. An honest, conservative first report:
   `codecs_video_hardware`) and `client_managed_dynamic_range_v1` is claimed whatever the GPU decodes, so HEVC, VP9,
   AV1 and HDR originals direct-play and FFmpeg decodes them on the CPU where D3D11VA cannot. For a PC whose GPU
   decodes these only in part (HEVC Main 10 on 6th-generation Intel graphics, for example), where the server would
-  otherwise transcode and tone-map. `output.hdr` stays false, and `hls` keeps the GPU's list: the server encodes HEVC
+  otherwise transcode and tone-map. `output.hdr` stays false, and `hls` keeps the list without them (what the GPU or the CPU decode smoothly): the server encodes HEVC
   only for an HLS delivery that lists it, so a transcode it still makes stays one the GPU decodes. Read at each start,
   so a change counts from the next title.
 - The log says why a title is transcoded: the probe's hardware and 10-bit codecs once, the report's video codecs and
