@@ -10,9 +10,10 @@ namespace Granary.App.Controls;
 public sealed partial class CatalogFiltersButton : UserControl
 {
     // The sections scroll within the window's height less the heading, the buttons and some room above and below, and
-    // never past the flyout's own limit, so the flyout itself never scrolls them away.
+    // never past the flyout's own limit, so the flyout itself never scrolls them away. The least is about two rows of
+    // pills, so that only a window shorter than that and the rest together cuts the flyout.
     private const double WindowRoom = 260;
-    private const double MinimumSectionsHeight = 200;
+    private const double MinimumSectionsHeight = 88;
     private const double MaximumSectionsHeight = 520;
 
     public static readonly DependencyProperty FiltersProperty =

@@ -131,8 +131,14 @@ public sealed record CatalogQuery
 
     /// <summary>The query string with its leading <c>?</c> (or empty).</summary>
     /// <exception cref="ArgumentException">The combination is one the server refuses with 422.</exception>
+    /// <exception cref="InvalidOperationException">The query has <see cref="Rules"/>, which only the POST body carries.</exception>
     public string ToQueryString()
     {
+        if (UsesRules)
+        {
+            // Left out, the rules would silently widen the listing.
+            throw new InvalidOperationException("A query with rules is posted (api/v2/catalog/query); it has no query string.");
+        }
         Validate();
         return new QueryBuilder()
             .Add("source", Source)

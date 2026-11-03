@@ -103,7 +103,8 @@ public sealed record LibraryFilterSet
         return this with
         {
             Genres = Values(Genres),
-            Decades = [.. Decades.Where(d => d >= MinimumYear && d % 10 == 0 && d + 9 <= MaximumYear).Distinct()],
+            // Compared without adding, so no decade, however large, overflows into a range the server refuses.
+            Decades = [.. Decades.Where(d => d >= MinimumYear && d % 10 == 0 && d <= MaximumYear - 9).Distinct()],
             YearFrom = from,
             YearTo = to,
             ContentRatings = Values(ContentRatings),

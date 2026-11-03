@@ -105,6 +105,19 @@ public sealed class LibraryFilterRulesTests
         Assert.Equal(1, new LibraryFilterSet { YearTo = 2000 }.Count);
     }
 
+    [Theory]
+    [InlineData(2_147_483_640)]
+    [InlineData(9_999_990)]
+    [InlineData(10_000)]
+    public void Normalized_DropsADecadePastTheLastYear_HoweverLarge(int decade)
+    {
+        Assert.Empty(new LibraryFilterSet { Decades = [decade] }.Normalized().Decades);
+    }
+
+    [Fact]
+    public void Normalized_KeepsTheLastDecade() =>
+        Assert.Equal([9990], new LibraryFilterSet { Decades = [9990] }.Normalized().Decades);
+
     [Fact]
     public void Normalized_DropsBlanksAndRepeats_OrdersTheYears_AndKeepsOnlyDecades()
     {
