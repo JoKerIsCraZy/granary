@@ -11,12 +11,16 @@ using Microsoft.UI.Xaml.Media;
 
 namespace Granary.App.Views.Settings;
 
-/// <summary>Settings → Playback; it reads the profile's values when it is shown.</summary>
-public sealed partial class PlaybackSettingsView : UserControl
+/// <summary>
+/// Settings → Playback; it reads the profile's values when it is shown. Edit asks the page for the mpv.conf editor, and the
+/// page disposes it as it leaves.
+/// </summary>
+public sealed partial class PlaybackSettingsView : UserControl, IDisposable
 {
     public PlaybackSettingsView()
     {
         ViewModel = ActivatorUtilities.CreateInstance<PlaybackSettingsViewModel>(App.Services);
+        Mpv = ActivatorUtilities.CreateInstance<MpvSettingsViewModel>(App.Services);
         InitializeComponent();
         // Once: the page keeps the view, and coming back to it must not overwrite what is shown.
         Loaded += OnFirstLoaded;
@@ -29,6 +33,32 @@ public sealed partial class PlaybackSettingsView : UserControl
     }
 
     public PlaybackSettingsViewModel ViewModel { get; }
+
+    /// <summary>What Granary's mpv.conf editor changed.</summary>
+    public MpvSettingsViewModel Mpv { get; }
+
+    /// <summary>Edit was pressed: the page shows the mpv.conf editor in this view's place.</summary>
+    public event EventHandler? EditMpvConfigRequested;
+
+    public void Dispose() => Mpv.Dispose();
+
+    /// <summary>Back from the editor: focus returns to Edit, once the view is in the page again.</summary>
+    public void FocusEditMpvConfig(FocusState state)
+    {
+        if (EditMpvConfigButton.IsLoaded)
+        {
+            EditMpvConfigButton.Focus(state);
+            return;
+        }
+        void OnLoaded(object sender, RoutedEventArgs e)
+        {
+            EditMpvConfigButton.Loaded -= OnLoaded;
+            EditMpvConfigButton.Focus(state);
+        }
+        EditMpvConfigButton.Loaded += OnLoaded;
+    }
+
+    private void OnEditMpvConfigClick(object sender, RoutedEventArgs e) => EditMpvConfigRequested?.Invoke(this, EventArgs.Empty);
 }
 
 /// <summary>Settings → Language &amp; Subtitles; it reads the profile's values when it is shown.</summary>

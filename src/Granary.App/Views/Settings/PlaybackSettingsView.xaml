@@ -65,10 +65,16 @@
                                          AutomationProperties.Name="Open the mpv folder" />
                         <Button Content="Open mpv.conf" Style="{StaticResource SiloSettingsOutlineButtonStyle}"
                                 Command="{x:Bind ViewModel.OpenMpvConfigCommand}" AutomationProperties.Name="Open mpv.conf" />
+                        <!-- Granary's own editor, in this page's place (MpvConfigEditorView), for a remote as for a keyboard. -->
+                        <Button x:Name="EditMpvConfigButton" Content="Edit" Style="{StaticResource SiloSettingsOutlineButtonStyle}"
+                                Click="OnEditMpvConfigClick" AutomationProperties.Name="Edit mpv.conf" />
                     </StackPanel>
                 </controls:SettingsRow>
                 <TextBlock Margin="0,12,0,0" Text="{x:Bind ViewModel.MpvConfigMessage, Mode=OneWay}" Style="{StaticResource SiloSettingsMutedTextStyle}"
                            Visibility="{x:Bind controls:SettingsText.Shows(ViewModel.MpvConfigMessage), Mode=OneWay}"
+                           AutomationProperties.LiveSetting="Polite" />
+                <TextBlock Margin="0,12,0,0" Text="{x:Bind Mpv.ChangeText, Mode=OneWay}" Style="{StaticResource SiloSettingsMutedTextStyle}"
+                           Visibility="{x:Bind controls:SettingsText.Shows(Mpv.ChangeText), Mode=OneWay}"
                            AutomationProperties.LiveSetting="Polite" />
             </StackPanel>
         </controls:SettingsGroup>

@@ -122,6 +122,15 @@ which it asks for before `mpv_initialize`. When mpv does not start with the file
 file (an option that only lists something, such as `audio-device=help`, with mpv's own words) or one of Granary's own
 options for it, and mpv starts without the file. A folder named `mpv.conf` is said and passed over.
 
+**Granary's editor** (Settings → Playback → This PC → Edit, `MpvConfigEditorViewModel`) edits the real file: it reads
+`mpv.conf` as it is (or the template, written only on Save) and writes the text back whole through
+`MpvConfigFolder.WriteConfig`, beside the file first and then moved over it, so a failed write leaves the old file. A
+text box hands lines back with a lone carriage return, which mpv would read as one line, so a save puts back the line
+breaks the file had (CRLF for a new one), and line breaks alone are no change. The check under the text is the
+engine's own pre-scan, behind the Core port `IMpvConfigCheck` (`MpvConfigCheck` in the player): `MpvConfigText` with
+the same option lists and `Refusal` as a start, on the text alone, so an `include` is checked when mpv starts. It
+never stops a save. Each save sets `MpvConfigChanges`, which the This PC row reads to say the change is still to come.
+
 **When it applies**: the engine is one libmpv instance for the whole run (`AddGranaryPlayer`), made when the player first
 opens, and mpv reads the file only in `mpv_initialize`. Reading it again before a title (`load-config-file`) would add
 changed options but never undo one taken out or the file deleted, so a change applies after Granary restarts, as the

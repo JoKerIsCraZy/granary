@@ -79,6 +79,28 @@ public sealed class MpvConfigFolderTests : IDisposable
     }
 
     [Fact]
+    public async Task WriteConfig_MakesTheFolder_AndReplacesTheFileWhole()
+    {
+        var folder = Create();
+
+        Assert.True(folder.WriteConfig("deband=yes\n"));
+        Assert.True(folder.WriteConfig("# ünïcode\r\nscale=spline36\r\n"));
+
+        Assert.Equal("# ünïcode\r\nscale=spline36\r\n", await File.ReadAllTextAsync(folder.ConfigFile, TestContext.Current.CancellationToken));
+        Assert.Equal(new MpvConfigContent("# ünïcode\r\nscale=spline36\r\n", IsNew: false), folder.ReadConfig());
+        Assert.Equal(["mpv.conf"], Directory.GetFiles(folder.Directory).Select(Path.GetFileName));
+    }
+
+    [Fact]
+    public void ReadConfig_WithoutAFile_IsTheTemplate_NotWritten()
+    {
+        var folder = Create();
+
+        Assert.Equal(new MpvConfigContent(MpvConfigFolder.Template.ReplaceLineEndings("\r\n"), IsNew: true), folder.ReadConfig());
+        Assert.False(Directory.Exists(folder.Directory));
+    }
+
+    [Fact]
     public void AFolderThatCannotBeMade_IsSaidInTheLog()
     {
         // A file where the folder belongs.

@@ -27,6 +27,11 @@ release's section is what its update says it changes (docs/release.md).
   logs, files and proxies, and runs no scripts or commands of the file's. The log names the options of yours it leaves
   out and any option mpv can't use; a file that would turn Granary's options off plays as if it were not there, and the
   log says why. Without the file, playback is as before.
+- Settings → Playback → This PC → mpv configuration: **Edit** opens `mpv.conf` in an editor inside Granary, usable
+  with the keyboard or a TV remote. It holds the file exactly as written, profiles, includes and comments too, and
+  checks the text as you type: which options Granary keeps for itself, and whether the player would not use the file
+  at all. Save writes the file in one piece and goes back to Settings, which says the change applies after a restart;
+  Cancel, Esc or the remote's Back close it, asking first when there are unsaved changes.
 - The log says why a title is converted: what this PC's graphics card decodes, what Granary told the server it plays,
   and the reason the server gave for its choice.
 - More filters for a library, and for Favorites, Watchlist, History and collections: several genres at once, decades,

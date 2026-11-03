@@ -625,13 +625,36 @@ says why above the sections.
 - **This PC → mpv configuration**: "Use your own mpv options from mpv.conf, such as shaders, scaling or debanding.
   They apply after you restart Granary. Granary keeps the options it needs to show the video and follow your Silo
   server's choices. A wrong option can make playback worse; delete the file to go back to normal." On the right an
-  **Open folder** link (tooltip "For shaders and other files your mpv.conf uses") and an **Open mpv.conf** outline
-  button. Open mpv.conf makes the `mpv` folder in the data directory and an `mpv.conf` of comments only when they are
-  missing, then opens the file in the app Windows has for `.conf` files, or Notepad when there is none; Open folder makes
-  the folder and shows it in File Explorer. When one fails, 13 px muted text under the row says so and where the folder
-  is: "Couldn't open mpv.conf. You'll find it in …", "Couldn't create mpv.conf in …", "mpv.conf in … is a folder.
-  Rename or remove it, then try again.", "Couldn't open …". The next try that works clears it. How mpv reads the file and which options Granary keeps is in docs/architecture.md ("Your own
-  mpv.conf").
+  **Open folder** link (tooltip "For shaders and other files your mpv.conf uses"), an **Open mpv.conf** outline
+  button and an **Edit** outline button (named "Edit mpv.conf" for screen readers). Open mpv.conf makes the `mpv` folder
+  in the data directory and an `mpv.conf` of comments only when they are missing, then opens the file in the app Windows
+  has for `.conf` files, or Notepad when there is none; Open folder makes the folder and shows it in File Explorer. When
+  one fails, 13 px muted text under the row says so and where the folder is: "Couldn't open mpv.conf. You'll find it in
+  …", "Couldn't create mpv.conf in …", "mpv.conf in … is a folder. Rename or remove it, then try again.", "Couldn't
+  open …". The next try that works clears it. After Granary's editor wrote the file, a second muted line says "Your
+  changes to mpv.conf apply after you restart Granary." for the rest of the run. How mpv reads the file and which
+  options Granary keeps is in docs/architecture.md ("Your own mpv.conf").
+- **This PC → mpv configuration → Edit** (`MpvConfigEditorView` on `MpvConfigEditorViewModel`; Granary's own, as Silo's
+  clients have no player configuration): the editor opens in the Playback page's place, in the same column, scrolled to
+  the top. "← Playback" (the settings' back button style, named "Back to Playback"), "mpv.conf" as the 32 px title, and
+  "Your own mpv options for this PC, in mpv's syntax. Profiles, includes and comments stay as you write them. A change
+  applies after you restart Granary." in 14 px muted text. Then a 420 px multi-line text box in Consolas 14 px, without
+  wrapping, spelling or text suggestions, holding the file's text exactly, or the comments a new `mpv.conf` starts with
+  when there is none yet (nothing is written until Save). Under it "Check" (14 px semibold) and the player's own check
+  of the text as it is typed, one 13 px muted line each: "Granary keeps its own vo.", "Granary keeps its own
+  keep-open, which the profile hq sets.", "This file would not be used: it sets player-operation-mode, which Granary
+  needs to keep its own options." (alone, as nothing else counts then), "Granary checks the files it includes only when
+  the player starts.", or "Nothing in it changes the options Granary keeps.". The check never stops a save. On the
+  right below, **Cancel** (outline) and **Save** (red, 8 px corners, named "Save mpv.conf"). Save writes the file whole
+  (beside it first, then over it) with the line breaks the file had, and goes back to Playback; a save that fails keeps
+  the editor and says "Couldn't save mpv.conf in …" in an error bar above the text. A folder in mpv.conf's place says
+  "mpv.conf in … is a folder. Rename or remove it, then try again." and leaves nothing to edit.
+  Remote and keyboard: focus starts in the text at its start; Down on the last line goes to Save, Up on the first line
+  to "← Playback", Left and Right between Cancel and Save, Tab as usual. Esc and a remote's Back close the editor from
+  anywhere in it (Backspace only outside the text), as do Cancel and "← Playback"; with unsaved edits each asks first:
+  "Discard unsaved changes?" / "Your edits to mpv.conf were never saved. Leaving now throws them away." with Discard and
+  Cancel (the default). Picking another settings page, or leaving Settings, asks the same; Cancel keeps the editor and
+  Playback picked. Back in Playback, focus is on Edit.
 - **Connection** (with `connection_speed_v1`): "Connection speed" with the reading as its description ("400 Mbps ·
   measured just now on Ethernet", "Not measured yet") and **Test speed** as an outline button on the right, "Testing…"
   and disabled while it runs (about 10 s). Under the row, in 13 px muted text, what went wrong, in the web's words:

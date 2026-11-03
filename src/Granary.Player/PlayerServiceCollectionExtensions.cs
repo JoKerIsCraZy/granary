@@ -13,6 +13,8 @@ public static class PlayerServiceCollectionExtensions
         services.AddSingleton<MpvPlaybackEngine>();
         services.AddSingleton<IPlaybackEngine>(sp => sp.GetRequiredService<MpvPlaybackEngine>());
         services.AddSingleton<ICompositionVideoOutput>(sp => sp.GetRequiredService<MpvPlaybackEngine>());
+        // The mpv.conf editor's check, by the engine's own rules; it does not start mpv.
+        services.AddSingleton<IMpvConfigCheck, MpvConfigCheck>();
         if (OperatingSystem.IsWindows())
         {
             services.TryAddSingleton<IPlaybackDeviceProbe, MpvDeviceProbe>();

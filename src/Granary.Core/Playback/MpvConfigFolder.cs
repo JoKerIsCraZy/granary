@@ -103,6 +103,57 @@ public sealed class MpvConfigFolder
         }
     }
 
+    /// <summary>
+    /// mpv.conf's text for the editor: the file's own, or the comments a new file starts with when there is none yet
+    /// (<see cref="MpvConfigContent.IsNew"/>). Null when it cannot be read, a folder in its place among the reasons.
+    /// </summary>
+    public MpvConfigContent? ReadConfig()
+    {
+        if (ConfigFileIsFolder)
+        {
+            _logger.LogWarning("mpv.conf in the mpv folder is a folder, not a file");
+            return null;
+        }
+        try
+        {
+            return File.Exists(ConfigFile)
+                ? new MpvConfigContent(File.ReadAllText(ConfigFile), IsNew: false)
+                : new MpvConfigContent(Template.ReplaceLineEndings("\r\n"), IsNew: true);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _logger.LogWarning(ex, "mpv.conf could not be read");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Replaces mpv.conf with <paramref name="text"/> as it is, made first when it is missing; false when it could not be
+    /// written. A write that fails leaves the file as it was.
+    /// </summary>
+    public bool WriteConfig(string text) => !ConfigFileIsFolder && EnsureDirectory() && WriteWhole(ConfigFile, text);
+
+    /// <summary>
+    /// Writes <paramref name="text"/> to <paramref name="path"/> in UTF-8: whole beside it first, then moved over it, so a
+    /// write that fails never leaves half a file. False, and logged, when it could not.
+    /// </summary>
+    internal bool WriteWhole(string path, string text)
+    {
+        string temp = path + ".tmp";
+        try
+        {
+            File.WriteAllText(temp, text);
+            File.Move(temp, path, overwrite: true);
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _logger.LogWarning(ex, "{File} could not be written", Path.GetFileName(path));
+            Delete(temp);
+            return false;
+        }
+    }
+
     private void Delete(string temp)
     {
         try
@@ -111,7 +162,10 @@ public sealed class MpvConfigFolder
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            _logger.LogDebug(ex, "A half-written mpv.conf stays behind as {File}", Path.GetFileName(temp));
+            _logger.LogDebug(ex, "A half-written file stays behind as {File}", Path.GetFileName(temp));
         }
     }
 }
+
+/// <summary>mpv.conf's text as read for the editor; <paramref name="IsNew"/> when there is no file yet and it is the template.</summary>
+public sealed record MpvConfigContent(string Text, bool IsNew);
