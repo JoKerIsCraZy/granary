@@ -46,6 +46,9 @@ public sealed partial class CatalogFiltersButton : UserControl
         set => SetValue(OptionsErrorTextProperty, value);
     }
 
+    /// <summary>Moves focus to the Filters pill, as when the last filter badge is removed.</summary>
+    public bool FocusPill(FocusState state) => PillButton.Focus(state);
+
     public string CountText(int count) => count.ToString(CultureInfo.InvariantCulture);
 
     public string FiltersName(int activeCount) => activeCount switch

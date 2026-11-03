@@ -413,6 +413,57 @@ public sealed class LibraryBrowseTests
     }
 
     [Fact]
+    public async Task Badges_ShowTheAppliedFilters_InTheLanguagesNames()
+    {
+        var library = await _harness.OpenLibraryTabAsync();
+        var filters = library.Browse.Filters;
+        Assert.Empty(filters.Badges);
+        Assert.False(filters.HasBadges);
+
+        filters.BeginEdit();
+        filters.GenreOptions[1].IsSelected = true;
+        filters.AudioLanguageOptions.Single(o => o.Value == "de").IsSelected = true;
+        filters.DraftYearTo = 1999;
+        await filters.ApplyCommand.ExecuteAsync(null);
+
+        Assert.Equal(["Genre: Drama", "Year: <= 1999", "Audio: German"], filters.Badges.Select(b => b.Label));
+        Assert.True(filters.HasBadges);
+    }
+
+    [Fact]
+    public async Task RemovingABadge_TakesOutOnlyItsFilter_AndRestartsTheGrid_AsApplyDoes()
+    {
+        var library = await _harness.OpenLibraryTabAsync();
+        var browse = library.Browse;
+        var filters = browse.Filters;
+        filters.BeginEdit();
+        filters.GenreOptions[0].IsSelected = true;
+        filters.GenreOptions[1].IsSelected = true;
+        filters.VideoQualityOptions.Single(o => o.Label == "HDR").IsSelected = true;
+        await filters.ApplyCommand.ExecuteAsync(null);
+        int restarts = 0;
+        browse.Grid.Restarted += (_, _) => restarts++;
+
+        await filters.RemoveBadgeCommand.ExecuteAsync(filters.Badges.Single(b => b.Label == "Genre: Crime"));
+
+        Assert.Equal(1, restarts);
+        Assert.Equal(["Genre: Drama", "HDR"], filters.Badges.Select(b => b.Label));
+        Assert.Equal(2, filters.ActiveCount);
+        Assert.Equal(new[] { false, true }, filters.GenreOptions.Select(o => o.IsSelected));
+        Assert.Equal(new LibraryFilterSet { Genres = ["Drama"], Hdr = true }, browse.CurrentState.Filters);
+        Assert.Equal("""
+            {"library_id":"1","type":"movie","groups":[{"match":"any","rules":[{"field":"genre","op":"contains","value":"Drama"}]},{"match":"all","rules":[{"field":"hdr","op":"is","value":true}]}],"sort":"title","order":"asc","limit":60}
+            """, _harness.QueryBodies()[^1]);
+
+        await filters.RemoveBadgeCommand.ExecuteAsync(filters.Badges[0]);
+        await filters.RemoveBadgeCommand.ExecuteAsync(filters.Badges[0]);
+
+        Assert.Empty(filters.Badges);
+        Assert.False(browse.IsNarrowed);
+        Assert.Equal(FirstQuery, _harness.Queries(CatalogPath)[^1]);
+    }
+
+    [Fact]
     public async Task FailedLanguagesOfTheFiles_LeaveTheOtherOptions()
     {
         // The file-derived facets are the heavier read: without them the genres, ratings and original languages still show.

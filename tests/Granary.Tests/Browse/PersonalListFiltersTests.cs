@@ -77,6 +77,24 @@ public sealed class PersonalListFiltersTests
     }
 
     [Fact]
+    public async Task RemovingABadge_NarrowsTheListLess()
+    {
+        var list = await ShownAsync(CatalogSources.Favorites);
+        list.Filters.BeginEdit();
+        list.Filters.RatingOptions[1].IsSelected = true;
+        list.Filters.DraftYearFrom = 2000;
+        await list.Filters.ApplyCommand.ExecuteAsync(null);
+
+        await list.Filters.RemoveBadgeCommand.ExecuteAsync(list.Filters.Badges.Single(b => b.Label == "Rated: R"));
+
+        Assert.True(list.IsNarrowed);
+        Assert.Equal(["Year: >= 2000"], list.Filters.Badges.Select(b => b.Label));
+        Assert.Contains("source=favorites", LastQuery, StringComparison.Ordinal);
+        Assert.DoesNotContain("content_rating", LastQuery, StringComparison.Ordinal);
+        Assert.Contains("year_min=2000", LastQuery, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task AList_OffersItsOwnOrder_AndTheSortsItHad_WithTheWebsWords()
     {
         var list = await ShownAsync(CatalogSources.Favorites);

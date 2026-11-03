@@ -28,7 +28,7 @@
         </DataTemplate>
     </UserControl.Resources>
 
-    <Button Style="{StaticResource FiltersPillButtonStyle}" AutomationProperties.Name="{x:Bind FiltersName(Filters.ActiveCount), Mode=OneWay}">
+    <Button x:Name="PillButton" Style="{StaticResource FiltersPillButtonStyle}" AutomationProperties.Name="{x:Bind FiltersName(Filters.ActiveCount), Mode=OneWay}">
         <StackPanel Orientation="Horizontal" Spacing="8">
             <FontIcon Glyph="&#xE71C;" FontSize="14" />
             <TextBlock Text="Filters" />

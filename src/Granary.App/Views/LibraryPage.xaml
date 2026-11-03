@@ -208,32 +208,37 @@
                             "Title ▾", "Ascending ▾" get the dark pill look directly: WinUI's DefaultDropDownButtonStyle
                             cannot be a BasedOn at runtime, and a style without it would drop the drop-down template.
                         -->
-                        <StackPanel Orientation="Horizontal" Spacing="10">
-                            <DropDownButton CornerRadius="{StaticResource SiloPillCornerRadius}" controls:Pill.IsEnabled="True" MinHeight="38" Padding="16,6,12,6"
-                                            FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="13"
-                                            Background="#CC1C1C20" BorderBrush="{StaticResource SiloBorderBrush}" Content="{x:Bind ViewModel.Browse.SortLabel, Mode=OneWay}"
-                                            AutomationProperties.Name="{x:Bind SortName(ViewModel.Browse.SortLabel), Mode=OneWay}">
-                                <DropDownButton.Flyout>
-                                    <MenuFlyout x:Name="SortMenu" Placement="BottomEdgeAlignedLeft" Opening="OnSortMenuOpening" />
-                                </DropDownButton.Flyout>
-                            </DropDownButton>
-                            <DropDownButton CornerRadius="{StaticResource SiloPillCornerRadius}" controls:Pill.IsEnabled="True" MinHeight="38" Padding="16,6,12,6"
-                                            FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="13"
-                                            Background="#CC1C1C20" BorderBrush="{StaticResource SiloBorderBrush}" Content="{x:Bind ViewModel.Browse.OrderLabel, Mode=OneWay}"
-                                            AutomationProperties.Name="{x:Bind OrderName(ViewModel.Browse.OrderLabel), Mode=OneWay}">
-                                <DropDownButton.Flyout>
-                                    <MenuFlyout Placement="BottomEdgeAlignedLeft">
-                                        <RadioMenuFlyoutItem Text="Ascending" GroupName="LibraryOrder" Command="{x:Bind ViewModel.Browse.SortAscendingCommand}"
-                                                             IsChecked="{x:Bind Not(ViewModel.Browse.IsDescending), Mode=OneWay}" />
-                                        <RadioMenuFlyoutItem Text="Descending" GroupName="LibraryOrder" Command="{x:Bind ViewModel.Browse.SortDescendingCommand}"
-                                                             IsChecked="{x:Bind ViewModel.Browse.IsDescending, Mode=OneWay}" />
-                                    </MenuFlyout>
-                                </DropDownButton.Flyout>
-                            </DropDownButton>
-                            <controls:CatalogFiltersButton Filters="{x:Bind ViewModel.Browse.Filters}"
-                                                           OptionsErrorText="Couldn't load the genres, ratings and languages of this library. The other filters still work." />
-                            <TextBlock Text="{x:Bind ViewModel.Browse.Grid.TotalText, Mode=OneWay}" Style="{StaticResource SiloCaptionTextStyle}"
-                                       VerticalAlignment="Center" Margin="6,0,0,0" />
+                        <!-- The bar, and under it the applied filters as badges, as the web's CatalogFiltersPanel. -->
+                        <StackPanel Spacing="12">
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <DropDownButton CornerRadius="{StaticResource SiloPillCornerRadius}" controls:Pill.IsEnabled="True" MinHeight="38" Padding="16,6,12,6"
+                                                FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="13"
+                                                Background="#CC1C1C20" BorderBrush="{StaticResource SiloBorderBrush}" Content="{x:Bind ViewModel.Browse.SortLabel, Mode=OneWay}"
+                                                AutomationProperties.Name="{x:Bind SortName(ViewModel.Browse.SortLabel), Mode=OneWay}">
+                                    <DropDownButton.Flyout>
+                                        <MenuFlyout x:Name="SortMenu" Placement="BottomEdgeAlignedLeft" Opening="OnSortMenuOpening" />
+                                    </DropDownButton.Flyout>
+                                </DropDownButton>
+                                <DropDownButton CornerRadius="{StaticResource SiloPillCornerRadius}" controls:Pill.IsEnabled="True" MinHeight="38" Padding="16,6,12,6"
+                                                FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="13"
+                                                Background="#CC1C1C20" BorderBrush="{StaticResource SiloBorderBrush}" Content="{x:Bind ViewModel.Browse.OrderLabel, Mode=OneWay}"
+                                                AutomationProperties.Name="{x:Bind OrderName(ViewModel.Browse.OrderLabel), Mode=OneWay}">
+                                    <DropDownButton.Flyout>
+                                        <MenuFlyout Placement="BottomEdgeAlignedLeft">
+                                            <RadioMenuFlyoutItem Text="Ascending" GroupName="LibraryOrder" Command="{x:Bind ViewModel.Browse.SortAscendingCommand}"
+                                                                 IsChecked="{x:Bind Not(ViewModel.Browse.IsDescending), Mode=OneWay}" />
+                                            <RadioMenuFlyoutItem Text="Descending" GroupName="LibraryOrder" Command="{x:Bind ViewModel.Browse.SortDescendingCommand}"
+                                                                 IsChecked="{x:Bind ViewModel.Browse.IsDescending, Mode=OneWay}" />
+                                        </MenuFlyout>
+                                    </DropDownButton.Flyout>
+                                </DropDownButton>
+                                <controls:CatalogFiltersButton x:Name="FiltersButton" Filters="{x:Bind ViewModel.Browse.Filters}"
+                                                               OptionsErrorText="Couldn't load the genres, ratings and languages of this library. The other filters still work." />
+                                <TextBlock Text="{x:Bind ViewModel.Browse.Grid.TotalText, Mode=OneWay}" Style="{StaticResource SiloCaptionTextStyle}"
+                                           VerticalAlignment="Center" Margin="6,0,0,0" />
+                            </StackPanel>
+                            <controls:ActiveFilterBadges Filters="{x:Bind ViewModel.Browse.Filters}" FiltersButton="{x:Bind FiltersButton}"
+                                                         Visibility="{x:Bind ViewModel.Browse.Filters.HasBadges, Mode=OneWay}" />
                         </StackPanel>
 
                         <ProgressRing IsActive="{x:Bind ViewModel.Browse.Grid.IsLoading, Mode=OneWay}" Visibility="{x:Bind ViewModel.Browse.Grid.IsLoading, Mode=OneWay}"

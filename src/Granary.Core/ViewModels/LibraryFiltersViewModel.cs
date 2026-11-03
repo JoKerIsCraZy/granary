@@ -22,7 +22,8 @@ public sealed partial class LibraryFilterToggle(string value, string label) : Ob
 /// <summary>
 /// The Filters flyout of a library's grid or a list, in the web's order and words: Genres, Decade, Year From and Year To,
 /// Content Rating, Video Quality, Original, Audio and Subtitle Language, and Watch Status (<see cref="LibraryFilterSet"/>).
-/// The flyout edits a draft; <see cref="ApplyCommand"/> and <see cref="ClearCommand"/> commit it and restart the grid.
+/// The flyout edits a draft; <see cref="ApplyCommand"/> and <see cref="ClearCommand"/> commit it and restart the grid, and so
+/// does a badge's ✕ under the bar (<see cref="RemoveBadgeCommand"/>) for its one filter.
 /// </summary>
 public sealed partial class LibraryFiltersViewModel(Func<Task> applied, ILogger logger) : ObservableObject
 {
@@ -44,6 +45,13 @@ public sealed partial class LibraryFiltersViewModel(Func<Task> applied, ILogger 
     public partial int ActiveCount { get; private set; }
 
     public bool HasActiveFilters => ActiveCount > 0;
+
+    /// <summary>The applied filters as the web's badges under the filter bar (<see cref="LibraryFilterBadges"/>).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasBadges))]
+    public partial IReadOnlyList<LibraryFilterBadge> Badges { get; private set; } = [];
+
+    public bool HasBadges => Badges.Count > 0;
 
     public ObservableCollection<LibraryFilterToggle> GenreOptions { get; } = [];
 
@@ -198,6 +206,19 @@ public sealed partial class LibraryFiltersViewModel(Func<Task> applied, ILogger 
         return applied();
     }
 
+    /// <summary>Takes the badge's one filter out, as Apply would without it: the draft and the count follow, the grid restarts.</summary>
+    [RelayCommand(AllowConcurrentExecutions = true)]
+    private Task RemoveBadgeAsync(LibraryFilterBadge? badge)
+    {
+        if (badge is null)
+        {
+            return Task.CompletedTask;
+        }
+        Commit(LibraryFilterBadges.Remove(Applied, badge));
+        BeginEdit();
+        return applied();
+    }
+
     /// <summary>Clears the filters without restarting the grid; the caller restarts it.</summary>
     internal void ClearSilently()
     {
@@ -209,6 +230,7 @@ public sealed partial class LibraryFiltersViewModel(Func<Task> applied, ILogger 
     {
         Applied = filters;
         ActiveCount = filters.Count;
+        Badges = LibraryFilterBadges.For(filters, SmartRuleViewModel.LanguageName);
     }
 
     private void ShowOptions()
