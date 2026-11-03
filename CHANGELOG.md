@@ -32,6 +32,12 @@ release's section is what its update says it changes (docs/release.md).
   checks the text as you type: which options Granary keeps for itself, and whether the player would not use the file
   at all. Save writes the file in one piece and goes back to Settings, which says the change applies after a restart;
   Cancel, Esc or the remote's Back close it, asking first when there are unsaved changes.
+- Settings → Playback → This PC: **mpv presets**. **Save as preset…** keeps your `mpv.conf` under a name, as a file
+  in the `presets` folder next to it that you can see and back up; a name already taken is replaced only after asking.
+  Each preset has **Load**, which replaces `mpv.conf` with it after asking, and **Delete**. Names are made safe for
+  Windows as you type them. Settings names the preset in use, and says "(changed)" once you edit it; **Unload** goes
+  back to your own `mpv.conf` from before you loaded any preset, which Granary keeps aside on the first load (or removes
+  `mpv.conf` again if you had none).
 - The log says why a title is converted: what this PC's graphics card decodes, what Granary told the server it plays,
   and the reason the server gave for its choice.
 - More filters for a library, and for Favorites, Watchlist, History and collections: several genres at once, decades,

@@ -131,6 +131,18 @@ engine's own pre-scan, behind the Core port `IMpvConfigCheck` (`MpvConfigCheck` 
 the same option lists and `Refusal` as a start, on the text alone, so an `include` is checked when mpv starts. It
 never stops a save. Each save sets `MpvConfigChanges`, which the This PC row reads to say the change is still to come.
 
+**Presets** (`MpvPresets`) are plain files, `mpv\presets\<name>.conf`, so the viewer can see and back them up. A typed
+name is made a file name first (`SafeName`: no path separators or other characters Windows refuses, no spaces or dots at
+the ends, at most 60 characters, no device name such as `CON` or `COM1`); every read, write and delete takes only a
+name that is one file name in that folder, so no name reaches another path. Saving one copies mpv.conf as it is on
+disk; loading one writes its text to mpv.conf through `WriteConfig`, a change like a save (`MpvPresets.Active.cs`). The
+first load keeps the viewer's own mpv.conf byte for byte in `presets\.before-preset.conf`, written whole like the rest,
+or marks that there was none (`.before-preset.none`); later loads keep that first backup, so Unload always returns to
+the file from before any preset, or removes mpv.conf. `presets\.active.json` holds the preset loaded last and the SHA-256
+of its text as written; an mpv.conf with another hash shows the preset as "(changed)". Deleting the preset's file leaves both, and
+Unload works from the backup. Files starting with a dot are Granary's own: never listed, never a preset's name. A load
+whose mpv.conf cannot be written drops a backup it just made; an Unload that fails keeps everything for another try.
+
 **When it applies**: the engine is one libmpv instance for the whole run (`AddGranaryPlayer`), made when the player first
 opens, and mpv reads the file only in `mpv_initialize`. Reading it again before a title (`load-config-file`) would add
 changed options but never undo one taken out or the file deleted, so a change applies after Granary restarts, as the

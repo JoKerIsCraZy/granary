@@ -160,6 +160,8 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton(sp => new MpvConfigFolder(MpvConfigFolder.DefaultDirectory, sp.GetRequiredService<ILogger<MpvConfigFolder>>()));
         // What Granary's editor wrote to it in this run, for Settings to say it applies later.
         services.AddSingleton<MpvConfigChanges>();
+        // Named copies of it, in its presets folder.
+        services.AddSingleton<MpvPresets>();
         services.AddTransient<SignInViewModel>();
         services.AddSingleton<MediaCardActions>();
         // One per page that shows TMDB cards: each says its own cards' failed requests.

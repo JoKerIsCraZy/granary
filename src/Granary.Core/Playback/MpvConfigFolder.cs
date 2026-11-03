@@ -137,12 +137,17 @@ public sealed class MpvConfigFolder
     /// Writes <paramref name="text"/> to <paramref name="path"/> in UTF-8: whole beside it first, then moved over it, so a
     /// write that fails never leaves half a file. False, and logged, when it could not.
     /// </summary>
-    internal bool WriteWhole(string path, string text)
+    internal bool WriteWhole(string path, string text) => WriteWhole(path, temp => File.WriteAllText(temp, text));
+
+    /// <summary>As <see cref="WriteWhole(string, string)"/>, byte for byte.</summary>
+    internal bool WriteWhole(string path, byte[] bytes) => WriteWhole(path, temp => File.WriteAllBytes(temp, bytes));
+
+    private bool WriteWhole(string path, Action<string> write)
     {
         string temp = path + ".tmp";
         try
         {
-            File.WriteAllText(temp, text);
+            write(temp);
             File.Move(temp, path, overwrite: true);
             return true;
         }

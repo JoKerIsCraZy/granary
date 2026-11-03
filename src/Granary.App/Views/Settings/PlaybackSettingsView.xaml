@@ -4,7 +4,8 @@
     x:Class="Granary.App.Views.Settings.PlaybackSettingsView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:controls="using:Granary.App.Controls">
+    xmlns:controls="using:Granary.App.Controls"
+    xmlns:settings="using:Granary.Core.ViewModels.Settings">
 
     <!-- Its own copy: the view is made before it joins the page, whose resources it cannot see then. -->
     <UserControl.Resources>
@@ -75,6 +76,47 @@
                            AutomationProperties.LiveSetting="Polite" />
                 <TextBlock Margin="0,12,0,0" Text="{x:Bind Mpv.ChangeText, Mode=OneWay}" Style="{StaticResource SiloSettingsMutedTextStyle}"
                            Visibility="{x:Bind controls:SettingsText.Shows(Mpv.ChangeText), Mode=OneWay}"
+                           AutomationProperties.LiveSetting="Polite" />
+                <!-- Granary's own: named copies of mpv.conf, plain files in mpv\presets (MpvPresets). -->
+                <controls:SettingsRow Label="mpv presets"
+                                      Description="Copies of your mpv.conf under a name, kept as files in the presets folder. Loading one replaces mpv.conf.">
+                    <Button x:Name="SavePresetButton" Content="Save as preset…" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Click="OnSavePresetClick"
+                            AutomationProperties.Name="Save mpv.conf as a preset" />
+                </controls:SettingsRow>
+                <!-- The preset loaded last, while one is; Unload goes back to mpv.conf from before the first preset. -->
+                <Grid Margin="0,12,0,0" ColumnSpacing="12" Visibility="{x:Bind Mpv.HasActivePreset, Mode=OneWay}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{x:Bind Mpv.ActivePresetText, Mode=OneWay}" VerticalAlignment="Center" FontFamily="{StaticResource SiloFontMedium}"
+                               FontWeight="Medium" FontSize="14" TextTrimming="CharacterEllipsis" Foreground="{StaticResource SiloForegroundBrush}" />
+                    <Button x:Name="UnloadPresetButton" Grid.Column="1" Content="Unload" Style="{StaticResource SiloSettingsOutlineButtonStyle}"
+                            Click="OnUnloadPresetClick" AutomationProperties.Name="Unload the preset" />
+                </Grid>
+                <TextBlock Margin="0,12,0,0" Text="No presets yet." Style="{StaticResource SiloSettingsMutedTextStyle}"
+                           Visibility="{x:Bind controls:SettingsText.Hides(Mpv.HasPresets), Mode=OneWay}" />
+                <ItemsControl ItemsSource="{x:Bind Mpv.Presets, Mode=OneWay}" IsTabStop="False">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="settings:MpvPresetRow">
+                            <Grid Margin="0,12,0,0" ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{x:Bind Name}" VerticalAlignment="Center" FontSize="14" TextTrimming="CharacterEllipsis"
+                                           Foreground="{StaticResource SiloForegroundBrush}" />
+                                <Button Grid.Column="1" Content="Load" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Tag="{x:Bind}"
+                                        Click="OnLoadPresetClick" AutomationProperties.Name="{x:Bind LoadName}" />
+                                <Button Grid.Column="2" Content="Delete" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Tag="{x:Bind}"
+                                        Click="OnDeletePresetClick" AutomationProperties.Name="{x:Bind DeleteName}" />
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <TextBlock Margin="0,12,0,0" Text="{x:Bind Mpv.PresetMessage, Mode=OneWay}" Style="{StaticResource SiloSettingsMutedTextStyle}"
+                           Visibility="{x:Bind controls:SettingsText.Shows(Mpv.PresetMessage), Mode=OneWay}"
                            AutomationProperties.LiveSetting="Polite" />
             </StackPanel>
         </controls:SettingsGroup>

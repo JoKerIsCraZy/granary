@@ -655,6 +655,33 @@ says why above the sections.
   "Discard unsaved changes?" / "Your edits to mpv.conf were never saved. Leaving now throws them away." with Discard and
   Cancel (the default). Picking another settings page, or leaving Settings, asks the same; Cancel keeps the editor and
   Playback picked. Back in Playback, focus is on Edit.
+- **This PC → mpv presets** (`MpvSettingsViewModel`, `MpvPresets`; Granary's own), a row under mpv configuration:
+  "Copies of your mpv.conf under a name, kept as files in the presets folder. Loading one replaces mpv.conf." with a
+  **Save as preset…** outline button (named "Save mpv.conf as a preset"). Below it each preset, by name ignoring case, as
+  its name (14 px) with **Load** and **Delete** outline buttons ("Load the preset …", "Delete the preset …" for screen
+  readers), or "No presets yet." in 13 px muted text. Save as preset… asks for the name first: "Save as preset" / "Keeps
+  your mpv.conf as it is now under this name." with a name field ("Name", focused), a muted note as it is typed ("Saves
+  as HQ night." when the name has to change to be a file name, "Enter a name.", "Windows keeps this name for itself.
+  Choose another."), Save (the default, so Enter saves; off while no name is possible) and Cancel. A name loses path
+  separators and the other characters Windows refuses, spaces and dots at its ends, and anything past 60 characters;
+  CON, NUL, COM1 and the other device names are refused. A name that is taken asks "Replace the preset …?" / "A preset
+  of that name is already saved. Saving replaces it with your mpv.conf." (Replace, Cancel). Load asks "Load the preset
+  …?" / "It replaces your mpv.conf. Save mpv.conf as a preset first to keep it." (Load, Cancel), then writes it to
+  mpv.conf as a save does, so "Your changes to mpv.conf apply after you restart Granary." shows. Delete asks "Delete the
+  preset …?" / "Its file goes from the presets folder. This can't be undone." (Delete, Cancel), and focus moves to Save
+  as preset…. Each question has Cancel as the default. Under the list a muted line says how the last action went:
+  "Saved your mpv.conf as …", "Loaded … into mpv.conf.", "Deleted the preset ….", "There's no mpv.conf to save yet.",
+  "Couldn't read your mpv.conf.", "Couldn't save the preset …", "Couldn't load the preset …" (the list is read again),
+  "Couldn't delete the preset …".
+  While a preset is loaded, a line under the row names it, 14 px medium: "Preset: HQ" while mpv.conf still holds its
+  text, "Preset: HQ (changed)" once it was edited since (in Granary's editor or outside); deleting the preset's file
+  leaves the line. Beside it an **Unload** outline button ("Unload the preset"): it asks "Go back to your mpv.conf from
+  before you loaded a preset?" / "Changes made since are lost." (Unload, Cancel), then puts back mpv.conf as it was
+  before the first preset was loaded, after any number of loads, or removes it when there was none. The line and the
+  button go, focus moves to Save as preset…, the change line says the change applies after a restart, and the muted line
+  says "Your mpv.conf from before the preset is back.", "You had no mpv.conf before the preset, so it is removed.",
+  "Couldn't find your mpv.conf from before the preset." (the backup was gone; the preset is no longer named) or
+  "Couldn't go back to your mpv.conf from before the preset." (everything stays for another try).
 - **Connection** (with `connection_speed_v1`): "Connection speed" with the reading as its description ("400 Mbps ·
   measured just now on Ethernet", "Not measured yet") and **Test speed** as an outline button on the right, "Testing…"
   and disabled while it runs (about 10 s). Under the row, in 13 px muted text, what went wrong, in the web's words:
