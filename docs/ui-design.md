@@ -957,7 +957,8 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   controls does what the pill says instead (Skip Intro, Recap, Credits, Preview, or Watch Intro) and the controls stay
   away; in the mini view OK lands on its own Play/Pause. From then until the controls hide, with focus on one of them,
   the arrows move between them (past the volume slider, which Tab still reaches; Down from the seek bar lands on
-  Play/Pause); a button reached with Tab keeps the web's arrows. Up and Down on the shown seek bar always move off it
+  Play/Pause); they hide after 5 s without a key, focus or not, as on Silo's TV app, and focus goes back to the picture.
+  A button reached with Tab keeps the web's arrows and keeps the controls up, as on the web. Up and Down on the shown seek bar always move off it
   and turn the arrows over to the controls, however focus got there (an air mouse's click). The remote's Back and
   Backspace with the controls shown
   hide them, as the TV app's ladder has it, unless paused, a skip pill shows (Back turns it away) or the marker editor is

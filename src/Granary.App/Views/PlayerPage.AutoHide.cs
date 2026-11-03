@@ -17,6 +17,9 @@ public sealed partial class PlayerPage
 {
     private static readonly TimeSpan HideDelay = TimeSpan.FromSeconds(3);
 
+    // With a remote's focus in the controls they wait as long as Silo's TV app's (CONTROLS_AUTO_HIDE_MS).
+    private static readonly TimeSpan RemoteHideDelay = TimeSpan.FromSeconds(5);
+
     // Moves this small are jitter, or the framework testing a still pointer again while the controls fade.
     private const double PointerMoveThreshold = 2;
 
@@ -66,7 +69,14 @@ public sealed partial class PlayerPage
     {
         SetControlsVisible(true);
         ShowCursor();
+        RestartHideTimer();
+    }
+
+    // Each key and each move of the pointer starts the wait again.
+    private void RestartHideTimer()
+    {
         _hideTimer.Stop();
+        _hideTimer.Interval = _movesThroughControls ? RemoteHideDelay : HideDelay;
         _hideTimer.Start();
     }
 
@@ -91,6 +101,12 @@ public sealed partial class PlayerPage
             _hideTimer.Start();
             return;
         }
+        // A remote's focus goes back to the picture, as on Silo's TV app: the arrows skip and change the volume again,
+        // and OK brings the controls back with focus on Play/Pause.
+        if (_movesThroughControls && HasFocusInControls())
+        {
+            Focus(FocusState.Programmatic);
+        }
         SetControlsVisible(false);
         if (PointerInPage() is not null)
         {
@@ -98,11 +114,12 @@ public sealed partial class PlayerPage
         }
     }
 
-    // The bar always shows its controls, and the pointer over the pages stays.
+    // The bar always shows its controls, and the pointer over the pages stays. A control reached with Tab keeps them, as
+    // on the web; a remote's focus does not: Silo's TV app hides them after a while without a key, focus or not.
     private bool KeepsControls() =>
         IsDocked || !ViewModel.IsPlaying || ViewModel.IsPaused || ViewModel.IsBuffering
-        || SeekBar.IsDragging || IsPointerOverControls() || HasOpenMenu() || HasKeyboardFocusInControls() || IsPanelOpen
-        || ViewModel.MarkerEditor.IsEditing;
+        || SeekBar.IsDragging || IsPointerOverControls() || HasOpenMenu() || (HasKeyboardFocusInControls() && !_movesThroughControls)
+        || IsPanelOpen || ViewModel.MarkerEditor.IsEditing;
 
     private bool IsPointerOverControls() =>
         PointerInPage() is { } point && (Contains(BottomBar, point) || Contains(ExitButton, point) || Contains(MinimizeButton, point)

@@ -227,6 +227,7 @@ public sealed partial class PlayerPage
     private void FocusTransport()
     {
         _movesThroughControls = true;
+        RestartHideTimer();
         // The mini view shows only its own Play/Pause.
         (IsMiniView ? MiniPlayPauseButton : PlayPauseButton).Focus(FocusState.Keyboard);
     }
@@ -257,6 +258,7 @@ public sealed partial class PlayerPage
             return false;
         }
         _movesThroughControls = true;
+        RestartHideTimer();
         // The arrows pass the volume slider by: on it they would change the volume, and no remote could get past it to
         // the buttons on its right. Tab still reaches it; a remote's volume is Up and Down with the controls hidden.
         var options = new FindNextElementOptions { SearchRoot = this };
