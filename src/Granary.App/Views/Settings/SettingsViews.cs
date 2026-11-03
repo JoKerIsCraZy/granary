@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using Granary.Core;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Settings;
 using Microsoft.Extensions.Logging;
@@ -302,7 +303,7 @@ public sealed partial class AboutSettingsView : UserControl, IDisposable
     {
         if (File.Exists(path))
         {
-            Start("notepad.exe", path);
+            Start(WindowsPrograms.Notepad, path);
         }
         else
         {
@@ -314,7 +315,7 @@ public sealed partial class AboutSettingsView : UserControl, IDisposable
     {
         if (Directory.Exists(path))
         {
-            Start("explorer.exe", path);
+            Start(WindowsPrograms.Explorer, path);
         }
         else
         {

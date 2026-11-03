@@ -167,6 +167,18 @@ public sealed class SettingsViewModelTests : IDisposable
     }
 
     [Fact]
+    public async Task AFolderInMpvConfsPlace_IsSaid()
+    {
+        Directory.CreateDirectory(MpvFolder.ConfigFile);
+        var page = Playback();
+
+        await page.OpenMpvConfigCommand.ExecuteAsync(null);
+
+        Assert.Equal($"mpv.conf in {MpvFolder.Directory} is a folder. Rename or remove it, then try again.", page.MpvConfigMessage);
+        Assert.Empty(_launcher.Opened);
+    }
+
+    [Fact]
     public async Task OpenFolder_ShowsTheMpvFolder_MadeFirst()
     {
         var page = Playback();

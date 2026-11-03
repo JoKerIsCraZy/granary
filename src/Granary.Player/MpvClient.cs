@@ -45,6 +45,9 @@ internal sealed class MpvClient : IDisposable
         }
     }
 
+    /// <summary>An option mpv may not know, such as one a newer mpv renamed; mpv's error code, below 0 when it refused.</summary>
+    public int TrySetOption(string name, string value) => LibMpv.SetOptionString(_handle, name, value);
+
     /// <summary>
     /// Reads options and profiles in mpv's config syntax, given as text (mpv's <c>memory://</c>), as if they were set one by
     /// one with <see cref="SetOption"/>; only before <see cref="Initialize"/>.
@@ -58,16 +61,26 @@ internal sealed class MpvClient : IDisposable
         }
     }
 
-    public void Initialize(IEnumerable<(string Name, int Format)> observedProperties)
+    /// <summary>
+    /// Starts mpv. With <paramref name="logFromStart"/>, mpv's log is asked for before, so what mpv says about the config
+    /// files it reads in <c>mpv_initialize</c> reaches the log too; otherwise it is asked for after, as it always was.
+    /// </summary>
+    public void Initialize(IEnumerable<(string Name, int Format)> observedProperties, bool logFromStart = false)
     {
-        // Before the start, so what mpv says about its config files reaches the log.
-        LibMpv.RequestLogMessages(_handle, "info");
+        if (logFromStart)
+        {
+            LibMpv.RequestLogMessages(_handle, "info");
+        }
         int rc = LibMpv.Initialize(_handle);
         if (rc < 0)
         {
             // The event thread never runs for a start that failed: mpv's own words on why are passed on here.
             DispatchPendingLog();
             throw new InvalidOperationException($"mpv_initialize failed: {LibMpv.Error(rc)}");
+        }
+        if (!logFromStart)
+        {
+            LibMpv.RequestLogMessages(_handle, "info");
         }
         foreach (var (name, format) in observedProperties)
         {

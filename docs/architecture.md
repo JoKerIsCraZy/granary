@@ -58,10 +58,12 @@ instead of tone-mapping them in a transcode.
 Settings → Playback → This PC opens `mpv.conf` in the data directory's `mpv` folder (`MpvConfigFolder`,
 `%LOCALAPPDATA%\Granary\mpv`), made with comments only when it is missing. mpv reads the file itself, so mpv's own
 syntax holds: profiles, `profile-cond` (mpv's built-in `auto_profiles.lua`), `include`, and `~~/` for the folder
-(`glsl-shaders=~~/shaders/…`). Without the file, mpv starts exactly as before (`config=no`, libmpv's default).
+(`glsl-shaders=~~/shaders/…`). The file is the viewer's own and trusted as mpv trusts it, within the limits below.
+Without it, mpv starts exactly as before: the same options in the same order (`MpvOwnOptions.Core`), `config=no`
+(libmpv's default), and its log asked for after the start.
 
-**Start order** (`MpvPlaybackEngine.Start.cs`). Found with libmpv v0.41.0-dev (`player/main.c`, `mp_initialize`) and
-checked in a spike:
+**Start order** (`MpvPlaybackEngine.Start.cs`). Found with libmpv v0.41.0-dev (`player/main.c`, `mp_initialize`;
+`player/loadfile.c`, `play_current_file`) and checked in a spike and in `MpvUserConfigTests`:
 
 - With `config=yes` and `config-dir=<folder>`, mpv reads `mpv.conf` inside `mpv_initialize`, after every option set
   before it, so the file overrides them. `~~/` needs this: with `config=no` it resolves to nothing, so loading the file
@@ -73,31 +75,52 @@ checked in a spike:
   before the first call after the start. Setting Granary's options back after the start is therefore not enough.
 - mpv applies the `pseudo-gui` profile right after the config files, inside `mpv_initialize`, over them, when
   `player-operation-mode=pseudo-gui` (an option client.h lists for setting before `mpv_initialize`). Granary puts its own
-  options (`MpvOwnOptions`) into that profile before the start, as config text through `mpv_load_config_file` with mpv's
-  `memory://`. They win before scripts load, before the video output is made and before idle mode is decided: one
-  `gpu-next` output in composition mode from the start, whatever the file says. The built-in `builtin-pseudo-gui`
-  profile that comes with this mode sets only what Granary sets too (`force-window`, `idle`) or never uses (a
-  screenshot folder).
-- Profiles of the file applied later (a `profile-cond` that becomes true, or the file's own `[pseudo-gui]` after
-  Granary's) can still set one of Granary's options. The engine observes them while mpv runs with a file and sets each
-  back as mpv reports it (`KeepsOwn`); `d3d11-composition-size` is left out, as the engine changes it itself.
+  options into that profile before the start, as config text through `mpv_load_config_file` with mpv's `memory://`.
+  They win before scripts load, before the video output is made and before idle mode is decided: one `gpu-next` output
+  in composition mode from the start, whatever the file says. The built-in `builtin-pseudo-gui` profile that comes with
+  this mode sets only what Granary sets too (`force-window`, `idle`) or never uses (a screenshot folder).
+- Two things in a file would undo that, and such a file is refused: mpv starts without it and the log says why.
+  `player-operation-mode` set to anything but `pseudo-gui` turns the profile off. A `[pseudo-gui]` section of the file
+  joins Granary's profile after Granary's entries (mpv adds a section's options to the profile of that name), so one
+  that sets one of Granary's options to another value wins over it. Granary reads the file by mpv's rules before the
+  start, and once mpv started, checks what mpv read, includes too: the mode (`player-operation-mode`) and the profiles
+  (`profile-list`). One found only then makes mpv start again without the file.
+- Each title gets Granary's options as its own options too (`loadfile`, each value quoted by its length). mpv applies
+  those after the file's `protocol.*` and `extension.*` profiles and before it opens the stream, so such a profile
+  cannot send the stream through a proxy or write its address to a log of mpv's; a test plays an `http` stream with
+  `[protocol.http]` setting `log-file` and `http-proxy`.
+- Profiles that apply while mpv plays (`profile-cond`, or one applied by name) can still set one of Granary's options.
+  The engine observes them while mpv runs with a file and sets each back as mpv reports it (`KeepsOwn`), comparing the
+  value as mpv writes it without regard to case. A profile whose condition follows the option itself would set it again
+  each time, so after five set-backs Granary logs it once and stops (`SetBackLimit`). Between the profile and the
+  set-back, mpv plays a moment with the file's value; it never holds server credentials, only the loopback address
+  with the media proxy's secret (Server playback, "Media proxy"). A profile that sets `input-commands` is refused, since
+  mpv runs those as soon as the profile applies and no set-back takes them back. `d3d11-composition-size` is kept at the
+  start only, as the engine changes it itself.
 - Compiled shaders are cached in `mpv\cache` (`gpu-shader-cache-dir`, `icc-cache-dir`), not in mpv's own folder under
   `%LOCALAPPDATA%\mpv`, where mpv puts them once `config=yes`.
 
-**Granary's own options**, set before every start and kept over the file: the video in Granary's window (`vo=gpu-next`,
-`gpu-api` and `gpu-context` `d3d11`, `d3d11-output-mode=composition`, `d3d11-composition-size`, `force-window`), the
-player Granary drives (`keep-open`, `idle`, `input-default-bindings`, `input-vo-keyboard`, `osc`, `ytdl`, `sub-auto`,
-`rebase-start-time`, `media-controls`), and the stream's address, which carries the media proxy's secret, kept inside
-Granary (`resume-playback`, `save-position-on-quit`, `save-watch-history`, `log-file`, `input-ipc-server`, and no scripts:
-`load-scripts=no`, `scripts=`), and `register`/`unregister` off, so mpv never makes itself Windows' media player. The
-server's track choice and start position go with each title (`loadfile` options), over the file's own. Everything else is
-the file's to change, `hwdec` included.
+**Granary's own options.** Always, and kept over the file: the video in Granary's window (`vo=gpu-next`, `gpu-api` and
+`gpu-context` `d3d11`, `d3d11-output-mode=composition`, `d3d11-composition-size`, `force-window`), the player Granary
+drives (`keep-open`, `idle`, `input-default-bindings`, `input-vo-keyboard`, `osc`, `ytdl`, `sub-auto`,
+`rebase-start-time`, `media-controls`), and no watch-later files (`resume-playback`, `save-position-on-quit`). With a
+file also (`MpvOwnOptions.Guarded`; they are mpv's defaults, so without a file nothing could change them): the stream's
+address stays out of mpv's own files and programs (`save-watch-history`, `watch-later-dir`,
+`write-filename-in-watch-later-config`, `log-file`, `dump-stats`, `stream-record`, `stream-dump`, `input-ipc-server`),
+goes through no proxy (`http-proxy`, `stream-lavf-o`, `demuxer-lavf-o`), mpv runs nothing of the file's (`load-scripts`,
+`scripts`, `input-commands`) and reads no key bindings (`input-conf` is an empty one of Granary's, so the folder's
+`input.conf` is not read), and it never makes itself Windows' player for media files (`register`, `unregister`). These
+are set one by one, and one this mpv does not know is logged and left out, so an mpv that drops or renames one still
+starts. All of them exist in v0.41.0-dev (`ThisMpv_KnowsEveryOptionGranaryKeepsWithAFile`). The server's track choice
+and start position go with each title (`loadfile` options), over the file's own. Everything else is the file's to
+change, `hwdec` included.
 
 **The log** says once per start which file mpv read (`mpv started with …`), names the options of Granary's that the file
-sets (`mpv.conf sets vo; Granary keeps its own`, read from the file by mpv's own rules for option names; an `include`d
-file's are kept but not named), and passes on mpv's own messages about the file (an unknown option, a shader it cannot
-open), which it asks for before `mpv_initialize`. A file mpv refuses to start with at all (an option that only lists
-something, such as `audio-device=help`) is logged with mpv's words, and mpv starts again without it.
+sets (`mpv.conf sets vo; Granary keeps its own`, read from the file by mpv's rules for option names; an `include`d file's
+are kept but not named), and passes on mpv's own messages about the file (an unknown option, a shader it cannot open),
+which it asks for before `mpv_initialize`. When mpv does not start with the file, the log says whether mpv refused the
+file (an option that only lists something, such as `audio-device=help`, with mpv's own words) or one of Granary's own
+options for it, and mpv starts without the file. A folder named `mpv.conf` is said and passed over.
 
 **When it applies**: the engine is one libmpv instance for the whole run (`AddGranaryPlayer`), made when the player first
 opens, and mpv reads the file only in `mpv_initialize`. Reading it again before a title (`load-config-file`) would add

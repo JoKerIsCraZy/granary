@@ -50,7 +50,7 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
         _outputSize = options.InitialOutputSize;
         _bufferedReads = new TrailingThrottle(BufferedThrottle, time ?? TimeProvider.System, ReadBuffered,
             ex => _logger.LogError(ex, "Reporting what mpv's cache holds failed"));
-        _own = MpvOwnOptions.For(options.VideoOutput, _outputSize);
+        _core = MpvOwnOptions.Core(options.VideoOutput, _outputSize);
         Start();
         _logger.LogInformation("libmpv {Version} initialized ({Output})", _mpv.GetString("mpv-version"), options.VideoOutput);
         RefreshSwapChain();
@@ -90,7 +90,8 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
 
         // Plan URLs are replayed byte for byte (docs/api-contract.md, 9.2): the string as given, not as Uri re-escapes it.
         string target = source.Url.IsFile ? source.Url.LocalPath : source.Url.OriginalString;
-        string perFileOptions = string.Join(",", PerFileOptions(source));
+        // With a mpv.conf, Granary's own options too, over the file's protocol and extension profiles.
+        string perFileOptions = string.Join(",", PerFileOptions(source).Concat(_perFile));
         long loadId;
         lock (_gate)
         {

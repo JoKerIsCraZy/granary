@@ -55,6 +55,30 @@ public sealed class MpvConfigFolderTests : IDisposable
     }
 
     [Fact]
+    public void AFolderNamedMpvConf_IsNotAFileToOpen()
+    {
+        var folder = Create();
+        Directory.CreateDirectory(folder.ConfigFile);
+
+        Assert.True(folder.ConfigFileIsFolder);
+        Assert.Null(folder.EnsureConfigFile());
+        Assert.True(Directory.Exists(folder.ConfigFile));
+    }
+
+    [Fact]
+    public void AWriteThatFails_LeavesNoEmptyMpvConf()
+    {
+        var folder = Create();
+        // A folder where the file is written first.
+        Directory.CreateDirectory(folder.ConfigFile + ".tmp");
+
+        Assert.Null(folder.EnsureConfigFile());
+
+        Assert.False(File.Exists(folder.ConfigFile));
+        Assert.Contains(_logs.Lines, line => line.StartsWith("Warning ", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void AFolderThatCannotBeMade_IsSaidInTheLog()
     {
         // A file where the folder belongs.

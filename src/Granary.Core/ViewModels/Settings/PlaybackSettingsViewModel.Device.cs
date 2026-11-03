@@ -34,7 +34,9 @@ public sealed partial class PlaybackSettingsViewModel
         string? file = await Task.Run(_mpvConfig.EnsureConfigFile);
         if (file is null)
         {
-            MpvConfigMessage = $"Couldn't create mpv.conf in {_mpvConfig.Directory}.";
+            MpvConfigMessage = _mpvConfig.ConfigFileIsFolder
+                ? $"mpv.conf in {_mpvConfig.Directory} is a folder. Rename or remove it, then try again."
+                : $"Couldn't create mpv.conf in {_mpvConfig.Directory}.";
         }
         else if (!_files.OpenFile(file))
         {

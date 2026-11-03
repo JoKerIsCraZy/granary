@@ -20,7 +20,7 @@ public sealed class MpvConfigFolder
         # Profiles, profile-cond and include work as in mpv.
         #
         # Granary keeps the options it needs to show the video and follow your Silo server's choices, such as vo,
-        # gpu-api, keep-open and idle. Its log says which of yours it leaves out.
+        # gpu-api, keep-open and idle. Its log says which of yours it leaves out. Scripts and input.conf are not used.
         # A wrong option can make playback worse. Delete this file to go back to normal.
         #
         # deband=yes
@@ -59,9 +59,12 @@ public sealed class MpvConfigFolder
         }
     }
 
+    /// <summary>A folder stands where mpv.conf belongs: mpv cannot read it, and Granary cannot make the file.</summary>
+    public bool ConfigFileIsFolder => System.IO.Directory.Exists(ConfigFile);
+
     /// <summary>
     /// mpv.conf's path, the file made with a few comments when it is missing; one that exists is left as it is. Null when it
-    /// cannot be made.
+    /// cannot be made, and when a folder has its name (<see cref="ConfigFileIsFolder"/>).
     /// </summary>
     public string? EnsureConfigFile()
     {
@@ -69,26 +72,46 @@ public sealed class MpvConfigFolder
         {
             return ConfigFile;
         }
+        if (ConfigFileIsFolder)
+        {
+            _logger.LogWarning("mpv.conf in the mpv folder is a folder, not a file");
+            return null;
+        }
         if (!EnsureDirectory())
         {
             return null;
         }
+        // Written whole beside it first: a write that fails leaves no empty mpv.conf behind.
+        string temp = ConfigFile + ".tmp";
         try
         {
-            // CreateNew: a file that appeared meanwhile is the viewer's and stays.
-            using var stream = new FileStream(ConfigFile, FileMode.CreateNew, FileAccess.Write);
-            using var writer = new StreamWriter(stream);
-            writer.Write(Template.ReplaceLineEndings("\r\n"));
+            File.WriteAllText(temp, Template.ReplaceLineEndings("\r\n"));
+            // Not over a file that appeared meanwhile: that one is the viewer's and stays.
+            File.Move(temp, ConfigFile, overwrite: false);
             return ConfigFile;
         }
         catch (IOException) when (File.Exists(ConfigFile))
         {
+            Delete(temp);
             return ConfigFile;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             _logger.LogWarning(ex, "mpv.conf could not be made");
+            Delete(temp);
             return null;
+        }
+    }
+
+    private void Delete(string temp)
+    {
+        try
+        {
+            File.Delete(temp);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _logger.LogDebug(ex, "A half-written mpv.conf stays behind as {File}", Path.GetFileName(temp));
         }
     }
 }

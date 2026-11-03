@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using Granary.Core;
 using Granary.Core.Abstractions;
 using Microsoft.Extensions.Logging;
 
@@ -21,7 +22,7 @@ internal sealed class ShellFileLauncher(ILogger<ShellFileLauncher> logger) : IFi
         }
         catch (Win32Exception ex) when (ex.NativeErrorCode == NoAssociation)
         {
-            return Start("notepad.exe", path);
+            return Start(WindowsPrograms.Notepad, path);
         }
         catch (Exception ex) when (ex is Win32Exception or InvalidOperationException)
         {
@@ -30,7 +31,7 @@ internal sealed class ShellFileLauncher(ILogger<ShellFileLauncher> logger) : IFi
         }
     }
 
-    public bool OpenFolder(string path) => Directory.Exists(path) && Start("explorer.exe", path);
+    public bool OpenFolder(string path) => Directory.Exists(path) && Start(WindowsPrograms.Explorer, path);
 
     private bool Start(string program, string path)
     {

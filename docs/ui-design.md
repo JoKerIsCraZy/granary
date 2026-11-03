@@ -568,8 +568,8 @@ says why above the sections.
   button. Open mpv.conf makes the `mpv` folder in the data directory and an `mpv.conf` of comments only when they are
   missing, then opens the file in the app Windows has for `.conf` files, or Notepad when there is none; Open folder makes
   the folder and shows it in File Explorer. When one fails, 13 px muted text under the row says so and where the folder
-  is: "Couldn't open mpv.conf. You'll find it in …", "Couldn't create mpv.conf in …", "Couldn't open …". The next try
-  that works clears it. How mpv reads the file and which options Granary keeps is in docs/architecture.md ("Your own
+  is: "Couldn't open mpv.conf. You'll find it in …", "Couldn't create mpv.conf in …", "mpv.conf in … is a folder.
+  Rename or remove it, then try again.", "Couldn't open …". The next try that works clears it. How mpv reads the file and which options Granary keeps is in docs/architecture.md ("Your own
   mpv.conf").
 - **Connection** (with `connection_speed_v1`): "Connection speed" with the reading as its description ("400 Mbps ·
   measured just now on Ethernet", "Not measured yet") and **Test speed** as an outline button on the right, "Testing…"

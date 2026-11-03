@@ -28,7 +28,10 @@ public sealed class MpvUserConfigTests : IDisposable
         }
     }
 
-    private MpvPlaybackEngine CreateEngine(string? config, params (string Name, string Text)[] files)
+    private MpvPlaybackEngine CreateEngine(string? config, params (string Name, string Text)[] files) =>
+        CreateEngine(VideoOutputKind.None, config, files);
+
+    private MpvPlaybackEngine CreateEngine(VideoOutputKind output, string? config, params (string Name, string Text)[] files)
     {
         Assert.SkipUnless(File.Exists(Path.Combine(AppContext.BaseDirectory, "libmpv-2.dll")),
             "libmpv-2.dll not found; run scripts/fetch-native.ps1.");
@@ -41,11 +44,13 @@ public sealed class MpvUserConfigTests : IDisposable
         {
             File.WriteAllText(Path.Combine(_directory, name), text);
         }
-        return new MpvPlaybackEngine(new MpvEngineOptions { VideoOutput = VideoOutputKind.None, ConfigDirectory = _directory },
+        return new MpvPlaybackEngine(new MpvEngineOptions { VideoOutput = output, ConfigDirectory = _directory },
             _logs.For<MpvPlaybackEngine>());
     }
 
     private bool Logged(string text) => _logs.Lines.Any(line => line.Contains(text, StringComparison.Ordinal));
+
+    private int Count(string text) => _logs.Lines.Count(line => line.Contains(text, StringComparison.Ordinal));
 
     [Fact]
     public void WithoutAFile_MpvStartsAsBefore()
@@ -54,7 +59,22 @@ public sealed class MpvUserConfigTests : IDisposable
 
         Assert.Equal("cplayer", engine.Option("player-operation-mode"));
         Assert.Equal("no", engine.Option("deband"));
+        // Only Granary's core options: mpv's defaults for the rest.
+        Assert.Equal("yes", engine.Option("load-scripts"));
+        Assert.Equal("", engine.Option("input-conf"));
         Assert.False(Logged("mpv started with"));
+    }
+
+    [Fact]
+    public void ThisMpv_KnowsEveryOptionGranaryKeepsWithAFile()
+    {
+        using var engine = CreateEngine("deband=yes\n");
+
+        Assert.True(Logged("mpv started with"));
+        Assert.False(Logged("mpv does not take"), _logs.All);
+        Assert.Equal("memory://", engine.Option("input-conf"));
+        Assert.Equal("", engine.Option("input-commands"));
+        Assert.Equal("no", engine.Option("register"));
     }
 
     [Fact]
@@ -96,8 +116,130 @@ public sealed class MpvUserConfigTests : IDisposable
         using var engine = CreateEngine("audio-device=help\ndeband=yes\n");
 
         Assert.Equal("no", engine.Option("deband"));
-        Assert.True(Logged("mpv did not start with"));
+        Assert.True(Logged("mpv refused to start with"));
         await PlaysAWav(engine);
+    }
+
+    [Fact]
+    public async Task AFileThatTurnsOffThePseudoGuiMode_IsRefused()
+    {
+        // In the player's own mode, mpv would not apply Granary's options over the file.
+        using var engine = CreateEngine("player-operation-mode=cplayer\nidle=no\nvo=gpu\ndeband=yes\n");
+
+        Assert.Equal("no", engine.Option("deband"));
+        Assert.Equal("null", engine.Option("vo"));
+        Assert.True(Logged("mpv.conf sets player-operation-mode, which Granary needs to keep its own options; mpv plays without it"));
+        await PlaysAWav(engine);
+    }
+
+    [Fact]
+    public async Task AnIncludeThatTurnsOffThePseudoGuiMode_IsRefusedOnceMpvReadIt()
+    {
+        using var engine = CreateEngine("include=~~/more.conf\n", ("more.conf", "player-operation-mode=cplayer\nidle=no\ndeband=yes\n"));
+
+        Assert.Equal("no", engine.Option("deband"));
+        Assert.Equal("cplayer", engine.Option("player-operation-mode"));
+        Assert.True(Logged("mpv.conf sets player-operation-mode, which Granary needs to keep its own options; mpv starts again without it"));
+        await PlaysAWav(engine);
+    }
+
+    [Fact]
+    public void AFilesOwnPseudoGuiProfile_JoinsGranarys_AfterIt()
+    {
+        // A harmless option there is played: mpv adds the file's section to the profile, after Granary's options.
+        using var engine = CreateEngine("[pseudo-gui]\ndeband=yes\n");
+
+        Assert.Equal("yes", engine.Option("deband"));
+        Assert.Equal("yes", engine.Option("keep-open"));
+        string profiles = engine.Option("profile-list") ?? "";
+        int granarys = profiles.IndexOf("""{"key":"keep-open","value":"yes"}""", StringComparison.Ordinal);
+        int files = profiles.IndexOf("""{"key":"deband","value":"yes"}""", StringComparison.Ordinal);
+        Assert.True(granarys >= 0 && files > granarys, profiles);
+    }
+
+    [Theory]
+    [InlineData("[pseudo-gui]\nkeep-open=no\ndeband=yes\n", null)]
+    [InlineData("include=~~/more.conf\n", "[pseudo-gui]\nkeep-open=no\ndeband=yes\n")]
+    public void AFilesOwnPseudoGuiProfile_ThatSetsOneOfGranarysOptions_IsRefused(string config, string? more)
+    {
+        using var engine = more is null ? CreateEngine(config) : CreateEngine(config, ("more.conf", more));
+
+        Assert.Equal("no", engine.Option("deband"));
+        Assert.Equal("yes", engine.Option("keep-open"));
+        Assert.True(Logged("sets keep-open in its [pseudo-gui] profile"), _logs.All);
+    }
+
+    [Fact]
+    public async Task AProtocolProfile_CannotSendTheStreamThroughAProxy_NorWriteItsAddressToALog()
+    {
+        await using var proxy = new TinyHttpServer(502, "Bad Gateway", [], "text/plain");
+        await using var server = new TinyHttpServer(200, "OK", WavFile.Sine(0.5), "audio/wav");
+        string log = Path.Combine(Path.GetDirectoryName(_directory)!, "mpv-own.log");
+        string address = proxy.Url("").OriginalString;
+        using var engine = CreateEngine($"[protocol.http]\nlog-file=\"{log}\"\nhttp-proxy={address}\nstream-lavf-o=http_proxy={address}\n");
+        var ended = new TaskCompletionSource<PlaybackEnded>(TaskCreationOptions.RunContinuationsAsynchronously);
+        engine.Ended += (_, e) => ended.TrySetResult(e);
+
+        engine.Load(new MediaSource(server.Url("secret-proxy-key/media.wav"), []));
+
+        Assert.Equal(PlaybackEndReason.EndOfFile, (await ended.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken)).Reason);
+        Assert.Empty(proxy.RequestHeaders);
+        Assert.NotEmpty(server.RequestHeaders);
+        Assert.False(File.Exists(log) && (await File.ReadAllTextAsync(log, TestContext.Current.CancellationToken)).Contains("secret-proxy-key",
+            StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task TheFilesCommandsNeverRun_NorItsKeyBindingsAreRead()
+    {
+        // At the top, input-commands=quit would end mpv as the title starts.
+        using var engine = CreateEngine("input-commands=quit\ndeband=yes\n", ("input.conf", "a quit\n"));
+
+        Assert.Equal("yes", engine.Option("deband"));
+        Assert.Equal("memory://", engine.Option("input-conf"));
+        Assert.Equal("", engine.Option("input-commands"));
+        await PlaysAWav(engine);
+        Assert.True(engine.Current.IsLoaded);
+    }
+
+    [Fact]
+    public void AProfileThatRunsCommands_IsRefused()
+    {
+        using var engine = CreateEngine("deband=yes\n[protocol.file]\ninput-commands=quit\n");
+
+        Assert.Equal("no", engine.Option("deband"));
+        Assert.True(Logged("mpv.conf sets input-commands in its profile protocol.file"));
+    }
+
+    [Fact]
+    public async Task AProfileThatKeepsSettingAnOption_WinsAfterAFewSetBacks()
+    {
+        // The profile applies whenever keep-open is on again: every set-back would start it over.
+        using var engine = CreateEngine("[loop]\nprofile-cond=p[\"keep-open\"] ~= \"no\" and p[\"keep-open\"] ~= false\nkeep-open=no\n");
+
+        await Until(() => Logged("mpv.conf keeps setting keep-open; Granary stops setting it back"), () => _logs.All);
+        await Task.Delay(500, TestContext.Current.CancellationToken);
+        Assert.Equal(1, Count("mpv.conf keeps setting keep-open"));
+        Assert.Equal(1, Count("mpv.conf set keep-open; Granary keeps its own"));
+        Assert.Equal("no", engine.Option("keep-open"));
+    }
+
+    [Fact]
+    public async Task InGranarysWindow_AHarmlessFile_KeepsTheOneSwapChain()
+    {
+        using var engine = CreateEngine(VideoOutputKind.D3D11Composition, "deband=yes\nscale=ewa_lanczossharp\n");
+        Assert.SkipWhen(engine.SwapChain == 0, "No d3d11 swap chain here.");
+        int changes = 0;
+        engine.SwapChainChanged += (_, _) => Interlocked.Increment(ref changes);
+
+        await Task.Delay(1000, TestContext.Current.CancellationToken);
+
+        Assert.Equal("gpu-next", engine.Option("vo"));
+        Assert.Equal("composition", engine.Option("d3d11-output-mode"));
+        Assert.Equal("yes", engine.Option("deband"));
+        Assert.Equal(0, Volatile.Read(ref changes));
+        Assert.False(Logged("Granary keeps its own"), _logs.All);
+        Assert.False(Logged("mpv does not take"), _logs.All);
     }
 
     [Fact]

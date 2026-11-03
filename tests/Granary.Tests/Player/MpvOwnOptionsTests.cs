@@ -2,42 +2,45 @@ using Granary.Player;
 
 namespace Granary.Tests.Player;
 
-/// <summary>The mpv options Granary keeps over the viewer's own mpv.conf, and how the log names those a file sets.</summary>
+/// <summary>The mpv options Granary sets, and keeps over the viewer's own mpv.conf.</summary>
 public sealed class MpvOwnOptionsTests
 {
-    private static readonly IReadOnlySet<string> Names =
-        MpvOwnOptions.For(VideoOutputKind.D3D11Composition, (1280, 720)).Select(o => o.Key).ToHashSet();
-
     [Fact]
-    public void TheVideo_StaysInGranarysWindow()
+    public void WithoutAFile_GranarySetsWhatItAlwaysSet_InTheSameOrder()
     {
-        var own = MpvOwnOptions.For(VideoOutputKind.D3D11Composition, (1920, 1080)).ToDictionary();
+        var core = MpvOwnOptions.Core(VideoOutputKind.D3D11Composition, (1920, 1080));
 
-        Assert.Equal("gpu-next", own["vo"]);
-        Assert.Equal("d3d11", own["gpu-api"]);
-        Assert.Equal("d3d11", own["gpu-context"]);
-        Assert.Equal("composition", own["d3d11-output-mode"]);
-        Assert.Equal("1920x1080", own["d3d11-composition-size"]);
-        Assert.Equal("yes", own["force-window"]);
+        Assert.Equal(
+        [
+            new("keep-open", "yes"), new("idle", "yes"), new("input-default-bindings", "no"), new("input-vo-keyboard", "no"),
+            new("osc", "no"), new("ytdl", "no"), new("sub-auto", "no"), new("rebase-start-time", "yes"), new("media-controls", "no"),
+            new("resume-playback", "no"), new("save-position-on-quit", "no"), new("vo", "gpu-next"), new("gpu-api", "d3d11"),
+            new("gpu-context", "d3d11"), new("d3d11-output-mode", "composition"), new("d3d11-composition-size", "1920x1080"),
+            new("force-window", "yes"),
+        ], core);
+        Assert.Equal([new("vo", "null"), new("ao", "null")], MpvOwnOptions.Core(VideoOutputKind.None, (1280, 720)).TakeLast(2));
     }
 
     [Fact]
-    public void GranaryDrivesThePlayer_AndTheStreamsAddressStaysInGranary()
+    public void WithAFile_TheStreamsAddressStaysInGranary_AndNothingOfTheFilesRuns()
     {
-        var own = MpvOwnOptions.For(VideoOutputKind.None, (1280, 720)).ToDictionary();
+        var guarded = MpvOwnOptions.Guarded(VideoOutputKind.D3D11Composition).ToDictionary();
 
-        Assert.Equal("null", own["vo"]);
-        Assert.Equal("null", own["ao"]);
         foreach (var (name, value) in new Dictionary<string, string>
         {
-            ["keep-open"] = "yes", ["idle"] = "yes", ["input-default-bindings"] = "no", ["input-vo-keyboard"] = "no", ["osc"] = "no",
-            ["ytdl"] = "no", ["sub-auto"] = "no", ["rebase-start-time"] = "yes", ["media-controls"] = "no", ["resume-playback"] = "no",
-            ["save-position-on-quit"] = "no", ["save-watch-history"] = "no", ["log-file"] = "", ["input-ipc-server"] = "",
+            ["save-watch-history"] = "no", ["watch-later-dir"] = "", ["write-filename-in-watch-later-config"] = "no", ["log-file"] = "",
+            ["dump-stats"] = "", ["stream-record"] = "", ["stream-dump"] = "", ["http-proxy"] = "", ["stream-lavf-o"] = "",
+            ["demuxer-lavf-o"] = "", ["input-ipc-server"] = "", ["input-conf"] = "memory://", ["input-commands"] = "",
             ["load-scripts"] = "no", ["scripts"] = "", ["register"] = "no", ["unregister"] = "no",
         })
         {
-            Assert.Equal(value, own[name]);
+            Assert.Equal(value, guarded[name]);
         }
+        Assert.DoesNotContain("force-window", guarded.Keys);
+        // Headless, the pseudo-GUI profile's own force-window=yes would make a window.
+        Assert.Equal("no", MpvOwnOptions.Guarded(VideoOutputKind.None).ToDictionary()["force-window"]);
+        // None of them is set without a file.
+        Assert.Empty(MpvOwnOptions.Core(VideoOutputKind.D3D11Composition, (1280, 720)).Select(o => o.Key).Intersect(guarded.Keys));
     }
 
     [Fact]
@@ -49,34 +52,19 @@ public sealed class MpvOwnOptionsTests
     }
 
     [Fact]
-    public void AFilesOptions_AreNamedAsMpvReadsThem()
+    public void EachTitle_GetsGranarysOptions_QuotedByLength_ButTheSizeGranaryChangesItself()
     {
-        const string text = """
-            # vo=gpu is a comment
-            deband=yes
-              --vo = gpu   # an option, spaced out
-            no-osc
-            keep-open=no
-            keep-open=always
-            glsl-shaders-append=~~/shaders/FSRCNNX.glsl
-            script=~~/scripts/thing.lua
-            scale=ewa_lanczossharp # keep-open in a comment
-            sub-font="keep-open"
-            [default]
-            idle=no
-            [anime]
-            profile-cond=p["video-params/primaries"] == "bt.709"
-            keep-open=no
-            """;
+        var perFile = MpvOwnOptions.PerFile([new("vo", "gpu-next"), new("d3d11-composition-size", "1280x720"), new("log-file", ""),
+            new("input-conf", "memory://")]);
 
-        var found = MpvOwnOptions.SetIn(text, Names);
-
-        Assert.Equal(
-            [("vo", null), ("osc", null), ("keep-open", null), ("scripts", null), ("idle", null), ("keep-open", "anime")],
-            found);
+        Assert.Equal(["vo=%8%gpu-next", "log-file=%0%", "input-conf=%9%memory://"], perFile);
     }
 
-    [Fact]
-    public void AFileWithoutGranarysOptions_NamesNone() =>
-        Assert.Empty(MpvOwnOptions.SetIn("deband=yes\r\nscale=ewa_lanczossharp\r\n[hq]\r\ninterpolation=yes\r\n", Names));
+    [Theory]
+    [InlineData("yes", "yes", true)]
+    [InlineData(" Composition ", "composition", true)]
+    [InlineData("gpu", "gpu-next", false)]
+    [InlineData(null, "", false)]
+    public void MpvsValue_IsGranarysWhateverItsCase(string? value, string own, bool same) =>
+        Assert.Equal(same, MpvOwnOptions.Same(value, own));
 }

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 
 namespace Granary.Player;
@@ -12,55 +13,88 @@ internal static class MpvOwnOptions
     /// <summary>Granary changes this one while it plays, so it is kept at the start only.</summary>
     public const string CompositionSize = "d3d11-composition-size";
 
-    // mpv's actions on list options ("glsl-shaders-append"), and the alias "script" for "scripts-append".
-    private static readonly string[] ListSuffixes = ["-add", "-append", "-pre", "-set", "-clr", "-del", "-remove", "-toggle"];
+    /// <summary>The mode in which mpv applies the pseudo-GUI profile, which holds Granary's options, over the config files.</summary>
+    public const string OperationMode = "player-operation-mode";
 
-    /// <summary>Granary's options and the values they keep, in the order they are set.</summary>
-    public static IReadOnlyList<KeyValuePair<string, string>> For(VideoOutputKind output, (int Width, int Height) size)
+    /// <summary>The profile mpv applies over the config files inside <c>mpv_initialize</c> in the pseudo-GUI mode.</summary>
+    public const string ProfileName = "pseudo-gui";
+
+    /// <summary>
+    /// The options Granary sets at every start, in the order it always has; mpv must know each. Without a mpv.conf these
+    /// are all it sets, besides <c>hwdec</c>.
+    /// </summary>
+    public static IReadOnlyList<KeyValuePair<string, string>> Core(VideoOutputKind output, (int Width, int Height) size)
     {
-        var own = new List<KeyValuePair<string, string>>();
+        var own = new List<KeyValuePair<string, string>>
+        {
+            new("keep-open", "yes"),
+            new("idle", "yes"),
+            new("input-default-bindings", "no"),
+            new("input-vo-keyboard", "no"),
+            new("osc", "no"),
+            new("ytdl", "no"),
+            new("sub-auto", "no"),
+            new("rebase-start-time", "yes"),
+            // Granary drives System Media Transport Controls itself.
+            new("media-controls", "no"),
+            // The server keeps the position. mpv must not read or write watch-later files, which would store the URLs,
+            // the media proxy's secret among them.
+            new("resume-playback", "no"),
+            new("save-position-on-quit", "no"),
+        };
         switch (output)
         {
             case VideoOutputKind.D3D11Composition:
-                Add("vo", "gpu-next");
-                Add("gpu-api", "d3d11");
-                Add("gpu-context", "d3d11");
-                Add("d3d11-output-mode", "composition");
-                Add(CompositionSize, MpvPlaybackEngine.SizeText(size));
-                Add("force-window", "yes");
+                own.Add(new("vo", "gpu-next"));
+                own.Add(new("gpu-api", "d3d11"));
+                own.Add(new("gpu-context", "d3d11"));
+                own.Add(new("d3d11-output-mode", "composition"));
+                own.Add(new(CompositionSize, MpvPlaybackEngine.SizeText(size)));
+                own.Add(new("force-window", "yes"));
                 break;
             case VideoOutputKind.None:
-                Add("vo", "null");
-                Add("ao", "null");
-                Add("force-window", "no");
+                own.Add(new("vo", "null"));
+                own.Add(new("ao", "null"));
                 break;
         }
-        Add("keep-open", "yes");
-        Add("idle", "yes");
-        Add("input-default-bindings", "no");
-        Add("input-vo-keyboard", "no");
-        Add("osc", "no");
-        Add("ytdl", "no");
-        Add("sub-auto", "no");
-        Add("rebase-start-time", "yes");
-        // Granary drives System Media Transport Controls itself.
-        Add("media-controls", "no");
-        // The server keeps the position. mpv must not read or write watch-later files or a watch history, which would
-        // store the URLs, the media proxy's secret among them; nor write them to a log of its own, or hand them to
-        // scripts or other programs.
-        Add("resume-playback", "no");
-        Add("save-position-on-quit", "no");
-        Add("save-watch-history", "no");
-        Add("log-file", "");
-        Add("input-ipc-server", "");
-        Add("load-scripts", "no");
-        Add("scripts", "");
-        // Nor make itself Windows' player for media files.
-        Add("register", "no");
-        Add("unregister", "no");
         return own;
+    }
 
-        void Add(string name, string value) => own.Add(new(name, value));
+    /// <summary>
+    /// Options only a mpv.conf could change, kept with one: the stream's address stays out of mpv's own files, logs,
+    /// proxies, programs and scripts; mpv reads no key bindings and runs no commands of the file's; it never makes itself
+    /// Windows' player for media files. They are mpv's defaults, so Granary sets them only with a file, each only if this
+    /// mpv knows it.
+    /// </summary>
+    public static IReadOnlyList<KeyValuePair<string, string>> Guarded(VideoOutputKind output)
+    {
+        var own = new List<KeyValuePair<string, string>>
+        {
+            new("save-watch-history", "no"),
+            new("watch-later-dir", ""),
+            new("write-filename-in-watch-later-config", "no"),
+            new("log-file", ""),
+            new("dump-stats", ""),
+            new("stream-record", ""),
+            new("stream-dump", ""),
+            new("http-proxy", ""),
+            new("stream-lavf-o", ""),
+            new("demuxer-lavf-o", ""),
+            new("input-ipc-server", ""),
+            // An empty input.conf of Granary's: with none named, mpv would read the folder's.
+            new("input-conf", "memory://"),
+            new("input-commands", ""),
+            new("load-scripts", "no"),
+            new("scripts", ""),
+            new("register", "no"),
+            new("unregister", "no"),
+        };
+        if (output == VideoOutputKind.None)
+        {
+            // The pseudo-GUI profile mpv applies first would make a window otherwise.
+            own.Add(new("force-window", "no"));
+        }
+        return own;
     }
 
     /// <summary>
@@ -69,7 +103,7 @@ internal static class MpvOwnOptions
     /// </summary>
     public static string Profile(IEnumerable<KeyValuePair<string, string>> own)
     {
-        var text = new StringBuilder("[pseudo-gui]\n");
+        var text = new StringBuilder("[").Append(ProfileName).Append("]\n");
         foreach (var (name, value) in own)
         {
             text.Append(name).Append('=').Append(value).Append('\n');
@@ -78,68 +112,15 @@ internal static class MpvOwnOptions
     }
 
     /// <summary>
-    /// The options of <paramref name="names"/> that a config file sets, each with the profile it is in (null outside
-    /// one), by mpv's own reading of a line (options/parse_configfile.c): "#" starts a comment, "[name]" a profile, and an
-    /// option's name, after an optional "--", is made of letters, digits, "-" and "_". "no-osc" names osc and
-    /// "scripts-append" scripts. Only for the log: mpv reads the file itself, includes too.
+    /// Granary's options as options of one file in <c>loadfile</c>. mpv applies these after the file's <c>protocol.*</c>
+    /// and <c>extension.*</c> profiles and before it opens the stream. Each value is quoted by its length (<c>%n%</c>), so
+    /// nothing in one can end it.
     /// </summary>
-    public static IReadOnlyList<(string Option, string? Profile)> SetIn(string text, IReadOnlySet<string> names)
-    {
-        var found = new List<(string, string?)>();
-        string? profile = null;
-        foreach (string raw in text.ReplaceLineEndings("\n").Split('\n'))
-        {
-            string line = raw.TrimStart();
-            if (line.Length == 0 || line[0] == '#')
-            {
-                continue;
-            }
-            if (line[0] == '[')
-            {
-                int end = line.IndexOf(']', StringComparison.Ordinal);
-                string name = end > 0 ? line[1..end] : "";
-                // [default] is the file's own options.
-                profile = name is "" or "default" ? null : name;
-                continue;
-            }
-            if (line.StartsWith("--", StringComparison.Ordinal))
-            {
-                line = line[2..];
-            }
-            int length = 0;
-            while (length < line.Length && (char.IsAsciiLetterOrDigit(line[length]) || line[length] is '-' or '_'))
-            {
-                length++;
-            }
-            if (OwnName(line[..length], names) is { } option && !found.Contains((option, profile)))
-            {
-                found.Add((option, profile));
-            }
-        }
-        return found;
-    }
+    public static IEnumerable<string> PerFile(IEnumerable<KeyValuePair<string, string>> own) =>
+        own.Where(o => o.Key != CompositionSize)
+            .Select(o => string.Create(CultureInfo.InvariantCulture, $"{o.Key}=%{Encoding.UTF8.GetByteCount(o.Value)}%{o.Value}"));
 
-    private static string? OwnName(string option, IReadOnlySet<string> names)
-    {
-        if (names.Contains(option))
-        {
-            return option;
-        }
-        if (option.StartsWith("no-", StringComparison.Ordinal) && names.Contains(option[3..]))
-        {
-            return option[3..];
-        }
-        if (option == "script" && names.Contains("scripts"))
-        {
-            return "scripts";
-        }
-        foreach (string suffix in ListSuffixes)
-        {
-            if (option.EndsWith(suffix, StringComparison.Ordinal) && names.Contains(option[..^suffix.Length]))
-            {
-                return option[..^suffix.Length];
-            }
-        }
-        return null;
-    }
+    /// <summary>Whether mpv's value is Granary's: mpv may write a value in another case or with spaces around it.</summary>
+    public static bool Same(string? value, string own) =>
+        value is not null && string.Equals(value.Trim(), own, StringComparison.OrdinalIgnoreCase);
 }
