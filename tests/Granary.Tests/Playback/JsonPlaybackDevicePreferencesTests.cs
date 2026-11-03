@@ -103,15 +103,27 @@ public sealed class JsonPlaybackDevicePreferencesTests : IDisposable
     {
         var preferences = Create();
 
-        _ = preferences.SetDecodesInSoftwareAsync(true);
-        _ = preferences.SetUpDownAsync(PlayerUpDown.Volume);
-        _ = preferences.SetDecodesInSoftwareAsync(false);
-        _ = preferences.SetDecodesInSoftwareAsync(true);
-        await preferences.LatestSave.WaitAsync(TestContext.Current.CancellationToken);
+        var saves = new[]
+        {
+            preferences.SetDecodesInSoftwareAsync(true),
+            preferences.SetUpDownAsync(PlayerUpDown.Volume),
+            preferences.SetDecodesInSoftwareAsync(false),
+            preferences.SetDecodesInSoftwareAsync(true),
+        };
+        try
+        {
+            await preferences.LatestSave.WaitAsync(TestContext.Current.CancellationToken);
 
-        var again = Create();
-        Assert.True(again.DecodesInSoftware);
-        Assert.Equal(PlayerUpDown.Volume, again.UpDown);
+            // Each save runs after the one before, so the latest ends last.
+            Assert.All(saves, save => Assert.True(save.IsCompleted));
+            var again = Create();
+            Assert.True(again.DecodesInSoftware);
+            Assert.Equal(PlayerUpDown.Volume, again.UpDown);
+        }
+        finally
+        {
+            await Task.WhenAll(saves);
+        }
     }
 
     [Fact]

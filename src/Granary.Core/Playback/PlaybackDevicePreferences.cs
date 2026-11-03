@@ -48,14 +48,15 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
 {
     private readonly string _filePath;
     private readonly ILogger<JsonPlaybackDevicePreferences> _logger;
-    // Saves one at a time, each the choice as it is when its turn comes, so the last one written is the latest.
-    private readonly SemaphoreSlim _gate = new(1, 1);
     private const string VolumeValue = "volume";
     private const string ControlsValue = "controls";
 
+    // Each save runs after the one before it on the thread pool, writing the choices as they are when its turn comes, so
+    // the last one written is the latest and the latest save ends after every earlier one.
+    private readonly Lock _saves = new();
     private volatile bool _decodesInSoftware;
     private volatile PlayerUpDown _upDown;
-    private volatile Task _latestSave = Task.CompletedTask;
+    private Task _latestSave = Task.CompletedTask;
 
     public JsonPlaybackDevicePreferences(string filePath, ILogger<JsonPlaybackDevicePreferences> logger)
     {
@@ -72,19 +73,38 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
     public bool DecodesInSoftware => _decodesInSoftware;
 
     public PlayerUpDown UpDown => _upDown;
-    public Task LatestSave => _latestSave;
+
+    public Task LatestSave
+    {
+        get
+        {
+            lock (_saves)
+            {
+                return _latestSave;
+            }
+        }
+    }
 
     public Task SetDecodesInSoftwareAsync(bool decodesInSoftware)
     {
         _decodesInSoftware = decodesInSoftware;
-        // Saves run one at a time behind the gate, so the latest one ends after those before it.
-        return _latestSave = Task.Run(SaveAsync);
+        return QueueSave();
+    }
+
+    // SaveAsync never throws, so the chain never breaks.
+    private Task QueueSave()
+    {
+        lock (_saves)
+        {
+            return _latestSave = _latestSave.ContinueWith(_ => SaveAsync(), CancellationToken.None,
+                TaskContinuationOptions.DenyChildAttach, TaskScheduler.Default).Unwrap();
+        }
     }
 
     public Task SetUpDownAsync(PlayerUpDown upDown)
     {
         _upDown = upDown;
-        return _latestSave = Task.Run(SaveAsync);
+        return QueueSave();
     }
 
     private PlaybackDeviceFile? Load()
@@ -105,7 +125,6 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
 
     private async Task SaveAsync()
     {
-        await _gate.WaitAsync().ConfigureAwait(false);
         // Its own temporary file: a second Granary on the same data folder saving at the same moment cannot write into it.
         string temp = $"{_filePath}.{Guid.NewGuid():N}.tmp";
         try
@@ -130,10 +149,6 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
             {
                 _logger.LogDebug(deleteFailure, "A half-written playback choices file stays behind");
             }
-        }
-        finally
-        {
-            _gate.Release();
         }
     }
 }
