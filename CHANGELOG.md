@@ -12,6 +12,8 @@ release's section is what its update says it changes (docs/release.md).
   files directly and decodes them on the processor where the graphics card can't, instead of having your Silo server
   convert them: the picture keeps its full quality and the server does less work, but slower PCs can stutter. Off by
   default; it is kept on this PC and counts from the next title you play.
+- The log says why a title is converted: what this PC's graphics card decodes, what Granary told the server it plays,
+  and the reason the server gave for its choice.
 
 ### Fixed
 

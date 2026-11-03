@@ -2327,6 +2327,9 @@ HDR with libplacebo. An honest, conservative first report:
   otherwise transcode and tone-map. `output.hdr` stays false, and `hls` keeps the GPU's list: the server encodes HEVC
   only for an HLS delivery that lists it, so a transcode it still makes stays one the GPU decodes. Read at each start,
   so a change counts from the next title.
+- The log says why a title is transcoded: the probe's hardware and 10-bit codecs once, the report's video codecs and
+  whether HDR originals are claimed at each start, and each plan's `decision_reason`, effective video codec, size and
+  dynamic range, `claims.video.dolby_vision_reason` and `degradation_warnings` codes.
 - Subtitles: `sidecar_text`, `ass_styling`, `font_attachments`, `embedded_text`, `embedded_bitmap`
   true; `embedded_subtitles_v1` with `native_embedded` entries for mkv and mp4 using
   `track_identity: "ffmpeg_stream_index"` (mpv's `track-list/N/ff-index`), as Apple does.

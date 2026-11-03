@@ -45,6 +45,19 @@ public sealed class ServerPlaybackSettingsTests
     }
 
     [Fact]
+    public async Task TheLog_SaysWhatThisPcPlaysAndWhyTheServerTranscodes()
+    {
+        _fixture.Silo.On(HttpMethod.Post, StartPath, Created(Transcode("720p-medium")));
+
+        await _fixture.StartAsync();
+
+        Assert.Contains(_fixture.Logs.Lines, line => line.Contains(
+            "This PC plays h264, mpeg2video, hevc (h264, hevc in hardware); HDR originals are played directly", StringComparison.Ordinal));
+        Assert.Contains(_fixture.Logs.Lines, line => line.Contains(
+            "The server's reason: transcode_required; it sends h264 1280x720 sdr (Dolby Vision: output_sdr; warnings: hdr_tone_mapped)", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task TheMenu_IsThePlansRungs_WithTheOneItDelivers()
     {
         _fixture.Silo.On(HttpMethod.Post, StartPath, Created(Transcode("720p-medium")));
