@@ -146,8 +146,8 @@ and start position go with each title (`loadfile` options), over the file's own.
 change, `hwdec` included.
 
 **The log** says once per start which file mpv read (`mpv started with …`), names the options of Granary's that the file
-sets (`mpv.conf sets vo; Granary keeps its own`, read from the file by mpv's rules for option names; an `include`d file's
-are kept but not named), and passes on mpv's own messages about the file (an unknown option, a shader it cannot open),
+sets (`mpv.conf sets vo; Granary keeps its own`, read from the file and its includes by mpv's rules for option names),
+and passes on mpv's own messages about the file (an unknown option, a shader it cannot open),
 which it asks for before `mpv_initialize`. When mpv does not start with the file, the log says whether mpv refused the
 file (an option that only lists something, such as `audio-device=help`, with mpv's own words) or one of Granary's own
 options for it, and mpv starts without the file. A folder named `mpv.conf` is said and passed over. The engine also
