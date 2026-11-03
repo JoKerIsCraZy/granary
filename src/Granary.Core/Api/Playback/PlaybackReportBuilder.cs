@@ -74,13 +74,23 @@ public static class PlaybackReportBuilder
     /// <param name="appChannel">The distribution channel (<c>release</c>, <c>dev</c>), when known.</param>
     /// <exception cref="ArgumentException">The app version is blank, or a codec list has more entries than the server accepts.</exception>
     /// <param name="mediaOrigins">The server offers <c>authorized_media_origins_v1</c> (its capabilities list it).</param>
-    public static PlaybackClientReport Build(PlaybackDeviceFacts device, string appVersion, string? appChannel = null, bool mediaOrigins = false)
+    /// <param name="softwareDecoding">
+    /// The viewer chose direct play without full hardware decoding (Settings → Playback): HEVC, VP9 and AV1 are declared
+    /// for direct play whatever the GPU does, and HDR is tone-mapped here, decoded on the CPU where the GPU cannot. A PC
+    /// that decodes 4K HDR well enough in software then plays the original instead of a server transcode; a slower one
+    /// may stutter. HLS keeps the list without them, the codecs the GPU or the CPU decode smoothly, so a transcode the
+    /// server still makes stays one this PC decodes without strain (the server encodes HEVC only for an HLS delivery that
+    /// lists it).
+    /// </param>
+    public static PlaybackClientReport Build(PlaybackDeviceFacts device, string appVersion, string? appChannel = null, bool mediaOrigins = false,
+        bool softwareDecoding = false)
     {
         ArgumentNullException.ThrowIfNull(device);
         ArgumentException.ThrowIfNullOrWhiteSpace(appVersion);
         var hardware = CodecList(device.HardwareVideoCodecs);
         // A codec the GPU decodes plays even when the software list leaves it out.
-        var video = CodecList([.. device.SoftwareVideoCodecs, .. device.HardwareVideoCodecs]);
+        var smooth = CodecList([.. device.SoftwareVideoCodecs, .. device.HardwareVideoCodecs]);
+        var video = softwareDecoding ? CodecList([.. smooth, .. HdrCodecs]) : smooth;
 
         var capabilities = new ClientCapabilities
         {
@@ -107,8 +117,8 @@ public static class PlaybackReportBuilder
             },
             Deliveries = new Dictionary<string, DeliveryCapability>
             {
-                [DeliveryClasses.OriginalHttp] = OriginalHttp(video, DecodesHdr(device, video)),
-                [DeliveryClasses.Hls] = Hls(video),
+                [DeliveryClasses.OriginalHttp] = OriginalHttp(video, softwareDecoding || DecodesHdr(device, video)),
+                [DeliveryClasses.Hls] = Hls(smooth),
             },
         };
         IReadOnlyList<string> features = mediaOrigins ? [.. ClientFeatures, PlaybackFeatures.AuthorizedMediaOriginsV1] : ClientFeatures;

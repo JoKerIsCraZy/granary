@@ -47,6 +47,31 @@ public sealed class FileLoggerProviderTests : IDisposable
         Assert.Null(thrown);
     }
 
+    [Fact]
+    public void AMessageWithLineBreaks_StaysOneLine_SoAServerCannotWriteLinesOfItsOwn()
+    {
+        using (var provider = new FileLoggerProvider(_directory))
+        {
+            provider.CreateLogger("Playback").LogInformation("The server's reason: {Reason}", "x\r\n12:00:00.000 Error Forged: line");
+        }
+
+        string[] lines = ReadAll().Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+
+        Assert.Single(lines);
+        Assert.EndsWith("The server's reason: x\\r\\n12:00:00.000 Error Forged: line", lines[0], StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AnExceptionsStackTrace_KeepsItsOwnLines()
+    {
+        using (var provider = new FileLoggerProvider(_directory))
+        {
+            provider.CreateLogger("Playback").LogError(new InvalidOperationException("first" + Environment.NewLine + "second"), "Failed");
+        }
+
+        Assert.Contains("first" + Environment.NewLine + "second", ReadAll(), StringComparison.Ordinal);
+    }
+
     private string ReadAll() => string.Concat(Directory.GetFiles(_directory, "*.log").Select(path =>
     {
         using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);

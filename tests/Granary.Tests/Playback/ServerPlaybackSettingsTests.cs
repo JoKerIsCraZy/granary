@@ -20,6 +20,44 @@ public sealed class ServerPlaybackSettingsTests
         .Replace("\"active_quality\": \"720p-medium\"", $"\"active_quality\": \"{active}\"", StringComparison.Ordinal);
 
     [Fact]
+    public async Task DirectPlayInSoftware_TheStartDeclaresAv1AndClaimsToneMapping()
+    {
+        _fixture.DevicePreferences.DecodesInSoftware = true;
+        _fixture.Silo.On(HttpMethod.Post, StartPath, Created(Transcode("720p-medium")));
+
+        await _fixture.StartAsync();
+
+        var start = _fixture.Body(HttpMethod.Post, StartPath);
+        Assert.Contains("av1", start.GetProperty("client_capabilities").GetProperty("codecs_video").EnumerateArray().Select(c => c.GetString()));
+        var claims = start.GetProperty("client_playback_context").GetProperty("deliveries").GetProperty("original_http").GetProperty("validated_claims");
+        Assert.Contains("client_managed_dynamic_range_v1", claims.EnumerateArray().Select(c => c.GetString()));
+    }
+
+    [Fact]
+    public async Task ByDefault_TheStartDeclaresOnlyWhatTheGpuAndCpuDecode()
+    {
+        _fixture.Silo.On(HttpMethod.Post, StartPath, Created(Transcode("720p-medium")));
+
+        await _fixture.StartAsync();
+
+        var codecs = _fixture.Body(HttpMethod.Post, StartPath).GetProperty("client_capabilities").GetProperty("codecs_video");
+        Assert.Equal(["h264", "mpeg2video", "hevc"], codecs.EnumerateArray().Select(c => c.GetString()));
+    }
+
+    [Fact]
+    public async Task TheLog_SaysWhatThisPcPlaysAndWhyTheServerTranscodes()
+    {
+        _fixture.Silo.On(HttpMethod.Post, StartPath, Created(Transcode("720p-medium")));
+
+        await _fixture.StartAsync();
+
+        Assert.Contains(_fixture.Logs.Lines, line => line.Contains(
+            "This PC plays h264, mpeg2video, hevc (h264, hevc in hardware); HDR originals are played directly", StringComparison.Ordinal));
+        Assert.Contains(_fixture.Logs.Lines, line => line.Contains(
+            "The server's reason: transcode_required; it sends h264 1280x720 sdr (Dolby Vision: output_sdr; warnings: hdr_tone_mapped)", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task TheMenu_IsThePlansRungs_WithTheOneItDelivers()
     {
         _fixture.Silo.On(HttpMethod.Post, StartPath, Created(Transcode("720p-medium")));
