@@ -177,6 +177,61 @@ public sealed class CatalogApiTests
     }
 
     [Fact]
+    public async Task Browse_WithRules_PostsTheQueryWithTheFiltersAsRules()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        Answer(HttpMethod.Post, "api/v2/catalog/query", CatalogPayloads.BrowsePage);
+        var query = new CatalogQuery
+        {
+            LibraryId = "12", Type = MediaScopes.Movie, Genre = "Crime", ContentRatings = ["R", "PG-13"],
+            Rules = [Group("all", Rule("hdr", "is", "true"))],
+            Sort = CatalogSort.Descending(CatalogSortFields.AddedAt), Limit = 60, Images = Images,
+        };
+
+        var page = await Api.BrowseAsync(Server, query, ct);
+        await Api.BrowseAsync(Server, query.AtPosition("w", 120), ct);
+
+        Assert.All(_silo.Sent, s => Assert.Equal(HttpMethod.Post, s.Method));
+        Assert.All(_silo.Sent, s => Assert.Equal(
+            "/silo/api/v2/catalog/query?poster_width=342&backdrop_width=1280&logo_width=500&still_width=400&photo_width=185", s.Uri.PathAndQuery));
+        const string Groups = """
+            "groups":[{"match":"all","rules":[{"field":"genre","op":"contains","value":"Crime"}]},{"match":"any","rules":[{"field":"content_rating","op":"is","value":"R"},{"field":"content_rating","op":"is","value":"PG-13"}]},{"match":"all","rules":[{"field":"hdr","op":"is","value":true}]}]
+            """;
+        Assert.Equal($$"""{"library_id":"12","type":"movie",{{Groups}},"sort":"added_at","order":"desc","limit":60}""", _silo.Sent[0].Body);
+        Assert.Equal($$"""{"library_id":"12","type":"movie",{{Groups}},"sort":"added_at","order":"desc","limit":60,"cursor":"w","seek":120,"skip_total":true}""",
+            _silo.Sent[1].Body);
+        Assert.NotEmpty(page.Items);
+    }
+
+    [Fact]
+    public async Task Browse_WithRules_RefusesAPageOverTheirLimit()
+    {
+        var query = new CatalogQuery { LibraryId = "12", Rules = [Group("all", Rule("hdr", "is", "true"))], Limit = 101 };
+
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => Api.BrowseAsync(Server, query, TestContext.Current.CancellationToken));
+
+        Assert.Empty(_silo.Sent);
+    }
+
+    [Fact]
+    public async Task Letters_CountTheRulesToo()
+    {
+        Answer(HttpMethod.Post, "api/v2/catalog/letters", """{ "total": 0, "letters": [], "runs": [] }""");
+        var query = new CatalogQuery { LibraryId = "12", Rules = [Group("any", Rule("audio_language", "is", "\"de\""), Rule("audio_language", "is", "\"fr\""))] };
+
+        await Api.GetLettersAsync(Server, query, TestContext.Current.CancellationToken);
+
+        Assert.Equal("""
+            {"library_id":"12","groups":[{"match":"any","rules":[{"field":"audio_language","op":"is","value":"de"},{"field":"audio_language","op":"is","value":"fr"}]}],"order":"asc"}
+            """, Only().Body);
+    }
+
+    private static SmartRuleGroup Group(string match, params SmartRule[] rules) => new(match, rules);
+
+    private static SmartRule Rule(string field, string op, string json) =>
+        new() { Field = field, Op = op, Value = JsonDocument.Parse(json).RootElement.Clone() };
+
+    [Fact]
     public async Task Browse_RefusesARefusedQueryBeforeSending()
     {
         await Assert.ThrowsAsync<ArgumentException>(() =>

@@ -175,11 +175,17 @@ public sealed class LibraryViewModelTests
             _harness.Tabs = new LibraryTabs(file, _harness.Logs.For<LibraryTabs>());
             var first = await _harness.OpenLibraryTabAsync();
             await first.Browse.SetSortCommand.ExecuteAsync(LibrarySortOption.All.Single(o => o.Field == CatalogSortFields.Year));
-            first.Browse.Filters.BeginEdit();
-            first.Browse.Filters.DraftGenreIndex = first.Browse.Filters.GenreChoices.IndexOf("Drama");
-            first.Browse.Filters.RatingOptions.Single(o => o.Value == "R").IsSelected = true;
-            first.Browse.Filters.DraftYearFrom = 1990;
-            await first.Browse.Filters.ApplyCommand.ExecuteAsync(null);
+            var picked = first.Browse.Filters;
+            picked.BeginEdit();
+            picked.GenreOptions.Single(o => o.Value == "Drama").IsSelected = true;
+            picked.RatingOptions.Single(o => o.Value == "R").IsSelected = true;
+            picked.DraftYearFrom = 1990;
+            picked.DecadeOptions.Single(o => o.Label == "1980s").IsSelected = true;
+            picked.VideoQualityOptions.Single(o => o.Label == "HDR").IsSelected = true;
+            picked.OriginalLanguageOptions.Single(o => o.Value == "fr").IsSelected = true;
+            picked.AudioLanguageOptions.Single(o => o.Value == "de").IsSelected = true;
+            picked.DraftWatchStatusIndex = (int)LibraryWatchStatus.InProgress;
+            await picked.ApplyCommand.ExecuteAsync(null);
             first.Deactivate();
 
             // The next start: a new store reads the file, a new page opens the library on the grid, as it was.
@@ -190,14 +196,22 @@ public sealed class LibraryViewModelTests
             Assert.Equal(LibraryTab.Library, library.SelectedTab);
             Assert.Equal(CatalogSortFields.Year, library.Browse.Sort.Field);
             Assert.True(library.Browse.IsDescending);
-            Assert.Equal("Drama", library.Browse.Filters.Genre);
-            Assert.Equal(["R"], library.Browse.Filters.ContentRatings);
-            Assert.Equal(1990, library.Browse.Filters.YearFrom);
-            Assert.Equal(3, library.Browse.Filters.ActiveCount);
-            string query = _harness.Queries(LibraryHarness.CatalogPath)[^1];
-            Assert.Contains("sort=-year", query, StringComparison.Ordinal);
-            Assert.Contains("genre=Drama", query, StringComparison.Ordinal);
-            Assert.Contains("year_min=1990", query, StringComparison.Ordinal);
+            var filters = library.Browse.Filters.Applied;
+            Assert.Equal(["Drama"], filters.Genres);
+            Assert.Equal(["R"], filters.ContentRatings);
+            Assert.Equal(1990, filters.YearFrom);
+            Assert.Equal([1980], filters.Decades);
+            Assert.True(filters.Hdr);
+            Assert.Equal(["fr"], filters.OriginalLanguages);
+            Assert.Equal(["de"], filters.AudioLanguages);
+            Assert.Equal(LibraryWatchStatus.InProgress, filters.WatchStatus);
+            Assert.Equal(8, library.Browse.Filters.ActiveCount);
+            Assert.True(library.Browse.Filters.GenreOptions.Single(o => o.Value == "Drama").IsSelected);
+            string body = _harness.QueryBodies()[^1];
+            Assert.Contains("\"sort\":\"year\",\"order\":\"desc\"", body, StringComparison.Ordinal);
+            Assert.Contains("{\"field\":\"genre\",\"op\":\"contains\",\"value\":\"Drama\"}", body, StringComparison.Ordinal);
+            Assert.Contains("{\"field\":\"year\",\"op\":\"gte\",\"value\":1990}", body, StringComparison.Ordinal);
+            Assert.Contains("{\"field\":\"in_progress\",\"op\":\"is\",\"value\":true}", body, StringComparison.Ordinal);
         }
         finally
         {
@@ -231,7 +245,45 @@ public sealed class LibraryViewModelTests
             await library.Browse.SortDescendingCommand.ExecuteAsync(null);
             var reread = new LibraryTabs(file, _harness.Logs.For<LibraryTabs>());
             Assert.Equal(LibraryTab.Library, reread.Recall("srv1", "7", "1"));
-            Assert.Equal(new LibraryBrowseState(CatalogSortFields.Title, true, null, [], null, null), reread.RecallBrowse("srv1", "7", "1"));
+            Assert.Equal(new LibraryBrowseState(CatalogSortFields.Title, true, LibraryFilterSet.None), reread.RecallBrowse("srv1", "7", "1"));
+        }
+        finally
+        {
+            if (Directory.Exists(directory))
+            {
+                Directory.Delete(directory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task AnOlderFilesOneGenre_IsTheOneGenrePicked_AndTheOtherFiltersAreOff()
+    {
+        string directory = Path.Combine(Path.GetTempPath(), "granary-tests", Guid.NewGuid().ToString("N"));
+        try
+        {
+            string file = Path.Combine(directory, "library-tabs.json");
+            Directory.CreateDirectory(directory);
+            await File.WriteAllTextAsync(file, """
+                { "tabs": [ { "server": "srv1", "profile": "7", "library": "1", "tab": "library", "sort": "year", "descending": true,
+                  "genre": "Drama", "content_ratings": ["R"], "year_from": 1990 } ] }
+                """, TestContext.Current.CancellationToken);
+            _harness.Tabs = new LibraryTabs(file, _harness.Logs.For<LibraryTabs>());
+
+            var library = _harness.Create();
+            await library.ActivateAsync("1");
+
+            var filters = library.Browse.Filters.Applied;
+            Assert.Equal(new LibraryFilterSet { Genres = ["Drama"], ContentRatings = ["R"], YearFrom = 1990 }, filters);
+            Assert.Equal(3, library.Browse.Filters.ActiveCount);
+            Assert.Contains("{\"field\":\"genre\",\"op\":\"contains\",\"value\":\"Drama\"}", _harness.QueryBodies()[^1], StringComparison.Ordinal);
+
+            // Kept again, it is the list of genres.
+            await library.Browse.SortAscendingCommand.ExecuteAsync(null);
+            string saved = await File.ReadAllTextAsync(file, TestContext.Current.CancellationToken);
+            Assert.Contains("\"genres\": [", saved, StringComparison.Ordinal);
+            Assert.DoesNotContain("\"genre\":", saved, StringComparison.Ordinal);
+            Assert.Equal(filters, new LibraryTabs(file, _harness.Logs.For<LibraryTabs>()).RecallBrowse("srv1", "7", "1")!.Filters);
         }
         finally
         {
@@ -262,8 +314,8 @@ public sealed class LibraryViewModelTests
             await library.ActivateAsync("1");
 
             Assert.Equal(LibraryTab.Library, library.SelectedTab);
-            Assert.Null(library.Browse.Filters.YearFrom);
-            Assert.Equal(LibraryFiltersViewModel.MaximumYear, library.Browse.Filters.YearTo);
+            Assert.Null(library.Browse.Filters.Applied.YearFrom);
+            Assert.Equal(LibraryFiltersViewModel.MaximumYear, library.Browse.Filters.Applied.YearTo);
             Assert.Contains("year_max=9999", _harness.Queries(LibraryHarness.CatalogPath)[^1], StringComparison.Ordinal);
             Assert.Null(_harness.Tabs.Recall("srv1", "7", "2"));
         }
@@ -281,12 +333,12 @@ public sealed class LibraryViewModelTests
     {
         var filters = new LibraryFiltersViewModel(() => Task.CompletedTask, _harness.Logs.For<LibraryViewModel>());
 
-        filters.Restore(null, [], 2010, 1990);
-        Assert.Equal((1990, 2010), (filters.YearFrom!.Value, filters.YearTo!.Value));
+        filters.Restore(new LibraryFilterSet { YearFrom = 2010, YearTo = 1990 });
+        Assert.Equal((1990, 2010), (filters.Applied.YearFrom!.Value, filters.Applied.YearTo!.Value));
 
-        filters.Restore(null, [], 0, -3);
-        Assert.Null(filters.YearFrom);
-        Assert.Null(filters.YearTo);
+        filters.Restore(new LibraryFilterSet { YearFrom = 0, YearTo = -3 });
+        Assert.Null(filters.Applied.YearFrom);
+        Assert.Null(filters.Applied.YearTo);
         Assert.Equal(0, filters.ActiveCount);
     }
 
@@ -298,12 +350,13 @@ public sealed class LibraryViewModelTests
         {
             string file = Path.Combine(directory, "library-tabs.json");
             _harness.Tabs = new LibraryTabs(file, _harness.Logs.For<LibraryTabs>());
-            await _harness.Tabs.RememberBrowseAsync("srv1", "8", "1", new LibraryBrowseState(CatalogSortFields.Year, true, "Crime", [], null, null));
+            await _harness.Tabs.RememberBrowseAsync("srv1", "8", "1",
+                new LibraryBrowseState(CatalogSortFields.Year, true, new LibraryFilterSet { Genres = ["Crime"] }));
 
             var library = await _harness.OpenLibraryTabAsync();
 
             Assert.True(library.Browse.Sort.IsTitle);
-            Assert.Null(library.Browse.Filters.Genre);
+            Assert.Empty(library.Browse.Filters.Applied.Genres);
         }
         finally
         {

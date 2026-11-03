@@ -48,14 +48,22 @@ public sealed class CatalogApi(SiloHttp http)
             SiloJsonContext.Default.Section, cancellationToken);
 
     /// <summary>
-    /// One page of a listing. A stale cursor is 400 <c>invalid_cursor</c>: restart from page one. A search
+    /// One page of a listing: <c>GET /api/v2/catalog</c>, or with <see cref="CatalogQuery.Rules"/> the same listing as
+    /// <c>POST /api/v2/catalog/query</c>. A stale cursor is 400 <c>invalid_cursor</c>: restart from page one. A search
     /// past its deadline is 503 with Retry-After.
     /// </summary>
     /// <exception cref="ArgumentException">The query is one the server refuses (see <see cref="CatalogQuery.ToQueryString"/>).</exception>
     public Task<CatalogBrowseCollection> BrowseAsync(Uri server, CatalogQuery query, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(query);
-        return http.GetAsync(server, "api/v2/catalog" + query.ToQueryString(), SiloAuth.Profile, SiloJsonContext.Default.CatalogBrowseCollection, cancellationToken);
+        if (!query.UsesRules)
+        {
+            return http.GetAsync(server, "api/v2/catalog" + query.ToQueryString(), SiloAuth.Profile, SiloJsonContext.Default.CatalogBrowseCollection,
+                cancellationToken);
+        }
+        query.Validate();
+        return http.PostAsync(server, "api/v2/catalog/query" + query.ImagesQuery(), SiloAuth.Profile, CatalogQueryBody.For(query),
+            SiloJsonContext.Default.JsonElement, SiloJsonContext.Default.CatalogBrowseCollection, cancellationToken);
     }
 
     /// <summary>

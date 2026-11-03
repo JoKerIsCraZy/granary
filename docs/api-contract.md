@@ -720,7 +720,7 @@ series/season card), `user_state { played, is_favorite, in_watchlist, not_intere
 | `name_prefix` | a literal prefix of the sort title (`LIKE 'x%'`) that narrows the listing; the web's A–Z bar does not use it (see the letter index below) |
 | `type` | `movie`, `series`, `episode`, `video` (movies + series), `audiobook`, `ebook`, `manga`; unknown values are silently ignored |
 | `genre`, `status`, `year_min`, `year_max`, `content_rating` | simple filters |
-| `sort` | one term: `title`, `added_at`, `release_date`, `year`, `runtime`, `rating_imdb`, `rating_tmdb`, `resolution`, `progress`, `date_viewed`, `plays`, … (`-` prefix = descending; no prefix = ascending). `relevance` only with `q`. |
+| `sort` | one term: `title`, `added_at`, `release_date`, `last_air_date`, `latest_episode_added`, `year`, `content_rating`, `runtime`, `rating_imdb`, `rating_tmdb`, `rating_rt_critic`, `rating_rt_audience`, `resolution`, `bitrate`, `progress`, `date_viewed`, `plays`, … (`-` prefix = descending; no prefix = ascending). `relevance` only with `q`. |
 | `limit`, `cursor` | 1..200 (default 50), opaque cursor |
 | `seek` | 0..10,000,000: zero-based list position a page starts at, with the first page's `window_cursor` as `cursor` |
 | `skip_total` | `true` → `total` is an estimate |
@@ -747,8 +747,8 @@ letter's titles apart (accented initials after Z under C), so the letter at a li
 `runs`: the last run starting at or before it. The body takes rule groups only: the simple filters of
 `GET /api/v2/catalog` become the groups the server makes of them (genre `contains`, status `is` and the
 years `between` / `gte` / `lte` in one `"all"` group; one rating as an `"all"` group, several as an
-`"any"` group). `search/capabilities.letter_index` tells whether the server has it. The web's bar jumps
-by scrolling the windowed grid to `position` and marks the letter of the top row
+`"any"` group), then any rule groups of the listing itself. `search/capabilities.letter_index` tells whether the
+server has it. The web's bar jumps by scrolling the windowed grid to `position` and marks the letter of the top row
 (`web/src/components/catalog/LetterBar.tsx`, `pages/LibraryBrowse.tsx`).
 
 Rule-based filters use `POST /api/v2/catalog/query` with a JSON body of `source`, `scope`,
@@ -760,7 +760,29 @@ body (a changed body answers `invalid_cursor`). The body has **no** `genre`, `st
 `year_max` or `content_rating`: express them as rules (`{ "field": "genre", "op": "contains", "value": "Crime" }`,
 `{ "field": "year", "op": "between", "value": [1990, 1999] }`, one
 `{ "field": "content_rating", "op": "is", "value": "R" }` per rating in a `"match": "any"` group).
-Any unknown body member is `422` (`unknown_field`). Facet menus: `GET /api/v2/catalog/filters`.
+Any unknown body member is `422` (`unknown_field`). Facet menus: `GET /api/v2/catalog/filters`; the file-derived facets
+(`technical: { resolutions, audio_languages, subtitle_languages }`, lowercase BCP 47 tags) come only without
+`skip_technical=true`.
+
+Rule fields and conditions are an allowlist (`catalog_resolver.go`, `catalogQueryRuleFields` and
+`catalogPersonalRuleFields`); an unknown field or condition is `422`. Among them, the fields Granary uses: `genre` `is` /
+`is_not` / `contains`; `year` `gte` / `lte` / `between`; `resolution`, `original_language`, `audio_language`,
+`subtitle_language` and `content_rating` `is` / `is_not` with a string; `hdr`, `dolby_vision`, `watched` and
+`in_progress` `is` with a JSON `true` / `false`. `watched` and `in_progress` are the acting profile's.
+
+**Granary's library grid and lists** (`LibraryFilterSet`, `LibraryFilterRules`) send `GET /api/v2/catalog` while only a
+year range and content ratings are set (`year_min`, `year_max`, `content_rating`), and `POST /api/v2/catalog/query` as
+soon as any other filter is on, with the same scope (`library_id` and `type`, or the list's `source` and
+`collection_id`), sort and paging. The body's `groups`, combined with all: the years in an `"all"` group, the ratings
+(one `"all"`, several `"any"`), then as Silo's Apple and Android apps build them (`CatalogQueryBuilder.swift`) one
+`"any"` group per facet for genres (`contains`), decades (`year between [1990, 1999]`), original, audio and subtitle
+languages (`is`); one `"all"` group of the picked video qualities (`resolution is "2160p"`, `hdr is true`,
+`dolby_vision is true`); one `"all"` group for the watch status (Watched: `watched is true`; In Progress:
+`in_progress is true`; Unwatched: `watched is false` and `in_progress is false`, as the web's guided filters). The
+letter index in title order takes the same groups. The facet values come from `GET /api/v2/catalog/filters` with the
+technical facets. The sort menu is the web's (`lib/querySortOptions.ts`) for the library's type: `last_air_date` and
+`latest_episode_added` only for a series library, the Rotten Tomatoes sorts only while `GET /api/v2/capabilities/ratings`
+lists their source (6.6.1).
 
 Android uses GET without rule groups and POST otherwise; page size 42 (phone) / 100 (TV); default
 sort `-added_at` (phone) / `title` (TV) (`silo-android/shared/.../apiv2/CatalogV2Api.kt:29-225`).

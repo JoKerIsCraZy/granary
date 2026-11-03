@@ -6,6 +6,20 @@ release's section is what its update says it changes (docs/release.md).
 
 ## [Unreleased]
 
+### Added
+
+- More filters for a library, and for Favorites, Watchlist, History and collections: several genres at once, decades,
+  4K, HDR and Dolby Vision, the original, audio and subtitle languages, and Watch Status (Unwatched, In Progress,
+  Watched). The Filters panel scrolls when it gets long, and a library opens with these filters as you left them.
+  The filters you set show as badges under the bar, as on Silo's web app; each badge's ✕ removes just that filter.
+- More ways to sort a library: Latest Episode Air Date and Latest Episode Added in a series library, Content Rating,
+  TMDB Rating, the Rotten Tomatoes critic and audience ratings while your server shows them, Resolution, Bitrate,
+  Progress, Date Viewed and Plays.
+
+### Changed
+
+- The sorts are named as on Silo's web app: Date Added, Release Date, IMDb Rating, and Duration in place of Runtime.
+
 ### Fixed
 
 - Switching quickly between sections and scrolling freezes the app less often and for shorter, most of all in a large

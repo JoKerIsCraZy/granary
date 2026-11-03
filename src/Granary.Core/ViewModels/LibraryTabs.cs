@@ -168,21 +168,68 @@ public sealed class LibraryTabs
         }
     }
 
-    private static LibraryTabEntry Entry((string Server, string Profile, string Library) key, Remembered remembered) => new(
-        key.Server, key.Profile.Length > 0 ? key.Profile : null, key.Library, remembered.Tab is { } tab ? TabToName(tab) : null)
+    private static LibraryTabEntry Entry((string Server, string Profile, string Library) key, Remembered remembered)
     {
-        Sort = remembered.Browse?.SortField,
-        Descending = remembered.Browse?.Descending,
-        Genre = remembered.Browse?.Genre,
-        ContentRatings = remembered.Browse is { ContentRatings.Count: > 0 } browse ? browse.ContentRatings : null,
-        YearFrom = remembered.Browse?.YearFrom,
-        YearTo = remembered.Browse?.YearTo,
+        var filters = remembered.Browse?.Filters ?? LibraryFilterSet.None;
+        return new(key.Server, key.Profile.Length > 0 ? key.Profile : null, key.Library, remembered.Tab is { } tab ? TabToName(tab) : null)
+        {
+            Sort = remembered.Browse?.SortField,
+            Descending = remembered.Browse?.Descending,
+            Genres = OrNull(filters.Genres),
+            Decades = filters.Decades.Count > 0 ? [.. filters.Decades.Select(d => (int?)d)] : null,
+            ContentRatings = OrNull(filters.ContentRatings),
+            YearFrom = filters.YearFrom,
+            YearTo = filters.YearTo,
+            FourK = filters.FourK ? true : null,
+            Hdr = filters.Hdr ? true : null,
+            DolbyVision = filters.DolbyVision ? true : null,
+            OriginalLanguages = OrNull(filters.OriginalLanguages),
+            AudioLanguages = OrNull(filters.AudioLanguages),
+            SubtitleLanguages = OrNull(filters.SubtitleLanguages),
+            WatchStatus = WatchStatusToName(filters.WatchStatus),
+        };
+    }
+
+    // An entry from before sort and filters were kept has none: the library opens by title. Filters it does not name are
+    // off; one genre, as versions before several were kept it, is the one genre picked.
+    private static LibraryBrowseState? BrowseOf(LibraryTabEntry entry) => entry.Sort is { Length: > 0 } sort
+        ? new LibraryBrowseState(sort, entry.Descending ?? false, new LibraryFilterSet
+        {
+            Genres = entry.Genres is not null ? Texts(entry.Genres) : entry.Genre is { } genre ? [genre] : [],
+            Decades = [.. entry.Decades?.OfType<int>() ?? []],
+            ContentRatings = Texts(entry.ContentRatings),
+            YearFrom = entry.YearFrom,
+            YearTo = entry.YearTo,
+            FourK = entry.FourK ?? false,
+            Hdr = entry.Hdr ?? false,
+            DolbyVision = entry.DolbyVision ?? false,
+            OriginalLanguages = Texts(entry.OriginalLanguages),
+            AudioLanguages = Texts(entry.AudioLanguages),
+            SubtitleLanguages = Texts(entry.SubtitleLanguages),
+            WatchStatus = NameToWatchStatus(entry.WatchStatus),
+        }.Normalized())
+        : null;
+
+    private static IReadOnlyList<string>? OrNull(IReadOnlyList<string> values) => values.Count > 0 ? values : null;
+
+    private static string[] Texts(IReadOnlyList<string?>? values) => [.. values?.OfType<string>() ?? []];
+
+    // The web's names (GuidedFormState.watchStatus).
+    private static string? WatchStatusToName(LibraryWatchStatus status) => status switch
+    {
+        LibraryWatchStatus.Unwatched => "unwatched",
+        LibraryWatchStatus.InProgress => "in_progress",
+        LibraryWatchStatus.Watched => "watched",
+        _ => null,
     };
 
-    // An entry from before sort and filters were kept has none: the library opens by title.
-    private static LibraryBrowseState? BrowseOf(LibraryTabEntry entry) => entry.Sort is { Length: > 0 } sort
-        ? new LibraryBrowseState(sort, entry.Descending ?? false, entry.Genre, [.. entry.ContentRatings?.OfType<string>() ?? []], entry.YearFrom, entry.YearTo)
-        : null;
+    private static LibraryWatchStatus NameToWatchStatus(string? name) => name switch
+    {
+        "unwatched" => LibraryWatchStatus.Unwatched,
+        "in_progress" => LibraryWatchStatus.InProgress,
+        "watched" => LibraryWatchStatus.Watched,
+        _ => LibraryWatchStatus.Any,
+    };
 
     private static string TabToName(LibraryTab tab) => tab switch
     {
@@ -213,13 +260,33 @@ internal sealed record LibraryTabEntry(string? Server, string? Profile, string? 
 
     public bool? Descending { get; init; }
 
+    /// <summary>The one genre a file from before several genres were kept holds; read, never written.</summary>
     public string? Genre { get; init; }
+
+    public IReadOnlyList<string?>? Genres { get; init; }
+
+    public IReadOnlyList<int?>? Decades { get; init; }
 
     public IReadOnlyList<string?>? ContentRatings { get; init; }
 
     public int? YearFrom { get; init; }
 
     public int? YearTo { get; init; }
+
+    public bool? FourK { get; init; }
+
+    public bool? Hdr { get; init; }
+
+    public bool? DolbyVision { get; init; }
+
+    public IReadOnlyList<string?>? OriginalLanguages { get; init; }
+
+    public IReadOnlyList<string?>? AudioLanguages { get; init; }
+
+    public IReadOnlyList<string?>? SubtitleLanguages { get; init; }
+
+    /// <summary><c>unwatched</c>, <c>in_progress</c> or <c>watched</c>; absent for any.</summary>
+    public string? WatchStatus { get; init; }
 }
 
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower, WriteIndented = true,
