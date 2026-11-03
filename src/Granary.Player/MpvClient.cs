@@ -45,14 +45,30 @@ internal sealed class MpvClient : IDisposable
         }
     }
 
+    /// <summary>
+    /// Reads options and profiles in mpv's config syntax, given as text (mpv's <c>memory://</c>), as if they were set one by
+    /// one with <see cref="SetOption"/>; only before <see cref="Initialize"/>.
+    /// </summary>
+    public void LoadConfigText(string text)
+    {
+        int rc = LibMpv.LoadConfigFile(_handle, "memory://" + text);
+        if (rc < 0)
+        {
+            throw new InvalidOperationException($"mpv did not read the config text: {LibMpv.Error(rc)}");
+        }
+    }
+
     public void Initialize(IEnumerable<(string Name, int Format)> observedProperties)
     {
+        // Before the start, so what mpv says about its config files reaches the log.
+        LibMpv.RequestLogMessages(_handle, "info");
         int rc = LibMpv.Initialize(_handle);
         if (rc < 0)
         {
+            // The event thread never runs for a start that failed: mpv's own words on why are passed on here.
+            DispatchPendingLog();
             throw new InvalidOperationException($"mpv_initialize failed: {LibMpv.Error(rc)}");
         }
-        LibMpv.RequestLogMessages(_handle, "info");
         foreach (var (name, format) in observedProperties)
         {
             ulong id = (ulong)(_observed.Count + 1);
@@ -129,6 +145,25 @@ internal sealed class MpvClient : IDisposable
             {
                 // A faulty subscriber must not stop the event loop.
                 _logger.LogError(ex, "mpv event handler failed for event {EventId}", ev.EventId);
+            }
+        }
+    }
+
+    private void DispatchPendingLog()
+    {
+        while (Marshal.PtrToStructure<LibMpv.MpvEvent>(LibMpv.WaitEvent(_handle, 0)) is { EventId: not LibMpv.EventNone } ev)
+        {
+            if (ev.EventId != LibMpv.EventLogMessage)
+            {
+                continue;
+            }
+            try
+            {
+                Dispatch(ev);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "mpv log handler failed");
             }
         }
     }

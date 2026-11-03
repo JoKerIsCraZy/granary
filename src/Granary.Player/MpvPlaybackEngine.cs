@@ -7,9 +7,10 @@ namespace Granary.Player;
 
 /// <summary>
 /// <see cref="IPlaybackEngine"/> on libmpv. Video goes through mpv's d3d11 composition mode
-/// (spike/README.md); a XAML host takes the swap chain via <see cref="ICompositionVideoOutput"/>.
+/// (spike/README.md); a XAML host takes the swap chain via <see cref="ICompositionVideoOutput"/>. How mpv starts, with the
+/// viewer's own mpv.conf or without, is in MpvPlaybackEngine.Start.cs.
 /// </summary>
-public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
+public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
 {
     private static readonly TimeSpan PositionThrottle = TimeSpan.FromMilliseconds(250);
 
@@ -18,7 +19,6 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
 
     private const string CacheStateProperty = "demuxer-cache-state";
 
-    private readonly MpvClient _mpv;
     private readonly ILogger<MpvPlaybackEngine> _logger;
     private readonly MpvEngineOptions _options;
     private readonly TrailingThrottle _bufferedReads;
@@ -50,26 +50,8 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
         _outputSize = options.InitialOutputSize;
         _bufferedReads = new TrailingThrottle(BufferedThrottle, time ?? TimeProvider.System, ReadBuffered,
             ex => _logger.LogError(ex, "Reporting what mpv's cache holds failed"));
-        _mpv = new MpvClient(logger);
-        _mpv.PropertyChanged += OnPropertyChanged;
-        _mpv.LogMessage += OnLogMessage;
-        _mpv.FileEnded += OnFileEnded;
-        _mpv.LifecycleEvent += OnLifecycleEvent;
-        Configure();
-        _mpv.Initialize(
-        [
-            ("time-pos", LibMpv.FormatDouble),
-            ("duration", LibMpv.FormatDouble),
-            ("pause", LibMpv.FormatFlag),
-            ("eof-reached", LibMpv.FormatFlag),
-            ("hwdec-current", LibMpv.FormatString),
-            ("paused-for-cache", LibMpv.FormatFlag),
-            ("volume", LibMpv.FormatDouble),
-            ("mute", LibMpv.FormatFlag),
-            // Only that it may have changed, several times a second while the stream loads: it is read when the
-            // throttle lets it (ReadBuffered), not with every notice.
-            (CacheStateProperty, LibMpv.FormatNone),
-        ]);
+        _own = MpvOwnOptions.For(options.VideoOutput, _outputSize);
+        Start();
         _logger.LogInformation("libmpv {Version} initialized ({Output})", _mpv.GetString("mpv-version"), options.VideoOutput);
         RefreshSwapChain();
     }
@@ -92,41 +74,6 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
     public event EventHandler<PlaybackEnded>? Ended;
 
     public event EventHandler? SwapChainChanged;
-
-    private void Configure()
-    {
-        _mpv.SetOption("hwdec", _options.HardwareDecoding);
-        _mpv.SetOption("keep-open", "yes");
-        _mpv.SetOption("idle", "yes");
-        _mpv.SetOption("input-default-bindings", "no");
-        _mpv.SetOption("input-vo-keyboard", "no");
-        _mpv.SetOption("osc", "no");
-        _mpv.SetOption("ytdl", "no");
-        _mpv.SetOption("sub-auto", "no");
-        _mpv.SetOption("rebase-start-time", "yes");
-        // Granary drives System Media Transport Controls itself.
-        _mpv.SetOption("media-controls", "no");
-        // The server keeps the position. mpv must not read or write watch-later files, which would store the URLs,
-        // the media proxy's secret among them.
-        _mpv.SetOption("resume-playback", "no");
-        _mpv.SetOption("save-position-on-quit", "no");
-
-        switch (_options.VideoOutput)
-        {
-            case VideoOutputKind.D3D11Composition:
-                _mpv.SetOption("vo", "gpu-next");
-                _mpv.SetOption("gpu-api", "d3d11");
-                _mpv.SetOption("gpu-context", "d3d11");
-                _mpv.SetOption("d3d11-output-mode", "composition");
-                _mpv.SetOption("d3d11-composition-size", SizeText(_outputSize));
-                _mpv.SetOption("force-window", "yes");
-                break;
-            case VideoOutputKind.None:
-                _mpv.SetOption("vo", "null");
-                _mpv.SetOption("ao", "null");
-                break;
-        }
-    }
 
     public long Load(MediaSource source)
     {
@@ -234,6 +181,9 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
 
     /// <summary>The audio stream that plays, counted from 1; null without one.</summary>
     internal string? PlayingAudioStream => _mpv.GetString("current-tracks/audio/id");
+
+    /// <summary>An mpv option's value as mpv gives it, for tests.</summary>
+    internal string? Option(string name) => _mpv.GetString(name);
 
     // sub-add reads the whole file before it returns; "auto" adds it without selecting it, so a file that arrives after
     // another load cannot take over that one's subtitles. Its stream number is read back from the track list: the track of
@@ -488,6 +438,10 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
 
     private void OnPropertyChanged(string name, object? value)
     {
+        if (KeepsOwn(name, value))
+        {
+            return;
+        }
         switch (name)
         {
             case "time-pos" when !IsRejected:
@@ -643,7 +597,7 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
         return _current;
     }
 
-    private static string SizeText((int Width, int Height) size) =>
+    internal static string SizeText((int Width, int Height) size) =>
         string.Create(CultureInfo.InvariantCulture, $"{size.Width}x{size.Height}");
 
     private static string Describe(Uri url) =>
@@ -653,10 +607,6 @@ public sealed class MpvPlaybackEngine : IPlaybackEngine, ICompositionVideoOutput
     {
         // First: a read waiting on its timer must not reach mpv once it is gone.
         _bufferedReads.Dispose();
-        _mpv.PropertyChanged -= OnPropertyChanged;
-        _mpv.LogMessage -= OnLogMessage;
-        _mpv.FileEnded -= OnFileEnded;
-        _mpv.LifecycleEvent -= OnLifecycleEvent;
-        _mpv.Dispose();
+        Close();
     }
 }

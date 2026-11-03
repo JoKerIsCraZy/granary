@@ -149,10 +149,12 @@ public partial class App : Application
         services.AddSingleton<IAppInfo, BuildInfo>();
         services.AddSingleton<IConfirmation, DialogConfirmation>();
         services.AddSingleton<ISystemMediaControls, WindowsMediaControls>();
+        services.AddSingleton<IFileLauncher, ShellFileLauncher>();
         // The main window's full screen and mini view, shared by the app, the player and a trailer.
         services.AddSingleton<WindowModeService>();
         services.AddGranaryCore();
-        services.AddGranaryPlayer();
+        // mpv reads the viewer's own mpv.conf from its folder when it starts (Settings → Playback → This PC).
+        services.AddGranaryPlayer(new MpvEngineOptions { ConfigDirectory = MpvConfigFolder.DefaultDirectory });
         services.AddSingleton<MainWindow>();
         return services.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });
     }

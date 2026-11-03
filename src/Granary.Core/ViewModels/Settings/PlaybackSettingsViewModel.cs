@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Granary.Core.Abstractions;
 using Granary.Core.Api.Playback;
 using Granary.Core.Api.Settings;
 using Granary.Core.Auth;
@@ -41,6 +42,8 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject
     private readonly TimeProvider _time;
     private readonly ILogger<PlaybackSettingsViewModel> _logger;
     private readonly IPlaybackDevicePreferences _devicePreferences;
+    private readonly MpvConfigFolder _mpvConfig;
+    private readonly IFileLauncher _files;
     private readonly SettingSaves _saves;
     private readonly Dictionary<string, string?> _sources = [];
 
@@ -50,7 +53,8 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject
 
     public PlaybackSettingsViewModel(
         IProfileSettings settings, PlaybackApi playback, PlaybackConnectionApi connection, ConnectionSpeedTest speedTest, INetworkLink network,
-        ISessionManager session, TimeProvider time, ILogger<PlaybackSettingsViewModel> logger, IPlaybackDevicePreferences devicePreferences)
+        ISessionManager session, TimeProvider time, ILogger<PlaybackSettingsViewModel> logger, IPlaybackDevicePreferences devicePreferences,
+        MpvConfigFolder mpvConfig, IFileLauncher files)
     {
         _settings = settings;
         _playback = playback;
@@ -61,6 +65,8 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject
         _time = time;
         _logger = logger;
         _devicePreferences = devicePreferences;
+        _mpvConfig = mpvConfig;
+        _files = files;
         DecodesInSoftware = devicePreferences.DecodesInSoftware;
         _saves = new SettingSaves(logger);
     }

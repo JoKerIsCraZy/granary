@@ -42,13 +42,29 @@
             </StackPanel>
         </controls:SettingsGroup>
 
-        <!-- Granary's own: about this PC's graphics card, so kept on the PC, not in the profile. -->
-        <controls:SettingsGroup Title="This PC" Description="Kept on this PC. Changes count from the next title you play.">
-            <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Direct play without hardware decoding"
-                                  Description="Play HEVC, VP9, AV1 and HDR files directly, decoding them on the processor where the graphics card can't, instead of having your Silo server convert them. The picture keeps its full quality, but slower PCs can stutter.">
-                <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.DecodesInSoftware, Mode=TwoWay}"
-                              AutomationProperties.Name="Direct play without hardware decoding" />
-            </controls:SettingsRow>
+        <!-- Granary's own: about this PC's graphics card and player, so kept on the PC, not in the profile. -->
+        <controls:SettingsGroup Title="This PC" Description="Kept on this PC.">
+            <StackPanel>
+                <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Direct play without hardware decoding"
+                                      Description="Play HEVC, VP9, AV1 and HDR files directly, decoding them on the processor where the graphics card can't, instead of having your Silo server convert them. The picture keeps its full quality, but slower PCs can stutter. Counts from the next title you play.">
+                    <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.DecodesInSoftware, Mode=TwoWay}"
+                                  AutomationProperties.Name="Direct play without hardware decoding" />
+                </controls:SettingsRow>
+                <!-- mpv reads the file once, when it starts: a change needs a restart (docs/architecture.md, "Your own mpv.conf"). -->
+                <controls:SettingsRow Label="mpv configuration"
+                                      Description="Use your own mpv options from mpv.conf, such as shaders, scaling or debanding. They apply after you restart Granary. Granary keeps the options it needs to show the video and follow your Silo server's choices. A wrong option can make playback worse; delete the file to go back to normal.">
+                    <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                        <HyperlinkButton Content="Open folder" Command="{x:Bind ViewModel.OpenMpvFolderCommand}"
+                                         ToolTipService.ToolTip="For shaders and other files your mpv.conf uses"
+                                         AutomationProperties.Name="Open the mpv folder" />
+                        <Button Content="Open mpv.conf" Style="{StaticResource SiloSettingsOutlineButtonStyle}"
+                                Command="{x:Bind ViewModel.OpenMpvConfigCommand}" AutomationProperties.Name="Open mpv.conf" />
+                    </StackPanel>
+                </controls:SettingsRow>
+                <TextBlock Margin="0,12,0,0" Text="{x:Bind ViewModel.MpvConfigMessage, Mode=OneWay}" Style="{StaticResource SiloSettingsMutedTextStyle}"
+                           Visibility="{x:Bind controls:SettingsText.Shows(ViewModel.MpvConfigMessage), Mode=OneWay}"
+                           AutomationProperties.LiveSetting="Polite" />
+            </StackPanel>
         </controls:SettingsGroup>
 
         <controls:SettingsGroup Title="Connection" Visibility="{x:Bind ViewModel.ShowsConnection, Mode=OneWay}">

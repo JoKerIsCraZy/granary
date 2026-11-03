@@ -25,6 +25,7 @@ public sealed class CompositionRootTests
         services.AddSingleton<IUiDispatcher, ImmediateDispatcher>();
         services.AddSingleton<INavigationService, RecordingNavigation>();
         services.AddSingleton<IConfirmation, FakeConfirmation>();
+        services.AddSingleton<IFileLauncher, RecordingFileLauncher>();
         services.AddGranaryCore();
         services.AddGranaryPlayer(new MpvEngineOptions { VideoOutput = VideoOutputKind.None });
 

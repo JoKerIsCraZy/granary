@@ -51,18 +51,30 @@ internal sealed class FakeProfileSettings : IProfileSettings
 }
 
 /// <summary>Settings → Playback and Language &amp; Subtitles.</summary>
-public sealed class SettingsViewModelTests
+public sealed class SettingsViewModelTests : IDisposable
 {
     private readonly FakeProfileSettings _settings = new();
     private readonly ScriptedSilo _silo = new();
     private readonly ManualTimeProvider _time = new();
     private readonly FakeNetworkLink _network = new();
     private readonly InMemoryPlaybackDevicePreferences _device = new();
+    private readonly string _data = Path.Combine(Path.GetTempPath(), "granary-tests", Guid.NewGuid().ToString("N"));
+    private readonly RecordingFileLauncher _launcher = new();
+
+    private MpvConfigFolder MpvFolder => new(Path.Combine(_data, "mpv"), new LogSink().For<MpvConfigFolder>());
+
+    public void Dispose()
+    {
+        if (Directory.Exists(_data))
+        {
+            Directory.Delete(_data, recursive: true);
+        }
+    }
 
     private PlaybackSettingsViewModel Playback() => new(_settings, new PlaybackApi(_silo.Http), new PlaybackConnectionApi(_silo.Http),
         ConnectionSpeedTestTests.SpeedTest(_silo, _time, _network), _network,
         new FakeSessionManager { State = SessionState.Ready, ActiveServer = ScriptedSilo.Server, ProfileId = "7" }, _time,
-        new LogSink().For<PlaybackSettingsViewModel>(), _device);
+        new LogSink().For<PlaybackSettingsViewModel>(), _device, MpvFolder, _launcher);
 
     private LanguageSettingsViewModel Language() => new(_settings, new LogSink().For<LanguageSettingsViewModel>());
 
@@ -108,6 +120,63 @@ public sealed class SettingsViewModelTests
 
         Assert.Equal([false], _device.Saved);
         Assert.Empty(_settings.Writes);
+    }
+
+    [Fact]
+    public async Task OpenMpvConf_MakesTheFileFirst_ThenOpensIt()
+    {
+        var page = Playback();
+
+        await page.OpenMpvConfigCommand.ExecuteAsync(null);
+
+        Assert.True(File.Exists(MpvFolder.ConfigFile));
+        Assert.Equal(["file " + MpvFolder.ConfigFile], _launcher.Opened);
+        Assert.Equal("", page.MpvConfigMessage);
+        Assert.Empty(_settings.Writes);
+    }
+
+    [Fact]
+    public async Task AnMpvConfThatDoesNotOpen_SaysWhereItIs()
+    {
+        _launcher.Fails = true;
+        var page = Playback();
+
+        await page.OpenMpvConfigCommand.ExecuteAsync(null);
+
+        Assert.Equal($"Couldn't open mpv.conf. You'll find it in {MpvFolder.Directory}.", page.MpvConfigMessage);
+        Assert.True(File.Exists(MpvFolder.ConfigFile));
+
+        // The next try that works clears it.
+        _launcher.Fails = false;
+        await page.OpenMpvConfigCommand.ExecuteAsync(null);
+        Assert.Equal("", page.MpvConfigMessage);
+    }
+
+    [Fact]
+    public async Task AnMpvConfThatCannotBeMade_IsSaid()
+    {
+        // A file where the folder belongs.
+        Directory.CreateDirectory(_data);
+        await File.WriteAllTextAsync(Path.Combine(_data, "mpv"), "", TestContext.Current.CancellationToken);
+        var page = Playback();
+
+        await page.OpenMpvConfigCommand.ExecuteAsync(null);
+
+        Assert.Equal($"Couldn't create mpv.conf in {MpvFolder.Directory}.", page.MpvConfigMessage);
+        Assert.Empty(_launcher.Opened);
+    }
+
+    [Fact]
+    public async Task OpenFolder_ShowsTheMpvFolder_MadeFirst()
+    {
+        var page = Playback();
+
+        await page.OpenMpvFolderCommand.ExecuteAsync(null);
+
+        Assert.True(Directory.Exists(MpvFolder.Directory));
+        Assert.Equal(["folder " + MpvFolder.Directory], _launcher.Opened);
+        Assert.False(File.Exists(MpvFolder.ConfigFile));
+        Assert.Equal("", page.MpvConfigMessage);
     }
 
     [Fact]

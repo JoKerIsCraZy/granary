@@ -53,6 +53,57 @@ Dolby Vision originals onto it. Where the GPU decodes HDR video at 10 bits, Gran
 (`client_managed_dynamic_range_v1`, docs/api-contract.md 13.2), so the server sends HDR files as they are
 instead of tone-mapping them in a transcode.
 
+## Your own mpv.conf
+
+Settings → Playback → This PC opens `mpv.conf` in the data directory's `mpv` folder (`MpvConfigFolder`,
+`%LOCALAPPDATA%\Granary\mpv`), made with comments only when it is missing. mpv reads the file itself, so mpv's own
+syntax holds: profiles, `profile-cond` (mpv's built-in `auto_profiles.lua`), `include`, and `~~/` for the folder
+(`glsl-shaders=~~/shaders/…`). Without the file, mpv starts exactly as before (`config=no`, libmpv's default).
+
+**Start order** (`MpvPlaybackEngine.Start.cs`). Found with libmpv v0.41.0-dev (`player/main.c`, `mp_initialize`) and
+checked in a spike:
+
+- With `config=yes` and `config-dir=<folder>`, mpv reads `mpv.conf` inside `mpv_initialize`, after every option set
+  before it, so the file overrides them. `~~/` needs this: with `config=no` it resolves to nothing, so loading the file
+  through `mpv_load_config_file`, `include` or the `load-config-file` command instead would lose it, and with
+  `config=yes` mpv reads the file anyway.
+- mpv acts on the file at once: its core thread leaves `mpv_initialize` straight into idle mode and makes the video
+  output there, before any call after `mpv_initialize` can run. In the spike, `vo=gpu` in the file made a `gpu` output
+  first, which setting `vo` back after the start replaced with a second one (a new swap chain); `idle=no` shut mpv down
+  before the first call after the start. Setting Granary's options back after the start is therefore not enough.
+- mpv applies the `pseudo-gui` profile right after the config files, inside `mpv_initialize`, over them, when
+  `player-operation-mode=pseudo-gui` (an option client.h lists for setting before `mpv_initialize`). Granary puts its own
+  options (`MpvOwnOptions`) into that profile before the start, as config text through `mpv_load_config_file` with mpv's
+  `memory://`. They win before scripts load, before the video output is made and before idle mode is decided: one
+  `gpu-next` output in composition mode from the start, whatever the file says. The built-in `builtin-pseudo-gui`
+  profile that comes with this mode sets only what Granary sets too (`force-window`, `idle`) or never uses (a
+  screenshot folder).
+- Profiles of the file applied later (a `profile-cond` that becomes true, or the file's own `[pseudo-gui]` after
+  Granary's) can still set one of Granary's options. The engine observes them while mpv runs with a file and sets each
+  back as mpv reports it (`KeepsOwn`); `d3d11-composition-size` is left out, as the engine changes it itself.
+- Compiled shaders are cached in `mpv\cache` (`gpu-shader-cache-dir`, `icc-cache-dir`), not in mpv's own folder under
+  `%LOCALAPPDATA%\mpv`, where mpv puts them once `config=yes`.
+
+**Granary's own options**, set before every start and kept over the file: the video in Granary's window (`vo=gpu-next`,
+`gpu-api` and `gpu-context` `d3d11`, `d3d11-output-mode=composition`, `d3d11-composition-size`, `force-window`), the
+player Granary drives (`keep-open`, `idle`, `input-default-bindings`, `input-vo-keyboard`, `osc`, `ytdl`, `sub-auto`,
+`rebase-start-time`, `media-controls`), and the stream's address, which carries the media proxy's secret, kept inside
+Granary (`resume-playback`, `save-position-on-quit`, `save-watch-history`, `log-file`, `input-ipc-server`, and no scripts:
+`load-scripts=no`, `scripts=`), and `register`/`unregister` off, so mpv never makes itself Windows' media player. The
+server's track choice and start position go with each title (`loadfile` options), over the file's own. Everything else is
+the file's to change, `hwdec` included.
+
+**The log** says once per start which file mpv read (`mpv started with …`), names the options of Granary's that the file
+sets (`mpv.conf sets vo; Granary keeps its own`, read from the file by mpv's own rules for option names; an `include`d
+file's are kept but not named), and passes on mpv's own messages about the file (an unknown option, a shader it cannot
+open), which it asks for before `mpv_initialize`. A file mpv refuses to start with at all (an option that only lists
+something, such as `audio-device=help`) is logged with mpv's words, and mpv starts again without it.
+
+**When it applies**: the engine is one libmpv instance for the whole run (`AddGranaryPlayer`), made when the player first
+opens, and mpv reads the file only in `mpv_initialize`. Reading it again before a title (`load-config-file`) would add
+changed options but never undo one taken out or the file deleted, so a change applies after Granary restarts, as the
+setting says.
+
 ## Threading
 
 - libmpv events arrive on the engine's event thread; `IPlaybackEngine` raises its events there.
@@ -526,6 +577,7 @@ Licensing is in [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).
 | mpv composition mode on a `SwapChainPanel` | XAML over video, stable mpv line, least app code, no frame drops in the spike. |
 | Own P/Invoke layer for libmpv | About 25 functions are needed; existing .NET bindings are unmaintained or lack the composition and D3D11 APIs. `LibraryImport` is trim- and AOT-safe. |
 | LGPL libmpv build | 30 MB smaller than the GPL build and passed the same spike tests; Granary needs no GPL-only mpv feature. |
+| The viewer's mpv.conf read by mpv itself, Granary's options in the `pseudo-gui` profile | mpv's syntax and `~~/` need mpv's own loader, which applies the file inside `mpv_initialize`; that profile is the one order libmpv offers that puts Granary's options after the file and before mpv acts on them. |
 | Header-authenticated media (`header_authenticated_media_v1`) | No tokens in URLs or logs; same mode as the Apple client. |
 | DPAPI file for tokens | The Credential Locker roams with the Microsoft account and is capped per app. |
 | Session state derived from registry and credentials | One source of truth; handler-initiated sign-outs and user actions take the same path to the UI. |

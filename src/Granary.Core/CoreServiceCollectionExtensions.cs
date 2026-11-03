@@ -156,6 +156,8 @@ public static class CoreServiceCollectionExtensions
         // This PC's playback choices, about its hardware: in the data directory, not in a server's profile.
         services.AddSingleton<IPlaybackDevicePreferences>(sp =>
             new JsonPlaybackDevicePreferences(JsonPlaybackDevicePreferences.DefaultPath, sp.GetRequiredService<ILogger<JsonPlaybackDevicePreferences>>()));
+        // The viewer's own mpv.conf, in the data directory; the player reads it when mpv starts.
+        services.AddSingleton(sp => new MpvConfigFolder(MpvConfigFolder.DefaultDirectory, sp.GetRequiredService<ILogger<MpvConfigFolder>>()));
         services.AddTransient<SignInViewModel>();
         services.AddSingleton<MediaCardActions>();
         // One per page that shows TMDB cards: each says its own cards' failed requests.

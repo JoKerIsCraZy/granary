@@ -533,11 +533,21 @@ page background with a faint outline, red when focused; switches are only their 
 says why above the sections.
 
 - **Playback**: Quality (preferred quality, maximum bitrate with "No limit", lower quality when buffering, and this
-  connection's learned limit with Reset), This PC ("Kept on this PC. Changes count from the next title you play.":
-  Direct play without hardware decoding, a switch, off by default; Granary's own and kept on the PC, not in the
-  profile, so it does not save to the server), Connection (the latest speed reading and what Auto plays without
-  converting), Skipping (skip intros, auto-skip recaps and credits), Next episode (start next at preview, auto-play),
-  Seek controls (rewind and fast-forward intervals).
+  connection's learned limit with Reset), This PC ("Kept on this PC."; Granary's own, kept on the PC, not in the
+  profile, so nothing saves to the server: Direct play without hardware decoding, a switch, off by default, counting
+  from the next title; and mpv configuration, see below), Connection (the latest speed reading and what Auto plays
+  without converting), Skipping (skip intros, auto-skip recaps and credits), Next episode (start next at preview,
+  auto-play), Seek controls (rewind and fast-forward intervals).
+- **This PC → mpv configuration**: "Use your own mpv options from mpv.conf, such as shaders, scaling or debanding.
+  They apply after you restart Granary. Granary keeps the options it needs to show the video and follow your Silo
+  server's choices. A wrong option can make playback worse; delete the file to go back to normal." On the right an
+  **Open folder** link (tooltip "For shaders and other files your mpv.conf uses") and an **Open mpv.conf** outline
+  button. Open mpv.conf makes the `mpv` folder in the data directory and an `mpv.conf` of comments only when they are
+  missing, then opens the file in the app Windows has for `.conf` files, or Notepad when there is none; Open folder makes
+  the folder and shows it in File Explorer. When one fails, 13 px muted text under the row says so and where the folder
+  is: "Couldn't open mpv.conf. You'll find it in …", "Couldn't create mpv.conf in …", "Couldn't open …". The next try
+  that works clears it. How mpv reads the file and which options Granary keeps is in docs/architecture.md ("Your own
+  mpv.conf").
 - **Connection** (with `connection_speed_v1`): "Connection speed" with the reading as its description ("400 Mbps ·
   measured just now on Ethernet", "Not measured yet") and **Test speed** as an outline button on the right, "Testing…"
   and disabled while it runs (about 10 s). Under the row, in 13 px muted text, what went wrong, in the web's words:
