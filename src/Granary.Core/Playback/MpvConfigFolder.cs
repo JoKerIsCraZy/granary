@@ -120,7 +120,7 @@ public sealed class MpvConfigFolder
         try
         {
             return File.Exists(ConfigFile)
-                ? new MpvConfigContent(File.ReadAllText(ConfigFile), IsNew: false)
+                ? new MpvConfigContent(ReadText(ConfigFile), IsNew: false)
                 : new MpvConfigContent(Template.ReplaceLineEndings("\r\n"), IsNew: true);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
@@ -128,6 +128,26 @@ public sealed class MpvConfigFolder
             _logger.LogWarning(ex, "mpv.conf could not be read");
             return null;
         }
+    }
+
+    /// <summary>
+    /// A file's bytes, read so that a write or delete of it meanwhile (a save, a preset, Unload) goes ahead rather than
+    /// failing on this read.
+    /// </summary>
+    internal static byte[] ReadBytes(string path)
+    {
+        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+        using var copy = new MemoryStream();
+        stream.CopyTo(copy);
+        return copy.ToArray();
+    }
+
+    /// <summary>As <see cref="ReadBytes"/>, as text: UTF-8 unless a byte order mark says otherwise, as File.ReadAllText reads it.</summary>
+    internal static string ReadText(string path)
+    {
+        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+        using var reader = new StreamReader(stream, detectEncodingFromByteOrderMarks: true);
+        return reader.ReadToEnd();
     }
 
     /// <summary>

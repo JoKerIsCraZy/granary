@@ -188,34 +188,6 @@ public sealed class MpvConfigRestartTests : IDisposable
         Assert.Equal("no", engine.Option("deband"));
     }
 
-    [Fact]
-    public void RestartsOneAfterAnother_LeaveNoHandlesBehind()
-    {
-        using var engine = CreateEngine("deband=yes\n");
-        // Warmed up: libmpv and the runtime make what they keep for the process on the first starts.
-        engine.RestartWithConfig();
-        engine.RestartWithConfig();
-        int before = Handles();
-
-        for (int i = 0; i < 10; i++)
-        {
-            Assert.True(engine.RestartWithConfig());
-        }
-
-        // Ten mpv instances made and closed: a leak would show as hundreds of handles (threads, events, files).
-        Assert.InRange(Handles() - before, int.MinValue, 40);
-        Assert.Equal(12, _restarts);
-
-        static int Handles()
-        {
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
-            using var self = Process.GetCurrentProcess();
-            self.Refresh();
-            return self.HandleCount;
-        }
-    }
-
     // A WAV of that length loaded and open; the load's id.
     private async Task<long> PlaysAWav(MpvPlaybackEngine engine, double seconds)
     {
@@ -254,6 +226,61 @@ public sealed class MpvConfigRestartTests : IDisposable
         {
             Assert.True(DateTime.UtcNow < deadline, "mpv did not get there in time. " + state?.Invoke());
             await Task.Delay(20, TestContext.Current.CancellationToken);
+        }
+    }
+}
+
+/// <summary>Tests that count the process's handles run alone: other tests open and close handles of their own meanwhile.</summary>
+[CollectionDefinition(nameof(HandleCounting), DisableParallelization = true)]
+public sealed class HandleCounting;
+
+/// <summary>Apply now, again and again, with the real libmpv. Skipped without libmpv-2.dll.</summary>
+[Collection(nameof(HandleCounting))]
+public sealed class MpvConfigRestartHandleTests : IDisposable
+{
+    private readonly string _directory = Path.Combine(Path.GetTempPath(), "granary-tests", Guid.NewGuid().ToString("N"), "mpv");
+
+    public void Dispose()
+    {
+        string root = Path.GetDirectoryName(_directory)!;
+        if (Directory.Exists(root))
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void RestartsOneAfterAnother_LeaveNoHandlesBehind()
+    {
+        Assert.SkipUnless(File.Exists(Path.Combine(AppContext.BaseDirectory, "libmpv-2.dll")),
+            "libmpv-2.dll not found; run scripts/fetch-native.ps1.");
+        Directory.CreateDirectory(_directory);
+        File.WriteAllText(Path.Combine(_directory, MpvConfigFolder.ConfigFileName), "deband=yes\n");
+        using var engine = new MpvPlaybackEngine(new MpvEngineOptions { VideoOutput = VideoOutputKind.None, ConfigDirectory = _directory },
+            new LogSink().For<MpvPlaybackEngine>(), null, new MpvConfigStatus());
+        int restarts = 0;
+        engine.ConfigRestarted += (_, _) => restarts++;
+        // Warmed up: libmpv and the runtime make what they keep for the process on the first starts.
+        engine.RestartWithConfig();
+        engine.RestartWithConfig();
+        int before = Handles();
+
+        for (int i = 0; i < 20; i++)
+        {
+            Assert.True(engine.RestartWithConfig());
+        }
+
+        // Twenty mpv instances made and closed: a leak would show as hundreds of handles (threads, events, files).
+        Assert.InRange(Handles() - before, int.MinValue, 60);
+        Assert.Equal(22, restarts);
+
+        static int Handles()
+        {
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            using var self = Process.GetCurrentProcess();
+            self.Refresh();
+            return self.HandleCount;
         }
     }
 }

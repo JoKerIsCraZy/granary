@@ -55,11 +55,11 @@ public sealed partial class MpvPresets
         try
         {
             if (!File.Exists(ActiveFile)
-                || JsonSerializer.Deserialize(File.ReadAllText(ActiveFile), MpvPresetsJsonContext.Default.ActivePresetFile) is not { Name: { } name } active)
+                || JsonSerializer.Deserialize(MpvConfigFolder.ReadText(ActiveFile), MpvPresetsJsonContext.Default.ActivePresetFile) is not { Name: { } name } active)
             {
                 return null;
             }
-            string? now = File.Exists(_folder.ConfigFile) ? Hash(File.ReadAllBytes(_folder.ConfigFile)) : null;
+            string? now = File.Exists(_folder.ConfigFile) ? Hash(MpvConfigFolder.ReadBytes(_folder.ConfigFile)) : null;
             return new MpvActivePreset(name, !string.Equals(now, active.Sha256, StringComparison.OrdinalIgnoreCase));
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
@@ -85,7 +85,7 @@ public sealed partial class MpvPresets
             }
             else if (File.Exists(BackupFile))
             {
-                result = _folder.WriteWhole(_folder.ConfigFile, File.ReadAllBytes(BackupFile)) ? MpvPresetUnload.Restored : MpvPresetUnload.Failed;
+                result = _folder.WriteWhole(_folder.ConfigFile, MpvConfigFolder.ReadBytes(BackupFile)) ? MpvPresetUnload.Restored : MpvPresetUnload.Failed;
             }
             else
             {
@@ -112,7 +112,7 @@ public sealed partial class MpvPresets
         {
             System.IO.Directory.CreateDirectory(Directory);
             return File.Exists(_folder.ConfigFile)
-                ? _folder.WriteWhole(BackupFile, File.ReadAllBytes(_folder.ConfigFile))
+                ? _folder.WriteWhole(BackupFile, MpvConfigFolder.ReadBytes(_folder.ConfigFile))
                 : _folder.WriteWhole(NoFileMarker, "");
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)

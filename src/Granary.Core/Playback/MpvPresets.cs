@@ -97,7 +97,7 @@ public sealed partial class MpvPresets
         }
         try
         {
-            return File.ReadAllText(path);
+            return MpvConfigFolder.ReadText(path);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
