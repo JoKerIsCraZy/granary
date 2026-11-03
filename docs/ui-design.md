@@ -216,7 +216,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   "Watch: in progress", "4K", "HDR", "DOVI"), Granary's own facets worded the same and placed as the flyout has them
   ("Decade: 1990s" after the genres, "Audio: German" and "Subtitles: English" after the language). Each has an ✕
   ("Remove Genre: Drama") that takes out that one filter as Apply would and restarts the grid; Tab and the arrows reach
-  every ✕, and after one is removed focus goes to the next badge's ✕, else the one before, else Filters. There is no
+  every ✕, and after one is removed focus goes to the next badge's ✕, else the one before, else Filters; a double click's
+  second click, or a held Enter's repeat, on the ✕ that moved into place removes nothing more. There is no
   Clear filters button beside the bar: the flyout's Clear and the ✕s remove filters.
 - Collections (`CollectionsPage`, the web's `pages/Collections.tsx`): "Your collections" with its count ("Manual ·
   4 titles", a SHARED badge on one other profiles see), "Shared with me" by owner ("by Mara"), and "Server

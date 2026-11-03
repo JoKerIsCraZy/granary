@@ -36,7 +36,7 @@
                     <StackPanel Orientation="Horizontal" Spacing="3">
                         <TextBlock Text="{x:Bind Label}" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium" FontSize="12"
                                    Foreground="#FFD0D0D6" VerticalAlignment="Center" />
-                        <Button Style="{StaticResource BadgeRemoveButtonStyle}" Tag="{x:Bind}" Click="OnRemoveClick"
+                        <Button Style="{StaticResource BadgeRemoveButtonStyle}" Tag="{x:Bind}" Click="OnRemoveClick" PreviewKeyDown="OnRemovePreviewKeyDown"
                                 AutomationProperties.Name="{x:Bind RemoveName}" ToolTipService.ToolTip="{x:Bind RemoveName}">
                             <FontIcon Glyph="&#xE711;" FontSize="9" />
                         </Button>

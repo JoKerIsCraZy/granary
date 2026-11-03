@@ -216,7 +216,7 @@
                                                 Background="#CC1C1C20" BorderBrush="{StaticResource SiloBorderBrush}" Content="{x:Bind ViewModel.Browse.SortLabel, Mode=OneWay}"
                                                 AutomationProperties.Name="{x:Bind SortName(ViewModel.Browse.SortLabel), Mode=OneWay}">
                                     <DropDownButton.Flyout>
-                                        <MenuFlyout x:Name="SortMenu" Placement="BottomEdgeAlignedLeft" Opening="OnSortMenuOpening" />
+                                        <MenuFlyout x:Name="SortMenu" Placement="BottomEdgeAlignedLeft" Opening="OnSortMenuOpening" Closed="OnSortMenuClosed" />
                                     </DropDownButton.Flyout>
                                 </DropDownButton>
                                 <DropDownButton CornerRadius="{StaticResource SiloPillCornerRadius}" controls:Pill.IsEnabled="True" MinHeight="38" Padding="16,6,12,6"

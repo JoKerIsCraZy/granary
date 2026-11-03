@@ -206,7 +206,10 @@ public sealed partial class LibraryFiltersViewModel(Func<Task> applied, ILogger 
         return applied();
     }
 
-    /// <summary>Takes the badge's one filter out, as Apply would without it: the draft and the count follow, the grid restarts.</summary>
+    /// <summary>
+    /// Takes the badge's one filter out, as Apply would without it: the draft and the count follow, the grid restarts, and
+    /// the chip of a value the scope no longer has goes with its badge.
+    /// </summary>
     [RelayCommand(AllowConcurrentExecutions = true)]
     private Task RemoveBadgeAsync(LibraryFilterBadge? badge)
     {
@@ -215,6 +218,7 @@ public sealed partial class LibraryFiltersViewModel(Func<Task> applied, ILogger 
             return Task.CompletedTask;
         }
         Commit(LibraryFilterBadges.Remove(Applied, badge));
+        ShowOptions();
         BeginEdit();
         return applied();
     }

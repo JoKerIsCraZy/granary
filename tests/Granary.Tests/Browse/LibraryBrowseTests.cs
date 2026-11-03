@@ -464,6 +464,44 @@ public sealed class LibraryBrowseTests
     }
 
     [Fact]
+    public async Task ABadgeRemovedWhileTheFilteredListingLoads_LeavesOnlyTheListingWithoutIt()
+    {
+        var release = new TaskCompletionSource();
+        _harness.Silo.On(HttpMethod.Post, LibraryHarness.QueryPath, LibraryHarness.Held(release, LibraryPayloads.OnlyPage),
+            ScriptedSilo.Json(HttpStatusCode.OK, LibraryPayloads.LastPage));
+        var library = await _harness.OpenLibraryTabAsync();
+        var browse = library.Browse;
+        var filters = browse.Filters;
+        filters.BeginEdit();
+        filters.GenreOptions[0].IsSelected = true;
+        filters.GenreOptions[1].IsSelected = true;
+
+        var applying = filters.ApplyCommand.ExecuteAsync(null);
+        await filters.RemoveBadgeCommand.ExecuteAsync(filters.Badges.Single(b => b.Label == "Genre: Crime"));
+        release.SetResult();
+        await applying;
+
+        Assert.Equal(2, _harness.QueryBodies().Count);
+        Assert.Contains("\"value\":\"Drama\"", _harness.QueryBodies()[^1], StringComparison.Ordinal);
+        Assert.DoesNotContain("Crime", _harness.QueryBodies()[^1], StringComparison.Ordinal);
+        Assert.Equal(new[] { "Se7en" }, browse.Grid.Cards.Select(c => c.Title));
+        Assert.Equal(["Genre: Drama"], filters.Badges.Select(b => b.Label));
+    }
+
+    [Fact]
+    public async Task RemovingTheBadgeOfAValueTheLibraryNoLongerHas_TakesItsChipAway()
+    {
+        var library = await _harness.OpenLibraryTabAsync();
+        var filters = library.Browse.Filters;
+        filters.Restore(new LibraryFilterSet { Genres = ["Drama", "Western"] });
+
+        await filters.RemoveBadgeCommand.ExecuteAsync(filters.Badges.Single(b => b.Label == "Genre: Western"));
+
+        Assert.Equal(new[] { "Crime", "Drama" }, filters.GenreOptions.Select(o => o.Value));
+        Assert.Equal(new[] { false, true }, filters.GenreOptions.Select(o => o.IsSelected));
+    }
+
+    [Fact]
     public async Task FailedLanguagesOfTheFiles_LeaveTheOtherOptions()
     {
         // The file-derived facets are the heavier read: without them the genres, ratings and original languages still show.
