@@ -85,7 +85,7 @@ public sealed partial class AddSubtitlesPanel : UserControl
 
     private void OnPanelKeyDown(object sender, KeyRoutedEventArgs e)
     {
-        if (e.Key == VirtualKey.Escape)
+        if (BackKeys.IsBack(e.Key, XamlRoot) && !e.KeyStatus.WasKeyDown)
         {
             e.Handled = true;
             _viewModel?.CloseCommand.Execute(null);

@@ -68,6 +68,7 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject
         _mpvConfig = mpvConfig;
         _files = files;
         DecodesInSoftware = devicePreferences.DecodesInSoftware;
+        SelectedUpDown = UpDownChoices[devicePreferences.UpDown == PlayerUpDown.Volume ? 1 : 0];
         _saves = new SettingSaves(logger);
     }
 

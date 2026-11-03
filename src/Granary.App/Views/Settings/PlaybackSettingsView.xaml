@@ -43,12 +43,18 @@
         </controls:SettingsGroup>
 
         <!-- Granary's own: about this PC's graphics card and player, so kept on the PC, not in the profile. -->
-        <controls:SettingsGroup Title="This PC" Description="Kept on this PC.">
+        <controls:SettingsGroup Title="This PC" Description="Kept on this PC, not in your profile.">
             <StackPanel>
                 <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Direct play without hardware decoding"
                                       Description="Play HEVC, VP9, AV1 and HDR files directly, decoding them on the processor where the graphics card can't, instead of having your Silo server convert them. The picture keeps its full quality, but slower PCs can stutter. Counts from the next title you play.">
                     <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.DecodesInSoftware, Mode=TwoWay}"
                                   AutomationProperties.Name="Direct play without hardware decoding" />
+                </controls:SettingsRow>
+                <!-- Granary's own: a remote's arrows and a keyboard's are the same keys, so the viewer says which they use. -->
+                <controls:SettingsRow Label="Up and Down in the player"
+                                      Description="While the picture shows. Show the controls and menus suits a remote, as on Silo's TV app: Up shows the controls, Down opens audio or subtitles. Change the volume is the keyboard shortcut of Silo's web player.">
+                    <ComboBox Style="{StaticResource SiloSettingsComboBoxStyle}" ItemsSource="{x:Bind ViewModel.UpDownChoices}"
+                              SelectedItem="{x:Bind ViewModel.SelectedUpDown, Mode=TwoWay}" AutomationProperties.Name="Up and Down in the player" />
                 </controls:SettingsRow>
                 <!-- mpv reads the file once, when it starts: a change needs a restart (docs/architecture.md, "Your own mpv.conf"). -->
                 <controls:SettingsRow Label="mpv configuration"

@@ -8,6 +8,15 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Added
 
+- A TV remote on a media PC, or the keyboard alone: the arrows move focus on every page and between the sidebar and
+  the page, the focused card comes to the middle, and Back (Esc, Backspace or the remote's Back button) goes back to the
+  card you came from, then to the section's sidebar entry, then Home. Menus and dialogs close on the remote's Back too.
+  The focus ring is thicker and goes round the whole card, artwork and text.
+  A title opened with OK starts on Play, and the remote's Play button plays the card, episode or title that has focus;
+  the Menu key opens a card's menu. In the player OK skips the intro (or recap, credits) while its pill shows, else
+  brings focus to the controls, also when an air mouse already shows them; the arrows then move to subtitles, audio and the settings, and Back closes their menus and
+  panels, hides the controls, then closes the player, with focus back where it was. The minimized player is reachable
+  with Down from the page.
 - Settings → Playback → This PC: **Direct play without hardware decoding**. On, Granary plays HEVC, VP9, AV1 and HDR
   files directly and decodes them on the processor where the graphics card can't, instead of having your Silo server
   convert them: the picture keeps its full quality and the server does less work, but slower PCs can stutter. Off by
@@ -33,6 +42,10 @@ release's section is what its update says it changes (docs/release.md).
 ### Changed
 
 - The sorts are named as on Silo's web app: Date Added, Release Date, IMDb Rating, and Duration in place of Runtime.
+- In the player, Up and Down no longer change the volume by default, as on Silo's TV app: Up shows the controls with
+  focus on Play/Pause, and Down opens the audio menu (or subtitles, or the playback settings). Settings → Playback →
+  This PC → Up and Down in the player → Change the volume brings back the volume keys. A remote's own volume buttons,
+  M to mute and the volume slider set it either way. Left and Right still skip.
 
 ### Fixed
 

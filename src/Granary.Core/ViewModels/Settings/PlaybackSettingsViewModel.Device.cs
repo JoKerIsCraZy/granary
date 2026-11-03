@@ -16,6 +16,23 @@ public sealed partial class PlaybackSettingsViewModel
     [ObservableProperty]
     public partial string MpvConfigMessage { get; private set; } = "";
 
+    /// <summary>Up and Down in the player (<see cref="IPlaybackDevicePreferences.UpDown"/>), the TV app's way first.</summary>
+    public IReadOnlyList<SettingChoice> UpDownChoices { get; } =
+        [new("controls", "Show the controls and menus"), new("volume", "Change the volume")];
+
+    [ObservableProperty]
+    public partial SettingChoice? SelectedUpDown { get; set; }
+
+    partial void OnSelectedUpDownChanged(SettingChoice? value)
+    {
+        var upDown = value?.Value == "volume" ? PlayerUpDown.Volume : PlayerUpDown.ControlsAndMenus;
+        if (value is not null && upDown != _devicePreferences.UpDown)
+        {
+            // Never fails, as the switch below; the player reads it at its next key.
+            _ = _devicePreferences.SetUpDownAsync(upDown);
+        }
+    }
+
     partial void OnDecodesInSoftwareChanged(bool value)
     {
         if (value != _devicePreferences.DecodesInSoftware)
