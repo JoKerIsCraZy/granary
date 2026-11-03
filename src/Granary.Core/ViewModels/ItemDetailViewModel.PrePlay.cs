@@ -20,6 +20,9 @@ public sealed partial class ItemDetailViewModel
     private CatalogItemDetail? _prePlayItem;
     private PrePlayPicks _picks = PrePlayPicks.None;
 
+    private const string AudioKind = "audio";
+    private const string SubtitleKind = "subtitle";
+
     // Saves started and reads of the item started: only the newest read, begun after the last save, is taken.
     private int _trackSaves;
     private int _prePlayReads;
@@ -59,8 +62,8 @@ public sealed partial class ItemDetailViewModel
         ShowPickers();
         // The web's words (useSetAudioPreference, useDeleteAudioPreference).
         return preference is null
-            ? SaveTrackChoiceAsync("audio", "Failed to reset audio preference", (api, server, key, token) => api.DeleteAudioAsync(server, key, token))
-            : SaveTrackChoiceAsync("audio", "Failed to save audio preference", (api, server, key, token) => api.SaveAudioAsync(server, key, preference, token));
+            ? SaveTrackChoiceAsync(AudioKind, "Failed to reset audio preference", (api, server, key, token) => api.DeleteAudioAsync(server, key, token))
+            : SaveTrackChoiceAsync(AudioKind, "Failed to save audio preference", (api, server, key, token) => api.SaveAudioAsync(server, key, preference, token));
     }
 
     /// <summary>Starts with <paramref name="option"/>'s track, or none, saved for the title; Auto forgets the saved one.</summary>
@@ -96,8 +99,8 @@ public sealed partial class ItemDetailViewModel
         ShowPickers();
         // The web's words (useSetSubtitlePreference, useDeleteSubtitlePreference).
         return choice is null
-            ? SaveTrackChoiceAsync("subtitle", "Failed to reset subtitle preference", (api, server, key, token) => api.DeleteSubtitleAsync(server, key, token))
-            : SaveTrackChoiceAsync("subtitle", "Failed to save subtitle preference", (api, server, key, token) => api.SaveSubtitleAsync(server, key, choice, token));
+            ? SaveTrackChoiceAsync(SubtitleKind, "Failed to reset subtitle preference", (api, server, key, token) => api.DeleteSubtitleAsync(server, key, token))
+            : SaveTrackChoiceAsync(SubtitleKind, "Failed to save subtitle preference", (api, server, key, token) => api.SaveSubtitleAsync(server, key, choice, token));
     }
 
     private void ShowPrePlay(CatalogItemDetail item)
@@ -140,6 +143,9 @@ public sealed partial class ItemDetailViewModel
         if (!saved)
         {
             ActionError = failure;
+            // The server keeps what it had: Auto shows what the item read last says it picks.
+            _picks = kind == AudioKind ? _picks with { AudioAutoPending = false } : _picks with { SubtitleAutoPending = false };
+            ShowPickers();
         }
         if (writes.IsIdle)
         {
@@ -154,30 +160,52 @@ public sealed partial class ItemDetailViewModel
     {
         int read = ++_prePlayReads;
         int saves = _trackSaves;
+        bool IsNewest() => generation == _generation && read == _prePlayReads && saves == _trackSaves;
         try
         {
             var item = await _catalog.GetItemAsync(server, _contentId);
-            if (generation == _generation && read == _prePlayReads && saves == _trackSaves && item.Versions.Count > 0)
+            if (!IsNewest())
             {
-                _prePlayItem = item;
-                _picks = _picks with
-                {
-                    AudioAutoPending = false,
-                    SubtitleAutoPending = false,
-                    SubtitleOverrideCleared = _picks.SubtitleOverrideCleared && item.EffectiveSubtitleTrackSignature is not null,
-                };
-                ShowPickers();
+                return;
             }
+            if (item.Versions.Count == 0)
+            {
+                SettleAuto();
+                return;
+            }
+            _prePlayItem = item;
+            _picks = _picks with
+            {
+                AudioAutoPending = false,
+                SubtitleAutoPending = false,
+                SubtitleOverrideCleared = _picks.SubtitleOverrideCleared && item.EffectiveSubtitleTrackSignature is not null,
+            };
+            ShowPickers();
         }
         catch (Exception ex) when (ex is ArgumentException || ApiFailureText.IsRequestFailure(ex))
         {
-            // The pickers keep what they show; the start reads the preferences itself.
             _logger.LogWarning("Reading item {ItemId} again after a track choice failed: {Failure}", _contentId, ApiFailureText.Describe(ex));
+            if (IsNewest())
+            {
+                SettleAuto();
+            }
         }
         catch (Exception ex)
         {
             // Nothing a picker shows is worth more than the page: logged, never thrown into the command.
             _logger.LogError(ex, "Reading item {ItemId} again after a track choice failed unexpectedly", _contentId);
+            if (IsNewest())
+            {
+                SettleAuto();
+            }
         }
+    }
+
+    // No answer to wait for any more: Auto shows what the item read last says it picks, never a bare "Auto" for good. A
+    // forgotten subtitle stays forgotten, and Play still sends its automatic track.
+    private void SettleAuto()
+    {
+        _picks = _picks with { AudioAutoPending = false, SubtitleAutoPending = false };
+        ShowPickers();
     }
 }

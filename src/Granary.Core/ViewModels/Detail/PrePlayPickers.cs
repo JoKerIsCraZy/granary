@@ -147,9 +147,9 @@ public sealed class PrePlayPickers
         bool subtitlePending = subtitleMode == SubtitlePickMode.Auto && picks.SubtitleAutoPending;
         var (subtitleOptions, subtitleSummary) = SubtitleRows(version, candidates, auto, preference.Signature is not null, subtitleMode, subtitle,
             subtitlePending);
-        // Auto over a remembered track the server still names, its forgetting refused: a start would apply that track, so
-        // it is told the automatic one (or none) instead, which the picker shows.
-        int? startSubtitle = subtitle ?? (subtitleMode == SubtitlePickMode.Auto && picks.SubtitleOverrideCleared && !subtitlePending
+        // Auto over a remembered track the item still names (its forgetting on the way, refused, or not read back): a start
+        // would apply that track, so it is told the automatic one (or none) instead, which is what the viewer chose.
+        int? startSubtitle = subtitle ?? (subtitleMode == SubtitlePickMode.Auto && picks.SubtitleOverrideCleared
             && item.EffectiveSubtitleTrackSignature is not null && candidates.Count > 0 ? auto?.SelectionIndex ?? -1 : null);
         var choice = picked is not null || audio is not null || startSubtitle is not null
             ? new PrePlayChoice(version.FileId, picked is not null, audio, startSubtitle)

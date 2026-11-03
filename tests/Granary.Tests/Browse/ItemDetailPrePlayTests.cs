@@ -266,6 +266,69 @@ public sealed class ItemDetailPrePlayTests
     }
 
     [Fact]
+    public async Task AFailedReadAfterAuto_LeavesNoBareAuto()
+    {
+        var detail = await LoadAsync();
+        detail.SelectVersionCommand.Execute(detail.Pickers.Versions[0]);
+        await detail.SelectAudioCommand.ExecuteAsync(detail.Pickers.Audio[2]);
+        await detail.SelectSubtitleCommand.ExecuteAsync(detail.Pickers.Subtitles[1]);
+        _fixture.Get(ItemPath(Movie), Busy());
+
+        await detail.SelectAudioCommand.ExecuteAsync(detail.Pickers.Audio[0]);
+        await detail.SelectSubtitleCommand.ExecuteAsync(detail.Pickers.Subtitles[0]);
+
+        // Not read again: Auto shows what the item last read says it picks.
+        Assert.Equal("Auto: English · DTS · 7.1", detail.Pickers.AudioSummary);
+        Assert.Equal("English · DTS · 7.1", detail.Pickers.Audio[0].Description);
+        Assert.Equal("Auto: English · SRT", detail.Pickers.SubtitleSummary);
+        Assert.Equal("English", detail.Pickers.Subtitles[0].Description);
+    }
+
+    [Fact]
+    public async Task AFailedAudioAuto_ShowsTheTrackTheServerKeeps()
+    {
+        var detail = await LoadAsync();
+        _fixture.Silo.On(HttpMethod.Delete, AudioPrefs, ScriptedSilo.Problem(500, "internal"));
+        _fixture.Get(ItemPath(Movie), Busy());
+
+        await detail.SelectAudioCommand.ExecuteAsync(detail.Pickers.Audio[0]);
+
+        Assert.Equal("Failed to reset audio preference", detail.ActionError);
+        Assert.Equal("Auto: English · DTS · 5.1", detail.Pickers.AudioSummary);
+    }
+
+    [Fact]
+    public async Task PlayWhileAutoIsSaved_PlaysTheAutomaticSubtitle_NotTheRememberedOne()
+    {
+        var detail = await LoadAsync(Ok(PrePlayPayloads.Remembered));
+        var (held, gate) = Held();
+        _fixture.Silo.On(HttpMethod.Delete, SubtitlePrefs, held);
+
+        var resetting = detail.SelectSubtitleCommand.ExecuteAsync(detail.Pickers.Subtitles[0]);
+        detail.PlayCommand.Execute(null);
+
+        Assert.Equal((AppRoute.Player, (object?)PlayRequest.Resume(Movie, new PrePlayChoice("502", false, SubtitleTrack: 0))), Played);
+        gate.SetResult(await ScriptedSilo.Problem(500, "internal")());
+        await resetting;
+        detail.PlayCommand.Execute(null);
+        Assert.Equal((AppRoute.Player, (object?)PlayRequest.Resume(Movie, new PrePlayChoice("502", false, SubtitleTrack: 0))), Played);
+    }
+
+    [Fact]
+    public async Task PlayAfterARefusedAutoAndAFailedRead_PlaysTheAutomaticSubtitle()
+    {
+        var detail = await LoadAsync(Ok(PrePlayPayloads.Remembered));
+        _fixture.Silo.On(HttpMethod.Delete, SubtitlePrefs, ScriptedSilo.Problem(500, "internal"));
+        _fixture.Get(ItemPath(Movie), Busy());
+
+        await detail.SelectSubtitleCommand.ExecuteAsync(detail.Pickers.Subtitles[0]);
+        detail.PlayCommand.Execute(null);
+
+        Assert.Equal("Auto: English · SRT", detail.Pickers.SubtitleSummary);
+        Assert.Equal((AppRoute.Player, (object?)PlayRequest.Resume(Movie, new PrePlayChoice("502", false, SubtitleTrack: 0))), Played);
+    }
+
+    [Fact]
     public async Task Auto_ShowsOnlyAuto_UntilTheServerIsReadAgain()
     {
         var detail = await LoadAsync();

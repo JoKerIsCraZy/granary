@@ -1435,8 +1435,11 @@ Watch Party's start, which takes none of the page's picks, does not wait. A star
 (without `audio_track_index` the server resolves the audio from the saved preferences), so one that waited in vain may
 play the choice saved before, which is logged. Once the writes are done, a failed one too, the page reads the item
 again, so Auto shows what the server now picks (the web invalidates the item likewise); only the newest read begun
-after the last write counts. When Auto over a remembered subtitle could not be saved, the item still names the track,
-and Play sends the automatic choice without it as the start's subtitle, so what plays is what the picker shows.
+after the last write counts. While the item still names a subtitle the viewer set back to Auto (its forgetting on the
+way, refused, or not read back), Play sends the automatic choice without it as the start's subtitle, so what plays is
+what the picker shows. Audio has no such remedy: what the server picks without the saved track comes from its own
+preference cascade, which no watch or item field names, so after a refused audio Auto the start plays the saved track
+and the picker shows it, with the failure said.
 
 #### 8.8.1 Initial track selection (before start)
 

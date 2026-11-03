@@ -392,7 +392,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     subtitles from Auto again. Audio and subtitle picks (Off included) are also saved for the title, for its series on an
     episode, and Auto forgets the saved one, as the web's detail page and Apple's client save them; the page then reads
     the item again. Until that answer is in, Auto shows as "Auto" alone (its row without a track), since what the server
-    picks then is not known yet. A save that fails says so in the hero's error bar in the web's words ("Failed to save
+    picks then is not known yet; a failed save or read ends the wait, and Auto then names what the item last read picks. A save that fails says so in the hero's error bar in the web's words ("Failed to save
     audio preference", "Failed to reset subtitle preference") and still applies to this visit's Play; an Auto over a
     remembered subtitle the server kept stays Auto. An open menu keeps its rows while the item is read again; it shows
     the new ones the next time it opens. A series or season page has no pickers: it plays an episode.
