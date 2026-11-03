@@ -15,6 +15,17 @@ release's section is what its update says it changes (docs/release.md).
   tracks, and the server keeps to the file you chose. Your audio and subtitle choices are remembered for the movie or
   the whole series, and Auto goes back to your profile's settings; if a choice cannot be saved, the page says so and
   still plays it. The pickers work with the keyboard too.
+- More filters for a library, and for Favorites, Watchlist, History and collections: several genres at once, decades,
+  4K, HDR and Dolby Vision, the original, audio and subtitle languages, and Watch Status (Unwatched, In Progress,
+  Watched). The Filters panel scrolls when it gets long, and a library opens with these filters as you left them.
+  The filters you set show as badges under the bar, as on Silo's web app; each badge's ✕ removes just that filter.
+- More ways to sort a library: Latest Episode Air Date and Latest Episode Added in a series library, Content Rating,
+  TMDB Rating, the Rotten Tomatoes critic and audience ratings while your server shows them, Resolution, Bitrate,
+  Progress, Date Viewed and Plays.
+
+### Changed
+
+- The sorts are named as on Silo's web app: Date Added, Release Date, IMDb Rating, and Duration in place of Runtime.
 
 ### Fixed
 
