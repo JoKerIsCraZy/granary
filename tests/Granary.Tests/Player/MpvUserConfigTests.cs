@@ -298,6 +298,62 @@ public sealed class MpvUserConfigTests : IDisposable
     }
 
     [Fact]
+    public async Task AProfileThatChangesAnOptionOncePerTitle_KeepsTheFileInUse_TitleAfterTitle()
+    {
+        await using var server = new TinyHttpServer(200, "OK", WavFile.Sine(0.5), "audio/wav");
+        // Applied once as each title starts, as a profile-cond on the title would be. Set-backs count per title: across
+        // more titles than the limit, nothing loops.
+        using var engine = CreateEngine("deband=yes\n[once]\nkeep-open=no\n");
+        var ends = new List<PlaybackEnded>();
+        engine.Ended += (_, e) =>
+        {
+            lock (ends)
+            {
+                ends.Add(e);
+            }
+        };
+
+        for (int title = 1; title <= 8; title++)
+        {
+            var loaded = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var played = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            long load = 0;
+            void OnState(object? sender, PlaybackSnapshot s)
+            {
+                if (s.IsLoaded && s.LoadId == Volatile.Read(ref load))
+                {
+                    loaded.TrySetResult();
+                }
+            }
+            void OnEnded(object? sender, PlaybackEnded e)
+            {
+                if (e.Reason == PlaybackEndReason.EndOfFile && e.LoadId == Volatile.Read(ref load))
+                {
+                    played.TrySetResult();
+                }
+            }
+            engine.StateChanged += OnState;
+            engine.Ended += OnEnded;
+            Volatile.Write(ref load, engine.Load(new MediaSource(server.Url($"title-{title}/media.wav"), [])));
+            await loaded.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken);
+
+            Assert.Equal(0, engine.Command("apply-profile", "once"));
+            await Until(() => engine.Option("keep-open") == "yes", () => _logs.All);
+            await played.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken);
+            engine.StateChanged -= OnState;
+            engine.Ended -= OnEnded;
+        }
+
+        Assert.False(Logged("keeps changing"), _logs.All);
+        Assert.Equal("yes", engine.Option("deband"));
+        Assert.Equal(MpvConfigUse.Used, _status.Current.Use);
+        lock (ends)
+        {
+            Assert.DoesNotContain(ends, e => e.Reason == PlaybackEndReason.Error);
+        }
+    }
+
+    [Fact]
     public async Task AProfileThatWouldKeepChangingTheLogFile_IsNotUsed_AndNoAddressReachesALog()
     {
         await using var server = new TinyHttpServer(200, "OK", WavFile.Sine(0.5), "audio/wav");
