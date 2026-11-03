@@ -50,107 +50,11 @@ internal static class CatalogLettersBody
     /// The filters become the rule groups the server makes of them on <c>GET /api/v2/catalog</c>, so the positions
     /// count the same titles the pages list.
     /// </summary>
-    public static JsonElement For(CatalogQuery query)
+    public static JsonElement For(CatalogQuery query) => CatalogRuleWriter.Body(writer =>
     {
-        using var buffer = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(buffer))
-        {
-            writer.WriteStartObject();
-            if (!string.IsNullOrWhiteSpace(query.LibraryId))
-            {
-                writer.WriteString("library_id", query.LibraryId);
-            }
-            if (!string.IsNullOrWhiteSpace(query.Type))
-            {
-                writer.WriteString("type", query.Type);
-            }
-            writer.WriteStartArray("groups");
-            WriteFilters(writer, query);
-            WriteRatings(writer, query.ContentRatings ?? []);
-            writer.WriteEndArray();
-            writer.WriteString("order", query.Sort is { IsDescending: true } ? "desc" : "asc");
-            writer.WriteEndObject();
-        }
-        using var document = JsonDocument.Parse(buffer.ToArray());
-        return document.RootElement.Clone();
-    }
-
-    private static void WriteFilters(Utf8JsonWriter writer, CatalogQuery query)
-    {
-        bool hasGenre = !string.IsNullOrWhiteSpace(query.Genre);
-        bool hasStatus = !string.IsNullOrWhiteSpace(query.Status);
-        int yearMin = query.YearMin ?? 0;
-        int yearMax = query.YearMax ?? 0;
-        if (!hasGenre && !hasStatus && yearMin <= 0 && yearMax <= 0)
-        {
-            return;
-        }
-        StartGroup(writer, "all");
-        if (hasGenre)
-        {
-            WriteRule(writer, "genre", "contains", w => w.WriteStringValue(query.Genre!.Trim()));
-        }
-        if (hasStatus)
-        {
-            WriteRule(writer, "status", "is", w => w.WriteStringValue(query.Status!.Trim()));
-        }
-        if (yearMin > 0 && yearMax > 0)
-        {
-            WriteRule(writer, "year", "between", w =>
-            {
-                w.WriteStartArray();
-                w.WriteNumberValue(yearMin);
-                w.WriteNumberValue(yearMax);
-                w.WriteEndArray();
-            });
-        }
-        else if (yearMin > 0)
-        {
-            WriteRule(writer, "year", "gte", w => w.WriteNumberValue(yearMin));
-        }
-        else if (yearMax > 0)
-        {
-            WriteRule(writer, "year", "lte", w => w.WriteNumberValue(yearMax));
-        }
-        EndGroup(writer);
-    }
-
-    // One rating must match; several are alternatives.
-    private static void WriteRatings(Utf8JsonWriter writer, IReadOnlyList<string> ratings)
-    {
-        string[] given = [.. ratings.Select(r => r.Trim()).Where(r => r.Length > 0).Distinct(StringComparer.Ordinal)];
-        if (given.Length == 0)
-        {
-            return;
-        }
-        StartGroup(writer, given.Length == 1 ? "all" : "any");
-        foreach (string rating in given)
-        {
-            WriteRule(writer, "content_rating", "is", w => w.WriteStringValue(rating));
-        }
-        EndGroup(writer);
-    }
-
-    private static void StartGroup(Utf8JsonWriter writer, string match)
-    {
-        writer.WriteStartObject();
-        writer.WriteString("match", match);
-        writer.WriteStartArray("rules");
-    }
-
-    private static void EndGroup(Utf8JsonWriter writer)
-    {
-        writer.WriteEndArray();
-        writer.WriteEndObject();
-    }
-
-    private static void WriteRule(Utf8JsonWriter writer, string field, string op, Action<Utf8JsonWriter> value)
-    {
-        writer.WriteStartObject();
-        writer.WriteString("field", field);
-        writer.WriteString("op", op);
-        writer.WritePropertyName("value");
-        value(writer);
-        writer.WriteEndObject();
-    }
+        CatalogRuleWriter.WriteString(writer, "library_id", query.LibraryId);
+        CatalogRuleWriter.WriteString(writer, "type", query.Type);
+        CatalogRuleWriter.WriteGroups(writer, query);
+        writer.WriteString("order", query.Sort is { IsDescending: true } ? "desc" : "asc");
+    });
 }

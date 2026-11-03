@@ -54,6 +54,19 @@ public sealed record CatalogQuery
     /// <summary>Any of these ratings (<c>content_rating</c>, one key per rating).</summary>
     public IReadOnlyList<string>? ContentRatings { get; init; }
 
+    /// <summary>
+    /// Rule groups the simple filters cannot say (4K, HDR, languages, …), each to match. With any, the listing is
+    /// <c>POST /api/v2/catalog/query</c>, which takes the simple filters as rules too and pages at most
+    /// <see cref="MaximumRuleLimit"/> titles (docs/api-contract.md, 7.4).
+    /// </summary>
+    public IReadOnlyList<SmartRuleGroup>? Rules { get; init; }
+
+    /// <summary>The largest page of a listing with <see cref="Rules"/>.</summary>
+    public const int MaximumRuleLimit = 100;
+
+    /// <summary>The listing goes through the rule query.</summary>
+    public bool UsesRules => Rules is { Count: > 0 };
+
     public CatalogSort? Sort { get; init; }
 
     /// <summary><c>work</c> collapses the editions of one book into one card.</summary>
@@ -118,8 +131,14 @@ public sealed record CatalogQuery
 
     /// <summary>The query string with its leading <c>?</c> (or empty).</summary>
     /// <exception cref="ArgumentException">The combination is one the server refuses with 422.</exception>
+    /// <exception cref="InvalidOperationException">The query has <see cref="Rules"/>, which only the POST body carries.</exception>
     public string ToQueryString()
     {
+        if (UsesRules)
+        {
+            // Left out, the rules would silently widen the listing.
+            throw new InvalidOperationException("A query with rules is posted (api/v2/catalog/query); it has no query string.");
+        }
         Validate();
         return new QueryBuilder()
             .Add("source", Source)
@@ -156,11 +175,16 @@ public sealed record CatalogQuery
         .Add("person_id", PersonId)
         .Add("type", Type);
 
-    private void Validate()
+    /// <summary>The image parameters alone: the query string of a rule query, whose other members go in its body.</summary>
+    internal string ImagesQuery() => new QueryBuilder().Add(Images).ToString();
+
+    /// <exception cref="ArgumentException">The combination is one the server refuses with 422.</exception>
+    internal void Validate()
     {
-        if (Limit is < 1 or > MaximumLimit)
+        int maximum = UsesRules ? MaximumRuleLimit : MaximumLimit;
+        if (Limit is < 1 || Limit > maximum)
         {
-            throw new ArgumentOutOfRangeException(nameof(Limit), Limit, $"The page size must be between 1 and {MaximumLimit}.");
+            throw new ArgumentOutOfRangeException(nameof(Limit), Limit, $"The page size must be between 1 and {maximum}.");
         }
         if (Seek is < 0 or > MaximumSeek)
         {
@@ -230,6 +254,7 @@ public sealed record CatalogQuery
             (nameof(YearMin), YearMin is not null),
             (nameof(YearMax), YearMax is not null),
             (nameof(ContentRatings), ContentRatings is { Count: > 0 }),
+            (nameof(Rules), UsesRules),
             (nameof(Sort), Sort is not null),
         ];
         foreach (var (name, given) in refused)
@@ -300,6 +325,8 @@ public static class CatalogSortFields
     public const string Runtime = "runtime";
     public const string RatingImdb = "rating_imdb";
     public const string RatingTmdb = "rating_tmdb";
+    public const string RatingRtCritic = "rating_rt_critic";
+    public const string RatingRtAudience = "rating_rt_audience";
     public const string Resolution = "resolution";
     public const string Bitrate = "bitrate";
     public const string Progress = "progress";

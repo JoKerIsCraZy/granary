@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Granary.Core.Api;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
 using Granary.Core.Servers;
@@ -12,12 +13,15 @@ namespace Granary.Core.ViewModels;
 /// The Library tab: every title of the library in a poster grid, with sort, order, filters and the A–Z bar.
 /// Each change starts the listing over with fresh image parameters, so the new cursors are bound to them. In title
 /// order the letter index tells where each letter starts: a letter scrolls the grid there, as on Silo's web client,
-/// and the bar marks the letter of the top row.
+/// and the bar marks the letter of the top row. The sorts are the web's for the library's type, the rating ones only
+/// for the rating sources the server shows.
 /// </summary>
 public sealed partial class LibraryBrowseViewModel : ObservableObject
 {
     /// <summary>Titles per page, as the web client asks for.</summary>
     public const int PageSize = 60;
+
+    private static readonly IReadOnlySet<string> NoRatingSources = new HashSet<string>();
 
     private readonly CatalogApi _catalog;
     private readonly ImageParameterCache _images;
@@ -31,6 +35,10 @@ public sealed partial class LibraryBrowseViewModel : ObservableObject
     private int _topRowEnd;
     private (Uri Server, CatalogQuery Query)? _indexed;
     private CancellationTokenSource _scope = new();
+    // The library's type (CatalogQuery.Type), and the rating sources its server shows, read when the tab starts.
+    private string? _type;
+    private string? _ratingsServerId;
+    private IReadOnlySet<string> _shownRatings = NoRatingSources;
 
     public LibraryBrowseViewModel(CatalogApi catalog, ImageParameterCache images, ILogger logger)
     {
@@ -53,14 +61,15 @@ public sealed partial class LibraryBrowseViewModel : ObservableObject
     public Func<LibraryBrowseState, Task>? Remember { get; set; }
 
     /// <summary>The sort and filters as they are now.</summary>
-    public LibraryBrowseState CurrentState =>
-        new(Sort.Field, IsDescending, Filters.Genre, Filters.ContentRatings, Filters.YearFrom, Filters.YearTo);
+    public LibraryBrowseState CurrentState => new(Sort.Field, IsDescending, Filters.Applied);
 
     public LibraryGridViewModel Grid { get; }
 
     public LibraryFiltersViewModel Filters { get; }
 
-    public IReadOnlyList<LibrarySortOption> SortOptions => LibrarySortOption.All;
+    /// <summary>The sorts of the library's type (<see cref="LibrarySortOption.For"/>); they change when the rating sources arrive.</summary>
+    [ObservableProperty]
+    public partial IReadOnlyList<LibrarySortOption> SortOptions { get; private set; } = LibrarySortOption.For(null, NoRatingSources);
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(SortLabel), nameof(IsLetterBarVisible))]
@@ -109,6 +118,13 @@ public sealed partial class LibraryBrowseViewModel : ObservableObject
         _server = server;
         _library = library;
         _sizes = sizes;
+        _type = CatalogQuery.ForLibrary(library).Type;
+        if (_ratingsServerId != server.Id)
+        {
+            _ratingsServerId = server.Id;
+            _shownRatings = NoRatingSources;
+        }
+        OfferSorts();
     }
 
     /// <summary>Forgets the library: no request of it is answered any more.</summary>
@@ -132,16 +148,17 @@ public sealed partial class LibraryBrowseViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Sorts and filters as <paramref name="state"/> says, before the first page loads; a sort this app does not know
-    /// keeps the title order.
+    /// Sorts and filters as <paramref name="state"/> says, before the first page loads; a sort the library's type does not
+    /// offer, or this app does not know, keeps the title order.
     /// </summary>
     public void Restore(LibraryBrowseState state)
     {
         ArgumentNullException.ThrowIfNull(state);
-        var known = LibrarySortOption.All.FirstOrDefault(o => o.Field == state.SortField);
+        var known = LibrarySortOption.For(_type, _shownRatings, keep: state.SortField).FirstOrDefault(o => o.Field == state.SortField);
         Sort = known ?? LibrarySortOption.Title;
         IsDescending = known is not null && state.Descending;
-        Filters.Restore(state.Genre, state.ContentRatings, state.YearFrom, state.YearTo);
+        OfferSorts();
+        Filters.Restore(state.Filters);
         OnPropertyChanged(nameof(IsNarrowed));
     }
 
@@ -154,7 +171,8 @@ public sealed partial class LibraryBrowseViewModel : ObservableObject
         }
         _isStarted = true;
         var options = Filters.LoadOptionsAsync(_catalog, server.BaseUri, CatalogQuery.ForLibrary(library), _scope.Token);
-        await Task.WhenAll(RestartAsync(), options);
+        var ratings = LoadRatingSourcesAsync(server.BaseUri, _scope.Token);
+        await Task.WhenAll(RestartAsync(), options, ratings);
     }
 
     [RelayCommand(AllowConcurrentExecutions = true)]
@@ -166,6 +184,7 @@ public sealed partial class LibraryBrowseViewModel : ObservableObject
         }
         Sort = option;
         IsDescending = option.StartsDescending;
+        OfferSorts();
         return Task.WhenAll(RememberAsync(), RestartAsync());
     }
 
@@ -231,6 +250,44 @@ public sealed partial class LibraryBrowseViewModel : ObservableObject
         }
         IsDescending = descending;
         return Task.WhenAll(RememberAsync(), RestartAsync());
+    }
+
+    // The rating sorts follow what the server shows; a server without ratings (404) shows none, and one that can't be
+    // asked leaves them as they were.
+    private async Task LoadRatingSourcesAsync(Uri server, CancellationToken cancellationToken)
+    {
+        IReadOnlySet<string> shown;
+        try
+        {
+            shown = (await _catalog.GetRatingsCapabilityAsync(server, cancellationToken)).Shown;
+        }
+        catch (SiloApiException ex) when (ex.Status == 404)
+        {
+            shown = NoRatingSources;
+        }
+        catch (Exception ex) when (LibraryErrors.IsExpected(ex))
+        {
+            if (!cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogInformation(ex, "The server's rating sources are unknown; its rating sorts stay as they were");
+            }
+            return;
+        }
+        if (!cancellationToken.IsCancellationRequested)
+        {
+            _shownRatings = shown;
+            OfferSorts();
+        }
+    }
+
+    // The sorts of the library's type, keeping the picked one even when its rating is hidden now.
+    private void OfferSorts()
+    {
+        var offered = LibrarySortOption.For(_type, _shownRatings, keep: Sort.Field);
+        if (!offered.SequenceEqual(SortOptions))
+        {
+            SortOptions = offered;
+        }
     }
 
     private Task RememberAsync() => _library is null || Remember is not { } remember ? Task.CompletedTask : remember(CurrentState);

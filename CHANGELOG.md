@@ -23,6 +23,17 @@ release's section is what its update says it changes (docs/release.md).
   default; it is kept on this PC and counts from the next title you play.
 - The log says why a title is converted: what this PC's graphics card decodes, what Granary told the server it plays,
   and the reason the server gave for its choice.
+- More filters for a library, and for Favorites, Watchlist, History and collections: several genres at once, decades,
+  4K, HDR and Dolby Vision, the original, audio and subtitle languages, and Watch Status (Unwatched, In Progress,
+  Watched). The Filters panel scrolls when it gets long, and a library opens with these filters as you left them.
+  The filters you set show as badges under the bar, as on Silo's web app; each badge's ✕ removes just that filter.
+- More ways to sort a library: Latest Episode Air Date and Latest Episode Added in a series library, Content Rating,
+  TMDB Rating, the Rotten Tomatoes critic and audience ratings while your server shows them, Resolution, Bitrate,
+  Progress, Date Viewed and Plays.
+
+### Changed
+
+- The sorts are named as on Silo's web app: Date Added, Release Date, IMDb Rating, and Duration in place of Runtime.
 
 ### Changed
 
