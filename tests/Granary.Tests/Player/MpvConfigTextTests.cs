@@ -100,6 +100,25 @@ public sealed class MpvConfigTextTests
         Assert.Null(MpvConfigText.Refusal(
             MpvConfigText.Entries("player-operation-mode=pseudo-gui\n[pseudo-gui]\nfullscreen=yes\nforce-window=yes\nidle=YES\n", Names), Kept));
 
+    [Theory]
+    [InlineData("dump-stats=~~/stats.txt", "dump-stats")]
+    [InlineData("watch-history-path=~~/history", "watch-history-path")]
+    [InlineData("write-filename-in-watch-later-config=yes", "write-filename-in-watch-later-config")]
+    [InlineData("stream-record=~~/recording", "stream-record")]
+    [InlineData("stream-dump=~~/dump", "stream-dump")]
+    [InlineData("demuxer-cache-dir=~~/cache", "demuxer-cache-dir")]
+    [InlineData("vo-image-outdir=~~/frames", "vo-image-outdir")]
+    [InlineData("input-ipc-client=socket", "input-ipc-client")]
+    [InlineData("demuxer-lavf-o-add=http_proxy=localhost", "demuxer-lavf-o")]
+    [InlineData("scripts-append=~~/script.lua", "scripts")]
+    [InlineData("unregister=yes", "unregister")]
+    public void UnsafeOptions_AreRefusedInsideProfiles(string setting, string option)
+    {
+        var entries = MpvConfigText.Entries($"[extension.mkv]\n{setting}\n", Names);
+
+        Assert.Equal($"sets {option}, which Granary does not let mpv.conf change", MpvConfigText.Refusal(entries, Kept));
+    }
+
     [Fact]
     public void WhatMpvRead_IsTheFilesPartOfItsProfiles()
     {
@@ -119,6 +138,35 @@ public sealed class MpvConfigTextTests
         // Granary's own entries in the pseudo-GUI profile are not the file's.
         Assert.Equal([new("keep-open", "later", "no"), new("osc", "pseudo-gui", "no"), new("vo", "pseudo-gui", "gpu")], found);
         Assert.StartsWith("sets vo in its [pseudo-gui] profile", MpvConfigText.Refusal(found, Kept), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void MpvsBuiltInProfiles_AreIgnored_ButUserProfilesAreChecked()
+    {
+        const string profiles = """
+            [
+              { "name": "low-latency", "options": [ { "key": "demuxer-lavf-o", "value": "built-in" } ] },
+              { "name": "movie", "options": [ { "key": "demuxer-lavf-o", "value": "http_proxy=localhost" } ] }
+            ]
+            """;
+
+        var entries = MpvConfigText.FromProfiles(profiles, Own, Names);
+
+        Assert.Equal([new("demuxer-lavf-o", "movie", "http_proxy=localhost")], entries);
+        Assert.Equal("sets demuxer-lavf-o, which Granary does not let mpv.conf change", MpvConfigText.Refusal(entries, Kept));
+    }
+
+    [Fact]
+    public void WhenGranarysProfileEntriesAreMissing_TheWholeProfileIsChecked()
+    {
+        const string profiles = """
+            [{ "name": "pseudo-gui", "options": [ { "key": "vo", "value": "gpu" } ] }]
+            """;
+
+        var entries = MpvConfigText.FromProfiles(profiles, Own, Names);
+
+        Assert.Equal([new("vo", "pseudo-gui", "gpu")], entries);
+        Assert.StartsWith("sets vo in its [pseudo-gui] profile", MpvConfigText.Refusal(entries, Kept), StringComparison.Ordinal);
     }
 
     // A config folder of files in memory, by full path; a missing one reads as none, as in mpv.
@@ -215,5 +263,36 @@ public sealed class MpvConfigTextTests
             path.EndsWith("locked.conf", StringComparison.Ordinal) ? throw new UnauthorizedAccessException() : "include=~~/locked.conf\n");
 
         Assert.Equal("includes locked.conf, which Granary cannot read", scan.Problem);
+    }
+
+    [Fact]
+    public void AnUnreadableMainFile_IsAProblemWithoutExposingItsPath()
+    {
+        var scan = MpvConfigText.Scan(Path.Combine(Folder, "mpv.conf"), Folder, Names, _ => throw new IOException("private path"));
+
+        Assert.Equal("cannot be read", scan.Problem);
+        Assert.Empty(scan.Entries);
+    }
+
+    [Fact]
+    public void AnUnreadableInclude_StopsTheScanBeforeLaterOptions()
+    {
+        var scan = MpvConfigText.Scan(Path.Combine(Folder, "mpv.conf"), Folder, Names, path =>
+            path.EndsWith("mpv.conf", StringComparison.Ordinal)
+                ? "vo=gpu\ninclude=~~/locked.conf\nidle=no\n"
+                : throw new IOException("private path"));
+
+        Assert.Equal("includes locked.conf, which Granary cannot read", scan.Problem);
+        Assert.Equal([new("vo", null, "gpu")], scan.Entries);
+    }
+
+    [Fact]
+    public void AnIncludeSection_DoesNotChangeTheParentsProfile()
+    {
+        var scan = Scan(("mpv.conf", "[movie]\ninclude=~~/other.conf\nkeep-open=no\n"),
+            ("other.conf", "[other]\nvo=gpu\n[default]\nidle=no\n"));
+
+        Assert.Null(scan.Problem);
+        Assert.Equal([new("vo", "other", "gpu"), new("idle", "movie", "no"), new("keep-open", "movie", "no")], scan.Entries);
     }
 }
