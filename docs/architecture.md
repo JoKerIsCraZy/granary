@@ -82,21 +82,37 @@ Without it, mpv starts exactly as before: the same options in the same order (`M
 - Two things in a file would undo that, and such a file is refused: mpv starts without it and the log says why.
   `player-operation-mode` set to anything but `pseudo-gui` turns the profile off. A `[pseudo-gui]` section of the file
   joins Granary's profile after Granary's entries (mpv adds a section's options to the profile of that name), so one
-  that sets one of Granary's options to another value wins over it. Granary reads the file by mpv's rules before the
-  start, and once mpv started, checks what mpv read, includes too: the mode (`player-operation-mode`) and the profiles
-  (`profile-list`). One found only then makes mpv start again without the file.
+  that sets one of Granary's options to another value wins over it. A profile that sets `input-commands` is refused
+  too, since mpv runs those as soon as the profile applies and no set-back takes them back.
+- Granary reads the file before the start by mpv's rules (`MpvConfigText.Scan`), its includes too, the way mpv finds
+  them: `~~/` is the folder, `~/` the user's home, any other relative path is opened from the working directory, and
+  an include's own options count in the profile it stands in. A missing include is passed over, as mpv does. Includes
+  that include each other are refused: libmpv v0.41 reads them over and over inside `mpv_initialize` and never starts
+  (a test hung on it before the check). So are includes nested deeper than 8 (mpv's own limit), one Granary cannot
+  read, and one it cannot follow, such as a stream URL. Anything unexpected while Granary reads the file makes mpv play
+  without it: the file never stops playback. Once mpv started, Granary checks again what mpv read: the mode
+  (`player-operation-mode`) and the profiles (`profile-list`). Something found only then, or a check that fails, makes
+  mpv start again without the file.
 - Each title gets Granary's options as its own options too (`loadfile`, each value quoted by its length). mpv applies
   those after the file's `protocol.*` and `extension.*` profiles and before it opens the stream, so such a profile
   cannot send the stream through a proxy or write its address to a log of mpv's; a test plays an `http` stream with
   `[protocol.http]` setting `log-file` and `http-proxy`.
 - Profiles that apply while mpv plays (`profile-cond`, or one applied by name) can still set one of Granary's options.
   The engine observes them while mpv runs with a file and sets each back as mpv reports it (`KeepsOwn`), comparing the
-  value as mpv writes it without regard to case. A profile whose condition follows the option itself would set it again
-  each time, so after five set-backs Granary logs it once and stops (`SetBackLimit`). Between the profile and the
-  set-back, mpv plays a moment with the file's value; it never holds server credentials, only the loopback address
-  with the media proxy's secret (Server playback, "Media proxy"). A profile that sets `input-commands` is refused, since
-  mpv runs those as soon as the profile applies and no set-back takes them back. `d3d11-composition-size` is kept at the
-  start only, as the engine changes it itself.
+  value as mpv writes it without regard to case. Between the profile and the set-back, mpv plays a moment with the
+  file's value; it never holds server credentials, only the loopback address with the media proxy's secret (Server
+  playback, "Media proxy"). `d3d11-composition-size` is kept at the start only, as the engine changes it itself.
+- The protection fails closed (`MpvPlaybackEngine.FailClosed.cs`). A profile whose condition follows the option itself
+  would set it again after every set-back; after five set-backs of one option (`SetBackLimit`), at the next change, or
+  when mpv does not take Granary's value back, Granary stops the file at once, so nothing more is read or written under
+  the file's value, and starts a new mpv without the file, the same start as when the file is refused, before it
+  closes the one before, so the graphics device stays in use all along. The log says
+  `mpv.conf keeps changing log-file; Granary stopped and plays without your mpv.conf`. The title that played ends as a
+  failure (`PlaybackEndReason.Error`): a server playback reconnects by itself and loads it into the new mpv, and the
+  player of a local file shows the failure with Retry. The engine's own settings carry over (volume, mute, speed,
+  subtitle look and delay, fill, the picture's size), and a new swap chain reaches `MpvVideoHost` through
+  `SwapChainChanged`. A load waits for the new mpv; a call that still reaches the old one finds it closed and does
+  nothing (`MpvClient`).
 - Compiled shaders are cached in `mpv\cache` (`gpu-shader-cache-dir`, `icc-cache-dir`), not in mpv's own folder under
   `%LOCALAPPDATA%\mpv`, where mpv puts them once `config=yes`.
 
@@ -120,7 +136,10 @@ sets (`mpv.conf sets vo; Granary keeps its own`, read from the file by mpv's rul
 are kept but not named), and passes on mpv's own messages about the file (an unknown option, a shader it cannot open),
 which it asks for before `mpv_initialize`. When mpv does not start with the file, the log says whether mpv refused the
 file (an option that only lists something, such as `audio-device=help`, with mpv's own words) or one of Granary's own
-options for it, and mpv starts without the file. A folder named `mpv.conf` is said and passed over.
+options for it, and mpv starts without the file. A folder named `mpv.conf` is said and passed over. The engine also
+reports the outcome for the run to `IMpvConfigStatus` (a Core port, one for the app): used, used with options Granary
+kept, not used, or stopped during playback, with the log's reason, which names options and included file names but no
+stream address and no folder beyond the mpv folder. Settings → Playback → This PC shows it (docs/ui-design.md).
 
 **Granary's editor** (Settings → Playback → This PC → Edit, `MpvConfigEditorViewModel`) edits the real file: it reads
 `mpv.conf` as it is (or the template, written only on Save) and writes the text back whole through

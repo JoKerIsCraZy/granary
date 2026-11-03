@@ -61,6 +61,11 @@
                 <controls:SettingsRow Label="mpv configuration"
                                       Description="Use your own mpv options from mpv.conf, such as shaders, scaling or debanding. They apply after you restart Granary. Granary keeps the options it needs to show the video and follow your Silo server's choices. A wrong option can make playback worse; delete the file to go back to normal.">
                     <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                        <!-- Only when the line below says how mpv.conf fared: the log has the details. -->
+                        <HyperlinkButton Content="Open logs" Command="{x:Bind ViewModel.OpenLogsCommand}"
+                                         Visibility="{x:Bind controls:SettingsText.Shows(ViewModel.MpvConfigStatusText), Mode=OneWay}"
+                                         ToolTipService.ToolTip="Granary's log says what the player did with your mpv.conf"
+                                         AutomationProperties.Name="Open logs" />
                         <HyperlinkButton Content="Open folder" Command="{x:Bind ViewModel.OpenMpvFolderCommand}"
                                          ToolTipService.ToolTip="For shaders and other files your mpv.conf uses"
                                          AutomationProperties.Name="Open the mpv folder" />
@@ -71,6 +76,10 @@
                                 Click="OnEditMpvConfigClick" AutomationProperties.Name="Edit mpv.conf" />
                     </StackPanel>
                 </controls:SettingsRow>
+                <!-- How the player fared with mpv.conf in this run; a fix counts after a restart, as the row says. -->
+                <TextBlock Margin="0,12,0,0" Text="{x:Bind ViewModel.MpvConfigStatusText, Mode=OneWay}" Style="{StaticResource SiloSettingsMutedTextStyle}"
+                           Visibility="{x:Bind controls:SettingsText.Shows(ViewModel.MpvConfigStatusText), Mode=OneWay}"
+                           AutomationProperties.Name="{x:Bind ViewModel.MpvConfigStatusText, Mode=OneWay}" />
                 <TextBlock Margin="0,12,0,0" Text="{x:Bind ViewModel.MpvConfigMessage, Mode=OneWay}" Style="{StaticResource SiloSettingsMutedTextStyle}"
                            Visibility="{x:Bind controls:SettingsText.Shows(ViewModel.MpvConfigMessage), Mode=OneWay}"
                            AutomationProperties.LiveSetting="Polite" />

@@ -1,5 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using System.Text.Json;
 using Granary.Core.Playback;
 using Granary.Player.Interop;
 using Microsoft.Extensions.Logging;
@@ -13,12 +12,14 @@ namespace Granary.Player;
 // the file could override Granary's options, and mpv acts on some of them as soon as mpv_initialize is done, before any
 // call after it could set them back: it makes its video output and leaves idle mode on what the file says. So Granary's
 // options also go into the pseudo-GUI profile, which mpv applies over the config files inside mpv_initialize. A file
-// that would turn that profile off, or override it, is refused, before the start and again after it with what mpv read.
-// Each title gets Granary's options as options of its own (Load), over the file's protocol and extension profiles, and a
-// profile applied while mpv runs is set back as mpv reports it (KeepsOwn), a few times at most.
+// that would turn that profile off, or override it, is refused, before the start, its includes followed, and again
+// after it with what mpv read. Each title gets Granary's options as options of its own (Load), over the file's protocol
+// and extension profiles, and a profile applied while mpv runs is set back as mpv reports it (KeepsOwn). One that keeps
+// changing an option, or one mpv does not take back, makes Granary stop and play without the file (FailClosed).
 public sealed partial class MpvPlaybackEngine
 {
-    // A profile that keeps setting one of Granary's options back (its condition follows the option) wins after this many.
+    // A profile that keeps changing one of Granary's options back (its condition follows the option) is set back this
+    // many times; the next change stops the file and mpv plays without the mpv.conf.
     private const int SetBackLimit = 5;
 
     // The properties the engine follows.
@@ -38,7 +39,14 @@ public sealed partial class MpvPlaybackEngine
     ];
 
     private readonly IReadOnlyList<KeyValuePair<string, string>> _core;
-    private MpvClient _mpv;
+    private readonly Func<string, string?> _readConfig;
+    private readonly IMpvConfigStatus _status;
+
+    // Under _gate: this engine stopped using the file.
+    private bool _stoppedThisRun;
+
+    // Replaced when mpv starts again without the file (FailClosed); a caller that still holds the one before finds it closed.
+    private volatile MpvClient _mpv;
 
     // With a mpv.conf: every option Granary keeps (its core ones and the guarded ones this mpv knows), those it keeps
     // while mpv runs, by name, and the options each title gets. Empty or null without one.
@@ -70,6 +78,7 @@ public sealed partial class MpvPlaybackEngine
         if (Directory.Exists(file))
         {
             _logger.LogWarning("mpv.conf in {Folder} is a folder, not a file; mpv plays without it", directory);
+            NotUsed("it is a folder, not a file");
             return null;
         }
         return File.Exists(file) ? file : null;
@@ -81,12 +90,25 @@ public sealed partial class MpvPlaybackEngine
     {
         var all = _core.Concat(MpvOwnOptions.Guarded(_options.VideoOutput)).ToList();
         var names = all.Select(o => o.Key).Append(MpvOwnOptions.OperationMode).ToHashSet();
-        var entries = Read(file) is { } text ? MpvConfigText.Entries(text, names) : [];
-        if (MpvConfigText.Refusal(entries, Kept(all)) is { } reason)
+        MpvConfigScan scan;
+        try
         {
-            _logger.LogWarning("mpv.conf {Reason}; mpv plays without it", reason);
+            scan = MpvConfigText.Scan(file, Path.GetDirectoryName(file)!, names, _readConfig);
+        }
+        catch (Exception ex)
+        {
+            // Whatever the file holds, it never stops playback: unchecked, it is not used.
+            _logger.LogWarning(ex, "mpv.conf could not be checked; mpv plays without it");
+            NotUsed("Granary could not check it");
             return false;
         }
+        if ((scan.Problem ?? MpvConfigText.Refusal(scan.Entries, Kept(all))) is { } reason)
+        {
+            _logger.LogWarning("mpv.conf {Reason}; mpv plays without it", reason);
+            NotUsed("it " + reason);
+            return false;
+        }
+        var entries = scan.Entries;
         try
         {
             Prepare(file);
@@ -94,6 +116,7 @@ public sealed partial class MpvPlaybackEngine
         catch (InvalidOperationException ex)
         {
             _logger.LogWarning("mpv did not take Granary's own options for mpv.conf ({Reason}); it plays without the file", ex.Message);
+            NotUsed("mpv did not take Granary's own options for it");
             return false;
         }
         try
@@ -104,30 +127,35 @@ public sealed partial class MpvPlaybackEngine
         {
             // An option that only lists the audio devices, say. mpv has said why.
             _logger.LogWarning("mpv refused to start with {File} ({Reason}); it plays without it", file, ex.Message);
+            NotUsed("mpv refused to start with it");
             return false;
         }
         if (RefusalAfterStart(names) is { } late)
         {
             // An include or a profile the file applied while mpv started did what the file itself would have been refused for.
             _logger.LogWarning("mpv.conf {Reason}; mpv starts again without it", late);
+            NotUsed("it " + late);
             Close();
             return false;
         }
-        SayWhatIsKept(file, entries);
+        Report(new MpvConfigState(MpvConfigUse.Used, KeptOptions: SayWhatIsKept(file, entries)));
         return true;
     }
 
-    private string? Read(string file)
+    // For Settings: the file was not used, with the log's reason, which names no stream and no folder beyond mpv's.
+    private void NotUsed(string reason) => Report(new MpvConfigState(MpvConfigUse.NotUsed, reason));
+
+    // A stop while mpv started (FailClosed, on mpv's event thread) stands over the start's own report, whichever comes last.
+    private void Report(MpvConfigState state)
     {
-        try
+        lock (_gate)
         {
-            return File.ReadAllText(file);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            // mpv reads it again and says what it makes of it.
-            _logger.LogDebug(ex, "mpv.conf could not be read to check it");
-            return null;
+            if (_stoppedThisRun && state.Use != MpvConfigUse.StoppedDuringPlayback)
+            {
+                return;
+            }
+            _stoppedThisRun |= state.Use == MpvConfigUse.StoppedDuringPlayback;
+            _status.Report(state);
         }
     }
 
@@ -175,7 +203,9 @@ public sealed partial class MpvPlaybackEngine
     private void Configure(string? configFile)
     {
         _mpv.SetOption("hwdec", _options.HardwareDecoding);
-        foreach (var (name, value) in _core)
+        // At the size Granary shows the picture now: a new mpv (FailClosed) starts at that, not at the first.
+        var core = MpvOwnOptions.Core(_options.VideoOutput, _outputSize);
+        foreach (var (name, value) in core)
         {
             _mpv.SetOption(name, value);
         }
@@ -183,7 +213,7 @@ public sealed partial class MpvPlaybackEngine
         {
             return;
         }
-        var own = new List<KeyValuePair<string, string>>(_core);
+        var own = new List<KeyValuePair<string, string>>(core);
         foreach (var option in MpvOwnOptions.Guarded(_options.VideoOutput))
         {
             if (TrySet(option.Key, option.Value))
@@ -225,21 +255,23 @@ public sealed partial class MpvPlaybackEngine
         try
         {
             entries = entries.Concat(MpvConfigText.FromProfiles(_mpv.GetString("profile-list"), _own, names));
+            return MpvConfigText.Refusal(entries, _kept ?? []);
         }
-        catch (Exception ex) when (ex is JsonException or InvalidOperationException or KeyNotFoundException)
+        catch (Exception ex)
         {
+            // Unchecked, it is not used.
             _logger.LogDebug(ex, "mpv's profiles could not be read to check them");
+            return "could not be checked once mpv read it";
         }
-        return MpvConfigText.Refusal(entries, _kept ?? []);
     }
 
-    // Once per start: the file mpv read, and the options of Granary's it sets, which the profile has already set back.
-    private void SayWhatIsKept(string configFile, IReadOnlyList<MpvConfigEntry> entries)
+    // Once per start: the file mpv read, and the options of Granary's it sets, which the profile has already set back. The
+    // number of those options.
+    private int SayWhatIsKept(string configFile, IReadOnlyList<MpvConfigEntry> entries)
     {
         _logger.LogInformation("mpv started with {File}", configFile);
-        foreach (var (option, profile) in entries
-            .Where(e => e.Option == MpvOwnOptions.CompositionSize || _kept!.ContainsKey(e.Option))
-            .Select(e => (e.Option, e.Profile)).Distinct())
+        var kept = entries.Where(e => e.Option == MpvOwnOptions.CompositionSize || _kept!.ContainsKey(e.Option)).ToList();
+        foreach (var (option, profile) in kept.Select(e => (e.Option, e.Profile)).Distinct())
         {
             if (profile is null)
             {
@@ -250,50 +282,60 @@ public sealed partial class MpvPlaybackEngine
                 _logger.LogWarning("mpv.conf's profile {Profile} sets {Option}; Granary keeps its own", profile, option);
             }
         }
+        return kept.Select(e => e.Option).Distinct().Count();
     }
 
     // A notice of one of Granary's options while mpv runs with a mpv.conf: a profile of the file set it (profile-cond, or
-    // one applied by name). It is set back, at most SetBackLimit times. True for these names.
+    // one applied by name). It is set back, SetBackLimit times at most; a change after that, or a set-back mpv does not
+    // take, stops the file and mpv plays without the mpv.conf (FailClosed). True for these names.
     private bool KeepsOwn(string name, object? value)
     {
         if (_kept is not { } kept || !kept.TryGetValue(name, out string? own))
         {
             return false;
         }
-        if (value is not string current || MpvOwnOptions.Same(current, own))
+        if (value is not string current || MpvOwnOptions.Same(current, own) || Volatile.Read(ref _failingClosed) != 0)
         {
             return true;
         }
-        int times = _setBacks.GetValueOrDefault(name);
         // A notice can arrive after the value changed back already.
-        if (times > SetBackLimit || MpvOwnOptions.Same(_mpv.GetString(name), own))
+        if (MpvOwnOptions.Same(_mpv.GetString(name), own))
         {
             return true;
         }
-        _setBacks[name] = ++times;
+        int times = _setBacks.GetValueOrDefault(name) + 1;
+        _setBacks[name] = times;
         if (times > SetBackLimit)
         {
-            _logger.LogWarning("mpv.conf keeps setting {Option}; Granary stops setting it back", name);
+            FailClosed($"keeps changing {name}");
             return true;
         }
         if (times == 1)
         {
             _logger.LogWarning("mpv.conf set {Option}; Granary keeps its own", name);
         }
-        int rc = _mpv.SetProperty(name, own);
-        if (rc < 0 && times == 1)
+        int rc = MpvOwnOptions.IsClearedList(name, own) ? _mpv.Command("change-list", name, "clr", "") : _mpv.SetProperty(name, own);
+        if (rc < 0)
         {
-            _logger.LogWarning("mpv did not take Granary's {Option} back: {Error}", name, LibMpv.Error(rc));
+            FailClosed($"changes {name}, and mpv did not take Granary's back ({LibMpv.Error(rc)})");
         }
         return true;
     }
 
-    private void Close()
+    private void Close() => Close(_mpv);
+
+    private void Close(MpvClient client)
     {
-        _mpv.PropertyChanged -= OnPropertyChanged;
-        _mpv.LogMessage -= OnLogMessage;
-        _mpv.FileEnded -= OnFileEnded;
-        _mpv.LifecycleEvent -= OnLifecycleEvent;
-        _mpv.Dispose();
+        Detach(client);
+        client.Dispose();
+    }
+
+    // Its events no longer reach the engine.
+    private void Detach(MpvClient client)
+    {
+        client.PropertyChanged -= OnPropertyChanged;
+        client.LogMessage -= OnLogMessage;
+        client.FileEnded -= OnFileEnded;
+        client.LifecycleEvent -= OnLifecycleEvent;
     }
 }

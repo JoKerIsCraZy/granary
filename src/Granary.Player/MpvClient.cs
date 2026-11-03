@@ -6,14 +6,21 @@ namespace Granary.Player;
 
 /// <summary>
 /// One libmpv instance: options, commands, properties, and an event thread. Events are raised on
-/// that thread. libmpv's API itself is thread-safe.
+/// that thread. libmpv's API itself is thread-safe. Commands and properties are only passed on while mpv runs: before
+/// <see cref="Initialize"/> and from <see cref="Dispose"/> on, they do nothing and read nothing, so a caller that still
+/// holds an instance the engine replaced cannot reach a handle that is gone.
 /// </summary>
 internal sealed class MpvClient : IDisposable
 {
     private readonly ILogger _logger;
     private readonly Thread _eventThread;
     private readonly Dictionary<ulong, string> _observed = [];
+
+    // Calls in flight hold it to read; the handle is destroyed under it to write, once they are done. Never disposed:
+    // a late caller still takes it, and finds the instance closed.
+    private readonly ReaderWriterLockSlim _life = new();
     private volatile bool _running;
+    private volatile bool _ready;
     private nint _handle;
 
     public MpvClient(ILogger logger)
@@ -89,7 +96,22 @@ internal sealed class MpvClient : IDisposable
             LibMpv.ObserveProperty(_handle, id, name, format);
         }
         _running = true;
+        _ready = true;
         _eventThread.Start();
+    }
+
+    // A call on the running mpv, or what a closed one gives.
+    private T Live<T>(Func<nint, T> call, T closed)
+    {
+        _life.EnterReadLock();
+        try
+        {
+            return _ready && _handle != 0 ? call(_handle) : closed;
+        }
+        finally
+        {
+            _life.ExitReadLock();
+        }
     }
 
     public int Command(params string[] args)
@@ -101,7 +123,7 @@ internal sealed class MpvClient : IDisposable
             {
                 pointers[i] = Marshal.StringToCoTaskMemUTF8(args[i]);
             }
-            int rc = LibMpv.Command(_handle, pointers);
+            int rc = Live(handle => LibMpv.Command(handle, pointers), LibMpv.ErrorUninitialized);
             if (rc < 0)
             {
                 _logger.LogWarning("mpv command {Command} failed: {Error}", args[0], LibMpv.Error(rc));
@@ -120,11 +142,12 @@ internal sealed class MpvClient : IDisposable
         }
     }
 
-    public int SetProperty(string name, string value) => LibMpv.SetPropertyString(_handle, name, value);
+    public int SetProperty(string name, string value) =>
+        Live(handle => LibMpv.SetPropertyString(handle, name, value), LibMpv.ErrorUninitialized);
 
-    public string? GetString(string name)
+    public string? GetString(string name) => Live(handle =>
     {
-        nint value = LibMpv.GetPropertyString(_handle, name);
+        nint value = LibMpv.GetPropertyString(handle, name);
         if (value == 0)
         {
             return null;
@@ -137,13 +160,13 @@ internal sealed class MpvClient : IDisposable
         {
             LibMpv.Free(value);
         }
-    }
+    }, null);
 
     public long? GetInt64(string name) =>
-        LibMpv.GetPropertyInt64(_handle, name, LibMpv.FormatInt64, out long value) >= 0 ? value : null;
+        Live(handle => LibMpv.GetPropertyInt64(handle, name, LibMpv.FormatInt64, out long value) >= 0 ? value : (long?)null, null);
 
     public double? GetDouble(string name) =>
-        LibMpv.GetPropertyDouble(_handle, name, LibMpv.FormatDouble, out double value) >= 0 ? value : null;
+        Live(handle => LibMpv.GetPropertyDouble(handle, name, LibMpv.FormatDouble, out double value) >= 0 ? value : (double?)null, null);
 
     private void EventLoop()
     {
@@ -234,12 +257,21 @@ internal sealed class MpvClient : IDisposable
             return;
         }
         _running = false;
+        _ready = false;
         LibMpv.Wakeup(_handle);
-        if (_eventThread.IsAlive)
+        if (_eventThread.IsAlive && _eventThread != Thread.CurrentThread)
         {
             _eventThread.Join(TimeSpan.FromSeconds(2));
         }
-        LibMpv.TerminateDestroy(_handle);
-        _handle = 0;
+        _life.EnterWriteLock();
+        try
+        {
+            LibMpv.TerminateDestroy(_handle);
+            _handle = 0;
+        }
+        finally
+        {
+            _life.ExitWriteLock();
+        }
     }
 }

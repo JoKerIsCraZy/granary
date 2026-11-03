@@ -46,18 +46,19 @@ public sealed class MpvOwnOptionsTests
     [Fact]
     public void TheProfile_IsMpvsPseudoGuiProfile_WithGranarysOptions()
     {
-        string profile = MpvOwnOptions.Profile([new("vo", "gpu-next"), new("log-file", "")]);
+        string profile = MpvOwnOptions.Profile([new("vo", "gpu-next"), new("log-file", ""), new("input-commands", "")]);
 
-        Assert.Equal("[pseudo-gui]\nvo=gpu-next\nlog-file=\n", profile);
+        // Set to "", input-commands would hold one empty command: it is cleared instead.
+        Assert.Equal("[pseudo-gui]\nvo=gpu-next\nlog-file=\ninput-commands-clr=\n", profile);
     }
 
     [Fact]
     public void EachTitle_GetsGranarysOptions_QuotedByLength_ButTheSizeGranaryChangesItself()
     {
         var perFile = MpvOwnOptions.PerFile([new("vo", "gpu-next"), new("d3d11-composition-size", "1280x720"), new("log-file", ""),
-            new("input-conf", "memory://")]);
+            new("input-conf", "memory://"), new("input-commands", "")]);
 
-        Assert.Equal(["vo=%8%gpu-next", "log-file=%0%", "input-conf=%9%memory://"], perFile);
+        Assert.Equal(["vo=%8%gpu-next", "log-file=%0%", "input-conf=%9%memory://", "input-commands-clr=%0%"], perFile);
     }
 
     [Theory]

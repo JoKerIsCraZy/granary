@@ -25,8 +25,10 @@ release's section is what its update says it changes (docs/release.md).
   **Open folder** is there for shaders. Changes apply after you restart Granary. Granary keeps the options it needs to
   show the video in its window and follow your Silo server's choices, keeps the stream's address out of mpv's own
   logs, files and proxies, and runs no scripts or commands of the file's. The log names the options of yours it leaves
-  out and any option mpv can't use; a file that would turn Granary's options off plays as if it were not there, and the
-  log says why. Without the file, playback is as before.
+  out and any option mpv can't use; a file that would turn Granary's options off, its includes too, plays as if it were
+  not there, and the log says why. If one of its profiles keeps changing them while a title plays, Granary stops that
+  title and plays on without the file. The row says when your file was not used, or only in part, and why, with a link
+  to the log. Without the file, playback is as before.
 - Settings → Playback → This PC → mpv configuration: **Edit** opens `mpv.conf` in an editor inside Granary, usable
   with the keyboard or a TV remote. It holds the file exactly as written, profiles, includes and comments too, and
   checks the text as you type: which options Granary keeps for itself, and whether the player would not use the file

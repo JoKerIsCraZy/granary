@@ -631,9 +631,17 @@ says why above the sections.
   has for `.conf` files, or Notepad when there is none; Open folder makes the folder and shows it in File Explorer. When
   one fails, 13 px muted text under the row says so and where the folder is: "Couldn't open mpv.conf. You'll find it in
   …", "Couldn't create mpv.conf in …", "mpv.conf in … is a folder. Rename or remove it, then try again.", "Couldn't
-  open …". The next try that works clears it. After Granary's editor wrote the file, a second muted line says "Your
-  changes to mpv.conf apply after you restart Granary." for the rest of the run. How mpv reads the file and which
-  options Granary keeps is in docs/architecture.md ("Your own mpv.conf").
+  open …". The next try that works clears it. Above that line, in the same text, how the player fared with the file in
+  this run (`IMpvConfigStatus`, read when the page is made and when it loads): "Your mpv.conf was not used: {reason}.
+  The log has the details." (refused at the start, or mpv refused it), "Granary stopped using your mpv.conf: {reason}.
+  The log has the details." (a profile kept changing one of Granary's options while a title played), or "Granary kept
+  {n} of its own options from your mpv.conf. The log names them."; the reason is the log's, such as "it sets
+  player-operation-mode, which Granary needs to keep its own options", "mpv refused to start with it" or "it keeps
+  changing log-file". Nothing when the file was used as written, when there is none, or before the player first
+  started. With that line, an **Open logs** link stands left of Open folder and shows Granary's log folder in File
+  Explorer (the data folder before the first log). After Granary's editor or a preset wrote the file, another muted line
+  says "Your changes to mpv.conf apply after you restart Granary." for the rest of the run. How mpv reads the file and
+  which options Granary keeps is in docs/architecture.md ("Your own mpv.conf").
 - **This PC → mpv configuration → Edit** (`MpvConfigEditorView` on `MpvConfigEditorViewModel`; Granary's own, as Silo's
   clients have no player configuration): the editor opens in the Playback page's place, in the same column, scrolled to
   the top. "← Playback" (the settings' back button style, named "Back to Playback"), "mpv.conf" as the 32 px title, and
