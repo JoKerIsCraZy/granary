@@ -91,18 +91,25 @@ public static class PlaybackInfo
     public static string VideoRangeLabel(WatchFileVersion version)
     {
         ArgumentNullException.ThrowIfNull(version);
+        return VideoRangeLabel(version.VideoTracks, version.Hdr);
+    }
+
+    /// <summary>The label of a file with <paramref name="videoTracks"/>; <paramref name="hdr"/> is its plain HDR flag, the last resort.</summary>
+    public static string VideoRangeLabel(IReadOnlyList<WatchVideoTrack> videoTracks, bool hdr)
+    {
+        ArgumentNullException.ThrowIfNull(videoTracks);
         bool dolbyVision = false;
-        string hdr = "";
-        foreach (var track in version.VideoTracks)
+        string type = "";
+        foreach (var track in videoTracks)
         {
             dolbyVision |= !string.IsNullOrWhiteSpace(track.DolbyVision) || track.DvProfile > 0
                 || (track.VideoRangeType?.Trim() ?? "").StartsWith("DOVI", StringComparison.Ordinal);
-            if (hdr.Length == 0)
+            if (type.Length == 0)
             {
-                hdr = HdrType(track);
+                type = HdrType(track);
             }
         }
-        return dolbyVision ? (hdr.Length > 0 ? $"DV {hdr}" : "DV") : hdr.Length > 0 ? hdr : version.Hdr ? "HDR" : "";
+        return dolbyVision ? (type.Length > 0 ? $"DV {type}" : "DV") : type.Length > 0 ? type : hdr ? "HDR" : "";
     }
 
     /// <summary>"4.0 GiB", as the web's file sizes in binary units.</summary>

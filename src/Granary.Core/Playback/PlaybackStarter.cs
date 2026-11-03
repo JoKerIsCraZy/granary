@@ -34,6 +34,9 @@ public sealed record PlaybackContext(
 
     /// <summary>The file was chosen for this playback (a Watch Party's): the server may not fall back to another.</summary>
     public bool FilePinned { get; init; }
+
+    /// <summary>The viewer picked the file on the detail page: the server may not swap in another version either.</summary>
+    public bool VersionPicked { get; init; }
 }
 
 /// <summary>
@@ -47,7 +50,8 @@ public sealed class PlaybackStarter(
     PlaybackPreferencesReader preferences,
     IPlaybackDeviceProbe device,
     ClientIdentity identity,
-    ISessionManager session)
+    ISessionManager session,
+    TrackChoiceWrites? trackChoices = null)
 {
     // A resume point at least this far in rewinds by ResumeRewindSeconds, so the viewer finds the scene again
     // (Android's player.resume_rewind_seconds, a client-local setting).
@@ -56,7 +60,9 @@ public sealed class PlaybackStarter(
 
     /// <exception cref="PlaybackUnavailableException">The title, the profile or the server cannot play.</exception>
     /// <param name="pinnedFileId">The one file to play (a Watch Party's); null lets the client choose.</param>
-    public async Task<PlaybackContext> PrepareAsync(string contentId, CancellationToken cancellationToken, string? pinnedFileId = null)
+    /// <param name="choice">The file and tracks picked on the detail page; ignored for a Watch Party's file.</param>
+    public async Task<PlaybackContext> PrepareAsync(string contentId, CancellationToken cancellationToken, string? pinnedFileId = null,
+        PrePlayChoice? choice = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(contentId);
         var server = session.ActiveServer ?? throw new PlaybackUnavailableException("Choose a server to play from.", canRetry: false);
@@ -68,21 +74,47 @@ public sealed class PlaybackStarter(
         WatchDetail detail;
         try
         {
+            // A pick or an Auto made on the detail page a moment ago is in the watch detail's preferences (Apple's
+            // client settles its pending writes before this read too).
+            if (trackChoices is not null)
+            {
+                await trackChoices.SettleAsync(cancellationToken).ConfigureAwait(false);
+            }
             detail = await watch.GetWatchAsync(server.BaseUri, contentId, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex, cancellationToken))
         {
             throw Describe(ex);
         }
-        var version = (pinnedFileId is null ? ChooseVersion(detail) : detail.Versions.FirstOrDefault(v => v.FileId == pinnedFileId))
+        var picked = pinnedFileId is null ? Picked(detail, choice) : null;
+        var version = (pinnedFileId is not null ? detail.Versions.FirstOrDefault(v => v.FileId == pinnedFileId) : picked?.Version ?? ChooseVersion(detail))
             ?? throw new PlaybackUnavailableException(pinnedFileId is null ? "This title has no file to play." : "The room's file is not available here.",
                 canRetry: false);
         var capabilities = await CapabilitiesAsync(server, cancellationToken).ConfigureAwait(false);
-        return new PlaybackContext(server, profileId, detail, version, await settings.ConfigureAwait(false), capabilities.InstallationId!, Report(capabilities))
+        return new PlaybackContext(server, profileId, detail, version, await settings.ConfigureAwait(false), capabilities.InstallationId!, Report(capabilities),
+            picked?.SubtitleTrack)
         {
             ContentId = contentId,
             FilePinned = pinnedFileId is not null,
+            VersionPicked = picked?.IsVersionPicked == true,
         };
+    }
+
+    // The detail page's file with its picked audio as the one it starts with, and its picked subtitle; null when the title
+    // no longer has that file, which then plays as without a pick (Apple's client falls back the same way). A track the
+    // file does not have is left to the automatic choice.
+    private static (WatchFileVersion Version, bool IsVersionPicked, int? SubtitleTrack)? Picked(WatchDetail detail, PrePlayChoice? choice)
+    {
+        if (choice is null || detail.Versions.FirstOrDefault(v => v.FileId.Length > 0 && v.FileId == choice.FileId) is not { } version)
+        {
+            return null;
+        }
+        if (choice.AudioTrack is { } audio && audio >= 0 && audio < version.AudioTracks.Count)
+        {
+            version = version with { EffectiveAudioTrackIndex = audio };
+        }
+        int? subtitle = choice.SubtitleTrack is { } track && track >= -1 && track < version.SubtitleTracks.Count ? track : null;
+        return (version, choice.IsVersionPicked, subtitle);
     }
 
     /// <summary>
@@ -130,8 +162,9 @@ public sealed class PlaybackStarter(
             FileId = context.Version.FileId,
             ProfileId = context.ProfileId,
             PlaybackAttemptId = attemptId,
-            // A Watch Party plays one file for everyone: no recovery may pick another.
-            AllowAlternateVersions = context.FilePinned ? false : null,
+            // A Watch Party plays one file for everyone, and a version the viewer picked is the one they want: no
+            // recovery may pick another.
+            AllowAlternateVersions = context.FilePinned || context.VersionPicked ? false : null,
             QualityPreference = context.Preferences.Quality,
             StartPosition = startPosition,
             // Always explicit: an omitted index is resolved from another device header (docs/api-contract.md, 8.8.1).
@@ -190,9 +223,16 @@ public sealed class PlaybackStarter(
     public static WatchFileVersion? ChooseVersion(WatchDetail detail)
     {
         ArgumentNullException.ThrowIfNull(detail);
-        var playable = detail.Versions.Where(v => v.FileId.Length > 0).ToList();
-        return playable.FirstOrDefault(v => v.FileId == detail.UserData?.LastFileId)
-            ?? playable.FirstOrDefault(v => v.PresentationPartIndex == 0)
+        return ChooseVersion(detail.Versions, v => v.FileId, v => v.PresentationPartIndex, detail.UserData?.LastFileId);
+    }
+
+    /// <summary>The same order for the files of another listing (the detail page's), which show what Play plays.</summary>
+    public static T? ChooseVersion<T>(IEnumerable<T> versions, Func<T, string> fileId, Func<T, int> partIndex, string? lastFileId) where T : class
+    {
+        ArgumentNullException.ThrowIfNull(versions);
+        var playable = versions.Where(v => fileId(v).Length > 0).ToList();
+        return playable.FirstOrDefault(v => fileId(v) == lastFileId)
+            ?? playable.FirstOrDefault(v => partIndex(v) == 0)
             ?? playable.FirstOrDefault();
     }
 

@@ -6,6 +6,15 @@ release's section is what its update says it changes (docs/release.md).
 
 ## [Unreleased]
 
+### Added
+
+- A movie's or episode's page lets you choose what to play before you press Play, as on Silo's web: Version, Audio and
+  Subs under the buttons. Version lists the title's files when it has more than one ("2160p · HEVC · HDR10 · DTS",
+  with size and source such as "38.9 GB · Remux"); Audio and Subs list the chosen file's tracks, with Auto and Off.
+  Each shows what would play anyway until you choose. Play, Resume and Start over then play that file with those
+  tracks, and the server keeps to the file you chose. Your audio and subtitle choices are remembered for the movie or
+  the whole series, and Auto goes back to your profile's settings. The pickers work with the keyboard too.
+
 ### Fixed
 
 - Switching quickly between sections and scrolling freezes the app less often and for shorter, most of all in a large

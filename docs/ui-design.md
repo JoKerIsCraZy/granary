@@ -369,8 +369,29 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     in 16/25, four lines at most and 820 wide.
   - Granary's own buttons one size up: the red Play pill ("Resume from 1:02:33" for a movie or episode), Start over,
     "Mark Watched", "Info", the heart and ⋮ (Watchlist, Add to Collection). Pills 50 high with 17 px labels, round
-    buttons 50, 14 apart. Under them "Available version: 1080P · H264 · EAC3 · 6.6 GB" (or the qualities of several
-    files) in 14 at 45 % white.
+    buttons 50, 14 apart. Under a single file's buttons "Available version: 1080P · H264 · EAC3 · 6.6 GB" in 14 at
+    45 % white.
+  - A movie's or episode's stream pickers under the buttons, the web's `VersionDropdown`, `AudioTracksPopover` and
+    `SubtitlesPopover` (ActionBar.tsx): dark pills 38 high (34 below 1400 px), 10 apart, each an icon, its label
+    ("Version", "Audio", "Subs"), what is chosen in 13 px muted text and a chevron. "Version 2160p · HEVC · HDR10 · DTS"
+    shows only with more than one file; "Audio Auto: English · DTS · 5.1" with audio tracks; "Subs Auto: English · SRT"
+    (or "Off", or a picked track's "English (SDH) · SRT") with subtitle tracks. Until the viewer picks, each shows what
+    playback picks by itself: the file played last (else the first whole file), the audio track the profile's
+    preferences pick, the subtitle the automatic choice makes for that audio; a subtitle remembered for the title shows
+    without "Auto:", and its Auto row then says "Reset to profile defaults".
+  - Each pill opens its list below it as a menu in the player's look, on near-solid dark grey with a hairline edge, the
+    chosen row lit with a red check at its right, keyboard focus on that row. Version rows: the quality ("2160p · HEVC ·
+    DV HDR10+ · EAC3") with its dynamic range as a chip, the size and the source the release name tells ("38.9 GB ·
+    Remux") under it, the edition first when the files differ in it (the web picks the edition in a picker of its own),
+    the highest resolution first. Audio rows: Auto with the track it picks, then each track's language with chips for
+    codec, channels and DEFAULT and its own title and layout, bitrate, sample rate and bit depth under it. Subs rows:
+    Auto, Off, then "Embedded" and "External" headings over their tracks, each by language (forced first, the file's
+    default first), with its format and FORCED, HI and DEFAULT chips, its own title under it. Downloaded subtitles and
+    "Search for Subtitles…" are left out before playback, as in Silo's apps; the player has them.
+  - Play, Resume and Start over play the chosen file with the chosen tracks. Picking another file starts its audio and
+    subtitles from Auto again. Audio and subtitle picks (Off included) are also saved for the title, for its series on an
+    episode, and Auto forgets the saved one, as the web's detail page and Apple's client save them; the page then reads
+    the item again. A series or season page has no pickers: it plays an episode.
   - Info opens a 980 wide dialog: Details (with the full overview, ratings, countries, studios, a series' regular seasons
     and episodes, a season's number and episodes), Cast, Crew by job and each file's facts (the played file's audio as
     its badge words it), never a file's name or path. The web's chips, ratings, credits and version lines are there

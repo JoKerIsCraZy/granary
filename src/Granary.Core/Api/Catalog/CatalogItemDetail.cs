@@ -1,3 +1,6 @@
+using System.Text.Json.Serialization;
+using Granary.Core.Api.Playback;
+
 namespace Granary.Core.Api.Catalog;
 
 /// <summary>
@@ -41,6 +44,26 @@ public sealed record CatalogItemDetail : CatalogItemBase
 
     /// <summary>Local extras (behind the scenes, featurettes, …).</summary>
     public IReadOnlyList<ItemExtra> Extras { get; init => field = value ?? []; } = [];
+
+    /// <summary>The subtitle language the profile's preferences resolve to for this item; empty when the preference is None.</summary>
+    public string? EffectiveSubtitleLanguage { get; init; }
+
+    /// <summary>Omitted when it is the default <c>auto</c>; read <see cref="SubtitleMode"/>.</summary>
+    public string? EffectiveSubtitleMode { get; init; }
+
+    /// <summary>Omitted when it is the default <c>true</c>; read <see cref="ShowForcedSubtitles"/>.</summary>
+    public bool? EffectiveShowForcedSubtitles { get; init; }
+
+    /// <summary>The subtitle track the profile last chose on this item (or its series); match it before any language rule.</summary>
+    public WatchSubtitleSignature? EffectiveSubtitleTrackSignature { get; init; }
+
+    /// <summary>The resolved subtitle mode: <see cref="EffectiveSubtitleMode"/>, or <c>auto</c> when the server left it out.</summary>
+    [JsonIgnore]
+    public string SubtitleMode => string.IsNullOrEmpty(EffectiveSubtitleMode) ? SubtitlePreferenceModes.Auto : EffectiveSubtitleMode;
+
+    /// <summary>The resolved show-forced flag: <see cref="EffectiveShowForcedSubtitles"/>, or true when the server left it out.</summary>
+    [JsonIgnore]
+    public bool ShowForcedSubtitles => EffectiveShowForcedSubtitles ?? true;
 }
 
 /// <summary>An external rating; <see cref="Score"/> is on a 0-100 scale, <see cref="Display"/> on the source's own.</summary>
@@ -88,7 +111,10 @@ public sealed record WatchRollup
     public string? LastFileId { get; init; }
 }
 
-/// <summary>One file of a movie or episode (only the members the detail page shows).</summary>
+/// <summary>
+/// One file of a movie or episode (only the members the detail page shows). Its tracks have the shape of the watch
+/// detail's, so they read as <see cref="WatchAudioTrack"/> and the like.
+/// </summary>
 public sealed record FileVersion
 {
     public string FileId { get; init => field = value ?? ""; } = "";
@@ -120,6 +146,25 @@ public sealed record FileVersion
 
     /// <summary>The edition as the file names it, for example <c>Director's Cut</c>.</summary>
     public string? EditionRaw { get; init; }
+
+    /// <summary>This file's part within its presentation, counted from 0.</summary>
+    public int PresentationPartIndex { get; init; }
+
+    /// <summary>
+    /// The audio track the profile's preferences pick, as an ordinal into <see cref="AudioTracks"/>; what playback starts
+    /// with unless the viewer picks another.
+    /// </summary>
+    public int? EffectiveAudioTrackIndex { get; init; }
+
+    public string? EffectiveAudioLanguage { get; init; }
+
+    public IReadOnlyList<WatchVideoTrack> VideoTracks { get; init => field = value ?? []; } = [];
+
+    /// <summary>In stream order; a track's position here is its audio ordinal.</summary>
+    public IReadOnlyList<WatchAudioTrack> AudioTracks { get; init => field = value ?? []; } = [];
+
+    /// <summary>Embedded tracks first; <see cref="WatchSubtitleTrack.Index"/> is an FFmpeg stream index, never a selection.</summary>
+    public IReadOnlyList<WatchSubtitleTrack> SubtitleTracks { get; init => field = value ?? []; } = [];
 }
 
 /// <summary>A trailer or clip hosted by <see cref="Site"/> (for example <c>YouTube</c>) under <see cref="SiteKey"/>; there is no URL.</summary>

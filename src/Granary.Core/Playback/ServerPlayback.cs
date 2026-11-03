@@ -273,7 +273,7 @@ public sealed partial class ServerPlayback : IServerPlayback
     {
         try
         {
-            _context = await _starter.PrepareAsync(contentId, cancellationToken, request.PinnedFileId);
+            _context = await _starter.PrepareAsync(contentId, cancellationToken, request.PinnedFileId, request.Choice);
         }
         catch (PlaybackUnavailableException ex)
         {

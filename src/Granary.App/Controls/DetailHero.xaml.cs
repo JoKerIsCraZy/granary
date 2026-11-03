@@ -64,6 +64,68 @@ public sealed partial class DetailHero : UserControl
 
     private void OnActionErrorClosed(InfoBar sender, object args) => ViewModel?.DismissActionError();
 
+    // A picker's list opens on the row that is chosen, so the arrows start from there.
+    private void OnVersionMenuOpened(object? sender, object e) =>
+        FocusRow(VersionRows, ViewModel?.Pickers.Versions.ToList().FindIndex(option => option.IsSelected) ?? -1);
+
+    private void OnAudioMenuOpened(object? sender, object e) =>
+        FocusRow(AudioRows, ViewModel?.Pickers.Audio.ToList().FindIndex(option => option.IsSelected) ?? -1);
+
+    private void OnSubtitleMenuOpened(object? sender, object e) =>
+        FocusRow(SubtitleRows, ViewModel?.Pickers.Subtitles.ToList().FindIndex(option => option.IsSelected) ?? -1);
+
+    private void OnVersionClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { DataContext: DetailVersionOption option })
+        {
+            VersionMenu.Hide();
+            ViewModel?.SelectVersionCommand.Execute(option);
+        }
+    }
+
+    private void OnAudioClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { DataContext: DetailAudioOption option })
+        {
+            AudioMenu.Hide();
+            ViewModel?.SelectAudioCommand.Execute(option);
+        }
+    }
+
+    private void OnSubtitleClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { DataContext: DetailSubtitleOption option })
+        {
+            SubtitleMenu.Hide();
+            ViewModel?.SelectSubtitleCommand.Execute(option);
+        }
+    }
+
+    private static void FocusRow(ItemsControl rows, int index)
+    {
+        if (index >= 0 && rows.ContainerFromIndex(index) is DependencyObject row && FirstButton(row) is { } button)
+        {
+            button.Focus(FocusState.Programmatic);
+        }
+    }
+
+    // The row's button: the template's root, or under a subtitle section's heading.
+    private static Button? FirstButton(DependencyObject element)
+    {
+        if (element is Button button)
+        {
+            return button;
+        }
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(element); i++)
+        {
+            if (FirstButton(VisualTreeHelper.GetChild(element, i)) is { } found)
+            {
+                return found;
+            }
+        }
+        return null;
+    }
+
     // Everything the hero leaves out: the full overview, ratings, cast and crew by job, and each file's facts.
     private async void OnInfoClick(object sender, RoutedEventArgs e)
     {

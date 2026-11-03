@@ -145,6 +145,28 @@ public sealed record SubtitleChoice
         };
     }
 
+    /// <summary>
+    /// The pick of a file's own track before playback, as the web's detail page and Apple's TrackSelectionPersistence
+    /// describe it from the catalog: its codec and label as the file has them, its selection ordinal.
+    /// </summary>
+    public static SubtitleChoice Of(int selectionIndex, SubtitleTrackSignature signature)
+    {
+        ArgumentNullException.ThrowIfNull(signature);
+        return new SubtitleChoice
+        {
+            SubtitleLanguage = AudioPreference.LanguageTag(signature.Language) ?? "",
+            SubtitleTrackIndex = Math.Max(-1, selectionIndex),
+            SubtitleMode = SubtitlePreferenceModes.Always,
+            TrackSignature = signature with
+            {
+                Source = Clean(signature.Source),
+                Language = Clean(signature.Language),
+                Codec = Clean(signature.Codec),
+                Label = Clean(signature.Label),
+            },
+        };
+    }
+
     private static string? Clean(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 }
 
@@ -167,10 +189,22 @@ public sealed class TrackPreferencesApi(SiloHttp http)
             choice, PlaybackJsonContext.Default.SubtitleChoice, cancellationToken);
     }
 
+    /// <summary>Forgets the audio pick under <paramref name="key"/>: the profile's defaults apply again (the detail page's Auto); 204 even without one.</summary>
+    public Task DeleteAudioAsync(Uri server, string key, CancellationToken cancellationToken = default) =>
+        http.SendAsync(HttpMethod.Delete, server, "api/v2/audio-prefs/" + SiloHttp.PathSegment(key, nameof(key)), SiloAuth.Profile, cancellationToken);
+
+    /// <summary>Forgets the subtitle pick under <paramref name="key"/>: the profile's defaults apply again (the detail page's Auto); 204 even without one.</summary>
+    public Task DeleteSubtitleAsync(Uri server, string key, CancellationToken cancellationToken = default) =>
+        http.SendAsync(HttpMethod.Delete, server, "api/v2/subtitle-prefs/" + SiloHttp.PathSegment(key, nameof(key)), SiloAuth.Profile, cancellationToken);
+
     /// <summary>Where a title's picks are kept: under its series for an episode, else under the title itself.</summary>
     public static string KeyFor(WatchDetail detail)
     {
         ArgumentNullException.ThrowIfNull(detail);
-        return detail.Type == WatchItemTypes.Episode && !string.IsNullOrWhiteSpace(detail.SeriesId) ? detail.SeriesId : detail.ContentId;
+        return KeyFor(detail.Type, detail.SeriesId, detail.ContentId);
     }
+
+    /// <summary>The key of a title of <paramref name="type"/> (<see cref="WatchItemTypes"/>, which the catalog's types share).</summary>
+    public static string KeyFor(string type, string? seriesId, string contentId) =>
+        type == WatchItemTypes.Episode && !string.IsNullOrWhiteSpace(seriesId) ? seriesId : contentId;
 }

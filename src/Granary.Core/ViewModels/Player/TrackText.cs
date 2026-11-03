@@ -32,8 +32,14 @@ public static partial class TrackText
     {
         ArgumentNullException.ThrowIfNull(track);
         string language = LanguageName(track.Language);
+        return Join(" · ", string.Equals(language, title, StringComparison.OrdinalIgnoreCase) ? null : language, CompactAudioMeta(track, culture));
+    }
+
+    /// <summary>"5.1(side) · 640 kbps · 48,000 Hz · 24-bit"; empty when the file says none of it (web: compactAudioMeta).</summary>
+    public static string CompactAudioMeta(WatchAudioTrack track, IFormatProvider? culture = null)
+    {
+        ArgumentNullException.ThrowIfNull(track);
         return Join(" · ",
-            string.Equals(language, title, StringComparison.OrdinalIgnoreCase) ? null : language,
             track.Layout?.Trim(),
             track.Bitrate > 0 ? string.Format(culture ?? CultureInfo.CurrentCulture, "{0:N0} kbps", track.Bitrate) : null,
             track.SampleRate > 0 ? string.Format(culture ?? CultureInfo.CurrentCulture, "{0:N0} Hz", track.SampleRate) : null,

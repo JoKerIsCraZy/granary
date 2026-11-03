@@ -35,6 +35,36 @@
             <Setter Property="Width" Value="50" />
             <Setter Property="Height" Value="50" />
         </Style>
+
+        <!--
+            The web's stream pickers under the buttons (ActionBar.tsx): smaller pills with an icon, the label, what is chosen in
+            muted text and a chevron; each opens its list as a menu in the player's look.
+        -->
+        <Style x:Key="DetailPickerButtonStyle" TargetType="Button" BasedOn="{StaticResource SiloSecondaryButtonStyle}">
+            <Setter Property="MinHeight" Value="38" />
+            <Setter Property="Padding" Value="14,6,14,6" />
+            <Setter Property="FontSize" Value="14" />
+        </Style>
+        <!-- The web's popover under its picker: dark grey and nearly solid with a hairline edge, so the page's text stays out of it. -->
+        <Style x:Key="DetailPickerMenuStyle" TargetType="FlyoutPresenter" BasedOn="{StaticResource SiloPlayerWideMenuStyle}">
+            <Setter Property="Background" Value="{StaticResource SiloPlayerPopupBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource SiloPlayerPopupBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+        <Style x:Key="DetailPickerChoiceTextStyle" TargetType="TextBlock">
+            <Setter Property="MaxWidth" Value="300" />
+            <Setter Property="FontFamily" Value="{StaticResource SiloFontRegular}" />
+            <Setter Property="FontWeight" Value="Normal" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Foreground" Value="{StaticResource SiloMutedBrush}" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style x:Key="DetailPickerDetailTextStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="#8CFFFFFF" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
     </UserControl.Resources>
 
     <Grid>
@@ -87,6 +117,13 @@
                         <Setter Target="InfoIcon.FontSize" Value="16" />
                         <Setter Target="FavoriteIcon.FontSize" Value="16" />
                         <Setter Target="MoreIcon.FontSize" Value="16" />
+                        <Setter Target="Pickers.Spacing" Value="8" />
+                        <Setter Target="VersionPicker.MinHeight" Value="34" />
+                        <Setter Target="VersionPicker.FontSize" Value="13" />
+                        <Setter Target="AudioPicker.MinHeight" Value="34" />
+                        <Setter Target="AudioPicker.FontSize" Value="13" />
+                        <Setter Target="SubtitlePicker.MinHeight" Value="34" />
+                        <Setter Target="SubtitlePicker.FontSize" Value="13" />
                         <Setter Target="VersionText.FontSize" Value="12" />
                     </VisualState.Setters>
                 </VisualState>
@@ -195,6 +232,173 @@
                                 </MenuFlyoutItem.Icon>
                             </MenuFlyoutItem>
                         </MenuFlyout>
+                    </Button.Flyout>
+                </Button>
+            </StackPanel>
+
+            <!--
+                A movie's or episode's Version, Audio and Subs (the web's VersionDropdown, AudioTracksPopover and SubtitlesPopover):
+                what Play plays, each showing what is chosen. In the focus order after the buttons; Left and Right move along.
+            -->
+            <StackPanel x:Name="Pickers" Orientation="Horizontal" Spacing="10" XYFocusKeyboardNavigation="Enabled"
+                        Visibility="{x:Bind ViewModel.Pickers.ShowsAny, Mode=OneWay}">
+                <Button x:Name="VersionPicker" Style="{StaticResource DetailPickerButtonStyle}"
+                        Visibility="{x:Bind ViewModel.Pickers.ShowsVersions, Mode=OneWay}"
+                        AutomationProperties.Name="{x:Bind ViewModel.Pickers.VersionName, Mode=OneWay}">
+                    <StackPanel Orientation="Horizontal" Spacing="7">
+                        <FontIcon Glyph="&#xE93C;" FontSize="14" VerticalAlignment="Center" />
+                        <TextBlock Text="Version" VerticalAlignment="Center" />
+                        <TextBlock Text="{x:Bind ViewModel.Pickers.VersionSummary, Mode=OneWay}" Style="{StaticResource DetailPickerChoiceTextStyle}" />
+                        <FontIcon Glyph="&#xE70D;" FontSize="10" VerticalAlignment="Center" Foreground="{StaticResource SiloMutedBrush}" />
+                    </StackPanel>
+                    <Button.Flyout>
+                        <Flyout x:Name="VersionMenu" Placement="BottomEdgeAlignedLeft" FlyoutPresenterStyle="{StaticResource DetailPickerMenuStyle}"
+                                Opened="OnVersionMenuOpened">
+                            <ItemsControl x:Name="VersionRows" ItemsSource="{x:Bind ViewModel.Pickers.Versions, Mode=OneWay}" IsTabStop="False"
+                                          XYFocusKeyboardNavigation="Enabled" Padding="6,0">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="detail:DetailVersionOption">
+                                        <Button Style="{StaticResource SiloPlayerMenuItemStyle}" CornerRadius="8" Click="OnVersionClick"
+                                                Background="{x:Bind controls:PlayerMenus.SubtitleRowBackground(IsSelected)}"
+                                                AutomationProperties.Name="{x:Bind AccessibleName}"
+                                                AutomationProperties.ItemStatus="{x:Bind controls:PlayerMenus.Status(IsSelected)}">
+                                            <Grid ColumnSpacing="12">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="16" />
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Spacing="3">
+                                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                                        <TextBlock Text="{x:Bind Summary}" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium"
+                                                                   FontSize="14" TextTrimming="CharacterEllipsis" Foreground="White" />
+                                                        <Border Style="{StaticResource SiloPlayerMenuChipStyle}" Visibility="{x:Bind controls:PlayerMenus.Shows(RangeLabel)}">
+                                                            <TextBlock Text="{x:Bind RangeLabel}" Style="{StaticResource SiloPlayerMenuChipTextStyle}" />
+                                                        </Border>
+                                                    </StackPanel>
+                                                    <TextBlock Text="{x:Bind Detail}" Style="{StaticResource DetailPickerDetailTextStyle}"
+                                                               Visibility="{x:Bind controls:PlayerMenus.Shows(Detail)}" />
+                                                </StackPanel>
+                                                <FontIcon Grid.Column="1" Glyph="&#xE73E;" FontSize="14" VerticalAlignment="Center"
+                                                          Foreground="{StaticResource SiloPrimaryBrush}" Visibility="{x:Bind IsSelected}" />
+                                            </Grid>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Flyout>
+                    </Button.Flyout>
+                </Button>
+
+                <Button x:Name="AudioPicker" Style="{StaticResource DetailPickerButtonStyle}"
+                        Visibility="{x:Bind ViewModel.Pickers.ShowsAudio, Mode=OneWay}"
+                        AutomationProperties.Name="{x:Bind ViewModel.Pickers.AudioName, Mode=OneWay}">
+                    <StackPanel Orientation="Horizontal" Spacing="7">
+                        <FontIcon Glyph="&#xE767;" FontSize="14" VerticalAlignment="Center" />
+                        <TextBlock Text="Audio" VerticalAlignment="Center" />
+                        <TextBlock Text="{x:Bind ViewModel.Pickers.AudioSummary, Mode=OneWay}" Style="{StaticResource DetailPickerChoiceTextStyle}" />
+                        <FontIcon Glyph="&#xE70D;" FontSize="10" VerticalAlignment="Center" Foreground="{StaticResource SiloMutedBrush}" />
+                    </StackPanel>
+                    <Button.Flyout>
+                        <Flyout x:Name="AudioMenu" Placement="BottomEdgeAlignedLeft" FlyoutPresenterStyle="{StaticResource DetailPickerMenuStyle}"
+                                Opened="OnAudioMenuOpened">
+                            <ItemsControl x:Name="AudioRows" ItemsSource="{x:Bind ViewModel.Pickers.Audio, Mode=OneWay}" IsTabStop="False"
+                                          XYFocusKeyboardNavigation="Enabled" Padding="6,0">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="detail:DetailAudioOption">
+                                        <Button Style="{StaticResource SiloPlayerMenuItemStyle}" CornerRadius="8" Click="OnAudioClick"
+                                                Background="{x:Bind controls:PlayerMenus.SubtitleRowBackground(IsSelected)}"
+                                                AutomationProperties.Name="{x:Bind AccessibleName}"
+                                                AutomationProperties.ItemStatus="{x:Bind controls:PlayerMenus.Status(IsSelected)}">
+                                            <Grid ColumnSpacing="12">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="16" />
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Spacing="3">
+                                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                                        <TextBlock Text="{x:Bind Title}" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium"
+                                                                   FontSize="14" TextTrimming="CharacterEllipsis" Foreground="White" />
+                                                        <Border Style="{StaticResource SiloPlayerMenuChipStyle}" Visibility="{x:Bind controls:PlayerMenus.Shows(Codec)}">
+                                                            <TextBlock Text="{x:Bind controls:PlayerMenus.Upper(Codec)}" Style="{StaticResource SiloPlayerMenuChipTextStyle}" />
+                                                        </Border>
+                                                        <Border Style="{StaticResource SiloPlayerMenuChipStyle}" Visibility="{x:Bind controls:PlayerMenus.Shows(Channels)}">
+                                                            <TextBlock Text="{x:Bind Channels}" Style="{StaticResource SiloPlayerMenuChipTextStyle}" />
+                                                        </Border>
+                                                        <Border Style="{StaticResource SiloPlayerMenuOutlineChipStyle}" Visibility="{x:Bind IsDefault}">
+                                                            <TextBlock Text="DEFAULT" Style="{StaticResource SiloPlayerMenuChipTextStyle}" Foreground="#B3FFFFFF" />
+                                                        </Border>
+                                                    </StackPanel>
+                                                    <TextBlock Text="{x:Bind Description}" Style="{StaticResource DetailPickerDetailTextStyle}"
+                                                               Visibility="{x:Bind controls:PlayerMenus.Shows(Description)}" />
+                                                </StackPanel>
+                                                <FontIcon Grid.Column="1" Glyph="&#xE73E;" FontSize="14" VerticalAlignment="Center"
+                                                          Foreground="{StaticResource SiloPrimaryBrush}" Visibility="{x:Bind IsSelected}" />
+                                            </Grid>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Flyout>
+                    </Button.Flyout>
+                </Button>
+
+                <Button x:Name="SubtitlePicker" Style="{StaticResource DetailPickerButtonStyle}"
+                        Visibility="{x:Bind ViewModel.Pickers.ShowsSubtitles, Mode=OneWay}"
+                        AutomationProperties.Name="{x:Bind ViewModel.Pickers.SubtitleName, Mode=OneWay}">
+                    <StackPanel Orientation="Horizontal" Spacing="7">
+                        <FontIcon Glyph="&#xE7F0;" FontSize="14" VerticalAlignment="Center" />
+                        <TextBlock Text="Subs" VerticalAlignment="Center" />
+                        <TextBlock Text="{x:Bind ViewModel.Pickers.SubtitleSummary, Mode=OneWay}" Style="{StaticResource DetailPickerChoiceTextStyle}" />
+                        <FontIcon Glyph="&#xE70D;" FontSize="10" VerticalAlignment="Center" Foreground="{StaticResource SiloMutedBrush}" />
+                    </StackPanel>
+                    <Button.Flyout>
+                        <Flyout x:Name="SubtitleMenu" Placement="BottomEdgeAlignedLeft" FlyoutPresenterStyle="{StaticResource DetailPickerMenuStyle}"
+                                Opened="OnSubtitleMenuOpened">
+                            <ItemsControl x:Name="SubtitleRows" ItemsSource="{x:Bind ViewModel.Pickers.Subtitles, Mode=OneWay}" IsTabStop="False"
+                                          XYFocusKeyboardNavigation="Enabled" Padding="6,0">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="detail:DetailSubtitleOption">
+                                        <StackPanel>
+                                            <TextBlock Text="{x:Bind Section}" Style="{StaticResource SiloPlayerMenuHeaderTextStyle}" Margin="12,10,12,4"
+                                                       Visibility="{x:Bind HasSection}" AutomationProperties.AccessibilityView="Raw" />
+                                            <Button Style="{StaticResource SiloPlayerMenuItemStyle}" CornerRadius="8" Click="OnSubtitleClick"
+                                                    Background="{x:Bind controls:PlayerMenus.SubtitleRowBackground(IsSelected)}"
+                                                    AutomationProperties.Name="{x:Bind AccessibleName}"
+                                                    AutomationProperties.ItemStatus="{x:Bind controls:PlayerMenus.Status(IsSelected)}">
+                                                <Grid ColumnSpacing="12">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="16" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel Spacing="3">
+                                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                                            <TextBlock Text="{x:Bind Title}" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium"
+                                                                       FontSize="14" TextTrimming="CharacterEllipsis" Foreground="White" />
+                                                            <Border Style="{StaticResource SiloPlayerMenuChipStyle}" Visibility="{x:Bind controls:PlayerMenus.Shows(Format)}">
+                                                                <TextBlock Text="{x:Bind Format}" Style="{StaticResource SiloPlayerMenuChipTextStyle}" />
+                                                            </Border>
+                                                            <Border Style="{StaticResource SiloPlayerMenuOutlineChipStyle}" Visibility="{x:Bind IsForced}">
+                                                                <TextBlock Text="FORCED" Style="{StaticResource SiloPlayerMenuChipTextStyle}" Foreground="#B3FFFFFF" />
+                                                            </Border>
+                                                            <Border Style="{StaticResource SiloPlayerMenuOutlineChipStyle}" Visibility="{x:Bind IsHearingImpaired}">
+                                                                <TextBlock Text="HI" Style="{StaticResource SiloPlayerMenuChipTextStyle}" Foreground="#B3FFFFFF" />
+                                                            </Border>
+                                                            <Border Style="{StaticResource SiloPlayerMenuOutlineChipStyle}" Visibility="{x:Bind IsDefault}">
+                                                                <TextBlock Text="DEFAULT" Style="{StaticResource SiloPlayerMenuChipTextStyle}" Foreground="#B3FFFFFF" />
+                                                            </Border>
+                                                        </StackPanel>
+                                                        <TextBlock Text="{x:Bind Description}" Style="{StaticResource DetailPickerDetailTextStyle}"
+                                                                   Visibility="{x:Bind controls:PlayerMenus.Shows(Description)}" />
+                                                    </StackPanel>
+                                                    <FontIcon Grid.Column="1" Glyph="&#xE73E;" FontSize="14" VerticalAlignment="Center"
+                                                              Foreground="{StaticResource SiloPrimaryBrush}" Visibility="{x:Bind IsSelected}" />
+                                                </Grid>
+                                            </Button>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Flyout>
                     </Button.Flyout>
                 </Button>
             </StackPanel>

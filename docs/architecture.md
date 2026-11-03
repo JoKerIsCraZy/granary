@@ -189,6 +189,13 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   start position (the resume point minus 7 s from 30 s on, 0 to start over, sent explicitly), the profile's
   quality and bitrate cap (`PlaybackPreferencesReader`), the server's capabilities, and the device report:
   `MpvDeviceProbe` reads the GPU's D3D11VA decoder profiles; HEVC, VP9 and AV1 count only with hardware.
+- **The detail page's pickers** (`PrePlayPickers`, `ItemDetailViewModel.PrePlay`): the Version, Audio and Subs of a
+  movie or episode, shown from the catalog item with the same rules the start applies (`ChooseVersion`,
+  `SubtitleAutoSelection`). Play passes the viewer's picks on as the `PlayRequest`'s `PrePlayChoice`; the starter takes
+  its file (pinned with `allow_alternate_versions: false` when the version itself was picked, a Watch Party's
+  `PinnedFileId` stays apart), starts with its audio as the version's `EffectiveAudioTrackIndex` and its subtitle as
+  `SubtitlePick`, the same places the player's own picks go. Audio and subtitle picks are saved through
+  `TrackChoiceWrites`, one app-wide queue in pick order that the starter settles before it reads the watch detail.
 - **The plan**: its stream URL must lie beneath the saved server, or, where the server offers
   `authorized_media_origins_v1` and the start confirms it, be the session's own stream on a proxy node
   (`PlaybackUrl.ResolveStream`, Apple's rules). A node URL the client refuses, or a node stream that never

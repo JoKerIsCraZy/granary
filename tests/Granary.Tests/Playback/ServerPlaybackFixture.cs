@@ -69,6 +69,9 @@ internal sealed class ServerPlaybackFixture
     /// <summary>The playback follows subtitle sync (<see cref="ServerPlayback.SubtitleSync"/>); off, it asks the server nothing about it.</summary>
     public bool SyncsSubtitles { get; set; }
 
+    /// <summary>The detail page's track choices on their way to the server, which the start waits for; none by default.</summary>
+    public TrackChoiceWrites? TrackChoices { get; set; }
+
     public static Uri StreamUrl(string session = Session) => new(ScriptedSilo.Base.AbsoluteUri + "/api/v2/stream/" + session);
 
     public static Func<Task<HttpResponseMessage>> Ok(string json) => ScriptedSilo.Json(HttpStatusCode.OK, json);
@@ -86,7 +89,8 @@ internal sealed class ServerPlaybackFixture
             new PlaybackPreferencesReader(new SettingsApi(Silo.Http), Logs.For<PlaybackPreferencesReader>()),
             new FakeDeviceProbe(),
             AuthPipeline.Identity,
-            SessionManager);
+            SessionManager,
+            TrackChoices);
         var playback = new ServerPlayback(
             starter,
             new PlaybackApi(Silo.Http),

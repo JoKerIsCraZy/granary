@@ -46,14 +46,23 @@ public static partial class SubtitleAutoSelection
     {
         ArgumentNullException.ThrowIfNull(detail);
         ArgumentNullException.ThrowIfNull(version);
-        // The audio that will play: the index the start sends, else what the server plays without one, the file's default.
-        var audioTrack = version.EffectiveAudioTrackIndex is { } audio && audio >= 0 && audio < version.AudioTracks.Count
-            ? version.AudioTracks[audio]
-            : version.AudioTracks.FirstOrDefault(t => t.Default) ?? version.AudioTracks.FirstOrDefault();
-        string? audioLanguage = audioTrack?.Language ?? version.EffectiveAudioLanguage;
+        string? audioLanguage = AudioLanguage(version.AudioTracks, version.EffectiveAudioTrackIndex, version.EffectiveAudioLanguage);
         return Resolve(FromCatalog(version.SubtitleTracks), new SubtitlePreference(
             string.IsNullOrWhiteSpace(detail.EffectiveSubtitleLanguage) ? null : detail.EffectiveSubtitleLanguage,
             detail.SubtitleMode, detail.ShowForcedSubtitles, audioLanguage, detail.EffectiveSubtitleTrackSignature))?.SelectionIndex;
+    }
+
+    /// <summary>
+    /// The language of the audio that will play: track <paramref name="ordinal"/> (the index the start sends), else what
+    /// the server plays without one, the file's default, else its first; <paramref name="fallback"/> without tracks.
+    /// </summary>
+    public static string? AudioLanguage(IReadOnlyList<WatchAudioTrack> tracks, int? ordinal, string? fallback)
+    {
+        ArgumentNullException.ThrowIfNull(tracks);
+        var track = ordinal is { } index && index >= 0 && index < tracks.Count
+            ? tracks[index]
+            : tracks.FirstOrDefault(t => t.Default) ?? tracks.FirstOrDefault();
+        return track?.Language ?? fallback;
     }
 
     /// <summary>
