@@ -1,5 +1,21 @@
 namespace Granary.Core.Playback;
 
+/// <summary>
+/// What the viewer chose on a title's detail page before Play (the web's version, audio and subtitle pickers): the file
+/// and its tracks. Track picks are that file's, so they only travel with it; null members leave the choice to playback.
+/// </summary>
+/// <param name="FileId">The file to play; when the title no longer has it, playback chooses as without a pick.</param>
+/// <param name="IsVersionPicked">
+/// The viewer picked <paramref name="FileId"/> itself, rather than only its tracks: the server may then not swap in
+/// another version (Silo's web, Android and Apple clients pin a chosen version the same way).
+/// </param>
+/// <param name="AudioTrack">An ordinal into the file's audio tracks.</param>
+/// <param name="SubtitleTrack">
+/// The combined ordinal the start request takes (external tracks first); -1 for off. Counted from the catalog's listing of
+/// the file's tracks, which the watch detail lists alike: the start only checks it is in range.
+/// </param>
+public sealed record PrePlayChoice(string FileId, bool IsVersionPicked, int? AudioTrack = null, int? SubtitleTrack = null);
+
 /// <summary>What the player plays: the navigation parameter of the player route.</summary>
 public sealed record PlayRequest
 {
@@ -25,17 +41,20 @@ public sealed record PlayRequest
     /// <summary>The room's playback epoch this request starts; a new one is a new title for the player.</summary>
     public long SelectionRevision { get; private init; }
 
+    /// <summary>The file and tracks picked on the detail page; null lets playback choose (every other way in).</summary>
+    public PrePlayChoice? Choice { get; private init; }
+
     /// <summary>Plays <paramref name="contentId"/> from where the profile left off, or from the start.</summary>
-    public static PlayRequest Resume(string contentId)
+    public static PlayRequest Resume(string contentId, PrePlayChoice? choice = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(contentId);
-        return new PlayRequest { ContentId = contentId };
+        return new PlayRequest { ContentId = contentId, Choice = choice };
     }
 
-    public static PlayRequest FromStart(string contentId)
+    public static PlayRequest FromStart(string contentId, PrePlayChoice? choice = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(contentId);
-        return new PlayRequest { ContentId = contentId, FromBeginning = true };
+        return new PlayRequest { ContentId = contentId, FromBeginning = true, Choice = choice };
     }
 
     /// <summary>

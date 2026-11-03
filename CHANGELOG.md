@@ -8,15 +8,13 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Added
 
-- A TV remote on a media PC, or the keyboard alone: the arrows move focus on every page and between the sidebar and
-  the page, the focused card comes to the middle, and Back (Esc, Backspace or the remote's Back button) goes back to the
-  card you came from, then to the section's sidebar entry, then Home. Menus and dialogs close on the remote's Back too.
-  The focus ring is thicker and goes round the whole card, artwork and text.
-  A title opened with OK starts on Play, and the remote's Play button plays the card, episode or title that has focus;
-  the Menu key opens a card's menu. In the player OK skips the intro (or recap, credits) while its pill shows, else
-  brings focus to the controls, also when an air mouse already shows them; the arrows then move to subtitles, audio and the settings, and Back closes their menus and
-  panels, hides the controls, then closes the player, with focus back where it was. The minimized player is reachable
-  with Down from the page.
+- A movie's or episode's page lets you choose what to play before you press Play, as on Silo's web: Version, Audio and
+  Subs under the buttons. Version lists the title's files when it has more than one ("2160p · HEVC · HDR10 · DTS",
+  with size and source such as "38.9 GB · Remux"); Audio and Subs list the chosen file's tracks, with Auto and Off.
+  Each shows what would play anyway until you choose. Play, Resume and Start over then play that file with those
+  tracks, and the server keeps to the file you chose. Your audio and subtitle choices are remembered for the movie or
+  the whole series, and Auto goes back to your profile's settings; if a choice cannot be saved, the page says so and
+  goes back to the choice that was kept. The pickers work with the keyboard too.
 - Settings → Playback → This PC: **Direct play without hardware decoding**. On, Granary plays HEVC, VP9, AV1 and HDR
   files directly and decodes them on the processor where the graphics card can't, instead of having your Silo server
   convert them: the picture keeps its full quality and the server does less work, but slower PCs can stutter. Off by
@@ -38,6 +36,15 @@ release's section is what its update says it changes (docs/release.md).
 - More ways to sort a library: Latest Episode Air Date and Latest Episode Added in a series library, Content Rating,
   TMDB Rating, the Rotten Tomatoes critic and audience ratings while your server shows them, Resolution, Bitrate,
   Progress, Date Viewed and Plays.
+- A TV remote on a media PC, or the keyboard alone: the arrows move focus on every page and between the sidebar and
+  the page, the focused card comes to the middle, and Back (Esc, Backspace or the remote's Back button) goes back to the
+  card you came from, then to the section's sidebar entry, then Home. Menus and dialogs close on the remote's Back too.
+  The focus ring is thicker and goes round the whole card, artwork and text.
+  A title opened with OK starts on Play, and the remote's Play button plays the card, episode or title that has focus;
+  the Menu key opens a card's menu. In the player OK skips the intro (or recap, credits) while its pill shows, else
+  brings focus to the controls, also when an air mouse already shows them; the arrows then move to subtitles, audio and the settings, and Back closes their menus and
+  panels, hides the controls, then closes the player, with focus back where it was. The minimized player is reachable
+  with Down from the page.
 
 ### Changed
 

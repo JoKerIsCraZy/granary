@@ -208,6 +208,8 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<PlaybackPreferencesReader>();
         services.AddSingleton<IMediaAuthorization, MediaAuthorization>();
         services.AddTransient<PlaybackStarter>();
+        // The detail page's track picks, which a start waits for (one queue for the whole app, in pick order).
+        services.AddSingleton<TrackChoiceWrites>();
         // Each playback keeps its session's control lane: an administrator's pause, stop or message reaches the player.
         // Made outside the container, as the playback is: a transient disposable resolved from the root provider would be
         // kept until the app exits.

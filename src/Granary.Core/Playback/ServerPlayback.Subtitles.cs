@@ -378,7 +378,7 @@ public sealed partial class ServerPlayback
             : SubtitleChoice.Of(item, item.HearingImpaired || SubtitleAutoSelection.LabelSaysHearingImpaired(item.Label));
         var context = _context!;
         string key = TrackPreferencesApi.KeyFor(context.Watch);
-        SaveChoice("subtitle", cancellationToken => _preferences.SaveSubtitleAsync(context.Server.BaseUri, key, choice, cancellationToken));
+        SaveChoice("subtitle", cancellationToken => _preferences.SaveSubtitleAsync(context.Server.BaseUri, key, context.ProfileId, choice, cancellationToken));
     }
 
     private void CloseSubtitleRoutes()

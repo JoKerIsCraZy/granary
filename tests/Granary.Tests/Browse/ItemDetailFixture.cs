@@ -2,11 +2,14 @@ using System.Net;
 using Granary.Core.Api;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
+using Granary.Core.Api.Playback;
 using Granary.Core.Auth;
+using Granary.Core.Playback;
 using Granary.Core.ViewModels;
 using Granary.Tests.Catalog;
 using Granary.Tests.Fakes;
 using Granary.Tests.Profiles;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Granary.Tests.Browse;
 
@@ -79,13 +82,18 @@ internal sealed class ItemDetailFixture
         .Get(SeasonsPath(ItemDetailPayloads.SeriesId), Ok(ItemDetailPayloads.SeriesSeasons))
         .Get(SeriesEpisodesPath(ItemDetailPayloads.SeriesId, 3), Ok(ItemDetailPayloads.SeasonEpisodes));
 
+    /// <summary>The app's queue of track choices on their way to the server, which a start waits for.</summary>
+    public TrackChoiceWrites TrackChoices => field ??= new(Session, TimeProvider.System, NullLogger<TrackChoiceWrites>.Instance);
+
     public ItemDetailViewModel Create() => new(
         Session,
         new CatalogApi(Silo.Http),
         new ImageParameterCache(new ImagesApi(Silo.Http), Logs.For<ImageParameterCache>()),
         Navigation,
         Artwork,
-        Logs.For<ItemDetailViewModel>());
+        Logs.For<ItemDetailViewModel>(),
+        trackPreferences: new TrackPreferencesApi(Silo.Http),
+        trackChoices: TrackChoices);
 
     public async Task<ItemDetailViewModel> LoadAsync(string id)
     {

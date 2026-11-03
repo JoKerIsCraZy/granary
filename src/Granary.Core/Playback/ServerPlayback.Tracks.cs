@@ -1,4 +1,5 @@
 using System.Globalization;
+using Granary.Core.Api;
 using Granary.Core.Api.Playback;
 using Granary.Core.ViewModels;
 using Microsoft.Extensions.Logging;
@@ -134,7 +135,7 @@ public sealed partial class ServerPlayback
         var context = _context!;
         string key = TrackPreferencesApi.KeyFor(context.Watch);
         var preference = AudioPreference.Of(version.AudioTracks[ordinal], ordinal);
-        SaveChoice("audio", cancellationToken => _preferences.SaveAudioAsync(context.Server.BaseUri, key, preference, cancellationToken));
+        SaveChoice("audio", cancellationToken => _preferences.SaveAudioAsync(context.Server.BaseUri, key, context.ProfileId, preference, cancellationToken));
     }
 
     // Saved in the order the viewer picked, whatever happens to playback meanwhile. Only the viewer's own picks are
@@ -155,6 +156,11 @@ public sealed partial class ServerPlayback
             catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex))
             {
                 _logger.LogWarning("Saving the {Kind} choice failed: {Failure}", kind, ApiFailureText.Describe(ex));
+            }
+            catch (ProfileChangedException)
+            {
+                // The server acts as another profile by now: the pick was this playback's profile's, so it is not saved.
+                _logger.LogInformation("The {Kind} choice was not saved: the profile changed before it went out", kind);
             }
             catch (Exception ex)
             {

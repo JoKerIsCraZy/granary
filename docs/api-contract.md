@@ -829,7 +829,16 @@ series/season), `versions[]` (`FileVersion`: `file_id`, `resolution`, `codec_vid
 `subtitles[]`, `videos[]` (trailers), `extras[]`. `edition_raw` is an edition's label, not a file name: the scanner
 sets it only when it recognises an edition (the text of a `{edition-…}` tag in a folder or file name, or edition words
 it matches to an `edition_key`, `internal/naming/variants.go`), so the Info dialog may show it; `file_path` and
-`file_name` are administrator data and are never shown.
+`file_name` are administrator data and are never shown (the Version picker only reads the source a release name tells,
+"Remux" or "BluRay", from `file_name`, as the web's `extractSourceHint` does).
+
+The detail page's Version, Audio and Subs pickers read the same members as watch detail (7.8), which the item carries
+too: `versions[].audio_tracks`, `subtitle_tracks`, `video_tracks` (same shapes), `effective_audio_track_index`,
+`effective_audio_language`, `presentation_part_index`, and the top-level `effective_subtitle_language`,
+`effective_subtitle_mode`, `effective_show_forced_subtitles` and `effective_subtitle_track_signature` (each omitted at
+its default, as in 8.8.1). Their defaults are what playback picks: the file as `PlaybackStarter.ChooseVersion`, the
+audio `effective_audio_track_index` (else the file's default track, else the first), the subtitle 8.8.1's resolver for
+that audio.
 
 ### 7.7 Series → seasons → episodes
 
@@ -1186,7 +1195,7 @@ audio-language layer at start reads the legacy `X-Device-ID` header instead (see
 | `start_position` | no | 0–31,536,000 s; omitted = server resume point; `0` = start over |
 | `audio_track_id` / `audio_track_index` | no | `file:{file_id}:audio:{n}`; send it explicitly ([8.8.1](#881-initial-track-selection-before-start)) |
 | `subtitle_track_id` / `subtitle_track_index` | no | **omitted = subtitles off**; the server applies no saved subtitle preference, so the client resolves it ([8.8.1](#881-initial-track-selection-before-start)) |
-| `allow_alternate_versions` | no | `false` pins the file through replans |
+| `allow_alternate_versions` | no | `false` pins the file through replans: a Watch Party's file, and a version the viewer picked on the detail page, with any file switched to later in that playback (the web, Android and Apple pin a chosen version so); omitted otherwise |
 | `bandwidth_cap_kbps`, `bandwidth_estimate_kbps` | no | 100–1,000,000; the estimate only from a real measurement |
 | `bandwidth_estimate_source` | no | `probe` or `observed_rebuffer`; requires `bandwidth_estimate_kbps` and `buffering_quality_v1` |
 | `observed_throughput_kbps`, `learned_limit` | no | only with `buffering_quality_v1` (else `422`); `learned_limit` is `ignore` or `clear` |
@@ -1435,9 +1444,34 @@ automatic ones) with:
 
 - `PUT /api/v2/audio-prefs/{key}` with `{ "audio_track_index": n (≥ -1), "audio_language"?, "track_signature"?: { language, title, embedded_title, codec, layout, channels, default } }` → `204`;
 - `PUT /api/v2/subtitle-prefs/{key}` with `{ "subtitle_track_index": n (-1 = off), "subtitle_language"?, "subtitle_mode"?, "show_forced_subtitles"?, "external_subtitle_path"?, "track_signature"?: { codec, forced, hearing_impaired, label, language, source } }` → `204`;
-- `DELETE` on the same path returns the series to Auto. `{key}` is the series id for an episode and
-  the `content_id` for a movie (`silo-server/internal/api/handlers/playback.go:941-946`). Both need
+- `DELETE` on the same path returns the series to Auto (`204`, also when nothing was saved). `{key}` is the series id
+  for an episode and the `content_id` for a movie (`silo-server/internal/api/handlers/playback.go:941-946`). Both need
   `X-Profile-Id`.
+
+The detail page's pickers save their picks too, as the web's detail page and Apple's `TrackSelectionPersistence` do:
+an audio pick as above; a subtitle pick from the catalog's own track (its combined ordinal, `subtitle_mode: always`,
+a signature with the track's raw codec and its title, embedded title or file name as `label`); Off as
+`{ "subtitle_track_index": -1, "subtitle_mode": "off" }`; Auto as `DELETE`. The writes go out one at a time in pick
+order, and a start reads the watch detail only once they are in (at most 10 s), as Apple's client settles them; a
+Watch Party's start (known by its request, also before the room names a file), which takes none of the page's picks,
+does not wait. A start cannot say "no saved choice" itself (without `audio_track_index` the server resolves the audio
+from the saved preferences), so one that waited in vain may play the choice saved before, which is logged. Once a
+page's own writes are done, a failed one too, it reads its item again, whatever other pages still have queued, so Auto
+shows what the server now picks (the web invalidates the item likewise); only the newest read begun after the page's
+last write counts, and a write's failure is reported only while its pick is the newest of its kind. An external
+subtitle's `file_name` may be a server path: only its last part is shown or saved as a label, as the server's
+inventory labels use `filepath.Base`. A write that fails puts its picker back on the last choice of its kind the
+server kept (a successful write sets it, unless a newer one was kept first; the page's load and another file start it
+at Auto), so Play never sends a choice the server did not keep, as the web's `usePrePlayAudioSelection` does. While the
+item still names a subtitle the viewer set back to Auto (its forgetting on the way, or done but not read back), Play
+sends the automatic choice without it as the start's subtitle, so what plays is what the picker shows; the start
+cannot do the same for audio, whose choice without a saved track comes from the server's own preference cascade.
+
+Each write belongs to the server and profile active when it was queued. It is sent only while they are still active,
+and bound to that profile (`SiloRequestOptions.Profile`, through `SiloHttp.SendAsProfileAsync`): the authentication
+handler refuses to send it under any other profile, or none (`ProfileChangedException`). When the server or profile
+changes, the old owner's writes are dropped: queued ones are not sent, the one on its way is cancelled, and a start for
+the new owner waits for none of them. The player's own saves are bound to the playback's profile the same way.
 
 #### 8.8.1 Initial track selection (before start)
 
@@ -1471,6 +1505,10 @@ watch-detail tracks to selection indexes itself.
   embedded tracks (`silo-server/internal/playback/subtitle_inventory_v3.go:116-150`; Android's
   `combinedSubtitleSelectionIndexes` in `PlaybackSubtitleChoices.kt:31-38`). Never send the
   watch-detail `index`. After start, use only inventory ids.
+- **A pick from the detail page** (`PrePlayChoice`) names the file and, for that file only, an audio ordinal and a
+  subtitle combined ordinal (-1 for off). The start sends them instead of the automatic choices when the fresh watch
+  detail still lists the file and the tracks; otherwise the start chooses as without a pick (Apple's client falls back
+  the same way).
 
 ### 8.9 Control socket (optional)
 

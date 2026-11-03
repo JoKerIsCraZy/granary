@@ -34,6 +34,13 @@ public sealed class AuthenticationHandler(
         {
             session = await RefreshAheadAsync(server!, session, cancellationToken).ConfigureAwait(false);
         }
+        if (auth == SiloAuth.Profile && request.GetProfile() is { } owner && session?.ProfileId != owner)
+        {
+            // A write made for one profile never goes out as another, nor without one: these are the credentials it
+            // would be sent with.
+            logger.LogInformation("A write made for another profile was not sent");
+            throw new ProfileChangedException();
+        }
         if (server is null || session is null)
         {
             // Without credentials the server answers 401, and the caller gets exactly that.
