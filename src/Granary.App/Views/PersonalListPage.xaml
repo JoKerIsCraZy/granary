@@ -106,39 +106,43 @@
 
             <!-- In your library: the list itself. -->
             <StackPanel Spacing="24" Visibility="{x:Bind ViewModel.ShowsLibrary, Mode=OneWay}">
-                <!-- "All Media ▾", "List Order ▾": dark pills, as the library's sort and order. -->
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                    <DropDownButton CornerRadius="{StaticResource SiloPillCornerRadius}" controls:Pill.IsEnabled="True" MinHeight="38" Padding="16,6,12,6"
-                                    FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="13"
-                                    Background="#CC1C1C20" BorderBrush="{StaticResource SiloBorderBrush}" Content="{x:Bind ViewModel.ScopeLabel, Mode=OneWay}"
-                                    AutomationProperties.Name="{x:Bind ScopeName(ViewModel.ScopeLabel), Mode=OneWay}">
-                        <DropDownButton.Flyout>
-                            <MenuFlyout x:Name="ScopeMenu" Placement="BottomEdgeAlignedLeft" Opening="OnScopeMenuOpening" />
-                        </DropDownButton.Flyout>
-                    </DropDownButton>
-                    <DropDownButton CornerRadius="{StaticResource SiloPillCornerRadius}" controls:Pill.IsEnabled="True" MinHeight="38" Padding="16,6,12,6"
-                                    FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="13"
-                                    Background="#CC1C1C20" BorderBrush="{StaticResource SiloBorderBrush}" Content="{x:Bind ViewModel.SortLabel, Mode=OneWay}"
-                                    AutomationProperties.Name="{x:Bind SortName(ViewModel.SortLabel), Mode=OneWay}">
-                        <DropDownButton.Flyout>
-                            <MenuFlyout x:Name="SortMenu" Placement="BottomEdgeAlignedLeft" Opening="OnSortMenuOpening" />
-                        </DropDownButton.Flyout>
-                    </DropDownButton>
-                    <DropDownButton CornerRadius="{StaticResource SiloPillCornerRadius}" controls:Pill.IsEnabled="True" MinHeight="38" Padding="16,6,12,6"
-                                    FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="13"
-                                    Background="#CC1C1C20" BorderBrush="{StaticResource SiloBorderBrush}" Content="{x:Bind ViewModel.OrderLabel, Mode=OneWay}"
-                                    Visibility="{x:Bind ViewModel.IsOrderShown, Mode=OneWay}"
-                                    AutomationProperties.Name="{x:Bind OrderName(ViewModel.OrderLabel), Mode=OneWay}">
-                        <DropDownButton.Flyout>
-                            <MenuFlyout Placement="BottomEdgeAlignedLeft">
-                                <RadioMenuFlyoutItem Text="Ascending" GroupName="ListOrder" Command="{x:Bind ViewModel.SortAscendingCommand}"
-                                                     IsChecked="{x:Bind Not(ViewModel.IsDescending), Mode=OneWay}" />
-                                <RadioMenuFlyoutItem Text="Descending" GroupName="ListOrder" Command="{x:Bind ViewModel.SortDescendingCommand}"
-                                                     IsChecked="{x:Bind ViewModel.IsDescending, Mode=OneWay}" />
-                            </MenuFlyout>
-                        </DropDownButton.Flyout>
-                    </DropDownButton>
-                    <controls:CatalogFiltersButton Filters="{x:Bind ViewModel.Filters}" />
+                <!-- "All Media ▾", "List Order ▾": dark pills, as the library's sort and order; the applied filters as badges under them. -->
+                <StackPanel Spacing="12">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <DropDownButton CornerRadius="{StaticResource SiloPillCornerRadius}" controls:Pill.IsEnabled="True" MinHeight="38" Padding="16,6,12,6"
+                                        FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="13"
+                                        Background="#CC1C1C20" BorderBrush="{StaticResource SiloBorderBrush}" Content="{x:Bind ViewModel.ScopeLabel, Mode=OneWay}"
+                                        AutomationProperties.Name="{x:Bind ScopeName(ViewModel.ScopeLabel), Mode=OneWay}">
+                            <DropDownButton.Flyout>
+                                <MenuFlyout x:Name="ScopeMenu" Placement="BottomEdgeAlignedLeft" Opening="OnScopeMenuOpening" />
+                            </DropDownButton.Flyout>
+                        </DropDownButton>
+                        <DropDownButton CornerRadius="{StaticResource SiloPillCornerRadius}" controls:Pill.IsEnabled="True" MinHeight="38" Padding="16,6,12,6"
+                                        FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="13"
+                                        Background="#CC1C1C20" BorderBrush="{StaticResource SiloBorderBrush}" Content="{x:Bind ViewModel.SortLabel, Mode=OneWay}"
+                                        AutomationProperties.Name="{x:Bind SortName(ViewModel.SortLabel), Mode=OneWay}">
+                            <DropDownButton.Flyout>
+                                <MenuFlyout x:Name="SortMenu" Placement="BottomEdgeAlignedLeft" Opening="OnSortMenuOpening" />
+                            </DropDownButton.Flyout>
+                        </DropDownButton>
+                        <DropDownButton CornerRadius="{StaticResource SiloPillCornerRadius}" controls:Pill.IsEnabled="True" MinHeight="38" Padding="16,6,12,6"
+                                        FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="13"
+                                        Background="#CC1C1C20" BorderBrush="{StaticResource SiloBorderBrush}" Content="{x:Bind ViewModel.OrderLabel, Mode=OneWay}"
+                                        Visibility="{x:Bind ViewModel.IsOrderShown, Mode=OneWay}"
+                                        AutomationProperties.Name="{x:Bind OrderName(ViewModel.OrderLabel), Mode=OneWay}">
+                            <DropDownButton.Flyout>
+                                <MenuFlyout Placement="BottomEdgeAlignedLeft">
+                                    <RadioMenuFlyoutItem Text="Ascending" GroupName="ListOrder" Command="{x:Bind ViewModel.SortAscendingCommand}"
+                                                         IsChecked="{x:Bind Not(ViewModel.IsDescending), Mode=OneWay}" />
+                                    <RadioMenuFlyoutItem Text="Descending" GroupName="ListOrder" Command="{x:Bind ViewModel.SortDescendingCommand}"
+                                                         IsChecked="{x:Bind ViewModel.IsDescending, Mode=OneWay}" />
+                                </MenuFlyout>
+                            </DropDownButton.Flyout>
+                        </DropDownButton>
+                        <controls:CatalogFiltersButton x:Name="FiltersButton" Filters="{x:Bind ViewModel.Filters}" />
+                    </StackPanel>
+                    <controls:ActiveFilterBadges Filters="{x:Bind ViewModel.Filters}" FiltersButton="{x:Bind FiltersButton}"
+                                                 Visibility="{x:Bind ViewModel.Filters.HasBadges, Mode=OneWay}" />
                 </StackPanel>
 
                 <!--

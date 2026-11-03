@@ -118,10 +118,17 @@ internal static class LibraryPayloads
     public const string Filters = """
         {
           "genres": ["Crime", "Drama"],
-          "studios": [], "networks": [], "countries": [], "original_languages": [],
+          "studios": [], "networks": [], "countries": [], "original_languages": ["fr", "en"],
           "content_ratings": ["PG-13", "R"],
-          "authors": [], "narrators": [], "series": []
+          "authors": [], "narrators": [], "series": [],
+          "technical": { "resolutions": ["2160p", "1080p"], "audio_languages": ["en", "de"], "subtitle_languages": [] }
         }
+        """;
+
+    /// <summary>A server that shows every rating source, Rotten Tomatoes' too.</summary>
+    public const string EveryRatingSource = """
+        { "state": "available", "sources": [ { "source": "imdb", "name": "IMDb" }, { "source": "tmdb", "name": "TMDB" },
+          { "source": "rt_critic", "name": "Tomatometer" }, { "source": "rt_audience", "name": "Popcornmeter" } ] }
         """;
 
     /// <summary><c>get_library_collections_ok.json</c>.</summary>

@@ -14,6 +14,7 @@ namespace Granary.App.Views;
 public sealed partial class LibraryPage : Page
 {
     private readonly Dictionary<LibrarySortOption, RadioMenuFlyoutItem> _sortItems = [];
+    private bool _isSortMenuStale;
     private double _shelvesOffset;
 
     public LibraryPage()
@@ -29,6 +30,16 @@ public sealed partial class LibraryPage : Page
         };
         ViewModel.Browse.Grid.Restarted += (_, _) => ScrollToTop(LibraryScroller);
         ViewModel.Browse.JumpRequested += (_, position) => BrowseGrid.ScrollToIndex(position);
+        // The sorts follow the library's type and the server's rating sources. Picking a sort can change them, and the rating
+        // sources can arrive while the menu is open: the menu is built again once it is closed, never under the viewer.
+        ViewModel.Browse.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(LibraryBrowseViewModel.SortOptions))
+            {
+                _isSortMenuStale = true;
+                DispatcherQueue.TryEnqueue(RebuildSortMenuIfClosed);
+            }
+        };
         ViewModel.Collections.PropertyChanged += OnCollectionsPropertyChanged;
     }
 
@@ -72,6 +83,8 @@ public sealed partial class LibraryPage : Page
 
     private void BuildSortMenu()
     {
+        _sortItems.Clear();
+        SortMenu.Items.Clear();
         foreach (var option in ViewModel.Browse.SortOptions)
         {
             var item = new RadioMenuFlyoutItem
@@ -80,14 +93,32 @@ public sealed partial class LibraryPage : Page
                 GroupName = "LibrarySort",
                 Command = ViewModel.Browse.SetSortCommand,
                 CommandParameter = option,
+                IsChecked = option == ViewModel.Browse.Sort,
             };
             _sortItems[option] = item;
             SortMenu.Items.Add(item);
         }
     }
 
+    private void RebuildSortMenuIfClosed()
+    {
+        if (_isSortMenuStale && !SortMenu.IsOpen)
+        {
+            _isSortMenuStale = false;
+            BuildSortMenu();
+        }
+    }
+
+    private void OnSortMenuClosed(object sender, object e) => DispatcherQueue.TryEnqueue(RebuildSortMenuIfClosed);
+
+    // A menu opened before a queued rebuild ran shows the new sorts already.
     private void OnSortMenuOpening(object sender, object e)
     {
+        if (_isSortMenuStale)
+        {
+            _isSortMenuStale = false;
+            BuildSortMenu();
+        }
         foreach (var (option, item) in _sortItems)
         {
             item.IsChecked = option == ViewModel.Browse.Sort;

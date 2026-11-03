@@ -145,7 +145,7 @@ public sealed partial class PersonalListViewModel : ObservableObject
 
     public IReadOnlyList<ListMediaScope> Scopes => ListMediaScope.All;
 
-    public IReadOnlyList<LibrarySortOption> SortOptions => LibrarySortOption.All;
+    public IReadOnlyList<LibrarySortOption> SortOptions => LibrarySortOption.ForLists;
 
     /// <summary>"List Order", "Watch History" for History, or "Collection Order": the list's own order.</summary>
     public string SourceOrderLabel => _collection is not null ? CollectionOrder
