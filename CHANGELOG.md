@@ -18,6 +18,12 @@ release's section is what its update says it changes (docs/release.md).
   panels, hides the controls, then closes the player, with focus back where it was. The minimized player is reachable
   with Down from the page.
 
+### Changed
+
+- In the player, Up and Down no longer change the volume, as on Silo's TV app: Up shows the controls with focus on
+  Play/Pause, and Down opens the audio menu (or subtitles, or the playback settings). A remote's own volume buttons, M
+  to mute and the volume slider still set it. Left and Right still skip.
+
 ### Fixed
 
 - Switching quickly between sections and scrolling freezes the app less often and for shorter, most of all in a large

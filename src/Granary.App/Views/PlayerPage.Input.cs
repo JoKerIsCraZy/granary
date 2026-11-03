@@ -110,7 +110,8 @@ public sealed partial class PlayerPage
     }
 
     // The other keys arrive after the focused control had them: the volume slider keeps its arrow keys,
-    // the seek bar its Left and Right.
+    // the seek bar its Left and Right. On the picture Left and Right skip, as on the web player and Silo's TV app; Up and
+    // Down do as on the TV app, not the web's volume: a remote has its own volume buttons.
     private void OnPageKeyDown(object sender, KeyRoutedEventArgs e)
     {
         if (!AcceptsShortcut())
@@ -194,11 +195,23 @@ public sealed partial class PlayerPage
             case VirtualKey.Right when ViewModel.CanSeek:
                 ViewModel.SkipForwardCommand.Execute(null);
                 break;
-            case VirtualKey.Up:
+            case VirtualKey.Up when IsDocked:
                 ViewModel.ChangeVolume(VolumeStep);
                 break;
-            case VirtualKey.Down:
+            case VirtualKey.Down when IsDocked:
                 ViewModel.ChangeVolume(-VolumeStep);
+                break;
+            case VirtualKey.Up:
+                if (!isRepeat)
+                {
+                    FocusTransport();
+                }
+                break;
+            case VirtualKey.Down:
+                if (!isRepeat)
+                {
+                    OpenPlaybackMenu();
+                }
                 break;
             default:
                 return;
@@ -222,6 +235,25 @@ public sealed partial class PlayerPage
     // A button with focus that is not one of the controls, so shows while they are hidden.
     private bool HasShownButtonFocus() => FocusManager.GetFocusedElement(XamlRoot) is ButtonBase button && !IsInControls(button);
 
+    // Down from the picture opens the menu a viewer most likely wants, as Silo's TV app opens its panel on audio, else
+    // subtitles, else video (preferredPlaybackHudTab): here the audio menu when there is a track to choose, else the
+    // subtitles', else the playback settings. Back closes it onto its button, among the shown controls.
+    private void OpenPlaybackMenu()
+    {
+        if (IsMiniView)
+        {
+            FocusTransport();
+            return;
+        }
+        var (button, menu) = ViewModel.CanChooseAudio ? (AudioButton, AudioMenu)
+            : ViewModel.HasSubtitleMenu ? (SubtitleButton, SubtitleMenu)
+            : (SettingsButton, SettingsMenu);
+        _movesThroughControls = true;
+        RestartHideTimer();
+        button.Focus(FocusState.Keyboard);
+        menu.ShowAt(button);
+    }
+
     // A remote's OK showed the controls (on the picture, or on the bar's picture): focus on Play/Pause, and the arrows
     // move between the controls until they hide.
     private void FocusTransport()
@@ -233,10 +265,9 @@ public sealed partial class PlayerPage
     }
 
     // After a remote's OK showed the controls, with focus still on one of them, the arrows move between them, as on Silo's
-    // TV app; the seek bar keeps Left and Right, which it takes first. Otherwise, a tabbed-to button too, the arrows skip
-    // and change the volume, as on the web player. Up and Down on the shown seek bar, which has no use for them, always
-    // move and turn the arrows over to the controls: focus put there by a click (an air mouse's) left a remote no way
-    // off the bar, Left and Right seeking and Up and Down changing the volume.
+    // TV app; the seek bar keeps Left and Right, which it takes first. Otherwise, a tabbed-to button too, Left and Right
+    // skip, as on the web player. Up and Down on a shown control, which has no other use for them, always move and turn
+    // the arrows over to the controls, however focus got there (an air mouse's click on the seek bar).
     private bool MovesThroughControls(VirtualKey key)
     {
         var direction = key switch
@@ -251,9 +282,8 @@ public sealed partial class PlayerPage
         {
             return false;
         }
-        bool offSeekBar = direction is FocusNavigationDirection.Up or FocusNavigationDirection.Down
-            && FocusManager.GetFocusedElement(XamlRoot) is SeekBar;
-        if (!_movesThroughControls && !offSeekBar)
+        bool upOrDown = direction is FocusNavigationDirection.Up or FocusNavigationDirection.Down;
+        if (!_movesThroughControls && !upOrDown)
         {
             return false;
         }
