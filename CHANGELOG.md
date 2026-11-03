@@ -43,7 +43,7 @@ release's section is what its update says it changes (docs/release.md).
 - The sorts are named as on Silo's web app: Date Added, Release Date, IMDb Rating, and Duration in place of Runtime.
 - In the player, Up and Down no longer change the volume by default, as on Silo's TV app: Up shows the controls with
   focus on Play/Pause, and Down opens the audio menu (or subtitles, or the playback settings). Settings → Playback →
-  This PC → Up and Down in the player → Change the volume brings back the volume keys. A remote's own volume buttons,
+  This PC → Up and Down in the player → Volume brings back the volume keys. A remote's own volume buttons,
   M to mute and the volume slider set it either way. Left and Right still skip.
 
 ### Fixed
