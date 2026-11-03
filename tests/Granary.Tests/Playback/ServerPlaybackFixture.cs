@@ -72,6 +72,9 @@ internal sealed class ServerPlaybackFixture
     /// <summary>The detail page's track choices on their way to the server, which the start waits for; none by default.</summary>
     public TrackChoiceWrites? TrackChoices { get; set; }
 
+    /// <summary>This PC's playback choices, read at each start.</summary>
+    public InMemoryPlaybackDevicePreferences DevicePreferences { get; } = new();
+
     public static Uri StreamUrl(string session = Session) => new(ScriptedSilo.Base.AbsoluteUri + "/api/v2/stream/" + session);
 
     public static Func<Task<HttpResponseMessage>> Ok(string json) => ScriptedSilo.Json(HttpStatusCode.OK, json);
@@ -87,6 +90,7 @@ internal sealed class ServerPlaybackFixture
         new PlaybackApi(Silo.Http),
         new PlaybackPreferencesReader(new SettingsApi(Silo.Http), Logs.For<PlaybackPreferencesReader>()),
         new FakeDeviceProbe(),
+        DevicePreferences,
         AuthPipeline.Identity,
         SessionManager,
         TrackChoices);

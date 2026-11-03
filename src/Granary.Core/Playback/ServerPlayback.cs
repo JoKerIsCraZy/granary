@@ -284,6 +284,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         {
             return;
         }
+        LogReport(_context.Report);
         (Title, Subtitle) = PlaybackStarter.Titles(_context.Watch);
         MediaInfo = PlaybackMediaInfo.Of(_context.Watch, _context.Server.BaseUri);
         _engine.SetSubtitleLook(_context.Preferences.Subtitles);
@@ -460,6 +461,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         int? audio = AudioStream(_plan, _tracks);
         _logger.LogInformation("Loading the {Delivery} plan at {Start:F1} s (offset {Offset:F1} s, audio stream {Audio})",
             _plan.Delivery, _playerPosition, _plan.Timeline.TimelineOffsetSeconds, audio?.ToString(CultureInfo.InvariantCulture) ?? "as delivered");
+        LogDecision(_plan);
         // mpv gets the loopback and no credential: the proxy adds the headers to each request of this stream alone,
         // renewing a token the server refuses. A playlist's variants and segments lie beside it.
         var server = _context!.Server;

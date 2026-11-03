@@ -153,6 +153,9 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<IUpdatePreferences>(sp =>
             new JsonUpdatePreferences(JsonUpdatePreferences.DefaultPath, sp.GetRequiredService<ILogger<JsonUpdatePreferences>>()));
         services.AddSingleton<AppUpdatesViewModel>();
+        // This PC's playback choices, about its hardware: in the data directory, not in a server's profile.
+        services.AddSingleton<IPlaybackDevicePreferences>(sp =>
+            new JsonPlaybackDevicePreferences(JsonPlaybackDevicePreferences.DefaultPath, sp.GetRequiredService<ILogger<JsonPlaybackDevicePreferences>>()));
         services.AddTransient<SignInViewModel>();
         services.AddSingleton<MediaCardActions>();
         // One per page that shows TMDB cards: each says its own cards' failed requests.

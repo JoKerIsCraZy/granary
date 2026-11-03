@@ -49,6 +49,7 @@ public sealed class PlaybackStarter(
     PlaybackApi playback,
     PlaybackPreferencesReader preferences,
     IPlaybackDeviceProbe device,
+    IPlaybackDevicePreferences devicePreferences,
     ClientIdentity identity,
     ISessionManager session,
     TrackChoiceWrites? trackChoices = null)
@@ -152,10 +153,11 @@ public sealed class PlaybackStarter(
         return context with { InstallationId = capabilities.InstallationId!, Report = Report(capabilities) };
     }
 
-    // Proxy-node media only where the server offers it, as Apple's client asks (docs/api-contract.md, 9.1).
+    // Proxy-node media only where the server offers it, as Apple's client asks (docs/api-contract.md, 9.1). This PC's
+    // software decoding choice is read at each start, so a change in the settings counts from the next title on.
     private PlaybackClientReport Report(PlaybackCapabilities capabilities) =>
         PlaybackReportBuilder.Build(device.Facts, identity.ClientVersion, identity.ClientChannel,
-            capabilities.HasFeature(PlaybackFeatures.AuthorizedMediaOriginsV1));
+            capabilities.HasFeature(PlaybackFeatures.AuthorizedMediaOriginsV1), devicePreferences.DecodesInSoftware);
 
     /// <summary>Starts an attempt of <paramref name="context"/>'s file at <paramref name="startPosition"/> (source seconds; null: the server's resume point).</summary>
     public Task<PlaybackDecision> StartAsync(PlaybackContext context, string attemptId, double? startPosition, CancellationToken cancellationToken)
