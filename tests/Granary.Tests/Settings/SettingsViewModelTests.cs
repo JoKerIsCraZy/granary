@@ -57,11 +57,12 @@ public sealed class SettingsViewModelTests
     private readonly ScriptedSilo _silo = new();
     private readonly ManualTimeProvider _time = new();
     private readonly FakeNetworkLink _network = new();
+    private readonly InMemoryPlaybackDevicePreferences _device = new();
 
     private PlaybackSettingsViewModel Playback() => new(_settings, new PlaybackApi(_silo.Http), new PlaybackConnectionApi(_silo.Http),
         ConnectionSpeedTestTests.SpeedTest(_silo, _time, _network), _network,
         new FakeSessionManager { State = SessionState.Ready, ActiveServer = ScriptedSilo.Server, ProfileId = "7" }, _time,
-        new LogSink().For<PlaybackSettingsViewModel>());
+        new LogSink().For<PlaybackSettingsViewModel>(), _device);
 
     private LanguageSettingsViewModel Language() => new(_settings, new LogSink().For<LanguageSettingsViewModel>());
 
@@ -93,6 +94,19 @@ public sealed class SettingsViewModelTests
         Assert.Equal("15 seconds", page.SelectedRewind?.Label);
         Assert.Equal("30 seconds", page.SelectedFastForward?.Label);
         Assert.False(page.ShowsBuffering);
+        Assert.Empty(_settings.Writes);
+    }
+
+    [Fact]
+    public void DirectPlayWithoutHardwareDecoding_IsThisPcsChoice_NotTheProfiles()
+    {
+        _device.DecodesInSoftware = true;
+        var page = Playback();
+        Assert.True(page.DecodesInSoftware);
+
+        page.DecodesInSoftware = false;
+
+        Assert.Equal([false], _device.Saved);
         Assert.Empty(_settings.Writes);
     }
 

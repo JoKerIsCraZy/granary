@@ -40,6 +40,7 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject
     private readonly ISessionManager _session;
     private readonly TimeProvider _time;
     private readonly ILogger<PlaybackSettingsViewModel> _logger;
+    private readonly IPlaybackDevicePreferences _devicePreferences;
     private readonly SettingSaves _saves;
     private readonly Dictionary<string, string?> _sources = [];
 
@@ -49,7 +50,7 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject
 
     public PlaybackSettingsViewModel(
         IProfileSettings settings, PlaybackApi playback, PlaybackConnectionApi connection, ConnectionSpeedTest speedTest, INetworkLink network,
-        ISessionManager session, TimeProvider time, ILogger<PlaybackSettingsViewModel> logger)
+        ISessionManager session, TimeProvider time, ILogger<PlaybackSettingsViewModel> logger, IPlaybackDevicePreferences devicePreferences)
     {
         _settings = settings;
         _playback = playback;
@@ -59,6 +60,8 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject
         _session = session;
         _time = time;
         _logger = logger;
+        _devicePreferences = devicePreferences;
+        DecodesInSoftware = devicePreferences.DecodesInSoftware;
         _saves = new SettingSaves(logger);
     }
 

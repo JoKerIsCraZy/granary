@@ -2319,6 +2319,17 @@ HDR with libplacebo. An honest, conservative first report:
   tone-maps an HDR original itself, in a transcode to H.264 (in software unless the server has hardware
   tone mapping), which is heavy at 2160p. HLS stays without the claim, so a server-made stream still has
   to fit the output.
+- **Direct play without hardware decoding** (Settings → Playback → This PC, off by default; Granary's own, kept in
+  `playback-device.json` in the data directory): `hevc`, `vp9` and `av1` join `codecs_video` (never
+  `codecs_video_hardware`) and `client_managed_dynamic_range_v1` is claimed whatever the GPU decodes, so HEVC, VP9,
+  AV1 and HDR originals direct-play and FFmpeg decodes them on the CPU where D3D11VA cannot. For a PC whose GPU
+  decodes these only in part (HEVC Main 10 on 6th-generation Intel graphics, for example), where the server would
+  otherwise transcode and tone-map. `output.hdr` stays false, and `hls` keeps the GPU's list: the server encodes HEVC
+  only for an HLS delivery that lists it, so a transcode it still makes stays one the GPU decodes. Read at each start,
+  so a change counts from the next title.
+- The log says why a title is transcoded: the probe's hardware and 10-bit codecs once, the report's video codecs and
+  whether HDR originals are claimed at each start, and each plan's `decision_reason`, effective video codec, size and
+  dynamic range, `claims.video.dolby_vision_reason` and `degradation_warnings` codes.
 - Subtitles: `sidecar_text`, `ass_styling`, `font_attachments`, `embedded_text`, `embedded_bitmap`
   true; `embedded_subtitles_v1` with `native_embedded` entries for mkv and mp4 using
   `track_identity: "ffmpeg_stream_index"` (mpv's `track-list/N/ff-index`), as Apple does.

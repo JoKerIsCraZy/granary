@@ -17,6 +17,12 @@ release's section is what its update says it changes (docs/release.md).
   brings focus to the controls, also when an air mouse already shows them; the arrows then move to subtitles, audio and the settings, and Back closes their menus and
   panels, hides the controls, then closes the player, with focus back where it was. The minimized player is reachable
   with Down from the page.
+- Settings → Playback → This PC: **Direct play without hardware decoding**. On, Granary plays HEVC, VP9, AV1 and HDR
+  files directly and decodes them on the processor where the graphics card can't, instead of having your Silo server
+  convert them: the picture keeps its full quality and the server does less work, but slower PCs can stutter. Off by
+  default; it is kept on this PC and counts from the next title you play.
+- The log says why a title is converted: what this PC's graphics card decodes, what Granary told the server it plays,
+  and the reason the server gave for its choice.
 
 ### Changed
 
