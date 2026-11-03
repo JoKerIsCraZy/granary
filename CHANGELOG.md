@@ -26,9 +26,10 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Changed
 
-- In the player, Up and Down no longer change the volume, as on Silo's TV app: Up shows the controls with focus on
-  Play/Pause, and Down opens the audio menu (or subtitles, or the playback settings). A remote's own volume buttons, M
-  to mute and the volume slider still set it. Left and Right still skip.
+- In the player, Up and Down no longer change the volume by default, as on Silo's TV app: Up shows the controls with
+  focus on Play/Pause, and Down opens the audio menu (or subtitles, or the playback settings). Settings → Playback →
+  This PC → Up and Down in the player → Change the volume brings back the volume keys. A remote's own volume buttons,
+  M to mute and the volume slider set it either way. Left and Right still skip.
 
 ### Fixed
 

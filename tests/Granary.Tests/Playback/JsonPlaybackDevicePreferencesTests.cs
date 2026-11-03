@@ -69,6 +69,36 @@ public sealed class JsonPlaybackDevicePreferencesTests : IDisposable
     }
 
     [Fact]
+    public void AtFirst_UpAndDownShowTheControlsAndMenus() =>
+        Assert.Equal(PlayerUpDown.ControlsAndMenus, Create().UpDown);
+
+    [Fact]
+    public async Task UpAndDownForTheVolume_StayAtTheNextStart_WithTheOtherChoice()
+    {
+        var preferences = Create();
+
+        await preferences.SetDecodesInSoftwareAsync(true);
+        await preferences.SetUpDownAsync(PlayerUpDown.Volume);
+
+        var again = Create();
+        Assert.Equal(PlayerUpDown.Volume, again.UpDown);
+        Assert.True(again.DecodesInSoftware);
+        Assert.Contains("\"up_down\": \"volume\"", await File.ReadAllTextAsync(FilePath, TestContext.Current.CancellationToken), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AnUnknownUpAndDown_ShowsTheControlsAndMenus()
+    {
+        Directory.CreateDirectory(_directory);
+        await File.WriteAllTextAsync(FilePath, "{ \"decodes_in_software\": true, \"up_down\": \"zoom\" }", TestContext.Current.CancellationToken);
+
+        var preferences = Create();
+
+        Assert.Equal(PlayerUpDown.ControlsAndMenus, preferences.UpDown);
+        Assert.True(preferences.DecodesInSoftware);
+    }
+
+    [Fact]
     public async Task AnUnreadableFile_LeavesItOff()
     {
         Directory.CreateDirectory(_directory);

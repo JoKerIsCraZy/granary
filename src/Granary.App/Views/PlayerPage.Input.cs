@@ -1,4 +1,5 @@
 using Granary.App.Controls;
+using Granary.Core.Playback;
 using Granary.Core.ViewModels;
 using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
@@ -111,7 +112,8 @@ public sealed partial class PlayerPage
 
     // The other keys arrive after the focused control had them: the volume slider keeps its arrow keys,
     // the seek bar its Left and Right. On the picture Left and Right skip, as on the web player and Silo's TV app; Up and
-    // Down do as on the TV app, not the web's volume: a remote has its own volume buttons.
+    // Down do as on the TV app (a remote has its own volume buttons), or set the volume as on the web, as this PC's
+    // settings say (IPlaybackDevicePreferences.UpDown). In the minimized bar they always set the volume.
     private void OnPageKeyDown(object sender, KeyRoutedEventArgs e)
     {
         if (!AcceptsShortcut())
@@ -195,10 +197,10 @@ public sealed partial class PlayerPage
             case VirtualKey.Right when ViewModel.CanSeek:
                 ViewModel.SkipForwardCommand.Execute(null);
                 break;
-            case VirtualKey.Up when IsDocked:
+            case VirtualKey.Up when IsDocked || !UpDownMovesFocus:
                 ViewModel.ChangeVolume(VolumeStep);
                 break;
-            case VirtualKey.Down when IsDocked:
+            case VirtualKey.Down when IsDocked || !UpDownMovesFocus:
                 ViewModel.ChangeVolume(-VolumeStep);
                 break;
             case VirtualKey.Up:
@@ -235,6 +237,9 @@ public sealed partial class PlayerPage
     // A button with focus that is not one of the controls, so shows while they are hidden.
     private bool HasShownButtonFocus() => FocusManager.GetFocusedElement(XamlRoot) is ButtonBase button && !IsInControls(button);
 
+    // Up and Down do as on Silo's TV app, unless this PC's settings give them the volume.
+    private bool UpDownMovesFocus => _devicePreferences.UpDown == PlayerUpDown.ControlsAndMenus;
+
     // Down from the picture opens the menu a viewer most likely wants, as Silo's TV app opens its panel on audio, else
     // subtitles, else video (preferredPlaybackHudTab): here the audio menu when there is a track to choose, else the
     // subtitles', else the playback settings. Back closes it onto its button, among the shown controls.
@@ -266,8 +271,9 @@ public sealed partial class PlayerPage
 
     // After a remote's OK showed the controls, with focus still on one of them, the arrows move between them, as on Silo's
     // TV app; the seek bar keeps Left and Right, which it takes first. Otherwise, a tabbed-to button too, Left and Right
-    // skip, as on the web player. Up and Down on a shown control, which has no other use for them, always move and turn
-    // the arrows over to the controls, however focus got there (an air mouse's click on the seek bar).
+    // skip, as on the web player. Up and Down on a shown control move and turn the arrows over to the controls, however
+    // focus got there (an air mouse's click on the seek bar); with Up and Down set to the volume only on the seek bar,
+    // which has no use for them, and elsewhere they keep the web's volume.
     private bool MovesThroughControls(VirtualKey key)
     {
         var direction = key switch
@@ -282,7 +288,8 @@ public sealed partial class PlayerPage
         {
             return false;
         }
-        bool upOrDown = direction is FocusNavigationDirection.Up or FocusNavigationDirection.Down;
+        bool upOrDown = direction is FocusNavigationDirection.Up or FocusNavigationDirection.Down
+            && (UpDownMovesFocus || FocusManager.GetFocusedElement(XamlRoot) is SeekBar);
         if (!_movesThroughControls && !upOrDown)
         {
             return false;

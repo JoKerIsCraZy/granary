@@ -564,9 +564,11 @@ page background with a faint outline, red when focused; switches are only their 
 says why above the sections.
 
 - **Playback**: Quality (preferred quality, maximum bitrate with "No limit", lower quality when buffering, and this
-  connection's learned limit with Reset), This PC ("Kept on this PC. Changes count from the next title you play.":
-  Direct play without hardware decoding, a switch, off by default; Granary's own and kept on the PC, not in the
-  profile, so it does not save to the server), Connection (the latest speed reading and what Auto plays without
+  connection's learned limit with Reset), This PC ("Kept on this PC, not in your profile.": Direct play without
+  hardware decoding, a switch, off by default, counting from the next title; Up and Down in the player, a select with
+  Show the controls and menus (the default, as Silo's TV app) and Change the volume (the web player's keys), which the
+  player follows at its next key. Granary's own and kept on the PC in `playback-device.json`, so they do not save to
+  the server), Connection (the latest speed reading and what Auto plays without
   converting), Skipping (skip intros, auto-skip recaps and credits), Next episode (start next at preview, auto-play),
   Seek controls (rewind and fast-forward intervals).
 - **Connection** (with `connection_speed_v1`): "Connection speed" with the reading as its description ("400 Mbps ·
@@ -952,11 +954,12 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   as F11, which works everywhere),
   P the mini view, Esc turns away an intro pill, else closes the marker panel, else leaves full screen or the mini
   view, else closes, M mute, C
-  subtitles off and on, Left/Right skip. Up and Down do as on Silo's TV app, not the web's volume (a remote has its own
-  volume buttons; M mutes and the slider, reached with Tab, sets it): from the picture Up shows the controls with focus
-  on Play/Pause and Down opens the audio menu when there is a track to choose, else the subtitles', else the playback
-  settings (the TV app's panel opens on audio, else subtitles, else video); in the minimized bar they still set the
-  volume ±5. A remote's Back (Browser Back) and Backspace do as Esc
+  subtitles off and on, Left/Right skip. Up and Down do as Settings → Playback → This PC says. By default as on Silo's
+  TV app (a remote has its own volume buttons; M mutes and the slider, reached with Tab, sets it): from the picture Up
+  shows the controls with focus on Play/Pause and Down opens the audio menu when there is a track to choose, else the
+  subtitles', else the playback settings (the TV app's panel opens on audio, else subtitles, else video), and on a
+  shown control they move from it. Set to Change the volume they set it ±5 as on the web, and move only off the seek
+  bar. In the minimized bar they always set the volume ±5. A remote's Back (Browser Back) and Backspace do as Esc
   does, but leave full screen alone (a media PC runs in it); OK (Enter) with focus on the picture only shows the
   controls, focus on Play/Pause, as on Silo's TV app, also when the pointer (an air mouse's) already shows them (so does
   OK on the minimized bar's picture); while a skip pill shows, OK on hidden
@@ -964,7 +967,7 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   away; in the mini view OK lands on its own Play/Pause. From then until the controls hide, with focus on one of them,
   the arrows move between them (past the volume slider, which Tab still reaches; Down from the seek bar lands on
   Play/Pause); they hide after 5 s without a key, focus or not, as on Silo's TV app, and focus goes back to the picture.
-  A button reached with Tab keeps the web's arrows and keeps the controls up, as on the web. Up and Down on any shown control always move from it
+  A button reached with Tab keeps the web's arrows and keeps the controls up, as on the web. Up and Down on a shown control move from it
   and turn the arrows over to the controls, however focus got there (an air mouse's click). The remote's Back and
   Backspace with the controls shown
   hide them, as the TV app's ladder has it, unless paused, a skip pill shows (Back turns it away) or the marker editor is

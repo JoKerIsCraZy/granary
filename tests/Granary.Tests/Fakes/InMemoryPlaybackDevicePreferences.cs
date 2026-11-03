@@ -9,6 +9,17 @@ internal sealed class InMemoryPlaybackDevicePreferences : IPlaybackDevicePrefere
 
     public List<bool> Saved { get; } = [];
 
+    public PlayerUpDown UpDown { get; set; }
+
+    public List<PlayerUpDown> SavedUpDown { get; } = [];
+
+    public Task SetUpDownAsync(PlayerUpDown upDown)
+    {
+        UpDown = upDown;
+        SavedUpDown.Add(upDown);
+        return Task.CompletedTask;
+    }
+
     public Task SetDecodesInSoftwareAsync(bool decodesInSoftware)
     {
         DecodesInSoftware = decodesInSoftware;

@@ -42,12 +42,14 @@ public sealed partial class PlayerPage : Page
     private PlayerSystemMedia? _systemMedia;
     // The window's full screen and mini view, the app's too: the player toggles them, and the window keeps them.
     private readonly WindowModeService _modes;
+    private readonly IPlaybackDevicePreferences _devicePreferences;
 
     public PlayerPage()
     {
         // Made outside the container: a disposable transient from the root provider would be kept until the app exits.
         ViewModel = ActivatorUtilities.CreateInstance<PlayerViewModel>(App.Services);
         _modes = App.Services.GetRequiredService<WindowModeService>();
+        _devicePreferences = App.Services.GetRequiredService<IPlaybackDevicePreferences>();
         InitializeComponent();
         VideoHost.VideoOutput = App.Services.GetRequiredService<ICompositionVideoOutput>();
         InitializeInput();
