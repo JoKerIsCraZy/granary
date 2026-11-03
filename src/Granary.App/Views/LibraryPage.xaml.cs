@@ -29,6 +29,15 @@ public sealed partial class LibraryPage : Page
         };
         ViewModel.Browse.Grid.Restarted += (_, _) => ScrollToTop(LibraryScroller);
         ViewModel.Browse.JumpRequested += (_, position) => BrowseGrid.ScrollToIndex(position);
+        // The sorts follow the library's type and the server's rating sources. Picking a sort can change them: the menu is
+        // built again after the picked item's command, not under it.
+        ViewModel.Browse.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(LibraryBrowseViewModel.SortOptions))
+            {
+                DispatcherQueue.TryEnqueue(BuildSortMenu);
+            }
+        };
         ViewModel.Collections.PropertyChanged += OnCollectionsPropertyChanged;
     }
 
@@ -72,6 +81,8 @@ public sealed partial class LibraryPage : Page
 
     private void BuildSortMenu()
     {
+        _sortItems.Clear();
+        SortMenu.Items.Clear();
         foreach (var option in ViewModel.Browse.SortOptions)
         {
             var item = new RadioMenuFlyoutItem

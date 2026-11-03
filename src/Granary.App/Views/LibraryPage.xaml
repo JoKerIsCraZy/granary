@@ -231,7 +231,7 @@
                                 </DropDownButton.Flyout>
                             </DropDownButton>
                             <controls:CatalogFiltersButton Filters="{x:Bind ViewModel.Browse.Filters}"
-                                                           OptionsErrorText="Couldn't load the genres and ratings of this library. The year range still works." />
+                                                           OptionsErrorText="Couldn't load the genres, ratings and languages of this library. The other filters still work." />
                             <TextBlock Text="{x:Bind ViewModel.Browse.Grid.TotalText, Mode=OneWay}" Style="{StaticResource SiloCaptionTextStyle}"
                                        VerticalAlignment="Center" Margin="6,0,0,0" />
                         </StackPanel>

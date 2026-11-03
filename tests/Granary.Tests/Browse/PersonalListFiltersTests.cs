@@ -22,7 +22,7 @@ public sealed class PersonalListFiltersTests
     {
         var list = WatchlistTitlesViewModelTests.CreateList(_harness, new ViewerStateChanges(new PlaybackStops()));
         await list.ActivateAsync(source);
-        await Auth.AuthPipeline.Eventually(() => list.Filters.GenreChoices.Count > 1);
+        await Auth.AuthPipeline.Eventually(() => list.Filters.GenreOptions.Count > 0);
         return list;
     }
 
@@ -34,7 +34,7 @@ public sealed class PersonalListFiltersTests
         var list = await ShownAsync(CatalogSources.Favorites);
 
         Assert.StartsWith("source=favorites", _harness.Queries(FiltersPath)[^1], StringComparison.Ordinal);
-        Assert.Equal([LibraryFiltersViewModel.AnyGenre, "Crime", "Drama"], list.Filters.GenreChoices);
+        Assert.Equal(["Crime", "Drama"], list.Filters.GenreOptions.Select(o => o.Value));
         Assert.Equal(["PG-13", "R"], list.Filters.RatingOptions.Select(o => o.Value));
     }
 
@@ -43,21 +43,45 @@ public sealed class PersonalListFiltersTests
     {
         var list = await ShownAsync(CatalogSources.Watchlist);
         list.Filters.BeginEdit();
-        list.Filters.DraftGenreIndex = 2;
         list.Filters.DraftYearFrom = 2000;
         list.Filters.DraftYearTo = 1990;
-
         await list.Filters.ApplyCommand.ExecuteAsync(null);
 
         Assert.True(list.IsNarrowed);
         Assert.Contains("source=watchlist", LastQuery, StringComparison.Ordinal);
-        Assert.Contains("genre=Drama", LastQuery, StringComparison.Ordinal);
         Assert.Contains("year_min=1990&year_max=2000", LastQuery, StringComparison.Ordinal);
 
         await list.ClearFiltersCommand.ExecuteAsync(null);
 
         Assert.False(list.IsNarrowed);
-        Assert.DoesNotContain("genre=", LastQuery, StringComparison.Ordinal);
+        Assert.DoesNotContain("year_min=", LastQuery, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task RuleFilters_GoToTheRuleQuery_WithTheListAsItsSource_InTheListsOwnOrder()
+    {
+        var list = await ShownAsync(CatalogSources.Watchlist);
+        list.Filters.BeginEdit();
+        list.Filters.GenreOptions.Single(o => o.Value == "Drama").IsSelected = true;
+        list.Filters.VideoQualityOptions.Single(o => o.Label == "HDR").IsSelected = true;
+        list.Filters.DraftWatchStatusIndex = (int)LibraryWatchStatus.Watched;
+        list.Filters.DraftYearFrom = 1990;
+
+        await list.Filters.ApplyCommand.ExecuteAsync(null);
+
+        Assert.True(list.IsNarrowed);
+        Assert.Equal(4, list.Filters.ActiveCount);
+        Assert.Equal("""
+            {"source":"watchlist","groups":[{"match":"all","rules":[{"field":"year","op":"gte","value":1990}]},{"match":"any","rules":[{"field":"genre","op":"contains","value":"Drama"}]},{"match":"all","rules":[{"field":"hdr","op":"is","value":true}]},{"match":"all","rules":[{"field":"watched","op":"is","value":true}]}],"limit":60}
+            """, Assert.Single(_harness.QueryBodies()));
+    }
+
+    [Fact]
+    public async Task AList_OffersItsOwnOrder_AndTheSortsItHad_WithTheWebsWords()
+    {
+        var list = await ShownAsync(CatalogSources.Favorites);
+
+        Assert.Equal(["Title", "Date Added", "Release Date", "Year", "Duration", "IMDb Rating"], list.SortOptions.Select(o => o.Label));
     }
 
     [Fact]
@@ -65,15 +89,16 @@ public sealed class PersonalListFiltersTests
     {
         var list = await ShownAsync(CatalogSources.Favorites);
         list.Filters.BeginEdit();
-        list.Filters.DraftGenreIndex = 1;
+        list.Filters.GenreOptions[0].IsSelected = true;
         await list.Filters.ApplyCommand.ExecuteAsync(null);
 
         await list.ActivateAsync(CatalogSources.History);
-        await Auth.AuthPipeline.Eventually(() => list.Filters.GenreChoices.Count > 1);
+        await Auth.AuthPipeline.Eventually(() => list.Filters.GenreOptions.Count > 0);
 
         Assert.Equal(0, list.Filters.ActiveCount);
         Assert.StartsWith("source=history", _harness.Queries(FiltersPath)[^1], StringComparison.Ordinal);
-        Assert.DoesNotContain("genre=", LastQuery, StringComparison.Ordinal);
+        Assert.StartsWith("source=history", LastQuery, StringComparison.Ordinal);
+        Assert.Equal(HttpMethod.Get, _harness.Silo.Sent[^1].Method);
     }
 
     [Fact]
@@ -85,7 +110,7 @@ public sealed class PersonalListFiltersTests
         Assert.Equal(1, list.Selection.Count);
 
         list.Filters.BeginEdit();
-        list.Filters.DraftGenreIndex = 1;
+        list.Filters.GenreOptions[0].IsSelected = true;
         await list.Filters.ApplyCommand.ExecuteAsync(null);
 
         Assert.True(list.Selection.IsActive);
@@ -97,7 +122,7 @@ public sealed class PersonalListFiltersTests
     {
         var list = await ShownAsync(CatalogSources.Favorites);
         list.Filters.BeginEdit();
-        list.Filters.DraftGenreIndex = 1;
+        list.Filters.GenreOptions[0].IsSelected = true;
         await list.Filters.ApplyCommand.ExecuteAsync(null);
         int asked = _harness.Queries(FiltersPath).Count;
 
@@ -106,7 +131,7 @@ public sealed class PersonalListFiltersTests
 
         Assert.Equal(0, list.Filters.ActiveCount);
         Assert.Equal(asked + 1, _harness.Queries(FiltersPath).Count);
-        Assert.DoesNotContain("genre=", LastQuery, StringComparison.Ordinal);
+        Assert.Single(_harness.QueryBodies());
     }
 
     [Fact]
@@ -114,16 +139,17 @@ public sealed class PersonalListFiltersTests
     {
         // A refusal no retry repeats on its own (a 503 the request pipeline would ask again).
         _harness.Silo.On(HttpMethod.Get, FiltersPath, Profiles.ScriptedSilo.Problem(400, "invalid_request"),
-            Profiles.ScriptedSilo.Json(System.Net.HttpStatusCode.OK, LibraryPayloads.Filters));
+            Profiles.ScriptedSilo.Problem(400, "invalid_request"), Profiles.ScriptedSilo.Json(System.Net.HttpStatusCode.OK, LibraryPayloads.Filters));
         var list = WatchlistTitlesViewModelTests.CreateList(_harness, new ViewerStateChanges(new PlaybackStops()));
         await list.ActivateAsync(CatalogSources.Favorites);
         await Auth.AuthPipeline.Eventually(() => list.Filters.HasOptionsError);
 
         await list.ActivateAsync(CatalogSources.Favorites);
-        await Auth.AuthPipeline.Eventually(() => list.Filters.GenreChoices.Count > 1);
+        await Auth.AuthPipeline.Eventually(() => list.Filters.GenreOptions.Count > 0);
 
         Assert.False(list.Filters.HasOptionsError);
-        Assert.Equal(2, _harness.Queries(FiltersPath).Count);
+        // Each visit asks with the files' languages, and once more without them when that fails.
+        Assert.Equal(3, _harness.Queries(FiltersPath).Count);
     }
 
     [Fact]

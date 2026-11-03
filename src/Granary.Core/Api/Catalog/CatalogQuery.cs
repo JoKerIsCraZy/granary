@@ -319,6 +319,8 @@ public static class CatalogSortFields
     public const string Runtime = "runtime";
     public const string RatingImdb = "rating_imdb";
     public const string RatingTmdb = "rating_tmdb";
+    public const string RatingRtCritic = "rating_rt_critic";
+    public const string RatingRtAudience = "rating_rt_audience";
     public const string Resolution = "resolution";
     public const string Bitrate = "bitrate";
     public const string Progress = "progress";

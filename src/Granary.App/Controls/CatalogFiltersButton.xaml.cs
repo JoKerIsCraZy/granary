@@ -9,13 +9,19 @@ namespace Granary.App.Controls;
 /// <summary>The Filters pill and its flyout, for a <see cref="LibraryFiltersViewModel"/>.</summary>
 public sealed partial class CatalogFiltersButton : UserControl
 {
+    // The sections scroll within the window's height less the heading, the buttons and some room above and below, and
+    // never past the flyout's own limit, so the flyout itself never scrolls them away.
+    private const double WindowRoom = 260;
+    private const double MinimumSectionsHeight = 200;
+    private const double MaximumSectionsHeight = 520;
+
     public static readonly DependencyProperty FiltersProperty =
         DependencyProperty.Register(nameof(Filters), typeof(LibraryFiltersViewModel), typeof(CatalogFiltersButton),
             new PropertyMetadata(null, (d, _) => ((CatalogFiltersButton)d).Bindings.Update()));
 
     public static readonly DependencyProperty OptionsErrorTextProperty =
         DependencyProperty.Register(nameof(OptionsErrorText), typeof(string), typeof(CatalogFiltersButton),
-            new PropertyMetadata("Couldn't load the genres and ratings. The year range still works."));
+            new PropertyMetadata("Couldn't load the genres, ratings and languages. The other filters still work."));
 
     public CatalogFiltersButton()
     {
@@ -33,7 +39,7 @@ public sealed partial class CatalogFiltersButton : UserControl
         set => SetValue(FiltersProperty, value);
     }
 
-    /// <summary>What the flyout says when the genres and ratings could not be read.</summary>
+    /// <summary>What the flyout says when the genres, ratings and languages could not be read.</summary>
     public string OptionsErrorText
     {
         get => (string)GetValue(OptionsErrorTextProperty);
@@ -49,7 +55,13 @@ public sealed partial class CatalogFiltersButton : UserControl
         _ => $"Filters, {activeCount} active",
     };
 
-    private void OnFiltersFlyoutOpening(object sender, object e) => Filters?.BeginEdit();
+    private void OnFiltersFlyoutOpening(object sender, object e)
+    {
+        double window = XamlRoot?.Size.Height ?? 0;
+        FiltersScroller.MaxHeight = window > 0 ? Math.Clamp(window - WindowRoom, MinimumSectionsHeight, MaximumSectionsHeight) : MaximumSectionsHeight;
+        FiltersScroller.ChangeView(null, 0, null, disableAnimation: true);
+        Filters?.BeginEdit();
+    }
 
     // The buttons run their commands; this only closes the flyout.
     private void OnFilterActionClick(object sender, RoutedEventArgs e) => FiltersFlyout.Hide();

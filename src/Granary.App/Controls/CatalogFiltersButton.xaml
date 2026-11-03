@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    "Filters" with its count, as a dark pill, and the flyout behind it: one genre, any of the content ratings, and a
-    year range, as the web's filter sheet keeps them. The library's grid and the personal lists share it.
+    "Filters" with its count, as a dark pill, and the flyout behind it, in the web's filter sheet's order and words: Genres,
+    Decade, Year From and Year To, Content Rating, Video Quality, the three languages and Watch Status. A facet the scope has
+    no values for is left out. The sections scroll between the heading and Clear / Apply; arrow keys move between the chips,
+    Tab from one section to the next. The library's grid and the personal lists share it.
 -->
 <UserControl
     x:Class="Granary.App.Controls.CatalogFiltersButton"
@@ -16,6 +18,14 @@
             <Setter Property="Padding" Value="16,6" />
             <Setter Property="FontSize" Value="13" />
         </Style>
+        <!-- A value as a pill that turns on and off; a long name ends in "…" and shows whole in its tooltip. -->
+        <DataTemplate x:Key="FilterChipTemplate" x:DataType="vm:LibraryFilterToggle">
+            <ToggleButton IsChecked="{x:Bind IsSelected, Mode=TwoWay}" HorizontalAlignment="Stretch" Padding="10,5,10,6"
+                          CornerRadius="{StaticResource SiloPillCornerRadius}" controls:Pill.IsEnabled="True"
+                          AutomationProperties.Name="{x:Bind Label}" ToolTipService.ToolTip="{x:Bind Label}">
+                <TextBlock Text="{x:Bind Label}" TextTrimming="CharacterEllipsis" />
+            </ToggleButton>
+        </DataTemplate>
     </UserControl.Resources>
 
     <Button Style="{StaticResource FiltersPillButtonStyle}" AutomationProperties.Name="{x:Bind FiltersName(Filters.ActiveCount), Mode=OneWay}">
@@ -30,43 +40,102 @@
         </StackPanel>
         <Button.Flyout>
             <Flyout x:Name="FiltersFlyout" Placement="BottomEdgeAlignedLeft" Opening="OnFiltersFlyoutOpening">
-                <StackPanel Width="340" Spacing="18">
+                <Grid Width="400" RowSpacing="14">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
                     <TextBlock Text="Filters" Style="{StaticResource SiloRowTitleTextStyle}" AutomationProperties.HeadingLevel="Level2" />
-                    <ComboBox Header="Genre" HorizontalAlignment="Stretch" ItemsSource="{x:Bind Filters.GenreChoices, Mode=OneWay}"
-                              SelectedIndex="{x:Bind Filters.DraftGenreIndex, Mode=TwoWay}" />
-                    <StackPanel Spacing="8" Visibility="{x:Bind Filters.HasRatings, Mode=OneWay}">
-                        <TextBlock Text="Content rating" Style="{StaticResource SiloCaptionTextStyle}" />
-                        <ItemsRepeater ItemsSource="{x:Bind Filters.RatingOptions, Mode=OneWay}">
-                            <ItemsRepeater.Layout>
-                                <UniformGridLayout MinItemWidth="72" MinColumnSpacing="8" MinRowSpacing="8" ItemsStretch="Fill" />
-                            </ItemsRepeater.Layout>
-                            <ItemsRepeater.ItemTemplate>
-                                <DataTemplate x:DataType="vm:LibraryFilterToggle">
-                                    <ToggleButton Content="{x:Bind Value}" IsChecked="{x:Bind IsSelected, Mode=TwoWay}" HorizontalAlignment="Stretch"
-                                                  CornerRadius="{StaticResource SiloPillCornerRadius}" controls:Pill.IsEnabled="True" />
-                                </DataTemplate>
-                            </ItemsRepeater.ItemTemplate>
-                        </ItemsRepeater>
-                    </StackPanel>
-                    <Grid ColumnSpacing="12">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <NumberBox x:Name="YearFromBox" Header="Year from" PlaceholderText="Any" SpinButtonPlacementMode="Hidden"
-                                   Minimum="1" Maximum="9999" Value="{x:Bind Filters.DraftYearFrom, Mode=TwoWay}" />
-                        <NumberBox x:Name="YearToBox" Grid.Column="1" Header="Year to" PlaceholderText="Any" SpinButtonPlacementMode="Hidden"
-                                   Minimum="1" Maximum="9999" Value="{x:Bind Filters.DraftYearTo, Mode=TwoWay}" />
-                    </Grid>
-                    <TextBlock Visibility="{x:Bind Filters.HasOptionsError, Mode=OneWay}" TextWrapping="Wrap" Style="{StaticResource SiloCaptionTextStyle}"
-                               Text="{x:Bind OptionsErrorText, Mode=OneWay}" />
-                    <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                    <ScrollViewer x:Name="FiltersScroller" Grid.Row="1" Padding="0,0,14,0" XYFocusKeyboardNavigation="Enabled"
+                                  HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel Spacing="18">
+                            <StackPanel Spacing="8" Visibility="{x:Bind Filters.HasGenres, Mode=OneWay}">
+                                <TextBlock Text="Genres" Style="{StaticResource SiloCaptionTextStyle}" />
+                                <ItemsRepeater ItemsSource="{x:Bind Filters.GenreOptions, Mode=OneWay}" ItemTemplate="{StaticResource FilterChipTemplate}"
+                                               TabFocusNavigation="Once" AutomationProperties.Name="Genres">
+                                    <ItemsRepeater.Layout>
+                                        <UniformGridLayout MinItemWidth="116" MinColumnSpacing="8" MinRowSpacing="8" ItemsStretch="Fill" />
+                                    </ItemsRepeater.Layout>
+                                </ItemsRepeater>
+                            </StackPanel>
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Decade" Style="{StaticResource SiloCaptionTextStyle}" />
+                                <ItemsRepeater ItemsSource="{x:Bind Filters.DecadeOptions}" ItemTemplate="{StaticResource FilterChipTemplate}"
+                                               TabFocusNavigation="Once" AutomationProperties.Name="Decade">
+                                    <ItemsRepeater.Layout>
+                                        <UniformGridLayout MinItemWidth="72" MinColumnSpacing="8" MinRowSpacing="8" ItemsStretch="Fill" />
+                                    </ItemsRepeater.Layout>
+                                </ItemsRepeater>
+                            </StackPanel>
+                            <Grid ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <NumberBox x:Name="YearFromBox" Header="Year From" PlaceholderText="Any" SpinButtonPlacementMode="Hidden"
+                                           Minimum="1" Maximum="9999" Value="{x:Bind Filters.DraftYearFrom, Mode=TwoWay}" />
+                                <NumberBox x:Name="YearToBox" Grid.Column="1" Header="Year To" PlaceholderText="Any" SpinButtonPlacementMode="Hidden"
+                                           Minimum="1" Maximum="9999" Value="{x:Bind Filters.DraftYearTo, Mode=TwoWay}" />
+                            </Grid>
+                            <StackPanel Spacing="8" Visibility="{x:Bind Filters.HasRatings, Mode=OneWay}">
+                                <TextBlock Text="Content Rating" Style="{StaticResource SiloCaptionTextStyle}" />
+                                <ItemsRepeater ItemsSource="{x:Bind Filters.RatingOptions, Mode=OneWay}" ItemTemplate="{StaticResource FilterChipTemplate}"
+                                               TabFocusNavigation="Once" AutomationProperties.Name="Content Rating">
+                                    <ItemsRepeater.Layout>
+                                        <UniformGridLayout MinItemWidth="72" MinColumnSpacing="8" MinRowSpacing="8" ItemsStretch="Fill" />
+                                    </ItemsRepeater.Layout>
+                                </ItemsRepeater>
+                            </StackPanel>
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Video Quality" Style="{StaticResource SiloCaptionTextStyle}" />
+                                <ItemsRepeater ItemsSource="{x:Bind Filters.VideoQualityOptions}" ItemTemplate="{StaticResource FilterChipTemplate}"
+                                               TabFocusNavigation="Once" AutomationProperties.Name="Video Quality">
+                                    <ItemsRepeater.Layout>
+                                        <UniformGridLayout MinItemWidth="72" MinColumnSpacing="8" MinRowSpacing="8" ItemsStretch="Fill" />
+                                    </ItemsRepeater.Layout>
+                                </ItemsRepeater>
+                            </StackPanel>
+                            <StackPanel Spacing="8" Visibility="{x:Bind Filters.HasOriginalLanguages, Mode=OneWay}">
+                                <TextBlock Text="Original Language" Style="{StaticResource SiloCaptionTextStyle}" />
+                                <ItemsRepeater ItemsSource="{x:Bind Filters.OriginalLanguageOptions, Mode=OneWay}" ItemTemplate="{StaticResource FilterChipTemplate}"
+                                               TabFocusNavigation="Once" AutomationProperties.Name="Original Language">
+                                    <ItemsRepeater.Layout>
+                                        <UniformGridLayout MinItemWidth="116" MinColumnSpacing="8" MinRowSpacing="8" ItemsStretch="Fill" />
+                                    </ItemsRepeater.Layout>
+                                </ItemsRepeater>
+                            </StackPanel>
+                            <StackPanel Spacing="8" Visibility="{x:Bind Filters.HasAudioLanguages, Mode=OneWay}">
+                                <TextBlock Text="Audio Language" Style="{StaticResource SiloCaptionTextStyle}" />
+                                <ItemsRepeater ItemsSource="{x:Bind Filters.AudioLanguageOptions, Mode=OneWay}" ItemTemplate="{StaticResource FilterChipTemplate}"
+                                               TabFocusNavigation="Once" AutomationProperties.Name="Audio Language">
+                                    <ItemsRepeater.Layout>
+                                        <UniformGridLayout MinItemWidth="116" MinColumnSpacing="8" MinRowSpacing="8" ItemsStretch="Fill" />
+                                    </ItemsRepeater.Layout>
+                                </ItemsRepeater>
+                            </StackPanel>
+                            <StackPanel Spacing="8" Visibility="{x:Bind Filters.HasSubtitleLanguages, Mode=OneWay}">
+                                <TextBlock Text="Subtitle Language" Style="{StaticResource SiloCaptionTextStyle}" />
+                                <ItemsRepeater ItemsSource="{x:Bind Filters.SubtitleLanguageOptions, Mode=OneWay}" ItemTemplate="{StaticResource FilterChipTemplate}"
+                                               TabFocusNavigation="Once" AutomationProperties.Name="Subtitle Language">
+                                    <ItemsRepeater.Layout>
+                                        <UniformGridLayout MinItemWidth="116" MinColumnSpacing="8" MinRowSpacing="8" ItemsStretch="Fill" />
+                                    </ItemsRepeater.Layout>
+                                </ItemsRepeater>
+                            </StackPanel>
+                            <ComboBox Header="Watch Status" HorizontalAlignment="Stretch" ItemsSource="{x:Bind vm:LibraryFiltersViewModel.WatchStatusChoices}"
+                                      SelectedIndex="{x:Bind Filters.DraftWatchStatusIndex, Mode=TwoWay}" />
+                            <TextBlock Visibility="{x:Bind Filters.HasOptionsError, Mode=OneWay}" TextWrapping="Wrap" Style="{StaticResource SiloCaptionTextStyle}"
+                                       Text="{x:Bind OptionsErrorText, Mode=OneWay}" />
+                        </StackPanel>
+                    </ScrollViewer>
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
                         <Button Content="Clear" Style="{StaticResource FiltersPillButtonStyle}" Command="{x:Bind Filters.ClearCommand, Mode=OneWay}"
                                 Click="OnFilterActionClick" />
                         <Button Content="Apply" Style="{StaticResource SiloPrimaryButtonStyle}" MinHeight="38" Padding="20,6"
                                 Command="{x:Bind Filters.ApplyCommand, Mode=OneWay}" Click="OnFilterActionClick" />
                     </StackPanel>
-                </StackPanel>
+                </Grid>
             </Flyout>
         </Button.Flyout>
     </Button>

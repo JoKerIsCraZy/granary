@@ -1,5 +1,6 @@
 using System.Net;
 using Granary.Core.Api;
+using Granary.Core.Api.Catalog;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Cards;
 using Granary.Tests.Profiles;
@@ -21,7 +22,7 @@ public sealed class LibraryBrowseTests
         var library = await _harness.OpenLibraryTabAsync();
 
         Assert.Equal(FirstQuery, Assert.Single(_harness.Queries(CatalogPath)));
-        Assert.Equal("library_id=1&type=movie&skip_technical=true", Assert.Single(_harness.Queries("api/v2/catalog/filters")));
+        Assert.Equal("library_id=1&type=movie", Assert.Single(_harness.Queries("api/v2/catalog/filters")));
         var browse = library.Browse;
         Assert.Equal(new[] { "Alien", "Heat" }, browse.Grid.Cards.Select(c => c.Title));
         Assert.Equal("2 titles", browse.Grid.TotalText);
@@ -48,7 +49,7 @@ public sealed class LibraryBrowseTests
         _harness.Answer(CatalogPath, LibraryPayloads.OnlyPage, LibraryPayloads.LastPage);
         var library = await _harness.OpenLibraryTabAsync();
         var browse = library.Browse;
-        var dateAdded = browse.SortOptions.Single(o => o.Label == "Date added");
+        var dateAdded = browse.SortOptions.Single(o => o.Label == "Date Added");
         int restarts = 0;
         browse.Grid.Restarted += (_, _) => restarts++;
 
@@ -67,17 +68,109 @@ public sealed class LibraryBrowseTests
     }
 
     [Theory]
-    [InlineData("Release date", "-release_date")]
+    [InlineData("Release Date", "-release_date")]
     [InlineData("Year", "-year")]
-    [InlineData("IMDb rating", "-rating_imdb")]
-    [InlineData("Runtime", "-runtime")]
-    public async Task Sort_UsesTheServersFieldNames(string label, string sort)
+    [InlineData("Content Rating", "content_rating")]
+    [InlineData("Duration", "-runtime")]
+    [InlineData("IMDb Rating", "-rating_imdb")]
+    [InlineData("TMDB Rating", "-rating_tmdb")]
+    [InlineData("RT Critic Rating", "-rating_rt_critic")]
+    [InlineData("RT Audience Rating", "-rating_rt_audience")]
+    [InlineData("Resolution", "-resolution")]
+    [InlineData("Bitrate", "-bitrate")]
+    [InlineData("Progress", "-progress")]
+    [InlineData("Date Viewed", "-date_viewed")]
+    [InlineData("Plays", "-plays")]
+    public async Task Sort_UsesTheServersFieldNames_InTheOrderEachStartsIn(string label, string sort)
     {
         var library = await _harness.OpenLibraryTabAsync();
 
         await library.Browse.SetSortCommand.ExecuteAsync(library.Browse.SortOptions.Single(o => o.Label == label));
 
         Assert.Contains($"&sort={sort}&", _harness.Queries(CatalogPath)[^1], StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task MovieLibrary_OffersTheWebsSorts_WithoutTheEpisodeOnes()
+    {
+        var library = await _harness.OpenLibraryTabAsync();
+
+        Assert.Equal(
+        [
+            "Title", "Date Added", "Release Date", "Year", "Content Rating", "Duration", "IMDb Rating", "TMDB Rating", "RT Critic Rating",
+            "RT Audience Rating", "Resolution", "Bitrate", "Progress", "Date Viewed", "Plays",
+        ], library.Browse.SortOptions.Select(o => o.Label));
+        Assert.Equal(1, _harness.Count(LibraryHarness.RatingsPath));
+    }
+
+    [Fact]
+    public async Task SeriesLibrary_AlsoSortsByItsLatestEpisode()
+    {
+        _harness.Answer("api/v2/library/2/sections", LibraryPayloads.Sections);
+        _harness.Answer("api/v2/library/2/sections/recently_added/items", LibraryPayloads.RecentlyAddedItems);
+        var library = await _harness.OpenLibraryTabAsync("2");
+        var browse = library.Browse;
+
+        Assert.Equal(["Title", "Date Added", "Release Date", "Latest Episode Air Date", "Latest Episode Added", "Year"],
+            browse.SortOptions.Take(6).Select(o => o.Label));
+
+        await browse.SetSortCommand.ExecuteAsync(browse.SortOptions.Single(o => o.Label == "Latest Episode Added"));
+
+        Assert.Contains("&sort=-latest_episode_added&", _harness.Queries(CatalogPath)[^1], StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("""{ "state": "available", "sources": [ { "source": "imdb", "name": "IMDb" }, { "source": "rt_critic", "name": "Tomatometer" } ] }""",
+        "RT Critic Rating")]
+    [InlineData("""{ "state": "available", "sources": [ { "source": "imdb", "name": "IMDb" } ] }""", "")]
+    [InlineData("""{ "state": "disabled", "sources": [] }""", "")]
+    public async Task RottenTomatoesSorts_OnlyForTheSourcesTheServerShows(string capability, string rtSorts)
+    {
+        _harness.Answer(LibraryHarness.RatingsPath, capability);
+
+        var library = await _harness.OpenLibraryTabAsync();
+
+        Assert.Equal(rtSorts, string.Join(",", library.Browse.SortOptions.Where(o => o.RatingSource is not null).Select(o => o.Label)));
+        Assert.Contains(library.Browse.SortOptions, o => o.Label == "IMDb Rating");
+    }
+
+    [Fact]
+    public async Task AServerWithoutRatings_OffersNoRottenTomatoesSorts()
+    {
+        _harness.Answer(LibraryHarness.RatingsPath, ScriptedSilo.Problem(404, "not_found"));
+
+        var library = await _harness.OpenLibraryTabAsync();
+
+        Assert.DoesNotContain(library.Browse.SortOptions, o => o.RatingSource is not null);
+        Assert.Equal(2, library.Browse.Grid.Cards.Count);
+    }
+
+    [Fact]
+    public async Task ARememberedSortTheLibraryDoesNotOffer_OpensByTitle()
+    {
+        var library = await _harness.OpenLibraryTabAsync();
+
+        library.Browse.Restore(new LibraryBrowseState(CatalogSortFields.LastAirDate, true, LibraryFilterSet.None));
+
+        Assert.True(library.Browse.Sort.IsTitle);
+        Assert.False(library.Browse.IsDescending);
+    }
+
+    [Fact]
+    public async Task ARememberedRatingSort_StaysWhileItsSourceIsHidden_UntilAnotherIsPicked()
+    {
+        _harness.Answer(LibraryHarness.RatingsPath, ScriptedSilo.Problem(404, "not_found"));
+        var library = await _harness.OpenLibraryTabAsync();
+        var browse = library.Browse;
+
+        browse.Restore(new LibraryBrowseState(CatalogSortFields.RatingRtCritic, true, LibraryFilterSet.None));
+
+        Assert.Equal("RT Critic Rating", browse.SortLabel);
+        Assert.Contains(browse.SortOptions, o => o.Field == CatalogSortFields.RatingRtCritic);
+
+        await browse.SetSortCommand.ExecuteAsync(browse.SortOptions.Single(o => o.Label == "Year"));
+
+        Assert.DoesNotContain(browse.SortOptions, o => o.Field == CatalogSortFields.RatingRtCritic);
     }
 
     [Fact]
@@ -94,15 +187,13 @@ public sealed class LibraryBrowseTests
     }
 
     [Fact]
-    public async Task Filters_NarrowByGenreRatingsAndYears()
+    public async Task Filters_YearsAndRatings_NarrowTheSimpleListing()
     {
         var library = await _harness.OpenLibraryTabAsync();
         var filters = library.Browse.Filters;
-        Assert.Equal(new[] { LibraryFiltersViewModel.AnyGenre, "Crime", "Drama" }, filters.GenreChoices);
         Assert.Equal(new[] { "PG-13", "R" }, filters.RatingOptions.Select(o => o.Value));
 
         filters.BeginEdit();
-        filters.DraftGenreIndex = 2;
         foreach (var rating in filters.RatingOptions)
         {
             rating.IsSelected = true;
@@ -111,9 +202,10 @@ public sealed class LibraryBrowseTests
         filters.DraftYearTo = 1990.4;
         await filters.ApplyCommand.ExecuteAsync(null);
 
-        Assert.Equal($"library_id=1&type=movie&genre=Drama&year_min=1990&year_max=1999&content_rating=PG-13&content_rating=R&sort=title&limit=60&{Images}",
+        Assert.Equal($"library_id=1&type=movie&year_min=1990&year_max=1999&content_rating=PG-13&content_rating=R&sort=title&limit=60&{Images}",
             _harness.Queries(CatalogPath)[^1]);
-        Assert.Equal(4, filters.ActiveCount);
+        Assert.Empty(_harness.QueryBodies());
+        Assert.Equal(3, filters.ActiveCount);
         Assert.True(filters.HasActiveFilters);
         Assert.True(library.Browse.IsNarrowed);
     }
@@ -121,12 +213,11 @@ public sealed class LibraryBrowseTests
     [Fact]
     public async Task Filters_AreTheLetterIndexsRuleGroups_AsTheServerMakesThem()
     {
-        // GET /catalog turns genre and years into one group that must all match, and several ratings into one of
-        // which any may: the index counts the same titles the pages list.
+        // GET /catalog turns the years into one group that must all match, and several ratings into one of which any
+        // may: the index counts the same titles the pages list.
         var library = await _harness.OpenLibraryTabAsync();
         var filters = library.Browse.Filters;
         filters.BeginEdit();
-        filters.DraftGenreIndex = 2;
         foreach (var rating in filters.RatingOptions)
         {
             rating.IsSelected = true;
@@ -137,8 +228,113 @@ public sealed class LibraryBrowseTests
         await filters.ApplyCommand.ExecuteAsync(null);
 
         Assert.Equal("""
-            {"library_id":"1","type":"movie","groups":[{"match":"all","rules":[{"field":"genre","op":"contains","value":"Drama"},{"field":"year","op":"between","value":[1990,1999]}]},{"match":"any","rules":[{"field":"content_rating","op":"is","value":"PG-13"},{"field":"content_rating","op":"is","value":"R"}]}],"order":"asc"}
+            {"library_id":"1","type":"movie","groups":[{"match":"all","rules":[{"field":"year","op":"between","value":[1990,1999]}]},{"match":"any","rules":[{"field":"content_rating","op":"is","value":"PG-13"},{"field":"content_rating","op":"is","value":"R"}]}],"order":"asc"}
             """, _harness.LetterBodies()[^1]);
+    }
+
+    [Fact]
+    public async Task Filters_Genres_TakeTheGridToTheRuleQuery_WithTheYearsAndRatingsAsGroupsBeforeThem()
+    {
+        var library = await _harness.OpenLibraryTabAsync();
+        var filters = library.Browse.Filters;
+        Assert.Equal(new[] { "Crime", "Drama" }, filters.GenreOptions.Select(o => o.Label));
+
+        filters.BeginEdit();
+        filters.GenreOptions[0].IsSelected = true;
+        filters.GenreOptions[1].IsSelected = true;
+        filters.RatingOptions[1].IsSelected = true;
+        filters.DraftYearFrom = 1990;
+        filters.DraftYearTo = 1999;
+        await filters.ApplyCommand.ExecuteAsync(null);
+
+        const string Groups = """
+            "groups":[{"match":"all","rules":[{"field":"year","op":"between","value":[1990,1999]}]},{"match":"all","rules":[{"field":"content_rating","op":"is","value":"R"}]},{"match":"any","rules":[{"field":"genre","op":"contains","value":"Crime"},{"field":"genre","op":"contains","value":"Drama"}]}]
+            """;
+        var sent = _harness.Silo.SentTo(HttpMethod.Post, LibraryHarness.QueryPath);
+        Assert.Equal("?" + Images, Assert.Single(sent).Uri.Query);
+        Assert.Equal($$"""{"library_id":"1","type":"movie",{{Groups}},"sort":"title","order":"asc","limit":60}""", sent[0].Body);
+        Assert.Equal($$"""{"library_id":"1","type":"movie",{{Groups}},"order":"asc"}""", _harness.LetterBodies()[^1]);
+        Assert.Equal(1, _harness.Count(CatalogPath));
+        Assert.Equal(4, filters.ActiveCount);
+        Assert.Equal(new[] { "Alien", "Heat" }, library.Browse.Grid.Cards.Select(c => c.Title));
+    }
+
+    [Fact]
+    public async Task Filters_DecadesQualityLanguagesAndWatchStatus_AreTheirRuleGroups_InTheFlyoutsOrder()
+    {
+        var library = await _harness.OpenLibraryTabAsync();
+        var browse = library.Browse;
+        var filters = browse.Filters;
+        await browse.SetSortCommand.ExecuteAsync(browse.SortOptions.Single(o => o.Label == "Year"));
+
+        filters.BeginEdit();
+        filters.DecadeOptions.Single(o => o.Label == "1990s").IsSelected = true;
+        filters.VideoQualityOptions.Single(o => o.Label == "4K").IsSelected = true;
+        filters.VideoQualityOptions.Single(o => o.Label == "DOVI").IsSelected = true;
+        filters.OriginalLanguageOptions.Single(o => o.Label == "French").IsSelected = true;
+        filters.AudioLanguageOptions.Single(o => o.Label == "German").IsSelected = true;
+        filters.DraftWatchStatusIndex = LibraryFiltersViewModel.WatchStatusChoices.ToList().IndexOf("Unwatched");
+        await filters.ApplyCommand.ExecuteAsync(null);
+
+        Assert.Equal("""
+            {"library_id":"1","type":"movie","groups":[{"match":"any","rules":[{"field":"year","op":"between","value":[1990,1999]}]},{"match":"all","rules":[{"field":"resolution","op":"is","value":"2160p"},{"field":"dolby_vision","op":"is","value":true}]},{"match":"any","rules":[{"field":"original_language","op":"is","value":"fr"}]},{"match":"any","rules":[{"field":"audio_language","op":"is","value":"de"}]},{"match":"all","rules":[{"field":"watched","op":"is","value":false},{"field":"in_progress","op":"is","value":false}]}],"sort":"year","order":"desc","limit":60}
+            """, Assert.Single(_harness.QueryBodies()));
+        Assert.Equal(6, filters.ActiveCount);
+        Assert.Equal(LibraryWatchStatus.Unwatched, filters.Applied.WatchStatus);
+    }
+
+    [Fact]
+    public async Task Filters_OfferTheLanguagesByName_AndLeaveOutAFacetWithoutValues()
+    {
+        var library = await _harness.OpenLibraryTabAsync();
+        var filters = library.Browse.Filters;
+
+        Assert.Equal(new[] { "English", "French" }, filters.OriginalLanguageOptions.Select(o => o.Label));
+        Assert.Equal(new[] { "en", "fr" }, filters.OriginalLanguageOptions.Select(o => o.Value));
+        Assert.Equal(new[] { "English", "German" }, filters.AudioLanguageOptions.Select(o => o.Label));
+        Assert.True(filters.HasAudioLanguages);
+        Assert.False(filters.HasSubtitleLanguages);
+        Assert.Equal(new[] { "4K", "HDR", "DOVI" }, filters.VideoQualityOptions.Select(o => o.Label));
+        Assert.Equal("1900s", filters.DecadeOptions[^1].Label);
+        Assert.Equal(new[] { "Any", "Unwatched", "In Progress", "Watched" }, LibraryFiltersViewModel.WatchStatusChoices);
+    }
+
+    [Fact]
+    public async Task Filters_CountEachPickedValue_OnceTheYearRange_AndOnceAWatchStatus()
+    {
+        var library = await _harness.OpenLibraryTabAsync();
+        var filters = library.Browse.Filters;
+
+        filters.BeginEdit();
+        foreach (var option in filters.GenreOptions.Concat(filters.RatingOptions).Concat(filters.VideoQualityOptions)
+            .Concat(filters.OriginalLanguageOptions).Concat(filters.AudioLanguageOptions).Concat(filters.DecadeOptions.Take(2)))
+        {
+            option.IsSelected = true;
+        }
+        filters.DraftYearFrom = 1980;
+        filters.DraftYearTo = 2000;
+        filters.DraftWatchStatusIndex = 3;
+        await filters.ApplyCommand.ExecuteAsync(null);
+
+        // 2 genres, 2 ratings, 3 qualities, 2 + 2 languages, 2 decades, the years, the watch status.
+        Assert.Equal(15, filters.ActiveCount);
+    }
+
+    [Fact]
+    public async Task Filters_ARememberedValueTheLibraryNoLongerHas_StillShows_SoItCanBeSwitchedOff()
+    {
+        var library = await _harness.OpenLibraryTabAsync();
+        var filters = library.Browse.Filters;
+
+        filters.Restore(new LibraryFilterSet { Genres = ["Western"], AudioLanguages = ["ja"] });
+
+        Assert.Equal(new[] { "Crime", "Drama", "Western" }, filters.GenreOptions.Select(o => o.Value));
+        Assert.True(filters.GenreOptions[^1].IsSelected);
+        Assert.Equal("Japanese", filters.AudioLanguageOptions[^1].Label);
+        filters.GenreOptions[^1].IsSelected = false;
+        await filters.ApplyCommand.ExecuteAsync(null);
+        Assert.Equal(new[] { "ja" }, filters.Applied.AudioLanguages);
+        Assert.Empty(filters.Applied.Genres);
     }
 
     [Fact]
@@ -165,13 +361,14 @@ public sealed class LibraryBrowseTests
         var library = await _harness.OpenLibraryTabAsync();
         var filters = library.Browse.Filters;
         filters.BeginEdit();
-        filters.DraftGenreIndex = 1;
+        filters.GenreOptions[0].IsSelected = true;
+        filters.VideoQualityOptions[1].IsSelected = true;
         await filters.ApplyCommand.ExecuteAsync(null);
 
         await filters.ClearCommand.ExecuteAsync(null);
 
         Assert.Equal(0, filters.ActiveCount);
-        Assert.Equal(0, filters.DraftGenreIndex);
+        Assert.DoesNotContain(filters.GenreOptions.Concat(filters.VideoQualityOptions), o => o.IsSelected);
         Assert.Equal(FirstQuery, _harness.Queries(CatalogPath)[^1]);
         Assert.Equal(AllTitlesLetters, _harness.LetterBodies()[^1]);
     }
@@ -182,16 +379,21 @@ public sealed class LibraryBrowseTests
         var library = await _harness.OpenLibraryTabAsync();
         var filters = library.Browse.Filters;
         filters.BeginEdit();
-        filters.DraftGenreIndex = 1;
+        filters.GenreOptions[0].IsSelected = true;
         filters.RatingOptions[1].IsSelected = true;
         await filters.ApplyCommand.ExecuteAsync(null);
         filters.BeginEdit();
-        filters.DraftGenreIndex = 2;
+        filters.GenreOptions[0].IsSelected = false;
+        filters.GenreOptions[1].IsSelected = true;
+        filters.DecadeOptions[0].IsSelected = true;
+        filters.DraftWatchStatusIndex = 2;
         filters.DraftYearFrom = 1980;
 
         filters.BeginEdit();
 
-        Assert.Equal(1, filters.DraftGenreIndex);
+        Assert.Equal(new[] { true, false }, filters.GenreOptions.Select(o => o.IsSelected));
+        Assert.False(filters.DecadeOptions[0].IsSelected);
+        Assert.Equal(0, filters.DraftWatchStatusIndex);
         Assert.True(double.IsNaN(filters.DraftYearFrom));
         Assert.True(filters.RatingOptions[1].IsSelected);
         Assert.False(filters.RatingOptions[0].IsSelected);
@@ -205,8 +407,47 @@ public sealed class LibraryBrowseTests
         var library = await _harness.OpenLibraryTabAsync();
 
         Assert.True(library.Browse.Filters.HasOptionsError);
-        Assert.Equal(new[] { LibraryFiltersViewModel.AnyGenre }, library.Browse.Filters.GenreChoices);
+        Assert.False(library.Browse.Filters.HasGenres);
+        Assert.False(library.Browse.Filters.HasOriginalLanguages);
         Assert.Equal(2, library.Browse.Grid.Cards.Count);
+    }
+
+    [Fact]
+    public async Task FailedLanguagesOfTheFiles_LeaveTheOtherOptions()
+    {
+        // The file-derived facets are the heavier read: without them the genres, ratings and original languages still show.
+        _harness.Silo.On(HttpMethod.Get, "api/v2/catalog/filters", ScriptedSilo.Problem(400, "invalid_request"),
+            ScriptedSilo.Json(HttpStatusCode.OK, """{ "genres": ["Crime"], "content_ratings": ["R"], "original_languages": ["en"] }"""));
+
+        var library = await _harness.OpenLibraryTabAsync();
+
+        var filters = library.Browse.Filters;
+        Assert.Equal(["library_id=1&type=movie", "library_id=1&type=movie&skip_technical=true"], _harness.Queries("api/v2/catalog/filters"));
+        Assert.False(filters.HasOptionsError);
+        Assert.True(filters.HasGenres);
+        Assert.True(filters.HasOriginalLanguages);
+        Assert.False(filters.HasAudioLanguages);
+    }
+
+    [Fact]
+    public async Task OptionsArrivingWhileTheFlyoutIsOpen_KeepTheDraft()
+    {
+        var release = new TaskCompletionSource();
+        _harness.Answer("api/v2/catalog/filters", LibraryHarness.Held(release, LibraryPayloads.Filters));
+        var library = _harness.Create();
+        await library.ActivateAsync("1");
+        var tab = library.SelectTabCommand.ExecuteAsync(LibraryTab.Library);
+        var filters = library.Browse.Filters;
+        filters.Restore(new LibraryFilterSet { Genres = ["Drama"] });
+        filters.BeginEdit();
+        filters.GenreOptions.Single(o => o.Value == "Drama").IsSelected = false;
+
+        release.SetResult();
+        await tab;
+
+        Assert.Equal(new[] { "Crime", "Drama" }, filters.GenreOptions.Select(o => o.Value));
+        Assert.DoesNotContain(filters.GenreOptions, o => o.IsSelected);
+        Assert.Equal(["Drama"], filters.Applied.Genres);
     }
 
     [Fact]
@@ -378,8 +619,8 @@ public sealed class LibraryBrowseTests
         var library = await _harness.OpenLibraryTabAsync();
         var browse = library.Browse;
         browse.Filters.BeginEdit();
-        browse.Filters.DraftGenreIndex = 1;
-        _harness.Answer(CatalogPath, LibraryPayloads.EmptyPage, LibraryPayloads.OnlyPage);
+        browse.Filters.GenreOptions[0].IsSelected = true;
+        _harness.Silo.On(HttpMethod.Post, LibraryHarness.QueryPath, ScriptedSilo.Json(HttpStatusCode.OK, LibraryPayloads.EmptyPage));
         await browse.Filters.ApplyCommand.ExecuteAsync(null);
 
         Assert.True(browse.Grid.IsEmpty);
@@ -434,11 +675,11 @@ public sealed class LibraryBrowseTests
         var browse = library.Browse;
 
         var stale = browse.SetSortCommand.ExecuteAsync(browse.SortOptions.Single(o => o.Label == "Year"));
-        await browse.SetSortCommand.ExecuteAsync(browse.SortOptions.Single(o => o.Label == "Runtime"));
+        await browse.SetSortCommand.ExecuteAsync(browse.SortOptions.Single(o => o.Label == "Duration"));
         release.SetResult();
         await stale;
 
-        Assert.Equal("Runtime", browse.SortLabel);
+        Assert.Equal("Duration", browse.SortLabel);
         Assert.Equal(new[] { "Se7en" }, browse.Grid.Cards.Select(c => c.Title));
     }
 }
