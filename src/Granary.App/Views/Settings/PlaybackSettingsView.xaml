@@ -52,7 +52,7 @@
                 </controls:SettingsRow>
                 <!-- Granary's own: a remote's arrows and a keyboard's are the same keys, so the viewer says which they use. -->
                 <controls:SettingsRow Label="Up and Down in the player"
-                                      Description="While the picture shows. Show the controls and menus suits a remote, as on Silo's TV app: Up shows the controls, Down opens audio or subtitles. Change the volume is the keyboard shortcut of Silo's web player.">
+                                      Description="While the picture shows. Controls and menus suits a remote, as on Silo's TV app: Up shows the controls, Down opens audio or subtitles. Volume is the keyboard shortcut of Silo's web player.">
                     <ComboBox Style="{StaticResource SiloSettingsComboBoxStyle}" ItemsSource="{x:Bind ViewModel.UpDownChoices}"
                               SelectedItem="{x:Bind ViewModel.SelectedUpDown, Mode=TwoWay}" AutomationProperties.Name="Up and Down in the player" />
                 </controls:SettingsRow>
