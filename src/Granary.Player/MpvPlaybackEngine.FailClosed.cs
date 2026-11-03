@@ -95,6 +95,8 @@ public sealed partial class MpvPlaybackEngine
         {
             Ended?.Invoke(this, new PlaybackEnded(PlaybackEndReason.Error, "Granary stopped using your mpv.conf", load));
         }
+        // Apply now that came while Granary stopped the title (MpvPlaybackEngine.Restart.cs).
+        StartAgainIfWaiting();
     }
 
     // Under _restartGate, into the new mpv: the engine's settings, and the size of the picture Granary shows now.

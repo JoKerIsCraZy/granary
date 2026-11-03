@@ -10,7 +10,7 @@ public sealed class MpvConfigEditorViewModelTests : IDisposable
 {
     private readonly string _data = Path.Combine(Path.GetTempPath(), "granary-tests", Guid.NewGuid().ToString("N"));
     private readonly FakeConfirmation _confirmation = new();
-    private readonly MpvConfigChanges _changes = new();
+    private readonly MpvConfigChanges _changes = new(new FakeMpvRestart(), new ImmediateDispatcher());
     private readonly MpvConfigFolder _folder;
 
     public MpvConfigEditorViewModelTests() => _folder = new(Path.Combine(_data, "mpv"), new LogSink().For<MpvConfigFolder>());

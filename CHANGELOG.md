@@ -32,7 +32,7 @@ release's section is what its update says it changes (docs/release.md).
 - Settings → Playback → This PC → mpv configuration: **Edit** opens `mpv.conf` in an editor inside Granary, usable
   with the keyboard or a TV remote. It holds the file exactly as written, profiles, includes and comments too, and
   checks the text as you type: which options Granary keeps for itself, and whether the player would not use the file
-  at all. Save writes the file in one piece and goes back to Settings, which says the change applies after a restart;
+  at all. Save writes the file in one piece and goes back to Settings, which offers to apply it;
   Cancel, Esc or the remote's Back close it, asking first when there are unsaved changes.
 - Settings → Playback → This PC: **mpv presets**. **Save as preset…** keeps your `mpv.conf` under a name, as a file
   in the `presets` folder next to it that you can see and back up; a name already taken is replaced only after asking.
@@ -40,6 +40,10 @@ release's section is what its update says it changes (docs/release.md).
   Windows as you type them. Settings names the preset in use, and says "(changed)" once you edit it; **Unload** goes
   back to your own `mpv.conf` from before you loaded any preset, which Granary keeps aside on the first load (or removes
   `mpv.conf` again if you had none).
+- Settings → Playback → This PC: **Apply now** after you save `mpv.conf` in Granary, load a preset or unload one. The
+  player starts mpv again with the new file without restarting Granary, and the row then says how the file fared.
+  Playback is never cut: while a title plays, Settings says "Applies to the next title." and the new file counts from
+  the next title, or once the player closes. Volume, speed, subtitles and the picture's fill carry over.
 - The log says why a title is converted: what this PC's graphics card decodes, what Granary told the server it plays,
   and the reason the server gave for its choice.
 - More filters for a library, and for Favorites, Watchlist, History and collections: several genres at once, decades,

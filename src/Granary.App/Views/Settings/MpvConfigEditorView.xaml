@@ -24,7 +24,7 @@
         </Button>
         <TextBlock Margin="0,12,0,0" Text="mpv.conf" Style="{StaticResource SiloSettingsPageTitleStyle}" AutomationProperties.HeadingLevel="Level1" />
         <TextBlock Margin="0,8,0,24" Style="{StaticResource SiloSettingsMutedTextStyle}" FontSize="14"
-                   Text="Your own mpv options for this PC, in mpv's syntax. Profiles, includes and comments stay as you write them. A change applies after you restart Granary." />
+                   Text="Your own mpv options for this PC, in mpv's syntax. Profiles, includes and comments stay as you write them. A change applies after you restart Granary, or with Apply now in Playback." />
         <InfoBar IsOpen="{x:Bind controls:SettingsText.Has(ViewModel.Message), Mode=OneWay}" Severity="Error" IsClosable="False"
                  Message="{x:Bind ViewModel.Message, Mode=OneWay}" Margin="0,0,0,16" />
 

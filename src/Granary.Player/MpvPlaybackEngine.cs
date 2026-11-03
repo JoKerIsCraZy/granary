@@ -99,11 +99,20 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
                 throw new ArgumentException($"Header '{name}' cannot be passed to mpv safely.", nameof(source));
             }
         }
-        // Not into an mpv that is being replaced (FailClosed): into the one after it.
+        // Not into an mpv that is being replaced (FailClosed): into the one after it. Apply now that waited for the title
+        // before starts mpv again here, so this title plays with mpv.conf as it is now.
+        long loadId;
+        bool startedAgain;
         lock (_restartGate)
         {
-            return LoadNow(source);
+            startedAgain = StartAgainBeforeLoad();
+            loadId = LoadNow(source);
         }
+        if (startedAgain)
+        {
+            AfterStartingAgain();
+        }
+        return loadId;
     }
 
     private long LoadNow(MediaSource source)
@@ -573,6 +582,8 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
             _ => new PlaybackEnded(PlaybackEndReason.Stopped, null),
         };
         Ended?.Invoke(this, ended with { LoadId = idle.LoadId });
+        // Apply now waited for this title: the player has heard how it ended, and mpv starts again.
+        StartAgainIfWaiting();
     }
 
     private void OnLogMessage(string prefix, string level, string text)

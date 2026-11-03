@@ -61,6 +61,10 @@ public sealed class SettingsViewModelTests : IDisposable
     private readonly string _data = Path.Combine(Path.GetTempPath(), "granary-tests", Guid.NewGuid().ToString("N"));
     private readonly RecordingFileLauncher _launcher = new();
     private readonly MpvConfigStatus _mpvStatus = new();
+    private readonly FakeMpvRestart _player = new();
+    private readonly MpvConfigChanges _mpvChanges;
+
+    public SettingsViewModelTests() => _mpvChanges = new MpvConfigChanges(_player, new ImmediateDispatcher());
 
     private MpvConfigFolder MpvFolder => new(Path.Combine(_data, "mpv"), new LogSink().For<MpvConfigFolder>());
 
@@ -75,7 +79,7 @@ public sealed class SettingsViewModelTests : IDisposable
     private PlaybackSettingsViewModel Playback() => new(_settings, new PlaybackApi(_silo.Http), new PlaybackConnectionApi(_silo.Http),
         ConnectionSpeedTestTests.SpeedTest(_silo, _time, _network), _network,
         new FakeSessionManager { State = SessionState.Ready, ActiveServer = ScriptedSilo.Server, ProfileId = "7" }, _time,
-        new LogSink().For<PlaybackSettingsViewModel>(), _device, MpvFolder, _launcher, _mpvStatus);
+        new LogSink().For<PlaybackSettingsViewModel>(), _device, MpvFolder, _launcher, _mpvStatus, _mpvChanges);
 
     private LanguageSettingsViewModel Language() => new(_settings, new LogSink().For<LanguageSettingsViewModel>());
 
@@ -225,6 +229,33 @@ public sealed class SettingsViewModelTests : IDisposable
         await page.LoadAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal("Your mpv.conf was not used: mpv refused to start with it. The log has the details.", page.MpvConfigStatusText);
+    }
+
+    [Fact]
+    public async Task ApplyNow_ShowsHowTheNewStartFared()
+    {
+        _mpvStatus.Report(new MpvConfigState(MpvConfigUse.NotUsed, "it sets player-operation-mode, which Granary needs to keep its own options"));
+        using var page = Playback();
+        _mpvChanges.Saved();
+        // The player starts again with the file as it is now, which it uses.
+        _player.WhileStarting = () => _mpvStatus.Report(new MpvConfigState(MpvConfigUse.Used, KeptOptions: 1));
+
+        await _mpvChanges.ApplyNowAsync();
+
+        Assert.Equal("Granary kept 1 of its own options from your mpv.conf. The log names them.", page.MpvConfigStatusText);
+    }
+
+    [Fact]
+    public async Task APageThatLeft_NoLongerFollowsApplyNow()
+    {
+        var page = Playback();
+        page.Dispose();
+        _mpvChanges.Saved();
+        _player.WhileStarting = () => _mpvStatus.Report(new MpvConfigState(MpvConfigUse.NotUsed, "mpv refused to start with it"));
+
+        await _mpvChanges.ApplyNowAsync();
+
+        Assert.Equal("", page.MpvConfigStatusText);
     }
 
     [Fact]

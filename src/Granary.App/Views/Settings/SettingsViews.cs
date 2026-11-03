@@ -40,7 +40,22 @@ public sealed partial class PlaybackSettingsView : UserControl, IDisposable
     /// <summary>Edit was pressed: the page shows the mpv.conf editor in this view's place.</summary>
     public event EventHandler? EditMpvConfigRequested;
 
-    public void Dispose() => Mpv.Dispose();
+    public void Dispose()
+    {
+        ViewModel.Dispose();
+        Mpv.Dispose();
+    }
+
+    // Apply now hides once mpv started again or waits for the next title: focus goes back to Edit.
+    private async void OnApplyNowClick(object sender, RoutedEventArgs e)
+    {
+        var state = ApplyNowButton.FocusState == FocusState.Keyboard ? FocusState.Keyboard : FocusState.Programmatic;
+        await RunAsync(() => Mpv.ApplyNowCommand.ExecuteAsync(null));
+        if (!Mpv.ShowsApplyNow)
+        {
+            EditMpvConfigButton.Focus(state);
+        }
+    }
 
     /// <summary>Back from the editor: focus returns to Edit, once the view is in the page again.</summary>
     public void FocusEditMpvConfig(FocusState state)

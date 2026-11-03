@@ -57,9 +57,9 @@
                     <ComboBox Style="{StaticResource SiloSettingsComboBoxStyle}" ItemsSource="{x:Bind ViewModel.UpDownChoices}"
                               SelectedItem="{x:Bind ViewModel.SelectedUpDown, Mode=TwoWay}" AutomationProperties.Name="Up and Down in the player" />
                 </controls:SettingsRow>
-                <!-- mpv reads the file once, when it starts: a change needs a restart (docs/architecture.md, "Your own mpv.conf"). -->
+                <!-- mpv reads the file once, when it starts: a change needs a restart, or Apply now (docs/architecture.md, "Your own mpv.conf"). -->
                 <controls:SettingsRow Label="mpv configuration"
-                                      Description="Use your own mpv options from mpv.conf, such as shaders, scaling or debanding. They apply after you restart Granary. Granary keeps the options it needs to show the video and follow your Silo server's choices. A wrong option can make playback worse; delete the file to go back to normal.">
+                                      Description="Use your own mpv options from mpv.conf, such as shaders, scaling or debanding. They apply after you restart Granary, or with Apply now after you change them here. Granary keeps the options it needs to show the video and follow your Silo server's choices. A wrong option can make playback worse; delete the file to go back to normal.">
                     <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
                         <!-- Only when the line below says how mpv.conf fared: the log has the details. -->
                         <HyperlinkButton Content="Open logs" Command="{x:Bind ViewModel.OpenLogsCommand}"
@@ -83,9 +83,18 @@
                 <TextBlock Margin="0,12,0,0" Text="{x:Bind ViewModel.MpvConfigMessage, Mode=OneWay}" Style="{StaticResource SiloSettingsMutedTextStyle}"
                            Visibility="{x:Bind controls:SettingsText.Shows(ViewModel.MpvConfigMessage), Mode=OneWay}"
                            AutomationProperties.LiveSetting="Polite" />
-                <TextBlock Margin="0,12,0,0" Text="{x:Bind Mpv.ChangeText, Mode=OneWay}" Style="{StaticResource SiloSettingsMutedTextStyle}"
-                           Visibility="{x:Bind controls:SettingsText.Shows(Mpv.ChangeText), Mode=OneWay}"
-                           AutomationProperties.LiveSetting="Polite" />
+                <!-- A change made here; Apply now starts the player's mpv again, never during a title (MpvConfigChanges). -->
+                <Grid Margin="0,12,0,0" ColumnSpacing="12" Visibility="{x:Bind controls:SettingsText.Shows(Mpv.ChangeText), Mode=OneWay}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{x:Bind Mpv.ChangeText, Mode=OneWay}" Style="{StaticResource SiloSettingsMutedTextStyle}" VerticalAlignment="Center"
+                               AutomationProperties.LiveSetting="Polite" />
+                    <Button x:Name="ApplyNowButton" Grid.Column="1" Content="Apply now" Style="{StaticResource SiloSettingsOutlineButtonStyle}"
+                            Click="OnApplyNowClick" Visibility="{x:Bind Mpv.ShowsApplyNow, Mode=OneWay}"
+                            AutomationProperties.Name="Apply mpv.conf now" />
+                </Grid>
                 <!-- Granary's own: named copies of mpv.conf, plain files in mpv\presets (MpvPresets). -->
                 <controls:SettingsRow Label="mpv presets"
                                       Description="Copies of your mpv.conf under a name, kept as files in the presets folder. Loading one replaces mpv.conf.">

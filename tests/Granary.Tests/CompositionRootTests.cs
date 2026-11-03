@@ -51,6 +51,34 @@ public sealed class CompositionRootTests
     }
 
     [Fact]
+    public void ApplyNow_DoesNotMakeTheEngine_WhichSaysSoOnceItIsMade()
+    {
+        Assert.SkipUnless(File.Exists(Path.Combine(AppContext.BaseDirectory, "libmpv-2.dll")),
+            "libmpv-2.dll not found; run scripts/fetch-native.ps1.");
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton<IUiDispatcher, ImmediateDispatcher>();
+        services.AddSingleton<INavigationService, RecordingNavigation>();
+        services.AddSingleton<IConfirmation, FakeConfirmation>();
+        services.AddSingleton<IFileLauncher, RecordingFileLauncher>();
+        services.AddGranaryCore();
+        services.AddGranaryPlayer(new MpvEngineOptions { VideoOutput = VideoOutputKind.None });
+        using var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });
+        var restart = provider.GetRequiredService<IMpvRestart>();
+        var changes = provider.GetRequiredService<MpvConfigChanges>();
+
+        // Before the player first opens there is nothing to start again: a change applies to the first title.
+        changes.Saved();
+        Assert.False(restart.IsRunning);
+        Assert.Equal(MpvConfigApply.NextTitle, changes.State);
+
+        _ = provider.GetRequiredService<IPlaybackEngine>();
+
+        Assert.True(restart.IsRunning);
+        Assert.Equal(MpvConfigApply.None, changes.State);
+    }
+
+    [Fact]
     public void SiloApiException_ExposesTheProblemWithoutItsDetail()
     {
         var problem = new ApiProblem($"{ApiProblem.TypeOrigin}{ProblemCodes.RateLimited}", "Rate limited", 429,

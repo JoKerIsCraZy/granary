@@ -8,7 +8,8 @@ namespace Granary.Tests.Settings;
 public sealed class MpvSettingsViewModelTests : IDisposable
 {
     private readonly string _data = Path.Combine(Path.GetTempPath(), "granary-tests", Guid.NewGuid().ToString("N"));
-    private readonly MpvConfigChanges _changes = new();
+    private readonly FakeMpvRestart _player = new();
+    private readonly MpvConfigChanges _changes;
     private readonly FakeConfirmation _confirmation = new();
     private readonly MpvConfigFolder _folder;
     private readonly MpvPresets _presets;
@@ -16,6 +17,7 @@ public sealed class MpvSettingsViewModelTests : IDisposable
     public MpvSettingsViewModelTests()
     {
         var logs = new LogSink();
+        _changes = new MpvConfigChanges(_player, new ImmediateDispatcher());
         _folder = new MpvConfigFolder(Path.Combine(_data, "mpv"), logs.For<MpvConfigFolder>());
         _presets = new MpvPresets(_folder, logs.For<MpvPresets>());
     }
@@ -40,14 +42,60 @@ public sealed class MpvSettingsViewModelTests : IDisposable
     private static string[] Names(MpvSettingsViewModel row) => [.. row.Presets.Select(p => p.Name)];
 
     [Fact]
-    public void ASave_IsSaid_ToApplyAfterARestart()
+    public void ASave_OffersApplyNow()
     {
         using var row = Row();
         Assert.Equal("", row.ChangeText);
+        Assert.False(row.ShowsApplyNow);
 
         _changes.Saved();
 
-        Assert.Equal("Your changes to mpv.conf apply after you restart Granary.", row.ChangeText);
+        Assert.Equal("Your changes to mpv.conf apply after you restart Granary, or with Apply now.", row.ChangeText);
+        Assert.True(row.ShowsApplyNow);
+    }
+
+    [Fact]
+    public async Task ApplyNow_WithNothingPlaying_StartsThePlayerAgain_AndTheLineGoes()
+    {
+        using var row = Row();
+        _changes.Saved();
+
+        await row.ApplyNowCommand.ExecuteAsync(null);
+
+        Assert.Equal(1, _player.Restarts);
+        Assert.Equal("", row.ChangeText);
+        Assert.False(row.ShowsApplyNow);
+    }
+
+    [Fact]
+    public async Task ApplyNow_WhileATitlePlays_AppliesToTheNextTitle()
+    {
+        using var row = Row();
+        _changes.Saved();
+        _player.IsPlaying = true;
+
+        await row.ApplyNowCommand.ExecuteAsync(null);
+
+        Assert.Equal(0, _player.Restarts);
+        Assert.Equal("Applies to the next title.", row.ChangeText);
+        Assert.False(row.ShowsApplyNow);
+
+        _player.TitleEnds();
+
+        Assert.Equal(1, _player.Restarts);
+        Assert.Equal("", row.ChangeText);
+    }
+
+    [Fact]
+    public void ASave_BeforeThePlayerFirstStarted_AppliesToTheNextTitle()
+    {
+        _player.IsRunning = false;
+        using var row = Row();
+
+        _changes.Saved();
+
+        Assert.Equal("Applies to the next title.", row.ChangeText);
+        Assert.False(row.ShowsApplyNow);
     }
 
     [Fact]

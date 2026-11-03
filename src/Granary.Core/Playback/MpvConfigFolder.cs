@@ -14,7 +14,8 @@ public sealed class MpvConfigFolder
     /// <summary>What a new mpv.conf says, all of it comments: it changes nothing until the viewer adds an option.</summary>
     internal const string Template = """
         # Your own mpv options for Granary, in mpv's syntax: https://mpv.io/manual/stable/#configuration-files
-        # They apply after you restart Granary. A line that starts with # does nothing.
+        # They apply after you restart Granary, or with Apply now in Settings after a change made there.
+        # A line that starts with # does nothing.
         #
         # ~~/ is this folder, for example: glsl-shaders=~~/shaders/FSRCNNX_x2_8-0-4-1.glsl
         # Profiles, profile-cond and include work as in mpv.

@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
 using Granary.Core.Playback;
 
@@ -11,7 +12,9 @@ namespace Granary.Core.ViewModels.Settings;
 /// </summary>
 public sealed partial class MpvSettingsViewModel : ObservableObject, IDisposable
 {
-    public const string PendingText = "Your changes to mpv.conf apply after you restart Granary.";
+    public const string PendingText = "Your changes to mpv.conf apply after you restart Granary, or with Apply now.";
+
+    public const string NextTitleText = "Applies to the next title.";
 
     private const string DeviceNameText = "Windows keeps this name for itself. Choose another.";
 
@@ -33,9 +36,17 @@ public sealed partial class MpvSettingsViewModel : ObservableObject, IDisposable
         ShowChanges();
     }
 
-    /// <summary>That mpv.conf changed since the player read it; empty otherwise.</summary>
+    /// <summary>That mpv.conf changed since the player read it, or that it applies to the next title; empty otherwise.</summary>
     [ObservableProperty]
     public partial string ChangeText { get; private set; } = "";
+
+    /// <summary>The player runs with the file as it was: Apply now starts it again.</summary>
+    [ObservableProperty]
+    public partial bool ShowsApplyNow { get; private set; }
+
+    /// <summary>Starts the player's mpv again with mpv.conf as it is now, or once the title that plays ends.</summary>
+    [RelayCommand]
+    private Task ApplyNowAsync() => _changes.ApplyNowAsync();
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasPresets))]
@@ -190,7 +201,16 @@ public sealed partial class MpvSettingsViewModel : ObservableObject, IDisposable
         _ = ShowActiveAsync();
     }
 
-    private void ShowChanges() => ChangeText = _changes.IsPending ? PendingText : "";
+    private void ShowChanges()
+    {
+        ChangeText = _changes.State switch
+        {
+            MpvConfigApply.Pending => PendingText,
+            MpvConfigApply.NextTitle => NextTitleText,
+            _ => "",
+        };
+        ShowsApplyNow = _changes.State == MpvConfigApply.Pending;
+    }
 }
 
 /// <summary>A preset in the list, with what its buttons are called for a screen reader.</summary>

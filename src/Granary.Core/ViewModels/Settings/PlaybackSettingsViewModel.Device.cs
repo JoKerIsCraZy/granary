@@ -98,6 +98,12 @@ public sealed partial class PlaybackSettingsViewModel
 
     private void ReadMpvConfigStatus() => MpvConfigStatusText = StatusText(_mpvStatus.Current);
 
+    // On the UI thread (MpvConfigChanges).
+    private void OnMpvChanged(object? sender, EventArgs e) => ReadMpvConfigStatus();
+
+    /// <summary>The page left: it stops following Apply now.</summary>
+    public void Dispose() => _mpvChanges.Changed -= OnMpvChanged;
+
     // The buttons share one line: the last one pressed says how it went, and one that ends after it says nothing.
     private int StartMpvConfigRequest()
     {
