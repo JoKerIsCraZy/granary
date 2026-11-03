@@ -89,7 +89,7 @@ public sealed partial class MpvPlaybackEngine
     private bool StartWith(string file)
     {
         var all = _core.Concat(MpvOwnOptions.Guarded(_options.VideoOutput)).ToList();
-        var names = all.Select(o => o.Key).Append(MpvOwnOptions.OperationMode).ToHashSet();
+        var names = all.Select(o => o.Key).Append(MpvOwnOptions.OperationMode).Concat(MpvOwnOptions.Refused.Keys).ToHashSet();
         MpvConfigScan scan;
         try
         {
@@ -231,7 +231,8 @@ public sealed partial class MpvPlaybackEngine
         _mpv.LoadConfigText(MpvOwnOptions.Profile(own));
         _mpv.SetOption(MpvOwnOptions.OperationMode, MpvOwnOptions.ProfileName);
         _own = own;
-        _kept = Kept(own);
+        // Set back while mpv runs: those a file may set and Granary keeps. The others the file may not set at all.
+        _kept = Kept(own.Where(o => !MpvOwnOptions.Refused.ContainsKey(o.Key)));
         _perFile = [.. MpvOwnOptions.PerFile(own)];
     }
 
@@ -255,7 +256,7 @@ public sealed partial class MpvPlaybackEngine
         try
         {
             entries = entries.Concat(MpvConfigText.FromProfiles(_mpv.GetString("profile-list"), _own, names));
-            return MpvConfigText.Refusal(entries, _kept ?? []);
+            return MpvConfigText.Refusal(entries, Kept(_own));
         }
         catch (Exception ex)
         {

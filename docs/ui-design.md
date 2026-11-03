@@ -635,8 +635,9 @@ says why above the sections.
   loads): "Your mpv.conf was not used: {reason}. The log has the details." (refused at the start, or mpv refused it),
   "Granary stopped using your mpv.conf: {reason}. The log has the details." (a profile kept changing one of Granary's
   options while a title played), or "Granary kept {n} of its own options from your mpv.conf. The log names them."; the
-  reason is the log's, such as "it sets player-operation-mode, which Granary needs to keep its own options", "mpv
-  refused to start with it" or "it keeps changing log-file". Nothing when the file was used as written, when there is
+  reason is the log's, such as "it sets player-operation-mode, which Granary needs to keep its own options", "it sets
+  log-file, which Granary does not let mpv.conf change", "mpv refused to start with it" or "it keeps changing
+  keep-open". Nothing when the file was used as written, when there is
   none, or before the player first started. With that line, an **Open logs** link stands left of Open folder and shows
   Granary's log folder in File Explorer (the data folder before the first log). How mpv reads the file and which options Granary keeps is in docs/architecture.md ("Your own
   mpv.conf").

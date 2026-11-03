@@ -21,6 +21,8 @@ public sealed class MpvConfigFolder
         #
         # Granary keeps the options it needs to show the video and follow your Silo server's choices, such as vo,
         # gpu-api, keep-open and idle. Its log says which of yours it leaves out. Scripts and input.conf are not used.
+        # A file that sets an option that could take the stream's address out of Granary, such as log-file, scripts,
+        # input-ipc-server or http-proxy, is not used at all: Settings and the log say why.
         # A wrong option can make playback worse. Delete this file to go back to normal.
         #
         # deband=yes
