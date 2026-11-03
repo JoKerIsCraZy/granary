@@ -14,7 +14,7 @@ release's section is what its update says it changes (docs/release.md).
   Each shows what would play anyway until you choose. Play, Resume and Start over then play that file with those
   tracks, and the server keeps to the file you chose. Your audio and subtitle choices are remembered for the movie or
   the whole series, and Auto goes back to your profile's settings; if a choice cannot be saved, the page says so and
-  still plays it. The pickers work with the keyboard too.
+  goes back to the choice that was kept. The pickers work with the keyboard too.
 - More filters for a library, and for Favorites, Watchlist, History and collections: several genres at once, decades,
   4K, HDR and Dolby Vision, the original, audio and subtitle languages, and Watch Status (Unwatched, In Progress,
   Watched). The Filters panel scrolls when it gets long, and a library opens with these filters as you left them.

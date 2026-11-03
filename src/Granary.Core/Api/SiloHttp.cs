@@ -49,6 +49,32 @@ public sealed class SiloHttp(HttpClient http)
         return await SendAsync(request, responseType, cancellationToken).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// As the 204 <c>SendAsync</c> with a body, under <see cref="SiloAuth.Profile"/>, for a write that belongs to profile
+    /// <paramref name="profileId"/>: it goes out only while the server still acts as that profile, else it throws
+    /// <see cref="ProfileChangedException"/> unsent (a choice queued before a profile switch).
+    /// </summary>
+    public async Task SendAsProfileAsync<TRequest>(HttpMethod method, Uri server, string path, string profileId, TRequest body,
+        JsonTypeInfo<TRequest> requestType, CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(profileId);
+        using var request = Create(method, server, path, SiloAuth.Profile);
+        request.SetProfile(profileId);
+        request.Content = JsonContent.Create(body, requestType);
+        using var response = await http.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>As the other <c>SendAsProfileAsync</c>, for a bodiless write, as a delete.</summary>
+    public async Task SendAsProfileAsync(HttpMethod method, Uri server, string path, string profileId, CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(profileId);
+        using var request = Create(method, server, path, SiloAuth.Profile);
+        request.SetProfile(profileId);
+        using var response = await http.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
+    }
+
     /// <summary>For operations that answer 204 No Content.</summary>
     public async Task SendAsync<TRequest>(HttpMethod method, Uri server, string path, SiloAuth auth, TRequest body, JsonTypeInfo<TRequest> requestType, CancellationToken cancellationToken)
     {

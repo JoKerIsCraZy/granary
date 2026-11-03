@@ -195,10 +195,13 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   its file (pinned with `allow_alternate_versions: false` when the version itself was picked, a Watch Party's
   `PinnedFileId` stays apart), starts with its audio as the version's `EffectiveAudioTrackIndex` and its subtitle as
   `SubtitlePick`, the same places the player's own picks go. Audio and subtitle picks are saved through
-  `TrackChoiceWrites`, one app-wide queue in pick order that the starter settles before it reads the watch detail (a
-  Watch Party's start does not wait for it: `PrepareAsync` takes the `PlayRequest` and knows a room by it). A page reads
-  its own item again once its own saves are done and takes only the newest answer; a menu fills its rows as it opens,
-  so a read meanwhile does not rebuild an open one.
+  `TrackChoiceWrites`, one app-wide queue in pick order that the starter settles before it reads the watch detail. A
+  queued save belongs to the server and profile active when it was made: it goes out only while they still are, bound
+  to that profile so the authentication handler sends it as no other (`SiloRequestOptions.Profile`), and a switch drops
+  the old owner's saves, cancelling the one on its way. A Watch Party's start does not wait for the queue:
+  `PrepareAsync` takes the `PlayRequest` and knows a room by it. A page reads its own item again once its own saves are
+  done and takes only the newest answer, and a failed save puts its picker back on the choice the server kept; a menu
+  fills its rows as it opens, so a read meanwhile does not rebuild an open one.
 - **The plan**: its stream URL must lie beneath the saved server, or, where the server offers
   `authorized_media_origins_v1` and the start confirms it, be the session's own stream on a proxy node
   (`PlaybackUrl.ResolveStream`, Apple's rules). A node URL the client refuses, or a node stream that never

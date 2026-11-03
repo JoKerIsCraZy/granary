@@ -23,6 +23,18 @@ public static class SiloRequestOptions
     /// <summary>The request must go to the saved address itself, never over a local route (the key it vouches for).</summary>
     public static readonly HttpRequestOptionsKey<bool> SavedAddressOnly = new("granary.saved-address-only");
 
+    /// <summary>
+    /// The one profile a <see cref="SiloAuth.Profile"/> request may be sent as: a write made for that profile. The
+    /// authentication handler refuses to send it under another (<see cref="ProfileChangedException"/>).
+    /// </summary>
+    public static readonly HttpRequestOptionsKey<string> Profile = new("granary.profile");
+
+    /// <summary>The profile the request is bound to (<see cref="Profile"/>), or null when it goes as whichever acts.</summary>
+    public static string? GetProfile(this HttpRequestMessage request) =>
+        request.Options.TryGetValue(Profile, out var profile) ? profile : null;
+
+    public static void SetProfile(this HttpRequestMessage request, string profileId) => request.Options.Set(Profile, profileId);
+
     public static SiloAuth GetAuth(this HttpRequestMessage request) =>
         request.Options.TryGetValue(Auth, out var auth) ? auth : SiloAuth.Anonymous;
 

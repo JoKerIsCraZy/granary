@@ -1460,11 +1460,18 @@ page's own writes are done, a failed one too, it reads its item again, whatever 
 shows what the server now picks (the web invalidates the item likewise); only the newest read begun after the page's
 last write counts, and a write's failure is reported only while its pick is the newest of its kind. An external
 subtitle's `file_name` may be a server path: only its last part is shown or saved as a label, as the server's
-inventory labels use `filepath.Base`. While the item still names a subtitle the viewer set back to Auto (its forgetting on the
-way, refused, or not read back), Play sends the automatic choice without it as the start's subtitle, so what plays is
-what the picker shows. Audio has no such remedy: what the server picks without the saved track comes from its own
-preference cascade, which no watch or item field names, so after a refused audio Auto the start plays the saved track
-and the picker shows it, with the failure said.
+inventory labels use `filepath.Base`. A write that fails puts its picker back on the last choice of its kind the
+server kept (a successful write sets it, unless a newer one was kept first; the page's load and another file start it
+at Auto), so Play never sends a choice the server did not keep, as the web's `usePrePlayAudioSelection` does. While the
+item still names a subtitle the viewer set back to Auto (its forgetting on the way, or done but not read back), Play
+sends the automatic choice without it as the start's subtitle, so what plays is what the picker shows; the start
+cannot do the same for audio, whose choice without a saved track comes from the server's own preference cascade.
+
+Each write belongs to the server and profile active when it was queued. It is sent only while they are still active,
+and bound to that profile (`SiloRequestOptions.Profile`, through `SiloHttp.SendAsProfileAsync`): the authentication
+handler refuses to send it under any other profile, or none (`ProfileChangedException`). When the server or profile
+changes, the old owner's writes are dropped: queued ones are not sent, the one on its way is cancelled, and a start for
+the new owner waits for none of them. The player's own saves are bound to the playback's profile the same way.
 
 #### 8.8.1 Initial track selection (before start)
 

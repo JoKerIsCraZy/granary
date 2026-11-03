@@ -13,7 +13,8 @@ namespace Granary.Core.ViewModels;
 // another file, as the web, Android and Apple clients pin a version the viewer chose. Audio and subtitle picks are also
 // saved for the title (for its series, on an episode), and Auto forgets the saved one, as the web's detail page and
 // Apple's client do; the page then reads the item again, so that Auto shows what the server picks now. A save that fails
-// says so in the web's words and still applies to this visit's Play.
+// says so in the web's words and puts its picker back on the choice the server kept, unless a newer pick of its kind came
+// since, as the web's usePrePlayAudioSelection does: the pickers, and so Play, never show a choice the server did not keep.
 public sealed partial class ItemDetailViewModel
 {
     // The item the pickers show, read again after a pick is saved; null for a page without files.
@@ -34,6 +35,11 @@ public sealed partial class ItemDetailViewModel
     private int _audioPicks;
     private int _subtitlePicks;
 
+    // The last choice of each kind the server kept (the web's savedRef), and the pick it came from: a successful save
+    // sets it unless a newer kept pick is there, the item's own state (a load, another file) starts it at Auto.
+    private KeptAudio _keptAudio = new(null, 0);
+    private KeptSubtitle _keptSubtitle = new(SubtitlePickMode.Auto, null, false, 0);
+
     /// <summary>The pickers' rows and words, and what Play passes on.</summary>
     [ObservableProperty]
     public partial PrePlayPickers Pickers { get; private set; } = PrePlayPickers.None;
@@ -46,9 +52,17 @@ public sealed partial class ItemDetailViewModel
         {
             return;
         }
-        _picks = option.FileId == Pickers.Version?.FileId
-            ? _picks with { FileId = option.FileId }
-            : _picks with { FileId = option.FileId, AudioTrack = null, SubtitleMode = SubtitlePickMode.Auto, SubtitleTrack = null };
+        if (option.FileId == Pickers.Version?.FileId)
+        {
+            _picks = _picks with { FileId = option.FileId };
+        }
+        else
+        {
+            _picks = _picks with { FileId = option.FileId, AudioTrack = null, SubtitleMode = SubtitlePickMode.Auto, SubtitleTrack = null };
+            // What the server keeps for the other file is its own Auto; a save for this file landing later is older.
+            _keptAudio = new KeptAudio(null, _audioPicks);
+            _keptSubtitle = _keptSubtitle with { Mode = SubtitlePickMode.Auto, Track = null, Pick = _subtitlePicks };
+        }
         ShowPickers();
     }
 
@@ -69,8 +83,10 @@ public sealed partial class ItemDetailViewModel
         ShowPickers();
         // The web's words (useSetAudioPreference, useDeleteAudioPreference).
         return preference is null
-            ? SaveTrackChoiceAsync(AudioKind, "Failed to reset audio preference", (api, server, key, token) => api.DeleteAudioAsync(server, key, token))
-            : SaveTrackChoiceAsync(AudioKind, "Failed to save audio preference", (api, server, key, token) => api.SaveAudioAsync(server, key, preference, token));
+            ? SaveTrackChoiceAsync(AudioKind, "Failed to reset audio preference",
+                (api, owner, key, token) => api.DeleteAudioAsync(owner.Server, key, owner.ProfileId, token))
+            : SaveTrackChoiceAsync(AudioKind, "Failed to save audio preference",
+                (api, owner, key, token) => api.SaveAudioAsync(owner.Server, key, owner.ProfileId, preference, token));
     }
 
     /// <summary>Starts with <paramref name="option"/>'s track, or none, saved for the title; Auto forgets the saved one.</summary>
@@ -106,14 +122,18 @@ public sealed partial class ItemDetailViewModel
         ShowPickers();
         // The web's words (useSetSubtitlePreference, useDeleteSubtitlePreference).
         return choice is null
-            ? SaveTrackChoiceAsync(SubtitleKind, "Failed to reset subtitle preference", (api, server, key, token) => api.DeleteSubtitleAsync(server, key, token))
-            : SaveTrackChoiceAsync(SubtitleKind, "Failed to save subtitle preference", (api, server, key, token) => api.SaveSubtitleAsync(server, key, choice, token));
+            ? SaveTrackChoiceAsync(SubtitleKind, "Failed to reset subtitle preference",
+                (api, owner, key, token) => api.DeleteSubtitleAsync(owner.Server, key, owner.ProfileId, token))
+            : SaveTrackChoiceAsync(SubtitleKind, "Failed to save subtitle preference",
+                (api, owner, key, token) => api.SaveSubtitleAsync(owner.Server, key, owner.ProfileId, choice, token));
     }
 
     private void ShowPrePlay(CatalogItemDetail item)
     {
         _prePlayItem = item.Versions.Count > 0 ? item : null;
         _picks = PrePlayPicks.None;
+        _keptAudio = new KeptAudio(null, _audioPicks);
+        _keptSubtitle = new KeptSubtitle(SubtitlePickMode.Auto, null, false, _subtitlePicks);
         ShowPickers();
     }
 
@@ -134,29 +154,50 @@ public sealed partial class ItemDetailViewModel
     // In pick order through the app's one queue, which a start waits for; a failure costs only the remembered choice and
     // says so, unless a newer pick of its kind has been made since. Once this page's own saves are all done, a failed one
     // too, it reads its item again, whatever other pages still have queued. A page the viewer has left is not touched.
-    private async Task SaveTrackChoiceAsync(string kind, string failure, Func<TrackPreferencesApi, Uri, string, CancellationToken, Task> write)
+    // The queue sends each save for the server and profile it was made under, and drops it once they are no longer active.
+    private async Task SaveTrackChoiceAsync(string kind, string failure, Func<TrackPreferencesApi, TrackWriteOwner, string, CancellationToken, Task> write)
     {
-        if (_trackPreferences is not { } api || _trackChoices is not { } writes || _serverBase is not { } server || _prePlayItem is not { } item)
+        if (_trackPreferences is not { } api || _trackChoices is not { } writes || _serverBase is not { } server || _prePlayItem is not { } item
+            || _session.ActiveServer?.BaseUri != server)
         {
             return;
         }
         string key = TrackPreferencesApi.KeyFor(item.Type, item.SeriesId, _contentId);
         int generation = _generation;
         int pick = kind == AudioKind ? ++_audioPicks : ++_subtitlePicks;
+        // The choice this save asks the server to keep: the picks as the caller just set them.
+        var asked = _picks;
         _trackSaves++;
         _savesOnTheWay++;
         ActionError = "";
-        bool saved = await writes.RunAsync(kind, cancellationToken => write(api, server, key, cancellationToken));
+        var outcome = await writes.RunAsync(kind, (owner, cancellationToken) => write(api, owner, key, cancellationToken));
         if (generation != _generation)
         {
             return;
         }
         _savesOnTheWay--;
-        if (!saved && pick == (kind == AudioKind ? _audioPicks : _subtitlePicks))
+        if (outcome == TrackWriteOutcome.Dropped)
+        {
+            // Another server or profile is active now: nothing of this page is theirs to read or report.
+            return;
+        }
+        if (outcome == TrackWriteOutcome.Saved)
+        {
+            Keep(kind, asked, pick);
+        }
+        else if (pick == (kind == AudioKind ? _audioPicks : _subtitlePicks))
         {
             ActionError = failure;
-            // The server keeps what it had: Auto shows what the item read last says it picks.
-            _picks = kind == AudioKind ? _picks with { AudioAutoPending = false } : _picks with { SubtitleAutoPending = false };
+            // The server keeps what it had: the picker, and Play, go back to it.
+            _picks = kind == AudioKind
+                ? _picks with { AudioTrack = _keptAudio.Track, AudioAutoPending = false }
+                : _picks with
+                {
+                    SubtitleMode = _keptSubtitle.Mode,
+                    SubtitleTrack = _keptSubtitle.Track,
+                    SubtitleOverrideCleared = _keptSubtitle.OverrideCleared,
+                    SubtitleAutoPending = false,
+                };
             ShowPickers();
         }
         if (_savesOnTheWay == 0)
@@ -212,6 +253,24 @@ public sealed partial class ItemDetailViewModel
             }
         }
     }
+
+    // A saved choice is what the server keeps now, unless a newer one was kept first (the web: success only records it while
+    // it is still the file's latest).
+    private void Keep(string kind, PrePlayPicks asked, int pick)
+    {
+        if (kind == AudioKind && pick > _keptAudio.Pick)
+        {
+            _keptAudio = new KeptAudio(asked.AudioTrack, pick);
+        }
+        else if (kind == SubtitleKind && pick > _keptSubtitle.Pick)
+        {
+            _keptSubtitle = new KeptSubtitle(asked.SubtitleMode, asked.SubtitleTrack, asked.SubtitleOverrideCleared, pick);
+        }
+    }
+
+    private sealed record KeptAudio(int? Track, int Pick);
+
+    private sealed record KeptSubtitle(SubtitlePickMode Mode, int? Track, bool OverrideCleared, int Pick);
 
     // No answer to wait for any more: Auto shows what the item read last says it picks, never a bare "Auto" for good. A
     // forgotten subtitle stays forgotten, and Play still sends its automatic track.

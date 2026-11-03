@@ -18,7 +18,7 @@ public enum SubtitlePickMode
 /// <param name="SubtitleTrack">With <see cref="SubtitlePickMode.Track"/>: the track's combined ordinal.</param>
 /// <param name="SubtitleOverrideCleared">
 /// Auto was picked over a remembered track: the item's saved signature no longer applies, although the item may still name
-/// it (not read again yet, or the server kept it when forgetting failed).
+/// it until it is read again.
 /// </param>
 /// <param name="AudioAutoPending">Auto was picked for audio, and what the server picks without the saved track is not read yet.</param>
 /// <param name="SubtitleAutoPending">The same for subtitles.</param>
@@ -147,8 +147,9 @@ public sealed class PrePlayPickers
         bool subtitlePending = subtitleMode == SubtitlePickMode.Auto && picks.SubtitleAutoPending;
         var (subtitleOptions, subtitleSummary) = SubtitleRows(version, candidates, auto, preference.Signature is not null, subtitleMode, subtitle,
             subtitlePending);
-        // Auto over a remembered track the item still names (its forgetting on the way, refused, or not read back): a start
-        // would apply that track, so it is told the automatic one (or none) instead, which is what the viewer chose.
+        // Auto over a remembered track the item still names (its forgetting on the way, or done but not read back): a start
+        // would apply that track, so it is told the automatic one (or none) instead, which is what the viewer chose. A
+        // forgetting the server refused puts the picker back on the remembered track, and this no longer applies.
         int? startSubtitle = subtitle ?? (subtitleMode == SubtitlePickMode.Auto && picks.SubtitleOverrideCleared
             && item.EffectiveSubtitleTrackSignature is not null && candidates.Count > 0 ? auto?.SelectionIndex ?? -1 : null);
         var choice = picked is not null || audio is not null || startSubtitle is not null

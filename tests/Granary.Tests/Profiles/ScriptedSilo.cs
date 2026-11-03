@@ -9,10 +9,10 @@ namespace Granary.Tests.Profiles;
 
 /// <summary>
 /// What the client sent; the body is read at send time because SiloHttp disposes the request.
-/// <paramref name="SavedAddressOnly"/>: it may not take a local route.
+/// <paramref name="SavedAddressOnly"/>: it may not take a local route. <paramref name="AsProfile"/>: the one profile it may be sent as.
 /// </summary>
 internal sealed record SentRequest(HttpMethod Method, Uri Uri, string? Body, SiloAuth Auth, bool SavedAddressOnly = false, string? IfMatch = null,
-    string? RoomToken = null, string? DeviceId = null);
+    string? RoomToken = null, string? DeviceId = null, string? AsProfile = null);
 
 /// <summary>
 /// A Silo server behind a reverse-proxy path prefix, scripted per method and URL. Each route answers
@@ -96,7 +96,7 @@ internal sealed class ScriptedSilo
         string? ifMatch = request.Headers.TryGetValues("If-Match", out var versions) ? string.Join(",", versions) : null;
         string? roomToken = request.Headers.TryGetValues("X-Room-Token", out var proofs) ? string.Join(",", proofs) : null;
         string? deviceId = request.Headers.TryGetValues("X-Silo-Device-Id", out var devices) ? string.Join(",", devices) : null;
-        Sent.Add(new SentRequest(request.Method, uri, body, request.GetAuth(), savedOnly, ifMatch, roomToken, deviceId));
+        Sent.Add(new SentRequest(request.Method, uri, body, request.GetAuth(), savedOnly, ifMatch, roomToken, deviceId, request.GetProfile()));
         if (_cancellable.TryGetValue(Key(request.Method, uri), out var cancellable))
         {
             return await cancellable(cancellationToken);

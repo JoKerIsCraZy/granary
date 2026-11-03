@@ -173,29 +173,38 @@ public sealed record SubtitleChoice
 /// <summary>The profile's track choices kept on the server (docs/api-contract.md, 8.8). They need <c>X-Profile-Id</c>.</summary>
 public sealed class TrackPreferencesApi(SiloHttp http)
 {
-    /// <summary>Saves the viewer's audio pick under <paramref name="key"/> (see <see cref="KeyFor"/>); the server answers 204.</summary>
-    public Task SaveAudioAsync(Uri server, string key, AudioPreference preference, CancellationToken cancellationToken = default)
+    // Every write is the pick of one profile: it goes out only while the server still acts as that profile, else it throws
+    // ProfileChangedException unsent, so a pick queued before a profile switch never lands on the next profile.
+
+    /// <summary>Saves profile <paramref name="profileId"/>'s audio pick under <paramref name="key"/> (see <see cref="KeyFor"/>); the server answers 204.</summary>
+    public Task SaveAudioAsync(Uri server, string key, string profileId, AudioPreference preference, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(preference);
-        return http.SendAsync(HttpMethod.Put, server, "api/v2/audio-prefs/" + SiloHttp.PathSegment(key, nameof(key)), SiloAuth.Profile,
+        return http.SendAsProfileAsync(HttpMethod.Put, server, "api/v2/audio-prefs/" + SiloHttp.PathSegment(key, nameof(key)), profileId,
             preference, PlaybackJsonContext.Default.AudioPreference, cancellationToken);
     }
 
-    /// <summary>Saves the viewer's subtitle pick, or off, under <paramref name="key"/> (see <see cref="KeyFor"/>); the server answers 204.</summary>
-    public Task SaveSubtitleAsync(Uri server, string key, SubtitleChoice choice, CancellationToken cancellationToken = default)
+    /// <summary>Saves profile <paramref name="profileId"/>'s subtitle pick, or off, under <paramref name="key"/> (see <see cref="KeyFor"/>); the server answers 204.</summary>
+    public Task SaveSubtitleAsync(Uri server, string key, string profileId, SubtitleChoice choice, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(choice);
-        return http.SendAsync(HttpMethod.Put, server, "api/v2/subtitle-prefs/" + SiloHttp.PathSegment(key, nameof(key)), SiloAuth.Profile,
+        return http.SendAsProfileAsync(HttpMethod.Put, server, "api/v2/subtitle-prefs/" + SiloHttp.PathSegment(key, nameof(key)), profileId,
             choice, PlaybackJsonContext.Default.SubtitleChoice, cancellationToken);
     }
 
-    /// <summary>Forgets the audio pick under <paramref name="key"/>: the profile's defaults apply again (the detail page's Auto); 204 even without one.</summary>
-    public Task DeleteAudioAsync(Uri server, string key, CancellationToken cancellationToken = default) =>
-        http.SendAsync(HttpMethod.Delete, server, "api/v2/audio-prefs/" + SiloHttp.PathSegment(key, nameof(key)), SiloAuth.Profile, cancellationToken);
+    /// <summary>
+    /// Forgets profile <paramref name="profileId"/>'s audio pick under <paramref name="key"/>: the profile's defaults apply again (the detail
+    /// page's Auto); 204 even without one.
+    /// </summary>
+    public Task DeleteAudioAsync(Uri server, string key, string profileId, CancellationToken cancellationToken = default) =>
+        http.SendAsProfileAsync(HttpMethod.Delete, server, "api/v2/audio-prefs/" + SiloHttp.PathSegment(key, nameof(key)), profileId, cancellationToken);
 
-    /// <summary>Forgets the subtitle pick under <paramref name="key"/>: the profile's defaults apply again (the detail page's Auto); 204 even without one.</summary>
-    public Task DeleteSubtitleAsync(Uri server, string key, CancellationToken cancellationToken = default) =>
-        http.SendAsync(HttpMethod.Delete, server, "api/v2/subtitle-prefs/" + SiloHttp.PathSegment(key, nameof(key)), SiloAuth.Profile, cancellationToken);
+    /// <summary>
+    /// Forgets profile <paramref name="profileId"/>'s subtitle pick under <paramref name="key"/>: the profile's defaults apply again (the
+    /// detail page's Auto); 204 even without one.
+    /// </summary>
+    public Task DeleteSubtitleAsync(Uri server, string key, string profileId, CancellationToken cancellationToken = default) =>
+        http.SendAsProfileAsync(HttpMethod.Delete, server, "api/v2/subtitle-prefs/" + SiloHttp.PathSegment(key, nameof(key)), profileId, cancellationToken);
 
     /// <summary>Where a title's picks are kept: under its series for an episode, else under the title itself.</summary>
     public static string KeyFor(WatchDetail detail)

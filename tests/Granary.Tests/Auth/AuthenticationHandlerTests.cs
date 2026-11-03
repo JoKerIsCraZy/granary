@@ -41,6 +41,44 @@ public sealed class AuthenticationHandlerTests
     }
 
     [Fact]
+    public async Task AWriteForAProfile_IsSentAsThatProfile()
+    {
+        var server = await _pipeline.AddServerAsync();
+        await _pipeline.SignInAsync(server, profileId: "7", profileToken: "pin-token");
+
+        await new Core.Api.Playback.TrackPreferencesApi(_pipeline.Http).DeleteAudioAsync(server.BaseUri, "movie-1", "7",
+            TestContext.Current.CancellationToken);
+
+        var sent = Assert.Single(_pipeline.Server.Requests);
+        Assert.Equal(("7", "pin-token"), (sent.Header("X-Profile-Id"), sent.Header("X-Profile-Token")));
+    }
+
+    [Fact]
+    public async Task AWriteForAProfile_IsNotSentOnceTheServerActsAsAnother()
+    {
+        var server = await _pipeline.AddServerAsync();
+        await _pipeline.SignInAsync(server, profileId: "9");
+
+        // Made by profile 7 and sent after the switch to 9: the check before the queue sends it and this send are apart.
+        await Assert.ThrowsAsync<ProfileChangedException>(() => new Core.Api.Playback.TrackPreferencesApi(_pipeline.Http)
+            .DeleteAudioAsync(server.BaseUri, "movie-1", "7", TestContext.Current.CancellationToken));
+
+        Assert.Empty(_pipeline.Server.Requests);
+    }
+
+    [Fact]
+    public async Task AWriteForAProfile_IsNotSentWithoutOne()
+    {
+        var server = await _pipeline.AddServerAsync();
+        await _pipeline.SignInAsync(server);
+
+        await Assert.ThrowsAsync<ProfileChangedException>(() => new Core.Api.Playback.TrackPreferencesApi(_pipeline.Http)
+            .DeleteAudioAsync(server.BaseUri, "movie-1", "7", TestContext.Current.CancellationToken));
+
+        Assert.Empty(_pipeline.Server.Requests);
+    }
+
+    [Fact]
     public async Task AnonymousRequest_CarriesIdentityButNoCredentials()
     {
         var server = await _pipeline.AddServerAsync();

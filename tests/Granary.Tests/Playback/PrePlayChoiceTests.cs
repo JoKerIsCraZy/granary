@@ -119,8 +119,8 @@ public sealed class PrePlayChoiceTests
     public async Task ARoomsStartWithoutAFile_DoesNotWaitForADetailPagesSave()
     {
         var saved = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        _fixture.TrackChoices = new TrackChoiceWrites(_fixture.Time, _fixture.Logs.For<TrackChoiceWrites>());
-        var saving = _fixture.TrackChoices.RunAsync("audio", _ => saved.Task);
+        _fixture.TrackChoices = new TrackChoiceWrites(_fixture.SessionManager, _fixture.Time, _fixture.Logs.For<TrackChoiceWrites>());
+        var saving = _fixture.TrackChoices.RunAsync("audio", (_, _) => saved.Task);
 
         // A room that has picked no file yet, or a rejoin before it says one: still the room's start.
         await _fixture.StartAsync(PlayRequest.WatchParty(MovieId, fileId: null, selectionRevision: 1));
@@ -129,15 +129,15 @@ public sealed class PrePlayChoiceTests
         Assert.Single(_fixture.Silo.SentTo(HttpMethod.Post, StartPath));
         Assert.False(saving.IsCompleted);
         saved.SetResult();
-        Assert.True(await saving);
+        Assert.Equal(TrackWriteOutcome.Saved, await saving);
     }
 
     [Fact]
     public async Task AWatchPartysStart_DoesNotWaitForADetailPagesSave()
     {
         var saved = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        _fixture.TrackChoices = new TrackChoiceWrites(_fixture.Time, _fixture.Logs.For<TrackChoiceWrites>());
-        var saving = _fixture.TrackChoices.RunAsync("audio", _ => saved.Task);
+        _fixture.TrackChoices = new TrackChoiceWrites(_fixture.SessionManager, _fixture.Time, _fixture.Logs.For<TrackChoiceWrites>());
+        var saving = _fixture.TrackChoices.RunAsync("audio", (_, _) => saved.Task);
 
         await _fixture.StartAsync(PlayRequest.WatchParty(MovieId, "42", selectionRevision: 1));
 
@@ -145,15 +145,15 @@ public sealed class PrePlayChoiceTests
         Assert.Equal("42", _fixture.Body(HttpMethod.Post, StartPath).GetProperty("file_id").GetString());
         Assert.False(saving.IsCompleted);
         saved.SetResult();
-        Assert.True(await saving);
+        Assert.Equal(TrackWriteOutcome.Saved, await saving);
     }
 
     [Fact]
     public async Task AStart_ReadsTheTitle_OnceAPickStillBeingSavedIsIn()
     {
         var saved = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        _fixture.TrackChoices = new TrackChoiceWrites(_fixture.Time, _fixture.Logs.For<TrackChoiceWrites>());
-        var saving = _fixture.TrackChoices.RunAsync("audio", _ => saved.Task);
+        _fixture.TrackChoices = new TrackChoiceWrites(_fixture.SessionManager, _fixture.Time, _fixture.Logs.For<TrackChoiceWrites>());
+        var saving = _fixture.TrackChoices.RunAsync("audio", (_, _) => saved.Task);
         var playback = _fixture.Create();
 
         var starting = playback.StartAsync(PlayRequest.Resume(MovieId), TestContext.Current.CancellationToken);
@@ -162,7 +162,7 @@ public sealed class PrePlayChoiceTests
         saved.SetResult();
         await starting;
 
-        Assert.True(await saving);
+        Assert.Equal(TrackWriteOutcome.Saved, await saving);
         Assert.Single(_fixture.Silo.SentTo(HttpMethod.Get, WatchPath));
         Assert.Single(_fixture.Silo.SentTo(HttpMethod.Post, StartPath));
     }

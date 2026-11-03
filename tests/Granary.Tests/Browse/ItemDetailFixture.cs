@@ -83,7 +83,7 @@ internal sealed class ItemDetailFixture
         .Get(SeriesEpisodesPath(ItemDetailPayloads.SeriesId, 3), Ok(ItemDetailPayloads.SeasonEpisodes));
 
     /// <summary>The app's queue of track choices on their way to the server, which a start waits for.</summary>
-    public TrackChoiceWrites TrackChoices { get; } = new(TimeProvider.System, NullLogger<TrackChoiceWrites>.Instance);
+    public TrackChoiceWrites TrackChoices => field ??= new(Session, TimeProvider.System, NullLogger<TrackChoiceWrites>.Instance);
 
     public ItemDetailViewModel Create() => new(
         Session,
