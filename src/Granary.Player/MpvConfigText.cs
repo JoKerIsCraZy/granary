@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 
 namespace Granary.Player;
@@ -164,7 +165,9 @@ internal static class MpvConfigText
         if (text.StartsWith('%'))
         {
             int mark = text.IndexOf('%', 1);
-            if (mark > 1 && int.TryParse(text.AsSpan(1, mark - 1), out int length) && length <= text.Length - mark - 1)
+            // Digits only: a sign or a size past the line is no length, and the value reads as text, as mpv refuses it.
+            if (mark > 1 && int.TryParse(text.AsSpan(1, mark - 1), NumberStyles.None, CultureInfo.InvariantCulture, out int length)
+                && length <= text.Length - mark - 1)
             {
                 return text.Substring(mark + 1, length);
             }

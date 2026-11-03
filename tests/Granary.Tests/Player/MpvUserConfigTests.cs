@@ -229,15 +229,14 @@ public sealed class MpvUserConfigTests : IDisposable
     {
         using var engine = CreateEngine(VideoOutputKind.D3D11Composition, "deband=yes\nscale=ewa_lanczossharp\n");
         Assert.SkipWhen(engine.SwapChain == 0, "No d3d11 swap chain here.");
-        int changes = 0;
-        engine.SwapChainChanged += (_, _) => Interlocked.Increment(ref changes);
 
         await Task.Delay(1000, TestContext.Current.CancellationToken);
 
+        // Counted from the engine's start, construction included: it logs each swap chain it takes.
+        Assert.Equal(1, Count("Composition swap chain ready"));
         Assert.Equal("gpu-next", engine.Option("vo"));
         Assert.Equal("composition", engine.Option("d3d11-output-mode"));
         Assert.Equal("yes", engine.Option("deband"));
-        Assert.Equal(0, Volatile.Read(ref changes));
         Assert.False(Logged("Granary keeps its own"), _logs.All);
         Assert.False(Logged("mpv does not take"), _logs.All);
     }

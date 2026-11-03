@@ -45,6 +45,18 @@ public sealed class MpvConfigTextTests
         ], found);
     }
 
+    [Theory]
+    [InlineData("deband=%-1%x\n")]
+    [InlineData("deband=%+3%abc\n")]
+    [InlineData("deband=%99999999999%x\n")]
+    [InlineData("vo=%-2%gpu\n")]
+    public void ASignedOrHugeLength_NeverThrows(string text)
+    {
+        var thrown = Record.Exception(() => MpvConfigText.Entries(text, Names));
+
+        Assert.Null(thrown);
+    }
+
     [Fact]
     public void AFileWithoutGranarysOptions_NamesNone() =>
         Assert.Empty(MpvConfigText.Entries("deband=yes\r\nscale=ewa_lanczossharp\r\n[hq]\r\ninterpolation=yes\r\n", Names));

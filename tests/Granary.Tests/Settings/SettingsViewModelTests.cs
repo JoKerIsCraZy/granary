@@ -136,6 +136,22 @@ public sealed class SettingsViewModelTests : IDisposable
     }
 
     [Fact]
+    public async Task AnOlderOpenThatEndsLast_DoesNotSpeakOverTheNewerOne()
+    {
+        using var hold = new ManualResetEventSlim();
+        _launcher.HoldFiles = hold;
+        _launcher.FailWhen = what => what.StartsWith("file ", StringComparison.Ordinal);
+        var page = Playback();
+
+        var older = page.OpenMpvConfigCommand.ExecuteAsync(null);
+        await page.OpenMpvFolderCommand.ExecuteAsync(null);
+        hold.Set();
+        await older;
+
+        Assert.Equal("", page.MpvConfigMessage);
+    }
+
+    [Fact]
     public async Task AnMpvConfThatDoesNotOpen_SaysWhereItIs()
     {
         _launcher.Fails = true;

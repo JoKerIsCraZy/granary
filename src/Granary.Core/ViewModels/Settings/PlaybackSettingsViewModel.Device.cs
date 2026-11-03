@@ -12,6 +12,9 @@ public sealed partial class PlaybackSettingsViewModel
     [ObservableProperty]
     public partial bool DecodesInSoftware { get; set; }
 
+    // Each press of Open mpv.conf or Open folder; the latest says how it went.
+    private int _mpvConfigRequests;
+
     /// <summary>Why mpv.conf or its folder did not open; empty otherwise.</summary>
     [ObservableProperty]
     public partial string MpvConfigMessage { get; private set; } = "";
@@ -46,29 +49,38 @@ public sealed partial class PlaybackSettingsViewModel
     [RelayCommand]
     private async Task OpenMpvConfigAsync()
     {
-        MpvConfigMessage = "";
+        int request = StartMpvConfigRequest();
         // Off the UI thread: the disk can be slow.
         string? file = await Task.Run(_mpvConfig.EnsureConfigFile);
-        if (file is null)
-        {
-            MpvConfigMessage = _mpvConfig.ConfigFileIsFolder
+        string message = file is null
+            ? _mpvConfig.ConfigFileIsFolder
                 ? $"mpv.conf in {_mpvConfig.Directory} is a folder. Rename or remove it, then try again."
-                : $"Couldn't create mpv.conf in {_mpvConfig.Directory}.";
-        }
-        else if (!_files.OpenFile(file))
-        {
-            MpvConfigMessage = $"Couldn't open mpv.conf. You'll find it in {_mpvConfig.Directory}.";
-        }
+                : $"Couldn't create mpv.conf in {_mpvConfig.Directory}."
+            : _files.OpenFile(file) ? "" : $"Couldn't open mpv.conf. You'll find it in {_mpvConfig.Directory}.";
+        SayMpvConfig(request, message);
     }
 
     /// <summary>Shows the mpv folder, made first when it is missing, for shaders and other files mpv.conf names.</summary>
     [RelayCommand]
     private async Task OpenMpvFolderAsync()
     {
+        int request = StartMpvConfigRequest();
+        bool opened = await Task.Run(_mpvConfig.EnsureDirectory) && _files.OpenFolder(_mpvConfig.Directory);
+        SayMpvConfig(request, opened ? "" : $"Couldn't open {_mpvConfig.Directory}.");
+    }
+
+    // The two buttons share one line: the last one pressed says how it went, and one that ends after it says nothing.
+    private int StartMpvConfigRequest()
+    {
         MpvConfigMessage = "";
-        if (!await Task.Run(_mpvConfig.EnsureDirectory) || !_files.OpenFolder(_mpvConfig.Directory))
+        return Interlocked.Increment(ref _mpvConfigRequests);
+    }
+
+    private void SayMpvConfig(int request, string message)
+    {
+        if (request == Volatile.Read(ref _mpvConfigRequests))
         {
-            MpvConfigMessage = $"Couldn't open {_mpvConfig.Directory}.";
+            MpvConfigMessage = message;
         }
     }
 }
