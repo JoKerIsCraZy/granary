@@ -99,18 +99,23 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
                 throw new ArgumentException($"Header '{name}' cannot be passed to mpv safely.", nameof(source));
             }
         }
-        // Not into an mpv that is being replaced (FailClosed): into the one after it. Apply now that waited for the title
-        // before starts mpv again here, so this title plays with mpv.conf as it is now.
+        // Not into an mpv that is being replaced: after a stop Granary made (FailClosed) whose mpv without the file does not
+        // run yet, it starts here, and the title plays in it. Apply now that waited for the title before starts mpv again
+        // here too, so this title plays with mpv.conf as it is now.
         long loadId;
-        bool startedAgain;
+        bool? startedAgain;
         lock (_restartGate)
         {
+            if (Volatile.Read(ref _failingClosed) != 0)
+            {
+                StartWithoutConfig(Volatile.Read(ref _failClosedStops));
+            }
             startedAgain = StartAgainBeforeLoad();
             loadId = LoadNow(source);
         }
-        if (startedAgain)
+        if (startedAgain is { } started)
         {
-            AfterStartingAgain();
+            AfterStartingAgain(started);
         }
         return loadId;
     }
@@ -562,7 +567,7 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
 
     private void OnFileEnded(int reason, int error)
     {
-        if (Volatile.Read(ref _failingClosed) != 0)
+        if (StopsTheFileItself)
         {
             // Granary stopped the file itself (FailClosed), which says how it ended once mpv runs again.
             return;

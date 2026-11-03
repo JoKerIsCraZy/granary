@@ -16,6 +16,8 @@ public sealed partial class MpvSettingsViewModel : ObservableObject, IDisposable
 
     public const string NextTitleText = "Applies to the next title.";
 
+    public const string FailedText = "Couldn't apply your mpv.conf. Granary keeps playing with the one it started with. The log has the details.";
+
     private const string DeviceNameText = "Windows keeps this name for itself. Choose another.";
 
     private readonly MpvConfigFolder _folder;
@@ -207,9 +209,11 @@ public sealed partial class MpvSettingsViewModel : ObservableObject, IDisposable
         {
             MpvConfigApply.Pending => PendingText,
             MpvConfigApply.NextTitle => NextTitleText,
+            MpvConfigApply.Failed => FailedText,
             _ => "",
         };
-        ShowsApplyNow = _changes.State == MpvConfigApply.Pending;
+        // After a failure, to try again.
+        ShowsApplyNow = _changes.State is MpvConfigApply.Pending or MpvConfigApply.Failed;
     }
 }
 

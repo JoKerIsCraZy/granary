@@ -58,7 +58,7 @@ public sealed class MpvConfigRestartTests : IDisposable
         engine.SetSpeed(1.5);
         File.WriteAllText(ConfigFile, "deband=no\nsaturation=-50\nvo=gpu\n");
 
-        Assert.True(engine.RestartWithConfig());
+        Assert.Equal(MpvRestartOutcome.Started, engine.RestartWithConfig());
 
         Assert.Equal(1, _restarts);
         Assert.Equal("no", engine.Option("deband"));
@@ -87,7 +87,7 @@ public sealed class MpvConfigRestartTests : IDisposable
         long first = await PlaysAWav(engine, 10);
         File.WriteAllText(ConfigFile, "deband=no\n");
 
-        Assert.False(engine.RestartWithConfig());
+        Assert.Equal(MpvRestartOutcome.Waiting, engine.RestartWithConfig());
         await Task.Delay(500, TestContext.Current.CancellationToken);
 
         // The title plays on in the same mpv.
@@ -113,7 +113,7 @@ public sealed class MpvConfigRestartTests : IDisposable
         using var engine = CreateEngine("deband=yes\n");
         await PlaysAWav(engine, 10);
         File.WriteAllText(ConfigFile, "deband=no\n");
-        Assert.False(engine.RestartWithConfig());
+        Assert.Equal(MpvRestartOutcome.Waiting, engine.RestartWithConfig());
 
         // The player closes.
         engine.Stop();
@@ -130,13 +130,13 @@ public sealed class MpvConfigRestartTests : IDisposable
         Assert.Equal(MpvConfigUse.NotUsed, _status.Current.Use);
 
         File.WriteAllText(ConfigFile, "deband=yes\n");
-        Assert.True(engine.RestartWithConfig());
+        Assert.Equal(MpvRestartOutcome.Started, engine.RestartWithConfig());
         Assert.Equal(new MpvConfigState(MpvConfigUse.Used), _status.Current);
         Assert.Equal("yes", engine.Option("deband"));
 
         // Unload removed it: mpv starts as without a file.
         File.Delete(ConfigFile);
-        Assert.True(engine.RestartWithConfig());
+        Assert.Equal(MpvRestartOutcome.Started, engine.RestartWithConfig());
         Assert.Equal(MpvConfigState.None, _status.Current);
         Assert.Equal("no", engine.Option("deband"));
         Assert.Equal("cplayer", engine.Option("player-operation-mode"));
@@ -153,7 +153,7 @@ public sealed class MpvConfigRestartTests : IDisposable
 
         File.WriteAllText(ConfigFile, "deband=yes\n");
         // While Granary still finishes its own start without the file, Apply now waits for it, then starts mpv again.
-        if (!engine.RestartWithConfig())
+        if (engine.RestartWithConfig() != MpvRestartOutcome.Started)
         {
             await Until(() => Volatile.Read(ref _restarts) == 1, () => _logs.All);
         }
@@ -175,7 +175,7 @@ public sealed class MpvConfigRestartTests : IDisposable
         Interlocked.Exchange(ref changed, 0);
         File.WriteAllText(ConfigFile, "deband=no\n");
 
-        Assert.True(engine.RestartWithConfig());
+        Assert.Equal(MpvRestartOutcome.Started, engine.RestartWithConfig());
         await Task.Delay(500, TestContext.Current.CancellationToken);
 
         Assert.NotEqual(before, engine.SwapChain);
@@ -186,6 +186,128 @@ public sealed class MpvConfigRestartTests : IDisposable
         // The picture's size now, not the first one.
         Assert.Equal("1920x1080", engine.Option("d3d11-composition-size"));
         Assert.Equal("no", engine.Option("deband"));
+    }
+
+    [Fact]
+    public async Task AFailedApplyNow_KeepsTheMpvBefore_AndSaysSo_UntilATryThatWorks()
+    {
+        using var engine = CreateEngine("deband=yes\n");
+        int failures = 0;
+        engine.ConfigRestartFailed += (_, _) => Interlocked.Increment(ref failures);
+        engine.SetVolume(40);
+        File.WriteAllText(ConfigFile, "deband=no\n");
+        // The new mpv starts, then something after it fails: it is closed, and the one before stays.
+        engine.AfterNewMpvStarted = () => throw new InvalidOperationException("The new mpv failed (test).");
+
+        Assert.Equal(MpvRestartOutcome.Failed, engine.RestartWithConfig());
+
+        Assert.Equal(1, failures);
+        Assert.Equal(0, _restarts);
+        Assert.Equal("yes", engine.Option("deband"));
+        Assert.Equal("40.000000", engine.Option("volume"));
+        Assert.Equal(new MpvConfigState(MpvConfigUse.Used), _status.Current);
+
+        // The start stays to be done: the next load tries it again first, and the title plays either way.
+        await PlaysAWav(engine, 0.5);
+        Assert.Equal(2, failures);
+        Assert.Equal("yes", engine.Option("deband"));
+
+        // Once a start works, mpv runs with the file as it is now.
+        engine.AfterNewMpvStarted = null;
+        engine.Stop();
+        await Until(() => Volatile.Read(ref _restarts) == 1, () => _logs.All);
+        Assert.Equal("no", engine.Option("deband"));
+        Assert.Equal(2, failures);
+    }
+
+    [Fact]
+    public async Task AFailedStartWithoutTheFile_AfterGranaryStoppedATitle_KeepsAWorkingMpv()
+    {
+        using var engine = CreateEngine("deband=yes\n[loop]\nkeep-open=no\n");
+        engine.SetSpeed(1.5);
+        var failed = new TaskCompletionSource<PlaybackEnded>(TaskCreationOptions.RunContinuationsAsynchronously);
+        engine.Ended += (_, e) =>
+        {
+            if (e.Reason == PlaybackEndReason.Error)
+            {
+                failed.TrySetResult(e);
+            }
+        };
+        engine.AfterNewMpvStarted = () => throw new InvalidOperationException("The new mpv failed (test).");
+        long first = await PlaysAWav(engine, 60);
+
+        await KeepChangingKeepOpen(engine, failed.Task);
+
+        // The title ends as a failure, as when the start works, and the mpv before plays on.
+        Assert.Equal(first, (await failed.Task).LoadId);
+        await Until(() => Count("A new mpv did not start without mpv.conf; the one before plays on") == 1, () => _logs.All);
+        Assert.Equal("1.500000", engine.Option("speed"));
+        Assert.Equal("yes", engine.Option("deband"));
+        Assert.Equal(MpvConfigUse.StoppedDuringPlayback, _status.Current.Use);
+        engine.AfterNewMpvStarted = null;
+        await PlaysAWav(engine, 0.5);
+    }
+
+    [Fact]
+    public async Task ALoadRightAfterGranaryStoppedATitle_PlaysInTheMpvWithoutTheFile()
+    {
+        using var engine = CreateEngine("deband=yes\n[loop]\nkeep-open=no\n");
+        var ends = new List<PlaybackEnded>();
+        var failed = new TaskCompletionSource<PlaybackEnded>(TaskCreationOptions.RunContinuationsAsynchronously);
+        engine.Ended += (_, e) =>
+        {
+            lock (ends)
+            {
+                ends.Add(e);
+            }
+            if (e.Reason == PlaybackEndReason.Error)
+            {
+                failed.TrySetResult(e);
+            }
+        };
+        // The thread pool is slow to run the start after the stop: the next title's load comes first.
+        using var slowPool = new ManualResetEventSlim();
+        engine.BeforeStartWithoutConfig = () => slowPool.Wait(Timeout);
+        long first = await PlaysAWav(engine, 60);
+        await KeepChangingKeepOpen(engine, () => Count("Granary stopped and plays without your mpv.conf") > 0);
+
+        var played = new TaskCompletionSource<long>(TaskCreationOptions.RunContinuationsAsynchronously);
+        engine.Ended += (_, e) =>
+        {
+            if (e.Reason == PlaybackEndReason.EndOfFile)
+            {
+                played.TrySetResult(e.LoadId);
+            }
+        };
+        long second = await PlaysAWav(engine, 0.5);
+
+        // The load started mpv without the file itself, and its title plays there, before the stop's own start ran.
+        Assert.Equal("cplayer", engine.Option("player-operation-mode"));
+        Assert.Equal("no", engine.Option("deband"));
+        slowPool.Set();
+        Assert.Equal(first, (await failed.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken)).LoadId);
+        Assert.Equal(second, await played.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken));
+        Assert.Equal(1, Count("mpv.conf keeps changing keep-open"));
+        lock (ends)
+        {
+            Assert.Single(ends, e => e.Reason == PlaybackEndReason.Error);
+            Assert.DoesNotContain(ends, e => e.LoadId == second && e.Reason != PlaybackEndReason.EndOfFile);
+        }
+    }
+
+    // A profile applied again and again, as one whose condition follows keep-open does after every set-back; applied by
+    // name, so the test does not wait on how fast mpv's auto_profiles.lua sees each change. Until Granary stops the title.
+    private Task KeepChangingKeepOpen(MpvPlaybackEngine engine, Task stopped) => KeepChangingKeepOpen(engine, () => stopped.IsCompleted);
+
+    private static async Task KeepChangingKeepOpen(MpvPlaybackEngine engine, Func<bool> stopped)
+    {
+        var deadline = DateTime.UtcNow + Timeout;
+        while (!stopped())
+        {
+            Assert.True(DateTime.UtcNow < deadline, "Granary did not stop the title in time.");
+            engine.Command("apply-profile", "loop");
+            await Task.Delay(50, TestContext.Current.CancellationToken);
+        }
     }
 
     // A WAV of that length loaded and open; the load's id.
@@ -267,7 +389,7 @@ public sealed class MpvConfigRestartHandleTests : IDisposable
 
         for (int i = 0; i < 20; i++)
         {
-            Assert.True(engine.RestartWithConfig());
+            Assert.Equal(MpvRestartOutcome.Started, engine.RestartWithConfig());
         }
 
         // Twenty mpv instances made and closed: a leak would show as hundreds of handles (threads, events, files).

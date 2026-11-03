@@ -87,6 +87,27 @@ public sealed class MpvSettingsViewModelTests : IDisposable
     }
 
     [Fact]
+    public async Task AFailedApplyNow_IsSaidInTheRow_AndClearsOnTheNextTryThatWorks()
+    {
+        using var row = Row();
+        _changes.Saved();
+        _player.FailsToStart = true;
+
+        await row.ApplyNowCommand.ExecuteAsync(null);
+
+        Assert.Equal("Couldn't apply your mpv.conf. Granary keeps playing with the one it started with. The log has the details.",
+            row.ChangeText);
+        // Apply now stays, to try again.
+        Assert.True(row.ShowsApplyNow);
+
+        _player.FailsToStart = false;
+        await row.ApplyNowCommand.ExecuteAsync(null);
+
+        Assert.Equal("", row.ChangeText);
+        Assert.False(row.ShowsApplyNow);
+    }
+
+    [Fact]
     public void ASave_BeforeThePlayerFirstStarted_AppliesToTheNextTitle()
     {
         _player.IsRunning = false;

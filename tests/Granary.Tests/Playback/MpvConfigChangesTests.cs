@@ -90,6 +90,52 @@ public sealed class MpvConfigChangesTests
     }
 
     [Fact]
+    public async Task AFailedApplyNow_IsSaid_AndTheNextTryThatWorksClearsIt()
+    {
+        var changes = Changes();
+        changes.Saved();
+        _player.FailsToStart = true;
+
+        await changes.ApplyNowAsync();
+
+        Assert.Equal(MpvConfigApply.Failed, changes.State);
+        Assert.True(changes.IsPending);
+
+        _player.FailsToStart = false;
+        await changes.ApplyNowAsync();
+
+        Assert.Equal(1, _player.Restarts);
+        Assert.Equal(MpvConfigApply.None, changes.State);
+    }
+
+    [Fact]
+    public async Task AWaitingStartThatFails_IsSaid()
+    {
+        var changes = Changes();
+        changes.Saved();
+        _player.IsPlaying = true;
+        await changes.ApplyNowAsync();
+        _player.FailsToStart = true;
+
+        _player.TitleEnds();
+
+        Assert.Equal(MpvConfigApply.Failed, changes.State);
+    }
+
+    [Fact]
+    public async Task ASaveAfterAFailure_IsAChangeToApplyAgain()
+    {
+        var changes = Changes();
+        changes.Saved();
+        _player.FailsToStart = true;
+        await changes.ApplyNowAsync();
+
+        changes.Saved();
+
+        Assert.Equal(MpvConfigApply.Pending, changes.State);
+    }
+
+    [Fact]
     public void ASaveAfterMpvStartedAgain_ButBeforeTheUiHeardOfIt_IsStillToApply()
     {
         var ui = new HeldDispatcher();

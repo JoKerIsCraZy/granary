@@ -43,7 +43,8 @@ release's section is what its update says it changes (docs/release.md).
 - Settings → Playback → This PC: **Apply now** after you save `mpv.conf` in Granary, load a preset or unload one. The
   player starts mpv again with the new file without restarting Granary, and the row then says how the file fared.
   Playback is never cut: while a title plays, Settings says "Applies to the next title." and the new file counts from
-  the next title, or once the player closes. Volume, speed, subtitles and the picture's fill carry over.
+  the next title, or once the player closes. Volume, speed, subtitles and the picture's fill carry over. If mpv cannot
+  start again, Settings says so and Granary plays on with the mpv it had; Apply now can be tried again.
 - The log says why a title is converted: what this PC's graphics card decodes, what Granary told the server it plays,
   and the reason the server gave for its choice.
 - More filters for a library, and for Favorites, Watchlist, History and collections: several genres at once, decades,

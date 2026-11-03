@@ -648,7 +648,10 @@ says why above the sections.
   log names them.", or nothing when the file is used as written or is gone). While a title plays, in the minimized
   player too, the line becomes "Applies to the next title." without the button: mpv starts again before the next title
   loads, or when the title ends or the player closes, and the line goes then. Before the player first opened in this
-  run, a change shows "Applies to the next title." straight away. How mpv reads the file and which options Granary keeps
+  run, a change shows "Applies to the next title." straight away. Should mpv not start again, at once or after waiting,
+  the line says "Couldn't apply your mpv.conf. Granary keeps playing with the one it started with. The log has the
+  details." with Apply now still there to try again; the next try that works clears it, and a new save shows the first
+  line again. How mpv reads the file and which options Granary keeps
   is in docs/architecture.md ("Your own mpv.conf").
 - **This PC → mpv configuration → Edit** (`MpvConfigEditorView` on `MpvConfigEditorViewModel`; Granary's own, as Silo's
   clients have no player configuration): the editor opens in the Playback page's place, in the same column, scrolled to
