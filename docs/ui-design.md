@@ -533,7 +533,9 @@ page background with a faint outline, red when focused; switches are only their 
 says why above the sections.
 
 - **Playback**: Quality (preferred quality, maximum bitrate with "No limit", lower quality when buffering, and this
-  connection's learned limit with Reset), Connection (the latest speed reading and what Auto plays without
+  connection's learned limit with Reset), This PC ("Kept on this PC. Changes count from the next title you play.":
+  Direct play without hardware decoding, a switch, off by default; Granary's own and kept on the PC, not in the
+  profile, so it does not save to the server), Connection (the latest speed reading and what Auto plays without
   converting), Skipping (skip intros, auto-skip recaps and credits), Next episode (start next at preview, auto-play),
   Seek controls (rewind and fast-forward intervals).
 - **Connection** (with `connection_speed_v1`): "Connection speed" with the reading as its description ("400 Mbps ·

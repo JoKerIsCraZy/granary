@@ -42,6 +42,15 @@
             </StackPanel>
         </controls:SettingsGroup>
 
+        <!-- Granary's own: about this PC's graphics card, so kept on the PC, not in the profile. -->
+        <controls:SettingsGroup Title="This PC" Description="Kept on this PC. Changes count from the next title you play.">
+            <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Direct play without hardware decoding"
+                                  Description="Play HEVC, VP9, AV1 and HDR files directly, decoding them on the processor where the graphics card can't, instead of having your Silo server convert them. The picture keeps its full quality, but slower PCs can stutter.">
+                <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.DecodesInSoftware, Mode=TwoWay}"
+                              AutomationProperties.Name="Direct play without hardware decoding" />
+            </controls:SettingsRow>
+        </controls:SettingsGroup>
+
         <controls:SettingsGroup Title="Connection" Visibility="{x:Bind ViewModel.ShowsConnection, Mode=OneWay}">
             <StackPanel Spacing="16">
                 <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Connection speed"

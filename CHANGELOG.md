@@ -6,6 +6,13 @@ release's section is what its update says it changes (docs/release.md).
 
 ## [Unreleased]
 
+### Added
+
+- Settings → Playback → This PC: **Direct play without hardware decoding**. On, Granary plays HEVC, VP9, AV1 and HDR
+  files directly and decodes them on the processor where the graphics card can't, instead of having your Silo server
+  convert them: the picture keeps its full quality and the server does less work, but slower PCs can stutter. Off by
+  default; it is kept on this PC and counts from the next title you play.
+
 ### Fixed
 
 - Switching quickly between sections and scrolling freezes the app less often and for shorter, most of all in a large

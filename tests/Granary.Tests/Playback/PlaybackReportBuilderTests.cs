@@ -174,6 +174,39 @@ public sealed class PlaybackReportBuilderTests
         Assert.Contains(DeliveryClaims.ClientManagedDynamicRangeV1, original.ValidatedClaims);
     }
 
+    // A Skylake laptop: HEVC 8-bit and VP9 in the GPU, nothing at 10 bits.
+    private static readonly PlaybackDeviceFacts OlderGpu = PlaybackRequests.Facts with
+    {
+        HardwareVideoCodecs = ["h264", "hevc", "vp9"],
+        HardwareTenBitVideoCodecs = [],
+        SoftwareVideoCodecs = ["h264", "mpeg2video"],
+    };
+
+    [Fact]
+    public void SoftwareDecoding_DeclaresHevcVp9AndAv1AndClaimsToneMapping_WithoutTheGpu()
+    {
+        var report = PlaybackReportBuilder.Build(OlderGpu with { HardwareVideoCodecs = ["h264"] }, "1.0.0", softwareDecoding: true);
+
+        Assert.Equal(["h264", "mpeg2video", "hevc", "vp9", "av1"], report.ClientCapabilities.CodecsVideo);
+        Assert.Equal(["h264"], report.ClientCapabilities.CodecsVideoHardware);
+        var original = report.ClientPlaybackContext.Deliveries[DeliveryClasses.OriginalHttp];
+        Assert.Contains(DeliveryClaims.ClientManagedDynamicRangeV1, original.ValidatedClaims);
+        Assert.Equal(report.ClientCapabilities.CodecsVideo, original.VideoCodecs);
+        Assert.False(report.ClientCapabilities.Hdr);
+        // A transcode stays one the GPU decodes: the server encodes HEVC only for an HLS delivery that lists it.
+        Assert.Equal(["h264", "mpeg2video"], report.ClientPlaybackContext.Deliveries[DeliveryClasses.Hls].VideoCodecs);
+    }
+
+    [Fact]
+    public void SoftwareDecoding_Off_LeavesHdrToTheServerOnAGpuWithoutTenBitDecoders()
+    {
+        var report = PlaybackReportBuilder.Build(OlderGpu, "1.0.0");
+
+        var original = report.ClientPlaybackContext.Deliveries[DeliveryClasses.OriginalHttp];
+        Assert.DoesNotContain(DeliveryClaims.ClientManagedDynamicRangeV1, original.ValidatedClaims);
+        Assert.DoesNotContain("av1", report.ClientCapabilities.CodecsVideo);
+    }
+
     [Fact]
     public void StartBody_NamesTheClaimsAsTheServerSpellsThem()
     {
