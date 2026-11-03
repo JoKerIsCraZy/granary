@@ -28,10 +28,17 @@ public sealed class FileLoggerProvider(string directory) : ILoggerProvider
 
     private static string Redact(string text) => LogRedactor.Redact(text);
 
+    // A message is one line: a value from a server with a line break in it cannot add lines that read as Granary's own.
+    // An exception's stack trace, which Granary writes itself, keeps its lines.
+    private static string OneLine(string text) =>
+        text.Contains('\r', StringComparison.Ordinal) || text.Contains('\n', StringComparison.Ordinal)
+            ? text.Replace("\r", "\\r", StringComparison.Ordinal).Replace("\n", "\\n", StringComparison.Ordinal)
+            : text;
+
     private void Write(string category, LogLevel level, string message, Exception? exception)
     {
         string line = string.Create(CultureInfo.InvariantCulture,
-            $"{DateTime.Now:HH:mm:ss.fff} {level,-11} {category}: {Redact(message)}");
+            $"{DateTime.Now:HH:mm:ss.fff} {level,-11} {category}: {OneLine(Redact(message))}");
         if (exception is not null)
         {
             line += Environment.NewLine + Redact(exception.ToString());
