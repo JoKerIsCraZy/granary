@@ -197,10 +197,11 @@ public sealed partial class PlayerPage
             case VirtualKey.Right when ViewModel.CanSeek:
                 ViewModel.SkipForwardCommand.Execute(null);
                 break;
-            case VirtualKey.Up when IsDocked || !UpDownMovesFocus:
+            // While the title loads or after it failed there are no controls to show or menus to open: the volume, as before.
+            case VirtualKey.Up when IsDocked || !UpDownMovesFocus || !HasTransport:
                 ViewModel.ChangeVolume(VolumeStep);
                 break;
-            case VirtualKey.Down when IsDocked || !UpDownMovesFocus:
+            case VirtualKey.Down when IsDocked || !UpDownMovesFocus || !HasTransport:
                 ViewModel.ChangeVolume(-VolumeStep);
                 break;
             case VirtualKey.Up:

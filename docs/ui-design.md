@@ -959,7 +959,7 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   shows the controls with focus on Play/Pause and Down opens the audio menu when there is a track to choose, else the
   subtitles', else the playback settings (the TV app's panel opens on audio, else subtitles, else video), and on a
   shown control they move from it. Set to Change the volume they set it ±5 as on the web, and move only off the seek
-  bar. In the minimized bar they always set the volume ±5. A remote's Back (Browser Back) and Backspace do as Esc
+  bar. In the minimized bar, while the title loads and after it failed they always set the volume ±5. A remote's Back (Browser Back) and Backspace do as Esc
   does, but leave full screen alone (a media PC runs in it); OK (Enter) with focus on the picture only shows the
   controls, focus on Play/Pause, as on Silo's TV app, also when the pointer (an air mouse's) already shows them (so does
   OK on the minimized bar's picture); while a skip pill shows, OK on hidden
