@@ -106,10 +106,18 @@ internal static class MpvOwnOptions
         var text = new StringBuilder("[").Append(ProfileName).Append("]\n");
         foreach (var (name, value) in own)
         {
-            text.Append(name).Append('=').Append(value).Append('\n');
+            text.Append(Written(name, value)).Append('=').Append(value).Append('\n');
         }
         return text.ToString();
     }
+
+    /// <summary>
+    /// A list option Granary keeps empty. Set to "", mpv holds one empty entry instead (an empty command it complains
+    /// about), so it is cleared with mpv's "-clr" action in the profile and for each title, and with change-list later.
+    /// </summary>
+    public static bool IsClearedList(string name, string value) => name == "input-commands" && value.Length == 0;
+
+    private static string Written(string name, string value) => IsClearedList(name, value) ? name + "-clr" : name;
 
     /// <summary>
     /// Granary's options as options of one file in <c>loadfile</c>. mpv applies these after the file's <c>protocol.*</c>
@@ -118,7 +126,7 @@ internal static class MpvOwnOptions
     /// </summary>
     public static IEnumerable<string> PerFile(IEnumerable<KeyValuePair<string, string>> own) =>
         own.Where(o => o.Key != CompositionSize)
-            .Select(o => string.Create(CultureInfo.InvariantCulture, $"{o.Key}=%{Encoding.UTF8.GetByteCount(o.Value)}%{o.Value}"));
+            .Select(o => string.Create(CultureInfo.InvariantCulture, $"{Written(o.Key, o.Value)}=%{Encoding.UTF8.GetByteCount(o.Value)}%{o.Value}"));
 
     /// <summary>Whether mpv's value is Granary's: mpv may write a value in another case or with spaces around it.</summary>
     public static bool Same(string? value, string own) =>

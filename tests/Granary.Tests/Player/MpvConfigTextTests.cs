@@ -104,4 +104,91 @@ public sealed class MpvConfigTextTests
         Assert.Equal([new("keep-open", "later", "no"), new("osc", "pseudo-gui", "no"), new("vo", "pseudo-gui", "gpu")], found);
         Assert.StartsWith("sets vo in its [pseudo-gui] profile", MpvConfigText.Refusal(found, Kept), StringComparison.Ordinal);
     }
+
+    // A config folder of files in memory, by full path; a missing one reads as none, as in mpv.
+    private static readonly string Folder = Path.GetFullPath(Path.Combine(Path.GetTempPath(), "granary-scan", "mpv"));
+
+    private static MpvConfigScan Scan(params (string Name, string Text)[] files)
+    {
+        var all = files.ToDictionary(f => Path.GetFullPath(Path.Combine(Folder, f.Name)), f => f.Text, StringComparer.OrdinalIgnoreCase);
+        return MpvConfigText.Scan(Path.Combine(Folder, "mpv.conf"), Folder, Names, path => all.GetValueOrDefault(path));
+    }
+
+    [Fact]
+    public void AnInclude_IsReadWhereItStands_InItsProfile()
+    {
+        var scan = Scan(
+            ("mpv.conf", "include=~~/top.conf\n[pseudo-gui]\ninclude=\"~~/sub/gui.conf\"\n[later]\ninclude=~~home/later.conf\n"),
+            ("top.conf", "vo=gpu\n[own]\nidle=no\n"),
+            ("sub/gui.conf", "keep-open=no\n"),
+            ("later.conf", "osc=yes\n"));
+
+        Assert.Null(scan.Problem);
+        Assert.Equal([new("vo", null, "gpu"), new("idle", "own", "no"), new("keep-open", "pseudo-gui", "no"), new("osc", "later", "yes")],
+            scan.Entries);
+        Assert.StartsWith("sets keep-open in its [pseudo-gui] profile", MpvConfigText.Refusal(scan.Entries, Kept), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AnIncludeByItsFullPath_IsRead()
+    {
+        string other = Path.Combine(Folder, "elsewhere", "x.conf");
+
+        var scan = Scan(("mpv.conf", $"include=\"{other}\"\n"), ("elsewhere/x.conf", "player-operation-mode=cplayer\n"));
+
+        Assert.StartsWith("sets player-operation-mode", MpvConfigText.Refusal(scan.Entries, Kept), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AMissingInclude_IsPassedOver_AsMpvDoes()
+    {
+        var scan = Scan(("mpv.conf", "include=~~/gone.conf\nvo=gpu\n"));
+
+        Assert.Null(scan.Problem);
+        Assert.Equal([new("vo", null, "gpu")], scan.Entries);
+    }
+
+    [Fact]
+    public void IncludesThatIncludeEachOther_AreTheProblem()
+    {
+        // mpv 0.41 reads them without end, and never starts.
+        var scan = Scan(("mpv.conf", "include=~~/a.conf\n"), ("a.conf", "vo=gpu\ninclude=~~/b.conf\n"), ("b.conf", "include=~~/A.conf\nidle=no\n"));
+
+        Assert.Equal("has includes that include each other, which mpv reads without end", scan.Problem);
+    }
+
+    [Fact]
+    public void AFileIncludedTwice_OneAfterTheOther_IsNoCycle()
+    {
+        var scan = Scan(("mpv.conf", "include=~~/common.conf\n[later]\ninclude=~~/common.conf\n"), ("common.conf", "idle=no\n"));
+
+        Assert.Null(scan.Problem);
+        Assert.Equal([new("idle", null, "no"), new("idle", "later", "no")], scan.Entries);
+    }
+
+    [Fact]
+    public void IncludesNestedDeeperThanEight_AreTheProblem()
+    {
+        var files = Enumerable.Range(1, 9).Select(n => ($"{n}.conf", n == 9 ? "vo=gpu\n" : $"include=~~/{n + 1}.conf\n")).ToList();
+        files.Add(("mpv.conf", "include=~~/1.conf\n"));
+
+        Assert.Equal("has includes nested deeper than 8", Scan([.. files]).Problem);
+        files[7] = ("8.conf", "idle=no\n");
+        Assert.Equal([new("idle", null, "no")], Scan([.. files]).Entries);
+    }
+
+    [Theory]
+    [InlineData("include=memory://vo=gpu\n", "includes memory://vo=gpu, which Granary cannot follow")]
+    [InlineData("include=~~cache/x.conf\n", "includes ~~cache/x.conf, which Granary cannot follow")]
+    public void AnIncludeGranaryCannotFollow_IsTheProblem(string text, string problem) =>
+        Assert.Equal(problem, Scan(("mpv.conf", text)).Problem);
+
+    [Fact]
+    public void AnIncludeGranaryCannotRead_IsTheProblem()
+    {
+        var scan = MpvConfigText.Scan(Path.Combine(Folder, "mpv.conf"), Folder, Names, path =>
+            path.EndsWith("locked.conf", StringComparison.Ordinal) ? throw new UnauthorizedAccessException() : "include=~~/locked.conf\n");
+
+        Assert.Equal("includes locked.conf, which Granary cannot read", scan.Problem);
+    }
 }

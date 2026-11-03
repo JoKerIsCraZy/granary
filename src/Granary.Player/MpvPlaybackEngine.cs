@@ -44,15 +44,26 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
     private nint _swapChain;
 
     public MpvPlaybackEngine(MpvEngineOptions options, ILogger<MpvPlaybackEngine> logger, TimeProvider? time = null)
+        : this(options, logger, time, ReadConfigText)
+    {
+    }
+
+    /// <param name="readConfig">Reads a config file Granary checks before mpv does: its text, or null when it is missing.</param>
+    internal MpvPlaybackEngine(MpvEngineOptions options, ILogger<MpvPlaybackEngine> logger, TimeProvider? time, Func<string, string?> readConfig)
     {
         _options = options;
         _logger = logger;
+        _readConfig = readConfig;
         _outputSize = options.InitialOutputSize;
         _bufferedReads = new TrailingThrottle(BufferedThrottle, time ?? TimeProvider.System, ReadBuffered,
             ex => _logger.LogError(ex, "Reporting what mpv's cache holds failed"));
         _core = MpvOwnOptions.Core(options.VideoOutput, _outputSize);
-        Start();
-        _logger.LogInformation("libmpv {Version} initialized ({Output})", _mpv.GetString("mpv-version"), options.VideoOutput);
+        // A restart without the file (FailClosed) waits until the engine is made.
+        lock (_restartGate)
+        {
+            Start();
+            _logger.LogInformation("libmpv {Version} initialized ({Output})", _mpv.GetString("mpv-version"), options.VideoOutput);
+        }
         RefreshSwapChain();
     }
 
@@ -85,6 +96,15 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
                 throw new ArgumentException($"Header '{name}' cannot be passed to mpv safely.", nameof(source));
             }
         }
+        // Not into an mpv that is being replaced (FailClosed): into the one after it.
+        lock (_restartGate)
+        {
+            return LoadNow(source);
+        }
+    }
+
+    private long LoadNow(MediaSource source)
+    {
         string headers = string.Join(",", source.Headers.Select(h => $"{h.Key}: {h.Value}"));
         _mpv.SetProperty("http-header-fields", headers);
 
@@ -96,6 +116,7 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
         lock (_gate)
         {
             loadId = ++_loads;
+            _activeLoad = loadId;
             _loadAudio = source.AudioStream;
             _lastReportedPosition = null;
             _rejected = false;
@@ -143,16 +164,16 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
         _mpv.Command("seek", position.TotalSeconds.ToString("0.###", CultureInfo.InvariantCulture), "absolute");
 
     public void SetVolume(double percent) =>
-        _mpv.SetProperty("volume", Math.Clamp(percent, 0, 100).ToString("0.##", CultureInfo.InvariantCulture));
+        SetGlobal("volume", Math.Clamp(percent, 0, 100).ToString("0.##", CultureInfo.InvariantCulture));
 
-    public void SetMuted(bool muted) => _mpv.SetProperty("mute", muted ? "yes" : "no");
+    public void SetMuted(bool muted) => SetGlobal("mute", muted ? "yes" : "no");
 
     // A global option: it stays for the next file. mpv keeps the pitch (audio-pitch-correction).
     public void SetSpeed(double speed) =>
-        _mpv.SetProperty("speed", Math.Clamp(speed, 0.25, 4).ToString("0.##", CultureInfo.InvariantCulture));
+        SetGlobal("speed", Math.Clamp(speed, 0.25, 4).ToString("0.##", CultureInfo.InvariantCulture));
 
     // panscan 1 scales the picture up until it fills the area on both sides, as object-fit: cover does on the web.
-    public void SetFill(bool fill) => _mpv.SetProperty("panscan", fill ? "1" : "0");
+    public void SetFill(bool fill) => SetGlobal("panscan", fill ? "1" : "0");
 
     // width and height are the picture as decoded, the drops counted since the file was loaded.
     public PlaybackStats ReadStats() => new(
@@ -259,14 +280,14 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
     }
 
     public void SetSubtitleDelay(double seconds) =>
-        _mpv.SetProperty("sub-delay", seconds.ToString("0.###", CultureInfo.InvariantCulture));
+        SetGlobal("sub-delay", seconds.ToString("0.###", CultureInfo.InvariantCulture));
 
     public void SetSubtitleLook(SubtitleAppearance look)
     {
         ArgumentNullException.ThrowIfNull(look);
         foreach (var (name, value) in SubtitleOptions(look))
         {
-            _mpv.SetProperty(name, value);
+            SetGlobal(name, value);
         }
         lock (_gate)
         {
@@ -352,7 +373,7 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
             SubtitlePosition.Top => 100,
             _ => 100 - lift * 100,
         };
-        _mpv.SetProperty("sub-pos", Math.Max(0, pos).ToString("0.#", CultureInfo.InvariantCulture));
+        SetGlobal("sub-pos", Math.Max(0, pos).ToString("0.#", CultureInfo.InvariantCulture));
     }
 
     private bool IsCurrentLoad(long loadId)
@@ -363,7 +384,14 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
         }
     }
 
-    public void Stop() => _mpv.Command("stop");
+    public void Stop()
+    {
+        lock (_gate)
+        {
+            _activeLoad = 0;
+        }
+        _mpv.Command("stop");
+    }
 
     public void Resize(int widthPixels, int heightPixels)
     {
@@ -519,6 +547,19 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
 
     private void OnFileEnded(int reason, int error)
     {
+        if (Volatile.Read(ref _failingClosed) != 0)
+        {
+            // Granary stopped the file itself (FailClosed), which says how it ended once mpv runs again.
+            return;
+        }
+        if (reason is LibMpv.EndFileError or LibMpv.EndFileEof)
+        {
+            // A stop is Granary's own (Stop), or the end of the file a new load replaces, whose load goes on.
+            lock (_gate)
+            {
+                _activeLoad = 0;
+            }
+        }
         // mpv keeps its pause, volume and mute across files, and says nothing of them for the next one.
         var idle = Update(s => PlaybackSnapshot.Idle with { IsPaused = s.IsPaused, Volume = s.Volume, IsMuted = s.IsMuted, LoadId = s.LoadId }, force: true);
         var ended = reason switch
@@ -608,6 +649,10 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
     {
         // First: a read waiting on its timer must not reach mpv once it is gone.
         _bufferedReads.Dispose();
-        Close();
+        lock (_restartGate)
+        {
+            _disposed = true;
+            Close();
+        }
     }
 }

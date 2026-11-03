@@ -24,6 +24,8 @@ internal static partial class LibMpv
     public const int EventPlaybackRestart = 21;
     public const int EventPropertyChange = 22;
 
+    public const int ErrorUninitialized = -3;
+
     public const int EndFileEof = 0;
     public const int EndFileStop = 2;
     public const int EndFileQuit = 3;
