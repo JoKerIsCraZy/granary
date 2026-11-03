@@ -1,6 +1,5 @@
 using System.Net;
 using System.Text.Json;
-using Granary.Core;
 using Granary.Core.Api;
 using Granary.Core.Api.Playback;
 using Granary.Core.Api.Settings;
@@ -240,30 +239,6 @@ public sealed class SettingsViewModelTests : IDisposable
     }
 
     [Fact]
-    public void OpenLogs_FallsBackToTheDataFolder_WhenTheLogFolderDoesNotOpen()
-    {
-        _launcher.FailWhen = what => what == "folder " + Granary.Core.Diagnostics.FileLoggerProvider.DefaultDirectory;
-        var page = Playback();
-
-        page.OpenLogsCommand.Execute(null);
-
-        Assert.Equal(["folder " + AppPaths.DataDirectory], _launcher.Opened);
-        Assert.Equal("", page.MpvConfigMessage);
-    }
-
-    [Fact]
-    public void OpenLogs_WhenBothFoldersFail_SaysWhereTheLogsAre()
-    {
-        _launcher.Fails = true;
-        var page = Playback();
-
-        page.OpenLogsCommand.Execute(null);
-
-        Assert.Empty(_launcher.Opened);
-        Assert.Equal($"Couldn't open {Granary.Core.Diagnostics.FileLoggerProvider.DefaultDirectory}.", page.MpvConfigMessage);
-    }
-
-    [Fact]
     public async Task OpenFolder_ShowsTheMpvFolder_MadeFirst()
     {
         var page = Playback();
@@ -277,7 +252,20 @@ public sealed class SettingsViewModelTests : IDisposable
     }
 
     [Fact]
-    public async Task OpenFolder_ReportsFailure_AndClearsItOnRetry()
+    public async Task OpenFolder_WhenItCannotBeCreated_DoesNotLaunchIt()
+    {
+        Directory.CreateDirectory(_data);
+        await File.WriteAllTextAsync(Path.Combine(_data, "mpv"), "", TestContext.Current.CancellationToken);
+        var page = Playback();
+
+        await page.OpenMpvFolderCommand.ExecuteAsync(null);
+
+        Assert.Equal($"Couldn't open {MpvFolder.Directory}.", page.MpvConfigMessage);
+        Assert.Empty(_launcher.Opened);
+    }
+
+    [Fact]
+    public async Task OpenFolder_WhenTheLauncherFails_SaysWhereItIs_AndClearsTheMessageOnRetry()
     {
         _launcher.Fails = true;
         var page = Playback();
@@ -293,16 +281,27 @@ public sealed class SettingsViewModelTests : IDisposable
     }
 
     [Fact]
-    public async Task OpenFolder_WhenDirectoryCannotBeCreated_DoesNotLaunchIt()
+    public void OpenLogs_WhenTheLogFolderFails_TriesTheDataFolder()
     {
-        Directory.CreateDirectory(_data);
-        await File.WriteAllTextAsync(Path.Combine(_data, "mpv"), "", TestContext.Current.CancellationToken);
+        _launcher.FailWhen = what => what == "folder " + Granary.Core.Diagnostics.FileLoggerProvider.DefaultDirectory;
         var page = Playback();
 
-        await page.OpenMpvFolderCommand.ExecuteAsync(null);
+        page.OpenLogsCommand.Execute(null);
 
-        Assert.Equal($"Couldn't open {MpvFolder.Directory}.", page.MpvConfigMessage);
+        Assert.Equal(["folder " + Granary.Core.AppPaths.DataDirectory], _launcher.Opened);
+        Assert.Equal("", page.MpvConfigMessage);
+    }
+
+    [Fact]
+    public void OpenLogs_WhenBothFoldersFail_SaysWhereTheLogsAre()
+    {
+        _launcher.Fails = true;
+        var page = Playback();
+
+        page.OpenLogsCommand.Execute(null);
+
         Assert.Empty(_launcher.Opened);
+        Assert.Equal($"Couldn't open {Granary.Core.Diagnostics.FileLoggerProvider.DefaultDirectory}.", page.MpvConfigMessage);
     }
 
     [Fact]

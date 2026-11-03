@@ -62,11 +62,11 @@ public sealed class MpvOwnOptionsTests
     }
 
     [Fact]
-    public void PerFileValues_UseUtf8ByteLengths_AndKeepSeparatorsInsideTheValue()
+    public void PerFileValues_AreQuotedByUtf8Bytes_AndCannotSplitAtCommas()
     {
-        var perFile = MpvOwnOptions.PerFile([new("example", "é,=#")]);
+        var perFile = MpvOwnOptions.PerFile([new("example", "é,=#"), new("input-commands", "quit")]);
 
-        Assert.Equal(["example=%5%é,=#"], perFile);
+        Assert.Equal(["example=%5%é,=#", "input-commands=%4%quit"], perFile);
     }
 
     [Theory]
