@@ -116,7 +116,8 @@ Without it, mpv starts exactly as before: the same options in the same order (`M
   file's value; it never holds server credentials, only the loopback address with the media proxy's secret (Server
   playback, "Media proxy"). `d3d11-composition-size` is kept at the start only, as the engine changes it itself.
 - The protection fails closed (`MpvPlaybackEngine.FailClosed.cs`). A profile whose condition follows the option itself
-  would set it again after every set-back; after five set-backs of one option (`SetBackLimit`), at the next change, or
+  would set it again after every set-back; after five set-backs of one option within one title (`SetBackLimit`; the
+  count starts again with each load, so a profile that changes it once per title never gets there), at the next change, or
   when mpv does not take Granary's value back, Granary stops the file at once, so nothing more is read or written under
   the file's value, and starts a new mpv without the file, the same start as when the file is refused, before it
   closes the one before, so the graphics device stays in use all along. The log says

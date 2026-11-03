@@ -19,7 +19,8 @@ namespace Granary.Player;
 public sealed partial class MpvPlaybackEngine
 {
     // A profile that keeps changing one of Granary's options back (its condition follows the option) is set back this
-    // many times; the next change stops the file and mpv plays without the mpv.conf.
+    // many times within one title; the next change stops the file and mpv plays without the mpv.conf. A profile that
+    // changes one once per title never gets there.
     private const int SetBackLimit = 5;
 
     // The properties the engine follows.
@@ -54,8 +55,10 @@ public sealed partial class MpvPlaybackEngine
     private Dictionary<string, string>? _kept;
     private string[] _perFile = [];
 
-    // How often each option was set back; on mpv's event thread only.
+    // How often each option was set back for the title _setBacksTitle (a load, as Load counts them; 0 before the first);
+    // on mpv's event thread only, so a load on another thread never touches them.
     private readonly Dictionary<string, int> _setBacks = [];
+    private long _setBacksTitle;
 
     [MemberNotNull(nameof(_mpv))]
     private void Start()
@@ -303,6 +306,19 @@ public sealed partial class MpvPlaybackEngine
         if (MpvOwnOptions.Same(_mpv.GetString(name), own))
         {
             return true;
+        }
+        // Counted per title. A notice of the title before that arrives after a new load is counted for the new one: at
+        // most the one in flight, as each set-back waits for the one before, so a profile that changes the option once
+        // per title stays far below the limit, and one that loops still reaches it within the title.
+        long title;
+        lock (_gate)
+        {
+            title = _loads;
+        }
+        if (title != _setBacksTitle)
+        {
+            _setBacks.Clear();
+            _setBacksTitle = title;
         }
         int times = _setBacks.GetValueOrDefault(name) + 1;
         _setBacks[name] = times;
