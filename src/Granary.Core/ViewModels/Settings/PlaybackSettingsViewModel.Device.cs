@@ -13,7 +13,7 @@ public sealed partial class PlaybackSettingsViewModel
 
     /// <summary>Up and Down in the player (<see cref="IPlaybackDevicePreferences.UpDown"/>), the TV app's way first.</summary>
     public IReadOnlyList<SettingChoice> UpDownChoices { get; } =
-        [new("controls", "Show the controls and menus"), new("volume", "Change the volume")];
+        [new("controls", "Controls and menus"), new("volume", "Volume")];
 
     [ObservableProperty]
     public partial SettingChoice? SelectedUpDown { get; set; }

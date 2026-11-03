@@ -114,7 +114,7 @@ public sealed class SettingsViewModelTests
     public void UpAndDownInThePlayer_IsThisPcsChoice_ControlsAndMenusFirst()
     {
         var page = Playback();
-        Assert.Equal(["Show the controls and menus", "Change the volume"], page.UpDownChoices.Select(c => c.Label));
+        Assert.Equal(["Controls and menus", "Volume"], page.UpDownChoices.Select(c => c.Label));
         Assert.Equal("controls", page.SelectedUpDown?.Value);
 
         page.SelectedUpDown = page.UpDownChoices[1];
