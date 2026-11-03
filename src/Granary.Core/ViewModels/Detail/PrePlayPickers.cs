@@ -17,15 +17,19 @@ public enum SubtitlePickMode
 /// <summary>What the viewer picked on the detail page; null members and Auto leave the choice to playback.</summary>
 /// <param name="SubtitleTrack">With <see cref="SubtitlePickMode.Track"/>: the track's combined ordinal.</param>
 /// <param name="SubtitleOverrideCleared">
-/// Auto was picked over a remembered track: the item's saved signature no longer applies, although the page has not read
-/// the item again yet.
+/// Auto was picked over a remembered track: the item's saved signature no longer applies, although the item may still name
+/// it (not read again yet, or the server kept it when forgetting failed).
 /// </param>
+/// <param name="AudioAutoPending">Auto was picked for audio, and what the server picks without the saved track is not read yet.</param>
+/// <param name="SubtitleAutoPending">The same for subtitles.</param>
 public sealed record PrePlayPicks(
     string? FileId = null,
     int? AudioTrack = null,
     SubtitlePickMode SubtitleMode = SubtitlePickMode.Auto,
     int? SubtitleTrack = null,
-    bool SubtitleOverrideCleared = false)
+    bool SubtitleOverrideCleared = false,
+    bool AudioAutoPending = false,
+    bool SubtitleAutoPending = false)
 {
     public static PrePlayPicks None { get; } = new();
 }
@@ -137,11 +141,20 @@ public sealed class PrePlayPickers
             item.ShowForcedSubtitles,
             SubtitleAutoSelection.AudioLanguage(audioTracks, audio ?? version.EffectiveAudioTrackIndex, version.EffectiveAudioLanguage),
             picks.SubtitleOverrideCleared ? null : item.EffectiveSubtitleTrackSignature);
-        var (subtitleOptions, subtitleSummary) = SubtitleRows(version, candidates, preference, subtitleMode, subtitle);
-        var choice = picked is not null || audio is not null || subtitle is not null
-            ? new PrePlayChoice(version.FileId, picked is not null, audio, subtitle)
+        var auto = SubtitleAutoSelection.Resolve(candidates, preference);
+        // Until the server is read again after Auto, what it picks is not known: Auto alone, the picks' own state.
+        bool audioPending = audio is null && picks.AudioAutoPending;
+        bool subtitlePending = subtitleMode == SubtitlePickMode.Auto && picks.SubtitleAutoPending;
+        var (subtitleOptions, subtitleSummary) = SubtitleRows(version, candidates, auto, preference.Signature is not null, subtitleMode, subtitle,
+            subtitlePending);
+        // Auto over a remembered track the server still names, its forgetting refused: a start would apply that track, so
+        // it is told the automatic one (or none) instead, which the picker shows.
+        int? startSubtitle = subtitle ?? (subtitleMode == SubtitlePickMode.Auto && picks.SubtitleOverrideCleared && !subtitlePending
+            && item.EffectiveSubtitleTrackSignature is not null && candidates.Count > 0 ? auto?.SelectionIndex ?? -1 : null);
+        var choice = picked is not null || audio is not null || startSubtitle is not null
+            ? new PrePlayChoice(version.FileId, picked is not null, audio, startSubtitle)
             : null;
-        return new PrePlayPickers(version, VersionRows(files, version), AudioRows(version, audio), AudioSummaryOf(version, audio),
+        return new PrePlayPickers(version, VersionRows(files, version), AudioRows(version, audio, audioPending), AudioSummaryOf(version, audio, audioPending),
             subtitleOptions, subtitleSummary, candidates, choice);
     }
 
@@ -191,25 +204,26 @@ public sealed class PrePlayPickers
         return Math.Max(0, marked);
     }
 
-    private static string AudioSummaryOf(FileVersion version, int? picked)
+    private static string AudioSummaryOf(FileVersion version, int? picked, bool pending)
     {
         if (version.AudioTracks.Count == 0)
         {
             return "";
         }
-        return picked is { } ordinal
-            ? PrePlayText.AudioSummary(version.AudioTracks[ordinal])
+        return picked is { } ordinal ? PrePlayText.AudioSummary(version.AudioTracks[ordinal])
+            : pending ? "Auto"
             : "Auto: " + PrePlayText.AudioSummary(version.AudioTracks[AutoAudio(version)]);
     }
 
-    private static IReadOnlyList<DetailAudioOption> AudioRows(FileVersion version, int? picked)
+    private static IReadOnlyList<DetailAudioOption> AudioRows(FileVersion version, int? picked, bool pending)
     {
         var tracks = version.AudioTracks;
         if (tracks.Count == 0)
         {
             return [];
         }
-        var auto = new DetailAudioOption(null, "Auto", PrePlayText.AudioSummary(tracks[AutoAudio(version)]), "", "", false, picked is null);
+        var auto = new DetailAudioOption(null, "Auto", pending ? "" : PrePlayText.AudioSummary(tracks[AutoAudio(version)]), "", "", false,
+            picked is null);
         return
         [
             auto,
@@ -227,8 +241,10 @@ public sealed class PrePlayPickers
 
     // web: buildVersionSubtitleInventory and buildPrePlaySubtitleCandidates without downloaded subtitles, which Silo's
     // apps leave out before playback as well: each source by language, forced first, the file's default first.
-    private static (IReadOnlyList<DetailSubtitleOption> Rows, string Summary) SubtitleRows(
-        FileVersion version, IReadOnlyList<SubtitleCandidate> candidates, SubtitlePreference preference, SubtitlePickMode mode, int? picked)
+    // auto: the automatic choice; remembers: it is the track the item remembers. pending: Auto was picked and what the
+    // server then picks is not read yet.
+    private static (IReadOnlyList<DetailSubtitleOption> Rows, string Summary) SubtitleRows(FileVersion version,
+        IReadOnlyList<SubtitleCandidate> candidates, SubtitleCandidate? auto, bool remembers, SubtitlePickMode mode, int? picked, bool pending)
     {
         var tracks = version.SubtitleTracks;
         if (tracks.Count == 0)
@@ -236,22 +252,22 @@ public sealed class PrePlayPickers
             return ([], "");
         }
         var rows = tracks.Select((track, i) => new SubtitleRow(track, candidates[i])).ToList();
-        var auto = SubtitleAutoSelection.Resolve(candidates, preference);
         var autoRow = rows.FirstOrDefault(r => ReferenceEquals(r.Candidate, auto));
         // A remembered track stands as the choice itself, not as an Auto guess (web: overrideCandidate).
-        var remembered = mode == SubtitlePickMode.Auto && preference.Signature is not null ? autoRow : null;
+        var remembered = mode == SubtitlePickMode.Auto && remembers ? autoRow : null;
         string summary = mode switch
         {
             SubtitlePickMode.Off => "Off",
             SubtitlePickMode.Track => rows.First(r => r.Candidate.SelectionIndex == picked).Summary,
+            _ when pending => "Auto",
             _ when remembered is not null => remembered.Summary,
             _ => "Auto: " + (autoRow?.Summary ?? "Off"),
         };
         int? chosen = mode == SubtitlePickMode.Track ? picked : remembered?.Candidate.SelectionIndex;
+        string autoDetail = pending ? "" : remembered is not null ? "Reset to profile defaults" : autoRow?.LanguageLabel ?? "Off";
         var options = new List<DetailSubtitleOption>
         {
-            new(DetailSubtitleKind.Auto, -1, "Auto", remembered is not null ? "Reset to profile defaults" : autoRow?.LanguageLabel ?? "Off", "",
-                false, false, false, mode == SubtitlePickMode.Auto && remembered is null),
+            new(DetailSubtitleKind.Auto, -1, "Auto", autoDetail, "", false, false, false, mode == SubtitlePickMode.Auto && remembered is null),
             new(DetailSubtitleKind.Off, -1, "Off", "", "", false, false, false, mode == SubtitlePickMode.Off),
         };
         options.AddRange(Section(rows.Where(r => !r.Track.External), "Embedded", chosen));

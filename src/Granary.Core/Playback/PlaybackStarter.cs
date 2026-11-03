@@ -75,8 +75,9 @@ public sealed class PlaybackStarter(
         try
         {
             // A pick or an Auto made on the detail page a moment ago is in the watch detail's preferences (Apple's
-            // client settles its pending writes before this read too).
-            if (trackChoices is not null)
+            // client settles its pending writes before this read too). A Watch Party's room plays its own file at once:
+            // it takes none of the page's picks, so it waits for none of their saves.
+            if (trackChoices is not null && pinnedFileId is null)
             {
                 await trackChoices.SettleAsync(cancellationToken).ConfigureAwait(false);
             }

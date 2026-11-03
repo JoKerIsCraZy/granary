@@ -36,7 +36,11 @@ public sealed class TrackChoiceWrites(TimeProvider time, ILogger<TrackChoiceWrit
         }
     }
 
-    /// <summary>Waits for the writes made so far, at most as long as one write may take.</summary>
+    /// <summary>
+    /// Waits for the writes made so far, at most as long as one write may take. A start cannot ask for "no saved choice"
+    /// itself (it resolves the audio from the saved preferences when it names none), so one that waited in vain may start
+    /// with the choice saved before; that is logged.
+    /// </summary>
     public async Task SettleAsync(CancellationToken cancellationToken)
     {
         Task tail;
@@ -50,7 +54,8 @@ public sealed class TrackChoiceWrites(TimeProvider time, ILogger<TrackChoiceWrit
         }
         catch (TimeoutException)
         {
-            logger.LogWarning("A track choice was still being saved when playback started");
+            logger.LogWarning("Playback starts while {Count} track choice(s) are still being saved after {Seconds} s: it may start with the choice saved before",
+                Volatile.Read(ref _waiting), WriteTimeout.TotalSeconds);
         }
     }
 

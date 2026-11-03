@@ -38,7 +38,8 @@
 
         <!--
             The web's stream pickers under the buttons (ActionBar.tsx): smaller pills with an icon, the label, what is chosen in
-            muted text and a chevron; each opens its list as a menu in the player's look.
+            muted text and a chevron; each opens its list as a menu in the player's look. A menu takes its rows as it opens
+            (DetailHero.xaml.cs), so an item read again meanwhile does not rebuild it under the viewer.
         -->
         <Style x:Key="DetailPickerButtonStyle" TargetType="Button" BasedOn="{StaticResource SiloSecondaryButtonStyle}">
             <Setter Property="MinHeight" Value="38" />
@@ -253,8 +254,8 @@
                     </StackPanel>
                     <Button.Flyout>
                         <Flyout x:Name="VersionMenu" Placement="BottomEdgeAlignedLeft" FlyoutPresenterStyle="{StaticResource DetailPickerMenuStyle}"
-                                Opened="OnVersionMenuOpened">
-                            <ItemsControl x:Name="VersionRows" ItemsSource="{x:Bind ViewModel.Pickers.Versions, Mode=OneWay}" IsTabStop="False"
+                                Opening="OnVersionMenuOpening" Opened="OnVersionMenuOpened">
+                            <ItemsControl x:Name="VersionRows" IsTabStop="False"
                                           XYFocusKeyboardNavigation="Enabled" Padding="6,0">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate x:DataType="detail:DetailVersionOption">
@@ -300,8 +301,8 @@
                     </StackPanel>
                     <Button.Flyout>
                         <Flyout x:Name="AudioMenu" Placement="BottomEdgeAlignedLeft" FlyoutPresenterStyle="{StaticResource DetailPickerMenuStyle}"
-                                Opened="OnAudioMenuOpened">
-                            <ItemsControl x:Name="AudioRows" ItemsSource="{x:Bind ViewModel.Pickers.Audio, Mode=OneWay}" IsTabStop="False"
+                                Opening="OnAudioMenuOpening" Opened="OnAudioMenuOpened">
+                            <ItemsControl x:Name="AudioRows" IsTabStop="False"
                                           XYFocusKeyboardNavigation="Enabled" Padding="6,0">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate x:DataType="detail:DetailAudioOption">
@@ -353,8 +354,8 @@
                     </StackPanel>
                     <Button.Flyout>
                         <Flyout x:Name="SubtitleMenu" Placement="BottomEdgeAlignedLeft" FlyoutPresenterStyle="{StaticResource DetailPickerMenuStyle}"
-                                Opened="OnSubtitleMenuOpened">
-                            <ItemsControl x:Name="SubtitleRows" ItemsSource="{x:Bind ViewModel.Pickers.Subtitles, Mode=OneWay}" IsTabStop="False"
+                                Opening="OnSubtitleMenuOpening" Opened="OnSubtitleMenuOpened">
+                            <ItemsControl x:Name="SubtitleRows" IsTabStop="False"
                                           XYFocusKeyboardNavigation="Enabled" Padding="6,0">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate x:DataType="detail:DetailSubtitleOption">

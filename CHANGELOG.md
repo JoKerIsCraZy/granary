@@ -13,7 +13,8 @@ release's section is what its update says it changes (docs/release.md).
   with size and source such as "38.9 GB · Remux"); Audio and Subs list the chosen file's tracks, with Auto and Off.
   Each shows what would play anyway until you choose. Play, Resume and Start over then play that file with those
   tracks, and the server keeps to the file you chose. Your audio and subtitle choices are remembered for the movie or
-  the whole series, and Auto goes back to your profile's settings. The pickers work with the keyboard too.
+  the whole series, and Auto goes back to your profile's settings; if a choice cannot be saved, the page says so and
+  still plays it. The pickers work with the keyboard too.
 
 ### Fixed
 

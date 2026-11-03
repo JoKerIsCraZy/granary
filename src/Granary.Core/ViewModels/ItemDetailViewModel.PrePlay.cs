@@ -12,12 +12,17 @@ namespace Granary.Core.ViewModels;
 // which Play, Resume and Start over pass on. A version pick lasts for the visit and keeps the server from swapping in
 // another file, as the web, Android and Apple clients pin a version the viewer chose. Audio and subtitle picks are also
 // saved for the title (for its series, on an episode), and Auto forgets the saved one, as the web's detail page and
-// Apple's client do; the page then reads the item again, so that Auto shows what the server picks now.
+// Apple's client do; the page then reads the item again, so that Auto shows what the server picks now. A save that fails
+// says so in the web's words and still applies to this visit's Play.
 public sealed partial class ItemDetailViewModel
 {
     // The item the pickers show, read again after a pick is saved; null for a page without files.
     private CatalogItemDetail? _prePlayItem;
     private PrePlayPicks _picks = PrePlayPicks.None;
+
+    // Saves started and reads of the item started: only the newest read, begun after the last save, is taken.
+    private int _trackSaves;
+    private int _prePlayReads;
 
     /// <summary>The pickers' rows and words, and what Play passes on.</summary>
     [ObservableProperty]
@@ -50,11 +55,12 @@ public sealed partial class ItemDetailViewModel
         {
             return Task.CompletedTask;
         }
-        _picks = _picks with { AudioTrack = option.Ordinal };
+        _picks = _picks with { AudioTrack = option.Ordinal, AudioAutoPending = option.Ordinal is null };
         ShowPickers();
-        return SaveTrackChoiceAsync("audio", (api, server, key, cancellationToken) => preference is null
-            ? api.DeleteAudioAsync(server, key, cancellationToken)
-            : api.SaveAudioAsync(server, key, preference, cancellationToken));
+        // The web's words (useSetAudioPreference, useDeleteAudioPreference).
+        return preference is null
+            ? SaveTrackChoiceAsync("audio", "Failed to reset audio preference", (api, server, key, token) => api.DeleteAudioAsync(server, key, token))
+            : SaveTrackChoiceAsync("audio", "Failed to save audio preference", (api, server, key, token) => api.SaveAudioAsync(server, key, preference, token));
     }
 
     /// <summary>Starts with <paramref name="option"/>'s track, or none, saved for the title; Auto forgets the saved one.</summary>
@@ -77,15 +83,21 @@ public sealed partial class ItemDetailViewModel
         }
         _picks = option.Kind switch
         {
-            DetailSubtitleKind.Off => _picks with { SubtitleMode = SubtitlePickMode.Off, SubtitleTrack = null },
-            DetailSubtitleKind.Track => _picks with { SubtitleMode = SubtitlePickMode.Track, SubtitleTrack = option.SelectionIndex },
-            // The remembered track no longer applies, although the item says so until it is read again.
-            _ => _picks with { SubtitleMode = SubtitlePickMode.Auto, SubtitleTrack = null, SubtitleOverrideCleared = true },
+            DetailSubtitleKind.Off => _picks with { SubtitleMode = SubtitlePickMode.Off, SubtitleTrack = null, SubtitleAutoPending = false },
+            DetailSubtitleKind.Track => _picks with
+            {
+                SubtitleMode = SubtitlePickMode.Track,
+                SubtitleTrack = option.SelectionIndex,
+                SubtitleAutoPending = false,
+            },
+            // The remembered track no longer applies, although the item names it until the server has forgotten it.
+            _ => _picks with { SubtitleMode = SubtitlePickMode.Auto, SubtitleTrack = null, SubtitleOverrideCleared = true, SubtitleAutoPending = true },
         };
         ShowPickers();
-        return SaveTrackChoiceAsync("subtitle", (api, server, key, cancellationToken) => choice is null
-            ? api.DeleteSubtitleAsync(server, key, cancellationToken)
-            : api.SaveSubtitleAsync(server, key, choice, cancellationToken));
+        // The web's words (useSetSubtitlePreference, useDeleteSubtitlePreference).
+        return choice is null
+            ? SaveTrackChoiceAsync("subtitle", "Failed to reset subtitle preference", (api, server, key, token) => api.DeleteSubtitleAsync(server, key, token))
+            : SaveTrackChoiceAsync("subtitle", "Failed to save subtitle preference", (api, server, key, token) => api.SaveSubtitleAsync(server, key, choice, token));
     }
 
     private void ShowPrePlay(CatalogItemDetail item)
@@ -108,10 +120,9 @@ public sealed partial class ItemDetailViewModel
     private PrePlayChoice? ChoiceFor(string target) =>
         _prePlayItem is not null && (target == _contentId || target == _item?.ContentId) ? Pickers.Choice : null;
 
-    // In pick order through the app's one queue, which a start waits for; a failure is logged there and costs only the
-    // remembered choice. The last write of a burst reads the item again, a failed one too: an Auto the server did not
-    // take then shows the remembered track again, the one a start would play.
-    private async Task SaveTrackChoiceAsync(string kind, Func<TrackPreferencesApi, Uri, string, CancellationToken, Task> write)
+    // In pick order through the app's one queue, which a start waits for; a failure costs only the remembered choice and
+    // says so. The last write of a burst reads the item again, a failed one too. A page the viewer has left is not touched.
+    private async Task SaveTrackChoiceAsync(string kind, string failure, Func<TrackPreferencesApi, Uri, string, CancellationToken, Task> write)
     {
         if (_trackPreferences is not { } api || _trackChoices is not { } writes || _serverBase is not { } server || _prePlayItem is not { } item)
         {
@@ -119,23 +130,42 @@ public sealed partial class ItemDetailViewModel
         }
         string key = TrackPreferencesApi.KeyFor(item.Type, item.SeriesId, _contentId);
         int generation = _generation;
-        await writes.RunAsync(kind, cancellationToken => write(api, server, key, cancellationToken));
-        if (writes.IsIdle && generation == _generation)
+        _trackSaves++;
+        ActionError = "";
+        bool saved = await writes.RunAsync(kind, cancellationToken => write(api, server, key, cancellationToken));
+        if (generation != _generation)
+        {
+            return;
+        }
+        if (!saved)
+        {
+            ActionError = failure;
+        }
+        if (writes.IsIdle)
         {
             await ReadPrePlayAgainAsync(server, generation);
         }
     }
 
-    // The server folds a saved pick into the item's effective fields (web: invalidateItemDetails after each write).
+    // The server folds a saved pick into the item's effective fields (web: invalidateItemDetails after each write). An
+    // answer is taken only when it is the newest read and no save began after it: an older one would bring back the item
+    // as it was. A remembered subtitle stays forgotten until the item no longer names it.
     private async Task ReadPrePlayAgainAsync(Uri server, int generation)
     {
+        int read = ++_prePlayReads;
+        int saves = _trackSaves;
         try
         {
             var item = await _catalog.GetItemAsync(server, _contentId);
-            if (generation == _generation && item.Versions.Count > 0)
+            if (generation == _generation && read == _prePlayReads && saves == _trackSaves && item.Versions.Count > 0)
             {
                 _prePlayItem = item;
-                _picks = _picks with { SubtitleOverrideCleared = false };
+                _picks = _picks with
+                {
+                    AudioAutoPending = false,
+                    SubtitleAutoPending = false,
+                    SubtitleOverrideCleared = _picks.SubtitleOverrideCleared && item.EffectiveSubtitleTrackSignature is not null,
+                };
                 ShowPickers();
             }
         }

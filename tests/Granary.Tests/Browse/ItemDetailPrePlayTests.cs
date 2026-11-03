@@ -230,28 +230,108 @@ public sealed class ItemDetailPrePlayTests
     }
 
     [Fact]
-    public async Task AFailedSave_KeepsThePick_ForThisPlay()
+    public async Task AFailedSave_SaysSo_AndThePickStillPlays()
     {
         var detail = await LoadAsync();
         _fixture.Silo.On(HttpMethod.Put, AudioPrefs, ScriptedSilo.Problem(500, "internal"));
 
         await detail.SelectAudioCommand.ExecuteAsync(detail.Pickers.Audio[1]);
 
+        // The web's words for it (useSetAudioPreference).
+        Assert.Equal("Failed to save audio preference", detail.ActionError);
         Assert.Equal("English · DTS · 5.1", detail.Pickers.AudioSummary);
         Assert.Equal(new PrePlayChoice("502", false, AudioTrack: 0), detail.Pickers.Choice);
+
+        _fixture.Silo.On(HttpMethod.Put, AudioPrefs, ScriptedSilo.NoContent());
+        await detail.SelectAudioCommand.ExecuteAsync(detail.Pickers.Audio[1]);
+        Assert.Equal("", detail.ActionError);
     }
 
     [Fact]
-    public async Task AnAutoTheServerRefused_ShowsTheRememberedTrackAgain_TheOneAStartPlays()
+    public async Task AnAutoTheServerRefused_StaysAuto_AndPlaysWhatAutoShows()
     {
         var detail = await LoadAsync(Ok(PrePlayPayloads.Remembered));
         _fixture.Silo.On(HttpMethod.Delete, SubtitlePrefs, ScriptedSilo.Problem(500, "internal"));
 
         await detail.SelectSubtitleCommand.ExecuteAsync(detail.Pickers.Subtitles[0]);
 
+        Assert.Equal("Failed to reset subtitle preference", detail.ActionError);
+        // Read again, the item still remembers the track; the page keeps the viewer's Auto all the same.
         Assert.Equal(2, _fixture.Silo.SentTo(HttpMethod.Get, ItemPath(Movie)).Count);
-        Assert.Equal("English · SRT", detail.Pickers.SubtitleSummary);
-        Assert.True(detail.Pickers.Subtitles[2].IsSelected);
+        Assert.Equal("Auto: English · SRT", detail.Pickers.SubtitleSummary);
+        Assert.True(detail.Pickers.Subtitles[0].IsSelected);
+        Assert.False(detail.Pickers.Subtitles[2].IsSelected);
+        // The start would apply the remembered track: it is told the automatic one instead.
+        Assert.Equal(new PrePlayChoice("502", false, SubtitleTrack: 0), detail.Pickers.Choice);
+    }
+
+    [Fact]
+    public async Task Auto_ShowsOnlyAuto_UntilTheServerIsReadAgain()
+    {
+        var detail = await LoadAsync();
+        detail.SelectVersionCommand.Execute(detail.Pickers.Versions[0]);
+        await detail.SelectAudioCommand.ExecuteAsync(detail.Pickers.Audio[2]);
+        var (held, gate) = Held();
+        _fixture.Silo.On(HttpMethod.Delete, AudioPrefs, held);
+
+        var resetting = detail.SelectAudioCommand.ExecuteAsync(detail.Pickers.Audio[0]);
+
+        // What the server picks without the saved track is not known yet.
+        Assert.Equal("Auto", detail.Pickers.AudioSummary);
+        Assert.Equal(("Auto", "", true), (detail.Pickers.Audio[0].Title, detail.Pickers.Audio[0].Description, detail.Pickers.Audio[0].IsSelected));
+        gate.SetResult(NoContentResponse());
+        await resetting;
+        Assert.Equal("Auto: English · DTS · 7.1", detail.Pickers.AudioSummary);
+    }
+
+    [Fact]
+    public async Task AnOlderReadLandingLast_DoesNotBringBackWhatAutoForgot()
+    {
+        var (olderRead, olderGate) = Held();
+        var detail = await LoadAsync(Ok(PrePlayPayloads.Remembered), olderRead, Ok(PrePlayPayloads.Movie));
+
+        // Off is saved, and the item read again: that answer is held back.
+        var off = detail.SelectSubtitleCommand.ExecuteAsync(detail.Pickers.Subtitles[1]);
+        await Until(() => _fixture.Silo.SentTo(HttpMethod.Get, ItemPath(Movie)).Count == 2);
+        // Auto is saved and read again, and that answer comes first.
+        await detail.SelectSubtitleCommand.ExecuteAsync(detail.Pickers.Subtitles[0]);
+        Assert.Equal("Auto: English · SRT", detail.Pickers.SubtitleSummary);
+
+        olderGate.SetResult(await Ok(PrePlayPayloads.Remembered)());
+        await off;
+
+        Assert.Equal("Auto: English · SRT", detail.Pickers.SubtitleSummary);
+        Assert.True(detail.Pickers.Subtitles[0].IsSelected);
+    }
+
+    [Fact]
+    public async Task ALateSave_LeavesAPageTheViewerHasLeftAlone()
+    {
+        var detail = await LoadAsync();
+        var (held, gate) = Held();
+        _fixture.Silo.On(HttpMethod.Put, AudioPrefs, held);
+        var saving = detail.SelectAudioCommand.ExecuteAsync(detail.Pickers.Audio[1]);
+        _fixture.Movie();
+        await detail.LoadCommand.ExecuteAsync(ItemDetailPayloads.MovieId);
+
+        gate.SetResult(await ScriptedSilo.Problem(500, "internal")());
+        await saving;
+
+        Assert.Equal("", detail.ActionError);
+        Assert.Single(_fixture.Silo.SentTo(HttpMethod.Get, ItemPath(Movie)));
+        Assert.Equal("Masterplan", detail.Title);
+        Assert.Equal("301", detail.Pickers.Version?.FileId);
+        Assert.Null(detail.Pickers.Choice);
+    }
+
+    private static async Task Until(Func<bool> condition)
+    {
+        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(5);
+        while (!condition())
+        {
+            Assert.True(DateTime.UtcNow < deadline, "The condition did not come true.");
+            await Task.Delay(10, TestContext.Current.CancellationToken);
+        }
     }
 
     [Fact]

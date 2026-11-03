@@ -1430,9 +1430,13 @@ The detail page's pickers save their picks too, as the web's detail page and App
 an audio pick as above; a subtitle pick from the catalog's own track (its combined ordinal, `subtitle_mode: always`,
 a signature with the track's raw codec and its title, embedded title or file name as `label`); Off as
 `{ "subtitle_track_index": -1, "subtitle_mode": "off" }`; Auto as `DELETE`. The writes go out one at a time in pick
-order, and a start reads the watch detail only once they are in (at most 10 s), as Apple's client settles them. Once
-they are done, a failed one too, the page reads the item again, so Auto shows what the server now picks (the web
-invalidates the item likewise).
+order, and a start reads the watch detail only once they are in (at most 10 s), as Apple's client settles them; a
+Watch Party's start, which takes none of the page's picks, does not wait. A start cannot say "no saved choice" itself
+(without `audio_track_index` the server resolves the audio from the saved preferences), so one that waited in vain may
+play the choice saved before, which is logged. Once the writes are done, a failed one too, the page reads the item
+again, so Auto shows what the server now picks (the web invalidates the item likewise); only the newest read begun
+after the last write counts. When Auto over a remembered subtitle could not be saved, the item still names the track,
+and Play sends the automatic choice without it as the start's subtitle, so what plays is what the picker shows.
 
 #### 8.8.1 Initial track selection (before start)
 

@@ -101,6 +101,36 @@ public sealed class PrePlayChoiceTests
     }
 
     [Fact]
+    public async Task AWatchPartysStart_IgnoresAChoice_ThePinnedFileWins()
+    {
+        _fixture.Silo.On(HttpMethod.Get, WatchPath, Ok(ServerPlaybackSubtitleTests.WithSubtitleTracks(ServerPlaybackSettingsTests.TwoFiles)));
+
+        var context = await _fixture.CreateStarter().PrepareAsync(MovieId, TestContext.Current.CancellationToken, pinnedFileId: "42",
+            choice: new PrePlayChoice("43", IsVersionPicked: true, AudioTrack: 0, SubtitleTrack: -1));
+
+        Assert.Equal("42", context.Version.FileId);
+        Assert.True(context.FilePinned);
+        Assert.False(context.VersionPicked);
+        Assert.Null(context.SubtitlePick);
+    }
+
+    [Fact]
+    public async Task AWatchPartysStart_DoesNotWaitForADetailPagesSave()
+    {
+        var saved = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _fixture.TrackChoices = new TrackChoiceWrites(_fixture.Time, _fixture.Logs.For<TrackChoiceWrites>());
+        var saving = _fixture.TrackChoices.RunAsync("audio", _ => saved.Task);
+
+        await _fixture.StartAsync(PlayRequest.WatchParty(MovieId, "42", selectionRevision: 1));
+
+        Assert.Single(_fixture.Silo.SentTo(HttpMethod.Get, WatchPath));
+        Assert.Equal("42", _fixture.Body(HttpMethod.Post, StartPath).GetProperty("file_id").GetString());
+        Assert.False(saving.IsCompleted);
+        saved.SetResult();
+        Assert.True(await saving);
+    }
+
+    [Fact]
     public async Task AStart_ReadsTheTitle_OnceAPickStillBeingSavedIsIn()
     {
         var saved = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
