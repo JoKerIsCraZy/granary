@@ -13,6 +13,7 @@ public sealed class MpvUserConfigTests : IDisposable
     private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(20);
     private readonly string _directory = Path.Combine(Path.GetTempPath(), "granary-tests", Guid.NewGuid().ToString("N"), "mpv");
     private readonly LogSink _logs = new();
+    private readonly MpvConfigStatus _status = new();
     private readonly List<string> _files = [];
 
     public void Dispose()
@@ -45,7 +46,7 @@ public sealed class MpvUserConfigTests : IDisposable
             File.WriteAllText(Path.Combine(_directory, name), text);
         }
         return new MpvPlaybackEngine(new MpvEngineOptions { VideoOutput = output, ConfigDirectory = _directory },
-            _logs.For<MpvPlaybackEngine>());
+            _logs.For<MpvPlaybackEngine>(), null, _status);
     }
 
     private bool Logged(string text) => _logs.Lines.Any(line => line.Contains(text, StringComparison.Ordinal));
@@ -63,6 +64,7 @@ public sealed class MpvUserConfigTests : IDisposable
         Assert.Equal("yes", engine.Option("load-scripts"));
         Assert.Equal("", engine.Option("input-conf"));
         Assert.False(Logged("mpv started with"));
+        Assert.Equal(MpvConfigState.None, _status.Current);
     }
 
     [Fact]
@@ -97,6 +99,8 @@ public sealed class MpvUserConfigTests : IDisposable
         Assert.True(Logged("mpv.conf sets keep-open; Granary keeps its own"));
         Assert.True(Logged("mpv.conf sets vo; Granary keeps its own"));
         Assert.False(Logged("mpv.conf sets deband"));
+        // keep-open, idle, vo and load-scripts.
+        Assert.Equal(new MpvConfigState(MpvConfigUse.Used, "", 4), _status.Current);
         await PlaysAWav(engine);
     }
 
@@ -119,6 +123,7 @@ public sealed class MpvUserConfigTests : IDisposable
 
         Assert.Equal("no", engine.Option("deband"));
         Assert.True(Logged("mpv refused to start with"));
+        Assert.Equal(new MpvConfigState(MpvConfigUse.NotUsed, "mpv refused to start with it"), _status.Current);
         await PlaysAWav(engine);
     }
 
@@ -131,6 +136,8 @@ public sealed class MpvUserConfigTests : IDisposable
         Assert.Equal("no", engine.Option("deband"));
         Assert.Equal("null", engine.Option("vo"));
         Assert.True(Logged("mpv.conf sets player-operation-mode, which Granary needs to keep its own options; mpv plays without it"));
+        Assert.Equal(new MpvConfigState(MpvConfigUse.NotUsed, "it sets player-operation-mode, which Granary needs to keep its own options"),
+            _status.Current);
         await PlaysAWav(engine);
     }
 
@@ -233,6 +240,7 @@ public sealed class MpvUserConfigTests : IDisposable
         Assert.Equal("yes", engine.Option("keep-open"));
         Assert.Equal(1, Count("mpv.conf keeps changing keep-open"));
         Assert.Equal(1, Count("mpv.conf set keep-open; Granary keeps its own"));
+        Assert.Equal(new MpvConfigState(MpvConfigUse.StoppedDuringPlayback, "it keeps changing keep-open"), _status.Current);
         await PlaysAWav(engine);
     }
 
@@ -333,6 +341,7 @@ public sealed class MpvUserConfigTests : IDisposable
 
         Assert.True(Logged("mpv.conf sets player-operation-mode, which Granary needs to keep its own options; mpv plays without it"));
         Assert.Equal("no", engine.Option("deband"));
+        Assert.Equal(MpvConfigUse.NotUsed, _status.Current.Use);
     }
 
     [Fact]

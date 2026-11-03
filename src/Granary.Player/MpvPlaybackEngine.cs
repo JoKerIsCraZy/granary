@@ -43,17 +43,20 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
     private (int Width, int Height) _outputSize;
     private nint _swapChain;
 
-    public MpvPlaybackEngine(MpvEngineOptions options, ILogger<MpvPlaybackEngine> logger, TimeProvider? time = null)
-        : this(options, logger, time, ReadConfigText)
+    /// <param name="status">Where the engine says how the viewer's mpv.conf fared, for Settings.</param>
+    public MpvPlaybackEngine(MpvEngineOptions options, ILogger<MpvPlaybackEngine> logger, TimeProvider? time = null, IMpvConfigStatus? status = null)
+        : this(options, logger, time, ReadConfigText, status)
     {
     }
 
     /// <param name="readConfig">Reads a config file Granary checks before mpv does: its text, or null when it is missing.</param>
-    internal MpvPlaybackEngine(MpvEngineOptions options, ILogger<MpvPlaybackEngine> logger, TimeProvider? time, Func<string, string?> readConfig)
+    internal MpvPlaybackEngine(MpvEngineOptions options, ILogger<MpvPlaybackEngine> logger, TimeProvider? time, Func<string, string?> readConfig,
+        IMpvConfigStatus? status = null)
     {
         _options = options;
         _logger = logger;
         _readConfig = readConfig;
+        _status = status ?? new MpvConfigStatus();
         _outputSize = options.InitialOutputSize;
         _bufferedReads = new TrailingThrottle(BufferedThrottle, time ?? TimeProvider.System, ReadBuffered,
             ex => _logger.LogError(ex, "Reporting what mpv's cache holds failed"));

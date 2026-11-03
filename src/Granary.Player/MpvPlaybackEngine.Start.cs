@@ -40,6 +40,10 @@ public sealed partial class MpvPlaybackEngine
 
     private readonly IReadOnlyList<KeyValuePair<string, string>> _core;
     private readonly Func<string, string?> _readConfig;
+    private readonly IMpvConfigStatus _status;
+
+    // Under _gate: this engine stopped using the file.
+    private bool _stoppedThisRun;
 
     // Replaced when mpv starts again without the file (FailClosed); a caller that still holds the one before finds it closed.
     private volatile MpvClient _mpv;
@@ -74,6 +78,7 @@ public sealed partial class MpvPlaybackEngine
         if (Directory.Exists(file))
         {
             _logger.LogWarning("mpv.conf in {Folder} is a folder, not a file; mpv plays without it", directory);
+            NotUsed("it is a folder, not a file");
             return null;
         }
         return File.Exists(file) ? file : null;
@@ -94,11 +99,13 @@ public sealed partial class MpvPlaybackEngine
         {
             // Whatever the file holds, it never stops playback: unchecked, it is not used.
             _logger.LogWarning(ex, "mpv.conf could not be checked; mpv plays without it");
+            NotUsed("Granary could not check it");
             return false;
         }
         if ((scan.Problem ?? MpvConfigText.Refusal(scan.Entries, Kept(all))) is { } reason)
         {
             _logger.LogWarning("mpv.conf {Reason}; mpv plays without it", reason);
+            NotUsed("it " + reason);
             return false;
         }
         var entries = scan.Entries;
@@ -109,6 +116,7 @@ public sealed partial class MpvPlaybackEngine
         catch (InvalidOperationException ex)
         {
             _logger.LogWarning("mpv did not take Granary's own options for mpv.conf ({Reason}); it plays without the file", ex.Message);
+            NotUsed("mpv did not take Granary's own options for it");
             return false;
         }
         try
@@ -119,17 +127,36 @@ public sealed partial class MpvPlaybackEngine
         {
             // An option that only lists the audio devices, say. mpv has said why.
             _logger.LogWarning("mpv refused to start with {File} ({Reason}); it plays without it", file, ex.Message);
+            NotUsed("mpv refused to start with it");
             return false;
         }
         if (RefusalAfterStart(names) is { } late)
         {
             // An include or a profile the file applied while mpv started did what the file itself would have been refused for.
             _logger.LogWarning("mpv.conf {Reason}; mpv starts again without it", late);
+            NotUsed("it " + late);
             Close();
             return false;
         }
-        SayWhatIsKept(file, entries);
+        Report(new MpvConfigState(MpvConfigUse.Used, KeptOptions: SayWhatIsKept(file, entries)));
         return true;
+    }
+
+    // For Settings: the file was not used, with the log's reason, which names no stream and no folder beyond mpv's.
+    private void NotUsed(string reason) => Report(new MpvConfigState(MpvConfigUse.NotUsed, reason));
+
+    // A stop while mpv started (FailClosed, on mpv's event thread) stands over the start's own report, whichever comes last.
+    private void Report(MpvConfigState state)
+    {
+        lock (_gate)
+        {
+            if (_stoppedThisRun && state.Use != MpvConfigUse.StoppedDuringPlayback)
+            {
+                return;
+            }
+            _stoppedThisRun |= state.Use == MpvConfigUse.StoppedDuringPlayback;
+            _status.Report(state);
+        }
     }
 
     private static Dictionary<string, string> Kept(IEnumerable<KeyValuePair<string, string>> own) =>
@@ -238,13 +265,13 @@ public sealed partial class MpvPlaybackEngine
         }
     }
 
-    // Once per start: the file mpv read, and the options of Granary's it sets, which the profile has already set back.
-    private void SayWhatIsKept(string configFile, IReadOnlyList<MpvConfigEntry> entries)
+    // Once per start: the file mpv read, and the options of Granary's it sets, which the profile has already set back. The
+    // number of those options.
+    private int SayWhatIsKept(string configFile, IReadOnlyList<MpvConfigEntry> entries)
     {
         _logger.LogInformation("mpv started with {File}", configFile);
-        foreach (var (option, profile) in entries
-            .Where(e => e.Option == MpvOwnOptions.CompositionSize || _kept!.ContainsKey(e.Option))
-            .Select(e => (e.Option, e.Profile)).Distinct())
+        var kept = entries.Where(e => e.Option == MpvOwnOptions.CompositionSize || _kept!.ContainsKey(e.Option)).ToList();
+        foreach (var (option, profile) in kept.Select(e => (e.Option, e.Profile)).Distinct())
         {
             if (profile is null)
             {
@@ -255,6 +282,7 @@ public sealed partial class MpvPlaybackEngine
                 _logger.LogWarning("mpv.conf's profile {Profile} sets {Option}; Granary keeps its own", profile, option);
             }
         }
+        return kept.Select(e => e.Option).Distinct().Count();
     }
 
     // A notice of one of Granary's options while mpv runs with a mpv.conf: a profile of the file set it (profile-cond, or

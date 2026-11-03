@@ -136,7 +136,10 @@ sets (`mpv.conf sets vo; Granary keeps its own`, read from the file by mpv's rul
 are kept but not named), and passes on mpv's own messages about the file (an unknown option, a shader it cannot open),
 which it asks for before `mpv_initialize`. When mpv does not start with the file, the log says whether mpv refused the
 file (an option that only lists something, such as `audio-device=help`, with mpv's own words) or one of Granary's own
-options for it, and mpv starts without the file. A folder named `mpv.conf` is said and passed over.
+options for it, and mpv starts without the file. A folder named `mpv.conf` is said and passed over. The engine also
+reports the outcome for the run to `IMpvConfigStatus` (a Core port, one for the app): used, used with options Granary
+kept, not used, or stopped during playback, with the log's reason, which names options and included file names but no
+stream address and no folder beyond the mpv folder. Settings → Playback → This PC shows it (docs/ui-design.md).
 
 **When it applies**: the engine is one libmpv instance for the whole run (`AddGranaryPlayer`), made when the player first
 opens, and mpv reads the file only in `mpv_initialize`. Reading it again before a title (`load-config-file`) would add

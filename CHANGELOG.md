@@ -27,7 +27,8 @@ release's section is what its update says it changes (docs/release.md).
   logs, files and proxies, and runs no scripts or commands of the file's. The log names the options of yours it leaves
   out and any option mpv can't use; a file that would turn Granary's options off, its includes too, plays as if it were
   not there, and the log says why. If one of its profiles keeps changing them while a title plays, Granary stops that
-  title and plays on without the file. Without the file, playback is as before.
+  title and plays on without the file. The row says when your file was not used, or only in part, and why, with a link
+  to the log. Without the file, playback is as before.
 - The log says why a title is converted: what this PC's graphics card decodes, what Granary told the server it plays,
   and the reason the server gave for its choice.
 - More filters for a library, and for Favorites, Watchlist, History and collections: several genres at once, decades,

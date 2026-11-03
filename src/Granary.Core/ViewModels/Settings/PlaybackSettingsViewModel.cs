@@ -44,6 +44,7 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject
     private readonly IPlaybackDevicePreferences _devicePreferences;
     private readonly MpvConfigFolder _mpvConfig;
     private readonly IFileLauncher _files;
+    private readonly IMpvConfigStatus _mpvStatus;
     private readonly SettingSaves _saves;
     private readonly Dictionary<string, string?> _sources = [];
 
@@ -54,7 +55,7 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject
     public PlaybackSettingsViewModel(
         IProfileSettings settings, PlaybackApi playback, PlaybackConnectionApi connection, ConnectionSpeedTest speedTest, INetworkLink network,
         ISessionManager session, TimeProvider time, ILogger<PlaybackSettingsViewModel> logger, IPlaybackDevicePreferences devicePreferences,
-        MpvConfigFolder mpvConfig, IFileLauncher files)
+        MpvConfigFolder mpvConfig, IFileLauncher files, IMpvConfigStatus mpvStatus)
     {
         _settings = settings;
         _playback = playback;
@@ -67,6 +68,8 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject
         _devicePreferences = devicePreferences;
         _mpvConfig = mpvConfig;
         _files = files;
+        _mpvStatus = mpvStatus;
+        ReadMpvConfigStatus();
         DecodesInSoftware = devicePreferences.DecodesInSoftware;
         SelectedUpDown = UpDownChoices[devicePreferences.UpDown == PlayerUpDown.Volume ? 1 : 0];
         _saves = new SettingSaves(logger);
@@ -179,6 +182,8 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject
     {
         IsLoading = true;
         ErrorMessage = "";
+        // The player may have started since the page was made.
+        ReadMpvConfigStatus();
         try
         {
             var values = await _settings.ReadAsync(Keys, cancellationToken);

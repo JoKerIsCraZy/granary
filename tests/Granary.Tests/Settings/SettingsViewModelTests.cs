@@ -60,6 +60,7 @@ public sealed class SettingsViewModelTests : IDisposable
     private readonly InMemoryPlaybackDevicePreferences _device = new();
     private readonly string _data = Path.Combine(Path.GetTempPath(), "granary-tests", Guid.NewGuid().ToString("N"));
     private readonly RecordingFileLauncher _launcher = new();
+    private readonly MpvConfigStatus _mpvStatus = new();
 
     private MpvConfigFolder MpvFolder => new(Path.Combine(_data, "mpv"), new LogSink().For<MpvConfigFolder>());
 
@@ -74,7 +75,7 @@ public sealed class SettingsViewModelTests : IDisposable
     private PlaybackSettingsViewModel Playback() => new(_settings, new PlaybackApi(_silo.Http), new PlaybackConnectionApi(_silo.Http),
         ConnectionSpeedTestTests.SpeedTest(_silo, _time, _network), _network,
         new FakeSessionManager { State = SessionState.Ready, ActiveServer = ScriptedSilo.Server, ProfileId = "7" }, _time,
-        new LogSink().For<PlaybackSettingsViewModel>(), _device, MpvFolder, _launcher);
+        new LogSink().For<PlaybackSettingsViewModel>(), _device, MpvFolder, _launcher, _mpvStatus);
 
     private LanguageSettingsViewModel Language() => new(_settings, new LogSink().For<LanguageSettingsViewModel>());
 
@@ -192,6 +193,49 @@ public sealed class SettingsViewModelTests : IDisposable
 
         Assert.Equal($"mpv.conf in {MpvFolder.Directory} is a folder. Rename or remove it, then try again.", page.MpvConfigMessage);
         Assert.Empty(_launcher.Opened);
+    }
+
+    [Theory]
+    [InlineData(MpvConfigUse.NotUsed, "it sets player-operation-mode, which Granary needs to keep its own options", 0,
+        "Your mpv.conf was not used: it sets player-operation-mode, which Granary needs to keep its own options. The log has the details.")]
+    [InlineData(MpvConfigUse.StoppedDuringPlayback, "it keeps changing log-file", 0,
+        "Granary stopped using your mpv.conf: it keeps changing log-file. The log has the details.")]
+    [InlineData(MpvConfigUse.Used, "", 2, "Granary kept 2 of its own options from your mpv.conf. The log names them.")]
+    [InlineData(MpvConfigUse.Used, "", 0, "")]
+    [InlineData(MpvConfigUse.None, "", 0, "")]
+    public void HowYourMpvConfFaredThisRun_IsSaidUnderTheRow(MpvConfigUse use, string reason, int kept, string text)
+    {
+        _mpvStatus.Report(new MpvConfigState(use, reason, kept));
+
+        var page = Playback();
+
+        Assert.Equal(text, page.MpvConfigStatusText);
+        Assert.Equal("", page.MpvConfigMessage);
+    }
+
+    [Fact]
+    public async Task TheStatus_IsReadAgainWhenThePageLoads()
+    {
+        Capabilities();
+        var page = Playback();
+        Assert.Equal("", page.MpvConfigStatusText);
+        // The player starts while Settings is open.
+        _mpvStatus.Report(new MpvConfigState(MpvConfigUse.NotUsed, "mpv refused to start with it"));
+
+        await page.LoadAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal("Your mpv.conf was not used: mpv refused to start with it. The log has the details.", page.MpvConfigStatusText);
+    }
+
+    [Fact]
+    public void OpenLogs_ShowsGranarysLogFolder()
+    {
+        var page = Playback();
+
+        page.OpenLogsCommand.Execute(null);
+
+        Assert.Equal(["folder " + Granary.Core.Diagnostics.FileLoggerProvider.DefaultDirectory], _launcher.Opened);
+        Assert.Equal("", page.MpvConfigMessage);
     }
 
     [Fact]

@@ -44,6 +44,7 @@ public sealed partial class MpvPlaybackEngine
             return;
         }
         _logger.LogWarning("mpv.conf {Reason}; Granary stopped and plays without your mpv.conf", reason);
+        Report(new MpvConfigState(MpvConfigUse.StoppedDuringPlayback, "it " + reason));
         long load;
         lock (_gate)
         {

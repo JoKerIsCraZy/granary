@@ -125,7 +125,8 @@ internal static class MpvConfigText
         {
             if (IncludePath(value, configDirectory!) is not { } path)
             {
-                Problem = $"includes {value}, which Granary cannot follow";
+                // Not the include's own words: a stream's address, or a folder beyond mpv's.
+                Problem = "has an include Granary cannot follow";
             }
             else if (reading.Contains(path))
             {

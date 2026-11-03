@@ -178,8 +178,8 @@ public sealed class MpvConfigTextTests
     }
 
     [Theory]
-    [InlineData("include=memory://vo=gpu\n", "includes memory://vo=gpu, which Granary cannot follow")]
-    [InlineData("include=~~cache/x.conf\n", "includes ~~cache/x.conf, which Granary cannot follow")]
+    [InlineData("include=memory://vo=gpu\n", "has an include Granary cannot follow")]
+    [InlineData("include=~~cache/x.conf\n", "has an include Granary cannot follow")]
     public void AnIncludeGranaryCannotFollow_IsTheProblem(string text, string problem) =>
         Assert.Equal(problem, Scan(("mpv.conf", text)).Problem);
 
