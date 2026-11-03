@@ -77,6 +77,13 @@ public partial class App : Application
         var started = new TaskCompletionSource();
         _window.ShowStartup(started.Task);
         _window.Activate();
+#if DEBUG
+        // Developer shortcut: --remote shows a TV remote on screen beside the window (Debugging/RemoteWindow.cs).
+        if (Environment.GetCommandLineArgs().Contains("--remote"))
+        {
+            new Debugging.RemoteWindow(_window).Show();
+        }
+#endif
         // A server on this network is reached directly, once its key is verified (docs/api-contract.md, 9.7).
         Services.GetRequiredService<LocalRouteMonitor>().Start();
         // The server's accent recolours Granary as it arrives, and with every other server.

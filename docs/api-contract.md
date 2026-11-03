@@ -2344,7 +2344,8 @@ HDR with libplacebo. An honest, conservative first report:
 - **Direct play without hardware decoding** (Settings → Playback → This PC, off by default; Granary's own, kept in
   `playback-device.json` in the data directory): `hevc`, `vp9` and `av1` join `codecs_video` (never
   `codecs_video_hardware`) and `client_managed_dynamic_range_v1` is claimed whatever the GPU decodes, so HEVC, VP9,
-  AV1 and HDR originals direct-play and FFmpeg decodes them on the CPU where D3D11VA cannot. For a PC whose GPU
+  AV1 and HDR originals become eligible for direct play (the server still applies its container, audio, quality and
+  subtitle rules first), and FFmpeg decodes them on the CPU where D3D11VA cannot. For a PC whose GPU
   decodes these only in part (HEVC Main 10 on 6th-generation Intel graphics, for example), where the server would
   otherwise transcode and tone-map. `output.hdr` stays false, and `hls` keeps the list without them (what the GPU or the CPU decode smoothly): the server encodes HEVC
   only for an HLS delivery that lists it, so a transcode it still makes stays one the GPU decodes. Read at each start,

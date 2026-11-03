@@ -111,6 +111,28 @@ public sealed class SettingsViewModelTests
     }
 
     [Fact]
+    public void UpAndDownInThePlayer_IsThisPcsChoice_ControlsAndMenusFirst()
+    {
+        var page = Playback();
+        Assert.Equal(["Show the controls and menus", "Change the volume"], page.UpDownChoices.Select(c => c.Label));
+        Assert.Equal("controls", page.SelectedUpDown?.Value);
+
+        page.SelectedUpDown = page.UpDownChoices[1];
+
+        Assert.Equal([PlayerUpDown.Volume], _device.SavedUpDown);
+        Assert.Empty(_settings.Writes);
+    }
+
+    [Fact]
+    public void UpAndDownForTheVolume_ShowsAsSaved()
+    {
+        _device.UpDown = PlayerUpDown.Volume;
+
+        Assert.Equal("volume", Playback().SelectedUpDown?.Value);
+        Assert.Empty(_device.SavedUpDown);
+    }
+
+    [Fact]
     public async Task AChange_IsSavedAtOnce_ClearingADeviceValueThatShadowedIt()
     {
         _settings.Set(SettingKeys.AutoSkipCredits, "true", "profile_device");

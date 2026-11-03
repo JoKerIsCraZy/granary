@@ -107,7 +107,8 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <controls:SeekBar x:Name="SeekBar" AutomationProperties.Name="Seek"
+                <!-- Down from the bar lands on Play/Pause, not on whatever sits nearest its left end. -->
+                <controls:SeekBar x:Name="SeekBar" AutomationProperties.Name="Seek" XYFocusDown="{x:Bind PlayPauseButton}"
                                   Position="{x:Bind ViewModel.PositionSeconds, Mode=OneWay}"
                                   Duration="{x:Bind ViewModel.DurationSeconds, Mode=OneWay}"
                                   Buffered="{x:Bind ViewModel.Buffered, Mode=OneWay}"

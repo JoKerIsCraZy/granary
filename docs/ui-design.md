@@ -488,6 +488,37 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   Search, each library) are the apps' tabs: picking one does not stack on the pages visited before, only Home stays
   under it, so Back walks the pages opened within a section and then goes Home (Android's tab switch pops to the
   anchor tab). Settings and Admin open over the page they came from and go back to it.
+- TV remote and keyboard alone (a media PC), the behaviour of Silo's TV app (`MainWindow.Remote.cs`): remotes send keys,
+  the arrows, Enter for OK, and Esc, Backspace or Browser Back for their Back button.
+  - The arrows move focus on every page. Left at a page's edge goes to the section's own sidebar entry, not the nearest
+    one (a title's page, which selects no entry, to the nearest); Right from the sidebar goes back to where focus was on
+    the page, else its first card. A held arrow stops at the edge, and a row's last card keeps focus on Right, as the TV
+    app's rows end (the arrows used to jump to the next "Explore all" link).
+  - Radio buttons (the library's Recommended / Library / Collections, the Watch Party's Host picks / Everyone votes)
+    keep only the arrows towards another of their group; the others leave the group where they point. A radio button
+    takes every arrow itself, so Down used to switch tabs and never reach the page under them.
+  - The Menu key on a card opens the card's menu, as its ⋮ does.
+  - With the player minimized, Down from the page's bottom goes to the bar's picture, OK on it brings the player back
+    (focus on Play/Pause); in the bar Left and Right move along it and Up returns to the page.
+  - A card the keyboard moves to comes to the middle of the page, so the row above and below show and a card in the
+    lowest row is never cut off. Its focus ring goes round the whole card, artwork and every line under it, 3 px and
+    rounded, 8 px out (12 below); sideways rows reach that far past their first card and below their highest one
+    (`RowBleed`), so no ring is cut off.
+  - Back (Esc, Backspace outside a text field, Browser Back): a page opened within a section goes back, focus on the card
+    it was opened from (the same title wherever it moved, else the same place). On a section's own page Back first moves
+    focus to its sidebar entry, from there it goes Home, focus on Home's entry; on Home it does nothing, the app does
+    not quit. A menu, flyout or dialog closes on Browser Back and Backspace as on Esc.
+  - A page opened with OK starts on its Play (a title, an episode) or Request (a TMDB title), else on its first card; a
+    title's page returned to with Back, made again, starts there too. A section picked in the sidebar keeps focus on
+    its entry, as the TV app's tabs do (the sidebar changing width used to move it to the page's first link).
+  - The player closed, or minimized, gives focus back to where it was on the page (a title's Play), not the sidebar's
+    first entry; shown after a key, quiet after a click.
+  - Play/Pause (a media key) on a card plays it, as its play disc does, an episode on a title's page too; anywhere else
+    on a title's page it plays the title. A remote that sends Play as a window command (WM_APPCOMMAND, as Media Center
+    remotes do; `Interop/AppCommandHook.cs`) does the same. While something plays, full or as the bar, the key stays
+    Windows' media session's and pauses that.
+  - Episode cards on a title's page count as cards: they come to the middle, and Back returns to them. A title's page
+    is made again when Back returns to it; its mark goes with its history entry and finds the card in the new lists.
 
 ## Signed-out screens
 
@@ -556,9 +587,11 @@ page background with a faint outline, red when focused; switches are only their 
 says why above the sections.
 
 - **Playback**: Quality (preferred quality, maximum bitrate with "No limit", lower quality when buffering, and this
-  connection's learned limit with Reset), This PC ("Kept on this PC. Changes count from the next title you play.":
-  Direct play without hardware decoding, a switch, off by default; Granary's own and kept on the PC, not in the
-  profile, so it does not save to the server), Connection (the latest speed reading and what Auto plays without
+  connection's learned limit with Reset), This PC ("Kept on this PC, not in your profile.": Direct play without
+  hardware decoding, a switch, off by default, counting from the next title; Up and Down in the player, a select with
+  Show the controls and menus (the default, as Silo's TV app) and Change the volume (the web player's keys), which the
+  player follows at its next key. Granary's own and kept on the PC in `playback-device.json`, so they do not save to
+  the server), Connection (the latest speed reading and what Auto plays without
   converting), Skipping (skip intros, auto-skip recaps and credits), Next episode (start next at preview, auto-play),
   Seek controls (rewind and fast-forward intervals).
 - **Connection** (with `connection_speed_v1`): "Connection speed" with the reading as its description ("400 Mbps ·
@@ -944,9 +977,28 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   as F11, which works everywhere),
   P the mini view, Esc turns away an intro pill, else closes the marker panel, else leaves full screen or the mini
   view, else closes, M mute, C
-  subtitles off and on, Left/Right skip, Up/Down volume ±5. Space wins over a focused button; arrows go to a focused
-  slider first. Nothing applies while a text field, an open menu or the Add Subtitles or appearance panel has focus
-  (Esc closes the panel), or with Ctrl, Alt, Shift or Windows held. The keys are handled on the page, not as keyboard
+  subtitles off and on, Left/Right skip. Up and Down do as Settings → Playback → This PC says. By default as on Silo's
+  TV app (a remote has its own volume buttons; M mutes and the slider, reached with Tab, sets it): from the picture Up
+  shows the controls with focus on Play/Pause and Down opens the audio menu when there is a track to choose, else the
+  subtitles', else the playback settings (the TV app's panel opens on audio, else subtitles, else video), and on a
+  shown control they move from it. Set to Change the volume they set it ±5 as on the web, and move only off the seek
+  bar. In the minimized bar, while the title loads and after it failed they always set the volume ±5. A remote's Back (Browser Back) and Backspace do as Esc
+  does, but leave full screen alone (a media PC runs in it); OK (Enter) with focus on the picture only shows the
+  controls, focus on Play/Pause, as on Silo's TV app, also when the pointer (an air mouse's) already shows them (so does
+  OK on the minimized bar's picture); while a skip pill shows, OK on hidden
+  controls does what the pill says instead (Skip Intro, Recap, Credits, Preview, or Watch Intro) and the controls stay
+  away; in the mini view OK lands on its own Play/Pause. From then until the controls hide, with focus on one of them,
+  the arrows move between them (past the volume slider, which Tab still reaches; Down from the seek bar lands on
+  Play/Pause); they hide after 5 s without a key, focus or not, as on Silo's TV app, and focus goes back to the picture.
+  A button reached with Tab keeps the web's arrows and keeps the controls up, as on the web. Up and Down on a shown control move from it
+  and turn the arrows over to the controls, however focus got there (an air mouse's click). The remote's Back and
+  Backspace with the controls shown
+  hide them, as the TV app's ladder has it, unless paused, a skip pill shows (Back turns it away) or the marker editor is
+  open; focus moves to the page, so the controls hide by themselves again after the next key. Esc keeps the web's
+  keys. A held OK does not press the button it lands on. Space wins over a
+  focused button; arrows go to a focused slider first. Nothing applies while a text field, an open menu or the Add Subtitles or appearance panel has focus
+  (Esc, Backspace and the remote's Back close the panel, focus back on Subtitles), or with Ctrl, Alt, Shift or Windows
+  held. The keys are handled on the page, not as keyboard
   accelerators, so no accelerator tooltip appears; the buttons announce them through
   `AutomationProperties.AcceleratorKey`.
 

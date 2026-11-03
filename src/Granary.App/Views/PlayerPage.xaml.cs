@@ -42,12 +42,14 @@ public sealed partial class PlayerPage : Page
     private PlayerSystemMedia? _systemMedia;
     // The window's full screen and mini view, the app's too: the player toggles them, and the window keeps them.
     private readonly WindowModeService _modes;
+    private readonly IPlaybackDevicePreferences _devicePreferences;
 
     public PlayerPage()
     {
         // Made outside the container: a disposable transient from the root provider would be kept until the app exits.
         ViewModel = ActivatorUtilities.CreateInstance<PlayerViewModel>(App.Services);
         _modes = App.Services.GetRequiredService<WindowModeService>();
+        _devicePreferences = App.Services.GetRequiredService<IPlaybackDevicePreferences>();
         InitializeComponent();
         VideoHost.VideoOutput = App.Services.GetRequiredService<ICompositionVideoOutput>();
         InitializeInput();
@@ -192,17 +194,23 @@ public sealed partial class PlayerPage : Page
     });
 
     // The keyboard map lives on the page, so focus must stay in it. It can still drop out, for one when a focused
-    // button collapses with its panel (Retry, the transport); the page takes it back, unless a menu has it.
-    private void KeepFocusInPage() => DispatcherQueue.TryEnqueue(() =>
+    // button collapses with its panel (Retry, the transport); the page takes it back, unless a menu has it. A panel
+    // opened from a button gives focus back to it, so a remote goes on from there; shown after a key.
+    private void KeepFocusInPage(Control? opener = null) => DispatcherQueue.TryEnqueue(() =>
     {
         if (!IsLoaded || IsDocked || XamlRoot is not { } root || HasOpenMenu())
         {
             return;
         }
-        if (FocusManager.GetFocusedElement(root) is not DependencyObject focused || !IsWithin(focused, this) || !IsShown(focused))
+        if (FocusManager.GetFocusedElement(root) is DependencyObject focused && IsWithin(focused, this) && IsShown(focused))
         {
-            Focus(FocusState.Programmatic);
+            return;
         }
+        if (opener is not null && IsShown(opener) && opener.Focus(_lastInputWasKey ? FocusState.Keyboard : FocusState.Programmatic))
+        {
+            return;
+        }
+        Focus(FocusState.Programmatic);
     });
 
     private static bool IsShown(DependencyObject element)

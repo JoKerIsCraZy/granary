@@ -25,6 +25,9 @@ public sealed partial class DetailHero : UserControl
         InitializeComponent();
     }
 
+    /// <summary>Play, where keyboard focus starts when the page opens with a remote, as on Silo's TV app.</summary>
+    public Control ArrivalFocus => PlayButton;
+
     public ItemDetailViewModel? ViewModel
     {
         get => (ItemDetailViewModel?)GetValue(ViewModelProperty);

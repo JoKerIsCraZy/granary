@@ -145,7 +145,7 @@ public sealed partial class MediaRow : UserControl
 
     public Visibility HasText(string? text) => string.IsNullOrEmpty(text) ? Visibility.Collapsed : Visibility.Visible;
 
-    private void ApplyBleed() => RowBleed.Apply(Bleed, Track, Items, PreviousButton, NextButton);
+    private void ApplyBleed() => RowBleed.Apply(Bleed, Track, Scroller, Items, PreviousButton, NextButton);
 
     // The profile's choice and the window's breakpoint, taken before the cards are laid out in them.
     protected override Size MeasureOverride(Size availableSize)

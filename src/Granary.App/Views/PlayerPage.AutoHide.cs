@@ -17,6 +17,9 @@ public sealed partial class PlayerPage
 {
     private static readonly TimeSpan HideDelay = TimeSpan.FromSeconds(3);
 
+    // With a remote's focus in the controls they wait as long as Silo's TV app's (CONTROLS_AUTO_HIDE_MS).
+    private static readonly TimeSpan RemoteHideDelay = TimeSpan.FromSeconds(5);
+
     // Moves this small are jitter, or the framework testing a still pointer again while the controls fade.
     private const double PointerMoveThreshold = 2;
 
@@ -28,6 +31,11 @@ public sealed partial class PlayerPage
     private DispatcherQueueTimer _hideTimer = null!;
     private Point? _lastPointer;
     private bool _areControlsVisible = true;
+
+    // Whether the controls were shown before the key now being handled showed them, and whether a remote's OK showed
+    // them, so the arrows move between them until they hide (PlayerPage.Input.cs).
+    private bool _controlsShownBeforeKey;
+    private bool _movesThroughControls;
     private bool _isCursorHidden;
 
     private void InitializeAutoHide()
@@ -61,7 +69,14 @@ public sealed partial class PlayerPage
     {
         SetControlsVisible(true);
         ShowCursor();
+        RestartHideTimer();
+    }
+
+    // Each key and each move of the pointer starts the wait again.
+    private void RestartHideTimer()
+    {
         _hideTimer.Stop();
+        _hideTimer.Interval = _movesThroughControls ? RemoteHideDelay : HideDelay;
         _hideTimer.Start();
     }
 
@@ -86,6 +101,12 @@ public sealed partial class PlayerPage
             _hideTimer.Start();
             return;
         }
+        // A remote's focus goes back to the picture, as on Silo's TV app: the arrows skip and change the volume again,
+        // and OK brings the controls back with focus on Play/Pause.
+        if (_movesThroughControls && HasFocusInControls())
+        {
+            Focus(FocusState.Programmatic);
+        }
         SetControlsVisible(false);
         if (PointerInPage() is not null)
         {
@@ -93,11 +114,12 @@ public sealed partial class PlayerPage
         }
     }
 
-    // The bar always shows its controls, and the pointer over the pages stays.
+    // The bar always shows its controls, and the pointer over the pages stays. A control reached with Tab keeps them, as
+    // on the web; a remote's focus does not: Silo's TV app hides them after a while without a key, focus or not.
     private bool KeepsControls() =>
         IsDocked || !ViewModel.IsPlaying || ViewModel.IsPaused || ViewModel.IsBuffering
-        || SeekBar.IsDragging || IsPointerOverControls() || HasOpenMenu() || HasKeyboardFocusInControls() || IsPanelOpen
-        || ViewModel.MarkerEditor.IsEditing;
+        || SeekBar.IsDragging || IsPointerOverControls() || HasOpenMenu() || (HasKeyboardFocusInControls() && !_movesThroughControls)
+        || IsPanelOpen || ViewModel.MarkerEditor.IsEditing;
 
     private bool IsPointerOverControls() =>
         PointerInPage() is { } point && (Contains(BottomBar, point) || Contains(ExitButton, point) || Contains(MinimizeButton, point)
@@ -110,8 +132,13 @@ public sealed partial class PlayerPage
         && element.TransformToVisual(this).TransformBounds(new Rect(0, 0, element.ActualWidth, element.ActualHeight)).Contains(point);
 
     private bool HasKeyboardFocusInControls() =>
-        FocusManager.GetFocusedElement(XamlRoot) is Control { FocusState: FocusState.Keyboard } control
-        && (IsWithin(control, TopChrome) || IsWithin(control, BottomChrome) || IsWithin(control, MiniChrome) || IsWithin(control, PartyPanel));
+        FocusManager.GetFocusedElement(XamlRoot) is Control { FocusState: FocusState.Keyboard } control && IsInControls(control);
+
+    // Any focus: a menu that closes gives its button focus back as set in code, not as the keyboard's.
+    private bool HasFocusInControls() => FocusManager.GetFocusedElement(XamlRoot) is Control control && IsInControls(control);
+
+    private bool IsInControls(Control control) =>
+        IsWithin(control, TopChrome) || IsWithin(control, BottomChrome) || IsWithin(control, MiniChrome) || IsWithin(control, PartyPanel);
 
     private static bool IsWithin(DependencyObject element, DependencyObject container)
     {
@@ -130,6 +157,7 @@ public sealed partial class PlayerPage
     private void SetControlsVisible(bool visible)
     {
         _areControlsVisible = visible;
+        _movesThroughControls &= visible;
         TopChrome.Opacity = BottomChrome.Opacity = MiniChrome.Opacity = visible ? 1 : 0;
         TopChrome.IsHitTestVisible = BottomChrome.IsHitTestVisible = MiniChrome.IsHitTestVisible = visible;
         ShowPartyPanel(visible);
