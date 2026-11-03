@@ -951,8 +951,9 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   P the mini view, Esc turns away an intro pill, else closes the marker panel, else leaves full screen or the mini
   view, else closes, M mute, C
   subtitles off and on, Left/Right skip, Up/Down volume ±5. A remote's Back (Browser Back) and Backspace do as Esc
-  does, but leave full screen alone (a media PC runs in it); OK (Enter) on hidden controls only shows them, focus on
-  Play/Pause, as on Silo's TV app (so does OK on the minimized bar's picture); while a skip pill shows, OK on hidden
+  does, but leave full screen alone (a media PC runs in it); OK (Enter) with focus on the picture only shows the
+  controls, focus on Play/Pause, as on Silo's TV app, also when the pointer (an air mouse's) already shows them (so does
+  OK on the minimized bar's picture); while a skip pill shows, OK on hidden
   controls does what the pill says instead (Skip Intro, Recap, Credits, Preview, or Watch Intro) and the controls stay
   away; in the mini view OK lands on its own Play/Pause. From then until the controls hide, with focus on one of them,
   the arrows move between them (past the volume slider, which Tab still reaches; Down from the seek bar lands on

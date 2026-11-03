@@ -67,9 +67,11 @@ public sealed partial class PlayerPage
     }
 
     // Any key shows the controls. Space is taken here, before a focused button would press itself with it:
-    // on the player Space always plays or pauses, as on the web. In the bar a focused button keeps it. OK (Enter) on
-    // hidden controls only shows them, with focus on Play/Pause, as on Silo's TV app; a button that shows while they are
-    // hidden (the sync notice's ✕, the skip pill) keeps OK. A held OK acts once: its repeats neither press the button it
+    // on the player Space always plays or pauses, as on the web. In the bar a focused button keeps it. OK (Enter) with
+    // focus on the picture shows the controls with focus on Play/Pause, as Silo's TV app reveals them
+    // (requestIdleOverlayFocus); there the controls never show without focus, here a pointer shows them too, and an air
+    // mouse keeps them up, so OK does it whether they show already or not. A button that shows while they are hidden
+    // (the sync notice's ✕, the skip pill) keeps OK. A held OK acts once: its repeats neither press the button it
     // landed on nor bring the controls back after a skip.
     private void OnPagePreviewKeyDown(object sender, KeyRoutedEventArgs e)
     {
@@ -87,7 +89,8 @@ public sealed partial class PlayerPage
         }
         _controlsShownBeforeKey = _areControlsVisible;
         ShowControls();
-        if (okOnHidden && !IsDocked && !ShowsNextUpScreen && AcceptsShortcut())
+        bool okOnPicture = e.Key == VirtualKey.Enter && !HasFocusInControls() && !HasShownButtonFocus();
+        if (okOnPicture && !IsDocked && !ShowsNextUpScreen && AcceptsShortcut())
         {
             e.Handled = true;
             FocusTransport();
@@ -219,7 +222,7 @@ public sealed partial class PlayerPage
     // A button with focus that is not one of the controls, so shows while they are hidden.
     private bool HasShownButtonFocus() => FocusManager.GetFocusedElement(XamlRoot) is ButtonBase button && !IsInControls(button);
 
-    // A remote's OK showed the controls (on hidden controls, or on the bar's picture): focus on Play/Pause, and the arrows
+    // A remote's OK showed the controls (on the picture, or on the bar's picture): focus on Play/Pause, and the arrows
     // move between the controls until they hide.
     private void FocusTransport()
     {
