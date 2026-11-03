@@ -617,7 +617,7 @@ says why above the sections.
 - **Playback**: Quality (preferred quality, maximum bitrate with "No limit", lower quality when buffering, and this
   connection's learned limit with Reset), This PC ("Kept on this PC, not in your profile.": Direct play without
   hardware decoding, a switch, off by default, counting from the next title; Up and Down in the player, a select with
-  Show the controls and menus (the default, as Silo's TV app) and Change the volume (the web player's keys), which the
+  Controls and menus (the default, as Silo's TV app) and Volume (the web player's keys), which the
   player follows at its next key; and mpv configuration, see below. Granary's own and kept on the PC, so nothing saves
   to the server), Connection (the latest speed reading and what Auto plays without converting), Skipping (skip
   intros, auto-skip recaps and credits), Next episode (start next at preview, auto-play), Seek controls (rewind and
@@ -637,8 +637,8 @@ says why above the sections.
   The log has the details." (refused at the start, or mpv refused it), "Granary stopped using your mpv.conf: {reason}.
   The log has the details." (a profile kept changing one of Granary's options while a title played), or "Granary kept
   {n} of its own options from your mpv.conf. The log names them."; the reason is the log's, such as "it sets
-  player-operation-mode, which Granary needs to keep its own options", "mpv refused to start with it" or "it keeps
-  changing log-file". Nothing when the file was used as written, when there is none, or before the player first
+  player-operation-mode, which Granary needs to keep its own options", "it sets log-file, which Granary does not let
+  mpv.conf change", "mpv refused to start with it" or "it keeps changing keep-open". Nothing when the file was used as written, when there is none, or before the player first
   started. With that line, an **Open logs** link stands left of Open folder and shows Granary's log folder in File
   Explorer (the data folder before the first log). After Granary's editor or a preset wrote the file, another muted line
   says so, with an **Apply now** outline button on its right ("Apply mpv.conf now" for screen readers): "Your changes to
@@ -1085,7 +1085,7 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   TV app (a remote has its own volume buttons; M mutes and the slider, reached with Tab, sets it): from the picture Up
   shows the controls with focus on Play/Pause and Down opens the audio menu when there is a track to choose, else the
   subtitles', else the playback settings (the TV app's panel opens on audio, else subtitles, else video), and on a
-  shown control they move from it. Set to Change the volume they set it ±5 as on the web, and move only off the seek
+  shown control they move from it. Set to Volume they set it ±5 as on the web, and move only off the seek
   bar. In the minimized bar, while the title loads and after it failed they always set the volume ±5. A remote's Back (Browser Back) and Backspace do as Esc
   does, but leave full screen alone (a media PC runs in it); OK (Enter) with focus on the picture only shows the
   controls, focus on Play/Pause, as on Silo's TV app, also when the pointer (an air mouse's) already shows them (so does

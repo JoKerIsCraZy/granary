@@ -23,12 +23,12 @@ release's section is what its update says it changes (docs/release.md).
   its data directory, in mpv's own syntax with profiles, `profile-cond` and `include`, and `~~/` for that folder, for
   shaders, scaling, debanding, tone mapping and the like. **Open mpv.conf** makes the file and opens it in your editor;
   **Open folder** is there for shaders. Changes apply after you restart Granary. Granary keeps the options it needs to
-  show the video in its window and follow your Silo server's choices, keeps the stream's address out of mpv's own
-  logs, files and proxies, and runs no scripts or commands of the file's. The log names the options of yours it leaves
-  out and any option mpv can't use; a file that would turn Granary's options off, its includes too, plays as if it were
-  not there, and the log says why. If one of its profiles keeps changing them while a title plays, Granary stops that
-  title and plays on without the file. The row says when your file was not used, or only in part, and why, with a link
-  to the log. Without the file, playback is as before.
+  show the video in its window and follow your Silo server's choices, and the log names the options of yours it leaves
+  out and any option mpv can't use. A file that sets an option that could take the stream's address out, such as mpv's
+  own log, a proxy, scripts or commands, or one that would turn Granary's options off, its includes too, plays as if it
+  were not there, and the log says why. If one of its profiles keeps changing Granary's options while a title plays,
+  Granary stops that title and plays on without the file. The row says when your file was not used, or only in part,
+  and why, with a link to the log. Without the file, playback is as before.
 - Settings → Playback → This PC → mpv configuration: **Edit** opens `mpv.conf` in an editor inside Granary, usable
   with the keyboard or a TV remote. It holds the file exactly as written, profiles, includes and comments too, and
   checks the text as you type: which options Granary keeps for itself, and whether the player would not use the file
@@ -68,7 +68,7 @@ release's section is what its update says it changes (docs/release.md).
 - The sorts are named as on Silo's web app: Date Added, Release Date, IMDb Rating, and Duration in place of Runtime.
 - In the player, Up and Down no longer change the volume by default, as on Silo's TV app: Up shows the controls with
   focus on Play/Pause, and Down opens the audio menu (or subtitles, or the playback settings). Settings → Playback →
-  This PC → Up and Down in the player → Change the volume brings back the volume keys. A remote's own volume buttons,
+  This PC → Up and Down in the player → Volume brings back the volume keys. A remote's own volume buttons,
   M to mute and the volume slider set it either way. Left and Right still skip.
 
 ### Fixed

@@ -25,8 +25,24 @@ public sealed class MpvConfigCheckTests
     }
 
     [Fact]
-    public void AnOptionGranaryGuards_IsNamedToo() =>
-        Assert.Equal(["Granary keeps its own scripts."], Check.Notes("script=~~/scripts/thing.lua\n"));
+    public void AnOptionThatCouldTakeTheStreamOut_MeansTheFileIsNotUsed() =>
+        Assert.Equal(["This file would not be used: it sets scripts, which Granary does not let mpv.conf change."],
+            Check.Notes("deband=yes\nscript=~~/scripts/thing.lua\n"));
+
+    [Fact]
+    public void SuchAnOption_AtTheValueGranaryGivesIt_IsFine() =>
+        Assert.Empty(Check.Notes("load-scripts=no\nytdl=no\n"));
+
+    [Fact]
+    public void EveryOptionTheFileMayNotSet_IsSaid()
+    {
+        foreach (string option in MpvOwnOptions.Refused.Keys)
+        {
+            var notes = Check.Notes(option + "=C:\\elsewhere\n");
+            Assert.True(notes.Count == 1 && notes[0].StartsWith($"This file would not be used: it sets {option}", StringComparison.Ordinal),
+                $"{option}: {string.Join(" | ", notes)}");
+        }
+    }
 
     [Theory]
     [InlineData("player-operation-mode=cplayer\nvo=gpu\n",
@@ -34,7 +50,7 @@ public sealed class MpvConfigCheckTests
     [InlineData("[pseudo-gui]\nkeep-open=no\n",
         "This file would not be used: it sets keep-open in its [pseudo-gui] profile, which mpv applies over Granary's own options.")]
     [InlineData("[protocol.http]\ninput-commands=quit\n",
-        "This file would not be used: it sets input-commands in its profile protocol.http, which mpv runs as soon as the profile applies.")]
+        "This file would not be used: it sets input-commands, which Granary does not let mpv.conf change.")]
     public void AFileThePlayerWouldRefuse_SaysSoAlone(string text, string note) =>
         Assert.Equal([note], Check.Notes(text));
 

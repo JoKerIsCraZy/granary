@@ -219,6 +219,9 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
     /// <summary>An mpv option's value as mpv gives it, for tests.</summary>
     internal string? Option(string name) => _mpv.GetString(name);
 
+    /// <summary>An mpv command on the mpv that runs now, for tests.</summary>
+    internal int Command(params string[] args) => _mpv.Command(args);
+
     // sub-add reads the whole file before it returns; "auto" adds it without selecting it, so a file that arrives after
     // another load cannot take over that one's subtitles. Its stream number is read back from the track list: the track of
     // that file that was not there before, as a file read again (its timing changed) is a track beside the old one.

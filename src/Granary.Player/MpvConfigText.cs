@@ -15,6 +15,13 @@ internal sealed record MpvConfigScan(IReadOnlyList<MpvConfigEntry> Entries, stri
 /// </summary>
 internal static class MpvConfigText
 {
+    // mpv's other names for options (options/options.c).
+    private static readonly Dictionary<string, string> Aliases = new(StringComparer.Ordinal)
+    {
+        ["script"] = "scripts",
+        ["watch-later-directory"] = "watch-later-dir",
+    };
+
     // mpv's actions on list options ("glsl-shaders-append").
     private static readonly string[] ListSuffixes = ["-add", "-append", "-pre", "-set", "-clr", "-del", "-remove", "-toggle"];
 
@@ -169,8 +176,8 @@ internal static class MpvConfigText
 
     /// <summary>
     /// The options of <paramref name="names"/> in mpv's profiles after it started, from its <c>profile-list</c>, includes
-    /// read: the pseudo-GUI profile's beyond mpv's own entry and Granary's, and every other profile's. A profile keeps an
-    /// option as it was written; a bare flag has an empty value there.
+    /// read: the pseudo-GUI profile's beyond mpv's own entry and Granary's, and every other profile's but mpv's built-in
+    /// ones. A profile keeps an option as it was written; a bare flag has an empty value there.
     /// </summary>
     public static IReadOnlyList<MpvConfigEntry> FromProfiles(string? profileList, IReadOnlyList<KeyValuePair<string, string>> own,
         IReadOnlySet<string> names)
@@ -184,6 +191,12 @@ internal static class MpvConfigText
         foreach (var profile in document.RootElement.EnumerateArray())
         {
             string name = profile.GetProperty("name").GetString() ?? "";
+            // mpv's own profiles set some of these themselves (low-latency sets demuxer-lavf-o); a file's section that
+            // joins one was read before the start.
+            if (BuiltIn.Contains(name))
+            {
+                continue;
+            }
             var options = profile.GetProperty("options").EnumerateArray()
                 .Select(o => new KeyValuePair<string, string>(o.GetProperty("key").GetString() ?? "", o.GetProperty("value").GetString() ?? ""))
                 .ToList();
@@ -201,8 +214,8 @@ internal static class MpvConfigText
 
     /// <summary>
     /// Why mpv must not start with these options, or null when it may: an option that turns off the profile holding
-    /// Granary's options, the file's own pseudo-GUI profile setting one of them after Granary's, or a profile running
-    /// commands, which no set-back can take back.
+    /// Granary's options, one a file may not set anywhere (<see cref="MpvOwnOptions.Refused"/>), or the file's own
+    /// pseudo-GUI profile setting one of Granary's after Granary's.
     /// </summary>
     public static string? Refusal(IEnumerable<MpvConfigEntry> entries, IReadOnlyDictionary<string, string> kept)
     {
@@ -212,17 +225,21 @@ internal static class MpvConfigText
             {
                 return $"sets {MpvOwnOptions.OperationMode}, which Granary needs to keep its own options";
             }
+            if (MpvOwnOptions.Refused.TryGetValue(option, out string? allowed) && (allowed is null || !MpvOwnOptions.Same(value, allowed)))
+            {
+                return $"sets {option}, which Granary does not let mpv.conf change";
+            }
             if (profile == MpvOwnOptions.ProfileName && kept.TryGetValue(option, out string? own) && !MpvOwnOptions.Same(value, own))
             {
                 return $"sets {option} in its [{MpvOwnOptions.ProfileName}] profile, which mpv applies over Granary's own options";
             }
-            if (profile is not null && option == "input-commands" && value.Length > 0)
-            {
-                return $"sets input-commands in its profile {profile}, which mpv runs as soon as the profile applies";
-            }
         }
         return null;
     }
+
+    // mpv's profiles that come with it (etc/builtin.conf), but the pseudo-GUI one, which holds Granary's options.
+    private static readonly HashSet<string> BuiltIn =
+        ["builtin-pseudo-gui", "libmpv", "encoding", "fast", "high-quality", "gpu-hq", "low-latency", "sw-fast", "osd-box", "sub-box", "box"];
 
     // "[default]" is the file's own options.
     private static string? Section(string name) => name is "" or "default" ? null : name;
@@ -250,9 +267,9 @@ internal static class MpvConfigText
         {
             return new(option[3..], null, "no");
         }
-        if (option == "script" && names.Contains("scripts"))
+        if (Aliases.TryGetValue(option, out string? named) && names.Contains(named))
         {
-            return new("scripts", null, value ?? "");
+            return new(named, null, value ?? "");
         }
         foreach (string suffix in ListSuffixes)
         {

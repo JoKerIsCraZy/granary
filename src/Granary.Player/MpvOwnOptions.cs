@@ -98,6 +98,45 @@ internal static class MpvOwnOptions
     }
 
     /// <summary>
+    /// Options a mpv.conf may not set anywhere, at the top, in any profile or in an include: mpv acts on each as soon as it
+    /// is set, before Granary could set it back. A profile that set <c>log-file</c> had mpv write its log, the stream's
+    /// address among it, before the set-back. They write the stream's address, which carries the media proxy's secret, or
+    /// its content to a file, a socket or a proxy, run scripts, programs or commands, read key bindings, or make mpv
+    /// Windows' player for media files. Each with the value a file may still write (Granary's own, or mpv's default), or
+    /// null when any value is refused. Screenshots are left: nothing can take one, with no bindings, commands or scripts.
+    /// </summary>
+    public static IReadOnlyDictionary<string, string?> Refused { get; } = new Dictionary<string, string?>(StringComparer.Ordinal)
+    {
+        // mpv's own files: its log, statistics, watch-later files and watch history.
+        ["log-file"] = "",
+        ["dump-stats"] = "",
+        ["watch-later-dir"] = "",
+        ["write-filename-in-watch-later-config"] = "no",
+        ["save-watch-history"] = "no",
+        ["watch-history-path"] = null,
+        // The stream's content written out, or read through a proxy.
+        ["stream-record"] = "",
+        ["stream-dump"] = "",
+        ["demuxer-cache-dir"] = "",
+        ["cache-on-disk"] = "no",
+        ["ao-pcm-file"] = null,
+        ["vo-image-outdir"] = null,
+        ["http-proxy"] = "",
+        ["stream-lavf-o"] = "",
+        ["demuxer-lavf-o"] = "",
+        // Other programs, scripts and commands; ytdl hands the address to a downloader.
+        ["input-ipc-server"] = "",
+        ["input-ipc-client"] = "",
+        ["input-conf"] = null,
+        ["input-commands"] = "",
+        ["load-scripts"] = "no",
+        ["scripts"] = "",
+        ["ytdl"] = "no",
+        ["register"] = "no",
+        ["unregister"] = "no",
+    };
+
+    /// <summary>
     /// The pseudo-GUI profile with Granary's options. mpv applies it in <c>mpv_initialize</c> right after the config files,
     /// and over them, when <c>player-operation-mode</c> is <c>pseudo-gui</c>; nothing else runs in between.
     /// </summary>

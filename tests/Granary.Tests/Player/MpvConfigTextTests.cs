@@ -8,7 +8,8 @@ public sealed class MpvConfigTextTests
     private static readonly IReadOnlyList<KeyValuePair<string, string>> Own =
         [.. MpvOwnOptions.Core(VideoOutputKind.D3D11Composition, (1280, 720)), .. MpvOwnOptions.Guarded(VideoOutputKind.D3D11Composition)];
 
-    private static readonly IReadOnlySet<string> Names = Own.Select(o => o.Key).Append(MpvOwnOptions.OperationMode).ToHashSet();
+    private static readonly IReadOnlySet<string> Names =
+        Own.Select(o => o.Key).Append(MpvOwnOptions.OperationMode).Concat(MpvOwnOptions.Refused.Keys).ToHashSet();
 
     private static readonly IReadOnlyDictionary<string, string> Kept =
         Own.Where(o => o.Key != MpvOwnOptions.CompositionSize).ToDictionary();
@@ -64,7 +65,8 @@ public sealed class MpvConfigTextTests
     [Fact]
     public void AFileThatSetsGranarysOptions_AtTheTopOrInProfiles_IsPlayed()
     {
-        var entries = MpvConfigText.Entries("vo=gpu\nkeep-open=no\nidle=no\n[protocol.https]\nlog-file=x.log\n[pseudo-gui]\nkeep-open=yes\n", Names);
+        var entries = MpvConfigText.Entries(
+            "vo=gpu\nkeep-open=no\nidle=no\n[protocol.https]\nosc=yes\n[pseudo-gui]\nkeep-open=yes\n[clean]\nlog-file=\nscripts-clr\nload-scripts=no\nno-ytdl\n", Names);
 
         Assert.Null(MpvConfigText.Refusal(entries, Kept));
     }
@@ -74,8 +76,22 @@ public sealed class MpvConfigTextTests
     [InlineData("[some]\nplayer-operation-mode=cplayer\n", "sets player-operation-mode")]
     [InlineData("[pseudo-gui]\nvo=gpu\n", "sets vo in its [pseudo-gui] profile")]
     [InlineData("[pseudo-gui]\nno-keep-open\n", "sets keep-open in its [pseudo-gui] profile")]
-    [InlineData("[protocol.http]\ninput-commands=quit\n", "sets input-commands in its profile protocol.http")]
-    [InlineData("[later]\ninput-commands-append=quit\n", "sets input-commands in its profile later")]
+    [InlineData("input-commands=quit\n", "sets input-commands, which Granary does not let mpv.conf change")]
+    [InlineData("[later]\ninput-commands-append=quit\n", "sets input-commands, which Granary does not let mpv.conf change")]
+    [InlineData("log-file=C:\\logs\\mpv.log\n", "sets log-file, which Granary does not let mpv.conf change")]
+    [InlineData("[loop]\nprofile-cond=true\nlog-file=x.log\n", "sets log-file")]
+    [InlineData("[protocol.http]\nhttp-proxy=http://127.0.0.1:9\n", "sets http-proxy")]
+    [InlineData("[extension.mkv]\nstream-lavf-o=http_proxy=http://127.0.0.1:9\n", "sets stream-lavf-o")]
+    [InlineData("[pseudo-gui]\ninput-ipc-server=granary\n", "sets input-ipc-server")]
+    [InlineData("script=~~/scripts/thing.lua\n", "sets scripts")]
+    [InlineData("load-scripts\n", "sets load-scripts")]
+    [InlineData("watch-later-directory=~~/later\n", "sets watch-later-dir")]
+    [InlineData("save-watch-history=yes\n", "sets save-watch-history")]
+    [InlineData("input-conf=~~/input.conf\n", "sets input-conf")]
+    [InlineData("ytdl\n", "sets ytdl")]
+    [InlineData("cache-on-disk=yes\n", "sets cache-on-disk")]
+    [InlineData("ao-pcm-file=out.wav\n", "sets ao-pcm-file")]
+    [InlineData("register\n", "sets register")]
     public void AFileThatWouldUndoGranarysOptions_IsRefused(string text, string reason) =>
         Assert.StartsWith(reason, MpvConfigText.Refusal(MpvConfigText.Entries(text, Names), Kept), StringComparison.Ordinal);
 
@@ -127,6 +143,15 @@ public sealed class MpvConfigTextTests
         Assert.Equal([new("vo", null, "gpu"), new("idle", "own", "no"), new("keep-open", "pseudo-gui", "no"), new("osc", "later", "yes")],
             scan.Entries);
         Assert.StartsWith("sets keep-open in its [pseudo-gui] profile", MpvConfigText.Refusal(scan.Entries, Kept), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AnOptionAFileMayNotSet_IsRefusedInAnIncludeToo()
+    {
+        var scan = Scan(("mpv.conf", "deband=yes\n[protocol.http]\ninclude=~~/http.conf\n"), ("http.conf", "log-file=~~/mpv.log\n"));
+
+        Assert.Equal([new("log-file", "protocol.http", "~~/mpv.log")], scan.Entries);
+        Assert.Equal("sets log-file, which Granary does not let mpv.conf change", MpvConfigText.Refusal(scan.Entries, Kept));
     }
 
     [Fact]

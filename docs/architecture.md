@@ -79,11 +79,23 @@ Without it, mpv starts exactly as before: the same options in the same order (`M
   They win before scripts load, before the video output is made and before idle mode is decided: one `gpu-next` output
   in composition mode from the start, whatever the file says. The built-in `builtin-pseudo-gui` profile that comes with
   this mode sets only what Granary sets too (`force-window`, `idle`) or never uses (a screenshot folder).
-- Two things in a file would undo that, and such a file is refused: mpv starts without it and the log says why.
+- Three things in a file would undo that, and such a file is refused: mpv starts without it and the log says why.
   `player-operation-mode` set to anything but `pseudo-gui` turns the profile off. A `[pseudo-gui]` section of the file
   joins Granary's profile after Granary's entries (mpv adds a section's options to the profile of that name), so one
-  that sets one of Granary's options to another value wins over it. A profile that sets `input-commands` is refused
-  too, since mpv runs those as soon as the profile applies and no set-back takes them back.
+  that sets one of Granary's options to another value wins over it. And some options a file may not set anywhere, at
+  the top, in any profile (`[pseudo-gui]`, `protocol.*`, `extension.*`, conditional ones) or in an include
+  (`MpvOwnOptions.Refused`): mpv acts on each as soon as it is set, before any set-back. A looping profile that set
+  `log-file` while a title played had mpv write its log, the stream's address among it, before Granary set it back
+  (one test run in five, and once in ten live runs). These are the options that write the stream's address or its
+  content out (`log-file`, `dump-stats`, `watch-later-dir`, `write-filename-in-watch-later-config`,
+  `save-watch-history`, `watch-history-path`, `stream-record`, `stream-dump`, `demuxer-cache-dir`, `cache-on-disk`,
+  `ao-pcm-file`, `vo-image-outdir`), send it through a proxy (`http-proxy`, `stream-lavf-o`, `demuxer-lavf-o`), hand it
+  to other programs, scripts or commands (`input-ipc-server`, `input-ipc-client`, `scripts` and `script`,
+  `load-scripts`, `input-commands`, `ytdl`, which runs a downloader with it), read key bindings (`input-conf`), or make
+  mpv Windows' player for media files (`register`, `unregister`). A value that is Granary's own or mpv's default
+  (`log-file=`, `load-scripts=no`) is no reason. Screenshots are left to the file: with no bindings, commands or
+  scripts nothing can take one. The shader and ICC caches are left too: they hold compiled shaders, nothing of the
+  stream.
 - Granary reads the file before the start by mpv's rules (`MpvConfigText.Scan`), its includes too, the way mpv finds
   them: `~~/` is the folder, `~/` the user's home, any other relative path is opened from the working directory, and
   an include's own options count in the profile it stands in. A missing include is passed over, as mpv does. Includes
@@ -91,15 +103,16 @@ Without it, mpv starts exactly as before: the same options in the same order (`M
   (a test hung on it before the check). So are includes nested deeper than 8 (mpv's own limit), one Granary cannot
   read, and one it cannot follow, such as a stream URL. Anything unexpected while Granary reads the file makes mpv play
   without it: the file never stops playback. Once mpv started, Granary checks again what mpv read: the mode
-  (`player-operation-mode`) and the profiles (`profile-list`). Something found only then, or a check that fails, makes
-  mpv start again without the file.
+  (`player-operation-mode`) and the profiles (`profile-list`; mpv's built-in ones, which set some of these options
+  themselves, are passed over). Something found only then, or a check that fails, makes mpv start again without the
+  file.
 - Each title gets Granary's options as its own options too (`loadfile`, each value quoted by its length). mpv applies
-  those after the file's `protocol.*` and `extension.*` profiles and before it opens the stream, so such a profile
-  cannot send the stream through a proxy or write its address to a log of mpv's; a test plays an `http` stream with
-  `[protocol.http]` setting `log-file` and `http-proxy`.
-- Profiles that apply while mpv plays (`profile-cond`, or one applied by name) can still set one of Granary's options.
-  The engine observes them while mpv runs with a file and sets each back as mpv reports it (`KeepsOwn`), comparing the
-  value as mpv writes it without regard to case. Between the profile and the set-back, mpv plays a moment with the
+  those after the file's `protocol.*` and `extension.*` profiles and before it opens the stream: a third line, should
+  a profile that sets one reach mpv past both checks.
+- Profiles that apply while mpv plays (`profile-cond`, or one applied by name) can still set one of the options Granary
+  keeps that a file may set (`vo`, `gpu-api`, `gpu-context`, `d3d11-output-mode`, `keep-open`, `idle`, `osc`, `sub-auto`
+  and the like). The engine observes those while mpv runs with a file and sets each back as mpv reports it
+  (`KeepsOwn`), comparing the value as mpv writes it without regard to case. Between the profile and the set-back, mpv plays a moment with the
   file's value; it never holds server credentials, only the loopback address with the media proxy's secret (Server
   playback, "Media proxy"). `d3d11-composition-size` is kept at the start only, as the engine changes it itself.
 - The protection fails closed (`MpvPlaybackEngine.FailClosed.cs`). A profile whose condition follows the option itself
@@ -120,8 +133,8 @@ Without it, mpv starts exactly as before: the same options in the same order (`M
 `gpu-context` `d3d11`, `d3d11-output-mode=composition`, `d3d11-composition-size`, `force-window`), the player Granary
 drives (`keep-open`, `idle`, `input-default-bindings`, `input-vo-keyboard`, `osc`, `ytdl`, `sub-auto`,
 `rebase-start-time`, `media-controls`), and no watch-later files (`resume-playback`, `save-position-on-quit`). With a
-file also (`MpvOwnOptions.Guarded`; they are mpv's defaults, so without a file nothing could change them): the stream's
-address stays out of mpv's own files and programs (`save-watch-history`, `watch-later-dir`,
+file also (`MpvOwnOptions.Guarded`; they are mpv's defaults, so without a file nothing could change them), behind the
+refusal above: the stream's address stays out of mpv's own files and programs (`save-watch-history`, `watch-later-dir`,
 `write-filename-in-watch-later-config`, `log-file`, `dump-stats`, `stream-record`, `stream-dump`, `input-ipc-server`),
 goes through no proxy (`http-proxy`, `stream-lavf-o`, `demuxer-lavf-o`), mpv runs nothing of the file's (`load-scripts`,
 `scripts`, `input-commands`) and reads no key bindings (`input-conf` is an empty one of Granary's, so the folder's

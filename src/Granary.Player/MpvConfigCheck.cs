@@ -13,10 +13,12 @@ internal sealed class MpvConfigCheck(MpvEngineOptions options) : IMpvConfigCheck
 
     public IReadOnlyList<string> Notes(string text)
     {
+        // The names and the options kept as StartWith and Configure have them.
         var own = MpvOwnOptions.Core(options.VideoOutput, options.InitialOutputSize).Concat(MpvOwnOptions.Guarded(options.VideoOutput)).ToList();
-        var names = own.Select(o => o.Key).Append(MpvOwnOptions.OperationMode).Append(Include).ToHashSet();
+        var names = own.Select(o => o.Key).Append(MpvOwnOptions.OperationMode).Concat(MpvOwnOptions.Refused.Keys).Append(Include).ToHashSet();
         var entries = MpvConfigText.Entries(text, names);
-        var kept = own.Where(o => o.Key != MpvOwnOptions.CompositionSize).ToDictionary(StringComparer.Ordinal);
+        var kept = own.Where(o => o.Key != MpvOwnOptions.CompositionSize && !MpvOwnOptions.Refused.ContainsKey(o.Key))
+            .ToDictionary(StringComparer.Ordinal);
         var notes = new List<string>();
         if (MpvConfigText.Refusal(entries.Where(e => e.Option != Include), kept) is { } reason)
         {
@@ -25,8 +27,8 @@ internal sealed class MpvConfigCheck(MpvEngineOptions options) : IMpvConfigCheck
         }
         else
         {
-            var ownNames = own.Select(o => o.Key).ToHashSet();
-            foreach (var set in entries.Where(e => ownNames.Contains(e.Option)).GroupBy(e => e.Option))
+            // Those a file may set and Granary sets back; a refused one at its allowed value changes nothing.
+            foreach (var set in entries.Where(e => e.Option == MpvOwnOptions.CompositionSize || kept.ContainsKey(e.Option)).GroupBy(e => e.Option))
             {
                 // At the top it holds from the start; in a profile only once that profile applies.
                 string? profile = set.All(e => e.Profile is not null) ? set.First().Profile : null;
