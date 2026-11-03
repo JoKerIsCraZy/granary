@@ -121,6 +121,66 @@ public sealed class MpvConfigTextTests
         Assert.StartsWith("sets vo in its [pseudo-gui] profile", MpvConfigText.Refusal(found, Kept), StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("watch-history-path=history.txt", "watch-history-path")]
+    [InlineData("demuxer-cache-dir=cache", "demuxer-cache-dir")]
+    [InlineData("vo-image-outdir=images", "vo-image-outdir")]
+    [InlineData("input-ipc-client=socket", "input-ipc-client")]
+    [InlineData("write-filename-in-watch-later-config=yes", "write-filename-in-watch-later-config")]
+    [InlineData("stream-record=out.mkv", "stream-record")]
+    [InlineData("stream-dump=out.bin", "stream-dump")]
+    [InlineData("dump-stats=stats.txt", "dump-stats")]
+    [InlineData("unregister=yes", "unregister")]
+    public void AnUnsafeOption_IsRefusedInAProfile(string option, string name)
+    {
+        var entries = MpvConfigText.Entries($"[extension.mkv]\n{option}\n", Names);
+
+        Assert.Equal($"sets {name}, which Granary does not let mpv.conf change", MpvConfigText.Refusal(entries, Kept));
+    }
+
+    [Theory]
+    [InlineData("add")]
+    [InlineData("append")]
+    [InlineData("pre")]
+    [InlineData("set")]
+    [InlineData("del")]
+    [InlineData("remove")]
+    [InlineData("toggle")]
+    public void AListActionCannotHideACommand(string action)
+    {
+        var entries = MpvConfigText.Entries($"[later]\ninput-commands-{action}=quit\n", Names);
+
+        Assert.Equal([new("input-commands", "later", "quit")], entries);
+        Assert.Equal("sets input-commands, which Granary does not let mpv.conf change", MpvConfigText.Refusal(entries, Kept));
+    }
+
+    [Fact]
+    public void ClearingCommandsAndUsingGranarysOperationMode_IsAllowed()
+    {
+        var entries = MpvConfigText.Entries("player-operation-mode= PSEUDO-GUI \n[later]\ninput-commands-clr\n", Names);
+
+        Assert.Null(MpvConfigText.Refusal(entries, Kept));
+    }
+
+    [Fact]
+    public void WhenGranarysProfileEntriesAreMissing_AllOfTheProfileIsChecked()
+    {
+        const string profiles = """
+            [
+              { "name": "low-latency", "options": [ { "key": "log-file", "value": "builtin" } ] },
+              { "name": "pseudo-gui", "options": [ { "key": "vo", "value": "gpu" } ] },
+              { "name": "default", "options": [ { "key": "idle", "value": "no" } ] }
+            ]
+            """;
+        IReadOnlyList<KeyValuePair<string, string>> own = [new("vo", "gpu-next"), new("idle", "yes")];
+
+        var found = MpvConfigText.FromProfiles(profiles, own, Names);
+
+        Assert.Equal([new("vo", "pseudo-gui", "gpu"), new("idle", null, "no")], found);
+        Assert.StartsWith("sets vo in its [pseudo-gui] profile", MpvConfigText.Refusal(found, Kept), StringComparison.Ordinal);
+        Assert.Empty(MpvConfigText.FromProfiles(null, own, Names));
+    }
+
     // A config folder of files in memory, by full path; a missing one reads as none, as in mpv.
     private static readonly string Folder = Path.GetFullPath(Path.Combine(Path.GetTempPath(), "granary-scan", "mpv"));
 
@@ -207,6 +267,35 @@ public sealed class MpvConfigTextTests
     [InlineData("include=~~cache/x.conf\n", "has an include Granary cannot follow")]
     public void AnIncludeGranaryCannotFollow_IsTheProblem(string text, string problem) =>
         Assert.Equal(problem, Scan(("mpv.conf", text)).Problem);
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void AnUnreadableFile_StopsTheScanWithoutExposingItsPath(bool root)
+    {
+        string file = Path.Combine(Folder, "mpv.conf");
+        var reads = new List<string>();
+        var scan = MpvConfigText.Scan(file, Folder, Names, path =>
+        {
+            reads.Add(path);
+            if (root || path.EndsWith("locked.conf", StringComparison.Ordinal))
+            {
+                throw new IOException("private path");
+            }
+            return "vo=gpu\ninclude=~~/locked.conf\ninclude=~~/later.conf\nidle=no\n";
+        });
+
+        Assert.Equal(root ? "cannot be read" : "includes locked.conf, which Granary cannot read", scan.Problem);
+        Assert.Equal(root ? 1 : 2, reads.Count);
+        if (root)
+        {
+            Assert.Empty(scan.Entries);
+        }
+        else
+        {
+            Assert.Equal([new("vo", null, "gpu")], scan.Entries);
+        }
+    }
 
     [Fact]
     public void AnIncludeGranaryCannotRead_IsTheProblem()

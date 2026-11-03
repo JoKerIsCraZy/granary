@@ -61,6 +61,14 @@ public sealed class MpvOwnOptionsTests
         Assert.Equal(["vo=%8%gpu-next", "log-file=%0%", "input-conf=%9%memory://", "input-commands-clr=%0%"], perFile);
     }
 
+    [Fact]
+    public void PerFileValues_AreQuotedByUtf8Bytes_AndCannotSplitAtCommas()
+    {
+        var perFile = MpvOwnOptions.PerFile([new("example", "é,=x"), new("input-commands", "quit")]);
+
+        Assert.Equal(["example=%5%é,=x", "input-commands=%4%quit"], perFile);
+    }
+
     [Theory]
     [InlineData("yes", "yes", true)]
     [InlineData(" Composition ", "composition", true)]
