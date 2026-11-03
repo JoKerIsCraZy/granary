@@ -230,7 +230,9 @@ public sealed partial class PlayerPage
 
     // After a remote's OK showed the controls, with focus still on one of them, the arrows move between them, as on Silo's
     // TV app; the seek bar keeps Left and Right, which it takes first. Otherwise, a tabbed-to button too, the arrows skip
-    // and change the volume, as on the web player.
+    // and change the volume, as on the web player. Up and Down on the shown seek bar, which has no use for them, always
+    // move and turn the arrows over to the controls: focus put there by a click (an air mouse's) left a remote no way
+    // off the bar, Left and Right seeking and Up and Down changing the volume.
     private bool MovesThroughControls(VirtualKey key)
     {
         var direction = key switch
@@ -241,10 +243,17 @@ public sealed partial class PlayerPage
             VirtualKey.Down => FocusNavigationDirection.Down,
             _ => FocusNavigationDirection.None,
         };
-        if (direction == FocusNavigationDirection.None || !_movesThroughControls || !_controlsShownBeforeKey || !HasFocusInControls())
+        if (direction == FocusNavigationDirection.None || !_controlsShownBeforeKey || !HasFocusInControls())
         {
             return false;
         }
+        bool offSeekBar = direction is FocusNavigationDirection.Up or FocusNavigationDirection.Down
+            && FocusManager.GetFocusedElement(XamlRoot) is SeekBar;
+        if (!_movesThroughControls && !offSeekBar)
+        {
+            return false;
+        }
+        _movesThroughControls = true;
         // The arrows pass the volume slider by: on it they would change the volume, and no remote could get past it to
         // the buttons on its right. Tab still reaches it; a remote's volume is Up and Down with the controls hidden.
         var options = new FindNextElementOptions { SearchRoot = this };
