@@ -132,7 +132,16 @@ public sealed class MpvConfigNextTitleTests : IDisposable
         File.WriteAllText(ConfigFile, "deband=no\n");
 
         await PlaysAWav(engine, 0.5);
-        await Until(() => Volatile.Read(ref changed) >= 1, () => _logs.All);
+        // A WAV has no video, so no event of mpv's says when the new swap chain is there, as a real title's VideoReconfig
+        // does. The window's next layout reads it too, so a resize stands in here.
+        int width = 1920;
+        await Until(() =>
+        {
+            width = width == 1920 ? 1921 : 1920;
+            engine.Resize(width, 1080);
+            return Volatile.Read(ref changed) >= 1;
+        }, () => _logs.All);
+        engine.Resize(1920, 1080);
 
         Assert.NotEqual(before, engine.SwapChain);
         Assert.NotEqual(0, engine.SwapChain);
