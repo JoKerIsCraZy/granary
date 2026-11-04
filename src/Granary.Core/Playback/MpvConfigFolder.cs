@@ -15,7 +15,7 @@ public sealed class MpvConfigFolder
     /// <summary>What a new mpv.conf says, all of it comments: it changes nothing until the viewer adds an option.</summary>
     internal const string Template = """
         # Your own mpv options for Granary, in mpv's syntax: https://mpv.io/manual/stable/#configuration-files
-        # They apply after you restart Granary, or with Apply now in Settings after a change made there.
+        # They apply from the next title you play.
         # A line that starts with # does nothing.
         #
         # ~~/ is this folder, for example: glsl-shaders=~~/shaders/FSRCNNX_x2_8-0-4-1.glsl
@@ -183,6 +183,16 @@ public sealed class MpvConfigFolder
         using var copy = new MemoryStream();
         stream.CopyTo(copy);
         return copy.ToArray();
+    }
+
+    /// <summary>
+    /// A config file as the player checks and compares it, read as <see cref="ReadBytes"/>: its UTF-8 text, or else each byte
+    /// as a character of its own, as mpv takes the bytes as they are and a change in any of them is a change.
+    /// </summary>
+    public static string ReadForCheck(string path)
+    {
+        byte[] bytes = ReadBytes(path);
+        return StrictText(bytes) ?? Encoding.Latin1.GetString(bytes);
     }
 
     /// <summary>As <see cref="ReadBytes"/>, as text: UTF-8 unless a byte order mark says otherwise, as File.ReadAllText reads it.</summary>

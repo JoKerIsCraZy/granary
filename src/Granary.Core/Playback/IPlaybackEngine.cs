@@ -96,7 +96,10 @@ public interface IPlaybackEngine : IDisposable
 
     event EventHandler<PlaybackEnded>? Ended;
 
-    /// <summary>Replaces what plays with <paramref name="source"/>; returns the new load's id (1, 2, ...).</summary>
+    /// <summary>
+    /// Replaces what plays with <paramref name="source"/>; returns the new load's id (1, 2, ...) at once, and the source
+    /// reaches the player off the caller's thread, loads in the order they came. A pause asked for meanwhile holds for it.
+    /// </summary>
     long Load(MediaSource source);
 
     void SetPaused(bool paused);

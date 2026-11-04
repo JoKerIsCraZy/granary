@@ -238,6 +238,21 @@ public sealed class PlayerViewModelTests
     }
 
     [Fact]
+    public void AVolumeTheEngineReported_IsNotTheViewersChange()
+    {
+        var viewModel = CreateViewModel();
+        // The engine has set the viewer's volume on a new mpv already.
+        _engine.Current = Loaded() with { Volume = 40, IsMuted = true, Sequence = 5 };
+
+        // That mpv's first notice, of its own volume, reaches the UI after that.
+        _engine.RaiseState(Loaded() with { Volume = 100, IsMuted = true, Sequence = 2 });
+
+        Assert.Equal(100, viewModel.Volume);
+        Assert.Equal(40, _engine.Current.Volume);
+        Assert.True(_engine.Current.IsMuted);
+    }
+
+    [Fact]
     public async Task Close_StopsAndLeavesThePlayer()
     {
         _navigation.NavigateTo(Granary.Core.Abstractions.AppRoute.Item, "movie-1");

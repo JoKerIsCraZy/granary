@@ -7,6 +7,7 @@ using Granary.Core.Playback;
 using Granary.Core.Realtime;
 using Granary.Core.Servers;
 using Granary.Core.ViewModels;
+using Granary.Core.ViewModels.Settings;
 using Granary.Player;
 using Granary.Tests.Fakes;
 using Microsoft.Extensions.DependencyInjection;
@@ -48,34 +49,9 @@ public sealed class CompositionRootTests
         Assert.NotSame(provider.GetRequiredService<Func<EventsLane>>()(), provider.GetRequiredService<Func<EventsLane>>()());
         using var player = provider.GetRequiredService<PlayerViewModel>();
         Assert.Same(provider.GetRequiredService<IPlaybackEngine>(), provider.GetRequiredService<ICompositionVideoOutput>());
-    }
-
-    [Fact]
-    public void ApplyNow_DoesNotMakeTheEngine_WhichSaysSoOnceItIsMade()
-    {
-        Assert.SkipUnless(File.Exists(Path.Combine(AppContext.BaseDirectory, "libmpv-2.dll")),
-            "libmpv-2.dll not found; run scripts/fetch-native.ps1.");
-        var services = new ServiceCollection();
-        services.AddLogging();
-        services.AddSingleton<IUiDispatcher, ImmediateDispatcher>();
-        services.AddSingleton<INavigationService, RecordingNavigation>();
-        services.AddSingleton<IConfirmation, FakeConfirmation>();
-        services.AddSingleton<IFileLauncher, RecordingFileLauncher>();
-        services.AddGranaryCore();
-        services.AddGranaryPlayer(new MpvEngineOptions { VideoOutput = VideoOutputKind.None });
-        using var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });
-        var restart = provider.GetRequiredService<IMpvRestart>();
-        var changes = provider.GetRequiredService<MpvConfigChanges>();
-
-        // Before the player first opens there is nothing to start again: a change applies to the first title.
-        changes.Saved();
-        Assert.False(restart.IsRunning);
-        Assert.Equal(MpvConfigApply.NextTitle, changes.State);
-
-        _ = provider.GetRequiredService<IPlaybackEngine>();
-
-        Assert.True(restart.IsRunning);
-        Assert.Equal(MpvConfigApply.None, changes.State);
+        // Made by their views, so nothing else checks what they ask for.
+        Assert.NotNull(ActivatorUtilities.CreateInstance<MpvConfigEditorViewModel>(provider));
+        using var presets = ActivatorUtilities.CreateInstance<MpvSettingsViewModel>(provider);
     }
 
     [Fact]

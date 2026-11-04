@@ -5,7 +5,8 @@ using Microsoft.Extensions.Logging;
 
 namespace Granary.Player;
 
-// How mpv starts, with the viewer's own mpv.conf or without (docs/architecture.md, "Your own mpv.conf").
+// How mpv starts, with the viewer's own mpv.conf or without (docs/architecture.md, "Your own mpv.conf"). A file that changed
+// meets the same start at the next load (MpvPlaybackEngine.NextTitle.cs).
 //
 // Without a file, mpv starts as it always did: Granary's core options, then mpv_initialize. With a mpv.conf in the config
 // folder, mpv reads it itself in mpv_initialize (config, config-dir; ~~/ is that folder), after everything set before, so
@@ -56,8 +57,9 @@ public sealed partial class MpvPlaybackEngine
     private string[] _perFile = [];
 
     // How often each option was set back for the title _setBacksTitle (a load, as Load counts them; 0 before the first);
-    // on mpv's event thread only, so a load on another thread never touches them.
-    private readonly Dictionary<string, int> _setBacks = [];
+    // on mpv's event thread only, so a load on another thread never touches them. A new mpv gets a new count: the event
+    // thread of the mpv before may be just done with its own.
+    private Dictionary<string, int> _setBacks = [];
     private long _setBacksTitle;
 
     [MemberNotNull(nameof(_mpv))]
@@ -172,7 +174,7 @@ public sealed partial class MpvPlaybackEngine
         _own = [];
         _kept = null;
         _perFile = [];
-        _setBacks.Clear();
+        _setBacks = [];
         _mpv = new MpvClient(_logger);
         _mpv.PropertyChanged += OnPropertyChanged;
         _mpv.LogMessage += OnLogMessage;

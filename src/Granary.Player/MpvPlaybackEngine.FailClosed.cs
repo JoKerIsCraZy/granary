@@ -13,14 +13,18 @@ public sealed partial class MpvPlaybackEngine
     // Guards replacing the mpv instance against a load, the engine's start and its disposal.
     private readonly object _restartGate = new();
 
-    // What the engine set that mpv keeps from one file to the next, by option, to set again in a new mpv. Under _gate.
+    // Guards what the engine set, and its way into mpv, against a new mpv taking it: a change while mpv starts again reaches
+    // that mpv, whichever comes first, and the latest value is the one that stays.
+    private readonly object _globalsGate = new();
+
+    // What the engine set that mpv keeps from one file to the next, by option, to set again in a new mpv. Under _globalsGate.
     private readonly Dictionary<string, string> _globals = new(StringComparer.Ordinal);
 
     // The load mpv plays or opens, 0 when none; under _gate.
     private long _activeLoad;
 
     // 1 from the moment Granary stops the file until mpv runs without the mpv.conf. It stays while that start fails, so no
-    // title goes into the mpv that still holds the file (Load), and the next load tries again.
+    // title goes into the mpv that still holds the file (Open), and the next load tries again.
     private int _failingClosed;
 
     // Each stop Granary made, and the last one an mpv without the file started for (under _restartGate). A load that comes
@@ -37,11 +41,11 @@ public sealed partial class MpvPlaybackEngine
     // A setting mpv keeps across files: remembered, so a new mpv gets it too.
     private void SetGlobal(string name, string value)
     {
-        lock (_gate)
+        lock (_globalsGate)
         {
             _globals[name] = value;
+            _mpv.SetProperty(name, value);
         }
-        _mpv.SetProperty(name, value);
     }
 
     // On mpv's event thread: stops the file now; mpv starts again without the mpv.conf on another thread, as this one
@@ -55,11 +59,16 @@ public sealed partial class MpvPlaybackEngine
         int stop = Interlocked.Increment(ref _failClosedStops);
         _logger.LogWarning("mpv.conf {Reason}; Granary stopped and plays without your mpv.conf", reason);
         Report(new MpvConfigState(MpvConfigUse.StoppedDuringPlayback, "it " + reason));
-        long load;
+        // A title that still waits for its turn has nothing to do with the file that plays: it opens in the mpv without the
+        // file (Open).
+        long load = 0;
         lock (_gate)
         {
-            load = _activeLoad;
-            _activeLoad = 0;
+            if (!_fileBefore)
+            {
+                load = _activeLoad;
+                ForgetOpening();
+            }
         }
         _mpv.Command("stop");
         _ = Task.Run(() => RestartWithoutConfig(load, stop));
@@ -98,8 +107,6 @@ public sealed partial class MpvPlaybackEngine
         {
             Ended?.Invoke(this, new PlaybackEnded(PlaybackEndReason.Error, "Granary stopped using your mpv.conf", load));
         }
-        // Apply now that came while Granary stopped the title (MpvPlaybackEngine.Restart.cs).
-        StartAgainIfWaiting();
     }
 
     // Under _restartGate: mpv without the file for this stop, whether the task after the stop or a load that came first
@@ -124,41 +131,19 @@ public sealed partial class MpvPlaybackEngine
         return started;
     }
 
-    // Under _restartGate, when the start after a stop failed again: the title goes into no mpv and ends as a failure, on
-    // another thread, as a load's end always comes after the load. The next load tries that start again.
-    private long RefuseLoad(MediaSource source)
-    {
-        long loadId;
-        lock (_gate)
-        {
-            loadId = ++_loads;
-            _activeLoad = 0;
-            _loadAudio = source.AudioStream;
-            _lastReportedPosition = null;
-            _rejected = false;
-        }
-        _bufferedReads.Reset();
-        Update(s => PlaybackSnapshot.Idle with { IsPaused = s.IsPaused, Volume = s.Volume, IsMuted = s.IsMuted, LoadId = loadId }, force: true);
-        _logger.LogWarning("mpv does not run without mpv.conf; this title is not played");
-        _ = Task.Run(() => Ended?.Invoke(this, new PlaybackEnded(PlaybackEndReason.Error, "Granary could not start the player without your mpv.conf", loadId)));
-        return loadId;
-    }
-
-    // Under _restartGate, into the new mpv: the engine's settings, and the size of the picture Granary shows now.
+    // Under _restartGate, into the mpv that runs now: the engine's settings, and the size of the picture Granary shows now.
     private void RestoreGlobals()
     {
-        KeyValuePair<string, string>[] globals;
-        lock (_gate)
+        lock (_globalsGate)
         {
-            globals = [.. _globals];
-        }
-        foreach (var (name, value) in globals)
-        {
-            _mpv.SetProperty(name, value);
-        }
-        if (_options.VideoOutput == VideoOutputKind.D3D11Composition)
-        {
-            _mpv.SetProperty(MpvOwnOptions.CompositionSize, SizeText(_outputSize));
+            foreach (var (name, value) in _globals)
+            {
+                _mpv.SetProperty(name, value);
+            }
+            if (_options.VideoOutput == VideoOutputKind.D3D11Composition)
+            {
+                _mpv.SetProperty(MpvOwnOptions.CompositionSize, SizeText(_outputSize));
+            }
         }
     }
 
@@ -167,7 +152,7 @@ public sealed partial class MpvPlaybackEngine
     {
         try
         {
-            return File.ReadAllText(path);
+            return MpvConfigFolder.ReadForCheck(path);
         }
         catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException)
         {

@@ -4,173 +4,84 @@ using Granary.Tests.Fakes;
 
 namespace Granary.Tests.Playback;
 
-/// <summary>A change to mpv.conf made in Granary, and Apply now: the player's mpv started again, never during a title.</summary>
+/// <summary>A change to mpv.conf made in Granary: it waits until a title has started with it.</summary>
 public sealed class MpvConfigChangesTests
 {
-    private readonly FakeMpvRestart _player = new();
+    private readonly MpvConfigStatus _status = new();
 
-    private MpvConfigChanges Changes(IUiDispatcher? ui = null) => new(_player, ui ?? new ImmediateDispatcher());
+    private MpvConfigChanges Changes(IUiDispatcher? ui = null) => new(_status, ui ?? new ImmediateDispatcher());
 
-    [Fact]
-    public void ASave_WhileThePlayerRuns_IsPending()
+    private void ATitleOpens()
     {
-        var changes = Changes();
-        Assert.Equal(MpvConfigApply.None, changes.State);
-
-        changes.Saved();
-
-        Assert.Equal(MpvConfigApply.Pending, changes.State);
-        Assert.True(changes.IsPending);
+        _status.ReportTitleOpening();
+        _status.ReportTitleOpened();
     }
 
     [Fact]
-    public async Task ApplyNow_WithNothingPlaying_StartsThePlayerAgainAtOnce()
+    public void ASave_IsPending_UntilATitleStartedWithIt()
     {
         var changes = Changes();
-        changes.Saved();
+        Assert.False(changes.IsPending);
         int raised = 0;
         changes.Changed += (_, _) => raised++;
 
-        await changes.ApplyNowAsync();
+        changes.Saved();
 
-        Assert.Equal(1, _player.Restarts);
-        Assert.Equal(MpvConfigApply.None, changes.State);
+        Assert.True(changes.IsPending);
+        Assert.Equal(1, raised);
+
+        ATitleOpens();
+
         Assert.False(changes.IsPending);
-        Assert.True(raised > 0);
+        Assert.Equal(2, raised);
     }
 
     [Fact]
-    public async Task ApplyNow_WhileATitlePlays_WaitsForTheNextTitle()
+    public void ATitleStillOpening_LeavesASaveThatCameBeforeItOpens_Pending()
     {
         var changes = Changes();
         changes.Saved();
-        _player.IsPlaying = true;
 
-        await changes.ApplyNowAsync();
+        _status.ReportTitleOpening();
 
-        Assert.Equal(0, _player.Restarts);
-        Assert.Equal(MpvConfigApply.NextTitle, changes.State);
-
-        // A save meanwhile is read by the same start.
-        changes.Saved();
-        Assert.Equal(MpvConfigApply.NextTitle, changes.State);
-
-        _player.TitleEnds();
-
-        Assert.Equal(1, _player.Restarts);
-        Assert.Equal(MpvConfigApply.None, changes.State);
+        Assert.True(changes.IsPending);
     }
 
     [Fact]
-    public async Task ASave_BeforeThePlayerFirstStarted_AppliesToTheNextTitle_WithoutARestart()
-    {
-        _player.IsRunning = false;
-        var changes = Changes();
-
-        changes.Saved();
-        await changes.ApplyNowAsync();
-
-        Assert.Equal(MpvConfigApply.NextTitle, changes.State);
-        Assert.Equal(0, _player.Restarts);
-
-        _player.Starts();
-
-        Assert.Equal(MpvConfigApply.None, changes.State);
-    }
-
-    [Fact]
-    public async Task ApplyNow_WithNothingToApply_DoesNothing()
-    {
-        var changes = Changes();
-
-        await changes.ApplyNowAsync();
-
-        Assert.Equal(0, _player.Restarts);
-        Assert.Equal(MpvConfigApply.None, changes.State);
-    }
-
-    [Fact]
-    public async Task AFailedApplyNow_IsSaid_AndTheNextTryThatWorksClearsIt()
+    public void ASaveAfterATitleReadTheFile_StaysPending_ForTheNextTitle()
     {
         var changes = Changes();
         changes.Saved();
-        _player.FailsToStart = true;
 
-        await changes.ApplyNowAsync();
+        _status.ReportTitleOpening();
+        // The title read the file before this.
+        changes.Saved();
+        _status.ReportTitleOpened();
 
-        Assert.Equal(MpvConfigApply.Failed, changes.State);
         Assert.True(changes.IsPending);
 
-        _player.FailsToStart = false;
-        await changes.ApplyNowAsync();
+        ATitleOpens();
 
-        Assert.Equal(1, _player.Restarts);
-        Assert.Equal(MpvConfigApply.None, changes.State);
+        Assert.False(changes.IsPending);
     }
 
     [Fact]
-    public async Task AWaitingStartThatFails_IsSaid()
-    {
-        var changes = Changes();
-        changes.Saved();
-        _player.IsPlaying = true;
-        await changes.ApplyNowAsync();
-        _player.FailsToStart = true;
-
-        _player.TitleEnds();
-
-        Assert.Equal(MpvConfigApply.Failed, changes.State);
-    }
-
-    [Fact]
-    public async Task ASaveAfterAFailure_IsAChangeToApplyAgain()
-    {
-        var changes = Changes();
-        changes.Saved();
-        _player.FailsToStart = true;
-        await changes.ApplyNowAsync();
-
-        changes.Saved();
-
-        Assert.Equal(MpvConfigApply.Pending, changes.State);
-    }
-
-    [Fact]
-    public void ASaveAfterMpvStartedAgain_ButBeforeTheUiHeardOfIt_IsStillToApply()
+    public void ASaveBeforeTheUiHeardOfATitle_StaysPending()
     {
         var ui = new HeldDispatcher();
         var changes = Changes(ui);
         changes.Saved();
 
-        // mpv starts again (the engine's own thread); the UI hears of it only after a newer save.
-        _player.Restart();
+        // The title opened on the player's thread; the UI hears of it only after a newer save.
+        ATitleOpens();
         changes.Saved();
         ui.RunAll();
 
-        Assert.Equal(MpvConfigApply.Pending, changes.State);
+        Assert.True(changes.IsPending);
     }
 
     [Fact]
-    public async Task ASaveWhileWaiting_ThatTheStartMissed_IsOfferedAgain()
-    {
-        var ui = new HeldDispatcher();
-        var changes = Changes(ui);
-        changes.Saved();
-        _player.IsPlaying = true;
-        await changes.ApplyNowAsync();
-        ui.RunAll();
-        Assert.Equal(MpvConfigApply.NextTitle, changes.State);
-
-        // The waiting start happens, then a save comes before the UI hears of it.
-        _player.TitleEnds();
-        changes.Saved();
-        ui.RunAll();
-
-        Assert.Equal(MpvConfigApply.Pending, changes.State);
-    }
-
-    [Fact]
-    public async Task ARestartOnAnotherThread_IsSaidOnTheUiThread()
+    public async Task ATitleOnAnotherThread_IsSaidOnTheUiThread()
     {
         using var ui = new SerialDispatcher();
         var changes = await ui.InvokeAsync(() => Changes(ui));
@@ -179,19 +90,16 @@ public sealed class MpvConfigChangesTests
             changes.Saved();
             return 0;
         });
-        _player.IsPlaying = true;
-        await ui.RunAsync(changes.ApplyNowAsync);
         var said = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         changes.Changed += (_, _) => said.TrySetResult(ui.HasThreadAccess);
 
-        // The engine starts mpv again on its own thread once the title ends.
-        await Task.Run(_player.TitleEnds, TestContext.Current.CancellationToken);
+        await Task.Run(ATitleOpens, TestContext.Current.CancellationToken);
 
         Assert.True(await said.Task.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken));
-        Assert.Equal(MpvConfigApply.None, ui.Read(() => changes.State));
+        Assert.False(ui.Read(() => changes.IsPending));
     }
 
-    // A UI thread that runs what was posted only when told: the order of a start and a save can be set.
+    // A UI thread that runs what was posted only when told: the order of a title and a save can be set.
     private sealed class HeldDispatcher : IUiDispatcher
     {
         private readonly Queue<Action> _work = new();

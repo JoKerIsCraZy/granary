@@ -22,8 +22,8 @@ public sealed partial class PlaybackSettingsViewModel
 
     /// <summary>
     /// How your mpv.conf fared in this run, as the player reported it (<see cref="IMpvConfigStatus"/>): not used, dropped
-    /// while a title played, or used with options Granary kept as its own. Empty when it was used as written, when there
-    /// is none, or before the player first started.
+    /// while a title played, a change a new mpv did not start for, or used with options Granary kept as its own. Empty when
+    /// it was used as written, when there is none, or before the player first started.
     /// </summary>
     [ObservableProperty]
     public partial string MpvConfigStatusText { get; private set; } = "";
@@ -91,6 +91,7 @@ public sealed partial class PlaybackSettingsViewModel
     {
         MpvConfigUse.NotUsed => $"Your mpv.conf was not used: {state.Reason}. The log has the details.",
         MpvConfigUse.StoppedDuringPlayback => $"Granary stopped using your mpv.conf: {state.Reason}. The log has the details.",
+        MpvConfigUse.NotApplied => "Couldn't apply your mpv.conf. Granary keeps playing with the one it started with. The log has the details.",
         MpvConfigUse.Used when state.KeptOptions > 0 =>
             $"Granary kept {state.KeptOptions} of its own options from your mpv.conf. The log names them.",
         _ => "",
@@ -101,7 +102,7 @@ public sealed partial class PlaybackSettingsViewModel
     // On the UI thread (MpvConfigChanges).
     private void OnMpvChanged(object? sender, EventArgs e) => ReadMpvConfigStatus();
 
-    /// <summary>The page left: it stops following Apply now.</summary>
+    /// <summary>The page left: it stops following how the file fares.</summary>
     public void Dispose() => _mpvChanges.Changed -= OnMpvChanged;
 
     // The buttons share one line: the last one pressed says how it went, and one that ends after it says nothing.

@@ -22,8 +22,10 @@ release's section is what its update says it changes (docs/release.md).
 - Settings → Playback → This PC: **mpv configuration**. Granary plays with your own `mpv.conf` from the `mpv` folder in
   its data directory, in mpv's own syntax with profiles, `profile-cond` and `include`, and `~~/` for that folder, for
   shaders, scaling, debanding, tone mapping and the like. **Open mpv.conf** makes the file and opens it in your editor;
-  **Open folder** is there for shaders. Changes apply after you restart Granary. Granary keeps the options it needs to
-  show the video in its window and follow your Silo server's choices, and the log names the options of yours it leaves
+  **Open folder** is there for shaders. A change, in Granary or in another editor, applies from the next title you play,
+  without a restart: a title that plays is never cut, and volume, speed, subtitles and the picture's fill carry over. If
+  the player cannot start with the new file, Granary plays on with the one it had and Settings says so. Granary keeps
+  the options it needs to show the video in its window and follow your Silo server's choices, and the log names the options of yours it leaves
   out and any option mpv can't use. A file that sets an option that could take the stream's address out, such as mpv's
   own log, a proxy, scripts or commands, or one that would turn Granary's options off, its includes too, plays as if it
   were not there, and the log says why. If one of its profiles keeps changing Granary's options while a title plays,
@@ -32,8 +34,8 @@ release's section is what its update says it changes (docs/release.md).
 - Settings → Playback → This PC → mpv configuration: **Edit** opens `mpv.conf` in an editor inside Granary, usable
   with the keyboard or a TV remote. It holds the file exactly as written, profiles, includes and comments too, and
   checks the text as you type: which options Granary keeps for itself, and whether the player would not use the file
-  at all. Save writes the file in one piece and goes back to Settings, which offers to apply it;
-  Cancel, Esc or the remote's Back close it, asking first when there are unsaved changes. A file that can't be read,
+  at all. Save writes the file in one piece and goes back to Settings, which says "Applies to the next title." until a
+  title has started with it; Cancel, Esc or the remote's Back close it, asking first when there are unsaved changes. A file that can't be read,
   or isn't UTF-8, isn't edited here, so saving can't damage it: **Open mpv.conf** still opens it in your editor.
 - Settings → Playback → This PC: **mpv presets**. **Save as preset…** keeps your `mpv.conf` under a name, as a file
   in the `presets` folder next to it that you can see and back up; a name already taken is replaced only after asking.
@@ -41,11 +43,6 @@ release's section is what its update says it changes (docs/release.md).
   Windows as you type them. Settings names the preset in use, and says "(changed)" once you edit it; **Unload** goes
   back to your own `mpv.conf` from before you loaded any preset, which Granary keeps aside on the first load (or removes
   `mpv.conf` again if you had none).
-- Settings → Playback → This PC: **Apply now** after you save `mpv.conf` in Granary, load a preset or unload one. The
-  player starts mpv again with the new file without restarting Granary, and the row then says how the file fared.
-  Playback is never cut: while a title plays, Settings says "Applies to the next title." and the new file counts from
-  the next title, or once the player closes. Volume, speed, subtitles and the picture's fill carry over. If mpv cannot
-  start again, Settings says so and Granary plays on with the mpv it had; Apply now can be tried again.
 - The log says why a title is converted: what this PC's graphics card decodes, what Granary told the server it plays,
   and the reason the server gave for its choice.
 - More filters for a library, and for Favorites, Watchlist, History and collections: several genres at once, decades,

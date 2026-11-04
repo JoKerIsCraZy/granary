@@ -156,11 +156,11 @@ public static class CoreServiceCollectionExtensions
         // This PC's playback choices, about its hardware: in the data directory, not in a server's profile.
         services.AddSingleton<IPlaybackDevicePreferences>(sp =>
             new JsonPlaybackDevicePreferences(JsonPlaybackDevicePreferences.DefaultPath, sp.GetRequiredService<ILogger<JsonPlaybackDevicePreferences>>()));
-        // The viewer's own mpv.conf, in the data directory; the player reads it when mpv starts.
+        // The viewer's own mpv.conf, in the data directory; the player reads it when mpv starts, and compares it at each load.
         services.AddSingleton(sp => new MpvConfigFolder(MpvConfigFolder.DefaultDirectory, sp.GetRequiredService<ILogger<MpvConfigFolder>>()));
         // How the player fared with it in this run, for Settings to show.
         services.AddSingleton<IMpvConfigStatus, MpvConfigStatus>();
-        // What Granary's editor wrote to it in this run, for Settings to say it applies later.
+        // What Granary's editor wrote to it in this run, for Settings to say it applies to the next title.
         services.AddSingleton<MpvConfigChanges>();
         // Named copies of it, in its presets folder.
         services.AddSingleton<MpvPresets>();

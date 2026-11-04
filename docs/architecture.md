@@ -133,7 +133,7 @@ Without it, mpv starts exactly as before: the same options in the same order (`M
   Should even mpv without the file not start, the mpv before stays (`ReplaceMpv`, below), still holding the rejected
   file, the title stays stopped, and the log says `A new mpv did not start without mpv.conf; the one before plays on`.
   `_failingClosed` stays set then: no title goes into that mpv. The next load tries the plain start again, and when it
-  fails too, that title ends as a failure without being loaded (`RefuseLoad`).
+  fails too, that title ends as a failure without being loaded (`EndWithoutPlaying`).
 - Compiled shaders are cached in `mpv\cache` (`gpu-shader-cache-dir`, `icc-cache-dir`), not in mpv's own folder under
   `%LOCALAPPDATA%\mpv`, where mpv puts them once `config=yes`.
 
@@ -173,7 +173,8 @@ text box hands lines back with a lone carriage return, which mpv would read as o
 breaks the file had (CRLF for a new one), and line breaks alone are no change. The check under the text is the
 engine's own pre-scan, behind the Core port `IMpvConfigCheck` (`MpvConfigCheck` in the player): `MpvConfigText` with
 the same option lists and `Refusal` as a start, on the text alone, so an `include` is checked when mpv starts. It
-never stops a save. Each save tells `MpvConfigChanges`, which the This PC row reads to offer Apply now (below).
+never stops a save. Each save tells `MpvConfigChanges`, which the This PC row reads to say it applies to the next title
+(below).
 
 **Presets** (`MpvPresets`) are plain files, `mpv\presets\<name>.conf`, so the viewer can see and back them up. A typed
 name is made a file name first (`SafeName`: no path separators or other characters Windows refuses, no spaces or dots at
@@ -193,46 +194,65 @@ is no success (`NotCleanedUp`), keeps what is left, and stays offered for anothe
 
 **When it applies**: the engine is one libmpv instance for the whole run (`AddGranaryPlayer`), made when the player first
 opens, and mpv reads the file only in `mpv_initialize`. Reading it again before a title (`load-config-file`) would add
-changed options but never undo one taken out or the file deleted, so a change applies when mpv starts again: after
-Granary restarts, or with Apply now.
+changed options but never undo one taken out or the file deleted, so a change applies when a new mpv starts, which the
+next title does by itself.
 
-**Apply now** (`MpvPlaybackEngine.Restart.cs`, `MpvConfigChanges`, `IMpvRestart`). A change made in Granary (a save in
-its editor, a preset loaded or unloaded) offers Apply now, which starts the engine's mpv again as the fail-closed stop
-does, with the file instead of without it; both replace the mpv through `ReplaceMpv`: under `_restartGate`, the old mpv
-is detached, a new one starts as at any start (`Start`: the pre-scan, the pseudo-GUI profile with Granary's options, the
-check after the start, `NotUsed` when refused), the engine's settings are set again (`RestoreGlobals`: volume, mute,
-speed, fill, subtitles, `sub-pos`, and the picture's size now), and only then is the old one closed, so the graphics
-device stays in use throughout. Outside the gate the window gets the new swap chain (`RefreshSwapChain`, so
-`SwapChainChanged`), and `ConfigRestarted` follows. A call that still holds the old `MpvClient` finds it closed and does
-nothing. The start is a new run for Settings: `_stoppedThisRun` is cleared and the state reported afresh, `None` when
-there is no file any more, so the status line under the row says how the new start fared.
-- Playback is never cut. While a load plays or is held at its end (`_activeLoad`), Apply now only marks the start as
-  waiting (`_restartPending`): the next `Load` starts mpv again first, under the same gate, so that title plays with the
-  file as it is now; or, once the file ends or is stopped (the player closing calls `Stop`), `OnFileEnded` hands the
-  start to the thread pool after the player has heard how the file ended, since the event thread ends with its mpv. A
-  start waiting there runs only while nothing plays. The mark is set before the check, so a file that ends meanwhile
-  never leaves it waiting. While Granary stops a title itself (fail closed), Apply now waits too, and that start's end
-  hands it on.
+**The next title** (`MpvPlaybackEngine.NextTitle.cs`, `MpvConfigChanges`). Every load compares what mpv would read with
+what it last tried, and replaces mpv only when they differ. That holds for any change, made in Granary or outside it.
+- `Load` hands out the load's id and its snapshot at once and queues the rest on one task chain (`_opens`), off the
+  caller's thread, which is often the UI's: titles reach mpv in the order they were loaded, and one that a newer load or
+  a `Stop` overtook does not open at all. The chain reads the files first, outside any gate, so a slow disk holds up that
+  title and nothing else.
+- What is compared is a fingerprint (`ReadConfigFingerprint`): the SHA-256 of `mpv.conf` and of the includes the pre-scan
+  follows (`MpvConfigText.Scan`), each file's path and text in the order they are read, so a file that changed, appeared
+  or went counts, whether Granary or another editor did it. Shaders are not in it. Writing the same text again is no
+  change. Files that are not UTF-8 count byte by byte (`MpvConfigFolder.ReadForCheck`), and one that cannot be read is a
+  state of its own.
+- Unchanged, the load only sends `loadfile`: the same mpv, the same swap chain, nothing added to the start but the read.
+  Changed, `ApplyChangedConfig` replaces the mpv through `ReplaceMpv`, which the fail-closed stop uses too: under
+  `_restartGate`, the old mpv is detached, a new one starts as at any start (`Start`: the pre-scan, the pseudo-GUI profile
+  with Granary's options, the check after the start, `NotUsed` when refused), the engine's settings are set again
+  (`RestoreGlobals`: volume, mute, speed, fill, subtitles, `sub-pos`, and the picture's size now), and only then is the
+  old one closed, so the graphics device stays in use throughout. mpv's pause carries over as it does across files. The
+  window gets the new swap chain (`RefreshSwapChain`, so `SwapChainChanged`). A call that still holds the old `MpvClient`
+  finds it closed and does nothing. The start is a new run for Settings: `_stoppedThisRun` is cleared and the state
+  reported afresh, `None` when there is no file any more, so the status line under the row says how the file fared.
+- A title that plays is never cut: nothing starts a new mpv but a load, not a save, a stop or the player closing, and a
+  load replaces the file that plays anyway. A reconnect or a switch of quality is a load too, so a change made meanwhile
+  applies there, not only with another title.
+- No retry storms: `_triedConfig` holds the fingerprint of the last try, set before the try, whatever came of it. A file
+  that was refused, that Granary stopped using (fail closed) or that a new mpv failed to start for is not tried again:
+  later titles play as they are, until the fingerprint changes.
 - A start that fails (libmpv makes no new mpv, or anything after it fails) keeps the mpv before as it was, its handlers
-  and Granary's options for it and the reported state too, and closes whatever the new start made (`ReplaceMpv`, for
-  Apply now and the fail-closed stop alike). For Apply now it raises `ConfigRestartFailed` and leaves the start waiting,
-  so the next load tries again; Settings says the change could not be applied and offers Apply now again.
-- Before the player first opens there is no engine, and Apply now must not make one: `IMpvRestart` is
-  `MpvRestartHandle`, which the engine's factory attaches once it is made. Until then a change "applies to the next
-  title", as the new engine reads the file; its first start, like every restart, raises `Restarted`, which clears the
-  line.
-- `MpvConfigChanges` (Core, on the UI thread) holds the state the row shows: `Pending` after a change while mpv runs
-  (Apply now offered), `NextTitle` while a start waits or before the engine exists, `Failed` after a start that failed
-  (Apply now offered again), `None` after a start. It calls `Restart` off the UI thread (`Started`, `Waiting`,
-  `Failed`); `Restarted` and `RestartFailed` arrive on any thread and are posted to the UI thread
-  (`MpvConfigChangesTests`, and `MpvConfigRestartTests` with libmpv: the new file's options in the new mpv, the settings
-  carried over, a title never cut and the next one with the new file, the start once the player stops, the swap chain
-  handed over at the current size, a failed start keeping the mpv before, for Apply now and after a fail-closed stop,
-  a load between that stop and its start playing in the new mpv, and no handles left after twenty starts).
+  and Granary's options for it and the reported state too, and closes whatever the new start made (`ReplaceMpv`, for a
+  change and the fail-closed stop alike). For a change the old mpv plays the title, the log says so, and Settings shows
+  `MpvConfigUse.NotApplied`.
+- Between the load and `loadfile` the file before still plays, so what mpv reports then is not the new title's:
+  `_fileBefore` keeps its position, end, failure and refusal from reaching the new load's state. It ends just before
+  `loadfile`, as the new file can fail at once. A pause asked for meanwhile (`_pauseWaits`) is sent right after
+  `loadfile`: the players unpause right after a load, and a file held at its end pauses itself again until the next file
+  takes over. A `Stop` that overtakes the open sends `stop` again once it is done, as it may have reached mpv first. A
+  fail-closed stop of the file before leaves the waiting title alone: it opens in the mpv without the file.
+- The engine's settings go through `_globalsGate`, whose holder also sets them on mpv, so a change while mpv starts again
+  reaches that mpv whichever comes first, and the latest value stays, on the new mpv or on the old one when the start
+  fails. A new mpv says its own volume before it gets the viewer's, so `PlayerViewModel` takes a volume it is shown by
+  the engine as no change of the viewer's.
+- `MpvConfigChanges` (Core, on the UI thread) holds what the row says: `IsPending` from a change made in Granary until a
+  title has started with it. The engine reports `TitleOpening` before a title reads the files and `TitleOpened` once it
+  went to mpv (`IMpvConfigStatus`, any thread), so a save after the read stays pending for the title after. Before the
+  player first opens there is no engine: the first title reads the file anyway, and clears the line the same way
+  (`MpvConfigChangesTests`, and `MpvConfigNextTitleTests` with libmpv: the new file's options in the next title, the
+  settings carried over, no new mpv or swap chain without a change, a title never cut, a stop that starts nothing, a
+  changed or new include, a removed file, no second try of a refused, stopped or failed file until it changes, a failed
+  start keeping the mpv before, a load on a slow disk, the order of titles, a pause and a stop while a title waits, the
+  file before ending meanwhile, the latest settings on whichever mpv stays, and no handles left after twenty changes).
 
 ## Threading
 
 - libmpv events arrive on the engine's event thread; `IPlaybackEngine` raises its events there.
+- `Load` returns at once: a task chain gives the titles to mpv in turn, off the caller's thread, after reading what mpv
+  would read and starting a new mpv if it changed ("Your own mpv.conf", "The next title"). A failure that ends a title
+  before mpv has it, and the window's new swap chain, come from that chain's thread.
 - View models marshal to the UI thread through `IUiDispatcher`; they never block on it.
 - `MpvVideoHost` re-enters the UI thread through its `DispatcherQueue` when the swap chain changes.
 - Position updates are throttled to 4 per second; state changes are reported immediately.

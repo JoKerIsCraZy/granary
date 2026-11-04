@@ -71,7 +71,7 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject, IDispo
         _files = files;
         _mpvStatus = mpvStatus;
         _mpvChanges = mpvChanges;
-        // Apply now starts the player again: the line says how the new start fared.
+        // A title opened, with a new mpv if the file changed: the line says how the file fared.
         _mpvChanges.Changed += OnMpvChanged;
         ReadMpvConfigStatus();
         DecodesInSoftware = devicePreferences.DecodesInSoftware;

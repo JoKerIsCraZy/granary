@@ -1,5 +1,4 @@
 using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
 using Granary.Core.Playback;
 
@@ -12,11 +11,7 @@ namespace Granary.Core.ViewModels.Settings;
 /// </summary>
 public sealed partial class MpvSettingsViewModel : ObservableObject, IDisposable
 {
-    public const string PendingText = "Your changes to mpv.conf apply after you restart Granary, or with Apply now.";
-
     public const string NextTitleText = "Applies to the next title.";
-
-    public const string FailedText = "Couldn't apply your mpv.conf. Granary keeps playing with the one it started with. The log has the details.";
 
     private const string DeviceNameText = "Windows keeps this name for itself. Choose another.";
 
@@ -38,17 +33,9 @@ public sealed partial class MpvSettingsViewModel : ObservableObject, IDisposable
         ShowChanges();
     }
 
-    /// <summary>That mpv.conf changed since the player read it, or that it applies to the next title; empty otherwise.</summary>
+    /// <summary>That a change made here applies to the next title, until a title has started with it; empty otherwise.</summary>
     [ObservableProperty]
     public partial string ChangeText { get; private set; } = "";
-
-    /// <summary>The player runs with the file as it was: Apply now starts it again.</summary>
-    [ObservableProperty]
-    public partial bool ShowsApplyNow { get; private set; }
-
-    /// <summary>Starts the player's mpv again with mpv.conf as it is now, or once the title that plays ends.</summary>
-    [RelayCommand]
-    private Task ApplyNowAsync() => _changes.ApplyNowAsync();
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasPresets))]
@@ -114,7 +101,7 @@ public sealed partial class MpvSettingsViewModel : ObservableObject, IDisposable
         Presets = await Task.Run(ReadPresets);
     });
 
-    /// <summary>Replaces mpv.conf with the preset, after asking: a change the player takes when it starts again.</summary>
+    /// <summary>Replaces mpv.conf with the preset, after asking: a change the player takes with the next title.</summary>
     public Task LoadPresetAsync(MpvPresetRow preset) => RunAsync(async () =>
     {
         ArgumentNullException.ThrowIfNull(preset);
@@ -206,18 +193,7 @@ public sealed partial class MpvSettingsViewModel : ObservableObject, IDisposable
         _ = ShowActiveAsync();
     }
 
-    private void ShowChanges()
-    {
-        ChangeText = _changes.State switch
-        {
-            MpvConfigApply.Pending => PendingText,
-            MpvConfigApply.NextTitle => NextTitleText,
-            MpvConfigApply.Failed => FailedText,
-            _ => "",
-        };
-        // After a failure, to try again.
-        ShowsApplyNow = _changes.State is MpvConfigApply.Pending or MpvConfigApply.Failed;
-    }
+    private void ShowChanges() => ChangeText = _changes.IsPending ? NextTitleText : "";
 }
 
 /// <summary>A preset in the list, with what its buttons are called for a screen reader.</summary>

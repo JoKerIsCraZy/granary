@@ -64,6 +64,8 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
         // A restart without the file (FailClosed) waits until the engine is made.
         lock (_restartGate)
         {
+            // Before mpv reads: a file that changes between the two is compared again at the next load.
+            _triedConfig = ReadConfigFingerprint();
             Start();
             _logger.LogInformation("libmpv {Version} initialized ({Output})", _mpv.GetString("mpv-version"), options.VideoOutput);
         }
@@ -99,42 +101,14 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
                 throw new ArgumentException($"Header '{name}' cannot be passed to mpv safely.", nameof(source));
             }
         }
-        // Not into an mpv that is being replaced: after a stop Granary made (FailClosed) whose mpv without the file does not
-        // run yet, it starts here, and the title plays in it; should it not start, the title ends as a failure rather than
-        // play with the rejected file. Apply now that waited for the title before starts mpv again here too, so this title
-        // plays with mpv.conf as it is now.
-        long loadId;
-        bool? startedAgain;
-        lock (_restartGate)
-        {
-            if (Volatile.Read(ref _failingClosed) != 0 && !StartWithoutConfig(Volatile.Read(ref _failClosedStops)))
-            {
-                return RefuseLoad(source);
-            }
-            startedAgain = StartAgainBeforeLoad();
-            loadId = LoadNow(source);
-        }
-        if (startedAgain is { } started)
-        {
-            AfterStartingAgain(started);
-        }
-        return loadId;
-    }
-
-    private long LoadNow(MediaSource source)
-    {
-        string headers = string.Join(",", source.Headers.Select(h => $"{h.Key}: {h.Value}"));
-        _mpv.SetProperty("http-header-fields", headers);
-
-        // Plan URLs are replayed byte for byte (docs/api-contract.md, 9.2): the string as given, not as Uri re-escapes it.
-        string target = source.Url.IsFile ? source.Url.LocalPath : source.Url.OriginalString;
-        // With a mpv.conf, Granary's own options too, over the file's protocol and extension profiles.
-        string perFileOptions = string.Join(",", PerFileOptions(source).Concat(_perFile));
         long loadId;
         lock (_gate)
         {
             loadId = ++_loads;
             _activeLoad = loadId;
+            _fileBefore = true;
+            _pauseWaits = true;
+            _pauseOnOpen = null;
             _loadAudio = source.AudioStream;
             _lastReportedPosition = null;
             _rejected = false;
@@ -147,7 +121,12 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
         _logger.LogInformation("Loading {Target} with {HeaderCount} header(s) at {Start} s, audio stream {Audio}, subtitle stream {Subtitle}",
             Describe(source.Url), source.Headers.Count, source.Start?.TotalSeconds ?? 0, source.AudioStream?.ToString(CultureInfo.InvariantCulture) ?? "auto",
             source.SubtitleStream?.ToString(CultureInfo.InvariantCulture) ?? "auto");
-        _mpv.Command("loadfile", target, "replace", "-1", perFileOptions);
+        // Off this thread, often the UI's: the disk can be slow, and mpv takes a moment when it starts again (Open). In turn,
+        // so titles reach mpv in the order they were loaded.
+        lock (_gate)
+        {
+            _opens = _opens.ContinueWith(_ => Open(source, loadId), CancellationToken.None, TaskContinuationOptions.DenyChildAttach, TaskScheduler.Default);
+        }
         return loadId;
     }
 
@@ -176,7 +155,18 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
         && value.All(c => c is >= ' ' and <= '~' and not ',' and not '\\')
         && (value.Length == 0 || value[0] is not ('"' or '\'' or '[' or '{' or '%'));
 
-    public void SetPaused(bool paused) => _mpv.SetProperty("pause", paused ? "yes" : "no");
+    public void SetPaused(bool paused)
+    {
+        lock (_gate)
+        {
+            if (_pauseWaits)
+            {
+                _pauseOnOpen = paused;
+                return;
+            }
+        }
+        _mpv.SetProperty("pause", paused ? "yes" : "no");
+    }
 
     public void Seek(TimeSpan position) =>
         _mpv.Command("seek", position.TotalSeconds.ToString("0.###", CultureInfo.InvariantCulture), "absolute");
@@ -409,7 +399,7 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
     {
         lock (_gate)
         {
-            _activeLoad = 0;
+            ForgetOpening();
         }
         _mpv.Command("stop");
     }
@@ -421,12 +411,15 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
             return;
         }
         var size = (widthPixels, heightPixels);
-        if (size == _outputSize)
+        lock (_globalsGate)
         {
-            return;
+            if (size == _outputSize)
+            {
+                return;
+            }
+            _outputSize = size;
+            _mpv.SetProperty("d3d11-composition-size", SizeText(size));
         }
-        _outputSize = size;
-        _mpv.SetProperty("d3d11-composition-size", SizeText(size));
         RefreshSwapChain();
     }
 
@@ -450,6 +443,10 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
         if (eventId is LibMpv.EventVideoReconfig or LibMpv.EventFileLoaded or LibMpv.EventPlaybackRestart)
         {
             RefreshSwapChain();
+        }
+        if (FileBeforePlays)
+        {
+            return;
         }
         if (eventId == LibMpv.EventFileLoaded)
         {
@@ -488,7 +485,7 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
 
     private void OnPropertyChanged(string name, object? value)
     {
-        if (KeepsOwn(name, value))
+        if (KeepsOwn(name, value) || (name is "time-pos" or "eof-reached" && FileBeforePlays))
         {
             return;
         }
@@ -568,9 +565,10 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
 
     private void OnFileEnded(int reason, int error)
     {
-        if (Volatile.Read(ref _failingClosed) != 0)
+        if (Volatile.Read(ref _failingClosed) != 0 || FileBeforePlays)
         {
-            // Granary stopped the file itself (FailClosed), which says how it ended once mpv runs again.
+            // Granary stopped the file itself (FailClosed), which says how it ended once mpv runs again; or it is the file
+            // before, while a new title waits for its turn: that title goes on.
             return;
         }
         if (reason is LibMpv.EndFileError or LibMpv.EndFileEof)
@@ -591,8 +589,6 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
             _ => new PlaybackEnded(PlaybackEndReason.Stopped, null),
         };
         Ended?.Invoke(this, ended with { LoadId = idle.LoadId });
-        // Apply now waited for this title: the player has heard how it ended, and mpv starts again.
-        StartAgainIfWaiting();
     }
 
     private void OnLogMessage(string prefix, string level, string text)
@@ -602,7 +598,8 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
         {
             lock (_gate)
             {
-                _rejected = true;
+                // Not of the file before, while a new title waits for its turn.
+                _rejected |= !_fileBefore;
             }
         }
         string safe = MpvLogClassifier.Redact(text);

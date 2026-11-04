@@ -8,7 +8,7 @@ namespace Granary.Tests.Settings;
 public sealed class MpvSettingsViewModelTests : IDisposable
 {
     private readonly string _data = Path.Combine(Path.GetTempPath(), "granary-tests", Guid.NewGuid().ToString("N"));
-    private readonly FakeMpvRestart _player = new();
+    private readonly MpvConfigStatus _status = new();
     private readonly MpvConfigChanges _changes;
     private readonly FakeConfirmation _confirmation = new();
     private readonly MpvConfigFolder _folder;
@@ -17,7 +17,7 @@ public sealed class MpvSettingsViewModelTests : IDisposable
     public MpvSettingsViewModelTests()
     {
         var logs = new LogSink();
-        _changes = new MpvConfigChanges(_player, new ImmediateDispatcher());
+        _changes = new MpvConfigChanges(_status, new ImmediateDispatcher());
         _folder = new MpvConfigFolder(Path.Combine(_data, "mpv"), logs.For<MpvConfigFolder>());
         _presets = new MpvPresets(_folder, logs.For<MpvPresets>());
     }
@@ -42,81 +42,20 @@ public sealed class MpvSettingsViewModelTests : IDisposable
     private static string[] Names(MpvSettingsViewModel row) => [.. row.Presets.Select(p => p.Name)];
 
     [Fact]
-    public void ASave_OffersApplyNow()
+    public void ASave_AppliesToTheNextTitle_UntilOneHasStartedWithIt()
     {
         using var row = Row();
         Assert.Equal("", row.ChangeText);
-        Assert.False(row.ShowsApplyNow);
-
-        _changes.Saved();
-
-        Assert.Equal("Your changes to mpv.conf apply after you restart Granary, or with Apply now.", row.ChangeText);
-        Assert.True(row.ShowsApplyNow);
-    }
-
-    [Fact]
-    public async Task ApplyNow_WithNothingPlaying_StartsThePlayerAgain_AndTheLineGoes()
-    {
-        using var row = Row();
-        _changes.Saved();
-
-        await row.ApplyNowCommand.ExecuteAsync(null);
-
-        Assert.Equal(1, _player.Restarts);
-        Assert.Equal("", row.ChangeText);
-        Assert.False(row.ShowsApplyNow);
-    }
-
-    [Fact]
-    public async Task ApplyNow_WhileATitlePlays_AppliesToTheNextTitle()
-    {
-        using var row = Row();
-        _changes.Saved();
-        _player.IsPlaying = true;
-
-        await row.ApplyNowCommand.ExecuteAsync(null);
-
-        Assert.Equal(0, _player.Restarts);
-        Assert.Equal("Applies to the next title.", row.ChangeText);
-        Assert.False(row.ShowsApplyNow);
-
-        _player.TitleEnds();
-
-        Assert.Equal(1, _player.Restarts);
-        Assert.Equal("", row.ChangeText);
-    }
-
-    [Fact]
-    public async Task AFailedApplyNow_IsSaidInTheRow_AndClearsOnTheNextTryThatWorks()
-    {
-        using var row = Row();
-        _changes.Saved();
-        _player.FailsToStart = true;
-
-        await row.ApplyNowCommand.ExecuteAsync(null);
-
-        Assert.Equal("Couldn't apply your mpv.conf. Granary keeps playing with the one it started with. The log has the details.",
-            row.ChangeText);
-        // Apply now stays, to try again.
-        Assert.True(row.ShowsApplyNow);
-
-        _player.FailsToStart = false;
-        await row.ApplyNowCommand.ExecuteAsync(null);
-
-        Assert.Equal("", row.ChangeText);
-        Assert.False(row.ShowsApplyNow);
-    }
-
-    [Fact]
-    public void ASave_BeforeThePlayerFirstStarted_AppliesToTheNextTitle()
-    {
-        _player.IsRunning = false;
-        using var row = Row();
 
         _changes.Saved();
 
         Assert.Equal("Applies to the next title.", row.ChangeText);
-        Assert.False(row.ShowsApplyNow);
+
+        _status.ReportTitleOpening();
+        Assert.Equal("Applies to the next title.", row.ChangeText);
+        _status.ReportTitleOpened();
+
+        Assert.Equal("", row.ChangeText);
     }
 
     [Fact]
@@ -126,7 +65,7 @@ public sealed class MpvSettingsViewModelTests : IDisposable
 
         using var row = Row();
 
-        Assert.Equal(MpvSettingsViewModel.PendingText, row.ChangeText);
+        Assert.Equal(MpvSettingsViewModel.NextTitleText, row.ChangeText);
     }
 
     [Fact]
@@ -250,7 +189,7 @@ public sealed class MpvSettingsViewModelTests : IDisposable
         Assert.Equal("# hq\r\nscale=ewa_lanczossharp\r\n", await File.ReadAllTextAsync(_folder.ConfigFile, TestContext.Current.CancellationToken));
         Assert.Equal("Loaded HQ into mpv.conf.", row.PresetMessage);
         Assert.True(_changes.IsPending);
-        Assert.Equal(MpvSettingsViewModel.PendingText, row.ChangeText);
+        Assert.Equal(MpvSettingsViewModel.NextTitleText, row.ChangeText);
     }
 
     [Fact]
@@ -330,7 +269,7 @@ public sealed class MpvSettingsViewModelTests : IDisposable
         Assert.Equal("Your mpv.conf from before the preset is back.", row.PresetMessage);
         Assert.Equal("", row.ActivePresetText);
         Assert.False(row.HasActivePreset);
-        Assert.Equal(MpvSettingsViewModel.PendingText, row.ChangeText);
+        Assert.Equal(MpvSettingsViewModel.NextTitleText, row.ChangeText);
     }
 
     [Fact]
@@ -348,12 +287,15 @@ public sealed class MpvSettingsViewModelTests : IDisposable
     }
 
     [Fact]
-    public async Task AnUnloadThatCannotFinish_SaysSo_OffersApplyNow_AndKeepsUnload()
+    public async Task AnUnloadThatCannotFinish_SaysSo_AppliesToTheNextTitle_AndKeepsUnload()
     {
         _presets.Save("HQ", "deband=yes\n");
         using var row = await Loaded();
         await row.LoadPresetAsync(row.Presets[0]);
-        await row.ApplyNowCommand.ExecuteAsync(null);
+        // A title started with the preset.
+        _status.ReportTitleOpening();
+        _status.ReportTitleOpened();
+        Assert.Equal("", row.ChangeText);
         string mark = Path.Combine(_presets.Directory, ".before-preset.none");
 
         using (new FileStream(mark, FileMode.Open, FileAccess.Read, FileShare.None))
@@ -362,7 +304,7 @@ public sealed class MpvSettingsViewModelTests : IDisposable
         }
 
         Assert.Equal("Your mpv.conf from before the preset is back, but Granary couldn't finish tidying up. Try Unload again.", row.PresetMessage);
-        Assert.True(row.ShowsApplyNow);
+        Assert.Equal(MpvSettingsViewModel.NextTitleText, row.ChangeText);
         Assert.True(row.HasActivePreset);
 
         await row.UnloadPresetAsync();

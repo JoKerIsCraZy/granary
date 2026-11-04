@@ -39,7 +39,7 @@ public sealed class MpvConfigFolderTests : IDisposable
         Assert.NotEmpty(lines);
         // mpv reads nothing from it: every line is a comment or empty.
         Assert.All(lines, line => Assert.True(line.Length == 0 || line.StartsWith('#'), line));
-        Assert.Contains(lines, line => line.Contains("restart Granary", StringComparison.Ordinal));
+        Assert.Contains(lines, line => line.Contains("next title you play", StringComparison.Ordinal));
     }
 
     [Fact]
