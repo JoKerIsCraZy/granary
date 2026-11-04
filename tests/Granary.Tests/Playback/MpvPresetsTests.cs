@@ -490,6 +490,76 @@ public sealed class MpvPresetsTests : IDisposable
     }
 
     [Fact]
+    public void ALoadThatCannotLookAtTheName_ChangesNothing_AndTheWayBackStays()
+    {
+        _folder.WriteConfig("# mine\n");
+        _presets.Save("A", "deband=yes\n");
+        _presets.Save("B", "deband=no\n");
+        Assert.True(_presets.Load("A"));
+
+        using (new DeniedRead(Path.Combine(_presets.Directory, ".active.json")))
+        {
+            Assert.False(_presets.Load("B"));
+        }
+
+        Assert.Equal("deband=yes\n", File.ReadAllText(_folder.ConfigFile));
+        Assert.Equal(new MpvActivePreset("A", IsChanged: false), _presets.Active());
+        Assert.Equal(MpvPresetUnload.Restored, _presets.Unload());
+        Assert.Equal("# mine\n", File.ReadAllText(_folder.ConfigFile));
+    }
+
+    [Fact]
+    public void ALoadThatCannotLookAtTheBackup_ChangesNothing_AndTheWayBackStays()
+    {
+        _folder.WriteConfig("# mine\n");
+        _presets.Save("A", "deband=yes\n");
+        _presets.Save("B", "deband=no\n");
+        Assert.True(_presets.Load("A"));
+
+        using (new DeniedRead(Path.Combine(_presets.Directory, ".before-preset.conf")))
+        {
+            Assert.False(_presets.Load("B"));
+        }
+
+        Assert.Equal("deband=yes\n", File.ReadAllText(_folder.ConfigFile));
+        Assert.Equal(MpvPresetUnload.Restored, _presets.Unload());
+        Assert.Equal("# mine\n", File.ReadAllText(_folder.ConfigFile));
+    }
+
+    [Fact]
+    public void AnUnloadThatCannotLookAtTheBackup_Fails_AndKeepsIt()
+    {
+        _folder.WriteConfig("# mine\n");
+        _presets.Save("HQ", "deband=yes\n");
+        Assert.True(_presets.Load("HQ"));
+
+        using (new DeniedRead(Path.Combine(_presets.Directory, ".before-preset.conf")))
+        {
+            Assert.Equal(MpvPresetUnload.Failed, _presets.Unload());
+        }
+
+        Assert.Equal("deband=yes\n", File.ReadAllText(_folder.ConfigFile));
+        Assert.NotNull(_presets.Active());
+        Assert.Equal(MpvPresetUnload.Restored, _presets.Unload());
+        Assert.Equal("# mine\n", File.ReadAllText(_folder.ConfigFile));
+    }
+
+    [Fact]
+    public void WhileMpvConfCannotBeRead_ThePresetStaysOnShow_SoUnloadIsOffered()
+    {
+        _folder.WriteConfig("# mine\n");
+        _presets.Save("HQ", "deband=yes\n");
+        Assert.True(_presets.Load("HQ"));
+
+        using (new FileStream(_folder.ConfigFile, FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            Assert.Equal(new MpvActivePreset("HQ", IsChanged: true), _presets.Active());
+        }
+
+        Assert.Equal(new MpvActivePreset("HQ", IsChanged: false), _presets.Active());
+    }
+
+    [Fact]
     public void UnloadWithoutABackup_HasNothingToRestore_AndForgetsThePreset()
     {
         _folder.WriteConfig("# mine\n");

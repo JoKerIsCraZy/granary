@@ -37,11 +37,13 @@ public sealed partial class MpvPresets
         byte[] preset;
         byte[]? before;
         byte[]? namedBefore;
+        bool hasWayBack;
         try
         {
             preset = MpvConfigFolder.ReadBytes(path);
             before = _folder.ReadConfigBytes();
-            namedBefore = File.Exists(ActiveFile) ? MpvConfigFolder.ReadBytes(ActiveFile) : null;
+            namedBefore = IsThere(ActiveFile) ? MpvConfigFolder.ReadBytes(ActiveFile) : null;
+            hasWayBack = IsThere(BackupFile) || IsThere(NoFileMarker);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
@@ -51,7 +53,7 @@ public sealed partial class MpvPresets
         // A backup or a mark holds only with the preset it was made for. Left without one, it is from a session whose Unload
         // could not remove it, and the viewer's own file is the one there now.
         bool backedUp = false;
-        if (namedBefore is null || (!File.Exists(BackupFile) && !File.Exists(NoFileMarker)))
+        if (namedBefore is null || !hasWayBack)
         {
             if (!TryDelete(BackupFile, NoFileMarker) || !BackUp(before))
             {
@@ -87,8 +89,7 @@ public sealed partial class MpvPresets
             {
                 return null;
             }
-            string? now = File.Exists(_folder.ConfigFile) ? Hash(MpvConfigFolder.ReadBytes(_folder.ConfigFile)) : null;
-            return new MpvActivePreset(name, !string.Equals(now, active.Sha256, StringComparison.OrdinalIgnoreCase));
+            return new MpvActivePreset(name, ConfigDiffersFrom(active.Sha256));
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
         {
@@ -108,12 +109,12 @@ public sealed partial class MpvPresets
         MpvPresetUnload result;
         try
         {
-            if (File.Exists(NoFileMarker))
+            if (IsThere(NoFileMarker))
             {
                 File.Delete(_folder.ConfigFile);
                 result = MpvPresetUnload.Removed;
             }
-            else if (File.Exists(BackupFile))
+            else if (IsThere(BackupFile))
             {
                 result = _folder.WriteWhole(_folder.ConfigFile, MpvConfigFolder.ReadBytes(BackupFile)) ? MpvPresetUnload.Restored : MpvPresetUnload.Failed;
             }
@@ -140,6 +141,36 @@ public sealed partial class MpvPresets
             return result;
         }
         return result == MpvPresetUnload.NothingToRestore ? MpvPresetUnload.Failed : MpvPresetUnload.NotCleanedUp;
+    }
+
+    // mpv.conf out of reach for a moment counts as changed: the preset stays on show, and Unload with it.
+    private bool ConfigDiffersFrom(string? sha256)
+    {
+        try
+        {
+            string? now = _folder.ReadConfigBytes() is { } bytes ? Hash(bytes) : null;
+            return !string.Equals(now, sha256, StringComparison.OrdinalIgnoreCase);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _logger.LogWarning(ex, "mpv.conf could not be read to compare it with the preset");
+            return true;
+        }
+    }
+
+    // Only a file that isn't there is false; one that can't be looked at throws. File.Exists says false to both, and the way back
+    // must not be replaced or given up because it couldn't be seen.
+    private static bool IsThere(string path)
+    {
+        try
+        {
+            File.GetAttributes(path);
+            return true;
+        }
+        catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException)
+        {
+            return false;
+        }
     }
 
     // The viewer's own mpv.conf, byte for byte, or the mark that there was none.

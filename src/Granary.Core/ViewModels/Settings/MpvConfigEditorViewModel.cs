@@ -27,6 +27,9 @@ public sealed partial class MpvConfigEditorViewModel : ObservableObject
     private bool _isNew;
     private string _lineBreak = "\r\n";
 
+    public const string ChangedElsewhereMessage =
+        "mpv.conf was changed outside Granary since you opened it, so this wasn't saved. Copy your edits, then close the editor and open it again.";
+
     public MpvConfigEditorViewModel(MpvConfigFolder folder, IMpvConfigCheck check, MpvConfigChanges changes, IConfirmation confirmation)
     {
         _folder = folder;
@@ -111,7 +114,14 @@ public sealed partial class MpvConfigEditorViewModel : ObservableObject
         try
         {
             string text = Text.ReplaceLineEndings(_lineBreak);
-            if (!await Task.Run(() => _folder.WriteConfig(text)))
+            // Open mpv.conf hands the file to another program, and the work done there must not go without a word.
+            var now = await Task.Run(_folder.ReadConfig);
+            if (now is { IsNew: false } && (_isNew || now.IsNotText || now.Text != _saved))
+            {
+                Message = ChangedElsewhereMessage;
+                return false;
+            }
+            if (now is null || !await Task.Run(() => _folder.WriteConfig(text)))
             {
                 Message = $"Couldn't save mpv.conf in {_folder.Directory}.";
                 return false;
@@ -129,8 +139,11 @@ public sealed partial class MpvConfigEditorViewModel : ObservableObject
         }
     }
 
-    /// <summary>Whether the editor may close: nothing to lose, or the viewer chose to throw the edits away.</summary>
-    public Task<bool> ConfirmDiscardAsync() => HasUnsavedChanges
+    /// <summary>
+    /// Whether the editor may close: nothing to lose, or the viewer chose to throw the edits away. Not while it saves, as the
+    /// edits are on their way to the file by then and can't be thrown away any more.
+    /// </summary>
+    public Task<bool> ConfirmDiscardAsync() => IsSaving ? Task.FromResult(false) : HasUnsavedChanges
         ? _confirmation.AskAsync("Discard unsaved changes?", "Your edits to mpv.conf were never saved. Leaving now throws them away.", "Discard")
         : Task.FromResult(true);
 

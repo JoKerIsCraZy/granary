@@ -223,6 +223,82 @@ public sealed class MpvConfigEditorViewModelTests : IDisposable
     }
 
     [Fact]
+    public async Task WhileItSaves_TheEditorStaysOpen_SinceTheEditsAreOnTheirWayToTheFile()
+    {
+        var editor = await OpenWith("deband=yes\n");
+        editor.Text = "deband=no\n";
+        Task<bool>? leaving = null;
+        editor.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(editor.IsSaving) && editor.IsSaving)
+            {
+                leaving = editor.ConfirmDiscardAsync();
+            }
+        };
+
+        Assert.True(await editor.SaveAsync());
+
+        Assert.False(await leaving!);
+        Assert.Empty(_confirmation.Asked);
+    }
+
+    [Fact]
+    public async Task AFileChangedElsewhereSinceItWasRead_IsNotOverwritten_AndTheEditsStay()
+    {
+        var editor = await OpenWith("deband=yes\n");
+        editor.Text = "deband=no\n";
+        await File.WriteAllTextAsync(_folder.ConfigFile, "# from my other editor\n", TestContext.Current.CancellationToken);
+
+        Assert.False(await editor.SaveAsync());
+
+        Assert.Equal(MpvConfigEditorViewModel.ChangedElsewhereMessage, editor.Message);
+        Assert.Equal("# from my other editor\n", await OnDisk());
+        Assert.Equal("deband=no\n", editor.Text);
+        Assert.True(editor.HasUnsavedChanges);
+        Assert.False(_changes.IsPending);
+    }
+
+    [Fact]
+    public async Task AFileMadeElsewhereWhileTheTemplateIsOpen_IsNotOverwritten()
+    {
+        var editor = await OpenWith(null);
+        Directory.CreateDirectory(_folder.Directory);
+        await File.WriteAllTextAsync(_folder.ConfigFile, "# from my other editor\n", TestContext.Current.CancellationToken);
+
+        Assert.False(await editor.SaveAsync());
+
+        Assert.Equal(MpvConfigEditorViewModel.ChangedElsewhereMessage, editor.Message);
+        Assert.Equal("# from my other editor\n", await OnDisk());
+    }
+
+    [Fact]
+    public async Task AFileDeletedElsewhereSinceItWasRead_IsSavedAgain_AsNothingIsLost()
+    {
+        var editor = await OpenWith("deband=yes\n");
+        editor.Text = "deband=no\n";
+        File.Delete(_folder.ConfigFile);
+
+        Assert.True(await editor.SaveAsync());
+
+        Assert.Equal("deband=no\n", await OnDisk());
+    }
+
+    [Theory]
+    [InlineData("deband=yes\n")]
+    [InlineData("deband=yes\r\nscale=spline36\r\n")]
+    public async Task ASecondSave_IsNotTakenForAChangeElsewhere(string file)
+    {
+        var editor = await OpenWith(file);
+        editor.Text = "deband=no\n";
+        Assert.True(await editor.SaveAsync());
+
+        editor.Text = "deband=no\nscale=lanczos\n";
+
+        Assert.True(await editor.SaveAsync());
+        Assert.Equal("", editor.Message);
+    }
+
+    [Fact]
     public void TheEditorsTextBox_IsReadOnlyWhileItSaves()
     {
         string file = Path.Combine(RepositoryFiles.Root, "src", "Granary.App", "Views", "Settings", "MpvConfigEditorView.xaml");

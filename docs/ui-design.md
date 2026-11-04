@@ -663,7 +663,7 @@ says why above the sections.
   `keep-open=yes`, is not named. The check never stops a save. On the
   right below, **Cancel** (outline) and **Save** (red, 8 px corners, named "Save mpv.conf"). Save writes the file whole
   (beside it first, then over it) with the line breaks the file had, and goes back to Playback; a save that fails keeps
-  the editor and says "Couldn't save mpv.conf in …" in an error bar above the text. The text is read-only while a save
+  the editor and says "Couldn't save mpv.conf in …" in an error bar above the text. A file changed outside Granary since the editor read it is not overwritten: the editor stays open with the edits and says "mpv.conf was changed outside Granary since you opened it, so this wasn't saved. Copy your edits, then close the editor and open it again.". The text is read-only while a save
   runs. A folder in mpv.conf's place says "mpv.conf in … is a folder. Rename or remove it, then try again.", a file that
   is there but cannot be read says "Couldn't read mpv.conf in …", and one that is not UTF-8 says "mpv.conf isn't UTF-8
   text, so Granary doesn't edit it here, where saving could damage it. Use Open mpv.conf to change it in another
