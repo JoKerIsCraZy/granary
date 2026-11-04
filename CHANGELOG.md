@@ -6,6 +6,8 @@ release's section is what its update says it changes (docs/release.md).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-04
+
 ### Added
 
 - **Your own `mpv.conf`:** Settings → Playback → This PC. Edit it inside Granary, with the keyboard or a TV remote, or in
