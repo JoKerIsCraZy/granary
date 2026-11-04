@@ -7,6 +7,7 @@ using Granary.Core.Playback;
 using Granary.Core.Realtime;
 using Granary.Core.Servers;
 using Granary.Core.ViewModels;
+using Granary.Core.ViewModels.Settings;
 using Granary.Player;
 using Granary.Tests.Fakes;
 using Microsoft.Extensions.DependencyInjection;
@@ -48,6 +49,9 @@ public sealed class CompositionRootTests
         Assert.NotSame(provider.GetRequiredService<Func<EventsLane>>()(), provider.GetRequiredService<Func<EventsLane>>()());
         using var player = provider.GetRequiredService<PlayerViewModel>();
         Assert.Same(provider.GetRequiredService<IPlaybackEngine>(), provider.GetRequiredService<ICompositionVideoOutput>());
+        // Made by their views, so nothing else checks what they ask for.
+        Assert.NotNull(ActivatorUtilities.CreateInstance<MpvConfigEditorViewModel>(provider));
+        using var presets = ActivatorUtilities.CreateInstance<MpvSettingsViewModel>(provider);
     }
 
     [Fact]

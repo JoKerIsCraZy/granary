@@ -11,6 +11,8 @@ public static class SettingsText
 
     public static Visibility Shows(string text) => string.IsNullOrEmpty(text) ? Visibility.Collapsed : Visibility.Visible;
 
+    public static Visibility Hides(bool value) => value ? Visibility.Collapsed : Visibility.Visible;
+
     public static string Of(Uri? uri) => uri?.AbsoluteUri ?? "";
 
     // Settings a style does not use are dimmed, as on the web.

@@ -387,10 +387,11 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         _navigation.LeavePlayer();
     }
 
-    // A value the engine does not have yet is the viewer's change: it also ends a mute, as on the web player.
+    // A value the engine does not have yet is the viewer's change: it also ends a mute, as on the web player. One the engine
+    // reported is not, even when the engine has moved on since: a new mpv says its own volume before it gets the viewer's.
     partial void OnVolumeChanged(double value)
     {
-        if (Math.Abs(_engine.Current.Volume - value) > 0.01)
+        if (!_showingEngineState && Math.Abs(_engine.Current.Volume - value) > 0.01)
         {
             if (_engine.Current.IsMuted)
             {
@@ -543,6 +544,9 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         }
     });
 
+    // Set while the volume shown follows the engine's (OnVolumeChanged). On the UI thread.
+    private bool _showingEngineState;
+
     // Server titles are shown in their own time: the stream may start later than the title (8.6).
     private void ShowEngineState()
     {
@@ -557,7 +561,9 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         }
         DurationSeconds = _playback?.DurationSeconds ?? (state.Duration is { } duration ? duration.TotalSeconds + offset : 0);
         IsMuted = state.IsMuted;
+        _showingEngineState = true;
         Volume = state.Volume;
+        _showingEngineState = false;
         CanSeek = state.IsLoaded && state.HasStarted && (_playback is null || _playback.Status.Phase == ServerPlaybackPhase.Playing);
         FollowBuffered(state, offset);
         FollowMarkers(state);

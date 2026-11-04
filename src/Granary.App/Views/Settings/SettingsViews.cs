@@ -11,12 +11,16 @@ using Microsoft.UI.Xaml.Media;
 
 namespace Granary.App.Views.Settings;
 
-/// <summary>Settings → Playback; it reads the profile's values when it is shown.</summary>
-public sealed partial class PlaybackSettingsView : UserControl
+/// <summary>
+/// Settings → Playback; it reads the profile's values when it is shown. Edit asks the page for the mpv.conf editor, and the
+/// page disposes it as it leaves.
+/// </summary>
+public sealed partial class PlaybackSettingsView : UserControl, IDisposable
 {
     public PlaybackSettingsView()
     {
         ViewModel = ActivatorUtilities.CreateInstance<PlaybackSettingsViewModel>(App.Services);
+        Mpv = ActivatorUtilities.CreateInstance<MpvSettingsViewModel>(App.Services);
         InitializeComponent();
         // Once: the page keeps the view, and coming back to it must not overwrite what is shown.
         Loaded += OnFirstLoaded;
@@ -25,10 +29,126 @@ public sealed partial class PlaybackSettingsView : UserControl
     private async void OnFirstLoaded(object sender, RoutedEventArgs e)
     {
         Loaded -= OnFirstLoaded;
-        await SettingsViewLoad.RunAsync(ViewModel.LoadAsync);
+        await SettingsViewLoad.RunAsync(_ => Task.WhenAll(ViewModel.LoadAsync(), Mpv.LoadPresetsAsync()));
     }
 
     public PlaybackSettingsViewModel ViewModel { get; }
+
+    /// <summary>What Granary's mpv.conf editor changed, and the presets.</summary>
+    public MpvSettingsViewModel Mpv { get; }
+
+    /// <summary>Edit was pressed: the page shows the mpv.conf editor in this view's place.</summary>
+    public event EventHandler? EditMpvConfigRequested;
+
+    public void Dispose()
+    {
+        ViewModel.Dispose();
+        Mpv.Dispose();
+    }
+
+    /// <summary>Back from the editor: focus returns to Edit, once the view is in the page again.</summary>
+    public void FocusEditMpvConfig(FocusState state)
+    {
+        if (EditMpvConfigButton.IsLoaded)
+        {
+            EditMpvConfigButton.Focus(state);
+            return;
+        }
+        void OnLoaded(object sender, RoutedEventArgs e)
+        {
+            EditMpvConfigButton.Loaded -= OnLoaded;
+            EditMpvConfigButton.Focus(state);
+        }
+        EditMpvConfigButton.Loaded += OnLoaded;
+    }
+
+    private void OnEditMpvConfigClick(object sender, RoutedEventArgs e) => EditMpvConfigRequested?.Invoke(this, EventArgs.Empty);
+
+    // The name first, in a question of its own; what it is saved under shows as it is typed. Enter saves, as the default.
+    private async void OnSavePresetClick(object sender, RoutedEventArgs e)
+    {
+        if (XamlRoot is null)
+        {
+            return;
+        }
+        var name = new TextBox { PlaceholderText = "Name", MaxLength = 120, IsSpellCheckEnabled = false };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(name, "Preset name");
+        var note = new TextBlock { FontSize = 13, TextWrapping = TextWrapping.Wrap, Foreground = (Brush)Application.Current.Resources["SiloMutedBrush"] };
+        var dialog = new ContentDialog
+        {
+            XamlRoot = XamlRoot,
+            Style = (Style)Application.Current.Resources["DefaultContentDialogStyle"],
+            Title = "Save as preset",
+            Content = new StackPanel
+            {
+                Spacing = 8,
+                Children = { new TextBlock { Text = "Keeps your mpv.conf as it is now under this name.", TextWrapping = TextWrapping.Wrap }, name, note },
+            },
+            PrimaryButtonText = "Save",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Primary,
+            IsPrimaryButtonEnabled = false,
+        };
+        name.TextChanged += (_, _) =>
+        {
+            note.Text = name.Text.Length == 0 ? "" : MpvSettingsViewModel.PresetNameNote(name.Text);
+            dialog.IsPrimaryButtonEnabled = MpvSettingsViewModel.CanSavePresetAs(name.Text);
+        };
+        dialog.Opened += (_, _) => name.Focus(FocusState.Keyboard);
+        await RunAsync(async () =>
+        {
+            if (await dialog.ShowAsync() == ContentDialogResult.Primary)
+            {
+                await Mpv.SavePresetAsync(name.Text);
+            }
+        });
+    }
+
+    private async void OnLoadPresetClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { Tag: MpvPresetRow preset })
+        {
+            await RunAsync(() => Mpv.LoadPresetAsync(preset));
+        }
+    }
+
+    // Unload hides once it is done: focus goes on to Save as preset, as after a delete.
+    private async void OnUnloadPresetClick(object sender, RoutedEventArgs e)
+    {
+        var state = UnloadPresetButton.FocusState == FocusState.Keyboard ? FocusState.Keyboard : FocusState.Programmatic;
+        await RunAsync(Mpv.UnloadPresetAsync);
+        if (!Mpv.HasActivePreset)
+        {
+            SavePresetButton.Focus(state);
+        }
+    }
+
+    // The row goes with its preset: focus stays in the presets, on Save as preset, not on whatever lies below.
+    private async void OnDeletePresetClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is Control { Tag: MpvPresetRow preset } button)
+        {
+            var state = button.FocusState == FocusState.Keyboard ? FocusState.Keyboard : FocusState.Programmatic;
+            await RunAsync(() => Mpv.DeletePresetAsync(preset));
+            if (!Mpv.Presets.Contains(preset))
+            {
+                SavePresetButton.Focus(state);
+            }
+        }
+    }
+
+    // async void handlers: a question that could not open, say, must not close the app.
+    private static async Task RunAsync(Func<Task> action)
+    {
+        try
+        {
+            await action();
+        }
+        catch (Exception ex)
+        {
+            App.Services.GetRequiredService<ILogger<PlaybackSettingsView>>().LogWarning("A preset action failed: {Error}", ex.GetType().Name);
+        }
+    }
 }
 
 /// <summary>Settings → Language &amp; Subtitles; it reads the profile's values when it is shown.</summary>

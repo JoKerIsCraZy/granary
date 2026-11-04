@@ -18,7 +18,7 @@ namespace Granary.Core.ViewModels.Settings;
 /// keeps for itself is cleared with it, so the control shows what was saved. A save the server refuses puts the
 /// control back and says so.
 /// </summary>
-public sealed partial class PlaybackSettingsViewModel : ObservableObject
+public sealed partial class PlaybackSettingsViewModel : ObservableObject, IDisposable
 {
     public const string AutoQualityDescription = "Plays the original file whenever your device and connection can handle it.";
     public const string QualityDescriptionText = "The resolution your profile should request when playback begins.";
@@ -45,6 +45,7 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject
     private readonly MpvConfigFolder _mpvConfig;
     private readonly IFileLauncher _files;
     private readonly IMpvConfigStatus _mpvStatus;
+    private readonly MpvConfigChanges _mpvChanges;
     private readonly SettingSaves _saves;
     private readonly Dictionary<string, string?> _sources = [];
 
@@ -55,7 +56,7 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject
     public PlaybackSettingsViewModel(
         IProfileSettings settings, PlaybackApi playback, PlaybackConnectionApi connection, ConnectionSpeedTest speedTest, INetworkLink network,
         ISessionManager session, TimeProvider time, ILogger<PlaybackSettingsViewModel> logger, IPlaybackDevicePreferences devicePreferences,
-        MpvConfigFolder mpvConfig, IFileLauncher files, IMpvConfigStatus mpvStatus)
+        MpvConfigFolder mpvConfig, IFileLauncher files, IMpvConfigStatus mpvStatus, MpvConfigChanges mpvChanges)
     {
         _settings = settings;
         _playback = playback;
@@ -69,6 +70,9 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject
         _mpvConfig = mpvConfig;
         _files = files;
         _mpvStatus = mpvStatus;
+        _mpvChanges = mpvChanges;
+        // A title opened, with a new mpv if the file changed: the line says how the file fared.
+        _mpvChanges.Changed += OnMpvChanged;
         ReadMpvConfigStatus();
         DecodesInSoftware = devicePreferences.DecodesInSoftware;
         SelectedUpDown = UpDownChoices[devicePreferences.UpDown == PlayerUpDown.Volume ? 1 : 0];

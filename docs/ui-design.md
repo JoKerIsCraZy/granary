@@ -623,24 +623,86 @@ says why above the sections.
   intros, auto-skip recaps and credits), Next episode (start next at preview, auto-play), Seek controls (rewind and
   fast-forward intervals).
 - **This PC → mpv configuration**: "Use your own mpv options from mpv.conf, such as shaders, scaling or debanding.
-  They apply after you restart Granary. Granary keeps the options it needs to show the video and follow your Silo
-  server's choices. A wrong option can make playback worse; delete the file to go back to normal." On the right an
-  **Open folder** link (tooltip "For shaders and other files your mpv.conf uses") and an **Open mpv.conf** outline
-  button. Open mpv.conf makes the `mpv` folder in the data directory and an `mpv.conf` of comments only when they are
-  missing, then opens the file in the app Windows has for `.conf` files, or Notepad when there is none; Open folder makes
-  the folder and shows it in File Explorer. When one fails, 13 px muted text under the row says so and where the folder
-  is: "Couldn't open mpv.conf. You'll find it in …", "Couldn't create mpv.conf in …", "mpv.conf in … is a folder.
-  Rename or remove it, then try again.", "Couldn't open …". The next try that works clears it. Above that line, in the
-  same text, how the player fared with the file in this run (`IMpvConfigStatus`, read when the page is made and when it
-  loads): "Your mpv.conf was not used: {reason}. The log has the details." (refused at the start, or mpv refused it),
-  "Granary stopped using your mpv.conf: {reason}. The log has the details." (a profile kept changing one of Granary's
-  options while a title played), or "Granary kept {n} of its own options from your mpv.conf. The log names them."; the
-  reason is the log's, such as "it sets player-operation-mode, which Granary needs to keep its own options", "it sets
-  log-file, which Granary does not let mpv.conf change", "mpv refused to start with it" or "it keeps changing
-  keep-open". Nothing when the file was used as written, when there is
-  none, or before the player first started. With that line, an **Open logs** link stands left of Open folder and shows
-  Granary's log folder in File Explorer (the data folder before the first log). How mpv reads the file and which options Granary keeps is in docs/architecture.md ("Your own
-  mpv.conf").
+  They apply from the next title you play. Granary keeps the options it
+  needs to show the video and follow your Silo server's choices. A wrong option can make playback worse; delete the
+  file to go back to normal." On the right an
+  **Open folder** link (tooltip "For shaders and other files your mpv.conf uses"), an **Open mpv.conf** outline
+  button and an **Edit** outline button (named "Edit mpv.conf" for screen readers). Open mpv.conf makes the `mpv` folder
+  in the data directory and an `mpv.conf` of comments only when they are missing, then opens the file in the app Windows
+  has for `.conf` files, or Notepad when there is none; Open folder makes the folder and shows it in File Explorer. When
+  one fails, 13 px muted text under the row says so and where the folder is: "Couldn't open mpv.conf. You'll find it in
+  …", "Couldn't create mpv.conf in …", "mpv.conf in … is a folder. Rename or remove it, then try again.", "Couldn't
+  open …". The next try that works clears it. Above that line, in the same text, how the player fared with the file in
+  this run (`IMpvConfigStatus`, read when the page is made, when it loads and as a title opens): "Your mpv.conf was not
+  used: {reason}. The log has the details." (refused at the start, or mpv refused it), "Granary stopped using your
+  mpv.conf: {reason}. The log has the details." (a profile kept changing one of Granary's options while a title played),
+  "Couldn't apply your mpv.conf. Granary keeps playing with the one it started with. The log has the details." (the file
+  changed and a new mpv did not start for it), or "Granary kept {n} of its own options from your mpv.conf. The log names
+  them."; the reason is the log's, such as "it sets
+  player-operation-mode, which Granary needs to keep its own options", "it sets log-file, which Granary does not let
+  mpv.conf change", "mpv refused to start with it" or "it keeps changing keep-open". Nothing when the file was used as written, when there is none, or before the player first
+  started. With that line, an **Open logs** link stands left of Open folder and shows Granary's log folder in File
+  Explorer (the data folder before the first log). After Granary's editor or a preset wrote the file, or Unload put it
+  back, another muted line says "Applies to the next title." until a title has started with it; the status line above
+  then says how the file fared (for example "Granary kept 1 of its own options from your mpv.conf. The log names them.",
+  or nothing when the file is used as written or is gone). There is no button: the next load compares the file with what
+  mpv read and starts a new mpv when it changed, so a change made in another editor applies too, without the line. A
+  title that plays, in the minimized player too, is never cut, and nothing restarts on a save, a stop or the player
+  closing. How mpv reads the file and which options Granary keeps is in docs/architecture.md ("Your own mpv.conf").
+- **This PC → mpv configuration → Edit** (`MpvConfigEditorView` on `MpvConfigEditorViewModel`; Granary's own, as Silo's
+  clients have no player configuration): the editor opens in the Playback page's place, in the same column, scrolled to
+  the top. "← Playback" (the settings' back button style, named "Back to Playback"), "mpv.conf" as the 32 px title, and
+  "Your own mpv options for this PC, in mpv's syntax. Profiles, includes and comments stay as you write them. A change
+  applies from the next title you play." in 14 px muted text. Then a 420 px multi-line text box in Consolas 14 px, without
+  wrapping, spelling or text suggestions, holding the file's text exactly, or the comments a new `mpv.conf` starts with
+  when there is none yet (nothing is written until Save). Under it "Check" (14 px semibold) and the player's own check
+  of the text as it is typed, one 13 px muted line each: "Granary keeps its own vo.", "Granary keeps its own
+  keep-open, which the profile hq sets.", "This file would not be used: it sets player-operation-mode, which Granary
+  needs to keep its own options." (alone, as nothing else counts then), "Granary checks the files it includes only when
+  the player starts.", or "Nothing in it changes the options Granary keeps."; an option at Granary's own value, such as
+  `keep-open=yes`, is not named. The check never stops a save. On the
+  right below, **Cancel** (outline) and **Save** (red, 8 px corners, named "Save mpv.conf"). Save writes the file whole
+  (beside it first, then over it) with the line breaks the file had, and goes back to Playback; a save that fails keeps
+  the editor and says "Couldn't save mpv.conf in …" in an error bar above the text. A file changed outside Granary since the editor read it is not overwritten: the editor stays open with the edits and says "mpv.conf was changed outside Granary since you opened it, so this wasn't saved. Copy your edits, then close the editor and open it again.". The text is read-only while a save
+  runs. A folder in mpv.conf's place says "mpv.conf in … is a folder. Rename or remove it, then try again.", a file that
+  is there but cannot be read says "Couldn't read mpv.conf in …", and one that is not UTF-8 says "mpv.conf isn't UTF-8
+  text, so Granary doesn't edit it here, where saving could damage it. Use Open mpv.conf to change it in another
+  editor."; each leaves nothing to edit, and Save stays off.
+  Remote and keyboard: focus starts in the text at its start; Down on the last line goes to Save, Up on the first line
+  to "← Playback", Left and Right between Cancel and Save, Tab as usual. Esc and a remote's Back close the editor from
+  anywhere in it (Backspace only outside the text), as do Cancel and "← Playback"; with unsaved edits each asks first:
+  "Discard unsaved changes?" / "Your edits to mpv.conf were never saved. Leaving now throws them away." with Discard and
+  Cancel (the default). Picking another settings page, or leaving Settings, asks the same; Cancel keeps the editor and
+  Playback picked. Back in Playback, focus is on Edit.
+- **This PC → mpv presets** (`MpvSettingsViewModel`, `MpvPresets`; Granary's own), a row under mpv configuration:
+  "Copies of your mpv.conf under a name, kept as files in the presets folder. Loading one replaces mpv.conf." with a
+  **Save as preset…** outline button (named "Save mpv.conf as a preset"). Below it each preset, by name ignoring case, as
+  its name (14 px) with **Load** and **Delete** outline buttons ("Load the preset …", "Delete the preset …" for screen
+  readers), or "No presets yet." in 13 px muted text. Save as preset… asks for the name first: "Save as preset" / "Keeps
+  your mpv.conf as it is now under this name." with a name field ("Name", focused), a muted note as it is typed ("Saves
+  as HQ night." when the name has to change to be a file name, "Enter a name.", "Windows keeps this name for itself.
+  Choose another."), Save (the default, so Enter saves; off while no name is possible) and Cancel. A name loses path
+  separators and the other characters Windows refuses, spaces and dots at its ends, and anything past 60 characters;
+  CON, NUL, COM1 and the other device names are refused. A name that is taken asks "Replace the preset …?" / "A preset
+  of that name is already saved. Saving replaces it with your mpv.conf." (Replace, Cancel). Load asks "Load the preset
+  …?" / "It replaces your mpv.conf. Save mpv.conf as a preset first to keep it." (Load, Cancel), then writes it to
+  mpv.conf as a save does, so the change line says "Applies to the next title." Delete asks "Delete the
+  preset …?" / "Its file goes from the presets folder. This can't be undone." (Delete, Cancel), and focus moves to Save
+  as preset…. Each question has Cancel as the default. Under the list a muted line says how the last action went:
+  "Saved your mpv.conf as …", "Loaded … into mpv.conf.", "Deleted the preset ….", "There's no mpv.conf to save yet.",
+  "Couldn't read your mpv.conf.", "Your mpv.conf isn't UTF-8 text, so Granary can't save it as a preset.", "Couldn't
+  save the preset …", "Couldn't load the preset …" (the list is read again, and mpv.conf stays as it was),
+  "Couldn't delete the preset …".
+  While a preset is loaded, a line under the row names it, 14 px medium: "Preset: HQ" while mpv.conf still holds its
+  text, "Preset: HQ (changed)" once it was edited since (in Granary's editor or outside); deleting the preset's file
+  leaves the line. Beside it an **Unload** outline button ("Unload the preset"): it asks "Go back to your mpv.conf from
+  before you loaded a preset?" / "Changes made since are lost." (Unload, Cancel), then puts back mpv.conf as it was
+  before the first preset was loaded, after any number of loads, or removes it when there was none. The line and the
+  button go, focus moves to Save as preset…, the change line says "Applies to the next title." as after a save, and the muted line
+  says "Your mpv.conf from before the preset is back.", "You had no mpv.conf before the preset, so it is removed.",
+  "Your mpv.conf from before the preset is back, but Granary couldn't finish tidying up. Try Unload again." (the line and
+  the button stay), "There's nothing from before the preset to go back to, so your mpv.conf stays as it is." (the backup was gone; the preset is no longer named) or
+  "Couldn't go back to your mpv.conf from before the preset." (everything stays for another try).
 - **Connection** (with `connection_speed_v1`): "Connection speed" with the reading as its description ("400 Mbps ·
   measured just now on Ethernet", "Not measured yet") and **Test speed** as an outline button on the right, "Testing…"
   and disabled while it runs (about 10 s). Under the row, in 13 px muted text, what went wrong, in the web's words:

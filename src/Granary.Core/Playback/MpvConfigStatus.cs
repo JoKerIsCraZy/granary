@@ -14,6 +14,9 @@ public enum MpvConfigUse
 
     /// <summary>A profile of the file kept changing one of Granary's options; Granary stopped the title and dropped the file.</summary>
     StoppedDuringPlayback,
+
+    /// <summary>The file changed and a new mpv did not start for it: the mpv before plays on, with the file as that one read it.</summary>
+    NotApplied,
 }
 
 /// <summary>
@@ -32,6 +35,16 @@ public interface IMpvConfigStatus
     MpvConfigState Current { get; }
 
     void Report(MpvConfigState state);
+
+    /// <summary>Raised on the player's thread before a title reads the file.</summary>
+    event EventHandler? TitleOpening;
+
+    /// <summary>Raised on the player's thread once a title went to mpv, a new one if the file changed; <see cref="Current"/> says how it fared.</summary>
+    event EventHandler? TitleOpened;
+
+    void ReportTitleOpening();
+
+    void ReportTitleOpened();
 }
 
 /// <summary><see cref="IMpvConfigStatus"/> for the run, held in memory.</summary>
@@ -41,9 +54,17 @@ public sealed class MpvConfigStatus : IMpvConfigStatus
 
     public MpvConfigState Current => _current;
 
+    public event EventHandler? TitleOpening;
+
+    public event EventHandler? TitleOpened;
+
     public void Report(MpvConfigState state)
     {
         ArgumentNullException.ThrowIfNull(state);
         _current = state;
     }
+
+    public void ReportTitleOpening() => TitleOpening?.Invoke(this, EventArgs.Empty);
+
+    public void ReportTitleOpened() => TitleOpened?.Invoke(this, EventArgs.Empty);
 }
