@@ -249,6 +249,51 @@ public sealed class MpvConfigRestartTests : IDisposable
     }
 
     [Fact]
+    public async Task AfterAFailedStartWithoutTheFile_TheNextTitleEndsAsAnError_AndTheOneAfterItTriesAgain()
+    {
+        using var engine = CreateEngine("deband=yes\n[loop]\nkeep-open=no\n");
+        var ends = new List<PlaybackEnded>();
+        engine.Ended += (_, e) =>
+        {
+            lock (ends)
+            {
+                ends.Add(e);
+            }
+        };
+        bool Ended(long load, PlaybackEndReason reason)
+        {
+            lock (ends)
+            {
+                return ends.Any(e => e.LoadId == load && e.Reason == reason);
+            }
+        }
+        engine.AfterNewMpvStarted = () => throw new InvalidOperationException("The new mpv failed (test).");
+        long first = await PlaysAWav(engine, 60);
+        await KeepChangingKeepOpen(engine, () => Ended(first, PlaybackEndReason.Error));
+        Assert.Equal(1, Count("A new mpv did not start without mpv.conf; the one before plays on"));
+
+        // The plain start fails again: the title never reaches the mpv that still holds the rejected file.
+        string wav = WavFile.WriteTemp(0.5);
+        _files.Add(wav);
+        long refused = engine.Load(MediaSource.Local(wav));
+
+        await Until(() => Ended(refused, PlaybackEndReason.Error), () => _logs.All);
+        Assert.True(refused > first);
+        Assert.Null(engine.Option("path"));
+        Assert.False(engine.Current.IsLoaded);
+        Assert.Equal(refused, engine.Current.LoadId);
+        Assert.Equal(2, Count("A new mpv did not start without mpv.conf; the one before plays on"));
+
+        // The next load tries again; once it works, the title plays there.
+        engine.AfterNewMpvStarted = null;
+        long next = await PlaysAWav(engine, 0.5);
+
+        Assert.True(next > refused);
+        Assert.Equal("cplayer", engine.Option("player-operation-mode"));
+        Assert.Equal("no", engine.Option("deband"));
+    }
+
+    [Fact]
     public async Task ALoadRightAfterGranaryStoppedATitle_PlaysInTheMpvWithoutTheFile()
     {
         using var engine = CreateEngine("deband=yes\n[loop]\nkeep-open=no\n");

@@ -14,6 +14,9 @@ public sealed partial class MpvConfigEditorViewModel : ObservableObject
     /// <summary>The check when nothing in the text concerns Granary.</summary>
     public const string NothingToNote = "Nothing in it changes the options Granary keeps.";
 
+    private const string NotTextMessage =
+        "mpv.conf isn't UTF-8 text, so Granary doesn't edit it here, where saving could damage it. Use Open mpv.conf to change it in another editor.";
+
     private readonly MpvConfigFolder _folder;
     private readonly IMpvConfigCheck _check;
     private readonly MpvConfigChanges _changes;
@@ -41,6 +44,7 @@ public sealed partial class MpvConfigEditorViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(CanSave))]
     public partial bool CanEdit { get; private set; }
 
+    /// <summary>A save is under way: the text is read-only, so nothing typed now is lost when the editor closes after it.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanSave))]
     public partial bool IsSaving { get; private set; }
@@ -73,6 +77,10 @@ public sealed partial class MpvConfigEditorViewModel : ObservableObject
             Message = _folder.ConfigFileIsFolder
                 ? $"mpv.conf in {_folder.Directory} is a folder. Rename or remove it, then try again."
                 : $"Couldn't read mpv.conf in {_folder.Directory}.";
+        }
+        else if (content.IsNotText)
+        {
+            Message = NotTextMessage;
         }
         else
         {

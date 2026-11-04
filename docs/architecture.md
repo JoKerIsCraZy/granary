@@ -129,9 +129,11 @@ Without it, mpv starts exactly as before: the same options in the same order (`M
   mpv starts on the thread pool, so a load can come between the stop and that start: the load then makes the start
   itself, under `_restartGate`, and its title plays in the new mpv (`StartWithoutConfig`, once per stop, counted by
   `_failClosedStops`); the start after the stop finds it done, raises the stopped title's failure, and leaves the new
-  title's state alone. Until the new mpv runs, the stopped file's own end is not passed on (`StopsTheFileItself`).
-  Should even mpv without the file not start, the mpv before plays on (`ReplaceMpv`, below), the title stays stopped,
-  and the log says `A new mpv did not start without mpv.conf; the one before plays on`.
+  title's state alone. Until the new mpv runs (`_failingClosed`), the stopped file's own end is not passed on.
+  Should even mpv without the file not start, the mpv before stays (`ReplaceMpv`, below), still holding the rejected
+  file, the title stays stopped, and the log says `A new mpv did not start without mpv.conf; the one before plays on`.
+  `_failingClosed` stays set then: no title goes into that mpv. The next load tries the plain start again, and when it
+  fails too, that title ends as a failure without being loaded (`RefuseLoad`).
 - Compiled shaders are cached in `mpv\cache` (`gpu-shader-cache-dir`, `icc-cache-dir`), not in mpv's own folder under
   `%LOCALAPPDATA%\mpv`, where mpv puts them once `config=yes`.
 
@@ -162,7 +164,11 @@ stream address and no folder beyond the mpv folder. Settings → Playback → Th
 
 **Granary's editor** (Settings → Playback → This PC → Edit, `MpvConfigEditorViewModel`) edits the real file: it reads
 `mpv.conf` as it is (or the template, written only on Save) and writes the text back whole through
-`MpvConfigFolder.WriteConfig`, beside the file first and then moved over it, so a failed write leaves the old file. A
+`MpvConfigFolder.WriteConfig`, beside the file first under a name of its own and then moved over it, so a failed write
+leaves the old file. Only a file that is not there counts as new: one that cannot be read (`File.Exists` says false for a
+file Windows does not let Granary look at) leaves nothing to edit, so Save can never replace it. So does one that is not
+strictly UTF-8, or that holds a NUL, as UTF-16 without a byte order mark does: decoded and saved, it would come back
+damaged, so the editor sends the viewer to Open mpv.conf. The text is read-only while a save runs. A
 text box hands lines back with a lone carriage return, which mpv would read as one line, so a save puts back the line
 breaks the file had (CRLF for a new one), and line breaks alone are no change. The check under the text is the
 engine's own pre-scan, behind the Core port `IMpvConfigCheck` (`MpvConfigCheck` in the player): `MpvConfigText` with
@@ -173,13 +179,17 @@ never stops a save. Each save tells `MpvConfigChanges`, which the This PC row re
 name is made a file name first (`SafeName`: no path separators or other characters Windows refuses, no spaces or dots at
 the ends, at most 60 characters, no device name such as `CON` or `COM1`); every read, write and delete takes only a
 name that is one file name in that folder, so no name reaches another path. Saving one copies mpv.conf as it is on
-disk; loading one writes its text to mpv.conf through `WriteConfig`, a change like a save (`MpvPresets.Active.cs`). The
+disk; loading one copies it to mpv.conf byte for byte, a change like a save (`MpvPresets.Active.cs`). The
 first load keeps the viewer's own mpv.conf byte for byte in `presets\.before-preset.conf`, written whole like the rest,
 or marks that there was none (`.before-preset.none`); later loads keep that first backup, so Unload always returns to
 the file from before any preset, or removes mpv.conf. `presets\.active.json` holds the preset loaded last and the SHA-256
 of its text as written; an mpv.conf with another hash shows the preset as "(changed)". Deleting the preset's file leaves both, and
-Unload works from the backup. Files starting with a dot are Granary's own: never listed, never a preset's name. A load
-whose mpv.conf cannot be written drops a backup it just made; an Unload that fails keeps everything for another try.
+Unload works from the backup. Files starting with a dot are Granary's own: never listed, never a preset's name.
+`.active.json` is what makes a backup or a mark count: left without it, they are from a session that could not remove
+them, and the next load replaces them with the viewer's file of now, or fails if it cannot. A load that cannot write
+mpv.conf or `.active.json` puts mpv.conf back as it was and drops a backup it just made, so Unload stays true to what
+is there. Unload removes the backup first and `.active.json` last: an Unload that fails, also only in that clean-up,
+is no success (`NotCleanedUp`), keeps what is left, and stays offered for another try.
 
 **When it applies**: the engine is one libmpv instance for the whole run (`AddGranaryPlayer`), made when the player first
 opens, and mpv reads the file only in `mpv_initialize`. Reading it again before a title (`load-config-file`) would add

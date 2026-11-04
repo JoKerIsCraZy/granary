@@ -1,3 +1,4 @@
+using System.Xml.Linq;
 using Granary.Core.Playback;
 using Granary.Core.ViewModels.Settings;
 using Granary.Player;
@@ -143,11 +144,13 @@ public sealed class MpvConfigEditorViewModelTests : IDisposable
     public async Task ASaveThatFails_SaysSo_AndKeepsTheEdits()
     {
         var editor = await OpenWith("deband=yes\n");
-        // A folder where the file is written first.
-        Directory.CreateDirectory(_folder.ConfigFile + ".tmp");
         editor.Text = "deband=no\n";
 
-        Assert.False(await editor.SaveAsync());
+        // Another program has the file open: it cannot be replaced.
+        using (new FileStream(_folder.ConfigFile, FileMode.Open, FileAccess.Read, FileShare.Read))
+        {
+            Assert.False(await editor.SaveAsync());
+        }
 
         Assert.Equal($"Couldn't save mpv.conf in {_folder.Directory}.", editor.Message);
         Assert.True(editor.HasUnsavedChanges);
@@ -155,9 +158,78 @@ public sealed class MpvConfigEditorViewModelTests : IDisposable
         Assert.Equal("deband=yes\n", await OnDisk());
 
         // The next try that works clears it.
-        Directory.Delete(_folder.ConfigFile + ".tmp");
         Assert.True(await editor.SaveAsync());
         Assert.Equal("", editor.Message);
+    }
+
+    [Fact]
+    public async Task AFileThatCannotBeRead_IsNoNewFile_AndCannotBeReplaced()
+    {
+        Directory.CreateDirectory(_folder.Directory);
+        await File.WriteAllTextAsync(_folder.ConfigFile, "deband=yes\n", TestContext.Current.CancellationToken);
+        var editor = Editor();
+
+        using (new DeniedRead(_folder.ConfigFile))
+        {
+            await editor.LoadAsync();
+
+            Assert.False(editor.CanEdit);
+            Assert.Equal("", editor.Text);
+            Assert.Equal($"Couldn't read mpv.conf in {_folder.Directory}.", editor.Message);
+            Assert.False(await editor.SaveAsync());
+        }
+
+        Assert.Equal("deband=yes\n", await OnDisk());
+        Assert.False(_changes.IsPending);
+    }
+
+    [Fact]
+    public async Task AFileThatIsNotUtf8_IsNotEditedInGranary_AndStaysAsItIs()
+    {
+        byte[] file = [(byte)'#', (byte)' ', 0xE9, (byte)'\n', .. "glsl-shaders=~~/shaders/caf"u8, 0xE9, (byte)'\n'];
+        Directory.CreateDirectory(_folder.Directory);
+        await File.WriteAllBytesAsync(_folder.ConfigFile, file, TestContext.Current.CancellationToken);
+        var editor = Editor();
+
+        await editor.LoadAsync();
+
+        Assert.False(editor.CanEdit);
+        Assert.False(editor.CanSave);
+        Assert.Equal("", editor.Text);
+        Assert.Equal("mpv.conf isn't UTF-8 text, so Granary doesn't edit it here, where saving could damage it. Use Open mpv.conf to change it in another editor.",
+            editor.Message);
+        Assert.False(await editor.SaveAsync());
+        Assert.Equal(file, await File.ReadAllBytesAsync(_folder.ConfigFile, TestContext.Current.CancellationToken));
+        Assert.False(_changes.IsPending);
+    }
+
+    [Fact]
+    public async Task WhileItSaves_TheTextIsMarkedSaving_SoNothingTypedIsLost()
+    {
+        var editor = await OpenWith("deband=yes\n");
+        editor.Text = "deband=no\n";
+        var saving = new List<bool>();
+        editor.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(editor.IsSaving))
+            {
+                saving.Add(editor.IsSaving);
+            }
+        };
+
+        Assert.True(await editor.SaveAsync());
+
+        Assert.Equal([true, false], saving);
+    }
+
+    [Fact]
+    public void TheEditorsTextBox_IsReadOnlyWhileItSaves()
+    {
+        string file = Path.Combine(RepositoryFiles.Root, "src", "Granary.App", "Views", "Settings", "MpvConfigEditorView.xaml");
+
+        var box = XDocument.Load(file).Descendants().Single(e => e.Name.LocalName == "TextBox");
+
+        Assert.Equal("{x:Bind ViewModel.IsSaving, Mode=OneWay}", (string?)box.Attribute("IsReadOnly"));
     }
 
     [Fact]

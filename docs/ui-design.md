@@ -666,8 +666,11 @@ says why above the sections.
   the player starts.", or "Nothing in it changes the options Granary keeps.". The check never stops a save. On the
   right below, **Cancel** (outline) and **Save** (red, 8 px corners, named "Save mpv.conf"). Save writes the file whole
   (beside it first, then over it) with the line breaks the file had, and goes back to Playback; a save that fails keeps
-  the editor and says "Couldn't save mpv.conf in …" in an error bar above the text. A folder in mpv.conf's place says
-  "mpv.conf in … is a folder. Rename or remove it, then try again." and leaves nothing to edit.
+  the editor and says "Couldn't save mpv.conf in …" in an error bar above the text. The text is read-only while a save
+  runs. A folder in mpv.conf's place says "mpv.conf in … is a folder. Rename or remove it, then try again.", a file that
+  is there but cannot be read says "Couldn't read mpv.conf in …", and one that is not UTF-8 says "mpv.conf isn't UTF-8
+  text, so Granary doesn't edit it here, where saving could damage it. Use Open mpv.conf to change it in another
+  editor."; each leaves nothing to edit, and Save stays off.
   Remote and keyboard: focus starts in the text at its start; Down on the last line goes to Save, Up on the first line
   to "← Playback", Left and Right between Cancel and Save, Tab as usual. Esc and a remote's Back close the editor from
   anywhere in it (Backspace only outside the text), as do Cancel and "← Playback"; with unsaved edits each asks first:
@@ -690,7 +693,8 @@ says why above the sections.
   preset …?" / "Its file goes from the presets folder. This can't be undone." (Delete, Cancel), and focus moves to Save
   as preset…. Each question has Cancel as the default. Under the list a muted line says how the last action went:
   "Saved your mpv.conf as …", "Loaded … into mpv.conf.", "Deleted the preset ….", "There's no mpv.conf to save yet.",
-  "Couldn't read your mpv.conf.", "Couldn't save the preset …", "Couldn't load the preset …" (the list is read again),
+  "Couldn't read your mpv.conf.", "Your mpv.conf isn't UTF-8 text, so Granary can't save it as a preset.", "Couldn't
+  save the preset …", "Couldn't load the preset …" (the list is read again, and mpv.conf stays as it was),
   "Couldn't delete the preset …".
   While a preset is loaded, a line under the row names it, 14 px medium: "Preset: HQ" while mpv.conf still holds its
   text, "Preset: HQ (changed)" once it was edited since (in Granary's editor or outside); deleting the preset's file
@@ -699,7 +703,8 @@ says why above the sections.
   before the first preset was loaded, after any number of loads, or removes it when there was none. The line and the
   button go, focus moves to Save as preset…, the change line offers Apply now as after a save, and the muted line
   says "Your mpv.conf from before the preset is back.", "You had no mpv.conf before the preset, so it is removed.",
-  "Couldn't find your mpv.conf from before the preset." (the backup was gone; the preset is no longer named) or
+  "Your mpv.conf from before the preset is back, but Granary couldn't finish tidying up. Try Unload again." (the line and
+  the button stay), "Couldn't find your mpv.conf from before the preset." (the backup was gone; the preset is no longer named) or
   "Couldn't go back to your mpv.conf from before the preset." (everything stays for another try).
 - **Connection** (with `connection_speed_v1`): "Connection speed" with the reading as its description ("400 Mbps ·
   measured just now on Ethernet", "Not measured yet") and **Test speed** as an outline button on the right, "Testing…"

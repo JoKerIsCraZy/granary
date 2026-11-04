@@ -96,9 +96,11 @@ public sealed partial class MpvSettingsViewModel : ObservableObject, IDisposable
             return;
         }
         var content = await Task.Run(_folder.ReadConfig);
-        if (content is null || content.IsNew)
+        if (content is null || content.IsNew || content.IsNotText)
         {
-            PresetMessage = content is null ? "Couldn't read your mpv.conf." : "There's no mpv.conf to save yet.";
+            PresetMessage = content is null ? "Couldn't read your mpv.conf."
+                : content.IsNew ? "There's no mpv.conf to save yet."
+                : "Your mpv.conf isn't UTF-8 text, so Granary can't save it as a preset.";
             return;
         }
         if (await Task.Run(() => _presets.Exists(name))
@@ -145,10 +147,11 @@ public sealed partial class MpvSettingsViewModel : ObservableObject, IDisposable
         {
             MpvPresetUnload.Restored => "Your mpv.conf from before the preset is back.",
             MpvPresetUnload.Removed => "You had no mpv.conf before the preset, so it is removed.",
+            MpvPresetUnload.NotCleanedUp => "Your mpv.conf from before the preset is back, but Granary couldn't finish tidying up. Try Unload again.",
             MpvPresetUnload.NothingToRestore => "Couldn't find your mpv.conf from before the preset.",
             _ => "Couldn't go back to your mpv.conf from before the preset.",
         };
-        if (result is MpvPresetUnload.Restored or MpvPresetUnload.Removed)
+        if (result is MpvPresetUnload.Restored or MpvPresetUnload.Removed or MpvPresetUnload.NotCleanedUp)
         {
             _changes.Saved();
         }

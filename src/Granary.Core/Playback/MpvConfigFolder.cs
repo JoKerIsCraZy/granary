@@ -1,3 +1,4 @@
+using System.Text;
 using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.Playback;
@@ -30,6 +31,8 @@ public sealed class MpvConfigFolder
         # scale=ewa_lanczossharp
 
         """;
+
+    private static readonly UTF8Encoding StrictUtf8 = new(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
 
     private readonly ILogger<MpvConfigFolder> _logger;
 
@@ -108,7 +111,9 @@ public sealed class MpvConfigFolder
 
     /// <summary>
     /// mpv.conf's text for the editor: the file's own, or the comments a new file starts with when there is none yet
-    /// (<see cref="MpvConfigContent.IsNew"/>). Null when it cannot be read, a folder in its place among the reasons.
+    /// (<see cref="MpvConfigContent.IsNew"/>). A file that is not UTF-8 has no text to edit
+    /// (<see cref="MpvConfigContent.IsNotText"/>): saving it decoded would damage it. Null when it cannot be read, a folder
+    /// in its place among the reasons: that is no missing file, and nothing may replace it.
     /// </summary>
     public MpvConfigContent? ReadConfig()
     {
@@ -119,13 +124,51 @@ public sealed class MpvConfigFolder
         }
         try
         {
-            return File.Exists(ConfigFile)
-                ? new MpvConfigContent(ReadText(ConfigFile), IsNew: false)
-                : new MpvConfigContent(Template.ReplaceLineEndings("\r\n"), IsNew: true);
+            if (ReadConfigBytes() is not { } bytes)
+            {
+                return new MpvConfigContent(Template.ReplaceLineEndings("\r\n"), IsNew: true);
+            }
+            return StrictText(bytes) is { } text
+                ? new MpvConfigContent(text, IsNew: false)
+                : new MpvConfigContent("", IsNew: false, IsNotText: true);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             _logger.LogWarning(ex, "mpv.conf could not be read");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// mpv.conf's bytes; null only when it is not there. One that is there but cannot be read throws: Windows' File.Exists
+    /// says false for a file it may not look at, so it does not tell the two apart.
+    /// </summary>
+    internal byte[]? ReadConfigBytes()
+    {
+        try
+        {
+            return ReadBytes(ConfigFile);
+        }
+        catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException)
+        {
+            return null;
+        }
+    }
+
+    // The file as UTF-8, a byte order mark left out; null when it is anything else. A NUL is no text either: UTF-16 without a
+    // byte order mark passes as UTF-8.
+    private static string? StrictText(ReadOnlySpan<byte> bytes)
+    {
+        if (bytes.Contains((byte)0))
+        {
+            return null;
+        }
+        try
+        {
+            return StrictUtf8.GetString(bytes.StartsWith(Encoding.UTF8.Preamble) ? bytes[Encoding.UTF8.Preamble.Length..] : bytes);
+        }
+        catch (DecoderFallbackException)
+        {
             return null;
         }
     }
@@ -156,6 +199,9 @@ public sealed class MpvConfigFolder
     /// </summary>
     public bool WriteConfig(string text) => !ConfigFileIsFolder && EnsureDirectory() && WriteWhole(ConfigFile, text);
 
+    /// <summary>As <see cref="WriteConfig(string)"/>, byte for byte.</summary>
+    internal bool WriteConfig(byte[] bytes) => !ConfigFileIsFolder && EnsureDirectory() && WriteWhole(ConfigFile, bytes);
+
     /// <summary>
     /// Writes <paramref name="text"/> to <paramref name="path"/> in UTF-8: whole beside it first, then moved over it, so a
     /// write that fails never leaves half a file. False, and logged, when it could not.
@@ -167,7 +213,9 @@ public sealed class MpvConfigFolder
 
     private bool WriteWhole(string path, Action<string> write)
     {
-        string temp = path + ".tmp";
+        // Its own temporary name, in the same folder so the move replaces the file at once: a leftover of an earlier write, or
+        // a second Granary on this data folder writing now, cannot get in its way.
+        string temp = $"{path}.{Guid.NewGuid():N}.tmp";
         try
         {
             write(temp);
@@ -195,5 +243,8 @@ public sealed class MpvConfigFolder
     }
 }
 
-/// <summary>mpv.conf's text as read for the editor; <paramref name="IsNew"/> when there is no file yet and it is the template.</summary>
-public sealed record MpvConfigContent(string Text, bool IsNew);
+/// <summary>
+/// mpv.conf's text as read for the editor; <paramref name="IsNew"/> when there is no file yet and it is the template,
+/// <paramref name="IsNotText"/> when the file is not UTF-8 and has no text to edit.
+/// </summary>
+public sealed record MpvConfigContent(string Text, bool IsNew, bool IsNotText = false);

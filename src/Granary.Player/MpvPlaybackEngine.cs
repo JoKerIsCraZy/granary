@@ -100,15 +100,16 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
             }
         }
         // Not into an mpv that is being replaced: after a stop Granary made (FailClosed) whose mpv without the file does not
-        // run yet, it starts here, and the title plays in it. Apply now that waited for the title before starts mpv again
-        // here too, so this title plays with mpv.conf as it is now.
+        // run yet, it starts here, and the title plays in it; should it not start, the title ends as a failure rather than
+        // play with the rejected file. Apply now that waited for the title before starts mpv again here too, so this title
+        // plays with mpv.conf as it is now.
         long loadId;
         bool? startedAgain;
         lock (_restartGate)
         {
-            if (Volatile.Read(ref _failingClosed) != 0)
+            if (Volatile.Read(ref _failingClosed) != 0 && !StartWithoutConfig(Volatile.Read(ref _failClosedStops)))
             {
-                StartWithoutConfig(Volatile.Read(ref _failClosedStops));
+                return RefuseLoad(source);
             }
             startedAgain = StartAgainBeforeLoad();
             loadId = LoadNow(source);
@@ -567,7 +568,7 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
 
     private void OnFileEnded(int reason, int error)
     {
-        if (StopsTheFileItself)
+        if (Volatile.Read(ref _failingClosed) != 0)
         {
             // Granary stopped the file itself (FailClosed), which says how it ended once mpv runs again.
             return;

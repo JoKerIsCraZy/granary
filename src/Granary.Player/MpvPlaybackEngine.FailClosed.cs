@@ -19,7 +19,8 @@ public sealed partial class MpvPlaybackEngine
     // The load mpv plays or opens, 0 when none; under _gate.
     private long _activeLoad;
 
-    // 1 from the moment Granary stops the file until mpv runs again without the mpv.conf.
+    // 1 from the moment Granary stops the file until mpv runs without the mpv.conf. It stays while that start fails, so no
+    // title goes into the mpv that still holds the file (Load), and the next load tries again.
     private int _failingClosed;
 
     // Each stop Granary made, and the last one an mpv without the file started for (under _restartGate). A load that comes
@@ -83,10 +84,6 @@ public sealed partial class MpvPlaybackEngine
             // ReplaceMpv keeps the mpv before when the new one fails; this only keeps a thread-pool task from throwing.
             _logger.LogError(ex, "mpv did not start again without mpv.conf");
         }
-        finally
-        {
-            Volatile.Write(ref _failingClosed, 0);
-        }
         RefreshSwapChain();
         bool loadedSince;
         lock (_gate)
@@ -105,28 +102,47 @@ public sealed partial class MpvPlaybackEngine
         StartAgainIfWaiting();
     }
 
-    // Under _restartGate: mpv without the file for this stop, once, whether the task after the stop or a load that came
-    // first makes it. mpv without the file is how it always started; should even that fail, the mpv before plays on
-    // (ReplaceMpv), the title stays stopped, and the next stop or load tries again.
-    private void StartWithoutConfig(int stop)
+    // Under _restartGate: mpv without the file for this stop, whether the task after the stop or a load that came first
+    // makes it; true once it runs, and only then is the stop over. mpv without the file is how it always started; should
+    // even that fail, the mpv before stays (ReplaceMpv), holding the file, and takes no title until a later load's try works.
+    private bool StartWithoutConfig(int stop)
     {
         if (_startedWithoutConfigFor >= stop)
         {
-            return;
+            return true;
         }
-        if (ReplaceMpv(() =>
-            {
-                Prepare(null);
-                Launch(null);
-            }, "without mpv.conf"))
+        bool started = ReplaceMpv(() =>
         {
-            Volatile.Write(ref _startedWithoutConfigFor, stop);
+            Prepare(null);
+            Launch(null);
+        }, "without mpv.conf");
+        if (started)
+        {
+            _startedWithoutConfigFor = stop;
+            Volatile.Write(ref _failingClosed, 0);
         }
+        return started;
     }
 
-    // A stop Granary made whose mpv without the file does not run yet: the stopped file's own end is FailClosed's to say.
-    private bool StopsTheFileItself =>
-        Volatile.Read(ref _failingClosed) != 0 && Volatile.Read(ref _startedWithoutConfigFor) < Volatile.Read(ref _failClosedStops);
+    // Under _restartGate, when the start after a stop failed again: the title goes into no mpv and ends as a failure, on
+    // another thread, as a load's end always comes after the load. The next load tries that start again.
+    private long RefuseLoad(MediaSource source)
+    {
+        long loadId;
+        lock (_gate)
+        {
+            loadId = ++_loads;
+            _activeLoad = 0;
+            _loadAudio = source.AudioStream;
+            _lastReportedPosition = null;
+            _rejected = false;
+        }
+        _bufferedReads.Reset();
+        Update(s => PlaybackSnapshot.Idle with { IsPaused = s.IsPaused, Volume = s.Volume, IsMuted = s.IsMuted, LoadId = loadId }, force: true);
+        _logger.LogWarning("mpv does not run without mpv.conf; this title is not played");
+        _ = Task.Run(() => Ended?.Invoke(this, new PlaybackEnded(PlaybackEndReason.Error, "Granary could not start the player without your mpv.conf", loadId)));
+        return loadId;
+    }
 
     // Under _restartGate, into the new mpv: the engine's settings, and the size of the picture Granary shows now.
     private void RestoreGlobals()

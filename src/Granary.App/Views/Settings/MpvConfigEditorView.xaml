@@ -33,7 +33,8 @@
                  AcceptsReturn="True" TextWrapping="NoWrap" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False"
                  FontFamily="Consolas" FontSize="14" Height="420" CornerRadius="8" Padding="12,10"
                  ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto"
-                 IsEnabled="{x:Bind ViewModel.CanEdit, Mode=OneWay}" PreviewKeyDown="OnEditorPreviewKeyDown"
+                 IsEnabled="{x:Bind ViewModel.CanEdit, Mode=OneWay}" IsReadOnly="{x:Bind ViewModel.IsSaving, Mode=OneWay}"
+                 PreviewKeyDown="OnEditorPreviewKeyDown"
                  AutomationProperties.Name="mpv.conf" />
 
         <StackPanel Margin="0,16,0,0" Spacing="6">

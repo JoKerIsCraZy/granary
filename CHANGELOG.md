@@ -33,7 +33,8 @@ release's section is what its update says it changes (docs/release.md).
   with the keyboard or a TV remote. It holds the file exactly as written, profiles, includes and comments too, and
   checks the text as you type: which options Granary keeps for itself, and whether the player would not use the file
   at all. Save writes the file in one piece and goes back to Settings, which offers to apply it;
-  Cancel, Esc or the remote's Back close it, asking first when there are unsaved changes.
+  Cancel, Esc or the remote's Back close it, asking first when there are unsaved changes. A file that can't be read,
+  or isn't UTF-8, isn't edited here, so saving can't damage it: **Open mpv.conf** still opens it in your editor.
 - Settings → Playback → This PC: **mpv presets**. **Save as preset…** keeps your `mpv.conf` under a name, as a file
   in the `presets` folder next to it that you can see and back up; a name already taken is replaced only after asking.
   Each preset has **Load**, which replaces `mpv.conf` with it after asking, and **Delete**. Names are made safe for

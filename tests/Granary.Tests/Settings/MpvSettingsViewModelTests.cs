@@ -348,6 +348,43 @@ public sealed class MpvSettingsViewModelTests : IDisposable
     }
 
     [Fact]
+    public async Task AnUnloadThatCannotFinish_SaysSo_OffersApplyNow_AndKeepsUnload()
+    {
+        _presets.Save("HQ", "deband=yes\n");
+        using var row = await Loaded();
+        await row.LoadPresetAsync(row.Presets[0]);
+        await row.ApplyNowCommand.ExecuteAsync(null);
+        string mark = Path.Combine(_presets.Directory, ".before-preset.none");
+
+        using (new FileStream(mark, FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            await row.UnloadPresetAsync();
+        }
+
+        Assert.Equal("Your mpv.conf from before the preset is back, but Granary couldn't finish tidying up. Try Unload again.", row.PresetMessage);
+        Assert.True(row.ShowsApplyNow);
+        Assert.True(row.HasActivePreset);
+
+        await row.UnloadPresetAsync();
+
+        Assert.Equal("You had no mpv.conf before the preset, so it is removed.", row.PresetMessage);
+        Assert.False(row.HasActivePreset);
+    }
+
+    [Fact]
+    public async Task SaveAsPreset_OfAnMpvConfThatIsNotUtf8_SaysSo_AndSavesNothing()
+    {
+        Directory.CreateDirectory(_folder.Directory);
+        await File.WriteAllBytesAsync(_folder.ConfigFile, [(byte)'#', 0xE9, (byte)'\n'], TestContext.Current.CancellationToken);
+        using var row = await Loaded();
+
+        await row.SavePresetAsync("HQ");
+
+        Assert.Equal("Your mpv.conf isn't UTF-8 text, so Granary can't save it as a preset.", row.PresetMessage);
+        Assert.Empty(_presets.Names());
+    }
+
+    [Fact]
     public async Task DeletingTheLoadedPreset_KeepsItNamed_AndUnloadStillWorks()
     {
         _folder.WriteConfig("# mine\n");
