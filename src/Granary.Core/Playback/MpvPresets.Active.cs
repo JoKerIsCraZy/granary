@@ -9,8 +9,10 @@ namespace Granary.Core.Playback;
 // Loading a preset, and going back from it. The first load keeps the viewer's own mpv.conf as it was, byte for byte, in
 // .before-preset.conf (or marks that there was none, .before-preset.none); a later load keeps that first backup, so Unload
 // always returns to the file from before any preset. .active.json names the preset loaded last and the hash of its text,
-// which tells whether mpv.conf was changed since, and it is what makes the backup or the mark count: a load that cannot
-// write it puts mpv.conf back. Deleting the preset's file leaves all of this as it is.
+// which tells whether mpv.conf was changed since, and it is what makes the backup or the mark count. A load writes it
+// before it replaces mpv.conf, in one move, as its last step: until then the viewer's file is in place, and after it nothing
+// is left to fail, so no failure leaves the preset in mpv.conf without the way back. Deleting the preset's file leaves all
+// of this as it is.
 public sealed partial class MpvPresets
 {
     private string BackupFile => Path.Combine(Directory, ".before-preset" + Extension);
@@ -18,6 +20,9 @@ public sealed partial class MpvPresets
     private string NoFileMarker => Path.Combine(Directory, ".before-preset.none");
 
     private string ActiveFile => Path.Combine(Directory, ".active.json");
+
+    /// <summary>For tests: runs once the preset is named, right before mpv.conf is replaced.</summary>
+    internal Action? BeforeConfigWrite { get; set; }
 
     /// <summary>
     /// Replaces mpv.conf with the preset, byte for byte, after keeping the viewer's own file if no preset is loaded yet;
@@ -31,10 +36,12 @@ public sealed partial class MpvPresets
         }
         byte[] preset;
         byte[]? before;
+        byte[]? namedBefore;
         try
         {
             preset = MpvConfigFolder.ReadBytes(path);
             before = _folder.ReadConfigBytes();
+            namedBefore = File.Exists(ActiveFile) ? MpvConfigFolder.ReadBytes(ActiveFile) : null;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
@@ -44,7 +51,7 @@ public sealed partial class MpvPresets
         // A backup or a mark holds only with the preset it was made for. Left without one, it is from a session whose Unload
         // could not remove it, and the viewer's own file is the one there now.
         bool backedUp = false;
-        if (!File.Exists(ActiveFile) || (!File.Exists(BackupFile) && !File.Exists(NoFileMarker)))
+        if (namedBefore is null || (!File.Exists(BackupFile) && !File.Exists(NoFileMarker)))
         {
             if (!TryDelete(BackupFile, NoFileMarker) || !BackUp(before))
             {
@@ -52,12 +59,18 @@ public sealed partial class MpvPresets
             }
             backedUp = true;
         }
-        if (_folder.WriteConfig(preset) && WriteActive(new ActivePresetFile(name, Hash(preset))))
+        bool namedAsBefore = true;
+        if (WriteActive(new ActivePresetFile(name, Hash(preset))))
         {
-            return true;
+            BeforeConfigWrite?.Invoke();
+            if (_folder.WriteConfig(preset))
+            {
+                return true;
+            }
+            namedAsBefore = namedBefore is null ? TryDelete(ActiveFile) : _folder.WriteWhole(ActiveFile, namedBefore);
         }
-        PutBack(before);
-        if (backedUp)
+        // With this preset still named Unload is still offered, and needs the backup: mpv.conf as it is now.
+        if (backedUp && namedAsBefore)
         {
             TryDelete(BackupFile, NoFileMarker);
         }
@@ -133,19 +146,6 @@ public sealed partial class MpvPresets
         {
             _logger.LogWarning(ex, "mpv.conf could not be kept before loading a preset");
             return false;
-        }
-    }
-
-    // A load that could not finish: mpv.conf as it was. Should even that fail the log says so, and the file holds the preset.
-    private void PutBack(byte[]? before)
-    {
-        if (before is not null)
-        {
-            _folder.WriteWhole(_folder.ConfigFile, before);
-        }
-        else
-        {
-            TryDelete(_folder.ConfigFile);
         }
     }
 

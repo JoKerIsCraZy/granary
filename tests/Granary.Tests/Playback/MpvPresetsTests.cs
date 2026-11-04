@@ -334,15 +334,18 @@ public sealed class MpvPresetsTests : IDisposable
     }
 
     [Fact]
-    public void AFirstLoadThatCannotNameThePreset_PutsMpvConfBack_AndReportsTheFailure()
+    public void AFirstLoadThatCannotNameThePreset_NeverReplacesMpvConf_AndReportsTheFailure()
     {
         _folder.WriteConfig("# mine\n");
         _presets.Save("HQ", "deband=yes\n");
+        var written = new DateTime(2020, 1, 2, 3, 4, 5, DateTimeKind.Utc);
+        File.SetLastWriteTimeUtc(_folder.ConfigFile, written);
         // A folder where the name of the preset in use is kept.
         Directory.CreateDirectory(Path.Combine(_presets.Directory, ".active.json"));
 
         Assert.False(_presets.Load("HQ"));
 
+        Assert.Equal(written, File.GetLastWriteTimeUtc(_folder.ConfigFile));
         Assert.Equal("# mine\n", File.ReadAllText(_folder.ConfigFile));
         Assert.Null(_presets.Active());
         Assert.Equal(["HQ.conf"], Directory.GetFiles(_presets.Directory).Select(Path.GetFileName));
@@ -377,6 +380,65 @@ public sealed class MpvPresetsTests : IDisposable
         Assert.Equal(new MpvActivePreset("A", IsChanged: false), _presets.Active());
         Assert.Equal(MpvPresetUnload.Restored, _presets.Unload());
         Assert.Equal("# mine\n", File.ReadAllText(_folder.ConfigFile));
+    }
+
+    [Fact]
+    public void AFirstLoadWhoseMpvConfCannotBeReplaced_LeavesNothingBehind()
+    {
+        _folder.WriteConfig("# mine\n");
+        _presets.Save("HQ", "deband=yes\n");
+
+        using (new FileStream(_folder.ConfigFile, FileMode.Open, FileAccess.Read, FileShare.Read))
+        {
+            Assert.False(_presets.Load("HQ"));
+        }
+
+        Assert.Equal("# mine\n", File.ReadAllText(_folder.ConfigFile));
+        Assert.Null(_presets.Active());
+        Assert.Equal(["HQ.conf"], Directory.GetFiles(_presets.Directory).Select(Path.GetFileName));
+    }
+
+    [Fact]
+    public void ASecondLoadWhoseMpvConfCannotBeReplaced_KeepsTheFirstPresetNamed_AndTheWayBack()
+    {
+        _folder.WriteConfig("# mine\n");
+        _presets.Save("A", "deband=yes\n");
+        _presets.Save("B", "deband=no\n");
+        Assert.True(_presets.Load("A"));
+
+        using (new FileStream(_folder.ConfigFile, FileMode.Open, FileAccess.Read, FileShare.Read))
+        {
+            Assert.False(_presets.Load("B"));
+        }
+
+        Assert.Equal("deband=yes\n", File.ReadAllText(_folder.ConfigFile));
+        Assert.Equal(new MpvActivePreset("A", IsChanged: false), _presets.Active());
+        Assert.Equal(MpvPresetUnload.Restored, _presets.Unload());
+        Assert.Equal("# mine\n", File.ReadAllText(_folder.ConfigFile));
+    }
+
+    [Fact]
+    public void ALoadThatCanNeitherFinishNorTakeBackTheName_KeepsTheWayBack()
+    {
+        _folder.WriteConfig("# mine\n");
+        _presets.Save("HQ", "deband=yes\n");
+        FileStream? config = null;
+        FileStream? name = null;
+        _presets.BeforeConfigWrite = () =>
+        {
+            config = new FileStream(_folder.ConfigFile, FileMode.Open, FileAccess.Read, FileShare.Read);
+            name = new FileStream(Path.Combine(_presets.Directory, ".active.json"), FileMode.Open, FileAccess.Read, FileShare.Read);
+        };
+
+        Assert.False(_presets.Load("HQ"));
+        config!.Dispose();
+        name!.Dispose();
+
+        Assert.Equal("# mine\n", File.ReadAllText(_folder.ConfigFile));
+        Assert.Equal(new MpvActivePreset("HQ", IsChanged: true), _presets.Active());
+        Assert.Equal(MpvPresetUnload.Restored, _presets.Unload());
+        Assert.Equal("# mine\n", File.ReadAllText(_folder.ConfigFile));
+        Assert.Equal(["HQ.conf"], Directory.GetFiles(_presets.Directory).Select(Path.GetFileName));
     }
 
     [Fact]

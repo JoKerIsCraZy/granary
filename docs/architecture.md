@@ -187,9 +187,10 @@ the file from before any preset, or removes mpv.conf. `presets\.active.json` hol
 of its text as written; an mpv.conf with another hash shows the preset as "(changed)". Deleting the preset's file leaves both, and
 Unload works from the backup. Files starting with a dot are Granary's own: never listed, never a preset's name.
 `.active.json` is what makes a backup or a mark count: left without it, they are from a session that could not remove
-them, and the next load replaces them with the viewer's file of now, or fails if it cannot. A load that cannot write
-mpv.conf or `.active.json` puts mpv.conf back as it was and drops a backup it just made, so Unload stays true to what
-is there. Unload removes the backup first and `.active.json` last: an Unload that fails, also only in that clean-up,
+them, and the next load replaces them with the viewer's file of now, or fails if it cannot. A load writes `.active.json`
+first and replaces mpv.conf last, in one move: until then the viewer's file is in place, and after it nothing is left to
+fail. One that fails takes the name back and drops a backup it just made; should the name stay, so does the backup, so
+Unload stays true to what is there. Unload removes the backup first and `.active.json` last: an Unload that fails, also only in that clean-up,
 is no success (`NotCleanedUp`), keeps what is left, and stays offered for another try.
 
 **When it applies**: the engine is one libmpv instance for the whole run (`AddGranaryPlayer`), made when the player first
