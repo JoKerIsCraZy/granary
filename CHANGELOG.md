@@ -8,76 +8,35 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Added
 
-- The sidebar shows the logo your Silo server's admin set in its branding in place of the server's name, as on Silo's web
-  app. A server without one keeps showing its name, and so does a logo that can't be loaded. Settings → Navigation &
-  Cards → Sidebar → Server logo turns it off.
-- A movie's or episode's page lets you choose what to play before you press Play, as on Silo's web: Version, Audio and
-  Subs under the buttons. Version lists the title's files when it has more than one ("2160p · HEVC · HDR10 · DTS",
-  with size and source such as "38.9 GB · Remux"); Audio and Subs list the chosen file's tracks, with Auto and Off.
-  Each shows what would play anyway until you choose. Play, Resume and Start over then play that file with those
-  tracks, and the server keeps to the file you chose. Your audio and subtitle choices are remembered for the movie or
-  the whole series, and Auto goes back to your profile's settings; if a choice cannot be saved, the page says so and
-  goes back to the choice that was kept. The pickers work with the keyboard too.
-- Settings → Playback → This PC: **Direct play without hardware decoding**. On, Granary plays HEVC, VP9, AV1 and HDR
-  files directly and decodes them on the processor where the graphics card can't, instead of having your Silo server
-  convert them: the picture keeps its full quality and the server does less work, but slower PCs can stutter. Off by
-  default; it is kept on this PC and counts from the next title you play.
-- Settings → Playback → This PC: **mpv configuration**. Granary plays with your own `mpv.conf` from the `mpv` folder in
-  its data directory, in mpv's own syntax with profiles, `profile-cond` and `include`, and `~~/` for that folder, for
-  shaders, scaling, debanding, tone mapping and the like. **Open mpv.conf** makes the file and opens it in your editor;
-  **Open folder** is there for shaders. A change, in Granary or in another editor, applies from the next title you play,
-  without a restart: a title that plays is never cut, and volume, speed, subtitles and the picture's fill carry over. If
-  the player cannot start with the new file, Granary plays on with the one it had and Settings says so. Granary keeps
-  the options it needs to show the video in its window and follow your Silo server's choices, and the log names the options of yours it leaves
-  out and any option mpv can't use. A file that sets an option that could take the stream's address out, such as mpv's
-  own log, a proxy, scripts or commands, or one that would turn Granary's options off, its includes too, plays as if it
-  were not there, and the log says why. If one of its profiles keeps changing Granary's options while a title plays,
-  Granary stops that title and plays on without the file. The row says when your file was not used, or only in part,
-  and why, with a link to the log. Without the file, playback is as before.
-- Settings → Playback → This PC → mpv configuration: **Edit** opens `mpv.conf` in an editor inside Granary, usable
-  with the keyboard or a TV remote. It holds the file exactly as written, profiles, includes and comments too, and
-  checks the text as you type: which options Granary keeps for itself, and whether the player would not use the file
-  at all. Save writes the file in one piece and goes back to Settings, which says "Applies to the next title." until a
-  title has started with it; Cancel, Esc or the remote's Back close it, asking first when there are unsaved changes. A file that can't be read,
-  or isn't UTF-8, isn't edited here, so saving can't damage it: **Open mpv.conf** still opens it in your editor.
-- Settings → Playback → This PC: **mpv presets**. **Save as preset…** keeps your `mpv.conf` under a name, as a file
-  in the `presets` folder next to it that you can see and back up; a name already taken is replaced only after asking.
-  Each preset has **Load**, which replaces `mpv.conf` with it after asking, and **Delete**. Names are made safe for
-  Windows as you type them. Settings names the preset in use, and says "(changed)" once you edit it; **Unload** goes
-  back to your own `mpv.conf` from before you loaded any preset, which Granary keeps aside on the first load (or removes
-  `mpv.conf` again if you had none).
-- The log says why a title is converted: what this PC's graphics card decodes, what Granary told the server it plays,
-  and the reason the server gave for its choice.
-- More filters for a library, and for Favorites, Watchlist, History and collections: several genres at once, decades,
-  4K, HDR and Dolby Vision, the original, audio and subtitle languages, and Watch Status (Unwatched, In Progress,
-  Watched). The Filters panel scrolls when it gets long, and a library opens with these filters as you left them.
-  The filters you set show as badges under the bar, as on Silo's web app; each badge's ✕ removes just that filter.
-- More ways to sort a library: Latest Episode Air Date and Latest Episode Added in a series library, Content Rating,
-  TMDB Rating, the Rotten Tomatoes critic and audience ratings while your server shows them, Resolution, Bitrate,
-  Progress, Date Viewed and Plays.
-- A TV remote on a media PC, or the keyboard alone: the arrows move focus on every page and between the sidebar and
-  the page, the focused card comes to the middle, and Back (Esc, Backspace or the remote's Back button) goes back to the
-  card you came from, then to the section's sidebar entry, then Home. Menus and dialogs close on the remote's Back too.
-  The focus ring is thicker and goes round the whole card, artwork and text.
-  A title opened with OK starts on Play, and the remote's Play button plays the card, episode or title that has focus;
-  the Menu key opens a card's menu. In the player OK skips the intro (or recap, credits) while its pill shows, else
-  brings focus to the controls, also when an air mouse already shows them; the arrows then move to subtitles, audio and the settings, and Back closes their menus and
-  panels, hides the controls, then closes the player, with focus back where it was. The minimized player is reachable
-  with Down from the page.
+- **Your own `mpv.conf`:** Settings → Playback → This PC. Edit it inside Granary, with the keyboard or a TV remote, or in
+  your own editor. Presets keep configurations under a name, and Unload brings your own file back. A change applies from
+  the next title, without a restart. Granary keeps the options it needs to show the video, a file with options that could
+  send the stream's address elsewhere isn't used, and Settings and the log say why.
+- **Choose what to play:** a movie's or episode's page has Version, Audio and Subs under its buttons, as on Silo's web
+  app. Your audio and subtitle choices are remembered for the movie or the whole series.
+- **Server logo:** the sidebar shows the logo your Silo server's admin set in place of the server's name, as on Silo's web
+  app. Settings → Navigation & Cards → Sidebar → Server logo turns it off.
+- **TV remote and keyboard:** the arrows move focus on every page, Back goes back a step at a time, and OK and the remote's
+  Play button act on what has focus. In the player OK skips an intro or brings up the controls.
+- **More filters** for libraries, Favorites, Watchlist, History and collections: several genres at once, decades, 4K, HDR,
+  Dolby Vision, languages and Watch Status. Filters show as badges you can remove one by one, as on Silo's web app.
+- **More sorts:** Latest Episode Air Date, Latest Episode Added, Content Rating, TMDB and Rotten Tomatoes ratings,
+  Resolution, Bitrate, Progress, Date Viewed and Plays.
+- **Direct play without hardware decoding:** Settings → Playback → This PC. Plays HEVC, VP9, AV1 and HDR files directly,
+  decoded on the processor where your graphics card can't, rather than converted by your Silo server. Slower PCs can
+  stutter, so it's off by default.
+- The log says why a title is converted.
 
 ### Changed
 
-- The sorts are named as on Silo's web app: Date Added, Release Date, IMDb Rating, and Duration in place of Runtime.
-- In the player, Up and Down no longer change the volume by default, as on Silo's TV app: Up shows the controls with
-  focus on Play/Pause, and Down opens the audio menu (or subtitles, or the playback settings). Settings → Playback →
-  This PC → Up and Down in the player → Volume brings back the volume keys. A remote's own volume buttons,
-  M to mute and the volume slider set it either way. Left and Right still skip.
+- In the player, Up shows the controls and Down opens the audio menu, as on Silo's TV app. Settings → Playback → This PC →
+  Up and Down in the player brings back the volume keys.
+- The sorts are named as on Silo's web app: Date Added, Release Date, IMDb Rating and Duration.
 
 ### Fixed
 
 - Switching quickly between sections and scrolling freezes the app less often and for shorter, most of all in a large
-  window: the full memory clean-ups that Windows' UI framework asks for now and then no longer go through every loading
-  placeholder of every grid again and again. Pages you left no longer stay in memory.
+  window. Pages you left no longer stay in memory.
 
 ## [0.1.1] - 2026-11-01
 
