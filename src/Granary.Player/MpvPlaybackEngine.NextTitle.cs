@@ -324,6 +324,9 @@ public sealed partial class MpvPlaybackEngine
             }
             return false;
         }
+        // The old swap chain goes with its mpv unless a panel holds it, so a window connecting from here on must not be given
+        // it. The new one comes with the next read; should it have the old one's address, it still counts as new.
+        _swapChain = 0;
         before.Dispose();
         return true;
     }

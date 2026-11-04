@@ -215,7 +215,8 @@ what it last tried, and replaces mpv only when they differ. That holds for any c
   with Granary's options, the check after the start, `NotUsed` when refused), the engine's settings are set again
   (`RestoreGlobals`: volume, mute, speed, fill, subtitles, `sub-pos`, and the picture's size now), and only then is the
   old one closed, so the graphics device stays in use throughout. mpv's pause carries over as it does across files. The
-  window gets the new swap chain (`RefreshSwapChain`, so `SwapChainChanged`). A call that still holds the old `MpvClient`
+  window gets the new swap chain (`RefreshSwapChain`, so `SwapChainChanged`). The engine stops offering the old one as its
+mpv closes: where no panel holds it, the new one can get its address, and that still counts as new. A call that still holds the old `MpvClient`
   finds it closed and does nothing. The start is a new run for Settings: `_stoppedThisRun` is cleared and the state
   reported afresh, `None` when there is no file any more, so the status line under the row says how the file fared.
 - A title that plays is never cut: nothing starts a new mpv but a load, not a save, a stop or the player closing, and a
