@@ -8,6 +8,9 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Added
 
+- The sidebar shows the logo your Silo server's admin set in its branding in place of the server's name, as on Silo's web
+  app. A server without one keeps showing its name, and so does a logo that can't be loaded. Settings → Navigation &
+  Cards → Sidebar → Server logo turns it off.
 - A movie's or episode's page lets you choose what to play before you press Play, as on Silo's web: Version, Audio and
   Subs under the buttons. Version lists the title's files when it has more than one ("2160p · HEVC · HDR10 · DTS",
   with size and source such as "38.9 GB · Remux"); Audio and Subs list the chosen file's tracks, with Auto and Off.

@@ -143,7 +143,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
 
 ## Layout
 
-- Sidebar (260 px): server name, Home, Search (`Ctrl+K`), "LIBRARIES" with the libraries the profile browses (its hidden
+- Sidebar (260 px): the server's wordmark at 112 x 48 px (`wordmark_url`, as the web's `SiloBrand`), else or with Server logo off its name, Home, Search (`Ctrl+K`), "LIBRARIES" with the libraries the profile browses (its hidden
   ones left out, in its library order: the web's Settings → Libraries), "DISCOVER" (For
   You, Requests while the server takes them, Calendar, Notifications with the unread count in red), "YOUR STUFF" (Favorites, Watchlist, Watch
   Party while the server offers rooms, Collections, History); Admin (an administrator's only, a shield), Settings and the profile menu at the bottom (the servers are in Settings → Servers). Favorites, Watchlist and History are one page (`PersonalListPage`, the web's `pages/Catalog.tsx` for those
@@ -669,7 +669,8 @@ says why above the sections.
   buttons, Color as Default and the web's twelve swatches, and Show icon for a badge that has one. Badges the server
   cannot store (an older manifest) or whose rating it does not show (Rotten Tomatoes) are not offered; a server without
   badge settings shows its own, and the page says so. Every change saves to the profile at once. Then Sidebar, with
-  Reset beside the title while something is hidden or moved: Libraries, Discover and Your Stuff, each a list between
+  Reset beside the title while something is hidden or moved: Server logo ("Shows the logo your Silo server's admin set in
+  place of the server's name. A server without one shows its name."), then Libraries, Discover and Your Stuff, each a list between
   hairlines of the entry's icon and name (Requests and Notifications: "Shows while your server offers it."), up and down
   as 32 px ghost buttons (off at the ends), and the switch; a hidden entry is dimmed. Changes show in the sidebar at
   once.

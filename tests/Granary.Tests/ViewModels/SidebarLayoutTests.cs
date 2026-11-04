@@ -195,6 +195,74 @@ public sealed class SidebarLayoutTests : IDisposable
         Assert.False(settings.IsCustomized);
     }
 
+    [Fact]
+    public async Task TheServersLogo_ShowsAtFirst_AndCanBeTurnedOff_UntilTheNextStartAndBeyond()
+    {
+        var layout = Create();
+        using var libraries = Libraries();
+        using var settings = new SidebarSettingsViewModel(layout, libraries);
+        Assert.True(settings.ShowsServerLogo);
+        Assert.True(layout.ShowsServerLogo);
+
+        settings.ShowsServerLogo = false;
+        await layout.Saving;
+
+        Assert.False(layout.ShowsServerLogo);
+        Assert.False(Create().ShowsServerLogo);
+        Assert.True(settings.IsCustomized);
+    }
+
+    [Fact]
+    public async Task Reset_BringsTheServersLogoBack()
+    {
+        var layout = Create();
+        using var libraries = Libraries();
+        using var settings = new SidebarSettingsViewModel(layout, libraries);
+        settings.ShowsServerLogo = false;
+        await layout.Saving;
+        var changed = new List<string?>();
+        settings.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+
+        await settings.ResetCommand.ExecuteAsync(null);
+
+        Assert.True(settings.ShowsServerLogo);
+        Assert.True(layout.ShowsServerLogo);
+        Assert.Contains(nameof(SidebarSettingsViewModel.ShowsServerLogo), changed);
+    }
+
+    [Fact]
+    public async Task TheServersLogo_IsTheProfilesChoice()
+    {
+        var layout = Create();
+        await layout.SetHiddenAsync(SidebarLayout.ServerLogoTag, true);
+
+        _session.ProfileId = "8";
+        _session.RaiseChanged();
+
+        Assert.True(layout.ShowsServerLogo);
+    }
+
+    [Fact]
+    public async Task WithoutAProfile_TheLogoSwitch_GoesBackToWhatTheSidebarShows()
+    {
+        _session.ProfileId = null;
+        var layout = Create();
+        using var libraries = Libraries();
+        using var settings = new SidebarSettingsViewModel(layout, libraries);
+
+        settings.ShowsServerLogo = false;
+        await layout.Saving;
+
+        Assert.True(settings.ShowsServerLogo);
+        Assert.True(layout.ShowsServerLogo);
+    }
+
+    [Fact]
+    public void TheServersLogo_IsNoEntryOfTheSidebar()
+    {
+        Assert.DoesNotContain(SidebarLayout.Entries, entry => entry.Tag == SidebarLayout.ServerLogoTag);
+    }
+
     private SidebarViewModel Libraries()
     {
         var handler = new FakeHttpMessageHandler((request, _) => Task.FromResult(request.RequestUri!.AbsolutePath.EndsWith("/user/libraries", StringComparison.Ordinal)

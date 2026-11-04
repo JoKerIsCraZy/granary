@@ -22,6 +22,12 @@ public sealed partial class SidebarLayout : ObservableObject
 {
     public const string LibraryTagPrefix = "Library:";
 
+    /// <summary>
+    /// Not an entry: hidden, the sidebar's top shows the server's name rather than its logo. It is kept with the hidden
+    /// entries so that it goes by profile and Reset brings it back.
+    /// </summary>
+    public const string ServerLogoTag = "ServerLogo";
+
     /// <summary>The entries besides the libraries, in the sidebar's own order.</summary>
     public static IReadOnlyList<SidebarEntry> Entries { get; } =
     [
@@ -74,6 +80,9 @@ public sealed partial class SidebarLayout : ObservableObject
         ArgumentNullException.ThrowIfNull(library);
         return LibraryTagPrefix + library.Id;
     }
+
+    /// <summary>The sidebar's top shows the logo of a server that has one.</summary>
+    public bool ShowsServerLogo => !IsHidden(ServerLogoTag);
 
     public bool IsHidden(string tag) => Current?.Hidden.Contains(tag, StringComparer.Ordinal) == true;
 
