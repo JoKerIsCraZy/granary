@@ -27,8 +27,10 @@ internal sealed class MpvConfigCheck(MpvEngineOptions options) : IMpvConfigCheck
         }
         else
         {
-            // Those a file may set and Granary sets back; a refused one at its allowed value changes nothing.
-            foreach (var set in entries.Where(e => e.Option == MpvOwnOptions.CompositionSize || kept.ContainsKey(e.Option)).GroupBy(e => e.Option))
+            // Those a file may set and Granary sets back; a refused one at its allowed value changes nothing, nor does one at
+            // Granary's own.
+            foreach (var set in entries.Where(e => e.Option == MpvOwnOptions.CompositionSize
+                || (kept.TryGetValue(e.Option, out string? ours) && !MpvOwnOptions.Same(e.Value, ours))).GroupBy(e => e.Option))
             {
                 // At the top it holds from the start; in a profile only once that profile applies.
                 string? profile = set.All(e => e.Profile is not null) ? set.First().Profile : null;

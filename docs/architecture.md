@@ -232,7 +232,10 @@ what it last tried, and replaces mpv only when they differ. That holds for any c
   `loadfile`, as the new file can fail at once. A pause asked for meanwhile (`_pauseWaits`) is sent right after
   `loadfile`: the players unpause right after a load, and a file held at its end pauses itself again until the next file
   takes over. A `Stop` that overtakes the open sends `stop` again once it is done, as it may have reached mpv first. A
-  fail-closed stop of the file before leaves the waiting title alone: it opens in the mpv without the file.
+  fail-closed stop of the file before leaves the waiting title alone: it opens in the mpv without the file. So does a stop
+  of a new mpv whose changed file goes too far as it starts. `OpenFile` looks for the stop's mark under the lock under
+  which `FailClosed`, after setting that mark, looks at `_fileBefore`: the stop either finds the title waiting, and the
+  title goes to the mpv without the file, or finds it on its way to mpv and ends it as a failure.
 - The engine's settings go through `_globalsGate`, whose holder also sets them on mpv, so a change while mpv starts again
   reaches that mpv whichever comes first, and the latest value stays, on the new mpv or on the old one when the start
   fails. A new mpv says its own volume before it gets the viewer's, so `PlayerViewModel` takes a volume it is shown by

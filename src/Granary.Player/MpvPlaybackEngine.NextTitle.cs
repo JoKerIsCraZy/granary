@@ -33,6 +33,9 @@ public sealed partial class MpvPlaybackEngine
     /// <summary>For tests: runs once a new mpv started, before the one before goes; one that throws stands for a start that failed.</summary>
     internal Action? AfterNewMpvStarted { get; set; }
 
+    /// <summary>For tests: runs once a title no longer waits, right before mpv is told to open it.</summary>
+    internal Action? BeforeLoadFile { get; set; }
+
     private bool FileBeforePlays
     {
         get
@@ -87,17 +90,16 @@ public sealed partial class MpvPlaybackEngine
             {
                 return;
             }
-            // After a stop Granary made (FailClosed) whose mpv without the file does not run yet, it starts here, and the
-            // title plays in it. Should it not start, the title ends as a failure rather than play with the rejected
-            // file, and the next load tries again.
-            if (Volatile.Read(ref _failingClosed) != 0 && !StartWithoutConfig(Volatile.Read(ref _failClosedStops)))
-            {
-                refused = true;
-            }
-            else
+            refused = !RunsPastAnyStop();
+            if (!refused)
             {
                 replaced = ApplyChangedConfig(config);
-                OpenFile(source, loadId);
+                // A profile of the changed file can make Granary stop the new mpv before the title reaches it.
+                while (!refused && !OpenFile(source, loadId))
+                {
+                    refused = !RunsPastAnyStop();
+                    replaced = true;
+                }
             }
         }
         if (refused)
@@ -126,8 +128,17 @@ public sealed partial class MpvPlaybackEngine
         }
     }
 
-    // Under _restartGate: mpv is told to open the file, and then hears the pause asked for since the load.
-    private void OpenFile(MediaSource source, long loadId)
+    // Under _restartGate: after a stop Granary made (FailClosed) whose mpv without the file does not run yet, it starts here,
+    // and the title plays in it. False when it does not start: the title ends as a failure rather than play with the rejected
+    // file, and the next load tries again.
+    private bool RunsPastAnyStop() =>
+        Volatile.Read(ref _failingClosed) == 0 || StartWithoutConfig(Volatile.Read(ref _failClosedStops));
+
+    // Under _restartGate: mpv is told to open the file, and then hears the pause asked for since the load. False when Granary
+    // stopped this mpv first, leaving the title waiting for the one without the file. FailClosed sets its mark before it looks
+    // at _fileBefore under _gate, so it either finds the title waiting, and this finds the mark, or it finds the title on its
+    // way and ends it as a failure itself. No title goes unsaid into an mpv about to go.
+    private bool OpenFile(MediaSource source, long loadId)
     {
         string headers = string.Join(",", source.Headers.Select(h => $"{h.Key}: {h.Value}"));
         _mpv.SetProperty("http-header-fields", headers);
@@ -140,11 +151,16 @@ public sealed partial class MpvPlaybackEngine
         {
             if (_activeLoad != loadId)
             {
-                return;
+                return true;
+            }
+            if (Volatile.Read(ref _failingClosed) != 0)
+            {
+                return false;
             }
             // Right before the file reaches mpv: it can fail at once, and that end is this title's.
             _fileBefore = false;
         }
+        BeforeLoadFile?.Invoke();
         _mpv.Command("loadfile", target, "replace", "-1", perFileOptions);
         bool? pause;
         lock (_gate)
@@ -152,7 +168,7 @@ public sealed partial class MpvPlaybackEngine
             // A newer load keeps its own wait.
             if (_activeLoad != loadId && _activeLoad != 0)
             {
-                return;
+                return true;
             }
             _pauseWaits = false;
             pause = _pauseOnOpen;
@@ -162,6 +178,7 @@ public sealed partial class MpvPlaybackEngine
         {
             _mpv.SetProperty("pause", paused ? "yes" : "no");
         }
+        return true;
     }
 
     // On the open's thread: the title goes into no mpv and ends as a failure, unless a newer load or a stop came.

@@ -639,6 +639,93 @@ public sealed class MpvConfigNextTitleTests : IDisposable
     }
 
     [Fact]
+    public async Task AChangedFileThatGoesTooFarAsItsMpvStarts_DoesNotLoseTheTitle()
+    {
+        using var engine = CreateEngine("deband=yes\n");
+        var ends = RecordEnds(engine);
+        string wav = TempWav(5);
+        File.WriteAllText(ConfigFile, LoopingProfile);
+        // The new mpv is up, the title has not reached it, and its profile makes Granary stop it.
+        engine.AfterNewMpvStarted = () =>
+        {
+            engine.AfterNewMpvStarted = null;
+            GoesTooFar(engine);
+        };
+
+        long load = engine.Load(MediaSource.Local(wav));
+
+        // It plays in the mpv without the file.
+        await Until(() => engine.Option("player-operation-mode") == "cplayer" && engine.Option("path") == wav, () => _logs.All);
+        await Until(() => engine.Current is { IsLoaded: true } s && s.LoadId == load, () => _logs.All);
+        Assert.Equal("no", engine.Option("deband"));
+        Assert.Equal(MpvConfigUse.StoppedDuringPlayback, _status.Current.Use);
+        lock (ends)
+        {
+            Assert.DoesNotContain(ends, e => e.LoadId == load && e.Reason != PlaybackEndReason.Stopped);
+        }
+    }
+
+    [Fact]
+    public async Task AChangedFileThatGoesTooFar_WithNoMpvWithoutTheFile_EndsTheTitleAsAFailure()
+    {
+        using var engine = CreateEngine("deband=yes\n");
+        var ends = RecordEnds(engine);
+        File.WriteAllText(ConfigFile, LoopingProfile);
+        bool stopped = false;
+        engine.AfterNewMpvStarted = () =>
+        {
+            if (stopped)
+            {
+                throw new InvalidOperationException("The new mpv failed (test).");
+            }
+            stopped = true;
+            GoesTooFar(engine);
+        };
+
+        long load = engine.Load(MediaSource.Local(TempWav(5)));
+
+        await Until(() =>
+        {
+            lock (ends)
+            {
+                return ends.Any(e => e.LoadId == load && e.Reason == PlaybackEndReason.Error);
+            }
+        }, () => _logs.All);
+        // Never into the mpv Granary stopped.
+        Assert.Null(engine.Option("path"));
+        Assert.False(engine.Current.IsLoaded);
+    }
+
+    [Fact]
+    public async Task AStopAsTheTitleGoesToMpv_EndsItAsAFailure_AndTheNextPlaysWithoutTheFile()
+    {
+        using var engine = CreateEngine(LoopingProfile);
+        var ends = RecordEnds(engine);
+        // The title no longer waits: from here on the stop is the one to say how it ended.
+        engine.BeforeLoadFile = () =>
+        {
+            engine.BeforeLoadFile = null;
+            GoesTooFar(engine);
+        };
+
+        long load = engine.Load(MediaSource.Local(TempWav(5)));
+
+        await Until(() =>
+        {
+            lock (ends)
+            {
+                return ends.Any(e => e.LoadId == load && e.Reason == PlaybackEndReason.Error);
+            }
+        }, () => _logs.All);
+        await Until(() => engine.Option("player-operation-mode") == "cplayer", () => _logs.All);
+        Assert.Null(engine.Option("path"));
+
+        await PlaysAWav(engine, 0.5);
+
+        Assert.Equal("no", engine.Option("deband"));
+    }
+
+    [Fact]
     public async Task AFailedStartWithoutTheFile_AfterGranaryStoppedATitle_KeepsAWorkingMpv()
     {
         using var engine = CreateEngine(LoopingProfile);
@@ -766,6 +853,31 @@ public sealed class MpvConfigNextTitleTests : IDisposable
             Assert.True(DateTime.UtcNow < deadline, "Granary did not stop the title in time.");
             engine.Command("apply-profile", "loop");
             await Task.Delay(50, TestContext.Current.CancellationToken);
+        }
+    }
+
+    private static List<PlaybackEnded> RecordEnds(MpvPlaybackEngine engine)
+    {
+        var ends = new List<PlaybackEnded>();
+        engine.Ended += (_, e) =>
+        {
+            lock (ends)
+            {
+                ends.Add(e);
+            }
+        };
+        return ends;
+    }
+
+    // As KeepChangingKeepOpen, from inside a start or a load, so it blocks: Granary has stopped the mpv when it returns.
+    private void GoesTooFar(MpvPlaybackEngine engine)
+    {
+        var deadline = DateTime.UtcNow + Timeout;
+        while (Count(StopLine) == 0)
+        {
+            Assert.True(DateTime.UtcNow < deadline, "Granary did not stop the mpv in time.");
+            engine.Command("apply-profile", "loop");
+            Thread.Sleep(50);
         }
     }
 

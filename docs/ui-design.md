@@ -659,7 +659,8 @@ says why above the sections.
   of the text as it is typed, one 13 px muted line each: "Granary keeps its own vo.", "Granary keeps its own
   keep-open, which the profile hq sets.", "This file would not be used: it sets player-operation-mode, which Granary
   needs to keep its own options." (alone, as nothing else counts then), "Granary checks the files it includes only when
-  the player starts.", or "Nothing in it changes the options Granary keeps.". The check never stops a save. On the
+  the player starts.", or "Nothing in it changes the options Granary keeps."; an option at Granary's own value, such as
+  `keep-open=yes`, is not named. The check never stops a save. On the
   right below, **Cancel** (outline) and **Save** (red, 8 px corners, named "Save mpv.conf"). Save writes the file whole
   (beside it first, then over it) with the line breaks the file had, and goes back to Playback; a save that fails keeps
   the editor and says "Couldn't save mpv.conf in …" in an error bar above the text. The text is read-only while a save

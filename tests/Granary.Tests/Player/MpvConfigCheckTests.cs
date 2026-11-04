@@ -14,7 +14,7 @@ public sealed class MpvConfigCheckTests
     [Fact]
     public void GranarysOwnOptions_AreNamedOnce_InTheFilesOrder()
     {
-        var notes = Check.Notes("vo=gpu\ndeband=yes\nno-osc\nvo=gpu-next\n[hq]\nkeep-open=no\n[later]\nkeep-open=no\n");
+        var notes = Check.Notes("vo=gpu\ndeband=yes\nosc=yes\nvo=gpu-next\n[hq]\nkeep-open=no\n[later]\nkeep-open=no\n");
 
         Assert.Equal(
         [
@@ -23,6 +23,10 @@ public sealed class MpvConfigCheckTests
             "Granary keeps its own keep-open, which the profile hq sets.",
         ], notes);
     }
+
+    [Fact]
+    public void AnOptionAtGranarysOwnValue_OverridesNothing_AndIsNotNamed() =>
+        Assert.Empty(Check.Notes("vo=gpu-next\nkeep-open=yes\nno-osc\n[hq]\nvo=GPU-Next\n"));
 
     [Fact]
     public void AnOptionThatCouldTakeTheStreamOut_MeansTheFileIsNotUsed() =>
