@@ -283,6 +283,59 @@ public sealed class SettingsViewModelTests : IDisposable
     }
 
     [Fact]
+    public async Task OpenFolder_WhenItCannotBeCreated_DoesNotLaunchIt()
+    {
+        Directory.CreateDirectory(_data);
+        await File.WriteAllTextAsync(Path.Combine(_data, "mpv"), "", TestContext.Current.CancellationToken);
+        var page = Playback();
+
+        await page.OpenMpvFolderCommand.ExecuteAsync(null);
+
+        Assert.Equal($"Couldn't open {MpvFolder.Directory}.", page.MpvConfigMessage);
+        Assert.Empty(_launcher.Opened);
+    }
+
+    [Fact]
+    public async Task OpenFolder_WhenTheLauncherFails_SaysWhereItIs_AndClearsTheMessageOnRetry()
+    {
+        _launcher.Fails = true;
+        var page = Playback();
+
+        await page.OpenMpvFolderCommand.ExecuteAsync(null);
+
+        Assert.True(Directory.Exists(MpvFolder.Directory));
+        Assert.Equal($"Couldn't open {MpvFolder.Directory}.", page.MpvConfigMessage);
+        _launcher.Fails = false;
+        await page.OpenMpvFolderCommand.ExecuteAsync(null);
+        Assert.Equal(["folder " + MpvFolder.Directory], _launcher.Opened);
+        Assert.Equal("", page.MpvConfigMessage);
+    }
+
+    [Fact]
+    public void OpenLogs_WhenTheLogFolderFails_TriesTheDataFolder()
+    {
+        _launcher.FailWhen = what => what == "folder " + Granary.Core.Diagnostics.FileLoggerProvider.DefaultDirectory;
+        var page = Playback();
+
+        page.OpenLogsCommand.Execute(null);
+
+        Assert.Equal(["folder " + Granary.Core.AppPaths.DataDirectory], _launcher.Opened);
+        Assert.Equal("", page.MpvConfigMessage);
+    }
+
+    [Fact]
+    public void OpenLogs_WhenBothFoldersFail_SaysWhereTheLogsAre()
+    {
+        _launcher.Fails = true;
+        var page = Playback();
+
+        page.OpenLogsCommand.Execute(null);
+
+        Assert.Empty(_launcher.Opened);
+        Assert.Equal($"Couldn't open {Granary.Core.Diagnostics.FileLoggerProvider.DefaultDirectory}.", page.MpvConfigMessage);
+    }
+
+    [Fact]
     public void UpAndDownInThePlayer_IsThisPcsChoice_ControlsAndMenusFirst()
     {
         var page = Playback();
