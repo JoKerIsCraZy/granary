@@ -82,8 +82,7 @@
                                Foreground="{StaticResource SiloForegroundBrush}" />
                     <!-- The server's wordmark in place of its name, at the web's size (components/AppSidebar.tsx). -->
                     <Image x:Name="ServerWordmark" Width="112" Height="48" Stretch="Uniform" HorizontalAlignment="Left" Visibility="Collapsed"
-                           AutomationProperties.Name="{x:Bind Sidebar.ServerName, Mode=OneWay}"
-                           ImageOpened="OnWordmarkOpened" ImageFailed="OnWordmarkFailed" />
+                           AutomationProperties.Name="{x:Bind Sidebar.ServerName, Mode=OneWay}" />
                 </Grid>
             </NavigationView.PaneHeader>
 

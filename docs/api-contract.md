@@ -188,7 +188,7 @@ Documents the MVP reads: `GET /api/v2/playback/capabilities`, `GET /api/v2/home/
 | `GET /api/v2/system/info` (`getSystemInfo`) | public | `api_major` (2), `server_version` and `contract_digest` (diagnostics only), `links { openapi, capabilities, identity }` |
 | `GET /api/v2/system/identity` (`getServerIdentity`) | public | `server_id`: UUID, stable per deployment across restarts and URL changes. Self-asserted; authorizes nothing |
 | `GET /api/v2/system/setup` (`getSetupStatus`) | public | `needs_setup`, `wizard_completed` |
-| `GET /api/v2/theme/branding` | public | `server_name` (display name), `accent_color`, `wordmark_url` (the sidebar's picture, relative to the server) |
+| `GET /api/v2/theme/branding` | public | `server_name` (display name), `accent_color`, `wordmark_url` (the sidebar's picture; only one on the server itself is used) |
 | `GET /api/v2/auth/providers` (`listAuthProviders`) | public | `password_login` (bool), `items[]` |
 | `GET /api/v2/system/connections` (`getServerConnections`) | bearer, account only | `endpoints[]`, optional `local_route { spki_sha256, url? }` |
 

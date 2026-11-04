@@ -87,7 +87,8 @@ public sealed class ServerAccentTests
     [InlineData("""{ "wordmark_url": "" }""")]
     [InlineData("""{ "wordmark_url": "file:///C:/Windows/win.ini" }""")]
     [InlineData("""{ "wordmark_url": "//elsewhere.example/wordmark.webp" }""")]
-    public async Task NoWordmark_OrOneThatIsNoWebAddress_LeavesTheServersName(string branding)
+    [InlineData("""{ "wordmark_url": "https://elsewhere.example/wordmark.webp" }""")]
+    public async Task NoWordmark_OrOneFromElsewhere_LeavesTheServersName(string branding)
     {
         _harness.Silo.On(HttpMethod.Get, BrandingPath, ScriptedSilo.Json(HttpStatusCode.OK, branding));
         var accent = Create();
@@ -95,6 +96,18 @@ public sealed class ServerAccentTests
         await accent.StartAsync();
 
         Assert.Null(accent.Wordmark);
+    }
+
+    [Fact]
+    public async Task AWordmarkGivenInFullOnTheServerItself_IsKept()
+    {
+        string full = ScriptedSilo.Base.AbsoluteUri.TrimEnd('/') + "/api/v2/branding/assets/wordmark?v=1.webp";
+        _harness.Silo.On(HttpMethod.Get, BrandingPath, ScriptedSilo.Json(HttpStatusCode.OK, $$"""{ "wordmark_url": "{{full}}" }"""));
+        var accent = Create();
+
+        await accent.StartAsync();
+
+        Assert.Equal(full, accent.Wordmark?.AbsoluteUri);
     }
 
     [Fact]

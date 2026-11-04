@@ -87,7 +87,7 @@ public sealed partial class ServerAccent : ObservableObject
         {
             var branding = await _branding.GetAsync(server, cancellationToken);
             palette = AccentPalette.From(branding.AccentColor);
-            wordmark = ArtworkUrl.Resolve(server, branding.WordmarkUrl);
+            wordmark = OnTheServer(server, ArtworkUrl.Resolve(server, branding.WordmarkUrl));
         }
         catch (Exception ex) when (!cancellationToken.IsCancellationRequested && ApiFailureText.IsRequestFailure(ex))
         {
@@ -105,6 +105,13 @@ public sealed partial class ServerAccent : ObservableObject
             Wordmark = wordmark;
         }
     }
+
+    // The server names its own asset, always relative to itself (silo-server internal/branding/render.go). A picture from
+    // anywhere else is not its wordmark, and fetching it would tell that host about this PC.
+    private static Uri? OnTheServer(Uri server, Uri? url) =>
+        url is not null && Uri.Compare(url, server, UriComponents.SchemeAndServer, UriFormat.SafeUnescaped, StringComparison.OrdinalIgnoreCase) == 0
+            ? url
+            : null;
 
     // Changed can come from a background thread (a sign-out by the authentication handler).
     private void OnSessionChanged(object? sender, EventArgs e) => _dispatcher.Post(() => Reading = ReadIfNewAsync());
