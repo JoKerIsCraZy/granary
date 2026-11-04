@@ -6,14 +6,21 @@ namespace Granary.Player;
 
 /// <summary>
 /// One libmpv instance: options, commands, properties, and an event thread. Events are raised on
-/// that thread. libmpv's API itself is thread-safe.
+/// that thread. libmpv's API itself is thread-safe. Commands and properties are only passed on while mpv runs: before
+/// <see cref="Initialize"/> and from <see cref="Dispose"/> on, they do nothing and read nothing, so a caller that still
+/// holds an instance the engine replaced cannot reach a handle that is gone.
 /// </summary>
 internal sealed class MpvClient : IDisposable
 {
     private readonly ILogger _logger;
     private readonly Thread _eventThread;
     private readonly Dictionary<ulong, string> _observed = [];
+
+    // Calls in flight hold it to read; the handle is destroyed under it to write, once they are done. Never disposed:
+    // a late caller still takes it, and finds the instance closed.
+    private readonly ReaderWriterLockSlim _life = new();
     private volatile bool _running;
+    private volatile bool _ready;
     private nint _handle;
 
     public MpvClient(ILogger logger)
@@ -45,14 +52,43 @@ internal sealed class MpvClient : IDisposable
         }
     }
 
-    public void Initialize(IEnumerable<(string Name, int Format)> observedProperties)
+    /// <summary>An option mpv may not know, such as one a newer mpv renamed; mpv's error code, below 0 when it refused.</summary>
+    public int TrySetOption(string name, string value) => LibMpv.SetOptionString(_handle, name, value);
+
+    /// <summary>
+    /// Reads options and profiles in mpv's config syntax, given as text (mpv's <c>memory://</c>), as if they were set one by
+    /// one with <see cref="SetOption"/>; only before <see cref="Initialize"/>.
+    /// </summary>
+    public void LoadConfigText(string text)
     {
+        int rc = LibMpv.LoadConfigFile(_handle, "memory://" + text);
+        if (rc < 0)
+        {
+            throw new InvalidOperationException($"mpv did not read the config text: {LibMpv.Error(rc)}");
+        }
+    }
+
+    /// <summary>
+    /// Starts mpv. With <paramref name="logFromStart"/>, mpv's log is asked for before, so what mpv says about the config
+    /// files it reads in <c>mpv_initialize</c> reaches the log too; otherwise it is asked for after, as it always was.
+    /// </summary>
+    public void Initialize(IEnumerable<(string Name, int Format)> observedProperties, bool logFromStart = false)
+    {
+        if (logFromStart)
+        {
+            LibMpv.RequestLogMessages(_handle, "info");
+        }
         int rc = LibMpv.Initialize(_handle);
         if (rc < 0)
         {
+            // The event thread never runs for a start that failed: mpv's own words on why are passed on here.
+            DispatchPendingLog();
             throw new InvalidOperationException($"mpv_initialize failed: {LibMpv.Error(rc)}");
         }
-        LibMpv.RequestLogMessages(_handle, "info");
+        if (!logFromStart)
+        {
+            LibMpv.RequestLogMessages(_handle, "info");
+        }
         foreach (var (name, format) in observedProperties)
         {
             ulong id = (ulong)(_observed.Count + 1);
@@ -60,7 +96,22 @@ internal sealed class MpvClient : IDisposable
             LibMpv.ObserveProperty(_handle, id, name, format);
         }
         _running = true;
+        _ready = true;
         _eventThread.Start();
+    }
+
+    // A call on the running mpv, or what a closed one gives.
+    private T Live<T>(Func<nint, T> call, T closed)
+    {
+        _life.EnterReadLock();
+        try
+        {
+            return _ready && _handle != 0 ? call(_handle) : closed;
+        }
+        finally
+        {
+            _life.ExitReadLock();
+        }
     }
 
     public int Command(params string[] args)
@@ -72,7 +123,7 @@ internal sealed class MpvClient : IDisposable
             {
                 pointers[i] = Marshal.StringToCoTaskMemUTF8(args[i]);
             }
-            int rc = LibMpv.Command(_handle, pointers);
+            int rc = Live(handle => LibMpv.Command(handle, pointers), LibMpv.ErrorUninitialized);
             if (rc < 0)
             {
                 _logger.LogWarning("mpv command {Command} failed: {Error}", args[0], LibMpv.Error(rc));
@@ -91,11 +142,12 @@ internal sealed class MpvClient : IDisposable
         }
     }
 
-    public int SetProperty(string name, string value) => LibMpv.SetPropertyString(_handle, name, value);
+    public int SetProperty(string name, string value) =>
+        Live(handle => LibMpv.SetPropertyString(handle, name, value), LibMpv.ErrorUninitialized);
 
-    public string? GetString(string name)
+    public string? GetString(string name) => Live(handle =>
     {
-        nint value = LibMpv.GetPropertyString(_handle, name);
+        nint value = LibMpv.GetPropertyString(handle, name);
         if (value == 0)
         {
             return null;
@@ -108,13 +160,13 @@ internal sealed class MpvClient : IDisposable
         {
             LibMpv.Free(value);
         }
-    }
+    }, null);
 
     public long? GetInt64(string name) =>
-        LibMpv.GetPropertyInt64(_handle, name, LibMpv.FormatInt64, out long value) >= 0 ? value : null;
+        Live(handle => LibMpv.GetPropertyInt64(handle, name, LibMpv.FormatInt64, out long value) >= 0 ? value : (long?)null, null);
 
     public double? GetDouble(string name) =>
-        LibMpv.GetPropertyDouble(_handle, name, LibMpv.FormatDouble, out double value) >= 0 ? value : null;
+        Live(handle => LibMpv.GetPropertyDouble(handle, name, LibMpv.FormatDouble, out double value) >= 0 ? value : (double?)null, null);
 
     private void EventLoop()
     {
@@ -129,6 +181,25 @@ internal sealed class MpvClient : IDisposable
             {
                 // A faulty subscriber must not stop the event loop.
                 _logger.LogError(ex, "mpv event handler failed for event {EventId}", ev.EventId);
+            }
+        }
+    }
+
+    private void DispatchPendingLog()
+    {
+        while (Marshal.PtrToStructure<LibMpv.MpvEvent>(LibMpv.WaitEvent(_handle, 0)) is { EventId: not LibMpv.EventNone } ev)
+        {
+            if (ev.EventId != LibMpv.EventLogMessage)
+            {
+                continue;
+            }
+            try
+            {
+                Dispatch(ev);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "mpv log handler failed");
             }
         }
     }
@@ -186,12 +257,21 @@ internal sealed class MpvClient : IDisposable
             return;
         }
         _running = false;
+        _ready = false;
         LibMpv.Wakeup(_handle);
-        if (_eventThread.IsAlive)
+        if (_eventThread.IsAlive && _eventThread != Thread.CurrentThread)
         {
             _eventThread.Join(TimeSpan.FromSeconds(2));
         }
-        LibMpv.TerminateDestroy(_handle);
-        _handle = 0;
+        _life.EnterWriteLock();
+        try
+        {
+            LibMpv.TerminateDestroy(_handle);
+            _handle = 0;
+        }
+        finally
+        {
+            _life.ExitWriteLock();
+        }
     }
 }

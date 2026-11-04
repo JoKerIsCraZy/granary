@@ -1,0 +1,336 @@
+using Granary.Player;
+
+namespace Granary.Tests.Player;
+
+/// <summary>What a viewer's mpv.conf sets of Granary's options, read as mpv reads it, and when a file is refused.</summary>
+public sealed class MpvConfigTextTests
+{
+    private static readonly IReadOnlyList<KeyValuePair<string, string>> Own =
+        [.. MpvOwnOptions.Core(VideoOutputKind.D3D11Composition, (1280, 720)), .. MpvOwnOptions.Guarded(VideoOutputKind.D3D11Composition)];
+
+    private static readonly IReadOnlySet<string> Names =
+        Own.Select(o => o.Key).Append(MpvOwnOptions.OperationMode).Concat(MpvOwnOptions.Refused.Keys).ToHashSet();
+
+    private static readonly IReadOnlyDictionary<string, string> Kept =
+        Own.Where(o => o.Key != MpvOwnOptions.CompositionSize).ToDictionary();
+
+    [Fact]
+    public void AFilesOptions_AreReadAsMpvReadsThem()
+    {
+        const string text = """
+            # vo=gpu is a comment
+            deband=yes
+              --vo = gpu   # an option, spaced out
+            no-osc
+            keep-open
+            glsl-shaders-append=~~/shaders/FSRCNNX.glsl
+            script=~~/scripts/thing.lua
+            scale=ewa_lanczossharp # keep-open in a comment
+            sub-font="keep-open"
+            log-file="C:\logs\mpv # not a comment.log"
+            http-proxy=%21%http://127.0.0.1:8080
+            [default]
+            idle=no
+            [anime]
+            profile-cond=p["video-params/primaries"] == "bt.709"
+            keep-open=no
+            """;
+
+        var found = MpvConfigText.Entries(text, Names);
+
+        Assert.Equal(
+        [
+            new("vo", null, "gpu"), new("osc", null, "no"), new("keep-open", null, "yes"), new("scripts", null, "~~/scripts/thing.lua"),
+            new("log-file", null, @"C:\logs\mpv # not a comment.log"), new("http-proxy", null, "http://127.0.0.1:8080"),
+            new("idle", null, "no"), new("keep-open", "anime", "no"),
+        ], found);
+    }
+
+    [Theory]
+    [InlineData("deband=%-1%x\n")]
+    [InlineData("deband=%+3%abc\n")]
+    [InlineData("deband=%99999999999%x\n")]
+    [InlineData("vo=%-2%gpu\n")]
+    public void ASignedOrHugeLength_NeverThrows(string text)
+    {
+        var thrown = Record.Exception(() => MpvConfigText.Entries(text, Names));
+
+        Assert.Null(thrown);
+    }
+
+    [Fact]
+    public void AFileWithoutGranarysOptions_NamesNone() =>
+        Assert.Empty(MpvConfigText.Entries("deband=yes\r\nscale=ewa_lanczossharp\r\n[hq]\r\ninterpolation=yes\r\n", Names));
+
+    [Fact]
+    public void AFileThatSetsGranarysOptions_AtTheTopOrInProfiles_IsPlayed()
+    {
+        var entries = MpvConfigText.Entries(
+            "vo=gpu\nkeep-open=no\nidle=no\n[protocol.https]\nosc=yes\n[pseudo-gui]\nkeep-open=yes\n[clean]\nlog-file=\nscripts-clr\nload-scripts=no\nno-ytdl\n", Names);
+
+        Assert.Null(MpvConfigText.Refusal(entries, Kept));
+    }
+
+    [Theory]
+    [InlineData("player-operation-mode=cplayer\n", "sets player-operation-mode")]
+    [InlineData("[some]\nplayer-operation-mode=cplayer\n", "sets player-operation-mode")]
+    [InlineData("[pseudo-gui]\nvo=gpu\n", "sets vo in its [pseudo-gui] profile")]
+    [InlineData("[pseudo-gui]\nno-keep-open\n", "sets keep-open in its [pseudo-gui] profile")]
+    [InlineData("input-commands=quit\n", "sets input-commands, which Granary does not let mpv.conf change")]
+    [InlineData("[later]\ninput-commands-append=quit\n", "sets input-commands, which Granary does not let mpv.conf change")]
+    [InlineData("log-file=C:\\logs\\mpv.log\n", "sets log-file, which Granary does not let mpv.conf change")]
+    [InlineData("[loop]\nprofile-cond=true\nlog-file=x.log\n", "sets log-file")]
+    [InlineData("[protocol.http]\nhttp-proxy=http://127.0.0.1:9\n", "sets http-proxy")]
+    [InlineData("[extension.mkv]\nstream-lavf-o=http_proxy=http://127.0.0.1:9\n", "sets stream-lavf-o")]
+    [InlineData("[pseudo-gui]\ninput-ipc-server=granary\n", "sets input-ipc-server")]
+    [InlineData("script=~~/scripts/thing.lua\n", "sets scripts")]
+    [InlineData("load-scripts\n", "sets load-scripts")]
+    [InlineData("watch-later-directory=~~/later\n", "sets watch-later-dir")]
+    [InlineData("save-watch-history=yes\n", "sets save-watch-history")]
+    [InlineData("input-conf=~~/input.conf\n", "sets input-conf")]
+    [InlineData("ytdl\n", "sets ytdl")]
+    [InlineData("cache-on-disk=yes\n", "sets cache-on-disk")]
+    [InlineData("ao-pcm-file=out.wav\n", "sets ao-pcm-file")]
+    [InlineData("register\n", "sets register")]
+    public void AFileThatWouldUndoGranarysOptions_IsRefused(string text, string reason) =>
+        Assert.StartsWith(reason, MpvConfigText.Refusal(MpvConfigText.Entries(text, Names), Kept), StringComparison.Ordinal);
+
+    [Fact]
+    public void ItsOwnPseudoGuiProfile_MaySetWhatGranarySetsAnyway_AndOtherOptions() =>
+        Assert.Null(MpvConfigText.Refusal(
+            MpvConfigText.Entries("player-operation-mode=pseudo-gui\n[pseudo-gui]\nfullscreen=yes\nforce-window=yes\nidle=YES\n", Names), Kept));
+
+    [Fact]
+    public void WhatMpvRead_IsTheFilesPartOfItsProfiles()
+    {
+        var own = new List<KeyValuePair<string, string>> { new("vo", "gpu-next"), new("keep-open", "yes") };
+        const string profiles = """
+            [
+              { "name": "later", "profile-cond": "true", "options": [ { "key": "keep-open", "value": "no" }, { "key": "deband", "value": "yes" } ] },
+              { "name": "pseudo-gui", "options": [ { "key": "player-operation-mode", "value": "pseudo-gui" },
+                { "key": "vo", "value": "gpu-next" }, { "key": "keep-open", "value": "yes" }, { "key": "no-osc", "value": "" },
+                { "key": "vo", "value": "gpu" } ] },
+              { "name": "default", "options": [] }
+            ]
+            """;
+
+        var found = MpvConfigText.FromProfiles(profiles, own, Names);
+
+        // Granary's own entries in the pseudo-GUI profile are not the file's.
+        Assert.Equal([new("keep-open", "later", "no"), new("osc", "pseudo-gui", "no"), new("vo", "pseudo-gui", "gpu")], found);
+        Assert.StartsWith("sets vo in its [pseudo-gui] profile", MpvConfigText.Refusal(found, Kept), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("watch-history-path=history.txt", "watch-history-path")]
+    [InlineData("demuxer-cache-dir=cache", "demuxer-cache-dir")]
+    [InlineData("vo-image-outdir=images", "vo-image-outdir")]
+    [InlineData("input-ipc-client=socket", "input-ipc-client")]
+    [InlineData("write-filename-in-watch-later-config=yes", "write-filename-in-watch-later-config")]
+    [InlineData("stream-record=out.mkv", "stream-record")]
+    [InlineData("stream-dump=out.bin", "stream-dump")]
+    [InlineData("dump-stats=stats.txt", "dump-stats")]
+    [InlineData("unregister=yes", "unregister")]
+    [InlineData("demuxer-lavf-o-add=http_proxy=localhost", "demuxer-lavf-o")]
+    [InlineData("scripts-append=~~/script.lua", "scripts")]
+    public void AnUnsafeOption_IsRefusedInAProfile(string option, string name)
+    {
+        var entries = MpvConfigText.Entries($"[extension.mkv]\n{option}\n", Names);
+
+        Assert.Equal($"sets {name}, which Granary does not let mpv.conf change", MpvConfigText.Refusal(entries, Kept));
+    }
+
+    [Theory]
+    [InlineData("add")]
+    [InlineData("append")]
+    [InlineData("pre")]
+    [InlineData("set")]
+    [InlineData("del")]
+    [InlineData("remove")]
+    [InlineData("toggle")]
+    public void AListActionCannotHideACommand(string action)
+    {
+        var entries = MpvConfigText.Entries($"[later]\ninput-commands-{action}=quit\n", Names);
+
+        Assert.Equal([new("input-commands", "later", "quit")], entries);
+        Assert.Equal("sets input-commands, which Granary does not let mpv.conf change", MpvConfigText.Refusal(entries, Kept));
+    }
+
+    [Fact]
+    public void ClearingCommandsAndUsingGranarysOperationMode_IsAllowed()
+    {
+        var entries = MpvConfigText.Entries("player-operation-mode= PSEUDO-GUI \n[later]\ninput-commands-clr\n", Names);
+
+        Assert.Null(MpvConfigText.Refusal(entries, Kept));
+    }
+
+    [Fact]
+    public void WhenGranarysProfileEntriesAreMissing_AllOfTheProfileIsChecked()
+    {
+        const string profiles = """
+            [
+              { "name": "low-latency", "options": [ { "key": "log-file", "value": "builtin" } ] },
+              { "name": "pseudo-gui", "options": [ { "key": "vo", "value": "gpu" } ] },
+              { "name": "default", "options": [ { "key": "idle", "value": "no" } ] }
+            ]
+            """;
+        IReadOnlyList<KeyValuePair<string, string>> own = [new("vo", "gpu-next"), new("idle", "yes")];
+
+        var found = MpvConfigText.FromProfiles(profiles, own, Names);
+
+        Assert.Equal([new("vo", "pseudo-gui", "gpu"), new("idle", null, "no")], found);
+        Assert.StartsWith("sets vo in its [pseudo-gui] profile", MpvConfigText.Refusal(found, Kept), StringComparison.Ordinal);
+        Assert.Empty(MpvConfigText.FromProfiles(null, own, Names));
+    }
+
+    [Fact]
+    public void MpvsBuiltInProfiles_AreIgnored_ButUserProfilesAreChecked()
+    {
+        const string profiles = """
+            [
+              { "name": "low-latency", "options": [ { "key": "demuxer-lavf-o", "value": "built-in" } ] },
+              { "name": "movie", "options": [ { "key": "demuxer-lavf-o", "value": "http_proxy=localhost" } ] }
+            ]
+            """;
+
+        var entries = MpvConfigText.FromProfiles(profiles, Own, Names);
+
+        Assert.Equal([new("demuxer-lavf-o", "movie", "http_proxy=localhost")], entries);
+        Assert.Equal("sets demuxer-lavf-o, which Granary does not let mpv.conf change", MpvConfigText.Refusal(entries, Kept));
+    }
+
+    // A config folder of files in memory, by full path; a missing one reads as none, as in mpv.
+    private static readonly string Folder = Path.GetFullPath(Path.Combine(Path.GetTempPath(), "granary-scan", "mpv"));
+
+    private static MpvConfigScan Scan(params (string Name, string Text)[] files)
+    {
+        var all = files.ToDictionary(f => Path.GetFullPath(Path.Combine(Folder, f.Name)), f => f.Text, StringComparer.OrdinalIgnoreCase);
+        return MpvConfigText.Scan(Path.Combine(Folder, "mpv.conf"), Folder, Names, path => all.GetValueOrDefault(path));
+    }
+
+    [Fact]
+    public void AnInclude_IsReadWhereItStands_InItsProfile()
+    {
+        var scan = Scan(
+            ("mpv.conf", "include=~~/top.conf\n[pseudo-gui]\ninclude=\"~~/sub/gui.conf\"\n[later]\ninclude=~~home/later.conf\n"),
+            ("top.conf", "vo=gpu\n[own]\nidle=no\n"),
+            ("sub/gui.conf", "keep-open=no\n"),
+            ("later.conf", "osc=yes\n"));
+
+        Assert.Null(scan.Problem);
+        Assert.Equal([new("vo", null, "gpu"), new("idle", "own", "no"), new("keep-open", "pseudo-gui", "no"), new("osc", "later", "yes")],
+            scan.Entries);
+        Assert.StartsWith("sets keep-open in its [pseudo-gui] profile", MpvConfigText.Refusal(scan.Entries, Kept), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AnOptionAFileMayNotSet_IsRefusedInAnIncludeToo()
+    {
+        var scan = Scan(("mpv.conf", "deband=yes\n[protocol.http]\ninclude=~~/http.conf\n"), ("http.conf", "log-file=~~/mpv.log\n"));
+
+        Assert.Equal([new("log-file", "protocol.http", "~~/mpv.log")], scan.Entries);
+        Assert.Equal("sets log-file, which Granary does not let mpv.conf change", MpvConfigText.Refusal(scan.Entries, Kept));
+    }
+
+    [Fact]
+    public void AnIncludeByItsFullPath_IsRead()
+    {
+        string other = Path.Combine(Folder, "elsewhere", "x.conf");
+
+        var scan = Scan(("mpv.conf", $"include=\"{other}\"\n"), ("elsewhere/x.conf", "player-operation-mode=cplayer\n"));
+
+        Assert.StartsWith("sets player-operation-mode", MpvConfigText.Refusal(scan.Entries, Kept), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AMissingInclude_IsPassedOver_AsMpvDoes()
+    {
+        var scan = Scan(("mpv.conf", "include=~~/gone.conf\nvo=gpu\n"));
+
+        Assert.Null(scan.Problem);
+        Assert.Equal([new("vo", null, "gpu")], scan.Entries);
+    }
+
+    [Fact]
+    public void IncludesThatIncludeEachOther_AreTheProblem()
+    {
+        // mpv 0.41 reads them without end, and never starts.
+        var scan = Scan(("mpv.conf", "include=~~/a.conf\n"), ("a.conf", "vo=gpu\ninclude=~~/b.conf\n"), ("b.conf", "include=~~/A.conf\nidle=no\n"));
+
+        Assert.Equal("has includes that include each other, which mpv reads without end", scan.Problem);
+    }
+
+    [Fact]
+    public void AFileIncludedTwice_OneAfterTheOther_IsNoCycle()
+    {
+        var scan = Scan(("mpv.conf", "include=~~/common.conf\n[later]\ninclude=~~/common.conf\n"), ("common.conf", "idle=no\n"));
+
+        Assert.Null(scan.Problem);
+        Assert.Equal([new("idle", null, "no"), new("idle", "later", "no")], scan.Entries);
+    }
+
+    [Fact]
+    public void IncludesNestedDeeperThanEight_AreTheProblem()
+    {
+        var files = Enumerable.Range(1, 9).Select(n => ($"{n}.conf", n == 9 ? "vo=gpu\n" : $"include=~~/{n + 1}.conf\n")).ToList();
+        files.Add(("mpv.conf", "include=~~/1.conf\n"));
+
+        Assert.Equal("has includes nested deeper than 8", Scan([.. files]).Problem);
+        files[7] = ("8.conf", "idle=no\n");
+        Assert.Equal([new("idle", null, "no")], Scan([.. files]).Entries);
+    }
+
+    [Theory]
+    [InlineData("include=memory://vo=gpu\n", "has an include Granary cannot follow")]
+    [InlineData("include=~~cache/x.conf\n", "has an include Granary cannot follow")]
+    public void AnIncludeGranaryCannotFollow_IsTheProblem(string text, string problem) =>
+        Assert.Equal(problem, Scan(("mpv.conf", text)).Problem);
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void AnUnreadableFile_StopsTheScanWithoutExposingItsPath(bool root)
+    {
+        string file = Path.Combine(Folder, "mpv.conf");
+        var reads = new List<string>();
+        var scan = MpvConfigText.Scan(file, Folder, Names, path =>
+        {
+            reads.Add(path);
+            if (root || path.EndsWith("locked.conf", StringComparison.Ordinal))
+            {
+                throw new IOException("private path");
+            }
+            return "vo=gpu\ninclude=~~/locked.conf\ninclude=~~/later.conf\nidle=no\n";
+        });
+
+        Assert.Equal(root ? "cannot be read" : "includes locked.conf, which Granary cannot read", scan.Problem);
+        Assert.Equal(root ? 1 : 2, reads.Count);
+        if (root)
+        {
+            Assert.Empty(scan.Entries);
+        }
+        else
+        {
+            Assert.Equal([new("vo", null, "gpu")], scan.Entries);
+        }
+    }
+
+    [Fact]
+    public void AnIncludeGranaryCannotRead_IsTheProblem()
+    {
+        var scan = MpvConfigText.Scan(Path.Combine(Folder, "mpv.conf"), Folder, Names, path =>
+            path.EndsWith("locked.conf", StringComparison.Ordinal) ? throw new UnauthorizedAccessException() : "include=~~/locked.conf\n");
+
+        Assert.Equal("includes locked.conf, which Granary cannot read", scan.Problem);
+    }
+
+    [Fact]
+    public void AnIncludeSection_DoesNotChangeTheParentsProfile()
+    {
+        var scan = Scan(("mpv.conf", "[movie]\ninclude=~~/other.conf\nkeep-open=no\n"),
+            ("other.conf", "[other]\nvo=gpu\n[default]\nidle=no\n"));
+
+        Assert.Null(scan.Problem);
+        Assert.Equal([new("vo", "other", "gpu"), new("idle", "movie", "no"), new("keep-open", "movie", "no")], scan.Entries);
+    }
+}

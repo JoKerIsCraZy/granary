@@ -24,6 +24,8 @@ internal static partial class LibMpv
     public const int EventPlaybackRestart = 21;
     public const int EventPropertyChange = 22;
 
+    public const int ErrorUninitialized = -3;
+
     public const int EndFileEof = 0;
     public const int EndFileStop = 2;
     public const int EndFileQuit = 3;
@@ -83,6 +85,9 @@ internal static partial class LibMpv
 
     [LibraryImport(LibraryName, EntryPoint = "mpv_set_option_string", StringMarshalling = StringMarshalling.Utf8)]
     public static partial int SetOptionString(nint handle, string name, string data);
+
+    [LibraryImport(LibraryName, EntryPoint = "mpv_load_config_file", StringMarshalling = StringMarshalling.Utf8)]
+    public static partial int LoadConfigFile(nint handle, string fileName);
 
     [LibraryImport(LibraryName, EntryPoint = "mpv_set_property_string", StringMarshalling = StringMarshalling.Utf8)]
     public static partial int SetPropertyString(nint handle, string name, string data);

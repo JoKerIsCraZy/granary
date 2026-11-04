@@ -19,6 +19,16 @@ release's section is what its update says it changes (docs/release.md).
   files directly and decodes them on the processor where the graphics card can't, instead of having your Silo server
   convert them: the picture keeps its full quality and the server does less work, but slower PCs can stutter. Off by
   default; it is kept on this PC and counts from the next title you play.
+- Settings → Playback → This PC: **mpv configuration**. Granary plays with your own `mpv.conf` from the `mpv` folder in
+  its data directory, in mpv's own syntax with profiles, `profile-cond` and `include`, and `~~/` for that folder, for
+  shaders, scaling, debanding, tone mapping and the like. **Open mpv.conf** makes the file and opens it in your editor;
+  **Open folder** is there for shaders. Changes apply after you restart Granary. Granary keeps the options it needs to
+  show the video in its window and follow your Silo server's choices, and the log names the options of yours it leaves
+  out and any option mpv can't use. A file that sets an option that could take the stream's address out, such as mpv's
+  own log, a proxy, scripts or commands, or one that would turn Granary's options off, its includes too, plays as if it
+  were not there, and the log says why. If one of its profiles keeps changing Granary's options while a title plays,
+  Granary stops that title and plays on without the file. The row says when your file was not used, or only in part,
+  and why, with a link to the log. Without the file, playback is as before.
 - The log says why a title is converted: what this PC's graphics card decodes, what Granary told the server it plays,
   and the reason the server gave for its choice.
 - More filters for a library, and for Favorites, Watchlist, History and collections: several genres at once, decades,

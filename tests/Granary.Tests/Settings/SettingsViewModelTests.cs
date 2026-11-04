@@ -51,18 +51,31 @@ internal sealed class FakeProfileSettings : IProfileSettings
 }
 
 /// <summary>Settings → Playback and Language &amp; Subtitles.</summary>
-public sealed class SettingsViewModelTests
+public sealed class SettingsViewModelTests : IDisposable
 {
     private readonly FakeProfileSettings _settings = new();
     private readonly ScriptedSilo _silo = new();
     private readonly ManualTimeProvider _time = new();
     private readonly FakeNetworkLink _network = new();
     private readonly InMemoryPlaybackDevicePreferences _device = new();
+    private readonly string _data = Path.Combine(Path.GetTempPath(), "granary-tests", Guid.NewGuid().ToString("N"));
+    private readonly RecordingFileLauncher _launcher = new();
+    private readonly MpvConfigStatus _mpvStatus = new();
+
+    private MpvConfigFolder MpvFolder => new(Path.Combine(_data, "mpv"), new LogSink().For<MpvConfigFolder>());
+
+    public void Dispose()
+    {
+        if (Directory.Exists(_data))
+        {
+            Directory.Delete(_data, recursive: true);
+        }
+    }
 
     private PlaybackSettingsViewModel Playback() => new(_settings, new PlaybackApi(_silo.Http), new PlaybackConnectionApi(_silo.Http),
         ConnectionSpeedTestTests.SpeedTest(_silo, _time, _network), _network,
         new FakeSessionManager { State = SessionState.Ready, ActiveServer = ScriptedSilo.Server, ProfileId = "7" }, _time,
-        new LogSink().For<PlaybackSettingsViewModel>(), _device);
+        new LogSink().For<PlaybackSettingsViewModel>(), _device, MpvFolder, _launcher, _mpvStatus);
 
     private LanguageSettingsViewModel Language() => new(_settings, new LogSink().For<LanguageSettingsViewModel>());
 
@@ -108,6 +121,187 @@ public sealed class SettingsViewModelTests
 
         Assert.Equal([false], _device.Saved);
         Assert.Empty(_settings.Writes);
+    }
+
+    [Fact]
+    public async Task OpenMpvConf_MakesTheFileFirst_ThenOpensIt()
+    {
+        var page = Playback();
+
+        await page.OpenMpvConfigCommand.ExecuteAsync(null);
+
+        Assert.True(File.Exists(MpvFolder.ConfigFile));
+        Assert.Equal(["file " + MpvFolder.ConfigFile], _launcher.Opened);
+        Assert.Equal("", page.MpvConfigMessage);
+        Assert.Empty(_settings.Writes);
+    }
+
+    [Fact]
+    public async Task AnOlderOpenThatEndsLast_DoesNotSpeakOverTheNewerOne()
+    {
+        using var hold = new ManualResetEventSlim();
+        _launcher.HoldFiles = hold;
+        _launcher.FailWhen = what => what.StartsWith("file ", StringComparison.Ordinal);
+        var page = Playback();
+
+        var older = page.OpenMpvConfigCommand.ExecuteAsync(null);
+        await page.OpenMpvFolderCommand.ExecuteAsync(null);
+        hold.Set();
+        await older;
+
+        Assert.Equal("", page.MpvConfigMessage);
+    }
+
+    [Fact]
+    public async Task AnMpvConfThatDoesNotOpen_SaysWhereItIs()
+    {
+        _launcher.Fails = true;
+        var page = Playback();
+
+        await page.OpenMpvConfigCommand.ExecuteAsync(null);
+
+        Assert.Equal($"Couldn't open mpv.conf. You'll find it in {MpvFolder.Directory}.", page.MpvConfigMessage);
+        Assert.True(File.Exists(MpvFolder.ConfigFile));
+
+        // The next try that works clears it.
+        _launcher.Fails = false;
+        await page.OpenMpvConfigCommand.ExecuteAsync(null);
+        Assert.Equal("", page.MpvConfigMessage);
+    }
+
+    [Fact]
+    public async Task AnMpvConfThatCannotBeMade_IsSaid()
+    {
+        // A file where the folder belongs.
+        Directory.CreateDirectory(_data);
+        await File.WriteAllTextAsync(Path.Combine(_data, "mpv"), "", TestContext.Current.CancellationToken);
+        var page = Playback();
+
+        await page.OpenMpvConfigCommand.ExecuteAsync(null);
+
+        Assert.Equal($"Couldn't create mpv.conf in {MpvFolder.Directory}.", page.MpvConfigMessage);
+        Assert.Empty(_launcher.Opened);
+    }
+
+    [Fact]
+    public async Task AFolderInMpvConfsPlace_IsSaid()
+    {
+        Directory.CreateDirectory(MpvFolder.ConfigFile);
+        var page = Playback();
+
+        await page.OpenMpvConfigCommand.ExecuteAsync(null);
+
+        Assert.Equal($"mpv.conf in {MpvFolder.Directory} is a folder. Rename or remove it, then try again.", page.MpvConfigMessage);
+        Assert.Empty(_launcher.Opened);
+    }
+
+    [Theory]
+    [InlineData(MpvConfigUse.NotUsed, "it sets player-operation-mode, which Granary needs to keep its own options", 0,
+        "Your mpv.conf was not used: it sets player-operation-mode, which Granary needs to keep its own options. The log has the details.")]
+    [InlineData(MpvConfigUse.StoppedDuringPlayback, "it keeps changing log-file", 0,
+        "Granary stopped using your mpv.conf: it keeps changing log-file. The log has the details.")]
+    [InlineData(MpvConfigUse.Used, "", 2, "Granary kept 2 of its own options from your mpv.conf. The log names them.")]
+    [InlineData(MpvConfigUse.Used, "", 0, "")]
+    [InlineData(MpvConfigUse.None, "", 0, "")]
+    public void HowYourMpvConfFaredThisRun_IsSaidUnderTheRow(MpvConfigUse use, string reason, int kept, string text)
+    {
+        _mpvStatus.Report(new MpvConfigState(use, reason, kept));
+
+        var page = Playback();
+
+        Assert.Equal(text, page.MpvConfigStatusText);
+        Assert.Equal("", page.MpvConfigMessage);
+    }
+
+    [Fact]
+    public async Task TheStatus_IsReadAgainWhenThePageLoads()
+    {
+        Capabilities();
+        var page = Playback();
+        Assert.Equal("", page.MpvConfigStatusText);
+        // The player starts while Settings is open.
+        _mpvStatus.Report(new MpvConfigState(MpvConfigUse.NotUsed, "mpv refused to start with it"));
+
+        await page.LoadAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal("Your mpv.conf was not used: mpv refused to start with it. The log has the details.", page.MpvConfigStatusText);
+    }
+
+    [Fact]
+    public void OpenLogs_ShowsGranarysLogFolder()
+    {
+        var page = Playback();
+
+        page.OpenLogsCommand.Execute(null);
+
+        Assert.Equal(["folder " + Granary.Core.Diagnostics.FileLoggerProvider.DefaultDirectory], _launcher.Opened);
+        Assert.Equal("", page.MpvConfigMessage);
+    }
+
+    [Fact]
+    public async Task OpenFolder_ShowsTheMpvFolder_MadeFirst()
+    {
+        var page = Playback();
+
+        await page.OpenMpvFolderCommand.ExecuteAsync(null);
+
+        Assert.True(Directory.Exists(MpvFolder.Directory));
+        Assert.Equal(["folder " + MpvFolder.Directory], _launcher.Opened);
+        Assert.False(File.Exists(MpvFolder.ConfigFile));
+        Assert.Equal("", page.MpvConfigMessage);
+    }
+
+    [Fact]
+    public async Task OpenFolder_WhenItCannotBeCreated_DoesNotLaunchIt()
+    {
+        Directory.CreateDirectory(_data);
+        await File.WriteAllTextAsync(Path.Combine(_data, "mpv"), "", TestContext.Current.CancellationToken);
+        var page = Playback();
+
+        await page.OpenMpvFolderCommand.ExecuteAsync(null);
+
+        Assert.Equal($"Couldn't open {MpvFolder.Directory}.", page.MpvConfigMessage);
+        Assert.Empty(_launcher.Opened);
+    }
+
+    [Fact]
+    public async Task OpenFolder_WhenTheLauncherFails_SaysWhereItIs_AndClearsTheMessageOnRetry()
+    {
+        _launcher.Fails = true;
+        var page = Playback();
+
+        await page.OpenMpvFolderCommand.ExecuteAsync(null);
+
+        Assert.True(Directory.Exists(MpvFolder.Directory));
+        Assert.Equal($"Couldn't open {MpvFolder.Directory}.", page.MpvConfigMessage);
+        _launcher.Fails = false;
+        await page.OpenMpvFolderCommand.ExecuteAsync(null);
+        Assert.Equal(["folder " + MpvFolder.Directory], _launcher.Opened);
+        Assert.Equal("", page.MpvConfigMessage);
+    }
+
+    [Fact]
+    public void OpenLogs_WhenTheLogFolderFails_TriesTheDataFolder()
+    {
+        _launcher.FailWhen = what => what == "folder " + Granary.Core.Diagnostics.FileLoggerProvider.DefaultDirectory;
+        var page = Playback();
+
+        page.OpenLogsCommand.Execute(null);
+
+        Assert.Equal(["folder " + Granary.Core.AppPaths.DataDirectory], _launcher.Opened);
+        Assert.Equal("", page.MpvConfigMessage);
+    }
+
+    [Fact]
+    public void OpenLogs_WhenBothFoldersFail_SaysWhereTheLogsAre()
+    {
+        _launcher.Fails = true;
+        var page = Playback();
+
+        page.OpenLogsCommand.Execute(null);
+
+        Assert.Empty(_launcher.Opened);
+        Assert.Equal($"Couldn't open {Granary.Core.Diagnostics.FileLoggerProvider.DefaultDirectory}.", page.MpvConfigMessage);
     }
 
     [Fact]

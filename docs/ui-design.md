@@ -618,10 +618,29 @@ says why above the sections.
   connection's learned limit with Reset), This PC ("Kept on this PC, not in your profile.": Direct play without
   hardware decoding, a switch, off by default, counting from the next title; Up and Down in the player, a select with
   Controls and menus (the default, as Silo's TV app) and Volume (the web player's keys), which the
-  player follows at its next key. Granary's own and kept on the PC in `playback-device.json`, so they do not save to
-  the server), Connection (the latest speed reading and what Auto plays without
-  converting), Skipping (skip intros, auto-skip recaps and credits), Next episode (start next at preview, auto-play),
-  Seek controls (rewind and fast-forward intervals).
+  player follows at its next key; and mpv configuration, see below. Granary's own and kept on the PC, so nothing saves
+  to the server), Connection (the latest speed reading and what Auto plays without converting), Skipping (skip
+  intros, auto-skip recaps and credits), Next episode (start next at preview, auto-play), Seek controls (rewind and
+  fast-forward intervals).
+- **This PC → mpv configuration**: "Use your own mpv options from mpv.conf, such as shaders, scaling or debanding.
+  They apply after you restart Granary. Granary keeps the options it needs to show the video and follow your Silo
+  server's choices. A wrong option can make playback worse; delete the file to go back to normal." On the right an
+  **Open folder** link (tooltip "For shaders and other files your mpv.conf uses") and an **Open mpv.conf** outline
+  button. Open mpv.conf makes the `mpv` folder in the data directory and an `mpv.conf` of comments only when they are
+  missing, then opens the file in the app Windows has for `.conf` files, or Notepad when there is none; Open folder makes
+  the folder and shows it in File Explorer. When one fails, 13 px muted text under the row says so and where the folder
+  is: "Couldn't open mpv.conf. You'll find it in …", "Couldn't create mpv.conf in …", "mpv.conf in … is a folder.
+  Rename or remove it, then try again.", "Couldn't open …". The next try that works clears it. Above that line, in the
+  same text, how the player fared with the file in this run (`IMpvConfigStatus`, read when the page is made and when it
+  loads): "Your mpv.conf was not used: {reason}. The log has the details." (refused at the start, or mpv refused it),
+  "Granary stopped using your mpv.conf: {reason}. The log has the details." (a profile kept changing one of Granary's
+  options while a title played), or "Granary kept {n} of its own options from your mpv.conf. The log names them."; the
+  reason is the log's, such as "it sets player-operation-mode, which Granary needs to keep its own options", "it sets
+  log-file, which Granary does not let mpv.conf change", "mpv refused to start with it" or "it keeps changing
+  keep-open". Nothing when the file was used as written, when there is
+  none, or before the player first started. With that line, an **Open logs** link stands left of Open folder and shows
+  Granary's log folder in File Explorer (the data folder before the first log). How mpv reads the file and which options Granary keeps is in docs/architecture.md ("Your own
+  mpv.conf").
 - **Connection** (with `connection_speed_v1`): "Connection speed" with the reading as its description ("400 Mbps ·
   measured just now on Ethernet", "Not measured yet") and **Test speed** as an outline button on the right, "Testing…"
   and disabled while it runs (about 10 s). Under the row, in 13 px muted text, what went wrong, in the web's words:
