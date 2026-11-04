@@ -58,7 +58,8 @@ public sealed partial class MainWindow : Window
     public MainWindow(NavigationService navigation, ShellViewModel shell, SidebarViewModel sidebar, SidebarSections sections,
         SidebarLayout layout, NotificationBadge notifications, RequestsFeature requests, PlaybackStops stops, AppUpdatesViewModel updates,
         Granary.Core.WatchParty.WatchPartyFeature watchParty, Granary.Core.WatchParty.WatchPartySession room,
-        Granary.Core.ViewModels.Detail.TrailerOverlayViewModel trailers, WindowModeService modes, ILogger<MainWindow> logger)
+        Granary.Core.ViewModels.Detail.TrailerOverlayViewModel trailers, WindowModeService modes, ILogger<MainWindow> logger,
+        Granary.Core.Theme.ServerAccent brand)
     {
         Layout = layout;
         _modes = modes;
@@ -70,6 +71,7 @@ public sealed partial class MainWindow : Window
         _logger = logger;
         Shell = shell;
         Sidebar = sidebar;
+        _brand = brand;
         Sections = sections;
         Notifications = notifications;
         Requests = requests;
@@ -97,6 +99,7 @@ public sealed partial class MainWindow : Window
         SetTitleBar(AppTitleBar);
         StyleCaptionButtons();
         InitializeFullScreen();
+        InitializeWordmark();
         InitializeRemote();
         // The exe carries the icon too (ApplicationIcon); an unpackaged window still has to be given it.
         AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets", "Logo", "granary.ico"));

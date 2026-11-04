@@ -76,9 +76,15 @@
             PaneClosed="OnPaneSettled"
             ItemInvoked="OnItemInvoked">
             <NavigationView.PaneHeader>
-                <TextBlock Margin="20,4,12,12" Text="{x:Bind Sidebar.ServerName, Mode=OneWay}" TextTrimming="CharacterEllipsis"
-                           FontFamily="{StaticResource SiloFontExtraBold}" FontWeight="ExtraBold" FontSize="22" CharacterSpacing="-30"
-                           Foreground="{StaticResource SiloForegroundBrush}" />
+                <Grid Margin="20,4,12,12">
+                    <TextBlock x:Name="ServerNameText" Text="{x:Bind Sidebar.ServerName, Mode=OneWay}" TextTrimming="CharacterEllipsis"
+                               FontFamily="{StaticResource SiloFontExtraBold}" FontWeight="ExtraBold" FontSize="22" CharacterSpacing="-30"
+                               Foreground="{StaticResource SiloForegroundBrush}" />
+                    <!-- The server's wordmark in place of its name, at the web's size (components/AppSidebar.tsx). -->
+                    <Image x:Name="ServerWordmark" Width="112" Height="48" Stretch="Uniform" HorizontalAlignment="Left" Visibility="Collapsed"
+                           AutomationProperties.Name="{x:Bind Sidebar.ServerName, Mode=OneWay}"
+                           ImageOpened="OnWordmarkOpened" ImageFailed="OnWordmarkFailed" />
+                </Grid>
             </NavigationView.PaneHeader>
 
             <NavigationView.MenuItems>

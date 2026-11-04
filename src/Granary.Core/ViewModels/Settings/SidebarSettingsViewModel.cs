@@ -38,6 +38,13 @@ public sealed partial class SidebarSettingsViewModel : ObservableObject, IDispos
     /// <summary>Something is hidden or moved; Reset shows the sidebar as it comes.</summary>
     public bool IsCustomized => _layout.IsCustomized;
 
+    /// <summary>The sidebar's top shows the logo of a server that has one, rather than its name.</summary>
+    public bool ShowsServerLogo
+    {
+        get => _layout.ShowsServerLogo;
+        set => _ = SetShownAsync(SidebarLayout.ServerLogoTag, value);
+    }
+
     [RelayCommand]
     private Task ResetAsync() => _layout.ResetAsync();
 
@@ -108,6 +115,7 @@ public sealed partial class SidebarSettingsViewModel : ObservableObject, IDispos
             _rows.Remove(gone);
         }
         OnPropertyChanged(nameof(IsCustomized));
+        OnPropertyChanged(nameof(ShowsServerLogo));
     }
 }
 

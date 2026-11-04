@@ -71,6 +71,66 @@ public sealed class ServerAccentTests
     }
 
     [Fact]
+    public async Task TheServersWordmark_IsItsAddressOnTheServer()
+    {
+        _harness.Silo.On(HttpMethod.Get, BrandingPath, ScriptedSilo.Json(HttpStatusCode.OK,
+            """{ "server_name": "Elena's Silo", "wordmark_url": "/api/v2/branding/assets/wordmark?v=1.webp" }"""));
+        var accent = Create();
+
+        await accent.StartAsync();
+
+        Assert.Equal(ScriptedSilo.Base.AbsoluteUri.TrimEnd('/') + "/api/v2/branding/assets/wordmark?v=1.webp", accent.Wordmark?.AbsoluteUri);
+    }
+
+    [Theory]
+    [InlineData("""{ "server_name": "Elena's Silo" }""")]
+    [InlineData("""{ "wordmark_url": "" }""")]
+    [InlineData("""{ "wordmark_url": "file:///C:/Windows/win.ini" }""")]
+    [InlineData("""{ "wordmark_url": "//elsewhere.example/wordmark.webp" }""")]
+    public async Task NoWordmark_OrOneThatIsNoWebAddress_LeavesTheServersName(string branding)
+    {
+        _harness.Silo.On(HttpMethod.Get, BrandingPath, ScriptedSilo.Json(HttpStatusCode.OK, branding));
+        var accent = Create();
+
+        await accent.StartAsync();
+
+        Assert.Null(accent.Wordmark);
+    }
+
+    [Fact]
+    public async Task AFailedRead_ShowsNoWordmark()
+    {
+        _harness.Silo.On(HttpMethod.Get, BrandingPath, ScriptedSilo.Json(HttpStatusCode.InternalServerError, "{}"));
+        var accent = Create();
+
+        await accent.StartAsync();
+
+        Assert.Null(accent.Wordmark);
+    }
+
+    [Fact]
+    public async Task AnotherServer_DoesNotKeepTheLastOnesWordmark_WhileItsOwnIsRead()
+    {
+        _harness.Silo.On(HttpMethod.Get, BrandingPath, ScriptedSilo.Json(HttpStatusCode.OK, """{ "wordmark_url": "/first.webp" }"""));
+        var accent = Create();
+        await accent.StartAsync();
+        Assert.NotNull(accent.Wordmark);
+        var held = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _harness.Silo.On(HttpMethod.Get, BrandingPath, () => held.Task);
+
+        _harness.Session.ActiveServer = _harness.Session.ActiveServer! with { Id = "another-server" };
+        _harness.Session.RaiseChanged();
+
+        Assert.Null(accent.Wordmark);
+        held.SetResult(new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("""{ "wordmark_url": "/second.webp" }""", System.Text.Encoding.UTF8, "application/json"),
+        });
+        await accent.Reading;
+        Assert.EndsWith("/second.webp", accent.Wordmark?.AbsoluteUri, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task AFailedRead_IsGranarysOwnRed()
     {
         _harness.Silo.On(HttpMethod.Get, BrandingPath, ScriptedSilo.Problem(500, "internal_error"));

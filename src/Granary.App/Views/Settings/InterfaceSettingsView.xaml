@@ -404,18 +404,25 @@
                     <TextBlock Style="{StaticResource SiloSettingsMutedTextStyle}"
                                Text="What Granary's sidebar shows, and in which order, for this profile on this PC. Home, Search and Settings always show." />
                 </StackPanel>
-                <ItemsControl Grid.Column="1" ItemsSource="{x:Bind Sidebar.Groups}" IsTabStop="False">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate x:DataType="settings:SidebarGroupViewModel">
-                            <StackPanel Margin="0,0,0,24" Visibility="{x:Bind HasRows, Mode=OneWay}">
-                                <TextBlock Text="{x:Bind Title}" Margin="0,0,0,8" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
-                                           FontSize="13" Foreground="{StaticResource SiloMutedBrush}" AutomationProperties.HeadingLevel="Level3" />
-                                <ItemsControl ItemsSource="{x:Bind Rows}" ItemTemplate="{StaticResource SidebarRowTemplate}" IsTabStop="False"
-                                              BorderThickness="0,0,0,1" BorderBrush="{StaticResource SiloSettingsHairlineBrush}" />
-                            </StackPanel>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+                <StackPanel Grid.Column="1" Spacing="24">
+                    <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Server logo"
+                                          Description="Shows the logo your Silo server's admin set in place of the server's name. A server without one shows its name.">
+                        <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind Sidebar.ShowsServerLogo, Mode=TwoWay}"
+                                      AutomationProperties.Name="Server logo" />
+                    </controls:SettingsRow>
+                    <ItemsControl ItemsSource="{x:Bind Sidebar.Groups}" IsTabStop="False">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="settings:SidebarGroupViewModel">
+                                <StackPanel Margin="0,0,0,24" Visibility="{x:Bind HasRows, Mode=OneWay}">
+                                    <TextBlock Text="{x:Bind Title}" Margin="0,0,0,8" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold"
+                                               FontSize="13" Foreground="{StaticResource SiloMutedBrush}" AutomationProperties.HeadingLevel="Level3" />
+                                    <ItemsControl ItemsSource="{x:Bind Rows}" ItemTemplate="{StaticResource SidebarRowTemplate}" IsTabStop="False"
+                                                  BorderThickness="0,0,0,1" BorderBrush="{StaticResource SiloSettingsHairlineBrush}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
             </Grid>
         </Border>
     </StackPanel>
