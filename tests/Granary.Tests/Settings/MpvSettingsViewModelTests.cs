@@ -223,6 +223,30 @@ public sealed class MpvSettingsViewModelTests : IDisposable
     }
 
     [Fact]
+    public async Task AFailedLoadThatLeavesThePresetNamed_ShowsIt_SoUnloadIsOffered()
+    {
+        _folder.WriteConfig("# mine\n");
+        _presets.Save("HQ", "deband=yes\n");
+        using var row = await Loaded();
+        FileStream? config = null;
+        FileStream? name = null;
+        _presets.BeforeConfigWrite = () =>
+        {
+            config = new FileStream(_folder.ConfigFile, FileMode.Open, FileAccess.Read, FileShare.Read);
+            name = new FileStream(Path.Combine(_presets.Directory, ".active.json"), FileMode.Open, FileAccess.Read, FileShare.Read);
+        };
+
+        await row.LoadPresetAsync(row.Presets[0]);
+        await config!.DisposeAsync();
+        await name!.DisposeAsync();
+
+        Assert.Equal("Couldn't load the preset HQ.", row.PresetMessage);
+        Assert.True(row.HasActivePreset);
+        Assert.Equal("Preset: HQ (changed)", row.ActivePresetText);
+        Assert.False(_changes.IsPending);
+    }
+
+    [Fact]
     public async Task ALoadedPreset_IsNamed_AndAnEditMarksItChanged()
     {
         _folder.WriteConfig("# mine\n");
@@ -296,9 +320,9 @@ public sealed class MpvSettingsViewModelTests : IDisposable
         _status.ReportTitleOpening();
         _status.ReportTitleOpened();
         Assert.Equal("", row.ChangeText);
-        string mark = Path.Combine(_presets.Directory, ".before-preset.none");
+        string named = Path.Combine(_presets.Directory, ".active.json");
 
-        using (new FileStream(mark, FileMode.Open, FileAccess.Read, FileShare.None))
+        using (new FileStream(named, FileMode.Open, FileAccess.Read, FileShare.Read))
         {
             await row.UnloadPresetAsync();
         }
@@ -309,7 +333,7 @@ public sealed class MpvSettingsViewModelTests : IDisposable
 
         await row.UnloadPresetAsync();
 
-        Assert.Equal("You had no mpv.conf before the preset, so it is removed.", row.PresetMessage);
+        Assert.Equal("There's nothing from before the preset to go back to, so your mpv.conf stays as it is.", row.PresetMessage);
         Assert.False(row.HasActivePreset);
     }
 

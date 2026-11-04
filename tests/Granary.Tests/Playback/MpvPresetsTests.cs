@@ -278,7 +278,7 @@ public sealed class MpvPresetsTests : IDisposable
     }
 
     [Fact]
-    public void AnUnloadThatCannotRemoveItsMark_IsNoSuccess_AndCanBeTriedAgain()
+    public void AnUnloadThatCannotRemoveItsMark_StillEndsThePreset_AndAFileMadeSinceIsSafe()
     {
         _presets.Save("HQ", "deband=yes\n");
         _presets.Load("HQ");
@@ -286,17 +286,65 @@ public sealed class MpvPresetsTests : IDisposable
 
         using (new FileStream(mark, FileMode.Open, FileAccess.Read, FileShare.None))
         {
+            Assert.Equal(MpvPresetUnload.Removed, _presets.Unload());
+        }
+
+        Assert.False(File.Exists(_folder.ConfigFile));
+        Assert.Null(_presets.Active());
+
+        _folder.WriteConfig("# made since\n");
+        Assert.True(_presets.Load("HQ"));
+        Assert.Equal(MpvPresetUnload.Restored, _presets.Unload());
+
+        Assert.Equal("# made since\n", File.ReadAllText(_folder.ConfigFile));
+        Assert.Equal(["HQ.conf"], Directory.GetFiles(_presets.Directory).Select(Path.GetFileName));
+    }
+
+    [Fact]
+    public void AnUnloadThatCannotRemoveItsBackup_StillEndsThePreset_AndAFileMadeSinceIsSafe()
+    {
+        _folder.WriteConfig("# mine\n");
+        _presets.Save("HQ", "deband=yes\n");
+        _presets.Load("HQ");
+        string backup = Path.Combine(_presets.Directory, ".before-preset.conf");
+
+        using (new FileStream(backup, FileMode.Open, FileAccess.Read, FileShare.Read))
+        {
+            Assert.Equal(MpvPresetUnload.Restored, _presets.Unload());
+        }
+
+        Assert.Equal("# mine\n", File.ReadAllText(_folder.ConfigFile));
+        Assert.Null(_presets.Active());
+
+        _folder.WriteConfig("# made since\n");
+        Assert.True(_presets.Load("HQ"));
+        Assert.Equal(MpvPresetUnload.Restored, _presets.Unload());
+
+        Assert.Equal("# made since\n", File.ReadAllText(_folder.ConfigFile));
+    }
+
+    [Fact]
+    public void AnUnloadThatCannotRemoveTheName_IsNoSuccess_AndAFileMadeSinceIsSafe()
+    {
+        _folder.WriteConfig("# mine\n");
+        _presets.Save("HQ", "deband=yes\n");
+        _presets.Load("HQ");
+
+        using (new FileStream(Path.Combine(_presets.Directory, ".active.json"), FileMode.Open, FileAccess.Read, FileShare.None))
+        {
             Assert.Equal(MpvPresetUnload.NotCleanedUp, _presets.Unload());
         }
 
-        // mpv.conf went as asked, and the way back stays offered until all of it is done.
-        Assert.False(File.Exists(_folder.ConfigFile));
+        // mpv.conf is back, and the way to finish stays offered.
+        Assert.Equal("# mine\n", File.ReadAllText(_folder.ConfigFile));
         Assert.NotNull(_presets.Active());
 
-        Assert.Equal(MpvPresetUnload.Removed, _presets.Unload());
+        _folder.WriteConfig("# made since\n");
+        Assert.True(_presets.Load("HQ"));
+        Assert.Equal(MpvPresetUnload.Restored, _presets.Unload());
 
+        Assert.Equal("# made since\n", File.ReadAllText(_folder.ConfigFile));
         Assert.Null(_presets.Active());
-        Assert.False(File.Exists(mark));
     }
 
     [Theory]

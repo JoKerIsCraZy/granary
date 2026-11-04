@@ -114,6 +114,8 @@ public sealed partial class MpvSettingsViewModel : ObservableObject, IDisposable
         {
             PresetMessage = $"Couldn't load the preset {preset.Name}.";
             Presets = await Task.Run(ReadPresets);
+            // One that could not take the preset's name back leaves it named, with Unload as the way out.
+            await ShowActiveAsync();
             return;
         }
         PresetMessage = $"Loaded {preset.Name} into mpv.conf.";
@@ -135,7 +137,7 @@ public sealed partial class MpvSettingsViewModel : ObservableObject, IDisposable
             MpvPresetUnload.Restored => "Your mpv.conf from before the preset is back.",
             MpvPresetUnload.Removed => "You had no mpv.conf before the preset, so it is removed.",
             MpvPresetUnload.NotCleanedUp => "Your mpv.conf from before the preset is back, but Granary couldn't finish tidying up. Try Unload again.",
-            MpvPresetUnload.NothingToRestore => "Couldn't find your mpv.conf from before the preset.",
+            MpvPresetUnload.NothingToRestore => "There's nothing from before the preset to go back to, so your mpv.conf stays as it is.",
             _ => "Couldn't go back to your mpv.conf from before the preset.",
         };
         if (result is MpvPresetUnload.Restored or MpvPresetUnload.Removed or MpvPresetUnload.NotCleanedUp)

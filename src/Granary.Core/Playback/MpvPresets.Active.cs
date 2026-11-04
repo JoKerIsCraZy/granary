@@ -99,8 +99,9 @@ public sealed partial class MpvPresets
 
     /// <summary>
     /// Goes back to mpv.conf from before the first preset: the backup put back, or mpv.conf removed when there was none.
-    /// The backup and then the active preset go once that is done; a failure, of either step, leaves what is left for
-    /// another try, and Unload stays offered as the active preset goes last.
+    /// When that fails everything stays for another try. Once it is done the backup and the active preset both go: a backup
+    /// left behind does no harm, as a load does not trust it without the active preset, and an active preset that stays is
+    /// no success, with Unload still offered to finish.
     /// </summary>
     public MpvPresetUnload Unload()
     {
@@ -127,7 +128,14 @@ public sealed partial class MpvPresets
             _logger.LogWarning(ex, "mpv.conf could not go back to how it was before the preset");
             result = MpvPresetUnload.Failed;
         }
-        if (result == MpvPresetUnload.Failed || (TryDelete(BackupFile, NoFileMarker) && TryDelete(ActiveFile)))
+        if (result == MpvPresetUnload.Failed)
+        {
+            return result;
+        }
+        // Each goes whatever becomes of the other: with the backup stuck and the preset still named, the next load would trust
+        // that backup, and the Unload after it would decide over a file made since.
+        TryDelete(BackupFile, NoFileMarker);
+        if (TryDelete(ActiveFile))
         {
             return result;
         }
@@ -189,7 +197,7 @@ public enum MpvPresetUnload
     /// <summary>The backup was gone; mpv.conf stays, and no preset is named any more.</summary>
     NothingToRestore,
 
-    /// <summary>mpv.conf is back, or removed, but what Granary kept for it could not all be removed: another try finishes it.</summary>
+    /// <summary>mpv.conf is back, or removed, but the preset is still named: another try finishes it.</summary>
     NotCleanedUp,
 
     /// <summary>mpv.conf could not be put back; the backup stays.</summary>

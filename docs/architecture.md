@@ -190,8 +190,8 @@ Unload works from the backup. Files starting with a dot are Granary's own: never
 them, and the next load replaces them with the viewer's file of now, or fails if it cannot. A load writes `.active.json`
 first and replaces mpv.conf last, in one move: until then the viewer's file is in place, and after it nothing is left to
 fail. One that fails takes the name back and drops a backup it just made; should the name stay, so does the backup, so
-Unload stays true to what is there. Unload removes the backup first and `.active.json` last: an Unload that fails, also only in that clean-up,
-is no success (`NotCleanedUp`), keeps what is left, and stays offered for another try.
+Unload stays true to what is there. Once mpv.conf is back Unload removes the backup and `.active.json`, each whatever becomes of the other: a
+backup left behind is not trusted, so only `.active.json` staying is no success (`NotCleanedUp`), and Unload stays offered to finish.
 
 **When it applies**: the engine is one libmpv instance for the whole run (`AddGranaryPlayer`), made when the player first
 opens, and mpv reads the file only in `mpv_initialize`. Reading it again before a title (`load-config-file`) would add

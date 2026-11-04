@@ -701,7 +701,7 @@ says why above the sections.
   button go, focus moves to Save as preset…, the change line says "Applies to the next title." as after a save, and the muted line
   says "Your mpv.conf from before the preset is back.", "You had no mpv.conf before the preset, so it is removed.",
   "Your mpv.conf from before the preset is back, but Granary couldn't finish tidying up. Try Unload again." (the line and
-  the button stay), "Couldn't find your mpv.conf from before the preset." (the backup was gone; the preset is no longer named) or
+  the button stay), "There's nothing from before the preset to go back to, so your mpv.conf stays as it is." (the backup was gone; the preset is no longer named) or
   "Couldn't go back to your mpv.conf from before the preset." (everything stays for another try).
 - **Connection** (with `connection_speed_v1`): "Connection speed" with the reading as its description ("400 Mbps ·
   measured just now on Ethernet", "Not measured yet") and **Test speed** as an outline button on the right, "Testing…"
