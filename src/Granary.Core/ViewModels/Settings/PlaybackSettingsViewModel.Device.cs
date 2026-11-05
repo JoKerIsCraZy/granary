@@ -1,3 +1,4 @@
+using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Diagnostics;
@@ -42,6 +43,81 @@ public sealed partial class PlaybackSettingsViewModel
         {
             // Never fails, as the switch below; the player reads it at its next key.
             _ = _devicePreferences.SetUpDownAsync(upDown);
+        }
+    }
+
+    private const string CustomChoice = "custom";
+
+    /// <summary>The still watching prompt (<see cref="IPlaybackDevicePreferences.PassoutThreshold"/>): the named numbers, then Custom.</summary>
+    public IReadOnlyList<SettingChoice> StillWatchingChoices { get; } =
+    [
+        .. AutoPlayStreak.ThresholdPresets.Select(episodes =>
+            new SettingChoice(SettingValues.Invariant(episodes), episodes == 0 ? "Unlimited" : $"{SettingValues.Invariant(episodes)} episodes")),
+        new SettingChoice(CustomChoice, "Custom"),
+    ];
+
+    [ObservableProperty]
+    public partial SettingChoice? SelectedStillWatching { get; set; }
+
+    /// <summary>Custom is chosen, so the number shows.</summary>
+    [ObservableProperty]
+    public partial bool IsStillWatchingCustom { get; private set; }
+
+    /// <summary>Custom's number. A double, as the number box has it: cleared, it is not a number.</summary>
+    [ObservableProperty]
+    public partial double StillWatchingEpisodes { get; set; }
+
+    // What the page opens with: the number by its name if it has one, else Custom. Nothing is saved by showing it.
+    private void ShowStillWatching(int episodes)
+    {
+        StillWatchingEpisodes = episodes > 0 ? episodes : AutoPlayStreak.DefaultThreshold;
+        SelectedStillWatching = StillWatchingChoices.FirstOrDefault(c => c.Value == SettingValues.Invariant(episodes)) ?? StillWatchingChoices[^1];
+    }
+
+    partial void OnSelectedStillWatchingChanged(SettingChoice? value)
+    {
+        if (value is null)
+        {
+            return;
+        }
+        IsStillWatchingCustom = value.Value == CustomChoice;
+        if (!IsStillWatchingCustom)
+        {
+            SaveStillWatching(int.Parse(value.Value, CultureInfo.InvariantCulture));
+            return;
+        }
+        // Custom starts from what holds; from Unlimited, whose number is no use to start from, at the default.
+        int holds = _devicePreferences.PassoutThreshold;
+        StillWatchingEpisodes = holds > 0 ? holds : AutoPlayStreak.DefaultThreshold;
+        SaveStillWatching((int)StillWatchingEpisodes);
+    }
+
+    partial void OnStillWatchingEpisodesChanged(double value)
+    {
+        if (double.IsNaN(value))
+        {
+            // The box was cleared: it shows what holds again.
+            int holds = _devicePreferences.PassoutThreshold;
+            StillWatchingEpisodes = holds > 0 ? holds : AutoPlayStreak.DefaultThreshold;
+            return;
+        }
+        int episodes = (int)Math.Clamp(Math.Round(value), 1, AutoPlayStreak.MaxThreshold);
+        if (episodes != value)
+        {
+            StillWatchingEpisodes = episodes;
+        }
+        else if (IsStillWatchingCustom)
+        {
+            SaveStillWatching(episodes);
+        }
+    }
+
+    private void SaveStillWatching(int episodes)
+    {
+        if (episodes != _devicePreferences.PassoutThreshold)
+        {
+            // Never fails, as the switch below; a change counts from the next episode.
+            _ = _devicePreferences.SetPassoutThresholdAsync(episodes);
         }
     }
 

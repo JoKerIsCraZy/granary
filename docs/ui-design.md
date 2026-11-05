@@ -618,7 +618,9 @@ says why above the sections.
   connection's learned limit with Reset), This PC ("Kept on this PC, not in your profile.": Direct play without
   hardware decoding, a switch, off by default, counting from the next title; Up and Down in the player, a select with
   Controls and menus (the default, as Silo's TV app) and Volume (the web player's keys), which the
-  player follows at its next key; and mpv configuration, see below. Granary's own and kept on the PC, so nothing saves
+  player follows at its next key; Still watching prompt, a select with Unlimited, 2 to 5 episodes (the Android app's
+  choices, 3 by default) and Custom, which shows a number box from 1 to 20 (the contract's highest), counting from the
+  next episode; and mpv configuration, see below. Granary's own and kept on the PC, so nothing saves
   to the server), Connection (the latest speed reading and what Auto plays without converting), Skipping (skip
   intros, auto-skip recaps and credits), Next episode (start next at preview, auto-play), Seek controls (rewind and
   fast-forward intervals).
@@ -1063,7 +1065,7 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
     "S1:E4 — Title" (14 px medium), Play Now (white, black text) and Cancel (outlined), both rounded 4. It counts the
     playback left, as the apps do.
   - 30 s before the end of an episode the "Playing Next" screen takes the page: its still blurred and darkened behind,
-    "PLAYING NEXT" (11 px, wide spacing, white 40 %), the still (16:9, radius 16, up to 38 % of the page high), the
+    "PLAYING NEXT", or "STILL WATCHING?" where the Still watching prompt holds the countdown back (11 px, wide spacing, white 40 %), the still (16:9, radius 16, up to 38 % of the page high), the
     series (18 px bold), "S1:E4 — Title", the air date and runtime, two lines of overview, the red Play Now pill, and
     once the episode has ended a 10 s ring in red with the seconds; "Auto-play is on" switches the profile's
     `playback.auto_play_next`. On Deck (Continue Watching without this series) runs along the bottom; Close (Esc) top

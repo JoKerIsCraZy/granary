@@ -26,15 +26,26 @@ public enum NextUpStep
 
 /// <summary>
 /// Counts the episodes that started by themselves since the viewer last did something. At the threshold the next one
-/// waits for the viewer (Android's pass-out gate, <c>player.passout_threshold</c>, default 3).
+/// waits for the viewer (Android's pass-out gate, <c>player.passout_threshold</c>, default 3, 0 never).
 /// </summary>
-public sealed class AutoPlayStreak
+public sealed class AutoPlayStreak(Func<int> threshold)
 {
-    public const int Threshold = 3;
+    public const int DefaultThreshold = 3;
+
+    public AutoPlayStreak()
+        : this(() => DefaultThreshold)
+    {
+    }
+
+    /// <summary>The largest the contract allows.</summary>
+    public const int MaxThreshold = 20;
+
+    /// <summary>The numbers Settings offers by name, as Silo's Android app does; 0 never waits. Custom takes the rest.</summary>
+    public static IReadOnlyList<int> ThresholdPresets { get; } = [0, 2, 3, 4, 5];
 
     public int Count { get; private set; }
 
-    public bool IsGated => Count >= Threshold;
+    public bool IsGated => threshold() is > 0 and var limit && Count >= limit;
 
     public void RecordAutomatic() => Count++;
 
@@ -49,8 +60,8 @@ public sealed class AutoPlayStreak
 /// is on. Resuming or seeking past the point does not.</item>
 /// <item>Crossing 30 s before the end of an episode shows the screen, as the web player does; the video goes on small.</item>
 /// <item>At the end the screen counts down 10 s and plays the next episode, when auto-play is on, the viewer has not
-/// turned the prompt away (Cancel, Keep watching, a pause or a seek during the card), and fewer than three episodes
-/// started by themselves in a row. A movie's end leaves the player.</item>
+/// turned the prompt away (Cancel, Keep watching, a pause or a seek during the card), and <see cref="AutoPlayStreak"/>
+/// does not hold it back. A movie's end leaves the player.</item>
 /// </list>
 /// </summary>
 public sealed class NextUpFlow
@@ -91,6 +102,12 @@ public sealed class NextUpFlow
 
     /// <summary>How much of the countdown at the end is left, 1 to 0, for the screen's ring.</summary>
     public double CountdownLeft { get; private set; }
+
+    /// <summary>
+    /// The pass-out gate is what keeps the next episode from starting by itself here, so the screen says so rather than
+    /// seem to have stopped. Not when auto-play is off or the viewer turned the prompt away: those are the viewer's own.
+    /// </summary>
+    public bool IsAskingStillWatching => _gated && _settings.AutoPlayNext && !_dismissed && !_countdownStopped;
 
     /// <summary>A new playback: an episode or not, the profile's settings, and whether the pass-out gate holds.</summary>
     public void Start(bool isEpisode, MarkerSettings settings, bool gated)

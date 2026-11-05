@@ -6,6 +6,12 @@ release's section is what its update says it changes (docs/release.md).
 
 ## [Unreleased]
 
+### Added
+
+- **Still watching prompt:** Settings → Playback → This PC sets how many episodes auto-play in a row before Granary waits
+  for you: 2 to 5, Unlimited, or a number of your own up to 20. The player's screen now says "Still watching?" when it
+  waits.
+
 ## [0.2.0] - 2026-11-04
 
 ### Added

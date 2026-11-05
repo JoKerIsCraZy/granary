@@ -478,8 +478,9 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   smallest (season, episode) after this one plays next. `NextUpFlow` decides what shows: the card when playback
   crosses the credits' start (else the length less `playback.next_up_prompt_seconds`), the screen 30 s before the
   end (the web's post-roll), and at the end a 10 s countdown, when `playback.auto_play_next` is on, the viewer did
-  not turn the prompt away (Cancel, Keep watching, a pause or seek during the card), and fewer than three episodes in
-  a row started by themselves (`AutoPlayStreak`, Android's pass-out gate). The next episode starts as a new playback
+  not turn the prompt away (Cancel, Keep watching, a pause or seek during the card), and fewer episodes in a row started
+  by themselves than Settings' Still watching prompt allows (`AutoPlayStreak`, Android's pass-out gate; 3 by default,
+  Unlimited never holds back). The next episode starts as a new playback
   from 0; the saved track preferences carry the picks over. The transport's previous and next episode buttons start
   theirs from the resume point, as the web player does for the viewer; the previous one is the largest episode before
   this one in the current season that has a readable file, as the web finds it, none before the season's first.

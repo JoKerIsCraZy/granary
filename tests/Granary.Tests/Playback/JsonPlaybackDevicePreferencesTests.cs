@@ -87,6 +87,44 @@ public sealed class JsonPlaybackDevicePreferencesTests : IDisposable
     }
 
     [Fact]
+    public void AtFirst_TheStillWatchingPromptComesAfterThreeEpisodes() =>
+        Assert.Equal(AutoPlayStreak.DefaultThreshold, Create().PassoutThreshold);
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(5)]
+    [InlineData(7)]
+    [InlineData(20)]
+    public async Task TheStillWatchingPrompt_StaysAtTheNextStart_WithTheOtherChoices(int episodes)
+    {
+        var preferences = Create();
+
+        await preferences.SetUpDownAsync(PlayerUpDown.Volume);
+        await preferences.SetPassoutThresholdAsync(episodes);
+
+        var again = Create();
+        Assert.Equal(episodes, again.PassoutThreshold);
+        Assert.Equal(PlayerUpDown.Volume, again.UpDown);
+    }
+
+    [Theory]
+    [InlineData("{ \"passout_threshold\": 21, \"up_down\": \"volume\" }")]
+    [InlineData("{ \"passout_threshold\": -2, \"up_down\": \"volume\" }")]
+    [InlineData("{ \"passout_threshold\": 99, \"up_down\": \"volume\" }")]
+    [InlineData("{ \"up_down\": \"volume\" }")]
+    public async Task ANumberOutOfBounds_OrAnOlderFile_MeansTheDefault_AndKeepsTheOtherChoices(string file)
+    {
+        Directory.CreateDirectory(_directory);
+        await File.WriteAllTextAsync(FilePath, file, TestContext.Current.CancellationToken);
+
+        var preferences = Create();
+
+        Assert.Equal(AutoPlayStreak.DefaultThreshold, preferences.PassoutThreshold);
+        Assert.Equal(PlayerUpDown.Volume, preferences.UpDown);
+    }
+
+    [Fact]
     public async Task AnUnknownUpAndDown_ShowsTheControlsAndMenus()
     {
         Directory.CreateDirectory(_directory);

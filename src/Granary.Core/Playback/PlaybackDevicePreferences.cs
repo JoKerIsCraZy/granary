@@ -17,12 +17,21 @@ public interface IPlaybackDevicePreferences
 
     /// <summary>What Up and Down do in the player while focus is on the picture.</summary>
     PlayerUpDown UpDown { get; }
+
+    /// <summary>
+    /// How many episodes in a row start by themselves before the player waits for the viewer, 0 for never
+    /// (<c>player.passout_threshold</c>, client-local in the contract).
+    /// </summary>
+    int PassoutThreshold { get; }
+
     /// <summary>The latest save: done once it is on disk, or failed and logged. The window waits for it briefly as it closes.</summary>
     Task LatestSave { get; }
 
     Task SetDecodesInSoftwareAsync(bool decodesInSoftware);
 
     Task SetUpDownAsync(PlayerUpDown upDown);
+
+    Task SetPassoutThresholdAsync(int episodes);
 }
 
 /// <summary>Up and Down in the player, with focus on the picture.</summary>
@@ -40,8 +49,9 @@ public enum PlayerUpDown
 
 /// <summary>
 /// <see cref="IPlaybackDevicePreferences"/> in <c>playback-device.json</c> in the data directory
-/// (<c>{ "decodes_in_software": true, "up_down": "volume" }</c>). Without the file, or with one that cannot be read, direct
-/// play needs the GPU and Up and Down show the controls and menus, as by default; a value it does not know is the default. One that cannot be written is logged, and the choice still holds for this run. Files are
+/// (<c>{ "decodes_in_software": true, "up_down": "volume", "passout_threshold": 5 }</c>). Without the file, or with one that
+/// cannot be read, direct play needs the GPU, Up and Down show the controls and menus and the player waits after three
+/// episodes, as by default; a value it does not know is the default. One that cannot be written is logged, and the choice still holds for this run. Files are
 /// written off the caller's thread, which is the UI's.
 /// </summary>
 public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
@@ -56,6 +66,7 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
     private readonly Lock _saves = new();
     private volatile bool _decodesInSoftware;
     private volatile PlayerUpDown _upDown;
+    private volatile int _passoutThreshold;
     private Task _latestSave = Task.CompletedTask;
 
     public JsonPlaybackDevicePreferences(string filePath, ILogger<JsonPlaybackDevicePreferences> logger)
@@ -66,6 +77,9 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
         var file = Load();
         _decodesInSoftware = file?.DecodesInSoftware == true;
         _upDown = file?.UpDown == VolumeValue ? PlayerUpDown.Volume : PlayerUpDown.ControlsAndMenus;
+        _passoutThreshold = file?.PassoutThreshold is { } episodes and >= 0 and <= AutoPlayStreak.MaxThreshold
+            ? episodes
+            : AutoPlayStreak.DefaultThreshold;
     }
 
     public static string DefaultPath => Path.Combine(AppPaths.DataDirectory, "playback-device.json");
@@ -73,6 +87,8 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
     public bool DecodesInSoftware => _decodesInSoftware;
 
     public PlayerUpDown UpDown => _upDown;
+
+    public int PassoutThreshold => _passoutThreshold;
 
     public Task LatestSave
     {
@@ -107,6 +123,12 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
         return QueueSave();
     }
 
+    public Task SetPassoutThresholdAsync(int episodes)
+    {
+        _passoutThreshold = episodes;
+        return QueueSave();
+    }
+
     private PlaybackDeviceFile? Load()
     {
         try
@@ -132,7 +154,7 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
             Directory.CreateDirectory(Path.GetDirectoryName(_filePath)!);
             await using (var stream = File.Create(temp))
             {
-                var file = new PlaybackDeviceFile(_decodesInSoftware, _upDown == PlayerUpDown.Volume ? VolumeValue : ControlsValue);
+                var file = new PlaybackDeviceFile(_decodesInSoftware, _upDown == PlayerUpDown.Volume ? VolumeValue : ControlsValue, _passoutThreshold);
                 await JsonSerializer.SerializeAsync(stream, file, PlaybackDeviceJsonContext.Default.PlaybackDeviceFile).ConfigureAwait(false);
             }
             File.Move(temp, _filePath, overwrite: true);
@@ -154,7 +176,7 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
 }
 
 /// <summary><c>playback-device.json</c>.</summary>
-internal sealed record PlaybackDeviceFile(bool? DecodesInSoftware, string? UpDown);
+internal sealed record PlaybackDeviceFile(bool? DecodesInSoftware, string? UpDown, int? PassoutThreshold);
 
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower, WriteIndented = true)]
 [JsonSerializable(typeof(PlaybackDeviceFile))]

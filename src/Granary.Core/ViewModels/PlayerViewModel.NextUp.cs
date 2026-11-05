@@ -49,6 +49,10 @@ public sealed partial class PlayerViewModel
     [ObservableProperty]
     public partial string NextUpTitle { get; private set; } = "";
 
+    /// <summary>The screen's small heading: what comes, nothing more to come, or that it waits for the viewer.</summary>
+    [ObservableProperty]
+    public partial string NextUpScreenLabel { get; private set; } = "PLAYING NEXT";
+
     /// <summary>"11 January 2024 • 37m".</summary>
     [ObservableProperty]
     public partial string NextUpMeta { get; private set; } = "";
@@ -262,6 +266,7 @@ public sealed partial class PlayerViewModel
         NextUpCardHeading = _nextUp.Seconds is { } seconds && view == NextUpView.Card
             ? string.Create(CultureInfo.InvariantCulture, $"UP NEXT IN {seconds}S")
             : "UP NEXT";
+        NextUpScreenLabel = next is null ? "FINISHED" : _nextUp.IsAskingStillWatching ? "STILL WATCHING?" : "PLAYING NEXT";
         IsNextUpCountingDown = view == NextUpView.Screen && _nextUp.IsCountingDown;
         NextUpSecondsText = _nextUp.Seconds is { } left ? string.Create(CultureInfo.InvariantCulture, $"{left}s") : "";
         NextUpCountdownLeft = _nextUp.CountdownLeft;

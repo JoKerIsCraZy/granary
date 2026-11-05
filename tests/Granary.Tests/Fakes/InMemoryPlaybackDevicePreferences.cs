@@ -19,6 +19,17 @@ internal sealed class InMemoryPlaybackDevicePreferences : IPlaybackDevicePrefere
         SavedUpDown.Add(upDown);
         return Task.CompletedTask;
     }
+    public int PassoutThreshold { get; set; } = AutoPlayStreak.DefaultThreshold;
+
+    public List<int> SavedPassoutThreshold { get; } = [];
+
+    public Task SetPassoutThresholdAsync(int episodes)
+    {
+        PassoutThreshold = episodes;
+        SavedPassoutThreshold.Add(episodes);
+        return Task.CompletedTask;
+    }
+
     public Task LatestSave => Task.CompletedTask;
 
     public Task SetDecodesInSoftwareAsync(bool decodesInSoftware)

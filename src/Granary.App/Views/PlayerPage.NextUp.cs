@@ -62,8 +62,6 @@ public sealed partial class PlayerPage
     }
 
     // Instance methods because x:Bind function bindings call them on the page.
-    public string NextUpLabel(bool hasNextEpisode) => hasNextEpisode ? "PLAYING NEXT" : "FINISHED";
-
     // The ring's dash is its circumference (2π·20 px) in stroke widths of 3 px; the offset hides what has run out.
     public double RingOffset(double left) => (1 - left) * 41.89;
 
