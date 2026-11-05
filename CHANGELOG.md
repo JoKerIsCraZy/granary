@@ -12,6 +12,15 @@ release's section is what its update says it changes (docs/release.md).
   for you: 2 to 5, Unlimited, or a number of your own up to 20. The player's screen now says "Still watching?" when it
   waits.
 
+### Changed
+
+- Settings → Playback → This PC says that with a fixed Quality, your server can still convert a file, even with Direct
+  play without hardware decoding on.
+
+### Fixed
+
+- Playback Info says "transcoded" when your Silo server re-encodes a video to HEVC, where it said "copy".
+
 ## [0.2.0] - 2026-11-04
 
 ### Added

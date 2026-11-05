@@ -1548,7 +1548,7 @@ start terminal is reported with `event: "terminal"` and no session or plan field
   ≥ 6 s (ignoring the first 10 s and outages), send `quality_change` with `auto`,
   `bandwidth_estimate_kbps` = 70 % of the delivered bitrate,
   `bandwidth_estimate_source: "observed_rebuffer"` and `observed_throughput_kbps`.
-- Server transformations (`audio_to_aac`, `video_to_h264`, `hdr_to_sdr_tonemap`, …) describe bytes
+- Server transformations (`audio_to_aac`, `video_to_h264`, `video_to_hevc`, `hdr_to_sdr_tonemap`, …) describe bytes
   already transformed. A client that tone-maps itself (mpv with libplacebo) can claim
   `client_managed_dynamic_range_v1` to keep HDR originals as direct play.
 
