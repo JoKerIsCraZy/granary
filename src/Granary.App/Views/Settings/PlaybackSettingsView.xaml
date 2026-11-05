@@ -47,7 +47,7 @@
         <controls:SettingsGroup Title="This PC" Description="Kept on this PC, not in your profile.">
             <StackPanel>
                 <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Direct play without hardware decoding"
-                                      Description="Play HEVC, VP9, AV1 and HDR files directly, decoding them on the processor where the graphics card can't, instead of having your Silo server convert them. The picture keeps its full quality, but slower PCs can stutter. Counts from the next title you play.">
+                                      Description="Play HEVC, VP9, AV1 and HDR files directly, decoding them on the processor where the graphics card can't, instead of having your Silo server convert them. The picture keeps its full quality, but slower PCs can stutter. Counts from the next title you play. With a fixed Quality above, your server can still convert a file.">
                     <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.DecodesInSoftware, Mode=TwoWay}"
                                   AutomationProperties.Name="Direct play without hardware decoding" />
                 </controls:SettingsRow>

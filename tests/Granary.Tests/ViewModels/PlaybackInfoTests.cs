@@ -37,6 +37,26 @@ public sealed class PlaybackInfoTests
     private static Dictionary<string, string> Rows(IReadOnlyList<PlaybackInfoSection> sections, string title) =>
         sections.Single(s => s.Title == title).Rows.ToDictionary(r => r.Label, r => r.Value);
 
+    [Theory]
+    [InlineData("video_to_hevc", "hevc", "HEVC (transcoded)")]
+    [InlineData("video_to_h264", "h264", "H.264 (transcoded)")]
+    [InlineData("hdr_to_sdr_tonemap", "hevc", "HEVC (copy)")]
+    public void TheVideoCodec_SaysTranscoded_WhenTheServerEncodesTheVideo_WhicheverCodecItEncodesTo(string transformation, string codec, string shown)
+    {
+        var plan = new PlaybackPlan
+        {
+            Delivery = PlaybackDeliveries.ServerTranscodeHls,
+            Stream = new PlaybackStream { Url = "/api/v2/stream/s", Protocol = StreamProtocols.Hls },
+            EffectiveRecipe = new EffectiveRecipe { VideoCodec = codec, AudioCodec = "aac" },
+            Transformations = [new PlaybackTransformation { Name = transformation, Executor = "server" }],
+        };
+        var stream = new PlaybackStreamInfo(plan, new Uri("https://silo.example/api/v2/stream/s/master.m3u8"), Uhd, Uhd, AudioOrdinal: 1);
+
+        var sections = PlaybackInfo.Sections(stream, new PlaybackStats(1920, 1080, 0, 0, "d3d11va"), 2560, 1440);
+
+        Assert.Equal(shown, Rows(sections, "Playback Stream Info")["Video codec"]);
+    }
+
     [Fact]
     public void ATranscode_SaysWhatTheServerMade_AndTheFileItCameFrom()
     {

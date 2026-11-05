@@ -616,7 +616,7 @@ says why above the sections.
 
 - **Playback**: Quality (preferred quality, maximum bitrate with "No limit", lower quality when buffering, and this
   connection's learned limit with Reset), This PC ("Kept on this PC, not in your profile.": Direct play without
-  hardware decoding, a switch, off by default, counting from the next title; Up and Down in the player, a select with
+  hardware decoding, a switch, off by default, counting from the next title, its text saying a fixed Quality can still convert a file; Up and Down in the player, a select with
   Controls and menus (the default, as Silo's TV app) and Volume (the web player's keys), which the
   player follows at its next key; and mpv configuration, see below. Granary's own and kept on the PC, so nothing saves
   to the server), Connection (the latest speed reading and what Auto plays without converting), Skipping (skip
