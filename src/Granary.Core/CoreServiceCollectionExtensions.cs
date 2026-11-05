@@ -240,7 +240,11 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<Func<IServerPlayback>>(sp => () => ActivatorUtilities.CreateInstance<ServerPlayback>(sp));
         services.AddTransient<IUpNextSource, UpNextSource>();
         // The episodes that started by themselves count across player pages, as long as the app runs.
-        services.AddSingleton<AutoPlayStreak>();
+        services.AddSingleton(sp =>
+        {
+            var preferences = sp.GetRequiredService<IPlaybackDevicePreferences>();
+            return new AutoPlayStreak(() => preferences.PassoutThreshold);
+        });
     }
 
     // The server's events for the signed-in profile (docs/api-contract.md, 12): one connection for as long as the app runs.

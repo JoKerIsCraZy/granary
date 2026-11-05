@@ -76,6 +76,7 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject, IDispo
         ReadMpvConfigStatus();
         DecodesInSoftware = devicePreferences.DecodesInSoftware;
         SelectedUpDown = UpDownChoices[devicePreferences.UpDown == PlayerUpDown.Volume ? 1 : 0];
+        ShowStillWatching(devicePreferences.PassoutThreshold);
         _saves = new SettingSaves(logger);
     }
 

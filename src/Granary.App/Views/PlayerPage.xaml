@@ -909,7 +909,7 @@
 
             <ScrollViewer x:Name="NextUpScroller" VerticalScrollBarVisibility="Auto">
                 <StackPanel x:Name="NextUpColumn" MaxWidth="820" Padding="32,24" VerticalAlignment="Center" HorizontalAlignment="Center">
-                    <TextBlock Text="{x:Bind NextUpLabel(ViewModel.HasNextEpisode), Mode=OneWay}" HorizontalAlignment="Center" Margin="0,0,0,12"
+                    <TextBlock Text="{x:Bind ViewModel.NextUpScreenLabel, Mode=OneWay}" HorizontalAlignment="Center" Margin="0,0,0,12"
                                FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="11" CharacterSpacing="250"
                                Foreground="#66FFFFFF" />
 

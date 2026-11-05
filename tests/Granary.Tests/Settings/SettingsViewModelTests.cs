@@ -351,6 +351,111 @@ public sealed class SettingsViewModelTests : IDisposable
     }
 
     [Fact]
+    public void TheStillWatchingPrompt_IsThisPcsChoice_ThreeEpisodesAtFirst()
+    {
+        var page = Playback();
+        Assert.Equal(["Unlimited", "2 episodes", "3 episodes", "4 episodes", "5 episodes", "Custom"], page.StillWatchingChoices.Select(c => c.Label));
+        Assert.Equal("3", page.SelectedStillWatching?.Value);
+        Assert.Empty(_device.SavedPassoutThreshold);
+
+        page.SelectedStillWatching = page.StillWatchingChoices[0];
+
+        Assert.Equal([0], _device.SavedPassoutThreshold);
+        Assert.Empty(_settings.Writes);
+    }
+
+    [Fact]
+    public void Custom_KeepsWhatHolds_UntilANumberIsTyped()
+    {
+        var page = Playback();
+        Assert.False(page.IsStillWatchingCustom);
+
+        page.SelectedStillWatching = page.StillWatchingChoices[^1];
+
+        Assert.True(page.IsStillWatchingCustom);
+        Assert.Equal(3, page.StillWatchingEpisodes);
+        Assert.Empty(_device.SavedPassoutThreshold);
+    }
+
+    [Fact]
+    public void Custom_AfterUnlimited_StartsAtTheDefault()
+    {
+        _device.PassoutThreshold = 0;
+        var page = Playback();
+
+        page.SelectedStillWatching = page.StillWatchingChoices[^1];
+
+        Assert.Equal(AutoPlayStreak.DefaultThreshold, page.StillWatchingEpisodes);
+        Assert.Equal([AutoPlayStreak.DefaultThreshold], _device.SavedPassoutThreshold);
+    }
+
+    [Fact]
+    public void ACustomNumber_IsSaved_AndShowsAsCustomAtTheNextOpen()
+    {
+        var page = Playback();
+        page.SelectedStillWatching = page.StillWatchingChoices[^1];
+
+        page.StillWatchingEpisodes = 7;
+
+        Assert.Equal([7], _device.SavedPassoutThreshold);
+        _device.SavedPassoutThreshold.Clear();
+        var again = Playback();
+        Assert.Equal("Custom", again.SelectedStillWatching?.Label);
+        Assert.True(again.IsStillWatchingCustom);
+        Assert.Equal(7, again.StillWatchingEpisodes);
+        Assert.Empty(_device.SavedPassoutThreshold);
+    }
+
+    [Theory]
+    [InlineData(50, 20)]
+    [InlineData(0, 1)]
+    [InlineData(-3, 1)]
+    [InlineData(6.6, 7)]
+    public void ACustomNumberOutOfBounds_OrNotWhole_BecomesTheNearestAllowed(double typed, int kept)
+    {
+        var page = Playback();
+        page.SelectedStillWatching = page.StillWatchingChoices[^1];
+
+        page.StillWatchingEpisodes = typed;
+
+        Assert.Equal(kept, page.StillWatchingEpisodes);
+        Assert.Equal(kept, _device.PassoutThreshold);
+    }
+
+    [Fact]
+    public void AClearedNumber_ShowsWhatHoldsAgain_AndSavesNothing()
+    {
+        _device.PassoutThreshold = 7;
+        var page = Playback();
+
+        page.StillWatchingEpisodes = double.NaN;
+
+        Assert.Equal(7, page.StillWatchingEpisodes);
+        Assert.Empty(_device.SavedPassoutThreshold);
+    }
+
+    [Fact]
+    public void LeavingCustom_HidesTheNumber_AndSavesTheChoice()
+    {
+        _device.PassoutThreshold = 7;
+        var page = Playback();
+
+        page.SelectedStillWatching = page.StillWatchingChoices[0];
+
+        Assert.False(page.IsStillWatchingCustom);
+        Assert.Equal([0], _device.SavedPassoutThreshold);
+    }
+
+    [Fact]
+    public void TheStillWatchingPromptSetToFive_ShowsAsSaved()
+    {
+        _device.PassoutThreshold = 5;
+
+        Assert.Equal("5", Playback().SelectedStillWatching?.Value);
+        Assert.Empty(_device.SavedPassoutThreshold);
+    }
+
+    [Fact]
     public void UpAndDownForTheVolume_ShowsAsSaved()
     {
         _device.UpDown = PlayerUpDown.Volume;

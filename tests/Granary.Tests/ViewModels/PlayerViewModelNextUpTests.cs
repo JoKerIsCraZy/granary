@@ -229,6 +229,30 @@ public sealed class PlayerViewModelNextUpTests
     }
 
     [Fact]
+    public async Task AtTheGate_TheScreenAsksWhetherYouAreStillWatching_AndWaits()
+    {
+        var viewModel = await PlayingAsync(Ted);
+        // Two episodes before this one started by themselves, and this one's countdown makes three.
+        _streak.RecordAutomatic();
+        _streak.RecordAutomatic();
+        PlayTo(2099);
+        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Ended));
+        Assert.Equal("PLAYING NEXT", viewModel.NextUpScreenLabel);
+        _time.Advance(TimeSpan.FromSeconds(10.1));
+        var waiting = Playback;
+
+        waiting.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));
+        _position = 0;
+        PlayTo(2099);
+        waiting.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Ended));
+        _time.Advance(TimeSpan.FromSeconds(10.1));
+
+        Assert.Equal("STILL WATCHING?", viewModel.NextUpScreenLabel);
+        Assert.False(viewModel.IsNextUpCountingDown);
+        Assert.Same(waiting, Playback);
+    }
+
+    [Fact]
     public async Task AMoviesEnd_LeavesThePlayer()
     {
         var viewModel = await PlayingAsync(episode: null);

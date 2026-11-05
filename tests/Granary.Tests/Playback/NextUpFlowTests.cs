@@ -241,6 +241,60 @@ public sealed class NextUpFlowTests
     }
 
     [Fact]
+    public void TheStreak_GatesAtTheChosenNumber_AndFollowsAChangeOfIt()
+    {
+        int threshold = 5;
+        var streak = new AutoPlayStreak(() => threshold);
+        for (int episode = 0; episode < 4; episode++)
+        {
+            streak.RecordAutomatic();
+        }
+        Assert.False(streak.IsGated);
+
+        streak.RecordAutomatic();
+        Assert.True(streak.IsGated);
+
+        threshold = 6;
+        Assert.False(streak.IsGated);
+    }
+
+    [Fact]
+    public void WithThePromptOff_TheStreakNeverGates()
+    {
+        var streak = new AutoPlayStreak(() => 0);
+        for (int episode = 0; episode < 50; episode++)
+        {
+            streak.RecordAutomatic();
+        }
+
+        Assert.False(streak.IsGated);
+    }
+
+    [Fact]
+    public void WhileTheGateHolds_TheFlowAsksWhetherYouAreStillWatching()
+    {
+        Episode(gated: true);
+
+        Assert.True(_flow.IsAskingStillWatching);
+    }
+
+    [Fact]
+    public void WithoutTheGate_TheFlowDoesNotAsk()
+    {
+        Episode();
+
+        Assert.False(_flow.IsAskingStillWatching);
+    }
+
+    [Fact]
+    public void WithAutoPlayOff_ItIsNotTheGateThatWaits_SoTheFlowDoesNotAsk()
+    {
+        Episode(MarkerSettings.Default with { AutoPlayNext = false }, gated: true);
+
+        Assert.False(_flow.IsAskingStillWatching);
+    }
+
+    [Fact]
     public void TheStreak_GatesAtThree_AndAViewerActionResetsIt()
     {
         var streak = new AutoPlayStreak();

@@ -57,6 +57,18 @@
                     <ComboBox Style="{StaticResource SiloSettingsComboBoxStyle}" ItemsSource="{x:Bind ViewModel.UpDownChoices}"
                               SelectedItem="{x:Bind ViewModel.SelectedUpDown, Mode=TwoWay}" AutomationProperties.Name="Up and Down in the player" />
                 </controls:SettingsRow>
+                <!-- player.passout_threshold is kept on the device, as the contract has it, which also sets the highest number; the named choices are the Android app's. -->
+                <controls:SettingsRow Label="Still watching prompt"
+                                      Description="How many episodes auto-play in a row before Granary asks whether you're still watching. Unlimited never asks, and Custom takes a number from 1 to 20.">
+                    <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                        <NumberBox Width="80" Minimum="1" Maximum="20" SmallChange="1" LargeChange="5" VerticalAlignment="Center"
+                                   Value="{x:Bind ViewModel.StillWatchingEpisodes, Mode=TwoWay}"
+                                   Visibility="{x:Bind ViewModel.IsStillWatchingCustom, Mode=OneWay}"
+                                   AutomationProperties.Name="Episodes before the still watching prompt" />
+                        <ComboBox Style="{StaticResource SiloSettingsComboBoxStyle}" ItemsSource="{x:Bind ViewModel.StillWatchingChoices}"
+                                  SelectedItem="{x:Bind ViewModel.SelectedStillWatching, Mode=TwoWay}" AutomationProperties.Name="Still watching prompt" />
+                    </StackPanel>
+                </controls:SettingsRow>
                 <!-- mpv reads the file when it starts, and each load starts a new one if the file changed (docs/architecture.md, "Your own mpv.conf"). -->
                 <controls:SettingsRow Label="mpv configuration"
                                       Description="Use your own mpv options from mpv.conf, such as shaders, scaling or debanding. They apply from the next title you play. Granary keeps the options it needs to show the video and follow your Silo server's choices. A wrong option can make playback worse; delete the file to go back to normal.">

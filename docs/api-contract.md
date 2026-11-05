@@ -2019,7 +2019,8 @@ same way:
    `duration − playback.next_up_prompt_seconds` (default 30; 0 = only at the end) without a credits
    marker. Resuming inside the credits does not trigger it.
 3. **Countdown**: only if `playback.auto_play_next` (default true) and the unattended-advance streak
-   is below `player.passout_threshold` (client_local, default 3, 0 = off). A prompt opened before the
+   is below `player.passout_threshold` (client_local, default 3, 0 = off; in Granary, `passout_threshold` in
+   `playback-device.json`, set under Settings → Playback → This PC). A prompt opened before the
    end counts down the remaining playback and advances at end of file; one opened at end of file uses
    a 10 s countdown. "Play now" resets the streak; pause cancels the countdown but keeps the prompt;
    dismiss hides it until the end.
