@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Globalization;
 using Granary.Core.Playback;
@@ -108,14 +109,15 @@ public sealed class MpvConfigNextTitleTests : IDisposable
         using var engine = CreateEngine("deband=yes\n", VideoOutputKind.D3D11Composition);
         await ASwapChainOrSkip(engine);
         nint before = engine.SwapChain;
-        int changed = 0;
-        engine.SwapChainChanged += (_, _) => Interlocked.Increment(ref changed);
+        // By the swap chain it names: the notice of the first one can still be on its way as this subscribes.
+        var announced = new ConcurrentBag<nint>();
+        engine.SwapChainChanged += (_, _) => announced.Add(engine.SwapChain);
 
         await PlaysAWav(engine, 0.5);
         await PlaysAWav(engine, 0.5);
 
         Assert.Equal(before, engine.SwapChain);
-        Assert.Equal(0, Volatile.Read(ref changed));
+        Assert.All(announced, swapChain => Assert.Equal(before, swapChain));
         Assert.Equal(1, Count(StartLine));
     }
 
