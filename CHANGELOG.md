@@ -6,6 +6,8 @@ release's section is what its update says it changes (docs/release.md).
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-11-05
+
 ### Added
 
 - **Still watching prompt:** Settings → Playback → This PC sets how many episodes auto-play in a row before Granary waits
