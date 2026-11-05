@@ -68,8 +68,8 @@ public static class PlaybackInfo
         }
         sections.Add(new("Playback Stream Info",
         [
-            new("Video codec", Delivered(stream.Plan, stream.Plan.EffectiveRecipe.VideoCodec, "video_to_h264")),
-            new("Audio codec", Delivered(stream.Plan, stream.Plan.EffectiveRecipe.AudioCodec, "audio_to_aac")),
+            new("Video codec", Delivered(stream.Plan, stream.Plan.EffectiveRecipe.VideoCodec, "video_to_")),
+            new("Audio codec", Delivered(stream.Plan, stream.Plan.EffectiveRecipe.AudioCodec, "audio_to_")),
         ]));
         sections.Add(SourceFile(stream.Playing, stream.AudioOrdinal));
         return sections;
@@ -153,8 +153,9 @@ public static class PlaybackInfo
         ]);
     }
 
-    // What is on the wire and how it got there: the plan says whether the server re-encoded, nothing is guessed.
-    private static string Delivered(PlaybackPlan plan, string? codec, string transformation)
+    // What is on the wire and how it got there: the plan says whether the server re-encoded, nothing is guessed. The
+    // server names an encode after its target (video_to_h264, video_to_hevc, audio_to_aac).
+    private static string Delivered(PlaybackPlan plan, string? codec, string encodePrefix)
     {
         string label = CodecLabel(codec);
         if (label == None)
@@ -165,7 +166,7 @@ public static class PlaybackInfo
         {
             return $"{label} (direct)";
         }
-        bool transcoded = plan.Transformations.Any(t => t.Executor == "server" && t.Name == transformation);
+        bool transcoded = plan.Transformations.Any(t => t.Executor == "server" && t.Name.StartsWith(encodePrefix, StringComparison.Ordinal));
         return $"{label} ({(transcoded ? "transcoded" : "copy")})";
     }
 

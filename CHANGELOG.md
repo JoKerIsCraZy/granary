@@ -6,6 +6,15 @@ release's section is what its update says it changes (docs/release.md).
 
 ## [Unreleased]
 
+### Fixed
+
+- Playback Info says "transcoded" when your Silo server re-encodes a video to HEVC, where it said "copy".
+
+### Changed
+
+- Settings → Playback → This PC says that with a fixed Quality, your server can still convert a file, even with Direct
+  play without hardware decoding on.
+
 ## [0.2.0] - 2026-11-04
 
 ### Added
