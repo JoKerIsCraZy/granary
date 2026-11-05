@@ -142,7 +142,7 @@ public static class PlaybackReportBuilder
         AudioDecodeCodecs = AudioCodecs,
         Subtitles = SubtitleCapabilities(NativeEmbeddedSubtitles),
         ValidatedClaims = toneMapsHdr
-            ? [DeliveryClaims.ClientSelectedAudioTrackV1, DeliveryClaims.ClientManagedDynamicRangeV1]
+            ? [DeliveryClaims.ClientSelectedAudioTrackV1, DeliveryClaims.ClientManagedDynamicRangeV1, .. DeliveryClaims.ClientManagedDolbyVisionBaseLayersV1]
             : [DeliveryClaims.ClientSelectedAudioTrackV1],
     };
 

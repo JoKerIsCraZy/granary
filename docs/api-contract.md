@@ -2380,6 +2380,10 @@ HDR with libplacebo. An honest, conservative first report:
   tone-maps an HDR original itself, in a transcode to H.264 (in software unless the server has hardware
   tone mapping), which is heavy at 2160p. HLS stays without the claim, so a server-made stream still has
   to fit the output.
+- `client_managed_dv_bl_compat_1_v1`, `_2_`, `_4_` and `_6_` go with `client_managed_dynamic_range_v1`, on `original_http` only. They
+  name the Dolby Vision base layers the player shows: 1 and 6 HDR10, 2 SDR, 4 HLG. Silo Server takes the general claim for Dolby
+  Vision and does not read these (an unknown claim is ignored); a server on the same protocol can want the base layer named. Profile
+  8.1 and 8.4 samples are checked; ids 2 and 6 are not, as no sample has them yet.
 - **Direct play without hardware decoding** (Settings → Playback → This PC, off by default; Granary's own, kept in
   `playback-device.json` in the data directory): `hevc`, `vp9` and `av1` join `codecs_video` (never
   `codecs_video_hardware`) and `client_managed_dynamic_range_v1` is claimed whatever the GPU decodes, so HEVC, VP9,
