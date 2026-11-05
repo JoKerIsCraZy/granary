@@ -6,6 +6,11 @@ release's section is what its update says it changes (docs/release.md).
 
 ## [Unreleased]
 
+### Fixed
+
+- Dolby Vision files with an HDR10, HLG or SDR base layer play directly on a server that wants each base layer named,
+  where it converted them.
+
 ## [0.2.1] - 2026-11-05
 
 ### Added

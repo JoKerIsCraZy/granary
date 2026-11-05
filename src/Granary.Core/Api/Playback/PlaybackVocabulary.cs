@@ -86,6 +86,19 @@ public static class DeliveryClaims
     /// even to an SDR output. Only on <c>original_http</c>; HLS and remux stay gated by the output.
     /// </summary>
     public const string ClientManagedDynamicRangeV1 = "client_managed_dynamic_range_v1";
+
+    /// <summary>
+    /// The same for Dolby Vision, named by the compatibility id of the file's base layer: 1 and 6 HDR10, 2 SDR, 4 HLG. FFmpeg
+    /// decodes each as ordinary HEVC. Silo Server takes the claim above for Dolby Vision and does not read these; a server
+    /// can instead want the base layer named, as what the player shows depends on it.
+    /// </summary>
+    public static IReadOnlyList<string> ClientManagedDolbyVisionBaseLayersV1 { get; } =
+    [
+        "client_managed_dv_bl_compat_1_v1",
+        "client_managed_dv_bl_compat_2_v1",
+        "client_managed_dv_bl_compat_4_v1",
+        "client_managed_dv_bl_compat_6_v1",
+    ];
 }
 
 /// <summary>How a capability fact was obtained (docs/api-contract.md, 8.4, evidence tiers).</summary>
