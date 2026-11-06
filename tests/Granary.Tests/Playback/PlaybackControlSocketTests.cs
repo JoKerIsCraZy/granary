@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Sockets;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
@@ -19,17 +18,14 @@ public sealed class PlaybackControlSocketTests : IAsyncDisposable
 {
     private const string Session = PlaybackPayloads.SessionId;
 
-    private readonly HttpListener _listener = new();
+    private readonly HttpListener _listener;
     private readonly Uri _server;
     private readonly ScriptedSilo _silo = new();
     private readonly LogSink _logs = new();
 
     public PlaybackControlSocketTests()
     {
-        int port = FreePort();
-        _server = new Uri($"http://localhost:{port}/");
-        _listener.Prefixes.Add(_server.AbsoluteUri);
-        _listener.Start();
+        (_listener, _server) = LoopbackHttpListener.Start();
         _silo.On(HttpMethod.Post, new Uri(_server, $"api/v2/playback/sessions/{Session}/control/ws-ticket"),
             ScriptedSilo.Json(HttpStatusCode.OK, """{ "ticket": "Tk_42", "expires_in": 30, "max_connection_seconds": 60, "protocol": "silo.playback-control.v2" }"""));
     }
@@ -76,15 +72,6 @@ public sealed class PlaybackControlSocketTests : IAsyncDisposable
     {
         _listener.Close();
         return ValueTask.CompletedTask;
-    }
-
-    private static int FreePort()
-    {
-        var probe = new TcpListener(IPAddress.Loopback, 0);
-        probe.Start();
-        int port = ((IPEndPoint)probe.LocalEndpoint).Port;
-        probe.Stop();
-        return port;
     }
 
     private static async Task<JsonElement> ReceiveAsync(WebSocket socket, CancellationToken token)
