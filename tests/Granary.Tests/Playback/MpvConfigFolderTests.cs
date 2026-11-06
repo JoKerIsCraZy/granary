@@ -151,6 +151,27 @@ public sealed class MpvConfigFolderTests : IDisposable
     }
 
     [Fact]
+    public void AWriteWhileTheFileIsBeingRead_GoesThroughOnceTheReadIsDone()
+    {
+        var folder = Create();
+        Assert.True(folder.WriteConfig("deband=yes\n"));
+        // As the settings row and the player read it.
+        using var read = new FileStream(folder.ConfigFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+        bool triedAgain = false;
+        folder.BeforeMoveRetry = () =>
+        {
+            triedAgain = true;
+            read.Dispose();
+        };
+
+        Assert.True(folder.WriteConfig("deband=no\n"));
+
+        Assert.True(triedAgain);
+        Assert.Equal("deband=no\n", File.ReadAllText(folder.ConfigFile));
+        Assert.Equal(["mpv.conf"], Directory.GetFiles(folder.Directory).Select(Path.GetFileName));
+    }
+
+    [Fact]
     public void AWriteThatCannotReplaceTheFile_LeavesItAndNothingBeside()
     {
         var folder = Create();

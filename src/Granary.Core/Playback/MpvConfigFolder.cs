@@ -32,9 +32,16 @@ public sealed class MpvConfigFolder
 
         """;
 
+    // Enough for a read of these small files to end; about 200 ms in all. All writes run off the UI thread.
+    private const int MoveTries = 6;
+    private static readonly TimeSpan MoveRetryDelay = TimeSpan.FromMilliseconds(40);
+
     private static readonly UTF8Encoding StrictUtf8 = new(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
 
     private readonly ILogger<MpvConfigFolder> _logger;
+
+    /// <summary>For tests: runs before a write that the file being open got in the way of tries again.</summary>
+    internal Action? BeforeMoveRetry { get; set; }
 
     public MpvConfigFolder(string directory, ILogger<MpvConfigFolder> logger)
     {
@@ -174,8 +181,8 @@ public sealed class MpvConfigFolder
     }
 
     /// <summary>
-    /// A file's bytes, read so that a write or delete of it meanwhile (a save, a preset, Unload) goes ahead rather than
-    /// failing on this read.
+    /// A file's bytes, read so that a delete of it meanwhile goes ahead rather than failing on this read. A write has to wait
+    /// for the read to end, which <see cref="WriteWhole(string, string)"/> does.
     /// </summary>
     internal static byte[] ReadBytes(string path)
     {
@@ -229,7 +236,7 @@ public sealed class MpvConfigFolder
         try
         {
             write(temp);
-            File.Move(temp, path, overwrite: true);
+            MoveOver(temp, path);
             return true;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
@@ -237,6 +244,25 @@ public sealed class MpvConfigFolder
             _logger.LogWarning(ex, "{File} could not be written", Path.GetFileName(path));
             Delete(temp);
             return false;
+        }
+    }
+
+    // Windows refuses to replace a file while anything has it open, whatever that shares: a read Granary started by itself
+    // (the settings row, the player's check) or a virus scanner's. Those end in a moment; a file held for good still fails.
+    private void MoveOver(string temp, string path)
+    {
+        for (int tries = 1; ; tries++)
+        {
+            try
+            {
+                File.Move(temp, path, overwrite: true);
+                return;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException && tries < MoveTries)
+            {
+                BeforeMoveRetry?.Invoke();
+                Thread.Sleep(MoveRetryDelay);
+            }
         }
     }
 
