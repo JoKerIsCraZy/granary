@@ -7,7 +7,21 @@ namespace Granary.Tests.Fakes;
 internal sealed class FakeHttpMessageHandler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> respond)
     : HttpMessageHandler
 {
-    public List<HttpRequestMessage> Requests { get; } = [];
+    // Requests arrive on whatever thread the client sends from.
+    private readonly Lock _gate = new();
+    private readonly List<HttpRequestMessage> _requests = [];
+
+    /// <summary>What was sent so far, as a copy.</summary>
+    public IReadOnlyList<HttpRequestMessage> Requests
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return [.. _requests];
+            }
+        }
+    }
 
     public static FakeHttpMessageHandler Returning(HttpStatusCode status, string body, string mediaType = "application/json") =>
         new((_, _) => Task.FromResult(new HttpResponseMessage(status)
@@ -17,7 +31,10 @@ internal sealed class FakeHttpMessageHandler(Func<HttpRequestMessage, Cancellati
 
     protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
-        Requests.Add(request);
+        lock (_gate)
+        {
+            _requests.Add(request);
+        }
         return respond(request, cancellationToken);
     }
 }

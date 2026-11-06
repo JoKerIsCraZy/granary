@@ -24,6 +24,9 @@ internal sealed class ScriptedSilo
 
     public static readonly ServerEntry Server = Entry("srv1", Base);
 
+    // Requests arrive on whatever thread the client sends from, while a test scripts more answers or polls what was sent.
+    private readonly Lock _gate = new();
+    private readonly List<SentRequest> _sent = [];
     private readonly Dictionary<string, Queue<Func<Task<HttpResponseMessage>>>> _routes = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Func<CancellationToken, Task<HttpResponseMessage>>> _cancellable = new(StringComparer.Ordinal);
 
@@ -37,7 +40,17 @@ internal sealed class ScriptedSilo
 
     public SiloHttp Http { get; }
 
-    public List<SentRequest> Sent { get; } = [];
+    /// <summary>What was sent so far, as a copy.</summary>
+    public IReadOnlyList<SentRequest> Sent
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return [.. _sent];
+            }
+        }
+    }
 
     public static ServerEntry Entry(string id, Uri baseUri) =>
         new(id, baseUri, "NAS", "server-" + id, DateTimeOffset.UnixEpoch, DateTimeOffset.UnixEpoch, null);
@@ -49,14 +62,20 @@ internal sealed class ScriptedSilo
 
     public ScriptedSilo On(HttpMethod method, Uri url, params Func<Task<HttpResponseMessage>>[] responders)
     {
-        _routes[Key(method, url)] = new Queue<Func<Task<HttpResponseMessage>>>(responders);
+        lock (_gate)
+        {
+            _routes[Key(method, url)] = new Queue<Func<Task<HttpResponseMessage>>>(responders);
+        }
         return this;
     }
 
     /// <summary>Answers every request to <paramref name="path"/> through <paramref name="responder"/>, which sees the request's cancellation.</summary>
     public ScriptedSilo OnCancellable(HttpMethod method, string path, Func<CancellationToken, Task<HttpResponseMessage>> responder)
     {
-        _cancellable[Key(method, Url(path))] = responder;
+        lock (_gate)
+        {
+            _cancellable[Key(method, Url(path))] = responder;
+        }
         return this;
     }
 
@@ -96,17 +115,27 @@ internal sealed class ScriptedSilo
         string? ifMatch = request.Headers.TryGetValues("If-Match", out var versions) ? string.Join(",", versions) : null;
         string? roomToken = request.Headers.TryGetValues("X-Room-Token", out var proofs) ? string.Join(",", proofs) : null;
         string? deviceId = request.Headers.TryGetValues("X-Silo-Device-Id", out var devices) ? string.Join(",", devices) : null;
-        Sent.Add(new SentRequest(request.Method, uri, body, request.GetAuth(), savedOnly, ifMatch, roomToken, deviceId, request.GetProfile()));
-        if (_cancellable.TryGetValue(Key(request.Method, uri), out var cancellable))
+        var answer = Record(new SentRequest(request.Method, uri, body, request.GetAuth(), savedOnly, ifMatch, roomToken, deviceId, request.GetProfile()));
+        return await answer(cancellationToken);
+    }
+
+    // Keeps the request and takes its answer, in turn.
+    private Func<CancellationToken, Task<HttpResponseMessage>> Record(SentRequest sent)
+    {
+        lock (_gate)
         {
-            return await cancellable(cancellationToken);
+            _sent.Add(sent);
+            if (_cancellable.TryGetValue(Key(sent.Method, sent.Uri), out var cancellable))
+            {
+                return cancellable;
+            }
+            if (!_routes.TryGetValue(Key(sent.Method, sent.Uri), out var responders) || responders.Count == 0)
+            {
+                throw new InvalidOperationException($"Unscripted request {sent.Method} {sent.Uri}");
+            }
+            var respond = responders.Count > 1 ? responders.Dequeue() : responders.Peek();
+            return _ => respond();
         }
-        if (!_routes.TryGetValue(Key(request.Method, uri), out var responders) || responders.Count == 0)
-        {
-            throw new InvalidOperationException($"Unscripted request {request.Method} {uri}");
-        }
-        var respond = responders.Count > 1 ? responders.Dequeue() : responders.Peek();
-        return await respond();
     }
 
     private static string Key(HttpMethod method, Uri url) => $"{method} {url.GetLeftPart(UriPartial.Path)}";
