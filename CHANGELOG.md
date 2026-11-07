@@ -19,6 +19,9 @@ release's section is what its update says it changes (docs/release.md).
 - **Play/Pause in the taskbar preview:** hover over Granary's taskbar button while something plays and the window's
   preview has a Play/Pause button, also when Granary is minimized. In a Watch Party it asks the room, as the player's own
   button does.
+- **Chapter keys:** in the player, Ctrl+Right jumps to the next chapter and Ctrl+Left back to the start of the chapter
+  that plays, or to the one before when you are in its first second. So you can skip an intro or the credits that the
+  file marks as a chapter before your Silo server offers Skip Intro.
 
 ### Fixed
 

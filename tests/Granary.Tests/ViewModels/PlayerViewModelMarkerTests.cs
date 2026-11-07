@@ -65,6 +65,57 @@ public sealed class PlayerViewModelMarkerTests
         Assert.Equal([0], Playback.Seeks);
     }
 
+    // Each from the position alone: no seek before it.
+    [Theory]
+    [InlineData(900, false, 600)]
+    [InlineData(600.5, false, 0)]
+    [InlineData(0, true, 600)]
+    [InlineData(900, true, 2000)]
+    public async Task TheChapterKeys_GoToTheNextChapter_AndBackToTheStartOfThisOne_OrWithinASecondOfIt_TheOneBefore(
+        double seconds, bool forward, double expected)
+    {
+        var viewModel = await PlayingAsync();
+        Playback.RaiseChapters([new PlaybackChapter("Opening", 0, 600, null), new PlaybackChapter("Heist", 600, 2000, null),
+            new PlaybackChapter("Credits", 2000, 2700, null)]);
+        At(seconds);
+
+        viewModel.SeekToAdjacentChapter(forward);
+
+        Assert.Equal([expected], Playback.Seeks);
+    }
+
+    [Fact]
+    public async Task AChapterKeyPressedAgain_GoesOnFromTheSeekOnItsWay()
+    {
+        var viewModel = await PlayingAsync();
+        Playback.RaiseChapters([new PlaybackChapter("Opening", 0, 600, null), new PlaybackChapter("Heist", 600, 2000, null),
+            new PlaybackChapter("Credits", 2000, 2700, null)]);
+        At(100);
+
+        viewModel.SeekToAdjacentChapter(forward: true);
+        viewModel.SeekToAdjacentChapter(forward: true);
+        viewModel.SeekToAdjacentChapter(forward: false);
+
+        Assert.Equal([600, 2000, 600], Playback.Seeks);
+    }
+
+    [Fact]
+    public async Task TheChapterKeys_DoNothing_PastTheLastAndFirstChapter_NorWithoutChapters()
+    {
+        var viewModel = await PlayingAsync();
+        At(100);
+        viewModel.SeekToAdjacentChapter(forward: true);
+        viewModel.SeekToAdjacentChapter(forward: false);
+
+        Playback.RaiseChapters([new PlaybackChapter("Opening", 0, 600, null), new PlaybackChapter("Heist", 600, 2700, null)]);
+        At(0.5);
+        viewModel.SeekToAdjacentChapter(forward: false);
+        At(1000);
+        viewModel.SeekToAdjacentChapter(forward: true);
+
+        Assert.Empty(Playback.Seeks);
+    }
+
     [Fact]
     public async Task InTheIntro_ThePillOffersToSkipIt_AndSkippingSeeksToItsEnd()
     {

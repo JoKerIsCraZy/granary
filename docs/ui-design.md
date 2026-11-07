@@ -949,6 +949,17 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   placeholder without one), the title (14 px; "Chapter 2" when it has none) and its start (12 px, white 45 %). The
   chapter that plays has a faint light behind it and white text, the others are white 70 %; it has the focus when the
   menu opens. A row seeks to the chapter's start and closes the menu.
+  Ctrl+Right and Ctrl+Left jump between chapters through the same seek, as ⌘→ and ⌘← on Silo's macOS app (`ChapterJump`,
+  after Apple's `seekToAdjacentChapter`; the web has no chapter keys): Right to the start of the first chapter more than a
+  second ahead, Left to the start of the last one more than a second behind. So Left goes back to the start of the
+  chapter that plays, and within its first second on to the one before. They go from a seek on its way, as the skips do,
+  so pressed again they go on to the next chapter. After the last chapter's start Right does nothing, and Left does
+  nothing in the first chapter's first second or before the first chapter. A held key jumps once. Without chapters, while
+  the title cannot be sought and on the Playing Next screen the keys pass on. A jump shows the controls as a skip does; in
+  a Watch Party it is a seek like any other, asked of the room, and a guest's is refused with the web's words. They work
+  in the full player, the mini view and the minimized bar, taken before the focused control: on the picture, the seek
+  bar, the volume slider (which keeps the plain arrows) or a button, also while a remote's arrows move between the
+  controls.
 - **Subtitle menu** (`SubtitleTrackOption`, after the web's `SubtitleMenu`): the button is there for every server
   title, tracks or not, since the menu also adds subtitles. Captions glyph, struck through while none shows; white
   with the amber dot while one does. C turns the subtitle off and back on to the track that showed last (both are
@@ -1159,7 +1170,8 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   as F11, which works everywhere),
   P the mini view, Esc turns away an intro pill, else closes the marker panel, else leaves full screen or the mini
   view, else closes, M mute, C
-  subtitles off and on, Left/Right skip. Up and Down do as Settings → Playback → This PC says. By default as on Silo's
+  subtitles off and on, Left/Right skip, Ctrl+Right and Ctrl+Left jump to the next and previous chapter (see the
+  Chapters menu). Up and Down do as Settings → Playback → This PC says. By default as on Silo's
   TV app (a remote has its own volume buttons; M mutes and the slider, reached with Tab, sets it): from the picture Up
   shows the controls with focus on Play/Pause and Down opens the audio menu when there is a track to choose, else the
   subtitles', else the playback settings (the TV app's panel opens on audio, else subtitles, else video), and on a
@@ -1178,9 +1190,9 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   hide them, as the TV app's ladder has it, unless paused, a skip pill shows (Back turns it away) or the marker editor is
   open; focus moves to the page, so the controls hide by themselves again after the next key. Esc keeps the web's
   keys. A held OK does not press the button it lands on. Space wins over a
-  focused button; arrows go to a focused slider first. Nothing applies while a text field, an open menu or the Add Subtitles or appearance panel has focus
+  focused button; arrows go to a focused slider first, Ctrl+Left and Ctrl+Right do not. Nothing applies while a text field, an open menu or the Add Subtitles or appearance panel has focus
   (Esc, Backspace and the remote's Back close the panel, focus back on Subtitles), or with Ctrl, Alt, Shift or Windows
-  held. The keys are handled on the page, not as keyboard
+  held, but for Ctrl+Left and Ctrl+Right (Ctrl alone). The keys are handled on the page, not as keyboard
   accelerators, so no accelerator tooltip appears; the buttons announce them through
   `AutomationProperties.AcceleratorKey`.
 

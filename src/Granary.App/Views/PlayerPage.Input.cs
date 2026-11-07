@@ -14,7 +14,8 @@ using DispatcherQueueTimer = Microsoft.UI.Dispatching.DispatcherQueueTimer;
 
 namespace Granary.App.Views;
 
-// The keyboard map of the web player (docs/api-contract.md, 13.5) and clicks on the picture.
+// The keyboard map of the web player (docs/api-contract.md, 13.5), the chapter keys of Silo's macOS app, and clicks on the
+// picture.
 public sealed partial class PlayerPage
 {
     // A second click within this time makes a double click, so the first click's play or pause waits for it.
@@ -74,7 +75,7 @@ public sealed partial class PlayerPage
     // (requestIdleOverlayFocus); there the controls never show without focus, here a pointer shows them too, and an air
     // mouse keeps them up, so OK does it whether they show already or not. A button that shows while they are hidden
     // (the sync notice's ✕, the skip pill) keeps OK. A held OK acts once: its repeats neither press the button it
-    // landed on nor bring the controls back after a skip.
+    // landed on nor bring the controls back after a skip. The chapter keys are taken here too (JumpsChapter).
     private void OnPagePreviewKeyDown(object sender, KeyRoutedEventArgs e)
     {
         _lastInputWasKey = true;
@@ -91,6 +92,11 @@ public sealed partial class PlayerPage
         }
         _controlsShownBeforeKey = _areControlsVisible;
         ShowControls();
+        if (JumpsChapter(e.Key, e.KeyStatus.WasKeyDown))
+        {
+            e.Handled = true;
+            return;
+        }
         bool okOnPicture = e.Key == VirtualKey.Enter && !HasFocusInControls() && !HasShownButtonFocus();
         if (okOnPicture && !IsDocked && !ShowsNextUpScreen && AcceptsShortcut())
         {
@@ -236,6 +242,23 @@ public sealed partial class PlayerPage
         return true;
     }
 
+    // Ctrl+Right and Ctrl+Left jump between chapters, as ⌘→ and ⌘← on Silo's macOS app, through the Chapters menu's seek. They
+    // are taken on the way down, before a focused volume slider would set the volume with them, and never skip or move between
+    // the controls. A held key jumps once: each repeat would be another seek, and in a Watch Party another request to the room.
+    // Without chapters, while the title cannot be sought and on the Playing Next screen they pass on.
+    private bool JumpsChapter(VirtualKey key, bool isRepeat)
+    {
+        if (!IsChapterKey(key) || ShowsNextUpScreen || !ViewModel.CanSeek || !ViewModel.HasChapters || !AcceptsShortcut(key))
+        {
+            return false;
+        }
+        if (!isRepeat)
+        {
+            ViewModel.SeekToAdjacentChapter(forward: key == VirtualKey.Right);
+        }
+        return true;
+    }
+
     // A button with focus that is not one of the controls, so shows while they are hidden.
     private bool HasShownButtonFocus() => FocusManager.GetFocusedElement(XamlRoot) is ButtonBase button && !IsInControls(button);
 
@@ -331,17 +354,25 @@ public sealed partial class PlayerPage
     // Esc, a remote's Back (Browser Back) and Backspace. Typing never gets here (AcceptsShortcut).
     private static bool IsBack(VirtualKey key) => key is VirtualKey.Escape or VirtualKey.GoBack or VirtualKey.Back;
 
-    // Modifier combinations belong to the app (Alt+Left, Ctrl+K); text fields, open menus and the subtitle panels keep
-    // their keys.
-    private bool AcceptsShortcut()
+    // Modifier combinations belong to the app (Alt+Left, Ctrl+K), all but the chapter keys (JumpsChapter, the only caller
+    // that passes a key); text fields, open menus and the subtitle panels keep their keys.
+    private bool AcceptsShortcut(VirtualKey key = VirtualKey.None)
     {
-        if (IsDown(VirtualKey.Control) || IsDown(VirtualKey.Menu) || IsDown(VirtualKey.Shift)
-            || IsDown(VirtualKey.LeftWindows) || IsDown(VirtualKey.RightWindows))
+        if (HasModifier() && !IsChapterKey(key))
         {
             return false;
         }
         return FocusManager.GetFocusedElement(XamlRoot) is not (TextBox or PasswordBox or RichEditBox) && !HasOpenMenu() && !IsPanelOpen;
     }
+
+    // Ctrl+Left and Ctrl+Right with no other modifier: Ctrl takes the place of the Mac's ⌘.
+    private static bool IsChapterKey(VirtualKey key) =>
+        (key is VirtualKey.Left or VirtualKey.Right) && IsDown(VirtualKey.Control)
+        && !IsDown(VirtualKey.Menu) && !IsDown(VirtualKey.Shift) && !IsDown(VirtualKey.LeftWindows) && !IsDown(VirtualKey.RightWindows);
+
+    private static bool HasModifier() =>
+        IsDown(VirtualKey.Control) || IsDown(VirtualKey.Menu) || IsDown(VirtualKey.Shift)
+        || IsDown(VirtualKey.LeftWindows) || IsDown(VirtualKey.RightWindows);
 
     private static bool IsDown(VirtualKey key) =>
         InputKeyboardSource.GetKeyStateForCurrentThread(key).HasFlag(CoreVirtualKeyStates.Down);

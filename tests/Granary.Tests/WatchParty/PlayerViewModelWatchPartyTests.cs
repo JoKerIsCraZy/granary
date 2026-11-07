@@ -153,6 +153,33 @@ public sealed class PlayerViewModelWatchPartyTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task TheHostsChapterJump_IsAskedOfTheRoom_NotDoneHere()
+    {
+        var viewModel = await PlayingAsync();
+        Playback.RaiseChapters([new PlaybackChapter("Opening", 0, 600, null), new PlaybackChapter("Heist", 600, 7200, null)]);
+
+        viewModel.SeekToAdjacentChapter(forward: true);
+
+        await ServerPlaybackFixture.Until(() => Socket.Sent.Any(f => f.Contains("\"transport_request\"", StringComparison.Ordinal)), "the request");
+        var request = JsonDocument.Parse(Socket.Sent.First(f => f.Contains("\"transport_request\"", StringComparison.Ordinal))).RootElement;
+        Assert.Equal(("seek", 600.0), (request.GetProperty("action").GetString(), request.GetProperty("position_seconds").GetDouble()));
+        Assert.Empty(Playback.Seeks);
+    }
+
+    [Fact]
+    public async Task AGuestsChapterJump_IsRefused_WithTheWebsWords()
+    {
+        var viewModel = await PlayingAsync(role: "guest");
+        Playback.RaiseChapters([new PlaybackChapter("Opening", 0, 600, null), new PlaybackChapter("Heist", 600, 7200, null)]);
+
+        viewModel.SeekToAdjacentChapter(forward: true);
+
+        Assert.Empty(Playback.Seeks);
+        Assert.Equal(WatchPartyPlaybackBinding.HostSeeksText, viewModel.NoticeMessage);
+        Assert.DoesNotContain(Socket.Sent, f => f.Contains("\"transport_request\"", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task AGuestsDiscordStatus_ShowsTheRoomsTitle_ThoughSeekingIsTheHosts()
     {
         var viewModel = await JoinedAsync(WatchPartyPayloads.Room("playing", "playing", generation: 3, revision: 1, role: "guest", selected: "movie:heat"));
