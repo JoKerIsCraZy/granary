@@ -486,11 +486,14 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   this one in the current season that has a readable file, as the web finds it, none before the season's first.
 - **Sleep timer** (`PlayerViewModel.SleepTimer.cs`; the apps' `SleepTimer` and `SleepTimerController`, the web's
   `SleepTimerMenu`): a duration counts on the player's `TimeProvider` once a second, whatever plays, pauses or loads
-  meanwhile, so it runs on into the next episode, and then pauses what plays, with no fade. Run out while the next title
-  loads, it pauses that title once it plays; at an episode's end, it stops the countdown to the next one. In a Watch Party
+  meanwhile, so it runs on into the next episode, and then pauses what plays, with no fade (a title already paused is left
+  as it is). Run out while the next title loads, it pauses that title once it plays; at an episode's end, it stops the
+  countdown to the next one; after a failure it just ends. In a Watch Party
   the viewer leaves the room instead, as Apple's player does; a room taking over, and leaving the player, end the timer.
   End of episode holds the next episode back (`NextUpFlow.Hold`: the card counts nothing and the end waits, as with
-  auto-play off) for whatever plays when the end comes, and ends with that end. The menu opens on this device's
+  auto-play off) for whatever plays when the end comes, and ends with that end; once a title has ended the menu does not
+  offer it. The page hands the menu its rows as it opens and keeps them while it is open (as `DetailHero`'s pickers), so a
+  change under it cannot take the focus out. The menu opens on this device's
   `player.sleep_timer_default_minutes` (read with the playback's settings, in a batch of its own); a duration started is
   saved there, as Android keeps the last one (`ServerPlayback.SetSleepTimerDefault`, `profile_device`).
 - **Chapters** (11.3): the playing file's `chapters` from the watch detail (mpv reads none through a remux or a

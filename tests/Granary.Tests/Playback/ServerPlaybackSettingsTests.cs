@@ -281,6 +281,25 @@ public sealed class ServerPlaybackSettingsTests
         Assert.Equal(15, _fixture.Body(HttpMethod.Put, path).GetProperty("value").GetInt32());
     }
 
+    [Fact]
+    public async Task EachSleepTimerPick_IsWrittenOnce_InTheOrderPicked()
+    {
+        const string path = "api/v2/settings/values/player.sleep_timer_default_minutes";
+        _fixture.Silo.On(HttpMethod.Put, path, ScriptedSilo.NoContent());
+        _fixture.Silo.On(HttpMethod.Delete, StopPath, Ok(PlaybackPayloads.StopCompleted));
+        var playback = await _fixture.PlayingAsync();
+
+        playback.SetSleepTimerDefault(15);
+        playback.SetSleepTimerDefault(15);
+        playback.SetSleepTimerDefault(45);
+        // The stop waits for the saves on their way.
+        await playback.StopAsync();
+
+        Assert.Equal(2, _fixture.Silo.SentTo(HttpMethod.Put, path).Count);
+        Assert.Equal([15, 45], [_fixture.Body(HttpMethod.Put, path, 0).GetProperty("value").GetInt32(),
+            _fixture.Body(HttpMethod.Put, path, 1).GetProperty("value").GetInt32()]);
+    }
+
     // A second file after the one played last.
     internal static string TwoFiles
     {

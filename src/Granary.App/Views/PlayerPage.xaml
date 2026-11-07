@@ -245,10 +245,10 @@
                                                Typography.NumeralAlignment="Tabular" />
                                 </StackPanel>
                                 <Button.Flyout>
+                                    <!-- The rows are taken as the menu opens and kept while it is open (OnSleepTimerMenuOpening). -->
                                     <Flyout x:Name="SleepTimerMenu" Placement="TopEdgeAlignedRight" FlyoutPresenterStyle="{StaticResource SiloPlayerSmallMenuStyle}"
-                                            Opened="OnSleepTimerMenuOpened">
-                                        <ItemsControl x:Name="SleepTimerRows" ItemsSource="{x:Bind ViewModel.SleepTimerOptions, Mode=OneWay}" IsTabStop="False"
-                                                      XYFocusKeyboardNavigation="Enabled">
+                                            Opening="OnSleepTimerMenuOpening" Opened="OnSleepTimerMenuOpened">
+                                        <ItemsControl x:Name="SleepTimerRows" IsTabStop="False" XYFocusKeyboardNavigation="Enabled">
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate x:DataType="player:SleepTimerOption">
                                                     <Button Style="{StaticResource SiloPlayerMenuItemStyle}" Padding="16,8" Click="OnSleepTimerOptionClick"

@@ -284,6 +284,118 @@ public sealed class PlayerViewModelSleepTimerTests
     }
 
     [Fact]
+    public async Task AtTheEnd_TheMenuNoLongerOffersTheEnd_AndTheNextTitleDoes()
+    {
+        var viewModel = await PlayingAsync(Ted);
+        var endRow = viewModel.SleepTimerOptions[^1];
+        PlaysToItsEnd();
+
+        Assert.DoesNotContain(viewModel.SleepTimerOptions, o => o.Action == SleepTimerAction.EndOfTitle);
+        // A row from a menu opened before the end changes nothing: the countdown runs on, the timer stays off.
+        viewModel.ChooseSleepTimer(endRow);
+        Assert.False(viewModel.IsSleepTimerOn);
+        Assert.True(viewModel.IsNextUpCountingDown);
+
+        _time.Advance(TimeSpan.FromSeconds(10.1));
+        Plays();
+        Assert.Equal("End of episode", viewModel.SleepTimerOptions[^1].Label);
+    }
+
+    [Fact]
+    public async Task ARunningDuration_StaysInTheMenuAtTheEnd_WithTurnOff()
+    {
+        var viewModel = await PlayingAsync(Ted);
+        Choose(viewModel, "15 min");
+
+        PlaysToItsEnd();
+
+        Assert.Equal(["Turn off", "5 min", "15 min", "30 min", "45 min", "60 min"], viewModel.SleepTimerOptions.Select(o => o.Label));
+    }
+
+    [Fact]
+    public async Task RunningOutWhileTheViewerHasPaused_NeitherPlaysNorPausesAgain()
+    {
+        var viewModel = await PlayingAsync(Ted);
+        Choose(viewModel, "5 min");
+        viewModel.TogglePauseCommand.Execute(null);
+        int pauses = _engine.PauseRequests.Count;
+
+        _time.Advance(TimeSpan.FromMinutes(5));
+
+        Assert.True(_engine.Current.IsPaused);
+        Assert.Equal(pauses, _engine.PauseRequests.Count);
+        Assert.False(viewModel.IsSleepTimerOn);
+    }
+
+    [Fact]
+    public async Task ADuration_RunsOnThroughAReconnectAndAReplan()
+    {
+        var viewModel = await PlayingAsync(Ted);
+        Choose(viewModel, "5 min");
+
+        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Reconnecting));
+        _time.Advance(TimeSpan.FromMinutes(1));
+        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));
+        Playback.RaisePlanChange(PlanChange.Quality);
+        _time.Advance(TimeSpan.FromMinutes(1));
+        Playback.RaisePlanChange(PlanChange.None);
+
+        Assert.Equal("Sleep 3:00", viewModel.SleepTimerText);
+        Assert.Single(_playbacks);
+        _time.Advance(TimeSpan.FromMinutes(3));
+        Assert.True(_engine.Current.IsPaused);
+    }
+
+    [Fact]
+    public async Task RunningOutWhileTheConnectionComesBack_Pauses()
+    {
+        var viewModel = await PlayingAsync(Ted);
+        Choose(viewModel, "5 min");
+        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Reconnecting));
+
+        _time.Advance(TimeSpan.FromMinutes(5));
+
+        Assert.True(_engine.Current.IsPaused);
+        Assert.False(viewModel.IsSleepTimerOn);
+    }
+
+    [Fact]
+    public async Task RunningOutAfterAFailure_JustEndsTheTimer()
+    {
+        var viewModel = await PlayingAsync(Ted);
+        Choose(viewModel, "5 min");
+        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Failed, "The server stopped responding.", CanRetry: true));
+        int pauses = _engine.PauseRequests.Count;
+
+        _time.Advance(TimeSpan.FromMinutes(5));
+
+        Assert.False(viewModel.IsSleepTimerOn);
+        Assert.Equal(pauses, _engine.PauseRequests.Count);
+        Assert.Equal(PlayerPhase.Failed, viewModel.Phase);
+        Assert.Equal(0, _navigation.PlayerLeaves);
+
+        // Retry is the viewer's: the title plays and nothing pauses it.
+        await viewModel.RetryCommand.ExecuteAsync(null);
+        Plays();
+        Assert.False(_engine.Current.IsPaused);
+    }
+
+    [Fact]
+    public async Task AMoviesEnd_LeavesThePlayer_AndEndsTheTimerWithIt()
+    {
+        var viewModel = await PlayingAsync();
+        Choose(viewModel, "5 min");
+
+        PlaysToItsEnd();
+
+        Assert.Equal(1, _navigation.PlayerLeaves);
+        Assert.False(viewModel.IsSleepTimerOn);
+        int pauses = _engine.PauseRequests.Count;
+        _time.Advance(TimeSpan.FromMinutes(5));
+        Assert.Equal(pauses, _engine.PauseRequests.Count);
+    }
+
+    [Fact]
     public async Task LeavingThePlayer_EndsTheTimer()
     {
         var viewModel = await PlayingAsync(Ted);

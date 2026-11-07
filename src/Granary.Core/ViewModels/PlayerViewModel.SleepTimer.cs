@@ -49,7 +49,7 @@ public sealed partial class PlayerViewModel
 
     /// <summary>
     /// The menu: "Turn off" while the timer is on, the durations, and the end of what plays, except in a Watch Party,
-    /// whose room decides what plays next.
+    /// whose room decides what plays next, and once that end has come.
     /// </summary>
     [ObservableProperty]
     public partial IReadOnlyList<SleepTimerOption> SleepTimerOptions { get; private set; } = [];
@@ -63,7 +63,8 @@ public sealed partial class PlayerViewModel
             case SleepTimerAction.Minutes when option.Minutes > 0:
                 StartSleepTimer(option.Minutes);
                 break;
-            case SleepTimerAction.EndOfTitle when !IsWatchParty:
+            // A row from a menu opened before the end: that end has come already.
+            case SleepTimerAction.EndOfTitle when !IsWatchParty && Phase != PlayerPhase.Ended:
                 SleepAtEndOfTitle();
                 break;
             case SleepTimerAction.TurnOff:
@@ -87,13 +88,13 @@ public sealed partial class PlayerViewModel
         ShowSleepTimer();
     }
 
-    // At the end already, the next episode waits from now on.
+    // Before the end only: the menu offers it until then.
     private void SleepAtEndOfTitle()
     {
         StopSleepTicks();
         _sleepEnds = null;
         _sleepPausePending = false;
-        _sleepAtEnd = Phase != PlayerPhase.Ended;
+        _sleepAtEnd = true;
         _logger.LogInformation("Sleep timer: stopping at the end of the title");
         _nextUp.Hold(true, Now);
         ShowNextUp();
@@ -152,7 +153,9 @@ public sealed partial class PlayerViewModel
         _logger.LogInformation("The sleep timer ran out; pausing");
         switch (Phase)
         {
-            case PlayerPhase.Playing:
+            // A title the viewer paused stays as it is. After a failure there is nothing to pause, and a movie's end
+            // left the player, which ended the timer.
+            case PlayerPhase.Playing when !_engine.Current.IsPaused:
                 Pause();
                 break;
             case PlayerPhase.Preparing:
@@ -172,11 +175,15 @@ public sealed partial class PlayerViewModel
         if (_sleepPausePending && Phase == PlayerPhase.Playing)
         {
             _sleepPausePending = false;
-            Pause();
+            if (!_engine.Current.IsPaused)
+            {
+                Pause();
+            }
         }
     }
 
-    // What plays came to its end: "End of episode" did what it was for. For the next title it applies again (BeginNextUp).
+    // What plays came to its end: "End of episode" did what it was for and turns off. The hold stays with this title's
+    // next-up flow, so the next episode waits; the title after that starts a new flow without it.
     private void EndSleepAtEnd()
     {
         if (_sleepAtEnd)
@@ -214,12 +221,16 @@ public sealed partial class PlayerViewModel
         var durations = preferred > 0 && !SleepTimerPresets.Contains(preferred) ? SleepTimerPresets.Append(preferred).Order() : SleepTimerPresets.AsEnumerable();
         options.AddRange(durations.Select(minutes =>
             new SleepTimerOption(SleepTimerAction.Minutes, minutes, MinutesLabel(minutes), IsDefault: minutes == preferred)));
-        if (!IsWatchParty)
+        // Not once the title has ended: that end has come.
+        if (!IsWatchParty && Phase != PlayerPhase.Ended)
         {
             options.Add(new SleepTimerOption(SleepTimerAction.EndOfTitle, 0, end));
         }
         return options;
     }
+
+    // The end row comes and goes with the title's end.
+    partial void OnPhaseChanged(PlayerPhase value) => ShowSleepTimer();
 
     // "30 min", as the web's rows say it.
     private static string MinutesLabel(int minutes) => string.Create(CultureInfo.InvariantCulture, $"{minutes} min");

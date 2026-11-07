@@ -323,10 +323,22 @@ public sealed partial class PlayerPage : Page
         FocusRow(SubtitleRows, ViewModel.SubtitleTracks.ToList().FindIndex(option => option.IsSelected));
     }
 
-    // The sleep timer's menu opens, while the timer is off, on the duration this device starts it on, so OK starts that;
-    // while it is on, on Turn off.
-    private void OnSleepTimerMenuOpened(object? sender, object e) =>
-        FocusRow(SleepTimerRows, ViewModel.IsSleepTimerOn ? 0 : Math.Max(0, ViewModel.SleepTimerOptions.ToList().FindIndex(option => option.IsDefault)));
+    // The sleep timer's menu takes its rows as it opens and keeps them while it is open, as the title page's pickers do
+    // (DetailHero): a timer that runs out, or a title that ends, would otherwise rebuild them under the focus and take it
+    // out of the menu. A row picked after that does nothing harmful: Turn off finds the timer off already, and the end of
+    // a title that has ended is refused.
+    private void OnSleepTimerMenuOpening(object? sender, object e) => SleepTimerRows.ItemsSource = ViewModel.SleepTimerOptions;
+
+    // It opens, while the timer is off, on the duration this device starts it on, so OK starts that; while it is on, on
+    // Turn off, the first row.
+    private void OnSleepTimerMenuOpened(object? sender, object e)
+    {
+        var options = SleepTimerRows.ItemsSource as IReadOnlyList<SleepTimerOption> ?? [];
+        bool isOn = options.Count > 0 && options[0].Action == SleepTimerAction.TurnOff;
+        // The rows were handed over as the menu opened: lay them out before looking for one.
+        SleepTimerRows.UpdateLayout();
+        FocusRow(SleepTimerRows, isOn ? 0 : Math.Max(0, options.ToList().FindIndex(option => option.IsDefault)));
+    }
 
     private void OnSleepTimerOptionClick(object sender, RoutedEventArgs e)
     {
