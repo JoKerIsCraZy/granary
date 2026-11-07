@@ -47,8 +47,10 @@ public sealed class PlayerRichPresence : IDisposable
     private ITimer? _held;
     private TitleKey? _lookingUp;
     private (TitleKey Key, TmdbTitle? Title)? _found;
-    // A title loads, or plays without the player having read its own stream yet (see Starting).
+    // A title loads, or plays without the player having read its own stream yet (see FollowStart).
     private bool _starting;
+    // The seek bar was off since the title began to load.
+    private bool _seekBarWasOff;
     private bool _disposed;
 
     public PlayerRichPresence(PlayerViewModel player, IRichPresence presence, IPlaybackDevicePreferences preferences, TmdbTitleLookup titles,
@@ -60,8 +62,9 @@ public sealed class PlayerRichPresence : IDisposable
         _titles = titles;
         _dispatcher = dispatcher;
         _time = time;
-        // A page made after its title started (CanSeek will not turn on again) shows it at once.
+        // A page made after its title started shows it at once.
         _starting = !(player.Phase == PlayerPhase.Playing && player.CanSeek);
+        _seekBarWasOff = !player.CanSeek;
         _player.PropertyChanged += OnPlayerChanged;
         _preferences.DiscordStatusChanged += OnSettingChanged;
         Update();
@@ -86,10 +89,6 @@ public sealed class PlayerRichPresence : IDisposable
 
     private void OnPlayerChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(PlayerViewModel.CanSeek))
-        {
-            Started();
-        }
         if (string.IsNullOrEmpty(e.PropertyName) || Shown.Contains(e.PropertyName))
         {
             Update();
@@ -97,20 +96,23 @@ public sealed class PlayerRichPresence : IDisposable
     }
 
     // While a title loads, the player keeps the position, length and pause of the title before, and it says the new one
-    // plays before it reads the new stream's state (its Phase before its engine state). Its seek bar turning on (CanSeek)
-    // is the first sign it has read a started stream of the new load: CanSeek comes from that state, after the position,
-    // length and pause, and is off from the load on. Until then the title does not show.
-    private void Starting()
+    // plays before it reads the new stream's state (its Phase before its engine state). Its seek bar (CanSeek) goes off as
+    // a load starts and comes on from a started stream of that load, after the position, length and pause are taken from
+    // it. So from a load on, the title shows once the seek bar was off and is on again while it plays, whichever of the
+    // player's changes comes first.
+    private void FollowStart()
     {
-        if (_player.HasLeft || _player.Phase != PlayerPhase.Playing)
+        var player = _player;
+        if ((player.HasLeft || player.Phase != PlayerPhase.Playing) && !_starting)
         {
             _starting = true;
+            _seekBarWasOff = false;
         }
-    }
-
-    private void Started()
-    {
-        if (_player.CanSeek && _player.Phase == PlayerPhase.Playing && !_player.HasLeft)
+        if (!player.CanSeek)
+        {
+            _seekBarWasOff = true;
+        }
+        else if (_starting && _seekBarWasOff && player.Phase == PlayerPhase.Playing && !player.HasLeft)
         {
             _starting = false;
         }
@@ -125,7 +127,7 @@ public sealed class PlayerRichPresence : IDisposable
         {
             return;
         }
-        Starting();
+        FollowStart();
         if (Read() is not { } state)
         {
             Clear();

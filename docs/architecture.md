@@ -724,8 +724,8 @@ panel follow it. It joins or opens the room over HTTP and keeps the room socket 
 
 ## Discord status
 
-An opt-in status in Discord while a title plays (Settings → Playback → This PC, `IPlaybackDevicePreferences.DiscordStatus`
-in `playback-device.json`); docs/ui-design.md says what it shows.
+An opt-in status in Discord while a title plays (Settings → Playback → This PC,
+`IPlaybackDevicePreferences.DiscordStatus` in `playback-device.json`); docs/ui-design.md says what it shows.
 
 - **`PlayerRichPresence`** (Core, beside `PlayerSystemMedia` and made and disposed with it by the player page) reads the
   player and the setting and shows the result on the port `IRichPresence`. Like `PlayerSystemMedia`, it sends only a
@@ -733,9 +733,10 @@ in `playback-device.json`); docs/ui-design.md says what it shows.
   seconds does. Discord takes about 5 updates in 20 seconds, so one goes out at most every 4 seconds; a change that has
   to wait goes out on a timer as the player is by then. Clearing goes at once. While a title loads, `PlayerViewModel`
   still holds the position, length and pause of the title before, and it sets `Phase` to Playing before it reads the new
-  stream's state; so from a load on, a title shows only once `CanSeek` turns on, which the player computes from a started
-  stream of the new load, after the position, length and pause. A file played directly (`PlaybackMediaKind.Direct`)
-  never shows, and a lookup's answer is taken only while its title still plays.
+  stream's state. Its seek bar (`CanSeek`) goes off as a load starts (`PlayAsync`) and comes on from a started stream of
+  that load, after the position, length and pause; so from a load on, a title shows once `CanSeek` was off and is on
+  again while it plays, whichever of the player's changes comes first. A file played directly
+  (`PlaybackMediaKind.Direct`) never shows, and a lookup's answer is taken only while its title still plays.
 - **`TmdbTitleLookup`** (Core, a singleton) finds the poster and the TMDB page through the server, so Granary needs no
   TMDB key of its own: the catalog item's `tmdb_id` (the movie's, an episode's series'), then the requests detail's
   `poster_path` (docs/api-contract.md, 7.6 and 7.15). It runs only while the setting is on, once per title and server,

@@ -53,7 +53,7 @@ internal sealed class DiscordStatus(ILogger<DiscordStatus> logger) : IRichPresen
                 Send();
             }
         }
-        Close(failed);
+        Close(failed, goodbye: false);
     }
 
     public void Clear()
@@ -70,7 +70,7 @@ internal sealed class DiscordStatus(ILogger<DiscordStatus> logger) : IRichPresen
             // Discord was not found yet: stop looking for it until something plays again.
             closing = LetGo();
         }
-        Close(closing);
+        Close(closing, goodbye: false);
     }
 
     /// <summary>At the app's exit: the status goes with the connection.</summary>
@@ -83,7 +83,8 @@ internal sealed class DiscordStatus(ILogger<DiscordStatus> logger) : IRichPresen
             _wanted = null;
             closing = LetGo();
         }
-        Close(closing);
+        // With its goodbye, which takes the status away.
+        Close(closing, goodbye: true);
     }
 
     // Under the lock. The client to close when it could not start, else null.
@@ -126,8 +127,13 @@ internal sealed class DiscordStatus(ILogger<DiscordStatus> logger) : IRichPresen
         return client;
     }
 
-    // Outside the lock.
-    private void Close(DiscordRpcClient? client)
+    // Outside the lock. At the app's exit the client says goodbye on the library's thread, which takes the status away; a
+    // connected client is let go only then. One let go before it was ready goes without: its goodbye is a status of nothing
+    // for this process (SET_ACTIVITY with this process's id and no activity), sent if its handshake still ends after it was
+    // let go, and it could clear the status the next client shows for the same process. With ShutdownOnly off the
+    // library's dispose aborts the connection instead and sends nothing more. No test checks this: the tests do not reach
+    // the App, and the library needs Discord's pipe.
+    private void Close(DiscordRpcClient? client, bool goodbye)
     {
         if (client is null)
         {
@@ -135,7 +141,10 @@ internal sealed class DiscordStatus(ILogger<DiscordStatus> logger) : IRichPresen
         }
         try
         {
-            // Says goodbye on the library's thread, which also takes the status away.
+            if (!goodbye)
+            {
+                client.ShutdownOnly = false;
+            }
             client.Dispose();
         }
         catch (Exception ex)

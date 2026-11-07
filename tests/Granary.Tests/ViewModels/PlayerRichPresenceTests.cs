@@ -566,6 +566,81 @@ public sealed class PlayerRichPresenceTests
     }
 
     [Fact]
+    public async Task ANewTitle_StillShows_WhenTheEngineNeverReportedItsLoad()
+    {
+        var (player, status) = await PlayingAsync(Heat, at: 2950);
+        _next = Secrets;
+        _nextLength = 2400;
+
+        // Neither the load's status nor its first engine state comes before the server says the title plays.
+        await player.StartAsync(PlayRequest.Resume("episode-dark-1-3"));
+        _time.Advance(PlayerRichPresence.MinimumSpacing);
+        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));
+        await status.Lookup;
+        At(30, length: 2400);
+        _time.Advance(PlayerRichPresence.MinimumSpacing);
+
+        var (start, end) = Timeline(30, 2400);
+        Assert.Equal(new RichPresenceState("Dark", "S01E03 · Secrets", start, end, TmdbPayloads.DarkPoster, TmdbPayloads.DarkPage), _presence.Current);
+    }
+
+    [Fact]
+    public async Task AStatusMadeWhileATitlePlays_ShowsItAtOnce()
+    {
+        var player = NewPlayer(Heat);
+        await player.StartAsync(PlayRequest.Resume(TmdbPayloads.HeatId));
+        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));
+        At(600);
+
+        using var status = Follow(player);
+
+        var (start, end) = Timeline(600);
+        Assert.Equal(new RichPresenceState("Heat", "1995", start, end, null, null), _presence.Current);
+        await status.Lookup;
+        _time.Advance(PlayerRichPresence.MinimumSpacing);
+        Assert.Equal(TmdbPayloads.HeatPoster, _presence.Current!.Poster);
+    }
+
+    [Fact]
+    public async Task AReconnectMidTitle_KeepsTheStatus_WhileTheSeekBarIsOff()
+    {
+        var (player, _) = await PlayingAsync(Secrets);
+        PlayOn();
+        int shown = _presence.Shown.Count;
+
+        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Reconnecting));
+        Assert.False(player.CanSeek);
+        _time.Advance(TimeSpan.FromSeconds(1));
+        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));
+        Assert.True(player.CanSeek);
+        PlayOn();
+
+        Assert.Equal(0, _presence.Clears);
+        Assert.Equal("Dark", _presence.Current!.Details);
+        // The second of the stall is less than a jump.
+        Assert.Equal(shown, _presence.Shown.Count);
+    }
+
+    [Theory]
+    [InlineData(ServerPlaybackPhase.Failed)]
+    [InlineData(ServerPlaybackPhase.Ended)]
+    public async Task ATitleStartedAgain_AfterItFailedOrEnded_ShowsAgain(ServerPlaybackPhase phase)
+    {
+        var (player, status) = await PlayingAsync(Secrets);
+        Playback.Raise(new ServerPlaybackStatus(phase, "The server stopped answering.", CanRetry: true));
+        Assert.Null(_presence.Current);
+
+        await player.StartAsync(PlayRequest.Resume("episode-dark-1-3"));
+        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Preparing));
+        await status.Lookup;
+        _time.Advance(PlayerRichPresence.MinimumSpacing);
+        At(0);
+        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));
+
+        Assert.Equal(("Dark", "S01E03 · Secrets", Timeline(0).Start), (_presence.Current!.Details, _presence.Current.State, _presence.Current.StartedAt!.Value));
+    }
+
+    [Fact]
     public async Task LongTexts_AreCutToWhatDiscordTakes_WithoutBreakingACharacter()
     {
         string series = string.Concat(Enumerable.Repeat("Ä", 100));

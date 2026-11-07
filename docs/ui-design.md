@@ -1058,9 +1058,9 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   id. Never anything of the server's address. A line is cut to Discord's 128 bytes with "…", and a one-letter title is
   padded so Discord takes it. It goes as soon as nothing plays (the player left, a title loading, failed or ended) or the
   switch is off, and shows again when it is turned on. A title that starts, the next episode too, shows once its own
-  stream plays, never with the position, length or pause of the title before. Discord takes about 5 updates in 20 seconds, so it changes only with what it shows (another title, a
-  pause, a seek or stall of more than 3 seconds, the length once known, the speed), at most every 4 seconds with the
-  latest state; playing on sends nothing.
+  stream plays, never with the position, length or pause of the title before. Discord takes about 5 updates in 20
+  seconds, so it changes only with what it shows (another title, a pause, a seek or stall of more than 3 seconds, the
+  length once known, the speed), at most every 4 seconds with the latest state; playing on sends nothing.
 - **Fill screen** (the web's video fit): the picture fills the page and is cut where it does not fit (mpv `panscan`);
   a new title shows its whole picture again.
 - **Mini view** (the web's Picture in Picture, P): the window becomes small (480 by 270), stays above the others

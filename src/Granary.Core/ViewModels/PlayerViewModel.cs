@@ -221,6 +221,8 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         ErrorMessage = "";
         CanRetry = false;
         Phase = PlayerPhase.Preparing;
+        // Nothing to seek in until the new stream plays, also before the engine first reports the new load.
+        CanSeek = false;
         MediaInfo = PlaybackMediaInfo.None;
         LeavePlayback();
         ResetFill();
