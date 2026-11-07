@@ -364,6 +364,11 @@ also walks all live XAML that .NET holds (the reference tracker), so its pause g
   recycle pool and the pool to the repeater, so the walk from a Granary control at the root took in the whole repeater.
   Placeholders never come back once their titles arrive, so each grid kept a pool of skeletons, and each of them walked
   the grid's thousands of references: 1.15 of 1.6 million references per collection. Guarded by `TemplateRootTests`.
+- More Episodes' Now Viewing mark (`MediaCard.IsCurrent`) costs the other cards nothing: its ring (the artwork's hairline
+  in the accent and one more pixel inside it, so the artwork keeps its layout) and its pill are made (`x:Load`) for the
+  first marked card only, and its ping is one composition animation that stops while the card is unloaded or parked for
+  reuse (the row's `ElementClearing`). The row centres that card once its list is laid out and the scroller's range
+  reaches it (`RowCentring`), following layout for at most 20 passes, so a row that stays hidden stops listening.
 - Timers tick through `WeakTick`: a `DispatcherQueueTimer` is not a XAML object, so a Tick handler holding its control
   was a cycle the collector cannot see through. A grid's timer kept its page (through the page's scroller) after the
   frame let it go: with a small page cache, nine copies of a list page were alive. Every control with a timer, the

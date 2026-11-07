@@ -21,7 +21,7 @@ public sealed partial class MediaRow : UserControl
 
     public static readonly DependencyProperty ItemsSourceProperty =
         DependencyProperty.Register(nameof(ItemsSource), typeof(object), typeof(MediaRow),
-            new PropertyMetadata(null, (sender, _) => ((MediaRow)sender).FollowItems()));
+            new PropertyMetadata(null, (sender, _) => ((MediaRow)sender).OnItemsChanged()));
 
     public static readonly DependencyProperty CardInvokedCommandProperty =
         DependencyProperty.Register(nameof(CardInvokedCommand), typeof(ICommand), typeof(MediaRow), new PropertyMetadata(null));
@@ -67,8 +67,13 @@ public sealed partial class MediaRow : UserControl
             {
                 ScrollMotion.Follow(page);
             }
+            FollowLayout(loaded: true);
         };
-        Unloaded += (_, _) => _prefetch.Follow(null);
+        Unloaded += (_, _) =>
+        {
+            _prefetch.Follow(null);
+            FollowLayout(loaded: false);
+        };
     }
 
     public string Title
@@ -169,6 +174,16 @@ public sealed partial class MediaRow : UserControl
         {
             var shape = sender.ItemsSourceView?.GetAt(args.Index) is MediaCard card ? card.Shape : MediaCardShape.Poster;
             ShowLook(button, view, shape);
+            view.IsParked = false;
+        }
+    }
+
+    // A card scrolled away waits in the repeater, still in the tree, for its next title.
+    private void OnElementClearing(ItemsRepeater sender, ItemsRepeaterElementClearingEventArgs args)
+    {
+        if (args.Element is Button { Content: MediaCardView view })
+        {
+            view.IsParked = true;
         }
     }
 
@@ -189,6 +204,12 @@ public sealed partial class MediaRow : UserControl
             }
         }
         return null;
+    }
+
+    private void OnItemsChanged()
+    {
+        FindCurrent();
+        FollowItems();
     }
 
     private void FollowItems()

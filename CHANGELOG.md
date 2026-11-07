@@ -20,6 +20,12 @@ release's section is what its update says it changes (docs/release.md).
   preview has a Play/Pause button, also when Granary is minimized. In a Watch Party it asks the room, as the player's own
   button does.
 
+### Changed
+
+- **More Episodes** on an episode's page lists the whole season, the episode you're on included, so the row no longer
+  jumps from the episode before it to the one after. That episode is marked Now Viewing, as on Silo's web app, and
+  the row opens with it in the middle. With the keyboard or a TV remote, Down into the row lands on it.
+
 ### Fixed
 
 - A TV remote's arrows work as soon as Granary has started into Home, and after you pick a profile with OK: focus starts

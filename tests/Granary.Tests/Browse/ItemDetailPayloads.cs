@@ -251,6 +251,22 @@ internal static class ItemDetailPayloads
         }
         """;
 
+    /// <summary>Season 3 as three bare episodes, in the server's order; the first is <see cref="Episode"/>.</summary>
+    public const string ThreeEpisodes = """
+        {
+          "items": [
+            { "content_id": "episode-tmdb-96677-3-1", "season_number": 3, "episode_number": 1, "title": "Chapter 1" },
+            { "content_id": "episode-tmdb-96677-3-2", "season_number": 3, "episode_number": 2, "title": "Chapter 2" },
+            { "content_id": "episode-tmdb-96677-3-3", "season_number": 3, "episode_number": 3, "title": "Chapter 3" }
+          ]
+        }
+        """;
+
+    /// <summary>Season 3 holding only <see cref="Episode"/>.</summary>
+    public const string OnlyEpisode = """
+        { "items": [{ "content_id": "episode-tmdb-96677-3-1", "season_number": 3, "episode_number": 1, "title": "Chapter 1" }] }
+        """;
+
     /// <summary>A watched episode with two versions; its still is the backdrop, its logo is the series'.</summary>
     public const string Episode = """
         {

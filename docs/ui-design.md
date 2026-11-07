@@ -430,6 +430,18 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   - Granary's rows follow, 56 apart: a series' seasons, all at once in a grid that wraps at the page's width (185 px
     posters, a season opens its own page), or a season's episode grid, more episodes, trailers, cast and crew, more like
     this.
+  - "More Episodes" on an episode's page (the web's `EpisodeCarousel`): the episode's whole season in the server's
+    order, the episode itself included; the row shows only when the season has more than one episode. The episode's own
+    card is marked as the web marks it: a 2 px accent ring at its artwork's edge (the hairline in the accent and a pixel
+    inside it), and a "NOW VIEWING" pill 10 px into the artwork at its top left (the accent, 10 px semibold capitals
+    0.08 em apart in the badge label colour, a 6 px dot whose copy pings to twice its size and fades, once a second,
+    standing still with Windows' animation effects off as the app starts), in place of that corner's badges. Screen
+    readers hear "S04E04 · Title, …, now viewing". The row opens scrolled at once so that card is in its middle, or as far
+    as the row scrolls; a new list never keeps the last one's place. Clicking it stays on the page, as the web's link to
+    the page it is on does.
+    With the keyboard or a remote, Up or Down into the row lands on it, as the TV app's episode rail starts on its page's
+    episode, also once the row has been scrolled away from it (the row brings it back to its middle); Left and Right then
+    go card by card, and Back to the page returns to the card it was left from.
   - "Trailers & More" (the web's `TrailersSection`): the title's YouTube videos in the server's order, each a 280 px card
     with YouTube's thumbnail, a play mark, its name and "Trailer · Official"; other sites are left out. A card is read as
     "Official Trailer, Trailer · Official, plays the trailer", and its tooltip says "Play trailer".

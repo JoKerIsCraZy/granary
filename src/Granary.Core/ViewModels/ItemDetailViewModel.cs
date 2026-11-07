@@ -271,7 +271,10 @@ public sealed partial class ItemDetailViewModel : ObservableObject
     [ObservableProperty]
     public partial string EpisodesTotalText { get; private set; } = "";
 
-    /// <summary>The other episodes of an episode's season (the episode itself left out).</summary>
+    /// <summary>
+    /// An episode's whole season in its order, the episode itself marked (<see cref="MediaCard.IsCurrent"/>), as the web's;
+    /// empty unless there is another episode to go to.
+    /// </summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasMoreEpisodes))]
     public partial IReadOnlyList<MediaCard> MoreEpisodes { get; private set; } = [];
@@ -550,7 +553,8 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         ShowPlayAction();
     }
 
-    // The season crumb links once the season is known; "More Episodes" lists the season's other episodes.
+    // The season crumb links once the season is known; "More Episodes" lists the whole season, this episode marked Now
+    // Viewing, as the web's EpisodeContent.tsx.
     private async Task LoadEpisodeContextAsync(CatalogItemDetail item, Uri server, ImageParameters images, int generation, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(item.SeriesId) || item.SeasonNumber is not { } number || number < 0)
@@ -566,10 +570,18 @@ public sealed partial class ItemDetailViewModel : ObservableObject
             Breadcrumbs = DetailFacts.Breadcrumbs(item, season);
         }
         var episodes = await episodesLoad;
-        if (generation == _generation && episodes is not null)
+        // Only a season of more than one episode has a row, as on the web.
+        if (generation == _generation && episodes?.Items.Where(e => e.ContentId.Length > 0).ToList() is { Count: > 1 } siblings)
         {
-            MoreEpisodes = [.. episodes.Items.Where(e => e.ContentId.Length > 0 && e.ContentId != _contentId).Select(e => MediaCardFactory.Episode(e, server))];
+            MoreEpisodes = [.. siblings.Select(e => SiblingCard(e, server))];
         }
+    }
+
+    // Matched by content id, as the apps match the episode they show.
+    private MediaCard SiblingCard(Episode episode, Uri server)
+    {
+        var card = MediaCardFactory.Episode(episode, server);
+        return episode.ContentId == _contentId ? card with { IsCurrent = true } : card;
     }
 
     private async Task LoadSimilarAsync(CatalogItemDetail item, Uri server, ImageParameters images, int generation, CancellationToken cancellationToken)
