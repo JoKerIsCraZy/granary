@@ -193,6 +193,7 @@ public sealed partial class MainWindow
             VirtualKey.GoBack when !repeat => Back(BackKey.BrowserBack),
             VirtualKey.Left => EnterSidebar(repeat),
             VirtualKey.Right => LeaveSidebar(repeat),
+            VirtualKey.Enter => ChecksRadio(repeat),
             MediaPlayPause or MediaPlay when !repeat => PlayFocused(),
             VirtualKey.Application when !repeat => FocusedElement() is Button { Content: MediaCardView card } && card.ShowMenuFromKey(),
             _ => false,
@@ -353,6 +354,21 @@ public sealed partial class MainWindow
         if (next is UIElement target)
         {
             target.Focus(FocusState.Keyboard);
+        }
+        return true;
+    }
+
+    // OK on a radio button checks it, as Space does: WinUI's RadioButton takes Space but leaves Enter, a remote's OK, to
+    // pass unhandled, so OK on the library's Library tab did nothing. A held OK acts once; the full player's keys are its own.
+    private bool ChecksRadio(bool repeat)
+    {
+        if (IsPlayerFull || FocusedElement() is not RadioButton { IsEnabled: true } radio)
+        {
+            return false;
+        }
+        if (!repeat)
+        {
+            radio.IsChecked = true;
         }
         return true;
     }

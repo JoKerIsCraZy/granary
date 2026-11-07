@@ -524,7 +524,9 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     app's rows end (the arrows used to jump to the next "Explore all" link).
   - Radio buttons (the library's Recommended / Library / Collections, the Watch Party's Host picks / Everyone votes)
     keep only the arrows towards another of their group; the others leave the group where they point. A radio button
-    takes every arrow itself, so Down used to switch tabs and never reach the page under them.
+    takes every arrow itself, so Down used to switch tabs and never reach the page under them. OK checks the focused
+    one, as Space does, every tab and pill in the window but the full player's: WinUI's radio buttons take Space and
+    leave Enter, a remote's OK, unhandled. A held OK checks once.
   - The Menu key on a card opens the card's menu, as its ⋮ does.
   - With the player minimized, Down from the page's bottom goes to the bar's picture, OK on it brings the player back
     (focus on Play/Pause); in the bar Left and Right move along it and Up returns to the page.
