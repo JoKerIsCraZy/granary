@@ -51,28 +51,45 @@ public sealed partial class MainWindow
     private const VirtualKey MediaPlayPause = (VirtualKey)0xB3;
     private const VirtualKey MediaPlay = (VirtualKey)0xFA;
 
-    // Every key the window sees: a page waiting to place focus stops once the viewer presses one.
+    // Every key and mouse button the window sees: a page waiting to place focus stops once the viewer presses one.
     private int _keysPressed;
+    private int _pointersPressed;
 
     // Whether the viewer last pressed a key rather than a mouse button: focus given back after the player shows then.
     private bool _lastInputWasKey;
+
+    // The focus the start placed on its first page, not shown until the remote's first key.
+    private readonly QuietStartFocus _startFocus = new();
 
     private void InitializeRemote()
     {
         Root.AddHandler(UIElement.KeyDownEvent, new KeyEventHandler(OnRootKeyDown), handledEventsToo: false);
         Root.AddHandler(UIElement.PreviewKeyDownEvent, new KeyEventHandler(OnRemotePreviewKeyDown), handledEventsToo: true);
-        Root.AddHandler(UIElement.PointerPressedEvent, new PointerEventHandler((_, _) => _lastInputWasKey = false), handledEventsToo: true);
+        Root.AddHandler(UIElement.PointerPressedEvent, new PointerEventHandler((_, _) =>
+        {
+            _lastInputWasKey = false;
+            _pointersPressed++;
+            _startFocus.End();
+        }), handledEventsToo: true);
         FocusManager.GotFocus += OnFocusMoved;
         ContentFrame.Navigating += (_, e) =>
         {
-            _openedByKey = FocusedElement() is UIElement { FocusState: FocusState.Keyboard };
-            _openedFromSidebar = _openedByKey && AreaOf(FocusedElement()) == FocusArea.Sidebar;
+            var focused = FocusedElement();
+            _openedByKey = IsOpenedByKey(focused);
+            _openedFromSidebar = _openedByKey && AreaOf(focused) == FocusArea.Sidebar;
             _leaving = ContentFrame.Content as Page;
             _returning = e.NavigationMode == NavigationMode.Back ? ContentFrame.BackStack.LastOrDefault() : null;
         };
         ContentFrame.Navigated += OnFrameNavigated;
         WindowMessageHook.Install(WinRT.Interop.WindowNative.GetWindowHandle(this), TakeAppCommand);
     }
+
+    // A page is opened with a key when focus shows as the keyboard's. A new start's page (Home after a profile picked) is
+    // also when the viewer's last input was a key and focus is in the window: the profile picker focuses its first tile in
+    // code, so OK on it opened Home with no keyboard focus. Only a start: a page nobody opened with a key takes no focus
+    // from one pressed long before. A mouse button resets the last input.
+    private bool IsOpenedByKey(DependencyObject? focused) =>
+        focused is UIElement { FocusState: FocusState.Keyboard } || (_navigation.IsStart && _lastInputWasKey && focused is UIElement);
 
     // A remote's Play sent as a command, not as a key: on the focused card or title, as the Play key, while nothing plays;
     // while something plays Windows hands it to the media session.
@@ -99,6 +116,11 @@ public sealed partial class MainWindow
         {
             return;
         }
+        if (ShowsStartFocus(e.Key))
+        {
+            e.Handled = true;
+            return;
+        }
         bool repeat = e.KeyStatus.WasKeyDown;
         e.Handled = e.Key switch
         {
@@ -108,6 +130,17 @@ public sealed partial class MainWindow
             VirtualKey.Up => MovesAlongDock(FocusNavigationDirection.Up) || LeavesRadioGroup(FocusNavigationDirection.Up, repeat),
             _ => false,
         };
+    }
+
+    // The first arrow or OK on the start's quiet focus shows it where it is, and moves or opens nothing (QuietStartFocus).
+    // A keyboard's OK is Space as often as Enter.
+    private bool ShowsStartFocus(VirtualKey key)
+    {
+        var focused = FocusedElement();
+        bool isArrowOrOk = key is VirtualKey.Left or VirtualKey.Right or VirtualKey.Up or VirtualKey.Down or VirtualKey.Enter
+            or VirtualKey.Space;
+        return _startFocus.ShowsInPlace(isArrowOrOk, focused, focused is UIElement { FocusState: FocusState.Keyboard },
+            () => focused is UIElement element && element.Focus(FocusState.Keyboard));
     }
 
     // The minimized player's bar lies below the page, outside it: Down from the page's bottom goes to its picture, which
@@ -168,6 +201,7 @@ public sealed partial class MainWindow
             VirtualKey.GoBack when !repeat => Back(BackKey.BrowserBack),
             VirtualKey.Left => EnterSidebar(repeat),
             VirtualKey.Right => LeaveSidebar(repeat),
+            VirtualKey.Enter => ChecksRadio(repeat),
             MediaPlayPause or MediaPlay when !repeat => PlayFocused(),
             VirtualKey.Application when !repeat => FocusedElement() is Button { Content: MediaCardView card } && card.ShowMenuFromKey(),
             _ => false,
@@ -332,6 +366,21 @@ public sealed partial class MainWindow
         return true;
     }
 
+    // OK on a radio button checks it, as Space does: WinUI's RadioButton takes Space but leaves Enter, a remote's OK, to
+    // pass unhandled, so OK on the library's Library tab did nothing. A held OK acts once; the full player's keys are its own.
+    private bool ChecksRadio(bool repeat)
+    {
+        if (IsPlayerFull || FocusedElement() is not RadioButton { IsEnabled: true } radio)
+        {
+            return false;
+        }
+        if (!repeat)
+        {
+            radio.IsChecked = true;
+        }
+        return true;
+    }
+
     // Radio buttons with a group name go together by it, those without by their panel.
     private static bool IsSameGroup(RadioButton radio, RadioButton other) =>
         string.IsNullOrEmpty(radio.GroupName)
@@ -343,6 +392,10 @@ public sealed partial class MainWindow
 
     private void OnFocusMoved(object? sender, FocusManagerGotFocusEventArgs args)
     {
+        if (args.NewFocusedElement is { } focused)
+        {
+            _startFocus.FocusMoved(focused);
+        }
         if (args.NewFocusedElement is not UIElement element)
         {
             return;
@@ -357,20 +410,20 @@ public sealed partial class MainWindow
     }
 
     // A page opened with a key starts on its arrival element (a title's Play), and a page Back returns to on the card it
-    // left from; a section picked in the sidebar keeps focus on its entry, as the TV app's tabs do. All wait for the page
-    // to show its parts (a title loads, a grid makes its cards), and hold the place against the focus XAML gives a page
-    // that comes in (the sidebar changing width moved it to the page's first link), until the viewer presses a key.
+    // left from; a section picked in the sidebar keeps focus on its entry, as the TV app's tabs do. A new start's page
+    // (Home after a profile picked with OK) starts as one opened with OK, unless it places its own focus.
     private async void OnFrameNavigated(object sender, NavigationEventArgs e)
     {
         bool back = e.NavigationMode == NavigationMode.Back && _backByKey;
         bool opened = e.NavigationMode == NavigationMode.New && _openedByKey;
         bool picked = opened && _openedFromSidebar;
+        bool start = opened && _navigation.IsStart;
         _backByKey = _openedByKey = _openedFromSidebar = false;
         RememberLeftPage(e.NavigationMode);
         var returning = _returning;
         _leaving = null;
         _returning = null;
-        if (e.Content is not Page page || !(back || opened))
+        if (e.Content is not Page page || !(back || opened) || (start && page is IOwnFocus))
         {
             return;
         }
@@ -379,33 +432,16 @@ public sealed partial class MainWindow
         {
             _entryFocus.TryGetValue(returning, out mark);
         }
-        int keys = _keysPressed;
+        // A start's page shows as a section's, but no section was picked or opened from elsewhere.
+        bool IsSection() => opened && !start && _navigation.IsAtSection;
         try
         {
-            UIElement? placed = null;
-            int held = 0;
-            for (var waited = TimeSpan.Zero; waited < ArrivalPatience && held < HeldPolls; waited += ArrivalPoll)
-            {
-                await Task.Delay(ArrivalPoll);
-                // Gone, or the viewer moved on; a section opened from elsewhere (Ctrl+K) places its own focus.
-                bool section = opened && _navigation.IsAtSection;
-                if (!ReferenceEquals(ContentFrame.Content, page) || _keysPressed != keys || (section && !picked))
-                {
-                    return;
-                }
-                if (placed is not null && ReferenceEquals(FocusedElement(), placed))
-                {
-                    held++;
-                    continue;
-                }
-                placed = section ? (FocusSidebarEntry() ? Navigation.SelectedItem as UIElement : null)
-                    : back ? PlaceOnReturn(page, mark) : FocusArrival(page);
-                held = 0;
-            }
-            if (placed is null && ReferenceEquals(ContentFrame.Content, page) && _keysPressed == keys)
-            {
-                _ = FocusArrival(page) ?? FocusFirst(page);
-            }
+            // Until the viewer presses a key or a mouse button; a section opened from elsewhere (Ctrl+K) places its own focus.
+            var since = InputSoFar();
+            await HoldFocusAsync(page, stops: () => MovedOnSince(since) || (IsSection() && !picked),
+                place: () => IsSection() ? (FocusSidebarEntry() ? Navigation.SelectedItem as UIElement : null)
+                    : back ? PlaceOnReturn(page, mark) : FocusArrival(page),
+                fallback: () => FocusArrival(page) ?? FocusFirst(page));
         }
         catch (Exception ex)
         {
@@ -413,6 +449,97 @@ public sealed partial class MainWindow
             _logger.LogError(ex, "Focus could not be placed on the page");
         }
     }
+
+    // The start screen has gone: focus goes to the first page's start element (Home's first card, as the TV app starts on
+    // its first row), quietly, so a mouse user sees no ring; the remote's first key shows it (ShowsStartFocus). After a key
+    // pressed during the start it shows at once: the viewer uses keys already, and that key reached nothing. Not on a page
+    // that places its own (sign-in, adding a server, the profiles), nor once anything else has focus or the viewer clicked
+    // since the start began. A start that outlasted the start screen does it when its page comes.
+    private void PlaceStartFocus(InputMark since)
+    {
+        if (ContentFrame.Content is not null || IsPlayerOpen)
+        {
+            FocusFirstPage(since);
+            return;
+        }
+        ContentFrame.Navigated += OnFirstPage;
+
+        void OnFirstPage(object sender, NavigationEventArgs e)
+        {
+            ContentFrame.Navigated -= OnFirstPage;
+            FocusFirstPage(since);
+        }
+    }
+
+    private async void FocusFirstPage(InputMark since)
+    {
+        if (ContentFrame.Content is not Page page || page is IOwnFocus || IsPlayerOpen || FocusedElement() is not null
+            || ClickedSince(since))
+        {
+            return;
+        }
+        UIElement? placed = null;
+        // Shown once a key has come since the start began, else quiet until the first key.
+        UIElement? Place(Func<FocusState, UIElement?> focus)
+        {
+            bool shown = _keysPressed != since.Keys;
+            placed = focus(shown ? FocusState.Keyboard : FocusState.Programmatic);
+            if (placed is not null && !shown)
+            {
+                _startFocus.Place(placed);
+            }
+            return placed;
+        }
+        try
+        {
+            // A key that reached nothing does not end the wait; focus the viewer moved on from, or a click, does.
+            await HoldFocusAsync(page,
+                stops: () => ClickedSince(since) || (FocusedElement() is { } focused && !ReferenceEquals(focused, placed)),
+                place: () => Place(state => FocusArrival(page, state)),
+                fallback: () => Place(state => FocusArrival(page, state) ?? FocusFirst(page, state)));
+        }
+        catch (Exception ex)
+        {
+            // async void: nothing may escape.
+            _logger.LogError(ex, "Focus could not be placed on the first page");
+        }
+    }
+
+    // Places focus on a page that has just come in once it shows its parts (a title loads, a grid makes its cards), and
+    // holds the place against the focus XAML gives a page that comes in (the sidebar changing width moved it to the page's
+    // first link). Stops when the page goes or stops says so (the viewer moved on); with nothing placed in time, fallback
+    // places it.
+    private async Task HoldFocusAsync(Page page, Func<bool> stops, Func<UIElement?> place, Func<UIElement?> fallback)
+    {
+        UIElement? placed = null;
+        int held = 0;
+        for (var waited = TimeSpan.Zero; waited < ArrivalPatience && held < HeldPolls; waited += ArrivalPoll)
+        {
+            await Task.Delay(ArrivalPoll);
+            if (!ReferenceEquals(ContentFrame.Content, page) || stops())
+            {
+                return;
+            }
+            if (placed is not null && ReferenceEquals(FocusedElement(), placed))
+            {
+                held++;
+                continue;
+            }
+            placed = place();
+            held = 0;
+        }
+        if (placed is null && ReferenceEquals(ContentFrame.Content, page) && !stops())
+        {
+            _ = fallback();
+        }
+    }
+
+    // The keys and mouse buttons the window has seen so far, to tell whether the viewer has moved on since.
+    private InputMark InputSoFar() => new(_keysPressed, _pointersPressed);
+
+    private bool MovedOnSince(InputMark since) => since != InputSoFar();
+
+    private bool ClickedSince(InputMark since) => since.Presses != _pointersPressed;
 
     // A page left for a new one keeps its mark with its history entry, for when it is made again.
     private void RememberLeftPage(NavigationMode mode)
@@ -430,14 +557,14 @@ public sealed partial class MainWindow
         mark is null || (mark.Card is null && !mark.IsOn(page)) ? FocusArrival(page) : RestoreFocus(page, mark);
 
     // The element focused, or null while the page has none to take it yet.
-    private static UIElement? FocusArrival(Page page)
+    private static UIElement? FocusArrival(Page page, FocusState state = FocusState.Keyboard)
     {
         if (page is not IArrivalFocus arrival)
         {
-            return FocusFirst(page);
+            return FocusFirst(page, state);
         }
         return arrival.ArrivalFocus is { IsLoaded: true, IsEnabled: true, Visibility: Visibility.Visible } target
-            && target.Focus(FocusState.Keyboard) ? target : null;
+            && target.Focus(state) ? target : null;
     }
 
     // The page's first card, as the TV app starts on the first row's first card; a page without cards on its first
@@ -650,6 +777,9 @@ public sealed partial class MainWindow
         }
         return null;
     }
+
+    // How many keys and mouse buttons the window had seen at some moment.
+    private readonly record struct InputMark(int Keys, int Presses);
 
     // Where focus was on a page; for a card, also the title it showed and its list and place, to find the title again.
     private sealed record FocusMark(WeakReference<UIElement> Element, MediaCard? Card, int Index, WeakReference<ItemsRepeater>? Repeater)

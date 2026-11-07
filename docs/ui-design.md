@@ -524,7 +524,9 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     app's rows end (the arrows used to jump to the next "Explore all" link).
   - Radio buttons (the library's Recommended / Library / Collections, the Watch Party's Host picks / Everyone votes)
     keep only the arrows towards another of their group; the others leave the group where they point. A radio button
-    takes every arrow itself, so Down used to switch tabs and never reach the page under them.
+    takes every arrow itself, so Down used to switch tabs and never reach the page under them. OK checks the focused
+    one, as Space does, every tab and pill in the window but the full player's: WinUI's radio buttons take Space and
+    leave Enter, a remote's OK, unhandled. A held OK checks once.
   - The Menu key on a card opens the card's menu, as its ⋮ does.
   - With the player minimized, Down from the page's bottom goes to the bar's picture, OK on it brings the player back
     (focus on Play/Pause); in the bar Left and Right move along it and Up returns to the page.
@@ -538,7 +540,17 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     not quit. A menu, flyout or dialog closes on Browser Back and Backspace as on Esc.
   - A page opened with OK starts on its Play (a title, an episode) or Request (a TMDB title), else on its first card; a
     title's page returned to with Back, made again, starts there too. A section picked in the sidebar keeps focus on
-    its entry, as the TV app's tabs do (the sidebar changing width used to move it to the page's first link).
+    its entry, as the TV app's tabs do (the sidebar changing width used to move it to the page's first link). A page
+    counts as opened with a key when focus shows as the keyboard's. A new start's page (Home after a profile picked or
+    a sign-in) counts so too when the last input was a key (a click resets that), since the profile picker focuses its
+    first tile in code and OK on it opened Home with no focus at all; it starts on its first card, as a page opened with
+    OK. A section opened from elsewhere (Ctrl+K) places its own focus.
+  - When the start screen goes, focus goes to the first page's start, Home's first card, as the TV app starts on its
+    first row (nothing had focus, so the arrows reached nothing). It is placed quietly, so a mouse user sees no ring; the
+    remote's first arrow or OK (Enter or Space) only shows the ring where it is and moves or opens nothing. A click, or
+    focus moved anywhere else, ends that. After a key pressed during the start, which reached nothing, it shows at once;
+    after a click during the start it is not placed. Not on the pages that place their own (`IOwnFocus`): a text box
+    when adding a server, signing in or changing the password, the first profile's tile.
   - The player closed, or minimized, gives focus back to where it was on the page (a title's Play), not the sidebar's
     first entry; shown after a key, quiet after a click.
   - Play/Pause (a media key) on a card plays it, as its play disc does, an episode on a title's page too; anywhere else
@@ -575,7 +587,8 @@ The mark moves (2026-10-26; drafts as SVG in `Assets/Logo`: `granary-mark-intro.
 to the G (composition's circles start at 12 o'clock, so the trimming is offset to the G's lower end). At start the
 window shows a start screen (`MainWindow.ShowStartup`): the intro in the middle, 132 px (the ring draws itself back
 from its upper end with a quarter turn, play pops in, a glint runs round, 1.7 s), then the loading loop while the
-first page still loads (Home's rows, `IStartupContent`), at most 6 s in all, then the app fades in (300 ms). The
+first page still loads (Home's rows, `IStartupContent`), at most 6 s in all, then the app fades in (300 ms), focus on
+the first page's start (TV remote, above). The
 player shows the loading loop (a stretch of the ring runs clockwise round at an even pace, unseen across the G's opening,
 so it slips out at the upper end as it comes back in at the lower one; play breathes; 1.4 s a round) on a dark disc
 while a title prepares or buffers, and small in the corner while the stream is planned anew. With Windows' animations
@@ -1131,9 +1144,13 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   `waiting` event, so a picture that still moves has none). It goes as soon as the picture moves. Failed shows the
   message, Retry when it can help and Back; keyboard focus moves to them. Ended keeps the controls up.
 - **Auto-hide**: during playback the controls fade (and slide a few pixels) after 3 s without pointer
-  movement, and the cursor goes with them while it is over the picture. They stay while paused, preparing,
-  buffering, failed or ended, while the pointer rests on them, during a seek drag, while a flyout is open or
-  a control in them has keyboard focus. Any pointer movement or key brings them back. Hidden controls take no
+  movement or a key, and the cursor goes with them while it is over the picture, however they hide (the wait, a
+  remote's Back, a tap). They stay while paused, preparing, buffering, failed or ended, while the pointer rests on
+  them (only while it shows: a hidden one there keeps nothing up), during a seek drag, while a flyout is open or
+  a control in them has keyboard focus. Any pointer movement or key brings them back. The cursor follows the mouse
+  only (`PlayerCursor`): it comes back with a real move (2 px or more, not the framework testing a still pointer
+  again) and when the player closes, never with a key or the player's own changes, so a remote does not put it back
+  over the picture; paused, it too stays away until the mouse moves. Hidden controls take no
   clicks. The cursor goes as the page's `ProtectedCursor`, a blank one made at run time (`BlankCursor`):
   `ShowCursor` does not reach WinUI content, whose cursor WinUI's input stack sets per element.
 - **Mouse**: a click on the picture plays or pauses (after 250 ms, so a double click does not), a double

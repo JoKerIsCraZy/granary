@@ -9,7 +9,7 @@ using Windows.System;
 
 namespace Granary.App.Views;
 
-public sealed partial class AddServerPage : Page
+public sealed partial class AddServerPage : Page, IOwnFocus
 {
     public AddServerPage()
     {

@@ -13,7 +13,7 @@ using Windows.System;
 
 namespace Granary.App.Views;
 
-public sealed partial class ProfilePickerPage : Page
+public sealed partial class ProfilePickerPage : Page, IOwnFocus
 {
     private const string LockGlyph = "\uE72E";
     private const int AvatarDecodeSize = 120;
