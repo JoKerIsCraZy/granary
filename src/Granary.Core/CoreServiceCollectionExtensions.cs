@@ -21,6 +21,7 @@ using Granary.Core.Api.Theme;
 using Granary.Core.Api.WatchParty;
 using Granary.Core.Artwork;
 using Granary.Core.Auth;
+using Granary.Core.Downloads;
 using Granary.Core.Http;
 using Granary.Core.Overlays;
 using Granary.Core.Playback;
@@ -291,6 +292,11 @@ public static class CoreServiceCollectionExtensions
             })
             .RemoveAllLoggers();
         services.AddTransient<DownloadsApi>();
+        // This PC's download settings, in the data directory; the downloads themselves, each in its own folder.
+        services.AddSingleton<IDownloadPreferences>(sp =>
+            new JsonDownloadPreferences(JsonDownloadPreferences.DefaultPath, sp.GetRequiredService<ILogger<JsonDownloadPreferences>>()));
+        services.AddSingleton(sp => new DownloadStore(DownloadStore.DefaultIndexPath, sp.GetRequiredService<IDownloadPreferences>(),
+            sp.GetRequiredService<TimeProvider>(), sp.GetRequiredService<ILogger<DownloadStore>>()));
     }
 
     // Artwork URLs are presigned and public: no credentials, no identity headers. HTTP/2 lets a page's images

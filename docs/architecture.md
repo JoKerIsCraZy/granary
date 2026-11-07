@@ -167,7 +167,8 @@ stream address and no folder beyond the mpv folder. Settings → Playback → Th
 **Granary's editor** (Settings → Playback → This PC → Edit, `MpvConfigEditorViewModel`) edits the real file: it reads
 `mpv.conf` as it is (or the template, written only on Save) and writes the text back whole through
 `MpvConfigFolder.WriteConfig`, beside the file first under a name of its own and then moved over it, so a failed write
-leaves the old file. Only a file that is not there counts as new: one that cannot be read (`File.Exists` says false for a
+leaves the old file. Every write of the mpv folder goes through `IO/SafeFile`, which Granary's other JSON files use too:
+a move that something reading the file holds up is tried again for a moment, and one whose file changed meanwhile is given up. Only a file that is not there counts as new: one that cannot be read (`File.Exists` says false for a
 file Windows does not let Granary look at) leaves nothing to edit, so Save can never replace it. So does one that is not
 strictly UTF-8, or that holds a NUL, as UTF-16 without a byte order mark does: decoded and saved, it would come back
 damaged, so the editor sends the viewer to Open mpv.conf. The text is read-only while a save runs. A
@@ -771,6 +772,63 @@ An opt-in status in Discord while a title plays (Settings → Playback → This 
   Discord connects or restarts. Without Discord the library keeps trying in the background, which the log says once; a
   clear while Discord is not there stops it. It is disposed when the window closes. The library raises its events on its
   own thread, under the same lock as the UI thread's calls; a client is let go under the lock and disposed outside it.
+
+## Downloads
+
+Films and episodes kept on this PC as the server's managed downloads (docs/api-contract.md, 14). Everything lives in Core's
+`Downloads` area; `Api/Downloads/DownloadsApi` speaks to the server, bound to the profile each download belongs to.
+
+### The store
+
+- **Scope.** A download belongs to a saved server's entry, the account signed in there and a profile (`DownloadScope`),
+  as the server keeps it for one account, profile and PC. `DownloadScope.Of(session)` is the active one, none unless the
+  session is ready.
+- **Layout.** Each download has its own folder, `<root>\<server>\acct-<account>\<profile>\<download>\`
+  (`DownloadPaths.Folder`). Every part is one folder name made by `DownloadPaths.Segment`: letters, digits, `.`, `_` and
+  `-` stay, anything else becomes `_`, and a name that changed, ran over 40 characters, has a capital letter, is a device
+  name (`CON`, `COM1`; set apart with a leading `_`), ends in a dot or ends as a hashed name does is cut to 40 characters and
+  gets `-` and 16 hex digits of the value's SHA-256. So no id the server sends names another path, and two ids never share
+  a folder, also where Windows ignores case. The folder holds `download.json` (the `DownloadRecord`, so the folder
+  describes itself), `manifest.json` as the server sent it, `media.part` while the file arrives, then `media.<container>`,
+  the artwork as `<kind>.<ext>` and the subtitles as `sub-<n>.<format>`; extensions are short plain names or a fallback,
+  never what the server sent unchecked. A record's media file is used only when it is such a `media.<ext>` name.
+- **Root.** `<root>` is the downloads folder chosen when the download started (`IDownloadPreferences.Folder`, in
+  `download-settings.json`; `downloads` in the data folder by default). Choosing another applies to new downloads only:
+  the ones there keep their folders. It is a full path below a drive's or a share's root, never the root itself.
+- **Index.** `downloads.json` in the data folder lists each download's scope, id and folder, with its row's description
+  (`media_item_id`, `title`, series, season and episode), the server deletes still to be sent (`pending_deletes`) and the
+  removed downloads' folders still to be deleted (`folder_deletes`). At every start the `download.json` files four folders
+  under the downloads folder and the data folder's own `downloads` are looked for, and one the index lacks (a write that did
+  not get through, an index that was lost) is taken in. An index that cannot be read is set aside and made again from them.
+  The downloads folder can be any folder, a media library too, so that look goes only into names the layout makes (a
+  `Segment`'s, and `acct-` and one at the second level), skips the folders the index loaded, and lists at most 2000
+  folders, saying so in the log when it stops there.
+- **What files say.** JSON can say null or anything for every member, so each is checked (`DownloadRecords`). An index
+  entry without its scope, id or title, or whose folder is not laid out as above for its scope and id, is left out and
+  logged; such a folder is never read, written or deleted. A record with a member missing or impossible (a negative size,
+  an unknown state) is damaged; a validator `If-Range` does not take, or a media file name the store does not make, is
+  dropped. A load that fails is tried again by the next call.
+- **Missing folders.** A folder that is not there at the start, as on a drive that is not plugged in, keeps its row from
+  the index as missing files (`StoredDownload.FilesMissing`), and its record is not written over meanwhile.
+  `RecheckFolders` reads it again from its own record once it is back, and turns a folder that went into missing files; it
+  reads the disk on the caller's thread, so the queue's loop calls it, never the UI thread. A folder that is there with a
+  record that cannot be read is damaged (`StoredDownload.IsDamaged`, said in the log once): its row stays until it is
+  deleted. Deleting such a row takes it off the index and queues the server's delete.
+- **Writes.** A change holds at once for `In`, `All` and `Find`, which answer snapshots, and `Changed` follows on the
+  caller's thread. The files are written one at a time behind a `SemaphoreSlim`, off the caller's thread, each with the
+  latest state, so the last write is the latest, and each is on the disk before it replaces the file. A new download starts
+  in an empty folder; a delete still waiting for that very folder leaves the index before the folder is made, so a crash
+  cannot delete it at the next start, and a folder whose record cannot be written goes again. A record that cannot be
+  written is logged; an index that cannot be written is written again with every following change. Either way the change
+  holds for the run, so a full drive still shows a download as failed. A removed row goes first, so the queue lets go of its
+  part; its folder goes once the index without it is on disk (each pass deletes only the folders of the index it wrote), and
+  a folder something still holds stays in `folder_deletes`, tried again at the next start and recheck, unless a row lives in
+  that very folder again. A `Changed` handler that throws does not keep a change from being written. Only a folder laid out
+  as above is ever deleted. The log names downloads by id: a file system error's message holds the full path, with the
+  Windows user name, so only its kind and code are logged.
+- **`SafeFile`** (`IO/SafeFile`) writes every one of these files, the settings and the mpv folder's: whole beside the
+  file under a name of its own, then moved over it, tried again for a moment while a read holds the file, and given up
+  when the file changed meanwhile. Nothing is written outside the data folder and the downloads folders.
 
 ## Windows App SDK
 
