@@ -540,7 +540,11 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     not quit. A menu, flyout or dialog closes on Browser Back and Backspace as on Esc.
   - A page opened with OK starts on its Play (a title, an episode) or Request (a TMDB title), else on its first card; a
     title's page returned to with Back, made again, starts there too. A section picked in the sidebar keeps focus on
-    its entry, as the TV app's tabs do (the sidebar changing width used to move it to the page's first link).
+    its entry, as the TV app's tabs do (the sidebar changing width used to move it to the page's first link). A page
+    counts as opened with a key when focus shows as the keyboard's. A new start's page (Home after a profile picked or
+    a sign-in) counts so too when the last input was a key (a click resets that), since the profile picker focuses its
+    first tile in code and OK on it opened Home with no focus at all; it starts on its first card, as a page opened with
+    OK. A section opened from elsewhere (Ctrl+K) places its own focus.
   - When the start screen goes, focus goes to the first page's start, Home's first card, as the TV app starts on its
     first row (nothing had focus, so the arrows reached nothing). It is placed quietly, so a mouse user sees no ring; the
     remote's first arrow or OK (Enter or Space) only shows the ring where it is and moves or opens nothing. A click, or

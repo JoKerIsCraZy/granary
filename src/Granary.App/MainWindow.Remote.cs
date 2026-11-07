@@ -74,14 +74,22 @@ public sealed partial class MainWindow
         FocusManager.GotFocus += OnFocusMoved;
         ContentFrame.Navigating += (_, e) =>
         {
-            _openedByKey = FocusedElement() is UIElement { FocusState: FocusState.Keyboard };
-            _openedFromSidebar = _openedByKey && AreaOf(FocusedElement()) == FocusArea.Sidebar;
+            var focused = FocusedElement();
+            _openedByKey = IsOpenedByKey(focused);
+            _openedFromSidebar = _openedByKey && AreaOf(focused) == FocusArea.Sidebar;
             _leaving = ContentFrame.Content as Page;
             _returning = e.NavigationMode == NavigationMode.Back ? ContentFrame.BackStack.LastOrDefault() : null;
         };
         ContentFrame.Navigated += OnFrameNavigated;
         WindowMessageHook.Install(WinRT.Interop.WindowNative.GetWindowHandle(this), TakeAppCommand);
     }
+
+    // A page is opened with a key when focus shows as the keyboard's. A new start's page (Home after a profile picked) is
+    // also when the viewer's last input was a key and focus is in the window: the profile picker focuses its first tile in
+    // code, so OK on it opened Home with no keyboard focus. Only a start: a page nobody opened with a key takes no focus
+    // from one pressed long before. A mouse button resets the last input.
+    private bool IsOpenedByKey(DependencyObject? focused) =>
+        focused is UIElement { FocusState: FocusState.Keyboard } || (_navigation.IsStart && _lastInputWasKey && focused is UIElement);
 
     // A remote's Play sent as a command, not as a key: on the focused card or title, as the Play key, while nothing plays;
     // while something plays Windows hands it to the media session.
@@ -402,18 +410,20 @@ public sealed partial class MainWindow
     }
 
     // A page opened with a key starts on its arrival element (a title's Play), and a page Back returns to on the card it
-    // left from; a section picked in the sidebar keeps focus on its entry, as the TV app's tabs do.
+    // left from; a section picked in the sidebar keeps focus on its entry, as the TV app's tabs do. A new start's page
+    // (Home after a profile picked with OK) starts as one opened with OK, unless it places its own focus.
     private async void OnFrameNavigated(object sender, NavigationEventArgs e)
     {
         bool back = e.NavigationMode == NavigationMode.Back && _backByKey;
         bool opened = e.NavigationMode == NavigationMode.New && _openedByKey;
         bool picked = opened && _openedFromSidebar;
+        bool start = opened && _navigation.IsStart;
         _backByKey = _openedByKey = _openedFromSidebar = false;
         RememberLeftPage(e.NavigationMode);
         var returning = _returning;
         _leaving = null;
         _returning = null;
-        if (e.Content is not Page page || !(back || opened))
+        if (e.Content is not Page page || !(back || opened) || (start && page is IOwnFocus))
         {
             return;
         }
@@ -422,7 +432,8 @@ public sealed partial class MainWindow
         {
             _entryFocus.TryGetValue(returning, out mark);
         }
-        bool IsSection() => opened && _navigation.IsAtSection;
+        // A start's page shows as a section's, but no section was picked or opened from elsewhere.
+        bool IsSection() => opened && !start && _navigation.IsAtSection;
         try
         {
             // Until the viewer presses a key or a mouse button; a section opened from elsewhere (Ctrl+K) places its own focus.
