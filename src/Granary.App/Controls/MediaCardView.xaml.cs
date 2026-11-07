@@ -652,7 +652,9 @@ public sealed partial class MediaCardView : UserControl
     // keeps them at their size. Over a progress bar the bottom row rises clear of it, as the web's does.
     private void PlaceBadges()
     {
-        double width = _artWidth;
+        // The badges lie inside the art's hairline: measured from its outer width, each edge was two pixels wider than its
+        // slot, and the right corner (the watched mark) lost them.
+        double width = _artWidth - Art.BorderThickness.Left - Art.BorderThickness.Right;
         if (width <= 0)
         {
             return;

@@ -34,6 +34,7 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Fixed
 
+- A card's badges in its right corners, such as the watched mark, are no longer cut off by two pixels at the right.
 - A TV remote's arrows work as soon as Granary has started into Home, and after you pick a profile with OK: focus starts
   on the first card. Right after the start, the first arrow or OK shows where you are before anything moves.
 - A TV remote's OK switches tabs and picks choices, such as a library's Recommended, Library and Collections, where it
