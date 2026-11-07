@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The buttons of Home's banner (docs/ui-design.md, Home), as the web's HeroBanner: Play and More Info under the slide's
+    text, the arrows at the banner's sides, and the counter, the progress rail and the pause button at its foot on the right.
+    The slide itself shows in the hero behind (BrowseHero). These lie in the rows' scroller, over the room between the hero's
+    compact header and the first row, so they take the pointer there and scroll away with the rows.
+-->
+<UserControl
+    x:Class="Granary.App.Controls.FeaturedBannerControls"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Granary.App.Controls"
+    VerticalAlignment="Top">
+
+    <UserControl.Resources>
+        <!-- The web's pills: 44 high, 14 px bold, the accent's Play and the glass More Info. -->
+        <Style x:Key="BannerPlayButtonStyle" TargetType="Button" BasedOn="{StaticResource SiloPrimaryButtonStyle}">
+            <Setter Property="Padding" Value="20,0,24,0" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="CharacterSpacing" Value="10" />
+        </Style>
+        <Style x:Key="BannerGlassButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#1FE8E8EC" />
+            <Setter Property="Foreground" Value="{StaticResource SiloForegroundBrush}" />
+            <Setter Property="BorderBrush" Value="#59242428" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="{StaticResource SiloPillCornerRadius}" />
+            <Setter Property="controls:Pill.IsEnabled" Value="True" />
+            <Setter Property="Padding" Value="20,0,24,0" />
+            <Setter Property="MinHeight" Value="44" />
+            <Setter Property="FontFamily" Value="{StaticResource SiloFontBold}" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="CharacterSpacing" Value="10" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="UseSystemFocusVisuals" Value="True" />
+            <Setter Property="FocusVisualMargin" Value="-3" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid x:Name="Root" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                              BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{TemplateBinding CornerRadius}">
+                            <VisualStateManager.VisualStateGroups>
+                                <VisualStateGroup x:Name="CommonStates">
+                                    <VisualState x:Name="Normal" />
+                                    <VisualState x:Name="PointerOver">
+                                        <VisualState.Setters>
+                                            <Setter Target="Root.Background" Value="#2EE8E8EC" />
+                                        </VisualState.Setters>
+                                    </VisualState>
+                                    <VisualState x:Name="Pressed">
+                                        <VisualState.Setters>
+                                            <Setter Target="Root.Background" Value="#14E8E8EC" />
+                                        </VisualState.Setters>
+                                    </VisualState>
+                                    <VisualState x:Name="Disabled">
+                                        <VisualState.Setters>
+                                            <Setter Target="Root.Opacity" Value="0.5" />
+                                        </VisualState.Setters>
+                                    </VisualState>
+                                </VisualStateGroup>
+                            </VisualStateManager.VisualStateGroups>
+                            <ContentPresenter
+                                Padding="{TemplateBinding Padding}"
+                                HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                Foreground="{TemplateBinding Foreground}"
+                                FontFamily="{TemplateBinding FontFamily}"
+                                FontWeight="{TemplateBinding FontWeight}"
+                                FontSize="{TemplateBinding FontSize}"
+                                CharacterSpacing="{TemplateBinding CharacterSpacing}"
+                                AutomationProperties.AccessibilityView="Raw"
+                                Content="{TemplateBinding Content}"
+                                ContentTemplate="{TemplateBinding ContentTemplate}" />
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <!-- The pause button: a bare 28 px icon, white at 70 %, full white under the pointer. -->
+        <Style x:Key="BannerPauseButtonStyle" TargetType="Button">
+            <Setter Property="Foreground" Value="#B3FFFFFF" />
+            <Setter Property="Width" Value="28" />
+            <Setter Property="Height" Value="28" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="CornerRadius" Value="14" />
+            <Setter Property="UseSystemFocusVisuals" Value="True" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid x:Name="Root" Background="Transparent" CornerRadius="{TemplateBinding CornerRadius}">
+                            <VisualStateManager.VisualStateGroups>
+                                <VisualStateGroup x:Name="CommonStates">
+                                    <VisualState x:Name="Normal" />
+                                    <VisualState x:Name="PointerOver">
+                                        <VisualState.Setters>
+                                            <Setter Target="Presenter.Foreground" Value="#FFFFFFFF" />
+                                        </VisualState.Setters>
+                                    </VisualState>
+                                    <VisualState x:Name="Pressed">
+                                        <VisualState.Setters>
+                                            <Setter Target="Presenter.Foreground" Value="#FFFFFFFF" />
+                                        </VisualState.Setters>
+                                    </VisualState>
+                                </VisualStateGroup>
+                            </VisualStateManager.VisualStateGroups>
+                            <ContentPresenter x:Name="Presenter" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                              Foreground="{TemplateBinding Foreground}" AutomationProperties.AccessibilityView="Raw"
+                                              Content="{TemplateBinding Content}" />
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <!-- The counter: monospaced, tracked, white at 68 % with the slide shown in full white. -->
+        <Style x:Key="BannerCounterTextStyle" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Cascadia Mono, Consolas" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="Medium" />
+            <Setter Property="CharacterSpacing" Value="120" />
+            <Setter Property="Foreground" Value="#ADFFFFFF" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+    </UserControl.Resources>
+
+    <!-- See-through but hit, so the pointer over the room between the buttons still holds the slideshow. In the web's focus
+         order: Play, More Info, the arrows, the pause button. -->
+    <Grid x:Name="Root" Background="Transparent">
+        <!-- Play and More Info, at the room's foot under the hero's text. -->
+        <StackPanel x:Name="Actions" Margin="48,0,0,26" Orientation="Horizontal" Spacing="12" HorizontalAlignment="Left" VerticalAlignment="Bottom">
+            <Button x:Name="PlayButton" Style="{StaticResource BannerPlayButtonStyle}" Command="{x:Bind Banner.PlayCommand, Mode=OneWay}"
+                    Visibility="{x:Bind Banner.CanPlay, Mode=OneWay}" AutomationProperties.Name="Play">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <FontIcon Glyph="&#xF5B0;" FontSize="15" />
+                    <TextBlock Text="Play" />
+                </StackPanel>
+            </Button>
+            <Button x:Name="InfoButton" Style="{StaticResource BannerGlassButtonStyle}" Command="{x:Bind Banner.MoreInfoCommand, Mode=OneWay}"
+                    AutomationProperties.Name="More Info">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <FontIcon Glyph="&#xE946;" FontSize="15" />
+                    <TextBlock Text="More Info" />
+                </StackPanel>
+            </Button>
+        </StackPanel>
+
+        <!-- Screen readers hear the slide that comes, as the web's live region. -->
+        <TextBlock x:Name="LiveSlide" Opacity="0" IsHitTestVisible="False" HorizontalAlignment="Left" VerticalAlignment="Top"
+                   Text="{x:Bind Banner.Current.Title.Heading, Mode=OneWay}" AutomationProperties.LiveSetting="Polite" />
+
+        <!-- The arrows, half way down the banner; they show while the pointer or focus is on it. -->
+        <Button x:Name="PreviousButton" Style="{StaticResource SiloPageBackButtonStyle}" HorizontalAlignment="Left" VerticalAlignment="Top"
+                Margin="8,0,0,0" Opacity="0" Command="{x:Bind Banner.PreviousCommand, Mode=OneWay}"
+                Visibility="{x:Bind Banner.HasSeveral, Mode=OneWay}"
+                AutomationProperties.Name="Previous slide" ToolTipService.ToolTip="Previous slide">
+            <FontIcon Glyph="&#xE76B;" FontSize="14" />
+        </Button>
+        <Button x:Name="NextButton" Style="{StaticResource SiloPageBackButtonStyle}" HorizontalAlignment="Right" VerticalAlignment="Top"
+                Margin="0,0,8,0" Opacity="0" Command="{x:Bind Banner.NextCommand, Mode=OneWay}"
+                Visibility="{x:Bind Banner.HasSeveral, Mode=OneWay}"
+                AutomationProperties.Name="Next slide" ToolTipService.ToolTip="Next slide">
+            <FontIcon Glyph="&#xE76C;" FontSize="14" />
+        </Button>
+
+        <!-- "01 —— 05", the rail that fills over each slide's 8 s, and the pause button, level with Play. -->
+        <StackPanel x:Name="Indicator" Margin="0,0,48,34" Orientation="Horizontal" Spacing="12" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                    Visibility="{x:Bind Banner.HasSeveral, Mode=OneWay}">
+            <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center" AutomationProperties.AccessibilityView="Raw">
+                <TextBlock Text="{x:Bind Banner.NumberText, Mode=OneWay}" Style="{StaticResource BannerCounterTextStyle}" Foreground="#FFFFFFFF" />
+                <Rectangle Width="40" Height="1" Fill="#59FFFFFF" VerticalAlignment="Center" />
+                <TextBlock Text="{x:Bind Banner.CountText, Mode=OneWay}" Style="{StaticResource BannerCounterTextStyle}" />
+            </StackPanel>
+            <Grid Width="144" Height="2" CornerRadius="1" Background="#2EFFFFFF" VerticalAlignment="Center" AutomationProperties.AccessibilityView="Raw">
+                <Rectangle x:Name="RailFill" Fill="#E0FFFFFF" />
+            </Grid>
+            <Button x:Name="PauseButton" Style="{StaticResource BannerPauseButtonStyle}" Command="{x:Bind Banner.TogglePauseCommand, Mode=OneWay}"
+                    AutomationProperties.Name="{x:Bind Banner.PauseLabel, Mode=OneWay}" ToolTipService.ToolTip="{x:Bind Banner.PauseLabel, Mode=OneWay}">
+                <FontIcon Glyph="{x:Bind PauseGlyph(Banner.IsPausedByButton), Mode=OneWay}" FontSize="13" />
+            </Button>
+        </StackPanel>
+    </Grid>
+</UserControl>

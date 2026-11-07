@@ -297,7 +297,8 @@ public sealed partial class MainWindow
     }
 
     // Play on a card plays it, as its play disc does, an episode of a title's page too; anywhere else on a title's page, its
-    // Play. While something plays (the player full or as the bar), the key stays the media session's and pauses that.
+    // Play; on the buttons of Home's banner, its slide. While something plays (the player full or as the bar), the key stays
+    // the media session's and pauses that.
     private bool PlayFocused()
     {
         if (IsPlayerOpen)
@@ -314,7 +315,12 @@ public sealed partial class MainWindow
             App.Services.GetRequiredService<MediaCardActions>().Play(card);
             return true;
         }
-        return ContentFrame.Content is ItemDetailPage page && focused is not null && IsWithin(focused, page) && page.PlayFromKey();
+        return focused is not null && ContentFrame.Content switch
+        {
+            ItemDetailPage page => IsWithin(focused, page) && page.PlayFromKey(),
+            HomePage home => home.PlayBannerFromKey(focused),
+            _ => false,
+        };
     }
 
     // A card button: a poster or episode card of a list, or an episode on a title's page.

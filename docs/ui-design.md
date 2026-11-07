@@ -344,10 +344,11 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   after 150 ms of rest, as on Home. Nothing shows until a result is pointed at, and each new search starts without one,
   as does every visit but Back. The pictures are let go while Search is not shown.
 - Pages: 48 px side margins, 32 px top; rows 40 px apart.
-- Home's hero (`BrowseHero`, `BrowseHeroViewModel`, also on For You and Requests), a deliberate departure from the web's
-  Home, which has none: the title of the card the pointer or the keyboard is on, in any row, at
-  the top of the page. A page lays its rows under it with `BrowseHero.RowsViewMargin` and `RowsPadding` (with the hero's
-  `Sizes`), and feeds it its rows' titles (`BrowseHeroViewModel.Follow`) and the card pointed at (`Point`).
+- Home's hero (`BrowseHero`, `BrowseHeroViewModel`, also on For You and Requests): while Home has no hero banner (below),
+  the title of the card the pointer or the keyboard is on, in any row, at the top of the page, a deliberate departure from
+  the web's Home, which then shows nothing there; with one, the banner's slides, as on the web. A page lays its rows under
+  it with `BrowseHero.RowsViewMargin` and `RowsPadding` (with the hero's `Sizes`), and feeds it its rows' titles
+  (`BrowseHeroViewModel.Follow`) and the card pointed at (`Point`); Home feeds it `HomeViewModel.HeroTitle`.
   - Its sizes below are a page up to 1040 px high (a 1080 px window). A taller page has a taller hero, which grows with
     the window (`BrowseHeroLayout.For`, in 8 px steps of the page's height): the hero keeps its share of the page's
     height, up to 720 px (643 px on a 3840 × 1600 screen), and the first row moves down with it; the compact header, the
@@ -366,16 +367,51 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     until then; a title picked during a fade follows it. It is decoded as wide as it is shown, or as its height needs
     where the box's shape cuts its sides (783 px at 440 high), and again when the window grows it by more than 15 %.
     Folded, a new title shows only its blur until the hero unfolds. The pictures are let go while Home is not shown.
-  - Which title: the first card of the first row until a card is pointed at. The first card pointed at shows at once;
-    after that a card has to keep the pointer for 150 ms, so a sweep across a row loads one backdrop, not one per
-    card. The pointer leaving the rows keeps the title; a reload keeps it, and a card the pointer rests on, while the rows
-    still have them. Another profile starts afresh.
-  - The rows begin 300 px down. Scrolling them folds the hero into a compact 150 px header that stays at the top and cuts
-    the rows off at its edge: over the first 150 px of scrolling the logo shrinks to 45 px, the details move up under
-    it, the overview fades and the backdrop shortens to the header. It follows the scroll on the compositor
-    (`BrowseHeroLayout`; its numbers are a property set's, never text in the user's culture). A wheel (not a tilt or
-    Ctrl with it) or a touch or pen drag over the header scrolls the rows. Without a hero (loading, empty, an error) the
-    rows sit as on other pages.
+  - Which title, without a banner: the first card of the first row until a card is pointed at. The first card pointed at
+    shows at once; after that a card has to keep the pointer for 150 ms, so a sweep across a row loads one backdrop, not
+    one per card. The pointer leaving the rows keeps the title; a reload keeps it, and a card the pointer rests on, while
+    the rows still have them. Another profile starts afresh, and so does the hero after a banner went.
+  - The rows begin 300 px down (348 under a banner). Scrolling them folds the hero into a compact 150 px header that stays
+    at the top and cuts the rows off at its edge: over the first 150 px of scrolling (198 under a banner) the logo shrinks
+    to 45 px, the details move up under it, the overview fades and the backdrop shortens to the header. It follows the
+    scroll on the compositor (`BrowseHeroLayout`; its numbers are a property set's, never text in the user's culture). A
+    wheel (not a tilt or Ctrl with it) or a touch or pen drag over the header scrolls the rows. Without a hero (loading,
+    empty, an error) the rows sit as on other pages.
+- Home's hero banner (`FeaturedBannerViewModel`, `FeaturedBannerControls`; the web's `components/HeroBanner.tsx`), shown
+  in the hero above:
+  - Which row: the first Home row the server marks as the hero (`featured`, docs/api-contract.md 7.1), as on the web
+    (`pages/homeSectionState.ts`) and in the Mac app. Its cards are the slides, as many as the row's item limit, and it
+    is no longer a row, as on the web and the Mac. A later featured row stays a row. A featured row without cards, or one
+    that could not be fetched, leaves Home without a banner, and the hero follows the cards. A refresh that adds or drops
+    the flag switches between the two; a refresh that keeps the slide shown keeps it, and its countdown.
+  - Where it is set: in Silo's web, by an administrator (Admin → Sections) or for one profile (Settings → Home Screen),
+    with "Use as hero banner" / "Stop using as hero banner" on a row. A banner an administrator keeps on the web ("Show in
+    the apps" off, the row's `web_only`) never reaches Granary, which declares the `desktop` family. Granary has no
+    setting for it.
+  - What a slide shows: the web's eyebrow over the name, "FEATURED — NO. 01" (11.5 px semibold, tracked, white at 62 %,
+    FEATURED at 92 %, read as "Featured — No. 01"), then the hero's logo or name, its details and overview, and its
+    backdrop. The rows begin 48 px lower than under the card hero, and the room between the compact header and the first
+    row holds the buttons, which scroll up under the header with the rows: the red Play pill and the glass More Info pill
+    (44 px, 14 px bold, a play and an info icon) 48 px in and 26 px above the first row; on the right, level with them,
+    "01 —— 05" (11 px monospaced, tracked, white at 68 %, the slide's number white), a 144 × 2 px rail that fills over
+    the slide's 8 s, and a 28 px pause button ("Pause slideshow" / "Play slideshow"). The arrows ("Previous slide",
+    "Next slide": the 36 px glass discs of PageBack) stand 8 px in from the page's sides, half way down the banner, and
+    show while the pointer or focus is on the banner, as the web's on a wide window. The arrows, the counter, the rail
+    and the pause button show only with two slides or more. Screen readers hear each new slide's name.
+  - Play plays a movie or episode from where it was left, and a series or season the episode the server names for it; a
+    slide with nothing to play has no Play, as in the Mac app. More Info opens the title.
+  - Moving on: every 8 s to the next slide, from the last back to the first; an arrow starts a fresh 8 s, and a slide
+    that waits shows the rail empty. The pointer on the banner's own room (the hero's strip above the rows' scroller, or
+    the buttons' room; not the backdrop behind the first row) or focus on its buttons holds the slide while it stays;
+    letting go starts a fresh 8 s. The pause button stops it until it is pressed again, whatever the pointer does, and
+    also across visits to other pages; the pause and the hold go with the banner (a refresh without it, another
+    profile). It holds while Home is not shown, once the rows fold the hero past half the way, and with Windows'
+    animations off, where the rail stands full and only the arrows move it. While the banner is in view, the next slide's
+    backdrop and logo are fetched ahead.
+  - Remote and keyboard: Home still starts on the first row's first card, as Silo's Android TV app does (it shows the
+    featured row as an ordinary row and has no hero to follow). Up from the first row reaches the banner's buttons and
+    scrolls the rows back to the top; Left and Right move along the buttons, Down returns to the rows, OK presses, and the
+    remote's Play key on any of them plays the slide. Focus on them holds the slide.
 - What happens on another device shows without a visit (`RealtimeEvents`, docs/api-contract.md 12): a title watched,
   favourited, put on the watchlist or taken off Home there, or a title the server added or changed, reloads Home in
   place once the changes have been quiet for 2 s (rows keep where they were scrolled to; other pages reload on their
