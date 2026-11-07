@@ -29,8 +29,8 @@ public enum ItemDetailState
 /// <summary>
 /// The detail page of a movie, series, season or episode (docs/api-contract.md 7.6, 7.7, 7.11), worded like
 /// Silo's web client. The item comes first; its seasons, episodes and "More like this" follow in parallel,
-/// and one that fails only hides its section. Watched, favourite and watchlist change at once and roll back
-/// when the server refuses.
+/// and one that fails only hides its section. Watched, favourite, watchlist and the stars change at once and roll
+/// back when the server refuses.
 /// </summary>
 /// <remarks>
 /// Only <see cref="LoadCommand"/> is cancellable. The toggles take no token on purpose: a cancellable command
@@ -56,6 +56,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
     private readonly ViewerStateChanges? _changes;
     private readonly TrackPreferencesApi? _trackPreferences;
     private readonly TrackChoiceWrites? _trackChoices;
+    private readonly RatingWrites? _ratings;
 
     // A newer load makes the answers of older calls stale.
     private int _generation;
@@ -81,7 +82,8 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         ILogger<ItemDetailViewModel> logger,
         ViewerStateChanges? changes = null,
         TrackPreferencesApi? trackPreferences = null,
-        TrackChoiceWrites? trackChoices = null)
+        TrackChoiceWrites? trackChoices = null,
+        RatingWrites? ratings = null)
     {
         _session = session;
         _catalog = catalog;
@@ -92,6 +94,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         _changes = changes;
         _trackPreferences = trackPreferences;
         _trackChoices = trackChoices;
+        _ratings = ratings;
     }
 
     /// <summary>The display scale artwork is requested for (1.5 at 150 %); set it before loading.</summary>
@@ -236,7 +239,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
 
     public string WatchlistLabel => IsInWatchlist ? "Remove from Watchlist" : "Add to Watchlist";
 
-    /// <summary>Why the last watched, favourite or watchlist change did not stick; empty when it did.</summary>
+    /// <summary>Why the last watched, favourite, watchlist or rating change did not stick; empty when it did.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasActionError))]
     public partial string ActionError { get; private set; } = "";
@@ -334,6 +337,10 @@ public sealed partial class ItemDetailViewModel : ObservableObject
             State = ItemDetailState.Failed;
             return;
         }
+        // The profile the item is read for: a switch during the read must not bind this page's writes to the next one. And
+        // where the rating writes stand, to see one that ends during the read.
+        string? profileId = _session.ProfileId;
+        long ratingMark = _ratings?.Mark ?? 0;
         try
         {
             var images = await ImageParametersAsync(server, cancellationToken);
@@ -342,7 +349,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
             {
                 return;
             }
-            Show(item, server.BaseUri);
+            Show(item, server.BaseUri, profileId, ratingMark);
             State = ItemDetailState.Ready;
             await LoadSectionsAsync(item, server.BaseUri, images, generation, cancellationToken);
         }
@@ -427,6 +434,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         BackdropThumbhash = "";
         AvailableVersionLine = "";
         ResetPrePlay();
+        ResetRating();
         InfoSections = [];
         LogoUrl = null;
         Seasons = [];
@@ -438,7 +446,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         Similar = [];
     }
 
-    private void Show(CatalogItemDetail item, Uri server)
+    private void Show(CatalogItemDetail item, Uri server, string? profileId, long ratingMark)
     {
         _item = item;
         _contentId = string.IsNullOrWhiteSpace(item.ContentId) ? ItemId.Trim() : item.ContentId;
@@ -468,6 +476,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         IsWatched = item.UserData?.Played ?? item.UserState?.Played ?? false;
         IsFavorite = item.UserState?.IsFavorite ?? false;
         IsInWatchlist = item.UserState?.InWatchlist ?? false;
+        ShowRating(item, server, profileId, ratingMark);
         ShowPlayAction();
     }
 

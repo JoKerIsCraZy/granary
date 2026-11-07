@@ -71,6 +71,7 @@ namespace Granary.Core.Api;
 [JsonSerializable(typeof(CatalogItemDetail))]
 [JsonSerializable(typeof(CatalogRating))]
 [JsonSerializable(typeof(RatingsCapability))]
+[JsonSerializable(typeof(RatingSet))]
 [JsonSerializable(typeof(CastCredit))]
 [JsonSerializable(typeof(CrewCredit))]
 [JsonSerializable(typeof(WatchRollup))]

@@ -163,6 +163,23 @@ public sealed class CatalogApi(SiloHttp http)
         http.SendAsync(inWatchlist ? HttpMethod.Put : HttpMethod.Delete, server, $"api/v2/watchlist/{Segment(itemId)}", SiloAuth.Profile, cancellationToken);
 
     /// <summary>
+    /// Sets profile <paramref name="profileId"/>'s stars for a movie or series, 1 to 5 (PUT), replacing any earlier rating.
+    /// Non-retryable: a repeat refreshes the profile's recommendations again. The server passes the change on to the
+    /// profile's watch providers. While the server acts as another profile it throws <see cref="ProfileChangedException"/> unsent.
+    /// </summary>
+    public Task SetRatingAsync(Uri server, string itemId, string profileId, int rating, CancellationToken cancellationToken = default)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(rating, RatingSet.Min);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(rating, RatingSet.Max);
+        return http.SendAsProfileAsync(HttpMethod.Put, server, $"api/v2/ratings/{Segment(itemId)}", profileId, new RatingSet(rating),
+            SiloJsonContext.Default.RatingSet, cancellationToken);
+    }
+
+    /// <summary>Removes profile <paramref name="profileId"/>'s rating of the item (DELETE); one it never had succeeds too. As setting otherwise.</summary>
+    public Task ClearRatingAsync(Uri server, string itemId, string profileId, CancellationToken cancellationToken = default) =>
+        http.SendAsProfileAsync(HttpMethod.Delete, server, $"api/v2/ratings/{Segment(itemId)}", profileId, cancellationToken);
+
+    /// <summary>
     /// Marks a movie or series Not interested (PUT) or clears the mark (DELETE); idempotent. Recommendation and
     /// discovery rows leave a marked title out; browsing, search and the lists are unchanged. Episodes and seasons are 422.
     /// </summary>
