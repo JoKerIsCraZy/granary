@@ -277,6 +277,7 @@ public sealed class MpvSettingsViewModelTests : IDisposable
         using var row = await Loaded();
         await row.LoadPresetAsync(row.Presets[0]);
         await row.LoadPresetAsync(row.Presets[1]);
+        Assert.Equal("Loaded B into mpv.conf.", row.PresetMessage);
         _confirmation.Asked.Clear();
         _confirmation.Answer = false;
 

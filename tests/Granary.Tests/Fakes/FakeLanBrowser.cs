@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Granary.Core.Servers;
 
 namespace Granary.Tests.Fakes;
@@ -60,18 +61,30 @@ internal sealed class FakeLanBrowser : ILanServiceBrowser
 internal sealed class FakeLanProbe : ILanServerProbe
 {
     private readonly Lock _gate = new();
+    private readonly List<string> _asked = [];
 
-    public Dictionary<string, string?> Ids { get; } = [];
+    // A test scripts more answers while the discovery asks on other threads.
+    public ConcurrentDictionary<string, string?> Ids { get; } = new();
 
-    public Dictionary<string, string?> Names { get; } = [];
+    public ConcurrentDictionary<string, string?> Names { get; } = new();
 
-    public List<string> Asked { get; } = [];
+    /// <summary>What was asked so far, as a copy.</summary>
+    public IReadOnlyList<string> Asked
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return [.. _asked];
+            }
+        }
+    }
 
     public int IdentityCalls(string origin)
     {
         lock (_gate)
         {
-            return Asked.Count(a => a == origin);
+            return _asked.Count(a => a == origin);
         }
     }
 
@@ -79,7 +92,7 @@ internal sealed class FakeLanProbe : ILanServerProbe
     {
         lock (_gate)
         {
-            Asked.Add(origin.AbsoluteUri);
+            _asked.Add(origin.AbsoluteUri);
             return Task.FromResult(Ids.GetValueOrDefault(origin.AbsoluteUri));
         }
     }
