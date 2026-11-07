@@ -430,6 +430,18 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   - Granary's rows follow, 56 apart: a series' seasons, all at once in a grid that wraps at the page's width (185 px
     posters, a season opens its own page), or a season's episode grid, more episodes, trailers, cast and crew, more like
     this.
+  - "More Episodes" on an episode's page (the web's `EpisodeCarousel`): the episode's whole season in the server's
+    order, the episode itself included; the row shows only when the season has more than one episode. The episode's own
+    card is marked as the web marks it: a 2 px accent ring at its artwork's edge (the hairline in the accent and a pixel
+    inside it), and a "NOW VIEWING" pill 10 px into the artwork at its top left (the accent, 10 px semibold capitals
+    0.08 em apart in the badge label colour, a 6 px dot whose copy pings to twice its size and fades, once a second,
+    standing still with Windows' animation effects off as the app starts), in place of that corner's badges. Screen
+    readers hear "S04E04 · Title, …, now viewing". The row opens scrolled at once so that card is in its middle, or as far
+    as the row scrolls; a new list never keeps the last one's place. Clicking it stays on the page, as the web's link to
+    the page it is on does.
+    With the keyboard or a remote, Up or Down into the row lands on it, as the TV app's episode rail starts on its page's
+    episode, also once the row has been scrolled away from it (the row brings it back to its middle); Left and Right then
+    go card by card, and Back to the page returns to the card it was left from.
   - "Trailers & More" (the web's `TrailersSection`): the title's YouTube videos in the server's order, each a 280 px card
     with YouTube's thumbnail, a play mark, its name and "Trailer · Official"; other sites are left out. A card is read as
     "Official Trailer, Trailer · Official, plays the trailer", and its tooltip says "Play trailer".
@@ -961,6 +973,17 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   placeholder without one), the title (14 px; "Chapter 2" when it has none) and its start (12 px, white 45 %). The
   chapter that plays has a faint light behind it and white text, the others are white 70 %; it has the focus when the
   menu opens. A row seeks to the chapter's start and closes the menu.
+  Ctrl+Right and Ctrl+Left jump between chapters through the same seek, as ⌘→ and ⌘← on Silo's macOS app (`ChapterJump`,
+  after Apple's `seekToAdjacentChapter`; the web has no chapter keys): Right to the start of the first chapter more than a
+  second ahead, Left to the start of the last one more than a second behind. So Left goes back to the start of the
+  chapter that plays, and within its first second on to the one before. They go from a seek on its way, as the skips do,
+  so pressed again they go on to the next chapter. After the last chapter's start Right does nothing, and Left does
+  nothing in the first chapter's first second or before the first chapter. A held key jumps once. Without chapters, while
+  the title cannot be sought and on the Playing Next screen the keys pass on. A jump shows the controls as a skip does; in
+  a Watch Party it is a seek like any other, asked of the room, and a guest's is refused with the web's words. They work
+  in the full player, the mini view and the minimized bar, taken before the focused control: on the picture, the seek
+  bar, the volume slider (which keeps the plain arrows) or a button, also while a remote's arrows move between the
+  controls.
 - **Subtitle menu** (`SubtitleTrackOption`, after the web's `SubtitleMenu`): the button is there for every server
   title, tracks or not, since the menu also adds subtitles. Captions glyph, struck through while none shows; white
   with the amber dot while one does. C turns the subtitle off and back on to the track that showed last (both are
@@ -1171,7 +1194,8 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   as F11, which works everywhere),
   P the mini view, Esc turns away an intro pill, else closes the marker panel, else leaves full screen or the mini
   view, else closes, M mute, C
-  subtitles off and on, Left/Right skip. Up and Down do as Settings → Playback → This PC says. By default as on Silo's
+  subtitles off and on, Left/Right skip, Ctrl+Right and Ctrl+Left jump to the next and previous chapter (see the
+  Chapters menu). Up and Down do as Settings → Playback → This PC says. By default as on Silo's
   TV app (a remote has its own volume buttons; M mutes and the slider, reached with Tab, sets it): from the picture Up
   shows the controls with focus on Play/Pause and Down opens the audio menu when there is a track to choose, else the
   subtitles', else the playback settings (the TV app's panel opens on audio, else subtitles, else video), and on a
@@ -1190,9 +1214,9 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   hide them, as the TV app's ladder has it, unless paused, a skip pill shows (Back turns it away) or the marker editor is
   open; focus moves to the page, so the controls hide by themselves again after the next key. Esc keeps the web's
   keys. A held OK does not press the button it lands on. Space wins over a
-  focused button; arrows go to a focused slider first. Nothing applies while a text field, an open menu or the Add Subtitles or appearance panel has focus
+  focused button; arrows go to a focused slider first, Ctrl+Left and Ctrl+Right do not. Nothing applies while a text field, an open menu or the Add Subtitles or appearance panel has focus
   (Esc, Backspace and the remote's Back close the panel, focus back on Subtitles), or with Ctrl, Alt, Shift or Windows
-  held. The keys are handled on the page, not as keyboard
+  held, but for Ctrl+Left and Ctrl+Right (Ctrl alone). The keys are handled on the page, not as keyboard
   accelerators, so no accelerator tooltip appears; the buttons announce them through
   `AutomationProperties.AcceleratorKey`.
 

@@ -22,6 +22,15 @@ release's section is what its update says it changes (docs/release.md).
 - **Cast & Crew in groups:** a title's Cast & Crew row now labels where its writers and its cast begin, with a thin line
   and "WRITERS" or "CAST" right before their cards, after the director or the series' creators. Screen readers read each
   card with its role, such as "Writer".
+- **Chapter keys:** in the player, Ctrl+Right jumps to the next chapter and Ctrl+Left back to the start of the chapter
+  that plays, or to the one before when you are in its first second. So you can skip an intro or the credits that the
+  file marks as a chapter before your Silo server offers Skip Intro.
+
+### Changed
+
+- **More Episodes** on an episode's page lists the whole season, the episode you're on included, so the row no longer
+  jumps from the episode before it to the one after. That episode is marked Now Viewing, as on Silo's web app, and
+  the row opens with it in the middle. With the keyboard or a TV remote, Down into the row lands on it.
 
 ### Fixed
 
