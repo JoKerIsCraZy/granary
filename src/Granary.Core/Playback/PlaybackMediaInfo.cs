@@ -7,7 +7,10 @@ namespace Granary.Core.Playback;
 /// <summary>What kind of title plays, as far as the Discord status words it.</summary>
 public enum PlaybackMediaKind
 {
-    /// <summary>A local file, or a title that is neither a movie nor an episode.</summary>
+    /// <summary>No Silo title: a file or URL played directly, or nothing yet.</summary>
+    Direct,
+
+    /// <summary>A Silo title that is neither a movie nor an episode.</summary>
     Other,
 
     Movie,
@@ -21,7 +24,8 @@ public enum PlaybackMediaKind
 /// MediaSession: title, then "Series - S01E03"; the Apple app's Now Playing: the episode's title, "Episode 3" without
 /// one), a movie its title over its year. The picture is the movie's poster or the episode's still, which the watch
 /// detail sends for the system controls, else the backdrop (the Apple app's order). The other members are what the
-/// Discord status words differently (<see cref="ViewModels.Player.PlayerRichPresence"/>).
+/// Discord status words differently (<see cref="ViewModels.Player.PlayerRichPresence"/>); one made without them is no Silo
+/// title (<see cref="PlaybackMediaKind.Direct"/>), as the player's for a file it plays directly.
 /// </summary>
 public sealed record PlaybackMediaInfo(string Title, string Subtitle, Uri? Artwork)
 {

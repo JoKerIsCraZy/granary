@@ -7,9 +7,10 @@ namespace Granary.Core.ViewModels.Player;
 
 /// <summary>
 /// The player on Discord's status (<see cref="IRichPresence"/>) while Settings → Playback → This PC allows it: "Watching"
-/// the series, the film or the file, the episode or the year under it, the timeline, and the title's poster and page from
-/// TMDB (<see cref="TmdbTitleLookup"/>). It goes as soon as nothing plays: the player left, a title loading, failed or
-/// ended, or the setting turned off. The texts are English; Discord writes "Watching" itself, in the viewer's language.
+/// the series, the film or another Silo title, the episode or the year under it, the timeline, and the title's poster and
+/// page from TMDB (<see cref="TmdbTitleLookup"/>). It goes as soon as nothing plays: the player left, a title loading,
+/// failed or ended, or the setting turned off. A file or URL played directly shows nothing, as its name may be private.
+/// The texts are English; Discord writes "Watching" itself, in the viewer's language.
 /// </summary>
 /// <remarks>
 /// Discord takes about 5 updates in 20 seconds. As <see cref="PlayerSystemMedia"/> does for Windows' controls, only a change
@@ -31,6 +32,7 @@ public sealed class PlayerRichPresence : IDisposable
     [
         nameof(PlayerViewModel.Phase), nameof(PlayerViewModel.IsPaused), nameof(PlayerViewModel.HasLeft), nameof(PlayerViewModel.MediaInfo),
         nameof(PlayerViewModel.PositionSeconds), nameof(PlayerViewModel.DurationSeconds), nameof(PlayerViewModel.Speed),
+        nameof(PlayerViewModel.CanSeek),
     ];
 
     private readonly PlayerViewModel _player;
@@ -45,6 +47,8 @@ public sealed class PlayerRichPresence : IDisposable
     private ITimer? _held;
     private TitleKey? _lookingUp;
     private (TitleKey Key, TmdbTitle? Title)? _found;
+    // A title loads, or plays without the player having read its own stream yet (see Starting).
+    private bool _starting;
     private bool _disposed;
 
     public PlayerRichPresence(PlayerViewModel player, IRichPresence presence, IPlaybackDevicePreferences preferences, TmdbTitleLookup titles,
@@ -56,6 +60,8 @@ public sealed class PlayerRichPresence : IDisposable
         _titles = titles;
         _dispatcher = dispatcher;
         _time = time;
+        // A page made after its title started (CanSeek will not turn on again) shows it at once.
+        _starting = !(player.Phase == PlayerPhase.Playing && player.CanSeek);
         _player.PropertyChanged += OnPlayerChanged;
         _preferences.DiscordStatusChanged += OnSettingChanged;
         Update();
@@ -80,9 +86,33 @@ public sealed class PlayerRichPresence : IDisposable
 
     private void OnPlayerChanged(object? sender, PropertyChangedEventArgs e)
     {
+        if (e.PropertyName == nameof(PlayerViewModel.CanSeek))
+        {
+            Started();
+        }
         if (string.IsNullOrEmpty(e.PropertyName) || Shown.Contains(e.PropertyName))
         {
             Update();
+        }
+    }
+
+    // While a title loads, the player keeps the position, length and pause of the title before, and it says the new one
+    // plays before it reads the new stream's state (its Phase before its engine state). Its seek bar turning on (CanSeek)
+    // is the first sign it has read a started stream of the new load: CanSeek comes from that state, after the position,
+    // length and pause, and is off from the load on. Until then the title does not show.
+    private void Starting()
+    {
+        if (_player.HasLeft || _player.Phase != PlayerPhase.Playing)
+        {
+            _starting = true;
+        }
+    }
+
+    private void Started()
+    {
+        if (_player.CanSeek && _player.Phase == PlayerPhase.Playing && !_player.HasLeft)
+        {
+            _starting = false;
         }
     }
 
@@ -95,6 +125,7 @@ public sealed class PlayerRichPresence : IDisposable
         {
             return;
         }
+        Starting();
         if (Read() is not { } state)
         {
             Clear();
@@ -116,11 +147,11 @@ public sealed class PlayerRichPresence : IDisposable
     private RichPresenceState? Read()
     {
         var player = _player;
-        if (!_preferences.DiscordStatus || player.HasLeft || player.Phase != PlayerPhase.Playing)
+        var info = player.MediaInfo;
+        if (!_preferences.DiscordStatus || player.HasLeft || player.Phase != PlayerPhase.Playing || _starting || info.Kind == PlaybackMediaKind.Direct)
         {
             return null;
         }
-        var info = player.MediaInfo;
         var (details, second) = Lines(info);
         if (RichPresenceText.Fit(details) is not { } first)
         {
@@ -133,7 +164,8 @@ public sealed class PlayerRichPresence : IDisposable
         return new RichPresenceState(first, state, start, end, found?.Poster, found?.Page);
     }
 
-    // The series over "S01E03 · Pilot", the film over its year, anything else by the title the player shows.
+    // The series over "S01E03 · Pilot", the film over its year, another Silo title by the title the player shows; a title
+    // without a name shows nothing.
     private static (string Details, string? State) Lines(PlaybackMediaInfo info)
     {
         switch (info.Kind)
@@ -256,6 +288,11 @@ public sealed class PlayerRichPresence : IDisposable
             {
                 _lookingUp = null;
             }
+            // An answer for a title that no longer plays is not this one's.
+            if (TitleKey.Of(_player.MediaInfo) != key)
+            {
+                return;
+            }
             _found = (key, title);
             Update();
         });
@@ -265,6 +302,6 @@ public sealed class PlayerRichPresence : IDisposable
     private readonly record struct TitleKey(PlaybackMediaKind Kind, string CatalogId)
     {
         public static TitleKey? Of(PlaybackMediaInfo info) =>
-            info.Kind != PlaybackMediaKind.Other && info.CatalogId is { } id ? new TitleKey(info.Kind, id) : null;
+            info.Kind is (PlaybackMediaKind.Movie or PlaybackMediaKind.Episode) && info.CatalogId is { } id ? new TitleKey(info.Kind, id) : null;
     }
 }

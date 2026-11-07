@@ -96,7 +96,13 @@ public sealed class PlaybackMediaInfoTests
         var info = PlaybackMediaInfo.Of(new WatchDetail { ContentId = "book-1", Type = WatchItemTypes.Audiobook, Title = "Dune", Year = 1965 }, Server);
 
         Assert.Equal((PlaybackMediaKind.Other, null), (info.Kind, info.CatalogId));
-        Assert.Equal(PlaybackMediaKind.Other, PlaybackMediaInfo.None.Kind);
+    }
+
+    [Fact]
+    public void WhatThePlayerShowsForAFilePlayedDirectly_IsNoSiloTitle()
+    {
+        Assert.Equal(PlaybackMediaKind.Direct, new PlaybackMediaInfo("Holiday.mkv", "", null).Kind);
+        Assert.Equal(PlaybackMediaKind.Direct, PlaybackMediaInfo.None.Kind);
     }
 
     [Fact]

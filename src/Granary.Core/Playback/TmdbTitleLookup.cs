@@ -35,7 +35,8 @@ public sealed class TmdbTitleLookup(CatalogApi catalog, RequestsApi requests, IS
     /// </summary>
     public async Task<TmdbTitle?> FindAsync(PlaybackMediaKind kind, string catalogId, CancellationToken cancellationToken = default)
     {
-        if (kind == PlaybackMediaKind.Other || string.IsNullOrWhiteSpace(catalogId) || session.ActiveServer is not { } server)
+        if (kind is not (PlaybackMediaKind.Movie or PlaybackMediaKind.Episode) || string.IsNullOrWhiteSpace(catalogId)
+            || session.ActiveServer is not { } server)
         {
             return null;
         }

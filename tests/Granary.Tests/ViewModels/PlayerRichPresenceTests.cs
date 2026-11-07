@@ -49,6 +49,9 @@ public sealed class PlayerRichPresenceTests
     private readonly ScriptedSilo _silo = new();
     private readonly TmdbTitleLookup _titles;
     private double _position;
+    // What the server playback the player makes next plays, and its length (null: the plan names none).
+    private PlaybackMediaInfo _next = PlaybackMediaInfo.None;
+    private double? _nextLength = Length;
 
     public PlayerRichPresenceTests()
     {
@@ -61,13 +64,16 @@ public sealed class PlayerRichPresenceTests
 
     private DateTimeOffset Now => _time.GetUtcNow();
 
-    private PlayerViewModel NewPlayer(PlaybackMediaInfo info) =>
-        new(_engine, new ImmediateDispatcher(), new RecordingNavigation(), () =>
+    private PlayerViewModel NewPlayer(PlaybackMediaInfo info)
+    {
+        _next = info;
+        return new(_engine, new ImmediateDispatcher(), new RecordingNavigation(), () =>
         {
-            var playback = new FakeServerPlayback { DurationSeconds = Length, MediaInfo = info };
+            var playback = new FakeServerPlayback { DurationSeconds = _nextLength, MediaInfo = _next };
             _playbacks.Add(playback);
             return playback;
         }, new PlaybackStops(), _time);
+    }
 
     private PlayerRichPresence Follow(PlayerViewModel player) => new(player, _presence, _preferences, _titles, new ImmediateDispatcher(), _time);
 
@@ -85,10 +91,23 @@ public sealed class PlayerRichPresenceTests
         return (player, status);
     }
 
-    private void At(double seconds, bool paused = false)
+    private void At(double seconds, bool paused = false, double length = Length)
     {
         _position = seconds;
-        _engine.RaiseState(new PlaybackSnapshot(true, paused, TimeSpan.FromSeconds(seconds), TimeSpan.FromSeconds(Length), null, HasStarted: true));
+        _engine.RaiseState(new PlaybackSnapshot(true, paused, TimeSpan.FromSeconds(seconds), TimeSpan.FromSeconds(length), null, HasStarted: true));
+    }
+
+    // The player goes on to `info` (the next episode, another title of the room): it loads while the engine still reports
+    // where the title before was, and the server says it plays before the player has read the new stream's state.
+    private async Task SwitchAsync(PlayerViewModel player, PlaybackMediaInfo info, PlayerRichPresence status, bool leftoverPause = false)
+    {
+        _next = info;
+        await player.StartAsync(PlayRequest.Resume(info.CatalogId ?? "item-2"));
+        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Preparing));
+        await status.Lookup;
+        _time.Advance(PlayerRichPresence.MinimumSpacing);
+        _engine.RaiseState(new PlaybackSnapshot(false, leftoverPause, TimeSpan.FromSeconds(_position), TimeSpan.FromSeconds(Length), null));
+        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));
     }
 
     // Playback goes on for a while, reported as mpv does, four times a second: long enough for Discord to take another change.
@@ -153,17 +172,52 @@ public sealed class PlayerRichPresenceTests
     }
 
     [Fact]
-    public async Task ALocalFile_ShowsItsName_WithGranarysPicture_AndAsksTheServerNothing()
+    public async Task AFilePlayedDirectly_ShowsNoStatus_AsItsNameMayBePrivate()
     {
         var player = NewPlayer(Heat);
         using var status = Follow(player);
 
         await player.StartAsync(PlayRequest.Direct(@"C:\Videos\Holiday.mkv"));
         At(5);
+        At(5, paused: true);
 
-        var (start, end) = Timeline(5);
-        Assert.Equal(new RichPresenceState("Holiday.mkv", null, start, end, null, null), _presence.Current);
+        Assert.Equal(PlayerPhase.Playing, player.Phase);
+        Assert.Empty(_presence.Shown);
+        Assert.Equal(0, _presence.Clears);
         Assert.Empty(_silo.Sent);
+    }
+
+    [Fact]
+    public async Task AFilePlayedAfterASiloTitle_TakesTheStatusAway()
+    {
+        var (player, _) = await PlayingAsync(Heat);
+
+        await player.StartAsync(PlayRequest.Direct(@"C:\Videos\Holiday.mkv"));
+        _time.Advance(PlayerRichPresence.MinimumSpacing);
+        At(5);
+
+        Assert.Equal((1, null), (_presence.Clears, _presence.Current));
+        Assert.Single(_presence.Shown);
+    }
+
+    [Fact]
+    public async Task ASiloTitleOfAnotherKind_ShowsByTheTitleThePlayerShows_WithGranarysPicture()
+    {
+        var extra = PlaybackMediaInfo.Of(new WatchDetail { ContentId = "extra-1", Type = "extra", Title = "Making of Heat", Year = 1995 }, ScriptedSilo.Base);
+
+        await PlayingAsync(extra);
+
+        var (start, end) = Timeline(600);
+        Assert.Equal(new RichPresenceState("Making of Heat", null, start, end, null, null), _presence.Current);
+        Assert.Empty(_silo.Sent);
+    }
+
+    [Fact]
+    public async Task ATitleWithoutAName_ShowsNoStatus()
+    {
+        await PlayingAsync(Heat with { Title = " " });
+
+        Assert.Empty(_presence.Shown);
     }
 
     [Fact]
@@ -227,13 +281,79 @@ public sealed class PlayerRichPresenceTests
     [Fact]
     public async Task APausedTitleWithoutASecondLine_SaysJustPaused()
     {
+        await PlayingAsync(Heat with { Year = null, Subtitle = "" });
+        PlayOn();
+
+        At(_position, paused: true);
+
+        Assert.Equal(("Heat", "Paused"), (_presence.Current!.Details, _presence.Current.State));
+    }
+
+    [Fact]
+    public async Task ANewTitle_ShowsOnceItsOwnStreamPlays_NotWithThePositionAndLengthLeftByTheTitleBefore()
+    {
+        var (player, status) = await PlayingAsync(Heat, at: 2950);
+        _nextLength = null;
+
+        await SwitchAsync(player, Secrets, status);
+
+        Assert.Null(_presence.Current);
+        Assert.Single(_presence.Shown);
+
+        At(30, length: 2400);
+
+        var (start, end) = Timeline(30, 2400);
+        Assert.Equal(new RichPresenceState("Dark", "S01E03 · Secrets", start, end, TmdbPayloads.DarkPoster, TmdbPayloads.DarkPage), _presence.Current);
+        Assert.Equal(2, _presence.Shown.Count);
+    }
+
+    [Fact]
+    public async Task ANewTitle_IsNotShownPaused_ForThePauseLeftByTheTitleBefore()
+    {
+        var (player, status) = await PlayingAsync(Heat);
+        PlayOn();
+        At(_position, paused: true);
+
+        await SwitchAsync(player, Secrets, status, leftoverPause: true);
+
+        Assert.Null(_presence.Current);
+        Assert.DoesNotContain(_presence.Shown, shown => shown.Details == "Dark");
+
+        At(0);
+
+        Assert.Equal(("Dark", "S01E03 · Secrets", Timeline(0).Start), (_presence.Current!.Details, _presence.Current.State, _presence.Current.StartedAt!.Value));
+    }
+
+    [Fact]
+    public async Task ALateAnswerForTheTitleBefore_LeavesTheNewTitlesPosterAlone()
+    {
+        var heatAnswer = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _silo.On(HttpMethod.Get, TmdbPayloads.HeatDetailPath, async () =>
+        {
+            await heatAnswer.Task;
+            return await ScriptedSilo.Json(HttpStatusCode.OK, TmdbPayloads.HeatDetail)();
+        });
         var player = NewPlayer(Heat);
         using var status = Follow(player);
-        await player.StartAsync(PlayRequest.Direct(@"C:\Videos\Holiday.mkv"));
+        await player.StartAsync(PlayRequest.Resume(TmdbPayloads.HeatId));
+        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Preparing));
+        var heatLookup = status.Lookup;
+        At(600);
+        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));
+        _time.Advance(PlayerRichPresence.MinimumSpacing);
 
-        At(5, paused: true);
+        await SwitchAsync(player, Secrets, status);
+        At(0);
+        Assert.Equal(TmdbPayloads.DarkPoster, _presence.Current!.Poster);
+        int shown = _presence.Shown.Count;
 
-        Assert.Equal(("Holiday.mkv", "Paused"), (_presence.Current!.Details, _presence.Current.State));
+        heatAnswer.SetResult();
+        await heatLookup;
+        _time.Advance(PlayerRichPresence.MinimumSpacing);
+
+        Assert.Equal(shown, _presence.Shown.Count);
+        Assert.Equal(TmdbPayloads.DarkPoster, _presence.Current!.Poster);
+        Assert.DoesNotContain(_presence.Shown, state => state.Poster == TmdbPayloads.HeatPoster);
     }
 
     [Fact]

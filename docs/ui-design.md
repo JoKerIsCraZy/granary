@@ -1022,15 +1022,17 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   Discord is on and the Discord app runs on this PC, the player minimized to the bar or in the mini view too. Discord
   writes "Watching" itself, in the viewer's language, and the member list shows the first line ("Watching Dark", not
   "Watching Granary"). The lines are English: the series over "S01E03 · Secrets" (two digits at least, the code alone for
-  an episode without a title), a film over its year (nothing without one), anything else, such as a local file, by the
-  title the player shows; while paused " · Paused" after the second line, or "Paused" alone. While it plays, a timeline
-  with the time left, in real time at another speed; none while paused or before the length is known. The picture is the
-  title's TMDB poster (a film's own, an episode's series'), with Granary's logo small in its corner ("Granary") and the
-  first line as its tooltip; without a poster (Requests off on the server, a local file) Granary's logo alone. "View on
-  TMDB" opens the film's or the series' TMDB page, when the server knows its TMDB id. Never anything of the server's
-  address. A line is cut to Discord's 128 bytes with "…", and a one-letter title is padded so Discord takes it. It goes
-  as soon as nothing plays (the player left, a title loading, failed or ended) or the switch is off, and shows again when
-  it is turned on. Discord takes about 5 updates in 20 seconds, so it changes only with what it shows (another title, a
+  an episode without a title), a film over its year (nothing without one), another kind of Silo title by the title the
+  player shows; while paused " · Paused" after the second line, or "Paused" alone. Only Silo titles show: a file or URL
+  played directly (`--play`) shows no status at all, as its name may be private, and neither does a title without a name.
+  While it plays, a timeline with the time left, in real time at another speed; none while paused or before the length
+  is known. The picture is the title's TMDB poster (a film's own, an episode's series'), with Granary's logo small in its
+  corner ("Granary") and the first line as its tooltip; without a poster (Requests off on the server, another kind of
+  title) Granary's logo alone. "View on TMDB" opens the film's or the series' TMDB page, when the server knows its TMDB
+  id. Never anything of the server's address. A line is cut to Discord's 128 bytes with "…", and a one-letter title is
+  padded so Discord takes it. It goes as soon as nothing plays (the player left, a title loading, failed or ended) or the
+  switch is off, and shows again when it is turned on. A title that starts, the next episode too, shows once its own
+  stream plays, never with the position, length or pause of the title before. Discord takes about 5 updates in 20 seconds, so it changes only with what it shows (another title, a
   pause, a seek or stall of more than 3 seconds, the length once known, the speed), at most every 4 seconds with the
   latest state; playing on sends nothing.
 - **Fill screen** (the web's video fit): the picture fills the page and is cut where it does not fit (mpv `panscan`);

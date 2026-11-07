@@ -717,7 +717,11 @@ in `playback-device.json`); docs/ui-design.md says what it shows.
   player and the setting and shows the result on the port `IRichPresence`. Like `PlayerSystemMedia`, it sends only a
   change of what shows: Discord runs the timeline on by itself, so a position tick sends nothing, a jump of more than 3
   seconds does. Discord takes about 5 updates in 20 seconds, so one goes out at most every 4 seconds; a change that has
-  to wait goes out on a timer as the player is by then. Clearing goes at once.
+  to wait goes out on a timer as the player is by then. Clearing goes at once. While a title loads, `PlayerViewModel`
+  still holds the position, length and pause of the title before, and it sets `Phase` to Playing before it reads the new
+  stream's state; so from a load on, a title shows only once `CanSeek` turns on, which the player computes from a started
+  stream of the new load, after the position, length and pause. A file played directly (`PlaybackMediaKind.Direct`)
+  never shows, and a lookup's answer is taken only while its title still plays.
 - **`TmdbTitleLookup`** (Core, a singleton) finds the poster and the TMDB page through the server, so Granary needs no
   TMDB key of its own: the catalog item's `tmdb_id` (the movie's, an episode's series'), then the requests detail's
   `poster_path` (docs/api-contract.md, 7.6 and 7.15). It runs only while the setting is on, once per title and server,
@@ -728,7 +732,8 @@ in `playback-device.json`); docs/ui-design.md says what it shows.
   Granary's Discord application (`DiscordStatus.ApplicationId`, whose Rich Presence assets hold the `granary` picture).
   It connects with the first status to show, sends only while Discord is connected, and the latest status again when
   Discord connects or restarts. Without Discord the library keeps trying in the background, which the log says once; a
-  clear while Discord is not there stops it. It is disposed when the window closes.
+  clear while Discord is not there stops it. It is disposed when the window closes. The library raises its events on its
+  own thread, under the same lock as the UI thread's calls; a client is let go under the lock and disposed outside it.
 
 ## Windows App SDK
 

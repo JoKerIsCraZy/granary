@@ -201,10 +201,12 @@ public sealed class TmdbTitleLookupTests
         Assert.Empty(_silo.Sent);
     }
 
-    [Fact]
-    public async Task AnotherKindOfTitle_IsNotLookedUp()
+    [Theory]
+    [InlineData(PlaybackMediaKind.Other)]
+    [InlineData(PlaybackMediaKind.Direct)]
+    public async Task AnotherKindOfTitle_IsNotLookedUp(PlaybackMediaKind kind)
     {
-        Assert.Null(await Create().FindAsync(PlaybackMediaKind.Other, TmdbPayloads.HeatId, Token));
+        Assert.Null(await Create().FindAsync(kind, TmdbPayloads.HeatId, Token));
         Assert.Empty(_silo.Sent);
     }
 }

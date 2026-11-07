@@ -11,8 +11,10 @@ namespace Granary.App.Services;
 /// nothing happens: the library keeps looking for it in the background, and the log says so once.
 /// </summary>
 /// <remarks>
-/// Shown and cleared on the UI thread; the library raises its events on a thread of its own. A status is sent only while
-/// Discord is connected, and the latest one again when it connects, also after Discord restarted.
+/// Shown and cleared on the UI thread; the library raises its events on a thread of its own, and they take the same lock.
+/// A client is let go under the lock but disposed outside it, so a dispose never waits on a thread that waits for the
+/// lock (the library's own dispose only flags its thread to say goodbye and end, without waiting for it). A status is
+/// sent only while Discord is connected, and the latest one again when it connects, also after Discord restarted.
 /// </remarks>
 internal sealed class DiscordStatus(ILogger<DiscordStatus> logger) : IRichPresence, IDisposable
 {
@@ -34,6 +36,7 @@ internal sealed class DiscordStatus(ILogger<DiscordStatus> logger) : IRichPresen
     public void Show(RichPresenceState state)
     {
         ArgumentNullException.ThrowIfNull(state);
+        DiscordRpcClient? failed = null;
         lock (_gate)
         {
             if (_disposed)
@@ -43,44 +46,48 @@ internal sealed class DiscordStatus(ILogger<DiscordStatus> logger) : IRichPresen
             _wanted = state;
             if (_client is null)
             {
-                Connect();
+                failed = Connect();
             }
             else if (_ready)
             {
                 Send();
             }
         }
+        Close(failed);
     }
 
     public void Clear()
     {
+        DiscordRpcClient? closing;
         lock (_gate)
         {
             _wanted = null;
             if (_ready)
             {
                 Send();
+                return;
             }
-            else
-            {
-                // Discord was not found yet: stop looking for it until something plays again.
-                Disconnect();
-            }
+            // Discord was not found yet: stop looking for it until something plays again.
+            closing = LetGo();
         }
+        Close(closing);
     }
 
     /// <summary>At the app's exit: the status goes with the connection.</summary>
     public void Dispose()
     {
+        DiscordRpcClient? closing;
         lock (_gate)
         {
             _disposed = true;
             _wanted = null;
-            Disconnect();
+            closing = LetGo();
         }
+        Close(closing);
     }
 
-    private void Connect()
+    // Under the lock. The client to close when it could not start, else null.
+    private DiscordRpcClient? Connect()
     {
         // Granary sends a status only when it changed, so the library compares nothing; that also lets the status go out
         // again whole when Discord restarted.
@@ -94,19 +101,21 @@ internal sealed class DiscordStatus(ILogger<DiscordStatus> logger) : IRichPresen
         try
         {
             client.Initialize();
+            return null;
         }
         catch (Exception ex)
         {
             logger.LogWarning("Discord's status could not start: {Failure}", ex.GetType().Name);
-            Disconnect();
+            return LetGo();
         }
     }
 
-    private void Disconnect()
+    // Under the lock: the client is no longer this one's, and its events from now on find it so (sender != _client).
+    private DiscordRpcClient? LetGo()
     {
         if (_client is not { } client)
         {
-            return;
+            return null;
         }
         _client = null;
         _ready = false;
@@ -114,6 +123,16 @@ internal sealed class DiscordStatus(ILogger<DiscordStatus> logger) : IRichPresen
         client.OnClose -= OnClose;
         client.OnConnectionFailed -= OnConnectionFailed;
         client.OnError -= OnError;
+        return client;
+    }
+
+    // Outside the lock.
+    private void Close(DiscordRpcClient? client)
+    {
+        if (client is null)
+        {
+            return;
+        }
         try
         {
             // Says goodbye on the library's thread, which also takes the status away.
