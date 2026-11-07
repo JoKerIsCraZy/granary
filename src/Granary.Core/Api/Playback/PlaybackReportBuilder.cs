@@ -82,8 +82,13 @@ public static class PlaybackReportBuilder
     /// server still makes stays one this PC decodes without strain (the server encodes HEVC only for an HLS delivery that
     /// lists it).
     /// </param>
+    /// <param name="hdrFileCodecs">
+    /// The video codecs of the HDR and Dolby Vision files the server may send for this start, as the scanner names them;
+    /// empty when none is HDR. HDR then counts only in those codecs, instead of in every codec the report lists. Null, or
+    /// with a blank among them, when that is not known.
+    /// </param>
     public static PlaybackClientReport Build(PlaybackDeviceFacts device, string appVersion, string? appChannel = null, bool mediaOrigins = false,
-        bool softwareDecoding = false)
+        bool softwareDecoding = false, IReadOnlyCollection<string>? hdrFileCodecs = null)
     {
         ArgumentNullException.ThrowIfNull(device);
         ArgumentException.ThrowIfNullOrWhiteSpace(appVersion);
@@ -117,7 +122,7 @@ public static class PlaybackReportBuilder
             },
             Deliveries = new Dictionary<string, DeliveryCapability>
             {
-                [DeliveryClasses.OriginalHttp] = OriginalHttp(video, softwareDecoding || DecodesHdr(device, video)),
+                [DeliveryClasses.OriginalHttp] = OriginalHttp(video, softwareDecoding || DecodesHdr(device, video, hdrFileCodecs)),
                 [DeliveryClasses.Hls] = Hls(smooth),
             },
         };
@@ -128,7 +133,7 @@ public static class PlaybackReportBuilder
     /// <summary>
     /// Direct play: mpv opens the original file, so its lists are the top-level ones. It switches audio tracks
     /// itself (<c>client_selected_audio_track_v1</c>; without it a non-default track forces a remux) and selects
-    /// embedded subtitles natively. Where the GPU decodes HDR video (<see cref="DecodesHdr"/>) it also tone-maps HDR
+    /// embedded subtitles natively. Where the GPU decodes the start's HDR video (<see cref="DecodesHdr"/>) it also tone-maps HDR
     /// and Dolby Vision originals to the SDR output with libplacebo (<c>client_managed_dynamic_range_v1</c>, as Silo's
     /// Apple app claims for its FFmpeg engine and the web for its decode engine on a hardware GPU), so the server sends
     /// a 4K HDR file as it is instead of tone-mapping it in a transcode.
@@ -147,17 +152,37 @@ public static class PlaybackReportBuilder
     };
 
     /// <summary>
-    /// The GPU decodes some HDR video at 10 bits, and every codec HDR comes in that the report lists plays without
-    /// stutter: decoded at 10 bits by the GPU, or on the CPU's list. The claim covers all of them at once (at
-    /// <c>declared</c> evidence the server checks codec names, not bit depth), so one 8-bit-only decoder, such as VP9
-    /// without Profile 2, leaves HDR to the server. H.264 High 10 is left out: no D3D11 decoder takes it and HDR in it is
-    /// rare (docs/api-contract.md, 13.2).
+    /// The GPU decodes some HDR video at 10 bits, and every codec HDR may come in for this start plays without stutter:
+    /// decoded at 10 bits by the GPU, or on the CPU's list. Those are the codecs of the HDR files the server may send, or
+    /// every HDR codec the report lists where one of theirs is not known, since at <c>declared</c> evidence the server
+    /// checks codec names, not bit depth. So an 8-bit-only decoder, such as VP9 without Profile 2, leaves HDR in that codec
+    /// to the server; SDR files need no 10-bit decoder. A codec the report does not list never plays directly. H.264 High
+    /// 10 is left out: no D3D11 decoder takes it and HDR in it is rare (docs/api-contract.md, 13.2).
     /// </summary>
-    private static bool DecodesHdr(PlaybackDeviceFacts device, IReadOnlyList<string> video)
+    private static bool DecodesHdr(PlaybackDeviceFacts device, IReadOnlyList<string> video, IReadOnlyCollection<string>? hdrFileCodecs)
     {
         var tenBit = CodecList(device.HardwareTenBitVideoCodecs);
         var software = CodecList(device.SoftwareVideoCodecs);
-        return tenBit.Count > 0 && HdrCodecs.Where(video.Contains).All(c => tenBit.Contains(c) || software.Contains(c));
+        var files = KnownCodecs(hdrFileCodecs);
+        return tenBit.Count > 0 && HdrCodecs.Where(c => video.Contains(c) && (files is null || files.Contains(c)))
+            .All(c => tenBit.Contains(c) || software.Contains(c));
+    }
+
+    /// <summary>
+    /// The files' codecs as Silo Server's planner reads them (its <c>normalizeCodecV3</c>), lower-case with HEVC's other
+    /// names as <c>hevc</c>; null when one of them is not known, which leaves the claim to every HDR codec the report lists.
+    /// </summary>
+    private static HashSet<string>? KnownCodecs(IReadOnlyCollection<string>? codecs)
+    {
+        if (codecs is null || codecs.Any(string.IsNullOrWhiteSpace))
+        {
+            return null;
+        }
+        return codecs.Select(c => c.Trim().ToLowerInvariant() switch
+        {
+            "h265" or "h.265" or "x265" => "hevc",
+            var name => name,
+        }).ToHashSet(StringComparer.Ordinal);
     }
 
     /// <summary>

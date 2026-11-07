@@ -170,8 +170,9 @@ public sealed partial class ServerPlayback
         }
         double position = SourcePosition;
         _logger.LogInformation("Switching to another file of the title at {Position:F1} s", position);
-        // Another file has its own subtitle order: its automatic choice applies.
-        _context = context with { Version = version, SubtitlePick = null };
+        // Another file has its own subtitle order: its automatic choice applies. Its codec can change the HDR claim.
+        _context = _starter.WithVersion(context, version) with { SubtitlePick = null };
+        LogReport(_context.Report);
         Recover(() =>
         {
             // A stop meanwhile waits for the start, as for any other, and ends the session it makes.
@@ -233,7 +234,9 @@ public sealed partial class ServerPlayback
     {
         if (!Superseded(generation) && _context is { } context)
         {
-            _context = context with { Version = previous.Version, SubtitlePick = previous.SubtitlePick };
+            _context = _starter.WithVersion(context, previous.Version) with { SubtitlePick = previous.SubtitlePick };
+            // The log named the turned-down file's report last.
+            LogReport(_context.Report);
             TracksChanged?.Invoke(this, EventArgs.Empty);
         }
     }
