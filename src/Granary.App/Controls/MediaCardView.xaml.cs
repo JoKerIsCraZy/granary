@@ -192,6 +192,7 @@ public sealed partial class MediaCardView : UserControl
         }
 
         ShowBadges(card);
+        ShowMark(card);
 
         TitleText.Text = card?.Title ?? "";
         // A recycled card mostly shows the same shape and colours: each is set only when it changes.
@@ -998,6 +999,8 @@ public sealed partial class MediaCardView : UserControl
             }
         }
         ShowState();
+        _loaded = true;
+        UpdatePing();
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
@@ -1005,6 +1008,8 @@ public sealed partial class MediaCardView : UserControl
         _actions.Changed -= OnStateChanged;
         _overlays.PropertyChanged -= OnOverlaysChanged;
         ForgetHost();
+        _loaded = false;
+        UpdatePing();
     }
 
     private void ForgetHost()

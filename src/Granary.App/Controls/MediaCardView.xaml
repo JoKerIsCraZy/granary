@@ -79,6 +79,30 @@
                 <StackPanel x:Name="BottomRightBadges" Spacing="4" HorizontalAlignment="Right" VerticalAlignment="Bottom" />
             </controls:BadgeEdge>
 
+            <!--
+                The page's own title among its siblings, as the web's EpisodeCarousel.tsx marks it, made for the first marked card
+                only (MediaCardView.ShowMark). The 2 px accent ring is the art's hairline in the accent and one pixel more inside it
+                (the hairline's 16 px corners less the hairline), so the art keeps its layout. The "Now Viewing" pill 10 px into the
+                art, its dot pinging in the accent's label colour, is 18 high as the web's leading-none: the capitals' own height
+                with the rest around them.
+            -->
+            <Border x:Name="NowViewing" x:Load="False" BorderBrush="{StaticResource SiloPrimaryBrush}" BorderThickness="1" CornerRadius="15"
+                    IsHitTestVisible="False" AutomationProperties.AccessibilityView="Raw">
+                <Border Margin="9" Padding="10,5.5" HorizontalAlignment="Left" VerticalAlignment="Top" CornerRadius="{StaticResource SiloPillCornerRadius}"
+                        controls:Pill.IsEnabled="True" Background="{StaticResource SiloPrimaryBrush}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <Grid Width="6" Height="6" VerticalAlignment="Center">
+                            <Ellipse x:Name="NowViewingPing" Fill="{StaticResource SiloOnPrimaryBadgeBrush}" />
+                            <Ellipse Fill="{StaticResource SiloOnPrimaryBadgeBrush}" />
+                        </Grid>
+                        <!-- The card's name says it already ("…, now viewing"). -->
+                        <TextBlock Text="NOW VIEWING" Style="{StaticResource SiloBadgeTextStyle}" CharacterSpacing="80" TextLineBounds="Tight"
+                                   Foreground="{StaticResource SiloOnPrimaryBadgeBrush}" VerticalAlignment="Center"
+                                   AutomationProperties.AccessibilityView="Raw" />
+                    </StackPanel>
+                </Border>
+            </Border>
+
             <!-- Made only for a card with progress, the play disc and the card's buttons only on first need (MediaCardView.EnsureActions). -->
             <ProgressBar x:Name="Progress" x:Load="False" Margin="10,0,10,8" VerticalAlignment="Bottom" Height="3" MinHeight="3" CornerRadius="2"
                          Maximum="1" Foreground="{StaticResource SiloPrimaryBrush}" Background="#66000000"

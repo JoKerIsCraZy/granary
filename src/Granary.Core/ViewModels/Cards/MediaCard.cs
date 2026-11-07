@@ -74,6 +74,13 @@ public sealed record MediaCard(string Id, string Type, string Title)
     /// </summary>
     public Api.Requests.MediaRequestCreate? RequestOffer { get; init; }
 
+    /// <summary>
+    /// The title the page is about, among its siblings: an episode's own card in its season's More Episodes, marked "Now
+    /// Viewing" as the web's <c>EpisodeCarousel</c>. No other row sets it.
+    /// </summary>
+    public bool IsCurrent { get; init; }
+
     /// <summary>The name screen readers announce for the whole card.</summary>
-    public string AccessibleName => string.Join(", ", new[] { Title, EpisodeTitle, Subtitle }.Where(text => !string.IsNullOrEmpty(text)));
+    public string AccessibleName => string.Join(", ",
+        new[] { Title, EpisodeTitle, Subtitle, IsCurrent ? "now viewing" : null }.Where(text => !string.IsNullOrEmpty(text)));
 }

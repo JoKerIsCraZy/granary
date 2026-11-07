@@ -1,3 +1,4 @@
+using Granary.Core.ViewModels.Cards;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
@@ -46,6 +47,29 @@ internal static class RowBleed
             target = scroller.HorizontalOffset + direction * viewport * 0.85;
         }
         scroller.ScrollTo(Math.Clamp(target, 0, scroller.ScrollableWidth), 0);
+    }
+
+    /// <summary>
+    /// Scrolls the row at once so the card at <paramref name="index"/> is in the middle of its view, or as near as the row
+    /// scrolls (<see cref="RowCentring"/>). False, without scrolling, while no card is laid out to measure or the scroller
+    /// has taken in too little of the row to reach the card; on the <paramref name="lastTry"/> it scrolls as near as it
+    /// can then.
+    /// </summary>
+    public static bool Centre(ScrollView scroller, ItemsRepeater items, int index, bool lastTry)
+    {
+        if (scroller.ViewportWidth <= 0 || items.Layout is not StackLayout { Orientation: Orientation.Horizontal } layout
+            || items.ItemsSourceView is not { Count: > 0 } source || CardWidth(items) is not { } width)
+        {
+            return false;
+        }
+        var centring = RowCentring.For(index, source.Count, width, layout.Spacing, items.Margin.Left, items.Margin.Right,
+            scroller.ViewportWidth, scroller.ScrollableWidth);
+        if (!centring.IsSettled && !lastTry)
+        {
+            return false;
+        }
+        scroller.ScrollTo(centring.Offset, 0, new ScrollingScrollOptions(ScrollingAnimationMode.Disabled));
+        return true;
     }
 
     // A realized card's width: the row's cards are all one width.
