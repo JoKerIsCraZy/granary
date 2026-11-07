@@ -7,7 +7,7 @@
     Width="120">
 
     <StackPanel Spacing="10">
-        <Grid Height="180" CornerRadius="{StaticResource SiloCardCornerRadius}" Background="{StaticResource SiloSurfaceBrush}"
+        <Grid Height="{StaticResource SiloCreditPhotoHeight}" CornerRadius="{StaticResource SiloCardCornerRadius}" Background="{StaticResource SiloSurfaceBrush}"
               BorderBrush="#0DFFFFFF" BorderThickness="1">
             <TextBlock x:Name="InitialsText" Text="{x:Bind Person.Initials, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center"
                        FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="22"
