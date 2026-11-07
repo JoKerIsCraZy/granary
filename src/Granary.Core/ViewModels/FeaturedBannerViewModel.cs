@@ -25,7 +25,7 @@ public sealed record FeaturedSlide(BrowseHeroTitle Title, CatalogItem Item)
 /// Home's banner (docs/ui-design.md, Home), as the web's <c>components/HeroBanner.tsx</c>: the cards of the first row the
 /// server marks as the hero (<c>featured</c>), one slide at a time at the top of Home, with Play and More Info. With several
 /// slides it moves on every <see cref="AdvanceTime"/>, from the last back to the first, while Home shows it in view. The
-/// pointer or focus on it holds it for as long as they stay (<see cref="Hold"/>); its pause button stops it until pressed
+/// pointer or keyboard focus on it holds it for as long as they stay (<see cref="Hold"/>); its pause button stops it until pressed
 /// again, also across visits to other pages (<see cref="IsPausedByButton"/>); with animations off it moves only by hand.
 /// Both clear when the banner goes. Each new slide and each resume start a fresh countdown (<see cref="Cycle"/>). While it
 /// is in view, the next slide's pictures are fetched ahead, as the web preloads the next backdrop.

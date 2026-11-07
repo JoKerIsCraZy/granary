@@ -13,8 +13,8 @@ namespace Granary.App.Controls;
 /// The buttons of Home's banner (<see cref="Banner"/>), over the room between the hero's compact header and the first row
 /// (<see cref="Sizes"/>). The rail starts empty with each slide and countdown (<see cref="Cycle"/>), fills on the compositor
 /// while a countdown runs and stops while none does (<see cref="IsAdvancing"/>); with Windows' animations off it stands full,
-/// as the web's under reduced motion. The arrows show while the pointer or focus is on the banner (<see cref="IsEngaged"/>),
-/// as the web's on a wide window.
+/// as the web's under reduced motion. The arrows show while the pointer or keyboard focus is on the banner
+/// (<see cref="IsEngaged"/>), as the web's on a wide window.
 /// </summary>
 public sealed partial class FeaturedBannerControls : UserControl
 {

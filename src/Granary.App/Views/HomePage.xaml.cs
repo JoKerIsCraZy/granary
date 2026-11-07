@@ -147,12 +147,15 @@ public sealed partial class HomePage : Page, IStartupContent
 
     private void FollowEngagementSoon() => DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, FollowEngagement);
 
-    // The pointer on the banner or focus on its buttons holds the slideshow and shows its arrows, as the web's hover and
-    // focus within; letting go of both starts it again. Only a banner with slides, on a page that is shown, is held.
+    // The pointer on the banner or keyboard focus on its buttons (a remote's arrows, Tab) holds the slideshow and shows its
+    // arrows, as the web's hover and focus within; letting go of both starts it again. Focus a click gave a button does not
+    // hold it: the slideshow stood still after a click on an arrow, long after the pointer had gone. Only a banner with
+    // slides, on a page that is shown, is held.
     private void FollowEngagement()
     {
-        bool focusOnButtons = XamlRoot is { } root && BannerControls.Holds(FocusManager.GetFocusedElement(root) as DependencyObject);
-        bool engaged = _isShown && ViewModel.Banner.HasSlides && (_pointerOnStrip || _pointerOnButtons || focusOnButtons);
+        bool keyboardOnButtons = XamlRoot is { } root && FocusManager.GetFocusedElement(root) is UIElement { FocusState: FocusState.Keyboard } focused
+            && BannerControls.Holds(focused);
+        bool engaged = _isShown && ViewModel.Banner.HasSlides && (_pointerOnStrip || _pointerOnButtons || keyboardOnButtons);
         if (engaged == _isEngaged)
         {
             return;

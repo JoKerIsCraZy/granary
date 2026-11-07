@@ -149,15 +149,16 @@
         <TextBlock x:Name="LiveSlide" Opacity="0" IsHitTestVisible="False" HorizontalAlignment="Left" VerticalAlignment="Top"
                    Text="{x:Bind Banner.Current.Title.Heading, Mode=OneWay}" AutomationProperties.LiveSetting="Polite" />
 
-        <!-- The arrows, half way down the banner; they show while the pointer or focus is on it. -->
+        <!-- The arrows, half way down the banner; they show while the pointer or keyboard focus is on it. A click on them, or on
+             the pause button, leaves focus where it was: the keyboard and a remote still move to them and press them. -->
         <Button x:Name="PreviousButton" Style="{StaticResource SiloPageBackButtonStyle}" HorizontalAlignment="Left" VerticalAlignment="Top"
-                Margin="8,0,0,0" Opacity="0" Command="{x:Bind Banner.PreviousCommand, Mode=OneWay}"
+                Margin="8,0,0,0" Opacity="0" AllowFocusOnInteraction="False" Command="{x:Bind Banner.PreviousCommand, Mode=OneWay}"
                 Visibility="{x:Bind Banner.HasSeveral, Mode=OneWay}"
                 AutomationProperties.Name="Previous slide" ToolTipService.ToolTip="Previous slide">
             <FontIcon Glyph="&#xE76B;" FontSize="14" />
         </Button>
         <Button x:Name="NextButton" Style="{StaticResource SiloPageBackButtonStyle}" HorizontalAlignment="Right" VerticalAlignment="Top"
-                Margin="0,0,8,0" Opacity="0" Command="{x:Bind Banner.NextCommand, Mode=OneWay}"
+                Margin="0,0,8,0" Opacity="0" AllowFocusOnInteraction="False" Command="{x:Bind Banner.NextCommand, Mode=OneWay}"
                 Visibility="{x:Bind Banner.HasSeveral, Mode=OneWay}"
                 AutomationProperties.Name="Next slide" ToolTipService.ToolTip="Next slide">
             <FontIcon Glyph="&#xE76C;" FontSize="14" />
@@ -174,7 +175,8 @@
             <Grid Width="144" Height="2" CornerRadius="1" Background="#2EFFFFFF" VerticalAlignment="Center" AutomationProperties.AccessibilityView="Raw">
                 <Rectangle x:Name="RailFill" Fill="#E0FFFFFF" />
             </Grid>
-            <Button x:Name="PauseButton" Style="{StaticResource BannerPauseButtonStyle}" Command="{x:Bind Banner.TogglePauseCommand, Mode=OneWay}"
+            <Button x:Name="PauseButton" Style="{StaticResource BannerPauseButtonStyle}" AllowFocusOnInteraction="False"
+                    Command="{x:Bind Banner.TogglePauseCommand, Mode=OneWay}"
                     AutomationProperties.Name="{x:Bind Banner.PauseLabel, Mode=OneWay}" ToolTipService.ToolTip="{x:Bind Banner.PauseLabel, Mode=OneWay}">
                 <FontIcon Glyph="{x:Bind PauseGlyph(Banner.IsPausedByButton), Mode=OneWay}" FontSize="13" />
             </Button>

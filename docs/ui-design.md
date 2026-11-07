@@ -396,14 +396,17 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     "01 —— 05" (11 px monospaced, tracked, white at 68 %, the slide's number white), a 144 × 2 px rail that fills over
     the slide's 8 s, and a 28 px pause button ("Pause slideshow" / "Play slideshow"). The arrows ("Previous slide",
     "Next slide": the 36 px glass discs of PageBack) stand 8 px in from the page's sides, half way down the banner, and
-    show while the pointer or focus is on the banner, as the web's on a wide window. The arrows, the counter, the rail
-    and the pause button show only with two slides or more. Screen readers hear each new slide's name.
+    show while the pointer or keyboard focus is on the banner, as the web's on a wide window. The arrows, the counter, the
+    rail and the pause button show only with two slides or more. A click on an arrow or the pause button leaves focus
+    where it was. Screen readers hear each new slide's name.
   - Play plays a movie or episode from where it was left, and a series or season the episode the server names for it; a
     slide with nothing to play has no Play, as in the Mac app. More Info opens the title.
   - Moving on: every 8 s to the next slide, from the last back to the first; an arrow starts a fresh 8 s, and a slide
     that waits shows the rail empty. The pointer on the banner's own room (the hero's strip above the rows' scroller, or
-    the buttons' room; not the backdrop behind the first row) or focus on its buttons holds the slide while it stays;
-    letting go starts a fresh 8 s. The pause button stops it until it is pressed again, whatever the pointer does, and
+    the buttons' room; not the backdrop behind the first row) or keyboard focus on its buttons (a remote's arrows, Tab)
+    holds the slide while it stays; letting go starts a fresh 8 s. Focus a click leaves on a button does not hold it, so a
+    click on an arrow shows the next slide, held while the pointer rests there and running once it leaves. The pause
+    button stops it until it is pressed again, whatever the pointer does, and
     also across visits to other pages; the pause and the hold go with the banner (a refresh without it, another
     profile). It holds while Home is not shown, once the rows fold the hero past half the way, and with Windows'
     animations off, where the rail stands full and only the arrows move it. While the banner is in view, the next slide's
@@ -411,7 +414,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   - Remote and keyboard: Home still starts on the first row's first card, as Silo's Android TV app does (it shows the
     featured row as an ordinary row and has no hero to follow). Up from the first row reaches the banner's buttons and
     scrolls the rows back to the top; Left and Right move along the buttons, Down returns to the rows, OK presses, and the
-    remote's Play key on any of them plays the slide. Focus on them holds the slide.
+    remote's Play key on any of them plays the slide. Keyboard focus on them holds the slide.
 - What happens on another device shows without a visit (`RealtimeEvents`, docs/api-contract.md 12): a title watched,
   favourited, put on the watchlist or taken off Home there, or a title the server added or changed, reloads Home in
   place once the changes have been quiet for 2 s (rows keep where they were scrolled to; other pages reload on their

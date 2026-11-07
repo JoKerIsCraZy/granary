@@ -254,6 +254,26 @@ public sealed class HomeBannerTests
     }
 
     [Fact]
+    public async Task AStepWhileThePointerRests_WaitsForItToLeave_ThenRunsAFreshEightSeconds()
+    {
+        var home = await HomeWithThreeSlidesAsync();
+        home.Banner.Hold(true);
+        _time.Advance(TimeSpan.FromSeconds(5));
+
+        home.Banner.NextCommand.Execute(null);
+        _time.Advance(TimeSpan.FromSeconds(30));
+        Assert.Equal(("f2", false), (home.HeroTitle?.Key, home.Banner.IsAdvancing));
+
+        int cycle = home.Banner.Cycle;
+        home.Banner.Hold(false);
+        Assert.Equal((true, cycle + 1), (home.Banner.IsAdvancing, home.Banner.Cycle));
+        _time.Advance(FeaturedBannerViewModel.AdvanceTime - Tick);
+        Assert.Equal("f2", home.HeroTitle?.Key);
+        _time.Advance(Tick);
+        Assert.Equal("f3", home.HeroTitle?.Key);
+    }
+
+    [Fact]
     public async Task SteppingByHandWhilePaused_StartsTheRailEmptyAgain()
     {
         var home = await HomeWithThreeSlidesAsync();
