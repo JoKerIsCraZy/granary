@@ -650,6 +650,12 @@ filters are `422`, so a "See all" grid hides the browse grid's sort, filter and 
   "Recently Added TV"; TV groups arrivals by show, returning an `episode` card for a single episode
   and a `series` card otherwise).
 - Never key logic on a section `id`; admins can rename and add rows.
+- **Hero banner**: `featured` marks the page's hero banner, set in Silo's web by an administrator or for one profile
+  ("Use as hero banner"). The server keeps one per page, but a profile's own featured row can follow an administrator's,
+  so the first one counts: Home shows it as its banner instead of as a row, as the web does
+  (`silo-server/web/src/pages/homeSectionState.ts:21-22`), and a later one stays a row. An administrator's banner kept on
+  the web (`web_only`) is sent only to `X-Silo-Client-Family: web`
+  (`silo-server/internal/sections/resolver_test.go:257-299`); Granary sends `desktop` and never sees it.
 - Dismissal: choose the surface **per card**, not per row. A card with `progress_updated_at` uses
   `continue_watching` (body `{ "progress_updated_at" }`); a card without it but with `series_id`
   (a next-up card, also inside a combined Continue Watching row) uses `next_up` (body

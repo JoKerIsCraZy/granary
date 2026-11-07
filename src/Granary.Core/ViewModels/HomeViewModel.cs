@@ -4,6 +4,7 @@ using Granary.Core.Abstractions;
 using Granary.Core.Api;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
+using Granary.Core.Artwork;
 using Granary.Core.Auth;
 using Granary.Core.Playback;
 using Granary.Core.ViewModels.Cards;
@@ -14,7 +15,8 @@ namespace Granary.Core.ViewModels;
 /// <summary>
 /// Home: the server's rows as Silo's web client shows them (docs/api-contract.md, 7.1). Rows that came
 /// back empty but count cards are fetched again, at most four at a time as Android does; rows without
-/// cards are hidden, and Continue Watching keeps only video cards. The page calls
+/// cards are hidden, and Continue Watching keeps only video cards. The first row marked as the hero is
+/// the <see cref="Banner"/> at the top instead of a row (HomeViewModel.Banner.cs). The page calls
 /// <see cref="ActivateAsync"/> when it is shown and <see cref="Deactivate"/> when it leaves: another
 /// server or profile reloads at once, a return reloads only rows older than <see cref="StaleAfter"/>, or rows from
 /// before a change of the viewer's state (<see cref="ViewerStateChanges"/>: playback, a watched mark, …). Such a
@@ -57,7 +59,8 @@ public sealed partial class HomeViewModel : ObservableObject
         IUiDispatcher dispatcher,
         TimeProvider time,
         ILogger<HomeViewModel> logger,
-        ViewerStateChanges? changes = null)
+        ViewerStateChanges? changes = null,
+        IArtworkPrefetcher? artwork = null)
     {
         _session = session;
         _catalog = catalog;
@@ -68,12 +71,15 @@ public sealed partial class HomeViewModel : ObservableObject
         _logger = logger;
         _changes = changes;
         Hero = new BrowseHeroViewModel(dispatcher, time);
+        Banner = new FeaturedBannerViewModel(dispatcher, time, navigation, artwork);
+        Hero.PropertyChanged += OnHeroChanged;
+        Banner.PropertyChanged += OnBannerChanged;
     }
 
     [ObservableProperty]
     public partial IReadOnlyList<HomeRowViewModel> Rows { get; private set; } = [];
 
-    /// <summary>The title at the top of Home, following the card the pointer or the keyboard is on.</summary>
+    /// <summary>The title at the top of Home without a banner, following the card the pointer or the keyboard is on.</summary>
     public BrowseHeroViewModel Hero { get; }
 
     /// <summary>The first answer is on its way and there is nothing to show yet.</summary>
@@ -113,11 +119,12 @@ public sealed partial class HomeViewModel : ObservableObject
             _isActive = true;
             _session.Changed += OnSessionChanged;
             _changes?.Changed += OnViewerStateChanged;
+            Banner.SetActive(true);
         }
         return RefreshIfNeededAsync();
     }
 
-    /// <summary>The page left; a load in flight still completes, so a return finds its rows.</summary>
+    /// <summary>The page left; a load in flight still completes, so a return finds its rows. The banner holds still.</summary>
     public void Deactivate()
     {
         if (_isActive)
@@ -125,6 +132,7 @@ public sealed partial class HomeViewModel : ObservableObject
             _isActive = false;
             _session.Changed -= OnSessionChanged;
             _changes?.Changed -= OnViewerStateChanged;
+            Banner.SetActive(false);
         }
     }
 
@@ -143,19 +151,29 @@ public sealed partial class HomeViewModel : ObservableObject
         }
     }
 
-    /// <summary>The pointer or the keyboard came to a card: the top of Home follows it.</summary>
+    /// <summary>The pointer or the keyboard came to a card: the top of Home follows it, unless the banner is there.</summary>
     [RelayCommand]
     private void PointCard(MediaCard? card)
     {
-        if (card is not null && _session.ActiveServer is { } server && Rows.Select(r => r.ItemOf(card)).FirstOrDefault(i => i is not null) is { } item)
+        if (card is not null && !Banner.HasSlides && _session.ActiveServer is { } server
+            && Rows.Select(r => r.ItemOf(card)).FirstOrDefault(i => i is not null) is { } item)
         {
             Hero.Point(item, server.BaseUri);
         }
     }
 
-    // The rows changed: the top of Home keeps its title while a row still has it, else shows the first card.
-    private void FollowRowsWithHero() =>
+    // The rows changed: the top of Home keeps its title while a row still has it, else shows the first card. Under the banner
+    // it waits, and starts afresh at the first card once the banner goes.
+    private void FollowRowsWithHero()
+    {
+        if (Banner.HasSlides)
+        {
+            Hero.Forget();
+            Hero.Reset(null);
+            return;
+        }
         Hero.Follow([.. Rows.SelectMany(row => row.Cards.Select(row.ItemOf)).OfType<CatalogItem>()], _session.ActiveServer?.BaseUri);
+    }
 
     partial void OnRowsChanged(IReadOnlyList<HomeRowViewModel> value) => FollowRowsWithHero();
 
@@ -196,9 +214,15 @@ public sealed partial class HomeViewModel : ObservableObject
         {
             row.RemoveWhere(SameTitle);
         }
+        bool hadSlides = Banner.HasSlides;
+        DropFromBanner(SameTitle);
         if (Rows.Any(r => r.Cards.Count == 0))
         {
             Rows = [.. Rows.Where(r => r.Cards.Count > 0)];
+            ShowLoaded();
+        }
+        else if (Banner.HasSlides != hadSlides)
+        {
             ShowLoaded();
         }
         FollowRowsWithHero();
@@ -242,7 +266,7 @@ public sealed partial class HomeViewModel : ObservableObject
         }
         bool isStale = _loadedAt is not { } loadedAt || _time.GetUtcNow() - loadedAt >= StaleAfter
             || _loadedVersion != (_changes?.Version ?? 0);
-        return isStale ? Loading = LoadAsync(quietly: !HasError && Rows.Count > 0) : Task.CompletedTask;
+        return isStale ? Loading = LoadAsync(quietly: !HasError && HasContent) : Task.CompletedTask;
     }
 
     /// <param name="quietly">Keeps the shown rows until the new ones are there, and keeps them if the refresh fails.</param>
@@ -258,21 +282,23 @@ public sealed partial class HomeViewModel : ObservableObject
         Notice = "";
         if (!quietly)
         {
-            // Another server or profile, or the first load: the hero starts afresh with the new rows.
+            // Another server or profile, or the first load: the hero and the banner start afresh with the new rows.
             Hero.Forget();
+            Banner.Show([]);
             Rows = [];
             _loadedAt = null;
         }
         if (_session is not { State: SessionState.Ready, ActiveServer: { } server })
         {
             // Signed out or between profiles: nothing to show and nothing to ask.
+            Banner.Show([]);
             Rows = [];
             IsLoading = false;
             ShowState(hasError: false, isEmpty: false, "");
             return;
         }
 
-        if (Rows.Count == 0)
+        if (!HasContent)
         {
             IsLoading = true;
             ShowState(hasError: false, isEmpty: false, LoadingText);
@@ -281,10 +307,14 @@ public sealed partial class HomeViewModel : ObservableObject
         {
             var images = await BrowseArtwork.ParametersAsync(_images, server, DisplayScale, _logger, cancellationToken);
             var collection = await _catalog.ListHomeSectionsAsync(server.BaseUri, images, cancellationToken);
-            var (sections, isComplete) = await HydrateAsync(server.BaseUri, collection.Sections, images, cancellationToken);
+            var fetched = await HydrateAsync(server.BaseUri, collection.Sections, images, cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
-            ShowRows(BuildRows(sections, server.BaseUri));
+            // The banner first: the rows' hero follows them only without it.
+            int featuredAt = FeaturedAt(collection.Sections);
+            ShowBanner(featuredAt < 0 ? null : fetched[featuredAt], server.BaseUri);
+            ShowRows(BuildRows([.. fetched.Where((_, i) => i != featuredAt).OfType<Section>()], server.BaseUri));
             // A row that could not be fetched is tried again on the next visit.
+            bool isComplete = fetched.All(section => section is not null);
             _loadedAt = isComplete ? _time.GetUtcNow() : null;
             _loadedVersion = version;
             ShowLoaded();
@@ -298,7 +328,7 @@ public sealed partial class HomeViewModel : ObservableObject
             }
             _logger.LogWarning("Loading Home failed: {Failure}", ApiFailureText.Describe(ex));
             _loadedAt = null;
-            if (Rows.Count == 0)
+            if (!HasContent)
             {
                 string text = BrowseFailureText.Describe(ex, "Home could not be loaded right now.");
                 ErrorText = text;
@@ -315,11 +345,10 @@ public sealed partial class HomeViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Fetches the rows that came back without cards although they count some. A row that fails stays
-    /// out; the result says whether every fetch answered.
+    /// Fetches the rows that came back without cards although they count some. Each row keeps its place; one that fails is
+    /// null there.
     /// </summary>
-    private async Task<(IReadOnlyList<Section> Sections, bool IsComplete)> HydrateAsync(
-        Uri server, IReadOnlyList<Section> sections, ImageParameters images, CancellationToken cancellationToken)
+    private async Task<Section?[]> HydrateAsync(Uri server, IReadOnlyList<Section> sections, ImageParameters images, CancellationToken cancellationToken)
     {
         using var gate = new SemaphoreSlim(MaxConcurrentRowRequests);
         var fetches = sections
@@ -327,8 +356,7 @@ public sealed partial class HomeViewModel : ObservableObject
                 ? FetchRowAsync(server, section, images, gate, cancellationToken)
                 : Task.FromResult<Section?>(section))
             .ToArray();
-        var fetched = await Task.WhenAll(fetches);
-        return ([.. fetched.OfType<Section>()], fetched.All(s => s is not null));
+        return await Task.WhenAll(fetches);
     }
 
     private async Task<Section?> FetchRowAsync(Uri server, Section section, ImageParameters images, SemaphoreSlim gate, CancellationToken cancellationToken)
@@ -399,7 +427,7 @@ public sealed partial class HomeViewModel : ObservableObject
 
     private void ShowLoaded()
     {
-        bool isEmpty = Rows.Count == 0;
+        bool isEmpty = !HasContent;
         ShowState(hasError: false, isEmpty, isEmpty ? EmptyText : "");
     }
 
@@ -443,7 +471,7 @@ public sealed partial class HomeViewModel : ObservableObject
     {
         if (_isActive && !_isReportingOwnChange && _shownFor == SessionKey())
         {
-            Loading = LoadAsync(quietly: !HasError && Rows.Count > 0);
+            Loading = LoadAsync(quietly: !HasError && HasContent);
         }
     }
 

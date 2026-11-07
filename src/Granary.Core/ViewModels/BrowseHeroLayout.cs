@@ -28,6 +28,9 @@ public static class BrowseHeroLayout
     /// <summary>How far the rows scroll before the hero is compact on such a page: they begin this far below the compact header.</summary>
     public const double CollapseDistance = 150;
 
+    /// <summary>How much lower the rows begin under Home's banner on such a page, for its Play and More Info.</summary>
+    public const double BannerRoom = 48;
+
     /// <summary>The backdrop's share of the hero's width, from the right.</summary>
     public const double BackdropShare = 0.65;
 
@@ -70,17 +73,29 @@ public static class BrowseHeroLayout
     /// The hero's sizes on a page <paramref name="pageHeight"/> high, in <see cref="HeightStep"/> steps: the hero keeps its
     /// share of a taller page up to <see cref="MaxRestHeight"/>, and the first row moves down with it; the compact header and
     /// the logo grow half as much, and the text a quarter, so a tall window's hero is larger without its words turning big.
-    /// A page of no known height has the hero's own sizes.
+    /// A page of no known height has the hero's own sizes. Home's <paramref name="banner"/> begins the rows
+    /// <see cref="BannerRoom"/> lower.
     /// </summary>
-    public static BrowseHeroSizes For(double pageHeight)
+    public static BrowseHeroSizes For(double pageHeight, bool banner = false)
     {
         double stepped = Math.Floor(pageHeight / HeightStep) * HeightStep;
         double scale = double.IsNaN(stepped) ? 1 : Math.Clamp(stepped / ReferencePageHeight, 1, MaxRestHeight / RestHeight);
         double grow = 1 + (scale - 1) / 2;
         double rest = Round(RestHeight * scale);
         double compact = Round(CompactHeight * grow);
-        return new BrowseHeroSizes(rest, compact, Round((CompactHeight + CollapseDistance) * scale), Round(HeadingHeight * grow),
-            Round(CompactHeadingHeight * grow), Round(rest * FadeShare), grow, 1 + (scale - 1) / 4);
+        double rowsTop = Round((CompactHeight + CollapseDistance + (banner ? BannerRoom : 0)) * scale);
+        return new BrowseHeroSizes(rest, compact, rowsTop, Round(HeadingHeight * grow), Round(CompactHeadingHeight * grow),
+            Round(rest * FadeShare), grow, 1 + (scale - 1) / 4);
+    }
+
+    /// <summary>
+    /// Whether the rows scrolled <paramref name="offset"/> fold the hero: past half the way, where a new backdrop shows only its
+    /// blur and Home's banner holds still, as the web's scrolled out of view.
+    /// </summary>
+    public static bool IsFolded(double offset, BrowseHeroSizes sizes)
+    {
+        ArgumentNullException.ThrowIfNull(sizes);
+        return offset > sizes.CollapseDistance / 2;
     }
 
     /// <summary><paramref name="size"/> as it is at <see cref="ReferencePageHeight"/>, grown by <paramref name="grow"/> to whole pixels.</summary>

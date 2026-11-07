@@ -25,6 +25,12 @@ release's section is what its update says it changes (docs/release.md).
 - **Chapter keys:** in the player, Ctrl+Right jumps to the next chapter and Ctrl+Left back to the start of the chapter
   that plays, or to the one before when you are in its first second. So you can skip an intro or the credits that the
   file marks as a chapter before your Silo server offers Skip Intro.
+- **Home's hero banner:** a Home row set as the hero banner in Silo's web ("Use as hero banner", in Admin → Sections or
+  in your own Settings → Home Screen) now shows at the top of Home as a banner instead of as a row, as in Silo's web: its
+  titles one at a time with Play and More Info, moving on every 8 seconds. Arrows change the slide, the pause button stops
+  the slides until you press it again, and pointing at the banner, or moving to its buttons with the keyboard or a TV
+  remote, holds the slide meanwhile.
+  Without such a row, the top of Home still shows the title you point at.
 
 ### Changed
 
