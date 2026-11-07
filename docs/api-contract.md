@@ -565,6 +565,7 @@ Profile and device settings live on the server (manifest
 | `playback.auto_play_next`, `playback.next_up_prompt_seconds` | profile, profile_device | `true`, `30` | [10.7](#107-next-episode) |
 | `player.video_skip_back_seconds`, `player.video_skip_forward_seconds` | profile | `10`, `30` | skip buttons, arrow keys, media keys ([13.5](#135-system-media-controls-and-input)) |
 | `player.subtitle_sync_ms`, `player.audio_sync_ms`, `player.playback_speed` | profile(_device) | – | player offsets and speed |
+| `player.sleep_timer_default_minutes` | profile_device only (a `profile` write is refused) | `30` (0 to 240; 0 none) | the duration the sleep timer's menu opens on; read in a batch of its own, a started duration saved back |
 | `player.resume_rewind_seconds`, `player.passout_threshold` | **client_local** (never on the server) | `7`, `3` | resume rewind, auto-advance streak limit |
 | `ui.next_up_mode`, `ui.disabled_library_ids`, `ui.library_order` | profile | `combined`, –, – | Home row behaviour, hidden libraries, library order |
 | `ui.card_overlays`, `ui.card_overlays_enabled` | profile | server defaults, `true` | card badges ([6.6.1](#661-card-badges)) |
@@ -2377,12 +2378,24 @@ HDR with libplacebo. An honest, conservative first report:
   (HDR10+ as HDR10), HLG and Dolby Vision Profile 5 and 8 to the SDR output, checked with d3d11va
   decoding in composition mode against the same clip in SDR. Profile 7 is covered by the claim too and
   plays its base layer with the RPU (the enhancement layer is dropped); not checked with a sample yet.
-  HDR is 10-bit, and the claim covers every codec the report lists, since the server checks codec names
-  and not bit depth at `declared` evidence. So it is sent only when the GPU decodes some HDR codec at 10
-  bits and every HDR codec listed (`hevc`, `vp9`, `av1`) is decoded at 10 bits by the GPU
-  (`HardwareTenBitVideoCodecs`: HEVC Main 10, VP9 Profile 2, AV1, whose Main profile includes 10-bit,
-  each only where `CheckVideoDecoderFormat` confirms the P010 output format) or is on the CPU's list. A GPU with an 8-bit-only HEVC or VP9 decoder leaves HDR to the server; else
-  the CPU would decode a 4K original. Two gaps stay: HDR in H.264 High 10, which D3D11VA does not decode,
+  HDR is 10-bit, and the server checks codec names, not bit depth, at `declared` evidence, so the claim
+  covers every codec HDR may come in for that start. Granary decides it per start from the files the server
+  may send: the file started and, unless the start keeps to it (`allow_alternate_versions: false`, a Watch
+  Party's file or a version the viewer picked), all of the title's `versions`, which the server may fall back
+  to or resume in. Of those, the files whose `hdr` is true count (the scanner sets it for PQ, HLG, Dolby
+  Vision and HDR10+), and to be safe the files that leave `hdr` out; an SDR file needs no 10-bit decoder.
+  The claim is sent when the GPU decodes some HDR codec at 10 bits (`HardwareTenBitVideoCodecs`: HEVC Main 10,
+  VP9 Profile 2, AV1, whose Main profile includes 10-bit, each only where `CheckVideoDecoderFormat` confirms
+  the P010 output format) and each of `hevc`, `vp9` and `av1` that is both in the report's `codecs_video` and
+  the `codec_video` of a counted file is decoded at 10 bits by the GPU or is on the CPU's list. Codec names
+  are trimmed and compared without case, with `h265`, `h.265` and `x265` read as `hevc`, as the server's
+  planner reads them. When a counted file has no `codec_video`, the old rule applies: every HDR codec the
+  report lists counts. With no counted file, the 10-bit decoder alone is enough. So a GPU with 10-bit HEVC
+  and an 8-bit-only VP9 decoder plays an HEVC HDR film directly, also beside an SDR VP9 version, but leaves a
+  VP9 HDR film, or a title with a VP9 HDR version the server may pick, to the server; else the CPU would
+  decode a 4K original. A file switched to in the player, a switch the server turns down (back to the file
+  that plays) and a start after `installation_changed` get the report for their files; replans repeat their
+  attempt's. Two gaps stay: HDR in H.264 High 10, which D3D11VA does not decode,
   and 12-bit HEVC, which no common decoder takes; both are rare, and the second already direct-plays as
   SDR, which only `platform_attested` evidence with `bit_depths` can bound. Like the web's decode engine,
   which claims it only with a hardware WebGPU adapter and an SDR display. Without the claim the server
@@ -2400,11 +2413,12 @@ HDR with libplacebo. An honest, conservative first report:
   subtitle rules first), and FFmpeg decodes them on the CPU where D3D11VA cannot. For a PC whose GPU
   decodes these only in part (HEVC Main 10 on 6th-generation Intel graphics, for example), where the server would
   otherwise transcode and tone-map. `output.hdr` stays false, and `hls` keeps the list without them (what the GPU or the CPU decode smoothly): the server encodes HEVC
-  only for an HLS delivery that lists it, so a transcode it still makes stays one the GPU decodes. Read at each start,
-  so a change counts from the next title.
+  only for an HLS delivery that lists it, so a transcode it still makes stays one the GPU decodes. Read when a title
+  starts and kept through its file switches and new attempts, so a change counts from the next title.
 - The log says why a title is transcoded: the probe's hardware and 10-bit codecs once, the report's video codecs and
-  whether HDR originals are claimed at each start, and each plan's `decision_reason`, effective video codec, size and
-  dynamic range, `claims.video.dolby_vision_reason` and `degradation_warnings` codes.
+  whether the title's HDR originals are claimed at each start and file switch (again when the server turns one down),
+  and each plan's `decision_reason`, effective video codec, size and dynamic range, `claims.video.dolby_vision_reason`
+  and `degradation_warnings` codes.
 - Subtitles: `sidecar_text`, `ass_styling`, `font_attachments`, `embedded_text`, `embedded_bitmap`
   true; `embedded_subtitles_v1` with `native_embedded` entries for mkv and mp4 using
   `track_identity: "ffmpeg_stream_index"` (mpv's `track-list/N/ff-index`), as Apple does.

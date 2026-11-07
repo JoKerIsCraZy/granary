@@ -210,6 +210,12 @@ public interface IServerPlayback : IAsyncDisposable
     /// <summary>Plays at <paramref name="speed"/> (0.25 to 3, in steps of 0.05) and saves it for this device, as the apps do.</summary>
     void SetSpeed(double speed);
 
+    /// <summary>
+    /// The duration the viewer started the sleep timer on: taken into <see cref="Preferences"/> at once and saved as this
+    /// device's <c>player.sleep_timer_default_minutes</c>, as Silo's Android app keeps the last one.
+    /// </summary>
+    void SetSleepTimerDefault(int minutes);
+
     Task StartAsync(PlayRequest request, CancellationToken cancellationToken);
 
     /// <summary>The server's playback session that plays now; null before the first plan and after the stop.</summary>

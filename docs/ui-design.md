@@ -894,12 +894,38 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   time left; in the middle skip back, the white play/pause disc and skip forward (glass discs showing the
   profile's intervals), for an episode with a previous or next one flanked by previous and next episode discs (both
   slots kept while one has an episode, so Play stays in the middle; a movie has none); on the right mute, the volume
-  slider, audio, chapters, subtitles, settings, playback info, mini view, fill screen and full screen. A utility
-  button that is on (playback info, fill screen, subtitles) turns white with the web's amber dot under it. As the
+  slider, the sleep timer, audio, chapters, subtitles, settings, playback info, mini view, fill screen and full screen. A utility
+  button that is on (sleep timer, playback info, fill screen, subtitles) turns white with the web's amber dot under it. As the
   web's `1fr auto 1fr` row, the right column is never narrower than its buttons: in a narrow window the transport
   moves left rather than the buttons being cut off. Previous and next start that episode from where the
   profile left it, as the web player does for the viewer; previous stays within the season and steps over episodes
   without a readable file.
+- **Sleep timer** (`SleepTimerOption`, the look and words of the web's `SleepTimerMenu`, which only its audiobook player
+  has): right of the volume slider, as the web's audiobook bar puts it after the volume, a 40 px pill without a background,
+  8 px each side: the moon (14 px) and "Sleep" (12 px), "Sleep 29:59" while a duration counts down (tabular figures); white
+  with the amber dot while the timer is on. Screen readers hear "Sleep timer" and, while it is on, the choice ("30 min",
+  "End of episode"), not the seconds. Its menu opens above it (black 90 %, radius 8, at least 160 px, no label): "Turn off" while the timer is on,
+  "5 min", "15 min", "30 min", "45 min", "60 min", then "End of episode" ("End of movie" for a movie; not in a Watch Party,
+  whose room decides what plays next, nor once the title has ended); rows of 14 px, white 85 %, 16 by 8 px padded, white
+  10 % under the pointer. A pick closes the menu and replaces the one before. The menu takes its rows as it opens and keeps
+  them while it is open, as the title page's pickers do, so a timer that runs out or a title that ends meanwhile does not
+  take the focus out of it; Turn off then finds the timer off, and the end of a title that has ended does nothing. While the timer is off the menu opens with the focus on this device's
+  duration (`player.sleep_timer_default_minutes`, 30 by default; one that is none of the durations, such as 90, gets a row
+  of its own in order, "90 min"; 0 none, so the first row), so OK starts it; while it is on, on Turn off. A duration
+  started becomes this device's, as on Android.
+  What it does is the apps': a duration counts on the clock whatever plays, pauses or loads, on into the next episode, and
+  then pauses what plays, with no fade; the button says "Sleep" again. A title the viewer paused stays paused, and a
+  reconnect or a new plan (quality, track, seek) leaves the countdown running. Run out while the next episode loads, it
+  pauses that as it starts; during the Playing Next countdown, the countdown stops and the screen waits. Run out after
+  playback failed, the timer just ends: Retry plays as usual. End of episode lets what
+  plays run to its end and holds the next episode back: the card shows "UP NEXT" without counting, and at the end the
+  Playing Next screen waits with Play Now, as with auto-play off; the timer is off then, and an episode started from there
+  plays on as usual. Another episode started before the end (next, previous) takes End of episode along. A movie's end leaves
+  the player as always, which ends a duration still running. Leaving the player ends the timer; the minimized bar and the mini view have no button, and the
+  timer runs on there. In a Watch Party, a duration that runs out leaves the room, which plays on for the others, as
+  Apple's player does; a room that takes over ends a timer set before. Tab reaches the button, and so do the arrows of a
+  remote moving through the controls (Right from Mute passes the slider); OK or Enter opens the menu, Up and Down move
+  through it, OK picks, Esc or the remote's Back closes it.
 - **Audio menu** (`AudioTrackOption`, wording in `TrackText` after the web's `AudioTrackMenu`): the button shows
   once the file has a track and opens with two or more. Above it, 280 to 360 px wide: "AUDIO", then a row per
   track with its name (its title, else the embedded title, else language, codec and channels), chips for the

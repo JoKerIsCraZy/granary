@@ -52,7 +52,7 @@ public sealed class ServerPlaybackSettingsTests
         await _fixture.StartAsync();
 
         Assert.Contains(_fixture.Logs.Lines, line => line.Contains(
-            "This PC plays h264, mpeg2video, hevc (h264, hevc in hardware); HDR originals are played directly", StringComparison.Ordinal));
+            "This PC plays h264, mpeg2video, hevc (h264, hevc in hardware); HDR originals of this title are played directly", StringComparison.Ordinal));
         Assert.Contains(_fixture.Logs.Lines, line => line.Contains(
             "The server's reason: transcode_required; it sends h264 1280x720 sdr (Dolby Vision: output_sdr; warnings: hdr_tone_mapped)", StringComparison.Ordinal));
     }
@@ -259,6 +259,45 @@ public sealed class ServerPlaybackSettingsTests
         await playback.StopAsync();
 
         Assert.Equal(1.5, _fixture.Body(HttpMethod.Put, SpeedPath).GetProperty("value").GetDouble());
+    }
+
+    [Fact]
+    public async Task TheSleepTimersDuration_IsThisDevicesSetting_AndAStartedOneIsSavedForIt()
+    {
+        const string path = "api/v2/settings/values/player.sleep_timer_default_minutes";
+        _fixture.Silo.On(HttpMethod.Get, "api/v2/settings/values/effective", Ok("""
+            { "items": [ { "key": "player.sleep_timer_default_minutes", "value": 45, "source": "profile_device" } ], "revision": 2 }
+            """));
+        _fixture.Silo.On(HttpMethod.Put, path, ScriptedSilo.NoContent());
+        var playback = await _fixture.PlayingAsync();
+        Assert.Equal(45, playback.Preferences.SleepTimerMinutes);
+
+        playback.SetSleepTimerDefault(15);
+        playback.SetSleepTimerDefault(15);
+
+        Assert.Equal(15, playback.Preferences.SleepTimerMinutes);
+        await Until(() => _fixture.Silo.SentTo(HttpMethod.Put, path).Count == 1, "the duration is saved");
+        Assert.Equal("?scope=profile_device", _fixture.Silo.SentTo(HttpMethod.Put, path)[0].Uri.Query);
+        Assert.Equal(15, _fixture.Body(HttpMethod.Put, path).GetProperty("value").GetInt32());
+    }
+
+    [Fact]
+    public async Task EachSleepTimerPick_IsWrittenOnce_InTheOrderPicked()
+    {
+        const string path = "api/v2/settings/values/player.sleep_timer_default_minutes";
+        _fixture.Silo.On(HttpMethod.Put, path, ScriptedSilo.NoContent());
+        _fixture.Silo.On(HttpMethod.Delete, StopPath, Ok(PlaybackPayloads.StopCompleted));
+        var playback = await _fixture.PlayingAsync();
+
+        playback.SetSleepTimerDefault(15);
+        playback.SetSleepTimerDefault(15);
+        playback.SetSleepTimerDefault(45);
+        // The stop waits for the saves on their way.
+        await playback.StopAsync();
+
+        Assert.Equal(2, _fixture.Silo.SentTo(HttpMethod.Put, path).Count);
+        Assert.Equal([15, 45], [_fixture.Body(HttpMethod.Put, path, 0).GetProperty("value").GetInt32(),
+            _fixture.Body(HttpMethod.Put, path, 1).GetProperty("value").GetInt32()]);
     }
 
     // A second file after the one played last.

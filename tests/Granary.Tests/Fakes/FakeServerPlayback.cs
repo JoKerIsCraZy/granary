@@ -186,6 +186,15 @@ internal sealed class FakeServerPlayback : IServerPlayback
 
     public void SetSpeed(double speed) => Speed = speed;
 
+    /// <summary>Every sleep timer duration the player saved as this device's, in order.</summary>
+    public List<int> SleepTimerDefaults { get; } = [];
+
+    public void SetSleepTimerDefault(int minutes)
+    {
+        SleepTimerDefaults.Add(minutes);
+        Preferences = Preferences with { SleepTimerMinutes = minutes };
+    }
+
     /// <summary>Takes a new plan's menu, as TracksChanged reports it.</summary>
     public void RaisePlan(IReadOnlyList<AvailableQuality> qualities, string preference, string? active)
     {

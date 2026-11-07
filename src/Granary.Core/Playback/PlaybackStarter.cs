@@ -37,6 +37,15 @@ public sealed record PlaybackContext(
 
     /// <summary>The viewer picked the file on the detail page: the server may not swap in another version either.</summary>
     public bool VersionPicked { get; init; }
+
+    /// <summary>Every start keeps to <see cref="Version"/>: the server may send none of the title's other files.</summary>
+    public bool KeepsVersion => FilePinned || VersionPicked;
+
+    /// <summary>
+    /// This PC's software decoding choice (Settings → Playback) when the title started, which <see cref="Report"/> follows
+    /// until the title ends, also for another of its files.
+    /// </summary>
+    public bool DecodesInSoftware { get; init; }
 }
 
 /// <summary>
@@ -98,12 +107,17 @@ public sealed class PlaybackStarter(
             ?? throw new PlaybackUnavailableException(pinnedFileId is null ? "This title has no file to play." : "The room's file is not available here.",
                 canRetry: false);
         var capabilities = await CapabilitiesAsync(server, cancellationToken).ConfigureAwait(false);
-        return new PlaybackContext(server, profileId, detail, version, await settings.ConfigureAwait(false), capabilities.InstallationId!, Report(capabilities),
+        bool pinned = pinnedFileId is not null;
+        bool versionPicked = picked?.IsVersionPicked == true;
+        bool software = devicePreferences.DecodesInSoftware;
+        var report = Report(OffersMediaOrigins(capabilities), software, HdrFileCodecs(detail, version, keepsVersion: pinned || versionPicked));
+        return new PlaybackContext(server, profileId, detail, version, await settings.ConfigureAwait(false), capabilities.InstallationId!, report,
             picked?.SubtitleTrack)
         {
             ContentId = contentId,
-            FilePinned = pinnedFileId is not null,
-            VersionPicked = picked?.IsVersionPicked == true,
+            FilePinned = pinned,
+            VersionPicked = versionPicked,
+            DecodesInSoftware = software,
         };
     }
 
@@ -150,14 +164,39 @@ public sealed class PlaybackStarter(
     {
         ArgumentNullException.ThrowIfNull(context);
         var capabilities = await CapabilitiesAsync(context.Server, cancellationToken).ConfigureAwait(false);
-        return context with { InstallationId = capabilities.InstallationId!, Report = Report(capabilities) };
+        var report = Report(OffersMediaOrigins(capabilities), context.DecodesInSoftware, HdrFileCodecs(context.Watch, context.Version, context.KeepsVersion));
+        return context with { InstallationId = capabilities.InstallationId!, Report = report };
     }
 
-    // Proxy-node media only where the server offers it, as Apple's client asks (docs/api-contract.md, 9.1). This PC's
-    // software decoding choice is read at each start, so a change in the settings counts from the next title on.
-    private PlaybackClientReport Report(PlaybackCapabilities capabilities) =>
-        PlaybackReportBuilder.Build(device.Facts, identity.ClientVersion, identity.ClientChannel,
-            capabilities.HasFeature(PlaybackFeatures.AuthorizedMediaOriginsV1), devicePreferences.DecodesInSoftware);
+    /// <summary>
+    /// The same context starting <paramref name="version"/>, another file of the title, with the report for the files that
+    /// start may get. Media origins and software decoding stay as the title's report has them.
+    /// </summary>
+    public PlaybackContext WithVersion(PlaybackContext context, WatchFileVersion version)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(version);
+        bool mediaOrigins = context.Report.ClientFeatures.Contains(PlaybackFeatures.AuthorizedMediaOriginsV1);
+        var report = Report(mediaOrigins, context.DecodesInSoftware, HdrFileCodecs(context.Watch, version, context.KeepsVersion));
+        return context with { Version = version, Report = report };
+    }
+
+    // Proxy-node media only where the server offers it, as Apple's client asks (docs/api-contract.md, 9.1).
+    private static bool OffersMediaOrigins(PlaybackCapabilities capabilities) => capabilities.HasFeature(PlaybackFeatures.AuthorizedMediaOriginsV1);
+
+    // A start's report. This PC's software decoding choice is the one read when the title started, so a change in the
+    // settings counts from the next title on; the HDR claim follows the codecs of the HDR files the start may get.
+    private PlaybackClientReport Report(bool mediaOrigins, bool softwareDecoding, IReadOnlyList<string> hdrFileCodecs) =>
+        PlaybackReportBuilder.Build(device.Facts, identity.ClientVersion, identity.ClientChannel, mediaOrigins, softwareDecoding, hdrFileCodecs);
+
+    // The video codecs of the HDR files the server may send for a start of that version: among its own and, unless the start
+    // keeps to it, the title's other files, which the server may fall back to or resume in. A file that does not say whether
+    // it is HDR counts as HDR, and one without a codec makes them unknown; an SDR file needs no 10-bit decoder.
+    private static IReadOnlyList<string> HdrFileCodecs(WatchDetail watch, WatchFileVersion version, bool keepsVersion)
+    {
+        IEnumerable<WatchFileVersion> files = keepsVersion ? [version] : [version, .. watch.Versions];
+        return [.. files.Where(f => f.MayBeHdr).Select(f => f.CodecVideo)];
+    }
 
     /// <summary>Starts an attempt of <paramref name="context"/>'s file at <paramref name="startPosition"/> (source seconds; null: the server's resume point).</summary>
     public Task<PlaybackDecision> StartAsync(PlaybackContext context, string attemptId, double? startPosition, CancellationToken cancellationToken)
@@ -172,7 +211,7 @@ public sealed class PlaybackStarter(
             PlaybackAttemptId = attemptId,
             // A Watch Party plays one file for everyone, and a version the viewer picked is the one they want: no
             // recovery may pick another.
-            AllowAlternateVersions = context.FilePinned || context.VersionPicked ? false : null,
+            AllowAlternateVersions = context.KeepsVersion ? false : null,
             QualityPreference = context.Preferences.Quality,
             StartPosition = startPosition,
             // Always explicit: an omitted index is resolved from another device header (docs/api-contract.md, 8.8.1).

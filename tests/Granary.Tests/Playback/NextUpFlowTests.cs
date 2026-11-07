@@ -182,6 +182,42 @@ public sealed class NextUpFlowTests
     }
 
     [Fact]
+    public void TheSleepTimersHold_ShowsEverythingWithoutCountingDown_AndLetsGoBeforeTheEnd()
+    {
+        Episode();
+        _flow.Hold(true, _now);
+        Play(2039, 2045);
+        Assert.Equal(NextUpView.Card, _flow.View);
+        Assert.Null(_flow.Seconds);
+        _flow.Hold(false, _now);
+        Assert.Equal(55, _flow.Seconds);
+
+        _flow.Hold(true, _now);
+        _flow.End(_now);
+        Assert.Equal(NextUpView.Screen, _flow.View);
+        Assert.False(_flow.IsCountingDown);
+        Assert.False(_flow.IsAskingStillWatching);
+        Assert.Equal(NextUpStep.None, After(30));
+    }
+
+    [Fact]
+    public void TheSleepTimersHold_StopsACountdownAtTheEnd_AndAutoPlayTurnedOnStartsItAgain()
+    {
+        Episode();
+        _flow.End(_now);
+        Assert.True(_flow.IsCountingDown);
+
+        _flow.Hold(true, _now);
+        Assert.False(_flow.IsCountingDown);
+        Assert.Equal(NextUpStep.None, After(20));
+
+        // The viewer's own choice at the screen goes before the timer's.
+        _flow.SetAutoPlayNext(false, _now);
+        _flow.SetAutoPlayNext(true, _now);
+        Assert.True(_flow.IsCountingDown);
+    }
+
+    [Fact]
     public void TurningAutoPlayOnAtTheEnd_StartsTheCountdown_AndOffStopsIt()
     {
         Episode(MarkerSettings.Default with { AutoPlayNext = false });

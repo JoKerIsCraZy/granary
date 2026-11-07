@@ -8,10 +8,12 @@ using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.Playback;
 
-// The settings menu (docs/api-contract.md, 8.11): the plan's qualities, the title's files, and the speed.
+// The settings menu (docs/api-contract.md, 8.11): the plan's qualities, the title's files, and the speed; and the sleep
+// timer's duration.
 public sealed partial class ServerPlayback
 {
     private const string SpeedKey = "player.playback_speed";
+    private const string SleepTimerKey = "player.sleep_timer_default_minutes";
 
     // An older server still lists the source as a rung; "Auto" is the way back to it.
     private const string SourceQuality = "original";
@@ -85,6 +87,20 @@ public sealed partial class ServerPlayback
         _engine.SetSpeed(speed);
         _speedSave?.Dispose();
         _speedSave = _time.CreateTimer(_ => _dispatcher.Post(SaveSpeedNow), null, SpeedSettle, Timeout.InfiniteTimeSpan);
+    }
+
+    public void SetSleepTimerDefault(int minutes)
+    {
+        minutes = Math.Clamp(minutes, 0, PlaybackPreferencesReader.MaxSleepTimerMinutes);
+        if (_context is not { } context || context.Preferences.SleepTimerMinutes == minutes)
+        {
+            return;
+        }
+        _context = context with { Preferences = context.Preferences with { SleepTimerMinutes = minutes } };
+        using var document = JsonDocument.Parse(minutes.ToString(CultureInfo.InvariantCulture));
+        var value = document.RootElement.Clone();
+        SaveChoice("sleep timer", cancellationToken =>
+            _settings.SetValueAsync(context.Server.BaseUri, SleepTimerKey, value, SettingScopes.ProfileDevice, cancellationToken));
     }
 
     // This device's speed, as the apps keep it.
@@ -170,8 +186,9 @@ public sealed partial class ServerPlayback
         }
         double position = SourcePosition;
         _logger.LogInformation("Switching to another file of the title at {Position:F1} s", position);
-        // Another file has its own subtitle order: its automatic choice applies.
-        _context = context with { Version = version, SubtitlePick = null };
+        // Another file has its own subtitle order: its automatic choice applies. Its codec can change the HDR claim.
+        _context = _starter.WithVersion(context, version) with { SubtitlePick = null };
+        LogReport(_context.Report);
         Recover(() =>
         {
             // A stop meanwhile waits for the start, as for any other, and ends the session it makes.
@@ -233,7 +250,9 @@ public sealed partial class ServerPlayback
     {
         if (!Superseded(generation) && _context is { } context)
         {
-            _context = context with { Version = previous.Version, SubtitlePick = previous.SubtitlePick };
+            _context = _starter.WithVersion(context, previous.Version) with { SubtitlePick = previous.SubtitlePick };
+            // The log named the turned-down file's report last.
+            LogReport(_context.Report);
             TracksChanged?.Invoke(this, EventArgs.Empty);
         }
     }

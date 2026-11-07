@@ -50,9 +50,10 @@ Small steps, as while the window's edge is dragged, are passed on at once and ke
 
 Because there is no window, mpv cannot query the monitor: the app must pass HDR target settings and
 the display refresh rate itself (Phase 3). Until it does, the output is SDR, and mpv tone-maps HDR and
-Dolby Vision originals onto it. Where the GPU decodes HDR video at 10 bits, Granary claims that on direct play
-(`client_managed_dynamic_range_v1`, docs/api-contract.md 13.2), so the server sends HDR files as they are
-instead of tone-mapping them in a transcode.
+Dolby Vision originals onto it. Where the GPU decodes the codec of the title's HDR files at 10 bits, Granary claims
+that on direct play (`client_managed_dynamic_range_v1`, docs/api-contract.md 13.2), so the server sends HDR files
+as they are instead of tone-mapping them in a transcode. `PlaybackStarter` builds the report for the files a start
+may get, again when the viewer switches files in the player and after the server was reinstalled.
 
 ## Your own mpv.conf
 
@@ -392,9 +393,10 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   start position (the resume point minus 7 s from 30 s on, 0 to start over, sent explicitly), the profile's
   quality and bitrate cap (`PlaybackPreferencesReader`), the server's capabilities, and the device report:
   `MpvDeviceProbe` reads the GPU's D3D11VA decoder profiles, and logs them once; HEVC, VP9 and AV1 count only with
-  hardware, unless this PC's choice of direct play without hardware decoding (`IPlaybackDevicePreferences`, read at each
-  start) adds them for direct play and claims HDR tone mapping; HLS keeps the list without them. Each start logs what the
-  report declares, and each plan the server's reason (`ServerPlayback.Diagnostics.cs`).
+  hardware, unless this PC's choice of direct play without hardware decoding (`IPlaybackDevicePreferences`, read once when
+  the title starts and kept through its file switches and new attempts) adds them for direct play and claims HDR tone
+  mapping; HLS keeps the list without them. Each start and file switch logs what the report declares, and each plan the
+  server's reason (`ServerPlayback.Diagnostics.cs`).
 - **The detail page's pickers** (`PrePlayPickers`, `ItemDetailViewModel.PrePlay`): the Version, Audio and Subs of a
   movie or episode, shown from the catalog item with the same rules the start applies (`ChooseVersion`,
   `SubtitleAutoSelection`). Play passes the viewer's picks on as the `PlayRequest`'s `PrePlayChoice`; the starter takes
@@ -481,10 +483,22 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   end (the web's post-roll), and at the end a 10 s countdown, when `playback.auto_play_next` is on, the viewer did
   not turn the prompt away (Cancel, Keep watching, a pause or seek during the card), and fewer episodes in a row started
   by themselves than Settings' Still watching prompt allows (`AutoPlayStreak`, Android's pass-out gate; 3 by default,
-  Unlimited never holds back). The next episode starts as a new playback
+  Unlimited never holds back), and the sleep timer does not hold it (`NextUpFlow.Hold`). The next episode starts as a new playback
   from 0; the saved track preferences carry the picks over. The transport's previous and next episode buttons start
   theirs from the resume point, as the web player does for the viewer; the previous one is the largest episode before
   this one in the current season that has a readable file, as the web finds it, none before the season's first.
+- **Sleep timer** (`PlayerViewModel.SleepTimer.cs`; the apps' `SleepTimer` and `SleepTimerController`, the web's
+  `SleepTimerMenu`): a duration counts on the player's `TimeProvider` once a second, whatever plays, pauses or loads
+  meanwhile, so it runs on into the next episode, and then pauses what plays, with no fade (a title already paused is left
+  as it is). Run out while the next title loads, it pauses that title once it plays; at an episode's end, it stops the
+  countdown to the next one; after a failure it just ends. In a Watch Party
+  the viewer leaves the room instead, as Apple's player does; a room taking over, and leaving the player, end the timer.
+  End of episode holds the next episode back (`NextUpFlow.Hold`: the card counts nothing and the end waits, as with
+  auto-play off) for whatever plays when the end comes, and ends with that end; once a title has ended the menu does not
+  offer it. The page hands the menu its rows as it opens and keeps them while it is open (as `DetailHero`'s pickers), so a
+  change under it cannot take the focus out. The menu opens on this device's
+  `player.sleep_timer_default_minutes` (read with the playback's settings, in a batch of its own); a duration started is
+  saved there, as Android keeps the last one (`ServerPlayback.SetSleepTimerDefault`, `profile_device`).
 - **Chapters** (11.3): the playing file's `chapters` from the watch detail (mpv reads none through a remux or a
   transcode), in order, empty ones left out, pictures resolved against the server; they make the Chapters menu, the
   seek bar's ticks and the chapter named in its bubble.

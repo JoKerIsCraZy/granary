@@ -65,6 +65,21 @@ public sealed class WatchApiTests
         Assert.Equal("path.id", Assert.Single(error.Problem.Errors!).Location);
     }
 
+    [Theory]
+    [InlineData("\"hdr\": true,", true, true)]
+    [InlineData("\"hdr\": false,", false, false)]
+    [InlineData("", false, true)]
+    public void AVersionThatDoesNotSayWhetherItIsHdr_MayBeHdr(string hdr, bool isHdr, bool mayBeHdr)
+    {
+        // A choice that must not miss HDR cannot read a missing flag as SDR.
+        Assert.Contains("\"hdr\": false,", PlaybackPayloads.WatchStateOk, StringComparison.Ordinal);
+        var version = Assert.Single(Parse(PlaybackPayloads.WatchStateOk.Replace("\"hdr\": false,", hdr, StringComparison.Ordinal)).Versions);
+
+        Assert.Equal((isHdr, mayBeHdr), (version.Hdr, version.MayBeHdr));
+        Assert.True(new WatchFileVersion { Hdr = true }.MayBeHdr);
+        Assert.False(new WatchFileVersion { Hdr = false }.MayBeHdr);
+    }
+
     [Fact]
     public void Fixture_ReadsTheVersionResumeAndMarkers()
     {
