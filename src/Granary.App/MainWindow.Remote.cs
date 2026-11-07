@@ -71,7 +71,7 @@ public sealed partial class MainWindow
             _returning = e.NavigationMode == NavigationMode.Back ? ContentFrame.BackStack.LastOrDefault() : null;
         };
         ContentFrame.Navigated += OnFrameNavigated;
-        AppCommandHook.Install(WinRT.Interop.WindowNative.GetWindowHandle(this), TakeAppCommand);
+        WindowMessageHook.Install(WinRT.Interop.WindowNative.GetWindowHandle(this), TakeAppCommand);
     }
 
     // A remote's Play sent as a command, not as a key: on the focused card or title, as the Play key, while nothing plays;
@@ -80,7 +80,7 @@ public sealed partial class MainWindow
     {
         try
         {
-            return command == AppCommandHook.MediaPlay && PlayFocused();
+            return command == WindowMessageHook.MediaPlay && PlayFocused();
         }
         catch (Exception ex)
         {

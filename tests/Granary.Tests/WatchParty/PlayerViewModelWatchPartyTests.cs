@@ -454,5 +454,55 @@ public sealed class PlayerViewModelWatchPartyTests : IAsyncDisposable
         Assert.Equal((true, false), (controls.Current!.CanPlayPause, controls.Current.CanSeek));
     }
 
+    [Fact]
+    public async Task InARoom_TheTaskbarsPlayPause_AsksTheRoom()
+    {
+        var viewModel = await PlayingAsync();
+        var button = new FakeTaskbarPlayButton();
+        using var taskbar = new PlayerTaskbarButton(viewModel, button, new ImmediateDispatcher());
+
+        Assert.Equal(new TaskbarPlayButtonState(IsPaused: false, IsEnabled: true), button.Current);
+
+        button.Press();
+
+        Assert.False(_engine.Current.IsPaused);
+        await ServerPlaybackFixture.Until(() => Socket.Sent.Any(f => f.Contains("\"action\":\"pause\"", StringComparison.Ordinal)), "the request");
+    }
+
+    [Fact]
+    public async Task AGuestTheRoomDoesNotLetPause_HasTheTaskbarsPlayPauseOff_AndAPressAsksNothing()
+    {
+        var viewModel = await PlayingAsync(role: "guest", transport: false);
+        var button = new FakeTaskbarPlayButton();
+        using var taskbar = new PlayerTaskbarButton(viewModel, button, new ImmediateDispatcher());
+
+        Assert.Equal(new TaskbarPlayButtonState(IsPaused: false, IsEnabled: false), button.Current);
+
+        button.Press();
+
+        Assert.False(_engine.Current.IsPaused);
+        Assert.Null(viewModel.Notice);
+        Assert.DoesNotContain(Socket.Sent, f => f.Contains("\"transport_request\"", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task TheRoomTakingAGuestsPauseAway_TurnsTheTaskbarsPlayPauseOff_AndAPressFromBeforeAsksNothing()
+    {
+        var viewModel = await PlayingAsync(role: "guest");
+        var button = new FakeTaskbarPlayButton();
+        var dispatcher = new QueuedDispatcher();
+        using var taskbar = new PlayerTaskbarButton(viewModel, button, dispatcher);
+        Assert.True(button.Current!.IsEnabled);
+        button.Press();
+
+        Socket.Push(WatchPartyPayloads.Snapshot(WatchPartyPayloads.Room("playing", "playing", generation: 4, revision: 1, role: "guest",
+            selected: "movie:heat", transport: false)));
+        await ServerPlaybackFixture.Until(() => button.Current is { IsEnabled: false }, "the button turned off");
+        dispatcher.RunAll();
+
+        Assert.False(_engine.Current.IsPaused);
+        Assert.DoesNotContain(Socket.Sent, f => f.Contains("\"transport_request\"", StringComparison.Ordinal));
+    }
+
     public async ValueTask DisposeAsync() => await _party.LeaveAsync();
 }

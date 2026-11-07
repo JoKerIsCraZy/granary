@@ -132,7 +132,10 @@ public sealed class PlayerSystemMedia : IDisposable
     // What the buttons may do now, the same for what the controls show and for a press: Windows shows a change a moment
     // later, and a press it queued before (a room that took a guest's pause away, a player just left) must not act on the
     // state that was. In a Watch Party play and pause are the host's and those of a guest the room lets, seeking the host's.
-    private bool CanPlayPause => !_player.HasLeft && _player.IsPlaying && _player.CanPauseInRoom;
+    private bool CanPlayPause => PlayPauseWorks(_player);
+
+    /// <summary>Whether play and pause work now; the taskbar's Play/Pause (<see cref="PlayerTaskbarButton"/>) follows it too.</summary>
+    internal static bool PlayPauseWorks(PlayerViewModel player) => !player.HasLeft && player.IsPlaying && player.CanPauseInRoom;
 
     private bool CanSeek => !_player.HasLeft && _player.IsPlaying && _player.CanSeek && _player.CanSeekInRoom;
 

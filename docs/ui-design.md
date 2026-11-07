@@ -543,7 +543,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     first entry; shown after a key, quiet after a click.
   - Play/Pause (a media key) on a card plays it, as its play disc does, an episode on a title's page too; anywhere else
     on a title's page it plays the title. A remote that sends Play as a window command (WM_APPCOMMAND, as Media Center
-    remotes do; `Interop/AppCommandHook.cs`) does the same. While something plays, full or as the bar, the key stays
+    remotes do; `Interop/WindowMessageHook.cs`) does the same. While something plays, full or as the bar, the key stays
     Windows' media session's and pauses that.
   - Episode cards on a title's page count as cards: they come to the middle, and Back returns to them. A title's page
     is made again when Back returns to it; its mark goes with its history entry and finds the card in the new lists.
@@ -1033,6 +1033,14 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   End Party and Cancel. One call at a time: the buttons wait while one is on its way. Invite and the policy say what they
   did as the player's notice in the web's toast words ("Invite copied. Room code ABCD1234", "Guests can now pause and
   resume"); Stop closes the player back to the room's lobby and End goes on to Watch Party, so they only say a failure.
+- **Play/Pause in the taskbar preview** (`PlayerTaskbarButton`; Granary's own): hovering over Granary's taskbar button
+  shows one button under the window's preview, while the player has a title, from its load until the player is left
+  (minimized to the bar, in the mini view and with the window minimized too). Two bars with the tip "Pause" while it
+  plays, a triangle with "Play" while paused, white at Windows' small-icon size, as the player's own Play/Pause names
+  itself. It is off (Windows greys it) while play and pause are, by the media keys' rule below: while the title loads,
+  after it failed or ended, and in a Watch Party for a guest the room does not let pause. A press is the player's
+  Play/Pause, so in a Watch Party it asks the room. Leaving the player hides it at once: Windows keeps a button once
+  added, so it is hidden, not removed. It changes only with what it shows, never as the position moves on.
 - **Media keys and Windows' media overlay** (System Media Transport Controls), while the player is open, minimized to the
   bar or in the mini view too: two lines as Silo's apps write them for the system (an episode's own title over "Dark — S1
   · E5", a movie's title over its year, a local file's name), the movie's poster or the episode's still (else the
