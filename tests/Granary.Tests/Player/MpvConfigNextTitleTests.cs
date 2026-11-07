@@ -791,11 +791,15 @@ public sealed class MpvConfigNextTitleTests : IDisposable
         Assert.Equal(1, Count("A new mpv did not start without mpv.conf; the one before plays on"));
 
         // The plain start fails again: the title never reaches the mpv that still holds the rejected file.
+        int filesOpened = 0;
+        engine.BeforeLoadFile = () => Interlocked.Increment(ref filesOpened);
         long refused = engine.Load(MediaSource.Local(TempWav(0.5)));
 
         await Until(() => Ended(refused, PlaybackEndReason.Error), () => _logs.All);
         Assert.True(refused > first);
-        Assert.Null(engine.Option("path"));
+        // mpv lets go of the first title in its own time, after the stop returned.
+        await Until(() => engine.Option("path") is null, () => _logs.All);
+        Assert.Equal(0, Volatile.Read(ref filesOpened));
         Assert.False(engine.Current.IsLoaded);
         Assert.Equal(refused, engine.Current.LoadId);
         Assert.Equal(2, Count("A new mpv did not start without mpv.conf; the one before plays on"));

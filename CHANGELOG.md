@@ -8,6 +8,8 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Fixed
 
+- Dolby Vision files with an HDR10, HLG or SDR base layer play directly on a server that wants each base layer named,
+  where it converted them.
 - Saving mpv.conf or loading a preset no longer fails when Granary happens to be reading the file at that moment.
 
 ## [0.2.1] - 2026-11-05

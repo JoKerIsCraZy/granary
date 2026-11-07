@@ -133,6 +133,52 @@ public sealed class PlaybackReportBuilderTests
     }
 
     [Fact]
+    public void OriginalHttp_NamesTheDolbyVisionBaseLayersItShows_WhereItMapsHdrItself()
+    {
+        var report = PlaybackReportBuilder.Build(Gpu with { HardwareTenBitVideoCodecs = ["hevc", "vp9", "av1"] }, "1.0.0");
+
+        var original = report.ClientPlaybackContext.Deliveries[DeliveryClasses.OriginalHttp];
+        Assert.Equal(
+            [
+                DeliveryClaims.ClientSelectedAudioTrackV1,
+                DeliveryClaims.ClientManagedDynamicRangeV1,
+                "client_managed_dv_bl_compat_1_v1",
+                "client_managed_dv_bl_compat_2_v1",
+                "client_managed_dv_bl_compat_4_v1",
+                "client_managed_dv_bl_compat_6_v1",
+            ],
+            original.ValidatedClaims);
+    }
+
+    [Fact]
+    public void OriginalHttp_NamesThemWithSoftwareDecoding_AsItMapsHdrThenToo()
+    {
+        var report = PlaybackReportBuilder.Build(
+            PlaybackRequests.Facts with { HardwareVideoCodecs = [], HardwareTenBitVideoCodecs = [] }, "1.0.0", softwareDecoding: true);
+
+        var original = report.ClientPlaybackContext.Deliveries[DeliveryClasses.OriginalHttp];
+        Assert.Contains("client_managed_dv_bl_compat_1_v1", original.ValidatedClaims);
+    }
+
+    [Fact]
+    public void OriginalHttp_NamesNoBaseLayer_WhereTheServerKeepsHdr()
+    {
+        var report = PlaybackReportBuilder.Build(Gpu with { HardwareTenBitVideoCodecs = ["vp9", "av1"] }, "1.0.0");
+
+        var original = report.ClientPlaybackContext.Deliveries[DeliveryClasses.OriginalHttp];
+        Assert.DoesNotContain(original.ValidatedClaims, claim => claim.StartsWith("client_managed_dv_bl_compat_", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Hls_NamesNoBaseLayer_AsTheClaimsAreAboutTheOriginalFile()
+    {
+        var report = PlaybackReportBuilder.Build(Gpu with { HardwareTenBitVideoCodecs = ["hevc", "vp9", "av1"] }, "1.0.0");
+
+        var hls = report.ClientPlaybackContext.Deliveries[DeliveryClasses.Hls];
+        Assert.DoesNotContain(hls.ValidatedClaims, claim => claim.StartsWith("client_managed_dv_bl_compat_", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void OriginalHttp_LeavesHdrToTheServer_WhenTheGpuDecodesEightBitHevcOnly()
     {
         // HDR is 10-bit; without a 10-bit decoder the CPU would decode a 4K HDR original, so the server tone-maps it.
@@ -213,7 +259,7 @@ public sealed class PlaybackReportBuilderTests
         var body = JsonNode.Parse(PlaybackRequests.Json(PlaybackRequests.Start()))!.AsObject();
 
         var claims = body["client_playback_context"]!["deliveries"]!["original_http"]!["validated_claims"]!.AsArray();
-        Assert.Equal(["client_selected_audio_track_v1", "client_managed_dynamic_range_v1"], claims.Select(c => (string)c!));
+        Assert.Equal(["client_selected_audio_track_v1", "client_managed_dynamic_range_v1", "client_managed_dv_bl_compat_1_v1", "client_managed_dv_bl_compat_2_v1", "client_managed_dv_bl_compat_4_v1", "client_managed_dv_bl_compat_6_v1"], claims.Select(c => (string)c!));
     }
 
     [Fact]
@@ -221,7 +267,7 @@ public sealed class PlaybackReportBuilderTests
     {
         var original = Report.ClientPlaybackContext.Deliveries[DeliveryClasses.OriginalHttp];
 
-        Assert.Equal([DeliveryClaims.ClientSelectedAudioTrackV1, DeliveryClaims.ClientManagedDynamicRangeV1], original.ValidatedClaims);
+        Assert.Equal([DeliveryClaims.ClientSelectedAudioTrackV1, DeliveryClaims.ClientManagedDynamicRangeV1, .. DeliveryClaims.ClientManagedDolbyVisionBaseLayersV1], original.ValidatedClaims);
         Assert.Equal(Report.ClientCapabilities.Containers, original.Containers);
         var subtitles = original.Subtitles;
         Assert.Equal((true, true, true, true, false, true),
