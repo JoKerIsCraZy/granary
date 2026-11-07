@@ -739,10 +739,12 @@ An opt-in status in Discord while a title plays (Settings → Playback → This 
   (`PlaybackMediaKind.Direct`) never shows, and a lookup's answer is taken only while its title still plays.
 - **`TmdbTitleLookup`** (Core, a singleton) finds the poster and the TMDB page through the server, so Granary needs no
   TMDB key of its own: the catalog item's `tmdb_id` (the movie's, an episode's series'), then the requests detail's
-  `poster_path` (docs/api-contract.md, 7.6 and 7.15). It runs only while the setting is on, once per title and server,
-  and keeps the answer for the run, none included; a server that could not be reached or was busy (429, 5xx) is asked
-  again for the next title. Only TMDB's own addresses (`TmdbImages.Poster`, `www.themoviedb.org`) reach Discord: an
-  address of the user's server would show it to everyone who looks at the profile.
+  `poster_path` (docs/api-contract.md, 7.6 and 7.15). It runs only while the setting is on, once per title, server and
+  profile (the session's, which the requests go out as: a child's profile may be refused what another sees), and keeps
+  the answer for the run, none included; an answer read while the session went to another profile or server is dropped,
+  and a server that could not be reached or was busy (429, 5xx) is asked again for the next title. Only TMDB's own
+  addresses (`TmdbImages.Poster`, `www.themoviedb.org`) reach Discord: an address of the user's server would show it to
+  everyone who looks at the profile.
 - **`DiscordStatus`** (App) implements the port with the DiscordRichPresence library over Discord's local pipe, as
   Granary's Discord application (`DiscordStatus.ApplicationId`, whose Rich Presence assets hold the `granary` picture).
   It connects with the first status to show, sends only while Discord is connected, and the latest status again when

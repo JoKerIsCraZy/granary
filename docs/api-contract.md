@@ -1002,8 +1002,9 @@ tracks ([8.8.1](#881-initial-track-selection-before-start)) → `POST /api/v2/pl
   The Discord status also reads it for the playing title's poster (`series` for an episode's series, while TMDB's own
   pages say `tv`): `poster_path` at TMDB's `w500`, taken only when it is a TMDB image name (`TmdbImages.Poster`). With
   Requests off the server answers a problem instead (409 `capability_disabled` or `capability_not_configured`, 403, or 404
-  for a title TMDB does not know): the status then shows Granary's own picture. Such an answer holds for the run; a
-  transport failure, 429 or 5xx is tried again for the next title.
+  for a title TMDB does not know, or one the profile may not see): the status then shows Granary's own picture. Such an
+  answer holds for the run and the profile it was read as; a transport failure, 429 or 5xx is tried again for the next
+  title.
 - `POST /api/v2/requests` with `{ "media_type", "tmdb_id", "title", "year"?, "overview"?, "poster_path"?,
   "backdrop_path"?, "seasons"? }` → `201` with the request. Not idempotent: never retried. Without `seasons` the server
   picks a series' aired seasons still missing, or the whole series when none aired. `GET /api/v2/requests/{id}` → one

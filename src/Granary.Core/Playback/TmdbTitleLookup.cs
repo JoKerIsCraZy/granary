@@ -16,7 +16,8 @@ public sealed record TmdbTitle(Uri Page, Uri? Poster);
 /// The TMDB page and poster of the title that plays, for the Discord status, read through the server so Granary needs no
 /// TMDB key of its own: the catalog item's <c>tmdb_id</c>, then the requests detail's <c>poster_path</c>
 /// (docs/api-contract.md, 7.6 and 7.15). Only TMDB's own addresses come out, never one of the server's, which would show
-/// its address to everyone who looks at the status. An answer is kept for the run, none too; a server that could not be
+/// its address to everyone who looks at the status. An answer is kept for the run, none too, for the profile it was read
+/// as: a profile that may not see a title, as a child's, is refused where another is not. A server that could not be
 /// reached or was busy is asked again for the next title.
 /// </summary>
 public sealed class TmdbTitleLookup(CatalogApi catalog, RequestsApi requests, ISessionManager session, ILogger<TmdbTitleLookup> logger)
@@ -27,7 +28,7 @@ public sealed class TmdbTitleLookup(CatalogApi catalog, RequestsApi requests, IS
     private const string Site = "https://www.themoviedb.org/";
 
     private readonly Lock _gate = new();
-    private readonly Dictionary<(string Server, PlaybackMediaKind Kind, string Id), Task<Lookup>> _reads = [];
+    private readonly Dictionary<(string Server, string? Profile, PlaybackMediaKind Kind, string Id), Task<Lookup>> _reads = [];
 
     /// <summary>
     /// The page and poster of the movie <paramref name="catalogId"/>, or of the series <paramref name="catalogId"/> of an
@@ -40,18 +41,27 @@ public sealed class TmdbTitleLookup(CatalogApi catalog, RequestsApi requests, IS
         {
             return null;
         }
+        // The profile the requests go out as (SiloAuth.Profile takes the session's).
+        string? profile = session.ProfileId;
         Task<Lookup> read;
         lock (_gate)
         {
-            var key = (server.Id, kind, catalogId);
+            var key = (server.Id, profile, kind, catalogId);
             if (!_reads.TryGetValue(key, out read!) || read is { IsCompletedSuccessfully: true, Result.IsFinal: false })
             {
                 // Off the caller's thread, which is the UI's, and outside the lock.
-                read = Task.Run(() => ReadAsync(server.BaseUri, kind, catalogId), CancellationToken.None);
+                read = Task.Run(() => ReadAsProfileAsync(server.Id, server.BaseUri, profile, kind, catalogId), CancellationToken.None);
                 _reads[key] = read;
             }
         }
         return (await read.WaitAsync(cancellationToken).ConfigureAwait(false)).Title;
+    }
+
+    // An answer read while the session went to another profile or server may be that one's: it is neither kept nor shown.
+    private async Task<Lookup> ReadAsProfileAsync(string serverId, Uri server, string? profile, PlaybackMediaKind kind, string catalogId)
+    {
+        var lookup = await ReadAsync(server, kind, catalogId).ConfigureAwait(false);
+        return session.ActiveServer?.Id == serverId && session.ProfileId == profile ? lookup : new Lookup(null, IsFinal: false);
     }
 
     private async Task<Lookup> ReadAsync(Uri server, PlaybackMediaKind kind, string catalogId)

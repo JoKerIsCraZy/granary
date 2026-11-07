@@ -178,6 +178,46 @@ public sealed class TmdbTitleLookupTests
     }
 
     [Fact]
+    public async Task EachProfile_HasItsOwnAnswers_SoOnesRefusalLeavesAnothersPosterAlone()
+    {
+        // A profile that may not see the title (a child's, say) is refused; another profile of the account is not.
+        _silo.On(HttpMethod.Get, TmdbPayloads.HeatDetailPath, ScriptedSilo.Problem(404, ProblemCodes.NotFound),
+            ScriptedSilo.Json(HttpStatusCode.OK, TmdbPayloads.HeatDetail));
+        var lookup = Create();
+
+        Assert.Equal(new TmdbTitle(TmdbPayloads.HeatPage, null), await lookup.FindAsync(PlaybackMediaKind.Movie, TmdbPayloads.HeatId, Token));
+        _session.ProfileId = "8";
+        Assert.Equal(new TmdbTitle(TmdbPayloads.HeatPage, TmdbPayloads.HeatPoster), await lookup.FindAsync(PlaybackMediaKind.Movie, TmdbPayloads.HeatId, Token));
+        _session.ProfileId = "7";
+        Assert.Equal(new TmdbTitle(TmdbPayloads.HeatPage, null), await lookup.FindAsync(PlaybackMediaKind.Movie, TmdbPayloads.HeatId, Token));
+
+        Assert.Equal((2, 2), (Asked(TmdbPayloads.HeatItemPath), Asked(TmdbPayloads.HeatDetailPath)));
+    }
+
+    [Fact]
+    public async Task AnAnswerReadWhileTheProfileChanged_IsDropped_AndNotKeptForEither()
+    {
+        var answer = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _silo.On(HttpMethod.Get, TmdbPayloads.HeatDetailPath, async () =>
+        {
+            await answer.Task;
+            return await ScriptedSilo.Json(HttpStatusCode.OK, TmdbPayloads.HeatDetail)();
+        }, ScriptedSilo.Json(HttpStatusCode.OK, TmdbPayloads.HeatDetail));
+        var lookup = Create();
+
+        var first = lookup.FindAsync(PlaybackMediaKind.Movie, TmdbPayloads.HeatId, Token);
+        await ServerPlaybackFixture.Until(() => Asked(TmdbPayloads.HeatDetailPath) == 1, "the poster's request");
+        _session.ProfileId = "8";
+        answer.SetResult();
+
+        Assert.Null(await first);
+        Assert.Equal(new TmdbTitle(TmdbPayloads.HeatPage, TmdbPayloads.HeatPoster), await lookup.FindAsync(PlaybackMediaKind.Movie, TmdbPayloads.HeatId, Token));
+        _session.ProfileId = "7";
+        Assert.Equal(new TmdbTitle(TmdbPayloads.HeatPage, TmdbPayloads.HeatPoster), await lookup.FindAsync(PlaybackMediaKind.Movie, TmdbPayloads.HeatId, Token));
+        Assert.Equal((3, 3), (Asked(TmdbPayloads.HeatItemPath), Asked(TmdbPayloads.HeatDetailPath)));
+    }
+
+    [Fact]
     public async Task EachServer_HasItsOwnAnswers()
     {
         var other = ScriptedSilo.Entry("srv2", new Uri("https://other.example/"));
