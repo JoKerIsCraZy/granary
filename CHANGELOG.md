@@ -6,6 +6,13 @@ release's section is what its update says it changes (docs/release.md).
 
 ## [Unreleased]
 
+### Added
+
+- **Discord status:** turn on Settings → Playback → This PC → Show what's playing in Discord, and while Granary plays,
+  your Discord status says what you're watching: the series or film, the season and episode, the poster and the time
+  left, with a link to the title on TMDB. Paused shows as paused, and the status goes when you stop. It needs the Discord
+  app on this PC, and the poster shows when your Silo server has Requests turned on.
+
 ### Fixed
 
 - Dolby Vision files with an HDR10, HLG or SDR base layer play directly on a server that wants each base layer named,

@@ -20,7 +20,8 @@ Dependencies point inward only: `App → Player → Core`, and `App → Core`.
   Core defines the ports the other layers implement: `IPlaybackEngine`, `IUiDispatcher`,
   `INavigationService`, `ISecretStore`, and `ISystemMediaControls` for Windows' media keys and their overlay
   (`PlayerSystemMedia` decides what they show and maps their buttons to the player's commands; the App's
-  `WindowsMediaControls` drives the main window's System Media Transport Controls). `IReleaseFiles` gives
+  `WindowsMediaControls` drives the main window's System Media Transport Controls), and `IRichPresence` for Discord's
+  status (see Discord status). `IReleaseFiles` gives
   `SignedReleaseVerifier` a release's SHA256SUMS and its signature, and the package on disk to hash and read; Core's own
   `HttpReleaseFiles` implements it, and the tests fake it (docs/release.md, "Signed releases").
 - **Player** implements `IPlaybackEngine` on libmpv and exposes the video side as
@@ -706,6 +707,28 @@ panel follow it. It joins or opens the room over HTTP and keeps the room socket 
   its position reported. The hub says why in the web's words (`WatchPartyText`) until it is dismissed, which leaves the
   room on this device. A room that only stopped playing is still on: the player closes, and the room page under it shows
   again.
+
+## Discord status
+
+An opt-in status in Discord while a title plays (Settings → Playback → This PC, `IPlaybackDevicePreferences.DiscordStatus`
+in `playback-device.json`); docs/ui-design.md says what it shows.
+
+- **`PlayerRichPresence`** (Core, beside `PlayerSystemMedia` and made and disposed with it by the player page) reads the
+  player and the setting and shows the result on the port `IRichPresence`. Like `PlayerSystemMedia`, it sends only a
+  change of what shows: Discord runs the timeline on by itself, so a position tick sends nothing, a jump of more than 3
+  seconds does. Discord takes about 5 updates in 20 seconds, so one goes out at most every 4 seconds; a change that has
+  to wait goes out on a timer as the player is by then. Clearing goes at once.
+- **`TmdbTitleLookup`** (Core, a singleton) finds the poster and the TMDB page through the server, so Granary needs no
+  TMDB key of its own: the catalog item's `tmdb_id` (the movie's, an episode's series'), then the requests detail's
+  `poster_path` (docs/api-contract.md, 7.6 and 7.15). It runs only while the setting is on, once per title and server,
+  and keeps the answer for the run, none included; a server that could not be reached or was busy (429, 5xx) is asked
+  again for the next title. Only TMDB's own addresses (`TmdbImages.Poster`, `www.themoviedb.org`) reach Discord: an
+  address of the user's server would show it to everyone who looks at the profile.
+- **`DiscordStatus`** (App) implements the port with the DiscordRichPresence library over Discord's local pipe, as
+  Granary's Discord application (`DiscordStatus.ApplicationId`, whose Rich Presence assets hold the `granary` picture).
+  It connects with the first status to show, sends only while Discord is connected, and the latest status again when
+  Discord connects or restarts. Without Discord the library keeps trying in the background, which the log says once; a
+  clear while Discord is not there stops it. It is disposed when the window closes.
 
 ## Windows App SDK
 

@@ -338,6 +338,29 @@ public sealed class SettingsViewModelTests : IDisposable
     }
 
     [Fact]
+    public void TheDiscordStatus_IsThisPcsChoice_OffAtFirst()
+    {
+        var page = Playback();
+        Assert.False(page.DiscordStatus);
+
+        page.DiscordStatus = true;
+
+        Assert.Equal([true], _device.SavedDiscordStatus);
+        Assert.Empty(_settings.Writes);
+    }
+
+    [Fact]
+    public void TheDiscordStatus_ShowsWhatThisPcHolds_WithoutSavingIt()
+    {
+        _device.DiscordStatus = true;
+
+        var page = Playback();
+
+        Assert.True(page.DiscordStatus);
+        Assert.Empty(_device.SavedDiscordStatus);
+    }
+
+    [Fact]
     public void UpAndDownInThePlayer_IsThisPcsChoice_ControlsAndMenusFirst()
     {
         var page = Playback();

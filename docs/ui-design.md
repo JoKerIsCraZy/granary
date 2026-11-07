@@ -620,8 +620,10 @@ says why above the sections.
   Controls and menus (the default, as Silo's TV app) and Volume (the web player's keys), which the
   player follows at its next key; Still watching prompt, a select with Unlimited, 2 to 5 episodes (the Android app's
   choices, 3 by default) and Custom, which shows a number box from 1 to 20 (the contract's highest), counting from the
-  next episode; and mpv configuration, see below. Granary's own and kept on the PC, so nothing saves
-  to the server), Connection (the latest speed reading and what Auto plays without converting), Skipping (skip
+  next episode; mpv configuration, see below; and Show what's playing in Discord, a switch at the group's end, off by
+  default ("Your Discord status shows the title, the episode and the time left while Granary plays. Needs the Discord app
+  on this PC."), which a title that plays follows at once (the Discord status, under Player). Granary's own and kept on
+  the PC, so nothing saves to the server), Connection (the latest speed reading and what Auto plays without converting), Skipping (skip
   intros, auto-skip recaps and credits), Next episode (start next at preview, auto-play), Seek controls (rewind and
   fast-forward intervals).
 - **This PC → mpv configuration**: "Use your own mpv options from mpv.conf, such as shaders, scaling or debanding.
@@ -1016,6 +1018,21 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   host only, and there are no episodes around. A key whose button is off does nothing, also one Windows sent before the
   room took a right away. Loading shows as changing, a failed title as stopped, and leaving the player (Exit, a movie's
   end, the room moving on) takes Granary off the overlay at once.
+- **Discord status** (`PlayerRichPresence`; Granary's own), while Settings → Playback → This PC → Show what's playing in
+  Discord is on and the Discord app runs on this PC, the player minimized to the bar or in the mini view too. Discord
+  writes "Watching" itself, in the viewer's language, and the member list shows the first line ("Watching Dark", not
+  "Watching Granary"). The lines are English: the series over "S01E03 · Secrets" (two digits at least, the code alone for
+  an episode without a title), a film over its year (nothing without one), anything else, such as a local file, by the
+  title the player shows; while paused " · Paused" after the second line, or "Paused" alone. While it plays, a timeline
+  with the time left, in real time at another speed; none while paused or before the length is known. The picture is the
+  title's TMDB poster (a film's own, an episode's series'), with Granary's logo small in its corner ("Granary") and the
+  first line as its tooltip; without a poster (Requests off on the server, a local file) Granary's logo alone. "View on
+  TMDB" opens the film's or the series' TMDB page, when the server knows its TMDB id. Never anything of the server's
+  address. A line is cut to Discord's 128 bytes with "…", and a one-letter title is padded so Discord takes it. It goes
+  as soon as nothing plays (the player left, a title loading, failed or ended) or the switch is off, and shows again when
+  it is turned on. Discord takes about 5 updates in 20 seconds, so it changes only with what it shows (another title, a
+  pause, a seek or stall of more than 3 seconds, the length once known, the speed), at most every 4 seconds with the
+  latest state; playing on sends nothing.
 - **Fill screen** (the web's video fit): the picture fills the page and is cut where it does not fit (mpv `panscan`);
   a new title shows its whole picture again.
 - **Mini view** (the web's Picture in Picture, P): the window becomes small (480 by 270), stays above the others

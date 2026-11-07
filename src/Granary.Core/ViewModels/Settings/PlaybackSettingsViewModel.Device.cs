@@ -121,6 +121,19 @@ public sealed partial class PlaybackSettingsViewModel
         }
     }
 
+    /// <summary>Discord's status shows what plays (<see cref="IPlaybackDevicePreferences.DiscordStatus"/>).</summary>
+    [ObservableProperty]
+    public partial bool DiscordStatus { get; set; }
+
+    partial void OnDiscordStatusChanged(bool value)
+    {
+        if (value != _devicePreferences.DiscordStatus)
+        {
+            // Never fails, as the switch below; a title that plays shows or leaves the status at once.
+            _ = _devicePreferences.SetDiscordStatusAsync(value);
+        }
+    }
+
     partial void OnDecodesInSoftwareChanged(bool value)
     {
         if (value != _devicePreferences.DecodesInSoftware)

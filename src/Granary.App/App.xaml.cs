@@ -105,6 +105,8 @@ public partial class App : Application
         var realtime = Services.GetRequiredService<RealtimeEvents>();
         realtime.Start();
         _window.Closed += (_, _) => realtime.StopAsync().Wait(RealtimeStopBudget);
+        // The Discord status goes with the app.
+        _window.Closed += (_, _) => Services.GetRequiredService<DiscordStatus>().Dispose();
 
         // Developer shortcuts: --play <file or URL> plays it without the server; --play-item <content id> plays a
         // title of the signed-in server.
@@ -156,6 +158,9 @@ public partial class App : Application
         services.AddSingleton<IAppInfo, BuildInfo>();
         services.AddSingleton<IConfirmation, DialogConfirmation>();
         services.AddSingleton<ISystemMediaControls, WindowsMediaControls>();
+        // Discord's status while a title plays (Settings → Playback → This PC); it connects only once there is one to show.
+        services.AddSingleton<DiscordStatus>();
+        services.AddSingleton<IRichPresence>(sp => sp.GetRequiredService<DiscordStatus>());
         services.AddSingleton<IFileLauncher, ShellFileLauncher>();
         // The main window's full screen and mini view, shared by the app, the player and a trailer.
         services.AddSingleton<WindowModeService>();

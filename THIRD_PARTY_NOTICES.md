@@ -38,6 +38,8 @@ Licenses as declared in each package's `.nuspec`:
 | Microsoft.WindowsAppSDK.Base | 2.0.4 | Microsoft Software License Terms (`license.txt` in the package) | Build only: the MSBuild files of the self-contained build; nothing of it ships |
 | Microsoft.Web.WebView2 | 1.0.3719.77 | BSD-3-Clause, © Microsoft Corporation (`LICENSE.txt` in the package; its `NOTICE.txt` lists the components it holds) | App (trailers, docs/architecture.md); comes with Microsoft.WindowsAppSDK.WinUI rather than as a package reference of Granary's. `WebView2Loader.dll` and `Microsoft.Web.WebView2.Core*.dll` ship with every build |
 | CommunityToolkit.Mvvm | 8.4.2 | MIT | Core |
+| DiscordRichPresence | 1.6.1.70 | MIT, © Lachee (<https://github.com/Lachee/discord-rpc-csharp>) | App (the Discord status, docs/architecture.md); `DiscordRPC.dll` ships with every build |
+| Newtonsoft.Json | 13.0.1 | MIT, © James Newton-King (<https://github.com/JamesNK/Newtonsoft.Json>) | App, through DiscordRichPresence, which writes Discord's messages with it; `Newtonsoft.Json.dll` ships with every build |
 | QRCoder | 1.8.1 | MIT | App (QR code for device sign-in) |
 | Velopack | 1.2.161 | MIT | App (setup and updates, docs/release.md); its setup, updater and launcher (`Setup.exe`, `Update.exe`) ship with every release |
 | Microsoft.Extensions.DependencyInjection(.Abstractions), .Http, .Logging(.Abstractions) | 10.0.13 | MIT | Core, Player, App |

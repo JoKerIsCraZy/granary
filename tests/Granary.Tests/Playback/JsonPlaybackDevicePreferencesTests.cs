@@ -125,6 +125,50 @@ public sealed class JsonPlaybackDevicePreferencesTests : IDisposable
     }
 
     [Fact]
+    public void AtFirst_TheDiscordStatusIsOff() => Assert.False(Create().DiscordStatus);
+
+    [Fact]
+    public async Task TheDiscordStatus_StaysOnAtTheNextStart_WithTheOtherChoices()
+    {
+        var preferences = Create();
+
+        await preferences.SetUpDownAsync(PlayerUpDown.Volume);
+        await preferences.SetDiscordStatusAsync(true);
+
+        var again = Create();
+        Assert.True(again.DiscordStatus);
+        Assert.Equal(PlayerUpDown.Volume, again.UpDown);
+        Assert.Contains("\"discord_status\": true", await File.ReadAllTextAsync(FilePath, TestContext.Current.CancellationToken), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AnOlderFile_LeavesTheDiscordStatusOff_AndKeepsTheOtherChoices()
+    {
+        Directory.CreateDirectory(_directory);
+        await File.WriteAllTextAsync(FilePath, "{ \"decodes_in_software\": true, \"up_down\": \"volume\" }", TestContext.Current.CancellationToken);
+
+        var preferences = Create();
+
+        Assert.False(preferences.DiscordStatus);
+        Assert.True(preferences.DecodesInSoftware);
+    }
+
+    [Fact]
+    public async Task TurningTheDiscordStatusOnOrOff_SaysSo_ButTheSameChoiceAgainDoesNot()
+    {
+        var preferences = Create();
+        int changes = 0;
+        preferences.DiscordStatusChanged += (_, _) => changes++;
+
+        await preferences.SetDiscordStatusAsync(true);
+        await preferences.SetDiscordStatusAsync(true);
+        await preferences.SetDiscordStatusAsync(false);
+
+        Assert.Equal(2, changes);
+        Assert.False(Create().DiscordStatus);
+    }
+
+    [Fact]
     public async Task AnUnknownUpAndDown_ShowsTheControlsAndMenus()
     {
         Directory.CreateDirectory(_directory);

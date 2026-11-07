@@ -840,6 +840,10 @@ its default, as in 8.8.1). Their defaults are what playback picks: the file as `
 audio `effective_audio_track_index` (else the file's default track, else the first), the subtitle 8.8.1's resolver for
 that audio.
 
+The Discord status (docs/architecture.md) reads `tmdb_id` here: a string of digits in the schema, absent for an item TMDB
+does not know. It takes the movie's own item, or an episode's series (`series_id` of the watch detail), and only a
+positive integer; anything else means no TMDB page and no poster.
+
 ### 7.7 Series → seasons → episodes
 
 - `GET /api/v2/catalog/series/{id}/seasons` → `{ "items": Season[] }`; `Season`: `content_id`,
@@ -994,6 +998,11 @@ tracks ([8.8.1](#881-initial-track-selection-before-start)) → `POST /api/v2/pl
   (`season_number`, `name`, `air_date`, `episode_count`, `availability` `missing|partial|available`, `requested`,
   `poster_path`), `recommendations`); 404 for a title TMDB does not know or the profile may not see.
   `request.request_id` names the request when it is the account's own (or the viewer is an admin).
+  The Discord status also reads it for the playing title's poster (`series` for an episode's series, while TMDB's own
+  pages say `tv`): `poster_path` at TMDB's `w500`, taken only when it is a TMDB image name (`TmdbImages.Poster`). With
+  Requests off the server answers a problem instead (409 `capability_disabled` or `capability_not_configured`, 403, or 404
+  for a title TMDB does not know): the status then shows Granary's own picture. Such an answer holds for the run; a
+  transport failure, 429 or 5xx is tried again for the next title.
 - `POST /api/v2/requests` with `{ "media_type", "tmdb_id", "title", "year"?, "overview"?, "poster_path"?,
   "backdrop_path"?, "seasons"? }` → `201` with the request. Not idempotent: never retried. Without `seasons` the server
   picks a series' aired seasons still missing, or the whole series when none aired. `GET /api/v2/requests/{id}` → one

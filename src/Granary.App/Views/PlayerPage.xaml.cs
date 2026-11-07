@@ -40,6 +40,8 @@ public sealed partial class PlayerPage : Page
     private AppWindow? _appWindow;
     // Windows' media controls and keys, from the page's load on (a page never loaded never played) until it is left.
     private PlayerSystemMedia? _systemMedia;
+    // Discord's status, likewise, while Settings allows it.
+    private PlayerRichPresence? _richPresence;
     // The window's full screen and mini view, the app's too: the player toggles them, and the window keeps them.
     private readonly WindowModeService _modes;
     private readonly IPlaybackDevicePreferences _devicePreferences;
@@ -117,6 +119,8 @@ public sealed partial class PlayerPage : Page
         ViewModel.PropertyChanged += OnViewModelPropertyChanged;
         _systemMedia ??= new PlayerSystemMedia(ViewModel, App.Services.GetRequiredService<ISystemMediaControls>(),
             App.Services.GetRequiredService<IUiDispatcher>(), TimeProvider.System);
+        _richPresence ??= new PlayerRichPresence(ViewModel, App.Services.GetRequiredService<IRichPresence>(), _devicePreferences,
+            App.Services.GetRequiredService<TmdbTitleLookup>(), App.Services.GetRequiredService<IUiDispatcher>(), TimeProvider.System);
         ShowSkipIntervals();
         Focus(FocusState.Programmatic);
         ShowControls();
@@ -137,6 +141,8 @@ public sealed partial class PlayerPage : Page
         StopPartyPanel();
         _systemMedia?.Dispose();
         _systemMedia = null;
+        _richPresence?.Dispose();
+        _richPresence = null;
         ViewModel.Dispose();
     }
 
