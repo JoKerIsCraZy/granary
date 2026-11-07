@@ -452,6 +452,18 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     dialog.
   - Granary's own player, minimized to its bar, pauses as a trailer opens, and stays paused once it closes; in a Watch
     Party it plays on. The keyboard's media keys still reach the bar meanwhile.
+  - "Cast & Crew", or "Cast" without crew (the web's `CastCarousel` and `castCrewGroups.ts`): the director (two at most)
+    or every creator of a series, then the writers (three at most, none who has a director's card already), then the
+    cast in billing order (12 for a movie or series, 20 otherwise); a season shows its cast only, and nobody shows twice
+    in a group. The cards (120 px, the photo 180 px) stand 12 apart. Each group after the first starts with a separator:
+    a 1 px line in the border colour, as tall as the photos, and the group's label turned to read bottom to top,
+    "WRITERS" or "CAST" (10 px, semibold, 0.2 em apart, the muted colour at 70 %, centred on the line). The first group
+    has none, so "Director" is never a label and a row of cast alone has no separator at all. Unlike the web, which puts
+    the label before its line, where it read as part of the group before, the label comes after the line, right before
+    the cards it names, with more room before the line than after the label: 24 px from the previous card to the line,
+    10 to the label, 12 to the first card. The separator is not a stop for the keyboard or the remote, so the arrows
+    move from card to card over it, and screen readers skip it, as the web's `aria-hidden`; a card is read with its role
+    instead ("Elena Moreau, Writer"). A card with a person opens their page.
   - Below a 1400 px window everything steps down (hero 84 from the top and 12 apart, logo 116, meta 15, overview 14/22,
     buttons 44, rows 44 apart), so a 1280×800 window keeps it whole. The step sets sizes, not styles, so a focused
     button keeps its focus when the window crosses it.

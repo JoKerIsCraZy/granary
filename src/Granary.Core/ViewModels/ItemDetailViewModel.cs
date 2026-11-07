@@ -284,11 +284,16 @@ public sealed partial class ItemDetailViewModel : ObservableObject
 
     public bool HasTrailers => Trailers.Count > 0;
 
+    /// <summary>The Cast &amp; Crew row as laid out: the cards in their groups, a separator before each after the first.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasPeople))]
-    public partial IReadOnlyList<DetailPerson> People { get; private set; } = [];
+    [NotifyPropertyChangedFor(nameof(People), nameof(HasPeople))]
+    public partial IReadOnlyList<DetailCredit> Credits { get; private set; } = [];
 
-    public bool HasPeople => People.Count > 0;
+    /// <summary>The row's cards without its separators.</summary>
+    public IReadOnlyList<DetailPerson> People => [.. Credits.OfType<DetailPerson>()];
+
+    // A separator stands only before cards: a row with entries has people.
+    public bool HasPeople => Credits.Count > 0;
 
     [ObservableProperty]
     public partial string PeopleTitle { get; private set; } = "Cast";
@@ -426,7 +431,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         ShowsNoEpisodes = false;
         MoreEpisodes = [];
         Trailers = [];
-        People = [];
+        Credits = [];
         Similar = [];
     }
 
@@ -452,7 +457,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         AvailableVersionLine = DetailFacts.AvailableVersionLine(item) ?? "";
         ShowPrePlay(item);
         InfoSections = DetailFacts.InfoSections(item);
-        People = DetailCredits.People(item, server);
+        Credits = DetailCredits.Row(DetailCredits.Groups(item, server));
         PeopleTitle = DetailCredits.PeopleTitle(People);
         Trailers = DetailTrailer.From(item.Videos);
         ShowsWatchedAction = DetailFacts.IsVideo(item.Type);

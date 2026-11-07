@@ -18,6 +18,42 @@
     <Page.Resources>
         <!-- The page's black, under the standing backdrop and its fades. -->
         <SolidColorBrush x:Key="DetailPageBrush" Color="#FF000000" />
+
+        <!-- A card with a person opens their page; one without is only a card (not a stop for the keyboard). -->
+        <DataTemplate x:Key="PersonTemplate" x:DataType="detail:DetailPerson">
+            <Button Style="{StaticResource SiloCardButtonStyle}" HorizontalAlignment="Left" Click="OnPersonClick" DataContext="{x:Bind}"
+                    IsTabStop="{x:Bind CanOpen}" IsHitTestVisible="{x:Bind CanOpen}"
+                    AutomationProperties.Name="{x:Bind AccessibleName}" ToolTipService.ToolTip="{x:Bind Name}">
+                <controls:PersonCreditCard Person="{x:Bind}" />
+            </Button>
+        </DataTemplate>
+        <!--
+            The line and label before each group after the first ("WRITERS", "CAST"), as tall as the photos, as the
+            web's CastCarousel stops its line above the names. The web puts the label before its line, where it read as
+            part of the group before; here, by the owner's choice, the line comes first and the label stands right
+            before the cards it names: 24 from the previous card to the line (the row's 12 and its own 12), 10 to the
+            label, 12 to the next card. Arrows and the remote move from card to card over it, and it is hidden from
+            screen readers as the web's aria-hidden is: each card says its role.
+        -->
+        <DataTemplate x:Key="SeparatorTemplate" x:DataType="detail:DetailCreditSeparator">
+            <Grid Height="{StaticResource SiloCreditPhotoHeight}" VerticalAlignment="Top" Padding="12,0,0,0" ColumnSpacing="10"
+                  IsHitTestVisible="False">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Rectangle Width="1" Fill="{StaticResource SiloBorderBrush}" AutomationProperties.AccessibilityView="Raw" />
+                <controls:SidewaysPanel Grid.Column="1">
+                    <controls:SidewaysPanel.Child>
+                        <TextBlock Text="{x:Bind Text}" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="10"
+                                   CharacterSpacing="200" Foreground="{StaticResource SiloMutedBrush}" Opacity="0.7"
+                                   AutomationProperties.AccessibilityView="Raw" />
+                    </controls:SidewaysPanel.Child>
+                </controls:SidewaysPanel>
+            </Grid>
+        </DataTemplate>
+        <controls:DetailCreditTemplateSelector x:Key="CreditTemplates" Person="{StaticResource PersonTemplate}"
+                                               Separator="{StaticResource SeparatorTemplate}" />
     </Page.Resources>
 
     <Grid Background="{StaticResource DetailPageBrush}">
@@ -173,20 +209,11 @@
                     <controls:DetailShelf Title="{x:Bind ViewModel.PeopleTitle, Mode=OneWay}" IsScrollerTabStop="True"
                                           Visibility="{x:Bind ViewModel.HasPeople, Mode=OneWay}">
                         <controls:DetailShelf.ShelfContent>
-                            <ItemsRepeater ItemsSource="{x:Bind ViewModel.People, Mode=OneWay}">
+                            <!-- The cards in their groups (the web's CastCarousel): the director or creators, the writers, the cast. -->
+                            <ItemsRepeater ItemsSource="{x:Bind ViewModel.Credits, Mode=OneWay}" ItemTemplate="{StaticResource CreditTemplates}">
                                 <ItemsRepeater.Layout>
-                                    <StackLayout Orientation="Horizontal" Spacing="16" />
+                                    <StackLayout Orientation="Horizontal" Spacing="12" />
                                 </ItemsRepeater.Layout>
-                                <ItemsRepeater.ItemTemplate>
-                                    <!-- A card with a person opens their page; one without is only a card (not a stop for the keyboard). -->
-                                    <DataTemplate x:DataType="detail:DetailPerson">
-                                        <Button Style="{StaticResource SiloCardButtonStyle}" HorizontalAlignment="Left" Click="OnPersonClick" DataContext="{x:Bind}"
-                                                IsTabStop="{x:Bind CanOpen}" IsHitTestVisible="{x:Bind CanOpen}"
-                                                AutomationProperties.Name="{x:Bind Name}" ToolTipService.ToolTip="{x:Bind Name}">
-                                            <controls:PersonCreditCard Person="{x:Bind}" />
-                                        </Button>
-                                    </DataTemplate>
-                                </ItemsRepeater.ItemTemplate>
                             </ItemsRepeater>
                         </controls:DetailShelf.ShelfContent>
                     </controls:DetailShelf>

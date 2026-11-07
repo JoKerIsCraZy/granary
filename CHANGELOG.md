@@ -19,6 +19,9 @@ release's section is what its update says it changes (docs/release.md).
 - **Play/Pause in the taskbar preview:** hover over Granary's taskbar button while something plays and the window's
   preview has a Play/Pause button, also when Granary is minimized. In a Watch Party it asks the room, as the player's own
   button does.
+- **Cast & Crew in groups:** a title's Cast & Crew row now labels where its writers and its cast begin, with a thin line
+  and "WRITERS" or "CAST" right before their cards, after the director or the series' creators. Screen readers read each
+  card with its role, such as "Writer".
 
 ### Fixed
 

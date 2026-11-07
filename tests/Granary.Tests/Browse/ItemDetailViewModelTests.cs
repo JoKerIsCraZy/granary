@@ -82,6 +82,9 @@ public sealed class ItemDetailViewModelTests
             [("David Ayer", "Director"), ("Sylvester Stallone", "Writer"), ("Chuck Dixon", "Writer"),
              ("Jason Statham", "Levon Cade"), ("Arianna Rivas", "Jenny"), ("Jason Flemyng", "Gareth")],
             detail.People.Select(p => (p.Name, p.Role ?? "")));
+        // The row lays them out with a separator before the writers and the cast; the director leads without one.
+        Assert.Equal(["WRITERS", "CAST"], detail.Credits.OfType<DetailCreditSeparator>().Select(s => s.Text));
+        Assert.IsType<DetailCreditSeparator>(detail.Credits[1]);
         var statham = detail.People.Single(p => p.Name == "Jason Statham");
         Assert.Equal(Art("/api/v2/artwork/people/976/w185.webp?exp=1&sig=c"), statham.PhotoUrl);
         Assert.Equal("JS", statham.Initials);
@@ -402,6 +405,7 @@ public sealed class ItemDetailViewModelTests
         Assert.False(detail.CanFavorite);
         Assert.Equal("Cast", detail.PeopleTitle);
         Assert.Equal(["Omar Sy"], detail.People.Select(p => p.Name));
+        Assert.DoesNotContain(detail.Credits, c => c is DetailCreditSeparator);
 
         Assert.Equal("8 total", detail.EpisodesTotalText);
         var first = detail.Episodes[0];
