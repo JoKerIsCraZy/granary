@@ -249,8 +249,10 @@ public sealed class MpvConfigFolder
 
     // Windows refuses to replace a file while anything has it open, whatever that shares: a read Granary started by itself
     // (the settings row, the player's check) or a virus scanner's. Those end in a moment; a file held for good still fails.
+    // So does one whose last write or size changed while it waited: that is another program's save, and it stays.
     private void MoveOver(string temp, string path)
     {
+        var before = Stamp(path);
         for (int tries = 1; ; tries++)
         {
             try
@@ -263,7 +265,19 @@ public sealed class MpvConfigFolder
                 BeforeMoveRetry?.Invoke();
                 Thread.Sleep(MoveRetryDelay);
             }
+            if (Stamp(path) != before)
+            {
+                throw new IOException("The file changed while the write waited for it.");
+            }
         }
+    }
+
+    // A file's last write and size, which a read leaves alone and a save does not. Readable while another program has it
+    // open, though Windows may only show a change once that program lets go.
+    private static (DateTime LastWrite, long Length) Stamp(string path)
+    {
+        var file = new FileInfo(path);
+        return file.Exists ? (file.LastWriteTimeUtc, file.Length) : default;
     }
 
     private void Delete(string temp)
