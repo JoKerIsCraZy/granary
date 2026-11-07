@@ -26,6 +26,8 @@ release's section is what its update says it changes (docs/release.md).
   or OK shows where you are before anything moves.
 - A TV remote's OK switches tabs and picks choices, such as a library's Recommended, Library and Collections, where it
   did nothing.
+- The mouse cursor no longer stays over the playing picture while you use a TV remote: it hides with the controls, also
+  when the remote's Back hides them, and only moving the mouse brings it back, not a key.
 - Dolby Vision files with an HDR10, HLG or SDR base layer play directly on a server that wants each base layer named,
   where it converted them.
 - Saving mpv.conf or loading a preset no longer fails when Granary happens to be reading the file at that moment.

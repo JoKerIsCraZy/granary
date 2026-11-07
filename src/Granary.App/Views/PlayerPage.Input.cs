@@ -67,7 +67,8 @@ public sealed partial class PlayerPage
         }
     }
 
-    // Any key shows the controls. Space is taken here, before a focused button would press itself with it:
+    // Any key shows the controls, not the cursor: only the mouse brings that back. Space is taken here, before a focused
+    // button would press itself with it:
     // on the player Space always plays or pauses, as on the web. In the bar a focused button keeps it. OK (Enter) with
     // focus on the picture shows the controls with focus on Play/Pause, as Silo's TV app reveals them
     // (requestIdleOverlayFocus); there the controls never show without focus, here a pointer shows them too, and an air
@@ -312,7 +313,8 @@ public sealed partial class PlayerPage
     // The remote's Back (Browser Back, Backspace) with the controls shown hides them, as the TV app's ladder has it; Esc
     // does as on the web player. Not while paused, where hidden controls would only leave a still picture, so Back closes;
     // a skip pill and the marker editor take Back first (the switch below). A stream reloading for a subtitle just picked
-    // counts as playing. Focus leaves the hidden buttons for the page: kept, it would hold the controls up from then on.
+    // counts as playing. Focus leaves the hidden buttons for the page: kept, it would hold the controls up from then on. The
+    // cursor goes with the controls, as when they hide by themselves (SetControlsVisible).
     private bool HidesControls(VirtualKey key, bool isRepeat)
     {
         if (key is not (VirtualKey.GoBack or VirtualKey.Back) || isRepeat || !_controlsShownBeforeKey || IsCompact
