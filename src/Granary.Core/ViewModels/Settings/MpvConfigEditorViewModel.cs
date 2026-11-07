@@ -116,14 +116,17 @@ public sealed partial class MpvConfigEditorViewModel : ObservableObject
             string text = Text.ReplaceLineEndings(_lineBreak);
             // Open mpv.conf hands the file to another program, and the work done there must not go without a word.
             var now = await Task.Run(_folder.ReadConfig);
-            if (now is { IsNew: false } && (_isNew || now.IsNotText || now.Text != _saved))
+            if (ChangedElsewhere(now))
             {
                 Message = ChangedElsewhereMessage;
                 return false;
             }
             if (now is null || !await Task.Run(() => _folder.WriteConfig(text)))
             {
-                Message = $"Couldn't save mpv.conf in {_folder.Directory}.";
+                // A write that had to wait stops when the file changes meanwhile, and that is what the viewer needs to hear.
+                Message = ChangedElsewhere(await Task.Run(_folder.ReadConfig))
+                    ? ChangedElsewhereMessage
+                    : $"Couldn't save mpv.conf in {_folder.Directory}.";
                 return false;
             }
             Message = "";
@@ -138,6 +141,8 @@ public sealed partial class MpvConfigEditorViewModel : ObservableObject
             IsSaving = false;
         }
     }
+
+    private bool ChangedElsewhere(MpvConfigContent? now) => now is { IsNew: false } && (_isNew || now.IsNotText || now.Text != _saved);
 
     /// <summary>
     /// Whether the editor may close: nothing to lose, or the viewer chose to throw the edits away. Not while it saves, as the

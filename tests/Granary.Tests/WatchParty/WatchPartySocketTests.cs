@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Sockets;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
@@ -17,20 +16,14 @@ namespace Granary.Tests.WatchParty;
 /// </summary>
 public sealed class WatchPartySocketTests : IAsyncDisposable
 {
-    private readonly HttpListener _listener = new();
+    private readonly HttpListener _listener;
     private readonly Uri _server;
     private readonly ScriptedSilo _silo = new();
     private readonly LogSink _logs = new();
 
     public WatchPartySocketTests()
     {
-        var probe = new TcpListener(IPAddress.Loopback, 0);
-        probe.Start();
-        int port = ((IPEndPoint)probe.LocalEndpoint).Port;
-        probe.Stop();
-        _server = new Uri($"http://localhost:{port}/");
-        _listener.Prefixes.Add(_server.AbsoluteUri);
-        _listener.Start();
+        (_listener, _server) = LoopbackHttpListener.Start();
         _silo.On(HttpMethod.Post, new Uri(_server, $"api/v2/watch-together/rooms/{WatchPartyPayloads.RoomId}/ws-ticket"),
             ScriptedSilo.Json(HttpStatusCode.OK, WatchPartyPayloads.TicketAnswer));
     }
