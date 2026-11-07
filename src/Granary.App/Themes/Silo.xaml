@@ -1090,6 +1090,11 @@
         <Setter Property="ScrollViewer.VerticalScrollMode" Value="Auto" />
         <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
     </Style>
+    <!-- The sleep timer's menu is the web's small one: 160 px and up, 8 px corners, no label. -->
+    <Style x:Key="SiloPlayerSmallMenuStyle" TargetType="FlyoutPresenter" BasedOn="{StaticResource SiloPlayerMenuStyle}">
+        <Setter Property="MinWidth" Value="160" />
+        <Setter Property="CornerRadius" Value="8" />
+    </Style>
     <Style x:Key="SiloPlayerMenuHeaderTextStyle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource SiloFontMedium}" />
         <Setter Property="FontWeight" Value="Medium" />

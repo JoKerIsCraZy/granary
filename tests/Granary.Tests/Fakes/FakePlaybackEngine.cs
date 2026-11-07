@@ -43,7 +43,14 @@ internal sealed class FakePlaybackEngine : IPlaybackEngine
         return LoadId;
     }
 
-    public void SetPaused(bool paused) => Current = Current with { IsPaused = paused };
+    /// <summary>Every pause or play asked for, in order (true pauses).</summary>
+    public List<bool> PauseRequests { get; } = [];
+
+    public void SetPaused(bool paused)
+    {
+        PauseRequests.Add(paused);
+        Current = Current with { IsPaused = paused };
+    }
 
     public void Seek(TimeSpan position) => Seeks.Add(position);
 

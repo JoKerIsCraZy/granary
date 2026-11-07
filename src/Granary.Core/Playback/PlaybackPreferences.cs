@@ -31,6 +31,15 @@ public sealed record PlaybackPreferences(string Quality, int? MaxBitrateKbps, do
 
     /// <summary>This device's playback speed (<c>player.playback_speed</c>).</summary>
     public double Speed { get; init; } = 1;
+
+    /// <summary>The contract's default for <see cref="SleepTimerMinutes"/>.</summary>
+    public const int DefaultSleepTimerMinutes = 30;
+
+    /// <summary>
+    /// The duration the sleep timer starts on, in minutes; 0 for none (<c>player.sleep_timer_default_minutes</c>, this
+    /// device's).
+    /// </summary>
+    public int SleepTimerMinutes { get; init; } = DefaultSleepTimerMinutes;
 }
 
 /// <summary>Reads <see cref="PlaybackPreferences"/>; playback starts with the defaults when the server cannot say.</summary>
@@ -67,6 +76,12 @@ public sealed class PlaybackPreferencesReader(SettingsApi settings, ILogger<Play
     // Asked on its own: a server from before it refuses a batch with it, and the marker settings must not go with it.
     internal static readonly string[] PreviewKeys = ["playback.auto_play_next_preview"];
 
+    // The same for the sleep timer's duration.
+    internal static readonly string[] SleepTimerKeys = ["player.sleep_timer_default_minutes"];
+
+    /// <summary>The longest sleep timer duration the contract allows, in minutes.</summary>
+    public const int MaxSleepTimerMinutes = 240;
+
     private const int MaxNextUpPromptSeconds = 120;
 
     /// <summary>The web player's limit for the subtitle delay.</summary>
@@ -82,6 +97,7 @@ public sealed class PlaybackPreferencesReader(SettingsApi settings, ILogger<Play
         var subtitles = ReadBatchAsync(server, SubtitleKeys, "Subtitle", cancellationToken);
         var markers = ReadBatchAsync(server, MarkerKeys, "Marker", cancellationToken);
         var preview = ReadBatchAsync(server, PreviewKeys, "Next episode preview", cancellationToken);
+        var sleepTimer = ReadBatchAsync(server, SleepTimerKeys, "Sleep timer", cancellationToken);
         var preferences = await ReadMainAsync(server, cancellationToken).ConfigureAwait(false);
         if (await subtitles.ConfigureAwait(false) is { } subtitleValues)
         {
@@ -101,6 +117,11 @@ public sealed class PlaybackPreferencesReader(SettingsApi settings, ILogger<Play
         if (await preview.ConfigureAwait(false) is { } previewValues && Bool(previewValues.Find(PreviewKeys[0])) is { } fromPreview)
         {
             preferences = preferences with { Markers = preferences.Markers with { AutoPlayNextPreview = fromPreview } };
+        }
+        if (await sleepTimer.ConfigureAwait(false) is { } sleepValues
+            && Number(sleepValues.Find(SleepTimerKeys[0])) is { } minutes && minutes is >= 0 and <= MaxSleepTimerMinutes)
+        {
+            preferences = preferences with { SleepTimerMinutes = (int)Math.Round(minutes) };
         }
         return preferences;
     }

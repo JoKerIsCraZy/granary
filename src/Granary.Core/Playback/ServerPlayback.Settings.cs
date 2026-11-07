@@ -8,10 +8,12 @@ using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.Playback;
 
-// The settings menu (docs/api-contract.md, 8.11): the plan's qualities, the title's files, and the speed.
+// The settings menu (docs/api-contract.md, 8.11): the plan's qualities, the title's files, and the speed; and the sleep
+// timer's duration.
 public sealed partial class ServerPlayback
 {
     private const string SpeedKey = "player.playback_speed";
+    private const string SleepTimerKey = "player.sleep_timer_default_minutes";
 
     // An older server still lists the source as a rung; "Auto" is the way back to it.
     private const string SourceQuality = "original";
@@ -85,6 +87,20 @@ public sealed partial class ServerPlayback
         _engine.SetSpeed(speed);
         _speedSave?.Dispose();
         _speedSave = _time.CreateTimer(_ => _dispatcher.Post(SaveSpeedNow), null, SpeedSettle, Timeout.InfiniteTimeSpan);
+    }
+
+    public void SetSleepTimerDefault(int minutes)
+    {
+        minutes = Math.Clamp(minutes, 0, PlaybackPreferencesReader.MaxSleepTimerMinutes);
+        if (_context is not { } context || context.Preferences.SleepTimerMinutes == minutes)
+        {
+            return;
+        }
+        _context = context with { Preferences = context.Preferences with { SleepTimerMinutes = minutes } };
+        using var document = JsonDocument.Parse(minutes.ToString(CultureInfo.InvariantCulture));
+        var value = document.RootElement.Clone();
+        SaveChoice("sleep timer", cancellationToken =>
+            _settings.SetValueAsync(context.Server.BaseUri, SleepTimerKey, value, SettingScopes.ProfileDevice, cancellationToken));
     }
 
     // This device's speed, as the apps keep it.

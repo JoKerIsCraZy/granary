@@ -124,6 +124,21 @@ public sealed class PlayerViewModelWatchPartyTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task ASleepTimerThatRunsOut_LeavesTheRoom_WhichPlaysOnForTheOthers()
+    {
+        var viewModel = await PlayingAsync(role: "guest");
+        // The room decides what plays next.
+        Assert.DoesNotContain(viewModel.SleepTimerOptions, o => o.Action == SleepTimerAction.EndOfTitle);
+
+        viewModel.ChooseSleepTimer(viewModel.SleepTimerOptions.Single(o => o.Label == "5 min"));
+        _time.Advance(TimeSpan.FromMinutes(5));
+
+        Assert.True(viewModel.HasLeft);
+        Assert.Equal(1, _navigation.PlayerLeaves);
+        Assert.DoesNotContain(Socket.Sent, f => f.Contains("\"transport_request\"", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task AGuestsSeek_IsRefused_WithTheWebsWords()
     {
         var viewModel = await PlayingAsync(role: "guest");
