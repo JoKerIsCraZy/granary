@@ -38,6 +38,7 @@ to the root of the named repository.
 11. [Markers, intro skip, chapters, and trickplay](#11-markers-intro-skip-chapters-and-trickplay)
 12. [Realtime events](#12-realtime-events)
 13. [Consequences for the Windows client](#13-consequences-for-the-windows-client)
+14. [Downloads and offline sync](#14-downloads-and-offline-sync)
 - [Appendix: where docs and code disagree](#appendix-where-docs-and-code-disagree)
 
 ## 1. Which API: `/api/v2` only
@@ -2439,7 +2440,7 @@ HDR with libplacebo. An honest, conservative first report:
 
 Control socket and `plan_invalidated_v1`, `buffering_quality_v1`, the realtime events socket,
 the LAN local route, trickplay, `/sync/progress` and progress bootstrap, external (OIDC) sign-in,
-signup, invitations, setup wizard, downloads, audiobooks, ebooks, watch together, admin.
+signup, invitations, setup wizard, audiobooks, ebooks, watch together, admin.
 
 ### 13.4 Open questions for the Phase 1 spike
 
@@ -2478,6 +2479,94 @@ signup, invitations, setup wizard, downloads, audiobooks, ebooks, watch together
   M mute, C captions, Left/Right skip by the profile intervals, Up/Down volume ±5 %; keys are
   ignored while a text field or menu has focus.
 - Enable the SMTC "Next" button only when a next episode has been resolved (10.7).
+
+## 14. Downloads and offline sync
+
+Granary keeps films and episodes on the PC as the server's **managed downloads**: every request carries
+`X-Silo-Device-Id` and `X-Profile-Id` (6.4), so each entry belongs to one account, profile and PC. Every call goes through
+`Api/Downloads/DownloadsApi`, bound to the profile its download belongs to (`SiloRequestOptions.Profile`): while the server
+acts as another profile, the request is not sent (`ProfileChangedException`). Problems follow 2.2; the downloads ones Granary
+branches on are `prepared_file_expired` and `capability_unsupported` (`ProblemCodes`). Sources:
+`silo-server/docs/downloads-api.md` (sections 3 to 6, 9 and 12), `silo-server/internal/apiv2/download_*.go`.
+
+### 14.1 Capability
+
+- `GET /api/v2/capabilities/downloads` (profile) → `enabled`, `allowed` (`download_allowed` and no demo-mode refusal),
+  `quality_presets` (always an array, best first; empty without downloads), `quality_options` (`[{ preset, bitrate_kbps?,
+  max_height? }]`, one per preset, both numbers absent for `original`), `proxy_delivery`, `preparation_progress`,
+  `prepare_again`, `revoked_removes_local`. Granary reads it at sign-in and profile switch (the guide's 9.3) and offers
+  downloads only when `enabled && allowed` (`DownloadCapability.IsUsable`). It does not send `If-None-Match`.
+
+### 14.2 Create
+
+- `POST /api/v2/downloads` → `202 { items: [DownloadEntry], skipped: [{ episode_id, reason }], page }`. Granary sends one
+  film or episode per request: `content_id` (the film, or the episode's series), `episode_id`, `media_file_id` (the version
+  the viewer chose, as a decimal string), `quality` (one of `quality_presets`), `caps` and `expected_revision: 0` (a new
+  entry; required on a single-item create with the device header).
+- `caps` is Granary's playback report (13.2, `DownloadCaps.For`): `codecs_video`, `codecs_audio` and `containers` as the
+  report lists them, `max_resolution: "2160p"` (mpv decodes 4K and scales it itself) and `hdr: false` (SDR output). With
+  `original`, the server sends the file as it is when the PC plays it, or else a remux or a compatible copy.
+- Not repeatable: after an uncertain answer, read the registry (14.3) instead. 403 `permission_denied`, 501
+  `capability_unsupported` (a preset the server cannot prepare), 409 `conflict` (the revision guard lost), 429 `rate_limited`.
+
+### 14.3 Registry and status events
+
+- `GET /api/v2/downloads?limit=100[&cursor=]` → `{ items: [DownloadEntry], page: { has_more, next_cursor? } }`, newest
+  first; the cursor goes back as `cursor` until `has_more` is false. An entry's members Granary reads: `id`, `content_id`,
+  `episode_id`, `media_file_id`, `file_size` (int64; an estimate while preparing), `status` (`preparing`, `ready`,
+  `downloading`, `completed`, `failed`, `revoked`, `cancelled`; `DownloadStatuses`), `quality`, `delivery_format`,
+  `revision`, and on listed preparing entries `preparation { state, queue_position?, progress? (0 to 1),
+  remaining_seconds? }`.
+- `PATCH /api/v2/downloads/{id}` `{ status: "downloading"|"completed", updated_at, revision }` → `200` `DownloadEntry`. The
+  time is taken when the PC's state changes and a retry sends the same event; an older or equal event leaves the entry as
+  it is. A time more than 2 minutes ahead of the server's is 400, another revision 409, `downloading` for a preparing entry
+  404.
+
+### 14.4 Media file
+
+- `GET /api/v2/downloads/{id}/file` with `Accept: */*` and `Cache-Control: no-store`; a resume adds `Range: bytes=<offset>-`
+  and `If-Range` with the validator the bytes on disk came with: one strong `ETag`, or `Last-Modified` as an HTTP date
+  (`ByteRange.IsValidator`; a weak or wildcard tag is never sent, and a range with one is refused unsent). Answers: `206` with
+  `Content-Range: bytes <from>-<to>/<total>`; `200` with the whole file (no range, or the file changed: the validator did not
+  match); `416`; `409 prepared_file_expired` (call 14.6's `/prepare`); `409 conflict` (revoked or not servable); `404`
+  (missing, or outside the profile's access). A failure after the body started ends the stream without JSON. Offsets and
+  sizes are int64 end to end (`ByteRange`), for files over 4 GB.
+- `GET /api/v2/downloads/{id}/file-proxy`, when the capability has `proxy_delivery`: the same, or `307` to a proxy node.
+  Granary follows one 307 on a client of its own (`DownloadsApi.HopClientName`: no credentials, identity headers, redirects,
+  cookies or log), with the same method, `Range` and `If-Range`. The target must be HTTPS (HTTP only when the server itself
+  is), without user info, written as it will be sent and not this machine or a link-local address
+  (`PlaybackUrl.ResolveProxyHop`); anything else is refused (`DownloadRedirectRefusedException`, an invalid answer that asking
+  again does not change). A second redirect comes back as it is. The hop's address, which carries its token, never reaches a
+  log or an error message.
+
+### 14.5 Manifest and assets
+
+- `GET /api/v2/downloads/{id}/manifest` → the `OfflineManifest`, at most 1 MiB (413 above; Granary refuses a longer answer
+  the same way) and kept as sent. One that brings no byte for 60 s is given up (`DownloadsApi.ManifestStallTimeout`). Members
+  Granary reads: `download_id`, `content_id`, `episode_id`, `type`, `revision`,
+  `media_file_id` (a string), `file_size`, `title` (the episode's own for an episode), `year`, `overview`, `series_id`,
+  `series_title`, `season_number`, `episode_number`, `poster_thumbhash`, `backdrop_thumbhash`, `series_poster_thumbhash`,
+  `artwork_urls { poster, backdrop, logo, series_poster }`, `container`, `duration_seconds`, `selected_audio_track_index`,
+  `audio_tracks [{ index, title, language, codec, layout, channels, default }]`, `chapters [{ index, title, start_seconds,
+  end_seconds }]`, `marker_segments [{ kind, start_seconds, end_seconds }]`, `subtitles [{ language, title, format, forced,
+  hearing_impaired, external, fetch_url, file_size, revision }]`, `integrity { expected_bytes, media_file_hash }` and
+  `manifest_version` (3).
+- `GET /api/v2/downloads/{id}/artwork/{kind}` (`poster`, `backdrop`, `logo`, `series_poster`) and
+  `GET /api/v2/downloads/{id}/subtitles/{ref}` (`external:N`, `embedded:N`, `downloaded:ID`): whole objects, no ranges. A
+  subtitle has a strong `ETag`; sent back as `If-None-Match`, an unchanged one answers 304. Artwork answers
+  `503 dependency_unavailable` with `Retry-After: 5` when its store fails.
+- Granary asks for an asset only when its URL is this download's artwork or subtitle (`DownloadsApi.AssetPath`): the path
+  from `api/v2/downloads/{id}/` on, rebuilt under the saved address, so a reverse proxy's prefix stays; absolute URLs, dot
+  segments, encoded slashes and queries are refused, since these requests carry the profile's credentials.
+
+### 14.6 Prepare again, revoked, delete
+
+- `POST /api/v2/downloads/{id}/prepare` (no body; capability `prepare_again`) → `200` `DownloadEntry`: `preparing` again with
+  the same revision when its prepared file had expired, else unchanged. 409 `conflict` for a revoked, failed or cancelled
+  entry, 429 at the account's cap, 501 when transcoding is now off.
+- A `revoked` entry was revoked by an administrator: with `revoked_removes_local`, the PC deletes its copy, then the entry.
+- `DELETE /api/v2/downloads/{id}` → `204`; `404` when the entry is missing or not this profile's and PC's, which
+  `DownloadsApi.DeleteAsync` takes as done. The server deletes nothing on the PC: the client removes its own files.
 
 ## Appendix: where docs and code disagree
 

@@ -61,6 +61,25 @@ public static class PlaybackUrl
         return Resolve(server, value) is { } sidecar && IsPlain(sidecar.OriginalString) ? sidecar : null;
     }
 
+    /// <summary>
+    /// Where a download's <c>/file-proxy</c> redirects to (downloads-api.md, 4.11), as <see cref="ResolveStream"/> checks a proxy
+    /// node: HTTPS unless the server itself is plain HTTP, no user info or fragment, written as it will be sent, and never
+    /// this machine or a link-local address. The hop carries a short-lived token of its own and none of the client's
+    /// credentials. Answers the URL in its canonical form, or null when it is refused.
+    /// </summary>
+    public static Uri? ResolveProxyHop(Uri server, Uri target)
+    {
+        ArgumentNullException.ThrowIfNull(server);
+        ArgumentNullException.ThrowIfNull(target);
+        if (!target.IsAbsoluteUri)
+        {
+            return null;
+        }
+        bool secure = target.Scheme == Uri.UriSchemeHttps || (target.Scheme == Uri.UriSchemeHttp && server.Scheme == Uri.UriSchemeHttp);
+        bool valid = secure && target.UserInfo.Length == 0 && target.Fragment.Length == 0 && IsPlain(target.OriginalString) && IsRemote(target);
+        return valid ? new Uri(target.AbsoluteUri) : null;
+    }
+
     /// <summary>An absolute HTTP URL that is not on the saved server: a proxy node's, or one the client refuses.</summary>
     public static bool IsElsewhere(Uri server, string? value) =>
         Uri.TryCreate(value, UriKind.Absolute, out var absolute)

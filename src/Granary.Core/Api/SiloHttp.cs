@@ -57,9 +57,7 @@ public sealed class SiloHttp(HttpClient http)
     public async Task SendAsProfileAsync<TRequest>(HttpMethod method, Uri server, string path, string profileId, TRequest body,
         JsonTypeInfo<TRequest> requestType, CancellationToken cancellationToken)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(profileId);
-        using var request = Create(method, server, path, SiloAuth.Profile);
-        request.SetProfile(profileId);
+        using var request = CreateAsProfile(method, server, path, profileId);
         request.Content = JsonContent.Create(body, requestType);
         using var response = await http.SendAsync(request, cancellationToken).ConfigureAwait(false);
         await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
@@ -68,11 +66,58 @@ public sealed class SiloHttp(HttpClient http)
     /// <summary>As the other <c>SendAsProfileAsync</c>, for a bodiless write, as a delete.</summary>
     public async Task SendAsProfileAsync(HttpMethod method, Uri server, string path, string profileId, CancellationToken cancellationToken)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(profileId);
-        using var request = Create(method, server, path, SiloAuth.Profile);
-        request.SetProfile(profileId);
+        using var request = CreateAsProfile(method, server, path, profileId);
         using var response = await http.SendAsync(request, cancellationToken).ConfigureAwait(false);
         await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// As <see cref="GetAsync{TResponse}"/>, for a read that belongs to profile <paramref name="profileId"/>, as a download's:
+    /// it goes out only while the server still acts as that profile, else it throws <see cref="ProfileChangedException"/> unsent.
+    /// </summary>
+    public async Task<TResponse> GetAsProfileAsync<TResponse>(Uri server, string path, string profileId, JsonTypeInfo<TResponse> responseType,
+        CancellationToken cancellationToken)
+    {
+        using var request = CreateAsProfile(HttpMethod.Get, server, path, profileId);
+        return await SendAsync(request, responseType, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>As the 204 <c>SendAsProfileAsync</c> with a body, for a write that answers JSON.</summary>
+    public async Task<TResponse> SendAsProfileAsync<TRequest, TResponse>(HttpMethod method, Uri server, string path, string profileId, TRequest body,
+        JsonTypeInfo<TRequest> requestType, JsonTypeInfo<TResponse> responseType, CancellationToken cancellationToken)
+    {
+        using var request = CreateAsProfile(method, server, path, profileId);
+        request.Content = JsonContent.Create(body, requestType);
+        return await SendAsync(request, responseType, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>As the bodiless 204 <c>SendAsProfileAsync</c>, for a write that answers JSON.</summary>
+    public async Task<TResponse> SendAsProfileAsync<TResponse>(HttpMethod method, Uri server, string path, string profileId,
+        JsonTypeInfo<TResponse> responseType, CancellationToken cancellationToken)
+    {
+        using var request = CreateAsProfile(method, server, path, profileId);
+        return await SendAsync(request, responseType, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// A read of profile <paramref name="profileId"/>'s file as it arrives, as <see cref="OpenAsync"/> answers it: once its
+    /// headers are in, whatever its status, for the caller to read and dispose. <paramref name="range"/> asks for the rest of a
+    /// file from an offset; <paramref name="ifNoneMatch"/> sends back the version kept, so an unchanged file answers 304.
+    /// </summary>
+    public async Task<HttpResponseMessage> OpenAsProfileAsync(Uri server, string path, string profileId, ByteRange? range, string? ifNoneMatch,
+        CancellationToken cancellationToken)
+    {
+        using var request = CreateAsProfile(HttpMethod.Get, server, path, profileId);
+        request.Headers.Accept.Clear();
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("*/*"));
+        request.Headers.CacheControl = new CacheControlHeaderValue { NoStore = true };
+        range?.ApplyTo(request.Headers);
+        if (ifNoneMatch is not null)
+        {
+            // Sent back as the server wrote it.
+            request.Headers.TryAddWithoutValidation("If-None-Match", ifNoneMatch);
+        }
+        return await http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>For operations that answer 204 No Content.</summary>
@@ -194,6 +239,15 @@ public sealed class SiloHttp(HttpClient http)
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         request.SetAuth(auth);
         request.SetServer(server);
+        return request;
+    }
+
+    // Bound to the one profile it may be sent as (SiloRequestOptions.Profile).
+    private static HttpRequestMessage CreateAsProfile(HttpMethod method, Uri server, string path, string profileId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(profileId);
+        var request = Create(method, server, path, SiloAuth.Profile);
+        request.SetProfile(profileId);
         return request;
     }
 

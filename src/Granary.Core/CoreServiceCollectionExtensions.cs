@@ -6,6 +6,7 @@ using Granary.Core.Api.Admin;
 using Granary.Core.Api.Auth;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Discovery;
+using Granary.Core.Api.Downloads;
 using Granary.Core.Api.Events;
 using Granary.Core.Api.Images;
 using Granary.Core.Api.Notifications;
@@ -109,6 +110,7 @@ public static class CoreServiceCollectionExtensions
 
         services.AddSingleton(_ => ClientIdentity.Load(ClientIdentity.DefaultDeviceIdFile));
         AddPlayback(services);
+        AddDownloads(services);
         AddRealtimeEvents(services);
 
         if (OperatingSystem.IsWindows())
@@ -271,6 +273,24 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<ConnectionSpeedTest>();
         // The app puts the system's view of the network in first.
         services.TryAddSingleton<INetworkLink, UnknownNetworkLink>();
+    }
+
+    // Offline downloads (docs/api-contract.md, 14). A download through /file-proxy may be redirected to a proxy node's
+    // short-lived address with a token of its own: that hop goes without credentials, redirects or cookies, and stays out of
+    // the log.
+    private static void AddDownloads(IServiceCollection services)
+    {
+        services.AddHttpClient(DownloadsApi.HopClientName, client => client.Timeout = Timeout.InfiniteTimeSpan)
+            .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
+            {
+                AllowAutoRedirect = false,
+                UseCookies = false,
+                AutomaticDecompression = System.Net.DecompressionMethods.None,
+                ConnectTimeout = TimeSpan.FromSeconds(15),
+                PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+            })
+            .RemoveAllLoggers();
+        services.AddTransient<DownloadsApi>();
     }
 
     // Artwork URLs are presigned and public: no credentials, no identity headers. HTTP/2 lets a page's images
