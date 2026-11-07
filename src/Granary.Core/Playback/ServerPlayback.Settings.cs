@@ -235,6 +235,8 @@ public sealed partial class ServerPlayback
         if (!Superseded(generation) && _context is { } context)
         {
             _context = _starter.WithVersion(context, previous.Version) with { SubtitlePick = previous.SubtitlePick };
+            // The log named the turned-down file's report last.
+            LogReport(_context.Report);
             TracksChanged?.Invoke(this, EventArgs.Empty);
         }
     }

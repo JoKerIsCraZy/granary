@@ -202,7 +202,7 @@ public sealed class PlaybackReportBuilderTests
     [Fact]
     public void OriginalHttp_ClaimsToneMapping_ForAnHevcTitle_ThoughTheVp9DecoderIsEightBitOnly()
     {
-        var report = PlaybackReportBuilder.Build(EightBitVp9, "1.0.0", fileCodecs: ["hevc"]);
+        var report = PlaybackReportBuilder.Build(EightBitVp9, "1.0.0", hdrFileCodecs: ["hevc"]);
 
         var original = report.ClientPlaybackContext.Deliveries[DeliveryClasses.OriginalHttp];
         Assert.Equal([DeliveryClaims.ClientSelectedAudioTrackV1, DeliveryClaims.ClientManagedDynamicRangeV1, .. DeliveryClaims.ClientManagedDolbyVisionBaseLayersV1],
@@ -214,45 +214,63 @@ public sealed class PlaybackReportBuilderTests
     public void OriginalHttp_LeavesHdrToTheServer_WhenAListedVp9DecoderIsEightBitOnly_AndTheTitleIsVp9()
     {
         // An 8-bit VP9 decoder would leave a VP9 HDR original to the CPU.
-        var report = PlaybackReportBuilder.Build(EightBitVp9, "1.0.0", fileCodecs: ["vp9"]);
+        var report = PlaybackReportBuilder.Build(EightBitVp9, "1.0.0", hdrFileCodecs: ["vp9"]);
 
         Assert.Equal([DeliveryClaims.ClientSelectedAudioTrackV1], report.ClientPlaybackContext.Deliveries[DeliveryClasses.OriginalHttp].ValidatedClaims);
     }
 
     [Fact]
-    public void OriginalHttp_LeavesHdrToTheServer_WhenAnyFileItMaySendIsVp9()
+    public void OriginalHttp_LeavesHdrToTheServer_WhenAnyHdrFileItMaySendIsVp9()
     {
-        // An HEVC file and a VP9 one the server may pick instead: the claim covers both.
-        Assert.False(MapsHdr(PlaybackReportBuilder.Build(EightBitVp9, "1.0.0", fileCodecs: ["hevc", "vp9"])));
+        // An HEVC HDR file and a VP9 HDR one the server may pick instead: the claim covers both.
+        Assert.False(MapsHdr(PlaybackReportBuilder.Build(EightBitVp9, "1.0.0", hdrFileCodecs: ["hevc", "vp9"])));
     }
 
     [Fact]
-    public void OriginalHttp_ChecksEveryHdrCodecTheReportLists_WhenAFilesCodecIsNotKnown()
+    public void OriginalHttp_ChecksEveryHdrCodecTheReportLists_WhenAnHdrFilesCodecIsNotKnown()
     {
         // Any listed codec may come then, the 8-bit VP9 decoder's too.
         Assert.False(MapsHdr(PlaybackReportBuilder.Build(EightBitVp9, "1.0.0")));
-        Assert.False(MapsHdr(PlaybackReportBuilder.Build(EightBitVp9, "1.0.0", fileCodecs: [])));
-        Assert.False(MapsHdr(PlaybackReportBuilder.Build(EightBitVp9, "1.0.0", fileCodecs: ["hevc", " "])));
-        Assert.True(MapsHdr(PlaybackReportBuilder.Build(Gpu with { HardwareTenBitVideoCodecs = ["hevc", "vp9", "av1"] }, "1.0.0", fileCodecs: ["hevc", ""])));
+        Assert.False(MapsHdr(PlaybackReportBuilder.Build(EightBitVp9, "1.0.0", hdrFileCodecs: ["hevc", " "])));
+        Assert.True(MapsHdr(PlaybackReportBuilder.Build(Gpu with { HardwareTenBitVideoCodecs = ["hevc", "vp9", "av1"] }, "1.0.0", hdrFileCodecs: ["hevc", ""])));
     }
 
     [Fact]
-    public void OriginalHttp_ReadsTheFilesCodecsAsTheServerDoes()
+    public void OriginalHttp_ClaimsToneMapping_WhenNoFileItMaySendIsHdr()
+    {
+        // Nothing to tone-map, as on any other GPU with a 10-bit decoder.
+        Assert.True(MapsHdr(PlaybackReportBuilder.Build(EightBitVp9, "1.0.0", hdrFileCodecs: [])));
+        Assert.False(MapsHdr(PlaybackReportBuilder.Build(EightBitVp9 with { HardwareTenBitVideoCodecs = [] }, "1.0.0", hdrFileCodecs: [])));
+    }
+
+    [Theory]
+    [InlineData("hevc")]
+    [InlineData(" HEVC ")]
+    [InlineData("h265")]
+    [InlineData("H.265")]
+    [InlineData("x265")]
+    public void OriginalHttp_ReadsHevcByEveryNameTheServerTakesForIt(string name)
     {
         var eightBitHevc = EightBitVp9 with { HardwareTenBitVideoCodecs = ["vp9"] };
 
-        // ffprobe's names in any case, and HEVC by the other names the server takes for it.
-        Assert.True(MapsHdr(PlaybackReportBuilder.Build(EightBitVp9, "1.0.0", fileCodecs: [" HEVC "])));
-        Assert.False(MapsHdr(PlaybackReportBuilder.Build(EightBitVp9, "1.0.0", fileCodecs: ["VP9"])));
-        Assert.False(MapsHdr(PlaybackReportBuilder.Build(eightBitHevc, "1.0.0", fileCodecs: ["h265"])));
-        Assert.True(MapsHdr(PlaybackReportBuilder.Build(eightBitHevc, "1.0.0", fileCodecs: ["vp9"])));
+        Assert.True(MapsHdr(PlaybackReportBuilder.Build(EightBitVp9, "1.0.0", hdrFileCodecs: [name])));
+        Assert.False(MapsHdr(PlaybackReportBuilder.Build(eightBitHevc, "1.0.0", hdrFileCodecs: [name])));
+    }
+
+    [Fact]
+    public void OriginalHttp_ReadsTheFilesCodecsInAnyCase()
+    {
+        var eightBitHevc = EightBitVp9 with { HardwareTenBitVideoCodecs = ["vp9"] };
+
+        Assert.False(MapsHdr(PlaybackReportBuilder.Build(EightBitVp9, "1.0.0", hdrFileCodecs: ["VP9"])));
+        Assert.True(MapsHdr(PlaybackReportBuilder.Build(eightBitHevc, "1.0.0", hdrFileCodecs: ["Vp9 "])));
     }
 
     [Fact]
     public void OriginalHttp_DoesNotCountACodecTheReportDoesNotList()
     {
         // The server plays no AV1 file directly to this PC, so its HDR is the server's whatever the claim says.
-        var report = PlaybackReportBuilder.Build(EightBitVp9, "1.0.0", fileCodecs: ["hevc", "av1"]);
+        var report = PlaybackReportBuilder.Build(EightBitVp9, "1.0.0", hdrFileCodecs: ["hevc", "av1"]);
 
         Assert.DoesNotContain("av1", report.ClientCapabilities.CodecsVideo);
         Assert.True(MapsHdr(report));
@@ -261,13 +279,13 @@ public sealed class PlaybackReportBuilderTests
     [Fact]
     public void OriginalHttp_LeavesHdrToTheServer_ForAnHevcTitle_WithoutAnyTenBitDecoderInTheGpu()
     {
-        Assert.False(MapsHdr(PlaybackReportBuilder.Build(EightBitVp9 with { HardwareTenBitVideoCodecs = [] }, "1.0.0", fileCodecs: ["hevc"])));
+        Assert.False(MapsHdr(PlaybackReportBuilder.Build(EightBitVp9 with { HardwareTenBitVideoCodecs = [] }, "1.0.0", hdrFileCodecs: ["hevc"])));
     }
 
     [Fact]
     public void SoftwareDecoding_ClaimsToneMappingWhateverTheTitlesCodec()
     {
-        var known = PlaybackReportBuilder.Build(EightBitVp9, "1.0.0", softwareDecoding: true, fileCodecs: ["vp9"]);
+        var known = PlaybackReportBuilder.Build(EightBitVp9, "1.0.0", softwareDecoding: true, hdrFileCodecs: ["vp9"]);
         var unknown = PlaybackReportBuilder.Build(EightBitVp9, "1.0.0", softwareDecoding: true);
 
         Assert.True(MapsHdr(known));

@@ -82,12 +82,13 @@ public static class PlaybackReportBuilder
     /// server still makes stays one this PC decodes without strain (the server encodes HEVC only for an HLS delivery that
     /// lists it).
     /// </param>
-    /// <param name="fileCodecs">
-    /// The video codecs of the files the server may send for this start, as the scanner names them. HDR then counts only in
-    /// those codecs, instead of in every codec the report lists; null, or with a blank among them, when that is not known.
+    /// <param name="hdrFileCodecs">
+    /// The video codecs of the HDR and Dolby Vision files the server may send for this start, as the scanner names them;
+    /// empty when none is HDR. HDR then counts only in those codecs, instead of in every codec the report lists. Null, or
+    /// with a blank among them, when that is not known.
     /// </param>
     public static PlaybackClientReport Build(PlaybackDeviceFacts device, string appVersion, string? appChannel = null, bool mediaOrigins = false,
-        bool softwareDecoding = false, IReadOnlyCollection<string>? fileCodecs = null)
+        bool softwareDecoding = false, IReadOnlyCollection<string>? hdrFileCodecs = null)
     {
         ArgumentNullException.ThrowIfNull(device);
         ArgumentException.ThrowIfNullOrWhiteSpace(appVersion);
@@ -121,7 +122,7 @@ public static class PlaybackReportBuilder
             },
             Deliveries = new Dictionary<string, DeliveryCapability>
             {
-                [DeliveryClasses.OriginalHttp] = OriginalHttp(video, softwareDecoding || DecodesHdr(device, video, fileCodecs)),
+                [DeliveryClasses.OriginalHttp] = OriginalHttp(video, softwareDecoding || DecodesHdr(device, video, hdrFileCodecs)),
                 [DeliveryClasses.Hls] = Hls(smooth),
             },
         };
@@ -152,17 +153,17 @@ public static class PlaybackReportBuilder
 
     /// <summary>
     /// The GPU decodes some HDR video at 10 bits, and every codec HDR may come in for this start plays without stutter:
-    /// decoded at 10 bits by the GPU, or on the CPU's list. Those are the HDR codecs of the files the server may send, or
-    /// every one the report lists where a file's is not known, since at <c>declared</c> evidence the server checks codec
-    /// names, not bit depth. So an 8-bit-only decoder, such as VP9 without Profile 2, leaves HDR in that codec to the
-    /// server. A codec the report does not list never plays directly. H.264 High 10 is left out: no D3D11 decoder takes it
-    /// and HDR in it is rare (docs/api-contract.md, 13.2).
+    /// decoded at 10 bits by the GPU, or on the CPU's list. Those are the codecs of the HDR files the server may send, or
+    /// every HDR codec the report lists where one of theirs is not known, since at <c>declared</c> evidence the server
+    /// checks codec names, not bit depth. So an 8-bit-only decoder, such as VP9 without Profile 2, leaves HDR in that codec
+    /// to the server; SDR files need no 10-bit decoder. A codec the report does not list never plays directly. H.264 High
+    /// 10 is left out: no D3D11 decoder takes it and HDR in it is rare (docs/api-contract.md, 13.2).
     /// </summary>
-    private static bool DecodesHdr(PlaybackDeviceFacts device, IReadOnlyList<string> video, IReadOnlyCollection<string>? fileCodecs)
+    private static bool DecodesHdr(PlaybackDeviceFacts device, IReadOnlyList<string> video, IReadOnlyCollection<string>? hdrFileCodecs)
     {
         var tenBit = CodecList(device.HardwareTenBitVideoCodecs);
         var software = CodecList(device.SoftwareVideoCodecs);
-        var files = KnownCodecs(fileCodecs);
+        var files = KnownCodecs(hdrFileCodecs);
         return tenBit.Count > 0 && HdrCodecs.Where(c => video.Contains(c) && (files is null || files.Contains(c)))
             .All(c => tenBit.Contains(c) || software.Contains(c));
     }
@@ -173,7 +174,7 @@ public static class PlaybackReportBuilder
     /// </summary>
     private static HashSet<string>? KnownCodecs(IReadOnlyCollection<string>? codecs)
     {
-        if (codecs is null || codecs.Count == 0 || codecs.Any(string.IsNullOrWhiteSpace))
+        if (codecs is null || codecs.Any(string.IsNullOrWhiteSpace))
         {
             return null;
         }

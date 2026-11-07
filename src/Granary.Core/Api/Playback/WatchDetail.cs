@@ -153,7 +153,17 @@ public sealed record WatchFileVersion
 
     public string CodecAudio { get; init => field = value ?? ""; } = "";
 
-    public bool Hdr { get; init; }
+    // A flag missing from the JSON would read as false, SDR (the source generator sets a missing bool to its default).
+    [JsonPropertyName("hdr")]
+    public bool? RawHdr { get; init; }
+
+    /// <summary>HDR or Dolby Vision, as the scanner found the file; false also when the server did not say.</summary>
+    [JsonIgnore]
+    public bool Hdr { get => RawHdr ?? false; init => RawHdr = value; }
+
+    /// <summary>HDR or Dolby Vision, or not said to be SDR: what a choice that must not miss HDR reads.</summary>
+    [JsonIgnore]
+    public bool MayBeHdr => RawHdr ?? true;
 
     public string Container { get; init => field = value ?? ""; } = "";
 

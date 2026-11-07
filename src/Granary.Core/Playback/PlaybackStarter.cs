@@ -110,7 +110,7 @@ public sealed class PlaybackStarter(
         bool pinned = pinnedFileId is not null;
         bool versionPicked = picked?.IsVersionPicked == true;
         bool software = devicePreferences.DecodesInSoftware;
-        var report = Report(OffersMediaOrigins(capabilities), software, FileCodecs(detail, version, keepsVersion: pinned || versionPicked));
+        var report = Report(OffersMediaOrigins(capabilities), software, HdrFileCodecs(detail, version, keepsVersion: pinned || versionPicked));
         return new PlaybackContext(server, profileId, detail, version, await settings.ConfigureAwait(false), capabilities.InstallationId!, report,
             picked?.SubtitleTrack)
         {
@@ -164,7 +164,7 @@ public sealed class PlaybackStarter(
     {
         ArgumentNullException.ThrowIfNull(context);
         var capabilities = await CapabilitiesAsync(context.Server, cancellationToken).ConfigureAwait(false);
-        var report = Report(OffersMediaOrigins(capabilities), context.DecodesInSoftware, FileCodecs(context.Watch, context.Version, context.KeepsVersion));
+        var report = Report(OffersMediaOrigins(capabilities), context.DecodesInSoftware, HdrFileCodecs(context.Watch, context.Version, context.KeepsVersion));
         return context with { InstallationId = capabilities.InstallationId!, Report = report };
     }
 
@@ -177,7 +177,7 @@ public sealed class PlaybackStarter(
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(version);
         bool mediaOrigins = context.Report.ClientFeatures.Contains(PlaybackFeatures.AuthorizedMediaOriginsV1);
-        var report = Report(mediaOrigins, context.DecodesInSoftware, FileCodecs(context.Watch, version, context.KeepsVersion));
+        var report = Report(mediaOrigins, context.DecodesInSoftware, HdrFileCodecs(context.Watch, version, context.KeepsVersion));
         return context with { Version = version, Report = report };
     }
 
@@ -185,14 +185,18 @@ public sealed class PlaybackStarter(
     private static bool OffersMediaOrigins(PlaybackCapabilities capabilities) => capabilities.HasFeature(PlaybackFeatures.AuthorizedMediaOriginsV1);
 
     // A start's report. This PC's software decoding choice is the one read when the title started, so a change in the
-    // settings counts from the next title on; the HDR claim follows the codecs of the files the start may get.
-    private PlaybackClientReport Report(bool mediaOrigins, bool softwareDecoding, IReadOnlyList<string> fileCodecs) =>
-        PlaybackReportBuilder.Build(device.Facts, identity.ClientVersion, identity.ClientChannel, mediaOrigins, softwareDecoding, fileCodecs);
+    // settings counts from the next title on; the HDR claim follows the codecs of the HDR files the start may get.
+    private PlaybackClientReport Report(bool mediaOrigins, bool softwareDecoding, IReadOnlyList<string> hdrFileCodecs) =>
+        PlaybackReportBuilder.Build(device.Facts, identity.ClientVersion, identity.ClientChannel, mediaOrigins, softwareDecoding, hdrFileCodecs);
 
-    // The video codecs of the files the server may send for a start of that version: its own and, unless the start keeps to
-    // it, the title's other files', which the server may fall back to or resume in. A file without one makes them unknown.
-    private static IReadOnlyList<string> FileCodecs(WatchDetail watch, WatchFileVersion version, bool keepsVersion) =>
-        keepsVersion ? [version.CodecVideo] : [version.CodecVideo, .. watch.Versions.Select(v => v.CodecVideo)];
+    // The video codecs of the HDR files the server may send for a start of that version: among its own and, unless the start
+    // keeps to it, the title's other files, which the server may fall back to or resume in. A file that does not say whether
+    // it is HDR counts as HDR, and one without a codec makes them unknown; an SDR file needs no 10-bit decoder.
+    private static IReadOnlyList<string> HdrFileCodecs(WatchDetail watch, WatchFileVersion version, bool keepsVersion)
+    {
+        IEnumerable<WatchFileVersion> files = keepsVersion ? [version] : [version, .. watch.Versions];
+        return [.. files.Where(f => f.MayBeHdr).Select(f => f.CodecVideo)];
+    }
 
     /// <summary>Starts an attempt of <paramref name="context"/>'s file at <paramref name="startPosition"/> (source seconds; null: the server's resume point).</summary>
     public Task<PlaybackDecision> StartAsync(PlaybackContext context, string attemptId, double? startPosition, CancellationToken cancellationToken)
