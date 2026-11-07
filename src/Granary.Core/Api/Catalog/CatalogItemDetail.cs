@@ -11,6 +11,9 @@ public sealed record CatalogItemDetail : CatalogItemBase
 {
     public string? OriginalTitle { get; init; }
 
+    /// <summary>The item's TMDB id, digits as a string; absent for an item TMDB does not know (the Discord status's link and poster).</summary>
+    public string? TmdbId { get; init; }
+
     public string? Tagline { get; init; }
 
     public IReadOnlyList<string> Countries { get; init => field = value ?? []; } = [];

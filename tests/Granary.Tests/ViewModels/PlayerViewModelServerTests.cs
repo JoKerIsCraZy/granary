@@ -162,6 +162,21 @@ public sealed class PlayerViewModelServerTests
     }
 
     [Fact]
+    public async Task ANewTitle_TurnsTheSeekBarOffAtOnce_NotOnlyWhenItsLoadIsFirstReported()
+    {
+        var viewModel = CreateViewModel();
+        await viewModel.StartAsync(PlayRequest.Resume("episode-1"));
+        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));
+        _engine.RaiseState(new PlaybackSnapshot(true, false, TimeSpan.FromSeconds(600), TimeSpan.FromSeconds(3000), null, HasStarted: true));
+        Assert.True(viewModel.CanSeek);
+
+        await viewModel.StartAsync(PlayRequest.Resume("episode-2"));
+
+        Assert.False(viewModel.CanSeek);
+        Assert.True(viewModel.IsPreparing);
+    }
+
+    [Fact]
     public async Task WithoutAKnownLength_TheStreamsLengthIsShiftedIntoTheTitlesTime()
     {
         var viewModel = CreateViewModel();

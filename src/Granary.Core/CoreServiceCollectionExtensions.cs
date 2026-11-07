@@ -239,6 +239,8 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<IMediaProxy>(sp => sp.GetRequiredService<MediaProxy>());
         services.AddSingleton<Func<IServerPlayback>>(sp => () => ActivatorUtilities.CreateInstance<ServerPlayback>(sp));
         services.AddTransient<IUpNextSource, UpNextSource>();
+        // The Discord status's TMDB page and poster of each title, kept as long as the app runs.
+        services.AddSingleton<TmdbTitleLookup>();
         // The episodes that started by themselves count across player pages, as long as the app runs.
         services.AddSingleton(sp =>
         {

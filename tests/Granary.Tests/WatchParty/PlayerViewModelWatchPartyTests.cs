@@ -1,7 +1,9 @@
 using System.Net;
 using System.Text.Json;
 using Granary.Core.Abstractions;
+using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Playback;
+using Granary.Core.Api.Requests;
 using Granary.Core.Api.WatchParty;
 using Granary.Core.Auth;
 using Granary.Core.Playback;
@@ -148,6 +150,26 @@ public sealed class PlayerViewModelWatchPartyTests : IAsyncDisposable
         Assert.Empty(Playback.Seeks);
         Assert.Equal(WatchPartyPlaybackBinding.HostSeeksText, viewModel.NoticeMessage);
         Assert.False(viewModel.CanSeekInRoom);
+    }
+
+    [Fact]
+    public async Task AGuestsDiscordStatus_ShowsTheRoomsTitle_ThoughSeekingIsTheHosts()
+    {
+        var viewModel = await JoinedAsync(WatchPartyPayloads.Room("playing", "playing", generation: 3, revision: 1, role: "guest", selected: "movie:heat"));
+        var presence = new FakeRichPresence();
+        var titles = new TmdbTitleLookup(new CatalogApi(_silo.Http), new RequestsApi(_silo.Http), _session, _logs.For<TmdbTitleLookup>());
+        using var status = new PlayerRichPresence(viewModel, presence, new InMemoryPlaybackDevicePreferences { DiscordStatus = true }, titles,
+            new ImmediateDispatcher(), _time);
+
+        await viewModel.StartAsync(PlayRequest.WatchParty("movie:heat", "77", 1));
+        // A title without its catalog id: nothing to look up on TMDB.
+        Playback.MediaInfo = new PlaybackMediaInfo("Heat", "1995", null) { Kind = PlaybackMediaKind.Movie, Year = 1995 };
+        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));
+        _engine.RaiseState(new PlaybackSnapshot(true, false, TimeSpan.FromSeconds(30), TimeSpan.FromHours(2), null, HasStarted: true));
+
+        Assert.False(viewModel.CanSeekInRoom);
+        var start = _time.GetUtcNow() - TimeSpan.FromSeconds(30);
+        Assert.Equal(new RichPresenceState("Heat", "1995", start, start + TimeSpan.FromHours(2), null, null), presence.Current);
     }
 
     [Fact]

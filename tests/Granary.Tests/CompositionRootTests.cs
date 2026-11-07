@@ -46,6 +46,8 @@ public sealed class CompositionRootTests
         Assert.IsType<MpvDeviceProbe>(provider.GetRequiredService<IPlaybackDeviceProbe>());
         Assert.IsType<ServerPlayback>(provider.GetRequiredService<Func<IServerPlayback>>()());
         Assert.Same(provider.GetRequiredService<RealtimeEvents>(), provider.GetRequiredService<RealtimeEvents>());
+        // The Discord status's TMDB answers are kept for the run, across player pages.
+        Assert.Same(provider.GetRequiredService<TmdbTitleLookup>(), provider.GetRequiredService<TmdbTitleLookup>());
         Assert.NotSame(provider.GetRequiredService<Func<EventsLane>>()(), provider.GetRequiredService<Func<EventsLane>>()());
         using var player = provider.GetRequiredService<PlayerViewModel>();
         Assert.Same(provider.GetRequiredService<IPlaybackEngine>(), provider.GetRequiredService<ICompositionVideoOutput>());

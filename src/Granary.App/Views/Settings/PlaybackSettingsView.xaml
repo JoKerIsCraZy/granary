@@ -140,6 +140,12 @@
                 <TextBlock Margin="0,12,0,0" Text="{x:Bind Mpv.PresetMessage, Mode=OneWay}" Style="{StaticResource SiloSettingsMutedTextStyle}"
                            Visibility="{x:Bind controls:SettingsText.Shows(Mpv.PresetMessage), Mode=OneWay}"
                            AutomationProperties.LiveSetting="Polite" />
+                <!-- Granary's own: Discord's status while a title plays (PlayerRichPresence), shown or taken away at once. -->
+                <controls:SettingsRow Label="Show what's playing in Discord"
+                                      Description="Your Discord status shows the title, the episode and the time left while Granary plays. Needs the Discord app on this PC.">
+                    <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.DiscordStatus, Mode=TwoWay}"
+                                  AutomationProperties.Name="Show what's playing in Discord" />
+                </controls:SettingsRow>
             </StackPanel>
         </controls:SettingsGroup>
 

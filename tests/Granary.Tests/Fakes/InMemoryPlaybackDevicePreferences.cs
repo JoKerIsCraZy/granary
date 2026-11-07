@@ -30,6 +30,24 @@ internal sealed class InMemoryPlaybackDevicePreferences : IPlaybackDevicePrefere
         return Task.CompletedTask;
     }
 
+    public bool DiscordStatus { get; set; }
+
+    public List<bool> SavedDiscordStatus { get; } = [];
+
+    public event EventHandler? DiscordStatusChanged;
+
+    public Task SetDiscordStatusAsync(bool enabled)
+    {
+        bool changed = enabled != DiscordStatus;
+        DiscordStatus = enabled;
+        SavedDiscordStatus.Add(enabled);
+        if (changed)
+        {
+            DiscordStatusChanged?.Invoke(this, EventArgs.Empty);
+        }
+        return Task.CompletedTask;
+    }
+
     public Task LatestSave => Task.CompletedTask;
 
     public Task SetDecodesInSoftwareAsync(bool decodesInSoftware)

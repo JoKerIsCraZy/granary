@@ -20,7 +20,7 @@ public sealed class PlaybackMediaInfoTests
             BackdropUrl = "/api/v2/artwork/a/backdrop.webp?sig=y",
         }, Server);
 
-        Assert.Equal(new PlaybackMediaInfo("Heat", "1995", new Uri("https://silo.example/api/v2/artwork/a/poster.webp?sig=x")), info);
+        Assert.Equal(("Heat", "1995", new Uri("https://silo.example/api/v2/artwork/a/poster.webp?sig=x")), (info.Title, info.Subtitle, info.Artwork));
     }
 
     [Fact]
@@ -36,7 +36,7 @@ public sealed class PlaybackMediaInfoTests
             PosterUrl = "https://cdn.example/still.webp",
         }, Server);
 
-        Assert.Equal(new PlaybackMediaInfo("Past and Present", "Dark — S1 · E5", new Uri("https://cdn.example/still.webp")), info);
+        Assert.Equal(("Past and Present", "Dark — S1 · E5", new Uri("https://cdn.example/still.webp")), (info.Title, info.Subtitle, info.Artwork));
     }
 
     [Fact]
@@ -53,6 +53,56 @@ public sealed class PlaybackMediaInfoTests
         var info = PlaybackMediaInfo.Of(new WatchDetail { Type = WatchItemTypes.Episode, Title = "Pilot", SeasonNumber = 1, EpisodeNumber = 1 }, Server);
 
         Assert.Equal(("Pilot", "S1 · E1"), (info.Title, info.Subtitle));
+    }
+
+    [Fact]
+    public void AMovie_CarriesItsYear_AndItsOwnIdToFindItOnTmdb()
+    {
+        var info = PlaybackMediaInfo.Of(new WatchDetail { ContentId = "movie-heat", Type = WatchItemTypes.Movie, Title = "Heat", Year = 1995 }, Server);
+
+        Assert.Equal((PlaybackMediaKind.Movie, 1995, "movie-heat", null, null), (info.Kind, info.Year, info.CatalogId, info.SeriesTitle, info.EpisodeNumber));
+    }
+
+    [Fact]
+    public void AnEpisode_CarriesItsSeriesNumbersAndTitle_AndItsSeriesIdToFindItOnTmdb()
+    {
+        var info = PlaybackMediaInfo.Of(new WatchDetail
+        {
+            ContentId = "episode-dark-1-5",
+            Type = WatchItemTypes.Episode,
+            Title = "Past and Present",
+            SeriesId = "series-dark",
+            SeriesTitle = "Dark",
+            SeasonNumber = 1,
+            EpisodeNumber = 5,
+            Year = 2017,
+        }, Server);
+
+        Assert.Equal((PlaybackMediaKind.Episode, "Dark", 1, 5, "Past and Present", "series-dark"),
+            (info.Kind, info.SeriesTitle, info.SeasonNumber, info.EpisodeNumber, info.EpisodeTitle, info.CatalogId));
+    }
+
+    [Fact]
+    public void AnEpisodeWithoutATitle_HasNoEpisodeTitle_ThoughItsLineNamesItByNumber()
+    {
+        var info = PlaybackMediaInfo.Of(new WatchDetail { Type = WatchItemTypes.Episode, Title = " ", SeriesId = "series-dark", SeriesTitle = "Dark", SeasonNumber = 2, EpisodeNumber = 1 }, Server);
+
+        Assert.Equal(("Episode 1", null), (info.Title, info.EpisodeTitle));
+    }
+
+    [Fact]
+    public void AnotherKindOfTitle_HasNothingToFindOnTmdb()
+    {
+        var info = PlaybackMediaInfo.Of(new WatchDetail { ContentId = "book-1", Type = WatchItemTypes.Audiobook, Title = "Dune", Year = 1965 }, Server);
+
+        Assert.Equal((PlaybackMediaKind.Other, null), (info.Kind, info.CatalogId));
+    }
+
+    [Fact]
+    public void WhatThePlayerShowsForAFilePlayedDirectly_IsNoSiloTitle()
+    {
+        Assert.Equal(PlaybackMediaKind.Direct, new PlaybackMediaInfo("Holiday.mkv", "", null).Kind);
+        Assert.Equal(PlaybackMediaKind.Direct, PlaybackMediaInfo.None.Kind);
     }
 
     [Fact]

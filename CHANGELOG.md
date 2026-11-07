@@ -8,17 +8,22 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Added
 
+- **Discord status:** turn on Settings → Playback → This PC → Show what's playing in Discord, and while Granary plays,
+  your Discord status says what you're watching: the series or film, the season and episode, the poster and the time
+  left, with a link to the title on TMDB. Paused shows as paused, and the status goes when you stop. Only titles from
+  your Silo server show, never a file you play directly. It needs the Discord app on this PC, and the poster shows when
+  your Silo server has Requests turned on.
 - **Sleep timer:** the player's Sleep button pauses playback after 5 to 60 minutes, counting down on the button, or stops
   at the end of the episode or movie instead of starting the next episode. A timer runs on into the next episode, and the
   menu opens on the duration you started last on this PC.
 
 ### Fixed
 
-- HDR and Dolby Vision films play directly on more graphics cards, because Granary now checks the film's own codec. A
-  card that decodes VP9 only in 8 bits had your Silo server convert every HDR film, HEVC ones too.
 - Dolby Vision files with an HDR10, HLG or SDR base layer play directly on a server that wants each base layer named,
   where it converted them.
 - Saving mpv.conf or loading a preset no longer fails when Granary happens to be reading the file at that moment.
+- HDR and Dolby Vision films play directly on more graphics cards, because Granary now checks the film's own codec. A
+  card that decodes VP9 only in 8 bits had your Silo server convert every HDR film, HEVC ones too.
 
 ## [0.2.1] - 2026-11-05
 
