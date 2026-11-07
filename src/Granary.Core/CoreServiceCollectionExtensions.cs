@@ -103,6 +103,7 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<ServerAccent>();
         services.AddSingleton<CardOverlaySettings>();
         services.AddSingleton<CardPresentationSettings>();
+        services.AddSingleton<EpisodeSpoilerSettings>();
         services.AddTransient<ImagesApi>();
         services.AddSingleton<ImageParameterCache>();
         AddArtwork(services);

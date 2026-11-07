@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Settings → Title Pages, as on Silo's web (pages/settings/TitlePagesSettings.tsx): its Spoilers group. -->
+<UserControl
+    x:Class="Granary.App.Views.Settings.TitlePagesSettingsView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Granary.App.Controls">
+
+    <!-- Its own copy: the view is made before it joins the page, whose resources it cannot see then. -->
+    <UserControl.Resources>
+        <ResourceDictionary Source="ms-appx:///Themes/SiloSettings.xaml" />
+    </UserControl.Resources>
+
+    <StackPanel>
+        <TextBlock Text="Title Pages" Style="{StaticResource SiloSettingsPageTitleStyle}" AutomationProperties.HeadingLevel="Level1" />
+        <TextBlock Margin="0,8,0,32" Style="{StaticResource SiloSettingsMutedTextStyle}" FontSize="14"
+                   Text="What a movie or show page shows and plays when you open it." />
+        <InfoBar IsOpen="{x:Bind controls:SettingsText.Has(ViewModel.ErrorMessage), Mode=OneWay}" Severity="Error" IsClosable="False"
+                 Message="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}" Margin="0,0,0,16" />
+
+        <controls:SettingsGroup Title="Spoilers" Description="Applies to episodes you have not started, on every device that uses this profile.">
+            <StackPanel>
+                <TextBlock Text="Loading…" Style="{StaticResource SiloSettingsMutedTextStyle}" FontSize="14"
+                           Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay}" />
+                <!-- Why the switches cannot show: the read failed, or the server predates them. -->
+                <Border Padding="16" CornerRadius="12" BorderThickness="1" BorderBrush="#FF28282E" Background="#0AFFFFFF"
+                        Visibility="{x:Bind controls:SettingsText.Shows(ViewModel.BlockerTitle), Mode=OneWay}">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="{x:Bind ViewModel.BlockerTitle, Mode=OneWay}" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium"
+                                   FontSize="14" TextWrapping="Wrap" Foreground="{StaticResource SiloForegroundBrush}" />
+                        <TextBlock Text="{x:Bind ViewModel.BlockerText, Mode=OneWay}" Style="{StaticResource SiloSettingsMutedTextStyle}" />
+                    </StackPanel>
+                </Border>
+                <StackPanel Visibility="{x:Bind ViewModel.IsReady, Mode=OneWay}">
+                    <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Blur unwatched episode images"
+                                          Description="Blur an episode's thumbnail until you start watching it, so the image does not give away the story.">
+                        <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.HidesImages, Mode=TwoWay}"
+                                      AutomationProperties.Name="Blur unwatched episode images" />
+                    </controls:SettingsRow>
+                    <controls:SettingsRow Label="Hide unwatched episode descriptions"
+                                          Description="Hide an episode's description until you start watching it.">
+                        <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.HidesOverviews, Mode=TwoWay}"
+                                      AutomationProperties.Name="Hide unwatched episode descriptions" />
+                    </controls:SettingsRow>
+                </StackPanel>
+            </StackPanel>
+        </controls:SettingsGroup>
+    </StackPanel>
+</UserControl>

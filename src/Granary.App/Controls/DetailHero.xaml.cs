@@ -67,6 +67,17 @@ public sealed partial class DetailHero : UserControl
 
     private void OnActionErrorClosed(InfoBar sender, object args) => ViewModel?.DismissActionError();
 
+    // The link goes with what it hid: keyboard focus moves on to Play, the next stop, rather than to nowhere.
+    private void OnRevealOverviewClick(object sender, RoutedEventArgs e)
+    {
+        bool byKeyboard = RevealOverviewButton.FocusState is FocusState.Keyboard or FocusState.Programmatic;
+        ViewModel?.RevealOverviewCommand.Execute(null);
+        if (byKeyboard)
+        {
+            PlayButton.Focus(FocusState.Keyboard);
+        }
+    }
+
     // A picker's menu takes its rows as it opens and keeps them while it is open: the page reads the item again after a
     // save, and new rows under an open menu would take the focus out of it. It opens on the chosen row, so the arrows
     // start from there.

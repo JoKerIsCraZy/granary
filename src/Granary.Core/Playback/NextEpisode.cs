@@ -18,6 +18,14 @@ public sealed record NextEpisode(string ContentId, int SeasonNumber, int Episode
     public Uri? StillUrl { get; init; }
 
     /// <summary>
+    /// <see cref="StillUrl"/> is the episode's own still (true) or the series' art (false); null when the server does not say.
+    /// </summary>
+    public bool? StillIsEpisodeStill { get; init; }
+
+    /// <summary>The profile has neither played nor started it, as <see cref="Settings.EpisodeSpoilers"/> counts it; unknown counts as unwatched.</summary>
+    public bool IsUnwatched { get; init; } = true;
+
+    /// <summary>
     /// The smallest (season, episode) strictly after <paramref name="season"/>/<paramref name="episode"/> in
     /// <paramref name="pool"/>, as Android's NextEpisodeResolver picks it; null at the end.
     /// </summary>
@@ -52,6 +60,8 @@ public sealed record NextEpisode(string ContentId, int SeasonNumber, int Episode
             AirDate = episode.AirDate,
             RuntimeMinutes = episode.Runtime,
             StillUrl = Api.Images.ArtworkUrl.Resolve(server, episode.StillUrl),
+            StillIsEpisodeStill = episode.StillIsEpisodeStill,
+            IsUnwatched = Settings.EpisodeSpoilers.IsUnwatched(episode.UserData),
         };
     }
 }

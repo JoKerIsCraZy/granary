@@ -49,6 +49,15 @@ public abstract record CatalogItemBase
 
     public string? BackdropThumbhash { get; init; }
 
+    /// <summary>
+    /// <see cref="PosterUrl"/> is an episode's own still (true) or other artwork, such as the series' standing in (false);
+    /// null when the server does not say, as older ones do (docs/api-contract.md, 7.10).
+    /// </summary>
+    public bool? PosterIsEpisodeStill { get; init; }
+
+    /// <summary>As <see cref="PosterIsEpisodeStill"/>, for <see cref="BackdropUrl"/>.</summary>
+    public bool? BackdropIsEpisodeStill { get; init; }
+
     /// <summary>There is no logo thumbhash.</summary>
     public string? LogoUrl { get; init; }
 

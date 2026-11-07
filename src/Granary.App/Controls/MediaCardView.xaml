@@ -37,6 +37,12 @@
             <Image x:Name="BlurImage" Stretch="UniformToFill" AutomationProperties.AccessibilityView="Raw" />
             <Image x:Name="ArtImage" Stretch="UniformToFill" ImageOpened="OnImageOpened" ImageFailed="OnImageFailed"
                    AutomationProperties.AccessibilityView="Raw" />
+            <!--
+                An unwatched episode's still the profile hides, blurred in place of the artwork (MediaCardView.Spoiler.cs); made for
+                the first card that shows one.
+            -->
+            <Image x:Name="SpoilerImage" x:Load="False" Stretch="UniformToFill" Opacity="0" IsHitTestVisible="False"
+                   AutomationProperties.AccessibilityView="Raw" />
 
             <!-- A darker foot for the bottom badges and buttons. -->
             <Rectangle Height="96" VerticalAlignment="Bottom" Opacity="0.9" IsHitTestVisible="False">

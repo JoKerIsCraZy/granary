@@ -9,6 +9,7 @@ using Granary.Core.Artwork;
 using Granary.Core.Auth;
 using Granary.Core.Playback;
 using Granary.Core.Servers;
+using Granary.Core.Settings;
 using Granary.Core.ViewModels.Cards;
 using Granary.Core.ViewModels.Detail;
 using Microsoft.Extensions.Logging;
@@ -56,6 +57,9 @@ public sealed partial class ItemDetailViewModel : ObservableObject
     private readonly ViewerStateChanges? _changes;
     private readonly TrackPreferencesApi? _trackPreferences;
     private readonly TrackChoiceWrites? _trackChoices;
+    private readonly EpisodeSpoilerSettings? _spoilers;
+    private readonly IUiDispatcher? _dispatcher;
+    private readonly TimeProvider _time;
 
     // A newer load makes the answers of older calls stale.
     private int _generation;
@@ -67,6 +71,10 @@ public sealed partial class ItemDetailViewModel : ObservableObject
     private WatchRollup? _watch;
     private IReadOnlyList<Season> _seasons = [];
     private IReadOnlyList<Episode> _episodes = [];
+    // The season whose episodes the page lists, and an episode's siblings in More Episodes.
+    private string? _episodesSeasonId;
+    private IReadOnlyList<Episode> _siblings = [];
+    private ImageParameters _imageParameters = ImageParameters.None;
 
     // The page lists episodes: a season, or a series with a single season.
     private bool _listsEpisodes;
@@ -81,7 +89,10 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         ILogger<ItemDetailViewModel> logger,
         ViewerStateChanges? changes = null,
         TrackPreferencesApi? trackPreferences = null,
-        TrackChoiceWrites? trackChoices = null)
+        TrackChoiceWrites? trackChoices = null,
+        EpisodeSpoilerSettings? spoilers = null,
+        IUiDispatcher? dispatcher = null,
+        TimeProvider? time = null)
     {
         _session = session;
         _catalog = catalog;
@@ -92,6 +103,9 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         _changes = changes;
         _trackPreferences = trackPreferences;
         _trackChoices = trackChoices;
+        _spoilers = spoilers;
+        _dispatcher = dispatcher;
+        _time = time ?? TimeProvider.System;
     }
 
     /// <summary>The display scale artwork is requested for (1.5 at 150 %); set it before loading.</summary>
@@ -163,10 +177,13 @@ public sealed partial class ItemDetailViewModel : ObservableObject
 
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasOverview))]
+    [NotifyPropertyChangedFor(nameof(HasOverview), nameof(ShowsOverview))]
     public partial string Overview { get; private set; } = "";
 
     public bool HasOverview => Overview.Length > 0;
+
+    /// <summary>The hero shows the overview: there is one, and spoiler protection does not hide it (<see cref="IsOverviewHidden"/>).</summary>
+    public bool ShowsOverview => HasOverview && !IsOverviewHidden;
 
 
 
@@ -337,6 +354,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         try
         {
             var images = await ImageParametersAsync(server, cancellationToken);
+            _imageParameters = images;
             var item = await _catalog.GetItemAsync(server.BaseUri, id, images: images, cancellationToken: cancellationToken);
             if (generation != _generation)
             {
@@ -415,6 +433,8 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         _watch = null;
         _seasons = [];
         _episodes = [];
+        _episodesSeasonId = null;
+        _siblings = [];
         _listsEpisodes = false;
         _logoFailed = false;
         State = ItemDetailState.Loading;
@@ -422,6 +442,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         ActionError = "";
         Breadcrumbs = [];
         Overview = "";
+        IsOverviewHidden = false;
         MetaLine = "";
         BackdropUrl = null;
         BackdropThumbhash = "";
@@ -469,6 +490,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         IsFavorite = item.UserState?.IsFavorite ?? false;
         IsInWatchlist = item.UserState?.InWatchlist ?? false;
         ShowPlayAction();
+        ShowOverview();
     }
 
     private Task LoadSectionsAsync(CatalogItemDetail item, Uri server, ImageParameters images, int generation, CancellationToken cancellationToken) =>
@@ -505,7 +527,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
             _seasons = seasons;
             if (episodes is not null)
             {
-                ShowEpisodes(episodes.Items, only.EpisodeCount);
+                ShowEpisodes(only.ContentId, episodes.Items, only.EpisodeCount);
                 return;
             }
         }
@@ -552,7 +574,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         {
             return;
         }
-        ShowEpisodes(collection.Items, item.EpisodeCount);
+        ShowEpisodes(_contentId, collection.Items, item.EpisodeCount);
         MetaLine = DetailFacts.MetaLine(item, listedEpisodes: collection.Items.Count);
         InfoSections = DetailFacts.InfoSections(item, listedEpisodes: collection.Items.Count);
         ShowPlayAction();
@@ -575,18 +597,10 @@ public sealed partial class ItemDetailViewModel : ObservableObject
             Breadcrumbs = DetailFacts.Breadcrumbs(item, season);
         }
         var episodes = await episodesLoad;
-        // Only a season of more than one episode has a row, as on the web.
-        if (generation == _generation && episodes?.Items.Where(e => e.ContentId.Length > 0).ToList() is { Count: > 1 } siblings)
+        if (generation == _generation && episodes is not null)
         {
-            MoreEpisodes = [.. siblings.Select(e => SiblingCard(e, server))];
+            ShowSiblings(episodes.Items);
         }
-    }
-
-    // Matched by content id, as the apps match the episode they show.
-    private MediaCard SiblingCard(Episode episode, Uri server)
-    {
-        var card = MediaCardFactory.Episode(episode, server);
-        return episode.ContentId == _contentId ? card with { IsCurrent = true } : card;
     }
 
     private async Task LoadSimilarAsync(CatalogItemDetail item, Uri server, ImageParameters images, int generation, CancellationToken cancellationToken)
@@ -613,8 +627,9 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         }
     }
 
-    private void ShowEpisodes(IReadOnlyList<Episode> episodes, int? total)
+    private void ShowEpisodes(string seasonId, IReadOnlyList<Episode> episodes, int? total)
     {
+        _episodesSeasonId = seasonId;
         _episodes = episodes;
         _listsEpisodes = true;
         ShowEpisodeCards();
@@ -622,14 +637,22 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         ShowsNoEpisodes = episodes.Count == 0;
     }
 
+    // An unwatched episode's still blurred and its overview left out as the profile chose (ItemDetailViewModel.Spoilers.cs).
     private void ShowEpisodeCards()
     {
         if (_serverBase is not { } server)
         {
             return;
         }
+        var spoilers = Spoilers;
         // The overview gets three lines of its own under the card instead of the card's one-line caption.
-        Episodes = [.. _episodes.Select(e => new DetailEpisode(MediaCardFactory.Episode(e, server) with { Caption = null }, string.IsNullOrWhiteSpace(e.Overview) ? null : e.Overview.Trim()))];
+        IReadOnlyList<DetailEpisode> episodes = [.. _episodes.Select(e => new DetailEpisode(MediaCardFactory.Episode(e, server, spoilers) with { Caption = null },
+            spoilers.HidesOverview(e) || string.IsNullOrWhiteSpace(e.Overview) ? null : e.Overview.Trim()))];
+        // The same cards again keep the grid as it is.
+        if (!episodes.SequenceEqual(Episodes))
+        {
+            Episodes = episodes;
+        }
     }
 
     private void ShowSeasonCards()
@@ -652,7 +675,9 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         {
             ShowSeasonCards();
         }
+        ShowSiblingCards();
         ShowPlayAction();
+        ShowOverview();
     }
 
     private void ShowPlayAction()

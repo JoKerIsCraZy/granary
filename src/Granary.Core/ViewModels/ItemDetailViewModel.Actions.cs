@@ -48,20 +48,23 @@ public sealed partial class ItemDetailViewModel
             return;
         }
         _isChangingWatched = true;
+        _watchEdits++;
         int generation = _generation;
         bool watched = !IsWatched;
-        var before = (Watch: _watch, IsWatched, Seasons: _seasons, Episodes: _episodes);
+        var before = (Watch: _watch, IsWatched, Seasons: _seasons, Episodes: _episodes, Siblings: _siblings);
         ActionError = "";
         _watch = Marked(_watch, watched, item.Type is CatalogItemTypes.Movie or CatalogItemTypes.Episode);
         IsWatched = watched;
         _seasons = [.. _seasons.Select(s => Marked(s, watched))];
         _episodes = [.. _episodes.Select(e => Marked(e, watched))];
-        var marked = (Seasons: _seasons, Episodes: _episodes);
+        // An episode's own card in More Episodes, too.
+        _siblings = [.. _siblings.Select(e => e.ContentId == _contentId ? Marked(e, watched) : e)];
+        var marked = (Seasons: _seasons, Episodes: _episodes, Siblings: _siblings);
         ShowWatchState();
         try
         {
             await _catalog.SetWatchedAsync(server, _contentId, watched);
-            _changes?.Report();
+            ReportOwnChange();
         }
         catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex))
         {
@@ -73,6 +76,7 @@ public sealed partial class ItemDetailViewModel
                 // A list that arrived while the change was on its way already shows the server's state.
                 _seasons = ReferenceEquals(_seasons, marked.Seasons) ? before.Seasons : _seasons;
                 _episodes = ReferenceEquals(_episodes, marked.Episodes) ? before.Episodes : _episodes;
+                _siblings = ReferenceEquals(_siblings, marked.Siblings) ? before.Siblings : _siblings;
                 ShowWatchState();
                 ActionError = DescribeActionFailure(watched ? "mark this as watched" : "mark this as unwatched", ex);
             }
@@ -80,6 +84,7 @@ public sealed partial class ItemDetailViewModel
         finally
         {
             _isChangingWatched = false;
+            RefreshIfStale();
         }
     }
 
@@ -98,7 +103,7 @@ public sealed partial class ItemDetailViewModel
         try
         {
             await _catalog.SetFavoriteAsync(server, _contentId, favorite);
-            _changes?.Report();
+            ReportOwnChange();
         }
         catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex))
         {
@@ -130,7 +135,7 @@ public sealed partial class ItemDetailViewModel
         try
         {
             await _catalog.SetWatchlistAsync(server, _contentId, add);
-            _changes?.Report();
+            ReportOwnChange();
         }
         catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex))
         {

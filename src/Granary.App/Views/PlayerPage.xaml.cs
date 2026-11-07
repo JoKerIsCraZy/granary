@@ -126,6 +126,7 @@ public sealed partial class PlayerPage : Page
         _richPresence ??= new PlayerRichPresence(ViewModel, App.Services.GetRequiredService<IRichPresence>(), _devicePreferences,
             App.Services.GetRequiredService<TmdbTitleLookup>(), App.Services.GetRequiredService<IUiDispatcher>(), TimeProvider.System);
         ShowSkipIntervals();
+        QueueNextUpStill();
         Focus(FocusState.Programmatic);
         ShowControls();
         // StartAsync runs on navigation, before this: it can have failed already.
@@ -141,6 +142,7 @@ public sealed partial class PlayerPage : Page
         ViewModel.PropertyChanged -= OnViewModelPropertyChanged;
         StopInput();
         StopAutoHide();
+        StopNextUpStill();
         StopSubtitlePanels();
         StopPartyPanel();
         _taskbarButton?.Dispose();
@@ -178,8 +180,8 @@ public sealed partial class PlayerPage : Page
             case nameof(PlayerViewModel.IsNextUpScreenShown):
                 ShowNextUpScreen();
                 break;
-            case nameof(PlayerViewModel.NextUpStill):
-                ShowNextUpStill();
+            case nameof(PlayerViewModel.NextUpStill) or nameof(PlayerViewModel.NextUpBlursStill):
+                QueueNextUpStill();
                 break;
             case nameof(PlayerViewModel.HasSkipPrompt) when ViewModel.HasSkipPrompt:
                 AnnounceSkipCaption();

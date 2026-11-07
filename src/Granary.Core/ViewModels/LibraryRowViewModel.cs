@@ -22,4 +22,10 @@ public sealed partial class LibraryRowViewModel(string id, string title, IComman
     public partial IReadOnlyList<MediaCard> Cards { get; internal set; } = [];
 
     public bool HasCards => Cards.Count > 0;
+
+    /// <summary>The row as the server sent it, to make its cards again.</summary>
+    internal Api.Catalog.Section? Source { get; set; }
+
+    /// <summary>The profile's spoiler switches the cards were made with.</summary>
+    internal Core.Settings.EpisodeSpoilers MadeWith { get; set; }
 }

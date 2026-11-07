@@ -31,6 +31,10 @@ release's section is what its update says it changes (docs/release.md).
   the slides until you press it again, and pointing at the banner, or moving to its buttons with the keyboard or a TV
   remote, holds the slide meanwhile.
   Without such a row, the top of Home still shows the title you point at.
+- **Spoilers:** Settings → Title Pages → Blur unwatched episode images and Hide unwatched episode descriptions, the same
+  switches as in Silo's apps, blur the still and hide the description of episodes you haven't started, in a season's
+  episodes, More Episodes, Continue Watching, Next Up and the player's Playing Next screen; on an episode's page, Show it
+  brings its description back.
 
 ### Changed
 

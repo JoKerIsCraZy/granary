@@ -8,6 +8,7 @@ using Granary.Core.Overlays;
 using Granary.Core.Playback;
 using Granary.Core.Realtime;
 using Granary.Core.Servers;
+using Granary.Core.Settings;
 using Granary.Core.Theme;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Cards;
@@ -100,6 +101,8 @@ public partial class App : Application
         _ = Services.GetRequiredService<CardOverlaySettings>().StartAsync();
         // The profile's poster size and caption, likewise.
         _ = Services.GetRequiredService<CardPresentationSettings>().StartAsync();
+        // The profile's spoiler switches, likewise.
+        _ = Services.GetRequiredService<EpisodeSpoilerSettings>().StartAsync();
         // Home and the sidebar's count follow what happens on other devices (docs/api-contract.md, 12). Closing tells the
         // server the connection goes, but waits for that only a moment: the stop never needs this thread.
         var realtime = Services.GetRequiredService<RealtimeEvents>();

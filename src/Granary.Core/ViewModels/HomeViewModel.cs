@@ -7,6 +7,7 @@ using Granary.Core.Api.Images;
 using Granary.Core.Artwork;
 using Granary.Core.Auth;
 using Granary.Core.Playback;
+using Granary.Core.Settings;
 using Granary.Core.ViewModels.Cards;
 using Microsoft.Extensions.Logging;
 
@@ -20,7 +21,9 @@ namespace Granary.Core.ViewModels;
 /// <see cref="ActivateAsync"/> when it is shown and <see cref="Deactivate"/> when it leaves: another
 /// server or profile reloads at once, a return reloads only rows older than <see cref="StaleAfter"/>, or rows from
 /// before a change of the viewer's state (<see cref="ViewerStateChanges"/>: playback, a watched mark, …). Such a
-/// change while Home is shown reloads it at once, quietly, the rows keeping where they were scrolled to.
+/// change while Home is shown reloads it at once, quietly, the rows keeping where they were scrolled to. Continue Watching
+/// and Next Up rows follow the profile's spoiler switches (<see cref="EpisodeSpoilerSettings"/>) in place, without a reload;
+/// the banner, the top of Home, is left as it is.
 /// </summary>
 /// <remarks>
 /// The commands take no cancellation token on purpose: a cancellable toolkit command cancels its running
@@ -43,8 +46,11 @@ public sealed partial class HomeViewModel : ObservableObject
     private readonly TimeProvider _time;
     private readonly ILogger<HomeViewModel> _logger;
     private readonly ViewerStateChanges? _changes;
+    private readonly EpisodeSpoilerSettings? _spoilers;
 
     private CancellationTokenSource? _run;
+    // The spoiler switches the rows' cards were made with.
+    private EpisodeSpoilers _madeWith;
     private (bool IsReady, string? ServerId, string? ProfileId)? _shownFor;
     private DateTimeOffset? _loadedAt;
     private long _loadedVersion;
@@ -60,7 +66,8 @@ public sealed partial class HomeViewModel : ObservableObject
         TimeProvider time,
         ILogger<HomeViewModel> logger,
         ViewerStateChanges? changes = null,
-        IArtworkPrefetcher? artwork = null)
+        IArtworkPrefetcher? artwork = null,
+        EpisodeSpoilerSettings? spoilers = null)
     {
         _session = session;
         _catalog = catalog;
@@ -70,6 +77,7 @@ public sealed partial class HomeViewModel : ObservableObject
         _time = time;
         _logger = logger;
         _changes = changes;
+        _spoilers = spoilers;
         Hero = new BrowseHeroViewModel(dispatcher, time);
         Banner = new FeaturedBannerViewModel(dispatcher, time, navigation, artwork);
         Hero.PropertyChanged += OnHeroChanged;
@@ -119,8 +127,10 @@ public sealed partial class HomeViewModel : ObservableObject
             _isActive = true;
             _session.Changed += OnSessionChanged;
             _changes?.Changed += OnViewerStateChanged;
+            _spoilers?.PropertyChanged += OnSpoilersChanged;
             Banner.SetActive(true);
         }
+        ShowSpoilers();
         return RefreshIfNeededAsync();
     }
 
@@ -132,6 +142,7 @@ public sealed partial class HomeViewModel : ObservableObject
             _isActive = false;
             _session.Changed -= OnSessionChanged;
             _changes?.Changed -= OnViewerStateChanged;
+            _spoilers?.PropertyChanged -= OnSpoilersChanged;
             Banner.SetActive(false);
         }
     }
@@ -384,12 +395,13 @@ public sealed partial class HomeViewModel : ObservableObject
 
     private IReadOnlyList<HomeRowViewModel> BuildRows(IReadOnlyList<Section> sections, Uri server)
     {
+        var spoilers = _madeWith = Spoilers;
         var rows = new List<HomeRowViewModel>();
         foreach (var section in sections.Where(s => s.TotalCount > 0))
         {
             var cards = section.Items
                 .Where(item => item.ContentId.Length > 0 && HomeRowRules.Shows(section.SectionType, item))
-                .Select(item => (MediaCardFactory.ForSection(section, item, server), item))
+                .Select(item => (MediaCardFactory.ForSection(section, item, server, spoilers), item))
                 .ToList();
             if (cards.Count == 0)
             {
@@ -423,6 +435,39 @@ public sealed partial class HomeViewModel : ObservableObject
             row.Take(next);
         }
         FollowRowsWithHero();
+    }
+
+    private EpisodeSpoilers Spoilers => _spoilers?.Shown ?? EpisodeSpoilers.Off;
+
+    // The switches changed, or arrived after the rows: their cards are made again in place, each row keeping its scroll.
+    private void ShowSpoilers()
+    {
+        var spoilers = Spoilers;
+        if (spoilers == _madeWith || _session.ActiveServer is not { } server)
+        {
+            return;
+        }
+        _madeWith = spoilers;
+        foreach (var row in Rows)
+        {
+            row.Remake(item => MediaCardFactory.ForSection(row.SectionType, item, server.BaseUri, spoilers));
+        }
+    }
+
+    private void OnSpoilersChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(EpisodeSpoilerSettings.Shown))
+        {
+            return;
+        }
+        if (_dispatcher.HasThreadAccess)
+        {
+            ShowSpoilers();
+        }
+        else
+        {
+            _dispatcher.Post(ShowSpoilers);
+        }
     }
 
     private void ShowLoaded()

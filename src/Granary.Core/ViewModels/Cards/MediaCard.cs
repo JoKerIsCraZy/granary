@@ -41,6 +41,12 @@ public sealed record MediaCard(string Id, string Type, string Title)
     public string? ImageThumbhash { get; init; }
 
     /// <summary>
+    /// The picture is the still of an episode the profile has not started, and the profile hides those
+    /// (<see cref="Settings.EpisodeSpoilers"/>): it is drawn blurred, as the web's <c>scale-110 blur-xl</c>.
+    /// </summary>
+    public bool BlursImage { get; init; }
+
+    /// <summary>
     /// What the card's badges can say (resolution, audio, ratings, show status, …); which of them it shows, where and how,
     /// is the profile's choice (<see cref="Overlays.CardOverlaySettings"/>). Null for a card without badges.
     /// </summary>

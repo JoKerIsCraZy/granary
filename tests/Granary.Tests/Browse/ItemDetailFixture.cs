@@ -5,6 +5,7 @@ using Granary.Core.Api.Images;
 using Granary.Core.Api.Playback;
 using Granary.Core.Auth;
 using Granary.Core.Playback;
+using Granary.Core.Settings;
 using Granary.Core.ViewModels;
 using Granary.Tests.Catalog;
 using Granary.Tests.Fakes;
@@ -85,6 +86,15 @@ internal sealed class ItemDetailFixture
     /// <summary>The app's queue of track choices on their way to the server, which a start waits for.</summary>
     public TrackChoiceWrites TrackChoices => field ??= new(Session, TimeProvider.System, NullLogger<TrackChoiceWrites>.Instance);
 
+    /// <summary>Drives the wait before the page reads changes of the viewer's state.</summary>
+    public ManualTimeProvider Clock { get; } = new();
+
+    /// <summary>Changes of the viewer's state the page follows while it is shown.</summary>
+    public ViewerStateChanges Changes { get; } = new(new PlaybackStops());
+
+    /// <summary>The profile's spoiler switches; none unless a test sets them, so nothing is hidden.</summary>
+    public EpisodeSpoilerSettings? Spoilers { get; set; }
+
     public ItemDetailViewModel Create() => new(
         Session,
         new CatalogApi(Silo.Http),
@@ -92,8 +102,12 @@ internal sealed class ItemDetailFixture
         Navigation,
         Artwork,
         Logs.For<ItemDetailViewModel>(),
+        Changes,
         trackPreferences: new TrackPreferencesApi(Silo.Http),
-        trackChoices: TrackChoices);
+        trackChoices: TrackChoices,
+        spoilers: Spoilers,
+        dispatcher: new ImmediateDispatcher(),
+        time: Clock);
 
     public async Task<ItemDetailViewModel> LoadAsync(string id)
     {

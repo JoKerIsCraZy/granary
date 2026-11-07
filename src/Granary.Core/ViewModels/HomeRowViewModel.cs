@@ -114,6 +114,27 @@ public sealed class HomeRowViewModel
         return -1;
     }
 
+    /// <summary>Makes each card again from its item where it is (the profile's spoiler switches changed); the same card stays.</summary>
+    internal void Remake(Func<CatalogItem, MediaCard> make)
+    {
+        for (int i = 0; i < Cards.Count; i++)
+        {
+            var shown = Cards[i];
+            if (!_items.TryGetValue(shown, out var item))
+            {
+                continue;
+            }
+            var card = make(item);
+            if (Equals(card, shown))
+            {
+                continue;
+            }
+            _items.Remove(shown);
+            _items[card] = item;
+            Cards[i] = card;
+        }
+    }
+
     /// <summary>Removes the cards whose item <paramref name="matches"/>; returns whether any went.</summary>
     internal bool RemoveWhere(Func<CatalogItem, bool> matches)
     {

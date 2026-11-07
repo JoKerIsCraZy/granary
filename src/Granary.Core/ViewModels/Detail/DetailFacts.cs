@@ -225,9 +225,11 @@ public static class DetailFacts
     /// The Info dialog: the details (with the full overview, a series' regular seasons and episodes once its season list
     /// is read, a season's number and episodes), the cast, the crew by job, and each file's facts with the played file's
     /// audio as its badge words it ("EAC3 5.1"). File names and paths are left out: they are administrator data.
-    /// Sections without rows are left out.
+    /// Sections without rows are left out; so is the overview with <paramref name="withOverview"/> false, an unwatched
+    /// episode's the profile hides.
     /// </summary>
-    public static IReadOnlyList<DetailInfoSection> InfoSections(CatalogItemDetail item, IReadOnlyList<Season>? seasons = null, int? listedEpisodes = null)
+    public static IReadOnlyList<DetailInfoSection> InfoSections(CatalogItemDetail item, IReadOnlyList<Season>? seasons = null, int? listedEpisodes = null,
+        bool withOverview = true)
     {
         // Counted like the server's season_count: regular seasons, without the specials.
         var regular = seasons?.Where(s => !IsSpecials(s)).ToList();
@@ -262,7 +264,7 @@ public static class DetailFacts
             Row("Networks", Joined(item.Networks)),
             Row("Ratings", Ratings(item) is { Count: > 0 } ratings ? string.Join(" · ", ratings.Select(r => r.AccessibleName)) : null),
             Row("Tagline", item.Tagline),
-            Row("Overview", item.Overview),
+            Row("Overview", withOverview ? item.Overview : null),
         ]);
         Add("Cast", [.. item.Cast
             .Where(c => c is not null && !string.IsNullOrWhiteSpace(c.Name))

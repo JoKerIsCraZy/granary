@@ -369,6 +369,14 @@ also walks all live XAML that .NET holds (the reference tracker), so its pause g
   first marked card only, and its ping is one composition animation that stops while the card is unloaded or parked for
   reuse (the row's `ElementClearing`). The row centres that card once its list is laid out and the scroller's range
   reaches it (`RowCentring`), following layout for at most 20 passes, so a row that stays hidden stops listening.
+- A hidden episode still (`MediaCard.BlursImage`, the profile's spoiler switches) costs the other cards nothing and itself
+  less than a picture: its image is made (`x:Load`) for the first card that shows one, and it is a pre-blurred decode
+  rather than an effect (Win2D, which a `GaussianBlurEffect` brush needs, is not in the app). `SpoilerArtwork` decodes the
+  cached bytes an eighth as wide as the card shows them, on the thread pool, blurs them there with a Gaussian of 3 of those
+  pixels, edges extended (`SpoilerBlur`: the web's 24 px at the card's size), and the card stretches the 30-odd pixels
+  over its artwork, a tenth larger as the web's `scale-110`. The sharp picture is never decoded for it, nor shown when
+  the blur fails: the thumbhash stays. The latest 48 blurs are kept by picture and width (`BlurredStills`), so a card
+  shown again only makes its bitmap.
 - Timers tick through `WeakTick`: a `DispatcherQueueTimer` is not a XAML object, so a Tick handler holding its control
   was a cycle the collector cannot see through. A grid's timer kept its page (through the page's scroller) after the
   frame let it go: with a small page cache, nine copies of a list page were alive. Every control with a timer, the

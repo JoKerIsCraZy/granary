@@ -7,6 +7,7 @@ using Granary.Core.Api.Images;
 using Granary.Core.Auth;
 using Granary.Core.Playback;
 using Granary.Core.Servers;
+using Granary.Core.Settings;
 using Granary.Core.ViewModels.Cards;
 using Microsoft.Extensions.Logging;
 
@@ -54,6 +55,7 @@ public sealed partial class LibraryViewModel : ObservableObject
     private readonly TimeProvider _time;
     private readonly ILogger<LibraryViewModel> _logger;
     private readonly ViewerStateChanges? _changes;
+    private readonly EpisodeSpoilerSettings? _spoilers;
     private readonly LibraryTabs? _tabs;
     private readonly Dictionary<(string ServerId, string? ProfileId), bool> _serverCanShuffle = [];
     private (string? ServerId, string? ProfileId, string? LibraryId)? _loaded;
@@ -76,7 +78,8 @@ public sealed partial class LibraryViewModel : ObservableObject
         TimeProvider time,
         ILogger<LibraryViewModel> logger,
         ViewerStateChanges? changes = null,
-        LibraryTabs? tabs = null)
+        LibraryTabs? tabs = null,
+        EpisodeSpoilerSettings? spoilers = null)
     {
         _session = session;
         _catalog = catalog;
@@ -89,7 +92,8 @@ public sealed partial class LibraryViewModel : ObservableObject
         _logger = logger;
         _changes = changes;
         _tabs = tabs;
-        Recommended = new LibraryRowsViewModel(catalog, navigation, logger);
+        _spoilers = spoilers;
+        Recommended = new LibraryRowsViewModel(catalog, navigation, logger, () => _spoilers?.Shown ?? EpisodeSpoilers.Off);
         Browse = new LibraryBrowseViewModel(catalog, images, logger);
         // The grid's sort and filters are remembered with the tab, per server, profile and library.
         Browse.Remember = state => _tabs is not null && _server is { } shown && _library is { } library
@@ -179,7 +183,10 @@ public sealed partial class LibraryViewModel : ObservableObject
         {
             _isActive = true;
             _session.Changed += OnSessionChanged;
+            _spoilers?.PropertyChanged += OnSpoilersChanged;
         }
+        // Spoiler switches changed while away show at once.
+        Recommended.ShowSpoilers();
         bool isFresh = _time.GetUtcNow() - _loadedAt < RefreshAfter;
         if (_loaded == Key(libraryId) && (State == LibraryLoadState.Loading || (State == LibraryLoadState.Ready && isFresh)))
         {
@@ -196,6 +203,15 @@ public sealed partial class LibraryViewModel : ObservableObject
         {
             _isActive = false;
             _session.Changed -= OnSessionChanged;
+            _spoilers?.PropertyChanged -= OnSpoilersChanged;
+        }
+    }
+
+    private void OnSpoilersChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(EpisodeSpoilerSettings.Shown))
+        {
+            _dispatcher.Post(Recommended.ShowSpoilers);
         }
     }
 

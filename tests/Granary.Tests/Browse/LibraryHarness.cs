@@ -5,6 +5,7 @@ using Granary.Core.Api.Images;
 using Granary.Core.Api.Settings;
 using Granary.Core.Auth;
 using Granary.Core.Playback;
+using Granary.Core.Settings;
 using Granary.Core.ViewModels;
 using Granary.Tests.Catalog;
 using Granary.Tests.Fakes;
@@ -71,6 +72,9 @@ internal sealed class LibraryHarness
     /// <summary>Where the libraries' last tabs are kept; none unless a test sets it.</summary>
     public LibraryTabs? Tabs { get; set; }
 
+    /// <summary>The profile's spoiler switches; none unless a test sets them, so nothing is hidden.</summary>
+    public EpisodeSpoilerSettings? Spoilers { get; set; }
+
     /// <summary>Answers GET <paramref name="path"/> with the bodies in order, repeating the last.</summary>
     public void Answer(string path, params string[] bodies) =>
         Silo.On(HttpMethod.Get, path, [.. bodies.Select(body => ScriptedSilo.Json(HttpStatusCode.OK, body))]);
@@ -100,7 +104,8 @@ internal sealed class LibraryHarness
         Clock,
         Logs.For<LibraryViewModel>(),
         ViewerState,
-        Tabs);
+        Tabs,
+        Spoilers);
 
     /// <summary>Library 1, shown on its Library tab with the first page loaded.</summary>
     public async Task<LibraryViewModel> OpenLibraryTabAsync(string libraryId = "1")
