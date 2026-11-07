@@ -16,6 +16,9 @@ release's section is what its update says it changes (docs/release.md).
 - **Sleep timer:** the player's Sleep button pauses playback after 5 to 60 minutes, counting down on the button, or stops
   at the end of the episode or movie instead of starting the next episode. A timer runs on into the next episode, and the
   menu opens on the duration you started last on this PC.
+- **Play/Pause in the taskbar preview:** hover over Granary's taskbar button while something plays and the window's
+  preview has a Play/Pause button, also when Granary is minimized. In a Watch Party it asks the room, as the player's own
+  button does.
 
 ### Fixed
 

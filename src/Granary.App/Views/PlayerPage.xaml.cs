@@ -38,6 +38,8 @@ public sealed partial class PlayerPage : Page
     private const double TitleBarHeight = 32;
 
     private AppWindow? _appWindow;
+    // The Play/Pause in the taskbar preview, for as long as Windows' media controls.
+    private PlayerTaskbarButton? _taskbarButton;
     // Windows' media controls and keys, from the page's load on (a page never loaded never played) until it is left.
     private PlayerSystemMedia? _systemMedia;
     // Discord's status, likewise, while Settings allows it.
@@ -117,6 +119,8 @@ public sealed partial class PlayerPage : Page
         _modes.Changed += OnWindowModeChanged;
         ShowWindowMode();
         ViewModel.PropertyChanged += OnViewModelPropertyChanged;
+        _taskbarButton ??= new PlayerTaskbarButton(ViewModel, App.Services.GetRequiredService<ITaskbarPlayButton>(),
+            App.Services.GetRequiredService<IUiDispatcher>());
         _systemMedia ??= new PlayerSystemMedia(ViewModel, App.Services.GetRequiredService<ISystemMediaControls>(),
             App.Services.GetRequiredService<IUiDispatcher>(), TimeProvider.System);
         _richPresence ??= new PlayerRichPresence(ViewModel, App.Services.GetRequiredService<IRichPresence>(), _devicePreferences,
@@ -139,6 +143,8 @@ public sealed partial class PlayerPage : Page
         StopAutoHide();
         StopSubtitlePanels();
         StopPartyPanel();
+        _taskbarButton?.Dispose();
+        _taskbarButton = null;
         _systemMedia?.Dispose();
         _systemMedia = null;
         _richPresence?.Dispose();

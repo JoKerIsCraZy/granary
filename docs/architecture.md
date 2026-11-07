@@ -696,6 +696,26 @@ screen all go through `WindowModeService` (App, a singleton that MainWindow atta
 - **Logs.** The outcome only ("The trailer plays", "can't play in Granary: EmbedRefused"); a blocked navigation is logged
   without its address, its host only at Debug. A YouTube address carries the video's key and stays out of the log.
 
+## Taskbar preview
+
+The player's Play/Pause under the window's taskbar preview (docs/ui-design.md, Player) goes through the port
+`ITaskbarPlayButton` (Core): show or change, hide, and a pressed event.
+
+- **`PlayerTaskbarButton`** (Core, beside `PlayerSystemMedia` and made and disposed with it by the player page) follows
+  the player: shown from a title's load until the player is left, Play or Pause by `IsPaused`, and off by
+  `PlayerSystemMedia.PlayPauseWorks`, the rule Windows' media controls use. It shows only a change of that, never a
+  position tick. A press is posted to the UI thread, so it runs after the window's message has returned, and runs the
+  player's `TogglePauseCommand` if the rule still allows it.
+- **`WindowsTaskbarPlayButton`** (App) is the one button of the main window's thumbnail toolbar (`ITaskbarList3` through
+  its vtable, `Interop/TaskbarList.cs`). The window's messages come through `Interop/WindowMessageHook.cs`, the window's
+  single comctl32 subclass, made with the window, which also takes a remote's WM_APPCOMMAND: Explorer's
+  `TaskbarButtonCreated` (before it, `ITaskbarList3` is not called; after it, the button is added, again when Explorer
+  restarts and makes a new taskbar button), the button's `WM_COMMAND` with `THBN_CLICKED`, and `WM_DPICHANGED`, which
+  remakes the icons. A toolbar's buttons cannot be removed, so hiding sets `THBF_HIDDEN`. The icons
+  (`Interop/PlayPauseIcons.cs`) are drawn at `SM_CXSMICON` for the window's DPI into premultiplied BGRA and made with
+  `CreateIconIndirect`; the taskbar copies them, and Granary destroys its own when they are replaced and when the window
+  closes, with the COM object. Three failures in a row and the player goes on without the button.
+
 ## Watch Party
 
 `WatchPartySession` (Core) is the room this profile is in, for the whole app: the hub, the room page and the player's
