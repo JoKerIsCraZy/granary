@@ -60,8 +60,8 @@ public sealed class AutoPlayStreak(Func<int> threshold)
 /// is on. Resuming or seeking past the point does not.</item>
 /// <item>Crossing 30 s before the end of an episode shows the screen, as the web player does; the video goes on small.</item>
 /// <item>At the end the screen counts down 10 s and plays the next episode, when auto-play is on, the viewer has not
-/// turned the prompt away (Cancel, Keep watching, a pause or a seek during the card), and <see cref="AutoPlayStreak"/>
-/// does not hold it back. A movie's end leaves the player.</item>
+/// turned the prompt away (Cancel, Keep watching, a pause or a seek during the card), and neither <see cref="AutoPlayStreak"/>
+/// nor the sleep timer (<see cref="Hold"/>) holds it back. A movie's end leaves the player.</item>
 /// </list>
 /// </summary>
 public sealed class NextUpFlow
@@ -83,6 +83,7 @@ public sealed class NextUpFlow
     private bool _screenArmed;
     private bool _dismissed;
     private bool _countdownStopped;
+    private bool _held;
     private bool _ended;
     private TimeSpan? _countdownEnds;
 
@@ -119,7 +120,7 @@ public sealed class NextUpFlow
         _creditsStart = null;
         _lastPosition = null;
         _position = _duration = 0;
-        _cardArmed = _screenArmed = _dismissed = _countdownStopped = _ended = false;
+        _cardArmed = _screenArmed = _dismissed = _countdownStopped = _held = _ended = false;
         _countdownEnds = null;
         Next = null;
         Show(TimeSpan.Zero);
@@ -226,6 +227,20 @@ public sealed class NextUpFlow
         Show(now);
     }
 
+    /// <summary>
+    /// The sleep timer keeps the next episode from starting by itself (End of episode, or a timer that ran out at the end):
+    /// the card counts nothing and the end waits, as with auto-play off. False before the end lets it come again.
+    /// </summary>
+    public void Hold(bool held, TimeSpan now)
+    {
+        _held = held;
+        if (held)
+        {
+            _countdownEnds = null;
+        }
+        Show(now);
+    }
+
     /// <summary>The screen's "Auto-play is on/off": turned on at the end, the countdown starts, as the viewer's own choice.</summary>
     public void SetAutoPlayNext(bool enabled, TimeSpan now)
     {
@@ -236,7 +251,7 @@ public sealed class NextUpFlow
         }
         else if (_ended)
         {
-            _gated = _dismissed = _countdownStopped = false;
+            _gated = _dismissed = _countdownStopped = _held = false;
             StartCountdown(now);
         }
         Show(now);
@@ -249,7 +264,7 @@ public sealed class NextUpFlow
 
     private void StartCountdown(TimeSpan now)
     {
-        if (Next is not null && _settings.AutoPlayNext && !_gated && !_dismissed && !_countdownStopped && _countdownEnds is null)
+        if (Next is not null && _settings.AutoPlayNext && !_gated && !_dismissed && !_countdownStopped && !_held && _countdownEnds is null)
         {
             _countdownEnds = now + TimeSpan.FromSeconds(CountdownSeconds);
         }
@@ -262,7 +277,7 @@ public sealed class NextUpFlow
             : NextUpView.None;
         Seconds = View switch
         {
-            NextUpView.Card when _settings.AutoPlayNext && !_gated && !_countdownStopped => (int)Math.Ceiling(Math.Max(0, _duration - _position)),
+            NextUpView.Card when _settings.AutoPlayNext && !_gated && !_countdownStopped && !_held => (int)Math.Ceiling(Math.Max(0, _duration - _position)),
             NextUpView.Screen when _countdownEnds is { } ends => (int)Math.Ceiling(Math.Max(0, (ends - now).TotalSeconds)),
             _ => null,
         };

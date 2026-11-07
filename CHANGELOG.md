@@ -6,6 +6,12 @@ release's section is what its update says it changes (docs/release.md).
 
 ## [Unreleased]
 
+### Added
+
+- **Sleep timer:** the player's Sleep button pauses playback after 5 to 60 minutes, counting down on the button, or stops
+  at the end of the episode or movie instead of starting the next episode. A timer runs on into the next episode, and the
+  menu opens on the duration you started last on this PC.
+
 ### Fixed
 
 - Dolby Vision files with an HDR10, HLG or SDR base layer play directly on a server that wants each base layer named,

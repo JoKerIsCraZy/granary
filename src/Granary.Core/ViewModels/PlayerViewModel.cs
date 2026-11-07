@@ -203,8 +203,10 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     public Task StartAsync(PlayRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
-        // A title the viewer started (or retried) is the viewer's doing: the pass-out gate opens again.
+        // A title the viewer started (or retried) is the viewer's doing: the pass-out gate opens again, and a sleep timer
+        // that ran out while the one before loaded does not pause it.
         _streak.Reset();
+        _sleepPausePending = false;
         return PlayAsync(request);
     }
 
@@ -223,6 +225,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         LeavePlayback();
         ResetFill();
         ResetLook();
+        ShowSleepTimer();
         if (request.DirectSource is { } direct)
         {
             StartDirect(direct);
@@ -314,6 +317,8 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         EndWatchParty();
         LeavePlayback();
         _engine.Stop();
+        // As Apple's player ends its timer with the player.
+        StopSleepTimer();
     }
 
     /// <summary>Raises or lowers the volume by <paramref name="delta"/> percentage points (Up and Down keys).</summary>
@@ -493,6 +498,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         SkipBackSeconds = playback.Preferences.SkipBackSeconds;
         SkipForwardSeconds = playback.Preferences.SkipForwardSeconds;
         ShowSettings();
+        ShowSleepTimer();
         switch (status.Phase)
         {
             case ServerPlaybackPhase.Preparing:
@@ -501,12 +507,14 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
             case ServerPlaybackPhase.Playing or ServerPlaybackPhase.Reconnecting:
                 Phase = PlayerPhase.Playing;
                 BeginNextUp(playback);
+                PauseIfSleptWhileLoading();
                 break;
             case ServerPlaybackPhase.Failed:
                 Fail(status.Message, status.CanRetry);
                 break;
             case ServerPlaybackPhase.Ended:
                 Phase = PlayerPhase.Ended;
+                EndSleepAtEnd();
                 EndNextUp();
                 break;
         }
@@ -541,6 +549,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         if (_playback is null && state.HasStarted && Phase == PlayerPhase.Preparing)
         {
             Phase = PlayerPhase.Playing;
+            PauseIfSleptWhileLoading();
         }
     });
 
@@ -585,6 +594,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         {
             case PlaybackEndReason.EndOfFile:
                 Phase = PlayerPhase.Ended;
+                EndSleepAtEnd();
                 break;
             case PlaybackEndReason.AuthenticationFailed:
                 Fail("The server rejected the credentials.", canRetry: true);
@@ -599,6 +609,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     {
         Leave();
         ResetNextUp();
+        StopSleepTicks();
         StopPlaybackInfo();
         _syncFeedback?.Dispose();
         _engine.StateChanged -= OnStateChanged;

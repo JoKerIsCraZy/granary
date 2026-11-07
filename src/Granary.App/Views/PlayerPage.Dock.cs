@@ -118,6 +118,7 @@ public sealed partial class PlayerPage
     private void CloseMenus()
     {
         AudioMenu.Hide();
+        SleepTimerMenu.Hide();
         ChaptersMenu.Hide();
         SubtitleMenu.Hide();
         SettingsMenu.Hide();

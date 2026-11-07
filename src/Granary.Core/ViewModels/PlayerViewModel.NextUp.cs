@@ -170,6 +170,11 @@ public sealed partial class PlayerViewModel
         _nextUpStarted = true;
         var episode = playback.Episode;
         _nextUp.Start(episode is not null, playback.Preferences.Markers, _streak.IsGated);
+        // The sleep timer's "End of episode" is for whatever plays when it comes.
+        if (_sleepAtEnd)
+        {
+            _nextUp.Hold(true, Now);
+        }
         TakeCredits(Markers);
         if (episode is null || _upNext is null)
         {

@@ -48,6 +48,8 @@ public sealed partial class PlayerViewModel
             return;
         }
         IsWatchParty = true;
+        // A sleep timer set before is not the room's, as Apple's player ends it when a room takes over.
+        StopSleepTimer();
         _partyRevision = request.SelectionRevision;
         _party = new WatchPartyPlaybackBinding(_watchParty, new RoomPlayer(this), _dispatcher, _time, _logger);
         _party.Notice += OnPartyNotice;

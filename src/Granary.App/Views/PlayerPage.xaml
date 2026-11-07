@@ -229,6 +229,40 @@
                                 <SolidColorBrush x:Key="SliderThumbBorderBrush" Color="Transparent" />
                             </Slider.Resources>
                         </Slider>
+                        <!--
+                            The web's sleep timer (SleepTimerMenu, after the volume as in its audiobook player): the moon and "Sleep",
+                            "Sleep 29:59" while a duration counts down; white with the amber dot while it is on. The menu: Turn off
+                            while on, the durations, and the end of what plays.
+                        -->
+                        <Grid>
+                            <Button x:Name="SleepTimerButton" Style="{StaticResource SiloPlayerIconButtonStyle}" Width="Auto" Padding="8,0"
+                                    Foreground="{x:Bind UtilityForeground(ViewModel.IsSleepTimerOn), Mode=OneWay}"
+                                    AutomationProperties.Name="Sleep timer" AutomationProperties.ItemStatus="{x:Bind ViewModel.SleepTimerStatus, Mode=OneWay}"
+                                    ToolTipService.ToolTip="Sleep timer">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <FontIcon Glyph="&#xE708;" FontSize="14" />
+                                    <TextBlock Text="{x:Bind ViewModel.SleepTimerText, Mode=OneWay}" VerticalAlignment="Center" FontSize="12"
+                                               Typography.NumeralAlignment="Tabular" />
+                                </StackPanel>
+                                <Button.Flyout>
+                                    <Flyout x:Name="SleepTimerMenu" Placement="TopEdgeAlignedRight" FlyoutPresenterStyle="{StaticResource SiloPlayerSmallMenuStyle}"
+                                            Opened="OnSleepTimerMenuOpened">
+                                        <ItemsControl x:Name="SleepTimerRows" ItemsSource="{x:Bind ViewModel.SleepTimerOptions, Mode=OneWay}" IsTabStop="False"
+                                                      XYFocusKeyboardNavigation="Enabled">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="player:SleepTimerOption">
+                                                    <Button Style="{StaticResource SiloPlayerMenuItemStyle}" Padding="16,8" Click="OnSleepTimerOptionClick"
+                                                            AutomationProperties.Name="{x:Bind Label}">
+                                                        <TextBlock Text="{x:Bind Label}" FontSize="14" />
+                                                    </Button>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </Flyout>
+                                </Button.Flyout>
+                            </Button>
+                            <Ellipse Style="{StaticResource SiloPlayerActiveDotStyle}" Visibility="{x:Bind ViewModel.IsSleepTimerOn, Mode=OneWay}" />
+                        </Grid>
                         <!-- Shown with a track to name; as on the web player it opens once there are two to choose from. -->
                         <Button x:Name="AudioButton" Style="{StaticResource SiloPlayerIconButtonStyle}"
                                 Visibility="{x:Bind ViewModel.HasAudioTracks, Mode=OneWay}" IsEnabled="{x:Bind ViewModel.CanChooseAudio, Mode=OneWay}"

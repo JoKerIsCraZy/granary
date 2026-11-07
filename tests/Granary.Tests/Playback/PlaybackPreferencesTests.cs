@@ -33,8 +33,34 @@ public sealed class PlaybackPreferencesTests
                 "?keys=playback.preferred_quality&keys=playback.max_bitrate_kbps&keys=player.video_skip_back_seconds&keys=player.video_skip_forward_seconds"
                     + "&keys=player.playback_speed",
                 "?keys=playback.subtitle_appearance&keys=player.subtitle_sync_ms",
+                "?keys=player.sleep_timer_default_minutes",
             ],
             _silo.SentTo(HttpMethod.Get, EffectivePath).Select(r => r.Uri.Query).Order(StringComparer.Ordinal));
+    }
+
+    [Fact]
+    public async Task Read_TakesThisDevicesSleepTimerDuration_AndKeepsTheDefaultForAnOddOne()
+    {
+        Assert.Equal(90, (await SleepTimerReadAsync("90")).SleepTimerMinutes);
+        Assert.Equal(0, (await SleepTimerReadAsync("0")).SleepTimerMinutes);
+        Assert.Equal(PlaybackPreferences.DefaultSleepTimerMinutes, (await SleepTimerReadAsync("500")).SleepTimerMinutes);
+        Assert.Equal(PlaybackPreferences.DefaultSleepTimerMinutes, (await SleepTimerReadAsync("\"long\"")).SleepTimerMinutes);
+    }
+
+    [Fact]
+    public async Task Read_AServerWithoutTheSleepTimersDuration_StartsOnTheDefault()
+    {
+        _silo.On(HttpMethod.Get, EffectivePath, ScriptedSilo.Problem(422, "validation_failed"));
+
+        Assert.Equal(30, (await Create().ReadAsync(ScriptedSilo.Base, Token)).SleepTimerMinutes);
+    }
+
+    private async Task<PlaybackPreferences> SleepTimerReadAsync(string value)
+    {
+        var silo = new ScriptedSilo();
+        silo.On(HttpMethod.Get, EffectivePath, ScriptedSilo.Json(HttpStatusCode.OK,
+            $$"""{ "items": [ { "key": "player.sleep_timer_default_minutes", "value": {{value}}, "source": "profile_device" } ], "revision": 1 }"""));
+        return await new PlaybackPreferencesReader(new SettingsApi(silo.Http), _logs.For<PlaybackPreferencesReader>()).ReadAsync(ScriptedSilo.Base, Token);
     }
 
     [Fact]

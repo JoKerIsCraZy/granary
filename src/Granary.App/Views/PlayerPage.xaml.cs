@@ -323,6 +323,20 @@ public sealed partial class PlayerPage : Page
         FocusRow(SubtitleRows, ViewModel.SubtitleTracks.ToList().FindIndex(option => option.IsSelected));
     }
 
+    // The sleep timer's menu opens, while the timer is off, on the duration this device starts it on, so OK starts that;
+    // while it is on, on Turn off.
+    private void OnSleepTimerMenuOpened(object? sender, object e) =>
+        FocusRow(SleepTimerRows, ViewModel.IsSleepTimerOn ? 0 : Math.Max(0, ViewModel.SleepTimerOptions.ToList().FindIndex(option => option.IsDefault)));
+
+    private void OnSleepTimerOptionClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { DataContext: SleepTimerOption option })
+        {
+            SleepTimerMenu.Hide();
+            ViewModel.ChooseSleepTimer(option);
+        }
+    }
+
     private void OnChaptersMenuOpened(object? sender, object e) =>
         FocusRow(ChapterRows, Math.Max(0, ViewModel.Chapters.ToList().FindIndex(option => option.IsCurrent)));
 

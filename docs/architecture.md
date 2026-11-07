@@ -480,10 +480,19 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   end (the web's post-roll), and at the end a 10 s countdown, when `playback.auto_play_next` is on, the viewer did
   not turn the prompt away (Cancel, Keep watching, a pause or seek during the card), and fewer episodes in a row started
   by themselves than Settings' Still watching prompt allows (`AutoPlayStreak`, Android's pass-out gate; 3 by default,
-  Unlimited never holds back). The next episode starts as a new playback
+  Unlimited never holds back), and the sleep timer does not hold it (`NextUpFlow.Hold`). The next episode starts as a new playback
   from 0; the saved track preferences carry the picks over. The transport's previous and next episode buttons start
   theirs from the resume point, as the web player does for the viewer; the previous one is the largest episode before
   this one in the current season that has a readable file, as the web finds it, none before the season's first.
+- **Sleep timer** (`PlayerViewModel.SleepTimer.cs`; the apps' `SleepTimer` and `SleepTimerController`, the web's
+  `SleepTimerMenu`): a duration counts on the player's `TimeProvider` once a second, whatever plays, pauses or loads
+  meanwhile, so it runs on into the next episode, and then pauses what plays, with no fade. Run out while the next title
+  loads, it pauses that title once it plays; at an episode's end, it stops the countdown to the next one. In a Watch Party
+  the viewer leaves the room instead, as Apple's player does; a room taking over, and leaving the player, end the timer.
+  End of episode holds the next episode back (`NextUpFlow.Hold`: the card counts nothing and the end waits, as with
+  auto-play off) for whatever plays when the end comes, and ends with that end. The menu opens on this device's
+  `player.sleep_timer_default_minutes` (read with the playback's settings, in a batch of its own); a duration started is
+  saved there, as Android keeps the last one (`ServerPlayback.SetSleepTimerDefault`, `profile_device`).
 - **Chapters** (11.3): the playing file's `chapters` from the watch detail (mpv reads none through a remux or a
   transcode), in order, empty ones left out, pictures resolved against the server; they make the Chapters menu, the
   seek bar's ticks and the chapter named in its bubble.
