@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Sockets;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
@@ -16,17 +15,14 @@ namespace Granary.Tests.Realtime;
 /// </summary>
 public sealed class EventsSocketTests : IAsyncDisposable
 {
-    private readonly HttpListener _listener = new();
+    private readonly HttpListener _listener;
     private readonly Uri _server;
     private readonly ScriptedSilo _silo = new();
     private readonly LogSink _logs = new();
 
     public EventsSocketTests()
     {
-        int port = FreePort();
-        _server = new Uri($"http://localhost:{port}/");
-        _listener.Prefixes.Add(_server.AbsoluteUri);
-        _listener.Start();
+        (_listener, _server) = LoopbackHttpListener.Start();
         _silo.On(HttpMethod.Post, new Uri(_server, EventsLaneTests.TicketPath), ScriptedSilo.Json(HttpStatusCode.OK, EventsLaneTests.Ticket));
     }
 
@@ -92,15 +88,6 @@ public sealed class EventsSocketTests : IAsyncDisposable
     {
         _listener.Close();
         return ValueTask.CompletedTask;
-    }
-
-    private static int FreePort()
-    {
-        var probe = new TcpListener(IPAddress.Loopback, 0);
-        probe.Start();
-        int port = ((IPEndPoint)probe.LocalEndpoint).Port;
-        probe.Stop();
-        return port;
     }
 
     private static async Task<JsonElement> ReceiveAsync(WebSocket socket, CancellationToken token)

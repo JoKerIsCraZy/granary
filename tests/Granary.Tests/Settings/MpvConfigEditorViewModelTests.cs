@@ -163,6 +163,29 @@ public sealed class MpvConfigEditorViewModelTests : IDisposable
     }
 
     [Fact]
+    public async Task AChangeFromElsewhereWhileASaveWaits_IsKept_AndSaid()
+    {
+        var editor = await OpenWith("deband=yes\n");
+        editor.Text = "deband=no\n";
+        // Another program has the file open, and saves as the save waits for it to let go.
+        using var other = new FileStream(_folder.ConfigFile, FileMode.Open, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete);
+        _folder.BeforeMoveRetry = () =>
+        {
+            other.SetLength(0);
+            other.Write("scale=spline36\n"u8);
+            other.Dispose();
+        };
+
+        Assert.False(await editor.SaveAsync());
+
+        Assert.Equal("scale=spline36\n", await OnDisk());
+        Assert.Equal(MpvConfigEditorViewModel.ChangedElsewhereMessage, editor.Message);
+        Assert.True(editor.HasUnsavedChanges);
+        Assert.False(_changes.IsPending);
+        Assert.Equal(["mpv.conf"], Directory.GetFiles(_folder.Directory).Select(Path.GetFileName));
+    }
+
+    [Fact]
     public async Task AFileThatCannotBeRead_IsNoNewFile_AndCannotBeReplaced()
     {
         Directory.CreateDirectory(_folder.Directory);

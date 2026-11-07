@@ -125,6 +125,9 @@ classes in `tests/Granary.Tests/Fakes`.
 - **Timers:** a `DispatcherQueueTimer`'s Tick goes through `WeakTick.Subscribe` with a static lambda. The timer is not a
   XAML object, so a handler holding its control is a cycle the collector cannot see through, and the page stays in
   memory for good (`TimerTickTests`).
+- **Replacing a file:** `File.Move(..., overwrite: true)` fails while anything has the target open, even a read that shares
+  delete. A read Granary starts by itself can be in the way of its next write, so the mpv folder's writes try again for a
+  moment (`MpvConfigFolder.MoveOver`), unless the file changed meanwhile: that is someone's save, which stays.
 - **ClientWebSocket:** a `ReceiveAsync` cancelled through its token aborts the socket. Close it through a token
   registration and `CloseAsync` instead, as `WebSocketRealtimeSocket` (`IRealtimeSocket`, in
   `src/Granary.Core/Realtime/RealtimeSocket.cs`) does for both the playback control lane and the events lane.

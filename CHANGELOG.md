@@ -6,6 +6,10 @@ release's section is what its update says it changes (docs/release.md).
 
 ## [Unreleased]
 
+### Fixed
+
+- Saving mpv.conf or loading a preset no longer fails when Granary happens to be reading the file at that moment.
+
 ## [0.2.1] - 2026-11-05
 
 ### Added
