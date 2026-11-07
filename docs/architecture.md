@@ -392,9 +392,10 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   start position (the resume point minus 7 s from 30 s on, 0 to start over, sent explicitly), the profile's
   quality and bitrate cap (`PlaybackPreferencesReader`), the server's capabilities, and the device report:
   `MpvDeviceProbe` reads the GPU's D3D11VA decoder profiles, and logs them once; HEVC, VP9 and AV1 count only with
-  hardware, unless this PC's choice of direct play without hardware decoding (`IPlaybackDevicePreferences`, read at each
-  start) adds them for direct play and claims HDR tone mapping; HLS keeps the list without them. Each start logs what the
-  report declares, and each plan the server's reason (`ServerPlayback.Diagnostics.cs`).
+  hardware, unless this PC's choice of direct play without hardware decoding (`IPlaybackDevicePreferences`, read once when
+  the title starts and kept through its file switches and new attempts) adds them for direct play and claims HDR tone
+  mapping; HLS keeps the list without them. Each start and file switch logs what the report declares, and each plan the
+  server's reason (`ServerPlayback.Diagnostics.cs`).
 - **The detail page's pickers** (`PrePlayPickers`, `ItemDetailViewModel.PrePlay`): the Version, Audio and Subs of a
   movie or episode, shown from the catalog item with the same rules the start applies (`ChooseVersion`,
   `SubtitleAutoSelection`). Play passes the viewer's picks on as the `PlayRequest`'s `PrePlayChoice`; the starter takes
