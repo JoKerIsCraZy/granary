@@ -165,6 +165,8 @@
     <CornerRadius x:Key="ControlCornerRadius">10</CornerRadius>
     <CornerRadius x:Key="OverlayCornerRadius">16</CornerRadius>
     <CornerRadius x:Key="SiloCardCornerRadius">16</CornerRadius>
+    <!-- A cast or crew card's photo (PersonCreditCard); the Cast & Crew row's separators stand as tall. -->
+    <x:Double x:Key="SiloCreditPhotoHeight">180</x:Double>
     <!-- Pills: with controls:Pill.IsEnabled the radius becomes half the height once laid out; WinUI would draw 999 as an oval. -->
     <CornerRadius x:Key="SiloPillCornerRadius">999</CornerRadius>
 
