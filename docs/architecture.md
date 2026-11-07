@@ -506,7 +506,8 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   saved there, as Android keeps the last one (`ServerPlayback.SetSleepTimerDefault`, `profile_device`).
 - **Chapters** (11.3): the playing file's `chapters` from the watch detail (mpv reads none through a remux or a
   transcode), in order, empty ones left out, pictures resolved against the server; they make the Chapters menu, the
-  seek bar's ticks and the chapter named in its bubble.
+  seek bar's ticks and the chapter named in its bubble, and Ctrl+Left and Ctrl+Right go to their starts (`ChapterJump`,
+  a pure function of the chapters and the position).
 - **Seek-bar previews** (11.4): for a file with `trickplay_available`, the manifest is read after its first frame and
   again 5 minutes before its sheets expire (a minute after a transient failure; a 404 means none). Thumbnail `i` of
   `interval_ms` sits on sheet `i / (cols·rows)`; the seek bar keeps three sheets decoded at the bubble's width and
