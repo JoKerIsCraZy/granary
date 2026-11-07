@@ -2368,12 +2368,20 @@ HDR with libplacebo. An honest, conservative first report:
   (HDR10+ as HDR10), HLG and Dolby Vision Profile 5 and 8 to the SDR output, checked with d3d11va
   decoding in composition mode against the same clip in SDR. Profile 7 is covered by the claim too and
   plays its base layer with the RPU (the enhancement layer is dropped); not checked with a sample yet.
-  HDR is 10-bit, and the claim covers every codec the report lists, since the server checks codec names
-  and not bit depth at `declared` evidence. So it is sent only when the GPU decodes some HDR codec at 10
-  bits and every HDR codec listed (`hevc`, `vp9`, `av1`) is decoded at 10 bits by the GPU
-  (`HardwareTenBitVideoCodecs`: HEVC Main 10, VP9 Profile 2, AV1, whose Main profile includes 10-bit,
-  each only where `CheckVideoDecoderFormat` confirms the P010 output format) or is on the CPU's list. A GPU with an 8-bit-only HEVC or VP9 decoder leaves HDR to the server; else
-  the CPU would decode a 4K original. Two gaps stay: HDR in H.264 High 10, which D3D11VA does not decode,
+  HDR is 10-bit, and the server checks codec names, not bit depth, at `declared` evidence, so the claim
+  covers every codec HDR may come in for that start. Granary decides it per start from the `codec_video`
+  of the files the server may send: the file started and, unless the start keeps to it
+  (`allow_alternate_versions: false`, a Watch Party's file or a version the viewer picked), the title's other
+  versions, which the server may fall back to or resume in. The claim is sent only when the GPU decodes some
+  HDR codec at 10 bits and each HDR codec (`hevc`, `vp9`, `av1`) among those files that the report lists is
+  decoded at 10 bits by the GPU (`HardwareTenBitVideoCodecs`: HEVC Main 10, VP9 Profile 2, AV1, whose Main
+  profile includes 10-bit, each only where `CheckVideoDecoderFormat` confirms the P010 output format) or is
+  on the CPU's list. Codec names are compared without case, with `h265` and `x265` read as `hevc` as the
+  server's planner reads them. When a file has no `codec_video`, every HDR codec the report lists counts. So a
+  GPU with 10-bit HEVC and an 8-bit-only VP9 decoder plays an HEVC HDR film directly but leaves a VP9 one,
+  or a title with a VP9 version the server may pick, to the server; else the CPU would decode a 4K original.
+  A file switched to in the player and a start after `installation_changed` get the report for their files;
+  replans repeat their attempt's. Two gaps stay: HDR in H.264 High 10, which D3D11VA does not decode,
   and 12-bit HEVC, which no common decoder takes; both are rare, and the second already direct-plays as
   SDR, which only `platform_attested` evidence with `bit_depths` can bound. Like the web's decode engine,
   which claims it only with a hardware WebGPU adapter and an SDR display. Without the claim the server
@@ -2391,10 +2399,10 @@ HDR with libplacebo. An honest, conservative first report:
   subtitle rules first), and FFmpeg decodes them on the CPU where D3D11VA cannot. For a PC whose GPU
   decodes these only in part (HEVC Main 10 on 6th-generation Intel graphics, for example), where the server would
   otherwise transcode and tone-map. `output.hdr` stays false, and `hls` keeps the list without them (what the GPU or the CPU decode smoothly): the server encodes HEVC
-  only for an HLS delivery that lists it, so a transcode it still makes stays one the GPU decodes. Read at each start,
-  so a change counts from the next title.
+  only for an HLS delivery that lists it, so a transcode it still makes stays one the GPU decodes. Read when a title
+  starts and kept through its file switches and new attempts, so a change counts from the next title.
 - The log says why a title is transcoded: the probe's hardware and 10-bit codecs once, the report's video codecs and
-  whether HDR originals are claimed at each start, and each plan's `decision_reason`, effective video codec, size and
+  whether the title's HDR originals are claimed at each start and file switch, and each plan's `decision_reason`, effective video codec, size and
   dynamic range, `claims.video.dolby_vision_reason` and `degradation_warnings` codes.
 - Subtitles: `sidecar_text`, `ass_styling`, `font_attachments`, `embedded_text`, `embedded_bitmap`
   true; `embedded_subtitles_v1` with `native_embedded` entries for mkv and mp4 using

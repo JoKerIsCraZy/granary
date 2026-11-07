@@ -75,6 +75,9 @@ internal sealed class ServerPlaybackFixture
     /// <summary>This PC's playback choices, read at each start.</summary>
     public InMemoryPlaybackDevicePreferences DevicePreferences { get; } = new();
 
+    /// <summary>What this PC's GPU and CPU decode.</summary>
+    public FakeDeviceProbe Device { get; } = new();
+
     public static Uri StreamUrl(string session = Session) => new(ScriptedSilo.Base.AbsoluteUri + "/api/v2/stream/" + session);
 
     public static Func<Task<HttpResponseMessage>> Ok(string json) => ScriptedSilo.Json(HttpStatusCode.OK, json);
@@ -89,7 +92,7 @@ internal sealed class ServerPlaybackFixture
         new WatchApi(Silo.Http),
         new PlaybackApi(Silo.Http),
         new PlaybackPreferencesReader(new SettingsApi(Silo.Http), Logs.For<PlaybackPreferencesReader>()),
-        new FakeDeviceProbe(),
+        Device,
         DevicePreferences,
         AuthPipeline.Identity,
         SessionManager,
@@ -218,7 +221,7 @@ internal sealed class FakeMediaAuthorization : IMediaAuthorization
 
 internal sealed class FakeDeviceProbe : IPlaybackDeviceProbe
 {
-    public PlaybackDeviceFacts Facts { get; } = new()
+    public PlaybackDeviceFacts Facts { get; set; } = new()
     {
         Platform = "windows",
         HardwareVideoCodecs = ["h264", "hevc"],

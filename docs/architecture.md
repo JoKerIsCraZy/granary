@@ -49,9 +49,10 @@ Small steps, as while the window's edge is dragged, are passed on at once and ke
 
 Because there is no window, mpv cannot query the monitor: the app must pass HDR target settings and
 the display refresh rate itself (Phase 3). Until it does, the output is SDR, and mpv tone-maps HDR and
-Dolby Vision originals onto it. Where the GPU decodes HDR video at 10 bits, Granary claims that on direct play
-(`client_managed_dynamic_range_v1`, docs/api-contract.md 13.2), so the server sends HDR files as they are
-instead of tone-mapping them in a transcode.
+Dolby Vision originals onto it. Where the GPU decodes the codec of the title's files at 10 bits, Granary claims
+that on direct play (`client_managed_dynamic_range_v1`, docs/api-contract.md 13.2), so the server sends HDR files
+as they are instead of tone-mapping them in a transcode. `PlaybackStarter` builds the report for the files a start
+may get, again when the viewer switches files in the player and after the server was reinstalled.
 
 ## Your own mpv.conf
 

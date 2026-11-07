@@ -8,6 +8,8 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Fixed
 
+- HDR and Dolby Vision films play directly on more graphics cards, because Granary now checks the film's own codec. A
+  card that decodes VP9 only in 8 bits had your Silo server convert every HDR film, HEVC ones too.
 - Dolby Vision files with an HDR10, HLG or SDR base layer play directly on a server that wants each base layer named,
   where it converted them.
 - Saving mpv.conf or loading a preset no longer fails when Granary happens to be reading the file at that moment.

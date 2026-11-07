@@ -52,7 +52,7 @@ public sealed class ServerPlaybackSettingsTests
         await _fixture.StartAsync();
 
         Assert.Contains(_fixture.Logs.Lines, line => line.Contains(
-            "This PC plays h264, mpeg2video, hevc (h264, hevc in hardware); HDR originals are played directly", StringComparison.Ordinal));
+            "This PC plays h264, mpeg2video, hevc (h264, hevc in hardware); HDR originals of this title are played directly", StringComparison.Ordinal));
         Assert.Contains(_fixture.Logs.Lines, line => line.Contains(
             "The server's reason: transcode_required; it sends h264 1280x720 sdr (Dolby Vision: output_sdr; warnings: hdr_tone_mapped)", StringComparison.Ordinal));
     }

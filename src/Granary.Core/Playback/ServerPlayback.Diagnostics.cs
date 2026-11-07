@@ -12,7 +12,8 @@ public sealed partial class ServerPlayback
         var capabilities = report.ClientCapabilities;
         bool mapsHdr = report.ClientPlaybackContext.Deliveries.TryGetValue(DeliveryClasses.OriginalHttp, out var original)
             && original.ValidatedClaims.Contains(DeliveryClaims.ClientManagedDynamicRangeV1);
-        _logger.LogInformation("This PC plays {Codecs} ({Hardware} in hardware); HDR originals are {Hdr}",
+        // The claim covers the files this start may get, so it speaks for this title only.
+        _logger.LogInformation("This PC plays {Codecs} ({Hardware} in hardware); HDR originals of this title are {Hdr}",
             Listed(capabilities.CodecsVideo), Listed(capabilities.CodecsVideoHardware),
             mapsHdr ? "played directly" : "tone-mapped by the server");
     }
