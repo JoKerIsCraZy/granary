@@ -100,12 +100,14 @@ internal static class DownloadPayloads
 
     /// <summary>
     /// Media bytes: a 200, or with <paramref name="rangeFrom"/> a 206 whose <c>Content-Range</c> starts there and covers the
-    /// body, out of <paramref name="total"/> (<c>*</c> when null).
+    /// body, out of <paramref name="total"/> (<c>*</c> when null). <paramref name="lastModified"/> is its <c>Last-Modified</c>.
     /// </summary>
-    public static Func<Task<HttpResponseMessage>> Bytes(HttpStatusCode status, byte[] body, string? etag, long? rangeFrom = null, long? total = null) => () =>
+    public static Func<Task<HttpResponseMessage>> Bytes(HttpStatusCode status, byte[] body, string? etag, long? rangeFrom = null, long? total = null,
+        DateTimeOffset? lastModified = null) => () =>
     {
         var content = new ByteArrayContent(body);
         content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+        content.Headers.LastModified = lastModified;
         if (rangeFrom is { } from)
         {
             long to = from + body.Length - 1;
@@ -113,6 +115,28 @@ internal static class DownloadPayloads
         }
         var response = new HttpResponseMessage(status) { Content = content };
         response.Headers.AcceptRanges.Add("bytes");
+        if (etag is not null)
+        {
+            response.Headers.ETag = EntityTagHeaderValue.Parse(etag);
+        }
+        return Task.FromResult(response);
+    };
+
+    /// <summary>
+    /// As <see cref="Bytes"/>, with <paramref name="body"/> read as it arrives; the answer promises <paramref name="length"/>
+    /// bytes (<c>Content-Length</c>, none when null), as a server does before a body breaks off or runs on.
+    /// </summary>
+    public static Func<Task<HttpResponseMessage>> Streamed(HttpStatusCode status, Stream body, long? length, string? etag, long? rangeFrom = null,
+        long? total = null) => () =>
+    {
+        var content = new StreamContent(body);
+        content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+        content.Headers.ContentLength = length;
+        if (rangeFrom is { } from && length is { } count)
+        {
+            content.Headers.ContentRange = total is { } size ? new ContentRangeHeaderValue(from, from + count - 1, size) : new ContentRangeHeaderValue(from, from + count - 1);
+        }
+        var response = new HttpResponseMessage(status) { Content = content };
         if (etag is not null)
         {
             response.Headers.ETag = EntityTagHeaderValue.Parse(etag);
@@ -135,4 +159,74 @@ internal static class DownloadPayloads
     public static byte[] Utf8(string text) => Encoding.UTF8.GetBytes(text);
 
     private static string Bool(bool value) => value ? "true" : "false";
+}
+
+/// <summary>
+/// A media body as a server sends it: at most <see cref="ChunkSize"/> bytes a read. It can break off with an
+/// <see cref="IOException"/> after <see cref="BreakAfter"/> bytes, as a lost connection does, or stall there after
+/// <see cref="StallAfter"/> bytes until the reader gives up.
+/// </summary>
+internal sealed class TestMediaStream(byte[] bytes) : Stream
+{
+    private readonly TaskCompletionSource _stalling = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private long _position;
+
+    public int ChunkSize { get; init; } = 1024;
+
+    public long? BreakAfter { get; init; }
+
+    public long? StallAfter { get; init; }
+
+    /// <summary>How many bytes were read so far.</summary>
+    public long Delivered => Interlocked.Read(ref _position);
+
+    /// <summary>Completes once a read waits at <see cref="StallAfter"/>.</summary>
+    public Task Stalling => _stalling.Task;
+
+    public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+    {
+        if (_position == BreakAfter)
+        {
+            throw new IOException("The connection broke off.");
+        }
+        if (_position == StallAfter)
+        {
+            _stalling.TrySetResult();
+            await Task.Delay(Timeout.Infinite, cancellationToken);
+        }
+        long end = Math.Min(bytes.Length, Math.Min(BreakAfter ?? long.MaxValue, StallAfter ?? long.MaxValue));
+        int count = (int)Math.Min(Math.Min(buffer.Length, ChunkSize), end - _position);
+        bytes.AsMemory((int)_position, count).CopyTo(buffer);
+        Interlocked.Add(ref _position, count);
+        return count;
+    }
+
+    public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) =>
+        ReadAsync(buffer.AsMemory(offset, count), cancellationToken).AsTask();
+
+    public override int Read(byte[] buffer, int offset, int count) => ReadAsync(buffer, offset, count).GetAwaiter().GetResult();
+
+    public override bool CanRead => true;
+
+    public override bool CanSeek => false;
+
+    public override bool CanWrite => false;
+
+    public override long Length => throw new NotSupportedException();
+
+    public override long Position
+    {
+        get => throw new NotSupportedException();
+        set => throw new NotSupportedException();
+    }
+
+    public override void Flush()
+    {
+    }
+
+    public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+
+    public override void SetLength(long value) => throw new NotSupportedException();
+
+    public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
 }

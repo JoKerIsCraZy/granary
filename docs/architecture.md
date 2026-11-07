@@ -830,6 +830,48 @@ Films and episodes kept on this PC as the server's managed downloads (docs/api-c
   file under a name of its own, then moved over it, tried again for a moment while a read holds the file, and given up
   when the file changed meanwhile. Nothing is written outside the data folder and the downloads folders.
 
+### The transfer
+
+`DownloadTransfer.RunAsync` brings one media file into `media.part` and answers a `TransferOutcome`: its result, the
+validator the bytes on disk came with, how long to wait when the server is busy, and the bytes on disk. The part is never
+deleted here; every result but Completed keeps what was written.
+
+- **Resume.** The part is cut back to the resume point (the queue's, kept within the part and the file), then written
+  through one `FileStream` (shared for reading, asynchronous, 1 MiB reads). A resume asks `Range: bytes=<offset>-` with
+  `If-Range` and the validator: the strong `ETag`, else `Last-Modified` in its HTTP form (`ByteRange.IsValidator`).
+  Without a validator `If-Range` takes, a resume starts over, so two versions' bytes are never joined. A 206 must start
+  exactly at the offset and end within the file, and its `ETag`, or else its `Last-Modified`, must be the validator's when
+  it names one: the rest of another version empties the part (an integrity failure). A 200 means the file changed on the
+  server (or there was nothing to resume): the part starts over from its first byte. A 416 on a part of exactly the file's
+  length, when that length is known, is done. A part that cannot be cut back (another program has it mapped) is a local
+  failure like a write that fails, never an exception. Offsets, `Content-Range` and sizes are `long` throughout, for files
+  over 4 GB.
+- **The validator first.** `RunAsync`'s `onValidator` is told the validator of the bytes in the part whenever it changes,
+  as the answer arrives and before any of its bytes are written, and the queue keeps it in the record. So a transfer that
+  is cancelled (a pause, a metered connection, a profile switch, Granary closing) or killed resumes with `If-Range` from
+  its bytes. A part that starts over is emptied before the new validator is told: no crash pairs a new validator with old
+  bytes.
+- **Length.** `TransferJob.ExpectedBytes` is the file's exact length: the manifest's `integrity.expected_bytes` or the
+  ready entry's size, never a preparing entry's estimate. A total from the server that is not it, a body that runs past it,
+  or no known length at all is an integrity failure; nothing past the file's end is written.
+- **On the disk.** The part is flushed to the disk (`FlushFileBuffers`) every 3 MiB, so with 1 MiB reads at most 4 MiB,
+  the queue's resume margin after a restart, are ever written but not on the disk, and once more before it counts as done.
+- **Space.** Nothing is sent when the folder's drive is not there (`IDiskSpace.FreeBytes` null: missing folder) or, the
+  size known, the rest from the offset actually used does not fit beside `SpaceReserve` (256 MB). Every 64 MB written the
+  free space is looked at again, and below the reserve the transfer stops; Windows' "disk full" errors stop it the same
+  way, and a folder or drive that goes away on the way is a missing folder. Core's own `DriveInfoDiskSpace` measures
+  lettered drives; the app's counts network shares too.
+- **Stall.** Every read, and the wait for the answer, has `StallTimeout` (60 s) on a `CancellationTokenSource` on the
+  `TimeProvider`: a connection that brings nothing for a minute is given up to be tried again.
+- **Answers.** 200 and 206 bring bytes. 409 `prepared_file_expired` is Expired (the queue prepares it again); another 409,
+  a 403 or another 4xx, a redirect Granary does not follow (`DownloadRedirectRefusedException`, or a second one), and a
+  request that cannot be made (an id or validator the API refuses) are Refused, since asking again gets the same answer;
+  404 Gone; 429 and 503 Busy for their `Retry-After`, else 5 s; 401, or 403 `profile_verification_required`, Signed out; a
+  5xx, a lost connection or a body that ended before the file did is Unreachable, to try again later; a request the server
+  would get as another profile is not sent (Profile changed). The log names the download and the status, and a problem
+  code only when it is one Granary knows, never an address or a local path: a network error's message can name the
+  server and a file error's the Windows user's folder, so only their kinds are logged.
+
 ## Windows App SDK
 
 The App is unpackaged and self-contained (`WindowsPackageType=None`, `WindowsAppSDKSelfContained=true`): the Windows
