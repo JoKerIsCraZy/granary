@@ -12,7 +12,7 @@ using Windows.System;
 namespace Granary.App.Views;
 
 /// <summary>Password form above device (QR) sign-in for one saved server; the parameter is its entry id.</summary>
-public sealed partial class SignInPage : Page
+public sealed partial class SignInPage : Page, IOwnFocus
 {
     private bool _deviceSignInStarted;
     private bool _formFocused;

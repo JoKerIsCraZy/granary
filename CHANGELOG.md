@@ -22,6 +22,8 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Fixed
 
+- A TV remote's arrows work as soon as Granary has started into Home: focus starts on the first card, and the first arrow
+  or OK shows where you are before anything moves.
 - Dolby Vision files with an HDR10, HLG or SDR base layer play directly on a server that wants each base layer named,
   where it converted them.
 - Saving mpv.conf or loading a preset no longer fails when Granary happens to be reading the file at that moment.

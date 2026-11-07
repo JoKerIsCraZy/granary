@@ -291,10 +291,12 @@ public sealed partial class MainWindow : Window
 
     /// <summary>
     /// Plays the mark's intro over the window until the shell has <paramref name="started"/> and its first page has what it
-    /// shows; a longer wait runs the loading loop meanwhile, and <see cref="StartupLimit"/> ends it in any case.
+    /// shows; a longer wait runs the loading loop meanwhile, and <see cref="StartupLimit"/> ends it in any case. Then the
+    /// first page gets focus, for a remote's arrows.
     /// </summary>
     public async void ShowStartup(Task started)
     {
+        var input = InputSoFar();
         try
         {
             var limit = Task.Delay(StartupLimit);
@@ -312,6 +314,7 @@ public sealed partial class MainWindow : Window
             _logger.LogWarning(ex, "The start screen ended early");
         }
         HideSplash();
+        PlaceStartFocus(input);
         // Updates are looked for once the app shows, so the first page's requests go first.
         await Updates.RunAsync(_updatesRun.Token);
     }
