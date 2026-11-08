@@ -371,10 +371,33 @@ public sealed class PlayerViewModelTimesTests
         Assert.Equal(Ends(14, 35), viewModel.EndsAtText);
     }
 
-    [Fact]
-    public async Task APositionPastTheLength_EndsNow()
+    [Theory]
+    [InlineData(2700)]
+    [InlineData(3000)]
+    public async Task APositionAtOrPastTheLength_ShowsNoEnd(double position)
     {
-        using var viewModel = await PlayingAsync(3000);
+        // The engine's last position can be the length while the player still says it plays: nothing is left to end.
+        using var viewModel = await PlayingAsync(position);
+
+        Assert.Equal("", viewModel.EndsAtText);
+    }
+
+    [Fact]
+    public async Task APlayerHeldAtTheEnd_ShowsNoEnd()
+    {
+        using var viewModel = await PlayingAsync(2690);
+        Assert.Equal(Ends(14, 0), viewModel.EndsAtText);
+
+        // Kept open at the end of the file, a moment short of the length the server named, before the end is told.
+        _engine.RaiseState(new PlaybackSnapshot(true, true, TimeSpan.FromSeconds(2699.6), null, null, HasStarted: true, IsAtEnd: true));
+
+        Assert.Equal("", viewModel.EndsAtText);
+    }
+
+    [Fact]
+    public async Task TheLastSecondsBeforeTheEnd_StillShowTheEnd()
+    {
+        using var viewModel = await PlayingAsync(2695);
 
         Assert.Equal(Ends(14, 0), viewModel.EndsAtText);
     }

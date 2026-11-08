@@ -1186,8 +1186,9 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   setting). After the times "· ENDS 22:41", in the line's muted upper case, also Granary's own as none of Silo's
   clients has it: the clock time the title ends at the speed it plays, rounded to the minute, in Windows' short time
   (12 or 24 hours as Windows writes it). It moves later while paused or waiting, and with a seek or another speed;
-  it is not there without a known length (a stream without one included) or at the end. Screen readers hear "Ends at
-  22:41". In the middle skip back, the white play/pause disc and skip forward (glass discs showing the
+  it is not there without a known length (a stream without one included) or once nothing is left to play: at the end,
+  also while the player holds at the end of the file before the title is over, as it would only say the time it is
+  now. Screen readers hear "Ends at 22:41". In the middle skip back, the white play/pause disc and skip forward (glass discs showing the
   profile's intervals), for an episode with a previous or next one flanked by previous and next episode discs (both
   slots kept while one has an episode, so Play stays in the middle; a movie has none); on the right mute, the volume
   slider, the sleep timer (unless Settings → Playback → This PC turns it off), audio, subtitles, chapters, settings,

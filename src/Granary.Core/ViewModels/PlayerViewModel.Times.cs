@@ -114,14 +114,16 @@ public sealed partial class PlayerViewModel
 
     // Now plus what is left of the title at the speed it plays; null while nothing plays toward a known end. A length
     // that is not a number or endless is a stream's without one, and an end a day or more away would not say which day.
+    // Nothing is left once the engine holds at the end of the file or the position reached the length, which can come
+    // before the player says the title ended: "Ends" with the time it is now would say nothing.
     private DateTimeOffset? EndsAtNow()
     {
-        if (_disposed || HasLeft || Phase != PlayerPhase.Playing || !_endsAtHasPosition || !(DurationSeconds > 0))
+        if (_disposed || HasLeft || Phase != PlayerPhase.Playing || !_endsAtHasPosition || _engineState.IsAtEnd || !(DurationSeconds > 0))
         {
             return null;
         }
-        double left = Math.Max(0, DurationSeconds - PositionSeconds) / (Speed > 0 ? Speed : 1);
-        return left < EndsAtHorizon.TotalSeconds ? _time.GetUtcNow() + TimeSpan.FromSeconds(left) : null;
+        double left = (DurationSeconds - PositionSeconds) / (Speed > 0 ? Speed : 1);
+        return left > 0 && left < EndsAtHorizon.TotalSeconds ? _time.GetUtcNow() + TimeSpan.FromSeconds(left) : null;
     }
 
     // Written again when the minute changed, or the zone or the time format did: in this PC's zone and short time ("t",
