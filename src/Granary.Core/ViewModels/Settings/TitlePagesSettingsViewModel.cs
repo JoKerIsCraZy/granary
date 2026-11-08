@@ -7,9 +7,9 @@ namespace Granary.Core.ViewModels.Settings;
 
 /// <summary>
 /// Settings → Title Pages, as Silo's web has it (<c>pages/settings/TitlePagesSettings.tsx</c>): its Title group, as the web's
-/// <c>TitleArtSettingsGroup.tsx</c>, its Spoilers, the profile's two switches (<see cref="EpisodeSpoilerSettings"/>), and its
-/// Age guidance (<see cref="TitlePageSettings"/>), each saved at once. While the spoiler switches cannot be edited, the page
-/// says why instead; a group the server does not keep is left out.
+/// <c>TitleArtSettingsGroup.tsx</c>, its Sound (theme music), its Spoilers, the profile's two switches
+/// (<see cref="EpisodeSpoilerSettings"/>), and its Age guidance (<see cref="TitlePageSettings"/>), each saved at once. While
+/// the spoiler switches cannot be edited, the page says why instead; a group the server does not keep is left out.
 /// </summary>
 public sealed partial class TitlePagesSettingsViewModel : ObservableObject, IDisposable
 {
@@ -110,6 +110,26 @@ public sealed partial class TitlePagesSettingsViewModel : ObservableObject, IDis
     [RelayCommand]
     private Task UseServerDefaultTitleArtAsync() => _titlePage?.UseServerDefaultTitleArtAsync() ?? Task.CompletedTask;
 
+    /// <summary>The Sound group shows: the server keeps "Theme music" for the profile.</summary>
+    public bool OffersThemeMusic => Offers(TitlePageSettings.ThemeMusicKey);
+
+    /// <summary>"Loop theme music" shows.</summary>
+    public bool OffersThemeMusicLoop => Offers(TitlePageSettings.ThemeMusicLoopKey);
+
+    /// <summary>"Theme music"; saved at once for the profile.</summary>
+    public bool PlaysThemeMusic
+    {
+        get => _titlePage?.Shown.PlaysThemeMusic ?? false;
+        set => _ = _titlePage?.SetPlaysThemeMusicAsync(value);
+    }
+
+    /// <summary>"Loop theme music".</summary>
+    public bool LoopsThemeMusic
+    {
+        get => _titlePage?.Shown.LoopsThemeMusic ?? false;
+        set => _ = _titlePage?.SetLoopsThemeMusicAsync(value);
+    }
+
     /// <summary>The Age guidance group shows: the server keeps "Show advisory age" for the profile.</summary>
     public bool OffersAdvisoryAge => Offers(TitlePageSettings.AdvisoryAgeKey);
 
@@ -178,6 +198,10 @@ public sealed partial class TitlePagesSettingsViewModel : ObservableObject, IDis
                 OnPropertyChanged(nameof(ShowsTitleArt));
                 OnPropertyChanged(nameof(TitleArtForAllDevices));
                 OnTitleArtNoteChanged();
+                OnPropertyChanged(nameof(OffersThemeMusic));
+                OnPropertyChanged(nameof(OffersThemeMusicLoop));
+                OnPropertyChanged(nameof(PlaysThemeMusic));
+                OnPropertyChanged(nameof(LoopsThemeMusic));
                 OnPropertyChanged(nameof(OffersAdvisoryAge));
                 OnPropertyChanged(nameof(ShowsAdvisoryAge));
                 break;

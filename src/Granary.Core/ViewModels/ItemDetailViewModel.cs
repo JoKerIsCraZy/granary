@@ -8,6 +8,7 @@ using Granary.Core.Api.Playback;
 using Granary.Core.Artwork;
 using Granary.Core.Auth;
 using Granary.Core.Playback;
+using Granary.Core.Playback.Themes;
 using Granary.Core.Servers;
 using Granary.Core.Settings;
 using Granary.Core.ViewModels.Cards;
@@ -59,6 +60,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
     private readonly TrackChoiceWrites? _trackChoices;
     private readonly EpisodeSpoilerSettings? _spoilers;
     private readonly TitlePageSettings? _titlePage;
+    private readonly ThemeMusic? _themeMusic;
     private readonly IUiDispatcher? _dispatcher;
     private readonly TimeProvider _time;
     private readonly RatingWrites? _ratings;
@@ -98,6 +100,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         TrackChoiceWrites? trackChoices = null,
         EpisodeSpoilerSettings? spoilers = null,
         TitlePageSettings? titlePage = null,
+        ThemeMusic? themeMusic = null,
         IUiDispatcher? dispatcher = null,
         TimeProvider? time = null,
         RatingWrites? ratings = null,
@@ -117,6 +120,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         _trackChoices = trackChoices;
         _spoilers = spoilers;
         _titlePage = titlePage;
+        _themeMusic = themeMusic;
         _dispatcher = dispatcher;
         _time = time ?? TimeProvider.System;
         _ratings = ratings;

@@ -553,6 +553,13 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   - Granary's rows follow, 56 apart: a series' seasons, all at once in a grid that wraps at the page's width (185 px
     posters, a season opens its own page), or a season's episode grid, more episodes, extras, trailers, cast and crew,
     a movie's box set, more like this.
+  - Theme music (Title Pages → Theme music, off by default): a movie's, series', season's or episode's page plays the
+    first theme of the set the server names for it, quietly under the page (35 %, faded in and out over 300 ms), once,
+    or again and again with Loop theme music. A page that follows with the same theme, a season with its series' set, goes
+    on where it was; another theme takes over. Leaving the page, or minimizing the window, fades it out, and it ends two
+    seconds later unless the same theme shows again. The player, also as its bar, and a trailer stop it at once; it starts
+    over once they close. Nothing on the page shows it; a title without themes, or a server that does not serve them, is
+    silent.
   - Spoilers, as the web's `SeasonEpisodeGrid`, `EpisodeCarousel` and `EpisodeContent` (the profile's Title Pages
     switches, [episode spoilers](api-contract.md#663-episode-spoilers)): in the episode grid and More Episodes an episode
     neither played nor started has its still blurred (only its own still: the series' art standing in for one stays) and
@@ -997,7 +1004,9 @@ says why above the sections.
   neither PC nor profile chosen, muted, "Using the server default (on). Change it here to choose for this PC."; with this
   PC's own choice "Only affects this PC. Your other devices keep their own setting." (the web says "browser" where
   Granary says "PC"). A chosen value has "Use server default" with the reset icon under it. A refused change says "Could
-  not save the title art setting". Then Spoilers ("Applies to
+  not save the title art setting". Then Sound ("Plays while a title's page is open.") with "Theme music" ("Play local theme
+  music while browsing movie and show detail pages.") and "Loop theme music" ("Repeat theme music while the detail page
+  stays open."), saved to the profile, this PC's own value cleared with it. Then Spoilers ("Applies to
   episodes you have not started, on every device that uses this profile.") with "Blur unwatched episode images" ("Blur an
   episode's thumbnail until you start watching it, so the image does not give away the story.") and "Hide unwatched episode
   descriptions" ("Hide an episode's description until you start watching it."). Each switch saves to the profile at once and

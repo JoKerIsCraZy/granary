@@ -61,6 +61,27 @@ public static class PlaybackUrl
         return Resolve(server, value) is { } sidecar && IsPlain(sidecar.OriginalString) ? sidecar : null;
     }
 
+    /// <summary>
+    /// A theme grant's audio URL (docs/api-contract.md 7.19): on the saved server as <see cref="Resolve"/> takes it, or on a
+    /// proxy node's origin, checked as a node stream is bar its path: HTTPS unless the server itself is plain HTTP, no user
+    /// info, never this machine or a link-local address. It carries its own token, so it is fetched without credentials.
+    /// </summary>
+    public static Uri? ResolveTheme(Uri server, string? value)
+    {
+        ArgumentNullException.ThrowIfNull(server);
+        if (Resolve(server, value) is { } onServer)
+        {
+            return IsPlain(onServer.OriginalString) ? onServer : null;
+        }
+        if (!IsElsewhere(server, value) || !IsPlain(value!) || !Uri.TryCreate(value, UriKind.Absolute, out var node))
+        {
+            return null;
+        }
+        bool secure = node.Scheme == Uri.UriSchemeHttps || (node.Scheme == Uri.UriSchemeHttp && server.Scheme == Uri.UriSchemeHttp);
+        bool valid = secure && node.UserInfo.Length == 0 && node.Fragment.Length == 0 && IsRemote(node);
+        return valid ? new Uri(node.AbsoluteUri) : null;
+    }
+
     /// <summary>An absolute HTTP URL that is not on the saved server: a proxy node's, or one the client refuses.</summary>
     public static bool IsElsewhere(Uri server, string? value) =>
         Uri.TryCreate(value, UriKind.Absolute, out var absolute)

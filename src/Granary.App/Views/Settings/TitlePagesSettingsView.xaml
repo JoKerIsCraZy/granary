@@ -53,6 +53,21 @@
             </StackPanel>
         </controls:SettingsGroup>
 
+        <controls:SettingsGroup Title="Sound" Description="Plays while a title's page is open." Visibility="{x:Bind ViewModel.OffersThemeMusic, Mode=OneWay}">
+            <StackPanel>
+                <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Theme music"
+                                      Description="Play local theme music while browsing movie and show detail pages.">
+                    <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.PlaysThemeMusic, Mode=TwoWay}"
+                                  IsEnabled="{x:Bind ViewModel.CanEditTitlePage, Mode=OneWay}" AutomationProperties.Name="Theme music" />
+                </controls:SettingsRow>
+                <controls:SettingsRow Label="Loop theme music" Description="Repeat theme music while the detail page stays open."
+                                      Visibility="{x:Bind ViewModel.OffersThemeMusicLoop, Mode=OneWay}">
+                    <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.LoopsThemeMusic, Mode=TwoWay}"
+                                  IsEnabled="{x:Bind ViewModel.CanEditTitlePage, Mode=OneWay}" AutomationProperties.Name="Loop theme music" />
+                </controls:SettingsRow>
+            </StackPanel>
+        </controls:SettingsGroup>
+
         <controls:SettingsGroup Title="Spoilers" Description="Applies to episodes you have not started, on every device that uses this profile.">
             <StackPanel>
                 <TextBlock Text="Loading…" Style="{StaticResource SiloSettingsMutedTextStyle}" FontSize="14"

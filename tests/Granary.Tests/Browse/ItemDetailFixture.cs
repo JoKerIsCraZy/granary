@@ -99,6 +99,9 @@ internal sealed class ItemDetailFixture
     /// <summary>The profile's other Title Pages settings; none unless a test sets them, so every one is at its default.</summary>
     public TitlePageSettings? TitlePage { get; set; }
 
+    /// <summary>The app's theme music; none unless a test sets it, so the page plays nothing.</summary>
+    public Core.Playback.Themes.ThemeMusic? ThemeMusic { get; set; }
+
     /// <summary>The calendar's airings a season's grid places its missing and upcoming episodes by; none unless a test sets them.</summary>
     public SeriesAirings? Airings { get; set; }
 
@@ -133,6 +136,7 @@ internal sealed class ItemDetailFixture
         trackChoices: TrackChoices,
         spoilers: Spoilers,
         titlePage: TitlePage,
+        themeMusic: ThemeMusic,
         dispatcher: new ImmediateDispatcher(),
         time: Clock,
         ratings: Ratings,

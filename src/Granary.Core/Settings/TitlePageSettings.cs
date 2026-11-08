@@ -30,8 +30,10 @@ public sealed partial class TitlePageSettings : ObservableObject
 {
     public const string AdvisoryAgeKey = "catalog.show_advisory_age";
     public const string TitleArtKey = "ui.title_art";
+    public const string ThemeMusicKey = "ui.theme_music_enabled";
+    public const string ThemeMusicLoopKey = "ui.theme_music_loop";
 
-    private static readonly string[] Keys = [AdvisoryAgeKey, TitleArtKey];
+    private static readonly string[] Keys = [AdvisoryAgeKey, TitleArtKey, ThemeMusicKey, ThemeMusicLoopKey];
 
     private readonly ISessionManager _session;
     private readonly IProfileSettings _settings;
@@ -73,6 +75,12 @@ public sealed partial class TitlePageSettings : ObservableObject
 
     public bool CanEdit => State == TitlePageState.Ready;
 
+    /// <summary>
+    /// <see cref="Shown"/> is the acting profile's own choice: false between a profile switch and the read for the next
+    /// profile, whatever order the switch reaches those who follow both.
+    /// </summary>
+    public bool KnowsActiveProfile => State == TitlePageState.Ready && _readFor == Owner();
+
     /// <summary>The last change was refused or lost, and went back to what the server has; the next change clears it.</summary>
     [ObservableProperty]
     public partial bool SaveFailed { get; private set; }
@@ -105,6 +113,37 @@ public sealed partial class TitlePageSettings : ObservableObject
     public Task SetShowsAdvisoryAgeAsync(bool shows) =>
         ChangeAsync(AdvisoryAgeKey, Shown with { ShowsAdvisoryAge = shows }, () => SaveForProfileAsync(AdvisoryAgeKey, shows, clearDevice: false),
             confirmed => confirmed with { ShowsAdvisoryAge = shows });
+
+    /// <summary>
+    /// "Theme music", saved for the profile and, as the web's <c>useProfileDefaultWriter</c>, this PC's own value cleared when
+    /// it would keep shadowing the profile's.
+    /// </summary>
+    public Task SetPlaysThemeMusicAsync(bool plays)
+    {
+        bool clearDevice = Shown.ThemeMusicFromDevice;
+        return ChangeAsync(ThemeMusicKey, Shown with { PlaysThemeMusic = plays, ThemeMusicFromDevice = false },
+            () => SaveForProfileAndClearDeviceAsync(ThemeMusicKey, plays, clearDevice),
+            confirmed => confirmed with { PlaysThemeMusic = plays, ThemeMusicFromDevice = false });
+    }
+
+    /// <summary>"Loop theme music", saved as <see cref="SetPlaysThemeMusicAsync"/>.</summary>
+    public Task SetLoopsThemeMusicAsync(bool loops)
+    {
+        bool clearDevice = Shown.ThemeMusicLoopFromDevice;
+        return ChangeAsync(ThemeMusicLoopKey, Shown with { LoopsThemeMusic = loops, ThemeMusicLoopFromDevice = false },
+            () => SaveForProfileAndClearDeviceAsync(ThemeMusicLoopKey, loops, clearDevice),
+            confirmed => confirmed with { LoopsThemeMusic = loops, ThemeMusicLoopFromDevice = false });
+    }
+
+    // The profile's value first, so a failed clear leaves the choice stored, then this PC's, which outranks it.
+    private async Task SaveForProfileAndClearDeviceAsync(string key, bool value, bool clearDevice)
+    {
+        await _api.SetValueAsync(Server, key, Json(value), SettingScopes.Profile);
+        if (clearDevice)
+        {
+            await ClearAsync(key, SettingScopes.ProfileDevice);
+        }
+    }
 
     /// <summary>
     /// "Show title art", as the web's <c>useTitleArtSetting</c> writes it: this PC's own value, or the profile's while "Apply to
@@ -140,7 +179,7 @@ public sealed partial class TitlePageSettings : ObservableObject
             // After a profile switch the clear would remove the other profile's choice.
             if (!allDevices && Owner() == owner)
             {
-                await ClearTitleArtAsync(SettingScopes.Profile);
+                await ClearAsync(TitleArtKey, SettingScopes.Profile);
             }
         }, confirmed => confirmed with { ShowsTitleArt = shows, TitleArtSource = scope });
     }
@@ -155,10 +194,10 @@ public sealed partial class TitlePageSettings : ObservableObject
         var owner = Owner();
         await ChangeAsync(TitleArtKey, Shown with { TitleArtSource = TitlePagePrefs.DefaultSource }, async () =>
         {
-            await ClearTitleArtAsync(SettingScopes.ProfileDevice);
+            await ClearAsync(TitleArtKey, SettingScopes.ProfileDevice);
             if (allDevices && Owner() == owner)
             {
-                await ClearTitleArtAsync(SettingScopes.Profile);
+                await ClearAsync(TitleArtKey, SettingScopes.Profile);
             }
         }, confirmed => confirmed with { TitleArtSource = TitlePagePrefs.DefaultSource });
         if (Owner() == owner)
@@ -169,11 +208,11 @@ public sealed partial class TitlePageSettings : ObservableObject
 
     private Task SetTitleArtAsync(bool shows, string scope) => _api.SetValueAsync(Server, TitleArtKey, Json(shows), scope);
 
-    private async Task ClearTitleArtAsync(string scope)
+    private async Task ClearAsync(string key, string scope)
     {
         try
         {
-            await _api.ClearValueAsync(Server, TitleArtKey, scope);
+            await _api.ClearValueAsync(Server, key, scope);
         }
         catch (SiloApiException ex) when (ex.Status == 404)
         {

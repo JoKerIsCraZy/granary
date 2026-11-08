@@ -1,3 +1,6 @@
+using Granary.Core.Playback.Themes;
+using Granary.Tests.Auth;
+using Granary.Tests.Playback;
 using Granary.Tests.Settings;
 using static Granary.Tests.Browse.ItemDetailFixture;
 using static Granary.Tests.Browse.ItemDetailPayloads;
@@ -159,6 +162,72 @@ public sealed class ItemDetailTitlePageTests
 
         Assert.False(detail.ShowsLogo);
         Assert.True(detail.ShowsTitleText);
+    }
+
+    private const string Themes =
+        """{ "owner_id": "movie-tmdb-1001", "items": [ { "id": "11", "title": "Main Title", "duration_seconds": 95, "container": "mp3" } ] }""";
+
+    private static readonly string ThemedMovie = Movie.Replace("\"tagline\":", "\"themes\": " + Themes + ", \"tagline\":", StringComparison.Ordinal);
+
+    private static async Task<ThemeMusicRig> ThemeRigAsync()
+    {
+        var rig = await new ThemeMusicRig().StartedAsync();
+        rig.Grants(MovieId, "11");
+        return rig;
+    }
+
+    [Fact]
+    public async Task AnOpenPage_PlaysItsTheme_AndLeavingItLetsTheThemeGo()
+    {
+        var rig = await ThemeRigAsync();
+        var fixture = new ItemDetailFixture().Movie().Get(ItemPath(MovieId), Ok(ThemedMovie));
+        fixture.ThemeMusic = rig.Music;
+
+        var detail = await OpenAsync(fixture, MovieId);
+
+        await AuthPipeline.Eventually(() => rig.Output.Made.Count == 1);
+        Assert.Equal(1, rig.GrantsAsked(MovieId, "11"));
+        var audio = rig.Playing();
+        detail.Deactivate();
+        rig.Clock.Advance(TimeSpan.FromMilliseconds(300) + ThemeMusic.ReleaseGrace);
+        Assert.True(audio.IsDisposed);
+    }
+
+    [Fact]
+    public async Task WhileThePageLoads_ItsThemeWaits()
+    {
+        var rig = await ThemeRigAsync();
+        var (held, gate) = Held();
+        var fixture = new ItemDetailFixture().Movie().Get(ItemPath(MovieId), held);
+        fixture.ThemeMusic = rig.Music;
+        var detail = fixture.Create();
+
+        var loading = detail.LoadCommand.ExecuteAsync(MovieId);
+        detail.Activate();
+        Assert.Empty(rig.Output.Made);
+        gate.SetResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK) { Content = new StringContent(ThemedMovie) });
+        await loading;
+
+        await AuthPipeline.Eventually(() => rig.Output.Made.Count == 1);
+    }
+
+    [Fact]
+    public async Task APageWithoutThemes_StopsTheOneBefore()
+    {
+        var rig = await ThemeRigAsync();
+        var themed = new ItemDetailFixture().Movie().Get(ItemPath(MovieId), Ok(ThemedMovie));
+        themed.ThemeMusic = rig.Music;
+        var first = await OpenAsync(themed, MovieId);
+        await AuthPipeline.Eventually(() => rig.Output.Made.Count == 1);
+        var audio = rig.Playing();
+        var plain = new ItemDetailFixture().Series();
+        plain.ThemeMusic = rig.Music;
+
+        first.Deactivate();
+        await OpenAsync(plain, SeriesId);
+        rig.Clock.Advance(TimeSpan.FromMilliseconds(300));
+
+        Assert.True(audio.IsDisposed);
     }
 
     [Fact]

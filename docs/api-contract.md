@@ -574,6 +574,7 @@ Profile and device settings live on the server (manifest
 | `catalog.hide_unwatched_episode_images`, `catalog.hide_unwatched_episode_overviews` | profile | `false`, `false` | episode spoilers ([6.6.3](#663-episode-spoilers)) |
 | `catalog.show_advisory_age` | profile | `false` | a title's suggested age on its page ([6.6.4](#664-title-pages)) |
 | `ui.title_art` | profile, profile_device (the profile's wins) | `true`, or the administrator's | a title's page names it with its logo ([6.6.4](#664-title-pages)) |
+| `ui.theme_music_enabled`, `ui.theme_music_loop` | profile, profile_device | `false`, `false` | title pages' theme music ([6.6.4](#664-title-pages), [7.19](#719-theme-music)) |
 
 #### 6.6.1 Card badges
 
@@ -662,6 +663,11 @@ server's contract does not know (`422`, then read one by one, `ProfileSettings`)
     while that is the source, then read the effective value again; a `404` means there was nothing to clear.
 
   Only a title's page follows it, as on the web; Home's hero keeps the logo.
+- `ui.theme_music_enabled` and `ui.theme_music_loop` (revision 11, `profile` and `profile_device`, this device's value first,
+  default `false`; the manifest lists them for `web` only, which the server does not enforce, and the apps read them too):
+  title pages play their theme music ([7.19](#719-theme-music)), and repeat it. Saved as the web's `useProfileDefaultWriter`
+  writes them: `PUT …?scope=profile`, then `DELETE …?scope=profile_device` when the effective value came from this device.
+  Only the acting profile's own read turns theme music on, never the previous profile's while the next one is read.
 
 ## 7. Catalog
 
@@ -900,6 +906,10 @@ too: `versions[].audio_tracks`, `subtitle_tracks`, `video_tracks` (same shapes),
 its default, as in 8.8.1). Their defaults are what playback picks: the file as `PlaybackStarter.ChooseVersion`, the
 audio `effective_audio_track_index` (else the file's default track, else the first), the subtitle 8.8.1's resolver for
 that audio.
+
+`themes?` is the theme music the page plays ([7.19](#719-theme-music)): `{ owner_id, items[{ id, title, duration_seconds,
+container }] }`, resolved by the server (a season without its own takes its series', an episode its season's, then its
+series'); an empty set keeps the item's id, and a failed lookup leaves the member out.
 
 `advisory_age?` (an integer) is a suggested minimum viewer age from an advisory service, not the certification, and
 `advisory_source?` who suggested it (`commonsense`, `mdblist`); absent means none was fetched, never "for everyone". The
@@ -1276,6 +1286,29 @@ groups them (`silo-server/docs/catalog-api.md`, "Movie box sets"; `internal/apiv
   `GET /api/v2/catalog/search/capabilities` says `box_sets: true` (as the Apple app checks; the web checks the libraries'
   `box_sets_enabled` instead) and not for Series, beside the people and titles; a failure, or an answer slower than
   1.5 s (Android's grace), shows none rather than holding the titles.
+
+### 7.19 Theme music
+
+A movie, series or season can own local theme audio (`theme.mp3` and the like, or a `theme-music/` folder;
+`silo-server/docs/catalog-api.md`, "Local theme songs, V2"). The item detail names the set to play (`themes`, 7.6); Granary
+plays its first theme, as the web's `useThemeMusic.ts` and the apps do (docs/architecture.md, Theme music).
+
+- `GET /api/v2/catalog/themes/capabilities` (profile) → `{ state: available|disabled|not_configured|unsupported, allowed,
+  delivery, transcode, cluster_routing, grant_lifetime_seconds, revision }`. Themes play only while `state` is `available`
+  and `allowed` is not `false`; a `404` is a server that predates themes. The answer stands 60 s, as the web's query keeps
+  it; a failed read changes nothing and is asked again with the next page.
+- `POST /api/v2/catalog/items/{owner_id}/themes/{theme_id}/playback` (profile) with `{ "accepted_formats": [{ container,
+  audio_codec }] }` → `{ url, expires_at, delivery: original|converted, content_type }`. Granary lists what Windows' media
+  player plays without extensions: `mp3/mp3`, `mp4/aac`, `m4a/aac`, `m4a/alac`, `aac/aac`, `flac/flac`, `wav/pcm`; the
+  server sends the original when it matches and otherwise converts it to AAC in audio-only MP4 (`converted`), or answers
+  `406` when it cannot. A grant answered after the profile changed is dropped.
+- `url` is a short-lived credential: relative to the server, or absolute on a proxy node's origin (HTTPS unless the server
+  is plain HTTP, no user info, never this machine or a link-local address; `PlaybackUrl.ResolveTheme`). Granary fetches it
+  whole (`ThemeAudioDownloader`: no credentials, no redirects, 60 s, at most 32 MB, as the Apple app reads a converted
+  theme), on a client that logs nothing, and hands only the bytes to the player. It never logs or keeps the URL; a failure
+  is logged by its status or kind alone.
+- A converted theme has no length and no byte ranges: to loop, it is played again from a new grant; an original loops in
+  place. A theme that fails is tried once more with a new grant, and one that plays earns that try back.
 
 ## 8. Playback protocol v3
 

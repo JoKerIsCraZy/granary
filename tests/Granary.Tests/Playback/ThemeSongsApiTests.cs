@@ -1,0 +1,184 @@
+using System.Net;
+using System.Net.Http.Headers;
+using System.Text.Json;
+using Granary.Core.Api;
+using Granary.Core.Api.Catalog;
+using Granary.Core.Playback.Themes;
+using Granary.Tests.Fakes;
+using Granary.Tests.Profiles;
+
+namespace Granary.Tests.Playback;
+
+/// <summary>The local theme songs API and the theme's download (docs/api-contract.md 7.19).</summary>
+public sealed class ThemeSongsApiTests
+{
+    internal const string CapabilityPath = "api/v2/catalog/themes/capabilities";
+
+    internal static string PlaybackPath(string owner, string theme) => $"api/v2/catalog/items/{owner}/themes/{theme}/playback";
+
+    internal const string Available = """
+        { "state": "available", "allowed": true, "delivery": "routed", "transcode": true, "cluster_routing": false,
+          "grant_lifetime_seconds": 300, "revision": "r1" }
+        """;
+
+    internal static string Grant(string url = "/api/v2/catalog/items/movie-1/themes/11/audio?token=tkn-secret", string delivery = "original",
+        string contentType = "audio/mpeg") => $$"""
+        { "url": "{{url}}", "expires_at": "2026-11-08T12:05:00Z", "delivery": "{{delivery}}", "content_type": "{{contentType}}" }
+        """;
+
+    private readonly ScriptedSilo _silo = new();
+    private readonly CancellationToken _token = TestContext.Current.CancellationToken;
+
+    [Theory]
+    [InlineData(Available, true)]
+    [InlineData("""{ "state": "available", "allowed": false, "revision": "r" }""", false)]
+    [InlineData("""{ "state": "available", "revision": "r" }""", true)]
+    [InlineData("""{ "state": "disabled", "allowed": true, "revision": "r" }""", false)]
+    [InlineData("""{ "state": "not_configured", "revision": "r" }""", false)]
+    public async Task TheCapability_SaysWhetherThemesPlay(string answer, bool available)
+    {
+        _silo.On(HttpMethod.Get, CapabilityPath, ScriptedSilo.Json(HttpStatusCode.OK, answer));
+
+        var capability = await new ThemesApi(_silo.Http).GetCapabilityAsync(ScriptedSilo.Base, _token);
+
+        Assert.Equal(available, capability.IsAvailable);
+        Assert.Equal(SiloAuth.Profile, Assert.Single(_silo.Sent).Auth);
+    }
+
+    [Fact]
+    public async Task AGrant_SaysWhatThisPCPlays_ForTheProfile()
+    {
+        _silo.On(HttpMethod.Post, PlaybackPath("movie-1", "11"), ScriptedSilo.Json(HttpStatusCode.OK, Grant()));
+
+        var grant = await new ThemesApi(_silo.Http).CreatePlaybackAsync(ScriptedSilo.Base, "movie-1", "11",
+            [new ThemeAudioFormat("mp3", "mp3"), new ThemeAudioFormat("mp4", "aac")], _token);
+
+        var sent = Assert.Single(_silo.Sent);
+        Assert.Equal(SiloAuth.Profile, sent.Auth);
+        Assert.Equal("""{"accepted_formats":[{"container":"mp3","audio_codec":"mp3"},{"container":"mp4","audio_codec":"aac"}]}""", sent.Body);
+        Assert.False(grant.IsConverted);
+        Assert.Equal("audio/mpeg", grant.ContentType);
+    }
+
+    [Fact]
+    public async Task WithoutFormats_TheGrantAsksForTheOriginal_WithNoBody()
+    {
+        _silo.On(HttpMethod.Post, PlaybackPath("movie-1", "11"), ScriptedSilo.Json(HttpStatusCode.OK, Grant(delivery: "converted")));
+
+        var grant = await new ThemesApi(_silo.Http).CreatePlaybackAsync(ScriptedSilo.Base, "movie-1", "11", [], _token);
+
+        Assert.Null(Assert.Single(_silo.Sent).Body);
+        Assert.True(grant.IsConverted);
+    }
+
+    [Fact]
+    public void AGrant_NeverShowsItsAddress()
+    {
+        var grant = JsonSerializer.Deserialize(Grant(), ThemesJsonContext.Default.ThemePlayback)!;
+
+        Assert.DoesNotContain("tkn-secret", grant.ToString(), StringComparison.Ordinal);
+        Assert.DoesNotContain("/audio", grant.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AnIdThatIsNoId_IsNotSent()
+    {
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            new ThemesApi(_silo.Http).CreatePlaybackAsync(ScriptedSilo.Base, "..", "11", [], _token));
+        Assert.Empty(_silo.Sent);
+    }
+
+    private static ThemePlayback Parsed(string json) => JsonSerializer.Deserialize(json, ThemesJsonContext.Default.ThemePlayback)!;
+
+    private static (ThemeAudioDownloader Downloader, FakeHttpMessageHandler Handler) Downloader(HttpStatusCode status = HttpStatusCode.OK,
+        byte[]? body = null, long? length = null)
+    {
+        var handler = new FakeHttpMessageHandler((_, _) =>
+        {
+            var content = new ByteArrayContent(body ?? [7, 8, 9]);
+            content.Headers.ContentType = new MediaTypeHeaderValue("audio/mpeg");
+            if (length is { } declared)
+            {
+                content.Headers.ContentLength = declared;
+            }
+            return Task.FromResult(new HttpResponseMessage(status) { Content = content });
+        });
+        return (new ThemeAudioDownloader(new FakeHttpClients(handler)), handler);
+    }
+
+    [Fact]
+    public async Task TheTheme_IsFetchedWhole_BeneathTheServer_WithoutCredentials()
+    {
+        var (downloader, handler) = Downloader();
+
+        var audio = await downloader.DownloadAsync(ScriptedSilo.Base, Parsed(Grant()), _token);
+
+        var request = Assert.Single(handler.Requests);
+        Assert.Equal("https://nas.example/silo/api/v2/catalog/items/movie-1/themes/11/audio?token=tkn-secret", request.RequestUri!.OriginalString);
+        Assert.Null(request.Headers.Authorization);
+        Assert.False(request.Headers.Contains("X-Profile-Id"));
+        Assert.Equal(new byte[] { 7, 8, 9 }, audio.Audio.ToArray());
+        Assert.Equal("audio/mpeg", audio.ContentType);
+        Assert.False(audio.Converted);
+    }
+
+    [Fact]
+    public async Task AConversion_IsMarkedSo()
+    {
+        var (downloader, _) = Downloader();
+
+        var audio = await downloader.DownloadAsync(ScriptedSilo.Base, Parsed(Grant(delivery: "converted", contentType: "audio/mp4")), _token);
+
+        Assert.True(audio.Converted);
+        Assert.Equal("audio/mp4", audio.ContentType);
+    }
+
+    [Fact]
+    public async Task AProxyNode_IsFetchedOnItsOwnOrigin()
+    {
+        var (downloader, handler) = Downloader();
+
+        await downloader.DownloadAsync(ScriptedSilo.Base, Parsed(Grant("https://proxy.example:8443/theme-audio/abc?token=t")), _token);
+
+        Assert.Equal("https://proxy.example:8443/theme-audio/abc?token=t", Assert.Single(handler.Requests).RequestUri!.AbsoluteUri);
+    }
+
+    [Theory]
+    [InlineData("http://proxy.example/theme-audio/abc?token=t")]
+    [InlineData("https://user:pass@proxy.example/theme-audio/abc")]
+    [InlineData("https://127.0.0.1/theme-audio/abc")]
+    [InlineData("https://localhost/theme-audio/abc")]
+    [InlineData("https://169.254.169.254/latest")]
+    [InlineData("/api/v2/catalog/items/movie-1/themes/11/../../../../admin")]
+    [InlineData("ftp://proxy.example/theme")]
+    [InlineData("")]
+    public async Task AnAddressGranaryDoesNotFetch_IsRefused_Unsent(string url)
+    {
+        var (downloader, handler) = Downloader();
+
+        await Assert.ThrowsAsync<HttpRequestException>(() => downloader.DownloadAsync(ScriptedSilo.Base, Parsed(Grant(url)), _token));
+
+        Assert.Empty(handler.Requests);
+    }
+
+    [Fact]
+    public async Task ARefusedDownload_Fails()
+    {
+        var (downloader, _) = Downloader(HttpStatusCode.Forbidden);
+
+        var failure = await Assert.ThrowsAsync<HttpRequestException>(() => downloader.DownloadAsync(ScriptedSilo.Base, Parsed(Grant()), _token));
+
+        Assert.Equal(HttpStatusCode.Forbidden, failure.StatusCode);
+        Assert.DoesNotContain("tkn-secret", failure.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task SomethingTooLargeForATheme_IsGivenUp()
+    {
+        var (declared, _) = Downloader(length: ThemeAudioDownloader.MaxBytes + 1L);
+        var (streamed, _) = Downloader(body: new byte[ThemeAudioDownloader.MaxBytes + 1]);
+
+        await Assert.ThrowsAsync<HttpRequestException>(() => declared.DownloadAsync(ScriptedSilo.Base, Parsed(Grant()), _token));
+        await Assert.ThrowsAsync<HttpRequestException>(() => streamed.DownloadAsync(ScriptedSilo.Base, Parsed(Grant()), _token));
+    }
+}

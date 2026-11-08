@@ -54,6 +54,9 @@ public sealed record CatalogItemDetail : CatalogItemBase
     /// <summary>Local extras (behind the scenes, featurettes, …).</summary>
     public IReadOnlyList<ItemExtra> Extras { get; init => field = value ?? []; } = [];
 
+    /// <summary>The theme music the page plays; absent when the server's lookup failed or it predates themes.</summary>
+    public ThemeSongSet? Themes { get; init; }
+
     /// <summary>The subtitle language the profile's preferences resolve to for this item; empty when the preference is None.</summary>
     public string? EffectiveSubtitleLanguage { get; init; }
 

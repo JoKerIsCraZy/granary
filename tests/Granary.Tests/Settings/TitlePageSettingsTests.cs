@@ -14,6 +14,8 @@ public sealed class TitlePageSettingsTests
     internal const string EffectivePath = "api/v2/settings/values/effective";
     private const string AdvisoryPath = "api/v2/settings/values/catalog.show_advisory_age";
     private const string TitleArtPath = "api/v2/settings/values/ui.title_art";
+    private const string ThemeMusicPath = "api/v2/settings/values/ui.theme_music_enabled";
+    private const string ThemeLoopPath = "api/v2/settings/values/ui.theme_music_loop";
 
     private readonly LibraryHarness _harness = new();
 
@@ -21,17 +23,27 @@ public sealed class TitlePageSettingsTests
     {
         _harness.Answer(EffectivePath, Answer());
         _harness.Silo.On(HttpMethod.Put, AdvisoryPath, ScriptedSilo.NoContent());
+        foreach (string path in new[] { ThemeMusicPath, ThemeLoopPath })
+        {
+            _harness.Silo.On(HttpMethod.Put, path, ScriptedSilo.NoContent());
+            _harness.Silo.On(HttpMethod.Delete, path, ScriptedSilo.NoContent());
+        }
         _harness.Silo.On(HttpMethod.Put, TitleArtPath, ScriptedSilo.NoContent());
         _harness.Silo.On(HttpMethod.Delete, TitleArtPath, ScriptedSilo.NoContent());
     }
 
     /// <summary>The effective values of the Title Pages settings, as the server answers them.</summary>
-    internal static string Answer(bool advisory = false, bool titleArt = true, string titleArtSource = "default") => $$"""
+    internal static string Answer(bool advisory = false, bool titleArt = true, string titleArtSource = "default", bool themeMusic = false,
+        bool loop = false, string themeMusicSource = "default") => $$"""
         { "items": [
-            { "key": "catalog.show_advisory_age", "source": "{{(advisory ? "profile" : "default")}}", "value": {{(advisory ? "true" : "false")}} },
-            { "key": "ui.title_art", "source": "{{titleArtSource}}", "value": {{(titleArt ? "true" : "false")}} }
+            { "key": "catalog.show_advisory_age", "source": "{{(advisory ? "profile" : "default")}}", "value": {{Bool(advisory)}} },
+            { "key": "ui.title_art", "source": "{{titleArtSource}}", "value": {{Bool(titleArt)}} },
+            { "key": "ui.theme_music_enabled", "source": "{{themeMusicSource}}", "value": {{Bool(themeMusic)}} },
+            { "key": "ui.theme_music_loop", "source": "{{themeMusicSource}}", "value": {{Bool(loop)}} }
           ], "revision": 6 }
         """;
+
+    private static string Bool(bool value) => value ? "true" : "false";
 
     internal static TitlePageSettings Create(LibraryHarness harness) =>
         new(harness.Session, new ProfileSettings(new SettingsApi(harness.Silo.Http), harness.Session, harness.Logs.For<ProfileSettings>()),
@@ -494,6 +506,97 @@ public sealed class TitlePageSettingsTests
 
         Assert.True(page.ShowsTitleArt);
         Assert.Equal(TitlePagesSettingsViewModel.TitleArtSaveFailedText, page.ErrorMessage);
+    }
+
+    private List<string> Writes(string key) =>
+        [.. _harness.Silo.Sent.Where(r => r.Uri.AbsolutePath.EndsWith("/" + key, StringComparison.Ordinal))
+            .Select(r => $"{r.Method} {r.Uri.Query} {r.Body}".TrimEnd())];
+
+    [Fact]
+    public async Task ThemeMusic_IsOff_UntilChosen_AndBothSwitchesAreRead()
+    {
+        var off = Create();
+        await off.StartAsync();
+        var harness = new LibraryHarness();
+        harness.Answer(EffectivePath, Answer(themeMusic: true, loop: true, themeMusicSource: "profile_device"));
+        var on = Create(harness);
+        await on.StartAsync();
+
+        Assert.False(off.Shown.PlaysThemeMusic);
+        Assert.False(off.Shown.LoopsThemeMusic);
+        Assert.True(on.Shown.PlaysThemeMusic);
+        Assert.True(on.Shown.LoopsThemeMusic);
+        Assert.True(on.Shown.ThemeMusicFromDevice);
+        string query = Assert.Single(harness.Queries(EffectivePath));
+        Assert.Contains("keys=ui.theme_music_enabled", query, StringComparison.Ordinal);
+        Assert.Contains("keys=ui.theme_music_loop", query, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task TheThemeSwitches_SaveForTheProfile()
+    {
+        var settings = Create();
+        await settings.StartAsync();
+
+        await settings.SetPlaysThemeMusicAsync(true);
+        await settings.SetLoopsThemeMusicAsync(true);
+
+        Assert.True(settings.Shown.PlaysThemeMusic);
+        Assert.True(settings.Shown.LoopsThemeMusic);
+        Assert.Equal(["PUT ?scope=profile {\"value\":true}"], Writes(TitlePageSettings.ThemeMusicKey));
+        Assert.Equal(["PUT ?scope=profile {\"value\":true}"], Writes(TitlePageSettings.ThemeMusicLoopKey));
+    }
+
+    [Fact]
+    public async Task AValueThisPCKeeps_IsCleared_AfterTheProfilesIsSaved()
+    {
+        _harness.Answer(EffectivePath, Answer(themeMusic: true, themeMusicSource: "profile_device"));
+        var settings = Create();
+        await settings.StartAsync();
+
+        await settings.SetPlaysThemeMusicAsync(false);
+        await settings.SetPlaysThemeMusicAsync(true);
+
+        Assert.Equal(["PUT ?scope=profile {\"value\":false}", "DELETE ?scope=profile_device", "PUT ?scope=profile {\"value\":true}"],
+            Writes(TitlePageSettings.ThemeMusicKey));
+        Assert.False(settings.Shown.ThemeMusicFromDevice);
+    }
+
+    [Fact]
+    public async Task ThePage_OffersTheSoundGroup_AndItsSwitchesSave()
+    {
+        var settings = Create();
+        await settings.StartAsync();
+        using var page = new TitlePagesSettingsViewModel(await SpoilerSwitches.StartedAsync(), settings);
+        var changed = new List<string?>();
+        page.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+
+        Assert.True(page.OffersThemeMusic);
+        Assert.True(page.OffersThemeMusicLoop);
+        page.PlaysThemeMusic = true;
+        await settings.Working;
+        page.LoopsThemeMusic = true;
+        await settings.Working;
+
+        Assert.True(page.PlaysThemeMusic);
+        Assert.True(page.LoopsThemeMusic);
+        Assert.Contains(nameof(TitlePagesSettingsViewModel.PlaysThemeMusic), changed);
+        Assert.Single(Writes(TitlePageSettings.ThemeMusicLoopKey));
+    }
+
+    [Fact]
+    public async Task ThePage_LeavesOutTheSoundGroup_OnAServerWithoutThemeMusic()
+    {
+        _harness.Answer(EffectivePath, """
+            { "items": [ { "key": "catalog.show_advisory_age", "source": "default", "value": false } ], "revision": 6 }
+            """);
+        var settings = Create();
+        await settings.StartAsync();
+        using var page = new TitlePagesSettingsViewModel(await SpoilerSwitches.StartedAsync(), settings);
+
+        Assert.False(page.OffersThemeMusic);
+        Assert.False(page.OffersThemeMusicLoop);
+        Assert.False(settings.Shown.PlaysThemeMusic);
     }
 
     [Fact]

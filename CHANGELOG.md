@@ -8,6 +8,10 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Added
 
+- **Theme music:** turn on Settings → Title Pages → Theme music, and a title's page plays its theme quietly while it is
+  open, when your Silo server has theme music for it, as in Silo's web and apps. Loop theme music repeats it. Going from a
+  series to one of its seasons keeps the music going; leaving the page or minimizing Granary fades it out, and playing a
+  title or a trailer stops it at once.
 - **Title art:** Settings → Title Pages → Show title art decides whether a title's page names it with its logo or with
   its name in text, for this PC or, with Apply to all devices, for every device signed into your profile. Use server
   default goes back to what your Silo server's admin set.

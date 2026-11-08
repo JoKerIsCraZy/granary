@@ -31,6 +31,7 @@ Dependencies point inward only: `App → Player → Core`, and `App → Core`.
   DISPLAY and SYSTEM, or with "Playing audio" under EXECUTION and SYSTEM. A request belongs to its object, not to a
   thread; a lock keeps the state whole if a call came from another thread. Should Windows make no request object, it
   falls back on `SetThreadExecutionState` (`ExecutionStateFlags`), which belongs to the calling thread, the UI's.
+  `IThemeAudioOutput` plays title pages' theme music (see Theme music).
   `IReleaseFiles` gives `SignedReleaseVerifier` a release's SHA256SUMS and its signature, and the package on disk to
   hash and read; Core's own `HttpReleaseFiles` implements it, and the tests fake it (docs/release.md, "Signed
   releases").
@@ -732,6 +733,30 @@ breaks YouTube's terms.
   (see Window modes): from a window the window goes full screen with it and back, in the app's full screen it stays as it
   is. The app under the trailer is hidden meanwhile. When the window leaves full screen another way (F11), the page is
   asked to leave its own.
+
+## Theme music
+
+A title page plays its local theme music while Settings → Title Pages → Theme music is on (docs/api-contract.md, 6.6.4 and
+7.19). Behaviour follows the apps (Android's `ThemeMusicCoordinator` and `ThemeMusicPlayer`, Apple's `ThemeMusicCenter` and
+`ThemeMusicController`), which follow the web's `useThemeMusic.ts` and `lib/themeMusic.ts`.
+
+- **`ThemeMusic`** (Core, a singleton) decides when. A title page's view model shows it a token of its own with the page's
+  themes (none while it loads) and hides it as the page leaves; it never holds the page. Nothing plays unless the acting
+  profile's own settings say so and the server's capability says themes are available (read again once a minute old). A page
+  that leaves or loads fades its theme out and pauses it; two seconds later (`ReleaseGrace`) the theme is let go, unless a
+  page shows the same theme again, as a season with its series' set does, which goes on where it was. While the player
+  holds a title, over the window or as its bar, or a trailer is open, the theme stops at once and starts over after
+  (`OtherMediaPlaying`, which MainWindow sets once the window's turn is done, so a player taking over from a trailer does not
+  let it start in between). A minimized window counts as a page that left (`IsMinimized`, from `AppWindow.Changed`). A
+  profile, server or sign-out stops it at once and forgets the capability.
+- **`ThemeMusicPlayer`** (Core) plays one theme: the set's first, faded in to 35 % in 12 steps over 300 ms once it is heard and
+  out the same way, on `TimeProvider` timers whose ticks go through `IUiDispatcher`. An original loops in place; a conversion
+  ends and plays again from a new grant. A failure is tried once with a new grant; audio that plays earns the try back.
+- **`ThemeAudioDownloader`** (Core) fetches the granted theme whole, without credentials or redirects, on the `theme-audio`
+  client, which logs nothing: the URL carries its own token and stays in Core.
+- **`WindowsThemeAudio`** (App) implements the port on `Windows.Media.Playback.MediaPlayer` from the bytes (a light player beside
+  mpv, not a second mpv), with its command manager off, so it stays out of Windows' media overlay and the media keys stay
+  the player's. Its events come on Windows' threads; Core takes them to the UI thread.
 
 ## Window modes
 

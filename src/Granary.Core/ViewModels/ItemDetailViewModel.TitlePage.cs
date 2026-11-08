@@ -1,13 +1,15 @@
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Granary.Core.Api.Catalog;
+using Granary.Core.Playback.Themes;
 using Granary.Core.Settings;
 using Granary.Core.ViewModels.Detail;
 
 namespace Granary.Core.ViewModels;
 
 // The profile's Title Pages settings on this page (Settings → Title Pages, the web's TitlePagesSettings.tsx): the title
-// named with its logo or in text, and the advisory age in the meta line. An open page follows a change.
+// named with its logo or in text, the advisory age in the meta line, and the theme music while the page shows (ThemeMusic
+// decides when it plays). An open page follows a change.
 public sealed partial class ItemDetailViewModel
 {
     // The counts the sections brought for the meta line, kept so the line can be written again when a setting changes.
@@ -16,6 +18,11 @@ public sealed partial class ItemDetailViewModel
 
     // The title's logo, which LogoUrl shows while title art is on.
     private Uri? _titleLogo;
+
+    private static readonly ThemeSongSet NoThemes = new();
+
+    // What this page is to the theme music: a token of its own, so the app-wide player never holds the page.
+    private readonly object _themePage = new();
 
     /// <summary>
     /// The title has a logo and the profile's choice of title art is not known yet: neither the logo nor the text shows, as
@@ -41,9 +48,33 @@ public sealed partial class ItemDetailViewModel
     {
         _titlePage?.PropertyChanged += OnTitlePageChanged;
         ShowTitlePage();
+        ShowThemes();
     }
 
-    private void LeaveTitlePage() => _titlePage?.PropertyChanged -= OnTitlePageChanged;
+    private void LeaveTitlePage()
+    {
+        _titlePage?.PropertyChanged -= OnTitlePageChanged;
+        _themeMusic?.Hide(_themePage);
+    }
+
+    // As the web's useThemeMusic: no themes while the page loads, which pauses the one playing; the item's once it is in, the
+    // set its season or series resolved to for a season or episode; none for a title that failed.
+    private void ShowThemes()
+    {
+        if (!_isActive || _themeMusic is null)
+        {
+            return;
+        }
+        _themeMusic.Show(_themePage, State switch
+        {
+            ItemDetailState.Loading => null,
+            ItemDetailState.Ready => _item?.Themes ?? NoThemes,
+            _ => NoThemes,
+        });
+    }
+
+    // The two-value hook: the one-value hook is the Watch Party offer's (ItemDetailViewModel.WatchParty.cs).
+    partial void OnStateChanged(ItemDetailState oldValue, ItemDetailState newValue) => ShowThemes();
 
     private void OnTitlePageChanged(object? sender, PropertyChangedEventArgs e)
     {

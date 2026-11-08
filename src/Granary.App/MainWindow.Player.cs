@@ -74,6 +74,7 @@ public sealed partial class MainWindow : IPlayerOverlay
         page.StopRequested += (_, _) => ClosePlayer();
         page.ViewModel.PropertyChanged += OnPlayerChanged;
         _player = page;
+        ShowOtherMedia();
         PlayerHost.Child = page;
         PlayerHost.Visibility = Visibility.Visible;
         Expand();
@@ -87,6 +88,7 @@ public sealed partial class MainWindow : IPlayerOverlay
             return;
         }
         _player = null;
+        ShowOtherMedia();
         page.ViewModel.PropertyChanged -= OnPlayerChanged;
         StopDockSlide();
         page.Leave();
