@@ -843,6 +843,16 @@ public sealed partial class MediaCardView : UserControl
         SetHovered(true);
     }
 
+    // A card that came back under a pointer that stayed put (its hover was dropped as it left the screen) hears no
+    // PointerEntered; the pointer's first move over it shows the hover again.
+    private void OnPointerMoved(object sender, PointerRoutedEventArgs e)
+    {
+        if (!_hovered && Card is not null && Pick is null)
+        {
+            OnPointerEntered(sender, e);
+        }
+    }
+
     private void OnGotFocus(object sender, RoutedEventArgs e) => ShowState();
 
     // The card's own button takes focus before Tab moves on to the buttons on the card, so they are made then; a TMDB
