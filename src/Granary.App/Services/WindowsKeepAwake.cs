@@ -5,37 +5,172 @@ using Microsoft.Extensions.Logging;
 namespace Granary.App.Services;
 
 /// <summary>
-/// <see cref="IKeepAwake"/> through <c>SetThreadExecutionState</c>, the call mpv's own window makes for
-/// <c>stop-screensaver</c> (w32_common.c); in composition mode mpv has no window, so nothing asked before. It covers the
-/// display and the system alone, which <c>DisplayRequest</c> cannot, and needs no package identity. The request belongs to
-/// the thread that made it and ends with it, so it is made on the UI thread only, as the player does. It shows in
-/// <c>powercfg /requests</c> under DISPLAY and SYSTEM; the window's close lets it go, and so does the end of the process.
+/// <see cref="IKeepAwake"/> through Windows' power requests (<c>PowerCreateRequest</c>, <c>PowerSetRequest</c>), so
+/// <c>powercfg /requests</c> shows Granary.exe with a reason: "Playing video" under DISPLAY and SYSTEM, or "Playing audio"
+/// under EXECUTION and SYSTEM (<see cref="KeepAwakeRequests"/>). mpv's own <c>stop-screensaver</c> asks only from a window
+/// of its own (w32_common.c), which composition mode has not, so nothing asked before.
 /// </summary>
-internal sealed partial class WindowsKeepAwake : IKeepAwake
+/// <remarks>
+/// A request belongs to its object, not to a thread; the player asks on the UI thread, and a lock keeps the state whole if
+/// another thread asks too. Without request objects (<c>PowerCreateRequest</c> failed) it falls back on
+/// <c>SetThreadExecutionState</c>, whose request belongs to the calling thread and ends with it. The window's close, or
+/// <see cref="Dispose"/>, clears everything and closes the objects; the end of the process does too.
+/// </remarks>
+internal sealed partial class WindowsKeepAwake : IKeepAwake, IDisposable
 {
+    // REASON_CONTEXT's version (POWER_REQUEST_CONTEXT_VERSION) and its flag for a plain reason.
+    private const uint ContextVersion = 0;
+    private const uint ContextSimpleString = 0x1;
+    private const nint InvalidHandle = -1;
+
     private readonly ILogger<WindowsKeepAwake> _logger;
+    private readonly Lock _gate = new();
+    // One request object per reason; null when Windows made none, and the thread's execution state stands in.
+    private readonly Dictionary<string, nint>? _requests;
+    // What is set on the request objects now.
+    private readonly HashSet<PowerRequest> _active = [];
     private KeepAwakeState _state;
+    private bool _disposed;
 
     public WindowsKeepAwake(MainWindow window, ILogger<WindowsKeepAwake> logger)
     {
         _logger = logger;
-        window.Closed += (_, _) => Set(KeepAwakeState.None);
+        _requests = CreateRequests();
+        window.Closed += (_, _) => Dispose();
     }
 
     public bool Set(KeepAwakeState state)
     {
-        if (state == _state)
+        lock (_gate)
+        {
+            if (_disposed)
+            {
+                return state == KeepAwakeState.None;
+            }
+            if (state == _state)
+            {
+                return true;
+            }
+            if (!(_requests is { } requests ? Change(requests, state) : SetThreadState(state)))
+            {
+                return false;
+            }
+            _state = state;
+            LogHeld(state);
+            return true;
+        }
+    }
+
+    public void Dispose()
+    {
+        lock (_gate)
+        {
+            if (_disposed)
+            {
+                return;
+            }
+            _disposed = true;
+            if (_requests is { } requests)
+            {
+                foreach (var request in _active)
+                {
+                    PowerClearRequest(requests[request.Reason], request.Type);
+                }
+                _active.Clear();
+                foreach (nint handle in requests.Values)
+                {
+                    CloseHandle(handle);
+                }
+            }
+            else if (_state != KeepAwakeState.None)
+            {
+                SetThreadExecutionState(ExecutionStateFlags.Continuous);
+            }
+            if (_state != KeepAwakeState.None)
+            {
+                _state = KeepAwakeState.None;
+                LogHeld(_state);
+            }
+        }
+    }
+
+    // Both objects or none: without them, the thread's execution state stands in, which is said once.
+    private Dictionary<string, nint>? CreateRequests()
+    {
+        var made = new Dictionary<string, nint>();
+        foreach (string reason in KeepAwakeRequests.Reasons)
+        {
+            nint handle = Create(reason);
+            if (handle is InvalidHandle or 0)
+            {
+                _logger.LogWarning("Windows made no power request (error {Error}); keeping awake through SetThreadExecutionState instead",
+                    Marshal.GetLastPInvokeError());
+                foreach (nint other in made.Values)
+                {
+                    CloseHandle(other);
+                }
+                return null;
+            }
+            made[reason] = handle;
+        }
+        return made;
+    }
+
+    // Windows copies the reason, so it is pinned only for the call.
+    private static unsafe nint Create(string reason)
+    {
+        fixed (char* text = reason)
+        {
+            var context = new ReasonContext { Version = ContextVersion, Flags = ContextSimpleString, SimpleReasonString = (nint)text };
+            return PowerCreateRequest(in context);
+        }
+    }
+
+    // Under the gate. The new requests first, then the old ones cleared, so nothing lapses in between; true once Windows
+    // holds just what the state wants. One that stopped is picked up by the next change where it stopped.
+    private bool Change(Dictionary<string, nint> requests, KeepAwakeState state)
+    {
+        var (set, clear) = KeepAwakeRequests.Changes(_active, state);
+        foreach (var request in set)
+        {
+            if (!PowerSetRequest(requests[request.Reason], request.Type))
+            {
+                _logger.LogWarning("Windows refused the power request {Type} for \"{Reason}\" (error {Error})", request.Type, request.Reason,
+                    Marshal.GetLastPInvokeError());
+                return false;
+            }
+            _active.Add(request);
+        }
+        bool cleared = true;
+        foreach (var request in clear)
+        {
+            if (PowerClearRequest(requests[request.Reason], request.Type))
+            {
+                _active.Remove(request);
+            }
+            else
+            {
+                _logger.LogWarning("Windows did not clear the power request {Type} for \"{Reason}\" (error {Error})", request.Type, request.Reason,
+                    Marshal.GetLastPInvokeError());
+                cleared = false;
+            }
+        }
+        return cleared;
+    }
+
+    // A call that works returns the state before, which holds ES_CONTINUOUS even on a thread's first call; 0 is a refusal.
+    private bool SetThreadState(KeepAwakeState state)
+    {
+        if (SetThreadExecutionState(ExecutionStateFlags.For(state)) != 0)
         {
             return true;
         }
-        // A call that works returns the state before, which holds ES_CONTINUOUS even on a thread's first call; 0 is a
-        // refusal, which sets the error (87 for flags Windows does not take).
-        if (SetThreadExecutionState(ExecutionStateFlags.For(state)) == 0)
-        {
-            _logger.LogWarning("Windows refused to keep awake: {State} (error {Error})", state, Marshal.GetLastPInvokeError());
-            return false;
-        }
-        _state = state;
+        _logger.LogWarning("Windows refused to keep awake: {State} (error {Error})", state, Marshal.GetLastPInvokeError());
+        return false;
+    }
+
+    private void LogHeld(KeepAwakeState state)
+    {
         switch (state)
         {
             case KeepAwakeState.Display:
@@ -48,8 +183,32 @@ internal sealed partial class WindowsKeepAwake : IKeepAwake
                 _logger.LogInformation("The display and the system may sleep again");
                 break;
         }
-        return true;
     }
+
+    // REASON_CONTEXT (minwinbase.h) with a plain reason: the version, the flags and the string, which starts a union whose
+    // larger member makes the whole 32 bytes on x64.
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    private struct ReasonContext
+    {
+        public uint Version;
+        public uint Flags;
+        public nint SimpleReasonString;
+    }
+
+    [LibraryImport("kernel32.dll", SetLastError = true)]
+    private static partial nint PowerCreateRequest(in ReasonContext context);
+
+    [LibraryImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static partial bool PowerSetRequest(nint request, PowerRequestType type);
+
+    [LibraryImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static partial bool PowerClearRequest(nint request, PowerRequestType type);
+
+    [LibraryImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static partial bool CloseHandle(nint handle);
 
     [LibraryImport("kernel32.dll", SetLastError = true)]
     private static partial uint SetThreadExecutionState(uint flags);

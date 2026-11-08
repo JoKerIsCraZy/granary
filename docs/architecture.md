@@ -24,8 +24,13 @@ Dependencies point inward only: `App → Player → Core`, and `App → Core`.
   status (see Discord status), and `IKeepAwake`, which keeps the display on while a title loads, plays or buffers
   (`PlayerKeepAwake`, made and disposed with `PlayerSystemMedia` by the player page, follows Android's player: not while
   paused, and only the system for sound without a picture, and asks again with the player's next change when Windows
-  refused; the App's `WindowsKeepAwake` calls `SetThreadExecutionState` with Core's `ExecutionStateFlags` on the UI
-  thread, as mpv's `stop-screensaver` does only from a window of its own, which composition mode has not).
+  refused; mpv's `stop-screensaver` asks Windows only from a window of its own, which composition mode has not). The
+  App's `WindowsKeepAwake` holds Windows' power requests (`PowerCreateRequest`, made once per reason and reused, then
+  `PowerSetRequest` and `PowerClearRequest`), as Core's `KeepAwakeRequests` lays them out: the new ones set before the
+  old ones are cleared, so nothing lapses. `powercfg /requests` then shows `Granary.exe` with "Playing video" under
+  DISPLAY and SYSTEM, or with "Playing audio" under EXECUTION and SYSTEM. A request belongs to its object, not to a
+  thread; a lock keeps the state whole if a call came from another thread. Should Windows make no request object, it
+  falls back on `SetThreadExecutionState` (`ExecutionStateFlags`), which belongs to the calling thread, the UI's.
   `IReleaseFiles` gives `SignedReleaseVerifier` a release's SHA256SUMS and its signature, and the package on disk to
   hash and read; Core's own `HttpReleaseFiles` implements it, and the tests fake it (docs/release.md, "Signed
   releases").

@@ -1208,9 +1208,10 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   seconds, so it changes only with what it shows (another title, a pause, a seek or stall of more than 3 seconds, the
   length once known, the speed), at most every 4 seconds with the latest state; playing on sends nothing.
 - **The display stays on** (`PlayerKeepAwake`, as Android's player keeps the screen on) while a title loads, plays or
-  buffers, minimized to the bar, in the mini view and with the window minimized too; `powercfg /requests` lists Granary
-  under DISPLAY and SYSTEM then. Paused, ended, failed or left, Windows' own display and sleep timeouts apply again.
-  Sound without a picture (an audio file played directly) keeps only the computer awake, not the display.
+  buffers, minimized to the bar, in the mini view and with the window minimized too; `powercfg /requests` lists
+  Granary.exe with "Playing video" under DISPLAY and SYSTEM then. Paused, ended, failed or left, Windows' own display
+  and sleep timeouts apply again. Sound without a picture (an audio file played directly) keeps only the computer
+  awake, not the display: "Playing audio" under EXECUTION and SYSTEM.
 - **Fill screen** (the web's video fit): the picture fills the page and is cut where it does not fit (mpv `panscan`);
   a new title shows its whole picture again.
 - **Mini view** (the web's Picture in Picture, P): the window becomes small (480 by 270), stays above the others
