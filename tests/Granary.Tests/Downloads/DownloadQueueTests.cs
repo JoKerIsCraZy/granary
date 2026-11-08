@@ -561,6 +561,44 @@ public sealed class DownloadQueueTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task Stopping_WhileTheRegistryIsAsked_DoesNotThrow()
+    {
+        await _h.AddAsync("dl_1", DownloadState.Completed);
+        _h.Silo.OnCancellable(HttpMethod.Get, ListPath, async cancellationToken =>
+        {
+            await Task.Delay(Timeout.Infinite, cancellationToken);
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        });
+        var queue = _h.StartQueue();
+        await Until(() => _h.Silo.SentTo(HttpMethod.Get, ListPath).Count == 1, "the registry was asked");
+
+        await queue.StopAsync();
+
+        Assert.DoesNotContain(_h.Logs.Lines, line => line.StartsWith("Error", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task Disposing_WhileARegistryReadHoldsItsTurn_LogsNoFailure()
+    {
+        await _h.AddAsync("dl_1", DownloadState.Completed);
+        // An answer that comes whatever the cancellation says, after the queue is disposed.
+        var answer = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _h.Silo.On(HttpMethod.Get, ListPath, () => answer.Task);
+        var queue = _h.StartQueue();
+        await Until(() => _h.Silo.SentTo(HttpMethod.Get, ListPath).Count == 1, "the registry was asked");
+
+        queue.Dispose();
+        answer.SetResult(new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(DownloadPayloads.Page(null, DownloadPayloads.Entry("dl_1", "completed")), System.Text.Encoding.UTF8, "application/json"),
+        });
+        await Until(() => queue.Passes >= 1, "the pass ended");
+
+        Assert.DoesNotContain(_h.Logs.Lines, line => line.StartsWith("Error", StringComparison.Ordinal));
+        await queue.StopAsync();
+    }
+
+    [Fact]
     public async Task Dispose_StopsFollowing_AndCanBeCalledTwice()
     {
         await _h.AddAsync("dl_8", scope: Scope8);

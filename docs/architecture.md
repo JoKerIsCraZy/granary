@@ -918,8 +918,9 @@ missing their folder.
   sends it. One the server will not take (another revision, an entry preparing again, a time it refuses) is dropped. A
   completed transfer renames `media.part` to its media name before the record says Completed.
 - **Stop.** `StopAsync` stops the loop, the transfers and the server work and waits up to `StopBudget` (2 s) for them to let
-  go of their files, logging when they did not. `Dispose` stops everything without waiting and lets go of the queue's
-  cancellation source and its reconcile gate; twice is no change.
+  go of their files, logging when they did not or when one failed; it never throws, also when a request was cancelled
+  under way or `Dispose` came first. `Dispose` stops everything without waiting and lets go of the queue's cancellation
+  source and its reconcile gate; twice is no change, and what still runs ends quietly.
 
 ### What the server says
 

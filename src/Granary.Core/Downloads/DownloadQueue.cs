@@ -224,7 +224,7 @@ public sealed partial class DownloadQueue : IDisposable
     /// <summary>
     /// Stops the loop, every transfer and the server work, and waits up to <see cref="StopBudget"/> for them to let go of their
     /// files. A transfer stopped here stays <see cref="DownloadState.Downloading"/>, so the next start resumes it with
-    /// <see cref="ResumeMargin"/>.
+    /// <see cref="ResumeMargin"/>. It never throws: what did not stop in time, or failed, is logged.
     /// </summary>
     public async Task StopAsync()
     {
@@ -243,14 +243,24 @@ public sealed partial class DownloadQueue : IDisposable
             tasks = [_loop, _chores, .. _running.Values.Select(r => r.Task)];
         }
         Unsubscribe();
-        await _stop.CancelAsync().ConfigureAwait(false);
         try
         {
-            await Task.WhenAll(tasks).WaitAsync(StopBudget, _time).ConfigureAwait(false);
+            await _stop.CancelAsync().ConfigureAwait(false);
         }
-        catch (TimeoutException)
+        catch (ObjectDisposedException)
+        {
+            // Dispose came first, and cancelled already.
+        }
+        var stopped = Task.WhenAll(tasks).WaitAsync(StopBudget, _time);
+        await stopped.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
+        if (stopped.Exception?.InnerException is TimeoutException)
         {
             _logger.LogWarning("The downloads did not stop within {Seconds} s", StopBudget.TotalSeconds);
+            return;
+        }
+        foreach (var failed in tasks.Where(t => t.IsFaulted))
+        {
+            _logger.LogError("Part of the download queue failed as it stopped ({Failure})", DownloadLog.Failure(failed.Exception!.GetBaseException()));
         }
     }
 

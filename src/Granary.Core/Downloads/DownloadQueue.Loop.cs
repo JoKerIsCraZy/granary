@@ -27,7 +27,12 @@ public sealed partial class DownloadQueue
                 await PassAsync(stop).ConfigureAwait(false);
                 _passRetryAt = null;
             }
-            catch (Exception ex) when (!(ex is OperationCanceledException && stop.IsCancellationRequested))
+            catch (Exception ex) when (IsStopping(ex, stop))
+            {
+                // The queue stops: the loop ends, quietly.
+                break;
+            }
+            catch (Exception ex)
             {
                 // A pass that failed is tried again a minute later, or at the next wake.
                 _logger.LogError("A pass of the download queue failed ({Failure})", DownloadLog.Failure(ex));
@@ -41,13 +46,21 @@ public sealed partial class DownloadQueue
             {
                 await ParkAsync(woken, stop).ConfigureAwait(false);
             }
-            catch (Exception ex) when (!(ex is OperationCanceledException && stop.IsCancellationRequested))
+            catch (Exception ex) when (IsStopping(ex, stop))
+            {
+                break;
+            }
+            catch (Exception ex)
             {
                 _logger.LogError("The download queue could not tell when to look again ({Failure}); it waits for a wake", DownloadLog.Failure(ex));
                 await WaitForWakeAsync(woken, RetryDelays[^1], stop).ConfigureAwait(false);
             }
         }
     }
+
+    // What a stop leaves behind: a cancelled wait, or what the queue let go of in Dispose.
+    private static bool IsStopping(Exception ex, CancellationToken stop) =>
+        stop.IsCancellationRequested && ex is OperationCanceledException or ObjectDisposedException;
 
     // Waits for a wake; a timer wakes the loop at the earliest time something waits for, and work that fell due while the
     // pass ran goes at once.
@@ -290,7 +303,7 @@ public sealed partial class DownloadQueue
                 await SendPendingReportsAsync(scope, server, stop).ConfigureAwait(false);
             }
         }
-        catch (Exception ex) when (stop.IsCancellationRequested && ex is OperationCanceledException or ObjectDisposedException)
+        catch (Exception ex) when (IsStopping(ex, stop))
         {
             // The queue stops.
         }

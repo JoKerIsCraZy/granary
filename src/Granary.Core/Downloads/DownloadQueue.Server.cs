@@ -149,7 +149,14 @@ public sealed partial class DownloadQueue
         }
         finally
         {
-            _reconciling.Release();
+            try
+            {
+                _reconciling.Release();
+            }
+            catch (ObjectDisposedException)
+            {
+                // The queue was disposed meanwhile: there is no next reconcile to let in.
+            }
         }
     }
 
