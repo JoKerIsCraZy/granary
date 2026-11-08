@@ -58,7 +58,8 @@ public sealed class ItemDetailDownloadsTests : IAsyncDisposable
         Manager = _h.NewManager(queue, Feature);
         var dispatcher = ui ?? new ImmediateDispatcher();
         _detail.Downloads = new DownloadActions(Manager, Feature, _dialog, _confirmation, _detail.Navigation, dispatcher,
-            () => new DownloadOptionsViewModel(Manager, Feature, _h.Preferences, _h.Disk, dispatcher), _h.Logs.For<DownloadActions>());
+            () => new DownloadOptionsViewModel(Manager, Feature, _h.Preferences, _h.Disk, dispatcher, _h.Time, _h.Logs.For<DownloadOptionsViewModel>()),
+            _h.Logs.For<DownloadActions>());
         return _detail.Create();
     }
 

@@ -1016,7 +1016,9 @@ client guide.
   while it shows (`Follow`), which reads the capability and posts one refresh to the UI thread per burst of `Changed`; a
   transfer's progress (`DownloadProgressedEventArgs`) counts only for the title and the episodes the page lists. The
   download dialog's `DownloadOptionsViewModel` reads the free space once per dialog on the thread pool (`SpaceRead`) and
-  shows it on the UI thread; Download waits for that read and does not start what would reach the transfer's reserve.
+  shows it on the UI thread; Download waits for that read and does not start what would reach the transfer's reserve. A
+  read that fails or takes longer than `SpaceReadTimeout` (5 s, a share that does not answer) leaves the space unknown,
+  which holds nothing back: the transfer checks it again.
   The app shows the dialog through `IDownloadOptionsDialog`; until it registers its own, Core's `NoDownloadOptionsDialog`
   shows nothing, so the services resolve without it.
 - **The Downloads page.** `DownloadsViewModel` follows `Changed` between `Attach` and `Detach` and posts one refresh to the

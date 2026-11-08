@@ -4,6 +4,7 @@ using Granary.Core.Abstractions;
 using Granary.Core.Api.Downloads;
 using Granary.Core.Downloads;
 using Granary.Core.ViewModels.Detail;
+using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.ViewModels.Downloads;
 
@@ -21,7 +22,8 @@ public sealed record DownloadQualityRow(string Preset, string Label);
 /// The download dialog of a film, an episode or a season. Its title, texts and version rows are the web's
 /// (<c>web/src/components/DownloadVersionPicker.tsx</c>); the qualities are the ones the server offers, as the apps list them
 /// (downloads-api.md, 10.3), and the free space line keeps a download that cannot fit from starting. The free space is read
-/// off the UI thread once per dialog (<see cref="SpaceRead"/>) and shown on it. Made per offer: <see cref="ForTitle"/> or
+/// off the UI thread once per dialog (<see cref="SpaceRead"/>) and shown on it; a read that fails or takes longer than
+/// <see cref="SpaceReadTimeout"/> leaves it unknown, which stops nothing. Made per offer: <see cref="ForTitle"/> or
 /// <see cref="ForSeason"/>, then the dialog, whose Download calls <see cref="StartAsync"/>.
 /// </summary>
 public sealed partial class DownloadOptionsViewModel : ObservableObject
@@ -29,6 +31,12 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
     public const string Description = "Choose a file to download. Make sure you have enough disk space.";
     public const string Footer = "Larger files require more storage space.";
     public const string StartFailed = "Download could not be started. Check access and try again.";
+
+    /// <summary>
+    /// The longest the free space is waited for: a share that does not answer would otherwise keep Download doing nothing for
+    /// half a minute. The transfer checks the space again before it writes.
+    /// </summary>
+    public static readonly TimeSpan SpaceReadTimeout = TimeSpan.FromSeconds(5);
 
     // A preset's file is its video bitrate over the runtime and a tenth more for audio and the container.
     private const double EstimateMargin = 1.1;
@@ -38,6 +46,8 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
     private readonly IDownloadPreferences _preferences;
     private readonly IDiskSpace _disk;
     private readonly IUiDispatcher _dispatcher;
+    private readonly TimeProvider _time;
+    private readonly ILogger<DownloadOptionsViewModel> _logger;
 
     private DownloadRequest? _title;
     private SeasonDownloadRequest? _season;
@@ -51,13 +61,15 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
     private int _reads;
 
     public DownloadOptionsViewModel(DownloadManager downloads, DownloadsFeature feature, IDownloadPreferences preferences, IDiskSpace disk,
-        IUiDispatcher dispatcher)
+        IUiDispatcher dispatcher, TimeProvider time, ILogger<DownloadOptionsViewModel> logger)
     {
         _downloads = downloads;
         _feature = feature;
         _preferences = preferences;
         _disk = disk;
         _dispatcher = dispatcher;
+        _time = time;
+        _logger = logger;
     }
 
     /// <summary>"Download: Example Movie", "Download: Example Series · S1 · E5", "Download: Example Series · Season 1".</summary>
@@ -269,12 +281,32 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
 
     private async Task ReadSpaceAsync(string folder, int read)
     {
-        long? free = await Task.Run(() => _disk.FreeBytes(folder)).ConfigureAwait(false);
+        long? free = await FreeBytesAsync(folder).ConfigureAwait(false);
         await _dispatcher.ResumeOnUi();
         if (read == _reads)
         {
             _free = free;
             ShowSpace();
+        }
+    }
+
+    // Unknown (null) when the read fails or does not answer in time; a read that does not answer runs on by itself.
+    private async Task<long?> FreeBytesAsync(string folder)
+    {
+        try
+        {
+            return await Task.Run(() => _disk.FreeBytes(folder)).WaitAsync(SpaceReadTimeout, _time).ConfigureAwait(false);
+        }
+        catch (TimeoutException)
+        {
+            _logger.LogWarning("The free space where downloads go did not come within {Seconds} s", SpaceReadTimeout.TotalSeconds);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            // Whatever the drive does, the dialog stays usable: the space is then not what holds a download back.
+            _logger.LogWarning("The free space where downloads go could not be read ({Failure})", DownloadLog.Failure(ex));
+            return null;
         }
     }
 

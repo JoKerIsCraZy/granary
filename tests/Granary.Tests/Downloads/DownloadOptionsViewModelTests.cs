@@ -37,7 +37,18 @@ public sealed class DownloadOptionsViewModelTests : IAsyncDisposable
         _h.Silo.On(HttpMethod.Get, CapabilityPath, ScriptedSilo.Json(HttpStatusCode.OK, DownloadPayloads.Capability(true, true, presets)));
         var feature = _h.NewFeature();
         await feature.RefreshAsync(Token);
-        return new DownloadOptionsViewModel(_h.NewManager(feature: feature), feature, _h.Preferences, _h.Disk, new ImmediateDispatcher());
+        return NewOptions(feature, _h.Disk, new ImmediateDispatcher());
+    }
+
+    // The dialog over what the feature read, free space as the disk answers it.
+    private DownloadOptionsViewModel NewOptions(DownloadsFeature feature, IDiskSpace disk, IUiDispatcher ui) =>
+        new(_h.NewManager(feature: feature), feature, _h.Preferences, disk, ui, _h.Time, _h.Logs.For<DownloadOptionsViewModel>());
+
+    private async Task<DownloadsFeature> ReadFeatureAsync()
+    {
+        var feature = _h.NewFeature();
+        await feature.RefreshAsync(Token);
+        return feature;
     }
 
     private async Task<DownloadOptionsViewModel> ForTitleAsync(DownloadRequest request, IReadOnlyList<DownloadVersionRow> versions,
@@ -201,9 +212,7 @@ public sealed class DownloadOptionsViewModelTests : IAsyncDisposable
     {
         using var ui = new SerialDispatcher();
         var disk = new ThreadNotingDiskSpace(ui, 200 * GB);
-        var feature = _h.NewFeature();
-        await feature.RefreshAsync(Token);
-        var options = new DownloadOptionsViewModel(_h.NewManager(feature: feature), feature, _h.Preferences, disk, ui);
+        var options = NewOptions(await ReadFeatureAsync(), disk, ui);
         var shownOnUi = new List<bool>();
         options.PropertyChanged += (_, e) =>
         {
@@ -229,9 +238,7 @@ public sealed class DownloadOptionsViewModelTests : IAsyncDisposable
     public async Task AStartBeforeTheSpaceIsKnown_WaitsForIt()
     {
         using var disk = new HeldDiskSpace(1 * GB);
-        var feature = _h.NewFeature();
-        await feature.RefreshAsync(Token);
-        var options = new DownloadOptionsViewModel(_h.NewManager(feature: feature), feature, _h.Preferences, disk, new ImmediateDispatcher());
+        var options = NewOptions(await ReadFeatureAsync(), disk, new ImmediateDispatcher());
         options.ForTitle(Movie, [OneFile], 7200);
         Assert.True(options.CanStart);
 
@@ -242,6 +249,41 @@ public sealed class DownloadOptionsViewModelTests : IAsyncDisposable
         Assert.False(await start);
         Assert.Equal("Not enough free space on this PC: 8.0 GB needed, 1.0 GB free.", options.SpaceText);
         Assert.Empty(_h.Silo.SentTo(HttpMethod.Post, CreatePath));
+    }
+
+    [Fact]
+    public async Task AFreeSpaceReadThatFails_IsUnknown_AndDownloadStillStarts()
+    {
+        Creates(Created(DownloadPayloads.Entry("dl_1", "ready")));
+        var options = NewOptions(await ReadFeatureAsync(), new FailingDiskSpace(), new ImmediateDispatcher());
+
+        options.ForTitle(Movie, [OneFile], 7200);
+        await options.SpaceRead;
+
+        Assert.Equal(("", false, true), (options.SpaceText, options.IsShortOfSpace, options.CanStart));
+        Assert.True(await options.StartAsync());
+        Assert.Single(CreateBodies());
+        Assert.Contains(_h.Logs.Lines, line => line.Contains("free space where downloads go could not be read", StringComparison.Ordinal));
+        Assert.DoesNotContain(_h.Logs.Lines, line => line.Contains(FailingDiskSpace.Message, StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task AFreeSpaceReadThatHangs_IsUnknownAfterFiveSeconds()
+    {
+        Creates(Created(DownloadPayloads.Entry("dl_1", "ready")));
+        // 1 GB would not hold the 8 GB file, if the drive ever answered.
+        using var disk = new HeldDiskSpace(1 * GB);
+        var options = NewOptions(await ReadFeatureAsync(), disk, new ImmediateDispatcher());
+        options.ForTitle(Movie, [OneFile], 7200);
+
+        var start = options.StartAsync();
+        _h.Time.Advance(TimeSpan.FromSeconds(4));
+        Assert.False(start.IsCompleted);
+        _h.Time.Advance(TimeSpan.FromSeconds(1));
+
+        Assert.True(await start);
+        Assert.Equal(("", true), (options.SpaceText, options.CanStart));
+        Assert.Single(CreateBodies());
     }
 
     [Fact]
@@ -297,19 +339,28 @@ public sealed class DownloadOptionsViewModelTests : IAsyncDisposable
         Assert.Equal("", options.ErrorText);
     }
 
-    // A drive that answers only once the test lets it, as one waking up does.
+    // A drive that answers only once the test lets it, as one waking up does, or a share that does not answer; the test's end
+    // lets a read still waiting go.
     private sealed class HeldDiskSpace(long free) : IDiskSpace, IDisposable
     {
-        private readonly ManualResetEventSlim _released = new();
+        private readonly TaskCompletionSource _released = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        public void Release() => _released.Set();
+        public void Release() => _released.TrySetResult();
 
         public long? FreeBytes(string folder)
         {
-            _released.Wait(TimeSpan.FromSeconds(5));
+            _released.Task.GetAwaiter().GetResult();
             return free;
         }
 
-        public void Dispose() => _released.Dispose();
+        public void Dispose() => Release();
+    }
+
+    // A drive whose free space cannot be read at all.
+    private sealed class FailingDiskSpace : IDiskSpace
+    {
+        public const string Message = @"The drive at D:\Elena failed.";
+
+        public long? FreeBytes(string folder) => throw new IOException(Message);
     }
 }
