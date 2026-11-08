@@ -545,7 +545,9 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   minimized bar does too; turned off, `PlayerViewModel.ShowsSleepTimer` goes false, a running timer ends as Turn off
   ends it, and a hold the timer left after the end lets go (`NextUpFlow.Hold(false)` then starts the countdown). A change
   on the UI thread applies at once, so work already queued there, such as the title's end, finds the timer off; one from
-  another thread is posted, and does nothing once the player is disposed.
+  another thread is posted, and does nothing once the player is disposed. Each change carries its own choice, so off and
+  on again before the UI thread gets to them still end the timer, and a tick that waits behind a switch-off does not run
+  out.
 - **Chapters** (11.3): the playing file's `chapters` from the watch detail (mpv reads none through a remux or a
   transcode), in order, empty ones left out, pictures resolved against the server; they make the Chapters menu, the
   seek bar's ticks and the chapter named in its bubble, and Ctrl+Left and Ctrl+Right go to their starts (`ChapterJump`,

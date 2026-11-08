@@ -96,14 +96,22 @@ public sealed class PlayerViewModelSleepTimerTests
         }
     }
 
-    // The setting changes on another thread than the UI's.
-    private void TurnOffElsewhere()
+    // The setting changes on another thread than the UI's, once for each value, in order.
+    private void ChangeElsewhere(params bool[] values)
     {
         _queue.UiThread = Thread.CurrentThread;
-        var elsewhere = new Thread(() => _ = _device.SetSleepTimerButtonAsync(false));
+        var elsewhere = new Thread(() =>
+        {
+            foreach (bool shown in values)
+            {
+                _ = _device.SetSleepTimerButtonAsync(shown);
+            }
+        });
         elsewhere.Start();
         elsewhere.Join();
     }
+
+    private void TurnOffElsewhere() => ChangeElsewhere(false);
 
     private static void Choose(PlayerViewModel viewModel, string label) =>
         viewModel.ChooseSleepTimer(viewModel.SleepTimerOptions.Single(o => o.Label == label));
@@ -667,6 +675,38 @@ public sealed class PlayerViewModelSleepTimerTests
         Drain();
         Assert.False(viewModel.ShowsSleepTimer);
         Assert.False(viewModel.IsSleepTimerOn);
+    }
+
+    [Fact]
+    public async Task ATickThatRanOutAheadOfATurnOffFromAnotherThread_DoesNotPause()
+    {
+        var viewModel = await PlayingAsync(Ted, queued: true);
+        Choose(viewModel, "5 min");
+        // The last ticks are already waiting on the UI thread when the setting changes.
+        _time.Advance(TimeSpan.FromMinutes(5));
+
+        TurnOffElsewhere();
+        Drain();
+
+        Assert.False(_engine.Current.IsPaused);
+        Assert.False(viewModel.IsSleepTimerOn);
+        Assert.False(viewModel.ShowsSleepTimer);
+    }
+
+    [Fact]
+    public async Task TurnedOffAndOnAgainOnAnotherThread_BeforeTheUiThreadGetsToIt_EndsTheTimer_AndTheButtonShowsAgain()
+    {
+        var viewModel = await PlayingAsync(Ted, queued: true);
+        Choose(viewModel, "5 min");
+
+        ChangeElsewhere(false, true);
+        Drain();
+
+        Assert.True(viewModel.ShowsSleepTimer);
+        Assert.False(viewModel.IsSleepTimerOn);
+        Assert.Equal("Sleep", viewModel.SleepTimerText);
+        Advance(TimeSpan.FromMinutes(10));
+        Assert.False(_engine.Current.IsPaused);
     }
 
     [Fact]

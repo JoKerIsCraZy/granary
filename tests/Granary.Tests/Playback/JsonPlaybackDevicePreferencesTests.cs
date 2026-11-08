@@ -199,17 +199,17 @@ public sealed class JsonPlaybackDevicePreferencesTests : IDisposable
     }
 
     [Fact]
-    public async Task TurningTheSleepButtonOffOrOn_SaysSo_ButTheSameChoiceAgainDoesNot()
+    public async Task TurningTheSleepButtonOffOrOn_SaysSoWithTheNewChoice_ButTheSameChoiceAgainDoesNot()
     {
         var preferences = Create();
-        int changes = 0;
-        preferences.SleepTimerButtonChanged += (_, _) => changes++;
+        var changes = new List<bool>();
+        preferences.SleepTimerButtonChanged += (_, shown) => changes.Add(shown);
 
         await preferences.SetSleepTimerButtonAsync(false);
         await preferences.SetSleepTimerButtonAsync(false);
         await preferences.SetSleepTimerButtonAsync(true);
 
-        Assert.Equal(2, changes);
+        Assert.Equal([false, true], changes);
         Assert.True(Create().SleepTimerButton);
     }
 

@@ -33,8 +33,11 @@ public interface IPlaybackDevicePreferences
     /// <summary>The player has its Sleep button (<see cref="ViewModels.PlayerViewModel.ShowsSleepTimer"/>); on by default.</summary>
     bool SleepTimerButton { get; }
 
-    /// <summary>Raised on the caller's thread when <see cref="SleepTimerButton"/> was turned on or off, so an open player follows.</summary>
-    event EventHandler? SleepTimerButtonChanged;
+    /// <summary>
+    /// Raised on the caller's thread with the new choice when <see cref="SleepTimerButton"/> was turned on or off, so an
+    /// open player follows each change in order, even after the next one.
+    /// </summary>
+    event EventHandler<bool>? SleepTimerButtonChanged;
 
     /// <summary>The latest save: done once it is on disk, or failed and logged. The window waits for it briefly as it closes.</summary>
     Task LatestSave { get; }
@@ -118,7 +121,7 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
 
     public bool SleepTimerButton => _sleepTimerButton;
 
-    public event EventHandler? SleepTimerButtonChanged;
+    public event EventHandler<bool>? SleepTimerButtonChanged;
 
     public Task LatestSave
     {
@@ -178,7 +181,7 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
         var save = QueueSave();
         if (changed)
         {
-            SleepTimerButtonChanged?.Invoke(this, EventArgs.Empty);
+            SleepTimerButtonChanged?.Invoke(this, shown);
         }
         return save;
     }

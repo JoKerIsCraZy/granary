@@ -139,7 +139,8 @@ public sealed partial class PlayerViewModel
 
     private void OnSleepTick()
     {
-        if (_sleepEnds is not { } ends)
+        // Settings has turned the timer off, and that change waits behind this tick: it no longer runs out.
+        if (_sleepEnds is not { } ends || _devicePreferences?.SleepTimerButton == false)
         {
             return;
         }
@@ -265,27 +266,27 @@ public sealed partial class PlayerViewModel
     }
 
     // Raised on the thread that changed the setting. On the UI thread it applies at once, so work queued there before it,
-    // such as the title's end, finds the timer off; from another thread it waits for its turn there.
-    private void OnSleepTimerButtonChanged(object? sender, EventArgs e)
+    // such as the title's end, finds the timer off; from another thread it waits for its turn there. Each change applies
+    // its own choice, so off and on again before the UI thread gets to them still ends the timer.
+    private void OnSleepTimerButtonChanged(object? sender, bool shown)
     {
         if (_dispatcher.HasThreadAccess)
         {
-            ApplySleepTimerButton();
+            ApplySleepTimerButton(shown);
         }
         else
         {
-            _dispatcher.Post(ApplySleepTimerButton);
+            _dispatcher.Post(() => ApplySleepTimerButton(shown));
         }
     }
 
-    private void ApplySleepTimerButton()
+    private void ApplySleepTimerButton(bool shows)
     {
         // Posted before the player was left for good: nothing is left to change.
         if (_disposed)
         {
             return;
         }
-        bool shows = _devicePreferences?.SleepTimerButton != false;
         if (shows == ShowsSleepTimer)
         {
             return;
