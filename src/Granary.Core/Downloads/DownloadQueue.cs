@@ -175,6 +175,9 @@ public sealed partial class DownloadQueue : IDisposable
     /// </summary>
     internal Action<string>? SenderAsked { get; set; }
 
+    /// <summary>For tests: runs on the loop's thread in a pass that took its scope, right before it starts that scope's transfers.</summary>
+    internal Action? StartingTransfers { get; set; }
+
     /// <summary>Starts following the session, the network, the settings and the store, and the loop. Once.</summary>
     public void Start()
     {

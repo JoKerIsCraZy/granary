@@ -148,6 +148,7 @@ public sealed partial class DownloadQueue
         _runnable = true;
         if (!IsWaitingForUnmetered)
         {
+            StartingTransfers?.Invoke();
             StartTransfers(scope, server, generation);
         }
         StartChores(scope, server);

@@ -817,13 +817,11 @@ public sealed class DownloadQueueTests : IAsyncDisposable
         var queue = _h.StartQueue();
         await IdleAsync(queue);
         _h.ServeFile("dl_1", Source);
-        // The profile changes while the pass that took profile 7's scope asks for the network link, right before it starts the
-        // transfers. Only that look switches: another one, before the pass, would leave nothing of profile 7 to start.
+        // The profile changes in the pass that took profile 7's scope, right before it starts the transfers.
         int switched = 0;
-        _h.Network.OnRead = () =>
+        queue.StartingTransfers = () =>
         {
-            if (new System.Diagnostics.StackTrace().ToString().Contains("PassAsync", StringComparison.Ordinal)
-                && Interlocked.Exchange(ref switched, 1) == 0)
+            if (Interlocked.Exchange(ref switched, 1) == 0)
             {
                 _h.SwitchProfile("8");
             }
@@ -834,7 +832,7 @@ public sealed class DownloadQueueTests : IAsyncDisposable
         await IdleAsync(queue);
 
         Assert.Empty(_h.FileRequests("dl_1"));
-        _h.Network.OnRead = null;
+        queue.StartingTransfers = null;
         _h.SwitchProfile("7");
         await CompletedAsync("dl_1");
         Assert.All(_h.FileRequests("dl_1"), r => Assert.Equal("7", r.AsProfile));
