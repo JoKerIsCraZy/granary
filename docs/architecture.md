@@ -978,9 +978,11 @@ client guide.
   playback report and `expected_revision: 0`. A second press while a create for the same title runs, or for a title the
   PC keeps, creates nothing (`AlreadyDownloading`). A create is never sent again: when its answer did not come, or was a
   conflict or a server error, the registry is read and the newest entry for that film or episode that is not over and not
-  kept here is taken over; none is a failure. An entry whose delete this PC still has to send is never taken over (the
-  delete would end it under the new download): that start fails, and works once the queue has sent the delete. An answer
-  for another title is a failure too. 403, 404 and 501, or a title the server passed over, are `Unavailable`. The entry is
+  kept here is taken over; none is a failure. When the create was refused as a conflict and the title's entry ended
+  (revoked, failed or cancelled), one explicit second create revives it: `expected_revision` the registry's revision of that
+  entry and `expected_download_id` its id. Whatever that answers, nothing is sent again; a second conflict fails. An entry
+  whose delete this PC still has to send is never taken over or revived (the delete would end it under the new download):
+  that start fails, and works once the queue has sent the delete. An answer for another title is a failure too. 403, 404 and 501, or a title the server passed over, are `Unavailable`. The entry is
   kept with the request's title, series, season and episode, queued, or Preparing while the server prepares a copy, and the
   queue is woken. Once the server made it, a cancel does not keep it from being kept. A download kept again takes its unsent
   server delete off the index in the same write.

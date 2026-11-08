@@ -2514,8 +2514,11 @@ branches on are `prepared_file_expired` and `capability_unsupported` (`ProblemCo
 - What Granary does: one press creates at most one entry. No answer, a 409 or a 5xx reads the whole registry and takes the
   newest entry with the same `content_id` and `episode_id` that is not `revoked`, `failed` or `cancelled`, not kept on the
   PC and not waiting for its `DELETE` from the PC; none means the download failed (after a delete, it works once that
-  `DELETE` went). An answer whose item is another title is a failure. 403, 404, 501, or an episode in `skipped`, means the
-  profile cannot download it.
+  `DELETE` went). After a 409, when the registry's newest entry for the title is `revoked`, `failed` or `cancelled` (and
+  neither kept nor being deleted), Granary sends one explicit second create with `expected_revision` set to that entry's
+  `revision` from the registry and `expected_download_id` to its `id`, which reuses, revives or replaces it; a second 409,
+  or no clear answer, fails without a third. An answer whose item is another title is a failure. 403, 404, 501, or an
+  episode in `skipped`, means the profile cannot download it.
   A 429 or another client error fails it. A season is one single-item request per episode, in order, for the episodes the
   PC does not have; Granary does not send `series`, `season_number`, `batch_id` or `expected_entries`.
 

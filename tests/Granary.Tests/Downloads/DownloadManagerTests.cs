@@ -406,6 +406,72 @@ public sealed class DownloadManagerTests : IAsyncDisposable
         Assert.Equal(2, DeletesSent("dl_9").Count);
     }
 
+    [Theory]
+    [InlineData("revoked")]
+    [InlineData("failed")]
+    [InlineData("cancelled")]
+    public async Task AnEndedEntry_IsRevivedWithItsRevision_WhenTheCreateFindsIt(string status)
+    {
+        Creates(ScriptedSilo.Problem(409, "conflict"), Created(DownloadPayloads.Entry("dl_9", "ready", revision: 4, episodeId: "ep_5")));
+        _h.List(DownloadPayloads.Entry("dl_9", status, revision: 3, episodeId: "ep_5"));
+        var manager = _h.NewManager();
+
+        Assert.Equal(DownloadStartResult.Started, await manager.StartAsync(Episode, Token));
+
+        Assert.Equal(2, CreatesSent.Count);
+        using var first = JsonDocument.Parse(CreatesSent[0].Body!);
+        Assert.Equal(0, first.RootElement.GetProperty("expected_revision").GetInt32());
+        Assert.False(first.RootElement.TryGetProperty("expected_download_id", out _));
+        using var second = JsonDocument.Parse(CreatesSent[1].Body!);
+        Assert.Equal((3, "dl_9", "ep_5"), (second.RootElement.GetProperty("expected_revision").GetInt32(),
+            second.RootElement.GetProperty("expected_download_id").GetString(), second.RootElement.GetProperty("episode_id").GetString()));
+        var record = _h.Find("dl_9")!.Record;
+        Assert.Equal((4L, DownloadState.Queued, "ep_5"), (record.Revision, record.State, record.MediaItemId));
+    }
+
+    [Fact]
+    public async Task ARevivalTheServerRefusesAgain_Fails_WithoutAThirdCreate()
+    {
+        Creates(ScriptedSilo.Problem(409, "conflict"), ScriptedSilo.Problem(409, "conflict"));
+        _h.List(DownloadPayloads.Entry("dl_9", "revoked", revision: 3, episodeId: "ep_5"));
+        var manager = _h.NewManager();
+
+        Assert.Equal(DownloadStartResult.Failed, await manager.StartAsync(Episode, Token));
+
+        Assert.Equal(2, CreatesSent.Count);
+        Assert.Empty(_h.Store.All);
+    }
+
+    [Fact]
+    public async Task AnEndedEntryWhoseDeleteWaits_IsNotRevived()
+    {
+        await _h.AddAsync("dl_9", DownloadState.Completed, mediaItemId: "ep_5");
+        _h.Silo.On(HttpMethod.Delete, EntryPath("dl_9"), ScriptedSilo.NetworkError());
+        var queue = _h.StartQueue();
+        var manager = _h.NewManager(queue);
+        await manager.DeleteAsync("dl_9", Token);
+        await Until(() => DeletesSent("dl_9").Count == 1, "the delete was tried");
+        await SettleAsync(queue);
+        Creates(ScriptedSilo.Problem(409, "conflict"), Created(DownloadPayloads.Entry("dl_9", "ready", revision: 4, episodeId: "ep_5")));
+        _h.List(DownloadPayloads.Entry("dl_9", "revoked", revision: 3, episodeId: "ep_5"));
+
+        Assert.Equal(DownloadStartResult.Failed, await manager.StartAsync(Episode, Token));
+
+        Assert.Single(CreatesSent);
+        Assert.Null(_h.Find("dl_9"));
+    }
+
+    [Fact]
+    public async Task AnEndedEntry_IsNotRevivedAfterACreateThatGotNoAnswer()
+    {
+        Creates(() => Task.FromException<HttpResponseMessage>(new HttpRequestException(HttpRequestError.ResponseEnded, "The answer broke off.")));
+        _h.List(DownloadPayloads.Entry("dl_9", "revoked", revision: 3, episodeId: "ep_5"));
+        var manager = _h.NewManager();
+
+        Assert.Equal(DownloadStartResult.Failed, await manager.StartAsync(Episode, Token));
+        Assert.Single(CreatesSent);
+    }
+
     [Fact]
     public async Task ACreateAnsweredForAnotherTitle_IsNotKept()
     {
