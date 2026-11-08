@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text.Json.Nodes;
 using Granary.Core.Abstractions;
+using Granary.Core.Auth;
 using Granary.Core.ViewModels.WatchParty;
 using Granary.Tests.Browse;
 using Granary.Tests.Playback;
@@ -227,6 +228,21 @@ public sealed partial class StartPartyTests
         await first;
 
         Assert.Equal("Chapter 1", sheet.Target?.Title);
+    }
+
+    [Fact]
+    public async Task ASheetOpenedWithoutAReadySession_DoesNotWaitForTheNextEpisode()
+    {
+        _page.Series();
+        var (_, sheet) = await AttachAsync(ItemDetailPayloads.SeriesId);
+        _page.Session.State = SessionState.ProfileRequired;
+
+        Assert.True(sheet.Open());
+        await sheet.Opening;
+
+        Assert.False(sheet.IsNamingTarget);
+        Assert.Equal("Choose an episode", sheet.EpisodeText);
+        Assert.Empty(_page.Silo.SentTo(HttpMethod.Get, ItemDetailFixture.ItemPath(ItemDetailPayloads.EpisodeId)));
     }
 
     [Fact]

@@ -553,6 +553,11 @@ public sealed partial class StartPartyViewModel : ObservableObject
     {
         if (request.Target is not null || request.NextUpId is not { } id || _session is not { State: SessionState.Ready, ActiveServer: { } server })
         {
+            // Nothing to read: the sheet asks for an episode instead of waiting for one.
+            if (opening == _opening)
+            {
+                IsNamingTarget = false;
+            }
             return;
         }
         try
