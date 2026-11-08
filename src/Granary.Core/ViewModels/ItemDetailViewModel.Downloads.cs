@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Api.Catalog;
@@ -16,6 +17,9 @@ namespace Granary.Core.ViewModels;
 public sealed partial class ItemDetailViewModel : ICardMenuSource
 {
     private IDisposable? _followedDownloads;
+
+    // The films and episodes whose downloads the page shows, set on the UI thread and read on the transfers' threads.
+    private volatile FrozenSet<string> _downloadItems = FrozenSet<string>.Empty;
 
     /// <summary>The ⋯ menu has a Download item: the server lets this profile download the title, or it is on this PC.</summary>
     [ObservableProperty]
@@ -40,7 +44,7 @@ public sealed partial class ItemDetailViewModel : ICardMenuSource
         {
             return;
         }
-        _followedDownloads = _downloads.Follow(ShowDownloads);
+        _followedDownloads = _downloads.Follow(id => _downloadItems.Contains(id), ShowDownloads);
         ShowDownloads();
     }
 
@@ -130,10 +134,22 @@ public sealed partial class ItemDetailViewModel : ICardMenuSource
 
     private void ShowDownloads()
     {
+        _downloadItems = DownloadItems();
         var state = DownloadState();
         ShowsDownload = state.IsShown;
         DownloadLabel = state.Label.Length > 0 ? state.Label : DownloadActions.DownloadLabel;
         CanDeleteDownload = state.CanDelete;
+    }
+
+    // The title, and the episodes it lists, whose cards have entries.
+    private FrozenSet<string> DownloadItems()
+    {
+        if (_item is null)
+        {
+            return FrozenSet<string>.Empty;
+        }
+        IEnumerable<string> episodes = _listsEpisodes ? _episodes.Select(e => e.ContentId) : [];
+        return episodes.Append(_contentId).Where(id => id.Length > 0).ToFrozenSet(StringComparer.Ordinal);
     }
 
     private TitleDownloadState DownloadState()

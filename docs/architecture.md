@@ -1013,7 +1013,8 @@ client guide.
   status, as the apps do. `Changed` follows the store, the queue's progress and the feature, on any thread; progress alone
   comes as `DownloadProgressedEventArgs` naming its download, whose bytes `BytesDone(id)` gives.
 - **The title page.** `DownloadActions` gives a title its Download item from `ForItem` and the feature; a page follows it
-  while it shows (`Follow`), which reads the capability and posts one refresh to the UI thread per burst of `Changed`. The
+  while it shows (`Follow`), which reads the capability and posts one refresh to the UI thread per burst of `Changed`; a
+  transfer's progress (`DownloadProgressedEventArgs`) counts only for the title and the episodes the page lists. The
   download dialog's `DownloadOptionsViewModel` reads the free space once per dialog on the thread pool (`SpaceRead`) and
   shows it on the UI thread; Download waits for that read and does not start what would reach the transfer's reserve.
   The app shows the dialog through `IDownloadOptionsDialog`; until it registers its own, Core's `NoDownloadOptionsDialog`

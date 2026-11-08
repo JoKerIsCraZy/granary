@@ -116,6 +116,13 @@ public sealed partial class DownloadManager
     public long BytesDone(string downloadId) =>
         DownloadScope.Of(_session) is { } scope && _store.Find(scope, downloadId) is { } download ? BytesDone(scope, download.Record) : 0;
 
+    /// <summary>
+    /// The film or episode one of the active profile's downloads is, by the download's id; null when it is not there. It reads
+    /// neither the disk nor the connection, so a page can tell whether a transfer's progress is one it shows.
+    /// </summary>
+    public string? MediaItemIdOf(string downloadId) =>
+        DownloadScope.Of(_session) is { } scope && _store.Find(scope, downloadId) is { } download ? download.Record.MediaItemId : null;
+
     /// <summary>The bytes the active profile's downloads take: the finished files and the parts so far, as the queue knows them.</summary>
     public long BytesUsed() =>
         DownloadScope.Of(_session) is { } scope

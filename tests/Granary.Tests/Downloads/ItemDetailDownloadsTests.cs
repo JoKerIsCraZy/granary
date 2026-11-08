@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Net;
 using System.Text.Json;
 using System.Windows.Input;
@@ -51,20 +52,20 @@ public sealed class ItemDetailDownloadsTests : IAsyncDisposable
     private DownloadManager Manager { get; set; } = null!;
 
     // The page's Download items over the harness, on a server that offers what the test scripted (Original by default).
-    private ItemDetailViewModel Page(DownloadQueue? queue = null)
+    private ItemDetailViewModel Page(DownloadQueue? queue = null, IUiDispatcher? ui = null)
     {
         Feature = _h.NewFeature();
         Manager = _h.NewManager(queue, Feature);
-        var dispatcher = new ImmediateDispatcher();
+        var dispatcher = ui ?? new ImmediateDispatcher();
         _detail.Downloads = new DownloadActions(Manager, Feature, _dialog, _confirmation, _detail.Navigation, dispatcher,
             () => new DownloadOptionsViewModel(Manager, Feature, _h.Preferences, _h.Disk, dispatcher), _h.Logs.For<DownloadActions>());
         return _detail.Create();
     }
 
     // The page loaded and following the downloads, once it has read what the server offers.
-    private async Task<ItemDetailViewModel> FollowedAsync(string id, DownloadQueue? queue = null)
+    private async Task<ItemDetailViewModel> FollowedAsync(string id, DownloadQueue? queue = null, IUiDispatcher? ui = null)
     {
-        var page = Page(queue);
+        var page = Page(queue, ui);
         await page.LoadCommand.ExecuteAsync(id);
         page.FollowDownloads();
         await Until(() => Feature.Capability is not null, "the capability was read");
@@ -245,6 +246,23 @@ public sealed class ItemDetailDownloadsTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task ProgressOfAnotherDownload_LeavesThePage_ItsOwnRefreshesItOnce()
+    {
+        var (other, own, page) = await ProgressPostsAsync(MovieId, own: MovieId, other: "mv_2");
+
+        Assert.Equal((0, 1), (other, own));
+        Assert.Equal("Downloading · 20%", page.DownloadLabel);
+    }
+
+    [Fact]
+    public async Task ASeasonPage_FollowsTheProgressOfItsEpisodes()
+    {
+        var (other, own, _) = await ProgressPostsAsync(SeasonId, own: EpisodeId, other: MovieId);
+
+        Assert.Equal((0, 1), (other, own));
+    }
+
+    [Fact]
     public async Task StoppingToFollow_LeavesTheItemsAsTheyWere()
     {
         var page = await FollowedAsync(MovieId);
@@ -258,6 +276,44 @@ public sealed class ItemDetailDownloadsTests : IAsyncDisposable
         await Until(() => page.DownloadLabel == "Downloaded", "following again showed the download");
     }
 
+    // The page's own download and another one run side by side. Once both run quietly, the other one goes further, then the
+    // page's: how many refreshes each posted to the UI thread, and the page after them.
+    private async Task<(int Other, int Own, ItemDetailViewModel Page)> ProgressPostsAsync(string pageId, string own, string other)
+    {
+        await _h.AddAsync("dl_1", mediaItemId: own);
+        await _h.AddAsync("dl_2", mediaItemId: other);
+        var ownBody = _h.ServeGated("dl_1", DownloadPayloads.Source(3000));
+        var otherBody = _h.ServeGated("dl_2", DownloadPayloads.Source(3000));
+        var queue = _h.StartQueue();
+        var ui = new QueuedDispatcher();
+        var page = await FollowedAsync(pageId, queue, ui);
+        ownBody.Release(300);
+        otherBody.Release(300);
+        await Until(() => queue.BytesDone(Scope7, "dl_1") == 300 && queue.BytesDone(Scope7, "dl_2") == 300, "both transfers ran");
+        await SettleRunningAsync(queue);
+        ui.RunAll();
+        var changes = new ConcurrentQueue<EventArgs>();
+        Manager.Changed += (_, e) => changes.Enqueue(e);
+        int before = ui.Posts;
+        // Half a second on, each transfer's progress is told again.
+        _h.Time.Advance(TimeSpan.FromSeconds(1));
+
+        otherBody.Release(300);
+        await Until(() => Progressed(changes, "dl_2"), "the other download went further");
+        int otherPosts = ui.Posts - before;
+        ownBody.Release(300);
+        await Until(() => Progressed(changes, "dl_1"), "the page's download went further");
+        int ownPosts = ui.Posts - before - otherPosts;
+
+        // Nothing but progress came meanwhile, so the posts are the progress's.
+        Assert.All(changes, e => Assert.IsType<DownloadProgressedEventArgs>(e));
+        ui.RunAll();
+        return (otherPosts, ownPosts, page);
+    }
+
+    private static bool Progressed(IEnumerable<EventArgs> changes, string downloadId) =>
+        changes.Any(e => e is DownloadProgressedEventArgs progressed && progressed.DownloadId == downloadId);
+
     // A card entry's command as the card's menu runs it, awaited when it runs asynchronously (Download, Delete).
     private static Task RunAsync(ICommand command, object? parameter)
     {
@@ -267,6 +323,31 @@ public sealed class ItemDetailDownloadsTests : IAsyncDisposable
         }
         command.Execute(parameter);
         return Task.CompletedTask;
+    }
+
+    // A UI thread the test runs by hand: posted work waits until RunAll, and every post is counted.
+    private sealed class QueuedDispatcher : IUiDispatcher
+    {
+        private readonly ConcurrentQueue<Action> _work = new();
+        private int _posts;
+
+        public int Posts => Volatile.Read(ref _posts);
+
+        public bool HasThreadAccess => true;
+
+        public void Post(Action action)
+        {
+            Interlocked.Increment(ref _posts);
+            _work.Enqueue(action);
+        }
+
+        public void RunAll()
+        {
+            while (_work.TryDequeue(out var action))
+            {
+                action();
+            }
+        }
     }
 
     /// <summary>A film, a season of "Example Series" with two episodes, and its fifth episode, as the catalog answers them.</summary>

@@ -67,12 +67,15 @@ public sealed class DownloadActions
 
     /// <summary>
     /// Runs <paramref name="changed"/> on the UI thread whenever the active profile's downloads or what the server offers
-    /// change, and once what it offers has been read; a burst of changes runs it once. Disposing stops it.
+    /// change, and once what it offers has been read; a burst of changes runs it once. A transfer that only went further runs
+    /// it only when <paramref name="concerns"/> says its film or episode is one the page shows; that is asked on any thread.
+    /// Disposing stops it.
     /// </summary>
-    public IDisposable Follow(Action changed)
+    public IDisposable Follow(Func<string, bool> concerns, Action changed)
     {
+        ArgumentNullException.ThrowIfNull(concerns);
         ArgumentNullException.ThrowIfNull(changed);
-        var follower = new Follower(this, changed);
+        var follower = new Follower(this, concerns, changed);
         _downloads.Changed += follower.OnChanged;
         _ = ReadOfferAsync(follower);
         return follower;
@@ -122,15 +125,17 @@ public sealed class DownloadActions
         follower.OnChanged(this, EventArgs.Empty);
     }
 
-    // The manager tells of changes on any thread; one show is posted at a time, and none after the page stopped following.
-    private sealed class Follower(DownloadActions actions, Action changed) : IDisposable
+    // The manager tells of changes on any thread; one show is posted at a time, and none after the page stopped following. Every
+    // running transfer's progress comes twice a second: only the page's own downloads' is worth a show.
+    private sealed class Follower(DownloadActions actions, Func<string, bool> concerns, Action changed) : IDisposable
     {
         private int _posted;
         private volatile bool _stopped;
 
         public void OnChanged(object? sender, EventArgs e)
         {
-            if (_stopped || Interlocked.Exchange(ref _posted, 1) == 1)
+            if (_stopped || (e is DownloadProgressedEventArgs progressed && !Concerns(progressed.DownloadId))
+                || Interlocked.Exchange(ref _posted, 1) == 1)
             {
                 return;
             }
@@ -149,5 +154,7 @@ public sealed class DownloadActions
             _stopped = true;
             actions._downloads.Changed -= OnChanged;
         }
+
+        private bool Concerns(string downloadId) => actions._downloads.MediaItemIdOf(downloadId) is { } mediaItemId && concerns(mediaItemId);
     }
 }
