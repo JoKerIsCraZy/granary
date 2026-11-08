@@ -1,6 +1,7 @@
 using Granary.Core.Abstractions;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Playback;
+using Granary.Core.Settings;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Cards;
 using Granary.Tests.Fakes;
@@ -46,7 +47,7 @@ public sealed class HomeHeroTests
     [Fact]
     public void AMovie_ReadsYearRuntimeAndRating()
     {
-        var title = BrowseHeroTitle.From(Movie(), Server);
+        var title = BrowseHeroTitle.From(Movie(), Server, EpisodeSpoilers.Off);
 
         Assert.Equal("The Dark Knight", title.Heading);
         Assert.Equal("2008 · 2h 32m · PG-13", title.Meta);
@@ -72,7 +73,7 @@ public sealed class HomeHeroTests
             ContentRating = "TV-14",
         };
 
-        var title = BrowseHeroTitle.From(episode, Server);
+        var title = BrowseHeroTitle.From(episode, Server, EpisodeSpoilers.Off);
 
         Assert.Equal("My Name Is Elena", title.Heading);
         Assert.Equal("S1 E1 · Kein Zufall · 25m · TV-14", title.Meta);
@@ -83,7 +84,7 @@ public sealed class HomeHeroTests
     {
         var series = new CatalogItem { ContentId = "s", Type = CatalogItemTypes.Series, Title = "Lupin", Year = 2021, Runtime = 45, ContentRating = "TV-MA" };
 
-        Assert.Equal("2021 · TV-MA", BrowseHeroTitle.From(series, Server).Meta);
+        Assert.Equal("2021 · TV-MA", BrowseHeroTitle.From(series, Server, EpisodeSpoilers.Off).Meta);
     }
 
     [Fact]
@@ -91,7 +92,7 @@ public sealed class HomeHeroTests
     {
         var bare = new CatalogItem { ContentId = "x", Type = CatalogItemTypes.Movie, Title = "Maya", Overview = "   " };
 
-        var title = BrowseHeroTitle.From(bare, Server);
+        var title = BrowseHeroTitle.From(bare, Server, EpisodeSpoilers.Off);
 
         Assert.Equal("", title.Meta);
         Assert.Null(title.Overview);
@@ -267,7 +268,7 @@ public sealed class HomeHeroTests
             ContentRating = "TV-14",
         };
 
-        Assert.Equal("Kein Zufall · 25m · TV-14", BrowseHeroTitle.From(episode, Server).Meta);
+        Assert.Equal("Kein Zufall · 25m · TV-14", BrowseHeroTitle.From(episode, Server, EpisodeSpoilers.Off).Meta);
     }
 
     [Fact]

@@ -42,6 +42,14 @@ public readonly record struct EpisodeSpoilers(bool HidesImages, bool HidesOvervi
         return HidesOverview(IsUnwatched(episode.UserData));
     }
 
+    /// <summary>A title of a row, by the played mark and the resume position it carries, as the web's <c>HeroBanner</c>.</summary>
+    public bool HidesOverview(CatalogItemBase item)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        return item.Type == CatalogItemTypes.Episode
+            && HidesOverview(IsUnwatched(item.UserState?.Played == true, null, item.PositionSeconds));
+    }
+
     /// <summary>
     /// A Continue Watching or Next Up card, by the picture it shows (<paramref name="showsBackdrop"/>, else its poster): rows
     /// carry the played mark and the resume position, as the web's <c>ContinueWatchingCard</c> reads them.

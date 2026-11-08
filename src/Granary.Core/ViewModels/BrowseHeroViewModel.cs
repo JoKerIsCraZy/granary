@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using Granary.Core.Abstractions;
 using Granary.Core.Api.Catalog;
+using Granary.Core.Settings;
 
 namespace Granary.Core.ViewModels;
 
@@ -33,26 +34,35 @@ public sealed partial class BrowseHeroViewModel : ObservableObject
     [ObservableProperty]
     public partial BrowseHeroTitle? Shown { get; private set; }
 
-    /// <summary>The pointer or the keyboard came to a card of <paramref name="item"/>, on <paramref name="server"/>.</summary>
-    internal void Point(CatalogItemBase item, Uri server) => Point(BrowseHeroTitle.From(item, server));
+    /// <summary>
+    /// The pointer or the keyboard came to a card of <paramref name="item"/>, on <paramref name="server"/>; an unwatched
+    /// episode shows what <paramref name="spoilers"/> leave of it, as its card does.
+    /// </summary>
+    internal void Point(CatalogItemBase item, Uri server, EpisodeSpoilers spoilers) =>
+        Point(BrowseHeroTitle.From(item, server, spoilers));
 
     /// <summary>
-    /// The page's rows changed to <paramref name="items"/>, their cards' titles in order: the title shown stays while they
-    /// still have it, else the first one shows. Without a server, or a title, the hero hides.
+    /// The page's rows changed to <paramref name="items"/>, their cards' titles in order, or the spoiler switches changed: the
+    /// title shown stays while they still have it, made again, else the first one shows. Without a server, or a title, the
+    /// hero hides.
     /// </summary>
-    internal void Follow(IReadOnlyList<CatalogItemBase> items, Uri? server)
+    internal void Follow(IReadOnlyList<CatalogItemBase> items, Uri? server, EpisodeSpoilers spoilers)
     {
         if (server is null)
         {
             Reset(null);
             return;
         }
-        BrowseHeroTitle? Find(string key) => items.FirstOrDefault(i => i.ContentId == key) is { } found ? BrowseHeroTitle.From(found, server) : null;
-        var title = (Shown is { } shown ? Find(shown.Key) : null) ?? (items.Count > 0 ? BrowseHeroTitle.From(items[0], server) : null);
+        BrowseHeroTitle? Find(string key) =>
+            items.FirstOrDefault(i => i.ContentId == key) is { } found ? BrowseHeroTitle.From(found, server, spoilers) : null;
+        var title = (Shown is { } shown ? Find(shown.Key) : null) ?? (items.Count > 0 ? BrowseHeroTitle.From(items[0], server, spoilers) : null);
         Reset(title, Find);
     }
 
-    /// <summary>As <see cref="Follow(IReadOnlyList{CatalogItemBase}, Uri?)"/>, for rows whose titles are made already (TMDB's).</summary>
+    /// <summary>
+    /// As <see cref="Follow(IReadOnlyList{CatalogItemBase}, Uri?, EpisodeSpoilers)"/>, for rows whose titles are made already
+    /// (TMDB's).
+    /// </summary>
     internal void Follow(IReadOnlyList<BrowseHeroTitle> titles)
     {
         BrowseHeroTitle? Find(string key) => titles.FirstOrDefault(t => t.Key == key);

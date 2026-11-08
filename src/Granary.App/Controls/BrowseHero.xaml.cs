@@ -18,7 +18,9 @@ namespace Granary.App.Controls;
 /// backdrop, for the card in focus. A new title's backdrop fades in over the last one, its blur first;
 /// the last one stays fully shown underneath until the fade is done. Once the rows below scroll, the hero folds into a
 /// compact header of the logo and the details, which stays at the top (<see cref="FollowScroll"/>); folded, a new title
-/// shows only its backdrop's blur. On a taller page the hero is taller (<see cref="Sizes"/>, <see cref="BrowseHeroLayout.For"/>).
+/// shows only its backdrop's blur. An unwatched episode's still, while the profile hides those, shows blurred as the web's
+/// <c>HeroBanner</c> (<see cref="BrowseHeroTitle.BlursBackdrop"/>, <see cref="BackdropLayer"/>), and its overview not at all.
+/// On a taller page the hero is taller (<see cref="Sizes"/>, <see cref="BrowseHeroLayout.For"/>).
 /// Showing Home's banner (<see cref="SlideNumber"/>), it says which slide over the name and begins the rows lower, for the
 /// banner's buttons. The page lays its rows under it with <see cref="RowsViewMargin"/> and <see cref="RowsPadding"/>.
 /// </summary>
@@ -50,7 +52,8 @@ public sealed partial class BrowseHero : UserControl
     private CompositionPropertySet? _fold;
     private CancellationTokenSource? _logoLoading;
     private BrowseHeroTitle? _shown;
-    private string? _picturesOf;
+    // The title whose pictures show, and whether its backdrop is blurred.
+    private (string Key, bool Blurs)? _picturesOf;
     private ScrollViewer? _scroller;
     private double? _scrollTarget;
     private bool _isFolded;
@@ -241,7 +244,8 @@ public sealed partial class BrowseHero : UserControl
     // so the logo and the backdrop stayed hidden behind the name and the blur. Loaded calls this again. Not while the page
     // is away either: a title that settles or reloads then would load into a page nothing lets go of. The same title
     // loaded again (its picture addresses are signed anew) keeps the pictures shown; one that comes while the pictures
-    // are being set follows them, rather than starting over from within.
+    // are being set follows them, rather than starting over from within. The same title with its backdrop blurred now, or
+    // no longer (a spoiler switch, the episode started), keeps its logo and fades its backdrop over.
     private void ShowPictures()
     {
         if (_showingPictures)
@@ -251,10 +255,13 @@ public sealed partial class BrowseHero : UserControl
         _showingPictures = true;
         try
         {
-            while (!_suspended && IsLoaded && _shown is { } title && title.Key != _picturesOf)
+            while (!_suspended && IsLoaded && _shown is { } title && PicturesOf(title) != _picturesOf)
             {
-                _picturesOf = title.Key;
-                ShowLogo(title.LogoUrl);
+                if (title.Key != _picturesOf?.Key)
+                {
+                    ShowLogo(title.LogoUrl);
+                }
+                _picturesOf = PicturesOf(title);
                 Begin(title);
             }
         }
@@ -263,6 +270,8 @@ public sealed partial class BrowseHero : UserControl
             _showingPictures = false;
         }
     }
+
+    private static (string Key, bool Blurs) PicturesOf(BrowseHeroTitle title) => (title.Key, title.BlursBackdrop);
 
     // The name shows until the logo is there; a logo that fails leaves the name.
     private void ShowLogo(Uri? url)
@@ -285,9 +294,20 @@ public sealed partial class BrowseHero : UserControl
         HeadingText.Opacity = 1;
     }
 
-    // A backdrop fades in on the layer not shown, on top; during a fade the newest title waits for it.
+    // A backdrop fades in on the layer not shown, on top; during a fade the newest title waits for it. A title whose still is
+    // blurred now takes its sharp picture away at once, also while it waits, rather than fading over it.
     private void Begin(BrowseHeroTitle title)
     {
+        if (title.BlursBackdrop)
+        {
+            foreach (var shown in _layers)
+            {
+                if (shown.Title is { BlursBackdrop: false } sharp && sharp.Key == title.Key)
+                {
+                    shown.Clear();
+                }
+            }
+        }
         if (_crossfade.Begin(title) is not int front)
         {
             return;
@@ -311,7 +331,7 @@ public sealed partial class BrowseHero : UserControl
             _layers[index].Grid.Opacity = 0;
             _layers[index].Clear();
         }
-        if (next is not null && next.Key == _picturesOf)
+        if (next is not null && PicturesOf(next) == _picturesOf)
         {
             Begin(next);
             return;
@@ -406,7 +426,8 @@ public sealed partial class BrowseHero : UserControl
         }
         var front = _layers[_crossfade.Front];
         int needed = BackdropWidth();
-        switch (BrowseHeroLayout.StepFor(front.WaitsForArt, _isFolded, _crossfade.IsFading, front.DecodedWidth, needed))
+        bool blurred = front.Title is { BlursBackdrop: true };
+        switch (BrowseHeroLayout.StepFor(front.WaitsForArt, _isFolded, _crossfade.IsFading, blurred, front.DecodedWidth, needed))
         {
             case BackdropStep.LoadArt:
                 front.LoadArt(needed);

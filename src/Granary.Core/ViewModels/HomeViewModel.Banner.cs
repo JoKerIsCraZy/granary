@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using Granary.Core.Api.Catalog;
+using Granary.Core.Settings;
 
 namespace Granary.Core.ViewModels;
 
@@ -33,8 +34,9 @@ public sealed partial class HomeViewModel
     }
 
     // The featured row's cards as slides, as many as the row's item limit (the web's maxSlides). A row without cards, or
-    // one that could not be fetched, leaves Home without a banner.
-    private void ShowBanner(Section? featured, Uri server)
+    // one that could not be fetched, leaves Home without a banner. An unwatched episode's slide hides what the spoiler
+    // switches hide, as the web's HeroBanner.
+    private void ShowBanner(Section? featured, Uri server, EpisodeSpoilers spoilers)
     {
         _bannerIsWatchingRow = featured is not null && HomeRowRules.IsWatchingRow(featured.SectionType);
         if (featured is not { TotalCount: > 0 })
@@ -47,7 +49,7 @@ public sealed partial class HomeViewModel
         {
             items = items.Take(featured.ItemLimit);
         }
-        Banner.Show([.. items.Select(item => new FeaturedSlide(BrowseHeroTitle.From(item, server), item))]);
+        Banner.Show([.. items.Select(item => new FeaturedSlide(BrowseHeroTitle.From(item, server, spoilers), item))]);
     }
 
     // A title removed from Continue Watching and Next Up leaves a banner made of one of them too.
