@@ -96,6 +96,12 @@ internal sealed class ItemDetailFixture
     /// <summary>The profile's spoiler switches; none unless a test sets them, so nothing is hidden.</summary>
     public EpisodeSpoilerSettings? Spoilers { get; set; }
 
+    /// <summary>The calendar's airings a season's grid places its missing and upcoming episodes by; none unless a test sets them.</summary>
+    public SeriesAirings? Airings { get; set; }
+
+    /// <summary>The reads of a listed episode's multi-episode file the places are checked with; none unless a test sets them.</summary>
+    public EpisodeSpans? Spans { get; set; }
+
     /// <summary>The clock of the ratings' remembered ends.</summary>
     public ManualTimeProvider Time { get; } = new();
 
@@ -119,12 +125,16 @@ internal sealed class ItemDetailFixture
         spoilers: Spoilers,
         dispatcher: new ImmediateDispatcher(),
         time: Clock,
-        ratings: Ratings);
+        ratings: Ratings,
+        airings: Airings,
+        spans: Spans);
 
+    /// <summary>The page once loaded, the places of a season's missing and upcoming episodes included, which come after.</summary>
     public async Task<ItemDetailViewModel> LoadAsync(string id)
     {
         var viewModel = Create();
         await viewModel.LoadCommand.ExecuteAsync(id);
+        await viewModel.Placing;
         return viewModel;
     }
 

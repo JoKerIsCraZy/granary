@@ -54,9 +54,10 @@ public sealed partial class ItemDetailViewModel
         ShowSpoilers();
     }
 
-    /// <summary>The page left: stop following, and drop a read of the state on its way.</summary>
+    /// <summary>The page left: stop following, and drop a read of the state, and the placing of missing episodes, on its way.</summary>
     public void Deactivate()
     {
+        StopPlacing();
         if (!_isActive)
         {
             return;

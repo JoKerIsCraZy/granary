@@ -198,6 +198,10 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<ItemDetailViewModel>();
         // One writer per title's stars for the whole app, so a title's page opened again joins the writes still on their way.
         services.AddSingleton<ViewModels.Detail.RatingWrites>();
+        // The calendar's airings a season's grid places missing and upcoming episodes by, and the double episodes' files it
+        // checks them with, kept for a few minutes across pages.
+        services.AddSingleton<ViewModels.Detail.SeriesAirings>();
+        services.AddSingleton<ViewModels.Detail.EpisodeSpans>();
         // One trailer at a time, over the whole window: the title's page opens it, the window shows it.
         services.AddSingleton<ViewModels.Detail.TrailerOverlayViewModel>();
         services.AddTransient<IProfileSettings, ProfileSettings>();

@@ -167,19 +167,32 @@
                             <TextBlock Text="{x:Bind vm:ItemDetailViewModel.NoEpisodesText}" Style="{StaticResource SiloBodyTextStyle}"
                                        Foreground="{StaticResource SiloMutedBrush}" />
                         </Border>
-                        <ItemsRepeater ItemsSource="{x:Bind ViewModel.Episodes, Mode=OneWay}">
+                        <!-- The episodes with the places of those the library does not have among them (ItemDetailViewModel.Airings.cs). -->
+                        <ItemsRepeater ItemsSource="{x:Bind ViewModel.EpisodeGrid}">
                             <ItemsRepeater.Layout>
                                 <UniformGridLayout MinItemWidth="280" MinColumnSpacing="20" MinRowSpacing="28" ItemsStretch="Fill"
                                                    ItemsJustification="Start" />
                             </ItemsRepeater.Layout>
                             <ItemsRepeater.ItemTemplate>
-                                <DataTemplate x:DataType="detail:DetailEpisode">
-                                    <!-- Top-aligned: episodes without an overview are shorter than their row. -->
-                                    <Button VerticalAlignment="Top" Style="{StaticResource SiloCardButtonStyle}" Click="OnEpisodeClick" DataContext="{x:Bind}"
-                                            AutomationProperties.Name="{x:Bind AccessibleName}">
-                                        <controls:DetailEpisodeCard Episode="{x:Bind}" />
-                                    </Button>
-                                </DataTemplate>
+                                <controls:DetailEpisodeTemplateSelector>
+                                    <controls:DetailEpisodeTemplateSelector.Episode>
+                                        <DataTemplate x:DataType="detail:DetailEpisode">
+                                            <!-- Top-aligned: episodes without an overview are shorter than their row. -->
+                                            <Button VerticalAlignment="Top" Style="{StaticResource SiloCardButtonStyle}" Click="OnEpisodeClick" DataContext="{x:Bind}"
+                                                    AutomationProperties.Name="{x:Bind AccessibleName}">
+                                                <controls:DetailEpisodeCard Episode="{x:Bind}" />
+                                            </Button>
+                                        </DataTemplate>
+                                    </controls:DetailEpisodeTemplateSelector.Episode>
+                                    <controls:DetailEpisodeTemplateSelector.Placeholder>
+                                        <DataTemplate x:DataType="detail:DetailEpisodePlaceholder">
+                                            <!-- A plain Grid as the root, on purpose: see "ItemsRepeater templates" in AGENTS.md. -->
+                                            <Grid VerticalAlignment="Top">
+                                                <controls:DetailEpisodePlaceholderCard Placeholder="{x:Bind}" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </controls:DetailEpisodeTemplateSelector.Placeholder>
+                                </controls:DetailEpisodeTemplateSelector>
                             </ItemsRepeater.ItemTemplate>
                         </ItemsRepeater>
                     </StackPanel>

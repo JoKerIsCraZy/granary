@@ -164,6 +164,14 @@ public sealed record FileVersion
     public int PresentationPartIndex { get; init; }
 
     /// <summary>
+    /// The episodes a multi-episode file holds, first and last (S01E05-E06: 5 and 6); absent for a file of one episode. Such
+    /// a file is linked to its first episode only.
+    /// </summary>
+    public int? MultiEpisodeStart { get; init; }
+
+    public int? MultiEpisodeEnd { get; init; }
+
+    /// <summary>
     /// The audio track the profile's preferences pick, as an ordinal into <see cref="AudioTracks"/>; what playback starts
     /// with unless the viewer picks another.
     /// </summary>

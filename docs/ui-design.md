@@ -121,7 +121,7 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
 - Page-specific pieces: `PersonCard` (search people, opening the person's page), `AlphabetJumpBar` (library A–Z: "#" and A–Z on a
   26 px round panel, letters without titles at 35 %, the top row's letter red with dark text; a letter
   scrolls the grid to its first title, as the web's `LetterBar`),
-  `DetailHero`, `DetailShelf`, `DetailEpisodeCard`, `DetailInfoPanel`, `DetailTrailerCard`, `PersonCreditCard`
+  `DetailHero`, `DetailShelf`, `DetailEpisodeCard`, `DetailEpisodePlaceholderCard`, `DetailInfoPanel`, `DetailTrailerCard`, `PersonCreditCard`
   (detail pages; a card with a person opens their page, one without, as a TMDB title's cast, is only a card),
   `TrailerOverlay` (a trailer over the window, in YouTube's player),
   `SeekBar` and `MpvVideoHost` (player).
@@ -517,6 +517,22 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     player, another device): 400 ms after the last such change the page reads its episode lists, and an episode its own
     state, again, so marking several cards reads them once. While the switches hide nothing it asks nothing, and reads
     what changed meanwhile when they are turned on.
+  - Missing and upcoming episodes, Granary's own (no Silo client shows them): a season's episode grid, and a
+    single-season series', also holds the places of episodes the library does not have, named by the calendar
+    ([7.13](api-contract.md#713-calendar)): one missing between the episodes it lists or aired in the 31 days after its
+    last, and one still to air in the next 62 days, after the last or in a season it has none of. A gap of more than 10
+    numbers (numbering, or a stray number) shows only the episodes the calendar names, and a season at most 50 places.
+    A place is as large as an episode card and kept quiet: no image, a faint dashed box for the still (the surface at
+    half, a 20 % white hairline dashed 4 and 3, radius 16), "MISSING" in the badge style with muted text in its top left
+    corner for a missing one, and under it the episode's line in the card title style, muted ("S01E05 · Title", or
+    "Episode 5" when the calendar does not name it), and its air date where an episode card has its date and runtime
+    ("23 Oct 2026", or "Airs Thu, Nov 19" for an upcoming one; the viewer's day, as the Calendar writes days). The page
+    does not wait for the places: they come in once the calendar answers, among the episode cards, which stay as they
+    are, so the keyboard focus and the scroll position stay too; the grid changes in place for a watched mark as well,
+    the changed cards only. A failed answer leaves the grid as listed. A place is not a button: no play disc, no menu,
+    nothing opens; Tab and a remote's arrows pass it by, and screen readers hear one line, "Episode 5, missing" or
+    "Episode 11, airs November 19". Play, Resume, the watched toggles, the spoiler blur and More Episodes know only the
+    listed episodes, and specials get no places.
   - "More Episodes" on an episode's page (the web's `EpisodeCarousel`): the episode's whole season in the server's
     order, the episode itself included; the row shows only when the season has more than one episode. The episode's own
     card is marked as the web marks it: a 2 px accent ring at its artwork's edge (the hairline in the accent and a pixel

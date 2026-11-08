@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The place of an episode the library does not have, in a season's grid (docs/ui-design.md, "Detail pages"), Granary's
+    own and kept quiet: a faint dashed box as large as an episode card's still, "MISSING" in the muted badge style in its
+    corner for one that is missing, and under it the episode's line and its air date where an episode card has its date and
+    runtime. No image, no play disc, no menu; not a button, so the keyboard and a remote's arrows pass it by.
+-->
+<UserControl
+    x:Class="Granary.App.Controls.DetailEpisodePlaceholderCard"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    IsTabStop="False">
+
+    <Grid RowSpacing="11">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Grid x:Name="Box">
+            <Rectangle RadiusX="16" RadiusY="16" Fill="{StaticResource SiloSurfaceBrush}" Opacity="0.5" />
+            <Rectangle RadiusX="16" RadiusY="16" Stroke="#33FFFFFF" StrokeThickness="1" StrokeDashArray="4,3" />
+            <Border x:Name="MissingBadge" Style="{StaticResource SiloBadgeStyle}" Margin="8" HorizontalAlignment="Left" VerticalAlignment="Top">
+                <TextBlock x:Name="MissingText" Style="{StaticResource SiloBadgeTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
+                           AutomationProperties.AccessibilityView="Raw" />
+            </Border>
+        </Grid>
+
+        <StackPanel Grid.Row="1" Spacing="4" Padding="2,0">
+            <TextBlock x:Name="TitleText" Style="{StaticResource SiloCardTitleTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
+                       AutomationProperties.AccessibilityView="Raw" />
+            <TextBlock x:Name="DetailText" Style="{StaticResource SiloCaptionTextStyle}" AutomationProperties.AccessibilityView="Raw" />
+        </StackPanel>
+    </Grid>
+</UserControl>

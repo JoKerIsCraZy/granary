@@ -8,6 +8,8 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Added
 
+- **Missing and upcoming episodes:** a season's episodes now show a quiet card marked Missing where one is gone, such as
+  S01E05 between E04 and E06 after its file was deleted, and the episodes still to air after the last one, with the day.
 - **Discord status:** turn on Settings → Playback → This PC → Show what's playing in Discord, and while Granary plays,
   your Discord status says what you're watching: the series or film, the season and episode, the poster and the time
   left, with a link to the title on TMDB. Paused shows as paused, and the status goes when you stop. Only titles from

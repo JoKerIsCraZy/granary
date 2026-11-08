@@ -713,5 +713,8 @@ public sealed class ItemDetailViewModelTests
         using var provider = services.BuildServiceProvider();
 
         Assert.NotSame(provider.GetRequiredService<ItemDetailViewModel>(), provider.GetRequiredService<ItemDetailViewModel>());
+        // The calendar's airings are kept for the whole app, so every title page finds what another asked.
+        Assert.Same(provider.GetRequiredService<SeriesAirings>(), provider.GetRequiredService<SeriesAirings>());
+        Assert.Same(provider.GetRequiredService<EpisodeSpans>(), provider.GetRequiredService<EpisodeSpans>());
     }
 }

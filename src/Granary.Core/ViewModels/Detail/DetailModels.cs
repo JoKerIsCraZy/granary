@@ -45,12 +45,29 @@ public sealed record DetailCrumb(string Label, string? TargetId, bool IsFirst)
     public bool IsLink => TargetId is not null;
 }
 
+/// <summary>An entry of a season's episode grid: an episode, or the place of one the library does not have.</summary>
+public abstract record DetailEpisodeEntry;
+
 /// <summary>An episode in a season grid: the shared card plus up to three lines of its overview.</summary>
-public sealed record DetailEpisode(MediaCard Card, string? Overview)
+public sealed record DetailEpisode(MediaCard Card, string? Overview) : DetailEpisodeEntry
 {
     public string Id => Card.Id;
 
     public string AccessibleName => Card.IsWatched ? $"{Card.AccessibleName}, watched" : Card.AccessibleName;
+}
+
+/// <summary>
+/// The place of an episode the library does not have, among a season's episodes: missing between those it has or aired
+/// after its last, or still to air. Nothing to open, play or mark; not a keyboard stop.
+/// </summary>
+/// <param name="Title">"S01E05 · Title" as the calendar names it, else "Episode 5".</param>
+/// <param name="Detail">Its air date where an episode card has its date and runtime: "23 Oct 2026", "Airs Thu, Nov 19".</param>
+/// <param name="AccessibleName">"Episode 5, missing", "Episode 11, airs November 19".</param>
+public sealed record DetailEpisodePlaceholder(int EpisodeNumber, bool IsMissing, string Title, string? Detail, string AccessibleName)
+    : DetailEpisodeEntry
+{
+    /// <summary>The pill on a missing episode's place, upper-cased as the card badges.</summary>
+    public const string MissingBadge = "MISSING";
 }
 
 /// <summary>A part of the Info dialog: "Details", "Cast", "Crew", "File".</summary>

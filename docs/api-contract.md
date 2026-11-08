@@ -856,7 +856,8 @@ when unrated; 7.11), `user_data` (`played`,
 `duration_seconds?`, `last_file_id?`), `play_content_id`, `play_season_number` (next episode for a
 series/season), `versions[]` (`FileVersion`: `file_id`, `resolution`, `codec_video`, `codec_audio`,
 `container`, `hdr`, `file_size`, `duration` (s), `bitrate` (kbps), `audio_tracks[]`,
-`subtitle_tracks[]`, `video_tracks[]`, `chapters[]`, `edition_key?`, `edition_raw?`), `playback_variants[]`,
+`subtitle_tracks[]`, `video_tracks[]`, `chapters[]`, `edition_key?`, `edition_raw?`, `multi_episode_start?`,
+`multi_episode_end?` (a multi-episode file's first and last episode, see 7.7)), `playback_variants[]`,
 `subtitles[]`, `videos[]` (trailers), `extras[]`. `edition_raw` is an edition's label, not a file name: the scanner
 sets it only when it recognises an edition (the text of a `{edition-…}` tag in a folder or file name, or edition words
 it matches to an `edition_key`, `internal/naming/variants.go`), so the Info dialog may show it; `file_path` and
@@ -886,6 +887,15 @@ positive integer; anything else means no TMDB page and no poster.
   `files?[{ file_id, resolution?, hdr, file_size }]`.
 - `GET /api/v2/catalog/items/{season_id}/episodes` lists episodes of a season item (a series id is
   `404`).
+- A season's listing holds only the episodes with a file in a library (`episode_libraries`): an episode whose file is
+  gone loses its membership, and with it its place in the listing, in the same scan, and comes back as it was when the
+  file returns within the scanner's removal grace (24 h by default; `silo-server/docs/architecture/missing-files.md`).
+  Specials are season 0.
+- A double episode (S01E05-E06 in one file) is one file linked to its first episode, with the range in that file's
+  `multi_episode_start` and `multi_episode_end` (item detail and versions, 7.6). The current server gives each later
+  episode of the range a membership of its own (`internal/catalog/multi_episode_files.go`), so the listing has E05 and
+  E06 as two rows with the same `file_id`. A server from before that, or one whose next scan has not yet restored the
+  ranges a 2026-10-28 migration cleared, lists E05 only. An episode row never carries the range.
 - Next episode: `play_content_id` on series/season detail and seasons; `/watch` has no
   next-episode field. Android picks the initial season (in progress → partly watched → first
   unplayed → first; specials last) and resolves the next episode from the season lists.
@@ -993,9 +1003,37 @@ tracks ([8.8.1](#881-initial-track-selection-before-start)) → `POST /api/v2/pl
   zone the days are reckoned in (absent is UTC; Windows ids need converting); `filter` is `following`, `trending`,
   `everything` (also `popular`, and the legacy `all`, `favorites`, `watchlist`).
 - `CalendarEvent`: `content_id`, `type` (`movie`, `episode`, `season_premiere`), `title` (the movie's or series'),
-  `series_id`, `season_number`, `episode_number`, `episode_title`, `air_at` (instant, when known) or `air_time` (HH:MM in
-  the network's zone), `badges` (`series_premiere`, `season_premiere`, `finale`), `poster_url`, `watched`. The episode
-  may not be in a library yet: the web opens the series, not the episode.
+  `series_id`, `season_number`, `episode_number`, `episode_title`, `air_date` (the source's date), `local_air_date` (the
+  day in `timezone` it is listed under), `air_at` (instant, when known) or `air_time` (HH:MM in the network's zone),
+  `badges` (`series_premiere`, `season_premiere`, `finale`), `poster_url`, `watched`. The episode may not be in a library
+  yet: the web opens the series, not the episode.
+- What it lists (`internal/catalog/calendar_repo.go`): every row of the server's episode metadata with an air date in the
+  window whose series is in a library the profile may see, whether the episode has a file or not; no specials (season
+  0); a `season_premiere` only for a season whose first episode has no air date. A double episode's later episode is a
+  row of its own. `filter` absent is `all`, no restriction; `library_id` keeps one library's series.
+- A season's grid (`ItemDetailViewModel.Airings.cs`, `SeasonGaps`, Granary's own; no Silo client does this) places the
+  episodes its listing lacks by the calendar, asked with no `filter` and the viewer's zone, and matched by `series_id`,
+  season and episode number. Its windows, at most 4 requests a page: today's next 62 days as two, always; then, the
+  latest first, each gap's between listed episodes, from one neighbour's `air_date` to the other's when they are at most
+  31 days apart (a day more at each end where that still fits, as the listing's source dates can be a day off the
+  viewer's), and the 31 days after the last listed episode's air date, up to yesterday. Windows that fit in 31 days
+  together are one request. Without an IANA name for the viewer's zone the server reckons in UTC, and the windows do too.
+  A season with no listed episode asks today's two windows only. Specials ask nothing.
+- An episode is missing once aired and upcoming before (by `air_at`, else by the day it is listed under), and dated by
+  the viewer's day. One aired more than 31 days after the last listed one is not found. A gap of at most 10 numbers shows
+  every number, by number alone where the calendar names none; a wider one, more likely numbering or a stray number,
+  only the episodes the calendar names. A season shows at most 50 places, the lowest numbers first.
+- A missing place is checked against the listed episode before it (the gap's first neighbour, or the last episode): on a
+  server whose listing has two episodes sharing a `file_id`, which lists double episodes' halves, nothing is read;
+  otherwise that episode is read (`GET /api/v2/catalog/items/{id}`, three at a time) for its versions'
+  `multi_episode_start`/`multi_episode_end`, so a double episode an older server lists by its first number only is never
+  a gap. One that cannot be read keeps the places it checks out.
+- The calendar's answer for a window lists every series, so it is asked once per server, profile, zone and window, kept
+  by series for 5 minutes (`SeriesAirings`) and shared by every page waiting for it; an episode's files are kept as long
+  (`EpisodeSpans`). A request goes out as whichever profile acts then, so an answer that came while another profile acts
+  is not kept, and a change of server, profile or session forgets them all. A request that takes 30 s is given up. The
+  page's load does not wait for any of it. A failed calendar request leaves the season as listed, with a warning in the
+  log.
 
 ### 7.14 Notifications
 
