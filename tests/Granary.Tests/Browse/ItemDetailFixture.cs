@@ -7,6 +7,7 @@ using Granary.Core.Auth;
 using Granary.Core.Playback;
 using Granary.Core.Settings;
 using Granary.Core.ViewModels;
+using Granary.Core.ViewModels.Detail;
 using Granary.Tests.Catalog;
 using Granary.Tests.Fakes;
 using Granary.Tests.Profiles;
@@ -39,6 +40,9 @@ internal sealed class ItemDetailFixture
     public LogSink Logs { get; } = new();
 
     public RecordingArtworkPrefetcher Artwork { get; } = new();
+
+    /// <summary>The app's count of the viewer's changes, which a write the server kept adds to.</summary>
+    public ViewerStateChanges Changes { get; } = new(new PlaybackStops());
 
     public static string ItemPath(string id) => $"api/v2/catalog/items/{id}";
 
@@ -89,11 +93,18 @@ internal sealed class ItemDetailFixture
     /// <summary>Drives the wait before the page reads changes of the viewer's state.</summary>
     public ManualTimeProvider Clock { get; } = new();
 
-    /// <summary>Changes of the viewer's state the page follows while it is shown.</summary>
-    public ViewerStateChanges Changes { get; } = new(new PlaybackStops());
-
     /// <summary>The profile's spoiler switches; none unless a test sets them, so nothing is hidden.</summary>
     public EpisodeSpoilerSettings? Spoilers { get; set; }
+
+    /// <summary>The clock of the ratings' remembered ends.</summary>
+    public ManualTimeProvider Time { get; } = new();
+
+    /// <summary>The app's star ratings on their way to the server, shared by every page the fixture makes.</summary>
+    public RatingWrites Ratings
+    {
+        get => field ??= new(new CatalogApi(Silo.Http), Time, Logs.For<RatingWrites>(), Changes);
+        set;
+    }
 
     public ItemDetailViewModel Create() => new(
         Session,
@@ -102,12 +113,13 @@ internal sealed class ItemDetailFixture
         Navigation,
         Artwork,
         Logs.For<ItemDetailViewModel>(),
-        Changes,
+        changes: Changes,
         trackPreferences: new TrackPreferencesApi(Silo.Http),
         trackChoices: TrackChoices,
         spoilers: Spoilers,
         dispatcher: new ImmediateDispatcher(),
-        time: Clock);
+        time: Clock,
+        ratings: Ratings);
 
     public async Task<ItemDetailViewModel> LoadAsync(string id)
     {

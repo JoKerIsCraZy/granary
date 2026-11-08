@@ -40,6 +40,12 @@ internal sealed class ScriptedSilo
 
     public SiloHttp Http { get; }
 
+    /// <summary>
+    /// The profile the server acts as now. When set, a write made for another profile is refused unsent, as the
+    /// authentication handler refuses it (<see cref="ProfileChangedException"/>), and is not in <see cref="Sent"/>.
+    /// </summary>
+    public Func<string?>? ActingProfile { get; set; }
+
     /// <summary>What was sent so far, as a copy.</summary>
     public IReadOnlyList<SentRequest> Sent
     {
@@ -109,6 +115,10 @@ internal sealed class ScriptedSilo
 
     private async Task<HttpResponseMessage> RespondAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
+        if (ActingProfile is { } acting && request.GetProfile() is { } owner && acting() != owner)
+        {
+            throw new ProfileChangedException();
+        }
         string? body = request.Content is null ? null : await request.Content.ReadAsStringAsync(cancellationToken);
         var uri = request.RequestUri!;
         bool savedOnly = request.Options.TryGetValue(SiloRequestOptions.SavedAddressOnly, out bool only) && only;

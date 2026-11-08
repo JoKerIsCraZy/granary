@@ -36,6 +36,9 @@ public sealed record CatalogItemDetail : CatalogItemBase
 
     public WatchRollup? UserData { get; init; }
 
+    /// <summary>The profile's own stars for the title, 1 to 5; absent when it has not rated it.</summary>
+    public int? UserRating { get; init; }
+
     /// <summary>The season of <see cref="CatalogItemBase.PlayContentId"/> when that is an episode.</summary>
     public int? PlaySeasonNumber { get; init; }
 
@@ -87,6 +90,13 @@ public sealed record RatingsCapability
 }
 
 public sealed record RatingsCapabilitySource(string Source, string Name);
+
+/// <summary>The body of <c>PUT /api/v2/ratings/{item_id}</c>: the profile's whole stars for the title.</summary>
+public sealed record RatingSet(int Rating)
+{
+    public const int Min = 1;
+    public const int Max = 5;
+}
 
 public sealed record CastCredit(string Name, string Character, int Order, string? PersonId, string? PhotoUrl, string? PhotoThumbhash);
 

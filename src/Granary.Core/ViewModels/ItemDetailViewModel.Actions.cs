@@ -202,12 +202,16 @@ public sealed partial class ItemDetailViewModel
         },
     };
 
-    private static string DescribeActionFailure(string action, Exception ex) => ex switch
+    private static string DescribeActionFailure(string action, Exception ex) => DescribeWriteFailure("Could not " + action, ex);
+
+    // Why a write of the page did not stick, after what failed ("Could not add this to your favorites", the web's "Failed to
+    // update rating"): the toggles' words for every write.
+    private static string DescribeWriteFailure(string what, Exception ex) => ex switch
     {
-        SiloApiException { Status: 429 } api => $"Could not {action}. The server is receiving too many requests. " + ApiFailureText.TryAgainIn(api.RetryAfter),
-        SiloApiException { Status: 503 } => $"Could not {action}. " + ApiFailureText.Busy,
-        SiloApiException { Status: 404 } => $"Could not {action}: this title is no longer available.",
-        SiloApiException api => $"Could not {action} (error {api.Status}). Try again.",
-        _ => $"Could not {action}. Check the connection and try again.",
+        SiloApiException { Status: 429 } api => $"{what}. The server is receiving too many requests. " + ApiFailureText.TryAgainIn(api.RetryAfter),
+        SiloApiException { Status: 503 } => $"{what}. " + ApiFailureText.Busy,
+        SiloApiException { Status: 404 } => $"{what}: this title is no longer available.",
+        SiloApiException api => $"{what} (error {api.Status}). Try again.",
+        _ => $"{what}. Check the connection and try again.",
     };
 }
