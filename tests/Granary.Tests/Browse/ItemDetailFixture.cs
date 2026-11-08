@@ -90,11 +90,20 @@ internal sealed class ItemDetailFixture
     /// <summary>The app's queue of track choices on their way to the server, which a start waits for.</summary>
     public TrackChoiceWrites TrackChoices => field ??= new(Session, TimeProvider.System, NullLogger<TrackChoiceWrites>.Instance);
 
+    /// <summary>The page's UI thread; work runs at once unless a test sets another.</summary>
+    public Core.Abstractions.IUiDispatcher Dispatcher { get; set; } = new ImmediateDispatcher();
+
     /// <summary>Drives the wait before the page reads changes of the viewer's state.</summary>
     public ManualTimeProvider Clock { get; } = new();
 
     /// <summary>The profile's spoiler switches; none unless a test sets them, so nothing is hidden.</summary>
     public EpisodeSpoilerSettings? Spoilers { get; set; }
+
+    /// <summary>The profile's other Title Pages settings; none unless a test sets them, so every one is at its default.</summary>
+    public TitlePageSettings? TitlePage { get; set; }
+
+    /// <summary>The app's theme music; none unless a test sets it, so the page plays nothing.</summary>
+    public Core.Playback.Themes.ThemeMusic? ThemeMusic { get; set; }
 
     /// <summary>The calendar's airings a season's grid places its missing and upcoming episodes by; none unless a test sets them.</summary>
     public SeriesAirings? Airings { get; set; }
@@ -129,7 +138,9 @@ internal sealed class ItemDetailFixture
         trackPreferences: new TrackPreferencesApi(Silo.Http),
         trackChoices: TrackChoices,
         spoilers: Spoilers,
-        dispatcher: new ImmediateDispatcher(),
+        titlePage: TitlePage,
+        themeMusic: ThemeMusic,
+        dispatcher: Dispatcher,
         time: Clock,
         ratings: Ratings,
         airings: Airings,

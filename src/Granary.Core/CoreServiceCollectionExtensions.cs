@@ -23,6 +23,7 @@ using Granary.Core.Auth;
 using Granary.Core.Http;
 using Granary.Core.Overlays;
 using Granary.Core.Playback;
+using Granary.Core.Playback.Themes;
 using Granary.Core.Realtime;
 using Granary.Core.Security;
 using Granary.Core.Servers;
@@ -107,6 +108,8 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<CardOverlaySettings>();
         services.AddSingleton<CardPresentationSettings>();
         services.AddSingleton<EpisodeSpoilerSettings>();
+        services.AddSingleton<TitlePageSettings>();
+        AddThemeMusic(services);
         services.AddTransient<ImagesApi>();
         services.AddSingleton<ImageParameterCache>();
         AddArtwork(services);
@@ -285,6 +288,23 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<ConnectionSpeedTest>();
         // The app puts the system's view of the network in first.
         services.TryAddSingleton<INetworkLink, UnknownNetworkLink>();
+    }
+
+    // Title pages' theme music, one player for the app. Its audio URL carries its own token: fetched without credentials,
+    // cookies or redirects, and kept out of the log. The app puts its own output in first; without it themes are silent.
+    private static void AddThemeMusic(IServiceCollection services)
+    {
+        services.AddHttpClient(ThemeAudioDownloader.HttpClientName, client => client.Timeout = Timeout.InfiniteTimeSpan)
+            .ConfigurePrimaryHttpMessageHandler(() => ThemeAudioDownloader.CreateHandler())
+            .RemoveAllLoggers();
+        // A proxy node's theme goes direct, never through the system's proxy, so its rule sees where its name resolves.
+        services.AddHttpClient(ThemeAudioDownloader.NodeHttpClientName, client => client.Timeout = Timeout.InfiniteTimeSpan)
+            .ConfigurePrimaryHttpMessageHandler(() => ThemeAudioDownloader.CreateNodeHandler())
+            .RemoveAllLoggers();
+        services.AddTransient<ThemesApi>();
+        services.AddTransient<ThemeAudioDownloader>();
+        services.TryAddSingleton<IThemeAudioOutput, NoThemeAudioOutput>();
+        services.AddSingleton<ThemeMusic>();
     }
 
     // Artwork URLs are presigned and public: no credentials, no identity headers. HTTP/2 lets a page's images
