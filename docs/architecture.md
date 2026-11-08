@@ -730,23 +730,37 @@ screen all go through `WindowModeService` (App, a singleton that MainWindow atta
 
 ## Taskbar preview
 
-The player's Play/Pause under the window's taskbar preview (docs/ui-design.md, Player) goes through the port
-`ITaskbarPlayButton` (Core): show or change, hide, and a pressed event.
+The player's Previous episode, Play/Pause and Next episode under the window's taskbar preview (docs/ui-design.md, Player)
+go through the port `ITaskbarToolbar` (Core): show or change the three buttons' state (`TaskbarToolbarState`: each
+hidden, disabled or enabled, and Play/Pause's paused), hide them all, and a pressed event naming the button.
 
-- **`PlayerTaskbarButton`** (Core, beside `PlayerSystemMedia` and made and disposed with it by the player page) follows
-  the player: shown from a title's load until the player is left, Play or Pause by `IsPaused`, and off by
-  `PlayerSystemMedia.PlayPauseWorks`, the rule Windows' media controls use. It shows only a change of that, never a
-  position tick. A press is posted to the UI thread, so it runs after the window's message has returned, and runs the
-  player's `TogglePauseCommand` if the rule still allows it.
-- **`WindowsTaskbarPlayButton`** (App) is the one button of the main window's thumbnail toolbar (`ITaskbarList3` through
-  its vtable, `Interop/TaskbarList.cs`). The window's messages come through `Interop/WindowMessageHook.cs`, the window's
-  single comctl32 subclass, made with the window, which also takes a remote's WM_APPCOMMAND: Explorer's
-  `TaskbarButtonCreated` (before it, `ITaskbarList3` is not called; after it, the button is added, again when Explorer
-  restarts and makes a new taskbar button), the button's `WM_COMMAND` with `THBN_CLICKED`, and `WM_DPICHANGED`, which
-  remakes the icons. A toolbar's buttons cannot be removed, so hiding sets `THBF_HIDDEN`. The icons
-  (`Interop/PlayPauseIcons.cs`) are drawn at `SM_CXSMICON` for the window's DPI into premultiplied BGRA and made with
-  `CreateIconIndirect`; the taskbar copies them, and Granary destroys its own when they are replaced and when the window
-  closes, with the COM object. Three failures in a row and the player goes on without the button.
+- **`PlayerTaskbarToolbar`** (Core, beside `PlayerSystemMedia` and made and disposed with it by the player page) follows
+  the player: shown from a title's load until the player is left, Play or Pause by `IsPaused`. Each button is enabled by
+  the rule Windows' media controls use, which `PlayerSystemMedia` shares: `PlayPauseWorks`, and `PreviousWorks` and
+  `NextWorks` (its `CanChangeEpisode` and the player's `HasPreviousEpisode` or `HasNextEpisode`). Previous and Next
+  show only while `MediaInfo.Kind` is an episode. Until a new title's details have come (`MediaInfo` is `None`) the
+  kind it remembers holds while the phase is `Preparing`, so they grey, not vanish, while the next episode loads; a
+  title that failed before its details came has none, and leaving the player forgets the kind. It shows only a change
+  of that, never a position tick. A press is posted to the UI thread, so it runs after the window's message has
+  returned, and runs the player's `PlayPreviousEpisodeCommand`, `TogglePauseCommand` or `PlayNextEpisodeCommand` if the
+  rule still allows it. `PlayerViewModel` clears `HasLeft` on a new start only after the title before is cleared
+  (`Phase`, `MediaInfo`), so nothing that follows the player shows that title again for a moment.
+- **`TaskbarToolbarSender`** (Core) hands each state to the App's Explorer call and keeps it handed on. A failed send
+  is sent again after 2 s, also when nothing changed (`PlayerTaskbarToolbar` sends only changes). It gives up only on
+  three failures in a row spanning 10 s at least, and then hides the buttons as far as Explorer still takes it. Given
+  up, a change at least a minute after the last failure tries again, and so does a new taskbar button. The clock is a
+  `TimeProvider`, the retries run on the UI thread through `IUiDispatcher`.
+- **`WindowsTaskbarToolbar`** (App) is the main window's thumbnail toolbar (`ITaskbarList3` through its vtable,
+  `Interop/TaskbarList.cs`): ids 1, 2 and 3 for Previous, Play/Pause and Next, in that order. The window's messages come
+  through `Interop/WindowMessageHook.cs`, the window's single comctl32 subclass, made with the window, which also takes a
+  remote's WM_APPCOMMAND: Explorer's `TaskbarButtonCreated` (before it, `ITaskbarList3` is not called; after it, all
+  three buttons are added in one `ThumbBarAddButtons`, again when Explorer restarts and makes a new taskbar button), a
+  button's `WM_COMMAND` with `THBN_CLICKED` in the high word of wParam and its id in the low word, and `WM_DPICHANGED`,
+  which remakes the icons. A toolbar's buttons can be neither added later nor removed, so `ThumbBarUpdateButtons` shows
+  and hides them (`THBF_HIDDEN`) and greys them (`THBF_DISABLED`). The icons (`Interop/TaskbarIcons.cs`: ⏮, ▶, ⏸, ⏭)
+  are drawn at `SM_CXSMICON` for the window's DPI into premultiplied BGRA and made with `CreateIconIndirect`; the taskbar
+  copies them, and Granary destroys its own when they are replaced and when the window closes, with the COM object. A
+  failed call drops the COM object, made again for the next try, and is the sender's to try again or give up on.
 
 ## Watch Party
 

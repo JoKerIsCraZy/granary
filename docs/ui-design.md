@@ -1171,14 +1171,22 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   End Party and Cancel. One call at a time: the buttons wait while one is on its way. Invite and the policy say what they
   did as the player's notice in the web's toast words ("Invite copied. Room code ABCD1234", "Guests can now pause and
   resume"); Stop closes the player back to the room's lobby and End goes on to Watch Party, so they only say a failure.
-- **Play/Pause in the taskbar preview** (`PlayerTaskbarButton`; Granary's own): hovering over Granary's taskbar button
-  shows one button under the window's preview, while the player has a title, from its load until the player is left
-  (minimized to the bar, in the mini view and with the window minimized too). Two bars with the tip "Pause" while it
-  plays, a triangle with "Play" while paused, white at Windows' small-icon size, as the player's own Play/Pause names
-  itself. It is off (Windows greys it) while play and pause are, by the media keys' rule below: while the title loads,
-  after it failed or ended, and in a Watch Party for a guest the room does not let pause. A press is the player's
-  Play/Pause, so in a Watch Party it asks the room. Leaving the player hides it at once: Windows keeps a button once
-  added, so it is hidden, not removed. It changes only with what it shows, never as the position moves on.
+- **Previous, Play/Pause and Next in the taskbar preview** (`PlayerTaskbarToolbar`; Granary's own): hovering over
+  Granary's taskbar button shows buttons under the window's preview, while the player has a title, from its load until
+  the player is left (minimized to the bar, in the mini view and with the window minimized too). White at Windows'
+  small-icon size, with the player's own words as tips:
+  - **Previous episode** (a bar and a triangle pointing left), **Play/Pause** (two bars with "Pause" while it plays, a
+    triangle with "Play" while paused) and **Next episode** (a triangle pointing right and a bar), in that order, for a
+    series episode. A movie or a file played directly has Play/Pause alone.
+  - Each is off (Windows greys it) by the media keys' rule below. Play/Pause while the title loads, after it failed or
+    ended, and in a Watch Party for a guest the room does not let pause. Previous at the season's first episode, Next at
+    the series' last, and both while the title loads or buffers, after it failed or ended, and in any Watch Party, where
+    the room decides what plays. While the next episode loads they stay, greyed; they go once the new title is known to
+    be a movie, or when it fails to load before that.
+  - A press is the player's own button: Previous and Next start the episode before or after from where the profile left
+    it, and Play/Pause in a Watch Party asks the room. A press while a button is off does nothing.
+  - Leaving the player hides all three at once: Windows keeps buttons once added, so they are hidden, not removed. They
+    change only with what they show, never as the position moves on.
 - **Media keys and Windows' media overlay** (System Media Transport Controls), while the player is open, minimized to the
   bar or in the mini view too: two lines as Silo's apps write them for the system (an episode's own title over "Dark — S1
   · E5", a movie's title over its year, a local file's name), the movie's poster or the episode's still (else the

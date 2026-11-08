@@ -167,8 +167,8 @@ public partial class App : Application
         services.AddSingleton<IFileLauncher, ShellFileLauncher>();
         // The main window's full screen and mini view, shared by the app, the player and a trailer.
         services.AddSingleton<WindowModeService>();
-        // The Play/Pause in the main window's taskbar preview while a title plays.
-        services.AddSingleton<ITaskbarPlayButton, WindowsTaskbarPlayButton>();
+        // Previous episode, Play/Pause and Next episode in the main window's taskbar preview while a title plays.
+        services.AddSingleton<ITaskbarToolbar, WindowsTaskbarToolbar>();
         // Keeps the display on while a title plays.
         services.AddSingleton<IKeepAwake, WindowsKeepAwake>();
         services.AddGranaryCore();

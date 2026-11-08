@@ -3,11 +3,12 @@ using System.Runtime.InteropServices;
 namespace Granary.App.Interop;
 
 /// <summary>
-/// The taskbar preview's play triangle and pause bars: white on clear, at Windows' small-icon size for a scale, so they
-/// read on the preview's dark toolbar. Drawn here into 32-bit premultiplied BGRA (Windows' "Creating an Alpha Blended
-/// Cursor"), the triangle's slanted edges smoothed by sampling each pixel 4 × 4 times; the bars' edges lie on whole pixels.
+/// The taskbar preview's icons: the previous and next episode marks (a bar and a triangle), the play triangle and the
+/// pause bars. White on clear, at Windows' small-icon size for a scale, so they read on the preview's dark toolbar. Drawn
+/// here into 32-bit premultiplied BGRA (Windows' "Creating an Alpha Blended Cursor"), the triangles' slanted edges
+/// smoothed by sampling each pixel 4 × 4 times; the bars' edges lie on whole pixels.
 /// </summary>
-internal sealed unsafe partial class PlayPauseIcons : IDisposable
+internal sealed unsafe partial class TaskbarIcons : IDisposable
 {
     // SM_CXSMICON; 16 px at 100 %.
     private const int SmallIconWidthMetric = 49;
@@ -15,11 +16,16 @@ internal sealed unsafe partial class PlayPauseIcons : IDisposable
     private const uint BaseDpi = 96;
     private const int Samples = 4;
 
-    private PlayPauseIcons(nint play, nint pause)
+    private TaskbarIcons(nint previous, nint play, nint pause, nint next)
     {
+        Previous = previous;
         Play = play;
         Pause = pause;
+        Next = next;
     }
+
+    /// <summary>A bar, then a triangle pointing left: the episode before.</summary>
+    public nint Previous { get; private set; }
 
     /// <summary>The play triangle, for while a title is paused.</summary>
     public nint Play { get; private set; }
@@ -27,8 +33,11 @@ internal sealed unsafe partial class PlayPauseIcons : IDisposable
     /// <summary>The pause bars, for while a title plays.</summary>
     public nint Pause { get; private set; }
 
-    /// <summary>Both icons at the small-icon size for the scale of the display the window is on.</summary>
-    public static PlayPauseIcons ForWindow(nint hwnd)
+    /// <summary>A triangle pointing right, then a bar: the episode after.</summary>
+    public nint Next { get; private set; }
+
+    /// <summary>The icons at the small-icon size for the scale of the display the window is on.</summary>
+    public static TaskbarIcons ForWindow(nint hwnd)
     {
         uint dpi = GetDpiForWindow(hwnd);
         int size = GetSystemMetricsForDpi(SmallIconWidthMetric, dpi == 0 ? BaseDpi : dpi);
@@ -36,49 +45,78 @@ internal sealed unsafe partial class PlayPauseIcons : IDisposable
         {
             size = BaseSize;
         }
-        // In 16 px: a shape 10 high, centred; bars 3 wide with 2 between them, the triangle 0.85 as wide as high.
-        float scale = size / (float)BaseSize;
-        int height = Math.Max(4, (int)MathF.Round(10 * scale));
-        int top = (size - height) / 2;
-        int bar = Math.Max(1, (int)MathF.Round(3 * scale));
-        int gap = Math.Max(1, (int)MathF.Round(2 * scale));
-        int barsLeft = (size - (2 * bar + gap)) / 2;
-        float width = height * 0.85f;
-        // Its box a little right of centre, halfway to where its weight (centroid) would be centred, so it looks centred;
-        // the player nudges its glyph so too.
-        float left = MathF.Round((size - width) / 2 + width / 12);
-        float middle = top + height / 2f;
-
-        nint play = Draw(size, (x, y) => y >= top && y <= top + height && x >= left
-            && x <= left + width * (1 - Math.Abs(y - middle) / (height / 2f)));
-        nint pause = 0;
+        var made = new List<nint>(4);
         try
         {
-            pause = Draw(size, (x, y) => y >= top && y < top + height
-                && ((x >= barsLeft && x < barsLeft + bar) || (x >= barsLeft + bar + gap && x < barsLeft + 2 * bar + gap)));
-        }
-        finally
-        {
-            if (pause == 0)
+            foreach (var shape in Shapes(size))
             {
-                DestroyIcon(play);
+                made.Add(Draw(size, shape));
             }
         }
-        return new PlayPauseIcons(play, pause);
+        catch
+        {
+            foreach (nint icon in made)
+            {
+                DestroyIcon(icon);
+            }
+            throw;
+        }
+        return new TaskbarIcons(made[0], made[1], made[2], made[3]);
     }
 
     public void Dispose()
     {
-        if (Play != 0)
+        Previous = Destroy(Previous);
+        Play = Destroy(Play);
+        Pause = Destroy(Pause);
+        Next = Destroy(Next);
+    }
+
+    private static nint Destroy(nint icon)
+    {
+        if (icon != 0)
         {
-            DestroyIcon(Play);
-            Play = 0;
+            DestroyIcon(icon);
         }
-        if (Pause != 0)
-        {
-            DestroyIcon(Pause);
-            Pause = 0;
-        }
+        return 0;
+    }
+
+    // Previous, Play, Pause and Next. In 16 px: each 10 high, centred. Play a triangle 0.85 as wide as high; Pause bars 3
+    // wide with 2 between them; Next a triangle 0.8 as wide as high touching a bar 2 wide, and Previous that mirrored.
+    private static Func<float, float, bool>[] Shapes(int size)
+    {
+        float scale = size / (float)BaseSize;
+        int height = Math.Max(4, (int)MathF.Round(10 * scale));
+        int top = (size - height) / 2;
+        float middle = top + height / 2f;
+        // How far a triangle pointing right reaches at y, from 1 at its tip's height to 0 at its corners.
+        float Reach(float y) => 1 - Math.Abs(y - middle) / (height / 2f);
+        bool Within(float y) => y >= top && y < top + height;
+
+        int bar = Math.Max(1, (int)MathF.Round(3 * scale));
+        int gap = Math.Max(1, (int)MathF.Round(2 * scale));
+        int barsLeft = (size - (2 * bar + gap)) / 2;
+
+        float width = height * 0.85f;
+        // Its box a little right of centre, halfway to where its weight (centroid) would be centred, so it looks centred;
+        // the player nudges its glyph so too.
+        float left = MathF.Round((size - width) / 2 + width / 12);
+
+        // Whole pixels, so the bar's edges are sharp.
+        int skipBar = Math.Max(1, (int)MathF.Round(2 * scale));
+        int skipTriangle = (int)MathF.Round(height * 0.8f);
+        int skipLeft = (size - (skipTriangle + skipBar)) / 2;
+
+        int skipBarLeft = skipLeft + skipTriangle;
+        bool NextShape(float x, float y) => Within(y)
+            && ((x >= skipLeft && x <= skipLeft + skipTriangle * Reach(y)) || (x >= skipBarLeft && x < skipBarLeft + skipBar));
+        return
+        [
+            (x, y) => NextShape(size - x, y),
+            (x, y) => Within(y) && x >= left && x <= left + width * Reach(y),
+            (x, y) => Within(y) && ((x >= barsLeft && x < barsLeft + bar) || (x >= barsLeft + bar + gap && x < barsLeft + 2 * bar + gap)),
+            NextShape,
+        ];
     }
 
     // White where the shape covers a pixel, as much as it covers it.

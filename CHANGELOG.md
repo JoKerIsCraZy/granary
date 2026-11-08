@@ -19,6 +19,10 @@ release's section is what its update says it changes (docs/release.md).
 - **Play/Pause in the taskbar preview:** hover over Granary's taskbar button while something plays and the window's
   preview has a Play/Pause button, also when Granary is minimized. In a Watch Party it asks the room, as the player's own
   button does.
+- **Previous and Next episode in the taskbar preview:** while an episode plays, the preview has Previous episode and Next
+  episode either side of Play/Pause, and they start the episode before or after, as the player's own buttons do. They
+  are greyed at the season's first episode or the series' last, while an episode loads, and in a Watch Party, where the
+  room decides what plays. A movie or a file you play directly has Play/Pause alone.
 - **Cast & Crew in groups:** a title's Cast & Crew row now labels where its writers and its cast begin, with a thin line
   and "WRITERS" or "CAST" right before their cards, after the director or the series' creators. Screen readers read each
   card with its role, such as "Writer".
