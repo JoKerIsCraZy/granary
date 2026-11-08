@@ -39,6 +39,7 @@ public sealed partial class DownloadQueue
         StoredDownload? download;
         try
         {
+            SenderAsked?.Invoke(key.Id);
             download = await MarkDownloadingAsync(run).ConfigureAwait(false);
         }
         catch
@@ -65,9 +66,10 @@ public sealed partial class DownloadQueue
         await OnOutcomeAsync(run, download, from, outcome).ConfigureAwait(false);
     }
 
-    // The server hears "downloading" before the file is asked for, so "completed" always comes after it. The transfer waits
-    // for that report at most ReportBudget, also when the server work has it under way already. One that did not go waits out
-    // its delay, and the server work sends it then: the loop is woken to know when.
+    // The server hears "downloading" before the file is asked for, so "completed" always comes after it. The transfer sends it
+    // itself; when a sender held the place first, it waits for that one, which may have looked before "downloading" was
+    // written, and then sends what is left. All of it takes at most ReportBudget. One that did not go waits out its delay, and
+    // the server work sends it then: the loop is woken to know when.
     private async Task SendStartReportAsync(Running run, TaskCompletionSource? sender)
     {
         var key = run.Key;
@@ -75,16 +77,33 @@ public sealed partial class DownloadQueue
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(_stopToken, budget.Token);
         try
         {
-            if (sender is not null)
+            while (sender is null)
             {
-                await SendReportsAsSenderAsync(run.Server, key, sender, linked.Token).ConfigureAwait(false);
+                await SenderOf(key).WaitAsync(linked.Token).ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
+                if (linked.IsCancellationRequested || !HasReportDue(key))
+                {
+                    return;
+                }
+                sender = TryBeginSending(key);
             }
-            // A sender already under way (one that held the place before the transfer) sends "downloading" too, once its own report went.
-            await SenderOf(key).WaitAsync(linked.Token).ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
+            await SendReportsAsSenderAsync(run.Server, key, sender, linked.Token).ConfigureAwait(false);
         }
         finally
         {
             LeaveReportForLater(key);
+        }
+    }
+
+    // A report is there and does not wait out its delay after one that could not go.
+    private bool HasReportDue(Key key)
+    {
+        if (_store.Find(key.Scope, key.Id)?.Record.PendingReport is null)
+        {
+            return false;
+        }
+        lock (_gate)
+        {
+            return IsReportDueLocked(key, _time.GetUtcNow(), sending: true);
         }
     }
 

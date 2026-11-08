@@ -167,6 +167,12 @@ public sealed partial class DownloadQueue : IDisposable
     /// <summary>For tests: how many passes the loop ended, failed ones included.</summary>
     internal long Passes => Interlocked.Read(ref _passes);
 
+    /// <summary>
+    /// For tests: runs on a transfer's thread with its download's id once it asked for the place of its reports' sender, before
+    /// its record turns Downloading.
+    /// </summary>
+    internal Action<string>? SenderAsked { get; set; }
+
     /// <summary>Starts following the session, the network, the settings and the store, and the loop. Once.</summary>
     public void Start()
     {

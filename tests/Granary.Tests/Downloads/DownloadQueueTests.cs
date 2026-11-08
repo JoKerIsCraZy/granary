@@ -658,6 +658,61 @@ public sealed class DownloadQueueTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task Downloading_GoesBeforeTheFile_WhenAnotherSendHeldItsPlace()
+    {
+        // dl_1 waits paused with an old report the server work sends; dl_2's report, after it, hangs, so the server work
+        // stays busy and only the transfer can send dl_1's "downloading".
+        await _h.AddAsync("dl_1", change: r => r with
+        {
+            IsPausedByViewer = true,
+            PendingReport = new DownloadStatusEvent(DownloadStatuses.Downloading, ManualTimeProvider.DefaultStart.AddMinutes(-5), 1),
+        });
+        await _h.AddAsync("dl_2", DownloadState.Completed, change: r => r with
+        {
+            PendingReport = new DownloadStatusEvent(DownloadStatuses.Completed, ManualTimeProvider.DefaultStart, 1),
+        });
+        _h.ServeFile("dl_1", Source);
+        var old = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var downloading = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var hanging = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _h.AcceptReports("dl_1", () => old.Task, () => downloading.Task);
+        _h.AcceptReports("dl_2", () => hanging.Task);
+        try
+        {
+            var queue = _h.NewQueue();
+            // The old report's send ends, and the server work is on to dl_2, after the transfer asked for the sender's place and
+            // before its record turns Downloading.
+            queue.SenderAsked = id =>
+            {
+                old.TrySetResult(Answer("dl_1", "downloading"));
+                Assert.True(SpinWait.SpinUntil(() => _h.Reports("dl_2").Count == 1, TimeSpan.FromSeconds(5)));
+            };
+            queue.Start();
+            await Until(() => _h.Reports("dl_1").Count == 1, "the old report went");
+
+            await _h.Store.UpdateAsync(Scope7, "dl_1", r => r with { IsPausedByViewer = false }, Token);
+
+            await Until(() => _h.Reports("dl_1").Count == 2, "downloading went");
+            await SettleRunningAsync(queue);
+            Assert.Empty(_h.FileRequests("dl_1"));
+            downloading.SetResult(Answer("dl_1", "downloading"));
+            await CompletedAsync("dl_1");
+            Assert.Single(_h.FileRequests("dl_1"));
+        }
+        finally
+        {
+            old.TrySetResult(Answer("dl_1", "downloading"));
+            downloading.TrySetResult(Answer("dl_1", "downloading"));
+            hanging.TrySetResult(Answer("dl_2", "completed"));
+        }
+    }
+
+    private static HttpResponseMessage Answer(string id, string status) => new(HttpStatusCode.OK)
+    {
+        Content = new StringContent(DownloadPayloads.Entry(id, status), System.Text.Encoding.UTF8, "application/json"),
+    };
+
+    [Fact]
     public async Task AHeldFolderOfARemovedDownload_IsDeletedAtTheNextFolderRecheck()
     {
         var stored = await _h.AddAsync("dl_1", DownloadState.Completed);
