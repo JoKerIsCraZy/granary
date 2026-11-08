@@ -542,8 +542,10 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   saved there, as Android keeps the last one (`ServerPlayback.SetSleepTimerDefault`, `profile_device`). This PC can
   hide the button (`IPlaybackDevicePreferences.SleepTimerButton`, `sleep_timer_button` in `playback-device.json`, on when
   missing): the player reads it as it is made and follows `SleepTimerButtonChanged` until it is disposed, so the
-  minimized bar does too; turned off, `PlayerViewModel.ShowsSleepTimer` goes false and a running timer ends as Turn off
-  ends it.
+  minimized bar does too; turned off, `PlayerViewModel.ShowsSleepTimer` goes false, a running timer ends as Turn off
+  ends it, and a hold the timer left after the end lets go (`NextUpFlow.Hold(false)` then starts the countdown). A change
+  on the UI thread applies at once, so work already queued there, such as the title's end, finds the timer off; one from
+  another thread is posted, and does nothing once the player is disposed.
 - **Chapters** (11.3): the playing file's `chapters` from the watch detail (mpv reads none through a remux or a
   transcode), in order, empty ones left out, pictures resolved against the server; they make the Chapters menu, the
   seek bar's ticks and the chapter named in its bubble, and Ctrl+Left and Ctrl+Right go to their starts (`ChapterJump`,

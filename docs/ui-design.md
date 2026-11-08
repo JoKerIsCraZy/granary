@@ -1181,7 +1181,8 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   through it, OK picks, Esc or the remote's Back closes it.
   Settings → Playback → This PC → Sleep timer (Granary's own; Silo's clients always have it), turned off, takes the button
   and its dot away and the buttons after it close up; the arrows go from Mute straight to the next button shown (audio,
-  else subtitles, chapters or settings), and Tab from the slider. A timer that runs then ends, as Turn off ends it, so the next episode may start by itself again; the
+  else subtitles, chapters or settings), and Tab from the slider. A timer that runs then ends, as Turn off ends it, and a Playing Next screen it left waiting (End of
+  episode, or a duration that ran out at the end) counts down again, so the next episode starts by itself as usual; the
   duration this device starts on stays. The player follows at once, also as the minimized bar, and a player opened later
   starts without the button.
 - **Audio menu** (`AudioTrackOption`, wording in `TrackText` after the web's `AudioTrackMenu`): the button shows

@@ -201,6 +201,36 @@ public sealed class NextUpFlowTests
     }
 
     [Fact]
+    public void TheSleepTimersHold_LetGoAfterTheEnd_StartsTheCountdownAsUsual()
+    {
+        Episode();
+        _flow.Hold(true, _now);
+        _flow.End(_now);
+        Assert.True(_flow.IsHeld);
+        Assert.False(_flow.IsCountingDown);
+
+        _flow.Hold(false, _now);
+
+        Assert.False(_flow.IsHeld);
+        Assert.True(_flow.IsCountingDown);
+        Assert.Equal(NextUpStep.PlayNext, After(NextUpFlow.CountdownSeconds));
+    }
+
+    [Fact]
+    public void TheSleepTimersHold_LetGoAfterTheEnd_LeavesTheViewersKeepWatchingAlone()
+    {
+        Episode();
+        _flow.End(_now);
+        _flow.Dismiss(_now);
+        _flow.Hold(true, _now);
+
+        _flow.Hold(false, _now);
+
+        Assert.False(_flow.IsCountingDown);
+        Assert.Equal(NextUpStep.None, After(30));
+    }
+
+    [Fact]
     public void TheSleepTimersHold_StopsACountdownAtTheEnd_AndAutoPlayTurnedOnStartsItAgain()
     {
         Episode();

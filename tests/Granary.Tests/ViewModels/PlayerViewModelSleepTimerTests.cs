@@ -23,14 +23,19 @@ public sealed class PlayerViewModelSleepTimerTests
     private readonly FakeUpNextSource _source = new();
     private readonly InMemoryPlaybackDevicePreferences _device = new();
     private readonly List<FakeServerPlayback> _playbacks = [];
+    // The UI thread's queue, for the tests that hold posted work until they let it run.
+    private readonly QueuedDispatcher _queue = new();
+    private bool _queued;
     private double _position;
 
     private FakeServerPlayback Playback => _playbacks[^1];
 
-    private async Task<PlayerViewModel> PlayingAsync(PlayingEpisode? episode = null, int sleepTimerMinutes = PlaybackPreferences.DefaultSleepTimerMinutes)
+    private async Task<PlayerViewModel> PlayingAsync(PlayingEpisode? episode = null, int sleepTimerMinutes = PlaybackPreferences.DefaultSleepTimerMinutes,
+        bool queued = false)
     {
+        _queued = queued;
         var episodes = new Queue<PlayingEpisode?>([episode, Fourth]);
-        var viewModel = new PlayerViewModel(_engine, new ImmediateDispatcher(), _navigation, () =>
+        var viewModel = new PlayerViewModel(_engine, queued ? _queue : new ImmediateDispatcher(), _navigation, () =>
         {
             var playback = new FakeServerPlayback
             {
@@ -54,6 +59,7 @@ public sealed class PlayerViewModelSleepTimerTests
         Playback.RaiseMarkers([Credits]);
         Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));
         _position = 0;
+        Drain();
     }
 
     private void PlayTo(double seconds)
@@ -64,6 +70,7 @@ public sealed class PlayerViewModelSleepTimerTests
             _time.Advance(TimeSpan.FromSeconds(0.25));
             _engine.RaiseState(new PlaybackSnapshot(true, _engine.Current.IsPaused, TimeSpan.FromSeconds(_position), TimeSpan.FromSeconds(Length), null,
                 HasStarted: true));
+            Drain();
         }
     }
 
@@ -71,6 +78,31 @@ public sealed class PlayerViewModelSleepTimerTests
     {
         PlayTo(2099);
         Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Ended));
+        Drain();
+    }
+
+    private void Advance(TimeSpan time)
+    {
+        _time.Advance(time);
+        Drain();
+    }
+
+    // In the tests with a queue, what the UI thread has waiting runs, as it would once it gets to it.
+    private void Drain()
+    {
+        if (_queued)
+        {
+            _queue.RunAll();
+        }
+    }
+
+    // The setting changes on another thread than the UI's.
+    private void TurnOffElsewhere()
+    {
+        _queue.UiThread = Thread.CurrentThread;
+        var elsewhere = new Thread(() => _ = _device.SetSleepTimerButtonAsync(false));
+        elsewhere.Start();
+        elsewhere.Join();
     }
 
     private static void Choose(PlayerViewModel viewModel, string label) =>
@@ -546,6 +578,112 @@ public sealed class PlayerViewModelSleepTimerTests
         viewModel.Dispose();
 
         Assert.False(_device.IsSleepTimerButtonFollowed);
+    }
+
+    [Fact]
+    public async Task TurnedOffOnTheUiThread_TakesEffectBeforeTheEndItHadQueued_SoTheNextEpisodeComes()
+    {
+        var viewModel = await PlayingAsync(Ted, queued: true);
+        Choose(viewModel, "End of episode");
+        PlayTo(2099);
+        // The end is already waiting on the UI thread when the setting changes.
+        _queue.Post(() => Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Ended)));
+
+        await _device.SetSleepTimerButtonAsync(false);
+        Assert.False(viewModel.ShowsSleepTimer);
+        Assert.False(viewModel.IsSleepTimerOn);
+        Drain();
+
+        Assert.True(viewModel.IsNextUpScreenShown);
+        Assert.True(viewModel.IsNextUpCountingDown);
+        Advance(TimeSpan.FromSeconds(10.1));
+        Assert.Equal(2, _playbacks.Count);
+    }
+
+    [Fact]
+    public async Task TurnedOffAfterEndOfEpisodeHeldTheEnd_TheNextEpisodeComesAsUsual()
+    {
+        var viewModel = await PlayingAsync(Ted, queued: true);
+        Choose(viewModel, "End of episode");
+        PlaysToItsEnd();
+        Assert.False(viewModel.IsNextUpCountingDown);
+
+        await _device.SetSleepTimerButtonAsync(false);
+        Drain();
+
+        Assert.True(viewModel.IsNextUpCountingDown);
+        Advance(TimeSpan.FromSeconds(10.1));
+        Assert.Equal(2, _playbacks.Count);
+    }
+
+    [Fact]
+    public async Task TurnedOffAfterADurationRanOutAtTheEnd_TheCountdownToTheNextEpisodeRunsAgain()
+    {
+        var viewModel = await PlayingAsync(Ted, queued: true);
+        Choose(viewModel, "5 min");
+        Advance(TimeSpan.FromSeconds(289));
+        PlaysToItsEnd();
+        Advance(TimeSpan.FromSeconds(1));
+        Assert.Equal(PlayerPhase.Ended, viewModel.Phase);
+        Assert.False(viewModel.IsNextUpCountingDown);
+
+        await _device.SetSleepTimerButtonAsync(false);
+        Drain();
+
+        Assert.True(viewModel.IsNextUpCountingDown);
+        Advance(TimeSpan.FromSeconds(10.1));
+        Assert.Equal(2, _playbacks.Count);
+    }
+
+    [Fact]
+    public async Task TurnedOffWhileTheNextEpisodeLoads_AfterTheTimerRanOut_ItPlaysWithoutAPause()
+    {
+        var viewModel = await PlayingAsync(Ted, queued: true);
+        Choose(viewModel, "5 min");
+        Advance(TimeSpan.FromSeconds(279));
+        PlaysToItsEnd();
+        Advance(TimeSpan.FromSeconds(10.1));
+        Assert.Equal(PlayerPhase.Preparing, viewModel.Phase);
+        Advance(TimeSpan.FromSeconds(1));
+        Assert.False(viewModel.IsSleepTimerOn);
+
+        await _device.SetSleepTimerButtonAsync(false);
+        Plays();
+
+        Assert.Equal(PlayerPhase.Playing, viewModel.Phase);
+        Assert.False(_engine.Current.IsPaused);
+    }
+
+    [Fact]
+    public async Task TurnedOffOnAnotherThread_WaitsForTheUiThread()
+    {
+        var viewModel = await PlayingAsync(Ted, queued: true);
+        Choose(viewModel, "5 min");
+
+        TurnOffElsewhere();
+
+        Assert.True(viewModel.ShowsSleepTimer);
+        Assert.True(viewModel.IsSleepTimerOn);
+        Drain();
+        Assert.False(viewModel.ShowsSleepTimer);
+        Assert.False(viewModel.IsSleepTimerOn);
+    }
+
+    [Fact]
+    public async Task TurnedOffOnAnotherThread_ThenDisposed_ChangesNothingOnceTheUiThreadGetsToIt()
+    {
+        var viewModel = await PlayingAsync(Ted, queued: true);
+        Choose(viewModel, "End of episode");
+        TurnOffElsewhere();
+        viewModel.Dispose();
+        var changed = new List<string?>();
+        viewModel.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+
+        Drain();
+        Advance(TimeSpan.FromMinutes(1));
+
+        Assert.Empty(changed);
+        Assert.Single(_playbacks);
     }
 
     private sealed class FakeUpNextSource : IUpNextSource

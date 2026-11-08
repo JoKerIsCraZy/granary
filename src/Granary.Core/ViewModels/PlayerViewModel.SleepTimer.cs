@@ -264,24 +264,48 @@ public sealed partial class PlayerViewModel
         }
     }
 
-    // Raised on the thread that changed the setting, which is the UI's; what holds is read once the change has its turn.
-    private void OnSleepTimerButtonChanged(object? sender, EventArgs e) => _dispatcher.Post(ApplySleepTimerButton);
+    // Raised on the thread that changed the setting. On the UI thread it applies at once, so work queued there before it,
+    // such as the title's end, finds the timer off; from another thread it waits for its turn there.
+    private void OnSleepTimerButtonChanged(object? sender, EventArgs e)
+    {
+        if (_dispatcher.HasThreadAccess)
+        {
+            ApplySleepTimerButton();
+        }
+        else
+        {
+            _dispatcher.Post(ApplySleepTimerButton);
+        }
+    }
 
     private void ApplySleepTimerButton()
     {
+        // Posted before the player was left for good: nothing is left to change.
+        if (_disposed)
+        {
+            return;
+        }
         bool shows = _devicePreferences?.SleepTimerButton != false;
         if (shows == ShowsSleepTimer)
         {
             return;
         }
         ShowsSleepTimer = shows;
-        if (!shows)
+        if (shows)
         {
-            if (IsSleepTimerOn)
-            {
-                _logger.LogInformation("Sleep timer turned off with its button in Settings");
-            }
-            StopSleepTimer();
+            return;
+        }
+        if (IsSleepTimerOn)
+        {
+            _logger.LogInformation("Sleep timer turned off with its button in Settings");
+        }
+        StopSleepTimer();
+        // A hold the timer left at the end of what plays (End of episode, or a duration that ran out there) goes with it:
+        // the next episode starts as usual.
+        if (_nextUp.IsHeld)
+        {
+            _nextUp.Hold(false, Now);
+            ShowNextUp();
         }
     }
 
