@@ -21,6 +21,7 @@ public sealed partial class PlaybackSettingsView : UserControl, IDisposable
     {
         ViewModel = ActivatorUtilities.CreateInstance<PlaybackSettingsViewModel>(App.Services);
         Mpv = ActivatorUtilities.CreateInstance<MpvSettingsViewModel>(App.Services);
+        AudioDelay = ActivatorUtilities.CreateInstance<AudioDelaySettingsViewModel>(App.Services);
         InitializeComponent();
         // Once: the page keeps the view, and coming back to it must not overwrite what is shown.
         Loaded += OnFirstLoaded;
@@ -29,13 +30,16 @@ public sealed partial class PlaybackSettingsView : UserControl, IDisposable
     private async void OnFirstLoaded(object sender, RoutedEventArgs e)
     {
         Loaded -= OnFirstLoaded;
-        await SettingsViewLoad.RunAsync(_ => Task.WhenAll(ViewModel.LoadAsync(), Mpv.LoadPresetsAsync()));
+        await SettingsViewLoad.RunAsync(_ => Task.WhenAll(ViewModel.LoadAsync(), Mpv.LoadPresetsAsync(), AudioDelay.LoadAsync()));
     }
 
     public PlaybackSettingsViewModel ViewModel { get; }
 
     /// <summary>What Granary's mpv.conf editor changed, and the presets.</summary>
     public MpvSettingsViewModel Mpv { get; }
+
+    /// <summary>This device's audio sync offset, under Sound.</summary>
+    public AudioDelaySettingsViewModel AudioDelay { get; }
 
     /// <summary>Edit was pressed: the page shows the mpv.conf editor in this view's place.</summary>
     public event EventHandler? EditMpvConfigRequested;
@@ -44,6 +48,7 @@ public sealed partial class PlaybackSettingsView : UserControl, IDisposable
     {
         ViewModel.Dispose();
         Mpv.Dispose();
+        AudioDelay.Dispose();
     }
 
     /// <summary>Back from the editor: focus returns to Edit, once the view is in the page again.</summary>

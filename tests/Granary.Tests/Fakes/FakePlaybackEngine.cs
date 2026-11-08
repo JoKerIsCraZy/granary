@@ -67,6 +67,11 @@ internal sealed class FakePlaybackEngine : IPlaybackEngine
 
     public void SetFill(bool fill) => Fill = fill;
 
+    /// <summary>The audio delay in seconds, positive for later sound.</summary>
+    public double AudioDelay { get; private set; }
+
+    public void SetAudioDelay(double seconds) => AudioDelay = seconds;
+
     public PlaybackStats Stats { get; set; } = PlaybackStats.None;
 
     public PlaybackStats ReadStats() => Stats;
