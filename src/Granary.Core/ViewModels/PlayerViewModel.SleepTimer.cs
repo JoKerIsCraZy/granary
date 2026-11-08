@@ -32,9 +32,6 @@ public sealed partial class PlayerViewModel
     // The duration the viewer started last here, which is saved as this device's; the running one while _sleepEnds is set.
     private int? _sleepPicked;
 
-    // Whether this PC shows the Sleep button (Settings → Playback → This PC); without it, as in tests that leave it out, it shows.
-    private readonly IPlaybackDevicePreferences? _devicePreferences;
-
     /// <summary>
     /// The bar has the Sleep button, as Settings → Playback → This PC has it (Granary's own switch, on by default). Turned off,
     /// a timer that runs ends, as Turn off ends it.

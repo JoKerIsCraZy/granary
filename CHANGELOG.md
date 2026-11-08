@@ -8,6 +8,10 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Added
 
+- **When it ends:** the line under the player's title now says when the title will end on the clock, such as
+  "Ends 22:41", in Windows' 12 or 24 hour time. It counts in the playback speed, moves later while you pause, and
+  follows a seek. The minimized player shows it after the times while it has room. It's not shown when the length
+  isn't known, such as for a live stream.
 - **Turn off the title preview:** Settings → Navigation & Cards → Pages → Title preview at the top. Off, Home, For You
   and Discover no longer open with a large picture of the title you point at, and start with their rows. It's on by
   default and kept for each profile on this PC. A row your Silo server shows as the hero banner on Home stays; you set
@@ -88,6 +92,8 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Changed
 
+- **Time left stays:** when you click the player's time to show the time left instead of the duration, Granary keeps
+  that on this PC. The next title, and the player after a restart, show the time left too, until you click it back.
 - **Player buttons:** Audio and Subtitles now sit side by side on the player's bar, with Chapters after them, and
   the Audio button shows sound waves, the icon of Silo's web player, where it showed sliders.
 - **More Episodes** on an episode's page lists the whole season, the episode you're on included, so the row no longer
