@@ -753,8 +753,8 @@ A title page plays its local theme music while Settings → Title Pages → Them
   profile, server or sign-out stops it at once and forgets the capability.
 - **`ThemeMusicPlayer`** (Core) plays one theme: the set's first, faded in to 35 % in 12 steps over 300 ms once it is heard and
   out the same way, on `TimeProvider` timers whose ticks go through `IUiDispatcher`. An original loops in place; a conversion
-  ends and plays again from a new grant. A refused grant, a failed download or audio that fails is tried once more with a
-  new grant; audio that plays earns the try back.
+  ends and plays again from a new grant. A grant or download lost on the way (network, 5xx, timeout) or audio that fails
+  is tried once more with a new grant, audio that plays earning the try back; a refusal (`ThemeFetch.Refused`) is not.
 - **`ThemeAudioDownloader`** (Core) fetches the granted theme whole, without credentials, cookies or redirects, on the
   `theme-audio` client and its own handler, which logs nothing: the URL carries its own token and stays in Core. The
   handler's `ConnectCallback` connects a proxy node only to a resolved address the node's rule takes (`ThemeNode`, set on the

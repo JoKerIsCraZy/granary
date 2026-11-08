@@ -20,7 +20,7 @@ internal sealed class ThemeMusicPlayer
     private const int FadeSteps = 12;
     public static readonly TimeSpan FadeStep = TimeSpan.FromMilliseconds(25);
 
-    private readonly Func<string, string, CancellationToken, Task<ThemeAudioSource?>> _fetch;
+    private readonly Func<string, string, CancellationToken, Task<ThemeFetch>> _fetch;
     private readonly IThemeAudioOutput _output;
     private readonly IUiDispatcher _dispatcher;
     private readonly TimeProvider _time;
@@ -44,8 +44,8 @@ internal sealed class ThemeMusicPlayer
     // Themes still fading out after a stop; a stop at once silences them too.
     private readonly List<(IThemeAudio Audio, Ramp Fade)> _retiring = [];
 
-    /// <param name="fetch">A theme's audio by owner and theme id; null when the grant was refused or the fetch failed.</param>
-    public ThemeMusicPlayer(Func<string, string, CancellationToken, Task<ThemeAudioSource?>> fetch, IThemeAudioOutput output,
+    /// <param name="fetch">A theme's audio by owner and theme id, or why it did not come: refused for good, or lost on the way.</param>
+    public ThemeMusicPlayer(Func<string, string, CancellationToken, Task<ThemeFetch>> fetch, IThemeAudioOutput output,
         IUiDispatcher dispatcher, TimeProvider time, ILogger logger)
     {
         _fetch = fetch;
@@ -169,10 +169,10 @@ internal sealed class ThemeMusicPlayer
 
     private async Task LoadAsync(string owner, string theme, int generation, CancellationToken cancellationToken)
     {
-        ThemeAudioSource? source;
+        ThemeFetch fetch;
         try
         {
-            source = await _fetch(owner, theme, cancellationToken);
+            fetch = await _fetch(owner, theme, cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -188,9 +188,16 @@ internal sealed class ThemeMusicPlayer
         {
             return;
         }
-        if (source is null)
+        if (fetch.Audio is not { } source)
         {
-            // A refused grant or a failed download: tried once more, as audio that breaks off.
+            if (fetch == ThemeFetch.Refused)
+            {
+                // For good: the page keeps the theme chosen, so showing it again does not ask once more.
+                ClearAudio();
+                _finished = true;
+                return;
+            }
+            // Lost on the way: tried once more, as audio that breaks off.
             Failed();
             return;
         }

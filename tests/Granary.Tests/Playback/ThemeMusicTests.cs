@@ -428,33 +428,78 @@ public sealed class ThemeMusicTests
         Assert.True(rig.Playing().IsLooping);
     }
 
-    [Fact]
-    public async Task ARefusedGrant_IsAskedForOnceMore_ThenThePageStaysSilent()
+    [Theory]
+    [InlineData(403, "forbidden")]
+    [InlineData(404, "not_found")]
+    [InlineData(406, "not_acceptable")]
+    public async Task AGrantTheServerRefuses_IsNotAskedForAgain(int status, string code)
     {
         var rig = new ThemeMusicRig();
-        rig.Harness.Silo.On(HttpMethod.Post, ThemeSongsApiTests.PlaybackPath("movie-1", "11"), ScriptedSilo.Problem(406, "not_acceptable"));
+        rig.Harness.Silo.On(HttpMethod.Post, ThemeSongsApiTests.PlaybackPath("movie-1", "11"), ScriptedSilo.Problem(status, code));
+        await rig.StartedAsync();
+
+        rig.Music.Show(_page, Set("movie-1", "11"));
+        await AuthPipeline.Eventually(() => rig.GrantsAsked("movie-1", "11") == 1);
+        await rig.Music.Fetching;
+
+        Assert.Equal(1, rig.GrantsAsked("movie-1", "11"));
+        Assert.Empty(rig.Download.Requests);
+        Assert.Empty(rig.Output.Made);
+    }
+
+    [Theory]
+    [InlineData(503)]
+    [InlineData(500)]
+    [InlineData(0)]
+    public async Task AGrantLostOnTheWay_IsAskedForOnceMore(int status)
+    {
+        var rig = new ThemeMusicRig();
+        rig.Harness.Silo.On(HttpMethod.Post, ThemeSongsApiTests.PlaybackPath("movie-1", "11"),
+            status == 0 ? ScriptedSilo.NetworkError() : ScriptedSilo.Problem(status, "unavailable"));
         await rig.StartedAsync();
 
         rig.Music.Show(_page, Set("movie-1", "11"));
 
         await AuthPipeline.Eventually(() => rig.GrantsAsked("movie-1", "11") == 2);
-        Assert.Empty(rig.Download.Requests);
+        await rig.Music.Fetching;
+        Assert.Equal(2, rig.GrantsAsked("movie-1", "11"));
         Assert.Empty(rig.Output.Made);
     }
 
-    [Fact]
-    public async Task AFailedDownload_IsTriedOnceMoreFromANewGrant_AndNeverLogsItsAddress()
+    [Theory]
+    [InlineData(HttpStatusCode.ServiceUnavailable, 2)]
+    [InlineData(HttpStatusCode.Forbidden, 1)]
+    [InlineData(HttpStatusCode.NotFound, 1)]
+    public async Task ADownloadThatFailed_IsTriedOnceMoreFromANewGrant_OnlyWhenItMayWorkNextTime(HttpStatusCode status, int tries)
     {
         var rig = await new ThemeMusicRig().StartedAsync();
-        rig.DownloadStatus = HttpStatusCode.Forbidden;
+        rig.DownloadStatus = status;
 
         rig.Music.Show(_page, Set("movie-1", "11"));
 
-        await AuthPipeline.Eventually(() => rig.Download.Requests.Count == 2);
-        Assert.Equal(2, rig.GrantsAsked("movie-1", "11"));
+        await AuthPipeline.Eventually(() => rig.Download.Requests.Count == tries);
+        await rig.Music.Fetching;
+        Assert.Equal(tries, rig.Download.Requests.Count);
+        Assert.Equal(tries, rig.GrantsAsked("movie-1", "11"));
         Assert.Empty(rig.Output.Made);
         Assert.DoesNotContain("tkn-", rig.Harness.Logs.All, StringComparison.Ordinal);
         Assert.Contains("theme music could not be played", rig.Harness.Logs.All, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AnAddressGranaryDoesNotFetch_IsNotAskedForAgain()
+    {
+        var rig = new ThemeMusicRig();
+        rig.Harness.Silo.On(HttpMethod.Post, ThemeSongsApiTests.PlaybackPath("movie-1", "11"),
+            ScriptedSilo.Json(HttpStatusCode.OK, ThemeSongsApiTests.Grant("https://127.0.0.1./stream/theme/abc")));
+        await rig.StartedAsync();
+
+        rig.Music.Show(_page, Set("movie-1", "11"));
+        await AuthPipeline.Eventually(() => rig.GrantsAsked("movie-1", "11") == 1);
+        await rig.Music.Fetching;
+
+        Assert.Equal(1, rig.GrantsAsked("movie-1", "11"));
+        Assert.Empty(rig.Download.Requests);
     }
 
     private async Task<ThemeMusicRig> PlayingAsync(string owner = "movie-1", string theme = "11")

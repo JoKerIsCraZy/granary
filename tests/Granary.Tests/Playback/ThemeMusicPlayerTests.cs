@@ -19,16 +19,16 @@ public sealed class ThemeMusicPlayerTests
     public ThemeMusicPlayerTests() =>
         _player = new ThemeMusicPlayer(FetchAsync, _output, new ImmediateDispatcher(), _clock, _logs.For<ThemeMusicPlayer>());
 
-    /// <summary>What the next fetches answer, in order; the last repeats. Null is a refused grant.</summary>
-    private Queue<Func<Task<ThemeAudioSource?>>> Answers { get; } = new();
+    /// <summary>What the next fetches answer, in order; the last repeats.</summary>
+    private Queue<Func<Task<ThemeFetch>>> Answers { get; } = new();
 
-    private Func<Task<ThemeAudioSource?>> _last = () => Task.FromResult<ThemeAudioSource?>(Original);
+    private Func<Task<ThemeFetch>> _last = () => Task.FromResult(ThemeFetch.Of(Original));
 
     private static ThemeAudioSource Original => new(new byte[] { 1, 2, 3 }, "audio/mpeg", Converted: false);
 
     private static ThemeAudioSource Converted => new(new byte[] { 4, 5 }, "audio/mp4", Converted: true);
 
-    private Task<ThemeAudioSource?> FetchAsync(string owner, string theme, CancellationToken cancellationToken)
+    private Task<ThemeFetch> FetchAsync(string owner, string theme, CancellationToken cancellationToken)
     {
         _fetched.Add((owner, theme));
         if (Answers.TryDequeue(out var next))
@@ -38,7 +38,9 @@ public sealed class ThemeMusicPlayerTests
         return _last();
     }
 
-    private void Answer(ThemeAudioSource? source) => Answers.Enqueue(() => Task.FromResult(source));
+    private void Answer(ThemeAudioSource source) => Answer(ThemeFetch.Of(source));
+
+    private void Answer(ThemeFetch fetch) => Answers.Enqueue(() => Task.FromResult(fetch));
 
     internal static ThemeSongSet Set(string owner, params string[] themes) =>
         new() { OwnerId = owner, Items = [.. themes.Select(id => new ThemeSong { Id = id, Title = "Theme " + id })] };
@@ -250,7 +252,7 @@ public sealed class ThemeMusicPlayerTests
     [Fact]
     public void AFetchThatThrows_CountsAsAFailure_TriedOnceMore()
     {
-        Answers.Enqueue(() => Task.FromException<ThemeAudioSource?>(new InvalidOperationException("unforeseen")));
+        Answers.Enqueue(() => Task.FromException<ThemeFetch>(new InvalidOperationException("unforeseen")));
         Answer(Original);
 
         _player.Select(Set("movie-1", "11"), loop: false);
@@ -261,9 +263,9 @@ public sealed class ThemeMusicPlayerTests
     }
 
     [Fact]
-    public void ARefusedGrant_IsAskedForOnceMore_ThenLeavesThePageSilent()
+    public void AFetchThatFailed_IsTriedOnceMore_ThenLeavesThePageSilent()
     {
-        Answer(null);
+        Answer(ThemeFetch.Failed);
 
         _player.Select(Set("movie-1", "11"), loop: false);
 
@@ -273,9 +275,9 @@ public sealed class ThemeMusicPlayerTests
     }
 
     [Fact]
-    public void AGrantRefusedOnce_PlaysFromTheNext()
+    public void AFetchThatFailedOnce_PlaysFromTheNext()
     {
-        Answer(null);
+        Answer(ThemeFetch.Failed);
         Answer(Original);
 
         _player.Select(Set("movie-1", "11"), loop: false);
@@ -285,15 +287,41 @@ public sealed class ThemeMusicPlayerTests
     }
 
     [Fact]
+    public void ARefusedFetch_IsNotTriedAgain_AlsoWhenItsPageShowsAgain()
+    {
+        Answer(ThemeFetch.Refused);
+
+        _player.Select(Set("movie-1", "11"), loop: false);
+        _player.Suspend();
+        _player.Select(Set("movie-1", "11"), loop: false);
+
+        Assert.Single(_fetched);
+        Assert.Empty(_output.Made);
+    }
+
+    [Fact]
+    public void ARefusedTheme_DoesNotKeepAnotherFromPlaying()
+    {
+        Answer(ThemeFetch.Refused);
+        _player.Select(Set("movie-1", "11"), loop: false);
+        Answer(Original);
+
+        _player.Select(Set("movie-2", "31"), loop: false);
+
+        Playing();
+        Assert.Equal(2, _fetched.Count);
+    }
+
+    [Fact]
     public void AnAnswerForAThemeLeftMeanwhile_IsDropped()
     {
-        var held = new TaskCompletionSource<ThemeAudioSource?>();
+        var held = new TaskCompletionSource<ThemeFetch>();
         Answers.Enqueue(() => held.Task);
         _player.Select(Set("movie-1", "11"), loop: false);
         Answer(Original);
         _player.Select(Set("movie-2", "31"), loop: false);
 
-        held.SetResult(Original);
+        held.SetResult(ThemeFetch.Of(Original));
 
         Assert.Single(_output.Made);
         Assert.Equal([("movie-1", "11"), ("movie-2", "31")], _fetched);
@@ -302,12 +330,12 @@ public sealed class ThemeMusicPlayerTests
     [Fact]
     public void ASuspendBeforeTheThemeCame_DropsIt_AndTheSameThemeIsFetchedAgain()
     {
-        var held = new TaskCompletionSource<ThemeAudioSource?>();
+        var held = new TaskCompletionSource<ThemeFetch>();
         Answers.Enqueue(() => held.Task);
         _player.Select(Set("movie-1", "11"), loop: false);
 
         _player.Suspend();
-        held.SetResult(Original);
+        held.SetResult(ThemeFetch.Of(Original));
         Answer(Original);
         _player.Select(Set("movie-1", "11"), loop: false);
 

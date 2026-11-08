@@ -314,19 +314,19 @@ public sealed class ThemeMusic : IDisposable
     /// <summary>The fetch of a theme last started, for tests.</summary>
     internal Task Fetching { get; private set; } = Task.CompletedTask;
 
-    private Task<ThemeAudioSource?> FetchAsync(string owner, string theme, CancellationToken cancellationToken)
+    private Task<ThemeFetch> FetchAsync(string owner, string theme, CancellationToken cancellationToken)
     {
         var fetch = FetchForProfileAsync(owner, theme, cancellationToken);
         Fetching = fetch;
         return fetch;
     }
 
-    // The theme's audio for the profile acting now, or none: a grant read while the profile changed is dropped, as the web's.
-    private async Task<ThemeAudioSource?> FetchForProfileAsync(string owner, string theme, CancellationToken cancellationToken)
+    // The theme's audio for the profile acting now, or why not: a grant read while the profile changed is dropped, as the web's.
+    private async Task<ThemeFetch> FetchForProfileAsync(string owner, string theme, CancellationToken cancellationToken)
     {
         if (_session is not { State: SessionState.Ready, ActiveServer: { } server })
         {
-            return null;
+            return ThemeFetch.Refused;
         }
         var identity = Identity();
         try
@@ -337,22 +337,43 @@ public sealed class ThemeMusic : IDisposable
                 return Dropped();
             }
             var audio = await _downloader.DownloadAsync(server.BaseUri, grant, _origins, cancellationToken);
-            return Identity() == identity ? audio : Dropped();
+            return Identity() == identity ? ThemeFetch.Of(audio) : Dropped();
         }
         catch (Exception ex) when (ex is ArgumentException || ApiFailureText.IsRequestFailure(ex, cancellationToken))
         {
             // Never the grant or its address: the status, or the kind of failure.
             _logger.LogInformation("The theme music could not be played: {Failure}", ApiFailureText.Describe(ex));
-            return null;
+            return MayWorkNextTime(ex) ? ThemeFetch.Failed : ThemeFetch.Refused;
         }
+    }
+
+    // Only what a new grant might get past: the network, a server error, a timeout. A refusal (403, 404, 406 and the like), an
+    // address Granary does not fetch, or an answer that is no theme would come back the same.
+    private static bool MayWorkNextTime(Exception ex)
+    {
+        for (Exception? at = ex; at is not null; at = at.InnerException)
+        {
+            if (at is ThemeRefusedException)
+            {
+                return false;
+            }
+        }
+        return ex switch
+        {
+            SiloApiException api => api.Status is >= 500 or 408 or 429,
+            HttpRequestException { StatusCode: { } status } => (int)status is >= 500 or 408 or 429,
+            HttpRequestException { HttpRequestError: HttpRequestError.InvalidResponse } => false,
+            HttpRequestException or OperationCanceledException => true,
+            _ => false,
+        };
     }
 
     // The profile changed while its theme was on its way: the change is taken now, before the session tells it, so the theme
     // stops and its next try does not go out as the next profile.
-    private ThemeAudioSource? Dropped()
+    private ThemeFetch Dropped()
     {
         Apply();
-        return null;
+        return ThemeFetch.Refused;
     }
 
     // The account, profile or server changed: stop at once, and ask the next one again.

@@ -63,12 +63,12 @@ public sealed class ThemeAudioDownloader(IHttpClientFactory clients)
             if (!host.Equals(NetworkAddresses.HostOf(url), StringComparison.OrdinalIgnoreCase) || endpoint.Port != url.Port)
             {
                 // Through a proxy, the proxy would look the name up, where this rule cannot see it.
-                throw new HttpRequestException(HttpRequestError.ConnectionError, "A theme's node is reached directly or not at all.");
+                throw new ThemeRefusedException("A theme's node is reached directly or not at all.");
             }
             IPAddress[] addresses = [.. (await resolve(host, cancellationToken).ConfigureAwait(false)).Where(node.Takes)];
             if (addresses.Length == 0)
             {
-                throw new HttpRequestException(HttpRequestError.ConnectionError, "The theme's node is at an address Granary does not fetch.");
+                throw new ThemeRefusedException("The theme's node is at an address Granary does not fetch.");
             }
             await socket.ConnectAsync(addresses, endpoint.Port, cancellationToken).ConfigureAwait(false);
             return new NetworkStream(socket, ownsSocket: true);
@@ -86,7 +86,7 @@ public sealed class ThemeAudioDownloader(IHttpClientFactory clients)
     {
         ArgumentNullException.ThrowIfNull(grant);
         var address = PlaybackUrl.ResolveTheme(server, grant.Url, origins)
-            ?? throw new HttpRequestException(HttpRequestError.InvalidResponse, "The server named a theme address Granary does not fetch.");
+            ?? throw new ThemeRefusedException("The server named a theme address Granary does not fetch.");
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(Timeout);
         using var request = new HttpRequestMessage(HttpMethod.Get, address.Url);
@@ -102,7 +102,7 @@ public sealed class ThemeAudioDownloader(IHttpClientFactory clients)
         }
         if (response.Content.Headers.ContentLength > MaxBytes)
         {
-            throw new HttpRequestException(HttpRequestError.InvalidResponse, "The theme is too large.");
+            throw new ThemeRefusedException("The theme is too large.");
         }
         byte[] audio = await ReadAsync(response.Content, timeout.Token).ConfigureAwait(false);
         return new ThemeAudioSource(audio, grant.ContentType ?? response.Content.Headers.ContentType?.MediaType, grant.IsConverted);
@@ -119,13 +119,13 @@ public sealed class ThemeAudioDownloader(IHttpClientFactory clients)
         {
             if (audio.Length + read > MaxBytes)
             {
-                throw new HttpRequestException(HttpRequestError.InvalidResponse, "The theme is too large.");
+                throw new ThemeRefusedException("The theme is too large.");
             }
             audio.Write(buffer, 0, read);
         }
         if (audio.Length == 0)
         {
-            throw new HttpRequestException(HttpRequestError.InvalidResponse, "The theme was empty.");
+            throw new ThemeRefusedException("The theme was empty.");
         }
         return audio.ToArray();
     }

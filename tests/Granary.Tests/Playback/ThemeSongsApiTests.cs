@@ -166,7 +166,7 @@ public sealed class ThemeSongsApiTests
     {
         var (downloader, handler) = Downloader();
 
-        await Assert.ThrowsAsync<HttpRequestException>(() =>
+        await Assert.ThrowsAsync<ThemeRefusedException>(() =>
             downloader.DownloadAsync(ScriptedSilo.Base, Parsed(Grant("https://proxy.example:8443/theme-audio/abc?token=t")), ThemeOrigins.Server, _token));
 
         Assert.Empty(handler.Requests);
@@ -301,7 +301,7 @@ public sealed class ThemeSongsApiTests
     {
         var (downloader, handler) = Downloader();
 
-        await Assert.ThrowsAsync<HttpRequestException>(() => downloader.DownloadAsync(ScriptedSilo.Base, Parsed(Grant(url)), ThemeOrigins.Routed, _token));
+        await Assert.ThrowsAsync<ThemeRefusedException>(() => downloader.DownloadAsync(ScriptedSilo.Base, Parsed(Grant(url)), ThemeOrigins.Routed, _token));
 
         Assert.Empty(handler.Requests);
     }
@@ -443,7 +443,7 @@ public sealed class ThemeSongsApiTests
         var (declared, _) = Downloader(length: ThemeAudioDownloader.MaxBytes + 1L);
         var (streamed, _) = Downloader(body: new byte[ThemeAudioDownloader.MaxBytes + 1]);
 
-        await Assert.ThrowsAsync<HttpRequestException>(() => declared.DownloadAsync(ScriptedSilo.Base, Parsed(Grant()), ThemeOrigins.Server, _token));
-        await Assert.ThrowsAsync<HttpRequestException>(() => streamed.DownloadAsync(ScriptedSilo.Base, Parsed(Grant()), ThemeOrigins.Server, _token));
+        await Assert.ThrowsAsync<ThemeRefusedException>(() => declared.DownloadAsync(ScriptedSilo.Base, Parsed(Grant()), ThemeOrigins.Server, _token));
+        await Assert.ThrowsAsync<ThemeRefusedException>(() => streamed.DownloadAsync(ScriptedSilo.Base, Parsed(Grant()), ThemeOrigins.Server, _token));
     }
 }

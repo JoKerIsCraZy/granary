@@ -1332,8 +1332,12 @@ plays its first theme, as the web's `useThemeMusic.ts` and the apps do (docs/arc
   client that logs nothing, and hands only the bytes to the player. It never logs or keeps the URL; a failure is logged by
   its status or kind alone.
 - A converted theme has no length and no byte ranges: to loop, it is played again from a new grant; an original loops in
-  place. A refused grant, a failed download and audio that fails or cannot be played are tried once more with a new grant,
-  and a theme that plays earns that try back. A grant answered after the profile changed is not tried again.
+  place. What a new grant might get past is tried once more with one: a grant or download lost to the network, a server
+  error or busy answer (5xx, 408, 429) or a timeout, and audio that fails or cannot be played; a theme that plays earns
+  that try back.
+  What would come back the same is not: a refused grant (403, 404, 406 and the like), a download refused (4xx), an
+  address Granary does not fetch, an answer that is no theme (empty, too large, unreadable), and a grant answered after
+  the profile changed. The page keeps such a theme chosen, so showing it again does not ask once more.
 
 ## 8. Playback protocol v3
 
