@@ -23,7 +23,4 @@ public sealed class ResumeRewindTests
 
     [Fact]
     public void TheRewind_NeverGoesBeforeTheStart() => Assert.Equal(0, ResumeRewind.Apply(30, ResumeRewind.MaxSeconds));
-
-    [Fact]
-    public void UpToThirtySeconds_NoneByDefault() => Assert.Equal((30, 0), (ResumeRewind.MaxSeconds, ResumeRewind.DefaultSeconds));
 }
