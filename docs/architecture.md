@@ -574,14 +574,16 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   profile's order names buttons by id (`volume`, `sleep_timer`, `audio`, `subtitles`, `chapters`, `settings`,
   `edit_markers`, `playback_info`, `mini_view`, `fill`, `full_screen`); an id this Granary does not know is left out, and a
   button the order lacks, one an update added, takes its own place, after the one before it in the bar's own order, and
-  shows. The order is written only when it is not the bar's own. A file that cannot be read shows today's bar. A change
-  shows at once and its save follows (one at a time, each writing the layouts as they are then, so the last change is
-  what stays; a failed one is logged and the change holds for the run), so the editor's Move takes the next press at
-  once, as the sidebar editor's does. This PC's
-  Sleep timer switch from before the editor (`IPlaybackDevicePreferences.SleepTimerSwitchOff`, `sleep_timer_button:
-  false` in `playback-device.json`, which keeps it as it was) is taken over once, while there is no file yet: the file
-  is written at once with `start_hidden: ["sleep_timer"]`, the bar of every profile without one of its own; a change
-  gives the profile its own, and Reset gives it today's. The player reads `IPlayerButtonsLayout.Current` as it is made
+  shows. The order is written only when it is not the bar's own. A file that cannot be read shows today's bar and is
+  kept as `player-buttons.json.bak` before the next write. A change shows at once and its save follows (one at a time,
+  each writing the layouts as they are then, so the last change is what stays; a failed one is logged and the change
+  holds for the run), so the editor's Move takes the next press at once, as the sidebar editor's does. This PC's Sleep
+  timer switch from before the editor (`IPlaybackDevicePreferences.SleepTimerSwitchOff`, `sleep_timer_button: false` in
+  `playback-device.json`) is taken over once, while there is no file yet: the file is written at once with
+  `start_hidden: ["sleep_timer"]`, the bar of every profile without one of its own, and once that is on disk the switch
+  is dropped (`ForgetSleepTimerSwitchAsync`), so a file deleted later does not hide the Sleep timer again; a write that
+  failed leaves it for the next start, and one left beside an existing file is dropped then. A change gives the profile
+  a bar of its own, and Reset gives it today's. The player reads `IPlayerButtonsLayout.Current` as it is made
   and follows `Changed` until it is disposed, so the minimized bar does too: a change on the UI thread applies at once,
   so work already queued there, such as the title's end, finds a hidden Sleep timer off; one from another thread is
   posted, and does nothing once the player is disposed. Each change carries its own bar, so hidden and shown again before

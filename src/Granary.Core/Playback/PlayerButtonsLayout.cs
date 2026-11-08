@@ -28,7 +28,9 @@ public interface IPlayerButtonsLayout
 /// <para>
 /// This PC's Sleep timer switch from before the editor (<c>sleep_timer_button: false</c> in <c>playback-device.json</c>)
 /// is taken over once, when there is no file yet: every profile then starts with the Sleep timer hidden, until it changes
-/// its buttons or resets them.
+/// its buttons or resets them. Once that is written the switch is dropped from <c>playback-device.json</c>, so a file
+/// deleted later does not bring it back; one that could not be written leaves it there to be taken over at the next start.
+/// A file that cannot be read is kept beside it as <c>player-buttons.json.bak</c> before it is written over.
 /// </para>
 /// </summary>
 public sealed partial class PlayerButtonsLayout : ObservableObject, IPlayerButtonsLayout
@@ -36,6 +38,7 @@ public sealed partial class PlayerButtonsLayout : ObservableObject, IPlayerButto
     private readonly string _filePath;
     private readonly ISessionManager _session;
     private readonly IUiDispatcher _dispatcher;
+    private readonly IPlaybackDevicePreferences _devicePreferences;
     private readonly ILogger<PlayerButtonsLayout> _logger;
     // Saves one at a time, each the layouts as they are when its turn comes, so the last one written is the latest.
     private readonly SemaphoreSlim _gate = new(1, 1);
@@ -44,26 +47,28 @@ public sealed partial class PlayerButtonsLayout : ObservableObject, IPlayerButto
     private volatile IReadOnlyDictionary<string, PlayerBar> _profiles;
     private string? _shownFor;
 
-    public PlayerButtonsLayout(string filePath, ISessionManager session, IUiDispatcher dispatcher, bool sleepTimerSwitchOff,
+    public PlayerButtonsLayout(string filePath, ISessionManager session, IUiDispatcher dispatcher, IPlaybackDevicePreferences devicePreferences,
         ILogger<PlayerButtonsLayout> logger)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
         _filePath = Path.GetFullPath(filePath);
         _session = session;
         _dispatcher = dispatcher;
+        _devicePreferences = devicePreferences;
         _logger = logger;
         bool isNew = !File.Exists(_filePath);
+        bool takesOver = isNew && devicePreferences.SleepTimerSwitchOff;
         (_profiles, var startHidden) = Load();
-        if (isNew && sleepTimerSwitchOff)
+        _start = new PlayerBar([], takesOver ? [PlayerButton.SleepTimer] : startHidden);
+        if (takesOver)
         {
-            startHidden = [PlayerButton.SleepTimer];
-        }
-        _start = new PlayerBar([], startHidden);
-        if (isNew && sleepTimerSwitchOff)
-        {
-            // Written at once, so it is taken over this once: from now on the file decides.
             _logger.LogInformation("The player's Sleep timer starts hidden, as this PC's switch had it");
-            Saving = SaveAsync();
+            Saving = TakeOverSleepTimerSwitchAsync();
+        }
+        else if (devicePreferences.SleepTimerSwitchOff)
+        {
+            // Taken over before, and the switch stayed behind: the file decides.
+            _ = devicePreferences.ForgetSleepTimerSwitchAsync();
         }
         _shownFor = Key();
         _session.Changed += OnSessionChanged;
@@ -128,6 +133,16 @@ public sealed partial class PlayerButtonsLayout : ObservableObject, IPlayerButto
         return saving;
     }
 
+    // Written at once, so it is taken over this once; then the switch goes, and from now on the file decides. A write that
+    // failed leaves the switch for the next start.
+    private async Task TakeOverSleepTimerSwitchAsync()
+    {
+        if (await WriteAsync().ConfigureAwait(false))
+        {
+            await _devicePreferences.ForgetSleepTimerSwitchAsync().ConfigureAwait(false);
+        }
+    }
+
     private void OnSessionChanged(object? sender, EventArgs e) => _dispatcher.Post(() =>
     {
         if (Key() != _shownFor)
@@ -157,7 +172,21 @@ public sealed partial class PlayerButtonsLayout : ObservableObject, IPlayerButto
         {
             // Whatever the file or the disk does, the app starts: the bar shows as it comes.
             _logger.LogWarning(ex, "The player's buttons could not be read; the bar shows as it comes");
+            KeepUnreadable();
             return (new Dictionary<string, PlayerBar>(), []);
+        }
+    }
+
+    // A file that cannot be read stays beside the next one, for whoever wants to see what was in it.
+    private void KeepUnreadable()
+    {
+        try
+        {
+            File.Copy(_filePath, _filePath + ".bak", overwrite: true);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "The unreadable player buttons file could not be kept as a backup");
         }
     }
 
@@ -167,7 +196,10 @@ public sealed partial class PlayerButtonsLayout : ObservableObject, IPlayerButto
 
     private static List<string> IdsOf(IEnumerable<PlayerButton> buttons) => [.. buttons.Select(button => PlayerBar.InfoOf(button).Id)];
 
-    private async Task SaveAsync()
+    private Task SaveAsync() => WriteAsync();
+
+    // True once the layouts are on disk.
+    private async Task<bool> WriteAsync()
     {
         await _gate.WaitAsync().ConfigureAwait(false);
         string temp = _filePath + ".tmp";
@@ -187,6 +219,7 @@ public sealed partial class PlayerButtonsLayout : ObservableObject, IPlayerButto
                 await JsonSerializer.SerializeAsync(stream, file, PlayerButtonsJsonContext.Default.PlayerButtonsFile).ConfigureAwait(false);
             }
             File.Move(temp, _filePath, overwrite: true);
+            return true;
         }
         catch (Exception ex)
         {
@@ -200,6 +233,7 @@ public sealed partial class PlayerButtonsLayout : ObservableObject, IPlayerButto
             {
                 _logger.LogDebug(deleteFailure, "A half-written player buttons file stays behind");
             }
+            return false;
         }
         finally
         {

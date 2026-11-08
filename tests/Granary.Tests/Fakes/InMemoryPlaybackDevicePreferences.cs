@@ -50,6 +50,16 @@ internal sealed class InMemoryPlaybackDevicePreferences : IPlaybackDevicePrefere
 
     public bool SleepTimerSwitchOff { get; set; }
 
+    /// <summary>How often the Sleep timer switch was dropped from the file.</summary>
+    public int SleepTimerSwitchForgotten { get; private set; }
+
+    public Task ForgetSleepTimerSwitchAsync()
+    {
+        SleepTimerSwitchOff = false;
+        SleepTimerSwitchForgotten++;
+        return Task.CompletedTask;
+    }
+
     public Task LatestSave => Task.CompletedTask;
 
     public Task SetDecodesInSoftwareAsync(bool decodesInSoftware)

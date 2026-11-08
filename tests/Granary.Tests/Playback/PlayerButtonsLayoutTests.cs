@@ -13,6 +13,7 @@ public sealed class PlayerButtonsLayoutTests : IDisposable
     private readonly string _directory = Path.Combine(Path.GetTempPath(), "granary-tests", Guid.NewGuid().ToString("N"));
     private readonly FakeSessionManager _session = new();
     private readonly LogSink _logs = new();
+    private readonly InMemoryPlaybackDevicePreferences _device = new();
 
     public PlayerButtonsLayoutTests()
     {
@@ -31,8 +32,19 @@ public sealed class PlayerButtonsLayoutTests : IDisposable
         }
     }
 
-    private PlayerButtonsLayout Create(bool sleepTimerSwitchOff = false) =>
-        new(FilePath, _session, new ImmediateDispatcher(), sleepTimerSwitchOff, _logs.For<PlayerButtonsLayout>());
+    private PlayerButtonsLayout Create(bool sleepTimerSwitchOff = false)
+    {
+        _device.SleepTimerSwitchOff = sleepTimerSwitchOff;
+        return new(FilePath, _session, new ImmediateDispatcher(), _device, _logs.For<PlayerButtonsLayout>());
+    }
+
+    private void ActAs(string profile)
+    {
+        _session.ProfileId = profile;
+        _session.RaiseChanged();
+    }
+
+    private async Task<string> FileTextAsync() => await File.ReadAllTextAsync(FilePath, TestContext.Current.CancellationToken);
 
     private async Task WriteAsync(string json)
     {
@@ -396,5 +408,99 @@ public sealed class PlayerButtonsLayoutTests : IDisposable
         var again = Create().Current;
         Assert.False(again.Settings);
         Assert.Equal(PlayerButton.Settings, again.Order[4]);
+    }
+
+    [Fact]
+    public async Task TheSwitchTakenOver_HidesTheSleepTimerForEveryProfile_AndOneThatChangesSomethingElseKeepsItHidden()
+    {
+        var layout = Create(sleepTimerSwitchOff: true);
+        await layout.Saving;
+
+        await layout.SetShownAsync(PlayerButton.Fill, false);
+        var again = Create(sleepTimerSwitchOff: false);
+
+        Assert.False(again.Current.SleepTimer);
+        Assert.False(again.Current.Fill);
+        ActAs("8");
+        Assert.False(again.Current.SleepTimer);
+        Assert.True(again.Current.Fill);
+        ActAs("9");
+        Assert.False(again.Current.SleepTimer);
+        Assert.True(again.IsCustomized);
+    }
+
+    [Fact]
+    public async Task TheSwitchTakenOver_IsDroppedFromThisPcsChoices_SoItIsNotTakenOverAgain()
+    {
+        var layout = Create(sleepTimerSwitchOff: true);
+        await layout.Saving;
+
+        Assert.Equal(1, _device.SleepTimerSwitchForgotten);
+        Assert.False(_device.SleepTimerSwitchOff);
+        File.Delete(FilePath);
+        Assert.True(new PlayerButtonsLayout(FilePath, _session, new ImmediateDispatcher(), _device, _logs.For<PlayerButtonsLayout>()).Current.SleepTimer);
+    }
+
+    [Fact]
+    public async Task TheSwitch_IsKeptWhileTheTakeOverCouldNotBeWritten_AndTakenOverAtTheNextStart()
+    {
+        // Something in the way of the file: the write fails.
+        Directory.CreateDirectory(FilePath + ".tmp");
+
+        var layout = Create(sleepTimerSwitchOff: true);
+        await layout.Saving;
+
+        Assert.False(layout.Current.SleepTimer);
+        Assert.Equal(0, _device.SleepTimerSwitchForgotten);
+        Directory.Delete(FilePath + ".tmp");
+        var again = new PlayerButtonsLayout(FilePath, _session, new ImmediateDispatcher(), _device, _logs.For<PlayerButtonsLayout>());
+        await again.Saving;
+        Assert.False(again.Current.SleepTimer);
+        Assert.Equal(1, _device.SleepTimerSwitchForgotten);
+        Assert.Contains("sleep_timer", await FileTextAsync(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ASwitchLeftOverBesideAFile_IsDropped_AndNotTakenOver()
+    {
+        await WriteAsync("""{ "profiles": {} }""");
+
+        var layout = Create(sleepTimerSwitchOff: true);
+
+        Assert.True(layout.Current.SleepTimer);
+        Assert.Equal(1, _device.SleepTimerSwitchForgotten);
+    }
+
+    [Fact]
+    public async Task AnUnreadableFile_IsKeptAsABackup_BeforeItIsWrittenOver()
+    {
+        await WriteAsync("{ not json");
+        var layout = Create();
+
+        await layout.SetShownAsync(PlayerButton.Fill, false);
+
+        Assert.Equal("{ not json", await File.ReadAllTextAsync(FilePath + ".bak", TestContext.Current.CancellationToken));
+        Assert.False(Create().Current.Fill);
+    }
+
+    [Fact]
+    public async Task AProfileWithoutABarOfItsOwn_WhileTheSleepTimerStartsHidden_IsCustomized_AndResetGivesItTodaysBar()
+    {
+        var layout = Create(sleepTimerSwitchOff: true);
+        await layout.Saving;
+        ActAs("8");
+        Assert.True(layout.IsCustomized);
+        var changed = new List<string?>();
+        layout.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+
+        await layout.ResetAsync();
+
+        Assert.False(layout.IsCustomized);
+        Assert.Contains(nameof(PlayerButtonsLayout.IsCustomized), changed);
+        var again = Create();
+        Assert.Equal(PlayerBar.Default, again.Current);
+        ActAs("7");
+        Assert.False(again.Current.SleepTimer);
+        Assert.True(again.IsCustomized);
     }
 }

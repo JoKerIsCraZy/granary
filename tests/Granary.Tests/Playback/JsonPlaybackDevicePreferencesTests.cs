@@ -196,6 +196,24 @@ public sealed class JsonPlaybackDevicePreferencesTests : IDisposable
     }
 
     [Fact]
+    public async Task TheSleepTimerSwitch_OnceTakenOver_IsDroppedFromTheFile_WithTheOtherChoicesKept()
+    {
+        Directory.CreateDirectory(_directory);
+        await File.WriteAllTextAsync(FilePath, "{ \"discord_status\": true, \"up_down\": \"volume\", \"sleep_timer_button\": false }",
+            TestContext.Current.CancellationToken);
+        var preferences = Create();
+
+        await preferences.ForgetSleepTimerSwitchAsync();
+
+        Assert.False(preferences.SleepTimerSwitchOff);
+        Assert.DoesNotContain("sleep_timer_button", await File.ReadAllTextAsync(FilePath, TestContext.Current.CancellationToken), StringComparison.Ordinal);
+        var again = Create();
+        Assert.False(again.SleepTimerSwitchOff);
+        Assert.True(again.DiscordStatus);
+        Assert.Equal(PlayerUpDown.Volume, again.UpDown);
+    }
+
+    [Fact]
     public async Task TheSleepTimerSwitchLeftOn_WasNotTurnedOff()
     {
         Directory.CreateDirectory(_directory);

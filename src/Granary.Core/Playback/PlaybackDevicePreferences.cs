@@ -32,7 +32,7 @@ public interface IPlaybackDevicePreferences
 
     /// <summary>
     /// This PC's Sleep timer switch, from before Settings → Playback → Player buttons, was turned off: the editor takes it
-    /// over once (<see cref="PlayerButtonsLayout"/>). Nothing changes it any more.
+    /// over once (<see cref="PlayerButtonsLayout"/>), which then drops it (<see cref="ForgetSleepTimerSwitchAsync"/>).
     /// </summary>
     bool SleepTimerSwitchOff { get; }
 
@@ -46,6 +46,9 @@ public interface IPlaybackDevicePreferences
     Task SetPassoutThresholdAsync(int episodes);
 
     Task SetDiscordStatusAsync(bool enabled);
+
+    /// <summary>The player buttons editor has taken the Sleep timer switch over: it goes from the file.</summary>
+    Task ForgetSleepTimerSwitchAsync();
 }
 
 /// <summary>Up and Down in the player, with focus on the picture.</summary>
@@ -68,7 +71,7 @@ public enum PlayerUpDown
 /// waits after three episodes and Discord's status stays as it is, as by default; a value it does not know, or one an older
 /// file lacks, is the default. One that cannot be written is logged, and the choice still holds for this run. Files are
 /// written off the caller's thread, which is the UI's. The Sleep timer switch from before the player buttons editor
-/// (<c>"sleep_timer_button": false</c>) is read and written back as it was, for the editor to take over.
+/// (<c>"sleep_timer_button": false</c>) is read and written back as it was, until the editor has taken it over.
 /// </summary>
 public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
 {
@@ -84,8 +87,8 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
     private volatile PlayerUpDown _upDown;
     private volatile int _passoutThreshold;
     private volatile bool _discordStatus;
-    // The Sleep timer switch's value as the file had it; null without one.
-    private readonly bool? _sleepTimerButton;
+    // The file had the Sleep timer switch turned off, and the player buttons editor has not taken it over yet.
+    private volatile bool _sleepTimerSwitchOff;
     private Task _latestSave = Task.CompletedTask;
 
     public JsonPlaybackDevicePreferences(string filePath, ILogger<JsonPlaybackDevicePreferences> logger)
@@ -100,7 +103,8 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
             ? episodes
             : AutoPlayStreak.DefaultThreshold;
         _discordStatus = file?.DiscordStatus == true;
-        _sleepTimerButton = file?.SleepTimerButton;
+        // Off only when turned off: a file from before the switch, or without it, shows the button.
+        _sleepTimerSwitchOff = file?.SleepTimerButton == false;
     }
 
     public static string DefaultPath => Path.Combine(AppPaths.DataDirectory, "playback-device.json");
@@ -115,8 +119,7 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
 
     public event EventHandler? DiscordStatusChanged;
 
-    // Off only when turned off: a file from before the switch, or without it, shows the button.
-    public bool SleepTimerSwitchOff => _sleepTimerButton == false;
+    public bool SleepTimerSwitchOff => _sleepTimerSwitchOff;
 
     public Task LatestSave
     {
@@ -154,6 +157,16 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
     public Task SetPassoutThresholdAsync(int episodes)
     {
         _passoutThreshold = episodes;
+        return QueueSave();
+    }
+
+    public Task ForgetSleepTimerSwitchAsync()
+    {
+        if (!_sleepTimerSwitchOff)
+        {
+            return Task.CompletedTask;
+        }
+        _sleepTimerSwitchOff = false;
         return QueueSave();
     }
 
@@ -198,7 +211,7 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
                 var file = new PlaybackDeviceFile(_decodesInSoftware, _upDown == PlayerUpDown.Volume ? VolumeValue : ControlsValue, _passoutThreshold)
                 {
                     DiscordStatus = _discordStatus,
-                    SleepTimerButton = _sleepTimerButton,
+                    SleepTimerButton = _sleepTimerSwitchOff ? false : null,
                 };
                 await JsonSerializer.SerializeAsync(stream, file, PlaybackDeviceJsonContext.Default.PlaybackDeviceFile).ConfigureAwait(false);
             }

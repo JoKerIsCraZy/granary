@@ -162,7 +162,7 @@ public static class CoreServiceCollectionExtensions
             new JsonPlaybackDevicePreferences(JsonPlaybackDevicePreferences.DefaultPath, sp.GetRequiredService<ILogger<JsonPlaybackDevicePreferences>>()));
         // The player's buttons, for each profile on this PC; they take over the Sleep timer switch this PC had before, once.
         services.AddSingleton(sp => new PlayerButtonsLayout(PlayerButtonsLayout.DefaultPath, sp.GetRequiredService<ISessionManager>(),
-            sp.GetRequiredService<IUiDispatcher>(), sp.GetRequiredService<IPlaybackDevicePreferences>().SleepTimerSwitchOff,
+            sp.GetRequiredService<IUiDispatcher>(), sp.GetRequiredService<IPlaybackDevicePreferences>(),
             sp.GetRequiredService<ILogger<PlayerButtonsLayout>>()));
         services.AddSingleton<IPlayerButtonsLayout>(sp => sp.GetRequiredService<PlayerButtonsLayout>());
         // The viewer's own mpv.conf, in the data directory; the player reads it when mpv starts, and compares it at each load.
