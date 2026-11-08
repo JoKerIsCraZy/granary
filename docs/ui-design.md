@@ -551,6 +551,9 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     dialog.
   - Granary's own player, minimized to its bar, pauses as a trailer opens, and stays paused once it closes; in a Watch
     Party it plays on. The keyboard's media keys still reach the bar meanwhile.
+  - A trailer keeps the display on without Granary's help, which is fine: WebView2's Chromium holds a display wake lock
+    of its own while a video plays on screen, as the web's `TrailerModal` leaves it to the browser. So the player's
+    `PlayerKeepAwake` (see Player) is not involved, and a trailer, being short, needs nothing more.
   - "Cast & Crew", or "Cast" without crew (the web's `CastCarousel` and `castCrewGroups.ts`): the director (two at most)
     or every creator of a series, then the writers (three at most, none who has a director's card already), then the
     cast in billing order (12 for a movie or series, 20 otherwise); a season shows its cast only, and nobody shows twice
@@ -1225,6 +1228,11 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   stream plays, never with the position, length or pause of the title before. Discord takes about 5 updates in 20
   seconds, so it changes only with what it shows (another title, a pause, a seek or stall of more than 3 seconds, the
   length once known, the speed), at most every 4 seconds with the latest state; playing on sends nothing.
+- **The display stays on** (`PlayerKeepAwake`, as Android's player keeps the screen on) while a title loads, plays or
+  buffers, minimized to the bar, in the mini view and with the window minimized too; `powercfg /requests` lists
+  Granary.exe with "Playing video" under DISPLAY and SYSTEM then. Paused, ended, failed or left, Windows' own display
+  and sleep timeouts apply again. Sound without a picture (an audio file played directly) keeps only the computer
+  awake, not the display: "Playing audio" under EXECUTION and SYSTEM.
 - **Fill screen** (the web's video fit): the picture fills the page and is cut where it does not fit (mpv `panscan`);
   a new title shows its whole picture again.
 - **Mini view** (the web's Picture in Picture, P): the window becomes small (480 by 270), stays above the others

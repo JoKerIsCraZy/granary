@@ -51,6 +51,8 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Fixed
 
+- The display no longer turns off while something plays. It stays on while a title plays or buffers, also minimized or
+  in the mini view; paused, it turns off after Windows' usual time again.
 - A card's badges in its right corners, such as the watched mark, are no longer cut off by two pixels at the right.
 - A TV remote's arrows work as soon as Granary has started into Home, and after you pick a profile with OK: focus starts
   on the first card. Right after the start, the first arrow or OK shows where you are before anything moves.

@@ -25,6 +25,13 @@ public sealed class MpvPlaybackEngineTests : IDisposable
         return path;
     }
 
+    private string TempY4m(double seconds)
+    {
+        string path = Y4mFile.WriteTemp(seconds);
+        _files.Add(path);
+        return path;
+    }
+
     [Fact]
     public async Task LocalFile_LoadsReportsDurationAndEnds()
     {
@@ -270,6 +277,150 @@ public sealed class MpvPlaybackEngineTests : IDisposable
 
         var state = await started.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken);
         Assert.True(state.IsLoaded);
+    }
+
+    [Fact]
+    public async Task ASoundFile_IsAudioOnly_OnceLoaded()
+    {
+        using var engine = CreateEngine();
+        var loaded = new TaskCompletionSource<PlaybackSnapshot>(TaskCreationOptions.RunContinuationsAsynchronously);
+        engine.StateChanged += (_, s) =>
+        {
+            if (s.IsLoaded)
+            {
+                loaded.TrySetResult(s);
+            }
+        };
+
+        engine.Load(MediaSource.Local(TempWav(3.0)));
+
+        var state = await loaded.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken);
+        Assert.True(state.IsAudioOnly);
+    }
+
+    [Fact]
+    public async Task AVideoFile_HasAPicture_AndALoadCountsAsOneUntilItsFileSaysOtherwise()
+    {
+        using var engine = CreateEngine();
+        string video = TempY4m(2.0);
+        var sound = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var pictured = new TaskCompletionSource<PlaybackSnapshot?>(TaskCreationOptions.RunContinuationsAsynchronously);
+        // Loads are counted from 1, so the video is load 2 whenever its states arrive.
+        engine.StateChanged += (_, s) =>
+        {
+            if (s is { LoadId: 1, IsLoaded: true, IsAudioOnly: true })
+            {
+                sound.TrySetResult();
+            }
+            if (s is { LoadId: 2, IsLoaded: true })
+            {
+                pictured.TrySetResult(s);
+            }
+        };
+        // A libmpv built without FFmpeg's y4m demuxer cannot open the file: the test has nothing to show then.
+        engine.Ended += (_, e) =>
+        {
+            if (e is { LoadId: 2, Reason: PlaybackEndReason.Error })
+            {
+                pictured.TrySetResult(null);
+            }
+        };
+        engine.Load(MediaSource.Local(TempWav(3.0)));
+        await sound.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken);
+
+        Assert.Equal(2, engine.Load(MediaSource.Local(video)));
+
+        // Not known yet: a title about to play is taken to have a picture.
+        Assert.False(engine.Current.IsAudioOnly);
+        var state = await pictured.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken);
+        Assert.SkipWhen(state is null, "This libmpv cannot read YUV4MPEG2.");
+        Assert.False(state!.IsAudioOnly);
+    }
+
+    [Fact]
+    public void AnOpenedFile_IsTakenOnlyForItsOwnLoad()
+    {
+        var loading = PlaybackSnapshot.Idle with { LoadId = 3 };
+
+        var own = MpvPlaybackEngine.Opened(loading, loadId: 3, audioOnly: true);
+        Assert.True(own.IsLoaded);
+        Assert.True(own.IsAudioOnly);
+        // A newer load came between the file's opening and its tracks' read: that file is not the one loading, which
+        // neither is open yet nor has the file's tracks.
+        Assert.Equal(loading, MpvPlaybackEngine.Opened(loading, loadId: 2, audioOnly: true));
+    }
+
+    [Fact]
+    public void AVideoTrackThatChangesAfterTheFileOpened_CountsForItsOwnLoadOnly()
+    {
+        var sound = PlaybackSnapshot.Idle with { LoadId = 3, IsLoaded = true, IsAudioOnly = true };
+
+        // A stream that names its picture late: the open file has a picture after all.
+        Assert.False(MpvPlaybackEngine.Retracked(sound, loadId: 3, audioOnly: false).IsAudioOnly);
+        // The tracks of a load before.
+        Assert.Equal(sound, MpvPlaybackEngine.Retracked(sound, loadId: 2, audioOnly: false));
+        // Before the file is open, the tracks are the last file's, going: a title loading counts as a picture until then.
+        var loading = PlaybackSnapshot.Idle with { LoadId = 4 };
+        Assert.Equal(loading, MpvPlaybackEngine.Retracked(loading, loadId: 4, audioOnly: true));
+    }
+
+    [Fact]
+    public async Task AVideoTrackSwitchedOffAndOn_IsFollowed()
+    {
+        using var engine = CreateEngine();
+        var opened = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var off = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var on = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var gate = new Lock();
+        long newest = 0;
+        engine.StateChanged += (_, s) =>
+        {
+            lock (gate)
+            {
+                // Snapshots come from more than one thread: one older than the newest seen says nothing new.
+                if (s.Sequence < newest || !s.IsLoaded)
+                {
+                    return;
+                }
+                newest = s.Sequence;
+                if (!s.IsAudioOnly)
+                {
+                    if (off.Task.IsCompleted)
+                    {
+                        on.TrySetResult();
+                    }
+                    opened.TrySetResult(true);
+                }
+                else if (opened.Task.IsCompleted)
+                {
+                    off.TrySetResult();
+                }
+            }
+        };
+        // A libmpv built without FFmpeg's y4m demuxer cannot open the file: the test has nothing to show then.
+        engine.Ended += (_, e) =>
+        {
+            if (e.Reason == PlaybackEndReason.Error)
+            {
+                opened.TrySetResult(false);
+            }
+        };
+        engine.Load(MediaSource.Local(TempY4m(6.0)));
+        Assert.SkipUnless(await opened.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken), "This libmpv cannot read YUV4MPEG2.");
+
+        Assert.Equal(0, engine.Command("set", "vid", "no"));
+        await off.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken);
+        Assert.Equal(0, engine.Command("set", "vid", "1"));
+        await on.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public void AStartedFile_IsTakenOnlyForItsOwnLoad()
+    {
+        var loading = PlaybackSnapshot.Idle with { LoadId = 3, IsLoaded = true };
+
+        Assert.True(MpvPlaybackEngine.Started(loading, loadId: 3).HasStarted);
+        Assert.Equal(loading, MpvPlaybackEngine.Started(loading, loadId: 2));
     }
 
     [Fact]

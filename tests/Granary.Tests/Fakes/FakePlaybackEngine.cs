@@ -38,7 +38,8 @@ internal sealed class FakePlaybackEngine : IPlaybackEngine
         Loaded.Add(source);
         Current = Current with
         {
-            LoadId = ++LoadId, IsLoaded = false, HasStarted = false, IsAtEnd = false, Buffered = BufferedRanges.None, Sequence = ++_sequence,
+            LoadId = ++LoadId, IsLoaded = false, HasStarted = false, IsAtEnd = false, IsAudioOnly = false, Buffered = BufferedRanges.None,
+            Sequence = ++_sequence,
         };
         return LoadId;
     }

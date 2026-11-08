@@ -34,6 +34,10 @@ public sealed record PlaybackStats(int VideoWidth, int VideoHeight, long Dropped
 /// The load this state belongs to, as <see cref="IPlaybackEngine.Load"/> returned it; 0 before the first. Events reach
 /// their consumers on another thread, so one raised just before a load can arrive after it.
 /// </param>
+/// <param name="IsAudioOnly">
+/// The loaded file has no picture of its own: sound alone, or with an audio file's cover. Unknown until the file is open,
+/// which counts as a picture.
+/// </param>
 public sealed record PlaybackSnapshot(
     bool IsLoaded,
     bool IsPaused,
@@ -45,7 +49,8 @@ public sealed record PlaybackSnapshot(
     double Volume = 100,
     bool IsMuted = false,
     bool IsAtEnd = false,
-    long LoadId = 0)
+    long LoadId = 0,
+    bool IsAudioOnly = false)
 {
     public static PlaybackSnapshot Idle { get; } = new(false, false, TimeSpan.Zero, null, null);
 
