@@ -271,7 +271,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   card is pointed at. The title, the subtitle and the taste profile stay, under the hero and above the rows, and scroll up
   under its compact header with them; the hero's name is not read as a heading, so the page's "For You" stays first. Its
   cards are library titles, so they carry the same logo, backdrop and details as Home's; one without a logo shows its
-  name in large type, one without a backdrop only the page's fade.
+  name in large type, one without a backdrop only the page's fade. With Title preview at the top off (Settings →
+  Navigation & Cards → Pages) there is no hero: the title starts 24 px down, as on the web (`pt-6`).
 - Calendar (`CalendarPage`, the web's `pages/Calendar.tsx`): the title with the presets Following, Trending, All (the
   chosen one in the accent) and "All Libraries" when there are several; the week strip pinned above the days (arrows, "Oct 19 –
   25, 2026", Today, a button per day with a dot on days with airings, today tinted with the accent, the picked day filled with it,
@@ -300,7 +301,9 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   no logo, so the name shows in large type; the line under it is the year, "Movie" or "Series", and where a request
   stands in the card badge's words ("2026 · Movie · Available", and "Pending" once a card's Request went through); the
   backdrop is TMDB's. The name is not read as a heading, so the page's "Requests" stays first. The title and the tabs
-  scroll up under its compact header with the rows; Yours shows no hero. Another profile's Discover starts without one. Yours, up to the web's
+  scroll up under its compact header with the rows; Yours shows no hero, and neither does Discover with Title preview at
+  the top off (Settings → Navigation & Cards → Pages): the title then starts 24 px down, as on the web (`pt-6`), on both
+  tabs. Another profile's Discover starts without one. Yours, up to the web's
   1024 px: "What the statuses mean", then Needs attention, On the way, In your library, Cancelled with their counts,
   each request a row with its poster, title and state badge (the web's variants, none in the accent: Failed destructive,
   approved, on their way and available filled, Pending outlined, closed ones outlined and muted), "Series · 2022 · Seasons 1–3",
@@ -365,12 +368,22 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   one in 400 ms, its blur first, decoded as wide as its box needs; the first result pointed at shows at once, later ones
   after 150 ms of rest, as on Home. Nothing shows until a result is pointed at, and each new search starts without one,
   as does every visit but Back. The pictures are let go while Search is not shown.
-- Pages: 48 px side margins, 32 px top; rows 40 px apart.
+- Pages: 48 px side margins, 32 px top; rows 40 px apart. Home, For You and Requests without a hero start 24 px down, as
+  the web's, which lays these pages out with their own `pt-6`.
 - Home's hero (`BrowseHero`, `BrowseHeroViewModel`, also on For You and Requests): while Home has no hero banner (below),
   the title of the card the pointer or the keyboard is on, in any row, at the top of the page, a deliberate departure from
   the web's Home, which then shows nothing there; with one, the banner's slides, as on the web. A page lays its rows under
   it with `BrowseHero.RowsViewMargin` and `RowsPadding` (with the hero's `Sizes`), and feeds it its rows' titles
-  (`BrowseHeroViewModel.Follow`) and the card pointed at (`Point`); Home feeds it `HomeViewModel.HeroTitle`.
+  (`BrowseHeroViewModel.Follow`) and the card pointed at (`Point`); Home feeds it `HomeViewModel.HeroTitle`, Requests
+  `RequestsViewModel.HeroTitle` (Discover's only). The rows' room follows `HasTitle` / `HasHeroTitle`, not the title:
+  x:Bind calls a function again only for an argument that is not null, so a title that went left its room behind.
+  - Title preview at the top (Settings → Navigation & Cards → Pages; `BrowseHeroSetting`), on by default, turns this
+    hero off, Granary's own switch since Silo's clients have no such hero. Off, Home, For You and Discover show no hero,
+    neither the picture nor the compact header, and start with their rows (For You and Requests with their title) 24 px
+    down; a card pointed at changes nothing and starts no timer, and the hero holds no picture. Home's banner is not this
+    switch's: a row marked as the hero on the web still shows as the banner. Focus still starts on the first row's first
+    card. It is kept on this PC for each server and profile (`browse-hero.json` in the data directory, the profiles that
+    turned it off); a page takes a change the next time it shows.
   - Its sizes below are a page up to 1040 px high (a 1080 px window). A taller page has a taller hero, which grows with
     the window (`BrowseHeroLayout.For`, in 8 px steps of the page's height): the hero keeps its share of the page's
     height, up to 720 px (643 px on a 3840 × 1600 screen), and the first row moves down with it; the compact header, the
@@ -410,8 +423,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     at the top and cuts the rows off at its edge: over the first 150 px of scrolling (198 under a banner) the logo shrinks
     to 45 px, the details move up under it, the overview fades and the backdrop shortens to the header. It follows the
     scroll on the compositor (`BrowseHeroLayout`; its numbers are a property set's, never text in the user's culture). A
-    wheel (not a tilt or Ctrl with it) or a touch or pen drag over the header scrolls the rows. Without a hero (loading,
-    empty, an error) the rows sit as on other pages.
+    wheel (not a tilt or Ctrl with it) or a touch or pen drag over the header scrolls the rows. Without a hero (the title
+    preview off, loading, empty, an error) the rows start 24 px down, at the side margins of other pages.
 - Home's hero banner (`FeaturedBannerViewModel`, `FeaturedBannerControls`; the web's `components/HeroBanner.tsx`), shown
   in the hero above:
   - Which row: the first Home row the server marks as the hero (`featured`, docs/api-contract.md 7.1), as on the web
@@ -422,7 +435,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   - Where it is set: in Silo's web, by an administrator (Admin → Sections) or for one profile (Settings → Home Screen),
     with "Use as hero banner" / "Stop using as hero banner" on a row. A banner an administrator keeps on the web ("Show in
     the apps" off, the row's `web_only`) never reaches Granary, which declares the `desktop` family. Granary has no
-    setting for it.
+    setting for it; Title preview at the top (above) does not touch it.
   - What a slide shows: the web's eyebrow over the name, "FEATURED — NO. 01" (11.5 px semibold, tracked, white at 62 %,
     FEATURED at 92 %, read as "Featured — No. 01"), then the hero's logo or name, its details and overview, and its
     backdrop. The rows begin 48 px lower than under the card hero, and the room between the compact header and the first
@@ -984,7 +997,8 @@ says why above the sections.
   forced subtitles; a 16:9 preview of the look, edited as a draft with Save Appearance and Discard Changes, Reset back to
   the default; Text (size, family, colour swatches, opacity, outline and its colour), Background & Position (style,
   opacity and colour for the box, position); Timing (the profile's subtitle offset in 100 ms steps, Reset).
-- **Navigation & Cards** (`InterfaceSettingsView` on `PosterSettingsViewModel` and `BadgeSettingsViewModel`, the web's
+- **Navigation & Cards** (`InterfaceSettingsView` on `PosterSettingsViewModel`, `BadgeSettingsViewModel`,
+  `TitlePreviewSettingsViewModel` and `SidebarSettingsViewModel`, the web's
   page of that name): Posters first, with Reset beside the title while the desktop apps have their own choice: Size
   (Compact, Standard, Large) and "Under each poster" (Title and details, Title only, Nothing) as the web's choice buttons
   (`SiloSettingsChoiceButtonStyle`: 32 px, outlined, the chosen one filled in the accent). A change shows on every row
@@ -999,7 +1013,11 @@ says why above the sections.
   on, and the switch. Adjust opens a popover (`SiloSettingsPopoverStyle`): the corner on an 80 × 120 poster with four
   buttons, Color as Default and the web's twelve swatches, and Show icon for a badge that has one. Badges the server
   cannot store (an older manifest) or whose rating it does not show (Rotten Tomatoes) are not offered; a server without
-  badge settings shows its own, and the page says so. Every change saves to the profile at once. Then Sidebar, with
+  badge settings shows its own, and the page says so. Every change saves to the profile at once. Then Pages, Granary's
+  own group since Silo's clients have no such switch (`TitlePreviewSettingsViewModel` on `BrowseHeroSetting`): "The top
+  of Home, For You and Discover, for this profile on this PC.", with Title preview at the top ("Home, For You and
+  Discover open with a large picture of the title you point at. Off, they start with the rows."), on by default, saved on
+  this PC at once and taken by each page the next time it shows (Home's hero, above). Then Sidebar, with
   Reset beside the title while something is hidden or moved: Server logo ("Shows the logo your Silo server's admin set in
   place of the server's name. A server without one shows its name."), then Libraries, Discover and Your Stuff, each a list between
   hairlines of the entry's icon and name (Requests and Notifications: "Shows while your server offers it."), up and down
@@ -1317,7 +1335,16 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   Esc closes the panel first; another title closes it.
 - **Settings menu** (the web's QualityMenu): a gear pill (white 8 %) that names the quality ("Auto", "720p Medium"),
   "…" while the plan changes, and, at a speed other than 1×, a white badge with it ("1.5×"). Below 640 px (the web's
-  `sm`) the pill leaves the quality out. SPEED: the value at the right, the speeds 0.5× to 3×
+  `sm`) the pill leaves the quality out. Granary's own, as the web shows none: a dot 6.5 px across fills the gear's hole
+  (its inner circle, clear of the teeth) and says how the server's stream plays: green (`SiloStreamDirectBrush`,
+  Tailwind green-400) for the original video and audio, as direct play or direct stream (a new container, both
+  copied), amber (`SiloStreamTranscodeBrush`, amber-400) while the server re-encodes either, also with the video copied:
+  any transformation of the server's own but a Dolby Vision strip, tone mapping and ones Granary does not know included.
+  It follows the stream the player loads: after a quality, version or audio switch or a restart it changes once the new
+  stream plays, and a plan the player turns down before its stream loads never shows. A file played directly, and a
+  title still loading (a retry too), failed or ended, show the plain gear. The button's name and tooltip add the method in the playback
+  info's words: "Playback settings, Direct Play", "…, Direct Streaming", "…, Transcode"; the name has the speed after
+  it ("Playback settings, Transcode, 1.5×"). SPEED: the value at the right, the speeds 0.5× to 3×
   (0.25 apart up to 2×, then 2.5× and 3×) as stops on a track drawn like the seek bar, the fill from 1× to the
   chosen speed, 0.5×, 1×, 2× and 3× named under it (`SpeedTrack`); it applies at once and is saved as this device's
   `player.playback_speed`. AUDIO DELAY under a line (Silo's Android player has it on its Sync page), drawn as the
@@ -1332,13 +1359,16 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   ("12 Mbps") and a white check on the one the plan delivers; a pick asks for a new plan. A pick of a file or quality
   closes the menu.
 - **Playback info** (the web's PlaybackInfoOverlay): 320 px, black at 85 %, radius 8, under Exit; "Playback Info" with a
-  close button, then PLAYER (mpv, the play method: Direct Play, Direct Streaming or Transcode, the stream's protocol and
-  type, and the file asked for when the server fell back to another), VIDEO INFO (the picture's area and the video in
-  pixels, hardware or software decoding, frames dropped by the output and by the decoder), PLAYBACK STREAM INFO (the
-  codecs the plan delivers: direct, copy or transcoded, as its transformations say) and CURRENT SOURCE FILE (container,
+  close button, then PLAYER (mpv, the play method: Direct Play, Direct Streaming or Transcode, as the settings gear's dot
+  has it, so a remux that converts the audio is a Transcode; the stream's protocol and type, and the file asked for when
+  the server fell back to another), VIDEO INFO (the picture's area and the video in pixels, hardware or software
+  decoding, frames dropped by the output and by the decoder), PLAYBACK STREAM INFO (the codecs the plan delivers: direct,
+  copy or transcoded, as its transformations say; tone mapping to SDR encodes the video, and where a transformation
+  Granary does not know may have touched a stream, its line names the codec alone) and CURRENT SOURCE FILE (container,
   size in GiB, bitrates, codec and profile, range type, colour range, the playing audio track's codec, channels and
-  sample rate). Labels white 60 %, values white 90 % on the right; read again every second while it shows; it stays
-  while the controls fade, until closed.
+  sample rate). It describes the stream the player loaded, as the gear's dot does: during a switch the one
+  before, until the new one loads. Labels white 60 %, values white 90 % on the right; read again every second while it
+  shows; it stays while the controls fade, until closed.
 - **Watch Party panel** (the web's WatchTogetherPanel), while the room plays its title and has not ended or gone to
   another device: 224 px, black at 80 %, a white 10 % border, radius 12, under Exit on the right, fading with the
   controls (faded, it takes no clicks and no keyboard focus). "WATCH PARTY", the connection's dot (emerald connected,

@@ -202,8 +202,8 @@ public sealed partial class LanguageSettingsView : UserControl
 }
 
 /// <summary>
-/// Settings → Navigation &amp; Cards; it reads the profile's poster settings and badges when it is shown, and lets go of them
-/// and of the sidebar as the page leaves.
+/// Settings → Navigation &amp; Cards; it reads the profile's poster settings and badges when it is shown, and lets go of them,
+/// of the title preview and of the sidebar as the page leaves.
 /// </summary>
 public sealed partial class InterfaceSettingsView : UserControl, IDisposable
 {
@@ -212,6 +212,7 @@ public sealed partial class InterfaceSettingsView : UserControl, IDisposable
         Posters = ActivatorUtilities.CreateInstance<PosterSettingsViewModel>(App.Services);
         ViewModel = ActivatorUtilities.CreateInstance<BadgeSettingsViewModel>(App.Services);
         Sidebar = ActivatorUtilities.CreateInstance<SidebarSettingsViewModel>(App.Services);
+        TitlePreview = ActivatorUtilities.CreateInstance<TitlePreviewSettingsViewModel>(App.Services);
         InitializeComponent();
         Loaded += OnFirstLoaded;
     }
@@ -222,11 +223,15 @@ public sealed partial class InterfaceSettingsView : UserControl, IDisposable
 
     public SidebarSettingsViewModel Sidebar { get; }
 
+    /// <summary>The title preview at the top of Home, For You and Discover: Granary's own switch, for this profile on this PC.</summary>
+    public TitlePreviewSettingsViewModel TitlePreview { get; }
+
     public void Dispose()
     {
         Posters.Dispose();
         ViewModel.Dispose();
         Sidebar.Dispose();
+        TitlePreview.Dispose();
     }
 
     private async void OnFirstLoaded(object sender, RoutedEventArgs e)

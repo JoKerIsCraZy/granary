@@ -2,8 +2,9 @@
 <!--
     Home: the server's rows as on Silo's web client (docs/ui-design.md), under the banner of the row the server marks as the
     hero, as on the web, or without one under a hero for the card the pointer or the keyboard is on (a deliberate departure
-    from the web's Home). No page title, as on the web; the sidebar shows the server and the profile. Cached, so Back
-    returns to the same scroll position.
+    from the web's Home). With that title preview off (Settings → Navigation & Cards), the rows start at the top, as on the
+    web. No page title, as on the web; the sidebar shows the server and the profile. Cached, so Back returns to the same
+    scroll position.
 -->
 <Page
     x:Class="Granary.App.Views.HomePage"
@@ -18,14 +19,14 @@
         <!-- Behind the rows: they scroll under the compact header and are cut off at its edge (RowsViewMargin). -->
         <controls:BrowseHero x:Name="Hero" Title="{x:Bind ViewModel.HeroTitle, Mode=OneWay}" SlideNumber="{x:Bind ViewModel.Banner.NumberText, Mode=OneWay}" />
 
-        <ScrollViewer x:Name="Scroller" XYFocusKeyboardNavigation="Enabled" Margin="{x:Bind controls:BrowseHero.RowsViewMargin(ViewModel.HeroTitle, Hero.Sizes), Mode=OneWay}">
+        <ScrollViewer x:Name="Scroller" XYFocusKeyboardNavigation="Enabled" Margin="{x:Bind controls:BrowseHero.RowsViewMargin(ViewModel.HasHeroTitle, Hero.Sizes), Mode=OneWay}">
             <Grid>
                 <!-- The banner's buttons, in the room above the first row: first in the focus order, drawn over the rows' padding. -->
                 <controls:FeaturedBannerControls x:Name="BannerControls" Canvas.ZIndex="1" Banner="{x:Bind ViewModel.Banner}"
                                                  Sizes="{x:Bind Hero.Sizes, Mode=OneWay}" Cycle="{x:Bind ViewModel.Banner.Cycle, Mode=OneWay}"
                                                  IsAdvancing="{x:Bind ViewModel.Banner.IsAdvancing, Mode=OneWay}"
                                                  Visibility="{x:Bind ViewModel.Banner.HasSlides, Mode=OneWay}" />
-                <StackPanel Spacing="16" Padding="{x:Bind controls:BrowseHero.RowsPadding(ViewModel.HeroTitle, Hero.Sizes), Mode=OneWay}">
+                <StackPanel Spacing="16" Padding="{x:Bind controls:BrowseHero.RowsPadding(ViewModel.HasHeroTitle, Hero.Sizes), Mode=OneWay}">
                     <TextBlock Text="{x:Bind ViewModel.Notice, Mode=OneWay}" Visibility="{x:Bind HasText(ViewModel.Notice), Mode=OneWay}"
                                Style="{StaticResource SiloCaptionTextStyle}" Foreground="{StaticResource SiloDestructiveBrush}" TextWrapping="Wrap"
                                AutomationProperties.LiveSetting="Polite" />

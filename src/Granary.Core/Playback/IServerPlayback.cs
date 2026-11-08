@@ -175,7 +175,10 @@ public interface IServerPlayback : IAsyncDisposable
     /// <summary>Raised when previews are read, or read again with fresh addresses.</summary>
     event EventHandler? TrickplayChanged;
 
-    /// <summary>The stream that plays, for the playback info; null before the first plan.</summary>
+    /// <summary>
+    /// The stream the player loaded last, for the playback info and the settings gear: a plan taken since that is still on
+    /// its way, or was turned down before its stream loaded, is not in it. Null before the first load.
+    /// </summary>
     PlaybackStreamInfo? StreamInfo { get; }
 
     /// <summary>The plan's quality menu, without the source; empty when there is nothing to choose (8.11).</summary>

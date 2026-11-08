@@ -8,6 +8,15 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Added
 
+- **Turn off the title preview:** Settings → Navigation & Cards → Pages → Title preview at the top. Off, Home, For You
+  and Discover no longer open with a large picture of the title you point at, and start with their rows. It's on by
+  default and kept for each profile on this PC. A row your Silo server shows as the hero banner on Home stays; you set
+  that on Silo's web.
+- **How the stream plays, on the gear:** the player's settings button now has a dot in its gear. Green means your Silo
+  server sends the original video and audio, as Direct Play or Direct Streaming; amber means it transcodes the video,
+  the audio or both. It changes with the quality, version or audio track you pick, and a file you play directly shows
+  no dot. Screen readers and the button's tooltip say it too, for example "Playback settings, Direct Play". Playback
+  info's play method now says the same, so a stream whose audio alone is converted shows as Transcode there too.
 - **Theme music:** turn on Settings → Title Pages → Theme music, and a title's page plays its theme quietly while it is
   open, when your Silo server has theme music for it, as in Silo's web and apps. Loop theme music repeats it. Going from a
   series to one of its seasons keeps the music going; leaving the page or minimizing Granary fades it out, and playing a
@@ -103,6 +112,8 @@ release's section is what its update says it changes (docs/release.md).
 - Saving mpv.conf or loading a preset no longer fails when Granary happens to be reading the file at that moment.
 - HDR and Dolby Vision films play directly on more graphics cards, because Granary now checks the film's own codec. A
   card that decodes VP9 only in 8 bits had your Silo server convert every HDR film, HEVC ones too.
+- When the large picture at the top of For You or Requests' Discover goes, such as for another profile while its rows
+  load, the page moves up into its place, and Discover no longer keeps showing the title from before.
 - Granary takes your Silo server's accent colour and logo also when it couldn't reach the server at start, such as right
   after waking the PC or connecting a VPN: it tries again until the server answers, where it kept its own red until the
   next start. It also remembers each server's colour and logo, so they show at once the next time, and stay while the

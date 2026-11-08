@@ -17,6 +17,9 @@ public sealed partial class HomeViewModel
     /// <summary>What the top of Home shows: the banner's slide while Home has one, else the card the pointer or the keyboard is on.</summary>
     public BrowseHeroTitle? HeroTitle => Banner.Current?.Title ?? Hero.Shown;
 
+    /// <summary>The top of Home shows a title, for its layout (see <see cref="BrowseHeroViewModel.HasTitle"/>).</summary>
+    public bool HasHeroTitle => HeroTitle is not null;
+
     // Rows or the banner to show: a refresh is then quiet, and Home is not empty.
     private bool HasContent => Rows.Count > 0 || Banner.HasSlides;
 
@@ -65,7 +68,7 @@ public sealed partial class HomeViewModel
     {
         if (e.PropertyName is nameof(FeaturedBannerViewModel.Current) or null)
         {
-            OnPropertyChanged(nameof(HeroTitle));
+            OnHeroTitleChanged();
         }
     }
 
@@ -73,7 +76,13 @@ public sealed partial class HomeViewModel
     {
         if (e.PropertyName is nameof(BrowseHeroViewModel.Shown) or null)
         {
-            OnPropertyChanged(nameof(HeroTitle));
+            OnHeroTitleChanged();
         }
+    }
+
+    private void OnHeroTitleChanged()
+    {
+        OnPropertyChanged(nameof(HeroTitle));
+        OnPropertyChanged(nameof(HasHeroTitle));
     }
 }
