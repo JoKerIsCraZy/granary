@@ -18,12 +18,17 @@ Dependencies point inward only: `App → Player → Core`, and `App → Core`.
 - **Core** has no UI dependency. View models use CommunityToolkit.Mvvm, which is UI-agnostic, so a
   later Avalonia front end could reuse Core unchanged (the role `shared` plays in the Android client).
   Core defines the ports the other layers implement: `IPlaybackEngine`, `IUiDispatcher`,
-  `INavigationService`, `ISecretStore`, and `ISystemMediaControls` for Windows' media keys and their overlay
+  `INavigationService`, `ISecretStore`, `ISystemMediaControls` for Windows' media keys and their overlay
   (`PlayerSystemMedia` decides what they show and maps their buttons to the player's commands; the App's
-  `WindowsMediaControls` drives the main window's System Media Transport Controls), and `IRichPresence` for Discord's
-  status (see Discord status). `IReleaseFiles` gives
-  `SignedReleaseVerifier` a release's SHA256SUMS and its signature, and the package on disk to hash and read; Core's own
-  `HttpReleaseFiles` implements it, and the tests fake it (docs/release.md, "Signed releases").
+  `WindowsMediaControls` drives the main window's System Media Transport Controls), `IRichPresence` for Discord's
+  status (see Discord status), and `IKeepAwake`, which keeps the display on while a title loads, plays or buffers
+  (`PlayerKeepAwake`, made and disposed with `PlayerSystemMedia` by the player page, follows Android's player: not while
+  paused, and only the system for sound without a picture, and asks again with the player's next change when Windows
+  refused; the App's `WindowsKeepAwake` calls `SetThreadExecutionState` with Core's `ExecutionStateFlags` on the UI
+  thread, as mpv's `stop-screensaver` does only from a window of its own, which composition mode has not).
+  `IReleaseFiles` gives `SignedReleaseVerifier` a release's SHA256SUMS and its signature, and the package on disk to
+  hash and read; Core's own `HttpReleaseFiles` implements it, and the tests fake it (docs/release.md, "Signed
+  releases").
 - **Player** implements `IPlaybackEngine` on libmpv and exposes the video side as
   `ICompositionVideoOutput`. It has no WinUI dependency either; the only Windows-specific code is the
   DXGI call in `Interop/DxgiSwapChain.cs`.
@@ -279,6 +284,11 @@ mpv closes: where no panel holds it, the new one can get its address, and that s
   snapshot it raises is numbered under the lock (`PlaybackSnapshot.Sequence`), and its consumers (`PlayerViewModel`,
   `ServerPlayback`) drop one numbered below the newest they took: a cache read from before a stop never brings the
   stopped file back, and the position never goes back.
+- Once mpv has opened a file, the engine reads whether a picture plays: a video track (`current-tracks/video`) that is
+  not an audio file's cover (`albumart`). Without one, `PlaybackSnapshot.IsAudioOnly` is set, and `PlayerKeepAwake`
+  keeps only the system awake. A load clears it, so a title still loading counts as having a picture. The tracks are
+  read outside the lock, so the answer is kept only for the load that was playing when mpv opened the file
+  (`MpvPlaybackEngine.Opened`): a newer load meanwhile keeps its own.
 
 ## Networking and security
 

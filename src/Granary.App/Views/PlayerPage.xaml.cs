@@ -44,6 +44,8 @@ public sealed partial class PlayerPage : Page
     private PlayerSystemMedia? _systemMedia;
     // Discord's status, likewise, while Settings allows it.
     private PlayerRichPresence? _richPresence;
+    // The display kept on while a title plays, likewise; the bar and the mini view are this page too.
+    private PlayerKeepAwake? _keepAwake;
     // The window's full screen and mini view, the app's too: the player toggles them, and the window keeps them.
     private readonly WindowModeService _modes;
     private readonly IPlaybackDevicePreferences _devicePreferences;
@@ -125,6 +127,7 @@ public sealed partial class PlayerPage : Page
             App.Services.GetRequiredService<IUiDispatcher>(), TimeProvider.System);
         _richPresence ??= new PlayerRichPresence(ViewModel, App.Services.GetRequiredService<IRichPresence>(), _devicePreferences,
             App.Services.GetRequiredService<TmdbTitleLookup>(), App.Services.GetRequiredService<IUiDispatcher>(), TimeProvider.System);
+        _keepAwake ??= new PlayerKeepAwake(ViewModel, App.Services.GetRequiredService<IKeepAwake>());
         ShowSkipIntervals();
         QueueNextUpStill();
         Focus(FocusState.Programmatic);
@@ -151,6 +154,8 @@ public sealed partial class PlayerPage : Page
         _systemMedia = null;
         _richPresence?.Dispose();
         _richPresence = null;
+        _keepAwake?.Dispose();
+        _keepAwake = null;
         ViewModel.Dispose();
     }
 

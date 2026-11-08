@@ -132,6 +132,10 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     public partial bool IsBuffering { get; private set; }
 
+    /// <summary>What plays has no picture of its own (<see cref="PlaybackSnapshot.IsAudioOnly"/>), so the display may sleep.</summary>
+    [ObservableProperty]
+    public partial bool IsAudioOnly { get; private set; }
+
     /// <summary>Position in the title's own time (source time), in seconds.</summary>
     [ObservableProperty]
     public partial double PositionSeconds { get; private set; }
@@ -568,6 +572,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         double offset = _playback?.TimelineOffsetSeconds ?? 0;
         IsPaused = state.IsPaused;
         IsBuffering = state.IsBuffering || _playback?.Status.Phase == ServerPlaybackPhase.Reconnecting;
+        IsAudioOnly = state.IsAudioOnly;
         PositionSeconds = state.Position.TotalSeconds + offset;
         if (_seekTarget is { } target && Math.Abs(PositionSeconds - target) < 1.5)
         {

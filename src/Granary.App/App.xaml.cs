@@ -169,6 +169,8 @@ public partial class App : Application
         services.AddSingleton<WindowModeService>();
         // The Play/Pause in the main window's taskbar preview while a title plays.
         services.AddSingleton<ITaskbarPlayButton, WindowsTaskbarPlayButton>();
+        // Keeps the display on while a title plays.
+        services.AddSingleton<IKeepAwake, WindowsKeepAwake>();
         services.AddGranaryCore();
         // mpv reads the viewer's own mpv.conf from its folder when it starts (Settings → Playback → This PC).
         services.AddGranaryPlayer(new MpvEngineOptions { ConfigDirectory = MpvConfigFolder.DefaultDirectory });
