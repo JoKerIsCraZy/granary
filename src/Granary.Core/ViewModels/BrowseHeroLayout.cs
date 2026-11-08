@@ -153,12 +153,13 @@ public static class BrowseHeroLayout
     /// What the backdrop shown does once its width is known (<paramref name="needed"/> to decode): a picture that waited
     /// loads, also while its fade runs, since it fades in over its blur; one decoded notably narrower fades in again wider
     /// once the fade is over. The first title of a start shows before the hero has a width, and its fade still runs when
-    /// the width comes: waiting for the fade there left it blurred.
+    /// the width comes: waiting for the fade there left it blurred. A hidden episode still (<paramref name="blurred"/>) is
+    /// never made again: its blur is at most 128 px stretched over the box, and would only fade over itself.
     /// </summary>
-    public static BackdropStep StepFor(bool waitsForArt, bool folded, bool fading, int decoded, int needed) =>
+    public static BackdropStep StepFor(bool waitsForArt, bool folded, bool fading, bool blurred, int decoded, int needed) =>
         needed <= 0 ? BackdropStep.None
         : waitsForArt ? (folded ? BackdropStep.None : BackdropStep.LoadArt)
-        : !fading && DecodesAgain(decoded, needed) ? BackdropStep.DecodeAgain
+        : !fading && !blurred && DecodesAgain(decoded, needed) ? BackdropStep.DecodeAgain
         : BackdropStep.None;
 }
 

@@ -376,7 +376,15 @@ also walks all live XAML that .NET holds (the reference tracker), so its pause g
   pixels, edges extended (`SpoilerBlur`: the web's 24 px at the card's size), and the card stretches the 30-odd pixels
   over its artwork, a tenth larger as the web's `scale-110`. The sharp picture is never decoded for it, nor shown when
   the blur fails: the thumbhash stays. The latest 48 blurs are kept by picture and width (`BlurredStills`), so a card
-  shown again only makes its bitmap.
+  shown again only makes its bitmap. Home's hero and banner take the same path for a hidden backdrop
+  (`BrowseHeroTitle.BlursBackdrop`, `BackdropLayer`): at the hero's width the decode stops at 128 px (a 1,100 px backdrop
+  is blurred by 2.8 of those pixels), stretched over the backdrop's box without the card's growth, and it fades in over
+  the thumbhash as a sharp backdrop would; a wider window does not make it again (`BrowseHeroLayout.StepFor`). The hero
+  takes a title whose blur changed as a new picture, so a switch fades the backdrop over while the logo stays; a picture
+  that becomes hidden is let go at once rather than faded over. Until the profile's switches are read
+  (`EpisodeSpoilerState.Loading`), Home makes the banner's and the hero's titles as if images were hidden
+  (`HomeViewModel.TopSpoilers`), and it looks at the settings' state on the UI thread's next turn, after the switches the
+  read brought, so a hidden still never shows sharp in between.
 - Timers tick through `WeakTick`: a `DispatcherQueueTimer` is not a XAML object, so a Tick handler holding its control
   was a cycle the collector cannot see through. A grid's timer kept its page (through the page's scroller) after the
   frame let it go: with a small page cache, nine copies of a list page were alive. Every control with a timer, the

@@ -186,8 +186,8 @@ public sealed partial class FeaturedBannerViewModel : ObservableObject
     }
 
     /// <summary>
-    /// The featured row loaded (again): the slide shown stays, with its countdown, while the row still has it; else the
-    /// first slide shows. A banner that goes lets go of what held or paused it.
+    /// The featured row loaded (again), or its slides were made again for the spoiler switches: the slide shown stays, with its
+    /// countdown, while the row still has it; else the first slide shows. A banner that goes lets go of what held or paused it.
     /// </summary>
     internal void Show(IReadOnlyList<FeaturedSlide> slides)
     {

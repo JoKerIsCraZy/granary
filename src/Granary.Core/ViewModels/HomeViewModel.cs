@@ -22,8 +22,9 @@ namespace Granary.Core.ViewModels;
 /// server or profile reloads at once, a return reloads only rows older than <see cref="StaleAfter"/>, or rows from
 /// before a change of the viewer's state (<see cref="ViewerStateChanges"/>: playback, a watched mark, …). Such a
 /// change while Home is shown reloads it at once, quietly, the rows keeping where they were scrolled to. Continue Watching
-/// and Next Up rows follow the profile's spoiler switches (<see cref="EpisodeSpoilerSettings"/>) in place, without a reload;
-/// the banner, the top of Home, is left as it is.
+/// and Next Up rows, the banner and the hero follow the profile's spoiler switches (<see cref="EpisodeSpoilerSettings"/>) in
+/// place, without a reload: the banner keeps its slide and countdown, the hero its title. Until the profile's switches are
+/// read, the banner and the hero blur every unwatched episode's still.
 /// </summary>
 /// <remarks>
 /// The commands take no cancellation token on purpose: a cancellable toolkit command cancels its running
@@ -49,8 +50,10 @@ public sealed partial class HomeViewModel : ObservableObject
     private readonly EpisodeSpoilerSettings? _spoilers;
 
     private CancellationTokenSource? _run;
-    // The spoiler switches the rows' cards were made with.
+    // The spoiler switches the rows' cards, the banner's slides and the hero's title were made with, and whether the
+    // profile's were read then (TopSpoilers).
     private EpisodeSpoilers _madeWith;
+    private bool _madeKnown;
     private (bool IsReady, string? ServerId, string? ProfileId)? _shownFor;
     private DateTimeOffset? _loadedAt;
     private long _loadedVersion;
@@ -162,19 +165,22 @@ public sealed partial class HomeViewModel : ObservableObject
         }
     }
 
-    /// <summary>The pointer or the keyboard came to a card: the top of Home follows it, unless the banner is there.</summary>
+    /// <summary>
+    /// The pointer or the keyboard came to a card: the top of Home follows it, unless the banner is there. An unwatched episode
+    /// shows there as on its card, so the hero never shows the still the card blurs.
+    /// </summary>
     [RelayCommand]
     private void PointCard(MediaCard? card)
     {
         if (card is not null && !Banner.HasSlides && _session.ActiveServer is { } server
             && Rows.Select(r => r.ItemOf(card)).FirstOrDefault(i => i is not null) is { } item)
         {
-            Hero.Point(item, server.BaseUri);
+            Hero.Point(item, server.BaseUri, TopSpoilers);
         }
     }
 
-    // The rows changed: the top of Home keeps its title while a row still has it, else shows the first card. Under the banner
-    // it waits, and starts afresh at the first card once the banner goes.
+    // The rows or the spoiler switches changed: the top of Home keeps its title while a row still has it, else shows the first
+    // card. Under the banner it waits, and starts afresh at the first card once the banner goes.
     private void FollowRowsWithHero()
     {
         if (Banner.HasSlides)
@@ -183,7 +189,8 @@ public sealed partial class HomeViewModel : ObservableObject
             Hero.Reset(null);
             return;
         }
-        Hero.Follow([.. Rows.SelectMany(row => row.Cards.Select(row.ItemOf)).OfType<CatalogItem>()], _session.ActiveServer?.BaseUri);
+        Hero.Follow([.. Rows.SelectMany(row => row.Cards.Select(row.ItemOf)).OfType<CatalogItem>()], _session.ActiveServer?.BaseUri,
+            TopSpoilers);
     }
 
     partial void OnRowsChanged(IReadOnlyList<HomeRowViewModel> value) => FollowRowsWithHero();
@@ -320,10 +327,12 @@ public sealed partial class HomeViewModel : ObservableObject
             var collection = await _catalog.ListHomeSectionsAsync(server.BaseUri, images, cancellationToken);
             var fetched = await HydrateAsync(server.BaseUri, collection.Sections, images, cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
+            _madeWith = Spoilers;
+            _madeKnown = SpoilersKnown;
             // The banner first: the rows' hero follows them only without it.
             int featuredAt = FeaturedAt(collection.Sections);
-            ShowBanner(featuredAt < 0 ? null : fetched[featuredAt], server.BaseUri);
-            ShowRows(BuildRows([.. fetched.Where((_, i) => i != featuredAt).OfType<Section>()], server.BaseUri));
+            ShowBanner(featuredAt < 0 ? null : fetched[featuredAt], server.BaseUri, TopSpoilers);
+            ShowRows(BuildRows([.. fetched.Where((_, i) => i != featuredAt).OfType<Section>()], server.BaseUri, _madeWith));
             // A row that could not be fetched is tried again on the next visit.
             bool isComplete = fetched.All(section => section is not null);
             _loadedAt = isComplete ? _time.GetUtcNow() : null;
@@ -393,9 +402,8 @@ public sealed partial class HomeViewModel : ObservableObject
         }
     }
 
-    private IReadOnlyList<HomeRowViewModel> BuildRows(IReadOnlyList<Section> sections, Uri server)
+    private IReadOnlyList<HomeRowViewModel> BuildRows(IReadOnlyList<Section> sections, Uri server, EpisodeSpoilers spoilers)
     {
-        var spoilers = _madeWith = Spoilers;
         var rows = new List<HomeRowViewModel>();
         foreach (var section in sections.Where(s => s.TotalCount > 0))
         {
@@ -439,32 +447,52 @@ public sealed partial class HomeViewModel : ObservableObject
 
     private EpisodeSpoilers Spoilers => _spoilers?.Shown ?? EpisodeSpoilers.Off;
 
-    // The switches changed, or arrived after the rows: their cards are made again in place, each row keeping its scroll.
+    // Whether the profile's switches are read; without the settings there is nothing to wait for.
+    private bool SpoilersKnown => _spoilers?.State != EpisodeSpoilerState.Loading;
+
+    // The switches the banner's slides and the hero's title are made with. Until the profile's are read, an unwatched episode's
+    // still counts as hidden there: Home can load first, and a large still shown sharp, then blurred a moment later, would
+    // give it away. Its description, and the rows' cards, wait for nothing.
+    private EpisodeSpoilers TopSpoilers => _madeKnown ? _madeWith : _madeWith with { HidesImages = true };
+
+    // The switches changed, arrived after the rows, or were read: the cards are made again in place, each row keeping its
+    // scroll, and so are the banner's slides, which keeps the one shown and its countdown, and the hero's title.
     private void ShowSpoilers()
     {
         var spoilers = Spoilers;
-        if (spoilers == _madeWith || _session.ActiveServer is not { } server)
+        bool isKnown = SpoilersKnown;
+        if ((spoilers == _madeWith && isKnown == _madeKnown) || _session.ActiveServer is not { } server)
         {
             return;
         }
+        bool switched = spoilers != _madeWith;
         _madeWith = spoilers;
-        foreach (var row in Rows)
+        _madeKnown = isKnown;
+        if (switched)
         {
-            row.Remake(item => MediaCardFactory.ForSection(row.SectionType, item, server.BaseUri, spoilers));
+            foreach (var row in Rows)
+            {
+                row.Remake(item => MediaCardFactory.ForSection(row.SectionType, item, server.BaseUri, spoilers));
+            }
         }
+        if (Banner.HasSlides)
+        {
+            var top = TopSpoilers;
+            Banner.Show([.. Banner.Slides.Select(slide =>
+                slide with { Title = BrowseHeroTitle.From(slide.Item, server.BaseUri, top) })]);
+        }
+        FollowRowsWithHero();
     }
 
+    // A change of the switches shows at once. A read sets its state just before the switches it brought, so the state is
+    // looked at a moment later, with them: a still they hide never shows sharp in between.
     private void OnSpoilersChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        if (e.PropertyName != nameof(EpisodeSpoilerSettings.Shown))
-        {
-            return;
-        }
-        if (_dispatcher.HasThreadAccess)
+        if (e.PropertyName == nameof(EpisodeSpoilerSettings.Shown) && _dispatcher.HasThreadAccess)
         {
             ShowSpoilers();
         }
-        else
+        else if (e.PropertyName is nameof(EpisodeSpoilerSettings.Shown) or nameof(EpisodeSpoilerSettings.State))
         {
             _dispatcher.Post(ShowSpoilers);
         }

@@ -5,7 +5,9 @@ namespace Granary.App.Controls;
 
 /// <summary>
 /// One of the two layers a backdrop crossfades between (<see cref="BrowseHero"/>, <see cref="FocusBackdrop"/>): its blur,
-/// its picture, and what it is loading.
+/// its picture, and what it is loading. A title whose backdrop the spoiler switches hide
+/// (<see cref="BrowseHeroTitle.BlursBackdrop"/>) gets its picture blurred instead (<see cref="SpoilerArtwork"/>): decoded
+/// small and stretched over the layer, never sharp.
 /// </summary>
 internal sealed class BackdropLayer(Grid grid, Image blur, Image art)
 {
@@ -34,15 +36,34 @@ internal sealed class BackdropLayer(Grid grid, Image blur, Image art)
 
     public void LoadArt(int width)
     {
-        if (Title?.BackdropUrl is not { } url || width <= 0)
+        if (Title is not { BackdropUrl: { } url } title || width <= 0)
         {
             return;
         }
         Replace(ref _loading);
         art.Opacity = 0;
-        art.Source = Artwork.Load(url, width, _loading!.Token);
+        if (title.BlursBackdrop)
+        {
+            art.Source = null;
+            _ = LoadBlurredAsync(url, width, _loading!.Token);
+        }
+        else
+        {
+            art.Source = Artwork.Load(url, width, _loading!.Token);
+        }
         DecodedWidth = width;
         WaitsForArt = false;
+    }
+
+    // As the picture: it fades in over the thumbhash once it is there. A blur that fails leaves the thumbhash.
+    private async Task LoadBlurredAsync(Uri url, int width, CancellationToken cancellationToken)
+    {
+        var picture = await SpoilerArtwork.LoadAsync(url, width, cancellationToken);
+        if (picture is not null && !cancellationToken.IsCancellationRequested)
+        {
+            art.Source = picture;
+            art.Opacity = 1;
+        }
     }
 
     public void Clear()

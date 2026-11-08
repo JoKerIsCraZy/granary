@@ -11,13 +11,19 @@ internal static class SpoilerSwitches
 {
     public static async Task<EpisodeSpoilerSettings> StartedAsync(bool images = true, bool overviews = true)
     {
+        var settings = Unread(images, overviews);
+        await settings.StartAsync();
+        return settings;
+    }
+
+    /// <summary>The switches before their first read (<see cref="EpisodeSpoilerState.Loading"/>); <c>StartAsync</c> reads them.</summary>
+    public static EpisodeSpoilerSettings Unread(bool images = true, bool overviews = true)
+    {
         var harness = new LibraryHarness();
         harness.Answer("api/v2/settings/values/effective", EpisodeSpoilerSettingsTests.Answer(images, overviews));
         harness.Silo.On(HttpMethod.Put, "api/v2/settings/values/" + EpisodeSpoilerSettings.ImagesKey, ScriptedSilo.NoContent());
         harness.Silo.On(HttpMethod.Put, "api/v2/settings/values/" + EpisodeSpoilerSettings.OverviewsKey, ScriptedSilo.NoContent());
-        var settings = new EpisodeSpoilerSettings(harness.Session, new SettingsApi(harness.Silo.Http), new ImmediateDispatcher(),
+        return new EpisodeSpoilerSettings(harness.Session, new SettingsApi(harness.Silo.Http), new ImmediateDispatcher(),
             harness.Logs.For<EpisodeSpoilerSettings>());
-        await settings.StartAsync();
-        return settings;
     }
 }
