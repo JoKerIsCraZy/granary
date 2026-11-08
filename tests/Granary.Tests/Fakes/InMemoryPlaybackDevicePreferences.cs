@@ -30,6 +30,17 @@ internal sealed class InMemoryPlaybackDevicePreferences : IPlaybackDevicePrefere
         return Task.CompletedTask;
     }
 
+    public int ResumeRewindSeconds { get; set; } = ResumeRewind.DefaultSeconds;
+
+    public List<int> SavedResumeRewindSeconds { get; } = [];
+
+    public Task SetResumeRewindSecondsAsync(int seconds)
+    {
+        ResumeRewindSeconds = seconds;
+        SavedResumeRewindSeconds.Add(seconds);
+        return Task.CompletedTask;
+    }
+
     public bool DiscordStatus { get; set; }
 
     public List<bool> SavedDiscordStatus { get; } = [];
@@ -44,6 +55,27 @@ internal sealed class InMemoryPlaybackDevicePreferences : IPlaybackDevicePrefere
         if (changed)
         {
             DiscordStatusChanged?.Invoke(this, EventArgs.Empty);
+        }
+        return Task.CompletedTask;
+    }
+
+    public bool SleepTimerButton { get; set; } = true;
+
+    public List<bool> SavedSleepTimerButton { get; } = [];
+
+    public event EventHandler<bool>? SleepTimerButtonChanged;
+
+    /// <summary>Something follows <see cref="SleepTimerButton"/>, such as an open player.</summary>
+    public bool IsSleepTimerButtonFollowed => SleepTimerButtonChanged is not null;
+
+    public Task SetSleepTimerButtonAsync(bool shown)
+    {
+        bool changed = shown != SleepTimerButton;
+        SleepTimerButton = shown;
+        SavedSleepTimerButton.Add(shown);
+        if (changed)
+        {
+            SleepTimerButtonChanged?.Invoke(this, shown);
         }
         return Task.CompletedTask;
     }

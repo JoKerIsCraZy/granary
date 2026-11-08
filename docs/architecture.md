@@ -434,7 +434,9 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
 [api-contract.md](api-contract.md), sections 8 to 10.
 
 - **Before the plan** (`PlaybackStarter`): watch detail, the file played last (else the first whole file), the
-  start position (the resume point minus 7 s from 30 s on, 0 to start over, sent explicitly), the profile's
+  start position (the resume point, minus this PC's Rewind on resume from 30 s on as Android rewinds (`ResumeRewind`,
+  read at each start, 0 by default), 0 to start over, sent explicitly; restarts and file switches keep the exact
+  position), the profile's
   quality and bitrate cap (`PlaybackPreferencesReader`), the server's capabilities, and the device report:
   `MpvDeviceProbe` reads the GPU's D3D11VA decoder profiles, and logs them once; HEVC, VP9 and AV1 count only with
   hardware, unless this PC's choice of direct play without hardware decoding (`IPlaybackDevicePreferences`, read once when
@@ -551,7 +553,8 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   by themselves than Settings' Still watching prompt allows (`AutoPlayStreak`, Android's pass-out gate; 3 by default,
   Unlimited never holds back), and the sleep timer does not hold it (`NextUpFlow.Hold`). The next episode starts as a new playback
   from 0; the saved track preferences carry the picks over. The transport's previous and next episode buttons start
-  theirs from the resume point, as the web player does for the viewer; the previous one is the largest episode before
+  theirs from the resume point, as the web player does for the viewer, and exactly there, never rewound, as Android
+  changes episode (`PlayRequest.ResumeWithoutRewind`); the previous one is the largest episode before
   this one in the current season that has a readable file, as the web finds it, none before the season's first.
 - **Sleep timer** (`PlayerViewModel.SleepTimer.cs`; the apps' `SleepTimer` and `SleepTimerController`, the web's
   `SleepTimerMenu`): a duration counts on the player's `TimeProvider` once a second, whatever plays, pauses or loads
@@ -564,7 +567,15 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   offer it. The page hands the menu its rows as it opens and keeps them while it is open (as `DetailHero`'s pickers), so a
   change under it cannot take the focus out. The menu opens on this device's
   `player.sleep_timer_default_minutes` (read with the playback's settings, in a batch of its own); a duration started is
-  saved there, as Android keeps the last one (`ServerPlayback.SetSleepTimerDefault`, `profile_device`).
+  saved there, as Android keeps the last one (`ServerPlayback.SetSleepTimerDefault`, `profile_device`). This PC can
+  hide the button (`IPlaybackDevicePreferences.SleepTimerButton`, `sleep_timer_button` in `playback-device.json`, on when
+  missing): the player reads it as it is made and follows `SleepTimerButtonChanged` until it is disposed, so the
+  minimized bar does too; turned off, `PlayerViewModel.ShowsSleepTimer` goes false, a running timer ends as Turn off
+  ends it, and a hold the timer left after the end lets go (`NextUpFlow.Hold(false)` then starts the countdown). A change
+  on the UI thread applies at once, so work already queued there, such as the title's end, finds the timer off; one from
+  another thread is posted, and does nothing once the player is disposed. Each change carries its own choice, so off and
+  on again before the UI thread gets to them still end the timer, and a tick that waits behind a switch-off does not run
+  out.
 - **Chapters** (11.3): the playing file's `chapters` from the watch detail (mpv reads none through a remux or a
   transcode), in order, empty ones left out, pictures resolved against the server; they make the Chapters menu, the
   seek bar's ticks and the chapter named in its bubble, and Ctrl+Left and Ctrl+Right go to their starts (`ChapterJump`,

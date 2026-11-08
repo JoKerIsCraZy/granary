@@ -1,3 +1,4 @@
+using System.Globalization;
 using Granary.Core.Playback;
 using Granary.Tests.Fakes;
 
@@ -125,6 +126,63 @@ public sealed class JsonPlaybackDevicePreferencesTests : IDisposable
     }
 
     [Fact]
+    public void AtFirst_AResumeIsNotRewound() => Assert.Equal(0, Create().ResumeRewindSeconds);
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(7)]
+    [InlineData(30)]
+    public async Task RewindOnResume_StaysAtTheNextStart_WithTheOtherChoices(int seconds)
+    {
+        var preferences = Create();
+
+        await preferences.SetUpDownAsync(PlayerUpDown.Volume);
+        await preferences.SetResumeRewindSecondsAsync(seconds);
+
+        var again = Create();
+        Assert.Equal(seconds, again.ResumeRewindSeconds);
+        Assert.Equal(PlayerUpDown.Volume, again.UpDown);
+        Assert.Contains(string.Create(CultureInfo.InvariantCulture, $"\"resume_rewind_seconds\": {seconds}"),
+            await File.ReadAllTextAsync(FilePath, TestContext.Current.CancellationToken), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(99, 30)]
+    [InlineData(-5, 0)]
+    public async Task ARewindOutOfBounds_IsSavedAsTheNearestAllowed(int asked, int kept)
+    {
+        var preferences = Create();
+
+        await preferences.SetResumeRewindSecondsAsync(asked);
+
+        Assert.Equal(kept, preferences.ResumeRewindSeconds);
+        Assert.Contains(string.Create(CultureInfo.InvariantCulture, $"\"resume_rewind_seconds\": {kept}"),
+            await File.ReadAllTextAsync(FilePath, TestContext.Current.CancellationToken), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("{ \"resume_rewind_seconds\": 31, \"up_down\": \"volume\" }")]
+    [InlineData("{ \"resume_rewind_seconds\": -1, \"up_down\": \"volume\" }")]
+    [InlineData("{ \"resume_rewind_seconds\": 7.5, \"up_down\": \"volume\" }")]
+    [InlineData("{ \"resume_rewind_seconds\": \"seven\", \"up_down\": \"volume\" }")]
+    [InlineData("{ \"resume_rewind_seconds\": true, \"up_down\": \"volume\" }")]
+    [InlineData("{ \"resume_rewind_seconds\": { \"seconds\": 7, \"more\": [1, { \"up_down\": \"controls\" }] }, \"up_down\": \"volume\" }")]
+    [InlineData("{ \"resume_rewind_seconds\": [7, [8], { \"up_down\": \"controls\" }], \"up_down\": \"volume\" }")]
+    [InlineData("{ \"resume_rewind_seconds\": null, \"up_down\": \"volume\" }")]
+    [InlineData("{ \"up_down\": \"volume\" }")]
+    public async Task ARewindOutOfBounds_NotWhole_NotANumber_OrMissing_MeansNone_AndKeepsTheOtherChoices(string file)
+    {
+        Directory.CreateDirectory(_directory);
+        await File.WriteAllTextAsync(FilePath, file, TestContext.Current.CancellationToken);
+
+        var preferences = Create();
+
+        Assert.Equal(0, preferences.ResumeRewindSeconds);
+        Assert.Equal(PlayerUpDown.Volume, preferences.UpDown);
+    }
+
+    [Fact]
     public void AtFirst_TheDiscordStatusIsOff() => Assert.False(Create().DiscordStatus);
 
     [Fact]
@@ -166,6 +224,51 @@ public sealed class JsonPlaybackDevicePreferencesTests : IDisposable
 
         Assert.Equal(2, changes);
         Assert.False(Create().DiscordStatus);
+    }
+
+    [Fact]
+    public void AtFirst_ThePlayerHasItsSleepButton() => Assert.True(Create().SleepTimerButton);
+
+    [Fact]
+    public async Task TheSleepButtonTurnedOff_StaysOffAtTheNextStart_WithTheOtherChoices()
+    {
+        var preferences = Create();
+
+        await preferences.SetDiscordStatusAsync(true);
+        await preferences.SetSleepTimerButtonAsync(false);
+
+        var again = Create();
+        Assert.False(again.SleepTimerButton);
+        Assert.True(again.DiscordStatus);
+        Assert.Contains("\"sleep_timer_button\": false", await File.ReadAllTextAsync(FilePath, TestContext.Current.CancellationToken), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AnOlderFile_KeepsTheSleepButton_AndTheOtherChoices()
+    {
+        Directory.CreateDirectory(_directory);
+        await File.WriteAllTextAsync(FilePath, "{ \"decodes_in_software\": true, \"discord_status\": true }", TestContext.Current.CancellationToken);
+
+        var preferences = Create();
+
+        Assert.True(preferences.SleepTimerButton);
+        Assert.True(preferences.DecodesInSoftware);
+        Assert.True(preferences.DiscordStatus);
+    }
+
+    [Fact]
+    public async Task TurningTheSleepButtonOffOrOn_SaysSoWithTheNewChoice_ButTheSameChoiceAgainDoesNot()
+    {
+        var preferences = Create();
+        var changes = new List<bool>();
+        preferences.SleepTimerButtonChanged += (_, shown) => changes.Add(shown);
+
+        await preferences.SetSleepTimerButtonAsync(false);
+        await preferences.SetSleepTimerButtonAsync(false);
+        await preferences.SetSleepTimerButtonAsync(true);
+
+        Assert.Equal([false, true], changes);
+        Assert.True(Create().SleepTimerButton);
     }
 
     [Fact]

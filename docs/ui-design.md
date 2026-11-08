@@ -471,7 +471,9 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     rating, regular seasons and genres, an episode's "S2 E7 · 54m · 30 Oct 2026"; with Title Pages → Show advisory age a
     movie's or series' suggested age follows its rating in the web's words, "Common Sense 13+", "MDBList 16+" or "13+");
     the tagline in 17 italic; the overview in 16/25, four lines at most and 820 wide.
-  - Granary's own buttons one size up: the red Play pill ("Resume from 1:02:33" for a movie or episode), Start over,
+  - Granary's own buttons one size up: the red Play pill ("Resume from 1:02:33" for a movie or episode: the saved
+    point, as the web's "Resume at" names it, which is also where playback starts unless Settings → Playback → This PC
+    → Rewind on resume sets a lead-in), Start over,
     "Mark Watched", "Info", the heart, the stars and ⋮ (Watchlist, Add to Collection, then Start a Watch Party below a
     line). Pills 50 high with 17 px labels, round buttons 50, 14 apart. An episode or a season has ⋮ with Start a Watch
     Party alone. Under a single file's buttons "Available version: 1080P · H264 · EAC3 · 6.6 GB" in 14 at 45 % white.
@@ -865,9 +867,16 @@ says why above the sections.
   connection's learned limit with Reset), This PC ("Kept on this PC, not in your profile.": Direct play without
   hardware decoding, a switch, off by default, counting from the next title, its text saying a fixed Quality can still convert a file; Up and Down in the player, a select with
   Controls and menus (the default, as Silo's TV app) and Volume (the web player's keys), which the
-  player follows at its next key; Still watching prompt, a select with Unlimited, 2 to 5 episodes (the Android app's
+  player follows at its next key; Rewind on resume, the contract's words ("Skip back this far when resuming a partly
+  watched item, to re-establish context. 0 turns it off."), a number box from 0 to 30 in steps of 1 with "seconds"
+  after it, counting from the next resume, 0 by default: a resume lands exactly where the viewer stopped. Silo's
+  contract defaults to 7; Granary departs from it on purpose, the owner's choice, because viewers expect the exact
+  point. As in the Android app, a set rewind applies only to resume points 30 s in or more, never to Start over, a Watch
+  Party, a restart, another file or the player's previous and next episode; Still watching prompt, a select with Unlimited, 2 to 5 episodes (the Android app's
   choices, 3 by default) and Custom, which shows a number box from 1 to 20 (the contract's highest), counting from the
-  next episode; mpv configuration, see below; and Show what's playing in Discord, a switch at the group's end, off by
+  next episode; Sleep timer, a switch, on by default ("Show the Sleep button in the player, which pauses playback after
+  a set time or at the end of an episode. Turning it off ends a timer that's running."), which an open player follows at
+  once, the minimized one too (see the Sleep timer, under Player); mpv configuration, see below; and Show what's playing in Discord, a switch at the group's end, off by
   default ("Your Discord status shows the title, the episode and the time left while Granary plays. Needs the Discord app
   on this PC."), which a title that plays follows at once (the Discord status, under Player). Granary's own and kept on
   the PC, so nothing saves to the server), Sound ("Audio on this device", as the web's device settings group it: Audio
@@ -1173,7 +1182,8 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   time left; in the middle skip back, the white play/pause disc and skip forward (glass discs showing the
   profile's intervals), for an episode with a previous or next one flanked by previous and next episode discs (both
   slots kept while one has an episode, so Play stays in the middle; a movie has none); on the right mute, the volume
-  slider, the sleep timer, audio, subtitles, chapters, settings, playback info, mini view, fill screen and full screen. Audio
+  slider, the sleep timer (unless Settings → Playback → This PC turns it off), audio, subtitles, chapters, settings,
+  playback info, mini view, fill screen and full screen. Audio
   and subtitles stand side by side, where the web puts chapters between them, as the two track choices belong together; audio
   shows the web's icon, lucide's AudioLines, drawn as a PathIcon. A utility
   button that is on (sleep timer, playback info, fill screen, subtitles) turns white with the web's amber dot under it. As the
@@ -1207,6 +1217,12 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   Apple's player does; a room that takes over ends a timer set before. Tab reaches the button, and so do the arrows of a
   remote moving through the controls (Right from Mute passes the slider); OK or Enter opens the menu, Up and Down move
   through it, OK picks, Esc or the remote's Back closes it.
+  Settings → Playback → This PC → Sleep timer (Granary's own; Silo's clients always have it), turned off, takes the button
+  and its dot away and the buttons after it close up; the arrows go from Mute straight to the next button shown (audio,
+  else subtitles, chapters or settings), and Tab from the slider. A timer that runs then ends, as Turn off ends it, and a Playing Next screen it left waiting (End of
+  episode, or a duration that ran out at the end) counts down again, so the next episode starts by itself as usual; the
+  duration this device starts on stays. The player follows at once, also as the minimized bar, and a player opened later
+  starts without the button.
 - **Audio menu** (`AudioTrackOption`, wording in `TrackText` after the web's `AudioTrackMenu`): the button shows
   once the file has a track and opens with two or more. Above it, 280 to 360 px wide: "AUDIO", then a row per
   track with its name (its title, else the embedded title, else language, codec and channels), chips for the

@@ -101,6 +101,9 @@ public sealed class NextUpFlow
     /// <summary>The countdown at the end runs.</summary>
     public bool IsCountingDown => _countdownEnds is not null;
 
+    /// <summary>The sleep timer holds the next episode back (<see cref="Hold"/>).</summary>
+    public bool IsHeld => _held;
+
     /// <summary>How much of the countdown at the end is left, 1 to 0, for the screen's ring.</summary>
     public double CountdownLeft { get; private set; }
 
@@ -229,14 +232,20 @@ public sealed class NextUpFlow
 
     /// <summary>
     /// The sleep timer keeps the next episode from starting by itself (End of episode, or a timer that ran out at the end):
-    /// the card counts nothing and the end waits, as with auto-play off. False before the end lets it come again.
+    /// the card counts nothing and the end waits, as with auto-play off. False before the end lets it come again; after
+    /// the end, the countdown the hold kept back starts as usual.
     /// </summary>
     public void Hold(bool held, TimeSpan now)
     {
+        bool wasHeld = _held;
         _held = held;
         if (held)
         {
             _countdownEnds = null;
+        }
+        else if (wasHeld && _ended)
+        {
+            StartCountdown(now);
         }
         Show(now);
     }
