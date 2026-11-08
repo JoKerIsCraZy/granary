@@ -484,6 +484,20 @@ public sealed class PlayerButtonsLayoutTests : IDisposable
     }
 
     [Fact]
+    public async Task AnUnreadableFile_ThatCannotBeKept_IsNotWrittenOver_WhileTheChangeHoldsForThisRun()
+    {
+        await WriteAsync("{ not json");
+        // A folder where the backup would go: the copy fails.
+        Directory.CreateDirectory(FilePath + ".bak");
+        var layout = Create();
+
+        await layout.SetShownAsync(PlayerButton.Fill, false);
+
+        Assert.False(layout.Current.Fill);
+        Assert.Equal("{ not json", await File.ReadAllTextAsync(FilePath, TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
     public async Task AProfileWithoutABarOfItsOwn_WhileTheSleepTimerStartsHidden_IsCustomized_AndResetGivesItTodaysBar()
     {
         var layout = Create(sleepTimerSwitchOff: true);

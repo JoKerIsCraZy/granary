@@ -30,7 +30,8 @@ public interface IPlayerButtonsLayout
 /// is taken over once, when there is no file yet: every profile then starts with the Sleep timer hidden, until it changes
 /// its buttons or resets them. Once that is written the switch is dropped from <c>playback-device.json</c>, so a file
 /// deleted later does not bring it back; one that could not be written leaves it there to be taken over at the next start.
-/// A file that cannot be read is kept beside it as <c>player-buttons.json.bak</c> before it is written over.
+/// A file that cannot be read is kept beside it as <c>player-buttons.json.bak</c> before it is written over; when that
+/// copy fails, the file is left as it is for this run and changes hold until Granary closes.
 /// </para>
 /// </summary>
 public sealed partial class PlayerButtonsLayout : ObservableObject, IPlayerButtonsLayout
@@ -46,6 +47,8 @@ public sealed partial class PlayerButtonsLayout : ObservableObject, IPlayerButto
     private readonly PlayerBar _start;
     private volatile IReadOnlyDictionary<string, PlayerBar> _profiles;
     private string? _shownFor;
+    // An unreadable file that could not be kept as a backup: it stays as it is for this run, and changes hold until exit.
+    private bool _leavesFileAsIs;
 
     public PlayerButtonsLayout(string filePath, ISessionManager session, IUiDispatcher dispatcher, IPlaybackDevicePreferences devicePreferences,
         ILogger<PlayerButtonsLayout> logger)
@@ -172,21 +175,24 @@ public sealed partial class PlayerButtonsLayout : ObservableObject, IPlayerButto
         {
             // Whatever the file or the disk does, the app starts: the bar shows as it comes.
             _logger.LogWarning(ex, "The player's buttons could not be read; the bar shows as it comes");
-            KeepUnreadable();
+            _leavesFileAsIs = !KeepUnreadable();
             return (new Dictionary<string, PlayerBar>(), []);
         }
     }
 
-    // A file that cannot be read stays beside the next one, for whoever wants to see what was in it.
-    private void KeepUnreadable()
+    // A file that cannot be read stays beside the next one, for whoever wants to see what was in it. False when it could
+    // not be kept: then nothing writes over it.
+    private bool KeepUnreadable()
     {
         try
         {
             File.Copy(_filePath, _filePath + ".bak", overwrite: true);
+            return true;
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "The unreadable player buttons file could not be kept as a backup");
+            _logger.LogWarning(ex, "The unreadable player buttons file could not be kept as a backup; it is left as it is");
+            return false;
         }
     }
 
@@ -201,6 +207,10 @@ public sealed partial class PlayerButtonsLayout : ObservableObject, IPlayerButto
     // True once the layouts are on disk.
     private async Task<bool> WriteAsync()
     {
+        if (_leavesFileAsIs)
+        {
+            return false;
+        }
         await _gate.WaitAsync().ConfigureAwait(false);
         string temp = _filePath + ".tmp";
         try

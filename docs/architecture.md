@@ -579,7 +579,8 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   `edit_markers`, `playback_info`, `mini_view`, `fill`, `full_screen`); an id this Granary does not know is left out, and a
   button the order lacks, one an update added, takes its own place, after the one before it in the bar's own order, and
   shows. The order is written only when it is not the bar's own. A file that cannot be read shows today's bar and is
-  kept as `player-buttons.json.bak` before the next write. A change shows at once and its save follows (one at a time,
+  kept as `player-buttons.json.bak` before the next write; when that copy fails, nothing writes over the file in that
+  run, and changes hold until Granary closes. A change shows at once and its save follows (one at a time,
   each writing the layouts as they are then, so the last change is what stays; a failed one is logged and the change
   holds for the run), so the editor's Move takes the next press at once, as the sidebar editor's does. This PC's Sleep
   timer switch from before the editor (`IPlaybackDevicePreferences.SleepTimerSwitchOff`, `sleep_timer_button: false` in
