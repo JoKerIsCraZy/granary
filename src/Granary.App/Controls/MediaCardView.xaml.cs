@@ -843,13 +843,16 @@ public sealed partial class MediaCardView : UserControl
         SetHovered(true);
     }
 
-    // A card that came back under a pointer that stayed put (its hover was dropped as it left the screen) hears no
-    // PointerEntered; the pointer's first move over it shows the hover again.
+    // A card that came back under a pointer that stayed put (its hover was dropped as it left the screen), or one recycled
+    // for another title under it, hears no PointerEntered; the pointer's first move over it shows the look again. Only the
+    // look: Request stays disarmed until the pointer really enters, so a click meant for the title never requests it.
     private void OnPointerMoved(object sender, PointerRoutedEventArgs e)
     {
         if (!_hovered && Card is not null && Pick is null)
         {
-            OnPointerEntered(sender, e);
+            EnsureActions();
+            ShowState();
+            SetHovered(true);
         }
     }
 
