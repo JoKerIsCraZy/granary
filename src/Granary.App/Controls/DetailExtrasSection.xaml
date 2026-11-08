@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    A movie's or series' local extras (docs/ui-design.md, "Detail pages"), as the web's ExtrasSection.tsx: "Extras", then a
+    group per kind in the server's order, its label in small capitals over a grid of 16:9 cards, at most five to a row and
+    12 apart, as the web's. A card plays its extra in Granary's player.
+-->
+<UserControl
+    x:Class="Granary.App.Controls.DetailExtrasSection"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Granary.App.Controls"
+    xmlns:detail="using:Granary.Core.ViewModels.Detail">
+
+    <UserControl.Resources>
+        <!-- The card's name says what it plays; its tooltip the whole title, which the card may cut short. -->
+        <DataTemplate x:Key="ExtraTemplate" x:DataType="detail:DetailExtra">
+            <Button VerticalAlignment="Top" Style="{StaticResource SiloCardButtonStyle}" Click="OnExtraClick" DataContext="{x:Bind}"
+                    AutomationProperties.Name="{x:Bind AccessibleName}" ToolTipService.ToolTip="{x:Bind Title}">
+                <controls:DetailExtraCard Extra="{x:Bind}" />
+            </Button>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <StackPanel Spacing="14">
+        <TextBlock Text="Extras" Style="{StaticResource SiloRowTitleTextStyle}" AutomationProperties.HeadingLevel="Level2" />
+        <ItemsRepeater ItemsSource="{x:Bind Groups, Mode=OneWay}">
+            <ItemsRepeater.Layout>
+                <StackLayout Spacing="24" />
+            </ItemsRepeater.Layout>
+            <ItemsRepeater.ItemTemplate>
+                <DataTemplate x:DataType="detail:DetailExtraGroup">
+                    <StackPanel Spacing="10">
+                        <!-- The web's text-xs, semibold, wider tracking, muted; screen readers hear it in plain case. -->
+                        <TextBlock Text="{x:Bind Heading}" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="12"
+                                   CharacterSpacing="50" Foreground="{StaticResource SiloMutedBrush}"
+                                   AutomationProperties.Name="{x:Bind Label}" AutomationProperties.HeadingLevel="Level3" />
+                        <!-- The web's 2 to 5 columns by the window's width: as many 200 px cards as fit, five at most, stretched. -->
+                        <ItemsRepeater ItemsSource="{x:Bind Extras}" ItemTemplate="{StaticResource ExtraTemplate}">
+                            <ItemsRepeater.Layout>
+                                <UniformGridLayout MinItemWidth="200" MinColumnSpacing="12" MinRowSpacing="12" MaximumRowsOrColumns="5"
+                                                   ItemsStretch="Fill" ItemsJustification="Start" />
+                            </ItemsRepeater.Layout>
+                        </ItemsRepeater>
+                    </StackPanel>
+                </DataTemplate>
+            </ItemsRepeater.ItemTemplate>
+        </ItemsRepeater>
+    </StackPanel>
+</UserControl>

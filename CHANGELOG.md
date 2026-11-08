@@ -8,6 +8,9 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Added
 
+- **Extras on title pages:** a movie's or series' page now shows the featurettes, deleted scenes and other extras your
+  Silo server has for it, in groups by kind as in Silo's web, right before Trailers & More. Click one, or press OK on a
+  TV remote, and it plays in Granary from the start.
 - **Missing and upcoming episodes:** a season's episodes now show a quiet card marked Missing where one is gone, such as
   S01E05 between E04 and E06 after its file was deleted, and the episodes still to air after the last one, with the day.
 - **Discord status:** turn on Settings → Playback → This PC → Show what's playing in Discord, and while Granary plays,

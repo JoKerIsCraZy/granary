@@ -3,7 +3,7 @@
     A movie, series, season or episode (docs/ui-design.md, "Detail pages"): on black, the
     backdrop stands at the top right behind everything and fades to the left and down while the hero and the rows scroll
     over it. Then Granary's rows that fit the type: a series' seasons (opening a season's page) or a season's episodes,
-    more episodes, trailers, cast and crew, more like this.
+    more episodes, extras, trailers, cast and crew, more like this.
 -->
 <Page
     x:Class="Granary.App.Views.ItemDetailPage"
@@ -200,6 +200,13 @@
                     <controls:MediaRow Title="More Episodes" ItemsSource="{x:Bind ViewModel.MoreEpisodes, Mode=OneWay}"
                                        CardInvokedCommand="{x:Bind ViewModel.OpenCardCommand}"
                                        Visibility="{x:Bind ViewModel.HasMoreEpisodes, Mode=OneWay}" />
+
+                    <!--
+                        Local extras play in Granary, so they lead and YouTube's videos follow, as the web's MovieContent.tsx and
+                        SeriesContent.tsx place them.
+                    -->
+                    <controls:DetailExtrasSection Groups="{x:Bind ViewModel.ExtraGroups, Mode=OneWay}" PlayCommand="{x:Bind ViewModel.PlayExtraCommand}"
+                                                  Visibility="{x:Bind ViewModel.HasExtras, Mode=OneWay}" />
 
                     <controls:DetailShelf Title="Trailers &amp; More" Visibility="{x:Bind ViewModel.HasTrailers, Mode=OneWay}">
                         <controls:DetailShelf.ShelfContent>
