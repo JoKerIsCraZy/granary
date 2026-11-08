@@ -14,7 +14,10 @@ public sealed class ThemeMusicPlayerTests
     private readonly List<(string Owner, string Theme)> _fetched = [];
     private readonly ThemeMusicPlayer _player;
 
-    public ThemeMusicPlayerTests() => _player = new ThemeMusicPlayer(FetchAsync, _output, new ImmediateDispatcher(), _clock);
+    private readonly LogSink _logs = new();
+
+    public ThemeMusicPlayerTests() =>
+        _player = new ThemeMusicPlayer(FetchAsync, _output, new ImmediateDispatcher(), _clock, _logs.For<ThemeMusicPlayer>());
 
     /// <summary>What the next fetches answer, in order; the last repeats. Null is a refused grant.</summary>
     private Queue<Func<Task<ThemeAudioSource?>>> Answers { get; } = new();
@@ -228,6 +231,33 @@ public sealed class ThemeMusicPlayerTests
 
         Assert.Equal(3, _fetched.Count);
         Assert.Empty(_output.Alive);
+    }
+
+    [Fact]
+    public void AnOutputThatCannotBeMade_CountsAsAFailure_TriedOnceMore_AndIsLoggedByItsType()
+    {
+        _output.FailsWith = new System.Runtime.InteropServices.COMException("no media features");
+
+        _player.Select(Set("movie-1", "11"), loop: false);
+
+        Assert.Equal(2, _fetched.Count);
+        Assert.Empty(_output.Made);
+        Assert.False(_player.IsAudible);
+        Assert.Contains("COMException", _logs.All, StringComparison.Ordinal);
+        Assert.DoesNotContain("no media features", _logs.All, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AFetchThatThrows_CountsAsAFailure_TriedOnceMore()
+    {
+        Answers.Enqueue(() => Task.FromException<ThemeAudioSource?>(new InvalidOperationException("unforeseen")));
+        Answer(Original);
+
+        _player.Select(Set("movie-1", "11"), loop: false);
+
+        Assert.Equal(2, _fetched.Count);
+        Playing();
+        Assert.Contains("InvalidOperationException", _logs.All, StringComparison.Ordinal);
     }
 
     [Fact]

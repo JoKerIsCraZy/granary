@@ -68,7 +68,7 @@ public sealed class ThemeMusic : IDisposable
         _dispatcher = dispatcher;
         _time = time;
         _logger = logger;
-        _player = new ThemeMusicPlayer(FetchAsync, output, dispatcher, time);
+        _player = new ThemeMusicPlayer(FetchAsync, output, dispatcher, time, logger);
         _identity = Identity();
         _settings.PropertyChanged += OnSettingsChanged;
         _session.Changed += OnSessionChanged;

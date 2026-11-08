@@ -16,8 +16,15 @@ internal sealed class FakeThemeAudioOutput : IThemeAudioOutput
     /// <summary>The themes not let go of yet.</summary>
     public IEnumerable<FakeThemeAudio> Alive => Made.Where(audio => !audio.IsDisposed);
 
+    /// <summary>What making a theme throws, as Windows without its media features would; nothing when null.</summary>
+    public Exception? FailsWith { get; set; }
+
     public IThemeAudio Create(ReadOnlyMemory<byte> audio, string? contentType)
     {
+        if (FailsWith is { } failure)
+        {
+            throw failure;
+        }
         var made = new FakeThemeAudio(audio.ToArray(), contentType);
         Made.Add(made);
         return made;

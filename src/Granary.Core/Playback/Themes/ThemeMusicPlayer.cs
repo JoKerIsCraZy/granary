@@ -1,5 +1,6 @@
 using Granary.Core.Abstractions;
 using Granary.Core.Api.Catalog;
+using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.Playback.Themes;
 
@@ -23,6 +24,7 @@ internal sealed class ThemeMusicPlayer
     private readonly IThemeAudioOutput _output;
     private readonly IUiDispatcher _dispatcher;
     private readonly TimeProvider _time;
+    private readonly ILogger _logger;
 
     private IThemeAudio? _audio;
     private Ramp? _fade;
@@ -44,12 +46,13 @@ internal sealed class ThemeMusicPlayer
 
     /// <param name="fetch">A theme's audio by owner and theme id; null when the grant was refused or the fetch failed.</param>
     public ThemeMusicPlayer(Func<string, string, CancellationToken, Task<ThemeAudioSource?>> fetch, IThemeAudioOutput output,
-        IUiDispatcher dispatcher, TimeProvider time)
+        IUiDispatcher dispatcher, TimeProvider time, ILogger logger)
     {
         _fetch = fetch;
         _output = output;
         _dispatcher = dispatcher;
         _time = time;
+        _logger = logger;
     }
 
     /// <summary>Theme audio may be coming out now, a fade-out included.</summary>
@@ -175,6 +178,12 @@ internal sealed class ThemeMusicPlayer
         {
             return;
         }
+        catch (Exception ex)
+        {
+            // Nothing escapes a load nobody waits for: an unforeseen failure counts as the theme failing.
+            Unforeseen(ex, generation);
+            return;
+        }
         if (source is null || generation != _generation)
         {
             return;
@@ -183,7 +192,17 @@ internal sealed class ThemeMusicPlayer
         _converted = source.Converted;
         _played = false;
         _finished = false;
-        var audio = _output.Create(source.Audio, source.ContentType);
+        IThemeAudio audio;
+        try
+        {
+            audio = _output.Create(source.Audio, source.ContentType);
+        }
+        catch (Exception ex)
+        {
+            // Windows without its media features (an N edition) has no player to make.
+            Unforeseen(ex, generation);
+            return;
+        }
         audio.Volume = 0;
         audio.IsLooping = _loop && !_converted;
         audio.Started += (_, _) => _dispatcher.Post(() => OnStarted(audio, generation));
@@ -234,6 +253,22 @@ internal sealed class ThemeMusicPlayer
         {
             return;
         }
+        Failed();
+    }
+
+    // Logged by its type alone: a message could hold the theme's address.
+    private void Unforeseen(Exception ex, int generation)
+    {
+        _logger.LogWarning("The theme music could not be played: {Failure}", ex.GetType().Name);
+        if (generation == _generation)
+        {
+            Failed();
+        }
+    }
+
+    // As the web's: the theme is let go, and tried once more with a new grant.
+    private void Failed()
+    {
         ClearAudio();
         if (!_suspended && SpendRetry())
         {
