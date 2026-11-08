@@ -477,6 +477,9 @@ public sealed partial class ServerPlayback : IServerPlayback
             (refused, cancellationToken) => _auth.GetAsync(server, refused, cancellationToken), media);
         // Subtitles are the plan's to choose; left to itself, mpv would show one the file marks as default.
         _loadId = _engine.Load(new MediaSource(_route.LocalUrl, [], TimeSpan.FromSeconds(_playerPosition), audio, SubtitleStream: 0));
+        // The player took this plan's stream (a load it refuses throws): the playback info and the settings gear's dot
+        // describe it from here.
+        _loaded = (_plan, _streamUrl!);
         if (!_titleLoaded)
         {
             // The title plays, however the one before was left: mpv keeps a pause across files, and pauses itself

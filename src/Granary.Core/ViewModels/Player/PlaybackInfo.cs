@@ -42,7 +42,7 @@ public static class PlaybackInfo
         List<PlaybackInfoRow> player = [new("Player", "mpv")];
         if (stream is not null)
         {
-            player.Add(new("Play method", Delivery(stream.Plan.Delivery)));
+            player.Add(new("Play method", PlayMethod(stream.Plan)));
             player.Add(new("Protocol", stream.Url.Scheme));
             player.Add(new("Stream type", stream.Plan.Stream.Protocol == StreamProtocols.Hls ? "HLS" : "Progressive"));
             if (stream.Requested is { } requested && stream.Playing is { } playing && requested.FileId != playing.FileId)
@@ -68,21 +68,18 @@ public static class PlaybackInfo
         }
         sections.Add(new("Playback Stream Info",
         [
-            new("Video codec", Delivered(stream.Plan, stream.Plan.EffectiveRecipe.VideoCodec, "video_to_")),
-            new("Audio codec", Delivered(stream.Plan, stream.Plan.EffectiveRecipe.AudioCodec, "audio_to_")),
+            new("Video codec", Delivered(stream.Plan, stream.Plan.EffectiveRecipe.VideoCodec, StreamMethods.EncodesVideo(stream.Plan))),
+            new("Audio codec", Delivered(stream.Plan, stream.Plan.EffectiveRecipe.AudioCodec, StreamMethods.EncodesAudio(stream.Plan))),
         ]));
         sections.Add(SourceFile(stream.Playing, stream.AudioOrdinal));
         return sections;
     }
 
-    /// <summary>The route the server chose, from the plan's delivery alone (web: formatDelivery).</summary>
-    public static string Delivery(string delivery) => delivery switch
-    {
-        PlaybackDeliveries.OriginalHttp => "Direct Play",
-        PlaybackDeliveries.ServerRemuxProgressive or PlaybackDeliveries.ServerRemuxHls => "Direct Streaming",
-        PlaybackDeliveries.ServerTranscodeHls => "Transcode",
-        _ => None,
-    };
+    /// <summary>
+    /// How the plan plays, in the web's words (formatDelivery): as the settings gear's dot says it, so a remux that converts
+    /// the audio is a transcode here too.
+    /// </summary>
+    public static string PlayMethod(PlaybackPlan plan) => StreamMethods.Of(plan) is var method and not StreamMethod.None ? StreamMethods.Label(method) : None;
 
     public static string CodecLabel(string? codec, string fallback = None) =>
         codec?.Trim() is { Length: > 0 } trimmed ? CodecLabels.GetValueOrDefault(trimmed) ?? trimmed.ToUpperInvariant() : fallback;
@@ -153,9 +150,9 @@ public static class PlaybackInfo
         ]);
     }
 
-    // What is on the wire and how it got there: the plan says whether the server re-encoded, nothing is guessed. The
-    // server names an encode after its target (video_to_h264, video_to_hevc, audio_to_aac).
-    private static string Delivered(PlaybackPlan plan, string? codec, string encodePrefix)
+    // What is on the wire and how it got there: the plan says whether the server re-encoded, nothing is guessed. Where a
+    // transformation Granary does not know may have touched the stream (encoded is null), the line claims neither.
+    private static string Delivered(PlaybackPlan plan, string? codec, bool? encoded)
     {
         string label = CodecLabel(codec);
         if (label == None)
@@ -166,8 +163,12 @@ public static class PlaybackInfo
         {
             return $"{label} (direct)";
         }
-        bool transcoded = plan.Transformations.Any(t => t.Executor == "server" && t.Name.StartsWith(encodePrefix, StringComparison.Ordinal));
-        return $"{label} ({(transcoded ? "transcoded" : "copy")})";
+        return encoded switch
+        {
+            true => $"{label} (transcoded)",
+            false => $"{label} (copy)",
+            null => label,
+        };
     }
 
     private static string VideoRangeType(WatchFileVersion? version, WatchVideoTrack? track)
