@@ -325,18 +325,109 @@ public sealed class ThemeSongsApiTests
         Assert.False(sockets.AllowAutoRedirect);
         Assert.Equal(DecompressionMethods.None, sockets.AutomaticDecompression);
         Assert.NotNull(sockets.ConnectCallback);
+        Assert.True(sockets.UseProxy);
+        var node = Assert.IsType<SocketsHttpHandler>(PrimaryHandler(provider, ThemeAudioDownloader.NodeHttpClientName));
+        Assert.False(node.UseProxy);
+        Assert.False(node.UseCookies);
+        Assert.False(node.AllowAutoRedirect);
+        Assert.Equal(DecompressionMethods.None, node.AutomaticDecompression);
+        Assert.Equal(TimeSpan.Zero, node.PooledConnectionLifetime);
+        Assert.NotNull(node.ConnectCallback);
+    }
+
+    private static HttpMessageHandler PrimaryHandler(IServiceProvider provider, string name)
+    {
+        var handler = provider.GetRequiredService<IHttpMessageHandlerFactory>().CreateHandler(name);
+        while (handler is DelegatingHandler delegating)
+        {
+            handler = delegating.InnerHandler!;
+        }
+        return handler;
+    }
+
+    [Fact]
+    public async Task ANodeRequest_NeverGoesThroughTheSystemProxy_AndConnectsOnlyToACheckedAddress()
+    {
+        await using var proxy = new KeepAliveServer([7, 8, 9]);
+        var (refusing, refused, clients) = ResolvingTo(new Uri($"http://127.0.0.1:{proxy.Port}/"), "127.0.0.1");
+        var (taking, taken, _) = ResolvingTo(new Uri($"http://127.0.0.1:{proxy.Port}/"), "203.0.113.7");
+        var grant = Parsed(Grant("http://node.example:8096/stream/theme/abc"));
+
+        var refusal = await Assert.ThrowsAsync<HttpRequestException>(() =>
+            refusing.DownloadAsync(new Uri("http://silo.example"), grant, ThemeOrigins.Routed, _token));
+        using var shortly = CancellationTokenSource.CreateLinkedTokenSource(_token);
+        shortly.CancelAfter(TimeSpan.FromMilliseconds(300));
+        var attempt = await Assert.ThrowsAnyAsync<Exception>(() =>
+            taking.DownloadAsync(new Uri("http://silo.example"), grant, ThemeOrigins.Routed, shortly.Token));
+
+        Assert.Equal(0, proxy.Requests);
+        Assert.Equal(0, proxy.Connections);
+        Assert.Equal([ThemeAudioDownloader.NodeHttpClientName], clients.Names);
+        Assert.Equal(["node.example"], refused);
+        Assert.True(RefusedAtConnect(refusal));
+        // The address the rule takes is the one connected to: the connection was tried, not refused.
+        Assert.Equal(["node.example"], taken);
+        Assert.False(RefusedAtConnect(attempt));
+    }
+
+    [Fact]
+    public async Task TheServersOwnOrigin_StillGoesThroughTheSystemProxy()
+    {
+        await using var proxy = new KeepAliveServer([7, 8, 9]);
+        var (downloader, resolved, clients) = ResolvingTo(new Uri($"http://127.0.0.1:{proxy.Port}/"), "203.0.113.7");
+
+        var audio = await downloader.DownloadAsync(new Uri("http://silo.example"), Parsed(Grant()), ThemeOrigins.Authorized, _token);
+
+        Assert.Equal(new byte[] { 7, 8, 9 }, audio.Audio.ToArray());
+        Assert.Equal([ThemeAudioDownloader.HttpClientName], clients.Names);
+        Assert.Equal("GET http://silo.example/api/v2/catalog/items/movie-1/themes/11/audio?token=tkn-secret HTTP/1.1",
+            Assert.Single(proxy.RequestLines));
+        Assert.Empty(resolved);
     }
 
     // The theme client's own handler over a resolver the test answers, so a node's connection is checked without the network.
     private static (ThemeAudioDownloader Downloader, List<string> Resolved) ResolvingTo(params string[] addresses)
     {
+        var (downloader, resolved, _) = ResolvingTo(proxy: null, addresses);
+        return (downloader, resolved);
+    }
+
+    // As the app makes them: the server's own origin through the theme client, a node through the node client, each with
+    // <paramref name="proxy"/> set as a system proxy would be.
+    private static (ThemeAudioDownloader Downloader, List<string> Resolved, NamedClients Clients) ResolvingTo(Uri? proxy,
+        params string[] addresses)
+    {
         var resolved = new List<string>();
-        var handler = ThemeAudioDownloader.CreateHandler((host, _) =>
+        Task<IPAddress[]> Resolve(string host, CancellationToken cancellationToken)
         {
             resolved.Add(host);
             return Task.FromResult(addresses.Select(IPAddress.Parse).ToArray());
+        }
+        var origin = ThemeAudioDownloader.CreateHandler(Resolve);
+        var node = ThemeAudioDownloader.CreateNodeHandler(Resolve);
+        if (proxy is not null)
+        {
+            origin.Proxy = new WebProxy(proxy);
+            node.Proxy = new WebProxy(proxy);
+        }
+        var clients = new NamedClients(new Dictionary<string, HttpMessageHandler>
+        {
+            [ThemeAudioDownloader.HttpClientName] = origin,
+            [ThemeAudioDownloader.NodeHttpClientName] = node,
         });
-        return (new ThemeAudioDownloader(new FakeHttpClients(handler)), resolved);
+        return (new ThemeAudioDownloader(clients), resolved, clients);
+    }
+
+    // Hands out each named client over its own handler, and remembers the names asked for.
+    private sealed class NamedClients(IReadOnlyDictionary<string, HttpMessageHandler> handlers) : IHttpClientFactory
+    {
+        public List<string> Names { get; } = [];
+
+        public HttpClient CreateClient(string name)
+        {
+            Names.Add(name);
+            return new HttpClient(handlers[name], disposeHandler: false);
+        }
     }
 
     [Theory]
@@ -447,6 +538,9 @@ public sealed class ThemeSongsApiTests
 
         public int Requests => Volatile.Read(ref _requests);
 
+        /// <summary>The first line of each request: a proxy is asked for an absolute address.</summary>
+        public System.Collections.Concurrent.ConcurrentQueue<string> RequestLines { get; } = new();
+
         private async Task AcceptAsync()
         {
             while (!_stop.IsCancellationRequested)
@@ -484,6 +578,8 @@ public sealed class ThemeSongsApiTests
                         head.Append(System.Text.Encoding.ASCII.GetString(buffer, 0, read));
                         while (head.ToString().IndexOf("\r\n\r\n", StringComparison.Ordinal) is var end and >= 0)
                         {
+                            string request = head.ToString();
+                            RequestLines.Enqueue(request[..request.IndexOf("\r\n", StringComparison.Ordinal)]);
                             head.Remove(0, end + 4);
                             Interlocked.Increment(ref _requests);
                             byte[] answer = System.Text.Encoding.ASCII.GetBytes(

@@ -760,7 +760,9 @@ A title page plays its local theme music while Settings → Title Pages → Them
   `theme-audio` client and its own handler, which logs nothing: the URL carries its own token and stays in Core. The
   handler's `ConnectCallback` connects a proxy node only to a resolved address the node's rule takes (`ThemeNode`, set on the
   request by `PlaybackUrl.ResolveTheme`), so a name that resolves to this PC or an unvouched private address is refused
-  where the address is known; the server's own origin connects as it resolves.
+  where the address is known. A node goes on the `theme-audio-node` client, whose handler never takes the system's proxy
+  (the proxy would resolve the name out of the rule's sight); the server's own origin goes on `theme-audio`, which keeps
+  the proxy and connects as it resolves.
 - **`WindowsThemeAudio`** (App) implements the port on `Windows.Media.Playback.MediaPlayer` from the bytes (a light player beside
   mpv, not a second mpv), with its command manager off, so it stays out of Windows' media overlay and the media keys stay
   the player's. Its events come on Windows' threads; Core takes them to the UI thread.

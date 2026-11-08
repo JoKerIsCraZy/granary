@@ -16,7 +16,11 @@ public sealed record ThemeAudioSource(ReadOnlyMemory<byte> Audio, string? Conten
 /// </summary>
 public sealed class ThemeAudioDownloader(IHttpClientFactory clients)
 {
+    /// <summary>The server's own origin: it goes through the system's proxy, as every other request to the server.</summary>
     public const string HttpClientName = "theme-audio";
+
+    /// <summary>A proxy node: always direct, so the node's rule sees the address its name resolves to.</summary>
+    public const string NodeHttpClientName = "theme-audio-node";
 
     /// <summary>Anything larger is not a theme (the Apple app's limit).</summary>
     public const int MaxBytes = 32 * 1024 * 1024;
@@ -35,8 +39,22 @@ public sealed class ThemeAudioDownloader(IHttpClientFactory clients)
     internal static SocketsHttpHandler CreateHandler() => CreateHandler(Dns.GetHostAddressesAsync);
 
     /// <param name="resolve">Looks a node's name up; tests answer it themselves.</param>
-    internal static SocketsHttpHandler CreateHandler(Func<string, CancellationToken, Task<IPAddress[]>> resolve) => new()
+    internal static SocketsHttpHandler CreateHandler(Func<string, CancellationToken, Task<IPAddress[]>> resolve) =>
+        CreateHandler(resolve, useProxy: true);
+
+    /// <summary>
+    /// The node client's handler: as <see cref="CreateHandler()"/>, but never through the system's proxy, which would look a
+    /// node's name up where its rule cannot see the address. A node is reached directly, so its theme plays behind a proxy
+    /// too. The server's own origin keeps the proxy on its own handler.
+    /// </summary>
+    internal static SocketsHttpHandler CreateNodeHandler() => CreateNodeHandler(Dns.GetHostAddressesAsync);
+
+    internal static SocketsHttpHandler CreateNodeHandler(Func<string, CancellationToken, Task<IPAddress[]>> resolve) =>
+        CreateHandler(resolve, useProxy: false);
+
+    private static SocketsHttpHandler CreateHandler(Func<string, CancellationToken, Task<IPAddress[]>> resolve, bool useProxy) => new()
     {
+        UseProxy = useProxy,
         UseCookies = false,
         AllowAutoRedirect = false,
         AutomaticDecompression = DecompressionMethods.None,
@@ -65,7 +83,8 @@ public sealed class ThemeAudioDownloader(IHttpClientFactory clients)
             var url = context.InitialRequestMessage.RequestUri!;
             if (!host.Equals(NetworkAddresses.HostOf(url), StringComparison.OrdinalIgnoreCase) || endpoint.Port != url.Port)
             {
-                // Through a proxy, the proxy would look the name up, where this rule cannot see it.
+                // The node client never takes a proxy; a node request on a handler that did is refused, as the proxy would look
+                // the name up where this rule cannot see it.
                 throw new ThemeRefusedException("A theme's node is reached directly or not at all.");
             }
             IPAddress[] addresses = [.. (await resolve(host, cancellationToken).ConfigureAwait(false)).Where(node.Takes)];
@@ -97,7 +116,7 @@ public sealed class ThemeAudioDownloader(IHttpClientFactory clients)
         {
             request.Options.Set(NodeOption, node);
         }
-        var client = clients.CreateClient(HttpClientName);
+        var client = clients.CreateClient(address.Node is null ? HttpClientName : NodeHttpClientName);
         using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, timeout.Token).ConfigureAwait(false);
         if (!response.IsSuccessStatusCode)
         {

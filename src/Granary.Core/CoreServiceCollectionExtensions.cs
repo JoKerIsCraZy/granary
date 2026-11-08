@@ -297,6 +297,10 @@ public static class CoreServiceCollectionExtensions
         services.AddHttpClient(ThemeAudioDownloader.HttpClientName, client => client.Timeout = Timeout.InfiniteTimeSpan)
             .ConfigurePrimaryHttpMessageHandler(() => ThemeAudioDownloader.CreateHandler())
             .RemoveAllLoggers();
+        // A proxy node's theme goes direct, never through the system's proxy, so its rule sees where its name resolves.
+        services.AddHttpClient(ThemeAudioDownloader.NodeHttpClientName, client => client.Timeout = Timeout.InfiniteTimeSpan)
+            .ConfigurePrimaryHttpMessageHandler(() => ThemeAudioDownloader.CreateNodeHandler())
+            .RemoveAllLoggers();
         services.AddTransient<ThemesApi>();
         services.AddTransient<ThemeAudioDownloader>();
         services.TryAddSingleton<IThemeAudioOutput, NoThemeAudioOutput>();

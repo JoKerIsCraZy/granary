@@ -1327,9 +1327,11 @@ plays its first theme, as the web's `useThemeMusic.ts` and the apps do (docs/arc
   - At the socket: a node's name could resolve anywhere (a rebinding, a wildcard DNS name), so the same rule is applied
     again to the addresses it resolves to (`ThemeAudioDownloader.CreateHandler`, its `ConnectCallback`; the decision rides
     on the request, `ThemeNode`): those it does not take are dropped, IPv6 forms carrying an IPv4 address included, and the
-    connection goes to one that is left, or the fetch fails. TLS still checks the node's name. A node is reached directly,
-    never through a system proxy, which would look the name up out of sight. The server's own origin is not checked so:
-    it connects as it resolves, wherever the server runs, on this PC (`http://localhost:8096`) or on the LAN. The rule
+    connection goes to one that is left, or the fetch fails. TLS still checks the node's name. A node is fetched on a
+    client of its own (`theme-audio-node`) that never takes the system's proxy, which would look the name up out of
+    sight: it goes direct, so its theme plays behind a proxy too. The server's own origin is fetched on the `theme-audio`
+    client, which keeps the system's proxy as every other request to the server, and is not checked so: it connects as it
+    resolves, wherever the server runs, on this PC (`http://localhost:8096`) or on the LAN. The rule
     runs as a connection opens, so the handler keeps none for a later request (`PooledConnectionLifetime` and
     `PooledConnectionIdleTimeout` zero; either alone stops the reuse in .NET 10): each download opens its own, and a
     node's connection checked under one server's rule never serves a request made under another's.
