@@ -8,6 +8,13 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Added
 
+- **Player buttons:** Settings → Playback → Player buttons chooses which buttons the player shows on the right, from
+  Volume to Full screen, and in which order: switch one off and it's gone from the player, move it up or down to change
+  its place. A hidden button is off, keys included: hide Subtitles and C does nothing, hide Volume and M and the volume
+  keys do nothing in the player, while the minimized player keeps its own Mute and volume keys; F11 still switches
+  full screen. Don't need the Sleep timer? Switch it off and the button is gone, also from a player that's already
+  open; a timer that's running ends. Reset brings back the usual buttons. It's kept for each profile on this PC, works
+  with a keyboard and a TV remote, and is Granary's own.
 - **When it ends:** the line under the player's title now says when the title will end on the clock, such as
   "Ends 22:41", in Windows' 12 or 24 hour time. It counts in the playback speed, moves later while you pause, and
   follows a seek. The minimized player shows it after the times while it has room. It's not shown when the length
@@ -61,8 +68,7 @@ release's section is what its update says it changes (docs/release.md).
   your Silo server has Requests turned on.
 - **Sleep timer:** the player's Sleep button pauses playback after 5 to 60 minutes, counting down on the button, or stops
   at the end of the episode or movie instead of starting the next episode. A timer runs on into the next episode, and the
-  menu opens on the duration you started last on this PC. Don't need it? Turn off Settings → Playback → This PC → Sleep
-  timer and the button is gone from the player, also from one that's already open; a timer that's running ends.
+  menu opens on the duration you started last on this PC.
 - **Play/Pause in the taskbar preview:** hover over Granary's taskbar button while something plays and the window's
   preview has a Play/Pause button, also when Granary is minimized. In a Watch Party it asks the room, as the player's own
   button does.

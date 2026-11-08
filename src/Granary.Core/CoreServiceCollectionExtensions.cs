@@ -166,6 +166,11 @@ public static class CoreServiceCollectionExtensions
         // This PC's playback choices, about its hardware: in the data directory, not in a server's profile.
         services.AddSingleton<IPlaybackDevicePreferences>(sp =>
             new JsonPlaybackDevicePreferences(JsonPlaybackDevicePreferences.DefaultPath, sp.GetRequiredService<ILogger<JsonPlaybackDevicePreferences>>()));
+        // The player's buttons, for each profile on this PC; they take over the Sleep timer switch this PC had before, once.
+        services.AddSingleton(sp => new PlayerButtonsLayout(PlayerButtonsLayout.DefaultPath, sp.GetRequiredService<ISessionManager>(),
+            sp.GetRequiredService<IUiDispatcher>(), sp.GetRequiredService<IPlaybackDevicePreferences>(),
+            sp.GetRequiredService<ILogger<PlayerButtonsLayout>>()));
+        services.AddSingleton<IPlayerButtonsLayout>(sp => sp.GetRequiredService<PlayerButtonsLayout>());
         // The viewer's own mpv.conf, in the data directory; the player reads it when mpv starts, and compares it at each load.
         services.AddSingleton(sp => new MpvConfigFolder(MpvConfigFolder.DefaultDirectory, sp.GetRequiredService<ILogger<MpvConfigFolder>>()));
         // How the player fared with it in this run, for Settings to show.

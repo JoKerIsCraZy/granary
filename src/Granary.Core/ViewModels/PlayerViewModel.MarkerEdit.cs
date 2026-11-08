@@ -28,7 +28,10 @@ public sealed partial class PlayerViewModel
     /// <summary>What the seek bar shows: the draft while the markers are edited, else the saved ones.</summary>
     public IReadOnlyList<PlaybackMarker> SeekBarMarkers => MarkerEditor.IsEditing ? MarkerEditor.DraftMarkers : Markers;
 
-    /// <summary>Opens the marker panel on the saved markers, or closes it and drops the draft.</summary>
+    /// <summary>
+    /// Opens the marker panel on the saved markers, or closes it and drops the draft. It opens only while Settings shows
+    /// the button; a panel open as Settings hides it stays, with its draft, until it is saved or closed.
+    /// </summary>
     [RelayCommand]
     private void ToggleMarkerEdit()
     {
@@ -36,7 +39,7 @@ public sealed partial class PlayerViewModel
         {
             MarkerEditor.Cancel();
         }
-        else if (CanEditMarkers)
+        else if (CanEditMarkers && Bar.EditMarkers)
         {
             MarkerEditor.Begin(Markers, DurationSeconds);
         }

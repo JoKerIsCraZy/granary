@@ -21,7 +21,7 @@ public sealed class PlayerViewModelSleepTimerTests
     private readonly ManualTimeProvider _time = new();
     private readonly RecordingNavigation _navigation = new();
     private readonly FakeUpNextSource _source = new();
-    private readonly InMemoryPlaybackDevicePreferences _device = new();
+    private readonly InMemoryPlayerButtons _buttons = new();
     private readonly List<FakeServerPlayback> _playbacks = [];
     // The UI thread's queue, for the tests that hold posted work until they let it run.
     private readonly QueuedDispatcher _queue = new();
@@ -45,7 +45,7 @@ public sealed class PlayerViewModelSleepTimerTests
             };
             _playbacks.Add(playback);
             return playback;
-        }, new PlaybackStops(), _time, _source, devicePreferences: _device);
+        }, new PlaybackStops(), _time, _source, buttons: _buttons);
         _navigation.NavigateTo(AppRoute.Item, "detail");
         _navigation.NavigateTo(AppRoute.Player);
         await viewModel.StartAsync(PlayRequest.Resume(episode?.ContentId ?? "movie-1"));
@@ -96,7 +96,7 @@ public sealed class PlayerViewModelSleepTimerTests
         }
     }
 
-    // The setting changes on another thread than the UI's, once for each value, in order.
+    // Settings → Playback → Player buttons shows or hides the Sleep timer on another thread than the UI's, once for each value, in order.
     private void ChangeElsewhere(params bool[] values)
     {
         _queue.UiThread = Thread.CurrentThread;
@@ -104,7 +104,7 @@ public sealed class PlayerViewModelSleepTimerTests
         {
             foreach (bool shown in values)
             {
-                _ = _device.SetSleepTimerButtonAsync(shown);
+                _buttons.SetShown(PlayerButton.SleepTimer, shown);
             }
         });
         elsewhere.Start();
@@ -489,7 +489,7 @@ public sealed class PlayerViewModelSleepTimerTests
     }
 
     [Fact]
-    public async Task TheButton_ShowsAsThisPcHasIt_ByDefault()
+    public async Task TheButton_ShowsByDefault()
     {
         var viewModel = await PlayingAsync(Ted);
 
@@ -497,9 +497,9 @@ public sealed class PlayerViewModelSleepTimerTests
     }
 
     [Fact]
-    public async Task APlayerOpenedWithTheButtonOff_HasNone()
+    public async Task APlayerOpenedWithTheButtonHidden_HasNone()
     {
-        await _device.SetSleepTimerButtonAsync(false);
+        _buttons.SetShown(PlayerButton.SleepTimer, false);
 
         var viewModel = await PlayingAsync(Ted);
 
@@ -511,10 +511,10 @@ public sealed class PlayerViewModelSleepTimerTests
     {
         var viewModel = await PlayingAsync(Ted);
 
-        await _device.SetSleepTimerButtonAsync(false);
+        _buttons.SetShown(PlayerButton.SleepTimer, false);
         Assert.False(viewModel.ShowsSleepTimer);
 
-        await _device.SetSleepTimerButtonAsync(true);
+        _buttons.SetShown(PlayerButton.SleepTimer, true);
         Assert.True(viewModel.ShowsSleepTimer);
     }
 
@@ -525,7 +525,7 @@ public sealed class PlayerViewModelSleepTimerTests
         Choose(viewModel, "5 min");
         _time.Advance(TimeSpan.FromMinutes(2));
 
-        await _device.SetSleepTimerButtonAsync(false);
+        _buttons.SetShown(PlayerButton.SleepTimer, false);
         _time.Advance(TimeSpan.FromMinutes(10));
 
         Assert.False(viewModel.IsSleepTimerOn);
@@ -540,7 +540,7 @@ public sealed class PlayerViewModelSleepTimerTests
         var viewModel = await PlayingAsync(Ted);
         Choose(viewModel, "End of episode");
 
-        await _device.SetSleepTimerButtonAsync(false);
+        _buttons.SetShown(PlayerButton.SleepTimer, false);
         PlaysToItsEnd();
 
         Assert.False(viewModel.IsSleepTimerOn);
@@ -553,8 +553,8 @@ public sealed class PlayerViewModelSleepTimerTests
         var viewModel = await PlayingAsync(Ted);
         Choose(viewModel, "15 min");
 
-        await _device.SetSleepTimerButtonAsync(false);
-        await _device.SetSleepTimerButtonAsync(true);
+        _buttons.SetShown(PlayerButton.SleepTimer, false);
+        _buttons.SetShown(PlayerButton.SleepTimer, true);
 
         Assert.Equal([15], Playback.SleepTimerDefaults);
         Assert.Equal("15 min", Assert.Single(viewModel.SleepTimerOptions, o => o.IsDefault).Label);
@@ -567,7 +567,7 @@ public sealed class PlayerViewModelSleepTimerTests
         var viewModel = await PlayingAsync(Ted);
         var rows = viewModel.SleepTimerOptions;
 
-        await _device.SetSleepTimerButtonAsync(false);
+        _buttons.SetShown(PlayerButton.SleepTimer, false);
         viewModel.ChooseSleepTimer(rows.Single(o => o.Label == "5 min"));
         viewModel.ChooseSleepTimer(rows.Single(o => o.Label == "End of episode"));
         _time.Advance(TimeSpan.FromMinutes(10));
@@ -581,11 +581,11 @@ public sealed class PlayerViewModelSleepTimerTests
     public async Task APlayerDisposed_NoLongerFollowsTheSetting()
     {
         var viewModel = await PlayingAsync(Ted);
-        Assert.True(_device.IsSleepTimerButtonFollowed);
+        Assert.True(_buttons.IsFollowed);
 
         viewModel.Dispose();
 
-        Assert.False(_device.IsSleepTimerButtonFollowed);
+        Assert.False(_buttons.IsFollowed);
     }
 
     [Fact]
@@ -597,7 +597,7 @@ public sealed class PlayerViewModelSleepTimerTests
         // The end is already waiting on the UI thread when the setting changes.
         _queue.Post(() => Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Ended)));
 
-        await _device.SetSleepTimerButtonAsync(false);
+        _buttons.SetShown(PlayerButton.SleepTimer, false);
         Assert.False(viewModel.ShowsSleepTimer);
         Assert.False(viewModel.IsSleepTimerOn);
         Drain();
@@ -616,7 +616,7 @@ public sealed class PlayerViewModelSleepTimerTests
         PlaysToItsEnd();
         Assert.False(viewModel.IsNextUpCountingDown);
 
-        await _device.SetSleepTimerButtonAsync(false);
+        _buttons.SetShown(PlayerButton.SleepTimer, false);
         Drain();
 
         Assert.True(viewModel.IsNextUpCountingDown);
@@ -635,7 +635,7 @@ public sealed class PlayerViewModelSleepTimerTests
         Assert.Equal(PlayerPhase.Ended, viewModel.Phase);
         Assert.False(viewModel.IsNextUpCountingDown);
 
-        await _device.SetSleepTimerButtonAsync(false);
+        _buttons.SetShown(PlayerButton.SleepTimer, false);
         Drain();
 
         Assert.True(viewModel.IsNextUpCountingDown);
@@ -655,7 +655,7 @@ public sealed class PlayerViewModelSleepTimerTests
         Advance(TimeSpan.FromSeconds(1));
         Assert.False(viewModel.IsSleepTimerOn);
 
-        await _device.SetSleepTimerButtonAsync(false);
+        _buttons.SetShown(PlayerButton.SleepTimer, false);
         Plays();
 
         Assert.Equal(PlayerPhase.Playing, viewModel.Phase);
@@ -691,6 +691,20 @@ public sealed class PlayerViewModelSleepTimerTests
         Assert.False(_engine.Current.IsPaused);
         Assert.False(viewModel.IsSleepTimerOn);
         Assert.False(viewModel.ShowsSleepTimer);
+    }
+
+    [Fact]
+    public async Task ATick_FollowsTheBarThePlayerWasGiven_NotWhatTheLayoutReadsMeanwhile()
+    {
+        var viewModel = await PlayingAsync(Ted);
+        Choose(viewModel, "5 min");
+
+        // Another profile's bar, say, that the player has not been told of: its own bar still has the timer.
+        _buttons.SetUnannounced(PlayerBar.Default.WithShown(PlayerButton.SleepTimer, false));
+        _time.Advance(TimeSpan.FromMinutes(5.1));
+
+        Assert.True(_engine.Current.IsPaused);
+        Assert.True(viewModel.ShowsSleepTimer);
     }
 
     [Fact]

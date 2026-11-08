@@ -33,11 +33,10 @@ public sealed partial class PlayerViewModel
     private int? _sleepPicked;
 
     /// <summary>
-    /// The bar has the Sleep button, as Settings → Playback → This PC has it (Granary's own switch, on by default). Turned off,
-    /// a timer that runs ends, as Turn off ends it.
+    /// The bar has the Sleep button, as Settings → Playback → Player buttons has it (<see cref="Bar"/>). Hidden, a timer that
+    /// runs ends, as Turn off ends it.
     /// </summary>
-    [ObservableProperty]
-    public partial bool ShowsSleepTimer { get; private set; } = true;
+    public bool ShowsSleepTimer => Bar.SleepTimer;
 
     /// <summary>A duration counts down, or "End of episode" is on: the button is white with the amber dot.</summary>
     [ObservableProperty]
@@ -136,8 +135,8 @@ public sealed partial class PlayerViewModel
 
     private void OnSleepTick()
     {
-        // Settings has turned the timer off, and that change waits behind this tick: it no longer runs out.
-        if (_sleepEnds is not { } ends || _devicePreferences?.SleepTimerButton == false)
+        // Settings has hidden the timer's button, and that change waits behind this tick: it no longer runs out.
+        if (_sleepEnds is not { } ends || !_barToCome.SleepTimer)
         {
             return;
         }
@@ -245,61 +244,16 @@ public sealed partial class PlayerViewModel
     // The end row comes and goes with the title's end.
     partial void OnPhaseChanged(PlayerPhase value) => ShowSleepTimer();
 
-    private void FollowSleepTimerButton()
+    // Settings → Playback → Player buttons hid the Sleep timer: a timer that runs ends, as Turn off ends it, and a hold it
+    // left at the end of what plays (End of episode, or a duration that ran out there) goes with it, so the next episode
+    // starts as usual.
+    private void EndSleepTimerWithItsButton()
     {
-        if (_devicePreferences is { } preferences)
-        {
-            ShowsSleepTimer = preferences.SleepTimerButton;
-            preferences.SleepTimerButtonChanged += OnSleepTimerButtonChanged;
-        }
-    }
-
-    private void StopFollowingSleepTimerButton()
-    {
-        if (_devicePreferences is { } preferences)
-        {
-            preferences.SleepTimerButtonChanged -= OnSleepTimerButtonChanged;
-        }
-    }
-
-    // Raised on the thread that changed the setting. On the UI thread it applies at once, so work queued there before it,
-    // such as the title's end, finds the timer off; from another thread it waits for its turn there. Each change applies
-    // its own choice, so off and on again before the UI thread gets to them still ends the timer.
-    private void OnSleepTimerButtonChanged(object? sender, bool shown)
-    {
-        if (_dispatcher.HasThreadAccess)
-        {
-            ApplySleepTimerButton(shown);
-        }
-        else
-        {
-            _dispatcher.Post(() => ApplySleepTimerButton(shown));
-        }
-    }
-
-    private void ApplySleepTimerButton(bool shows)
-    {
-        // Posted before the player was left for good: nothing is left to change.
-        if (_disposed)
-        {
-            return;
-        }
-        if (shows == ShowsSleepTimer)
-        {
-            return;
-        }
-        ShowsSleepTimer = shows;
-        if (shows)
-        {
-            return;
-        }
         if (IsSleepTimerOn)
         {
             _logger.LogInformation("Sleep timer turned off with its button in Settings");
         }
         StopSleepTimer();
-        // A hold the timer left at the end of what plays (End of episode, or a duration that ran out there) goes with it:
-        // the next episode starts as usual.
         if (_nextUp.IsHeld)
         {
             _nextUp.Hold(false, Now);

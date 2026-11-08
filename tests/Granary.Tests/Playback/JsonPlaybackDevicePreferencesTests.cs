@@ -128,7 +128,6 @@ public sealed class JsonPlaybackDevicePreferencesTests : IDisposable
         await preferences.SetPassoutThresholdAsync(7);
         await preferences.SetResumeRewindSecondsAsync(12);
         await preferences.SetDiscordStatusAsync(true);
-        await preferences.SetSleepTimerButtonAsync(false);
 
         var again = Create();
         Assert.True(again.DecodesInSoftware);
@@ -137,7 +136,6 @@ public sealed class JsonPlaybackDevicePreferencesTests : IDisposable
         Assert.Equal(7, again.PassoutThreshold);
         Assert.Equal(12, again.ResumeRewindSeconds);
         Assert.True(again.DiscordStatus);
-        Assert.False(again.SleepTimerButton);
     }
 
     [Fact]
@@ -280,48 +278,57 @@ public sealed class JsonPlaybackDevicePreferencesTests : IDisposable
     }
 
     [Fact]
-    public void AtFirst_ThePlayerHasItsSleepButton() => Assert.True(Create().SleepTimerButton);
-
-    [Fact]
-    public async Task TheSleepButtonTurnedOff_StaysOffAtTheNextStart_WithTheOtherChoices()
+    public async Task WithoutTheSleepTimerSwitch_ItWasNotTurnedOff_AndNoneIsWritten()
     {
         var preferences = Create();
+        Assert.False(preferences.SleepTimerSwitchOff);
 
         await preferences.SetDiscordStatusAsync(true);
-        await preferences.SetSleepTimerButtonAsync(false);
 
-        var again = Create();
-        Assert.False(again.SleepTimerButton);
-        Assert.True(again.DiscordStatus);
-        Assert.Contains("\"sleep_timer_button\": false", await File.ReadAllTextAsync(FilePath, TestContext.Current.CancellationToken), StringComparison.Ordinal);
+        Assert.DoesNotContain("sleep_timer_button", await File.ReadAllTextAsync(FilePath, TestContext.Current.CancellationToken), StringComparison.Ordinal);
     }
 
     [Fact]
-    public async Task AnOlderFile_KeepsTheSleepButton_AndTheOtherChoices()
+    public async Task TheSleepTimerSwitchTurnedOff_IsReadForThePlayerButtons_AndKeptAsItWas()
     {
         Directory.CreateDirectory(_directory);
-        await File.WriteAllTextAsync(FilePath, "{ \"decodes_in_software\": true, \"discord_status\": true }", TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(FilePath, "{ \"discord_status\": true, \"sleep_timer_button\": false }", TestContext.Current.CancellationToken);
 
         var preferences = Create();
-
-        Assert.True(preferences.SleepTimerButton);
-        Assert.True(preferences.DecodesInSoftware);
+        Assert.True(preferences.SleepTimerSwitchOff);
         Assert.True(preferences.DiscordStatus);
+
+        await preferences.SetDecodesInSoftwareAsync(true);
+
+        Assert.Contains("\"sleep_timer_button\": false", await File.ReadAllTextAsync(FilePath, TestContext.Current.CancellationToken), StringComparison.Ordinal);
+        Assert.True(Create().SleepTimerSwitchOff);
     }
 
     [Fact]
-    public async Task TurningTheSleepButtonOffOrOn_SaysSoWithTheNewChoice_ButTheSameChoiceAgainDoesNot()
+    public async Task TheSleepTimerSwitch_OnceTakenOver_IsDroppedFromTheFile_WithTheOtherChoicesKept()
     {
+        Directory.CreateDirectory(_directory);
+        await File.WriteAllTextAsync(FilePath, "{ \"discord_status\": true, \"up_down\": \"volume\", \"sleep_timer_button\": false }",
+            TestContext.Current.CancellationToken);
         var preferences = Create();
-        var changes = new List<bool>();
-        preferences.SleepTimerButtonChanged += (_, shown) => changes.Add(shown);
 
-        await preferences.SetSleepTimerButtonAsync(false);
-        await preferences.SetSleepTimerButtonAsync(false);
-        await preferences.SetSleepTimerButtonAsync(true);
+        await preferences.ForgetSleepTimerSwitchAsync();
 
-        Assert.Equal([false, true], changes);
-        Assert.True(Create().SleepTimerButton);
+        Assert.False(preferences.SleepTimerSwitchOff);
+        Assert.DoesNotContain("sleep_timer_button", await File.ReadAllTextAsync(FilePath, TestContext.Current.CancellationToken), StringComparison.Ordinal);
+        var again = Create();
+        Assert.False(again.SleepTimerSwitchOff);
+        Assert.True(again.DiscordStatus);
+        Assert.Equal(PlayerUpDown.Volume, again.UpDown);
+    }
+
+    [Fact]
+    public async Task TheSleepTimerSwitchLeftOn_WasNotTurnedOff()
+    {
+        Directory.CreateDirectory(_directory);
+        await File.WriteAllTextAsync(FilePath, "{ \"sleep_timer_button\": true }", TestContext.Current.CancellationToken);
+
+        Assert.False(Create().SleepTimerSwitchOff);
     }
 
     [Fact]

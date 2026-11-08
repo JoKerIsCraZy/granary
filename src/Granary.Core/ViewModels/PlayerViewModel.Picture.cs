@@ -26,9 +26,14 @@ public sealed partial class PlayerViewModel
     /// <summary>The picture's area in pixels, as the page lays it out; the playback info shows it.</summary>
     public void SetPictureSize(int width, int height) => _pictureSize = (width, height);
 
+    // Its panel closes as ever; it opens only while Settings shows its button.
     [RelayCommand]
     private void TogglePlaybackInfo()
     {
+        if (!IsPlaybackInfoShown && !Bar.PlaybackInfo)
+        {
+            return;
+        }
         IsPlaybackInfoShown = !IsPlaybackInfoShown;
         if (!IsPlaybackInfoShown)
         {
@@ -44,9 +49,14 @@ public sealed partial class PlayerViewModel
         }, null, PlaybackInfoRefresh, PlaybackInfoRefresh);
     }
 
+    // The whole picture comes back as ever; it fills only while Settings shows the button.
     [RelayCommand]
     private void ToggleFill()
     {
+        if (!IsFillingScreen && !Bar.Fill)
+        {
+            return;
+        }
         IsFillingScreen = !IsFillingScreen;
         _engine.SetFill(IsFillingScreen);
     }

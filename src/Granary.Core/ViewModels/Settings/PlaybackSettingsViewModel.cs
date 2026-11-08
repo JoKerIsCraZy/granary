@@ -79,7 +79,6 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject, IDispo
         ShowStillWatching(devicePreferences.PassoutThreshold);
         ResumeRewindSeconds = devicePreferences.ResumeRewindSeconds;
         DiscordStatus = devicePreferences.DiscordStatus;
-        SleepTimerButton = devicePreferences.SleepTimerButton;
         _saves = new SettingSaves(logger);
     }
 

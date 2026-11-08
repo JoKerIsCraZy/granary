@@ -39,14 +39,11 @@ public interface IPlaybackDevicePreferences
     /// <summary>Raised on the caller's thread when <see cref="DiscordStatus"/> was turned on or off, so a title that plays follows.</summary>
     event EventHandler? DiscordStatusChanged;
 
-    /// <summary>The player has its Sleep button (<see cref="ViewModels.PlayerViewModel.ShowsSleepTimer"/>); on by default.</summary>
-    bool SleepTimerButton { get; }
-
     /// <summary>
-    /// Raised on the caller's thread with the new choice when <see cref="SleepTimerButton"/> was turned on or off, so an
-    /// open player follows each change in order, even after the next one.
+    /// This PC's Sleep timer switch, from before Settings → Playback → Player buttons, was turned off: the editor takes it
+    /// over once (<see cref="PlayerButtonsLayout"/>), which then drops it (<see cref="ForgetSleepTimerSwitchAsync"/>).
     /// </summary>
-    event EventHandler<bool>? SleepTimerButtonChanged;
+    bool SleepTimerSwitchOff { get; }
 
     /// <summary>The latest save: done once it is on disk, or failed and logged. The window waits for it briefly as it closes.</summary>
     Task LatestSave { get; }
@@ -64,7 +61,8 @@ public interface IPlaybackDevicePreferences
 
     Task SetDiscordStatusAsync(bool enabled);
 
-    Task SetSleepTimerButtonAsync(bool shown);
+    /// <summary>The player buttons editor has taken the Sleep timer switch over: it goes from the file.</summary>
+    Task ForgetSleepTimerSwitchAsync();
 }
 
 /// <summary>Up and Down in the player, with focus on the picture.</summary>
@@ -83,12 +81,13 @@ public enum PlayerUpDown
 /// <summary>
 /// <see cref="IPlaybackDevicePreferences"/> in <c>playback-device.json</c> in the data directory
 /// (<c>{ "decodes_in_software": true, "up_down": "volume", "time_left": true, "passout_threshold": 5,
-/// "resume_rewind_seconds": 7, "discord_status": true, "sleep_timer_button": false }</c>).
-/// Without the file, or with one that cannot be read, direct play needs the GPU, Up and Down show the controls and menus,
-/// the player's time shows the duration, the player waits after three episodes, a resume lands on the saved point,
-/// Discord's status stays as it is and the player has its Sleep button, as by default; a value it does not know, or one an
-/// older file lacks, is the default. One that cannot be written is logged, and the choice still holds for this run. Files
-/// are written off the caller's thread, which is the UI's.
+/// "resume_rewind_seconds": 7, "discord_status": true }</c>). Without the file, or with one that cannot be read, direct play
+/// needs the GPU, Up and Down show the controls and menus, the player's time shows the duration, the player waits after
+/// three episodes, a resume lands on the saved point and Discord's status stays as it is, as by default; a value it does
+/// not know, or one an older file lacks, is the default. One that cannot be written is logged, and the choice still holds
+/// for this run. Files are written off the caller's thread, which is the UI's. The Sleep timer switch from before the
+/// player buttons editor (<c>"sleep_timer_button": false</c>) is read and written back as it was, until the editor has
+/// taken it over.
 /// </summary>
 public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
 {
@@ -106,7 +105,8 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
     private volatile int _passoutThreshold;
     private volatile int _resumeRewindSeconds;
     private volatile bool _discordStatus;
-    private volatile bool _sleepTimerButton;
+    // The file had the Sleep timer switch turned off, and the player buttons editor has not taken it over yet.
+    private volatile bool _sleepTimerSwitchOff;
     private Task _latestSave = Task.CompletedTask;
 
     public JsonPlaybackDevicePreferences(string filePath, ILogger<JsonPlaybackDevicePreferences> logger)
@@ -125,8 +125,8 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
             ? (int)seconds
             : ResumeRewind.DefaultSeconds;
         _discordStatus = file?.DiscordStatus == true;
-        // Off only when turned off: a file from before the switch shows the button.
-        _sleepTimerButton = file?.SleepTimerButton != false;
+        // Off only when turned off: a file from before the switch, or without it, shows the button.
+        _sleepTimerSwitchOff = file?.SleepTimerButton == false;
     }
 
     public static string DefaultPath => Path.Combine(AppPaths.DataDirectory, "playback-device.json");
@@ -145,9 +145,7 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
 
     public event EventHandler? DiscordStatusChanged;
 
-    public bool SleepTimerButton => _sleepTimerButton;
-
-    public event EventHandler<bool>? SleepTimerButtonChanged;
+    public bool SleepTimerSwitchOff => _sleepTimerSwitchOff;
 
     public Task LatestSave
     {
@@ -200,6 +198,16 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
         return QueueSave();
     }
 
+    public Task ForgetSleepTimerSwitchAsync()
+    {
+        if (!_sleepTimerSwitchOff)
+        {
+            return Task.CompletedTask;
+        }
+        _sleepTimerSwitchOff = false;
+        return QueueSave();
+    }
+
     public Task SetDiscordStatusAsync(bool enabled)
     {
         bool changed = enabled != _discordStatus;
@@ -208,18 +216,6 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
         if (changed)
         {
             DiscordStatusChanged?.Invoke(this, EventArgs.Empty);
-        }
-        return save;
-    }
-
-    public Task SetSleepTimerButtonAsync(bool shown)
-    {
-        bool changed = shown != _sleepTimerButton;
-        _sleepTimerButton = shown;
-        var save = QueueSave();
-        if (changed)
-        {
-            SleepTimerButtonChanged?.Invoke(this, shown);
         }
         return save;
     }
@@ -254,7 +250,7 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
                     TimeLeft = _timeLeft,
                     ResumeRewindSeconds = _resumeRewindSeconds,
                     DiscordStatus = _discordStatus,
-                    SleepTimerButton = _sleepTimerButton,
+                    SleepTimerButton = _sleepTimerSwitchOff ? false : null,
                 };
                 await JsonSerializer.SerializeAsync(stream, file, PlaybackDeviceJsonContext.Default.PlaybackDeviceFile).ConfigureAwait(false);
             }
@@ -288,6 +284,8 @@ internal sealed record PlaybackDeviceFile(bool? DecodesInSoftware, string? UpDow
 
     public bool? DiscordStatus { get; init; }
 
+    // Only in a file that had it: Settings no longer sets it.
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? SleepTimerButton { get; init; }
 }
 

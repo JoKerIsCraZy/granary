@@ -70,8 +70,9 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         global::Granary.Core.WatchParty.WatchPartySession? watchParty = null,
         IConfirmation? confirmation = null,
         EpisodeSpoilerSettings? spoilers = null,
-        IPlaybackDevicePreferences? devicePreferences = null,
-        AudioDelay? audioDelay = null)
+        IPlayerButtonsLayout? buttons = null,
+        AudioDelay? audioDelay = null,
+        IPlaybackDevicePreferences? devicePreferences = null)
     {
         _engine = engine;
         _dispatcher = dispatcher;
@@ -95,9 +96,10 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         Party = InitializeWatchParty(confirmation);
         Look.Edited += OnLookEdited;
         InitializeMarkerEdit();
+        _buttons = buttons;
+        FollowButtons();
         _devicePreferences = devicePreferences;
         ShowsTimeLeft = devicePreferences?.TimeLeft == true;
-        FollowSleepTimerButton();
         _engine.StateChanged += OnStateChanged;
         _engine.Ended += OnEnded;
     }
@@ -642,7 +644,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         Leave();
         ResetNextUp();
         StopSleepTicks();
-        StopFollowingSleepTimerButton();
+        StopFollowingButtons();
         StopPlaybackInfo();
         _syncFeedback?.Dispose();
         _engine.StateChanged -= OnStateChanged;

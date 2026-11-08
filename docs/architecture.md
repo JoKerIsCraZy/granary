@@ -567,15 +567,41 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   offer it. The page hands the menu its rows as it opens and keeps them while it is open (as `DetailHero`'s pickers), so a
   change under it cannot take the focus out. The menu opens on this device's
   `player.sleep_timer_default_minutes` (read with the playback's settings, in a batch of its own); a duration started is
-  saved there, as Android keeps the last one (`ServerPlayback.SetSleepTimerDefault`, `profile_device`). This PC can
-  hide the button (`IPlaybackDevicePreferences.SleepTimerButton`, `sleep_timer_button` in `playback-device.json`, on when
-  missing): the player reads it as it is made and follows `SleepTimerButtonChanged` until it is disposed, so the
-  minimized bar does too; turned off, `PlayerViewModel.ShowsSleepTimer` goes false, a running timer ends as Turn off
-  ends it, and a hold the timer left after the end lets go (`NextUpFlow.Hold(false)` then starts the countdown). A change
-  on the UI thread applies at once, so work already queued there, such as the title's end, finds the timer off; one from
-  another thread is posted, and does nothing once the player is disposed. Each change carries its own choice, so off and
-  on again before the UI thread gets to them still end the timer, and a tick that waits behind a switch-off does not run
-  out.
+  saved there, as Android keeps the last one (`ServerPlayback.SetSleepTimerDefault`, `profile_device`). Player buttons
+  can hide the button (below): `PlayerViewModel.ShowsSleepTimer` goes false, a running timer ends as Turn off ends it,
+  and a hold the timer left after the end lets go (`NextUpFlow.Hold(false)` then starts the countdown). A tick reads the
+  latest bar the player was told of, so one that waits behind a change from another thread does not run out.
+- **Player buttons** (`PlayerBar`, `PlayerButtonsLayout`, `PlayerViewModel.Buttons.cs`; Granary's own, Silo's clients
+  have no such editor): which of the eleven buttons on the right of the bar may show, and in which order, for each server
+  and profile on this PC (`player-buttons.json`, by "server id/profile id", as `SidebarLayout` keeps the sidebar; the
+  server keeps nothing). A `PlayerBar` is immutable: every `PlayerButton` in the profile's order and the hidden ones. A
+  profile's order names buttons by id (`volume`, `sleep_timer`, `audio`, `subtitles`, `chapters`, `settings`,
+  `edit_markers`, `playback_info`, `mini_view`, `fill`, `full_screen`); an id this Granary does not know is left out, and a
+  button the order lacks, one an update added, takes its own place, after the one before it in the bar's own order, and
+  shows. The order is written only when it is not the bar's own. A file that cannot be read shows today's bar and is
+  kept as `player-buttons.json.bak` before the next write; when that copy fails, nothing writes over the file in that
+  run, and changes hold until Granary closes. A change shows at once and its save follows (one at a time,
+  each writing the layouts as they are then, so the last change is what stays; a failed one is logged and the change
+  holds for the run), so the editor's Move takes the next press at once, as the sidebar editor's does. This PC's Sleep
+  timer switch from before the editor (`IPlaybackDevicePreferences.SleepTimerSwitchOff`, `sleep_timer_button: false` in
+  `playback-device.json`) is taken over once, while there is no file yet: the file is written at once with
+  `start_hidden: ["sleep_timer"]`, the bar of every profile without one of its own, and once that is on disk the switch
+  is dropped (`ForgetSleepTimerSwitchAsync`), so a file deleted later does not hide the Sleep timer again; a write that
+  failed leaves it for the next start, and one left beside an existing file is dropped then. A change gives the profile
+  a bar of its own, and Reset gives it today's. The player reads `IPlayerButtonsLayout.Current` as it is made
+  and follows `Changed` until it is disposed, so the minimized bar does too: a change on the UI thread applies at once,
+  so work already queued there, such as the title's end, finds a hidden Sleep timer off; one from another thread is
+  posted, and does nothing once the player is disposed. The player keeps the latest bar it was told of as well, on the
+  telling thread, and a sleep tick reads that, so one queued ahead of a hide from another thread does not run out. Each change carries its own bar, so hidden and shown again before
+  the UI thread gets to them still end the timer. Another profile acting raises `Changed` too. The page arranges its
+  buttons in `PlayerBar.Order` (`PlayerPage.ArrangeBarButtons`) and shows each one while the bar does and, for one that
+  needs something, while there is that (`ShowsButton`); a menu goes with its hidden button. A hidden button is off: the
+  page asks `PlayerBar.AllowsKey` before a key of one (`PlayerKey`: M, the volume keys, C, the chapter keys, P, F and a
+  double click; the minimized bar keeps its own Mute and the volume keys), Down opens `PlayerBar.MenuOnDown`, the first
+  of the audio, subtitle and settings menus that shows, and the view model's own commands check `Bar` too (C, the chapter
+  keys, opening Playback info, filling, opening the marker panel). Hidden, Playback info closes and Fill screen ends,
+  as the Sleep timer does; an open marker panel stays with its draft. F11 is the window's (`MainWindow.FullScreen.cs`)
+  and always works.
 - **Chapters** (11.3): the playing file's `chapters` from the watch detail (mpv reads none through a remux or a
   transcode), in order, empty ones left out, pictures resolved against the server; they make the Chapters menu, the
   seek bar's ticks and the chapter named in its bubble, and Ctrl+Left and Ctrl+Right go to their starts (`ChapterJump`,

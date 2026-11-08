@@ -65,7 +65,17 @@ internal sealed class FakePlaybackEngine : IPlaybackEngine
 
     public bool Fill { get; private set; }
 
-    public void SetFill(bool fill) => Fill = fill;
+    /// <summary>Thrown by <see cref="SetFill"/> while set, as an engine that has gone away might.</summary>
+    public Exception? FailFill { get; set; }
+
+    public void SetFill(bool fill)
+    {
+        if (FailFill is { } failure)
+        {
+            throw failure;
+        }
+        Fill = fill;
+    }
 
     /// <summary>The audio delay in seconds, positive for later sound.</summary>
     public double AudioDelay { get; private set; }

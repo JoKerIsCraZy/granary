@@ -888,12 +888,10 @@ says why above the sections.
   point. As in the Android app, a set rewind applies only to resume points 30 s in or more, never to Start over, a Watch
   Party, a restart, another file or the player's previous and next episode; Still watching prompt, a select with Unlimited, 2 to 5 episodes (the Android app's
   choices, 3 by default) and Custom, which shows a number box from 1 to 20 (the contract's highest), counting from the
-  next episode; Sleep timer, a switch, on by default ("Show the Sleep button in the player, which pauses playback after
-  a set time or at the end of an episode. Turning it off ends a timer that's running."), which an open player follows at
-  once, the minimized one too (see the Sleep timer, under Player); mpv configuration, see below; and Show what's playing in Discord, a switch at the group's end, off by
+  next episode; mpv configuration, see below; and Show what's playing in Discord, a switch at the group's end, off by
   default ("Your Discord status shows the title, the episode and the time left while Granary plays. Needs the Discord app
   on this PC."), which a title that plays follows at once (the Discord status, under Player). Granary's own and kept on
-  the PC, so nothing saves to the server), Sound ("Audio on this device", as the web's device settings group it: Audio
+  the PC, so nothing saves to the server), Player buttons (see below), Sound ("Audio on this device", as the web's device settings group it: Audio
   sync offset, "Shift audio earlier or later to correct lip sync on this device.", a 160 px slider from −5000 to 5000 ms
   in the Android app's 50 ms steps with the value and its unit beside it, "-250 milliseconds" in 12 px muted, as the
   web's slider reads it out; off until this device's value was read; a read that failed shows "Couldn't load your audio
@@ -904,6 +902,26 @@ says why above the sections.
   0 and nothing changed it in this run), Connection (the latest speed reading and what Auto plays without converting), Skipping (skip
   intros, auto-skip recaps and credits), Next episode (start next at preview, auto-play), Seek controls (rewind and
   fast-forward intervals).
+- **Player buttons** (`PlayerButtonsSettingsViewModel` on `PlayerButtonsLayout`; Granary's own, Silo's clients have no
+  such editor): which buttons the right of the player's bar shows, and in which order, laid out as Navigation & Cards →
+  Sidebar, with Reset beside the title while the bar is not today's: "Which buttons the player shows on the right of its
+  controls, and in which order, for this profile on this PC. Some show only when a title has what they need. A hidden
+  button's keys do nothing too, such as C for Subtitles." A row for
+  each button in the bar's order: its icon (the player's own; Audio for the audio tracks' lines) dimmed while hidden,
+  its name and, in 12 px muted, a note (Volume "Mute and the volume slider.", Sleep timer "Hiding it ends a timer that's
+  running.", Audio tracks "Shows when a title has audio tracks.", Subtitles "Shows for titles from your Silo server.",
+  Chapters "Shows when a title has chapters.", Playback settings "Speed, audio delay, version and quality.", Edit markers
+  "Shows when your account may edit markers.", Full screen "F11 still switches full screen."; Playback info, Mini view
+  and Fill screen have none), Move up
+  and Move down as 32 px ghost buttons (off at the ends, where they still take the keyboard, so a remote's Up and Down go
+  along each column), and the switch. Today's bar, the default: Volume, Sleep timer,
+  Audio tracks, Subtitles, Chapters, Playback settings, Edit markers, Playback info, Mini view, Fill screen, Full screen,
+  all shown. A move shows at once, while it is saved, so a held key or a remote's quick presses all count; it keeps the
+  keyboard on its row, on the button pressed or, once the row is at the end, on the other one, so a remote can go on;
+  after Reset it goes to the first row's switch. Without a profile acting a switch goes back.
+  An open player, the minimized one too, follows each change at once, and a hidden button is off, keys included (see
+  Hidden buttons, under Player). Hiding everything is allowed: the right of the bar is then empty. The transport, the seek bar, Exit and Minimize, the time and title, and the minimized player's bar stay
+  as they are.
 - **This PC → mpv configuration**: "Use your own mpv options from mpv.conf, such as shaders, scaling or debanding.
   They apply from the next title you play. Granary keeps the options it
   needs to show the video and follow your Silo server's choices. A wrong option can make playback worse; delete the
@@ -1211,9 +1229,10 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   before the title is over, as it would only say the time it is now. Screen readers hear "Ends at 22:41". In the middle skip back, the white play/pause disc and skip forward (glass discs showing the
   profile's intervals), for an episode with a previous or next one flanked by previous and next episode discs (both
   slots kept while one has an episode, so Play stays in the middle; a movie has none); on the right mute, the volume
-  slider, the sleep timer (unless Settings → Playback → This PC turns it off), audio, subtitles, chapters, settings,
-  playback info, mini view, fill screen and full screen. Audio
-  and subtitles stand side by side, where the web puts chapters between them, as the two track choices belong together; audio
+  slider, the sleep timer, audio, subtitles, chapters, settings, edit markers, playback info, mini view, fill screen and
+  full screen, as Settings → Playback → Player buttons shows and orders them (a hidden one is gone, and the buttons after
+  it close up). By default audio and subtitles stand side by side, where the web puts chapters between them, as the two
+  track choices belong together, and a profile can reorder them there; audio
   shows the web's icon, lucide's AudioLines, drawn as a PathIcon. A utility
   button that is on (sleep timer, playback info, fill screen, subtitles) turns white with the web's amber dot under it. As the
   web's `1fr auto 1fr` row, the right column is never narrower than its buttons: in a narrow window the transport
@@ -1221,7 +1240,8 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   profile left it, as the web player does for the viewer; previous stays within the season and steps over episodes
   without a readable file.
 - **Sleep timer** (`SleepTimerOption`, the look and words of the web's `SleepTimerMenu`, which only its audiobook player
-  has): right of the volume slider, as the web's audiobook bar puts it after the volume, a 40 px pill without a background,
+  has): by default right of the volume slider, as the web's audiobook bar puts it after the volume (Player buttons can
+  move it), a 40 px pill without a background,
   8 px each side: the moon (14 px) and "Sleep" (12 px), "Sleep 29:59" while a duration counts down (tabular figures); white
   with the amber dot while the timer is on. Screen readers hear "Sleep timer" and, while it is on, the choice ("30 min",
   "End of episode"), not the seconds. Its menu opens above it (black 90 %, radius 8, at least 160 px, no label): "Turn off" while the timer is on,
@@ -1246,12 +1266,13 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   Apple's player does; a room that takes over ends a timer set before. Tab reaches the button, and so do the arrows of a
   remote moving through the controls (Right from Mute passes the slider); OK or Enter opens the menu, Up and Down move
   through it, OK picks, Esc or the remote's Back closes it.
-  Settings → Playback → This PC → Sleep timer (Granary's own; Silo's clients always have it), turned off, takes the button
-  and its dot away and the buttons after it close up; the arrows go from Mute straight to the next button shown (audio,
-  else subtitles, chapters or settings), and Tab from the slider. A timer that runs then ends, as Turn off ends it, and a Playing Next screen it left waiting (End of
-  episode, or a duration that ran out at the end) counts down again, so the next episode starts by itself as usual; the
-  duration this device starts on stays. The player follows at once, also as the minimized bar, and a player opened later
-  starts without the button.
+  Hidden in Settings → Playback → Player buttons (Granary's own; Silo's clients always have it), the button and its dot
+  go and the buttons after it close up; the arrows go from Mute straight to the next button shown, and Tab from the
+  slider. A timer that runs then ends, as Turn off ends it, and a Playing Next screen it left waiting (End of episode, or
+  a duration that ran out at the end) counts down again, so the next episode starts by itself as usual; the duration
+  this device starts on stays. The player follows at once, also as the minimized bar, and a player opened later starts
+  without the button. This PC's Sleep timer switch from before the editor (`sleep_timer_button: false` in
+  `playback-device.json`) is taken over once: every profile on this PC starts with the Sleep timer hidden.
 - **Audio menu** (`AudioTrackOption`, wording in `TrackText` after the web's `AudioTrackMenu`): the button shows
   once the file has a track and opens with two or more. Above it, 280 to 360 px wide: "AUDIO", then a row per
   track with its name (its title, else the embedded title, else language, codec and channels), chips for the
@@ -1523,8 +1544,9 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   Chapters menu). Up and Down do as Settings → Playback → This PC says. By default as on Silo's
   TV app (a remote has its own volume buttons; M mutes and the slider, reached with Tab, sets it): from the picture Up
   shows the controls with focus on Play/Pause and Down opens the audio menu when there is a track to choose, else the
-  subtitles', else the playback settings (the TV app's panel opens on audio, else subtitles, else video), and on a
-  shown control they move from it. Set to Volume they set it ±5 as on the web, and move only off the seek
+  subtitles', else the playback settings (the TV app's panel opens on audio, else subtitles, else video; of those, the
+  first Settings → Playback → Player buttons shows, and with none Down does nothing), and on a shown control they move
+  from it. Set to Volume they set it ±5 as on the web, and move only off the seek
   bar. In the minimized bar, while the title loads and after it failed they always set the volume ±5. A remote's Back (Browser Back) and Backspace do as Esc
   does, but leave full screen alone (a media PC runs in it); OK (Enter) with focus on the picture only shows the
   controls, focus on Play/Pause, as on Silo's TV app, also when the pointer (an air mouse's) already shows them (so does
@@ -1544,6 +1566,17 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   held, but for Ctrl+Left and Ctrl+Right (Ctrl alone). The keys are handled on the page, not as keyboard
   accelerators, so no accelerator tooltip appears; the buttons announce them through
   `AutomationProperties.AcceleratorKey`.
+- **Hidden buttons** (Settings → Playback → Player buttons, `PlayerBar.AllowsKey`): a hidden button is off, keys and
+  remote included. Volume hidden: M does nothing, and with Up and Down in the player set to Volume, so do Up and Down
+  (also while the title loads or after it failed, where they otherwise always set it); the minimized bar keeps its own
+  Mute, and there M and the volume keys still work. Subtitles hidden: C does nothing; a subtitle that shows stays.
+  Chapters hidden: Ctrl+Left and Ctrl+Right do nothing. Mini view hidden: P does nothing, so in the mini view P no
+  longer leaves it; Esc and its own button still do. Full screen hidden: F and a double click
+  on the picture do nothing; F11, the window's, still switches. Playback info hidden: its panel closes and does not
+  open. Fill screen hidden: the whole picture shows again. Edit markers hidden: the marker panel does not open; one that
+  is open stays, with its draft, until it is saved or closed. Sleep timer hidden: a running timer ends. Audio, Subtitles
+  and Playback settings hidden: Down never opens their menu. Playback settings hidden: speed, audio delay, version and
+  quality are out of reach, as the viewer chose. Granary has no key for Playback info.
 
 ### The web player, measured (reference for phase 3d)
 

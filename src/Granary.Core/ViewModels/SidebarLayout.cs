@@ -72,6 +72,9 @@ public sealed partial class SidebarLayout : ObservableObject
     /// <summary>The save in flight, for tests.</summary>
     internal Task Saving { get; private set; } = Task.CompletedTask;
 
+    /// <summary>Waited for before each write, inside it, so a test can hold a save back.</summary>
+    internal Func<Task> BeforeWrite { get; set; } = static () => Task.CompletedTask;
+
     /// <summary>The acting profile hid or moved something; Reset shows the sidebar as it comes.</summary>
     public bool IsCustomized => Current is { } layout && (layout.Hidden.Count > 0 || layout.Order.Count > 0);
 
@@ -202,6 +205,7 @@ public sealed partial class SidebarLayout : ObservableObject
         string temp = _filePath + ".tmp";
         try
         {
+            await BeforeWrite().ConfigureAwait(false);
             var file = new SidebarLayoutFile(_profiles.ToDictionary(
                 pair => pair.Key,
                 pair => new SidebarLayoutEntry([.. pair.Value.Hidden], pair.Value.Order.ToDictionary(o => o.Key, o => (IReadOnlyList<string>?)o.Value))));
