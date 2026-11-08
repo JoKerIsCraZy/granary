@@ -39,7 +39,7 @@ public sealed partial class PlayerViewModel
     /// <summary>
     /// How the server's stream plays, as the dot in the gear shows it (Granary's own): that of the plan whose stream the
     /// player loaded, so a switch shows its own once the new stream plays, and a plan turned down never shows. None without
-    /// a server stream, and once playback failed or ended.
+    /// a server stream and whenever none plays: while a title (or its retry) prepares, and once it failed or ended.
     /// </summary>
     [ObservableProperty]
     public partial StreamMethod StreamMethod { get; private set; }
@@ -94,9 +94,9 @@ public sealed partial class PlayerViewModel
             {
                 AudioDelayMs = 0;
             }
-            StreamMethod = playback.Status.Phase is ServerPlaybackPhase.Failed or ServerPlaybackPhase.Ended
-                ? StreamMethod.None
-                : StreamMethods.Of(playback.LoadedPlan);
+            StreamMethod = playback.Status.Phase is ServerPlaybackPhase.Playing or ServerPlaybackPhase.Reconnecting
+                ? StreamMethods.Of(playback.LoadedPlan)
+                : StreamMethod.None;
         }
         else
         {

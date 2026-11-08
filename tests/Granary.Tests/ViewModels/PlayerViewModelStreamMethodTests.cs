@@ -195,6 +195,31 @@ public sealed class PlayerViewModelStreamMethodTests
     }
 
     [Fact]
+    public async Task ARetry_ShowsNoMethod_UntilItsStreamPlays()
+    {
+        var viewModel = await PlayingAsync(Transcode);
+        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Failed, "The server stopped responding.", CanRetry: true));
+
+        await viewModel.RetryCommand.ExecuteAsync(null);
+        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Preparing));
+        Assert.Equal(StreamMethod.None, viewModel.StreamMethod);
+
+        Playback.TakePlan(DirectPlay);
+        Playback.PlayStream();
+        Assert.Equal(StreamMethod.DirectPlay, viewModel.StreamMethod);
+    }
+
+    [Fact]
+    public async Task APlaybackPreparingAgain_ShowsNoMethod_ThoughItLoadedAStreamBefore()
+    {
+        var viewModel = await PlayingAsync(Transcode);
+
+        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Preparing));
+
+        Assert.Equal(StreamMethod.None, viewModel.StreamMethod);
+    }
+
+    [Fact]
     public async Task LeavingThePlayer_ShowsNoMethod()
     {
         var viewModel = await PlayingAsync(Transcode);

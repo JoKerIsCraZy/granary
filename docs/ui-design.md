@@ -1283,8 +1283,8 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   copied), amber (`SiloStreamTranscodeBrush`, amber-400) while the server re-encodes either, also with the video copied:
   any transformation of the server's own but a Dolby Vision strip, tone mapping and ones Granary does not know included.
   It follows the stream the player loads: after a quality, version or audio switch or a restart it changes once the new
-  stream plays, and a plan the player turns down before its stream loads never shows. A file played directly, a title
-  still loading, failed or ended show the plain gear. The button's name and tooltip add the method in the playback
+  stream plays, and a plan the player turns down before its stream loads never shows. A file played directly, and a
+  title still loading (a retry too), failed or ended, show the plain gear. The button's name and tooltip add the method in the playback
   info's words: "Playback settings, Direct Play", "…, Direct Streaming", "…, Transcode"; the name has the speed after
   it ("Playback settings, Transcode, 1.5×"). SPEED: the value at the right, the speeds 0.5× to 3×
   (0.25 apart up to 2×, then 2.5× and 3×) as stops on a track drawn like the seek bar, the fill from 1× to the
