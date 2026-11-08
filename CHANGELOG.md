@@ -8,6 +8,11 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Added
 
+- **Start a Watch Party from a title's page:** the ⋮ menu of a movie, series, season or episode now has Start a Watch
+  Party. Pick whether the host picks or everyone votes, whether guests may pause, and for a series which episode, then
+  Create party & copy invite: the room opens with the title up next (or as the first suggestion of a vote), and the
+  invite link is on your clipboard. Nothing plays until you start it. It shows while your Silo server hosts Watch Party
+  and you're not in one already.
 - **Box sets:** a film that belongs to a box set, such as a trilogy, now shows the set's films in release order on its
   page, the film you're on marked "This film". Explore all opens the box set's own page, with its films, how many you've
   watched, and Play for the next one you haven't seen. Box sets show when your Silo server has them turned on for the

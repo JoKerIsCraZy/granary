@@ -1,9 +1,13 @@
+using System.ComponentModel;
+using Granary.App.Services;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Collections;
 using Granary.Core.ViewModels.Detail;
+using Granary.Core.ViewModels.WatchParty;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 
@@ -22,8 +26,35 @@ public sealed partial class DetailHero : UserControl
 
     public DetailHero()
     {
+        Party = App.Services.GetRequiredService<StartPartyViewModel>();
+        Party.CopyText = RoomClipboard.Copy;
         InitializeComponent();
+        // The menu's Watch Party entry follows the page, the server's rooms and this profile's room while the hero shows.
+        // Loaded and Unloaded can come out of order (an Unloaded after the next Loaded), so they are counted: only the
+        // last Unloaded lets go, and the session and the server's rooms, which live for the whole app, no longer hold the
+        // page.
+        Loaded += (_, _) =>
+        {
+            _loads++;
+            if (ViewModel is { } page)
+            {
+                Party.Attach(page);
+            }
+        };
+        Unloaded += (_, _) =>
+        {
+            _loads = Math.Max(0, _loads - 1);
+            if (_loads == 0)
+            {
+                Party.Detach();
+            }
+        };
     }
+
+    private int _loads;
+
+    /// <summary>"Start a Watch Party" in the More menu, and the sheet it opens.</summary>
+    public StartPartyViewModel Party { get; }
 
     /// <summary>Play, where keyboard focus starts when the page opens with a remote, as on Silo's TV app.</summary>
     public Control ArrivalFocus => PlayButton;
@@ -40,6 +71,10 @@ public sealed partial class DetailHero : UserControl
     public static Visibility Shows(string? text) => string.IsNullOrEmpty(text) ? Visibility.Collapsed : Visibility.Visible;
 
     public static Visibility Not(bool value) => value ? Visibility.Collapsed : Visibility.Visible;
+
+    public static Visibility Either(bool first, bool second) => first || second ? Visibility.Visible : Visibility.Collapsed;
+
+    public static Visibility Both(bool first, bool second) => first && second ? Visibility.Visible : Visibility.Collapsed;
 
     public static Style ChipStyle(bool isAccent) => (Style)Application.Current.Resources[isAccent ? "SiloAccentChipStyle" : "SiloChipStyle"];
 
@@ -188,6 +223,55 @@ public sealed partial class DetailHero : UserControl
     }
 
     private static double PanelHeight(XamlRoot root) => Math.Max(240, root.Size.Height * InfoHeightShare - InfoChrome);
+
+    // The web's StartPartySheet, in a dialog: it closes once the room opened (or the profile it was for is gone), or with
+    // Cancel, which leaves focus where the menu was.
+    private async void OnStartWatchPartyClick(object sender, RoutedEventArgs e)
+    {
+        if (XamlRoot is not { } root || !Party.Open())
+        {
+            return;
+        }
+        var focus = (sender as Control)?.FocusState is FocusState.Keyboard ? FocusState.Keyboard : FocusState.Programmatic;
+        StartPartyPanel? panel = null;
+        ContentDialog? dialog = null;
+        void CloseWhenDone(object? s, PropertyChangedEventArgs args)
+        {
+            if (args.PropertyName == nameof(StartPartyViewModel.IsDone) && Party.IsDone)
+            {
+                dialog?.Hide();
+            }
+        }
+        Party.PropertyChanged += CloseWhenDone;
+        try
+        {
+            panel = new StartPartyPanel(Party);
+            dialog = new ContentDialog
+            {
+                XamlRoot = root,
+                Content = panel,
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.None,
+            };
+            AutomationProperties.SetName(dialog, "Start a party with this");
+            await dialog.ShowAsync();
+            if (!Party.IsDone && IsLoaded)
+            {
+                MoreButton.Focus(focus);
+            }
+        }
+        catch (Exception ex)
+        {
+            // async void: nothing may escape (another dialog may already be open).
+            App.Services.GetRequiredService<ILogger<DetailHero>>().LogWarning("The Watch Party sheet could not be shown: {Error}", ex.GetType().Name);
+        }
+        finally
+        {
+            Party.PropertyChanged -= CloseWhenDone;
+            panel?.Detach();
+            Party.Close();
+        }
+    }
 
     // The web's "Add to a collection": the profile's own manual collections, ticked where the title is in them.
     private async void OnAddToCollectionClick(object sender, RoutedEventArgs e)

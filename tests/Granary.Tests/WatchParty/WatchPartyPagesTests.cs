@@ -209,5 +209,20 @@ public sealed class WatchPartyPagesTests : IAsyncDisposable
         again.Deactivate();
     }
 
+    [Fact]
+    public async Task ARoomStartedFromATitlesPage_SaysWhatHappenedOnTheWay_ForAFewSeconds()
+    {
+        await JoinAsync(WatchPartyPayloads.Room());
+        var page = RoomPage(Feature());
+        page.Activate();
+
+        page.Arrive(new WatchPartyArrival("Invite copied. Room code ABCD1234"));
+        Assert.Equal("Invite copied. Room code ABCD1234", page.Message);
+
+        _time.Advance(WatchPartyRoomViewModel.MessageFor);
+        Assert.False(page.HasMessage);
+        page.Deactivate();
+    }
+
     public async ValueTask DisposeAsync() => await _party.LeaveAsync();
 }

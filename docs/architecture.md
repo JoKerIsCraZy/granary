@@ -797,6 +797,12 @@ panel follow it. It joins or opens the room over HTTP and keeps the room socket 
   its position reported. The hub says why in the web's words (`WatchPartyText`) until it is dismissed, which leaves the
   room on this device. A room that only stopped playing is still on: the player closes, and the room page under it shows
   again.
+- **From a title's page.** `StartPartyViewModel` (Core, one per detail hero) offers "Start a Watch Party" while the page
+  has a title (`ItemDetailViewModel.WatchPartyRequest`), the server's capabilities say rooms with `staged_selection`, and
+  the session is in no room. Its sheet creates the room through the session, so the session has the room's proof at
+  once: it changes the pause policy where the switch says otherwise, stages the title or (in a vote) suggests it, and
+  copies the invite before the room page opens, which says what happened on the way (`WatchPartyArrival`, the web's
+  toasts). Each step is for the server and profile of the click; a change of either ends it quietly.
 
 ## Discord status
 

@@ -155,12 +155,18 @@
                                     </Grid>
                                 </RadioButton>
                             </Grid>
-                            <!--
-                                The web's hint under the button ("…choose Start a party with this from the menu.") is left out:
-                                Granary's title pages have no such entry yet.
-                            -->
                             <Button Content="{x:Bind ViewModel.CreateLabel, Mode=OneWay}" Style="{StaticResource SiloPrimaryButtonStyle}" HorizontalAlignment="Stretch"
                                     MinHeight="48" FontSize="16" Command="{x:Bind ViewModel.CreateCommand}" />
+                            <!--
+                                The web's hint under the button, 12 px muted with the entry's name in the foreground. The web names it
+                                "Start a party with this", its sheet's title; here it names the menu entry itself, "Start a Watch Party",
+                                which is what the web's menu shows too.
+                            -->
+                            <TextBlock Margin="0,-8,0,0" FontSize="12" LineHeight="20" Foreground="{StaticResource SiloMutedBrush}" TextWrapping="Wrap">
+                                <Run Text="Already know what you want to watch? Open its page and choose" />
+                                <Run Text="Start a Watch Party" Foreground="{StaticResource SiloForegroundBrush}" />
+                                <Run Text="from the menu." />
+                            </TextBlock>
                         </StackPanel>
                     </Grid>
                 </Border>
