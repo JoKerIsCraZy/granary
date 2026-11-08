@@ -300,7 +300,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         _engine.SetSpeed(_speed);
         StartAudioDelay(_context.Preferences, audioDelayRead);
         SetStatus(Status);
-        await StartAttemptAsync(PlaybackStarter.StartPosition(_context.Watch, request.FromBeginning), cancellationToken);
+        await StartAttemptAsync(_starter.StartPosition(_context.Watch, request), cancellationToken);
     }
 
     // A new attempt: a fresh attempt id and, from the server, a fresh session.

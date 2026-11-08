@@ -128,6 +128,18 @@ public sealed class ItemDetailViewModelTests
     }
 
     [Fact]
+    public async Task TheResumeLabel_NamesTheSavedPoint_NotARewoundOne()
+    {
+        // Left at 1312.5 s. As the web's "Resume at", the label names that point; Rewind on resume moves only where the
+        // player starts (to 21:45 with 7 s), which the page leaves to the player.
+        var detail = await _fixture.Movie().LoadAsync(MovieId);
+
+        Assert.Equal("Resume from 21:52", detail.PlayButtonText);
+        detail.PlayCommand.Execute(null);
+        Assert.Equal((AppRoute.Player, (object?)PlayRequest.Resume(MovieId)), _fixture.Navigation.Navigations[^1]);
+    }
+
+    [Fact]
     public async Task StartOver_OpensThePlayerAtTheBeginning()
     {
         var detail = await _fixture.Movie().LoadAsync(MovieId);

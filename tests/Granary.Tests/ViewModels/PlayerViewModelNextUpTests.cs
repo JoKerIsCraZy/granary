@@ -77,8 +77,20 @@ public sealed class PlayerViewModelNextUpTests
         Assert.True(viewModel.HasNextEpisode);
 
         await viewModel.PlayPreviousEpisodeCommand.ExecuteAsync(null);
-        Assert.Equal(PlayRequest.Resume("episode-1-2"), Playback.Started);
+        // A change of episode is never rewound, as Android's (suppressResumeRewind).
+        Assert.Equal(PlayRequest.ResumeWithoutRewind("episode-1-2"), Playback.Started);
         Assert.Equal(1, _playbacks[0].Stops);
+    }
+
+    [Fact]
+    public async Task AnOnDeckPick_ResumesAsAnyResume_RewindIncluded()
+    {
+        // Android's On Deck tap is a normal resume, which its Rewind on resume applies to.
+        var viewModel = await PlayingAsync(Ted);
+
+        await viewModel.PlayOnDeckCommand.ExecuteAsync(new MediaCard("movie-9", CatalogItemTypes.Movie, "Alles Routine"));
+
+        Assert.Equal(PlayRequest.Resume("movie-9"), Playback.Started);
     }
 
     [Fact]
@@ -102,7 +114,7 @@ public sealed class PlayerViewModelNextUpTests
         Assert.False(viewModel.HasPreviousEpisode);
 
         await viewModel.PlayNextEpisodeCommand.ExecuteAsync(null);
-        Assert.Equal(PlayRequest.Resume("episode-1-4"), Playback.Started);
+        Assert.Equal(PlayRequest.ResumeWithoutRewind("episode-1-4"), Playback.Started);
     }
 
     [Fact]

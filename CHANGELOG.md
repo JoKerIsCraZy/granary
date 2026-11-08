@@ -13,6 +13,11 @@ release's section is what its update says it changes (docs/release.md).
   the audio or both. It changes with the quality, version or audio track you pick, and a file you play directly shows
   no dot. Screen readers and the button's tooltip say it too, for example "Playback settings, Direct Play". Playback
   info's play method now says the same, so a stream whose audio alone is converted shows as Transcode there too.
+- **Rewind on resume:** resuming a movie or episode now starts exactly where you stopped, the time the Resume button
+  shows, instead of 7 seconds earlier. To get a few seconds of lead-in back, set Settings → Playback → This PC → Rewind
+  on resume, from 0 to 30 seconds. Silo's settings suggest 7 seconds; Granary starts at 0 on purpose, because you expect
+  to land where you stopped. A rewind never applies to Start over, a Watch Party, or the player's previous and next
+  episode.
 - **Start a Watch Party from a title's page:** the ⋮ menu of a movie, series, season or episode now has Start a Watch
   Party. Pick whether the host picks or everyone votes, whether guests may pause, and for a series which episode, then
   Create party & copy invite: the room opens with the title up next (or as the first suggestion of a vote), and the
@@ -39,7 +44,8 @@ release's section is what its update says it changes (docs/release.md).
   your Silo server has Requests turned on.
 - **Sleep timer:** the player's Sleep button pauses playback after 5 to 60 minutes, counting down on the button, or stops
   at the end of the episode or movie instead of starting the next episode. A timer runs on into the next episode, and the
-  menu opens on the duration you started last on this PC.
+  menu opens on the duration you started last on this PC. Don't need it? Turn off Settings → Playback → This PC → Sleep
+  timer and the button is gone from the player, also from one that's already open; a timer that's running ends.
 - **Play/Pause in the taskbar preview:** hover over Granary's taskbar button while something plays and the window's
   preview has a Play/Pause button, also when Granary is minimized. In a Watch Party it asks the room, as the player's own
   button does.

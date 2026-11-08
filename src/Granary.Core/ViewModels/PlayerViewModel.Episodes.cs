@@ -16,15 +16,18 @@ public sealed partial class PlayerViewModel
     [ObservableProperty]
     public partial bool ShowsEpisodeSlots { get; private set; }
 
-    /// <summary>The episode before, from where the profile left it, as the web player starts it for the viewer.</summary>
+    /// <summary>
+    /// The episode before, from where the profile left it, as the web player starts it for the viewer. Exactly there: as in
+    /// Android, a change of episode is never rewound.
+    /// </summary>
     [RelayCommand]
     private Task PlayPreviousEpisodeAsync() =>
-        _previousEpisode is { } previous ? StartAsync(PlayRequest.Resume(previous.ContentId)) : Task.CompletedTask;
+        _previousEpisode is { } previous ? StartAsync(PlayRequest.ResumeWithoutRewind(previous.ContentId)) : Task.CompletedTask;
 
     /// <summary>The episode after, as Previous starts its episode.</summary>
     [RelayCommand]
     private Task PlayNextEpisodeAsync() =>
-        _nextUp.Next is { } next ? StartAsync(PlayRequest.Resume(next.ContentId)) : Task.CompletedTask;
+        _nextUp.Next is { } next ? StartAsync(PlayRequest.ResumeWithoutRewind(next.ContentId)) : Task.CompletedTask;
 
     partial void OnHasPreviousEpisodeChanged(bool value) => ShowsEpisodeSlots = value || HasNextEpisode;
 

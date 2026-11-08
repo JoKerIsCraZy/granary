@@ -121,6 +121,33 @@ public sealed partial class PlaybackSettingsViewModel
         }
     }
 
+    /// <summary>
+    /// Rewind on resume in seconds (<see cref="IPlaybackDevicePreferences.ResumeRewindSeconds"/>). A double, as the number
+    /// box has it: cleared, it is not a number.
+    /// </summary>
+    [ObservableProperty]
+    public partial double ResumeRewindSeconds { get; set; }
+
+    partial void OnResumeRewindSecondsChanged(double value)
+    {
+        if (double.IsNaN(value))
+        {
+            // The box was cleared: it shows what holds again.
+            ResumeRewindSeconds = _devicePreferences.ResumeRewindSeconds;
+            return;
+        }
+        int seconds = (int)Math.Clamp(Math.Round(value), 0, ResumeRewind.MaxSeconds);
+        if (seconds != value)
+        {
+            ResumeRewindSeconds = seconds;
+        }
+        else if (seconds != _devicePreferences.ResumeRewindSeconds)
+        {
+            // Never fails, as the switch below; it counts from the next resume.
+            _ = _devicePreferences.SetResumeRewindSecondsAsync(seconds);
+        }
+    }
+
     /// <summary>Discord's status shows what plays (<see cref="IPlaybackDevicePreferences.DiscordStatus"/>).</summary>
     [ObservableProperty]
     public partial bool DiscordStatus { get; set; }
@@ -131,6 +158,19 @@ public sealed partial class PlaybackSettingsViewModel
         {
             // Never fails, as the switch below; a title that plays shows or leaves the status at once.
             _ = _devicePreferences.SetDiscordStatusAsync(value);
+        }
+    }
+
+    /// <summary>The player has its Sleep button (<see cref="IPlaybackDevicePreferences.SleepTimerButton"/>).</summary>
+    [ObservableProperty]
+    public partial bool SleepTimerButton { get; set; }
+
+    partial void OnSleepTimerButtonChanged(bool value)
+    {
+        if (value != _devicePreferences.SleepTimerButton)
+        {
+            // Never fails, as the switch below; an open player, also the minimized one, follows at once.
+            _ = _devicePreferences.SetSleepTimerButtonAsync(value);
         }
     }
 

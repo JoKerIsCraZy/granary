@@ -203,6 +203,8 @@ public sealed class ServerPlaybackSettingsTests
         _fixture.Silo.On(HttpMethod.Get, "api/v2/watch/" + MovieId, Ok(TwoFiles));
         _fixture.Silo.On(HttpMethod.Post, StartPath, Created(PlaybackPayloads.StartOpaqueIds), Created(StartedAgain));
         _fixture.Silo.On(HttpMethod.Delete, StopPath, Ok(PlaybackPayloads.StopCompleted));
+        // Another file is no resume: Rewind on resume leaves it alone.
+        _fixture.DevicePreferences.ResumeRewindSeconds = ResumeRewind.MaxSeconds;
         var playback = await _fixture.PlayingAsync();
         Assert.Equal(["42", "43"], playback.Versions.Select(v => v.FileId));
         _fixture.Engine.RaiseState(Frame(600));
