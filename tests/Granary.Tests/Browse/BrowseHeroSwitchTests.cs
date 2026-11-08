@@ -155,6 +155,33 @@ public sealed class BrowseHeroSwitchTests : IDisposable
     }
 
     [Fact]
+    public async Task Home_TurnedOffBeforeAPointedCardSettled_StartsWithItsRowsOnItsReturn_AndTurnedOnShowsTheFirstCardPointedAtAtOnce()
+    {
+        var setting = SettingFor(_session);
+        var home = await HomeAsync(setting, Section("recent", "recently_added", 3, Item("r1"), Item("r2"), Item("r3")));
+        home.PointCardCommand.Execute(home.Rows[0].Cards[0]);
+        home.PointCardCommand.Execute(home.Rows[0].Cards[1]);
+        home.Deactivate();
+
+        await setting.SetShownAsync(false);
+        _time.Advance(BrowseHeroViewModel.SettleTime);
+
+        // The card waiting to settle does not show, and Home has still to take its rows without the title preview.
+        Assert.NotEqual("r2", home.Hero.Shown?.Key);
+        Assert.True(home.Hero.MissedSwitch);
+
+        await home.ActivateAsync();
+        Assert.Null(home.Hero.Shown);
+        Assert.False(home.Hero.MissedSwitch);
+
+        home.Deactivate();
+        await setting.SetShownAsync(true);
+        await home.ActivateAsync();
+        home.PointCardCommand.Execute(home.Rows[0].Cards[2]);
+        Assert.Equal("r3", home.Hero.Shown?.Key);
+    }
+
+    [Fact]
     public async Task FromTheContainer_HomeForYouAndDiscover_FollowTheSwitch()
     {
         var services = new ServiceCollection();

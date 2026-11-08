@@ -25,7 +25,7 @@ public sealed partial class BrowseHeroViewModel : ObservableObject
     private bool _hasPointed;
     // Each point and reset; a settle timer that fires for an older one does nothing.
     private int _generation;
-    // Whether the title preview was on when the hero last took its page's rows (Reset).
+    // Whether the title preview was on when the hero last took its page's rows (Follow).
     private bool _tookRowsOn = true;
 
     internal BrowseHeroViewModel(IUiDispatcher dispatcher, TimeProvider time, BrowseHeroSetting? setting = null)
@@ -82,6 +82,7 @@ public sealed partial class BrowseHeroViewModel : ObservableObject
             TurnOff();
             return;
         }
+        _tookRowsOn = true;
         if (server is null)
         {
             Reset(null);
@@ -104,6 +105,7 @@ public sealed partial class BrowseHeroViewModel : ObservableObject
             TurnOff();
             return;
         }
+        _tookRowsOn = true;
         BrowseHeroTitle? Find(string key) => titles.FirstOrDefault(t => t.Key == key);
         Reset((Shown is { } shown ? Find(shown.Key) : null) ?? titles.FirstOrDefault(), Find);
     }
@@ -135,12 +137,10 @@ public sealed partial class BrowseHeroViewModel : ObservableObject
 
     /// <summary>
     /// The rows changed: shows <paramref name="title"/> (the shown title loaded again, or the first card) at once. A card the
-    /// pointer rests on still settles when <paramref name="find"/> finds it in the new rows. With the title preview off,
-    /// nothing shows.
+    /// pointer rests on still settles when <paramref name="find"/> finds it in the new rows.
     /// </summary>
     internal void Reset(BrowseHeroTitle? title, Func<string, BrowseHeroTitle?>? find = null)
     {
-        _tookRowsOn = IsOn;
         if (_pointed is { } pending && find?.Invoke(pending.Key) is { } fresh)
         {
             _pointed = fresh;
@@ -149,7 +149,7 @@ public sealed partial class BrowseHeroViewModel : ObservableObject
         {
             CancelPending();
         }
-        Shown = _tookRowsOn ? title : null;
+        Shown = title;
     }
 
     /// <summary>Another server or profile: its first card pointed at shows at once again.</summary>
@@ -163,12 +163,18 @@ public sealed partial class BrowseHeroViewModel : ObservableObject
     // shows at once.
     private void TurnOff()
     {
+        _tookRowsOn = false;
         Forget();
         Reset(null);
     }
 
     private void Settle(int generation)
     {
+        // Turned off while the card waited: the page takes its rows again as it shows (MissedSwitch), and that hides the title.
+        if (!IsOn)
+        {
+            return;
+        }
         if (generation == _generation && _pointed is { } title)
         {
             Reset(title);
