@@ -2,6 +2,7 @@ using System.Globalization;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
 using Granary.Core.Api.Requests;
+using Granary.Core.Settings;
 using Granary.Core.ViewModels.Detail;
 
 namespace Granary.Core.ViewModels;
@@ -12,9 +13,17 @@ namespace Granary.Core.ViewModels;
 /// </summary>
 /// <param name="Key">The title's content id: the same title loaded again is the same hero.</param>
 /// <param name="Meta">"2008 · 2h 32m · PG-13", an episode's "S1 E1 · Kein Zufall · 25m · TV-14"; empty when nothing is known.</param>
+/// <param name="Overview">Null when there is none, or for an unwatched episode while the profile hides descriptions.</param>
 public sealed record BrowseHeroTitle(string Key, string Heading, string Meta, string? Overview, Uri? LogoUrl, Uri? BackdropUrl, string? BackdropThumbhash)
 {
-    public static BrowseHeroTitle From(CatalogItemBase item, Uri server)
+    /// <summary>
+    /// The backdrop is the still of an episode the profile has not started, while it hides those: it shows blurred, as the
+    /// web's <c>HeroBanner</c> does (<see cref="EpisodeSpoilers"/>).
+    /// </summary>
+    public bool BlursBackdrop { get; init; }
+
+    /// <summary>The title of <paramref name="item"/>, hiding what <paramref name="spoilers"/> hide of an unwatched episode.</summary>
+    public static BrowseHeroTitle From(CatalogItemBase item, Uri server, EpisodeSpoilers spoilers)
     {
         ArgumentNullException.ThrowIfNull(item);
         bool isEpisode = item.Type == CatalogItemTypes.Episode;
@@ -23,10 +32,13 @@ public sealed record BrowseHeroTitle(string Key, string Heading, string Meta, st
             item.ContentId,
             heading,
             MetaOf(item),
-            string.IsNullOrWhiteSpace(item.Overview) ? null : item.Overview.Trim(),
+            string.IsNullOrWhiteSpace(item.Overview) || spoilers.HidesOverview(item) ? null : item.Overview.Trim(),
             ArtworkUrl.Resolve(server, item.LogoUrl),
             ArtworkUrl.Resolve(server, item.BackdropUrl),
-            item.BackdropThumbhash);
+            item.BackdropThumbhash)
+        {
+            BlursBackdrop = spoilers.HidesImage(item, showsBackdrop: true),
+        };
     }
 
     /// <summary>

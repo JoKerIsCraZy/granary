@@ -208,7 +208,8 @@ public sealed partial class FocusBackdrop : UserControl
         }
         var front = _layers[_crossfade.Front];
         int needed = DecodeWidth();
-        switch (BrowseHeroLayout.StepFor(front.WaitsForArt, folded: false, _crossfade.IsFading, front.DecodedWidth, needed))
+        bool blurred = front.Title is { BlursBackdrop: true };
+        switch (BrowseHeroLayout.StepFor(front.WaitsForArt, folded: false, _crossfade.IsFading, blurred, front.DecodedWidth, needed))
         {
             case BackdropStep.LoadArt:
                 front.LoadArt(needed);

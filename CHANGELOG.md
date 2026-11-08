@@ -40,8 +40,8 @@ release's section is what its update says it changes (docs/release.md).
   profile has Send ratings turned on for a watch provider in the web's settings, your Silo server passes the rating on.
 - **Spoilers:** Settings → Title Pages → Blur unwatched episode images and Hide unwatched episode descriptions, the same
   switches as in Silo's apps, blur the still and hide the description of episodes you haven't started, in a season's
-  episodes, More Episodes, Continue Watching, Next Up and the player's Playing Next screen; on an episode's page, Show it
-  brings its description back.
+  episodes, More Episodes, Continue Watching, Next Up, Home's banner and the title at the top of Home, and the player's
+  Playing Next screen; on an episode's page, Show it brings its description back.
 
 ### Changed
 

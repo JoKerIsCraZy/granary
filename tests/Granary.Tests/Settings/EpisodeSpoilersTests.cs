@@ -104,6 +104,17 @@ public sealed class EpisodeSpoilersTests
     }
 
     [Fact]
+    public void ARowCardsDescription_IsHiddenForAnUnwatchedEpisodeOnly()
+    {
+        // Whatever its picture: the description is the episode's own.
+        Assert.True(Both.HidesOverview(SectionEpisode(backdropIsStill: false)));
+        Assert.False(Both.HidesOverview(SectionEpisode(position: 600)));
+        Assert.False(Both.HidesOverview(SectionEpisode(played: true)));
+        Assert.False(Both.HidesOverview(SectionEpisode() with { Type = CatalogItemTypes.Movie }));
+        Assert.False(new EpisodeSpoilers(HidesImages: true, HidesOverviews: false).HidesOverview(SectionEpisode()));
+    }
+
+    [Fact]
     public void Movies_AreNeverHidden()
     {
         var movie = SectionEpisode() with { Type = CatalogItemTypes.Movie };

@@ -371,6 +371,19 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     until then; a title picked during a fade follows it. It is decoded as wide as it is shown, or as its height needs
     where the box's shape cuts its sides (783 px at 440 high), and again when the window grows it by more than 15 %.
     Folded, a new title shows only its blur until the hero unfolds. The pictures are let go while Home is not shown.
+  - Spoilers, as the web's `HeroBanner` ([episode spoilers](api-contract.md#663-episode-spoilers)): a banner slide of an
+    episode neither played nor started shows its backdrop blurred while the profile hides unwatched episode images, when
+    that backdrop is the episode's own still (`backdrop_is_episode_still`), and no overview while it hides descriptions;
+    its name and details stay. The hero that follows the cards does the same for the card pointed at, so pointing at a
+    Next Up card does not show the still the card blurs (the web has no such hero). A started or watched episode, a movie,
+    a series and an episode whose backdrop is its series' art stay sharp. The blur is the cards' 24 px at the size the
+    backdrop shows, decoded at most 128 px wide and stretched over its box; the thumbhash shows first, as for any
+    backdrop, and the sharp picture is never decoded, nor decoded again when the window grows. A change of a switch, or
+    the episode started (with the reload that follows), shows in place: the banner keeps its slide, its countdown, hold and
+    pause, and the hero its title; the logo stays, and the backdrop fades over to the sharp picture, while a picture that
+    becomes hidden goes at once rather than fading out under its blur. Until the profile's switches are read, the banner
+    and the hero show every unwatched episode's still blurred, since Home can load first; its overview waits for nothing.
+    For You and Search have no episodes to hide: the server recommends movies and series only, and Search asks for those.
   - Which title, without a banner: the first card of the first row until a card is pointed at. The first card pointed at
     shows at once; after that a card has to keep the pointer for 150 ms, so a sweep across a row loads one backdrop, not
     one per card. The pointer leaving the rows keeps the title; a reload keeps it, and a card the pointer rests on, while
@@ -428,8 +441,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   the profile hides unwatched episode images, as the web's `SectionRow` and `ContinueWatchingCard`: by the provenance of
   the picture the card shows (its backdrop, else its poster). An episode already started is not blurred, nor a movie, nor
   any other row's card, nor On Deck under the player's Playing Next screen, as on the web. A change of the switch shows in
-  the rows as they are, without a reload; starting the episode lifts the blur with the reload that follows. The hero at the
-  top of Home does not blur yet.
+  the rows as they are, without a reload; starting the episode lifts the blur with the reload that follows. The top of
+  Home, its banner and its hero, follows the same rule (Home's hero, above).
 - Detail pages: a layout of Granary's own, a deliberate departure from the web's look (the user preferred it).
   - On black, the backdrop stands at the top right, 85 % of the page's height, and stays put while the hero and rows
     scroll over it. It fades to black toward the left (100 % → 92 % at a quarter → 25 % at 65 % → clear) and
@@ -863,7 +876,7 @@ says why above the sections.
   episode's thumbnail until you start watching it, so the image does not give away the story.") and "Hide unwatched episode
   descriptions" ("Hide an episode's description until you start watching it."). Each switch saves to the profile at once and
   shows on every page that shows episodes: a season's episode grid, More Episodes and an episode's own page, Continue
-  Watching and Next Up on Home and in a library, and the player's Playing Next screen (the Home hero follows later). A
+  Watching and Next Up on Home and in a library, Home's banner and hero, and the player's Playing Next screen. A
   switch the server refused goes back, and "Failed to save title page setting" (the web's words) shows above the group
   until the next change. While they load the group says "Loading…"; a failed read or an older server shows a panel instead
   ("Couldn't load your spoiler settings", "Your server needs an update").

@@ -6,6 +6,7 @@ using Granary.Core.Abstractions;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
 using Granary.Core.Auth;
+using Granary.Core.Settings;
 using Granary.Core.ViewModels.Cards;
 using Microsoft.Extensions.Logging;
 
@@ -49,6 +50,9 @@ public sealed partial class ForYouViewModel : ObservableObject
     internal const string PersonalSubtitle = "Personalized picks based on your viewing history and ratings.";
     internal const string DefaultSubtitle =
         "Highly rated and recently added titles from your library. Watch and rate titles to personalize this page.";
+
+    // The server recommends movies and series only (its recommendableMediaTypes), so the hero has no episode to hide.
+    private static readonly EpisodeSpoilers NoEpisodes = EpisodeSpoilers.Off;
 
     private readonly ISessionManager _session;
     private readonly RecommendationsApi _recommendations;
@@ -141,7 +145,7 @@ public sealed partial class ForYouViewModel : ObservableObject
     {
         if (card is not null && _session.ActiveServer is { } server && _items.TryGetValue(card.Id, out var item))
         {
-            Hero.Point(item, server.BaseUri);
+            Hero.Point(item, server.BaseUri, NoEpisodes);
         }
     }
 
@@ -290,7 +294,7 @@ public sealed partial class ForYouViewModel : ObservableObject
             }
         }
         Hero.Follow([.. Rows.SelectMany(row => row.Cards).Select(card => _items.GetValueOrDefault(card.Id)).OfType<CatalogItem>()],
-            _session.ActiveServer?.BaseUri);
+            _session.ActiveServer?.BaseUri, NoEpisodes);
     }
 
     private void ShowTaste(TasteProfile? taste)

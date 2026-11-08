@@ -20,12 +20,13 @@ public sealed class HomeSpoilerTests
         new(_session, _silo.Catalog, _silo.Images, new RecordingNavigation(), new ImmediateDispatcher(), new TestClock(ManualTimeProvider.DefaultStart),
             _silo.Logs.For<HomeViewModel>(), _changes, spoilers: spoilers);
 
-    // An episode card as Home's rows send it: its backdrop is the episode's own still.
-    private static object Episode(string id, double? position = null, bool played = false, bool? backdropIsStill = true) => new
+    // An episode card as Home's rows send it: its backdrop is the episode's own still. Home's hero tests use it too.
+    internal static object Episode(string id, double? position = null, bool played = false, bool? backdropIsStill = true) => new
     {
         content_id = id,
         type = "episode",
         title = "Chapter " + id,
+        overview = "Everything comes out in chapter " + id + ".",
         status = "matched",
         genres = Array.Empty<string>(),
         keywords = Array.Empty<string>(),
@@ -113,32 +114,6 @@ public sealed class HomeSpoilerTests
 
         Assert.True(home.Rows[0].Cards[0].BlursImage);
         Assert.Single(_silo.To(SectionsPath));
-    }
-
-    [Fact]
-    public async Task ASwitchChange_LeavesTheBannerAsItIs()
-    {
-        // The hero banner is the top of Home, which follows later: its slides, the one shown and its hold stay.
-        _silo.Map(SectionsPath, Sections(
-            Featured("next", "next_up", 3, Episode("e1"), Episode("e2"), Episode("e3")),
-            Section("cw", "continue_watching", 1, Episode("unwatched"))));
-        var spoilers = await SpoilerSwitches.StartedAsync(images: false);
-        var home = Create(spoilers);
-        await home.ActivateAsync();
-        home.Banner.NextCommand.Execute(null);
-        home.Banner.Hold(true);
-        var slides = home.Banner.Slides;
-        var shown = home.Banner.Current;
-        int cycle = home.Banner.Cycle;
-
-        await spoilers.SetHidesImagesAsync(true);
-
-        Assert.True(home.Rows[0].Cards[0].BlursImage);
-        Assert.Same(slides, home.Banner.Slides);
-        Assert.Same(shown, home.Banner.Current);
-        Assert.Equal(1, home.Banner.Index);
-        Assert.True(home.Banner.IsHeld);
-        Assert.Equal(cycle, home.Banner.Cycle);
     }
 
     [Fact]

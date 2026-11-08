@@ -6,6 +6,7 @@ using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
 using Granary.Core.Auth;
 using Granary.Core.Servers;
+using Granary.Core.Settings;
 using Granary.Core.ViewModels.Cards;
 using Microsoft.Extensions.Logging;
 
@@ -509,14 +510,15 @@ public sealed partial class SearchViewModel : ObservableObject
         _ => MediaScopes.Video,
     };
 
-    // An item without an id could not be opened. What the backdrop shows of it is kept with its search's.
+    // An item without an id could not be opened. What the backdrop shows of it is kept with its search's. Search asks for movies
+    // and series only (SearchScope, never video_with_episodes), so the backdrop has no episode to hide.
     private static MediaCard? CardFor(CatalogItem item, Uri server, Dictionary<string, BrowseHeroTitle> backdrops)
     {
         if (item.ContentId.Length == 0)
         {
             return null;
         }
-        backdrops[item.ContentId] = BrowseHeroTitle.From(item, server);
+        backdrops[item.ContentId] = BrowseHeroTitle.From(item, server, EpisodeSpoilers.Off);
         return MediaCardFactory.Poster(item, server);
     }
 
