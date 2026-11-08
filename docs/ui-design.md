@@ -1130,8 +1130,8 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   which brings the full player back, its only way there (under the pointer, or the keyboard, the whole picture greys
   and shows a chevron up). Then the title, the episode line and the times, with the full player's end clock after them
   ("0:23:07 / 2:29:27 · Ends 22:41", 12 px, muted, not upper case: a bar too narrow for both leaves the end clock out
-  rather than cut the times, `FittingRow`, and screen readers hear both from the times, "…, ends at 22:41"); previous
-  episode, skip back, play/pause, skip forward and next episode; on the right mute and Stop playback (✕, as the web bar's). Along its top edge, right of the picture, the full player's seek bar (`DockSeekBar`): thin, thicker under
+  rather than cut the times, and brings it back only with 12 px to spare, so it does not blink as the times gain a
+  digit, `FittingRow` and `RowFit`; screen readers hear both from the times, "…, ends at 22:41"); previous episode, skip back, play/pause, skip forward and next episode; on the right mute and Stop playback (✕, as the web bar's). Along its top edge, right of the picture, the full player's seek bar (`DockSeekBar`): thin, thicker under
   the pointer with its thumb and the bubble with the picture, time and chapter above the bar; a click or drag seeks. The bar keeps its controls and the pointer, and leaves the keyboard to the page.
   Minimizing keeps full screen, ends the mini view and closes the menus; a failure brings the full player back to
   say it. The rail of a title's page opens over the page: the bar's left edge moves aside with it (250 ms, easing
