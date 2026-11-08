@@ -1230,8 +1230,8 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   slots kept while one has an episode, so Play stays in the middle; a movie has none); on the right mute, the volume
   slider, the sleep timer, audio, subtitles, chapters, settings, edit markers, playback info, mini view, fill screen and
   full screen, as Settings → Playback → Player buttons shows and orders them (a hidden one is gone, and the buttons after
-  it close up). Audio
-  and subtitles stand side by side, where the web puts chapters between them, as the two track choices belong together; audio
+  it close up). By default audio and subtitles stand side by side, where the web puts chapters between them, as the two
+  track choices belong together, and a profile can reorder them there; audio
   shows the web's icon, lucide's AudioLines, drawn as a PathIcon. A utility
   button that is on (sleep timer, playback info, fill screen, subtitles) turns white with the web's amber dot under it. As the
   web's `1fr auto 1fr` row, the right column is never narrower than its buttons: in a narrow window the transport
@@ -1239,7 +1239,8 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   profile left it, as the web player does for the viewer; previous stays within the season and steps over episodes
   without a readable file.
 - **Sleep timer** (`SleepTimerOption`, the look and words of the web's `SleepTimerMenu`, which only its audiobook player
-  has): right of the volume slider, as the web's audiobook bar puts it after the volume, a 40 px pill without a background,
+  has): by default right of the volume slider, as the web's audiobook bar puts it after the volume (Player buttons can
+  move it), a 40 px pill without a background,
   8 px each side: the moon (14 px) and "Sleep" (12 px), "Sleep 29:59" while a duration counts down (tabular figures); white
   with the amber dot while the timer is on. Screen readers hear "Sleep timer" and, while it is on, the choice ("30 min",
   "End of episode"), not the seconds. Its menu opens above it (black 90 %, radius 8, at least 160 px, no label): "Turn off" while the timer is on,
