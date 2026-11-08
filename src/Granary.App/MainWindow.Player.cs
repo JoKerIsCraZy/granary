@@ -52,14 +52,14 @@ public sealed partial class MainWindow : IPlayerOverlay
             if (playing.IsLoaded)
             {
                 // Meanwhile the next title counts as playing, so a page's theme does not start in between.
-                _playerOpening = true;
+                BeginPlayerOpening();
                 playing.Unloaded += OpenAfterUnloaded;
                 return;
 
                 void OpenAfterUnloaded(object sender, RoutedEventArgs e)
                 {
                     playing.Unloaded -= OpenAfterUnloaded;
-                    _playerOpening = false;
+                    EndPlayerOpening();
                     try
                     {
                         Open(play);
@@ -93,6 +93,8 @@ public sealed partial class MainWindow : IPlayerOverlay
 
     public void ClosePlayer()
     {
+        // A title still on its way counts as playing no longer: the player's own close is what the viewer asked for.
+        EndPlayerOpening();
         if (_player is not { } page)
         {
             return;

@@ -749,7 +749,8 @@ A title page plays its local theme music while Settings → Title Pages → Them
   holds a title, over the window or as its bar, or a trailer is open, the theme stops at once and starts over after
   (`OtherMediaPlaying`, which MainWindow sets once the window's turn is done, so a player taking over from a trailer does not
   let it start in between; a title replacing the one that played counts from its Play, while the old player lets the
-  picture go). A minimized window counts as a page that left (`IsMinimized`, from `AppWindow.Changed`). A
+  picture go, until it opens or fails to, the player closes, or 3 s have passed, a `DispatcherQueueTimer` through
+  `WeakTick`). A minimized window counts as a page that left (`IsMinimized`, from `AppWindow.Changed`). A
   profile, server or sign-out stops it at once and forgets the capability.
 - **`ThemeMusicPlayer`** (Core) plays one theme: the set's first, faded in to 35 % in 12 steps over 300 ms once it is heard and
   out the same way, on `TimeProvider` timers whose ticks go through `IUiDispatcher`. An original loops in place; a conversion
