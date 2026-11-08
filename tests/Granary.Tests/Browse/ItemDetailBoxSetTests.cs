@@ -65,6 +65,32 @@ public sealed class ItemDetailBoxSetTests
     }
 
     [Fact]
+    public async Task AnIdTheBoxSetReadRefuses_OnlyLeavesTheRowOut()
+    {
+        // The box set read refuses an id it would not send as a path ("." or ".."): the page's other rows go on.
+        _fixture.Movie().Get(BoxSetPath(MovieId), () => Task.FromException<HttpResponseMessage>(new ArgumentException("not an id")));
+
+        var detail = await _fixture.LoadAsync(MovieId);
+
+        Assert.Equal(ItemDetailState.Ready, detail.State);
+        Assert.True(detail.HasSimilar);
+        Assert.False(detail.HasBoxSet);
+        Assert.Contains("box set", _fixture.Logs.All, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AServerThatNamesTheMovieDotDot_StillShowsThePage()
+    {
+        _fixture.Get(ItemPath(MovieId), Ok(Movie.Replace("\"content_id\": \"movie-tmdb-1001\"", "\"content_id\": \"..\"", StringComparison.Ordinal)));
+
+        var detail = await _fixture.LoadAsync(MovieId);
+
+        Assert.Equal(ItemDetailState.Ready, detail.State);
+        Assert.False(detail.HasBoxSet);
+        Assert.True(detail.HasPeople);
+    }
+
+    [Fact]
     public async Task AProfileSwitchDuringTheLoad_AsksForTheProfileThePageWasLoadedFor()
     {
         var (held, gate) = Held();

@@ -57,7 +57,8 @@ public sealed partial class ItemDetailViewModel
         {
             boxSet = await _boxSets.GetForItemAsync(server, _contentId, images: images, cancellationToken: cancellationToken);
         }
-        catch (Exception ex) when (LibraryErrors.IsExpected(ex))
+        // ArgumentException: the server named an id the client refuses to put in a path ("", "..").
+        catch (Exception ex) when (LibraryErrors.IsExpected(ex) || ex is ArgumentException)
         {
             // A server without box sets answers 404, which is nothing to report.
             if (!cancellationToken.IsCancellationRequested && ex is not SiloApiException { Status: 404 })
