@@ -7,6 +7,7 @@ using Granary.Core.Api.Images;
 using Granary.Core.Api.Playback;
 using Granary.Core.Artwork;
 using Granary.Core.Auth;
+using Granary.Core.Downloads;
 using Granary.Core.Playback;
 using Granary.Core.Servers;
 using Granary.Core.ViewModels.Cards;
@@ -56,6 +57,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
     private readonly ViewerStateChanges? _changes;
     private readonly TrackPreferencesApi? _trackPreferences;
     private readonly TrackChoiceWrites? _trackChoices;
+    private readonly DownloadActions? _downloads;
 
     // A newer load makes the answers of older calls stale.
     private int _generation;
@@ -81,7 +83,8 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         ILogger<ItemDetailViewModel> logger,
         ViewerStateChanges? changes = null,
         TrackPreferencesApi? trackPreferences = null,
-        TrackChoiceWrites? trackChoices = null)
+        TrackChoiceWrites? trackChoices = null,
+        DownloadActions? downloads = null)
     {
         _session = session;
         _catalog = catalog;
@@ -92,6 +95,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         _changes = changes;
         _trackPreferences = trackPreferences;
         _trackChoices = trackChoices;
+        _downloads = downloads;
     }
 
     /// <summary>The display scale artwork is requested for (1.5 at 150 %); set it before loading.</summary>
@@ -222,6 +226,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
 
     /// <summary>Movies and series have a favourite heart and a watchlist entry, as on the web.</summary>
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowsMoreMenu))]
     public partial bool CanFavorite { get; private set; }
 
     [ObservableProperty]
@@ -428,6 +433,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         Trailers = [];
         People = [];
         Similar = [];
+        ShowDownloads();
     }
 
     private void Show(CatalogItemDetail item, Uri server)
@@ -461,6 +467,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         IsFavorite = item.UserState?.IsFavorite ?? false;
         IsInWatchlist = item.UserState?.InWatchlist ?? false;
         ShowPlayAction();
+        ShowDownloads();
     }
 
     private Task LoadSectionsAsync(CatalogItemDetail item, Uri server, ImageParameters images, int generation, CancellationToken cancellationToken) =>
@@ -603,6 +610,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         ShowEpisodeCards();
         EpisodesTotalText = $"{total ?? episodes.Count} total";
         ShowsNoEpisodes = episodes.Count == 0;
+        ShowDownloads();
     }
 
     private void ShowEpisodeCards()

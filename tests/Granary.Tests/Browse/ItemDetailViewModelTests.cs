@@ -1,6 +1,7 @@
 using Granary.Core;
 using Granary.Core.Abstractions;
 using Granary.Core.Api;
+using Granary.Core.Downloads;
 using Granary.Core.Playback;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Detail;
@@ -654,9 +655,14 @@ public sealed class ItemDetailViewModelTests
         services.AddSingleton<IUiDispatcher, ImmediateDispatcher>();
         services.AddSingleton<INavigationService, RecordingNavigation>();
         services.AddSingleton<IConfirmation, FakeConfirmation>();
+        services.AddSingleton<IDownloadOptionsDialog, FakeDownloadOptionsDialog>();
+        // The player layer's, which the title page's downloads ask for.
+        services.AddSingleton<IPlaybackDeviceProbe, Granary.Tests.Playback.FakeDeviceProbe>();
         services.AddGranaryCore();
         using var provider = services.BuildServiceProvider();
 
         Assert.NotSame(provider.GetRequiredService<ItemDetailViewModel>(), provider.GetRequiredService<ItemDetailViewModel>());
+        // One set of Download items for every title page, as the downloads they follow are the app's.
+        Assert.Same(provider.GetRequiredService<DownloadActions>(), provider.GetRequiredService<DownloadActions>());
     }
 }

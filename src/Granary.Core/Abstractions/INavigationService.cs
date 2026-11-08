@@ -79,6 +79,9 @@ public enum AppRoute
 
     /// <summary>The Watch Party this profile is in (<c>WatchPartySession</c>).</summary>
     WatchPartyRoom,
+
+    /// <summary>The active profile's downloads on this PC.</summary>
+    Downloads,
 }
 
 /// <summary>Which row an "Explore all" grid lists: a Home row, or a library row when <see cref="LibraryId"/> is set.</summary>

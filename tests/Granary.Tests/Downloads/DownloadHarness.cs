@@ -93,13 +93,16 @@ internal sealed class DownloadHarness : IAsyncDisposable
         return queue;
     }
 
-    /// <summary>The manager over <paramref name="queue"/> (a queue not started when none is given), on this PC's device facts.</summary>
-    public DownloadManager NewManager(DownloadQueue? queue = null)
-    {
-        var feature = new DownloadsFeature(Session, Api, Store, Time, Logs.For<DownloadsFeature>());
-        return new DownloadManager(Store, queue ?? NewQueue(), Api, feature, Session, new FakeDeviceProbe(), new InMemoryPlaybackDevicePreferences(), Time,
+    /// <summary>What the server offers the session's profile, not read yet.</summary>
+    public DownloadsFeature NewFeature() => new(Session, Api, Store, Time, Logs.For<DownloadsFeature>());
+
+    /// <summary>
+    /// The manager over <paramref name="queue"/> (a queue not started when none is given) and <paramref name="feature"/> (a new
+    /// one when none is given), on this PC's device facts.
+    /// </summary>
+    public DownloadManager NewManager(DownloadQueue? queue = null, DownloadsFeature? feature = null) =>
+        new(Store, queue ?? NewQueue(), Api, feature ?? NewFeature(), Session, new FakeDeviceProbe(), new InMemoryPlaybackDevicePreferences(), Time,
             Logs.For<DownloadManager>());
-    }
 
     /// <summary>As at Granary's next start: the queues stop, and a new store reads the index.</summary>
     public async Task RestartAsync()

@@ -97,6 +97,7 @@ public sealed class LibraryPageApiTests
         services.AddSingleton<INavigationService, RecordingNavigation>();
         services.AddSingleton<IConfirmation, FakeConfirmation>();
         services.AddSingleton<IFileLauncher, RecordingFileLauncher>();
+        services.AddSingleton<IDownloadOptionsDialog, FakeDownloadOptionsDialog>();
         services.AddGranaryCore();
         services.AddGranaryPlayer(new MpvEngineOptions { VideoOutput = VideoOutputKind.None });
 

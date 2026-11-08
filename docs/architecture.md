@@ -1011,6 +1011,10 @@ client guide.
   (the queue's count, the whole file once downloaded), whether the connection holds it back, and the poster's file as the
   record names it, so a page never reads the disk for them. `DownloadText` words their status, as the apps do. `Changed`
   follows the store, the queue's progress and the feature, on any thread.
+- **The title page.** `DownloadActions` gives a title its Download item from `ForItem` and the feature; a page follows it
+  while it shows (`Follow`), which reads the capability and posts one refresh to the UI thread per burst of `Changed`. The
+  download dialog's `DownloadOptionsViewModel` reads the free space once per dialog on the thread pool (`SpaceRead`) and
+  shows it on the UI thread; Download waits for that read and does not start what would reach the transfer's reserve.
 
 ## Windows App SDK
 

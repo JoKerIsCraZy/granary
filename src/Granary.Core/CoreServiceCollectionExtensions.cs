@@ -305,6 +305,11 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<DownloadQueue>();
         services.AddSingleton<DownloadsFeature>();
         services.AddSingleton<DownloadManager>();
+        // The title pages' Download items, and a download dialog's view model per offer, which the app's dialog shows
+        // (IDownloadOptionsDialog).
+        services.AddSingleton<Func<ViewModels.Downloads.DownloadOptionsViewModel>>(sp =>
+            () => ActivatorUtilities.CreateInstance<ViewModels.Downloads.DownloadOptionsViewModel>(sp));
+        services.AddSingleton<DownloadActions>();
     }
 
     // Artwork URLs are presigned and public: no credentials, no identity headers. HTTP/2 lets a page's images

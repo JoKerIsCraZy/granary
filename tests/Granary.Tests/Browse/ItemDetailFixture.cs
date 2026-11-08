@@ -4,6 +4,7 @@ using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
 using Granary.Core.Api.Playback;
 using Granary.Core.Auth;
+using Granary.Core.Downloads;
 using Granary.Core.Playback;
 using Granary.Core.ViewModels;
 using Granary.Tests.Catalog;
@@ -20,18 +21,24 @@ namespace Granary.Tests.Browse;
 internal sealed class ItemDetailFixture
 {
     public ItemDetailFixture()
+        : this(new ScriptedSilo(), new FakeSessionManager { State = SessionState.Ready, ActiveServer = ScriptedSilo.Server, ProfileId = "7" })
     {
+    }
+
+    /// <summary>The detail page on <paramref name="silo"/> for <paramref name="session"/>, as the downloads tests share them with their harness.</summary>
+    public ItemDetailFixture(ScriptedSilo silo, FakeSessionManager session)
+    {
+        Silo = silo;
+        Session = session;
         Silo.On(HttpMethod.Get, "api/v2/images/capabilities", ScriptedSilo.Json(HttpStatusCode.OK, CatalogPayloads.ImageCapabilities));
     }
 
-    public ScriptedSilo Silo { get; } = new();
+    public ScriptedSilo Silo { get; }
 
-    public FakeSessionManager Session { get; } = new()
-    {
-        State = SessionState.Ready,
-        ActiveServer = ScriptedSilo.Server,
-        ProfileId = "7",
-    };
+    public FakeSessionManager Session { get; }
+
+    /// <summary>The title page's Download items; without them the page offers none.</summary>
+    public DownloadActions? Downloads { get; set; }
 
     public RecordingNavigation Navigation { get; } = new();
 
@@ -93,7 +100,8 @@ internal sealed class ItemDetailFixture
         Artwork,
         Logs.For<ItemDetailViewModel>(),
         trackPreferences: new TrackPreferencesApi(Silo.Http),
-        trackChoices: TrackChoices);
+        trackChoices: TrackChoices,
+        downloads: Downloads);
 
     public async Task<ItemDetailViewModel> LoadAsync(string id)
     {
