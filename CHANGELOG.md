@@ -11,7 +11,8 @@ release's section is what its update says it changes (docs/release.md).
 - **Player buttons:** Settings → Playback → Player buttons chooses which buttons the player shows on the right, from
   Volume to Full screen, and in which order: switch one off and it's gone from the player, move it up or down to change
   its place. A hidden button is off, keys included: hide Subtitles and C does nothing, hide Volume and M and the volume
-  keys do nothing; F11 still switches full screen. Don't need the Sleep timer? Switch it off and the button is gone, also
+  keys do nothing in the player, while the minimized player keeps its own Mute and volume keys; F11 still switches
+  full screen. Don't need the Sleep timer? Switch it off and the button is gone, also
   from a player that's already open; a timer that's running ends. Reset brings back the usual buttons. It's kept for
   each profile on this PC, works with a keyboard and a TV remote, and is Granary's own.
 - **Turn off the title preview:** Settings → Navigation & Cards → Pages → Title preview at the top. Off, Home, For You
