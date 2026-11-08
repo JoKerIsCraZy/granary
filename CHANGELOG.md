@@ -8,6 +8,10 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Added
 
+- **When it ends:** the line under the player's title now says when the title will end on the clock, such as
+  "Ends 22:41", in Windows' 12 or 24 hour time. It counts in the playback speed, moves later while you pause, and
+  follows a seek. The minimized player shows it after the times while it has room. It's not shown when the length
+  isn't known, such as for a live stream.
 - **Start a Watch Party from a title's page:** the ⋮ menu of a movie, series, season or episode now has Start a Watch
   Party. Pick whether the host picks or everyone votes, whether guests may pause, and for a series which episode, then
   Create party & copy invite: the room opens with the title up next (or as the first suggestion of a vote), and the

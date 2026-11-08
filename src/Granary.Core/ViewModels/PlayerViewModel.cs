@@ -598,6 +598,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         FollowNextUp();
         // During a plan change the spinner waits for the picture to stop.
         FollowWait();
+        ShowEndsAt();
     }
 
     private void OnEnded(object? sender, PlaybackEnded ended) => _dispatcher.Post(() =>

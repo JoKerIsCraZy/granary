@@ -1128,8 +1128,10 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   and the viewer browses on. Settings and Admin keep their own sidebar down to the window's edge too (`IDockSpace`):
   only their page ends above the bar. Unlike the web's bar, the picture plays on in it: a 160 by 90 box at its left, a click on
   which brings the full player back, its only way there (under the pointer, or the keyboard, the whole picture greys
-  and shows a chevron up). Then the title, the episode line and the times; previous episode, skip back,
-  play/pause, skip forward and next episode; on the right mute and Stop playback (✕, as the web bar's). Along its top edge, right of the picture, the full player's seek bar (`DockSeekBar`): thin, thicker under
+  and shows a chevron up). Then the title, the episode line and the times, with the full player's end clock after them
+  ("0:23:07 / 2:29:27 · Ends 22:41", 12 px, muted, not upper case: a bar too narrow for both leaves the end clock out
+  rather than cut the times, `FittingRow`, and screen readers hear both from the times, "…, ends at 22:41"); previous
+  episode, skip back, play/pause, skip forward and next episode; on the right mute and Stop playback (✕, as the web bar's). Along its top edge, right of the picture, the full player's seek bar (`DockSeekBar`): thin, thicker under
   the pointer with its thumb and the bubble with the picture, time and chapter above the bar; a click or drag seeks. The bar keeps its controls and the pointer, and leaves the keyboard to the page.
   Minimizing keeps full screen, ends the mini view and closes the menus; a failure brings the full player back to
   say it. The rail of a title's page opens over the page: the bar's left edge moves aside with it (250 ms, easing
@@ -1141,7 +1143,11 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   line "S1 · E1 — EPISODE · 31:55 / 48:41" (a movie shows its year), whose end time a click turns into the
   time left ("31:55 / -16:46") and back, in the minimized bar too. Granary's own: the web forgets the choice, this PC
   keeps it for the next player and after a restart (`time_left` in `playback-device.json`; the click is its only
-  setting). In the middle skip back, the white play/pause disc and skip forward (glass discs showing the
+  setting). After the times "· ENDS 22:41", in the line's muted upper case, also Granary's own as none of Silo's
+  clients has it: the clock time the title ends at the speed it plays, rounded to the minute, in Windows' short time
+  (12 or 24 hours as Windows writes it). It moves later while paused or waiting, and with a seek or another speed;
+  it is not there without a known length (a stream without one included) or at the end. Screen readers hear "Ends at
+  22:41". In the middle skip back, the white play/pause disc and skip forward (glass discs showing the
   profile's intervals), for an episode with a previous or next one flanked by previous and next episode discs (both
   slots kept while one has an episode, so Play stays in the middle; a movie has none); on the right mute, the volume
   slider, the sleep timer, audio, subtitles, chapters, settings, playback info, mini view, fill screen and full screen. Audio
