@@ -372,7 +372,8 @@ public sealed class DownloadQueueServerTests : IAsyncDisposable
     public async Task ANewRevision_IsReportedBeforeItsFile_ThoughTheOldReportWaitsItsDelay()
     {
         await _h.AddAsync("dl_1");
-        _h.ServeGated("dl_1", Source, "\"v1\"", DownloadPayloads.Bytes(HttpStatusCode.OK, Source, "\"v2\""));
+        // Both revisions' bytes wait: the new transfer does not finish, so no "completed" comes in between.
+        _h.ServeGated("dl_1", Source, "\"v1\"", DownloadPayloads.Streamed(HttpStatusCode.OK, new GatedMediaStream(Source), Source.Length, "\"v2\""));
         _h.AcceptReports("dl_1", ScriptedSilo.Problem(503, "dependency_unavailable"),
             ScriptedSilo.Json(HttpStatusCode.OK, DownloadPayloads.Entry("dl_1", "downloading", revision: 2)));
         var queue = _h.StartQueue();
