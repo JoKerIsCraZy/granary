@@ -93,6 +93,14 @@ internal sealed class DownloadHarness : IAsyncDisposable
         return queue;
     }
 
+    /// <summary>The manager over <paramref name="queue"/> (a queue not started when none is given), on this PC's device facts.</summary>
+    public DownloadManager NewManager(DownloadQueue? queue = null)
+    {
+        var feature = new DownloadsFeature(Session, Api, Store, Time, Logs.For<DownloadsFeature>());
+        return new DownloadManager(Store, queue ?? NewQueue(), Api, feature, Session, new FakeDeviceProbe(), new InMemoryPlaybackDevicePreferences(), Time,
+            Logs.For<DownloadManager>());
+    }
+
     /// <summary>As at Granary's next start: the queues stop, and a new store reads the index.</summary>
     public async Task RestartAsync()
     {

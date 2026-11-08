@@ -2511,6 +2511,11 @@ branches on are `prepared_file_expired` and `capability_unsupported` (`ProblemCo
   `original`, the server sends the file as it is when the PC plays it, or else a remux or a compatible copy.
 - Not repeatable: after an uncertain answer, read the registry (14.3) instead. 403 `permission_denied`, 501
   `capability_unsupported` (a preset the server cannot prepare), 409 `conflict` (the revision guard lost), 429 `rate_limited`.
+- What Granary does: one press creates at most one entry. No answer, a 409 or a 5xx reads the whole registry and takes the
+  newest entry with the same `content_id` and `episode_id` that is not `revoked`, `failed` or `cancelled` and not kept on
+  the PC; none means the download failed. 403, 404, 501, or an episode in `skipped`, means the profile cannot download it.
+  A 429 or another client error fails it. A season is one single-item request per episode, in order, for the episodes the
+  PC does not have; Granary does not send `series`, `season_number`, `batch_id` or `expected_entries`.
 
 ### 14.3 Registry and status events
 

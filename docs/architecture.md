@@ -880,8 +880,10 @@ missing their folder.
 
 - **One loop.** It decides what starts, on a wake: `Wake()`, a session change, `INetworkLink.Changed`, the download
   settings changing, the store changing, a transfer ending, or a timer at the earliest time something waits for (a retry,
-  a status report, a missing folder's recheck). Each pass rechecks the folders (`RecheckFolders`, which reads the disk, so
-  only this loop calls it), sends the scope's pending status reports and starts transfers. The event handlers only cancel
+  a status report or a delete to send again, the next look at preparing copies, a missing folder's recheck). Each pass
+  rechecks the folders (`RecheckFolders`, which reads the disk, so only this loop calls it), activates or reconciles the
+  scope with the server (below), sends its pending deletes and status reports and starts transfers. Work that fell due
+  while a pass ran gets the next pass at once; nothing else does, so the loop never spins. The event handlers only cancel
   and wake, so nothing of a transfer ever runs on the UI thread; cancelling goes through `CancelAsync`.
 - **Stopping a transfer.** A transfer stops at once, keeping its bytes, when its download is deleted (the store's
   `Changed` comes before the folder is deleted, so the part is let go first), paused by the viewer or no longer to be
@@ -940,9 +942,39 @@ client guide.
   is logged and left out, to be tried at the next refresh; a manifest that does not come ends the attempt as the file
   would have. The record keeps the artwork's file names and each subtitle's revision; a refresh fetches the artwork the
   folder lacks and the subtitles whose revision changed. The finished file is named after the manifest's container.
-- **Deletes.** The deletes still to send (`pending_deletes`) go out for the active scope at every pass; one the server
-  takes, or will never take (a client error), is forgotten, and one that cannot go now is tried at the next wake and after
-  the retry delays.
+- **Deletes.** The deletes still to send (`pending_deletes`) go out for the active scope, bound to its profile, each once
+  its folder is gone (`DownloadStore.FolderBeingDeleted`; a folder on a drive that is not there does not hold it back): the
+  files go first. One the server takes, or will never take (a client error), is forgotten; after one that cannot go now,
+  they wait for the retry delays.
+
+### Starting and deleting
+
+`DownloadManager` is what the view models use; `DownloadsFeature` says whether downloads are offered.
+
+- **Offered.** `DownloadsFeature` reads the capability once per server, account and profile (a failed read again after a
+  minute): `CanDownload` when it is `enabled && allowed`, as Silo's Apple app gates it, and `IsOffered` (the sidebar's
+  entry) then or while the profile has downloads on this PC, which stay playable and deletable whatever the server says.
+- **One create.** `StartAsync` creates the server's entry for one film or episode: a film's `content_id` is its own id,
+  an episode's its series with the episode as `episode_id`, the version the viewer chose, the preset, `caps` from this PC's
+  playback report and `expected_revision: 0`. A second press while a create for the same title runs, or for a title the
+  PC keeps, creates nothing (`AlreadyDownloading`). A create is never sent again: when its answer did not come, or was a
+  conflict or a server error, the registry is read and the newest entry for that film or episode that is not over and not
+  kept here is taken over; none is a failure. 403, 404 and 501, or a title the server passed over, are `Unavailable`. The
+  entry is kept with the request's title, series, season and episode, queued, or Preparing while the server prepares a
+  copy, and the queue is woken. Once the server made it, a cancel does not keep it from being kept.
+- **Seasons.** `StartSeasonAsync` sends one create per episode, in order, passing over the episodes this PC has or is
+  fetching, and counts what started, what was there and what failed.
+- **Pause and resume.** Pause marks a download paused by the viewer (it stays paused across starts), and the queue stops
+  its transfer. Resume clears that, and queues a failed download again from the bytes it has, unless the server no longer
+  has it.
+- **Delete.** The files go first: the row leaves the store, the queue stops its transfer, the folder is deleted once the
+  index without it is written; then the queue sends `DELETE`, bound to the download's profile, kept in `pending_deletes`
+  while the server cannot be reached and sent while that profile is the active one. A row whose files are missing is taken
+  off the index the same way, and the server still hears it.
+- **Items.** `Items` lists the active profile's downloads newest first as `DownloadItem`s: the record, the bytes so far
+  (the queue's count, the whole file once downloaded), whether the connection holds it back, and the poster's file as the
+  record names it, so a page never reads the disk for them. `DownloadText` words their status, as the apps do. `Changed`
+  follows the store, the queue's progress and the feature, on any thread.
 
 ## Windows App SDK
 

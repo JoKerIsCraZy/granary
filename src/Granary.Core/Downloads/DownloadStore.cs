@@ -52,7 +52,7 @@ public sealed partial class DownloadStore
     /// <summary>Every download of every scope on this PC.</summary>
     public IReadOnlyList<StoredDownload> All => Current.Downloads;
 
-    /// <summary>For tests: the folders' deletes and index write a <see cref="RecheckFolders"/> started.</summary>
+    /// <summary>The folders' deletes and index write a <see cref="RecheckFolders"/> started; the queue waits for them.</summary>
     internal Task FolderWork { get; private set; } = Task.CompletedTask;
 
     /// <summary>For tests: runs once a delete pass has written its index, before it deletes that index's folders.</summary>
@@ -106,6 +106,13 @@ public sealed partial class DownloadStore
 
     /// <summary>The server deletes still to be sent for <paramref name="scope"/>.</summary>
     public IReadOnlyList<PendingDelete> PendingDeletes(DownloadScope scope) => [.. Current.PendingDeletes.Where(d => d.Scope == scope)];
+
+    /// <summary>
+    /// The folder of a removed download that is still to be deleted (something held it, or its drive is not there); null when
+    /// none is. A server delete waits while it is there: the files go first.
+    /// </summary>
+    public string? FolderBeingDeleted(DownloadScope scope, string downloadId) =>
+        Current.FolderDeletes.FirstOrDefault(d => d.Scope == scope && d.DownloadId == downloadId)?.Folder;
 
     /// <summary>
     /// Keeps a new download in its folder under the downloads folder chosen now, which starts empty. Throws, and keeps nothing,

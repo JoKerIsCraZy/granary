@@ -85,9 +85,10 @@ public sealed partial class DownloadQueue : IDisposable
     private bool _started;
     private bool _stopping;
 
-    // The loop's own: whether the store was read, and the scope it last ran.
+    // The loop's own: whether the store was read, the scope it last ran, and whether that scope's downloads can run.
     private bool _loaded;
     private DownloadScope? _activeScope;
+    private bool _runnable;
 
     public DownloadQueue(DownloadStore store, DownloadTransfer transfer, DownloadAssets assets, DownloadsApi api, ISessionManager session,
         INetworkLink network, IDownloadPreferences preferences, TimeProvider time, ILogger<DownloadQueue> logger)
@@ -306,10 +307,15 @@ public sealed partial class DownloadQueue : IDisposable
         }
     }
 
-    // Waits for a wake; a timer wakes the loop at the earliest time something waits for.
+    // Waits for a wake; a timer wakes the loop at the earliest time something waits for, and work that fell due while the
+    // pass ran goes at once.
     private async Task ParkAsync(Task woken, CancellationToken stop)
     {
         var due = NextWake();
+        if (due == TimeSpan.Zero)
+        {
+            return;
+        }
         using var timer = due is { } wait ? _time.CreateTimer(static queue => ((DownloadQueue)queue!).Wake(), this, wait, Timeout.InfiniteTimeSpan) : null;
         lock (_gate)
         {
@@ -334,6 +340,8 @@ public sealed partial class DownloadQueue : IDisposable
             NoteInterrupted();
         }
         _store.RecheckFolders();
+        // Removed downloads' folders a recheck deletes again go before their server deletes are looked at.
+        await _store.FolderWork.ConfigureAwait(false);
         ForgetGone();
         DownloadScope? scope;
         Uri? server;
@@ -346,6 +354,7 @@ public sealed partial class DownloadQueue : IDisposable
         }
         bool activated = scope != _activeScope || resumed;
         _activeScope = scope;
+        _runnable = scope is not null && server is not null && !stopped;
         if (scope is null || server is null || stopped)
         {
             return;
@@ -428,48 +437,51 @@ public sealed partial class DownloadQueue : IDisposable
         }
     }
 
-    // The earliest time the loop has to look again: a download's retry, a report's or a delete's, the next look at preparing
-    // copies, a missing folder's recheck, or a pass that failed. Times already past are not waited for: what they let start
-    // starts when a transfer ends.
+    // How long until the loop has to look again: a pass that failed, and for a scope whose downloads can run, the next look at
+    // preparing copies, a delete's retry, a download's retry while a transfer can start, a report's retry while none is under
+    // way, and a missing folder's recheck. Zero when one of them fell due while the pass ran: the next pass acts on each of
+    // these, so it never comes back at once for the same one.
     private TimeSpan? NextWake()
     {
         var now = _time.GetUtcNow();
         var scope = _activeScope;
-        var downloads = scope is null ? [] : _store.In(scope);
-        bool deletes = scope is not null && _store.PendingDeletes(scope).Count > 0;
-        DateTimeOffset? next = _passRetryAt is { } passRetry ? Earliest(null, passRetry, now) : null;
+        bool runnable = _runnable && scope is not null;
+        var downloads = runnable ? _store.In(scope!) : [];
+        bool deletes = runnable && _store.PendingDeletes(scope!).Count > 0;
+        bool metered = runnable && IsWaitingForUnmetered;
+        DateTimeOffset? next = _passRetryAt;
         lock (_gate)
         {
+            bool canStart = !metered && !_stopping && _running.Count < MaxConcurrent;
             if (downloads.Any(d => !d.FilesMissing && d.Record.State == DownloadState.Preparing))
             {
-                next = Earliest(next, (_lastReconcile ?? now) + PreparingPoll, now);
+                next = Earliest(next, (_lastReconcile ?? now) + PreparingPoll);
             }
             if (deletes && _deleteRetry is { } deleteRetry)
             {
-                next = Earliest(next, deleteRetry.At, now);
+                next = Earliest(next, deleteRetry.At);
             }
             foreach (var download in downloads)
             {
                 var key = Key.Of(download.Record);
-                if (IsWanted(download) && _retries.TryGetValue(key, out var retry))
+                if (canStart && IsWanted(download) && !_running.ContainsKey(key) && !_resetting.Contains(key) && _retries.TryGetValue(key, out var retry))
                 {
-                    next = Earliest(next, retry.At, now);
+                    next = Earliest(next, retry.At);
                 }
-                if (download.Record.PendingReport is not null && _reportRetries.TryGetValue(key, out var report))
+                if (download.Record.PendingReport is not null && !_reporting.Contains(key) && _reportRetries.TryGetValue(key, out var report))
                 {
-                    next = Earliest(next, report.At, now);
+                    next = Earliest(next, report.At);
                 }
                 if (download.FilesMissing && !download.IsDamaged)
                 {
-                    next = Earliest(next, now + RetryDelays[^1], now);
+                    next = Earliest(next, now + RetryDelays[^1]);
                 }
             }
         }
-        return next is { } at && at > now ? at - now : null;
+        return next is not { } at ? null : at > now ? at - now : TimeSpan.Zero;
     }
 
-    private static DateTimeOffset? Earliest(DateTimeOffset? next, DateTimeOffset at, DateTimeOffset now) =>
-        at <= now ? next : next is { } earlier && earlier <= at ? earlier : at;
+    private static DateTimeOffset? Earliest(DateTimeOffset? next, DateTimeOffset at) => next is { } earlier && earlier <= at ? earlier : at;
 
     // A download that is to be on this PC and can be fetched now: queued or under way, not paused, gone or missing.
     private static bool IsWanted(StoredDownload download) =>

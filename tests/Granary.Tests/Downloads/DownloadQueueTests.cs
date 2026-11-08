@@ -381,7 +381,7 @@ public sealed class DownloadQueueTests : IAsyncDisposable
 
         await _h.Store.RemoveAsync(Scope7, "dl_1", queueServerDelete: true, Token);
 
-        Assert.False(Directory.Exists(stored.Folder));
+        await Until(() => !Directory.Exists(stored.Folder), "the folder went");
         await IdleAsync(queue);
         Assert.Single(_h.FileRequests("dl_1"));
         Assert.Null(_h.Find("dl_1"));

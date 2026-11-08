@@ -303,6 +303,8 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<DownloadAssets>();
         // One queue runs the active profile's transfers; the app starts it and stops it when the window closes.
         services.AddSingleton<DownloadQueue>();
+        services.AddSingleton<DownloadsFeature>();
+        services.AddSingleton<DownloadManager>();
     }
 
     // Artwork URLs are presigned and public: no credentials, no identity headers. HTTP/2 lets a page's images

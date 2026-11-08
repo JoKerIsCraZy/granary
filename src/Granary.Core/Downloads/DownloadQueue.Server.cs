@@ -398,12 +398,26 @@ public sealed partial class DownloadQueue
         RequestReconcile();
     }
 
-    // The server deletes of the active scope: each goes once the server took it or will never take it. One that cannot go now
-    // is tried at the next wake, and after the retry delays.
+    // The server deletes of the active scope, each once its folder is gone (the files go first; a folder on a drive that is not
+    // there does not hold it back). Each is forgotten once the server took it or will never take it. After one that could not
+    // go, they wait for the retry delays; one whose folder is still there is looked at again after a minute at the latest.
     private async Task SendPendingDeletesAsync(DownloadScope scope, Uri server, CancellationToken stop)
     {
+        lock (_gate)
+        {
+            if (_deleteRetry is { Failures: > 0 } failed && failed.At > _time.GetUtcNow())
+            {
+                return;
+            }
+        }
+        bool heldBack = false;
         foreach (var delete in _store.PendingDeletes(scope))
         {
+            if (_store.FolderBeingDeleted(scope, delete.DownloadId) is { } folder && Directory.Exists(folder))
+            {
+                heldBack = true;
+                continue;
+            }
             try
             {
                 await _api.DeleteAsync(server, scope.ProfileId, delete.DownloadId, stop).ConfigureAwait(false);
@@ -427,6 +441,17 @@ public sealed partial class DownloadQueue
             lock (_gate)
             {
                 _deleteRetry = null;
+            }
+        }
+        if (heldBack)
+        {
+            var now = _time.GetUtcNow();
+            lock (_gate)
+            {
+                if (_deleteRetry is not { } retry || retry.At <= now)
+                {
+                    _deleteRetry = new Retry(now + RetryDelays[^1], _deleteRetry?.Failures ?? 0);
+                }
             }
         }
     }
