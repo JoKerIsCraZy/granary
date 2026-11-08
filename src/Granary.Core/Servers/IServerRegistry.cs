@@ -12,7 +12,22 @@ public sealed record ServerEntry(
     string? ServerId,
     DateTimeOffset AddedAt,
     DateTimeOffset LastUsedAt,
-    string? LastProfileId);
+    string? LastProfileId)
+{
+    /// <summary>What the server's branding last answered; null until it answered once.</summary>
+    public SavedBranding? Branding { get; init; }
+}
+
+/// <summary>
+/// The server's branding as it last answered (<c>GET /api/v2/theme/branding</c>), so Granary paints its accent at once
+/// the next time, before the server answers, and keeps it while a read fails, as Silo's apps keep the last branding of
+/// each server. <see cref="Accent"/> is the accent as "#rrggbb", or <see cref="NoAccent"/> for a server without one;
+/// <see cref="Wordmark"/> the wordmark's address on the server, or null.
+/// </summary>
+public sealed record SavedBranding(string Accent, string? Wordmark)
+{
+    public const string NoAccent = "none";
+}
 
 /// <summary>
 /// The saved servers and which one is active (docs/api-contract.md, 6.5). Holds no secrets; tokens live
@@ -42,6 +57,13 @@ public interface IServerRegistry
     Task<ServerEntry> AddOrUpdateAsync(Uri baseUri, string name, string? serverId, CancellationToken cancellationToken = default);
 
     Task UpdateAsync(ServerEntry entry, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Changes the saved entry with <paramref name="id"/> through <paramref name="change"/>, read and written in one step,
+    /// so a change made meanwhile by someone else is not lost. Its id and address stay; nothing happens when it is no
+    /// longer saved. <paramref name="change"/> must not call back into the registry.
+    /// </summary>
+    Task UpdateAsync(string id, Func<ServerEntry, ServerEntry> change, CancellationToken cancellationToken = default);
 
     /// <summary>Makes the entry active and bumps its <see cref="ServerEntry.LastUsedAt"/>.</summary>
     Task SetActiveAsync(string id, CancellationToken cancellationToken = default);

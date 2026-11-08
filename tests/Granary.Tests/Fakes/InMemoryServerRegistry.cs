@@ -15,6 +15,16 @@ internal sealed class InMemoryServerRegistry : IServerRegistry
 
     public event EventHandler? Changed;
 
+    /// <summary>When set, a change by id throws it, as a save that fails would.</summary>
+    public Exception? FailWith { get; set; }
+
+    /// <summary>Saves <paramref name="entry"/> as it is, in place of one with the same id.</summary>
+    public void Add(ServerEntry entry)
+    {
+        _servers.RemoveAll(s => s.Id == entry.Id);
+        _servers.Add(entry);
+    }
+
     public Task LoadAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
 
     public ServerEntry? Find(string id) => _servers.FirstOrDefault(s => s.Id == id);
@@ -46,6 +56,26 @@ internal sealed class InMemoryServerRegistry : IServerRegistry
         {
             _servers[index] = entry;
             Changed?.Invoke(this, EventArgs.Empty);
+        }
+        return Task.CompletedTask;
+    }
+
+    public Task UpdateAsync(string id, Func<ServerEntry, ServerEntry> change, CancellationToken cancellationToken = default)
+    {
+        if (FailWith is { } failure)
+        {
+            return Task.FromException(failure);
+        }
+        int index = _servers.FindIndex(s => s.Id == id);
+        if (index >= 0)
+        {
+            var current = _servers[index];
+            var updated = change(current) with { Id = current.Id, BaseUri = current.BaseUri };
+            if (updated != current)
+            {
+                _servers[index] = updated;
+                Changed?.Invoke(this, EventArgs.Empty);
+            }
         }
         return Task.CompletedTask;
     }

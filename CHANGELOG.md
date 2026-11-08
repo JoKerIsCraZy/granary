@@ -90,7 +90,8 @@ release's section is what its update says it changes (docs/release.md).
   card that decodes VP9 only in 8 bits had your Silo server convert every HDR film, HEVC ones too.
 - Granary takes your Silo server's accent colour and logo also when it couldn't reach the server at start, such as right
   after waking the PC or connecting a VPN: it tries again until the server answers, where it kept its own red until the
-  next start.
+  next start. It also remembers each server's colour and logo, so they show at once the next time, and stay while the
+  server can't be reached.
 
 ## [0.2.1] - 2026-11-05
 

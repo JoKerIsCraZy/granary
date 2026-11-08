@@ -536,11 +536,20 @@ Signing out keeps the entry but drops its tokens and profile; removing a server 
 over its theme (`web/src/lib/accentColor.ts`): only `#rgb` or `#rrggbb` counts (the admin's setting is free text,
 `branding.accent_color`); it recolours the primary actions, the focus ring and the selection, and labels on it turn
 white when white contrasts more than the dark label `#141417`. Granary reads it for the active server
-(`ServerAccent`) and keeps its own red when there is none, and while the read fails. A failed read (no network yet after
-a wake or a VPN, a slow server) is tried again after 5 s, 15 s and a minute, then every 5 minutes; at once when the
-session signs in or becomes ready; and 2 s after the network changes (`ILocalNetwork`), which starts the waits over. An
-answer ends the retries, also one without an accent, and so does another server becoming active, which starts afresh. A
-streak of failures is logged once, with the status or the kind of failure only.
+(`ServerAccent`) and keeps its own red when there is none.
+
+- **Remembered per server.** As Android and Apple keep each server's last branding (`ServerBrandingCache`), Granary keeps
+  what the server last answered with its entry in `servers.json`: `"branding": { "accent": "#rrggbb" or "none",
+  "wordmark": <its address on the server>? }`. When the server becomes active, that is painted at once, before the read
+  answers, and it stays while the read fails. A read that answers differently replaces it. Only a server never read, or
+  one without an accent, shows Granary's red. A file from before has no `branding`; its servers are read as never read.
+  When an address answers as another server when it is added again, its branding goes.
+- **A failed read** (no network yet after a wake or a VPN, a slow server) is tried again after 5 s, 15 s and a minute,
+  then every 5 minutes; at once when the session signs in or becomes ready; and 2 s after the network changes
+  (`ILocalNetwork`), which starts the waits over. An answer ends the retries, also one without an accent, and so does
+  another server becoming active, which starts afresh. A streak of failures is logged once, with the status or the kind
+  of failure only.
+- **The wordmark** is shown only from the server itself, the remembered one too: anywhere else is not its wordmark.
 
 ### 6.6 Settings the client reads
 

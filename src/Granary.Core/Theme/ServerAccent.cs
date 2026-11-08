@@ -11,11 +11,12 @@ namespace Granary.Core.Theme;
 
 /// <summary>
 /// The accent of the server Granary uses, from its branding (<c>GET /api/v2/theme/branding</c>, public, so known before
-/// anyone signs in), as the web paints it. Read when Granary starts and whenever another server becomes active; the last
-/// accent stays until the new one answers. Granary's own red without a server, for a server without an accent, and while
-/// the read fails. A failed read is tried again after 5 s, 15 s and a minute, then every 5 minutes, and at once when the
-/// session signs in or becomes ready, or the network changes, until the server answers. The branding's wordmark comes
-/// with it, for the sidebar.
+/// anyone signs in), as the web paints it. Read when Granary starts and whenever another server becomes active. What the
+/// server last answered is kept with it (<see cref="ServerEntry.Branding"/>) and painted at once, before it answers, and
+/// while a read fails; without that, the last accent stays until the new one answers. Granary's own red without a server,
+/// for a server without an accent, and while the read of a server never read fails. A failed read is tried again after
+/// 5 s, 15 s and a minute, then every 5 minutes, and at once when the session signs in or becomes ready, or the network
+/// changes, until the server answers. The branding's wordmark comes with it, for the sidebar.
 /// </summary>
 public sealed partial class ServerAccent : ObservableObject, IDisposable
 {
@@ -26,6 +27,7 @@ public sealed partial class ServerAccent : ObservableObject, IDisposable
     internal static readonly TimeSpan NetworkSettle = TimeSpan.FromSeconds(2);
 
     private readonly ISessionManager _session;
+    private readonly IServerRegistry _registry;
     private readonly BrandingApi _branding;
     private readonly ILocalNetwork _network;
     private readonly IUiDispatcher _dispatcher;
@@ -43,10 +45,11 @@ public sealed partial class ServerAccent : ObservableObject, IDisposable
     // Which of the RetryDelays comes next.
     private int _retries;
 
-    public ServerAccent(ISessionManager session, BrandingApi branding, ILocalNetwork network, IUiDispatcher dispatcher, TimeProvider time,
-        ILogger<ServerAccent> logger)
+    public ServerAccent(ISessionManager session, IServerRegistry registry, BrandingApi branding, ILocalNetwork network, IUiDispatcher dispatcher,
+        TimeProvider time, ILogger<ServerAccent> logger)
     {
         _session = session;
+        _registry = registry;
         _branding = branding;
         _network = network;
         _dispatcher = dispatcher;
@@ -114,11 +117,20 @@ public sealed partial class ServerAccent : ObservableObject, IDisposable
         StopRetrying();
         _failing = false;
         _retries = 0;
-        Wordmark = null;
         if (server is null)
         {
             Palette = AccentPalette.Default;
+            Wordmark = null;
             return Task.CompletedTask;
+        }
+        if (server.Branding is { } saved)
+        {
+            Palette = AccentPalette.From(saved.Accent);
+            Wordmark = Uri.TryCreate(saved.Wordmark, UriKind.Absolute, out var wordmark) ? OnTheServer(server.BaseUri, wordmark) : null;
+        }
+        else
+        {
+            Wordmark = null;
         }
         return ReadAsync(server);
     }
@@ -155,8 +167,23 @@ public sealed partial class ServerAccent : ObservableObject, IDisposable
         }
         _failing = false;
         _retries = 0;
+        var wordmark = OnTheServer(server.BaseUri, ArtworkUrl.Resolve(server.BaseUri, branding.WordmarkUrl));
         Palette = AccentPalette.From(branding.AccentColor);
-        Wordmark = OnTheServer(server.BaseUri, ArtworkUrl.Resolve(server.BaseUri, branding.WordmarkUrl));
+        Wordmark = wordmark;
+        await RememberAsync(server.Id, new SavedBranding(AccentPalette.Parse(branding.AccentColor)?.ToString() ?? SavedBranding.NoAccent, wordmark?.AbsoluteUri));
+    }
+
+    // Saved with the server; the registry writes only what differs from what it has.
+    private async Task RememberAsync(string serverId, SavedBranding branding)
+    {
+        try
+        {
+            await _registry.UpdateAsync(serverId, entry => entry with { Branding = branding });
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _logger.LogWarning("Could not remember the server's branding: {Failure}", ex.GetType().Name);
+        }
     }
 
     private void Failed(ServerEntry server, Exception ex)
@@ -166,8 +193,11 @@ public sealed partial class ServerAccent : ObservableObject, IDisposable
             _failing = true;
             _logger.LogWarning("Could not read the server's branding; trying again: {Failure}", ApiFailureText.Describe(ex));
         }
-        // Another server's accent must not stay; Granary's own is the safe one.
-        Palette = AccentPalette.Default;
+        if (server.Branding is null)
+        {
+            // Another server's accent must not stay; Granary's own is the safe one. What this server answered last stays.
+            Palette = AccentPalette.Default;
+        }
         RetryIn(RetryDelays[Math.Min(_retries, RetryDelays.Length - 1)], server.Id);
         _retries++;
     }

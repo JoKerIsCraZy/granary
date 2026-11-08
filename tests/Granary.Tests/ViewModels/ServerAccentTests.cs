@@ -2,6 +2,7 @@ using System.Net;
 using Granary.Core.Api;
 using Granary.Core.Api.Theme;
 using Granary.Core.Auth;
+using Granary.Core.Servers;
 using Granary.Core.Theme;
 using Granary.Tests.Browse;
 using Granary.Tests.Fakes;
@@ -18,14 +19,29 @@ public sealed class ServerAccentTests
 
     private const string NoAccent = """{ "server_name": "Elena's Silo" }""";
 
+    private static readonly string WordmarkUrl = ScriptedSilo.Base.AbsoluteUri.TrimEnd('/') + "/api/v2/branding/assets/wordmark?v=1.webp";
+
     private readonly LibraryHarness _harness = new();
     private readonly FakeLocalNetwork _network = new();
+    private readonly InMemoryServerRegistry _registry = new();
+
+    public ServerAccentTests() => _registry.Add(ScriptedSilo.Server);
 
     private static CancellationToken Cancellation => TestContext.Current.CancellationToken;
 
     private ServerAccent Create() =>
-        new(_harness.Session, new BrandingApi(_harness.Silo.Http), _network, new ImmediateDispatcher(), _harness.Clock,
+        new(_harness.Session, _registry, new BrandingApi(_harness.Silo.Http), _network, new ImmediateDispatcher(), _harness.Clock,
             _harness.Logs.For<ServerAccent>());
+
+    // The server as saved with what it last answered, active.
+    private void Remember(SavedBranding branding)
+    {
+        var server = ScriptedSilo.Server with { Branding = branding };
+        _registry.Add(server);
+        _harness.Session.ActiveServer = server;
+    }
+
+    private SavedBranding? Remembered(string serverId = "srv1") => _registry.Find(serverId)?.Branding;
 
     private int Reads(Uri? server = null) =>
         _harness.Silo.Sent.Count(r => r.Method == HttpMethod.Get && r.Uri.GetLeftPart(UriPartial.Path) == ScriptedSilo.Url(BrandingPath, server).AbsoluteUri);
@@ -401,5 +417,143 @@ public sealed class ServerAccentTests
 
         Assert.Single(_harness.Logs.Lines, line => line.Contains("Could not read the server's branding", StringComparison.Ordinal));
         Assert.DoesNotContain(ScriptedSilo.Base.Host, _harness.Logs.All, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task TheRememberedAccentAndWordmark_ArePaintedAtOnce_BeforeTheServerAnswers()
+    {
+        Remember(new SavedBranding("#16a34a", WordmarkUrl));
+        var held = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _harness.Silo.On(HttpMethod.Get, BrandingPath, () => held.Task);
+        var accent = Create();
+
+        var reading = accent.StartAsync();
+
+        Assert.Equal("#16a34a", accent.Palette.Primary.ToString());
+        Assert.Equal(WordmarkUrl, accent.Wordmark?.AbsoluteUri);
+        held.SetResult(await ScriptedSilo.Json(HttpStatusCode.OK, Blue)());
+        await reading;
+        Assert.Equal("#1d4ed8", accent.Palette.Primary.ToString());
+    }
+
+    [Fact]
+    public async Task AFailedRead_KeepsTheRememberedAccent_AndTriesAgain()
+    {
+        Remember(new SavedBranding("#16a34a", WordmarkUrl));
+        _harness.Silo.On(HttpMethod.Get, BrandingPath, ScriptedSilo.NetworkError());
+        var accent = Create();
+
+        await accent.StartAsync();
+        await RetryAsync(accent);
+
+        Assert.Equal("#16a34a", accent.Palette.Primary.ToString());
+        Assert.Equal(WordmarkUrl, accent.Wordmark?.AbsoluteUri);
+        Assert.Equal(new SavedBranding("#16a34a", WordmarkUrl), Remembered());
+        Assert.Equal(TimeSpan.FromSeconds(15), _harness.Clock.NextDue);
+    }
+
+    [Fact]
+    public async Task ARemembered_None_IsGranarysOwnRed()
+    {
+        Remember(new SavedBranding(SavedBranding.NoAccent, null));
+        _harness.Silo.On(HttpMethod.Get, BrandingPath, ScriptedSilo.NetworkError());
+        var accent = Create();
+
+        await accent.StartAsync();
+
+        Assert.Same(AccentPalette.Default, accent.Palette);
+        Assert.Null(accent.Wordmark);
+    }
+
+    [Theory]
+    [InlineData("https://elsewhere.example/wordmark.webp")]
+    [InlineData("file:///C:/Windows/win.ini")]
+    [InlineData("/api/v2/branding/assets/wordmark.webp")]
+    [InlineData("not a url")]
+    public async Task ARememberedWordmark_FromElsewhere_IsNotShown(string wordmark)
+    {
+        Remember(new SavedBranding("#16a34a", wordmark));
+        _harness.Silo.On(HttpMethod.Get, BrandingPath, ScriptedSilo.NetworkError());
+        var accent = Create();
+
+        await accent.StartAsync();
+
+        Assert.Null(accent.Wordmark);
+        Assert.Equal("#16a34a", accent.Palette.Primary.ToString());
+    }
+
+    [Fact]
+    public async Task ARead_IsRemembered_WithTheAccentNormalized_AndTheWordmarksAddress()
+    {
+        _harness.Silo.On(HttpMethod.Get, BrandingPath, ScriptedSilo.Json(HttpStatusCode.OK,
+            """{ "accent_color": " #38F ", "wordmark_url": "/api/v2/branding/assets/wordmark?v=1.webp" }"""));
+        var accent = Create();
+
+        await accent.StartAsync();
+
+        Assert.Equal(new SavedBranding("#3388ff", WordmarkUrl), Remembered());
+    }
+
+    [Theory]
+    [InlineData("""{ "accent_color": "#1d4ed8" }""", "#1d4ed8")]
+    [InlineData("""{ "server_name": "Elena's Silo" }""", SavedBranding.NoAccent)]
+    [InlineData("""{ "accent_color": "blue" }""", SavedBranding.NoAccent)]
+    public async Task AChangedAccent_ReplacesTheRememberedOne(string branding, string remembered)
+    {
+        Remember(new SavedBranding("#16a34a", WordmarkUrl));
+        _harness.Silo.On(HttpMethod.Get, BrandingPath, ScriptedSilo.Json(HttpStatusCode.OK, branding));
+        var accent = Create();
+
+        await accent.StartAsync();
+
+        Assert.Equal(new SavedBranding(remembered, null), Remembered());
+        Assert.Equal(AccentPalette.From(remembered), accent.Palette);
+        Assert.Null(accent.Wordmark);
+    }
+
+    [Fact]
+    public async Task TheSameAnswer_SavesNothing()
+    {
+        Remember(new SavedBranding("#1d4ed8", null));
+        _harness.Silo.On(HttpMethod.Get, BrandingPath, ScriptedSilo.Json(HttpStatusCode.OK, Blue));
+        int changes = 0;
+        _registry.Changed += (_, _) => changes++;
+        var accent = Create();
+
+        await accent.StartAsync();
+
+        Assert.Equal(0, changes);
+    }
+
+    [Fact]
+    public async Task AnotherServer_IsPaintedWithWhatItRemembers_AndAFailedReadThereKeepsIt()
+    {
+        _harness.Silo.On(HttpMethod.Get, BrandingPath, ScriptedSilo.Json(HttpStatusCode.OK, Blue));
+        var other = ScriptedSilo.Entry("srv2", new Uri("https://other.example/silo")) with { Branding = new SavedBranding("#16a34a", null) };
+        _registry.Add(other);
+        _harness.Silo.On(HttpMethod.Get, ScriptedSilo.Url(BrandingPath, other.BaseUri), ScriptedSilo.NetworkError());
+        var accent = Create();
+        await accent.StartAsync();
+
+        _harness.Session.ActiveServer = other;
+        _harness.Session.RaiseChanged();
+        await accent.Reading;
+
+        Assert.Equal("#16a34a", accent.Palette.Primary.ToString());
+        Assert.Equal(new SavedBranding("#1d4ed8", null), Remembered());
+        Assert.Equal(new SavedBranding("#16a34a", null), Remembered("srv2"));
+    }
+
+    [Fact]
+    public async Task AFailedSave_KeepsTheAccent_AndIsLogged()
+    {
+        _harness.Silo.On(HttpMethod.Get, BrandingPath, ScriptedSilo.Json(HttpStatusCode.OK, Blue));
+        _registry.FailWith = new IOException("The disk is full.");
+        var accent = Create();
+
+        await accent.StartAsync();
+
+        Assert.Equal("#1d4ed8", accent.Palette.Primary.ToString());
+        Assert.Contains(_harness.Logs.Lines, line => line.Contains("Could not remember the server's branding", StringComparison.Ordinal));
     }
 }
