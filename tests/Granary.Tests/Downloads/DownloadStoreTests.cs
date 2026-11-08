@@ -460,6 +460,25 @@ public sealed class DownloadStoreTests : IDisposable
     }
 
     [Fact]
+    public async Task AFollowerThatThrowsOnceTheFolderWent_IsLogged_AndTheRemoveEnds()
+    {
+        var store = await LoadedAsync();
+        var added = await store.AddAsync(Record("dl_1"), Token);
+        store.Changed += (_, _) =>
+        {
+            if (!Directory.Exists(added.Folder))
+            {
+                throw new InvalidOperationException("A follower broke.");
+            }
+        };
+
+        await store.RemoveAsync(Scope7, "dl_1", queueServerDelete: false, Token);
+
+        Assert.False(Directory.Exists(added.Folder));
+        Assert.Contains("A follower of the downloads failed", _logs.All, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task ADownloadAddedAgain_KeepsItsFolderFromAnEarlierRemove()
     {
         var store = await LoadedAsync();

@@ -377,12 +377,21 @@ public sealed partial class DownloadStore
         }
     }
 
-    // The index, then the removed downloads' folders. Changed follows when a folder went, so a server delete it held back goes.
+    // The index, then the removed downloads' folders. Changed follows when a folder went, so a server delete it held back goes;
+    // a follower that throws then is logged, since the change it hears of is done already.
     private async Task WriteIndexThenDeleteFoldersAsync()
     {
-        if (await PersistAsync(WriteIndexThenDeleteFolders))
+        if (!await PersistAsync(WriteIndexThenDeleteFolders))
+        {
+            return;
+        }
+        try
         {
             Changed?.Invoke(this, EventArgs.Empty);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning("A follower of the downloads failed as a removed download's folder went ({Failure})", DownloadLog.Failure(ex));
         }
     }
 
