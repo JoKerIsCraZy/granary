@@ -9,11 +9,12 @@ release's section is what its update says it changes (docs/release.md).
 ### Added
 
 - **Player buttons:** Settings → Playback → Player buttons shows, hides and orders the player's buttons. A hidden
-  button's keys are off too.
+  button's keys are off too, except F11 and the minimized player's own Mute and volume keys.
 - **When it ends:** the player shows the clock time the title ends, such as "Ends 22:41".
 - **Stream dot:** a dot in the player's gear is green for Direct Play or Direct Stream and amber while your Silo server
   transcodes.
-- **Sleep timer:** pauses after 5 to 60 minutes, or at the end of the episode or movie.
+- **Sleep timer:** the player's Sleep button pauses after 5 to 60 minutes, or stops at the end of the episode or movie
+  instead of playing the next one.
 - **Audio sync offset:** moves the sound up to 5 seconds earlier or later, in Settings → Playback or the player's menu.
 - **Chapter keys:** Ctrl+Right and Ctrl+Left jump between chapters.
 - **Taskbar preview:** Play/Pause, and Previous and Next episode, in the preview of Granary's taskbar button.
@@ -21,7 +22,7 @@ release's section is what its update says it changes (docs/release.md).
 - **Theme music:** a title's page can play its theme quietly (Settings → Title Pages), when your Silo server has one.
 - **Title art and advisory age:** Settings → Title Pages chooses a title's logo or its name, and can show an advisory
   age such as "Common Sense 13+".
-- **Spoilers:** Settings → Title Pages can blur the pictures and hide the descriptions of episodes you haven't watched.
+- **Spoilers:** Settings → Title Pages can blur the stills and hide the descriptions of episodes you haven't started.
 - **Star ratings:** rate a movie or series from 1 to 5 stars on its page.
 - **Box sets:** a film's page lists its box set, which has its own page and shows in Search.
 - **Extras:** title pages show the featurettes, deleted scenes and other extras your Silo server has.
@@ -30,13 +31,13 @@ release's section is what its update says it changes (docs/release.md).
 - **Watch Party from a title's page:** its ⋮ menu starts a party with that title and copies the invite.
 - **Home's hero banner:** a Home row set as the hero banner on Silo's web slides through its titles at the top of Home.
 - **Title preview switch:** Settings → Navigation & Cards can turn off the large title preview at the top of Home, For
-  You and Discover.
+  You and Discover. A hero banner set on Silo's web stays.
 
 ### Changed
 
 - **Resume** starts exactly where you stopped instead of 7 seconds earlier. Settings → Playback → This PC → Rewind on
   resume brings a lead-in back.
-- **Time left stays:** the player remembers whether it shows the duration or the time left.
+- **Time left stays:** click the player's time to show the time left, and the player remembers it.
 - **Player bar:** Audio and Subtitles sit side by side, and Audio has the sound-wave icon of Silo's web player.
 - **More Episodes** shows the whole season, with the episode you're on marked Now Viewing.
 
