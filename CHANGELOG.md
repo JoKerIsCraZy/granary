@@ -12,6 +12,10 @@ release's section is what its update says it changes (docs/release.md).
   "Ends 22:41", in Windows' 12 or 24 hour time. It counts in the playback speed, moves later while you pause, and
   follows a seek. The minimized player shows it after the times while it has room. It's not shown when the length
   isn't known, such as for a live stream.
+- **Turn off the title preview:** Settings → Navigation & Cards → Pages → Title preview at the top. Off, Home, For You
+  and Discover no longer open with a large picture of the title you point at, and start with their rows. It's on by
+  default and kept for each profile on this PC. A row your Silo server shows as the hero banner on Home stays; you set
+  that on Silo's web.
 - **How the stream plays, on the gear:** the player's settings button now has a dot in its gear. Green means your Silo
   server sends the original video and audio, as Direct Play or Direct Streaming; amber means it transcodes the video,
   the audio or both. It changes with the quality, version or audio track you pick, and a file you play directly shows
@@ -114,6 +118,8 @@ release's section is what its update says it changes (docs/release.md).
 - Saving mpv.conf or loading a preset no longer fails when Granary happens to be reading the file at that moment.
 - HDR and Dolby Vision films play directly on more graphics cards, because Granary now checks the film's own codec. A
   card that decodes VP9 only in 8 bits had your Silo server convert every HDR film, HEVC ones too.
+- When the large picture at the top of For You or Requests' Discover goes, such as for another profile while its rows
+  load, the page moves up into its place, and Discover no longer keeps showing the title from before.
 
 ## [0.2.1] - 2026-11-05
 

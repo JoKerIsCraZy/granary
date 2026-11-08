@@ -24,7 +24,8 @@ namespace Granary.Core.ViewModels;
 /// change while Home is shown reloads it at once, quietly, the rows keeping where they were scrolled to. Continue Watching
 /// and Next Up rows, the banner and the hero follow the profile's spoiler switches (<see cref="EpisodeSpoilerSettings"/>) in
 /// place, without a reload: the banner keeps its slide and countdown, the hero its title. Until the profile's switches are
-/// read, the banner and the hero blur every unwatched episode's still.
+/// read, the banner and the hero blur every unwatched episode's still. With the title preview off (<see cref="BrowseHeroSetting"/>)
+/// Home has no hero, and starts with its rows unless a row is the banner.
 /// </summary>
 /// <remarks>
 /// The commands take no cancellation token on purpose: a cancellable toolkit command cancels its running
@@ -70,7 +71,8 @@ public sealed partial class HomeViewModel : ObservableObject
         ILogger<HomeViewModel> logger,
         ViewerStateChanges? changes = null,
         IArtworkPrefetcher? artwork = null,
-        EpisodeSpoilerSettings? spoilers = null)
+        EpisodeSpoilerSettings? spoilers = null,
+        BrowseHeroSetting? browseHero = null)
     {
         _session = session;
         _catalog = catalog;
@@ -81,7 +83,7 @@ public sealed partial class HomeViewModel : ObservableObject
         _logger = logger;
         _changes = changes;
         _spoilers = spoilers;
-        Hero = new BrowseHeroViewModel(dispatcher, time);
+        Hero = new BrowseHeroViewModel(dispatcher, time, browseHero);
         Banner = new FeaturedBannerViewModel(dispatcher, time, navigation, artwork);
         Hero.PropertyChanged += OnHeroChanged;
         Banner.PropertyChanged += OnBannerChanged;
@@ -90,7 +92,10 @@ public sealed partial class HomeViewModel : ObservableObject
     [ObservableProperty]
     public partial IReadOnlyList<HomeRowViewModel> Rows { get; private set; } = [];
 
-    /// <summary>The title at the top of Home without a banner, following the card the pointer or the keyboard is on.</summary>
+    /// <summary>
+    /// The title at the top of Home without a banner, following the card the pointer or the keyboard is on; none while the title
+    /// preview is off.
+    /// </summary>
     public BrowseHeroViewModel Hero { get; }
 
     /// <summary>The first answer is on its way and there is nothing to show yet.</summary>
@@ -134,6 +139,11 @@ public sealed partial class HomeViewModel : ObservableObject
             Banner.SetActive(true);
         }
         ShowSpoilers();
+        if (Hero.MissedSwitch)
+        {
+            // The title preview was turned on or off while Home was away.
+            FollowRowsWithHero();
+        }
         return RefreshIfNeededAsync();
     }
 

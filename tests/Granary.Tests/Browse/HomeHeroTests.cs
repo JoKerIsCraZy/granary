@@ -133,7 +133,13 @@ public sealed class HomeHeroTests
         var cards = home.Rows[0].Cards;
         home.PointCardCommand.Execute(cards[0]);
         var shown = new List<string?>();
-        home.Hero.PropertyChanged += (_, e) => shown.Add(home.Hero.Shown?.Key);
+        home.Hero.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(BrowseHeroViewModel.Shown))
+            {
+                shown.Add(home.Hero.Shown?.Key);
+            }
+        };
 
         foreach (var card in cards.Skip(1))
         {
@@ -257,6 +263,23 @@ public sealed class HomeHeroTests
         await home.Loading;
 
         Assert.Null(home.Hero.Shown);
+    }
+
+    [Fact]
+    public async Task AProfileWithoutRows_TellsThePageTheHeroWent_SoItsRowsMoveUp()
+    {
+        var home = await HomeWithAsync(Section("recent", "recently_added", 1, Item("r1")));
+        Assert.True(home.HasHeroTitle);
+        var changed = new List<string?>();
+        home.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+        _silo.Map(SectionsPath, Sections(Section("nothing", "genre", 0)));
+
+        _session.ProfileId = "8";
+        _session.RaiseChanged();
+        await home.Loading;
+
+        Assert.False(home.HasHeroTitle);
+        Assert.Contains(nameof(HomeViewModel.HasHeroTitle), changed);
     }
 
     [Fact]
