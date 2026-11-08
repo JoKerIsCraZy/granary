@@ -912,11 +912,14 @@ missing their folder.
   enough space", its bytes kept for Resume. A file of another length starts over from its first byte once, and fails the
   second time in a row. Refusals go to what the server says (below). A missing folder waits until a recheck finds it.
 - **Status reports.** Turning Downloading or Completed records a `DownloadStatusEvent` with the time of the change in the
-  record (`PendingReport`). The transfer sends "downloading" itself before it asks for the file, waiting at most
-  `ReportBudget` (15 s), so "completed" always comes after it; "completed" goes with the server work, so a finished transfer
-  frees its slot at once. One that does not go is sent again as it is, time included, after the retry delays, whoever
-  sends it. One the server will not take (another revision, an entry preparing again, a time it refuses) is dropped. A
-  completed transfer renames `media.part` to its media name before the record says Completed.
+  record (`PendingReport`). The transfer takes the place of its download's report sender before it writes "downloading",
+  then sends it itself before it asks for the file, waiting at most `ReportBudget` (15 s), also for a send the server work
+  had under way. "completed" goes with the server work, so a finished transfer frees its slot at once; while a
+  "downloading" is still unsent, "completed" waits behind it (`NextReport`) and follows once it went or was refused. One
+  that does not go is sent again as it is, time included, after the retry delays, whoever sends it; the loop is woken to
+  know when, also when the transfer's own send ran out of time. One the server will not take (another revision, an entry
+  preparing again, a time it refuses) is dropped. A completed transfer renames `media.part` to its media name before the
+  record says Completed.
 - **Stop.** `StopAsync` stops the loop, the transfers and the server work and waits up to `StopBudget` (2 s) for them to let
   go of their files, logging when they did not or when one failed; it never throws, also when a request was cancelled
   under way or `Dispose` came first. `Dispose` stops everything without waiting and lets go of the queue's cancellation

@@ -91,6 +91,12 @@ public sealed record DownloadRecord
     /// <summary>A status event not yet taken by the server, sent again as it was.</summary>
     public DownloadStatusEvent? PendingReport { get; init; }
 
+    /// <summary>
+    /// The event after <see cref="PendingReport"/>, sent once that one went or was refused: "completed" waits behind a
+    /// "downloading" the server has not heard yet.
+    /// </summary>
+    public DownloadStatusEvent? NextReport { get; init; }
+
     public DateTimeOffset CreatedAt { get; init; }
 
     /// <summary>When the manifest was last read from the server.</summary>

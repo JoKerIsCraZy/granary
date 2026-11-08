@@ -74,6 +74,8 @@ internal static class DownloadRecords
 
     public static bool IsUsable(PendingDelete? delete) => delete is not null && IsUsable(delete.Scope) && !string.IsNullOrWhiteSpace(delete.DownloadId);
 
+    private static bool IsUsable(DownloadStatusEvent? report) => report is { Status: { Length: > 0 }, Revision: >= 0 };
+
     /// <summary>
     /// <paramref name="folder"/> is laid out as <see cref="DownloadPaths.Folder"/> lays out this scope's download: only such a folder
     /// is read, written or deleted, whatever a file says.
@@ -112,12 +114,16 @@ internal static class DownloadRecords
         {
             return null;
         }
+        var pending = IsUsable(record.PendingReport) ? record.PendingReport : null;
+        var next = IsUsable(record.NextReport) ? record.NextReport : null;
         return record with
         {
             Validator = ByteRange.IsValidator(record.Validator) ? record.Validator : null,
             MediaFile = DownloadPaths.IsMediaName(record.MediaFile) ? record.MediaFile : null,
             PreparationProgress = record.PreparationProgress is >= 0 and <= 1 ? record.PreparationProgress : null,
-            PendingReport = record.PendingReport is { Status: { Length: > 0 } } report && report.Revision >= 0 ? report : null,
+            // The next report moves up when the one before it is gone.
+            PendingReport = pending ?? next,
+            NextReport = pending is null ? null : next,
             SubtitleRevisions = record.SubtitleRevisions.Where(r => r.Key is not null && r.Value is not null).ToDictionary(),
             ArtworkFiles = record.ArtworkFiles.Where(a => DownloadPaths.IsArtworkName(a.Key, a.Value)).ToDictionary(),
         };

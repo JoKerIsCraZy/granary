@@ -272,7 +272,7 @@ public sealed partial class DownloadQueue
 
     // A report not on its way (or asked for by its own sender), and not waiting out its delay after one that could not go.
     private bool IsReportDueLocked(Key key, DateTimeOffset now, bool sending = false) =>
-        (sending || !_reporting.Contains(key)) && (!_reportRetries.TryGetValue(key, out var retry) || retry.At <= now);
+        (sending || !_reporting.ContainsKey(key)) && (!_reportRetries.TryGetValue(key, out var retry) || retry.At <= now);
 
     // Each part for the scope it was started for, while that scope is still the active one. One that fails unexpectedly holds
     // the work back for a minute, so it does not come back at once.
@@ -394,7 +394,7 @@ public sealed partial class DownloadQueue
         foreach (var download in downloads.Where(d => d.Record.PendingReport is not null))
         {
             var key = Key.Of(download.Record);
-            if (!_reporting.Contains(key) && _reportRetries.TryGetValue(key, out var report))
+            if (!_reporting.ContainsKey(key) && _reportRetries.TryGetValue(key, out var report))
             {
                 next = Earliest(next, report.At);
             }

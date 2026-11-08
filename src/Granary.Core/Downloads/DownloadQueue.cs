@@ -72,7 +72,8 @@ public sealed partial class DownloadQueue : IDisposable
     private readonly Dictionary<Key, Retry> _reportRetries = [];
     private readonly HashSet<Key> _integrityFailed = [];
     private readonly HashSet<Key> _resumeWithMargin = [];
-    private readonly HashSet<Key> _reporting = [];
+    // The send under way for each download's reports, and what it does when it ends.
+    private readonly Dictionary<Key, TaskCompletionSource> _reporting = [];
     private readonly HashSet<Key> _reportAgain = [];
 
     // Downloads whose files a new revision replaces: nothing starts them meanwhile.

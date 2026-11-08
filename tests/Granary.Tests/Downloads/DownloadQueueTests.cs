@@ -1,6 +1,8 @@
 using System.Net;
+using System.Text.Json;
 using Granary.Core.Api.Downloads;
 using Granary.Core.Downloads;
+using Granary.Tests.Fakes;
 using Granary.Tests.Profiles;
 using static Granary.Tests.Downloads.DownloadHarness;
 
@@ -558,6 +560,101 @@ public sealed class DownloadQueueTests : IAsyncDisposable
 
         Assert.Contains("did not stop within", _h.Logs.All, StringComparison.Ordinal);
         stubborn.Release();
+    }
+
+    // A transfer that resumes 1000 bytes in, its manifest read and its validator kept, and waits for the rest: nothing it does
+    // writes the record after "downloading", so only the queue's own timers wake the loop.
+    private async Task<GatedMediaStream> ResumingAsync()
+    {
+        var stored = await _h.AddAsync("dl_1", validator: "\"v1\"", change: r => r with { ManifestReadAt = ManualTimeProvider.DefaultStart });
+        await File.WriteAllTextAsync(Path.Combine(stored.Folder, DownloadPaths.Manifest), DownloadPayloads.Manifest("dl_1"), Token);
+        await File.WriteAllBytesAsync(stored.PartPath, Source[..1000], Token);
+        var rest = new GatedMediaStream(Source[1000..]);
+        _h.ServeFile("dl_1", DownloadPayloads.Streamed(HttpStatusCode.PartialContent, rest, 2000, "\"v1\"", 1000, 3000));
+        return rest;
+    }
+
+    private string[] ReportStatuses() =>
+        [.. _h.Reports("dl_1").Select(r => JsonDocument.Parse(r.Body!).RootElement.GetProperty("status").GetString()!)];
+
+    [Fact]
+    public async Task AFailedDownloadingReport_IsSentAgainWhileTheTransferRuns()
+    {
+        await ResumingAsync();
+        _h.AcceptReports("dl_1", ScriptedSilo.Problem(503, "dependency_unavailable"), ScriptedSilo.Json(HttpStatusCode.OK, DownloadPayloads.Entry("dl_1", "downloading")));
+        _h.StartQueue();
+        await Until(() => _h.Logs.All.Contains("could not be sent", StringComparison.Ordinal), "the first report failed");
+
+        _h.Time.Advance(TimeSpan.FromSeconds(1));
+
+        await Until(() => _h.Find("dl_1")!.Record.PendingReport is null, "the report went again");
+        Assert.Equal(["downloading", "downloading"], ReportStatuses());
+        Assert.Equal(DownloadState.Downloading, _h.Find("dl_1")!.Record.State);
+    }
+
+    [Fact]
+    public async Task ADownloadingReportThatTakesTooLong_IsLeftForLater_AndTheFileIsAsked()
+    {
+        await ResumingAsync();
+        int reports = 0;
+        _h.Silo.OnCancellable(HttpMethod.Patch, EntryPath("dl_1"), async cancellationToken =>
+        {
+            if (Interlocked.Increment(ref reports) == 1)
+            {
+                await Task.Delay(Timeout.Infinite, cancellationToken);
+            }
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(DownloadPayloads.Entry("dl_1", "downloading"), System.Text.Encoding.UTF8, "application/json"),
+            };
+        });
+        var queue = _h.StartQueue();
+        await Until(() => _h.Reports("dl_1").Count == 1, "the report went");
+        await SettleRunningAsync(queue);
+        Assert.Empty(_h.FileRequests("dl_1"));
+
+        _h.Time.Advance(DownloadQueue.ReportBudget);
+        await Until(() => _h.FileRequests("dl_1").Count == 1, "the file was asked for");
+        _h.Time.Advance(TimeSpan.FromSeconds(1));
+
+        await Until(() => _h.Find("dl_1")!.Record.PendingReport is null, "the report went again");
+        Assert.Equal(2, _h.Reports("dl_1").Count);
+    }
+
+    [Fact]
+    public async Task AnUnsentDownloadingReport_StillGoesBeforeCompleted()
+    {
+        await _h.AddAsync("dl_1");
+        _h.ServeFile("dl_1", Source);
+        _h.AcceptReports("dl_1", ScriptedSilo.Problem(503, "dependency_unavailable"), ScriptedSilo.Json(HttpStatusCode.OK, DownloadPayloads.Entry("dl_1", "downloading")));
+        _h.StartQueue();
+        await CompletedAsync("dl_1");
+        Assert.Equal(["downloading"], ReportStatuses());
+
+        _h.Time.Advance(TimeSpan.FromSeconds(1));
+
+        await Until(() => _h.Find("dl_1")!.Record is { PendingReport: null, NextReport: null }, "both reports went");
+        Assert.Equal(["downloading", "downloading", "completed"], ReportStatuses());
+    }
+
+    [Fact]
+    public async Task TheFile_IsAskedForOnlyOnceDownloadingWasAnswered()
+    {
+        await _h.AddAsync("dl_1");
+        _h.ServeFile("dl_1", Source);
+        var answer = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _h.AcceptReports("dl_1", () => answer.Task, ScriptedSilo.Json(HttpStatusCode.OK, DownloadPayloads.Entry("dl_1", "completed")));
+        var queue = _h.StartQueue();
+        await Until(() => _h.Reports("dl_1").Count == 1, "downloading went");
+        await SettleRunningAsync(queue);
+
+        Assert.Empty(_h.FileRequests("dl_1"));
+        answer.SetResult(new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(DownloadPayloads.Entry("dl_1", "downloading"), System.Text.Encoding.UTF8, "application/json"),
+        });
+        await CompletedAsync("dl_1");
+        Assert.Single(_h.FileRequests("dl_1"));
     }
 
     [Fact]

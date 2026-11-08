@@ -300,6 +300,7 @@ public sealed partial class DownloadQueue
                 ExpectedBytes = entry.FileSize > 0 ? entry.FileSize : r.ExpectedBytes,
                 PreparationProgress = null,
                 PendingReport = null,
+                NextReport = null,
                 SubtitleRevisions = new Dictionary<string, string>(),
             }, CancellationToken.None).ConfigureAwait(false);
             lock (_gate)

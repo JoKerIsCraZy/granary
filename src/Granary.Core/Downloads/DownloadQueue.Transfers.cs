@@ -33,11 +33,31 @@ public sealed partial class DownloadQueue
     private async Task TransferAsync(Running run)
     {
         var key = run.Key;
-        if (await MarkDownloadingAsync(run).ConfigureAwait(false) is not { } download)
+        // The transfer's own place as the sender of its reports, taken before "downloading" is written: the server work, which
+        // that write wakes, leaves it to the transfer and its budget.
+        var sender = TryBeginSending(key);
+        StoredDownload? download;
+        try
         {
+            download = await MarkDownloadingAsync(run).ConfigureAwait(false);
+        }
+        catch
+        {
+            if (sender is not null)
+            {
+                EndSending(key, sender);
+            }
+            throw;
+        }
+        if (download is null)
+        {
+            if (sender is not null)
+            {
+                EndSending(key, sender);
+            }
             return;
         }
-        await SendStartReportAsync(run).ConfigureAwait(false);
+        await SendStartReportAsync(run, sender).ConfigureAwait(false);
         (download, var failed) = await FetchAssetsFirstAsync(run, download).ConfigureAwait(false);
         long from = failed?.Bytes ?? ResumePoint(download);
         var outcome = failed ?? await _transfer.RunAsync(JobOf(run, download, from), bytes => OnProgress(key, bytes),
@@ -46,12 +66,44 @@ public sealed partial class DownloadQueue
     }
 
     // The server hears "downloading" before the file is asked for, so "completed" always comes after it. The transfer waits
-    // for that report at most ReportBudget; one that does not go now is sent again by the server work.
-    private async Task SendStartReportAsync(Running run)
+    // for that report at most ReportBudget, also when the server work has it under way already. One that did not go waits out
+    // its delay, and the server work sends it then: the loop is woken to know when.
+    private async Task SendStartReportAsync(Running run, TaskCompletionSource? sender)
     {
+        var key = run.Key;
         using var budget = new CancellationTokenSource(ReportBudget, _time);
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(_stopToken, budget.Token);
-        await SendReportsAsync(run.Server, run.Key, linked.Token).ConfigureAwait(false);
+        try
+        {
+            if (sender is not null)
+            {
+                await SendReportsAsSenderAsync(run.Server, key, sender, linked.Token).ConfigureAwait(false);
+            }
+            // A sender already under way (one that held the place before the transfer) sends "downloading" too, once its own report went.
+            await SenderOf(key).WaitAsync(linked.Token).ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
+        }
+        finally
+        {
+            LeaveReportForLater(key);
+        }
+    }
+
+    // A report still to send after the transfer's own try: it waits out a delay (the first one when it ran out of time rather
+    // than failed), and the loop looks again, so the server work sends it while the transfer runs.
+    private void LeaveReportForLater(Key key)
+    {
+        if (_store.Find(key.Scope, key.Id)?.Record.PendingReport is null)
+        {
+            return;
+        }
+        lock (_gate)
+        {
+            if (!_reporting.ContainsKey(key) && !_reportRetries.ContainsKey(key))
+            {
+                _reportRetries[key] = new Retry(_time.GetUtcNow() + RetryDelays[0], 1);
+            }
+            WakeLocked();
+        }
     }
 
     private TransferJob JobOf(Running run, StoredDownload download, long from)
@@ -178,6 +230,7 @@ public sealed partial class DownloadQueue
                         State = DownloadState.Downloading,
                         Failure = DownloadFailure.None,
                         PendingReport = new DownloadStatusEvent(DownloadStatuses.Downloading, now, r.Revision),
+                        NextReport = null,
                     };
             }, run.Cancel.Token).ConfigureAwait(false);
             return start && !download.FilesMissing ? download : null;
@@ -355,13 +408,14 @@ public sealed partial class DownloadQueue
             return;
         }
         var now = _time.GetUtcNow();
-        await ChangeOwnAsync(key, run.Revision, r => r with
+        await ChangeOwnAsync(key, run.Revision, r =>
         {
-            State = DownloadState.Completed,
-            Failure = DownloadFailure.None,
-            MediaFile = name,
-            PreparationProgress = null,
-            PendingReport = new DownloadStatusEvent(DownloadStatuses.Completed, now, r.Revision),
+            var completed = r with { State = DownloadState.Completed, Failure = DownloadFailure.None, MediaFile = name, PreparationProgress = null };
+            var report = new DownloadStatusEvent(DownloadStatuses.Completed, now, r.Revision);
+            // A "downloading" the server has not heard goes first; "completed" follows it.
+            return r.PendingReport is { Status: DownloadStatuses.Downloading }
+                ? completed with { NextReport = report }
+                : completed with { PendingReport = report, NextReport = null };
         }).ConfigureAwait(false);
         lock (_gate)
         {
@@ -433,19 +487,45 @@ public sealed partial class DownloadQueue
         }
     }
 
-    // Sends a download's status reports until none is left or one could not go. One sender per download at a time: a second
-    // caller has the one under way look once more when it is done, but a report that could not go waits out its delay. Never
-    // throws.
+    // Sends a download's status reports, the next one after the pending one, until none is left or one could not go. One sender
+    // per download at a time: a second caller has the one under way look once more when it is done (SenderOf tells when), but a
+    // report that could not go waits out its delay. Never throws.
     private async Task SendReportsAsync(Uri server, Key key, CancellationToken stop)
+    {
+        if (TryBeginSending(key) is { } done)
+        {
+            await SendReportsAsSenderAsync(server, key, done, stop).ConfigureAwait(false);
+        }
+    }
+
+    // The sender's place for a download's reports; null when a sender is under way, which then looks once more when it is done.
+    private TaskCompletionSource? TryBeginSending(Key key)
     {
         lock (_gate)
         {
-            if (!_reporting.Add(key))
+            if (_reporting.ContainsKey(key))
             {
                 _reportAgain.Add(key);
-                return;
+                return null;
             }
+            var done = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            _reporting[key] = done;
+            return done;
         }
+    }
+
+    // A sender's place given up before it sent anything.
+    private void EndSending(Key key, TaskCompletionSource done)
+    {
+        lock (_gate)
+        {
+            EndSendingLocked(key);
+        }
+        done.TrySetResult();
+    }
+
+    private async Task SendReportsAsSenderAsync(Uri server, Key key, TaskCompletionSource done, CancellationToken stop)
+    {
         try
         {
             DownloadStatusEvent? kept = null;
@@ -458,7 +538,7 @@ public sealed partial class DownloadQueue
                     {
                         if (!_reportAgain.Remove(key) || (report is not null && !IsReportDueLocked(key, _time.GetUtcNow(), sending: true)))
                         {
-                            _reporting.Remove(key);
+                            EndSendingLocked(key);
                             return;
                         }
                     }
@@ -470,8 +550,7 @@ public sealed partial class DownloadQueue
                     // One that could not go a moment ago waits out its delay, whoever asks to send it.
                     if (!IsReportDueLocked(key, _time.GetUtcNow(), sending: true))
                     {
-                        _reporting.Remove(key);
-                        _reportAgain.Remove(key);
+                        EndSendingLocked(key);
                         return;
                     }
                 }
@@ -485,13 +564,31 @@ public sealed partial class DownloadQueue
         {
             lock (_gate)
             {
-                _reporting.Remove(key);
-                _reportAgain.Remove(key);
+                EndSendingLocked(key);
             }
             if (!(ex is OperationCanceledException && stop.IsCancellationRequested))
             {
                 _logger.LogWarning("The status of download {DownloadId} was not sent ({Failure})", key.Id, DownloadLog.Failure(ex));
             }
+        }
+        finally
+        {
+            done.TrySetResult();
+        }
+    }
+
+    private void EndSendingLocked(Key key)
+    {
+        _reporting.Remove(key);
+        _reportAgain.Remove(key);
+    }
+
+    // The end of the send under way for a download's reports, or done when none is.
+    private Task SenderOf(Key key)
+    {
+        lock (_gate)
+        {
+            return _reporting.TryGetValue(key, out var sender) ? sender.Task : Task.CompletedTask;
         }
     }
 
@@ -526,7 +623,9 @@ public sealed partial class DownloadQueue
         }
         try
         {
-            await _store.UpdateAsync(key.Scope, key.Id, r => r.PendingReport == report ? r with { PendingReport = null } : r, stop).ConfigureAwait(false);
+            // The next report, as "completed" behind a "downloading", moves up.
+            await _store.UpdateAsync(key.Scope, key.Id, r => r.PendingReport == report ? r with { PendingReport = r.NextReport, NextReport = null } : r,
+                stop).ConfigureAwait(false);
         }
         catch (KeyNotFoundException)
         {
