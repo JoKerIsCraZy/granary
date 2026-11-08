@@ -43,7 +43,7 @@
                 <TextBlock Margin="0,12,0,0" Text="{x:Bind ViewModel.TitleArtNote, Mode=OneWay}" Style="{StaticResource SiloSettingsMutedTextStyle}"
                            FontSize="13" Visibility="{x:Bind ViewModel.ShowsTitleArtPlainNote, Mode=OneWay}" />
                 <HyperlinkButton Margin="-4,8,0,0" Padding="4,2" FontSize="13" Foreground="{StaticResource SiloMutedBrush}"
-                                 Command="{x:Bind ViewModel.UseServerDefaultTitleArtCommand}"
+                                 Command="{x:Bind ViewModel.UseServerDefaultTitleArtCommand}" AutomationProperties.Name="Use server default"
                                  Visibility="{x:Bind ViewModel.CanUseServerDefaultTitleArt, Mode=OneWay}">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <FontIcon Glyph="&#xE7A7;" FontSize="13" AutomationProperties.AccessibilityView="Raw" />
