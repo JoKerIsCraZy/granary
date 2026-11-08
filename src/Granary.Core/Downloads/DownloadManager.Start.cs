@@ -36,13 +36,13 @@ public sealed partial class DownloadManager
         }
         try
         {
-            await _store.LoadAsync(cancellationToken);
+            await _store.LoadAsync(cancellationToken).ConfigureAwait(false);
             if (_store.FindByItem(scope, request.MediaItemId) is not null)
             {
                 return DownloadStartResult.AlreadyDownloading;
             }
-            var (entry, result) = await CreateAsync(server.BaseUri, scope, BodyOf(request), cancellationToken);
-            return entry is null ? result : await KeepAsync(scope, request, entry);
+            var (entry, result) = await CreateAsync(server.BaseUri, scope, BodyOf(request), cancellationToken).ConfigureAwait(false);
+            return entry is null ? result : await KeepAsync(scope, request, entry).ConfigureAwait(false);
         }
         finally
         {
@@ -53,17 +53,35 @@ public sealed partial class DownloadManager
         }
     }
 
-    /// <summary>A season's episodes one create each, in order, passing over the ones this PC has or is fetching.</summary>
+    /// <summary>
+    /// A season's episodes one create each, in order, passing over the ones this PC has or is fetching. It stops, with what it
+    /// counted so far, when it is cancelled or the profile it started for is no longer the active one: the episodes after that
+    /// are in none of the counts.
+    /// </summary>
     public async Task<SeasonStartResult> StartSeasonAsync(SeasonDownloadRequest request, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
+        var scope = DownloadScope.Of(_session);
         int started = 0;
         int there = 0;
         int failed = 0;
         foreach (var episode in request.Episodes)
         {
-            var result = await StartAsync(new DownloadRequest(episode.EpisodeId, request.SeriesId, null, request.Quality, episode.Title, request.SeriesTitle,
-                request.SeasonNumber, episode.EpisodeNumber), cancellationToken);
+            if (cancellationToken.IsCancellationRequested || scope is null || DownloadScope.Of(_session) != scope)
+            {
+                _logger.LogInformation("A season's downloads stopped after {Count} episodes", started + there + failed);
+                break;
+            }
+            DownloadStartResult result;
+            try
+            {
+                result = await StartAsync(new DownloadRequest(episode.EpisodeId, request.SeriesId, null, request.Quality, episode.Title,
+                    request.SeriesTitle, request.SeasonNumber, episode.EpisodeNumber), cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                break;
+            }
             switch (result)
             {
                 case DownloadStartResult.Started:
@@ -97,10 +115,16 @@ public sealed partial class DownloadManager
     {
         try
         {
-            var created = await _api.CreateAsync(server, scope.ProfileId, body, cancellationToken);
-            if ((created.Items.FirstOrDefault(e => IsFor(e, body)) ?? created.Items.FirstOrDefault()) is { } entry)
+            var created = await _api.CreateAsync(server, scope.ProfileId, body, cancellationToken).ConfigureAwait(false);
+            if (created.Items.FirstOrDefault(e => IsFor(e, body)) is { } entry)
             {
                 return (entry, DownloadStartResult.Started);
+            }
+            if (created.Items.Count > 0)
+            {
+                // An answer for another title is not this download's: nothing is kept.
+                _logger.LogWarning("The server answered a download's create for another title");
+                return (null, DownloadStartResult.Failed);
             }
             _logger.LogInformation("The server passed the download over ({Reason})", created.Skipped.FirstOrDefault()?.Reason ?? "no reason");
             return (null, DownloadStartResult.Unavailable);
@@ -113,7 +137,7 @@ public sealed partial class DownloadManager
         catch (Exception ex) when (IsUncertain(ex, cancellationToken))
         {
             _logger.LogInformation("A download's create got no clear answer ({Failure}); the registry is read", Describe(ex));
-            return await AdoptAsync(server, scope, body, cancellationToken) is { } entry
+            return await AdoptAsync(server, scope, body, cancellationToken).ConfigureAwait(false) is { } entry
                 ? (entry, DownloadStartResult.Started)
                 : (null, DownloadStartResult.Failed);
         }
@@ -131,21 +155,23 @@ public sealed partial class DownloadManager
         || (ex is OperationCanceledException && !cancellationToken.IsCancellationRequested);
 
     // The newest entry of the registry for this film or episode that is not over and not kept here; null when there is none or
-    // the registry cannot be read.
+    // the registry cannot be read. An entry whose delete this PC still has to send is never taken over: the delete would end
+    // it under the new download. That download fails, to be tried again once the delete went (the queue sends it).
     private async Task<DownloadEntry?> AdoptAsync(Uri server, DownloadScope scope, CreateDownloadBody body, CancellationToken cancellationToken)
     {
+        var deleting = _store.PendingDeletes(scope).Select(d => d.DownloadId).ToHashSet(StringComparer.Ordinal);
+        var cursors = new HashSet<string>(StringComparer.Ordinal);
         string? cursor = null;
         try
         {
             for (int page = 0; page < MaxPages; page++)
             {
-                var read = await _api.ListAsync(server, scope.ProfileId, cursor, cancellationToken);
-                if (read.Items.FirstOrDefault(e => IsFor(e, body) && IsLive(e) && _store.Find(scope, e.Id) is null) is { } entry)
+                var read = await _api.ListAsync(server, scope.ProfileId, cursor, cancellationToken).ConfigureAwait(false);
+                if (read.Items.FirstOrDefault(e => IsFor(e, body) && IsLive(e)) is { } entry)
                 {
-                    _logger.LogInformation("The server had made download {DownloadId}; it is kept", entry.Id);
-                    return entry;
+                    return Adoptable(scope, entry, deleting);
                 }
-                if (read.Page is not { HasMore: true, NextCursor: { Length: > 0 } next })
+                if (read.Page is not { HasMore: true, NextCursor: { Length: > 0 } next } || !cursors.Add(next))
                 {
                     return null;
                 }
@@ -159,6 +185,24 @@ public sealed partial class DownloadManager
             _logger.LogInformation("The download registry could not be read ({Failure})", Describe(ex));
             return null;
         }
+    }
+
+    // The newest live entry for the title: taken over unless this PC keeps it already, or still has to send its delete (then or
+    // now).
+    private DownloadEntry? Adoptable(DownloadScope scope, DownloadEntry entry, HashSet<string> deleting)
+    {
+        if (_store.Find(scope, entry.Id) is not null)
+        {
+            return null;
+        }
+        if (deleting.Contains(entry.Id) || _store.PendingDeletes(scope).Any(d => d.DownloadId == entry.Id))
+        {
+            _logger.LogInformation("Download {DownloadId} is still to be deleted on the server; it is not taken over, try again later", entry.Id);
+            _queue.Wake();
+            return null;
+        }
+        _logger.LogInformation("The server had made download {DownloadId}; it is kept", entry.Id);
+        return entry;
     }
 
     private static bool IsFor(DownloadEntry entry, CreateDownloadBody body) => entry.ContentId == body.ContentId && entry.EpisodeId == body.EpisodeId;
@@ -190,7 +234,7 @@ public sealed partial class DownloadManager
         };
         try
         {
-            await _store.AddAsync(record, CancellationToken.None);
+            await _store.AddAsync(record, CancellationToken.None).ConfigureAwait(false);
         }
         catch (InvalidOperationException)
         {

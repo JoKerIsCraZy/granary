@@ -16,20 +16,32 @@ public sealed partial class DownloadStore
     private static readonly TimeSpan DeleteRetryDelay = TimeSpan.FromMilliseconds(40);
 
     // A new download on disk, then in the state and the index. A delete still waiting for this very folder leaves the index
-    // first: a crash after the folder is made cannot delete it at the next start.
+    // first: a crash after the folder is made cannot delete it at the next start. A server delete not yet sent for this very
+    // download goes with it: the entry is this download's again, and the next index write, this one's, no longer names it.
     private void AddToDisk(StoredDownload download)
     {
+        var record = download.Record;
         var waiting = Current.FolderDeletes.Where(d => IsSameFolder(d.Folder, download.Folder)).ToList();
-        if (waiting.Count > 0)
+        var unsent = Current.PendingDeletes.Where(d => d.Scope == record.Scope && d.DownloadId == record.DownloadId).ToList();
+        Change(state => state with
         {
-            Change(state => state with { FolderDeletes = [.. state.FolderDeletes.Except(waiting)] });
-            if (!WriteIndex(Current))
+            FolderDeletes = [.. state.FolderDeletes.Except(waiting)],
+            PendingDeletes = [.. state.PendingDeletes.Except(unsent)],
+        });
+        try
+        {
+            if (waiting.Count > 0 && !WriteIndex(Current))
             {
-                Change(state => state with { FolderDeletes = [.. state.FolderDeletes, .. waiting] });
                 throw new IOException("The downloads index could not be written before the download's folder was made.");
             }
+            MakeFolder(download);
         }
-        MakeFolder(download);
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // Not kept: what waited for this folder and this entry waits again.
+            Change(state => state with { FolderDeletes = [.. state.FolderDeletes, .. waiting], PendingDeletes = [.. state.PendingDeletes, .. unsent] });
+            throw;
+        }
         Change(state => state with { Downloads = [.. state.Downloads, download] });
         WriteIndex(Current);
     }
@@ -226,6 +238,10 @@ public sealed partial class DownloadStore
             downloads.Add(found);
             write = true;
         }
+        // A server delete for a download kept here is not sent: it was kept again after the delete was queued.
+        int unsent = pending.Count;
+        pending = [.. pending.Where(p => !downloads.Any(d => d.Record.Scope == p.Scope && d.Record.DownloadId == p.DownloadId))];
+        write |= pending.Count != unsent;
         return (new Snapshot(downloads, pending, folderDeletes), write);
     }
 

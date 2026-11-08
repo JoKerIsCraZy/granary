@@ -15,7 +15,6 @@ public sealed class DownloadManagerTests : IAsyncDisposable
 {
     private const string CreatePath = "api/v2/downloads";
     private static readonly byte[] Source = DownloadPayloads.Source(3000);
-    private static readonly TimeSpan Settle = TimeSpan.FromSeconds(5);
 
     private static readonly DownloadRequest Movie = new("mv_1", null, "4567", "original", "Example Movie", null, null, null);
     private static readonly DownloadRequest Episode = new("ep_5", "sr_1", null, "original", "Chapter Five", "Example Series", 1, 5);
@@ -373,5 +372,122 @@ public sealed class DownloadManagerTests : IAsyncDisposable
         Assert.Equal(DownloadStartResult.Unavailable, await manager.StartAsync(Movie, Token));
         Assert.Empty(manager.Items);
         Assert.Empty(CreatesSent);
+    }
+
+    [Fact]
+    public async Task DownloadingAgain_WhileTheDeleteWaits_DoesNotTakeOverTheEntryBeingDeleted()
+    {
+        // A download deleted while the server cannot be reached: its entry is still on the server, its delete waits.
+        await _h.AddAsync("dl_9", DownloadState.Completed, mediaItemId: "ep_5");
+        _h.Silo.On(HttpMethod.Delete, EntryPath("dl_9"), ScriptedSilo.NetworkError(), ScriptedSilo.NoContent());
+        var queue = _h.StartQueue();
+        var manager = _h.NewManager(queue);
+        await manager.DeleteAsync("dl_9", Token);
+        await Until(() => DeletesSent("dl_9").Count == 1, "the delete was tried");
+        await SettleAsync(queue);
+        Assert.Single(_h.Store.PendingDeletes(Scope7));
+
+        // Download again: the server still has the entry (409), and the registry lists it.
+        Creates(ScriptedSilo.Problem(409, "conflict"), Created(DownloadPayloads.Entry("dl_10", "ready", episodeId: "ep_5")));
+        _h.List(DownloadPayloads.Entry("dl_9", "completed", episodeId: "ep_5"));
+        var result = await manager.StartAsync(Episode, Token);
+
+        Assert.Equal(DownloadStartResult.Failed, result);
+        Assert.Null(_h.Find("dl_9"));
+        Assert.Single(_h.Store.PendingDeletes(Scope7));
+
+        // The delete goes once the server answers; then Download makes a new entry.
+        await _h.AdvanceAsync(TimeSpan.FromSeconds(1), queue);
+        await Until(() => _h.Store.PendingDeletes(Scope7).Count == 0, "the delete went");
+        _h.ServeAssets("dl_10");
+        _h.ServeFile("dl_10", Source);
+        Assert.Equal(DownloadStartResult.Started, await manager.StartAsync(Episode, Token));
+        Assert.NotNull(_h.Find("dl_10"));
+        Assert.Equal(2, DeletesSent("dl_9").Count);
+    }
+
+    [Fact]
+    public async Task ACreateAnsweredForAnotherTitle_IsNotKept()
+    {
+        Creates(Created(DownloadPayloads.Entry("dl_4", "ready", episodeId: "ep_4")));
+        var manager = _h.NewManager();
+
+        Assert.Equal(DownloadStartResult.Failed, await manager.StartAsync(Episode, Token));
+        Assert.Empty(_h.Store.All);
+    }
+
+    [Fact]
+    public async Task AnUncertainCreate_WhoseRegistryCursorComesBack_Fails()
+    {
+        Creates(() => Task.FromException<HttpResponseMessage>(new HttpRequestException(HttpRequestError.ResponseEnded, "The answer broke off.")));
+        _h.ListPages(
+            DownloadPayloads.Page("c1", DownloadPayloads.Entry("dl_8", "ready", episodeId: "ep_4")),
+            DownloadPayloads.Page("c1"));
+        var manager = _h.NewManager();
+
+        Assert.Equal(DownloadStartResult.Failed, await manager.StartAsync(Episode, Token));
+        Assert.Equal(2, _h.Silo.SentTo(HttpMethod.Get, ListPath).Count);
+    }
+
+    [Fact]
+    public async Task ASeason_StopsWhenTheProfileIsNoLongerActive()
+    {
+        Creates(() =>
+        {
+            _h.SignOut();
+            return Created(DownloadPayloads.Entry("dl_1", "ready", episodeId: "ep_1"))();
+        });
+        var manager = _h.NewManager();
+        var season = new SeasonDownloadRequest("sr_1", "Example Series", 1,
+            [new("ep_1", 1, "Pilot"), new("ep_2", 2, "Chapter Two"), new("ep_3", 3, "Chapter Three")], "original");
+
+        var result = await manager.StartSeasonAsync(season, Token);
+
+        Assert.Equal(new SeasonStartResult(Started: 1, AlreadyThere: 0, Failed: 0), result);
+        Assert.Single(CreatesSent);
+    }
+
+    [Fact]
+    public async Task ASeasonCancelledHalfway_KeepsWhatItCounted()
+    {
+        using var cancel = CancellationTokenSource.CreateLinkedTokenSource(Token);
+        Creates(Created(DownloadPayloads.Entry("dl_1", "ready", episodeId: "ep_1")));
+        await _h.Store.LoadAsync(Token);
+        // Cancelled once the first episode is kept.
+        _h.Store.Changed += (_, _) =>
+        {
+            if (_h.Find("dl_1") is not null)
+            {
+                cancel.Cancel();
+            }
+        };
+        var manager = _h.NewManager();
+        var season = new SeasonDownloadRequest("sr_1", "Example Series", 1, [new("ep_1", 1, "Pilot"), new("ep_2", 2, "Chapter Two")], "original");
+
+        var result = await manager.StartSeasonAsync(season, cancel.Token);
+
+        Assert.Equal(new SeasonStartResult(Started: 1, AlreadyThere: 0, Failed: 0), result);
+        Assert.Single(CreatesSent);
+        Assert.NotNull(_h.Find("dl_1"));
+    }
+
+    [Fact]
+    public async Task Resume_TriesAWaitingDownloadAtOnce()
+    {
+        await _h.AddAsync("dl_1");
+        _h.ServeFile("dl_1", ScriptedSilo.NetworkError(), ScriptedSilo.NetworkError(), ScriptedSilo.NetworkError(),
+            DownloadPayloads.Bytes(HttpStatusCode.OK, Source, "\"v1\""));
+        var queue = _h.StartQueue();
+        var manager = _h.NewManager(queue);
+        await Until(() => _h.FileRequests("dl_1").Count == 1, "the first try");
+        await SettleAsync(queue);
+        await _h.AdvanceAsync(TimeSpan.FromSeconds(1), queue);
+        await Until(() => _h.FileRequests("dl_1").Count == 2, "the second try");
+        await SettleAsync(queue);
+
+        await manager.ResumeAsync("dl_1");
+
+        await Until(() => _h.FileRequests("dl_1").Count == 3, "the try Resume asked for");
+        Assert.Equal(TimeSpan.FromSeconds(1), _h.Time.Elapsed);
     }
 }

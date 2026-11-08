@@ -197,6 +197,21 @@ public sealed partial class DownloadQueue : IDisposable
         }
     }
 
+    /// <summary>
+    /// The viewer resumed a download: what it waited out (a retry delay, a first failed integrity check) is forgotten, and the
+    /// loop looks again.
+    /// </summary>
+    internal void RetryNow(DownloadScope scope, string downloadId)
+    {
+        var key = new Key(scope, downloadId);
+        lock (_gate)
+        {
+            _retries.Remove(key);
+            _integrityFailed.Remove(key);
+            WakeLocked();
+        }
+    }
+
     /// <summary>The bytes of a download on this PC so far, as its transfer last wrote them; 0 when none are known.</summary>
     public long BytesDone(DownloadScope scope, string downloadId)
     {

@@ -368,6 +368,22 @@ public sealed class DownloadStoreTests : IDisposable
     }
 
     [Fact]
+    public async Task ADownloadKeptAgain_TakesBackItsUnsentServerDelete()
+    {
+        var store = await LoadedAsync();
+        await store.AddAsync(Record("dl_1"), Token);
+        await store.RemoveAsync(Scope7, "dl_1", queueServerDelete: true, Token);
+        Assert.Single(store.PendingDeletes(Scope7));
+
+        await store.AddAsync(Record("dl_1"), Token);
+
+        Assert.Empty(store.PendingDeletes(Scope7));
+        using var index = JsonDocument.Parse(await File.ReadAllTextAsync(IndexPath, Token));
+        Assert.Equal(0, index.RootElement.GetProperty("pending_deletes").GetArrayLength());
+        Assert.Empty((await LoadedAsync()).PendingDeletes(Scope7));
+    }
+
+    [Fact]
     public async Task AnArtworkNameTheStoreDoesNotMake_IsLeftOut()
     {
         var files = new Dictionary<string, string>

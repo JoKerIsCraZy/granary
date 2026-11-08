@@ -818,7 +818,9 @@ Films and episodes kept on this PC as the server's managed downloads (docs/api-c
   caller's thread. The files are written one at a time behind a `SemaphoreSlim`, off the caller's thread, each with the
   latest state, so the last write is the latest, and each is on the disk before it replaces the file. A new download starts
   in an empty folder; a delete still waiting for that very folder leaves the index before the folder is made, so a crash
-  cannot delete it at the next start, and a folder whose record cannot be written goes again. A record that cannot be
+  cannot delete it at the next start, and a folder whose record cannot be written goes again. A server delete not yet sent
+  for that very download leaves with the same index write that keeps it (and a load drops one for a download it keeps), so
+  the entry it now belongs to is never deleted under it. A record that cannot be
   written is logged; an index that cannot be written is written again with every following change. Either way the change
   holds for the run, so a full drive still shows a download as failed. A removed row goes first, so the queue lets go of its
   part; its folder goes once the index without it is on disk (each pass deletes only the folders of the index it wrote), and
@@ -972,14 +974,18 @@ client guide.
   playback report and `expected_revision: 0`. A second press while a create for the same title runs, or for a title the
   PC keeps, creates nothing (`AlreadyDownloading`). A create is never sent again: when its answer did not come, or was a
   conflict or a server error, the registry is read and the newest entry for that film or episode that is not over and not
-  kept here is taken over; none is a failure. 403, 404 and 501, or a title the server passed over, are `Unavailable`. The
-  entry is kept with the request's title, series, season and episode, queued, or Preparing while the server prepares a
-  copy, and the queue is woken. Once the server made it, a cancel does not keep it from being kept.
+  kept here is taken over; none is a failure. An entry whose delete this PC still has to send is never taken over (the
+  delete would end it under the new download): that start fails, and works once the queue has sent the delete. An answer
+  for another title is a failure too. 403, 404 and 501, or a title the server passed over, are `Unavailable`. The entry is
+  kept with the request's title, series, season and episode, queued, or Preparing while the server prepares a copy, and the
+  queue is woken. Once the server made it, a cancel does not keep it from being kept. A download kept again takes its unsent
+  server delete off the index in the same write.
 - **Seasons.** `StartSeasonAsync` sends one create per episode, in order, passing over the episodes this PC has or is
-  fetching, and counts what started, what was there and what failed.
+  fetching, and counts what started, what was there and what failed. It stops, with those counts, when it is cancelled or
+  the profile it started for is no longer the active one.
 - **Pause and resume.** Pause marks a download paused by the viewer (it stays paused across starts), and the queue stops
-  its transfer. Resume clears that, and queues a failed download again from the bytes it has, unless the server no longer
-  has it.
+  its transfer. Resume clears that, queues a failed download again from the bytes it has, unless the server no longer has
+  it, and has one that waited out a retry delay tried at once.
 - **Delete.** The files go first: the row leaves the store, the queue stops its transfer, the folder is deleted once the
   index without it is written; then the queue sends `DELETE`, bound to the download's profile, kept in `pending_deletes`
   while the server cannot be reached and sent while that profile is the active one. A row whose files are missing is taken

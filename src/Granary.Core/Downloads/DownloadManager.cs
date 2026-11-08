@@ -101,16 +101,31 @@ public sealed partial class DownloadManager
             : 0;
 
     /// <summary>Pauses a download until the viewer resumes it, also across starts; its transfer stops, keeping its bytes.</summary>
-    public Task PauseAsync(string downloadId) =>
-        ChangeAsync(downloadId, r => r.State is DownloadState.Preparing or DownloadState.Queued or DownloadState.Downloading
-            ? r with { IsPausedByViewer = true }
-            : r);
+    public async Task PauseAsync(string downloadId)
+    {
+        if (DownloadScope.Of(_session) is { } scope)
+        {
+            await ChangeAsync(scope, downloadId, r => r.State is DownloadState.Preparing or DownloadState.Queued or DownloadState.Downloading
+                ? r with { IsPausedByViewer = true }
+                : r).ConfigureAwait(false);
+            _queue.Wake();
+        }
+    }
 
-    /// <summary>Resumes a paused download, and tries a failed one again from the bytes it has.</summary>
-    public Task ResumeAsync(string downloadId) =>
-        ChangeAsync(downloadId, r => r.State == DownloadState.Failed && !r.IsNoLongerAvailable
-            ? r with { IsPausedByViewer = false, State = DownloadState.Queued, Failure = DownloadFailure.None }
-            : r with { IsPausedByViewer = false });
+    /// <summary>
+    /// Resumes a paused download, and tries a failed one again from the bytes it has; one that waited to be tried again after a
+    /// lost connection or a busy server is tried at once.
+    /// </summary>
+    public async Task ResumeAsync(string downloadId)
+    {
+        if (DownloadScope.Of(_session) is { } scope)
+        {
+            await ChangeAsync(scope, downloadId, r => r.State == DownloadState.Failed && !r.IsNoLongerAvailable
+                ? r with { IsPausedByViewer = false, State = DownloadState.Queued, Failure = DownloadFailure.None }
+                : r with { IsPausedByViewer = false }).ConfigureAwait(false);
+            _queue.RetryNow(scope, downloadId);
+        }
+    }
 
     /// <summary>
     /// Deletes a download from this PC: its transfer stops and its files go first, then the server hears it, bound to the
@@ -122,26 +137,21 @@ public sealed partial class DownloadManager
         {
             return;
         }
-        await _store.RemoveAsync(scope, downloadId, queueServerDelete: true, cancellationToken);
+        await _store.RemoveAsync(scope, downloadId, queueServerDelete: true, cancellationToken).ConfigureAwait(false);
         _logger.LogInformation("Download {DownloadId} was deleted from this PC", downloadId);
         _queue.Wake();
     }
 
-    private async Task ChangeAsync(string downloadId, Func<DownloadRecord, DownloadRecord> change)
+    private async Task ChangeAsync(DownloadScope scope, string downloadId, Func<DownloadRecord, DownloadRecord> change)
     {
-        if (DownloadScope.Of(_session) is not { } scope)
-        {
-            return;
-        }
         try
         {
-            await _store.UpdateAsync(scope, downloadId, change, CancellationToken.None);
+            await _store.UpdateAsync(scope, downloadId, change, CancellationToken.None).ConfigureAwait(false);
         }
         catch (KeyNotFoundException)
         {
             // Deleted meanwhile.
         }
-        _queue.Wake();
     }
 
     private DownloadItem ItemOf(StoredDownload download, bool waitsForUnmetered)
