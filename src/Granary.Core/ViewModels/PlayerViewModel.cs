@@ -326,6 +326,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         {
             _engine.Seek(TimeSpan.FromSeconds(target));
         }
+        RoundEndsAtAgain();
     }
 
     /// <summary>
@@ -400,8 +401,11 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     private void SkipForward() => SeekTo(SkipOrigin + SkipForwardSeconds);
 
     // Where a skip goes from: a seek on its way, else the position.
-    private double SkipOrigin =>
-        _party?.PendingSeekSeconds ?? (_seekTarget is { } target && Environment.TickCount64 - _seekTargetAt < SeekTargetMilliseconds ? target : PositionSeconds);
+    private double SkipOrigin => _party?.PendingSeekSeconds ?? PendingSeek ?? PositionSeconds;
+
+    // The target of a seek of the player's own while it is on its way: until the engine reports it, for a few seconds.
+    private double? PendingSeek =>
+        _seekTarget is { } target && Environment.TickCount64 - _seekTargetAt < SeekTargetMilliseconds ? target : null;
 
     [RelayCommand]
     private void ToggleMute() => _engine.SetMuted(!IsMuted);

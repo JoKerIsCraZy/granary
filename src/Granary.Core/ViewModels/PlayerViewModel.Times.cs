@@ -63,7 +63,7 @@ public sealed partial class PlayerViewModel
 
     // The engine's positions come through ShowEngineState; these are the other things the end follows. The single-value
     // OnPhaseChanged is the sleep timer's.
-    partial void OnSpeedChanged(double value) => ShowEndsAt();
+    partial void OnSpeedChanged(double value) => RoundEndsAtAgain();
 
     partial void OnPhaseChanged(PlayerPhase oldValue, PlayerPhase newValue) => ShowEndsAt();
 
@@ -74,6 +74,14 @@ public sealed partial class PlayerViewModel
     {
         _endsAtLoadsBefore = _engine.Current.LoadId;
         _endsAtHasPosition = false;
+        ShowEndsAt();
+    }
+
+    // A seek or another speed moves the end for good, however little: the slack is for positions that come early or
+    // late, so the minute is worked out again from the new end.
+    private void RoundEndsAtAgain()
+    {
+        _endsAtBasis = null;
         ShowEndsAt();
     }
 
@@ -115,14 +123,15 @@ public sealed partial class PlayerViewModel
     // Now plus what is left of the title at the speed it plays; null while nothing plays toward a known end. A length
     // that is not a number or endless is a stream's without one, and an end a day or more away would not say which day.
     // Nothing is left once the engine holds at the end of the file or the position reached the length, which can come
-    // before the player says the title ended: "Ends" with the time it is now would say nothing.
+    // before the player says the title ended: "Ends" with the time it is now would say nothing. A seek on its way counts
+    // as done, as for the skips, so a position from before it does not take the end back.
     private DateTimeOffset? EndsAtNow()
     {
         if (_disposed || HasLeft || Phase != PlayerPhase.Playing || !_endsAtHasPosition || _engineState.IsAtEnd || !(DurationSeconds > 0))
         {
             return null;
         }
-        double left = (DurationSeconds - PositionSeconds) / (Speed > 0 ? Speed : 1);
+        double left = (DurationSeconds - (PendingSeek ?? PositionSeconds)) / (Speed > 0 ? Speed : 1);
         return left > 0 && left < EndsAtHorizon.TotalSeconds ? _time.GetUtcNow() + TimeSpan.FromSeconds(left) : null;
     }
 

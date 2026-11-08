@@ -403,6 +403,34 @@ public sealed class PlayerViewModelTimesTests
     }
 
     [Fact]
+    public async Task ASeekOfASecond_ThatCrossesTheHalfMinute_ShowsTheNextMinute()
+    {
+        // The end, 14:35:29.5, rounds down; a second back it is 14:35:30.5, which rounds up.
+        using var viewModel = await PlayingAsync(570.5);
+        Assert.Equal(Ends(14, 35), viewModel.EndsAtText);
+
+        viewModel.SeekTo(569.5);
+        Assert.Equal(Ends(14, 36), viewModel.EndsAtText);
+        // A position from before the seek, then the one it landed on, keep it.
+        At(570.6);
+        Assert.Equal(Ends(14, 36), viewModel.EndsAtText);
+        At(569.5);
+        Assert.Equal(Ends(14, 36), viewModel.EndsAtText);
+    }
+
+    [Fact]
+    public async Task ASpeedChange_ThatCrossesTheHalfMinute_ShowsTheNextMinute()
+    {
+        // 35:29 left ends at 14:35:29; a hair slower it ends a second later, at 14:35:30.
+        using var viewModel = await PlayingAsync(571);
+        Assert.Equal(Ends(14, 35), viewModel.EndsAtText);
+
+        viewModel.SetSpeed(0.9995);
+
+        Assert.Equal(Ends(14, 36), viewModel.EndsAtText);
+    }
+
+    [Fact]
     public async Task APositionThatIsNotANumber_ShowsNoEnd()
     {
         using var viewModel = await PlayingAsync(600);
