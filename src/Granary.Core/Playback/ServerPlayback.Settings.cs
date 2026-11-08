@@ -22,6 +22,10 @@ public sealed partial class ServerPlayback
     private static readonly TimeSpan SpeedSettle = TimeSpan.FromSeconds(1);
 
     private double _speed = 1;
+
+    // The plan whose stream the player loaded last, with that stream's address: what the playback info and the settings
+    // gear describe. A plan taken since, still on its way or turned down before its stream loaded, is not it.
+    private (PlaybackPlan Plan, Uri Url)? _loaded;
     private ITimer? _speedSave;
 
     // The viewer's latest quality or file until a stream plays it: one picked while the stream is being replaced
@@ -46,9 +50,9 @@ public sealed partial class ServerPlayback
 
     public double Speed => _speed;
 
-    public PlaybackStreamInfo? StreamInfo => _plan is { } plan && _streamUrl is { } url && _context is { } context
-        ? new PlaybackStreamInfo(plan, url, PlayingVersion,
-            plan.RequestedMediaFileId is { Length: > 0 } requested ? context.Watch.Versions.FirstOrDefault(v => v.FileId == requested) : context.Version,
+    public PlaybackStreamInfo? StreamInfo => _loaded is { } loaded && _context is { } context
+        ? new PlaybackStreamInfo(loaded.Plan, loaded.Url, FileOf(loaded.Plan),
+            loaded.Plan.RequestedMediaFileId is { Length: > 0 } requested ? context.Watch.Versions.FirstOrDefault(v => v.FileId == requested) : context.Version,
             AudioTrack)
         : null;
 

@@ -321,9 +321,6 @@ public sealed partial class PlayerPage : Page
         }
     }
 
-    // "Playback settings, 1.5×" while the speed is not 1×.
-    public string SettingsName(string speedBadge) => speedBadge.Length > 0 ? $"Playback settings, {speedBadge}" : "Playback settings";
-
     // A menu opens on the track that plays, so the keyboard starts from there.
     private void OnAudioMenuOpened(object? sender, object e) =>
         FocusRow(AudioRows, ViewModel.AudioTracks.ToList().FindIndex(option => option.IsSelected));

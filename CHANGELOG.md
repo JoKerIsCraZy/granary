@@ -12,6 +12,11 @@ release's section is what its update says it changes (docs/release.md).
   "Ends 22:41", in Windows' 12 or 24 hour time. It counts in the playback speed, moves later while you pause, and
   follows a seek. The minimized player shows it after the times while it has room. It's not shown when the length
   isn't known, such as for a live stream.
+- **How the stream plays, on the gear:** the player's settings button now has a dot in its gear. Green means your Silo
+  server sends the original video and audio, as Direct Play or Direct Streaming; amber means it transcodes the video,
+  the audio or both. It changes with the quality, version or audio track you pick, and a file you play directly shows
+  no dot. Screen readers and the button's tooltip say it too, for example "Playback settings, Direct Play". Playback
+  info's play method now says the same, so a stream whose audio alone is converted shows as Transcode there too.
 - **Theme music:** turn on Settings → Title Pages → Theme music, and a title's page plays its theme quietly while it is
   open, when your Silo server has theme music for it, as in Silo's web and apps. Loop theme music repeats it. Going from a
   series to one of its seasons keeps the music going; leaving the page or minimizing Granary fades it out, and playing a
