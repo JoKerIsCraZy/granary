@@ -365,13 +365,15 @@ public sealed class ThemeMusicTests
         await rig.StartedAsync();
         rig.Music.Show(_page, Set("movie-1", "11"));
         await AuthPipeline.Eventually(() => rig.GrantsAsked("movie-1", "11") == 1);
+        var fetching = rig.Music.Fetching;
 
         rig.Harness.Session.ProfileId = "8";
         release.SetResult();
+        await fetching;
 
-        await Task.Delay(50, TestContext.Current.CancellationToken);
         Assert.Empty(rig.Output.Made);
         Assert.Empty(rig.Download.Requests);
+        Assert.Equal(1, rig.GrantsAsked("movie-1", "11"));
     }
 
     [Fact]

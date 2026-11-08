@@ -287,8 +287,18 @@ public sealed class ThemeMusic : IDisposable
         }
     }
 
+    /// <summary>The fetch of a theme last started, for tests.</summary>
+    internal Task Fetching { get; private set; } = Task.CompletedTask;
+
+    private Task<ThemeAudioSource?> FetchAsync(string owner, string theme, CancellationToken cancellationToken)
+    {
+        var fetch = FetchForProfileAsync(owner, theme, cancellationToken);
+        Fetching = fetch;
+        return fetch;
+    }
+
     // The theme's audio for the profile acting now, or none: a grant read while the profile changed is dropped, as the web's.
-    private async Task<ThemeAudioSource?> FetchAsync(string owner, string theme, CancellationToken cancellationToken)
+    private async Task<ThemeAudioSource?> FetchForProfileAsync(string owner, string theme, CancellationToken cancellationToken)
     {
         if (_session is not { State: SessionState.Ready, ActiveServer: { } server })
         {
