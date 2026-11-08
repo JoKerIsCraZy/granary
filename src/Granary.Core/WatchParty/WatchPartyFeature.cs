@@ -52,6 +52,7 @@ public sealed partial class WatchPartyFeature : ObservableObject
             return;
         }
         _readFor = key;
+        bool taken = false;
         try
         {
             var capabilities = await _api.GetCapabilitiesAsync(server.BaseUri, cancellationToken);
@@ -59,9 +60,12 @@ public sealed partial class WatchPartyFeature : ObservableObject
             {
                 return;
             }
+            // Read for this server and profile now, also when another's read began meanwhile.
+            _readFor = key;
             Capabilities = capabilities;
             IsAvailable = capabilities.IsAvailable;
             _failed = null;
+            taken = true;
         }
         catch (Exception ex) when (LibraryErrors.IsExpected(ex) && !cancellationToken.IsCancellationRequested)
         {
@@ -74,6 +78,15 @@ public sealed partial class WatchPartyFeature : ObservableObject
             _failed = (key, _time.GetUtcNow());
             IsAvailable = false;
             Capabilities = null;
+        }
+        finally
+        {
+            // A read that did not go through (an unexpected failure, a cancelled call) is not a read: the next refresh
+            // reads again, rather than the entry staying away until another profile or server.
+            if (!taken && _readFor == key)
+            {
+                _readFor = null;
+            }
         }
     }
 

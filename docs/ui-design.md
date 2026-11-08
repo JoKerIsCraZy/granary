@@ -490,7 +490,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     switch that shows the profile's saved choice; an error in the hub's red box; the red "Create party & copy invite"
     ("Creating…") across the width; and "You'll land in the room. Nothing plays until you start it. The room can see
     what members are mid-way through." Cancel closes it; a room already asked for is still made, set up and joined, but
-    the invite is not copied and the room page does not open over the page the viewer stays on. The button waits while the saved choice or the next episode is read and while the chooser is open. It creates the room, sets the pause choice where the room has another (a
+    quietly: the invite is not copied, the room page does not open over the page the viewer stays on, and what it would
+    have said on the way (such as "couldn't be queued") is not shown. The button waits while the saved choice or the next episode is read and while the chooser is open. It creates the room, sets the pause choice where the room has another (a
     flipped switch is sent even where it does not, so the server keeps it for the next party), stages the title (or, in
     a vote, makes it the first suggestion), copies the invite link and opens the room, which shows what the web toasts
     on the way for 4 seconds ("Invite copied. Room code ABCD1234", "Room created, but that item couldn't be queued.

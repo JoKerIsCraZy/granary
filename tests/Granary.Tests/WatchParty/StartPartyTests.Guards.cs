@@ -33,6 +33,23 @@ public sealed partial class StartPartyTests
     }
 
     [Fact]
+    public async Task ASheetCancelledOnce_CopiesAndOpensTheRoom_WhenOpenedAgainAndCreated()
+    {
+        _page.Movie();
+        _page.Silo.On(HttpMethod.Post, Rooms, Created(WatchPartyPayloads.Room()));
+        _page.Silo.On(HttpMethod.Put, Room + "/staged-selection", Answered(WatchPartyPayloads.Room(selected: ItemDetailPayloads.MovieId)));
+        var sheet = await OpenAsync(ItemDetailPayloads.MovieId);
+        sheet.Close();
+
+        Assert.True(sheet.Open());
+        await sheet.Opening;
+        await sheet.CreateCommand.ExecuteAsync(null);
+
+        Assert.Single(_copied);
+        Assert.Equal(Invite, Arrival()?.Notice);
+    }
+
+    [Fact]
     public async Task ARoomPageThatCannotOpen_StillPutsTheSheetAway()
     {
         _page.Movie();
