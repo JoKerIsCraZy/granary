@@ -1241,7 +1241,11 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   `sm`) the pill leaves the quality out. SPEED: the value at the right, the speeds 0.5× to 3×
   (0.25 apart up to 2×, then 2.5× and 3×) as stops on a track drawn like the seek bar, the fill from 1× to the
   chosen speed, 0.5×, 1×, 2× and 3× named under it (`SpeedTrack`); it applies at once and is saved as this device's
-  `player.playback_speed`. VERSION with more than one file ("2160p HEVC HDR", "Playing" / "Requested" chips): a pick
+  `player.playback_speed`. AUDIO DELAY under a line (Silo's Android player has it on its Sync page), drawn as the
+  subtitle menu's DELAY: earlier and later in 50 ms steps up to 5 s either way, the value ("+150 ms", "−200 ms") and
+  Reset; a server title follows it at once and it is saved as this device's `player.audio_sync_ms` (Settings → Playback
+  → Sound shows the same value, and a change there shows here); a local file starts with it, and a step there is only
+  the player's. VERSION with more than one file ("2160p HEVC HDR", "Playing" / "Requested" chips): a pick
   plays that file from where the viewer is. QUALITY when the plan offers rungs: Auto ("Auto · limited after buffering"
   under a learned limit), then the rungs with their bitrate muted at the right ("12 Mbps") and a white check on the
   one the plan delivers; a pick asks for a new plan. A pick of a file or quality closes the menu.

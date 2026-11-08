@@ -512,7 +512,8 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
 - **Audio delay** (6.6): mpv's `audio-delay`, positive for later sound as Android's `DelayAudioProcessor` has it, from
   this device's `player.audio_sync_ms` (±5 s). `AudioDelay` is one for the app: the playback reads the value with its
   settings, takes it unless a change made here is still on its way, sets it at the start, and follows `Changed` until
-  its stop, as Android's `SiloPlaybackService` does; Settings → Playback → Sound changes it. A change is saved at
+  its stop, as Android's `SiloPlaybackService` does; Settings → Playback → Sound and the player's settings menu change it
+  (a local file starts with it, and a step there goes only to the engine). A change is saved at
   `profile_device` once it settles for a second, or as the window closes (`PlaybackStops`); a failed save is logged and
   the value holds for this run. mpv moves only the sound: subtitles keep to the picture, so the subtitle delay and
   subtitle sync, both timed against the picture, are untouched.

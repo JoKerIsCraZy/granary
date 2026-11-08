@@ -397,6 +397,12 @@ public sealed partial class PlayerPage : Page
 
     private void OnSubtitleDelayResetClick(object sender, RoutedEventArgs e) => ViewModel.ResetSubtitleDelay();
 
+    private void OnAudioEarlierClick(object sender, RoutedEventArgs e) => ViewModel.ChangeAudioDelay(-PlayerViewModel.AudioDelayStepMs);
+
+    private void OnAudioLaterClick(object sender, RoutedEventArgs e) => ViewModel.ChangeAudioDelay(PlayerViewModel.AudioDelayStepMs);
+
+    private void OnAudioDelayResetClick(object sender, RoutedEventArgs e) => ViewModel.ResetAudioDelay();
+
     private void OnSubtitleTrackClick(object sender, RoutedEventArgs e)
     {
         if (sender is FrameworkElement { DataContext: SubtitleTrackOption option })
