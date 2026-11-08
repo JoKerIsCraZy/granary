@@ -138,7 +138,7 @@
                     </NavigationViewItem.Icon>
                     <NavigationViewItem.InfoBadge>
                         <InfoBadge Value="{x:Bind Notifications.UnreadCount, Mode=OneWay}" Visibility="{x:Bind Notifications.HasUnread, Mode=OneWay}"
-                                   Background="{StaticResource SiloPrimaryBrush}" />
+                                   Background="{StaticResource SiloPrimaryBrush}" Foreground="{StaticResource SiloOnPrimaryBadgeBrush}" />
                     </NavigationViewItem.InfoBadge>
                 </NavigationViewItem>
                 <NavigationViewItemHeader x:Name="YourStuffHeader" Style="{StaticResource SiloNavigationSectionHeaderStyle}">
