@@ -23,11 +23,11 @@ public sealed partial class PlayerViewModel
 
     /// <summary>
     /// The C key: the subtitle that shows goes off, remembered; with none showing, the one remembered comes back. Both
-    /// are the viewer's picks, saved for the series.
+    /// are the viewer's picks, saved for the series. Nothing while Settings hides the Subtitles button.
     /// </summary>
     public void ToggleSubtitles()
     {
-        if (_playback is not { } playback)
+        if (_playback is not { } playback || !Bar.Subtitles)
         {
             return;
         }

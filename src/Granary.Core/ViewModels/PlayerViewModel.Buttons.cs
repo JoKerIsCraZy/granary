@@ -6,7 +6,8 @@ namespace Granary.Core.ViewModels;
 // The right of the bar as Settings → Playback → Player buttons has it for the acting profile on this PC: which buttons may
 // show, and in which order. Granary's own; Silo's clients have no such editor. A button that needs something, such as
 // chapters, still shows only with it. The player reads the bar as it is made and follows it until it is disposed, so the
-// minimized player does too.
+// minimized player does too. A hidden button is off: its keys do nothing (PlayerBar.AllowsKey, the page's), its commands
+// do nothing, and what it had on goes.
 public sealed partial class PlayerViewModel
 {
     private readonly IPlayerButtonsLayout? _buttons;
@@ -60,6 +61,16 @@ public sealed partial class PlayerViewModel
         if (hidesSleepTimer)
         {
             EndSleepTimerWithItsButton();
+        }
+        // Hidden means off: what a button had on goes with it. Subtitles that show, the speed and the sound stay, as the
+        // title's own choices.
+        if (!bar.PlaybackInfo && IsPlaybackInfoShown)
+        {
+            TogglePlaybackInfo();
+        }
+        if (!bar.Fill && IsFillingScreen)
+        {
+            ResetFill();
         }
     }
 }

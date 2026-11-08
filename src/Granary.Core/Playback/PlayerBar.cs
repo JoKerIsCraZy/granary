@@ -22,6 +22,31 @@ public enum PlayerButton
     FullScreen,
 }
 
+/// <summary>
+/// A key of the player, a keyboard's or a remote's, that belongs to a button of the bar: with the button hidden it does
+/// nothing (<see cref="PlayerBar.AllowsKey"/>). F11 is the window's full screen, not the player's, and always works.
+/// </summary>
+public enum PlayerKey
+{
+    /// <summary>M.</summary>
+    Mute,
+
+    /// <summary>Up and Down when they set the volume.</summary>
+    Volume,
+
+    /// <summary>C.</summary>
+    Subtitles,
+
+    /// <summary>Ctrl+Left and Ctrl+Right.</summary>
+    Chapters,
+
+    /// <summary>P.</summary>
+    MiniView,
+
+    /// <summary>F, and a double click on the picture.</summary>
+    FullScreen,
+}
+
 /// <summary>A player button as Settings lists it: its name in <c>player-buttons.json</c>, its label, and what to know about it.</summary>
 public sealed record PlayerButtonInfo(PlayerButton Button, string Id, string Label, string? Note);
 
@@ -44,7 +69,7 @@ public sealed class PlayerBar : IEquatable<PlayerBar>
         new(PlayerButton.PlaybackInfo, "playback_info", "Playback info", null),
         new(PlayerButton.MiniView, "mini_view", "Mini view", null),
         new(PlayerButton.Fill, "fill", "Fill screen", null),
-        new(PlayerButton.FullScreen, "full_screen", "Full screen", null),
+        new(PlayerButton.FullScreen, "full_screen", "Full screen", "F11 still switches full screen."),
     ];
 
     private static readonly PlayerButton[] DefaultOrder = [.. Buttons.Select(info => info.Button)];
@@ -103,6 +128,34 @@ public sealed class PlayerBar : IEquatable<PlayerBar>
     public bool FullScreen => Shows(PlayerButton.FullScreen);
 
     public static PlayerButtonInfo InfoOf(PlayerButton button) => Buttons[Array.IndexOf(DefaultOrder, button)];
+
+    /// <summary>The button whose key <paramref name="key"/> is.</summary>
+    public static PlayerButton ButtonOf(PlayerKey key) => key switch
+    {
+        PlayerKey.Mute or PlayerKey.Volume => PlayerButton.Volume,
+        PlayerKey.Subtitles => PlayerButton.Subtitles,
+        PlayerKey.Chapters => PlayerButton.Chapters,
+        PlayerKey.MiniView => PlayerButton.MiniView,
+        _ => PlayerButton.FullScreen,
+    };
+
+    /// <summary>
+    /// The key does what it does: its button shows. A hidden button's keys do nothing, as the viewer chose. The minimized
+    /// player's bar has a Mute of its own, which the editor leaves alone, so there M and the volume keys always work.
+    /// </summary>
+    public bool AllowsKey(PlayerKey key, bool isMinimized) =>
+        (isMinimized && key is PlayerKey.Mute or PlayerKey.Volume) || Shows(ButtonOf(key));
+
+    /// <summary>
+    /// The menu Down opens from the picture, as Silo's TV app opens its panel on audio, else subtitles, else video: audio
+    /// while there is a track to choose, else subtitles while a server title plays, else the playback settings. A hidden
+    /// button's menu never opens: the next one that shows does, and with none Down does nothing.
+    /// </summary>
+    public PlayerButton? MenuOnDown(bool canChooseAudio, bool hasSubtitleMenu) =>
+        canChooseAudio && Audio ? PlayerButton.Audio
+        : hasSubtitleMenu && Subtitles ? PlayerButton.Subtitles
+        : Settings ? PlayerButton.Settings
+        : null;
 
     public bool Shows(PlayerButton button) => Array.IndexOf(_hidden, button) < 0;
 

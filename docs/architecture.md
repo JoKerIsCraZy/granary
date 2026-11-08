@@ -584,7 +584,13 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   posted, and does nothing once the player is disposed. Each change carries its own bar, so hidden and shown again before
   the UI thread gets to them still end the timer. Another profile acting raises `Changed` too. The page arranges its
   buttons in `PlayerBar.Order` (`PlayerPage.ArrangeBarButtons`) and shows each one while the bar does and, for one that
-  needs something, while there is that (`ShowsButton`); a menu goes with its hidden button.
+  needs something, while there is that (`ShowsButton`); a menu goes with its hidden button. A hidden button is off: the
+  page asks `PlayerBar.AllowsKey` before a key of one (`PlayerKey`: M, the volume keys, C, the chapter keys, P, F and a
+  double click; the minimized bar keeps its own Mute and the volume keys), Down opens `PlayerBar.MenuOnDown`, the first
+  of the audio, subtitle and settings menus that shows, and the view model's own commands check `Bar` too (C, the chapter
+  keys, opening Playback info, filling, opening the marker panel). Hidden, Playback info closes and Fill screen ends,
+  as the Sleep timer does; an open marker panel stays with its draft. F11 is the window's (`MainWindow.FullScreen.cs`)
+  and always works.
 - **Chapters** (11.3): the playing file's `chapters` from the watch detail (mpv reads none through a remux or a
   transcode), in order, empty ones left out, pictures resolved against the server; they make the Chapters menu, the
   seek bar's ticks and the chapter named in its bubble, and Ctrl+Left and Ctrl+Right go to their starts (`ChapterJump`,

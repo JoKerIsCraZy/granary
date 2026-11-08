@@ -104,6 +104,51 @@ public sealed class PlayerBarTests
         Assert.NotEqual(one, other.WithShown(PlayerButton.Fill, true));
     }
 
+    [Theory]
+    [InlineData(PlayerKey.Mute, PlayerButton.Volume)]
+    [InlineData(PlayerKey.Volume, PlayerButton.Volume)]
+    [InlineData(PlayerKey.Subtitles, PlayerButton.Subtitles)]
+    [InlineData(PlayerKey.Chapters, PlayerButton.Chapters)]
+    [InlineData(PlayerKey.MiniView, PlayerButton.MiniView)]
+    [InlineData(PlayerKey.FullScreen, PlayerButton.FullScreen)]
+    public void AKey_WorksWhileItsButtonShows_AndDoesNothingOnceItIsHidden(PlayerKey key, PlayerButton button)
+    {
+        Assert.Equal(button, PlayerBar.ButtonOf(key));
+        Assert.True(PlayerBar.Default.AllowsKey(key, isMinimized: false));
+        Assert.False(PlayerBar.Default.WithShown(button, false).AllowsKey(key, isMinimized: false));
+        Assert.True(PlayerBar.Default.WithShown(PlayerButton.Fill, false).AllowsKey(key, isMinimized: false));
+    }
+
+    [Theory]
+    [InlineData(PlayerKey.Mute, true)]
+    [InlineData(PlayerKey.Volume, true)]
+    [InlineData(PlayerKey.Subtitles, false)]
+    [InlineData(PlayerKey.Chapters, false)]
+    public void TheMinimizedBar_KeepsItsOwnMute_AndTheVolumeKeys(PlayerKey key, bool allowed)
+    {
+        var bar = PlayerBar.Default.WithShown(PlayerBar.ButtonOf(key), false);
+
+        Assert.Equal(allowed, bar.AllowsKey(key, isMinimized: true));
+    }
+
+    [Theory]
+    [InlineData(true, true, "", PlayerButton.Audio)]
+    [InlineData(false, true, "", PlayerButton.Subtitles)]
+    [InlineData(false, false, "", PlayerButton.Settings)]
+    [InlineData(true, true, "Audio", PlayerButton.Subtitles)]
+    [InlineData(true, false, "Audio", PlayerButton.Settings)]
+    [InlineData(true, true, "Audio,Subtitles", PlayerButton.Settings)]
+    [InlineData(true, true, "Audio,Subtitles,Settings", null)]
+    [InlineData(false, false, "Settings", null)]
+    public void Down_OpensTheFirstMenuThatShows_AudioSubtitlesOrSettings_AndNoneThatIsHidden(
+        bool canChooseAudio, bool hasSubtitleMenu, string hidden, PlayerButton? expected)
+    {
+        var bar = hidden.Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .Aggregate(PlayerBar.Default, (current, name) => current.WithShown(Enum.Parse<PlayerButton>(name), false));
+
+        Assert.Equal(expected, bar.MenuOnDown(canChooseAudio, hasSubtitleMenu));
+    }
+
     [Fact]
     public void EverythingHidden_IsAllowed()
     {

@@ -175,7 +175,7 @@
                         </Button>
                     </Grid>
                     <TextBlock Style="{StaticResource SiloSettingsMutedTextStyle}"
-                               Text="Which buttons the player shows on the right of its controls, and in which order, for this profile on this PC. Some show only when a title has what they need." />
+                               Text="Which buttons the player shows on the right of its controls, and in which order, for this profile on this PC. Some show only when a title has what they need. A hidden button's keys do nothing too, such as C for Subtitles." />
                 </StackPanel>
                 <ItemsControl x:Name="PlayerButtonRows" Grid.Column="1" ItemsSource="{x:Bind PlayerButtons.Rows}" IsTabStop="False"
                               BorderThickness="0,0,0,1" BorderBrush="{StaticResource SiloSettingsHairlineBrush}">

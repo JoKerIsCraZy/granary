@@ -10,8 +10,9 @@ release's section is what its update says it changes (docs/release.md).
 
 - **Player buttons:** Settings → Playback → Player buttons chooses which buttons the player shows on the right, from
   Volume to Full screen, and in which order: switch one off and it's gone from the player, move it up or down to change
-  its place. Don't need the Sleep timer? Switch it off and the button is gone, also from a player that's already open; a
-  timer that's running ends. Reset brings back the usual buttons. It's kept for each profile on this PC, works with a
+  its place. A hidden button is off, keys included: hide Subtitles and C does nothing, hide Volume and M and the volume
+  keys do nothing; F11 still switches full screen. Don't need the Sleep timer? Switch it off and the button is gone, also
+  from a player that's already open; a timer that's running ends. Reset brings back the usual buttons. It's kept for each profile on this PC, works with a
   keyboard and a TV remote, and is Granary's own.
 - **Start a Watch Party from a title's page:** the ⋮ menu of a movie, series, season or episode now has Start a Watch
   Party. Pick whether the host picks or everyone votes, whether guests may pause, and for a series which episode, then

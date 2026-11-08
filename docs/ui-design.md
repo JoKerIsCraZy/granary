@@ -875,19 +875,21 @@ says why above the sections.
 - **Player buttons** (`PlayerButtonsSettingsViewModel` on `PlayerButtonsLayout`; Granary's own, Silo's clients have no
   such editor): which buttons the right of the player's bar shows, and in which order, laid out as Navigation & Cards →
   Sidebar, with Reset beside the title while the bar is not today's: "Which buttons the player shows on the right of its
-  controls, and in which order, for this profile on this PC. Some show only when a title has what they need." A row for
+  controls, and in which order, for this profile on this PC. Some show only when a title has what they need. A hidden
+  button's keys do nothing too, such as C for Subtitles." A row for
   each button in the bar's order: its icon (the player's own; Audio for the audio tracks' lines) dimmed while hidden,
   its name and, in 12 px muted, a note (Volume "Mute and the volume slider.", Sleep timer "Hiding it ends a timer that's
   running.", Audio tracks "Shows when a title has audio tracks.", Subtitles "Shows for titles from your Silo server.",
   Chapters "Shows when a title has chapters.", Playback settings "Speed, audio delay, version and quality.", Edit markers
-  "Shows when your account may edit markers."; Playback info, Mini view, Fill screen and Full screen have none), Move up
+  "Shows when your account may edit markers.", Full screen "F11 still switches full screen."; Playback info, Mini view
+  and Fill screen have none), Move up
   and Move down as 32 px ghost buttons (off at the ends, where they still take the keyboard, so a remote's Up and Down go
   along each column), and the switch. Today's bar, the default: Volume, Sleep timer,
   Audio tracks, Subtitles, Chapters, Playback settings, Edit markers, Playback info, Mini view, Fill screen, Full screen,
   all shown. A move keeps the keyboard on its row, on the button pressed or, once the row is at the end, on the other
   one, so a remote can go on; after Reset it goes to the first row's switch. Without a profile acting a switch goes back.
-  An open player, the minimized one too, follows each change at once. Hiding everything is allowed: the right of the bar
-  is then empty. The transport, the seek bar, Exit and Minimize, the time and title, and the minimized player's bar stay
+  An open player, the minimized one too, follows each change at once, and a hidden button is off, keys included (see
+  Hidden buttons, under Player). Hiding everything is allowed: the right of the bar is then empty. The transport, the seek bar, Exit and Minimize, the time and title, and the minimized player's bar stay
   as they are.
 - **This PC → mpv configuration**: "Use your own mpv options from mpv.conf, such as shaders, scaling or debanding.
   They apply from the next title you play. Granary keeps the options it
@@ -1469,8 +1471,9 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   Chapters menu). Up and Down do as Settings → Playback → This PC says. By default as on Silo's
   TV app (a remote has its own volume buttons; M mutes and the slider, reached with Tab, sets it): from the picture Up
   shows the controls with focus on Play/Pause and Down opens the audio menu when there is a track to choose, else the
-  subtitles', else the playback settings (the TV app's panel opens on audio, else subtitles, else video), and on a
-  shown control they move from it. Set to Volume they set it ±5 as on the web, and move only off the seek
+  subtitles', else the playback settings (the TV app's panel opens on audio, else subtitles, else video; of those, the
+  first Settings → Playback → Player buttons shows, and with none Down does nothing), and on a shown control they move
+  from it. Set to Volume they set it ±5 as on the web, and move only off the seek
   bar. In the minimized bar, while the title loads and after it failed they always set the volume ±5. A remote's Back (Browser Back) and Backspace do as Esc
   does, but leave full screen alone (a media PC runs in it); OK (Enter) with focus on the picture only shows the
   controls, focus on Play/Pause, as on Silo's TV app, also when the pointer (an air mouse's) already shows them (so does
@@ -1490,6 +1493,15 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   held, but for Ctrl+Left and Ctrl+Right (Ctrl alone). The keys are handled on the page, not as keyboard
   accelerators, so no accelerator tooltip appears; the buttons announce them through
   `AutomationProperties.AcceleratorKey`.
+- **Hidden buttons** (Settings → Playback → Player buttons, `PlayerBar.AllowsKey`): a hidden button is off, keys and
+  remote included. Volume hidden: M and Up and Down as the volume do nothing (the minimized bar keeps its own Mute, and
+  there M and the volume keys still work). Subtitles hidden: C does nothing; a subtitle that shows stays. Chapters
+  hidden: Ctrl+Left and Ctrl+Right do nothing. Mini view hidden: P does nothing. Full screen hidden: F and a double click
+  on the picture do nothing; F11, the window's, still switches. Playback info hidden: its panel closes and does not
+  open. Fill screen hidden: the whole picture shows again. Edit markers hidden: the marker panel does not open; one that
+  is open stays, with its draft, until it is saved or closed. Sleep timer hidden: a running timer ends. Audio, Subtitles
+  and Playback settings hidden: Down never opens their menu. Playback settings hidden: speed, audio delay, version and
+  quality are out of reach, as the viewer chose. Granary has no key for Playback info.
 
 ### The web player, measured (reference for phase 3d)
 
