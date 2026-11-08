@@ -827,7 +827,8 @@ device-specific audio/subtitle preferences). Accepts movie, series, season and e
 `CatalogItemDetail` = `CatalogItem` plus: `original_title`, `tagline`, `overview`, `studios`,
 `networks`, `countries`, `first_air_date`, `last_air_date`, `season_count`, `episode_count`,
 `ratings[{ source, name, score, display }]` (render as given, max 3), `cast[{ name, character, order, person_id?, photo_url? }]`,
-`crew[{ name, job, person_id?, photo_url? }]`, `user_state`, `user_data` (`played`,
+`crew[{ name, job, person_id?, photo_url? }]`, `user_state`, `user_rating?` (the profile's own stars, 1 to 5, absent
+when unrated; 7.11), `user_data` (`played`,
 `watched_count`, `unplayed_count`, `in_progress_count`, `is_in_progress?`, `position_seconds?`,
 `duration_seconds?`, `last_file_id?`), `play_content_id`, `play_season_number` (next episode for a
 series/season), `versions[]` (`FileVersion`: `file_id`, `resolution`, `codec_video`, `codec_audio`,
@@ -923,7 +924,7 @@ tracks ([8.8.1](#881-initial-track-selection-before-start)) → `POST /api/v2/pl
   `GET /api/v2/images/capabilities` reports `state: available` and lists the slot in
   `slot_width_params`. Keep the same widths across a paged listing (cursors are bound to them).
 
-### 7.11 Favorites, watchlist, watched
+### 7.11 Favorites, watchlist, watched, ratings
 
 - `PUT` / `DELETE /api/v2/favorites/{item_id}` and `/api/v2/watchlist/{item_id}` → `204`
   (idempotent). Membership comes from `user_state` on cards and detail; point checks use
@@ -931,6 +932,21 @@ tracks ([8.8.1](#881-initial-track-selection-before-start)) → `POST /api/v2/pl
   (gate on `GET /api/v2/capabilities/personal-lists` → `membership_supported`). Avoid the older
   entry-or-404 `GET /api/v2/favorites/{item_id}`: bursts of 404s can trip intrusion detection.
 - `POST` / `DELETE /api/v2/watched/{id}` → `204` (movie, episode, season or series; non-retryable).
+- Ratings, the profile's own whole stars: `PUT /api/v2/ratings/{item_id}` `{ "rating": 1-5 }` → `204` replaces any
+  earlier rating of an item the viewer may see (else `404`); `DELETE /api/v2/ratings/{item_id}` → `204` runs no access
+  check and also answers `204` for a rating that never existed. Both are non-retryable (a repeat refreshes the
+  profile's recommendations again), so a failed write is not sent again. Granary has one writer per title and profile
+  for the whole app (`RatingWrites`), which sends one write at a time and, of the clicks made meanwhile, only the last,
+  each bound to the profile the page was read for (`SiloRequestOptions.Profile`), so a click waiting when the profile
+  changes is dropped unsent. It skips a click only when one of its own writes already stored it. The read is
+  `user_rating` on the item detail (7.6), absent when unrated, as the web reads it; a page that reads while the title's
+  writes are on their way shows their newest click instead, and one whose read began before they ended (within a
+  minute) what they left. `GET /api/v2/ratings` (the profile's ratings, newest first,
+  `{ items: [{ item_id, rating, rated_at }], page }` with a cursor) and `GET /api/v2/ratings/{item_id}`
+  (`{ item_id, rating, rated_at }`, `404` when unrated or hidden) are not used. The server takes any catalog item; the web, and Granary, show the stars on movies and series only
+  (`ItemDetail/components/MediaUserActionBar.tsx`). A profile that turned on "Send ratings" for a watch provider in the
+  web's Watch Providers settings has each change passed on by the server (`internal/watchsync/ratings.go`, 4 stars as
+  8/10); Granary only writes the rating.
 - `POST /api/v2/history/remove` `{ targets: [{ content_id, scope }] }` → `204`: clears the titles' watch history,
   watched state and resume progress for the profile. `scope` is `show` for a series or season, else `item`
   (the web's `lib/historyRemoval.ts`).

@@ -390,6 +390,62 @@ public sealed class CatalogApiTests
         Assert.Equal(method, Only().Method.Method);
     }
 
+    [Fact]
+    public async Task Rating_PutsTheStars()
+    {
+        AnswerNoContent(HttpMethod.Put, "api/v2/ratings/movie%3Aheat-1995");
+
+        await Api.SetRatingAsync(Server, "movie:heat-1995", "7", 4, TestContext.Current.CancellationToken);
+
+        var sent = Only();
+        Assert.Equal(HttpMethod.Put, sent.Method);
+        Assert.Equal("/silo/api/v2/ratings/movie%3Aheat-1995", sent.Uri.PathAndQuery);
+        Assert.Equal("""{"rating":4}""", sent.Body);
+        // Bound to the profile it was made for: never sent as another.
+        Assert.Equal("7", sent.AsProfile);
+    }
+
+    [Fact]
+    public async Task ClearRating_Deletes()
+    {
+        AnswerNoContent(HttpMethod.Delete, "api/v2/ratings/series-1");
+
+        await Api.ClearRatingAsync(Server, "series-1", "7", TestContext.Current.CancellationToken);
+
+        var sent = Only();
+        Assert.Equal(HttpMethod.Delete, sent.Method);
+        Assert.Equal("/silo/api/v2/ratings/series-1", sent.Uri.PathAndQuery);
+        Assert.Null(sent.Body);
+        Assert.Equal("7", sent.AsProfile);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(6)]
+    public async Task Rating_OutsideOneToFive_IsNotSent(int stars)
+    {
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
+            Api.SetRatingAsync(Server, "movie-1", "7", stars, TestContext.Current.CancellationToken));
+
+        Assert.Empty(_silo.Sent);
+    }
+
+    [Fact]
+    public async Task ItemDetail_CarriesTheProfilesRating()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        Answer(HttpMethod.Get, "api/v2/catalog/items/movie-1",
+            """{ "content_id": "movie-1", "type": "movie", "title": "A", "status": "matched", "genres": [], "keywords": [], "user_rating": 3 }""");
+        Answer(HttpMethod.Get, "api/v2/catalog/items/movie-2",
+            """{ "content_id": "movie-2", "type": "movie", "title": "B", "status": "matched", "genres": [], "keywords": [] }""");
+
+        var rated = await Api.GetItemAsync(Server, "movie-1", cancellationToken: ct);
+        var unrated = await Api.GetItemAsync(Server, "movie-2", cancellationToken: ct);
+
+        Assert.Equal(3, rated.UserRating);
+        Assert.Null(unrated.UserRating);
+    }
+
     [Theory]
     [InlineData(true, "POST")]
     [InlineData(false, "DELETE")]

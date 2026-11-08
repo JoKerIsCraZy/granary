@@ -430,9 +430,22 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     rating, regular seasons and genres, an episode's "S2 E7 · 54m · 30 Oct 2026"); the tagline in 17 italic; the overview
     in 16/25, four lines at most and 820 wide.
   - Granary's own buttons one size up: the red Play pill ("Resume from 1:02:33" for a movie or episode), Start over,
-    "Mark Watched", "Info", the heart and ⋮ (Watchlist, Add to Collection). Pills 50 high with 17 px labels, round
-    buttons 50, 14 apart. Under a single file's buttons "Available version: 1080P · H264 · EAC3 · 6.6 GB" in 14 at
+    "Mark Watched", "Info", the heart, the stars and ⋮ (Watchlist, Add to Collection). Pills 50 high with 17 px labels,
+    round buttons 50, 14 apart. Under a single file's buttons "Available version: 1080P · H264 · EAC3 · 6.6 GB" in 14 at
     45 % white.
+  - The stars, the web's `StarRating` after the heart (ActionBar.tsx), on movies and series only, as on the web: five
+    20 px stars (16 below 1400 px) 2 apart in a dark pill as high as the buttons (82 % of the surface colour, a 30 %
+    border, a faint light along its top). The profile's rating is yellow and filled (`#FACC15`), the other stars a
+    muted outline at 50 %; the star under the pointer previews its value instead, until a click shows what it made. A
+    click on a star sets that rating, a click on the current star clears it; the stars change at once and go back when the
+    server refuses, with the web's "Failed to update rating" and the reason in the toggles' words in the hero's error bar
+    ("Failed to update rating (error 500). Try again."). A title's page opened again while its stars are still being
+    sent shows the newest click and follows it to its end; opened as they end, it shows what they left rather than an
+    answer read before. No tooltips, as on the web; screen readers get the group
+    "Rating" of radio buttons "1 star" to "5 stars", "3 of 5", the rating's selected. One Tab stop, landing on the
+    rating's star (the first without one), as the web's roving tab stop. Unlike the web, where each arrow changes the
+    rating, the arrows only move between the stars, so a remote crossing the action bar rates nothing: the star they reach
+    previews its value, and OK (Enter, Space or a gamepad's A) rates. A held OK rates once.
   - A movie's or episode's stream pickers under the buttons, the web's `VersionDropdown`, `AudioTracksPopover` and
     `SubtitlesPopover` (ActionBar.tsx): dark pills 38 high (34 below 1400 px), 10 apart, each an icon, its label
     ("Version", "Audio", "Subs"), what is chosen in 13 px muted text and a chevron. "Version 2160p · HEVC · HDR10 · DTS"
@@ -590,6 +603,9 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     takes every arrow itself, so Down used to switch tabs and never reach the page under them. OK checks the focused
     one, as Space does, every tab and pill in the window but the full player's: WinUI's radio buttons take Space and
     leave Enter, a remote's OK, unhandled. A held OK checks once.
+  - A title's stars are five buttons, not radio buttons, so the arrows pass them as any other button and rate nothing:
+    the star they reach previews its value, OK rates (or clears the current star), and a held OK rates once. Left from
+    the first star goes to the heart, Right from the last to ⋮.
   - The Menu key on a card opens the card's menu, as its ⋮ does.
   - With the player minimized, Down from the page's bottom goes to the bar's picture, OK on it brings the player back
     (focus on Play/Pause); in the bar Left and Right move along it and Up returns to the page.

@@ -31,6 +31,9 @@ release's section is what its update says it changes (docs/release.md).
   the slides until you press it again, and pointing at the banner, or moving to its buttons with the keyboard or a TV
   remote, holds the slide meanwhile.
   Without such a row, the top of Home still shows the title you point at.
+- **Star ratings:** a movie's or series' page has five stars after the heart, as on the web. Click a star to rate the
+  title from 1 to 5, or your current star to clear the rating; with a TV remote, move to a star and press OK. When your
+  profile has Send ratings turned on for a watch provider in the web's settings, your Silo server passes the rating on.
 
 ### Changed
 

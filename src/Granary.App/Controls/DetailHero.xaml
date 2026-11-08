@@ -2,8 +2,8 @@
 <!--
     The top of the detail page (docs/ui-design.md), on the backdrop the page itself draws
     behind its scrolling content. The logo (or the title), one line of facts, the tagline and four lines of overview, then
-    Granary's own buttons at a larger size and the file's short facts. Chips, ratings, credits and the files' details are
-    in the Info dialog. Below 1400 px of window everything steps down a size, so a 1280 window keeps it whole; the step
+    Granary's own buttons at a larger size with the web's stars, and the file's short facts. Chips, ratings, credits and
+    the files' details are in the Info dialog. Below 1400 px of window everything steps down a size, so a 1280 window keeps it whole; the step
     sets sizes rather than styles, so a button keeps its focus when the window crosses it.
 -->
 <UserControl
@@ -110,6 +110,8 @@
                         <Setter Target="StartOverButton.Height" Value="44" />
                         <Setter Target="FavoriteButton.Width" Value="44" />
                         <Setter Target="FavoriteButton.Height" Value="44" />
+                        <Setter Target="RatingStars.Height" Value="44" />
+                        <Setter Target="RatingStars.FontSize" Value="16" />
                         <Setter Target="MoreButton.Width" Value="44" />
                         <Setter Target="MoreButton.Height" Value="44" />
                         <Setter Target="PlayIcon.FontSize" Value="16" />
@@ -213,6 +215,9 @@
                     <FontIcon x:Name="FavoriteIcon" Glyph="{x:Bind controls:DetailHero.HeartGlyph(ViewModel.IsFavorite), Mode=OneWay}" FontSize="20"
                               Foreground="{x:Bind controls:DetailHero.ActiveForeground(ViewModel.IsFavorite), Mode=OneWay}" />
                 </Button>
+                <!-- The profile's stars after the heart, as in the web's action bar; movies and series only. -->
+                <controls:StarRating x:Name="RatingStars" Height="50" FontSize="20" Visibility="{x:Bind ViewModel.CanRate, Mode=OneWay}"
+                                     Value="{x:Bind ViewModel.UserRating, Mode=OneWay}" RateCommand="{x:Bind ViewModel.RateCommand}" />
                 <Button x:Name="MoreButton" Style="{StaticResource HeroIconButtonStyle}" Visibility="{x:Bind ViewModel.CanFavorite, Mode=OneWay}"
                         AutomationProperties.Name="More actions" ToolTipService.ToolTip="More actions">
                     <FontIcon x:Name="MoreIcon" Glyph="&#xE712;" FontSize="19" RenderTransformOrigin="0.5,0.5">

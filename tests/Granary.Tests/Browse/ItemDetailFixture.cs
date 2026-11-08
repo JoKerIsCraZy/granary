@@ -6,6 +6,7 @@ using Granary.Core.Api.Playback;
 using Granary.Core.Auth;
 using Granary.Core.Playback;
 using Granary.Core.ViewModels;
+using Granary.Core.ViewModels.Detail;
 using Granary.Tests.Catalog;
 using Granary.Tests.Fakes;
 using Granary.Tests.Profiles;
@@ -38,6 +39,9 @@ internal sealed class ItemDetailFixture
     public LogSink Logs { get; } = new();
 
     public RecordingArtworkPrefetcher Artwork { get; } = new();
+
+    /// <summary>The app's count of the viewer's changes, which a write the server kept adds to.</summary>
+    public ViewerStateChanges Changes { get; } = new(new PlaybackStops());
 
     public static string ItemPath(string id) => $"api/v2/catalog/items/{id}";
 
@@ -85,6 +89,16 @@ internal sealed class ItemDetailFixture
     /// <summary>The app's queue of track choices on their way to the server, which a start waits for.</summary>
     public TrackChoiceWrites TrackChoices => field ??= new(Session, TimeProvider.System, NullLogger<TrackChoiceWrites>.Instance);
 
+    /// <summary>The clock of the ratings' remembered ends.</summary>
+    public ManualTimeProvider Time { get; } = new();
+
+    /// <summary>The app's star ratings on their way to the server, shared by every page the fixture makes.</summary>
+    public RatingWrites Ratings
+    {
+        get => field ??= new(new CatalogApi(Silo.Http), Time, Logs.For<RatingWrites>(), Changes);
+        set;
+    }
+
     public ItemDetailViewModel Create() => new(
         Session,
         new CatalogApi(Silo.Http),
@@ -92,8 +106,10 @@ internal sealed class ItemDetailFixture
         Navigation,
         Artwork,
         Logs.For<ItemDetailViewModel>(),
+        changes: Changes,
         trackPreferences: new TrackPreferencesApi(Silo.Http),
-        trackChoices: TrackChoices);
+        trackChoices: TrackChoices,
+        ratings: Ratings);
 
     public async Task<ItemDetailViewModel> LoadAsync(string id)
     {
