@@ -38,7 +38,7 @@ public sealed record DetailExtra(string ContentId, string Title, string Duration
     }
 }
 
-/// <summary>The extras of one kind under their heading, as the web's <c>ExtrasSection.tsx</c> groups them.</summary>
+/// <summary>The extras of one kind under their heading, as the web's <c>ExtrasSection.tsx</c> shows them.</summary>
 /// <param name="Label">The web's group label, "Deleted Scenes"; screen readers hear the heading in these words.</param>
 public sealed record DetailExtraGroup(string Label, IReadOnlyList<DetailExtra> Extras)
 {
@@ -49,6 +49,12 @@ public sealed record DetailExtraGroup(string Label, IReadOnlyList<DetailExtra> E
     /// The extras by kind: the groups in the order their kinds first come, each extra in the server's order (the server
     /// sorts them by kind already). Extras nothing could play are left out.
     /// </summary>
+    /// <remarks>
+    /// Unlike the web, which groups by the kind exactly as the server spells it, a group here is the kind's name in the
+    /// server's list (<see cref="ExtraKinds.Key"/>): other spellings of a kind share its group, and every kind the list does
+    /// not have goes into one "Other" group, where the web would show an "Other" heading for each. The server folds unknown
+    /// kinds to "other" itself, so both show the same for what it sends today.
+    /// </remarks>
     public static IReadOnlyList<DetailExtraGroup> From(IEnumerable<ItemExtra> extras, Uri server)
     {
         ArgumentNullException.ThrowIfNull(extras);
