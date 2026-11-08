@@ -105,6 +105,9 @@ internal sealed class ItemDetailFixture
     /// <summary>The box set reads a movie's row comes from; none unless a test sets them, so the row stays out.</summary>
     public BoxSetsApi? BoxSets { get; set; }
 
+    /// <summary>Whether a library has box sets on, which a movie's page asks before its box set; none unless a test sets it.</summary>
+    public BoxSetLibraries? BoxSetLibraries { get; set; }
+
     /// <summary>The clock of the ratings' remembered ends.</summary>
     public ManualTimeProvider Time { get; } = new();
 
@@ -131,7 +134,8 @@ internal sealed class ItemDetailFixture
         ratings: Ratings,
         airings: Airings,
         spans: Spans,
-        boxSets: BoxSets);
+        boxSets: BoxSets,
+        boxSetLibraries: BoxSetLibraries);
 
     /// <summary>The page once loaded, the places of a season's missing and upcoming episodes included, which come after.</summary>
     public async Task<ItemDetailViewModel> LoadAsync(string id)

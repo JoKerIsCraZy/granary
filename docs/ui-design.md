@@ -620,8 +620,9 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     centred with its top 32 px above the poster's foot; its corners keep their badges. Screen readers hear "Masterplan,
     2026, this film". The row opens with that card in its middle and Up or Down into it lands on it, as More Episodes;
     clicking it stays on the page, and as in the apps it has no play disc, buttons or menu, since the page's own buttons
-    hold its state. Another film opens its page. The row shows nothing while it loads, for a movie in no box set, and on
-    a server without box sets or when the read fails; a box set of one film shows that one (the server keeps sets of
+    hold its state. Another film opens its page. It is asked for only while one of the profile's libraries has box sets
+    on, as the web asks. The row shows nothing while it loads, for a movie in no box set, and on a server without box sets
+    or when the read fails; a box set of one film shows that one (the server keeps sets of
     fewer than its minimum out).
   - Below a 1400 px window everything steps down (hero 84 from the top and 12 apart, logo 116, meta 15, overview 14/22,
     buttons 44, rows 44 apart), so a 1280×800 window keeps it whole. The step sets sizes, not styles, so a focused

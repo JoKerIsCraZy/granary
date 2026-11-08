@@ -64,6 +64,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
     private readonly SeriesAirings? _airings;
     private readonly EpisodeSpans? _spans;
     private readonly BoxSetsApi? _boxSets;
+    private readonly BoxSetLibraries? _boxSetLibraries;
 
     // A newer load makes the answers of older calls stale.
     private int _generation;
@@ -100,7 +101,8 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         RatingWrites? ratings = null,
         SeriesAirings? airings = null,
         EpisodeSpans? spans = null,
-        BoxSetsApi? boxSets = null)
+        BoxSetsApi? boxSets = null,
+        BoxSetLibraries? boxSetLibraries = null)
     {
         _session = session;
         _catalog = catalog;
@@ -118,6 +120,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         _airings = airings;
         _spans = spans;
         _boxSets = boxSets;
+        _boxSetLibraries = boxSetLibraries;
     }
 
     /// <summary>The display scale artwork is requested for (1.5 at 150 %); set it before loading.</summary>

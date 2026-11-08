@@ -16,9 +16,51 @@ public sealed class ItemDetailBoxSetTests
     public ItemDetailBoxSetTests()
     {
         _fixture.BoxSets = new BoxSetsApi(_fixture.Silo.Http);
+        _fixture.BoxSetLibraries = new BoxSetLibraries(new CatalogApi(_fixture.Silo.Http), new Fakes.ManualTimeProvider(),
+            _fixture.Logs.For<BoxSetLibraries>());
+        _fixture.Get(LibrariesPath, Ok(BoxSetPayloads.Libraries(boxSets: true)));
     }
 
+    private const string LibrariesPath = "api/v2/user/libraries";
+
     private static string BoxSetPath(string id) => $"api/v2/catalog/items/{id}/box-set";
+
+    [Fact]
+    public async Task NoLibraryWithBoxSetsOn_DoesNotAsk_AsTheWebsUseItemBoxSet()
+    {
+        _fixture.Movie().Get(LibrariesPath, Ok(BoxSetPayloads.Libraries(boxSets: false)));
+
+        var detail = await _fixture.LoadAsync(MovieId);
+
+        Assert.Empty(_fixture.Silo.SentTo(HttpMethod.Get, BoxSetPath(MovieId)));
+        Assert.False(detail.HasBoxSet);
+        Assert.True(detail.HasSimilar);
+    }
+
+    [Fact]
+    public async Task UnreadableLibraries_DoNotAsk_AndShowNoError()
+    {
+        _fixture.Movie().Get(LibrariesPath, Busy());
+
+        var detail = await _fixture.LoadAsync(MovieId);
+
+        Assert.Empty(_fixture.Silo.SentTo(HttpMethod.Get, BoxSetPath(MovieId)));
+        Assert.Equal(ItemDetailState.Ready, detail.State);
+        Assert.False(detail.HasBoxSet);
+    }
+
+    [Fact]
+    public async Task TheLibraries_AreReadOnceForEveryMoviesPage()
+    {
+        _fixture.Movie().Get(BoxSetPath(MovieId), Ok(BoxSetPayloads.ItemBoxSet));
+
+        await _fixture.LoadAsync(MovieId);
+        var again = await _fixture.LoadAsync(MovieId);
+
+        Assert.True(again.HasBoxSet);
+        Assert.Single(_fixture.Silo.SentTo(HttpMethod.Get, LibrariesPath));
+        Assert.Equal(2, _fixture.Silo.SentTo(HttpMethod.Get, BoxSetPath(MovieId)).Count);
+    }
 
     [Fact]
     public async Task AMovieInABoxSet_ShowsTheSetsFilmsInReleaseOrder_ThisFilmMarked()

@@ -10,9 +10,10 @@ using Microsoft.Extensions.Logging;
 namespace Granary.Core.ViewModels;
 
 // A movie's box set (docs/api-contract.md, 7.18), as the web's MovieBoxSetRow shows it before More Like This: the set's films
-// in release order, this one marked "This film", the set's name as the row's title and Explore all to its page. Nothing
-// shows while it loads, for a movie in no box set, or on a server without box sets (404): a failed read only leaves the row
-// out, as the apps keep their rows quiet.
+// in release order, this one marked "This film", the set's name as the row's title and Explore all to its page. It is asked
+// for only while one of the profile's libraries has box sets on (BoxSetLibraries), as the web asks. Nothing shows while it
+// loads, for a movie in no box set, or on a server without box sets (404): a failed read only leaves the row out, as the
+// apps keep their rows quiet.
 public sealed partial class ItemDetailViewModel
 {
     private CatalogBoxSetDetail? _boxSet;
@@ -40,13 +41,18 @@ public sealed partial class ItemDetailViewModel
 
     private async Task LoadBoxSetAsync(Uri server, ImageParameters images, int generation, CancellationToken cancellationToken)
     {
-        if (_boxSets is null)
+        if (_boxSets is null || _boxSetLibraries is null || _session.ActiveServer is not { } entry)
         {
             return;
         }
         CatalogBoxSetDetail? boxSet;
         try
         {
+            // Only while a library has box sets on, as the web's useItemBoxSet: otherwise there is nothing to ask for.
+            if (!await _boxSetLibraries.AnyAsync(entry, _session.ProfileId, cancellationToken))
+            {
+                return;
+            }
             boxSet = await _boxSets.GetForItemAsync(server, _contentId, images: images, cancellationToken: cancellationToken);
         }
         catch (Exception ex) when (LibraryErrors.IsExpected(ex))

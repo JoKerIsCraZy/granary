@@ -709,7 +709,8 @@ series/season card), `poster_is_episode_still`, `backdrop_is_episode_still` ([6.
 
 ### 7.3 Libraries
 
-- `GET /api/v2/user/libraries` (`listUserLibraries`) → `{ "items": [{ "id", "name", "type", "sort_order", "poster_url"? }] }`.
+- `GET /api/v2/user/libraries` (`listUserLibraries`) → `{ "items": [{ "id", "name", "type", "sort_order", "poster_url"?,
+  "box_sets_enabled" }] }` (box sets, 7.18).
   `type` is free text (`movies`, `series`, `mixed`, …); sort by `sort_order`. The libraries a profile browses are the
   web's `useUserLibraries`: read with the profile settings `ui.disabled_library_ids` (left out) and `ui.library_order`
   (those it names first, in its order, the rest after) in one `GET /api/v2/settings/values/effective?keys=…`. Both are
@@ -1226,9 +1227,12 @@ groups them (`silo-server/docs/catalog-api.md`, "Movie box sets"; `internal/apiv
 - `GET /api/v2/catalog/items/{id}/box-set[?library_id=]` (`getCatalogItemBoxSet`, image params) → `{ "box_set"?:
   CatalogBoxSetDetail }`: the box set a movie's page shows, from `library_id` or the first of the movie's libraries with
   box sets on. `box_set` is absent (`{}`, a 200) when the movie is in none the viewer sees, and for a series; 404 for an
-  id that is missing, hidden or not a catalog title. Granary asks for every movie's page without `library_id` (its title
-  route carries none), as the Apple app asks for every movie: a 404 or any failure only leaves the row out, unlogged for
-  a 404.
+  id that is missing, hidden or not a catalog title. Granary asks only while one of the profile's libraries has
+  `box_sets_enabled` (`GET /api/v2/user/libraries`, read once per server and profile and again once five minutes old, the
+  web's staleTime; a failed read asks nothing), as the web's `useItemBoxSet` does, so a server with box sets off is not
+  asked on every movie page. It asks without `library_id`, since its title route carries none: the server then takes the
+  first of the movie's libraries with box sets on, while the web passes the library the movie is being viewed in. A 404
+  or any failure only leaves the row out, unlogged for a 404.
 - `GET /api/v2/catalog/box-sets/{id}?library_id=` (`getCatalogBoxSet`, `library_id` required, image params) →
   `CatalogBoxSetDetail`: the box set and `items`, its movies in that library the viewer can see as `CatalogItem` cards, in
   collection (release) order. 404 when the library has box sets off or the viewer sees too few of its movies: the

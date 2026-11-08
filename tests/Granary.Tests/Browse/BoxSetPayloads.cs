@@ -59,6 +59,14 @@ internal static class BoxSetPayloads
           ] }
         """;
 
+    /// <summary>The profile's libraries: movies, with box sets on or off, and series, which have none.</summary>
+    public static string Libraries(bool boxSets) => $$"""
+        { "items": [
+            { "id": "3", "name": "Films", "type": "movies", "sort_order": 1, "box_sets_enabled": {{(boxSets ? "true" : "false")}} },
+            { "id": "4", "name": "Series", "type": "series", "sort_order": 2, "box_sets_enabled": false }
+          ] }
+        """;
+
     private static string Film(string id, string title, int year, bool played, double? position) => $$"""
         { "content_id": "{{id}}", "type": "movie", "title": "{{title}}", "year": {{year}}, "genres": [], "keywords": [], "status": "matched",
           {{(position is { } at ? $"\"position_seconds\": {at.ToString(System.Globalization.CultureInfo.InvariantCulture)}, \"duration_seconds\": 6000," : "")}}
