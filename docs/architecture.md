@@ -884,8 +884,8 @@ missing their folder.
 - **One loop.** It decides what starts, on a wake: `Wake()`, a session change, `INetworkLink.Changed`, the download
   settings changing, the store changing, a transfer ending, the server work ending, or a timer at the earliest time
   something waits for (a retry, a status report, a delete or a registry read to try again, the next look at preparing
-  copies, a folder recheck). Each pass starts a folder recheck when that is due, at most every `FolderRecheck` (60 s) or
-  when a transfer found its folder gone; it runs beside the loop, one at a time, since `RecheckFolders` reads the disk for
+  copies, a folder recheck). Each pass starts a folder recheck when that is due, `FolderRecheck` (60 s) after the last one
+  ended or when a transfer found its folder gone; it runs beside the loop, one at a time (none is due while one runs), since `RecheckFolders` reads the disk for
   every download, a slow drive's included, and wakes the loop when it ends. The pass then activates the scope with the server when it becomes the active one (below), starts transfers, and hands what the server is
   to hear to the server work. Work that fell due while a pass ran gets the next pass at once; nothing else does, so the loop
   never spins. An iteration that fails, the wait after the pass included, is logged and the loop carries on. The event

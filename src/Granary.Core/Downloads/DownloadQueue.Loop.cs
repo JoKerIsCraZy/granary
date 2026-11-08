@@ -153,9 +153,10 @@ public sealed partial class DownloadQueue
         StartChores(scope, server);
     }
 
-    // The folders are read again at most every FolderRecheck (or when a transfer found its folder gone), beside the loop, one
-    // recheck at a time: it reads the disk for every download, a slow drive's included. It also retries removed downloads'
-    // folders that are due, and wakes the loop once all of it is done, for the deletes those folders held back.
+    // The folders are read again at most every FolderRecheck after the last recheck ended (or when a transfer found its folder
+    // gone), beside the loop, one recheck at a time: it reads the disk for every download, a slow drive's included. It also
+    // retries removed downloads' folders that are due, and wakes the loop once all of it is done, for the deletes those folders
+    // held back.
     private void RecheckFoldersWhenDue()
     {
         var now = _time.GetUtcNow();
@@ -166,12 +167,12 @@ public sealed partial class DownloadQueue
                 return;
             }
             _recheckRequested = false;
-            _lastRecheck = now;
             _rechecking = Task.Run(RecheckFoldersAsync);
         }
     }
 
-    // Never throws: a recheck that fails is logged, and the next one is a minute later.
+    // Never throws: a recheck that fails is logged, and the next one is a minute later. The next is counted from its end, so a
+    // recheck slower than FolderRecheck is never due again while it runs.
     private async Task RecheckFoldersAsync()
     {
         try
@@ -187,7 +188,11 @@ public sealed partial class DownloadQueue
         finally
         {
             ForgetHeldFolders();
-            Wake();
+            lock (_gate)
+            {
+                _lastRecheck = _time.GetUtcNow();
+                WakeLocked();
+            }
         }
     }
 
@@ -397,12 +402,14 @@ public sealed partial class DownloadQueue
                     next = Earliest(next, retry.At);
                 }
             }
+            // A recheck under way wakes the loop when it ends: until then, no other is due.
             var recheck = (_lastRecheck ?? now) + FolderRecheck;
-            if (downloads.Any(d => d.FilesMissing && !d.IsDamaged))
+            bool rechecking = !_rechecking.IsCompleted;
+            if (!rechecking && downloads.Any(d => d.FilesMissing && !d.IsDamaged))
             {
                 next = Earliest(next, recheck);
             }
-            if (folderDelete is { } tryAt)
+            if (!rechecking && folderDelete is { } tryAt)
             {
                 // Never before a recheck is due: one that is not would be no look at all.
                 next = Earliest(next, tryAt > recheck ? tryAt : recheck);

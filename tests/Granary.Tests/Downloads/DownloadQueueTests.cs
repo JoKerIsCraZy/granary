@@ -778,6 +778,37 @@ public sealed class DownloadQueueTests : IAsyncDisposable
         Assert.Equal(written, File.GetLastWriteTimeUtc(_h.IndexPath));
     }
 
+    [Fact]
+    public async Task AFolderRecheckLongerThanAMinute_DoesNotMakeTheQueueLookAgainAndAgain()
+    {
+        var stored = await _h.AddAsync("dl_1", DownloadState.Completed);
+        var queue = _h.StartQueue();
+        await IdleAsync(queue);
+        await using (new FileStream(Path.Combine(stored.Folder, "media.mkv"), FileMode.Create, FileAccess.Write, FileShare.None))
+        {
+            await _h.Store.RemoveAsync(Scope7, "dl_1", queueServerDelete: false, Token);
+        }
+        await IdleAsync(queue);
+        // The next recheck's folder work takes two minutes, on a drive slow to answer.
+        long passesWhileRechecking = -1;
+        int once = 0;
+        _h.Store.IndexWritten = () =>
+        {
+            if (Interlocked.Exchange(ref once, 1) == 0)
+            {
+                long before = queue.Passes;
+                _h.Time.Advance(TimeSpan.FromMinutes(2));
+                Thread.Sleep(300);
+                passesWhileRechecking = queue.Passes - before;
+            }
+        };
+
+        await _h.AdvanceAsync(TimeSpan.FromMinutes(1), queue);
+
+        Assert.InRange(passesWhileRechecking, 0, 1);
+        Assert.False(Directory.Exists(stored.Folder));
+    }
+
     private int FolderTries() => _h.Logs.Lines.Count(line => line.Contains("could not be deleted yet", StringComparison.Ordinal));
 
     [Fact]
