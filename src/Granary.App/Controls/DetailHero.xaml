@@ -231,7 +231,9 @@
                 <!-- The profile's stars after the heart, as in the web's action bar; movies and series only. -->
                 <controls:StarRating x:Name="RatingStars" Height="50" FontSize="20" Visibility="{x:Bind ViewModel.CanRate, Mode=OneWay}"
                                      Value="{x:Bind ViewModel.UserRating, Mode=OneWay}" RateCommand="{x:Bind ViewModel.RateCommand}" />
-                <Button x:Name="MoreButton" Style="{StaticResource HeroIconButtonStyle}" Visibility="{x:Bind ViewModel.CanFavorite, Mode=OneWay}"
+                <!-- Movies and series have the watchlist and collections; an episode or a season only a Watch Party to start. -->
+                <Button x:Name="MoreButton" Style="{StaticResource HeroIconButtonStyle}"
+                        Visibility="{x:Bind controls:DetailHero.Either(ViewModel.CanFavorite, Party.IsOffered), Mode=OneWay}"
                         AutomationProperties.Name="More actions" ToolTipService.ToolTip="More actions">
                     <FontIcon x:Name="MoreIcon" Glyph="&#xE712;" FontSize="19" RenderTransformOrigin="0.5,0.5">
                         <FontIcon.RenderTransform>
@@ -240,14 +242,22 @@
                     </FontIcon>
                     <Button.Flyout>
                         <MenuFlyout Placement="BottomEdgeAlignedLeft">
-                            <MenuFlyoutItem Text="{x:Bind ViewModel.WatchlistLabel, Mode=OneWay}" Command="{x:Bind ViewModel.ToggleWatchlistCommand}">
+                            <MenuFlyoutItem Text="{x:Bind ViewModel.WatchlistLabel, Mode=OneWay}" Command="{x:Bind ViewModel.ToggleWatchlistCommand}"
+                                            Visibility="{x:Bind ViewModel.CanFavorite, Mode=OneWay}">
                                 <MenuFlyoutItem.Icon>
                                     <FontIcon Glyph="{x:Bind controls:DetailHero.WatchlistGlyph(ViewModel.IsInWatchlist), Mode=OneWay}" />
                                 </MenuFlyoutItem.Icon>
                             </MenuFlyoutItem>
-                            <MenuFlyoutItem Text="Add to Collection" Click="OnAddToCollectionClick">
+                            <MenuFlyoutItem Text="Add to Collection" Click="OnAddToCollectionClick" Visibility="{x:Bind ViewModel.CanFavorite, Mode=OneWay}">
                                 <MenuFlyoutItem.Icon>
                                     <FontIcon Glyph="&#xE8F4;" />
+                                </MenuFlyoutItem.Icon>
+                            </MenuFlyoutItem>
+                            <!-- The web's Watch Together group in its overflow menu (ActionBar.tsx), after the others. -->
+                            <MenuFlyoutSeparator Visibility="{x:Bind controls:DetailHero.Both(ViewModel.CanFavorite, Party.IsOffered), Mode=OneWay}" />
+                            <MenuFlyoutItem Text="Start a Watch Party" Click="OnStartWatchPartyClick" Visibility="{x:Bind Party.IsOffered, Mode=OneWay}">
+                                <MenuFlyoutItem.Icon>
+                                    <FontIcon Glyph="&#xE716;" />
                                 </MenuFlyoutItem.Icon>
                             </MenuFlyoutItem>
                         </MenuFlyout>

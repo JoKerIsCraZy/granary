@@ -8,6 +8,11 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Added
 
+- **Start a Watch Party from a title's page:** the ⋮ menu of a movie, series, season or episode now has Start a Watch
+  Party. Pick whether the host picks or everyone votes, whether guests may pause, and for a series which episode, then
+  Create party & copy invite: the room opens with the title up next (or as the first suggestion of a vote), and the
+  invite link is on your clipboard. Nothing plays until you start it. It shows while your Silo server hosts Watch Party
+  and you're not in one already.
 - **Audio sync offset:** Settings → Playback → Sound, or Audio delay in the player's settings menu, moves the sound up to
   5 seconds earlier or later than the picture, in steps of 50 ms, for Bluetooth headphones or an AV receiver that lag
   behind. It's kept for this PC on your Silo server, and a title that plays follows a change at once.
@@ -59,12 +64,16 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Changed
 
+- **Player buttons:** Audio and Subtitles now sit side by side on the player's bar, with Chapters after them, and
+  the Audio button shows sound waves, the icon of Silo's web player, where it showed sliders.
 - **More Episodes** on an episode's page lists the whole season, the episode you're on included, so the row no longer
   jumps from the episode before it to the one after. That episode is marked Now Viewing, as on Silo's web app, and
   the row opens with it in the middle. With the keyboard or a TV remote, Down into the row lands on it.
 
 ### Fixed
 
+- In the player's Subtitle appearance, the Opacity boxes are no longer cut off at the right, and their number stands at
+  the right as on Silo's web.
 - The display no longer turns off while something plays. It stays on while a title plays or buffers, also minimized or
   in the mini view; paused, it turns off after Windows' usual time again.
 - A card's badges in its right corners, such as the watched mark, are no longer cut off by two pixels at the right.

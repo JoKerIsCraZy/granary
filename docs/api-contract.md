@@ -2400,6 +2400,16 @@ the commands its player runs. Sources: `silo-server/docs/realtime-api.md` ("Watc
   …/suggestions/promote { suggestion_id }` plays any suggestion for everyone (`vote_host_override`), answering the room.
   The socket's `suggestions_update { suggestions[] }` carries the list with every `voted_by_me` false (and numeric
   `suggester_user_id`): a client keeps its own votes from what it knew.
+- From a title's page (the web's `StartPartySheet.tsx`), offered only while the capabilities say `staged_selection`
+  (Android's `watchPartyHostingOffered`): the sheet first reads the host's saved choice with `GET
+  /api/v2/settings/values/effective?keys=watch_party.guest_control_policy` (`guest_play_pause` or `host_only`, profile
+  scope), which the server gives the next room it creates for that profile
+  (`silo-server/internal/watchtogether/guest_control_preference.go`). Then `POST …/rooms` with the chosen mode; `PATCH
+  …/{id}/policy` where the room's policy differs from the switch, or the host flipped the switch to a value not saved
+  yet (the v2 route saves a policy it applied as the host's next choice, `UpdatePolicyAndRemember`); an unread saved
+  choice sends nothing and says what the room has. A host-pick room then gets `PUT …/{id}/staged-selection {
+  content_id }`, a vote room the title as its first suggestion (`POST …/suggestions`, which the web's room page sends on
+  arrival). A refused policy, stage or suggestion keeps the room. Each step is for the server and profile of the click.
 - Picker (with `X-Room-Token`): `GET …/{id}/picker` → `{ members, continue_together[], watchlist_union[] }`, each
   entry `{ item (a catalog card), members[] { user_id, profile_id, display_name, position_seconds?,
   duration_seconds? }, next_up? { content_id, season_number, episode_number, title?, member_count } }`, computed over

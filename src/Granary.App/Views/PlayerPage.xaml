@@ -263,11 +263,16 @@
                             </Button>
                             <Ellipse Style="{StaticResource SiloPlayerActiveDotStyle}" Visibility="{x:Bind ViewModel.IsSleepTimerOn, Mode=OneWay}" />
                         </Grid>
-                        <!-- Shown with a track to name; as on the web player it opens once there are two to choose from. -->
+                        <!--
+                            Shown with a track to name; as on the web player it opens once there are two to choose from. Audio and
+                            subtitles stand side by side, where the web puts chapters between them: the two track choices belong together.
+                        -->
                         <Button x:Name="AudioButton" Style="{StaticResource SiloPlayerIconButtonStyle}"
                                 Visibility="{x:Bind ViewModel.HasAudioTracks, Mode=OneWay}" IsEnabled="{x:Bind ViewModel.CanChooseAudio, Mode=OneWay}"
                                 AutomationProperties.Name="Audio tracks" ToolTipService.ToolTip="Audio tracks">
-                            <FontIcon Glyph="&#xE9E9;" FontSize="18" />
+                            <!-- The web's icon, lucide's AudioLines: its six strokes, drawn at 18 px as filled rounded bars. -->
+                            <PathIcon Width="18" Height="18"
+                                      Data="M0.75,7.5 A0.75,0.75 0 0 1 2.25,7.5 L2.25,9.75 A0.75,0.75 0 0 1 0.75,9.75 Z M3.75,4.5 A0.75,0.75 0 0 1 5.25,4.5 L5.25,12.75 A0.75,0.75 0 0 1 3.75,12.75 Z M6.75,2.25 A0.75,0.75 0 0 1 8.25,2.25 L8.25,15.75 A0.75,0.75 0 0 1 6.75,15.75 Z M9.75,6 A0.75,0.75 0 0 1 11.25,6 L11.25,11.25 A0.75,0.75 0 0 1 9.75,11.25 Z M12.75,3.75 A0.75,0.75 0 0 1 14.25,3.75 L14.25,13.5 A0.75,0.75 0 0 1 12.75,13.5 Z M15.75,7.5 A0.75,0.75 0 0 1 17.25,7.5 L17.25,9.75 A0.75,0.75 0 0 1 15.75,9.75 Z" />
                             <Button.Flyout>
                                 <Flyout x:Name="AudioMenu" Placement="TopEdgeAlignedRight" FlyoutPresenterStyle="{StaticResource SiloPlayerMenuStyle}"
                                         Opened="OnAudioMenuOpened">
@@ -303,49 +308,6 @@
                                                                 </StackPanel>
                                                                 <TextBlock Text="{x:Bind Meta}" FontSize="11" Foreground="#8CFFFFFF" TextTrimming="CharacterEllipsis"
                                                                            Visibility="{x:Bind controls:PlayerMenus.Shows(Meta)}" />
-                                                            </StackPanel>
-                                                        </Grid>
-                                                    </Button>
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
-                                    </StackPanel>
-                                </Flyout>
-                            </Button.Flyout>
-                        </Button>
-                        <!-- The web player's Chapters menu: a picture, the title and its start; a row seeks there and closes. -->
-                        <Button x:Name="ChaptersButton" Style="{StaticResource SiloPlayerIconButtonStyle}"
-                                Visibility="{x:Bind ViewModel.HasChapters, Mode=OneWay}"
-                                AutomationProperties.Name="Chapters" ToolTipService.ToolTip="Chapters">
-                            <FontIcon Glyph="&#xE8FD;" FontSize="18" />
-                            <Button.Flyout>
-                                <Flyout x:Name="ChaptersMenu" Placement="TopEdgeAlignedRight" FlyoutPresenterStyle="{StaticResource SiloPlayerWideMenuStyle}"
-                                        Opened="OnChaptersMenuOpened">
-                                    <StackPanel MinWidth="280" XYFocusKeyboardNavigation="Enabled">
-                                        <TextBlock Text="CHAPTERS" Style="{StaticResource SiloPlayerMenuHeaderTextStyle}" AutomationProperties.Name="Chapters" />
-                                        <ItemsControl x:Name="ChapterRows" ItemsSource="{x:Bind ViewModel.Chapters, Mode=OneWay}" IsTabStop="False">
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate x:DataType="player:ChapterOption">
-                                                    <Button Style="{StaticResource SiloPlayerMenuItemStyle}" Click="OnChapterClick"
-                                                            Background="{x:Bind controls:PlayerMenus.SubtitleRowBackground(IsCurrent)}"
-                                                            Foreground="{x:Bind controls:PlayerMenus.SubtitleRowForeground(IsCurrent)}"
-                                                            AutomationProperties.Name="{x:Bind controls:PlayerMenus.ChapterName(Title, StartSeconds)}"
-                                                            AutomationProperties.ItemStatus="{x:Bind controls:PlayerMenus.ChapterStatus(IsCurrent)}">
-                                                        <Grid ColumnSpacing="12">
-                                                            <Grid.ColumnDefinitions>
-                                                                <ColumnDefinition Width="80" />
-                                                                <ColumnDefinition Width="*" />
-                                                            </Grid.ColumnDefinitions>
-                                                            <Border Width="80" Height="48" CornerRadius="4" Background="#0FFFFFFF">
-                                                                <Grid>
-                                                                    <FontIcon Glyph="&#xE714;" FontSize="16" Foreground="#33FFFFFF" />
-                                                                    <Image Source="{x:Bind controls:PlayerMenus.ChapterThumbnail(Thumbnail)}" Stretch="UniformToFill" />
-                                                                </Grid>
-                                                            </Border>
-                                                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                                                                <TextBlock Text="{x:Bind Title}" FontSize="14" TextTrimming="CharacterEllipsis" />
-                                                                <TextBlock Text="{x:Bind controls:PlayerMenus.ChapterStart(StartSeconds)}" FontSize="12" Foreground="#73FFFFFF"
-                                                                           Typography.NumeralAlignment="Tabular" />
                                                             </StackPanel>
                                                         </Grid>
                                                     </Button>
@@ -520,6 +482,49 @@
                         </Button>
                         <Ellipse Style="{StaticResource SiloPlayerActiveDotStyle}" Visibility="{x:Bind ViewModel.IsSubtitleOn, Mode=OneWay}" />
                         </Grid>
+                        <!-- The web player's Chapters menu: a picture, the title and its start; a row seeks there and closes. -->
+                        <Button x:Name="ChaptersButton" Style="{StaticResource SiloPlayerIconButtonStyle}"
+                                Visibility="{x:Bind ViewModel.HasChapters, Mode=OneWay}"
+                                AutomationProperties.Name="Chapters" ToolTipService.ToolTip="Chapters">
+                            <FontIcon Glyph="&#xE8FD;" FontSize="18" />
+                            <Button.Flyout>
+                                <Flyout x:Name="ChaptersMenu" Placement="TopEdgeAlignedRight" FlyoutPresenterStyle="{StaticResource SiloPlayerWideMenuStyle}"
+                                        Opened="OnChaptersMenuOpened">
+                                    <StackPanel MinWidth="280" XYFocusKeyboardNavigation="Enabled">
+                                        <TextBlock Text="CHAPTERS" Style="{StaticResource SiloPlayerMenuHeaderTextStyle}" AutomationProperties.Name="Chapters" />
+                                        <ItemsControl x:Name="ChapterRows" ItemsSource="{x:Bind ViewModel.Chapters, Mode=OneWay}" IsTabStop="False">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="player:ChapterOption">
+                                                    <Button Style="{StaticResource SiloPlayerMenuItemStyle}" Click="OnChapterClick"
+                                                            Background="{x:Bind controls:PlayerMenus.SubtitleRowBackground(IsCurrent)}"
+                                                            Foreground="{x:Bind controls:PlayerMenus.SubtitleRowForeground(IsCurrent)}"
+                                                            AutomationProperties.Name="{x:Bind controls:PlayerMenus.ChapterName(Title, StartSeconds)}"
+                                                            AutomationProperties.ItemStatus="{x:Bind controls:PlayerMenus.ChapterStatus(IsCurrent)}">
+                                                        <Grid ColumnSpacing="12">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="80" />
+                                                                <ColumnDefinition Width="*" />
+                                                            </Grid.ColumnDefinitions>
+                                                            <Border Width="80" Height="48" CornerRadius="4" Background="#0FFFFFFF">
+                                                                <Grid>
+                                                                    <FontIcon Glyph="&#xE714;" FontSize="16" Foreground="#33FFFFFF" />
+                                                                    <Image Source="{x:Bind controls:PlayerMenus.ChapterThumbnail(Thumbnail)}" Stretch="UniformToFill" />
+                                                                </Grid>
+                                                            </Border>
+                                                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                                                <TextBlock Text="{x:Bind Title}" FontSize="14" TextTrimming="CharacterEllipsis" />
+                                                                <TextBlock Text="{x:Bind controls:PlayerMenus.ChapterStart(StartSeconds)}" FontSize="12" Foreground="#73FFFFFF"
+                                                                           Typography.NumeralAlignment="Tabular" />
+                                                            </StackPanel>
+                                                        </Grid>
+                                                    </Button>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </Flyout>
+                            </Button.Flyout>
+                        </Button>
                         <!--
                             The web player's settings (QualityMenu): the gear names the quality, and a speed other than 1x shows
                             beside it. SPEED always; VERSION with more than one file; QUALITY when the plan offers rungs.
