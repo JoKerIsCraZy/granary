@@ -143,10 +143,11 @@ public sealed class BrowseHeroSettingTests : IDisposable
     }
 
     [Fact]
-    public async Task WithoutAProfile_TheSwitchGoesBack_AndNothingIsWritten()
+    public async Task WithoutAProfile_TheSwitchGoesBack_OnceItsChangeIsDone_AndNothingIsWritten()
     {
         _session.ProfileId = null;
-        var setting = Create();
+        var dispatcher = new QueuedDispatcher();
+        var setting = new BrowseHeroSetting(FilePath, _session, dispatcher, _logs.For<BrowseHeroSetting>());
         using var page = new TitlePreviewSettingsViewModel(setting);
         var changed = new List<string?>();
         page.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
@@ -154,6 +155,9 @@ public sealed class BrowseHeroSettingTests : IDisposable
         page.IsShown = false;
         await setting.Saving;
 
+        // Not from inside the switch's own change, which its binding would not take.
+        Assert.Empty(changed);
+        dispatcher.RunAll();
         Assert.True(page.IsShown);
         Assert.Equal([nameof(TitlePreviewSettingsViewModel.IsShown)], changed);
         Assert.False(File.Exists(FilePath));

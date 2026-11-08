@@ -50,8 +50,9 @@ public sealed partial class BrowseHeroSetting : ObservableObject
     {
         if (Key() is not { } key)
         {
-            // No profile to keep it for: the switch goes back to what the pages show.
-            OnPropertyChanged(nameof(IsShown));
+            // No profile to keep it for: the switch goes back to what the pages show, once its own change is done. Told from
+            // inside the change, a two-way binding would not take it, and the switch would stay where it was moved.
+            _dispatcher.Post(() => OnPropertyChanged(nameof(IsShown)));
             return Task.CompletedTask;
         }
         if (shown == IsShown)
