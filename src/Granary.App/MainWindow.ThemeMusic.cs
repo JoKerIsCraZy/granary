@@ -11,6 +11,8 @@ public sealed partial class MainWindow
 {
     private ThemeMusic? _themeMusic;
     private bool _otherMediaPending;
+    // A title replacing the one that played waits for the old player to let the picture go (MainWindow.Player.cs).
+    private bool _playerOpening;
 
     private void InitializeThemeMusic()
     {
@@ -39,7 +41,7 @@ public sealed partial class MainWindow
         DispatcherQueue.TryEnqueue(() =>
         {
             _otherMediaPending = false;
-            _themeMusic?.OtherMediaPlaying = IsPlayerOpen || Trailers.IsOpen;
+            _themeMusic?.OtherMediaPlaying = IsPlayerOpen || _playerOpening || Trailers.IsOpen;
         });
     }
 }

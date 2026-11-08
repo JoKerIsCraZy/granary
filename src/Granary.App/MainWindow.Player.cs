@@ -51,13 +51,23 @@ public sealed partial class MainWindow : IPlayerOverlay
             // The engine's picture goes to one panel at a time: the new player takes it once the old one let it go.
             if (playing.IsLoaded)
             {
+                // Meanwhile the next title counts as playing, so a page's theme does not start in between.
+                _playerOpening = true;
                 playing.Unloaded += OpenAfterUnloaded;
                 return;
 
                 void OpenAfterUnloaded(object sender, RoutedEventArgs e)
                 {
                     playing.Unloaded -= OpenAfterUnloaded;
-                    Open(play);
+                    _playerOpening = false;
+                    try
+                    {
+                        Open(play);
+                    }
+                    finally
+                    {
+                        ShowOtherMedia();
+                    }
                 }
             }
         }
