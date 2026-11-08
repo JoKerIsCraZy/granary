@@ -130,13 +130,16 @@
                     <!--
                         The title, and "S1 · E1 — EPISODE · 31:55 / 48:41" under it. Left-aligned, the line takes only the
                         width it needs, so the times follow the episode; a long episode title is cut, never the times.
-                        Clicking the times switches the end between duration and time left.
+                        Clicking the times switches the end between duration and time left, which this PC keeps. Then
+                        "· ENDS 22:41", Granary's own: none of Silo's clients has the clock time the title ends.
                     -->
                     <StackPanel VerticalAlignment="Center" Spacing="3">
                         <TextBlock Text="{x:Bind ViewModel.Title, Mode=OneWay}" Style="{StaticResource SiloPlayerTitleTextStyle}" />
                         <Grid HorizontalAlignment="Left">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
@@ -146,11 +149,19 @@
                             <TextBlock Grid.Column="1" Text="·" Margin="5,0,3,0" Style="{StaticResource SiloPlayerMetaTextStyle}"
                                        Foreground="{StaticResource SiloPlayerMetaBrush}" Visibility="{x:Bind Shows(ViewModel.Subtitle), Mode=OneWay}"
                                        AutomationProperties.AccessibilityView="Raw" />
-                            <Button Grid.Column="2" Margin="-4,-2" Style="{StaticResource SiloPlayerTextButtonStyle}" Click="OnEndTimeClick"
-                                    AutomationProperties.Name="{x:Bind EndTimeName(ShowsRemaining), Mode=OneWay}">
+                            <Button Grid.Column="2" Margin="-4,-2" Style="{StaticResource SiloPlayerTextButtonStyle}"
+                                    Command="{x:Bind ViewModel.ToggleTimeLeftCommand}"
+                                    AutomationProperties.Name="{x:Bind EndTimeName(ViewModel.ShowsTimeLeft), Mode=OneWay}">
                                 <TextBlock Style="{StaticResource SiloPlayerMetaTextStyle}" Typography.NumeralAlignment="Tabular"
-                                           Text="{x:Bind TimesText(ViewModel.PositionSeconds, ViewModel.DurationSeconds, ShowsRemaining), Mode=OneWay}" />
+                                           Text="{x:Bind TimesText(ViewModel.PositionSeconds, ViewModel.DurationSeconds, ViewModel.ShowsTimeLeft), Mode=OneWay}" />
                             </Button>
+                            <TextBlock Grid.Column="3" Text="·" Margin="5,0,3,0" Style="{StaticResource SiloPlayerMetaTextStyle}"
+                                       Foreground="{StaticResource SiloPlayerMetaBrush}" Visibility="{x:Bind Shows(ViewModel.EndsAtText), Mode=OneWay}"
+                                       AutomationProperties.AccessibilityView="Raw" />
+                            <TextBlock Grid.Column="4" Text="{x:Bind MetaText(ViewModel.EndsAtText), Mode=OneWay}" Style="{StaticResource SiloPlayerMetaTextStyle}"
+                                       Foreground="{StaticResource SiloPlayerMetaBrush}" Typography.NumeralAlignment="Tabular"
+                                       Visibility="{x:Bind Shows(ViewModel.EndsAtText), Mode=OneWay}"
+                                       AutomationProperties.Name="{x:Bind ViewModel.EndsAtSpoken, Mode=OneWay}" />
                         </Grid>
                     </StackPanel>
 
@@ -1153,8 +1164,20 @@
                            FontSize="14" Foreground="{StaticResource SiloForegroundBrush}" TextTrimming="CharacterEllipsis" MaxLines="1" />
                 <TextBlock Text="{x:Bind ViewModel.Subtitle, Mode=OneWay}" FontSize="12" Foreground="{StaticResource SiloMutedBrush}"
                            TextTrimming="CharacterEllipsis" MaxLines="1" Visibility="{x:Bind Shows(ViewModel.Subtitle), Mode=OneWay}" />
-                <TextBlock Text="{x:Bind TimesText(ViewModel.PositionSeconds, ViewModel.DurationSeconds, ShowsRemaining), Mode=OneWay}" FontSize="12"
-                           Foreground="{StaticResource SiloMutedBrush}" Typography.NumeralAlignment="Tabular" />
+                <!--
+                    The times, then the full player's end clock, which a bar too narrow for both leaves out rather than cut
+                    the times. Screen readers hear both from the times.
+                -->
+                <controls:FittingRow>
+                    <TextBlock Text="{x:Bind TimesText(ViewModel.PositionSeconds, ViewModel.DurationSeconds, ViewModel.ShowsTimeLeft), Mode=OneWay}" FontSize="12"
+                               Foreground="{StaticResource SiloMutedBrush}" Typography.NumeralAlignment="Tabular"
+                               AutomationProperties.Name="{x:Bind DockTimesName(ViewModel.PositionSeconds, ViewModel.DurationSeconds, ViewModel.ShowsTimeLeft, ViewModel.EndsAtSpoken), Mode=OneWay}" />
+                    <TextBlock Text="·" Margin="5,0,4,0" FontSize="12" Foreground="{StaticResource SiloMutedBrush}"
+                               Visibility="{x:Bind Shows(ViewModel.EndsAtText), Mode=OneWay}" AutomationProperties.AccessibilityView="Raw" />
+                    <TextBlock Text="{x:Bind ViewModel.EndsAtText, Mode=OneWay}" FontSize="12" Foreground="{StaticResource SiloMutedBrush}"
+                               Typography.NumeralAlignment="Tabular" Visibility="{x:Bind Shows(ViewModel.EndsAtText), Mode=OneWay}"
+                               AutomationProperties.AccessibilityView="Raw" />
+                </controls:FittingRow>
             </StackPanel>
 
             <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">

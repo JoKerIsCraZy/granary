@@ -18,6 +18,9 @@ public interface IPlaybackDevicePreferences
     /// <summary>What Up and Down do in the player while focus is on the picture.</summary>
     PlayerUpDown UpDown { get; }
 
+    /// <summary>The player's time ends with the time left, not the duration: the viewer's last click on it; off by default.</summary>
+    bool TimeLeft { get; }
+
     /// <summary>
     /// How many episodes in a row start by themselves before the player waits for the viewer, 0 for never
     /// (<c>player.passout_threshold</c>, client-local in the contract).
@@ -49,6 +52,8 @@ public interface IPlaybackDevicePreferences
 
     Task SetUpDownAsync(PlayerUpDown upDown);
 
+    Task SetTimeLeftAsync(bool shown);
+
     Task SetPassoutThresholdAsync(int episodes);
 
     /// <summary>Saves <see cref="ResumeRewindSeconds"/>, brought into 0 to 30 first.</summary>
@@ -75,13 +80,14 @@ public enum PlayerUpDown
 
 /// <summary>
 /// <see cref="IPlaybackDevicePreferences"/> in <c>playback-device.json</c> in the data directory
-/// (<c>{ "decodes_in_software": true, "up_down": "volume", "passout_threshold": 5, "resume_rewind_seconds": 7,
-/// "discord_status": true }</c>). Without the file, or with one that cannot be read, direct play needs the GPU, Up and Down
-/// show the controls and menus, the player waits after three episodes, a resume lands on the saved point and Discord's
-/// status stays as it is, as by default; a value it does not know, or one an older file lacks, is the default. One that
-/// cannot be written is logged, and the choice still holds for this run. Files are written off the caller's thread, which
-/// is the UI's. The Sleep timer switch from before the player buttons editor (<c>"sleep_timer_button": false</c>) is read
-/// and written back as it was, until the editor has taken it over.
+/// (<c>{ "decodes_in_software": true, "up_down": "volume", "time_left": true, "passout_threshold": 5,
+/// "resume_rewind_seconds": 7, "discord_status": true }</c>). Without the file, or with one that cannot be read, direct play
+/// needs the GPU, Up and Down show the controls and menus, the player's time shows the duration, the player waits after
+/// three episodes, a resume lands on the saved point and Discord's status stays as it is, as by default; a value it does
+/// not know, or one an older file lacks, is the default. One that cannot be written is logged, and the choice still holds
+/// for this run. Files are written off the caller's thread, which is the UI's. The Sleep timer switch from before the
+/// player buttons editor (<c>"sleep_timer_button": false</c>) is read and written back as it was, until the editor has
+/// taken it over.
 /// </summary>
 public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
 {
@@ -95,6 +101,7 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
     private readonly Lock _saves = new();
     private volatile bool _decodesInSoftware;
     private volatile PlayerUpDown _upDown;
+    private volatile bool _timeLeft;
     private volatile int _passoutThreshold;
     private volatile int _resumeRewindSeconds;
     private volatile bool _discordStatus;
@@ -110,6 +117,7 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
         var file = Load();
         _decodesInSoftware = file?.DecodesInSoftware == true;
         _upDown = file?.UpDown == VolumeValue ? PlayerUpDown.Volume : PlayerUpDown.ControlsAndMenus;
+        _timeLeft = file?.TimeLeft == true;
         _passoutThreshold = file?.PassoutThreshold is { } episodes and >= 0 and <= AutoPlayStreak.MaxThreshold
             ? episodes
             : AutoPlayStreak.DefaultThreshold;
@@ -126,6 +134,8 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
     public bool DecodesInSoftware => _decodesInSoftware;
 
     public PlayerUpDown UpDown => _upDown;
+
+    public bool TimeLeft => _timeLeft;
 
     public int PassoutThreshold => _passoutThreshold;
 
@@ -167,6 +177,12 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
     public Task SetUpDownAsync(PlayerUpDown upDown)
     {
         _upDown = upDown;
+        return QueueSave();
+    }
+
+    public Task SetTimeLeftAsync(bool shown)
+    {
+        _timeLeft = shown;
         return QueueSave();
     }
 
@@ -231,6 +247,7 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
             {
                 var file = new PlaybackDeviceFile(_decodesInSoftware, _upDown == PlayerUpDown.Volume ? VolumeValue : ControlsValue, _passoutThreshold)
                 {
+                    TimeLeft = _timeLeft,
                     ResumeRewindSeconds = _resumeRewindSeconds,
                     DiscordStatus = _discordStatus,
                     SleepTimerButton = _sleepTimerSwitchOff ? false : null,
@@ -258,6 +275,8 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
 /// <summary><c>playback-device.json</c>.</summary>
 internal sealed record PlaybackDeviceFile(bool? DecodesInSoftware, string? UpDown, int? PassoutThreshold)
 {
+    public bool? TimeLeft { get; init; }
+
     // Missing from an older file: a resume then lands on the saved point, the default. Read leniently, so that 7.5,
     // "seven" or a list typed into the file only loses this value, not the file's other choices.
     [JsonConverter(typeof(AnyNumberConverter))]

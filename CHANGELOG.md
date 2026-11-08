@@ -12,9 +12,13 @@ release's section is what its update says it changes (docs/release.md).
   Volume to Full screen, and in which order: switch one off and it's gone from the player, move it up or down to change
   its place. A hidden button is off, keys included: hide Subtitles and C does nothing, hide Volume and M and the volume
   keys do nothing in the player, while the minimized player keeps its own Mute and volume keys; F11 still switches
-  full screen. Don't need the Sleep timer? Switch it off and the button is gone, also
-  from a player that's already open; a timer that's running ends. Reset brings back the usual buttons. It's kept for
-  each profile on this PC, works with a keyboard and a TV remote, and is Granary's own.
+  full screen. Don't need the Sleep timer? Switch it off and the button is gone, also from a player that's already
+  open; a timer that's running ends. Reset brings back the usual buttons. It's kept for each profile on this PC, works
+  with a keyboard and a TV remote, and is Granary's own.
+- **When it ends:** the line under the player's title now says when the title will end on the clock, such as
+  "Ends 22:41", in Windows' 12 or 24 hour time. It counts in the playback speed, moves later while you pause, and
+  follows a seek. The minimized player shows it after the times while it has room. It's not shown when the length
+  isn't known, such as for a live stream.
 - **Turn off the title preview:** Settings → Navigation & Cards → Pages → Title preview at the top. Off, Home, For You
   and Discover no longer open with a large picture of the title you point at, and start with their rows. It's on by
   default and kept for each profile on this PC. A row your Silo server shows as the hero banner on Home stays; you set
@@ -94,6 +98,8 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Changed
 
+- **Time left stays:** when you click the player's time to show the time left instead of the duration, Granary keeps
+  that on this PC. The next title, and the player after a restart, show the time left too, until you click it back.
 - **Player buttons:** Audio and Subtitles now sit side by side on the player's bar, with Chapters after them, and
   the Audio button shows sound waves, the icon of Silo's web player, where it showed sliders.
 - **More Episodes** on an episode's page lists the whole season, the episode you're on included, so the row no longer
