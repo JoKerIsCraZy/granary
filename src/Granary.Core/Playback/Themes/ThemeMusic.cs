@@ -56,6 +56,7 @@ public sealed class ThemeMusic : IDisposable
     // The answer says themes are routed: a grant may name a proxy node's origin.
     private bool _routed;
     private bool _readingCapability;
+    private bool _disposed;
 
     public ThemeMusic(ISessionManager session, TitlePageSettings settings, ThemesApi api, ThemeAudioDownloader downloader,
         IThemeAudioOutput output, IUiDispatcher dispatcher, TimeProvider time, ILogger<ThemeMusic> logger)
@@ -109,6 +110,10 @@ public sealed class ThemeMusic : IDisposable
     public void Show(object page, ThemeSongSet? themes)
     {
         ArgumentNullException.ThrowIfNull(page);
+        if (_disposed)
+        {
+            return;
+        }
         _page = page;
         _themes = themes;
         Apply();
@@ -117,7 +122,7 @@ public sealed class ThemeMusic : IDisposable
     /// <summary>Page <paramref name="page"/> left; nothing changes when another page has shown since.</summary>
     public void Hide(object page)
     {
-        if (!ReferenceEquals(_page, page))
+        if (_disposed || !ReferenceEquals(_page, page))
         {
             return;
         }
@@ -128,6 +133,12 @@ public sealed class ThemeMusic : IDisposable
 
     public void Dispose()
     {
+        // For good: nothing that comes after, a page, a setting or a session change, plays again.
+        if (_disposed)
+        {
+            return;
+        }
+        _disposed = true;
         _settings.PropertyChanged -= OnSettingsChanged;
         _session.Changed -= OnSessionChanged;
         CancelRelease();
@@ -136,6 +147,10 @@ public sealed class ThemeMusic : IDisposable
 
     private void Apply()
     {
+        if (_disposed)
+        {
+            return;
+        }
         if (Identity() != _identity)
         {
             Reset();

@@ -216,6 +216,28 @@ public sealed class ThemeMusicTests
     }
 
     [Fact]
+    public async Task Disposed_ItStopsAtOnce_AndNothingPlaysAgain()
+    {
+        var rig = await PlayingAsync();
+        var audio = rig.Playing();
+
+        rig.Music.Dispose();
+        rig.Music.Show(_nextPage, Set("movie-2", "31"));
+        rig.Music.OtherMediaPlaying = true;
+        rig.Music.OtherMediaPlaying = false;
+        rig.Music.IsMinimized = true;
+        rig.Music.IsMinimized = false;
+        await rig.Settings.SetLoopsThemeMusicAsync(true);
+        rig.Harness.Session.RaiseChanged();
+        rig.Music.Dispose();
+
+        Assert.True(audio.IsDisposed);
+        Assert.Single(rig.Output.Made);
+        Assert.Equal(0, rig.GrantsAsked("movie-2", "31"));
+        Assert.Null(rig.Clock.NextDue);
+    }
+
+    [Fact]
     public async Task AfterTheGrace_TheSameThemeStartsOver()
     {
         var rig = await PlayingAsync();
