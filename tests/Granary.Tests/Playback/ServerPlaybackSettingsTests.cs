@@ -275,6 +275,37 @@ public sealed class ServerPlaybackSettingsTests
     }
 
     [Fact]
+    public async Task AServerThatDoesNotKnowTheAudioDelay_PlaysWithout_AndDoesNotFollowOne()
+    {
+        _fixture.Silo.OnUrl(HttpMethod.Get, "api/v2/settings/values/effective", (uri, _) =>
+            uri.Query.Contains("player.audio_sync_ms", StringComparison.Ordinal)
+                ? ScriptedSilo.Problem(422, "validation_failed")()
+                : Ok("""{ "items": [], "revision": 1 }""")());
+        _fixture.AudioDelay.Take(300);
+
+        var playback = await _fixture.PlayingAsync();
+        Assert.Equal(0, _fixture.Engine.AudioDelay);
+        Assert.True(playback.Preferences.AudioDelayRefused);
+
+        _fixture.AudioDelay.Set(150);
+        Assert.Equal(0, _fixture.Engine.AudioDelay);
+    }
+
+    [Fact]
+    public async Task AnAudioDelayThatCouldNotBeRead_IsTheOneThisRunKnows()
+    {
+        _fixture.Silo.OnUrl(HttpMethod.Get, "api/v2/settings/values/effective", (uri, _) =>
+            uri.Query.Contains("player.audio_sync_ms", StringComparison.Ordinal)
+                ? ScriptedSilo.NetworkError()()
+                : Ok("""{ "items": [], "revision": 1 }""")());
+        _fixture.AudioDelay.Take(300);
+
+        await _fixture.PlayingAsync();
+
+        Assert.Equal(0.3, _fixture.Engine.AudioDelay);
+    }
+
+    [Fact]
     public async Task WithoutAnAudioDelay_ThePlayerStartsWithNone()
     {
         _fixture.Engine.SetAudioDelay(0.4);

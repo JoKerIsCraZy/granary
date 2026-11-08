@@ -105,5 +105,19 @@ public sealed class PlayerViewModelAudioDelayTests
         _time.Advance(TimeSpan.FromSeconds(2));
         await _delay.LatestSave;
         Assert.Empty(Saves);
+        Assert.True(viewModel.ShowsAudioDelay);
+    }
+
+    [Fact]
+    public async Task AServerThatDoesNotKnowTheSetting_GetsNoRow()
+    {
+        var playback = new FakeServerPlayback { Preferences = PlaybackPreferences.Default with { AudioDelayRefused = true } };
+        using var viewModel = new PlayerViewModel(_engine, new ImmediateDispatcher(), new RecordingNavigation(), () => playback,
+            new PlaybackStops(), _time, audioDelay: _delay);
+
+        await viewModel.StartAsync(PlayRequest.Resume("movie-1"));
+        playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));
+
+        Assert.False(viewModel.ShowsAudioDelay);
     }
 }

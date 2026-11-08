@@ -832,10 +832,12 @@ says why above the sections.
   the PC, so nothing saves to the server), Sound ("Audio on this device", as the web's device settings group it: Audio
   sync offset, "Shift audio earlier or later to correct lip sync on this device.", a 160 px slider from −5000 to 5000 ms
   in the Android app's 50 ms steps with the value and its unit beside it, "-250 milliseconds" in 12 px muted, as the
-  web's slider reads it out; off until this device's value was read; a title that plays, in the mini player too, follows
-  a change at once, and it is saved as this device's `player.audio_sync_ms` once it settles for a second, or as the app
-  closes, or before Switch profile and Sign out; an `audio-delay` of your own mpv.conf stays while the offset is 0 and nothing changed it in this run),
-  Connection (the latest speed reading and what Auto plays without converting), Skipping (skip
+  web's slider reads it out; off until this device's value was read; a read that failed shows "Couldn't load your audio
+  sync offset. Try again." in 13 px muted in the slider's place with a Retry outline button, as the Devices page does,
+  and a server that does not know the setting (422) has no Sound group; a title that plays, in the mini player too,
+  follows a change at once, and it is saved as this device's `player.audio_sync_ms` once it settles for a second, or as
+  the app closes, or before Switch profile and Sign out; an `audio-delay` of your own mpv.conf stays while the offset is
+  0 and nothing changed it in this run), Connection (the latest speed reading and what Auto plays without converting), Skipping (skip
   intros, auto-skip recaps and credits), Next episode (start next at preview, auto-play), Seek controls (rewind and
   fast-forward intervals).
 - **This PC → mpv configuration**: "Use your own mpv options from mpv.conf, such as shaders, scaling or debanding.
@@ -1245,8 +1247,9 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   `player.playback_speed`. AUDIO DELAY under a line (Silo's Android player has it on its Sync page), drawn as the
   subtitle menu's DELAY: earlier and later in 50 ms steps up to 5 s either way, the value ("+150 ms", "−200 ms") and
   Reset; a server title follows it at once and it is saved as this device's `player.audio_sync_ms` (Settings → Playback
-  → Sound shows the same value, and a change there shows here); a local file starts with it, and a step there is only
-  the player's. VERSION with more than one file ("2160p HEVC HDR", "Playing" / "Requested" chips): a pick
+  → Sound shows the same value, and a change there shows here); a server that does not know the setting has no row; a
+  local file starts with the delay as far as this run knows it (none on a cold `--play`, which reads nothing from the
+  server), and a step there is only the player's. VERSION with more than one file ("2160p HEVC HDR", "Playing" / "Requested" chips): a pick
   plays that file from where the viewer is. QUALITY when the plan offers rungs: Auto ("Auto · limited after buffering"
   under a learned limit), then the rungs with their bitrate muted at the right ("12 Mbps") and a white check on the
   one the plan delivers; a pick asks for a new plan. A pick of a file or quality closes the menu.

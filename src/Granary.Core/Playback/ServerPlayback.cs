@@ -296,7 +296,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         // A Watch Party plays at the room's speed: 1x, with the room's own corrections.
         _speed = request.IsWatchParty ? 1 : _context.Preferences.Speed;
         _engine.SetSpeed(_speed);
-        StartAudioDelay(_context.Preferences.AudioDelayMs);
+        StartAudioDelay(_context.Preferences);
         SetStatus(Status);
         await StartAttemptAsync(PlaybackStarter.StartPosition(_context.Watch, request.FromBeginning), cancellationToken);
     }

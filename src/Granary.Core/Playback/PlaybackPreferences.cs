@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Granary.Core.Api;
 using Granary.Core.Api.Settings;
 using Granary.Core.ViewModels;
 using Microsoft.Extensions.Logging;
@@ -32,8 +33,14 @@ public sealed record PlaybackPreferences(string Quality, int? MaxBitrateKbps, do
     /// <summary>This device's playback speed (<c>player.playback_speed</c>).</summary>
     public double Speed { get; init; } = 1;
 
-    /// <summary>This device's audio delay in milliseconds, positive for later sound (<see cref="AudioDelay"/>), within ±5 s.</summary>
-    public int AudioDelayMs { get; init; }
+    /// <summary>
+    /// This device's audio delay in milliseconds, positive for later sound (<see cref="AudioDelay"/>), within ±5 s; null
+    /// when it could not be read.
+    /// </summary>
+    public int? AudioDelayMs { get; init; }
+
+    /// <summary>The server does not know the audio delay (it refused the key): the player offers none.</summary>
+    public bool AudioDelayRefused { get; init; }
 
     /// <summary>The contract's default for <see cref="SleepTimerMinutes"/>.</summary>
     public const int DefaultSleepTimerMinutes = 30;
@@ -55,7 +62,6 @@ public sealed class PlaybackPreferencesReader(SettingsApi settings, ILogger<Play
         "player.video_skip_back_seconds",
         "player.video_skip_forward_seconds",
         "player.playback_speed",
-        AudioDelay.Key,
     ];
 
     /// <summary>The setting's range (settings contract): the apps and the server keep to it.</summary>
@@ -83,6 +89,9 @@ public sealed class PlaybackPreferencesReader(SettingsApi settings, ILogger<Play
     // The same for the sleep timer's duration.
     internal static readonly string[] SleepTimerKeys = ["player.sleep_timer_default_minutes"];
 
+    // And for the audio delay, which a server that refuses it does not have: the player then offers none.
+    internal static readonly string[] AudioDelayKeys = [AudioDelay.Key];
+
     /// <summary>The longest sleep timer duration the contract allows, in minutes.</summary>
     public const int MaxSleepTimerMinutes = 240;
 
@@ -102,6 +111,7 @@ public sealed class PlaybackPreferencesReader(SettingsApi settings, ILogger<Play
         var markers = ReadBatchAsync(server, MarkerKeys, "Marker", cancellationToken);
         var preview = ReadBatchAsync(server, PreviewKeys, "Next episode preview", cancellationToken);
         var sleepTimer = ReadBatchAsync(server, SleepTimerKeys, "Sleep timer", cancellationToken);
+        var audioDelay = ReadAudioDelayAsync(server, cancellationToken);
         var preferences = await ReadMainAsync(server, cancellationToken).ConfigureAwait(false);
         if (await subtitles.ConfigureAwait(false) is { } subtitleValues)
         {
@@ -127,7 +137,27 @@ public sealed class PlaybackPreferencesReader(SettingsApi settings, ILogger<Play
         {
             preferences = preferences with { SleepTimerMinutes = (int)Math.Round(minutes) };
         }
-        return preferences;
+        var (delayMs, delayRefused) = await audioDelay.ConfigureAwait(false);
+        return preferences with { AudioDelayMs = delayMs, AudioDelayRefused = delayRefused };
+    }
+
+    private async Task<(int? Milliseconds, bool Refused)> ReadAudioDelayAsync(Uri server, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var values = await settings.GetEffectiveAsync(server, AudioDelayKeys, cancellationToken).ConfigureAwait(false);
+            return (AudioDelay.FromSetting(values.Find(AudioDelay.Key)), false);
+        }
+        catch (SiloApiException ex) when (ex.Status == 422)
+        {
+            logger.LogInformation("The server does not know the audio delay; the player offers none");
+            return (null, true);
+        }
+        catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex, cancellationToken))
+        {
+            logger.LogInformation("The audio delay is not available ({Failure}); the player keeps the one it knows", ApiFailureText.Describe(ex));
+            return (null, false);
+        }
     }
 
     private async Task<EffectiveSettings?> ReadBatchAsync(Uri server, string[] keys, string name, CancellationToken cancellationToken)
@@ -186,7 +216,6 @@ public sealed class PlaybackPreferencesReader(SettingsApi settings, ILogger<Play
             Number(values.Find(Keys[3])) is { } forward && forward is > 0 and <= MaxSkipSeconds ? forward : defaults.SkipForwardSeconds)
         {
             Speed = Number(values.Find(Keys[4])) is { } speed && speed is >= MinSpeed and <= MaxSpeed ? speed : defaults.Speed,
-            AudioDelayMs = AudioDelay.FromSetting(values.Find(Keys[5])),
         };
     }
 

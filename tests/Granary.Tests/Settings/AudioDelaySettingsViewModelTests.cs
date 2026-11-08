@@ -47,6 +47,8 @@ public sealed class AudioDelaySettingsViewModelTests
         await page.LoadAsync(Token);
 
         Assert.True(page.IsLoaded);
+        Assert.True(page.IsSupported);
+        Assert.True(page.ShowsSlider);
         Assert.Equal(-237, page.Milliseconds);
         Assert.Equal("-237 milliseconds", page.ValueText);
         Assert.Empty(Saves);
@@ -88,17 +90,39 @@ public sealed class AudioDelaySettingsViewModelTests
     }
 
     [Fact]
-    public async Task AnOffsetThatCouldNotBeRead_IsNotOffered()
+    public async Task AnOffsetThatCouldNotBeRead_SaysSo_AndRetryReadsItAgain()
     {
-        _silo.On(HttpMethod.Get, EffectivePath, ScriptedSilo.NetworkError());
+        _silo.On(HttpMethod.Get, EffectivePath, ScriptedSilo.NetworkError(), ScriptedSilo.Json(HttpStatusCode.OK,
+            """{ "items": [ { "key": "player.audio_sync_ms", "value": 100 } ], "revision": 2 }"""));
         using var page = Create();
 
         await page.LoadAsync(Token);
 
         Assert.False(page.IsLoaded);
+        Assert.Equal(AudioDelaySettingsViewModel.LoadFailedText, page.LoadMessage);
+        Assert.False(page.ShowsSlider);
+        Assert.True(page.IsSupported);
         page.Milliseconds = 500;
         Assert.Equal(0, _delay.Milliseconds);
-        Assert.Contains(_logs.Lines, l => l.Contains("audio sync offset", StringComparison.OrdinalIgnoreCase));
+
+        await page.LoadCommand.ExecuteAsync(null);
+
+        Assert.True(page.IsLoaded);
+        Assert.Equal("", page.LoadMessage);
+        Assert.True(page.ShowsSlider);
+        Assert.Equal(100, page.Milliseconds);
+    }
+
+    [Fact]
+    public async Task AServerThatDoesNotKnowTheSetting_HasNoSound()
+    {
+        _silo.On(HttpMethod.Get, EffectivePath, ScriptedSilo.Problem(422, "validation_failed"));
+        using var page = Create();
+
+        await page.LoadAsync(Token);
+
+        Assert.False(page.IsSupported);
+        Assert.False(page.IsLoaded);
+        Assert.Equal("", page.LoadMessage);
     }
 }
-

@@ -512,18 +512,19 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   from this device's `player.playback_speed` and saved there once it settles for a second (a drag passes several
   stops), or at the stop.
 - **Audio delay** (6.6): mpv's `audio-delay`, positive for later sound as Android's `DelayAudioProcessor` has it, from
-  this device's `player.audio_sync_ms` (±5 s). `AudioDelay` is one for the app: the playback reads the value with its
-  settings, takes it unless a change made here is still on its way, sets it at the start, and follows `Changed` until
-  its stop, as Android's `SiloPlaybackService` does; Settings → Playback → Sound and the player's settings menu change it
-  (a local file starts with it, and a step there goes only to the engine). A change belongs to the server and profile
-  acting when it was made: it is saved at `profile_device` once it settles for a second, or as the window closes
-  (`PlaybackStops`), to that server and bound to that profile (`SettingsApi.SetValueAsProfileAsync`), so a server
-  switched to meanwhile does not lose it (the one before stays signed in) and a profile its server no longer acts as is
-  never written for the new one. Switch profile and Sign out in the sidebar save a waiting change first, waiting 2 s at
-  most. A timer that was due as a later change came saves nothing; a failed save is logged and the value holds for this
-  run; a read that answers after a change made here, or once another profile acts, is dropped. mpv moves only the
-  sound: subtitles keep to the picture, so the subtitle delay and subtitle sync, both timed against the picture, are
-  untouched.
+  this device's `player.audio_sync_ms` (±5 s). `AudioDelay` is one for the app: the playback reads the value in a batch
+  of its own, so a server that refuses the key keeps the other settings and plays without a delay (no row, no Sound);
+  it takes the value unless a change made here is still on its way, keeps the one this run knows when the read failed,
+  sets it at the start, and follows `Changed` until its stop, as Android's `SiloPlaybackService` does. Settings →
+  Playback → Sound and the player's settings menu change it (a local file starts with the delay as far as this run
+  knows it, and a step there goes only to the engine). A change belongs to the server and profile acting when it was
+  made: it is saved at `profile_device` once it settles for a second, or as the window closes (`PlaybackStops`), to that
+  server and bound to that profile (`SettingsApi.SetValueAsProfileAsync`), so a server switched to meanwhile does not
+  lose it (the one before stays signed in) and a profile its server no longer acts as is never written for the new one.
+  Switch profile and Sign out in the sidebar save a waiting change first, waiting 2 s at most. A timer that was due as
+  a later change came saves nothing; a failed save is logged and the value holds for this run; a read that answers
+  after a change made here, or once another profile acts, is dropped. mpv moves only the sound: subtitles keep to the
+  picture, so the subtitle delay and subtitle sync, both timed against the picture, are untouched.
 - **Markers** (11.1, 11.2): the playing file's intro (its single projection, as Android takes it), recaps, credits
   and previews come from the watch detail, then from a second read that names the file once its first frame
   shows (`file_id`, which makes the server fill markers it finds on demand); a failed read changes nothing.
