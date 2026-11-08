@@ -598,6 +598,23 @@ public sealed class ServerAccentTests
     }
 
     [Fact]
+    public async Task AnUnexpectedFailure_IsTriedAgainToo_AndLoggedWithoutTheAddress()
+    {
+        _harness.Silo.On(HttpMethod.Get, BrandingPath,
+            () => throw new InvalidOperationException("Something broke at " + ScriptedSilo.Base),
+            ScriptedSilo.Json(HttpStatusCode.OK, Blue));
+        var accent = Create();
+
+        await accent.StartAsync();
+
+        Assert.Equal(TimeSpan.FromSeconds(5), _harness.Clock.NextDue);
+        Assert.Contains(_harness.Logs.Lines, line => line.Contains(nameof(InvalidOperationException), StringComparison.Ordinal));
+        Assert.DoesNotContain(ScriptedSilo.Base.Host, _harness.Logs.All, StringComparison.OrdinalIgnoreCase);
+        await RetryAsync(accent);
+        Assert.Equal("#1d4ed8", accent.Palette.Primary.ToString());
+    }
+
+    [Fact]
     public async Task AFailedSave_KeepsTheAccent_AndIsLogged()
     {
         _harness.Silo.On(HttpMethod.Get, BrandingPath, ScriptedSilo.Json(HttpStatusCode.OK, Blue));

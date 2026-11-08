@@ -150,6 +150,9 @@ public sealed partial class ServerAccent : ObservableObject, IDisposable
         return Reading = ReadAsync(server);
     }
 
+    // Started on the UI thread, as every caller is (StartAsync, and the dispatcher for the session, the network and the
+    // retries), and resumed there after each await through its synchronization context: what follows sets the properties
+    // the app paints from, and the state of the reads, which only that thread touches.
     private async Task ReadAsync(ServerEntry server)
     {
         // A read started again replaces one still waiting for an answer.
@@ -157,13 +160,19 @@ public sealed partial class ServerAccent : ObservableObject, IDisposable
         var run = new CancellationTokenSource();
         _run = run;
         var cancellationToken = run.Token;
-        ServerBranding branding;
+        AccentPalette palette;
+        Uri? wordmark;
+        SavedBranding answer;
         try
         {
-            branding = await _branding.GetAsync(server.BaseUri, cancellationToken);
+            var branding = await _branding.GetAsync(server.BaseUri, cancellationToken);
+            palette = AccentPalette.From(branding.AccentColor);
+            wordmark = OnTheServer(server.BaseUri, ArtworkUrl.Resolve(server.BaseUri, branding.WordmarkUrl));
+            answer = new SavedBranding(AccentPalette.Parse(branding.AccentColor)?.ToString() ?? SavedBranding.NoAccent, wordmark?.AbsoluteUri);
         }
-        catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex))
+        catch (Exception ex)
         {
+            // Any failure is tried again, one of Granary's own too: nothing ends the retries unseen.
             if (!cancellationToken.IsCancellationRequested && _readFor == server.Id)
             {
                 Failed(server, ex);
@@ -176,10 +185,9 @@ public sealed partial class ServerAccent : ObservableObject, IDisposable
         }
         _failing = false;
         _retries = 0;
-        var wordmark = OnTheServer(server.BaseUri, ArtworkUrl.Resolve(server.BaseUri, branding.WordmarkUrl));
-        Palette = AccentPalette.From(branding.AccentColor);
+        Palette = palette;
         Wordmark = wordmark;
-        await RememberAsync(server, new SavedBranding(AccentPalette.Parse(branding.AccentColor)?.ToString() ?? SavedBranding.NoAccent, wordmark?.AbsoluteUri));
+        await RememberAsync(server, answer);
     }
 
     // Saved with the server, unless another server answers at its address by now; the registry writes only what differs
@@ -190,19 +198,25 @@ public sealed partial class ServerAccent : ObservableObject, IDisposable
         {
             await _registry.UpdateAsync(server.Id, entry => entry.ServerId == server.ServerId ? entry with { Branding = branding } : entry);
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        catch (Exception ex)
         {
+            // The accent shows all the same; it is read again at the next start. By its kind only: a file path can name the user.
             _logger.LogWarning("Could not remember the server's branding: {Failure}", ex.GetType().Name);
         }
     }
 
     private void Failed(ServerEntry server, Exception ex)
     {
-        if (!_failing)
+        if (!ApiFailureText.IsRequestFailure(ex))
         {
-            _failing = true;
+            // Not the server's doing: logged each time, by its kind only, since its message can name the address.
+            _logger.LogWarning("Reading the server's branding failed unexpectedly; trying again: {Failure}", ex.GetType().Name);
+        }
+        else if (!_failing)
+        {
             _logger.LogWarning("Could not read the server's branding; trying again: {Failure}", ApiFailureText.Describe(ex));
         }
+        _failing = true;
         if (server.Branding is null)
         {
             // Another server's accent must not stay; Granary's own is the safe one. What this server answered last stays.
