@@ -59,7 +59,7 @@ public sealed class AudioDelay(SettingsApi settings, ISessionManager session, IU
     /// <summary>Raised on the UI thread when <see cref="Milliseconds"/> changed, for what plays and what shows it to follow.</summary>
     public event EventHandler? Changed;
 
-    /// <summary>The latest save: done once it went through, or failed and was logged. Waiting for it starts none.</summary>
+    /// <summary>The save started most recently: done once it went through, or failed and was logged. Waiting for it starts none.</summary>
     public Task LatestSave => _latest;
 
     /// <summary>A stored value within the contract's range, in whole milliseconds; 0, the default, for anything but a number.</summary>
@@ -161,6 +161,16 @@ public sealed class AudioDelay(SettingsApi settings, ISessionManager session, IU
             _latest = _chains[pending.Owner] = SaveAsync(before, pending);
         }
         return _chains[pending.Owner];
+    }
+
+    /// <summary>
+    /// As <see cref="SaveNowAsync"/>, for the app's close: done once every profile's saves on their way are, not only the
+    /// acting one's, so a slow save for a server switched away from is not cut off. Never fails.
+    /// </summary>
+    public Task SaveAllNowAsync()
+    {
+        _ = SaveNowAsync();
+        return Task.WhenAll([.. _chains.Values]);
     }
 
     private Owner? Acting() =>

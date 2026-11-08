@@ -253,6 +253,36 @@ public sealed class AudioDelayTests
     }
 
     [Fact]
+    public async Task TheClose_WaitsForEveryProfilesSaves_NotOnlyTheActingOnes()
+    {
+        // Each server keeps its own sign-in, with its own profile.
+        _silo.ActingProfile = null;
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _silo.On(HttpMethod.Put, ValuePath, async () =>
+        {
+            await gate.Task;
+            return new HttpResponseMessage(HttpStatusCode.NoContent);
+        });
+        _silo.On(HttpMethod.Put, ScriptedSilo.Url(ValuePath, OtherBase), ScriptedSilo.NoContent());
+        var delay = Create();
+        delay.Set(100);
+        _ = delay.SaveNowAsync();
+        await ServerPlaybackFixture.Until(() => Saves.Count == 1, "the first server's save goes out");
+        _session.ActiveServer = ScriptedSilo.Entry("srv2", OtherBase);
+        _session.ProfileId = "3";
+        delay.Set(-100);
+
+        var closing = delay.SaveAllNowAsync();
+
+        await ServerPlaybackFixture.Until(() => _silo.Sent.Any(r => r.Method == HttpMethod.Put && r.Uri.Host == OtherBase.Host),
+            "the waiting change goes out at the close");
+        Assert.False(closing.IsCompleted);
+        gate.SetResult();
+        await closing;
+        Assert.Equal(100, Value(Assert.Single(Saves)));
+    }
+
+    [Fact]
     public async Task ASignOutWhileAChangeWaits_SendsNothing_LogsIt_AndLeavesNothingWaiting()
     {
         var delay = Create();
