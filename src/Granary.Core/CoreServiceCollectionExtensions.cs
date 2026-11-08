@@ -295,7 +295,7 @@ public static class CoreServiceCollectionExtensions
     private static void AddThemeMusic(IServiceCollection services)
     {
         services.AddHttpClient(ThemeAudioDownloader.HttpClientName, client => client.Timeout = Timeout.InfiniteTimeSpan)
-            .ConfigurePrimaryHttpMessageHandler(ThemeAudioDownloader.CreateHandler)
+            .ConfigurePrimaryHttpMessageHandler(() => ThemeAudioDownloader.CreateHandler())
             .RemoveAllLoggers();
         services.AddTransient<ThemesApi>();
         services.AddTransient<ThemeAudioDownloader>();

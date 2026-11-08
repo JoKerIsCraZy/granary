@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Sockets;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Playback;
 
@@ -23,28 +24,76 @@ public sealed class ThemeAudioDownloader(IHttpClientFactory clients)
     /// <summary>The whole download, body included.</summary>
     public static readonly TimeSpan Timeout = TimeSpan.FromSeconds(60);
 
+    // A proxy node's request carries its connection rule, which the handler applies to the addresses the name resolves to.
+    private static readonly HttpRequestOptionsKey<ThemeNode> NodeOption = new("granary.theme-node");
+
     /// <summary>
     /// The theme client's own handler: it keeps no cookie a node sets, follows no redirect, and takes the body as it was
-    /// sent, so the size limit counts what came over the wire.
+    /// sent, so the size limit counts what came over the wire. A node's connection goes only to an address its rule takes
+    /// (<see cref="ThemeNode"/>); the server's own origin connects as it resolves.
     /// </summary>
-    internal static SocketsHttpHandler CreateHandler() => new()
+    internal static SocketsHttpHandler CreateHandler() => CreateHandler(Dns.GetHostAddressesAsync);
+
+    /// <param name="resolve">Looks a node's name up; tests answer it themselves.</param>
+    internal static SocketsHttpHandler CreateHandler(Func<string, CancellationToken, Task<IPAddress[]>> resolve) => new()
     {
         UseCookies = false,
         AllowAutoRedirect = false,
         AutomaticDecompression = DecompressionMethods.None,
         PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+        ConnectCallback = (context, cancellationToken) => ConnectAsync(context, resolve, cancellationToken),
     };
+
+    // A name that resolves to this PC, or a private address the server did not vouch for, is refused here, where the
+    // address is known (a name looked up again, a rebinding, a wildcard DNS name). TLS goes on to check the node's name.
+    private static async ValueTask<Stream> ConnectAsync(SocketsHttpConnectionContext context, Func<string, CancellationToken, Task<IPAddress[]>> resolve,
+        CancellationToken cancellationToken)
+    {
+        var endpoint = context.DnsEndPoint;
+        var socket = new Socket(SocketType.Stream, ProtocolType.Tcp) { NoDelay = true };
+        try
+        {
+            if (!context.InitialRequestMessage.Options.TryGetValue(NodeOption, out var node))
+            {
+                await socket.ConnectAsync(endpoint, cancellationToken).ConfigureAwait(false);
+                return new NetworkStream(socket, ownsSocket: true);
+            }
+            string host = NetworkAddresses.Normalize(endpoint.Host);
+            var url = context.InitialRequestMessage.RequestUri!;
+            if (!host.Equals(NetworkAddresses.HostOf(url), StringComparison.OrdinalIgnoreCase) || endpoint.Port != url.Port)
+            {
+                // Through a proxy, the proxy would look the name up, where this rule cannot see it.
+                throw new HttpRequestException(HttpRequestError.ConnectionError, "A theme's node is reached directly or not at all.");
+            }
+            IPAddress[] addresses = [.. (await resolve(host, cancellationToken).ConfigureAwait(false)).Where(node.Takes)];
+            if (addresses.Length == 0)
+            {
+                throw new HttpRequestException(HttpRequestError.ConnectionError, "The theme's node is at an address Granary does not fetch.");
+            }
+            await socket.ConnectAsync(addresses, endpoint.Port, cancellationToken).ConfigureAwait(false);
+            return new NetworkStream(socket, ownsSocket: true);
+        }
+        catch
+        {
+            socket.Dispose();
+            throw;
+        }
+    }
 
     /// <param name="origins">Where the server lets the audio come from: its own origin, or also a proxy node's.</param>
     /// <exception cref="HttpRequestException">The URL is not one Granary fetches, or the answer is not a theme.</exception>
     public async Task<ThemeAudioSource> DownloadAsync(Uri server, ThemePlayback grant, ThemeOrigins origins, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(grant);
-        var url = PlaybackUrl.ResolveTheme(server, grant.Url, origins)
+        var address = PlaybackUrl.ResolveTheme(server, grant.Url, origins)
             ?? throw new HttpRequestException(HttpRequestError.InvalidResponse, "The server named a theme address Granary does not fetch.");
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(Timeout);
-        using var request = new HttpRequestMessage(HttpMethod.Get, url);
+        using var request = new HttpRequestMessage(HttpMethod.Get, address.Url);
+        if (address.Node is { } node)
+        {
+            request.Options.Set(NodeOption, node);
+        }
         var client = clients.CreateClient(HttpClientName);
         using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, timeout.Token).ConfigureAwait(false);
         if (!response.IsSuccessStatusCode)

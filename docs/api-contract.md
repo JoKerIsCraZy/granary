@@ -1319,6 +1319,12 @@ plays its first theme, as the web's `useThemeMusic.ts` and the apps do (docs/arc
     private (RFC 1918), shared (100.64/10) or unique-local node only while the server's own address is on a private
     network too (such an address, one label, `.local`, `.lan`, `.internal`, `.home.arpa`): a proxy at `192.168.1.20` beside
     a server at `192.168.1.10` plays, the same address named by a server on the internet does not.
+  - At the socket: a node's name could resolve anywhere (a rebinding, a wildcard DNS name), so the same rule is applied
+    again to the addresses it resolves to (`ThemeAudioDownloader.CreateHandler`, its `ConnectCallback`; the decision rides
+    on the request, `ThemeNode`): those it does not take are dropped, IPv6 forms carrying an IPv4 address included, and the
+    connection goes to one that is left, or the fetch fails. TLS still checks the node's name. A node is reached directly,
+    never through a system proxy, which would look the name up out of sight. The server's own origin is not checked so:
+    it connects as it resolves, wherever the server runs, on this PC (`http://localhost:8096`) or on the LAN.
 
   Anything else is refused unsent. Granary fetches it whole (`ThemeAudioDownloader`: no
   credentials, cookies or redirects, the body as sent, 60 s, at most 32 MB, as the Apple app reads a converted theme), on a

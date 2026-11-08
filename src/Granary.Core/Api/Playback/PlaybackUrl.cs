@@ -64,18 +64,19 @@ public static class PlaybackUrl
     /// <summary>
     /// A theme grant's audio URL (docs/api-contract.md 7.19): on the saved server as <see cref="Resolve"/> takes it, or, while
     /// <paramref name="origins"/> lets one, on a proxy node's origin, decided as a video stream's is
-    /// (<c>authorized_media_origins_v1</c>, <see cref="ResolveStream"/>): the server's own scheme, no user info, no fragment, and
-    /// never this machine, a link-local, multicast or unspecified address, however written (<see cref="NetworkAddresses"/>). A server
-    /// that authorizes media origins vouches for the node, a private address included; without that, a private or
+    /// (<c>authorized_media_origins_v1</c>, <see cref="ResolveStream"/>): the server's own scheme, no user info, no fragment,
+    /// and never this machine, a link-local, multicast or unspecified address, however written (<see cref="NetworkAddresses"/>).
+    /// A server that authorizes media origins vouches for the node, a private address included; without that, a private or
     /// unique-local node is taken only from a server that is on a private network itself. It carries its own token, so it is
-    /// fetched without credentials.
+    /// fetched without credentials. A node's connection is checked again on the addresses its name resolves to
+    /// (<see cref="ThemeAudioAddress.Node"/>).
     /// </summary>
-    public static Uri? ResolveTheme(Uri server, string? value, ThemeOrigins origins)
+    public static ThemeAudioAddress? ResolveTheme(Uri server, string? value, ThemeOrigins origins)
     {
         ArgumentNullException.ThrowIfNull(server);
         if (Resolve(server, value) is { } onServer)
         {
-            return IsPlain(onServer.OriginalString) ? onServer : null;
+            return IsPlain(onServer.OriginalString) ? new ThemeAudioAddress(onServer, Node: null) : null;
         }
         if (origins == ThemeOrigins.Server || !IsElsewhere(server, value) || !IsPlain(value!)
             || !Uri.TryCreate(value, UriKind.Absolute, out var node))
@@ -104,8 +105,8 @@ public static class PlaybackUrl
         {
             isPrivate = NetworkAddresses.IsLanName(host);
         }
-        bool vouched = origins == ThemeOrigins.Authorized || !isPrivate || IsOnPrivateNetwork(server);
-        return vouched ? new Uri(node.AbsoluteUri) : null;
+        bool takesPrivate = origins == ThemeOrigins.Authorized || IsOnPrivateNetwork(server);
+        return !isPrivate || takesPrivate ? new ThemeAudioAddress(new Uri(node.AbsoluteUri), new ThemeNode(takesPrivate)) : null;
     }
 
     // The server itself is on a private network: by its address, this PC's included, or by a name only a LAN resolves.

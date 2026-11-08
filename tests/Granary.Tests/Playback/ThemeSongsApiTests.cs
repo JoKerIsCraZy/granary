@@ -323,6 +323,106 @@ public sealed class ThemeSongsApiTests
         Assert.False(sockets.UseCookies);
         Assert.False(sockets.AllowAutoRedirect);
         Assert.Equal(DecompressionMethods.None, sockets.AutomaticDecompression);
+        Assert.NotNull(sockets.ConnectCallback);
+    }
+
+    // The theme client's own handler over a resolver the test answers, so a node's connection is checked without the network.
+    private static (ThemeAudioDownloader Downloader, List<string> Resolved) ResolvingTo(params string[] addresses)
+    {
+        var resolved = new List<string>();
+        var handler = ThemeAudioDownloader.CreateHandler((host, _) =>
+        {
+            resolved.Add(host);
+            return Task.FromResult(addresses.Select(IPAddress.Parse).ToArray());
+        });
+        return (new ThemeAudioDownloader(new FakeHttpClients(handler)), resolved);
+    }
+
+    [Theory]
+    [InlineData("127.0.0.1")]
+    [InlineData("127.8.9.10")]
+    [InlineData("169.254.169.254")]
+    [InlineData("0.0.0.0")]
+    [InlineData("::1")]
+    [InlineData("::ffff:127.0.0.1")]
+    [InlineData("::ffff:169.254.1.1")]
+    [InlineData("2002:7f00:1::")]
+    [InlineData("64:ff9b::a9fe:a9fe")]
+    [InlineData("::7f00:1")]
+    [InlineData("fe80::1")]
+    [InlineData("224.0.0.1")]
+    public async Task ANodeNameThatResolvesToThisPC_IsRefusedAtConnect_AuthorizedOrNot(string address)
+    {
+        foreach (var origins in new[] { ThemeOrigins.Routed, ThemeOrigins.Authorized })
+        {
+            var (downloader, resolved) = ResolvingTo(address);
+
+            var failure = await Assert.ThrowsAsync<HttpRequestException>(() => downloader.DownloadAsync(new Uri("http://silo.example"),
+                Parsed(Grant("http://node.example:8096/stream/theme/abc")), origins, _token));
+
+            Assert.Equal(["node.example"], resolved);
+            Assert.True(RefusedAtConnect(failure));
+        }
+    }
+
+    [Theory]
+    [InlineData("192.168.1.20")]
+    [InlineData("10.1.2.3")]
+    [InlineData("fd00::20")]
+    [InlineData("::ffff:192.168.1.20")]
+    public async Task ANodeNameThatResolvesToAPrivateAddress_IsRefusedAtConnect_ForAServerOnTheInternet(string address)
+    {
+        var (downloader, resolved) = ResolvingTo(address);
+
+        var failure = await Assert.ThrowsAsync<HttpRequestException>(() => downloader.DownloadAsync(new Uri("http://silo.example"),
+            Parsed(Grant("http://node.example:8096/stream/theme/abc")), ThemeOrigins.Routed, _token));
+
+        Assert.Single(resolved);
+        Assert.True(RefusedAtConnect(failure));
+    }
+
+    // Refused by the node's rule, not by an attempt to connect that failed.
+    private static bool RefusedAtConnect(Exception failure)
+    {
+        for (Exception? at = failure; at is not null; at = at.InnerException)
+        {
+            if (at.Message.Contains("address Granary does not fetch", StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    [Theory]
+    [InlineData("http://192.168.1.10:8095", ThemeOrigins.Routed, "192.168.1.20", true)]
+    [InlineData("http://nas.local:8095", ThemeOrigins.Routed, "192.168.1.20", true)]
+    [InlineData("http://silo.example", ThemeOrigins.Routed, "192.168.1.20", false)]
+    [InlineData("http://silo.example", ThemeOrigins.Authorized, "192.168.1.20", true)]
+    [InlineData("http://silo.example", ThemeOrigins.Routed, "203.0.113.7", true)]
+    [InlineData("http://192.168.1.10:8095", ThemeOrigins.Authorized, "127.0.0.1", false)]
+    public void ANodesConnection_TakesWhatItsServerVouchesFor(string server, ThemeOrigins origins, string address, bool taken)
+    {
+        var resolved = PlaybackUrl.ResolveTheme(new Uri(server), "http://node.example:8096/stream/theme/abc", origins);
+
+        var node = Assert.IsType<ThemeNode>(resolved?.Node);
+        Assert.Equal(taken, node.Takes(IPAddress.Parse(address)));
+    }
+
+    [Fact]
+    public async Task AServerOnThisPC_StillFetchesItsOwnTheme_AsItResolves()
+    {
+        await using var silo = new TinyHttpServer(200, "OK", [7, 8, 9], "audio/mpeg");
+        var server = new Uri($"http://localhost:{silo.Url("").Port}/");
+        var (downloader, resolved) = ResolvingTo("203.0.113.7");
+
+        var audio = await downloader.DownloadAsync(server, Parsed(Grant()), ThemeOrigins.Authorized, _token);
+
+        Assert.Equal(new byte[] { 7, 8, 9 }, audio.Audio.ToArray());
+        Assert.Empty(resolved);
+        var own = PlaybackUrl.ResolveTheme(server, "/api/v2/catalog/items/movie-1/themes/11/audio?token=t", ThemeOrigins.Authorized);
+        Assert.NotNull(own);
+        Assert.Null(own.Node);
     }
 
     [Fact]
