@@ -218,7 +218,6 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     {
         EndWatchParty();
         _request = request;
-        HasLeft = false;
         // A seek on its way belongs to the title before.
         _seekTarget = null;
         ErrorMessage = "";
@@ -227,6 +226,9 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         // Nothing to seek in until the new stream plays, also before the engine first reports the new load.
         CanSeek = false;
         MediaInfo = PlaybackMediaInfo.None;
+        // Back only now that the title before is cleared, so what follows the player (the taskbar, Windows' media
+        // controls, the Discord status) does not show that one again for a moment.
+        HasLeft = false;
         LeavePlayback();
         ResetFill();
         ResetLook();
