@@ -72,7 +72,9 @@ Settings → Playback → This PC opens `mpv.conf` in the data directory's `mpv`
 syntax holds: profiles, `profile-cond` (mpv's built-in `auto_profiles.lua`), `include`, and `~~/` for the folder
 (`glsl-shaders=~~/shaders/…`). The file is the viewer's own and trusted as mpv trusts it, within the limits below.
 Without it, mpv starts exactly as before: the same options in the same order (`MpvOwnOptions.Core`), `config=no`
-(libmpv's default), and its log asked for after the start.
+(libmpv's default), and its log asked for after the start. An `audio-delay` in the file stays as long as the audio sync
+offset is 0 and nothing in this run gave the engine another (`MpvPlaybackEngine.SetAudioDelay`); after that Granary's
+value holds, 0 included.
 
 **Start order** (`MpvPlaybackEngine.Start.cs`). Found with libmpv v0.41.0-dev (`player/main.c`, `mp_initialize`;
 `player/loadfile.c`, `play_current_file`) and checked in a spike and in `MpvUserConfigTests`:

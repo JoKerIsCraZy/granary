@@ -834,7 +834,8 @@ says why above the sections.
   in the Android app's 50 ms steps with the value and its unit beside it, "-250 milliseconds" in 12 px muted, as the
   web's slider reads it out; off until this device's value was read; a title that plays, in the mini player too, follows
   a change at once, and it is saved as this device's `player.audio_sync_ms` once it settles for a second, or as the app
-  closes), Connection (the latest speed reading and what Auto plays without converting), Skipping (skip
+  closes; an `audio-delay` of your own mpv.conf stays while the offset is 0 and nothing changed it in this run),
+  Connection (the latest speed reading and what Auto plays without converting), Skipping (skip
   intros, auto-skip recaps and credits), Next episode (start next at preview, auto-play), Seek controls (rewind and
   fast-forward intervals).
 - **This PC → mpv configuration**: "Use your own mpv options from mpv.conf, such as shaders, scaling or debanding.

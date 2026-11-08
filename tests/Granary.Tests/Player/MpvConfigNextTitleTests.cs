@@ -91,6 +91,21 @@ public sealed class MpvConfigNextTitleTests : IDisposable
     }
 
     [Fact]
+    public async Task AnAudioDelayInTheFile_StaysWhileGranaryHasNone_AndGivesWayOnceGranarySetsOne()
+    {
+        using var engine = CreateEngine("audio-delay=0.3\n");
+
+        await PlaysAWav(engine, 0.5);
+        engine.SetAudioDelay(0);
+        Assert.Equal("0.300000", engine.Option("audio-delay"));
+
+        engine.SetAudioDelay(-0.1);
+        Assert.Equal("-0.100000", engine.Option("audio-delay"));
+        engine.SetAudioDelay(0);
+        Assert.Equal("0.000000", engine.Option("audio-delay"));
+    }
+
+    [Fact]
     public async Task AnUnchangedFile_StartsNoNewMpv_EvenWhenItWasWrittenAgain()
     {
         using var engine = CreateEngine("deband=yes\n");

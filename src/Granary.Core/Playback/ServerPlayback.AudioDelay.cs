@@ -38,5 +38,6 @@ public sealed partial class ServerPlayback
         }
     }
 
+    // The engine leaves mpv.conf's own audio-delay alone until it is given another value than 0.
     private void ApplyAudioDelay(AudioDelay delay) => _engine.SetAudioDelay(delay.Milliseconds / 1000.0);
 }
