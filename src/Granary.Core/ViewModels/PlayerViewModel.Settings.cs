@@ -6,6 +6,7 @@ namespace Granary.Core.ViewModels;
 
 // The settings menu of Silo's web player (QualityMenu): SPEED, VERSION when the title has several files, QUALITY when
 // the plan offers rungs; the gear names the quality ("…" while the plan changes), and a speed other than 1× shows beside it.
+// Granary's own: a dot in the gear says how the stream plays.
 public sealed partial class PlayerViewModel
 {
     [ObservableProperty]
@@ -34,6 +35,13 @@ public sealed partial class PlayerViewModel
     /// <summary>The quality on the gear ("Auto", "1080p High"), "…" while the plan changes; empty without a quality menu.</summary>
     [ObservableProperty]
     public partial string SettingsLabel { get; private set; } = "";
+
+    /// <summary>
+    /// How the server's stream plays, as the dot in the gear shows it (Granary's own): that of the plan taken last, so a
+    /// switch shows its own once the server has answered. None without a server stream, and once playback failed or ended.
+    /// </summary>
+    [ObservableProperty]
+    public partial StreamMethod StreamMethod { get; private set; }
 
     /// <summary>The viewer's pick in QUALITY: a new plan from where the viewer is; not saved, as on the web.</summary>
     public void SelectQuality(string preference)
@@ -85,11 +93,15 @@ public sealed partial class PlayerViewModel
             {
                 AudioDelayMs = 0;
             }
+            StreamMethod = playback.Status.Phase is ServerPlaybackPhase.Failed or ServerPlaybackPhase.Ended
+                ? StreamMethod.None
+                : StreamMethods.Of(playback.StreamInfo?.Plan);
         }
         else
         {
             QualityOptions = [];
             VersionOptions = [];
+            StreamMethod = StreamMethod.None;
         }
         HasQualityOptions = QualityOptions.Count > 0;
         HasVersionOptions = VersionOptions.Count > 0;

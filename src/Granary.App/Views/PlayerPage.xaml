@@ -528,12 +528,24 @@
                         <!--
                             The web player's settings (QualityMenu): the gear names the quality, and a speed other than 1x shows
                             beside it. SPEED always; VERSION with more than one file; QUALITY when the plan offers rungs.
+                            Granary's own, as the web shows none: a dot fills the gear's hole, green while the server sends the
+                            original streams and amber while it re-encodes any of them; the name and tooltip say which.
                         -->
                         <Button x:Name="SettingsButton" Style="{StaticResource SiloPlayerIconButtonStyle}" Width="Auto" Padding="10,0,12,0"
-                                Background="#14FFFFFF" AutomationProperties.Name="{x:Bind SettingsName(ViewModel.SpeedBadge), Mode=OneWay}"
-                                ToolTipService.ToolTip="Playback settings">
+                                Background="#14FFFFFF" AutomationProperties.Name="{x:Bind SettingsName(ViewModel.SpeedBadge, ViewModel.StreamMethod), Mode=OneWay}"
+                                ToolTipService.ToolTip="{x:Bind SettingsTip(ViewModel.StreamMethod), Mode=OneWay}">
                             <StackPanel Orientation="Horizontal" Spacing="6">
-                                <FontIcon Glyph="&#xE713;" FontSize="16" />
+                                <!--
+                                    The dot covers the glyph's inner circle, 6.5 px across at 16 px and centred on its em box, and
+                                    leaves the teeth clear. Not rounded to whole pixels, so it stays on the glyph's centre.
+                                -->
+                                <Grid VerticalAlignment="Center">
+                                    <FontIcon Glyph="&#xE713;" FontSize="16" />
+                                    <Ellipse Width="6.5" Height="6.5" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                             UseLayoutRounding="False" IsHitTestVisible="False"
+                                             Fill="{x:Bind StreamMethodBrush(ViewModel.StreamMethod), Mode=OneWay}"
+                                             Visibility="{x:Bind ShowsStreamMethod(ViewModel.StreamMethod), Mode=OneWay}" />
+                                </Grid>
                                 <TextBlock Text="{x:Bind ViewModel.SettingsLabel, Mode=OneWay}" VerticalAlignment="Center" FontFamily="{StaticResource SiloFontMedium}"
                                            FontWeight="Medium" FontSize="11" CharacterSpacing="25"
                                            Visibility="{x:Bind ShowsSettingsLabel(ViewModel.SettingsLabel, IsNarrow), Mode=OneWay}" />

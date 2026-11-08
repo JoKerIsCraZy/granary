@@ -141,6 +141,13 @@ internal sealed class FakeServerPlayback : IServerPlayback
 
     public PlaybackStreamInfo? StreamInfo { get; set; }
 
+    /// <summary>Takes a new plan whose stream is <paramref name="stream"/>, as TracksChanged reports it.</summary>
+    public void RaiseStream(PlaybackStreamInfo? stream)
+    {
+        StreamInfo = stream;
+        TracksChanged?.Invoke(this, EventArgs.Empty);
+    }
+
     public PlayerTrickplay? Trickplay { get; set; }
 
     public event EventHandler? TrickplayChanged;

@@ -1277,7 +1277,14 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   Esc closes the panel first; another title closes it.
 - **Settings menu** (the web's QualityMenu): a gear pill (white 8 %) that names the quality ("Auto", "720p Medium"),
   "…" while the plan changes, and, at a speed other than 1×, a white badge with it ("1.5×"). Below 640 px (the web's
-  `sm`) the pill leaves the quality out. SPEED: the value at the right, the speeds 0.5× to 3×
+  `sm`) the pill leaves the quality out. Granary's own, as the web shows none: a dot 6.5 px across fills the gear's hole
+  (its inner circle, clear of the teeth) and says how the server's stream plays: green (`SiloStreamDirectBrush`,
+  Tailwind green-400) for the original video and audio, as direct play or direct stream (a new container, both
+  copied), amber (`SiloStreamTranscodeBrush`, amber-400) while the server re-encodes either, also with the video copied.
+  It follows each plan the player takes (a quality, version or audio switch, a restart); a file played directly, a
+  title still loading, failed or ended show the plain gear. The button's name and tooltip add the method in the playback
+  info's words: "Playback settings, Direct Play", "…, Direct Streaming", "…, Transcode"; the name has the speed after
+  it ("Playback settings, Transcode, 1.5×"). SPEED: the value at the right, the speeds 0.5× to 3×
   (0.25 apart up to 2×, then 2.5× and 3×) as stops on a track drawn like the seek bar, the fill from 1× to the
   chosen speed, 0.5×, 1×, 2× and 3× named under it (`SpeedTrack`); it applies at once and is saved as this device's
   `player.playback_speed`. AUDIO DELAY under a line (Silo's Android player has it on its Sync page), drawn as the

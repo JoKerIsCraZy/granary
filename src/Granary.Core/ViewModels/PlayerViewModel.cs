@@ -443,6 +443,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         playback.PlanChangeChanged -= OnPlaybackPlanChanged;
         ForgetSubtitleSync(playback);
         PlanChange = PlanChange.None;
+        StreamMethod = StreamMethod.None;
         ResetNotice();
         AudioTracks = [];
         HasSubtitleMenu = false;
