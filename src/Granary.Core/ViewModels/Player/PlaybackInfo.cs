@@ -42,7 +42,7 @@ public static class PlaybackInfo
         List<PlaybackInfoRow> player = [new("Player", "mpv")];
         if (stream is not null)
         {
-            player.Add(new("Play method", Delivery(stream.Plan.Delivery)));
+            player.Add(new("Play method", PlayMethod(stream.Plan)));
             player.Add(new("Protocol", stream.Url.Scheme));
             player.Add(new("Stream type", stream.Plan.Stream.Protocol == StreamProtocols.Hls ? "HLS" : "Progressive"));
             if (stream.Requested is { } requested && stream.Playing is { } playing && requested.FileId != playing.FileId)
@@ -68,21 +68,18 @@ public static class PlaybackInfo
         }
         sections.Add(new("Playback Stream Info",
         [
-            new("Video codec", Delivered(stream.Plan, stream.Plan.EffectiveRecipe.VideoCodec, StreamMethods.VideoEncode)),
-            new("Audio codec", Delivered(stream.Plan, stream.Plan.EffectiveRecipe.AudioCodec, StreamMethods.AudioEncode)),
+            new("Video codec", Delivered(stream.Plan, stream.Plan.EffectiveRecipe.VideoCodec, StreamMethods.EncodesVideo(stream.Plan))),
+            new("Audio codec", Delivered(stream.Plan, stream.Plan.EffectiveRecipe.AudioCodec, StreamMethods.EncodesAudio(stream.Plan))),
         ]));
         sections.Add(SourceFile(stream.Playing, stream.AudioOrdinal));
         return sections;
     }
 
-    /// <summary>The route the server chose, from the plan's delivery alone (web: formatDelivery).</summary>
-    public static string Delivery(string delivery) => delivery switch
-    {
-        PlaybackDeliveries.OriginalHttp => StreamMethods.Label(StreamMethod.DirectPlay),
-        PlaybackDeliveries.ServerRemuxProgressive or PlaybackDeliveries.ServerRemuxHls => StreamMethods.Label(StreamMethod.DirectStream),
-        PlaybackDeliveries.ServerTranscodeHls => StreamMethods.Label(StreamMethod.Transcode),
-        _ => None,
-    };
+    /// <summary>
+    /// How the plan plays, in the web's words (formatDelivery): as the settings gear's dot says it, so a remux that converts
+    /// the audio is a transcode here too.
+    /// </summary>
+    public static string PlayMethod(PlaybackPlan plan) => StreamMethods.Of(plan) is var method and not StreamMethod.None ? StreamMethods.Label(method) : None;
 
     public static string CodecLabel(string? codec, string fallback = None) =>
         codec?.Trim() is { Length: > 0 } trimmed ? CodecLabels.GetValueOrDefault(trimmed) ?? trimmed.ToUpperInvariant() : fallback;
@@ -154,7 +151,7 @@ public static class PlaybackInfo
     }
 
     // What is on the wire and how it got there: the plan says whether the server re-encoded, nothing is guessed.
-    private static string Delivered(PlaybackPlan plan, string? codec, string encodePrefix)
+    private static string Delivered(PlaybackPlan plan, string? codec, bool encoded)
     {
         string label = CodecLabel(codec);
         if (label == None)
@@ -165,7 +162,7 @@ public static class PlaybackInfo
         {
             return $"{label} (direct)";
         }
-        return $"{label} ({(StreamMethods.EncodesOnServer(plan, encodePrefix) ? "transcoded" : "copy")})";
+        return $"{label} ({(encoded ? "transcoded" : "copy")})";
     }
 
     private static string VideoRangeType(WatchFileVersion? version, WatchVideoTrack? track)

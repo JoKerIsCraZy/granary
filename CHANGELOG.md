@@ -11,7 +11,8 @@ release's section is what its update says it changes (docs/release.md).
 - **How the stream plays, on the gear:** the player's settings button now has a dot in its gear. Green means your Silo
   server sends the original video and audio, as Direct Play or Direct Streaming; amber means it transcodes the video,
   the audio or both. It changes with the quality, version or audio track you pick, and a file you play directly shows
-  no dot. Screen readers and the button's tooltip say it too, for example "Playback settings, Direct Play".
+  no dot. Screen readers and the button's tooltip say it too, for example "Playback settings, Direct Play". Playback
+  info's play method now says the same, so a stream whose audio alone is converted shows as Transcode there too.
 - **Start a Watch Party from a title's page:** the ⋮ menu of a movie, series, season or episode now has Start a Watch
   Party. Pick whether the host picks or everyone votes, whether guests may pause, and for a series which episode, then
   Create party & copy invite: the room opens with the title up next (or as the first suggestion of a vote), and the

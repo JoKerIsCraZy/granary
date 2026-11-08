@@ -40,7 +40,7 @@ public sealed class PlaybackInfoTests
     [Theory]
     [InlineData("video_to_hevc", "hevc", "HEVC (transcoded)")]
     [InlineData("video_to_h264", "h264", "H.264 (transcoded)")]
-    [InlineData("hdr_to_sdr_tonemap", "hevc", "HEVC (copy)")]
+    [InlineData("hdr_to_sdr_tonemap", "hevc", "HEVC (transcoded)")]
     public void TheVideoCodec_SaysTranscoded_WhenTheServerEncodesTheVideo_WhicheverCodecItEncodesTo(string transformation, string codec, string shown)
     {
         var plan = new PlaybackPlan
@@ -102,6 +102,34 @@ public sealed class PlaybackInfoTests
             ["Audio channels"] = "2",
             ["Audio sample rate"] = "48,000 Hz",
         }, Rows(sections, "Current Source File"));
+    }
+
+    [Fact]
+    public void ARemuxThatConvertsTheAudio_IsATranscode_AsTheSettingsGearSays()
+    {
+        var stream = new PlaybackStreamInfo(
+            Plan(PlaybackDeliveries.ServerRemuxHls, StreamProtocols.Hls, new PlaybackTransformation { Name = "audio_to_aac", Executor = "server" }),
+            new Uri("https://silo.example/api/v2/stream/s/master.m3u8"), Uhd, Uhd, AudioOrdinal: 0);
+
+        var sections = PlaybackInfo.Sections(stream, PlaybackStats.None, 0, 0);
+
+        Assert.Equal("Transcode", Rows(sections, "Player")["Play method"]);
+        Assert.Equal(new Dictionary<string, string>
+        {
+            ["Video codec"] = "H.264 (copy)",
+            ["Audio codec"] = "AAC (transcoded)",
+        }, Rows(sections, "Playback Stream Info"));
+    }
+
+    [Theory]
+    [InlineData(PlaybackDeliveries.ServerRemuxProgressive, "Direct Streaming")]
+    [InlineData(PlaybackDeliveries.ServerRemuxHls, "Direct Streaming")]
+    [InlineData("server_future_delivery", "—")]
+    public void ThePlayMethod_OfAPlanThatEncodesNothing(string delivery, string method)
+    {
+        var stream = new PlaybackStreamInfo(Plan(delivery, StreamProtocols.Hls), new Uri("https://silo.example/api/v2/stream/s"), Uhd, Uhd, AudioOrdinal: 0);
+
+        Assert.Equal(method, Rows(PlaybackInfo.Sections(stream, PlaybackStats.None, 0, 0), "Player")["Play method"]);
     }
 
     [Fact]

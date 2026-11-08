@@ -1280,7 +1280,8 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   `sm`) the pill leaves the quality out. Granary's own, as the web shows none: a dot 6.5 px across fills the gear's hole
   (its inner circle, clear of the teeth) and says how the server's stream plays: green (`SiloStreamDirectBrush`,
   Tailwind green-400) for the original video and audio, as direct play or direct stream (a new container, both
-  copied), amber (`SiloStreamTranscodeBrush`, amber-400) while the server re-encodes either, also with the video copied.
+  copied), amber (`SiloStreamTranscodeBrush`, amber-400) while the server re-encodes either, also with the video copied:
+  any transformation of the server's own but a Dolby Vision strip, tone mapping and ones Granary does not know included.
   It follows each plan the player takes (a quality, version or audio switch, a restart); a file played directly, a
   title still loading, failed or ended show the plain gear. The button's name and tooltip add the method in the playback
   info's words: "Playback settings, Direct Play", "…, Direct Streaming", "…, Transcode"; the name has the speed after
@@ -1299,13 +1300,14 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   ("12 Mbps") and a white check on the one the plan delivers; a pick asks for a new plan. A pick of a file or quality
   closes the menu.
 - **Playback info** (the web's PlaybackInfoOverlay): 320 px, black at 85 %, radius 8, under Exit; "Playback Info" with a
-  close button, then PLAYER (mpv, the play method: Direct Play, Direct Streaming or Transcode, the stream's protocol and
-  type, and the file asked for when the server fell back to another), VIDEO INFO (the picture's area and the video in
-  pixels, hardware or software decoding, frames dropped by the output and by the decoder), PLAYBACK STREAM INFO (the
-  codecs the plan delivers: direct, copy or transcoded, as its transformations say) and CURRENT SOURCE FILE (container,
-  size in GiB, bitrates, codec and profile, range type, colour range, the playing audio track's codec, channels and
-  sample rate). Labels white 60 %, values white 90 % on the right; read again every second while it shows; it stays
-  while the controls fade, until closed.
+  close button, then PLAYER (mpv, the play method: Direct Play, Direct Streaming or Transcode, as the settings gear's dot
+  has it, so a remux that converts the audio is a Transcode; the stream's protocol and type, and the file asked for when
+  the server fell back to another), VIDEO INFO (the picture's area and the video in pixels, hardware or software
+  decoding, frames dropped by the output and by the decoder), PLAYBACK STREAM INFO (the codecs the plan delivers: direct,
+  copy or transcoded, as its transformations say; tone mapping to SDR encodes the video) and CURRENT SOURCE FILE
+  (container, size in GiB, bitrates, codec and profile, range type, colour range, the playing audio track's codec,
+  channels and sample rate). Labels white 60 %, values white 90 % on the right; read again every second while it shows;
+  it stays while the controls fade, until closed.
 - **Watch Party panel** (the web's WatchTogetherPanel), while the room plays its title and has not ended or gone to
   another device: 224 px, black at 80 %, a white 10 % border, radius 12, under Exit on the right, fading with the
   controls (faded, it takes no clicks and no keyboard focus). "WATCH PARTY", the connection's dot (emerald connected,

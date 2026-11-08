@@ -23,13 +23,21 @@ public enum StreamMethod
 
 public static class StreamMethods
 {
-    // The server names an encode after its target (video_to_h264, video_to_hevc, audio_to_aac).
-    internal const string VideoEncode = "video_to_";
-    internal const string AudioEncode = "audio_to_";
+    private const string ServerExecutor = "server";
+
+    // The server names an encode after its target (video_to_h264, video_to_hevc, audio_to_aac); its tone mapping encodes
+    // the video too.
+    private const string VideoEncode = "video_to_";
+    private const string AudioEncode = "audio_to_";
+    private const string ToneMap = "hdr_to_sdr_tonemap";
+
+    // The server's transformations that only rewrite Dolby Vision metadata and copy the picture (the API's section 11).
+    // Any other one, also one this app does not know yet, may encode, so it counts as a transcode.
+    private static readonly HashSet<string> MetadataOnly = new(StringComparer.Ordinal) { "server_dv7_to_hdr10", "server_dv7_to_dv81" };
 
     /// <summary>
-    /// The method of <paramref name="plan"/>, from what the server does to it: an encode of either stream makes a transcode,
-    /// also on a route that copies the video. A Dolby Vision strip only rewrites metadata and stays a direct stream.
+    /// The method of <paramref name="plan"/>, from what the server does to it: any transformation of its own but a Dolby
+    /// Vision strip makes a transcode, also on a route that copies the video and converts only the audio.
     /// </summary>
     public static StreamMethod Of(PlaybackPlan? plan)
     {
@@ -41,7 +49,8 @@ public static class StreamMethods
         {
             return StreamMethod.DirectPlay;
         }
-        if (plan.Delivery == PlaybackDeliveries.ServerTranscodeHls || EncodesOnServer(plan, VideoEncode) || EncodesOnServer(plan, AudioEncode))
+        if (plan.Delivery == PlaybackDeliveries.ServerTranscodeHls
+            || plan.Transformations.Any(t => t.Executor == ServerExecutor && !MetadataOnly.Contains(t.Name)))
         {
             return StreamMethod.Transcode;
         }
@@ -57,7 +66,13 @@ public static class StreamMethods
         _ => "",
     };
 
-    /// <summary>The server encodes a stream for <paramref name="plan"/>: one of its transformations starts with <paramref name="prefix"/>.</summary>
-    internal static bool EncodesOnServer(PlaybackPlan plan, string prefix) =>
-        plan.Transformations.Any(t => t.Executor == "server" && t.Name.StartsWith(prefix, StringComparison.Ordinal));
+    /// <summary>The server encodes the video of <paramref name="plan"/>: to another codec, or tone mapped to SDR.</summary>
+    internal static bool EncodesVideo(PlaybackPlan plan) =>
+        ServerDoes(plan, name => name.StartsWith(VideoEncode, StringComparison.Ordinal) || name == ToneMap);
+
+    /// <summary>The server encodes the audio of <paramref name="plan"/>.</summary>
+    internal static bool EncodesAudio(PlaybackPlan plan) => ServerDoes(plan, name => name.StartsWith(AudioEncode, StringComparison.Ordinal));
+
+    private static bool ServerDoes(PlaybackPlan plan, Func<string, bool> transformation) =>
+        plan.Transformations.Any(t => t.Executor == ServerExecutor && transformation(t.Name));
 }

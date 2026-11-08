@@ -44,6 +44,14 @@ public sealed class StreamMethodsTests
         Assert.Equal(StreamMethod.Transcode, StreamMethods.Of(Plan(PlaybackDeliveries.ServerTranscodeHls, transformation)));
 
     [Fact]
+    public void ToneMapping_EncodesTheVideo_AndIsATranscode() =>
+        Assert.Equal(StreamMethod.Transcode, StreamMethods.Of(Plan(PlaybackDeliveries.ServerRemuxHls, "hdr_to_sdr_tonemap")));
+
+    [Fact]
+    public void AServerTransformationThisAppDoesNotKnow_CountsAsATranscode() =>
+        Assert.Equal(StreamMethod.Transcode, StreamMethods.Of(Plan(PlaybackDeliveries.ServerRemuxProgressive, "server_future_filter")));
+
+    [Fact]
     public void ATranscodeDelivery_IsATranscode_EvenWhenItNamesNoEncode() =>
         Assert.Equal(StreamMethod.Transcode, StreamMethods.Of(Plan(PlaybackDeliveries.ServerTranscodeHls)));
 
