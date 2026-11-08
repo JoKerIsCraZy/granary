@@ -168,6 +168,9 @@ public sealed partial class DownloadQueue
             }
             _recheckRequested = false;
             _rechecking = Task.Run(RecheckFoldersAsync);
+            // The loop is woken once the recheck is over, not from inside it: a pass it wakes sees it done.
+            _ = _rechecking.ContinueWith(static (_, queue) => ((DownloadQueue)queue!).Wake(), this, CancellationToken.None,
+                TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
         }
     }
 
@@ -191,7 +194,6 @@ public sealed partial class DownloadQueue
             lock (_gate)
             {
                 _lastRecheck = _time.GetUtcNow();
-                WakeLocked();
             }
         }
     }
