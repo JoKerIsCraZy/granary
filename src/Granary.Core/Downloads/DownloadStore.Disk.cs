@@ -142,7 +142,8 @@ public sealed partial class DownloadStore
 
     // Removed downloads' folders go only once the index without them is on disk: a folder deleted while the index still names it
     // would come back as missing files, and one kept while the index no longer names it would be taken in again. So the pass
-    // deletes only the folders of the index it wrote, never one a remove since then added.
+    // deletes only the folders of the index it wrote, never one a remove since then added. Answers whether a folder's delete is
+    // done.
     private bool WriteIndexThenDeleteFolders()
     {
         var written = Current;
@@ -157,7 +158,7 @@ public sealed partial class DownloadStore
         {
             WriteIndex(Current);
         }
-        return false;
+        return done;
     }
 
     // Each of these folders, unless a row lives in that very folder again; answers whether any delete is done.

@@ -554,6 +554,29 @@ public sealed class DownloadQueueServerTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task ADeleteWhoseFolderGoesAfterTheQueueLooked_GoesAtOnce()
+    {
+        var stored = await _h.AddAsync("dl_1", DownloadState.Completed);
+        var queue = _h.StartQueue();
+        await IdleAsync(queue);
+        // The folder goes only once the queue has found it still there and waits: nothing else wakes it then.
+        int held = 0;
+        _h.Store.IndexWritten = () =>
+        {
+            if (Interlocked.Exchange(ref held, 1) == 0)
+            {
+                Assert.True(SpinWait.SpinUntil(() => queue.Idle.IsCompleted, TimeSpan.FromSeconds(5)));
+            }
+        };
+
+        await _h.Store.RemoveAsync(Scope7, "dl_1", queueServerDelete: true, Token);
+
+        Assert.False(Directory.Exists(stored.Folder));
+        await Until(() => _h.Store.PendingDeletes(Scope7).Count == 0, "the delete went");
+        Assert.Single(_h.Silo.SentTo(HttpMethod.Delete, EntryPath("dl_1")));
+    }
+
+    [Fact]
     public async Task ADeleteRefusedForTheSignIn_IsKeptAndSentLater()
     {
         await _h.AddAsync("dl_1", DownloadState.Completed);

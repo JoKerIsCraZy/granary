@@ -46,7 +46,10 @@ public sealed partial class DownloadStore
     /// <summary><c>downloads.json</c> in the data folder.</summary>
     public static string DefaultIndexPath => Path.Combine(AppPaths.DataDirectory, "downloads.json");
 
-    /// <summary>Raised after each change, on the thread that made it (a load's on the thread that asked for it first).</summary>
+    /// <summary>
+    /// Raised after each change, on the thread that made it (a load's on the thread that asked for it first), and once a removed
+    /// download's folder went.
+    /// </summary>
     public event EventHandler? Changed;
 
     /// <summary>Every download of every scope on this PC.</summary>
@@ -292,7 +295,7 @@ public sealed partial class DownloadStore
                 {
                     if (FolderWork.IsCompleted)
                     {
-                        FolderWork = PersistAsync(WriteIndexThenDeleteFolders);
+                        FolderWork = WriteIndexThenDeleteFoldersAsync();
                     }
                 }
             }
@@ -329,7 +332,7 @@ public sealed partial class DownloadStore
         {
             if (write || loaded.FolderDeletes.Count > 0)
             {
-                await PersistAsync(WriteIndexThenDeleteFolders);
+                await WriteIndexThenDeleteFoldersAsync();
             }
         }
     }
@@ -344,7 +347,16 @@ public sealed partial class DownloadStore
         }
         finally
         {
-            await PersistAsync(WriteIndexThenDeleteFolders);
+            await WriteIndexThenDeleteFoldersAsync();
+        }
+    }
+
+    // The index, then the removed downloads' folders. Changed follows when a folder went, so a server delete it held back goes.
+    private async Task WriteIndexThenDeleteFoldersAsync()
+    {
+        if (await PersistAsync(WriteIndexThenDeleteFolders))
+        {
+            Changed?.Invoke(this, EventArgs.Empty);
         }
     }
 
@@ -377,7 +389,7 @@ public sealed partial class DownloadStore
         }
     }
 
-    // Each write in turn, off the caller's thread; answers whether a folder turned out missing on the way.
+    // Each write in turn, off the caller's thread; answers what the write answers (a folder found missing, or a folder deleted).
     private async Task<bool> PersistAsync(Func<bool> write)
     {
         await _writes.WaitAsync(CancellationToken.None);

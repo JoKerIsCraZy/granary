@@ -969,7 +969,8 @@ client guide.
 - **Deletes.** The deletes still to send (`pending_deletes`) go out for the active scope, bound to its profile, each once
   its folder is gone (`DownloadStore.FolderBeingDeleted`; a folder on a drive that is not there does not hold it back): the
   files go first. The server work looks at the folder when it is about to send, and remembers one still there until the
-  next folder recheck, so the loop never reads the disk for a delete. While any removed download's folder is still there,
+  next folder recheck, so the loop never reads the disk for a delete. A removed download's folder that goes raises the
+  store's `Changed`, so the delete it held back goes at once. While any removed download's folder is still there,
   with a delete to send or without (a sign-out), the folders are looked at again every minute. One the server takes, or will
   never take (a client error), is forgotten; after one that cannot go now, they wait for the retry delays.
 
