@@ -2608,6 +2608,8 @@ branches on are `prepared_file_expired` and `capability_unsupported` (`ProblemCo
 - `DELETE /api/v2/downloads/{id}` → `204`; `404` when the entry is missing or not this profile's and PC's, which
   `DownloadsApi.DeleteAsync` takes as done. The server deletes nothing on the PC: the client removes its own files. A delete
   that cannot be sent is kept (`pending_deletes`) and sent while its profile is the active one; a client error drops it.
+  Signing out of a server or removing it sends the active profile's deletes there first, for at most 10 s, and keeps none
+  after: the files go all the same, and other profiles' entries stay on the server.
 
 ## Appendix: where docs and code disagree
 

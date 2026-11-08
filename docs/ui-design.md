@@ -750,7 +750,8 @@ says why above the sections.
   on the right Sign out (outline; "Sign out this device" on Granary's own) and Details with a chevron, which opens the
   last seen, signed in, IP address at sign-in, expiry and User-Agent below. Sign out asks first in the web's words
   ("Sign out Chrome on Windows?" … "This client will lose access on its next authenticated request."); on Granary's own
-  it signs Granary out of the server and back to sign-in. "No other signed-in sessions." when there are none, "Load more
+  it signs Granary out of the server and back to sign-in, and the question ends with the downloads that go along when the
+  account has some on this PC ("1 download (1.5 GB) on this PC is deleted with it."). "No other signed-in sessions." when there are none, "Load more
   sessions" while the server has more, and the web's line on what Last seen records. The server without session
   management says "Signed-in session management is unavailable on this server."; a failed read "Couldn't load sessions.
   Try again." with Retry. **Your Devices**: grouped as the web's list, USING NOW, THIS WEEK and EARLIER, a line per device:
@@ -766,7 +767,9 @@ says why above the sections.
 - **Servers** (`ServersSettingsView` on `ServersViewModel`; the apps keep the server under Settings too): the title and
   its line with Add server (outline) on the right; then a line per saved server between hairlines: a 40 px disc, the
   name (15 px semibold) and "https://silo.example · Signed in as alex" (13 px muted, trimmed), the red Active pill or
-  Switch, and More (…) with Sign out and Remove… (asks first). The sign-in screen's "Use another server" still opens the
+  Switch, and More (…) with Sign out and Remove… (asks first). Sign out, as the profile menu's and Change password's,
+  asks first only when the account has downloads on this PC, which go with it: "Sign out of NAS?", "2 downloads
+  (3.0 GB) on this PC are deleted with it.", Sign out and Cancel. The sign-in screen's "Use another server" still opens the
   standalone servers page, which shares the question before removing.
 - **About** (`AboutSettingsView` on `AboutViewModel`, as the apps' About with Version and Acknowledgements): Granary's
   mark (64 px), name and "Version 0.2.0", what it is and that it is not an official Silo app. Updates: the state in one

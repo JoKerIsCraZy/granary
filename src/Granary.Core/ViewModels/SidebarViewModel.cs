@@ -6,6 +6,7 @@ using Granary.Core.Api;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Profiles;
 using Granary.Core.Auth;
+using Granary.Core.Downloads;
 using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.ViewModels;
@@ -34,6 +35,7 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
     private readonly IUiDispatcher _dispatcher;
     private readonly TimeProvider _time;
     private readonly ILogger<SidebarViewModel> _logger;
+    private readonly DownloadSignOut? _downloads;
     private (string? ServerId, string? ProfileId)? _loaded;
     private (string? ServerId, string? ProfileId)? _shown;
     private int _generation;
@@ -46,7 +48,8 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
         INavigationService navigation,
         IUiDispatcher dispatcher,
         TimeProvider time,
-        ILogger<SidebarViewModel> logger)
+        ILogger<SidebarViewModel> logger,
+        DownloadSignOut? downloads = null)
     {
         _session = session;
         _profiles = profiles;
@@ -55,6 +58,7 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
         _dispatcher = dispatcher;
         _time = time;
         _logger = logger;
+        _downloads = downloads;
         _session.Changed += OnSessionChanged;
     }
 
@@ -194,8 +198,12 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private Task SwitchProfileAsync() => _session.ClearProfileAsync();
 
+    /// <summary>Signs out of the active server; when its account has downloads on this PC, after asking, and they go first.</summary>
     [RelayCommand]
-    private Task SignOutAsync() => _session.SignOutAsync();
+    private Task SignOutAsync() =>
+        _downloads is not null && _session.ActiveServer is { } server
+            ? _downloads.SignOutAsync(server, CancellationToken.None)
+            : _session.SignOutAsync();
 
     /// <summary>The servers live in Settings → Servers, as the apps keep them under their settings.</summary>
     [RelayCommand]

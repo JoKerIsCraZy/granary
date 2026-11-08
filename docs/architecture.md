@@ -1033,6 +1033,35 @@ client guide.
 - **Settings → Downloads.** `DownloadSettingsViewModel` takes a folder only below a drive's or a share's root and once it
   made the folder and wrote and deleted `.granary-write-check` there, on the thread pool; Open makes the folder first.
 
+### Signing out
+
+`DownloadSignOut` takes a server's downloads along when the viewer signs out of it or removes it, as Silo's Apple app does.
+The view models of the sign-out paths take it (optional, so they work without it).
+
+- **Asking.** The profile menu's Sign out, Settings → Servers' Sign out and Change password's Sign out
+  (`DownloadSignOut.SignOutAsync`) ask first when the account has downloads on this PC: "Sign out of NAS?" and "2
+  downloads (3.0 GB) on this PC are deleted with it." (`Note`). Without any they sign out at once. Settings → Devices'
+  Sign out this device asks already; its question adds the same line. The count covers every profile of the account on
+  that server, and the size is what their folders take on the disk (`Summarize` reads the disk, so the view models use
+  `SummarizeAsync`, which loads the store and reads on the thread pool). Removing a server takes every account's
+  downloads there (`ClearAsync(server, null)`); the app asks before it removes one.
+- **The account.** On the active server it is the session's; on another, the one its saved sign-in names
+  (`AccountOfAsync`). None known stands for every account there. A sign-out reads it once, so the downloads it asked
+  about are the ones that go.
+- **Order.** The server hears first, while the session can still send: `DELETE` for each of the active profile's
+  entries on that server and account (its downloads and the deletes still to send), bound to that profile, one at a time,
+  for at most `DeleteBudget` (10 s of the `TimeProvider`). An entry the server refuses does not stop the others; no
+  answer, a profile switch or the end of the budget stops them all. Then every matching download of every profile goes
+  from this PC, whether the server answered or not: rows, index entries, deletes still to send, and the folders once the
+  index without them is written (`RemoveWhereAsync`; the queue stops their transfers, and a folder something still holds is
+  tried again as any removed download's). Then the sign-out.
+- **Other profiles' entries stay on the server.** A delete goes only as the profile its entry belongs to, and only the
+  active profile can be sent as. So the entries of the account's other profiles, and all of a server that is not the
+  active one, stay in the server's registry; only their files go.
+- **An expired sign-in.** When the server no longer takes the session, the authentication handler signs out by itself,
+  without the viewer's command. Nothing comes here and the downloads stay, as the Android app keeps them: they show again
+  when that account signs in there, and its next sign-out or the server's removal takes them along.
+
 ## Windows App SDK
 
 The App is unpackaged and self-contained (`WindowsPackageType=None`, `WindowsAppSDKSelfContained=true`): the Windows

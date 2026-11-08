@@ -75,6 +75,8 @@ public sealed class CompositionRootTests
 
         Assert.NotNull(provider.GetRequiredService<Granary.Core.Downloads.DownloadActions>());
         Assert.IsType<Granary.Core.Downloads.NoDownloadOptionsDialog>(provider.GetRequiredService<IDownloadOptionsDialog>());
+        // The sign-out paths' view models take it, so a sign-out asks about the downloads and takes them along.
+        Assert.Same(provider.GetRequiredService<Granary.Core.Downloads.DownloadSignOut>(), provider.GetRequiredService<Granary.Core.Downloads.DownloadSignOut>());
     }
 
     [Fact]

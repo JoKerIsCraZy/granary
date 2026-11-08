@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Api;
+using Granary.Core.Downloads;
 using Granary.Core.Servers;
 using Microsoft.Extensions.Logging;
 
@@ -40,18 +41,21 @@ public sealed partial class DevicesViewModel
 
     /// <summary>
     /// Signs a sign-in out after asking. Another one loses access on its next request; Granary's own signs Granary out
-    /// of the server, back to the sign-in screen, as the web's own does for its browser.
+    /// of the server, back to the sign-in screen, as the web's own does for its browser, and takes the account's downloads
+    /// on this PC along, which the question names.
     /// </summary>
     [RelayCommand(AllowConcurrentExecutions = true)]
     private async Task SignOutSessionAsync(SignedInSessionRow? row)
     {
-        if (row is null || row.IsBusy || await TargetAsync() is null || !Listed(row))
+        if (row is null || row.IsBusy || await TargetAsync() is not { } target || !Listed(row))
         {
             return;
         }
+        var (accountId, downloads) = row.IsCurrent ? await DownloadsOfAsync(target) : (null, "");
         bool asked = row.IsCurrent
             ? await _confirmation.AskAsync("Sign out this device?",
-                "You'll return to the sign-in screen. You can sign in again with the same password or sign-in provider.\n\n" + SignOutNote, "Sign out")
+                "You'll return to the sign-in screen. You can sign in again with the same password or sign-in provider.\n\n" + SignOutNote + downloads,
+                "Sign out")
             : await _confirmation.AskAsync($"Sign out {row.Name}?",
                 "This client will lose access on its next authenticated request. Its other sessions and password stay unchanged.\n\n" + SignOutNote,
                 "Sign out");
@@ -66,6 +70,10 @@ public sealed partial class DevicesViewModel
         {
             if (row.IsCurrent)
             {
+                if (_downloads is not null)
+                {
+                    await _downloads.ClearAsync(server.Id, accountId, CancellationToken.None);
+                }
                 await _session.SignOutAsync(server.Id);
                 return;
             }
@@ -221,6 +229,19 @@ public sealed partial class DevicesViewModel
         await ReloadForNowAsync();
         Status = "The server or profile changed. The lists were read again.";
         return null;
+    }
+
+    // The account signed in on this PC and what the question adds of its downloads here ("\n\n1 download (1.5 GB) on this PC
+    // is deleted with it."); nothing without any.
+    private async Task<(string? AccountId, string Note)> DownloadsOfAsync(ServerEntry server)
+    {
+        if (_downloads is null)
+        {
+            return (null, "");
+        }
+        string? accountId = await _downloads.AccountOfAsync(server.Id, CancellationToken.None);
+        string? note = DownloadSignOut.Note(await _downloads.SummarizeAsync(server.Id, accountId, CancellationToken.None));
+        return (accountId, note is null ? "" : "\n\n" + note);
     }
 
     // A row from the lists as they are now, not one an earlier read left behind.

@@ -313,6 +313,8 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<DownloadActions>();
         // The Downloads page's view model, one per page. Settings → Downloads makes its own with the app's folder picker.
         services.AddTransient<ViewModels.Downloads.DownloadsViewModel>();
+        // What a sign-out or a server's removal does with the downloads; the sign-out paths' view models take it.
+        services.AddSingleton<DownloadSignOut>();
     }
 
     // Artwork URLs are presigned and public: no credentials, no identity headers. HTTP/2 lets a page's images
