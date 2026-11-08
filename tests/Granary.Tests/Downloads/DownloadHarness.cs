@@ -76,19 +76,19 @@ internal sealed class DownloadHarness : IAsyncDisposable
     public static CancellationToken Token => TestContext.Current.CancellationToken;
 
     /// <summary>A queue over this harness, not started yet; it is stopped when the harness goes.</summary>
-    public DownloadQueue NewQueue()
+    public DownloadQueue NewQueue(Action<long>? flushed = null)
     {
-        var transfer = new DownloadTransfer(Api, Disk, Time, Logs.For<DownloadTransfer>());
+        var transfer = new DownloadTransfer(Api, Disk, Time, Logs.For<DownloadTransfer>()) { Flushed = flushed };
         var assets = new DownloadAssets(Api, Time, Logs.For<DownloadAssets>());
         var queue = new DownloadQueue(Store, transfer, assets, Api, Session, Network, Preferences, Time, Logs.For<DownloadQueue>());
         _queues.Add(queue);
         return queue;
     }
 
-    /// <summary>A started queue.</summary>
-    public DownloadQueue StartQueue()
+    /// <summary>A started queue; <paramref name="flushed"/> runs each time a transfer put its part on the disk.</summary>
+    public DownloadQueue StartQueue(Action<long>? flushed = null)
     {
-        var queue = NewQueue();
+        var queue = NewQueue(flushed);
         queue.Start();
         return queue;
     }

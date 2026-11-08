@@ -319,6 +319,36 @@ public sealed class DownloadQueueServerTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task ANewRevisionAsTheOldTransferFinishes_DeletesTheFileThatTransferNamed()
+    {
+        var stored = await _h.AddAsync("dl_1");
+        _h.ServeFile("dl_1", Source);
+        DownloadQueue? queue = null;
+        Task? reconcile = null;
+        int replaced = 0;
+        // As the old transfer puts its last bytes on the disk, the server has new ones (in an MP4 now): a reconcile replaces the
+        // download while that transfer finishes, names its file media.mkv and says so.
+        queue = _h.StartQueue(flushed: _ =>
+        {
+            if (Interlocked.Exchange(ref replaced, 1) == 0)
+            {
+                _h.List(DownloadPayloads.Entry("dl_1", "ready", revision: 2));
+                _h.Silo.On(HttpMethod.Get, ManifestPath("dl_1"), ScriptedSilo.Json(HttpStatusCode.OK, DownloadPayloads.Manifest("dl_1", "mp4")));
+                reconcile = Task.Run(() => queue!.ReconcileAsync(Token));
+                SpinWait.SpinUntil(() => _h.Silo.SentTo(HttpMethod.Get, ListPath).Count >= 2, TimeSpan.FromSeconds(2));
+                Thread.Sleep(200);
+            }
+        });
+
+        await Until(() => _h.Find("dl_1")?.Record is { Revision: 2, State: DownloadState.Completed }, "the new revision completed");
+        await reconcile!;
+
+        Assert.Equal("media.mp4", _h.Find("dl_1")!.Record.MediaFile);
+        Assert.False(System.IO.File.Exists(File(stored, "media.mkv")));
+        Assert.Equal(Source, await System.IO.File.ReadAllBytesAsync(File(stored, "media.mp4"), Token));
+    }
+
+    [Fact]
     public async Task AnActivationThatFails_IsDoneAgain_CapabilityAndRegistry()
     {
         await _h.AddAsync("dl_1");

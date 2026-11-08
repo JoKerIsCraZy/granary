@@ -282,9 +282,14 @@ public sealed partial class DownloadQueue
             {
                 await running.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
             }
+            // The record as the old transfer left it: one that finished meanwhile named its file, which goes too.
+            if (_store.Find(key.Scope, key.Id) is not { } current)
+            {
+                return null;
+            }
             _logger.LogInformation("Download {DownloadId} has new bytes on the server (revision {Revision}); its files are fetched again",
                 key.Id, entry.Revision);
-            foreach (string? file in new[] { download.MediaPath, download.PartPath, Path.Combine(download.Folder, DownloadPaths.Manifest) })
+            foreach (string? file in new[] { current.MediaPath, current.PartPath, Path.Combine(current.Folder, DownloadPaths.Manifest) })
             {
                 TryDelete(file, key);
             }
