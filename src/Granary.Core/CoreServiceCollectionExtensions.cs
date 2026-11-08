@@ -137,6 +137,9 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton(sp => new SidebarLayout(SidebarLayout.DefaultPath, sp.GetRequiredService<ISessionManager>(),
             sp.GetRequiredService<IUiDispatcher>(), sp.GetRequiredService<ILogger<SidebarLayout>>()));
         services.AddSingleton(sp => new LibraryTabs(LibraryTabs.DefaultPath, sp.GetRequiredService<ILogger<LibraryTabs>>()));
+        // Granary's own title preview switch, kept on this PC by server and profile as the sidebar's layout is.
+        services.AddSingleton(sp => new BrowseHeroSetting(BrowseHeroSetting.DefaultPath, sp.GetRequiredService<ISessionManager>(),
+            sp.GetRequiredService<IUiDispatcher>(), sp.GetRequiredService<ILogger<BrowseHeroSetting>>()));
         // The app brings its own updater (Velopack); without it nothing updates. It applies an update only once
         // SignedReleaseVerifier has verified its release as signed. Release files come on a client of their own, with
         // nothing of this device or of a server's sign-in, following GitHub's redirect to where downloads are served.

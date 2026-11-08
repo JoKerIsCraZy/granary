@@ -65,19 +65,23 @@ public sealed partial class ForYouViewModel : ObservableObject
     private readonly Dictionary<string, CatalogItem> _items = new(StringComparer.Ordinal);
 
     public ForYouViewModel(ISessionManager session, RecommendationsApi recommendations, ImageParameterCache images,
-        INavigationService navigation, IUiDispatcher dispatcher, TimeProvider time, ILogger<ForYouViewModel> logger)
+        INavigationService navigation, IUiDispatcher dispatcher, TimeProvider time, ILogger<ForYouViewModel> logger,
+        BrowseHeroSetting? browseHero = null)
     {
         _session = session;
         _recommendations = recommendations;
         _images = images;
         _navigation = navigation;
         _logger = logger;
-        Hero = new BrowseHeroViewModel(dispatcher, time);
+        Hero = new BrowseHeroViewModel(dispatcher, time, browseHero);
     }
 
     public ObservableCollection<RecommendationRowViewModel> Rows { get; } = [];
 
-    /// <summary>The title at the top of the page, following the card the pointer or the keyboard is on.</summary>
+    /// <summary>
+    /// The title at the top of the page, following the card the pointer or the keyboard is on; none while the title preview is
+    /// off, when the page starts with its title and rows.
+    /// </summary>
     public BrowseHeroViewModel Hero { get; }
 
     [ObservableProperty]
@@ -119,6 +123,11 @@ public sealed partial class ForYouViewModel : ObservableObject
     /// </summary>
     public Task ActivateAsync(bool isReturn)
     {
+        if (Hero.MissedSwitch)
+        {
+            // The title preview was turned on or off while the page was away.
+            FollowRowsWithHero();
+        }
         bool shown = _loadedFor == Key() && State is LibraryLoadState.Ready or LibraryLoadState.Empty or LibraryLoadState.Loading;
         if (isReturn && shown)
         {
@@ -293,9 +302,12 @@ public sealed partial class ForYouViewModel : ObservableObject
                 }
             }
         }
+        FollowRowsWithHero();
+    }
+
+    private void FollowRowsWithHero() =>
         Hero.Follow([.. Rows.SelectMany(row => row.Cards).Select(card => _items.GetValueOrDefault(card.Id)).OfType<CatalogItem>()],
             _session.ActiveServer?.BaseUri, NoEpisodes);
-    }
 
     private void ShowTaste(TasteProfile? taste)
     {
