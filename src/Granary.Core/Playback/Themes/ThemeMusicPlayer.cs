@@ -184,8 +184,14 @@ internal sealed class ThemeMusicPlayer
             Unforeseen(ex, generation);
             return;
         }
-        if (source is null || generation != _generation)
+        if (generation != _generation)
         {
+            return;
+        }
+        if (source is null)
+        {
+            // A refused grant or a failed download: tried once more, as audio that breaks off.
+            Failed();
             return;
         }
         ClearAudio();

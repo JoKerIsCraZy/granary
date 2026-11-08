@@ -354,14 +354,29 @@ public sealed class ThemeMusicTests
     }
 
     [Fact]
-    public async Task AFailedDownload_IsTriedOnce_AndNeverLogsItsAddress()
+    public async Task ARefusedGrant_IsAskedForOnceMore_ThenThePageStaysSilent()
+    {
+        var rig = new ThemeMusicRig();
+        rig.Harness.Silo.On(HttpMethod.Post, ThemeSongsApiTests.PlaybackPath("movie-1", "11"), ScriptedSilo.Problem(406, "not_acceptable"));
+        await rig.StartedAsync();
+
+        rig.Music.Show(_page, Set("movie-1", "11"));
+
+        await AuthPipeline.Eventually(() => rig.GrantsAsked("movie-1", "11") == 2);
+        Assert.Empty(rig.Download.Requests);
+        Assert.Empty(rig.Output.Made);
+    }
+
+    [Fact]
+    public async Task AFailedDownload_IsTriedOnceMoreFromANewGrant_AndNeverLogsItsAddress()
     {
         var rig = await new ThemeMusicRig().StartedAsync();
         rig.DownloadStatus = HttpStatusCode.Forbidden;
 
         rig.Music.Show(_page, Set("movie-1", "11"));
 
-        await AuthPipeline.Eventually(() => rig.Download.Requests.Count == 1);
+        await AuthPipeline.Eventually(() => rig.Download.Requests.Count == 2);
+        Assert.Equal(2, rig.GrantsAsked("movie-1", "11"));
         Assert.Empty(rig.Output.Made);
         Assert.DoesNotContain("tkn-", rig.Harness.Logs.All, StringComparison.Ordinal);
         Assert.Contains("theme music could not be played", rig.Harness.Logs.All, StringComparison.Ordinal);

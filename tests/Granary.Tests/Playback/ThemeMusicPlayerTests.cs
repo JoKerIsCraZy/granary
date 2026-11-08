@@ -261,14 +261,27 @@ public sealed class ThemeMusicPlayerTests
     }
 
     [Fact]
-    public void ARefusedGrant_LeavesThePageSilent()
+    public void ARefusedGrant_IsAskedForOnceMore_ThenLeavesThePageSilent()
     {
         Answer(null);
 
         _player.Select(Set("movie-1", "11"), loop: false);
 
+        Assert.Equal(2, _fetched.Count);
         Assert.Empty(_output.Made);
         Assert.False(_player.IsAudible);
+    }
+
+    [Fact]
+    public void AGrantRefusedOnce_PlaysFromTheNext()
+    {
+        Answer(null);
+        Answer(Original);
+
+        _player.Select(Set("movie-1", "11"), loop: false);
+
+        Assert.Equal(2, _fetched.Count);
+        Playing();
     }
 
     [Fact]

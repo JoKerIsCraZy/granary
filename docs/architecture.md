@@ -751,7 +751,8 @@ A title page plays its local theme music while Settings → Title Pages → Them
   profile, server or sign-out stops it at once and forgets the capability.
 - **`ThemeMusicPlayer`** (Core) plays one theme: the set's first, faded in to 35 % in 12 steps over 300 ms once it is heard and
   out the same way, on `TimeProvider` timers whose ticks go through `IUiDispatcher`. An original loops in place; a conversion
-  ends and plays again from a new grant. A failure is tried once with a new grant; audio that plays earns the try back.
+  ends and plays again from a new grant. A refused grant, a failed download or audio that fails is tried once more with a
+  new grant; audio that plays earns the try back.
 - **`ThemeAudioDownloader`** (Core) fetches the granted theme whole, without credentials or redirects, on the `theme-audio`
   client, which logs nothing: the URL carries its own token and stays in Core.
 - **`WindowsThemeAudio`** (App) implements the port on `Windows.Media.Playback.MediaPlayer` from the bytes (a light player beside

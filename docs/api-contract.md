@@ -1312,7 +1312,8 @@ plays its first theme, as the web's `useThemeMusic.ts` and the apps do (docs/arc
   theme), on a client that logs nothing, and hands only the bytes to the player. It never logs or keeps the URL; a failure
   is logged by its status or kind alone.
 - A converted theme has no length and no byte ranges: to loop, it is played again from a new grant; an original loops in
-  place. A theme that fails is tried once more with a new grant, and one that plays earns that try back.
+  place. A refused grant, a failed download and audio that fails or cannot be played are tried once more with a new grant,
+  and a theme that plays earns that try back. A grant answered after the profile changed is not tried again.
 
 ## 8. Playback protocol v3
 

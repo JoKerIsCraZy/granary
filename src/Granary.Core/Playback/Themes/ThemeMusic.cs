@@ -282,10 +282,10 @@ public sealed class ThemeMusic : IDisposable
             var grant = await _api.CreatePlaybackAsync(server.BaseUri, owner, theme, _output.Formats, cancellationToken);
             if (Identity() != identity)
             {
-                return null;
+                return Dropped();
             }
             var audio = await _downloader.DownloadAsync(server.BaseUri, grant, _routed, cancellationToken);
-            return Identity() == identity ? audio : null;
+            return Identity() == identity ? audio : Dropped();
         }
         catch (Exception ex) when (ex is ArgumentException || ApiFailureText.IsRequestFailure(ex, cancellationToken))
         {
@@ -293,6 +293,14 @@ public sealed class ThemeMusic : IDisposable
             _logger.LogInformation("The theme music could not be played: {Failure}", ApiFailureText.Describe(ex));
             return null;
         }
+    }
+
+    // The profile changed while its theme was on its way: the change is taken now, before the session tells it, so the theme
+    // stops and its next try does not go out as the next profile.
+    private ThemeAudioSource? Dropped()
+    {
+        Apply();
+        return null;
     }
 
     // The account, profile or server changed: stop at once, and ask the next one again.
