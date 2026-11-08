@@ -45,7 +45,7 @@
         <!-- Failed: what went wrong, Retry when it can help, and Back. -->
         <Grid Background="#B3000000" Visibility="{x:Bind ShowsInWindow(ViewModel.IsFailed, IsDocked), Mode=OneWay}">
             <StackPanel MaxWidth="560" Margin="32" Spacing="20" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <FontIcon Glyph="&#xE7BA;" FontSize="36" Foreground="{StaticResource SiloPrimaryBrush}" />
+                <FontIcon Glyph="&#xE7BA;" FontSize="36" Foreground="{StaticResource SiloDestructiveBrush}" />
                 <TextBlock x:Name="ErrorText" Text="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}" Style="{StaticResource SiloRowTitleTextStyle}"
                            TextWrapping="Wrap" TextAlignment="Center" AutomationProperties.LiveSetting="Assertive" />
                 <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Center">

@@ -54,7 +54,7 @@
             </Style>
             <Style x:Key="ActivityTerminateStyle" TargetType="Button" BasedOn="{StaticResource ActivityActionStyle}">
                 <Setter Property="BorderBrush" Value="#66EF4444" />
-                <Setter Property="Foreground" Value="#FFEF4444" />
+                <Setter Property="Foreground" Value="{StaticResource SiloDestructiveBrush}" />
             </Style>
         </ResourceDictionary>
     </UserControl.Resources>
@@ -96,7 +96,7 @@
 
         <ProgressRing IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay}"
                       Width="40" Height="40" Margin="0,48" HorizontalAlignment="Center" />
-        <TextBlock Text="{x:Bind ViewModel.ErrorText, Mode=OneWay}" Visibility="{x:Bind ViewModel.HasError, Mode=OneWay}" Foreground="#FFEF4444"
+        <TextBlock Text="{x:Bind ViewModel.ErrorText, Mode=OneWay}" Visibility="{x:Bind ViewModel.HasError, Mode=OneWay}" Foreground="{StaticResource SiloDestructiveBrush}"
                    FontSize="13" HorizontalAlignment="Center" Margin="0,48" TextWrapping="Wrap" />
 
         <!-- Which accounts used an address over the last 30 days. -->

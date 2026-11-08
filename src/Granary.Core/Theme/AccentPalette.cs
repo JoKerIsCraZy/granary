@@ -27,35 +27,32 @@ public readonly record struct RgbColor(byte R, byte G, byte B)
 }
 
 /// <summary>
-/// The accent Granary draws its primary actions, focus and selection in: the server's (its admin's branding accent, as the
-/// web paints it over Cinema Dark, <c>lib/accentColor.ts</c>), or Granary's own red. Hover and press are a lighter and a
-/// darker shade of it. A label on an accent fill is white or the dark label, whichever contrasts more, as the web
-/// chooses; Granary's own red keeps its exact shades and labels.
+/// The accent Granary draws its primary actions, focus and selection in, as the web paints Cinema Dark's primary, ring and
+/// sidebar primary: the server's (its admin's branding accent, <c>lib/accentColor.ts</c>), or without one Cinema Dark's own
+/// near-white primary (<c>app.css</c>, <c>--primary: #e8e8ec</c>). Hover and press are the accent seen through over the page,
+/// as the web's <c>hover:bg-primary/90</c>, press a step further. A label on an accent fill is white or the dark label,
+/// whichever contrasts more, as the web chooses. Destructive actions and errors are not drawn in it: they stay red.
 /// </summary>
-public sealed record AccentPalette(RgbColor Primary, RgbColor Hover, RgbColor Pressed, RgbColor Label, RgbColor BadgeLabel)
+public sealed record AccentPalette(RgbColor Primary, RgbColor Hover, RgbColor Pressed, RgbColor Label)
 {
-    /// <summary>Cinema Dark's label on primary surfaces, the page background.</summary>
+    /// <summary>Cinema Dark's label on primary surfaces (<c>--primary-foreground</c>).</summary>
     public static readonly RgbColor DarkLabel = new(0x14, 0x14, 0x17);
 
     public static readonly RgbColor White = new(0xff, 0xff, 0xff);
 
-    private static readonly RgbColor Black = new(0, 0, 0);
+    /// <summary>The page Granary draws on (Themes/Silo.xaml, <c>SiloBackgroundColor</c>), which a hovered accent lets through.</summary>
+    public static readonly RgbColor Page = new(0x0e, 0x0e, 0x10);
 
-    /// <summary>Granary's own red, with the shades and labels it was drawn with: dark on buttons, white on small badges.</summary>
-    public static AccentPalette Default { get; } = new(new(0xef, 0x44, 0x44), new(0xf2, 0x58, 0x58), new(0xdc, 0x2f, 0x2f), DarkLabel, White);
+    /// <summary>Cinema Dark's own primary, for a server without an accent and for no server at all, as the web's sign-in.</summary>
+    public static AccentPalette Default { get; } = Of(new RgbColor(0xe8, 0xe8, 0xec));
 
     public bool IsDefault => this == Default;
 
-    /// <summary>The palette of a stored accent; <see cref="Default"/> for none, Granary's own red, or anything but a hex colour.</summary>
-    public static AccentPalette From(string? accent)
-    {
-        if (Parse(accent) is not { } primary || primary == Default.Primary)
-        {
-            return Default;
-        }
-        var label = PrefersWhiteLabel(primary) ? White : DarkLabel;
-        return new AccentPalette(primary, primary.Mix(White, 0.1), primary.Mix(Black, 0.1), label, label);
-    }
+    /// <summary>The palette of a stored accent; <see cref="Default"/> for none, or anything but a hex colour.</summary>
+    public static AccentPalette From(string? accent) => Parse(accent) is { } primary ? Of(primary) : Default;
+
+    private static AccentPalette Of(RgbColor primary) =>
+        new(primary, primary.Mix(Page, 0.1), primary.Mix(Page, 0.2), PrefersWhiteLabel(primary) ? White : DarkLabel);
 
     /// <summary>"#rgb" or "#rrggbb", any case and with spaces around; null for anything else.</summary>
     public static RgbColor? Parse(string? accent)

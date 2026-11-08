@@ -397,7 +397,7 @@
                                                     <Button Width="28" Height="28" Padding="0" CornerRadius="14" Click="OnVoteClick" Tag="{x:Bind}" Visibility="{x:Bind ShowsVotes, Mode=OneWay}"
                                                             Background="{x:Bind views:WatchPartyRoomPage.VoteBackground(VotedByMe), Mode=OneWay}" BorderBrush="{x:Bind views:WatchPartyRoomPage.VoteBorder(VotedByMe), Mode=OneWay}"
                                                             AutomationProperties.Name="{x:Bind VoteName, Mode=OneWay}" ToolTipService.ToolTip="{x:Bind VoteName, Mode=OneWay}">
-                                                        <TextBlock Text="&#x2713;" FontSize="12" Foreground="White" Opacity="{x:Bind views:WatchPartyRoomPage.Shown(VotedByMe), Mode=OneWay}" />
+                                                        <TextBlock Text="&#x2713;" FontSize="12" Foreground="{StaticResource SiloOnPrimaryBrush}" Opacity="{x:Bind views:WatchPartyRoomPage.Shown(VotedByMe), Mode=OneWay}" />
                                                     </Button>
                                                     <Border Grid.Column="1" Width="32" Height="48" CornerRadius="4" Background="{StaticResource SiloSurfaceRaisedBrush}">
                                                         <Image Source="{x:Bind views:WatchPartyRoomPage.SmallPoster(PosterUrl), Mode=OneWay}" Stretch="UniformToFill" />

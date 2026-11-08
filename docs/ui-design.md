@@ -17,7 +17,8 @@ The greys are a step darker than the web's (`#141417`, `#1C1C20`, `#232328`, `#2
 app; the steps between them stay the web's. Gradients that fade to the page name `SiloBackgroundColor` rather than repeat it.
 | `SiloForegroundBrush` | `#E8E8EC` | Text |
 | `SiloMutedBrush` | `#A4A4AE` | Secondary text, overlines, section labels |
-| `SiloPrimaryBrush` | `#EF4444`, or the server's accent | The only accent: Play, progress, selection, focus. The server's branding accent replaces it, as on the web (`ServerAccent`, `AccentPainter`); its shades (`SiloPrimaryHoverBrush`, `SiloPrimaryPressedBrush`), tints (`SiloPrimaryTint15/60/75Brush`), labels (`SiloOnPrimaryBrush` dark on buttons, `SiloOnPrimaryBadgeBrush` white on badges) and the sign-in glow follow it. Errors stay red. |
+| `SiloPrimaryBrush` | The server's accent, or without one `#E8E8EC` | The only accent: Play, progress, selection, focus, as the web's `primary`, `ring` and `sidebar-primary`. The server's branding accent replaces it, as on the web (`ServerAccent`, `AccentPainter`); without one it is Cinema Dark's own near-white primary, as the web's. Its shades (`SiloPrimaryHoverBrush` at 90 % over the page, as the web's `hover:bg-primary/90`, `SiloPrimaryPressedBrush` at 80 %), tints (`SiloPrimaryTint15/20/60/75Brush`), labels (`SiloOnPrimaryBrush`, `SiloOnPrimaryBadgeBrush`: `#141417` on a light accent, white on a dark one) and the sign-in glow follow it. |
+| `SiloDestructiveBrush` | `#EF4444` | The web's `destructive`: errors, and actions that delete or end something. Never the accent: it stays red whatever the server's accent. |
 | `SiloBadgeBackgroundBrush` / `SiloBadgeBorderBrush` | `#14141E` at 70 % / white at 15 % | Pills on artwork |
 | `SiloAttentionBrush` / `SiloAttentionDotBrush` | `#FCD34D` / `#FBBF24` | A watchlist title TMDB lost: its caption, the tab's dot |
 | `SiloCardCornerRadius` | 16 | Cards, artwork, sidebar items |
@@ -42,21 +43,21 @@ face of the file it names, so use the `SiloFont<Weight>` resources together with
 | `SiloCaptionTextStyle` | 12 / Medium, muted | Third lines, meta text |
 | `SiloBadgeTextStyle` | 10 / SemiBold, white | Badge text |
 
-Buttons: `SiloPrimaryButtonStyle` (red pill: Play, Resume), `SiloSecondaryButtonStyle` (dark pill:
+Buttons: `SiloPrimaryButtonStyle` (accent pill: Play, Resume), `SiloSecondaryButtonStyle` (dark pill:
 Mark watched), `SiloIconButtonStyle` (round: favourite, more), `SiloLinkButtonStyle` ("EXPLORE ALL"). The title bar's
 own buttons are drawn as Windows' caption buttons: `SiloTitleBarButtonStyle` (Full screen) and
 `SiloTitleBarCloseButtonStyle` (Close in full screen, red under the pointer).
 Chips: `SiloChipStyle` (year, rating, runtime), `SiloAccentChipStyle` (1080P, EAC3).
 
 The player draws on the picture, not on these surfaces: `SiloPlayer*` brushes (white text, scrims, the
-seek track), `SiloPlayerPlayButtonStyle` (red disc), `SiloPlayerDiscButtonStyle` (glass disc: back,
+seek track), `SiloPlayerPlayButtonStyle` (accent disc), `SiloPlayerDiscButtonStyle` (glass disc: back,
 skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlayerTextButtonStyle`.
 
 ## Components (`src/Granary.App/Controls`)
 
 - `MediaCardView` draws one `MediaCard` (`Granary.Core.ViewModels.Cards`): 2:3 poster or 16:9
   landscape artwork with radius 16, the profile's badges in the four corners, the card's own status ("NEW", "APPROVED")
-  and a watched mark top right, a 3 px red progress bar, then title, subtitle and an optional caption. In a row or grid
+  and a watched mark top right, a 3 px progress bar in the accent, then title, subtitle and an optional caption. In a row or grid
   the lines under the artwork follow the profile's caption choice ([poster size and caption](api-contract.md#662-poster-size-and-caption)):
   all of them, the title only, or none (then nothing under the artwork, not even its 11 px gap); a card elsewhere (an
   episode on a title's page) keeps them all, as the web's. The badges are
@@ -128,7 +129,7 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
   Continue Watching" / "Next Up" when its `MediaRow` offers removal. Right-click, Shift+F10 and the menu key open the
   same menu. The web's admin entries (play history, metadata) are not there yet.
 - Page-specific pieces: `PersonCard` (search people, opening the person's page), `AlphabetJumpBar` (library A–Z: "#" and A–Z on a
-  26 px round panel, letters without titles at 35 %, the top row's letter red with dark text; a letter
+  26 px round panel, letters without titles at 35 %, the top row's letter in the accent with its label; a letter
   scrolls the grid to its first title, as the web's `LetterBar`),
   `DetailHero`, `DetailShelf`, `DetailEpisodeCard`, `DetailEpisodePlaceholderCard`, `DetailExtrasSection`, `DetailExtraCard`,
   `DetailInfoPanel`, `DetailTrailerCard`, `PersonCreditCard`
@@ -159,7 +160,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
 
 - Sidebar (260 px): the server's wordmark at 112 x 48 px (`wordmark_url`, as the web's `SiloBrand`), else or with Server logo off its name, Home, Search (`Ctrl+K`), "LIBRARIES" with the libraries the profile browses (its hidden
   ones left out, in its library order: the web's Settings → Libraries), "DISCOVER" (For
-  You, Requests while the server takes them, Calendar, Notifications with the unread count in red), "YOUR STUFF" (Favorites, Watchlist, Watch
+  You, Requests while the server takes them, Calendar, Notifications with the unread count in the accent), "YOUR STUFF" (Favorites, Watchlist, Watch
   Party while the server offers rooms, Collections, History); Admin (an administrator's only, a shield), Settings and the profile menu at the bottom (the servers are in Settings → Servers). Favorites, Watchlist and History are one page (`PersonalListPage`, the web's `pages/Catalog.tsx` for those
   sources): the list's name, what it holds and its count, the media menu (All Media, Movies & Series, Movies, Series,
   Episodes), the list's own order ("List Order", History's "Watch History") or one of six sorts (Title, Date Added,
@@ -171,7 +172,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   the watchlist has the web's line tabs (`SiloLineTabStyle`, as Requests'): In your library, the list; and Not in your
   library yet (`WatchlistTitlesViewModel`, the web's `WatchlistTitlesTab`) with its count in a pill and an amber dot
   while TMDB lost one of them. That tab drops the count, menus and posters for: a panel with the hint (whether adding
-  requested them) and Find more in Discover in red; the TMDB posters soonest first (downloading, then by release date,
+  requested them) and Find more in Discover in the accent; the TMDB posters soonest first (downloading, then by release date,
   awaiting approval, not requested, TMDB lost), each with its state as the badge ("DOWNLOADING 43%", "OUT DEC 18",
   "AWAITING APPROVAL", "NOT REQUESTED", "NOT ON TMDB"), "MOVIE · 2020" and the state in words under it ("Out Dec 18 ·
   approved", amber for a lost one), and the watchlist toggle to take it off; "Could not load these titles." with
@@ -237,7 +238,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   4 titles", a SHARED badge on one other profiles see), "Shared with me" by owner ("by Mara"), and "Server
   collections" with a pill per library (All first) and Load more, which the end of the grid presses by itself. A
   collection opens on the list page with its name and "Collection Order"; the sidebar keeps Collections picked. The
-  red New collection at the title (and, with none yet, the dashed card) opens the web's picker ("New collection", what
+  New collection in the accent at the title (and, with none yet, the dashed card) opens the web's picker ("New collection", what
   decides what's in it, a card each for Manual and Smart with "Good for …"; synced lists are left out), and the card the
   collection editor (`CollectionEditorPage`, the web's `CollectionEditor` for a personal collection): "‹ Collections", the tags
   (Manual, Shared, Not created yet), the name and "3 titles", Open and ⋯ Delete… once it exists; then cards for Name,
@@ -273,8 +274,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   name in large type, one without a backdrop only the page's fade. With Title preview at the top off (Settings →
   Navigation & Cards → Pages) there is no hero: the title starts 24 px down, as on the web (`pt-6`).
 - Calendar (`CalendarPage`, the web's `pages/Calendar.tsx`): the title with the presets Following, Trending, All (the
-  chosen one red) and "All Libraries" when there are several; the week strip pinned above the days (arrows, "Oct 19 –
-  25, 2026", Today, a button per day with a dot on days with airings, today tinted red, the picked day filled red,
+  chosen one in the accent) and "All Libraries" when there are several; the week strip pinned above the days (arrows, "Oct 19 –
+  25, 2026", Today, a button per day with a dot on days with airings, today tinted with the accent, the picked day filled with it,
   which scrolls to its row); then a row per day ("Monday, October 19th", TODAY on today's) of airings: "S2 · E1 - TITLE",
   the air time on the viewer's clock, SERIES PREMIERE / SEASON PREMIERE / FINALE, watched ones marked. Unlike the web,
   a week with airings lists its empty days too, each with "Nothing scheduled." in a faint box, so picking one scrolls
@@ -283,7 +284,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
 - Notifications (`NotificationsPage`, the web's `pages/Notifications.tsx`): one centred column of the web's width with
   the bell and title, Mark all read while anything is unread, Preferences (a flyout with the master switch and
   Favorites, Watchlist, Continue Watching, Next Up, read each time it opens and saved at once), All and "Unread (3)",
-  then the entries: poster, a red dot and a lighter background while unread, title, "5m ago", what happened
+  then the entries: poster, a dot in the accent and a lighter background while unread, title, "5m ago", what happened
   ("S4E2 — Blind Rooster"), the reasons as pills, a check button to mark it read; 25 at a time with Load more. An entry
   opens its episode or series and is read from then. The sidebar hides the entry when the server has no inbox and
   reads the count again on the way through the app, at most every half minute. Where the server lists them, Series
@@ -304,15 +305,15 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   the top off (Settings → Navigation & Cards → Pages): the title then starts 24 px down, as on the web (`pt-6`), on both
   tabs. Another profile's Discover starts without one. Yours, up to the web's
   1024 px: "What the statuses mean", then Needs attention, On the way, In your library, Cancelled with their counts,
-  each request a row with its poster, title and state badge (the web's variants: Available red, Failed destructive,
-  approved and on their way filled, Pending outlined, closed ones outlined and muted), "Series · 2022 · Seasons 1–3",
+  each request a row with its poster, title and state badge (the web's variants, none in the accent: Failed destructive,
+  approved, on their way and available filled, Pending outlined, closed ones outlined and muted), "Series · 2022 · Seasons 1–3",
   the download's bar and "Downloading · 43% · about 12 min left", when it was requested and changed, the error in red
   or the admin's reason, Open in library, and Cancel request behind the web's confirmation. A Discover row of several
   pages has EXPLORE ALL; under the rows come Studios, Networks and Genres as rows of 208 × 112 tiles (a logo on gray-800
   with a gray-700 ring, the name when there is none, a genre's name on its 135° gradient), empty tiles while they load,
   and "Could not load studios." beside Retry. Every TMDB title's card (on the hub, a row in full, a
   studio's page, More like this) has the web's watchlist toggle where library cards keep their menu, while the server
-  keeps TMDB titles on the watchlist: the web's bookmark, red with a check when on it (the TMDB title page's Add to
+  keeps TMDB titles on the watchlist: the web's bookmark, in the accent with a check when on it (the TMDB title page's Add to
   Watchlist too; a library title keeps + and ✓); an add that requested the title shows the request's state on the card
   at once. While the viewer may request the title (`request.requestable`) and the server takes requests, the card has
   the web source's Request in its middle, where library cards keep Play (`RequestPosterCard`'s `RequestAction`): a 36 px
@@ -438,7 +439,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   - What a slide shows: the web's eyebrow over the name, "FEATURED — NO. 01" (11.5 px semibold, tracked, white at 62 %,
     FEATURED at 92 %, read as "Featured — No. 01"), then the hero's logo or name, its details and overview, and its
     backdrop. The rows begin 48 px lower than under the card hero, and the room between the compact header and the first
-    row holds the buttons, which scroll up under the header with the rows: the red Play pill and the glass More Info pill
+    row holds the buttons, which scroll up under the header with the rows: the Play pill in the accent and the glass More Info pill
     (44 px, 14 px bold, a play and an info icon) 48 px in and 26 px above the first row; on the right, level with them,
     "01 —— 05" (11 px monospaced, tracked, white at 68 %, the slide's number white), a 144 × 2 px rail that fills over
     the slide's 8 s, and a 28 px pause button ("Pause slideshow" / "Play slideshow"). The arrows ("Previous slide",
@@ -484,7 +485,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     rating, regular seasons and genres, an episode's "S2 E7 · 54m · 30 Oct 2026"; with Title Pages → Show advisory age a
     movie's or series' suggested age follows its rating in the web's words, "Common Sense 13+", "MDBList 16+" or "13+");
     the tagline in 17 italic; the overview in 16/25, four lines at most and 820 wide.
-  - Granary's own buttons one size up: the red Play pill ("Resume from 1:02:33" for a movie or episode: the saved
+  - Granary's own buttons one size up: the Play pill in the accent ("Resume from 1:02:33" for a movie or episode: the saved
     point, as the web's "Resume at" names it, which is also where playback starts unless Settings → Playback → This PC
     → Rewind on resume sets a lead-in), Start over,
     "Mark Watched", "Info", the heart, the stars and ⋮ (Watchlist, Add to Collection, then Start a Watch Party below a
@@ -504,7 +505,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     TO PICK" as two of the hub's mode cards at radius 8, "Host picks" / "This is up next. You start it when everyone
     is here." and "Everyone votes" / "This is the first suggestion. Anyone can add and vote." ("Nothing" with no
     episode), Host picks chosen on every opening; "Allow guests to pause" / "Otherwise only you control playback" with a
-    switch that shows the profile's saved choice; an error in the hub's red box; the red "Create party & copy invite"
+    switch that shows the profile's saved choice; an error in the hub's red box; the "Create party & copy invite" button in the accent
     ("Creating…") across the width; and "You'll land in the room. Nothing plays until you start it. The room can see
     what members are mid-way through." Cancel closes it; a room already asked for is still made, set up and joined, but
     quietly: the invite is not copied, the room page does not open over the page the viewer stays on, and what it would
@@ -541,7 +542,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     preferences pick, the subtitle the automatic choice makes for that audio; a subtitle remembered for the title shows
     without "Auto:", and its Auto row then says "Reset to profile defaults".
   - Each pill opens its list below it as a menu in the player's look, on near-solid dark grey with a hairline edge, the
-    chosen row lit with a red check at its right, keyboard focus on that row. Version rows: the quality ("2160p · HEVC ·
+    chosen row lit with a check in the accent at its right, keyboard focus on that row. Version rows: the quality ("2160p · HEVC ·
     DV HDR10+ · EAC3") with its dynamic range as a chip, the size and the source the release name tells ("38.9 GB ·
     Remux") under it, the edition first when the files differ in it (the web picks the edition in a picker of its own),
     the highest resolution first. Audio rows: Auto with the track it picks, then each track's language with chips for
@@ -649,7 +650,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     back.
   - A trailer that can't play here (its owner allows it only on YouTube, it is gone, YouTube refused the embed, the
     player gave no answer within 15 seconds, or WebView2 is missing or failed) shows "This video can't play in
-    Granary." in the frame with a red "Open on YouTube" button, which opens YouTube's page in the browser and closes the
+    Granary." in the frame with an "Open on YouTube" button in the accent, which opens YouTube's page in the browser and closes the
     dialog.
   - Granary's own player, minimized to its bar, pauses as a trailer opens, and stays paused once it closes; in a Watch
     Party it plays on. The keyboard's media keys still reach the bar meanwhile.
@@ -688,7 +689,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
 - A box set (`BoxSetPage`, `BoxSetViewModel`, the web's `pages/BoxSetPage.tsx`): a detail page, so the sidebar narrows
   to its rail. Its hero is laid out as a title from TMDB's (the web's `DetailHero` with its poster): over the backdrop
   (its thumbhash first) the 220 px poster, "BOX SET" in the overline style, the name, the web's metadata badges in
-  capitals ("3 FILMS", "2019 – 2028", "1 OF 3 WATCHED" once one is watched), the overview, and the red Play pill for the
+  capitals ("3 FILMS", "2019 – 2028", "1 OF 3 WATCHED" once one is watched), the overview, and the Play pill in the accent for the
   film to watch next: the first in release order not played, or the first once all are, "Play Groundwork" or, once some
   are played and not all or that film is started, "Continue · Masterplan" (Android's label; the web looks at the count
   only), playing on from where it was left. A long title is cut rather than widen the hero. Then "Movies", its films as
@@ -812,7 +813,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
 ## Signed-out screens
 
 Adding a server and signing in look like Silo's web login (measured 2026-10-25). `SiloAuthShellStyle` centres a
-448 px card (the surface, radius 12, 28 + 24 px inside) on the background with a red glow at the top left and a
+448 px card (the surface, radius 12, 28 + 24 px inside) on the background with a glow in the accent at the top left and a
 light one at the top right. Above it Granary's lockup, its mark (`Assets/Logo/granary-mark.svg`, 48 px) beside its
 name (44 / Bold, plain tracking, apart from Silo's ExtraBold wordmark), and "A Silo client for Windows": Granary's
 identity leads these screens, as Silo's developers asked (2026-10-26). Silo's mark, the official flat cut from
@@ -844,11 +845,11 @@ while a title prepares or buffers, and small in the corner while the stream is p
 off the mark stands still.
 
 - In the card: the title (`SiloAuthTitleTextStyle`, 30 / ExtraBold) over a muted lead, labelled 36 px fields
-  (`SiloAuthTextBoxStyle`, `SiloAuthPasswordBoxStyle`), full-width buttons rounded 10 (`SiloAuthButtonStyle` red,
+  (`SiloAuthTextBoxStyle`, `SiloAuthPasswordBoxStyle`), full-width buttons rounded 10 (`SiloAuthButtonStyle` in the accent,
   `SiloAuthOutlineButtonStyle`), refusals in a red box (`SiloAuthErrorStyle`) and the consent to an unencrypted
   connection in an amber one (`SiloAuthWarningStyle`).
 - The pages merge `Themes/SiloAuth.xaml`, which gives WinUI's text boxes the web's field: the page background, a
-  faint outline, a red one when focused (instead of Fluent's accent underline), the placeholder muted.
+  faint outline, one in the accent when focused (instead of Fluent's accent underline), the placeholder muted.
 - Add server: "Connect to your server" and "Type the address you use for Silo." as in the apps; progress and
   refusals below the button. Under the address, "Found nearby" as the apps list it once a server on this network is
   confirmed (nothing before): up to four rows in a rounded card with hairlines between them, each a 40 px disc with
@@ -867,12 +868,12 @@ off the mark stands still.
 
 Opened from the sidebar's Settings; as on Silo's web the app's sidebar gives way to the settings' own (260 px, a shade
 darker, a hairline at its edge): "← Back to App", "Settings", the current profile (its initial in a 32 px disc), then
-the pages by group: PLAYBACK (the profile's), APPEARANCE (Navigation & Cards, Title Pages), ACCOUNT (Devices) and APP (Servers, About). The page open is white 6 % with red text and a
-red mark. Pages scroll on the right in a centred column of at most 1120 px, padded 50 px (a column, not MaxWidth on the
+the pages by group: PLAYBACK (the profile's), APPEARANCE (Navigation & Cards, Title Pages), ACCOUNT (Devices) and APP (Servers, About). The page open is white 6 % with text and a
+mark in the accent. Pages scroll on the right in a centred column of at most 1120 px, padded 50 px (a column, not MaxWidth on the
 host, which pushed a page of short lines off the right edge): the title (32 px bold) and its line, then sections between hairlines (`SettingsGroup`), their title
 (15 px semibold) and description (13 px muted) in a 256 px column and their rows (`SettingsRow`: label 14 px medium,
 description 13 px muted, the control on the right, hairlines between rows). Selects are 220 px and 36 px high on the
-page background with a faint outline, red when focused; switches are only their 40 px track, red when on
+page background with a faint outline, in the accent when focused; switches are only their 40 px track, in the accent when on
 (Themes/SiloSettings.xaml). Every value is the profile's and saves at once; a refused save puts the control back and
 says why above the sections.
 
@@ -942,7 +943,7 @@ says why above the sections.
   needs to keep its own options." (alone, as nothing else counts then), "Granary checks the files it includes only when
   the player starts.", or "Nothing in it changes the options Granary keeps."; an option at Granary's own value, such as
   `keep-open=yes`, is not named. The check never stops a save. On the
-  right below, **Cancel** (outline) and **Save** (red, 8 px corners, named "Save mpv.conf"). Save writes the file whole
+  right below, **Cancel** (outline) and **Save** (in the accent, 8 px corners, named "Save mpv.conf"). Save writes the file whole
   (beside it first, then over it) with the line breaks the file had, and goes back to Playback; a save that fails keeps
   the editor and says "Couldn't save mpv.conf in …" in an error bar above the text. A file changed outside Granary since the editor read it is not overwritten: the editor stays open with the edits and says "mpv.conf was changed outside Granary since you opened it, so this wasn't saved. Copy your edits, then close the editor and open it again.". The text is read-only while a save
   runs. A folder in mpv.conf's place says "mpv.conf in … is a folder. Rename or remove it, then try again.", a file that
@@ -1071,7 +1072,7 @@ says why above the sections.
   again."
 - **Servers** (`ServersSettingsView` on `ServersViewModel`; the apps keep the server under Settings too): the title and
   its line with Add server (outline) on the right; then a line per saved server between hairlines: a 40 px disc, the
-  name (15 px semibold) and "https://silo.example · Signed in as alex" (13 px muted, trimmed), the red Active pill or
+  name (15 px semibold) and "https://silo.example · Signed in as alex" (13 px muted, trimmed), the Active pill in the accent or
   Switch, and More (…) with Sign out and Remove… (asks first). The sign-in screen's "Use another server" still opens the
   standalone servers page, which shares the question before removing.
 - **About** (`AboutSettingsView` on `AboutViewModel`, as the apps' About with Version and Acknowledgements): Granary's
@@ -1490,9 +1491,9 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   - 30 s before the end of an episode the "Playing Next" screen takes the page: its still blurred and darkened behind,
     "PLAYING NEXT", or "STILL WATCHING?" where the Still watching prompt holds the countdown back (11 px, wide spacing, white 40 %), the still (16:9, radius 16, up to 38 % of the page high), the
     series (18 px bold), "S1:E4 — Title", the air date and runtime, two lines of overview (left out for an episode not
-    started while the profile hides descriptions, and its still blurred while it hides images, as on cards), the red Play
-    Now pill, and
-    once the episode has ended a 10 s ring in red with the seconds; "Auto-play is on" switches the profile's
+    started while the profile hides descriptions, and its still blurred while it hides images, as on cards), the Play Now pill in
+    the accent, and
+    once the episode has ended a 10 s ring in the accent with the seconds; "Auto-play is on" switches the profile's
     `playback.auto_play_next`. On Deck (Continue Watching without this series) runs along the bottom; Close (Esc) top
     right. The video plays on in a 320 px window top left (radius 16), a click on it returns to it; it fades out at
     the end. Enter plays the next episode.

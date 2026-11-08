@@ -82,7 +82,15 @@ public sealed class JsonServerRegistry : IServerRegistry
             if (index >= 0)
             {
                 var existing = state.Servers[index];
-                var updated = existing with { Name = displayName, ServerId = serverId ?? existing.ServerId, LastUsedAt = now };
+                // Another server at the address is not painted in the last one's branding.
+                bool another = serverId is not null && serverId != existing.ServerId;
+                var updated = existing with
+                {
+                    Name = displayName,
+                    ServerId = serverId ?? existing.ServerId,
+                    LastUsedAt = now,
+                    Branding = another ? null : existing.Branding,
+                };
                 return (state with { Servers = state.Servers.SetItem(index, updated) }, updated);
             }
 
@@ -96,25 +104,21 @@ public sealed class JsonServerRegistry : IServerRegistry
         }, cancellationToken);
     }
 
-    /// <summary>Replaces the entry with the same id. The address of a saved entry cannot change.</summary>
-    public Task UpdateAsync(ServerEntry entry, CancellationToken cancellationToken = default)
+    /// <summary>Changes the entry with <paramref name="id"/> under the gate. The address of a saved entry cannot change.</summary>
+    public Task UpdateAsync(string id, Func<ServerEntry, ServerEntry> change, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(entry);
-        var address = NormalizeAddress(entry.BaseUri);
+        ArgumentException.ThrowIfNullOrEmpty(id);
+        ArgumentNullException.ThrowIfNull(change);
         return ChangeAsync(state =>
         {
-            int index = state.Servers.FindIndex(s => s.Id == entry.Id);
+            int index = state.Servers.FindIndex(s => s.Id == id);
             if (index < 0)
             {
-                _logger.LogDebug("Ignored an update of server {ServerEntryId}, which is no longer saved", entry.Id);
+                _logger.LogDebug("Ignored an update of server {ServerEntryId}, which is no longer saved", id);
                 return (state, false);
             }
             var current = state.Servers[index];
-            if (!SameAddress(current.BaseUri, address))
-            {
-                throw new ArgumentException("The address of a saved server cannot change; add it as a new server instead.", nameof(entry));
-            }
-            var updated = entry with { BaseUri = current.BaseUri };
+            var updated = change(current) with { Id = current.Id, BaseUri = current.BaseUri };
             return updated == current ? (state, false) : (state with { Servers = state.Servers.SetItem(index, updated) }, true);
         }, cancellationToken);
     }
@@ -282,7 +286,11 @@ public sealed class JsonServerRegistry : IServerRegistry
         // A stored id stays authoritative: credentials are keyed by it.
         string id = string.IsNullOrWhiteSpace(stored.Id) ? IdFor(address) : stored.Id;
         string name = string.IsNullOrWhiteSpace(stored.Name) ? address.Host : stored.Name;
-        return new ServerEntry(id, address, name, stored.ServerId, stored.AddedAt, stored.LastUsedAt, stored.LastProfileId);
+        return new ServerEntry(id, address, name, stored.ServerId, stored.AddedAt, stored.LastUsedAt, stored.LastProfileId)
+        {
+            // A file from before branding was kept has none: the server is read as one never read.
+            Branding = stored.Branding is { Accent: { } accent } branding ? new SavedBranding(accent, branding.Wordmark) : null,
+        };
     }
 
     private async Task SaveAsync(Snapshot state, CancellationToken cancellationToken)
@@ -299,7 +307,8 @@ public sealed class JsonServerRegistry : IServerRegistry
     }
 
     private static ServerRegistryFileEntry ToFileEntry(ServerEntry entry) =>
-        new(entry.Id, entry.BaseUri.OriginalString, entry.Name, entry.ServerId, entry.AddedAt, entry.LastUsedAt, entry.LastProfileId);
+        new(entry.Id, entry.BaseUri.OriginalString, entry.Name, entry.ServerId, entry.AddedAt, entry.LastUsedAt, entry.LastProfileId,
+            entry.Branding is { } branding ? new ServerRegistryFileBranding(branding.Accent, branding.Wordmark) : null);
 
     private static Uri NormalizeAddress(Uri baseUri)
     {

@@ -99,6 +99,9 @@ public sealed partial class DetailHero : UserControl
 
     public static Brush ActiveForeground(bool isActive) => Resource(isActive ? "SiloPrimaryBrush" : "SiloForegroundBrush");
 
+    // A favourite's heart stays red whatever the accent: the web's text-red-400 (ItemDetail/components/ActionBar.tsx).
+    public static Brush FavoriteForeground(bool isFavorite) => Resource(isFavorite ? "SiloFavoriteLightBrush" : "SiloForegroundBrush");
+
     // Segoe Fluent Icons: Heart, HeartFill; Add, Accept.
     public static string HeartGlyph(bool isFavorite) => isFavorite ? "" : "";
 

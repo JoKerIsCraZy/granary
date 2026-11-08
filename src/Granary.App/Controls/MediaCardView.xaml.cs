@@ -483,7 +483,8 @@ public sealed partial class MediaCardView : UserControl
 
         string favorite = state.IsFavorite ? "Remove from Favorites" : "Add to Favorites";
         FavoriteIcon.Glyph = state.IsFavorite ? "" : "";
-        FavoriteIcon.Foreground = Brush(state.IsFavorite ? "SiloPrimaryBrush" : "SiloForegroundBrush");
+        // Red whatever the accent, as the web's text-red-500 fill-red-500 (MediaItemMenu.tsx).
+        FavoriteIcon.Foreground = Brush(state.IsFavorite ? "SiloFavoriteBrush" : "SiloForegroundBrush");
         Label(FavoriteButton, favorite);
         FavoriteButton.Visibility = Visible(canCollect);
         MenuFavorite.Text = favorite;

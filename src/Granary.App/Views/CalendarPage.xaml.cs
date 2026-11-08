@@ -14,7 +14,6 @@ namespace Granary.App.Views;
 public sealed partial class CalendarPage : Page
 {
     private static readonly Brush Transparent = new SolidColorBrush(Colors.Transparent);
-    private static readonly Brush White = new SolidColorBrush(Colors.White);
 
     public CalendarPage()
     {
@@ -40,16 +39,18 @@ public sealed partial class CalendarPage : Page
         }
     }
 
-    // The web's day buttons: the picked day filled red, today tinted red, the others plain.
+    // The web's day buttons (components/calendar/WeekNavigator.tsx): the picked day filled with the accent and the label
+    // drawn on it (text-primary-foreground), today tinted with the accent, the others plain.
     public static Brush DayBackground(bool isSelected, bool isToday) =>
         isSelected ? Primary() : isToday ? new SolidColorBrush(PrimaryColor()) { Opacity = 0.15 } : Transparent;
 
     public static Brush DayLabelForeground(bool isSelected, bool isToday) =>
-        isSelected ? new SolidColorBrush(Colors.White) { Opacity = 0.85 } : isToday ? Primary() : Muted();
+        isSelected ? new SolidColorBrush(OnPrimary().Color) { Opacity = 0.85 } : isToday ? Primary() : Muted();
 
-    public static Brush DayNumberForeground(bool isSelected, bool isToday) => isSelected ? White : isToday ? Primary() : Text();
+    public static Brush DayNumberForeground(bool isSelected, bool isToday) => isSelected ? OnPrimary() : isToday ? Primary() : Text();
 
-    public static Brush DayDotFill(bool isSelected, bool isToday) => isSelected ? White : isToday ? Primary() : Muted();
+    public static Brush DayDotFill(bool isSelected, bool isToday) =>
+        isSelected ? new SolidColorBrush(OnPrimary().Color) { Opacity = 0.85 } : isToday ? Primary() : Muted();
 
     public static double DayDotOpacity(bool hasEvents) => hasEvents ? 1 : 0;
 
@@ -57,6 +58,9 @@ public sealed partial class CalendarPage : Page
     public string LibraryName(SettingChoice library) => $"Library: {library.Label}";
 
     private static Brush Primary() => (Brush)Application.Current.Resources["SiloPrimaryBrush"];
+
+    // The label on the accent: dark on a light accent, white on a dark one (AccentPainter).
+    private static SolidColorBrush OnPrimary() => (SolidColorBrush)Application.Current.Resources["SiloOnPrimaryBrush"];
 
     // The brush, not SiloPrimaryColor: the brush carries the server's accent (AccentPainter).
     private static Windows.UI.Color PrimaryColor() => ((SolidColorBrush)Application.Current.Resources["SiloPrimaryBrush"]).Color;

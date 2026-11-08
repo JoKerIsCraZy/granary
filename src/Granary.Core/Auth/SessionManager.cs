@@ -135,10 +135,8 @@ public sealed class SessionManager : ISessionManager, IDisposable
         var updated = await _credentials.UpdateAsync(server.Id,
             c => c with { ProfileId = profileId, ProfileToken = profileToken }, cancellationToken).ConfigureAwait(false)
             ?? throw new InvalidOperationException("Selecting a profile needs a signed-in server.");
-        if (_registry.Find(server.Id) is { } entry && entry.LastProfileId != profileId)
-        {
-            await _registry.UpdateAsync(entry with { LastProfileId = profileId }, cancellationToken).ConfigureAwait(false);
-        }
+        // Applied to the entry as saved then, so nothing saved meanwhile, such as the server's branding, is undone.
+        await _registry.UpdateAsync(server.Id, entry => entry with { LastProfileId = profileId }, cancellationToken).ConfigureAwait(false);
         _logger.LogInformation("Selected profile {ProfileId} on server {ServerEntryId}", updated.ProfileId, server.Id);
         await SyncAsync(cancellationToken).ConfigureAwait(false);
     }
@@ -221,9 +219,12 @@ public sealed class SessionManager : ISessionManager, IDisposable
 
     private async Task ActivateCoreAsync(string serverEntryId, CancellationToken cancellationToken)
     {
-        var entry = _registry.Find(serverEntryId)
-            ?? throw new InvalidOperationException("The server is not saved.");
-        await _registry.UpdateAsync(entry with { LastUsedAt = _time.GetUtcNow() }, cancellationToken).ConfigureAwait(false);
+        if (_registry.Find(serverEntryId) is null)
+        {
+            throw new InvalidOperationException("The server is not saved.");
+        }
+        var now = _time.GetUtcNow();
+        await _registry.UpdateAsync(serverEntryId, entry => entry with { LastUsedAt = now }, cancellationToken).ConfigureAwait(false);
         await _registry.SetActiveAsync(serverEntryId, cancellationToken).ConfigureAwait(false);
         await SyncAsync(cancellationToken).ConfigureAwait(false);
     }

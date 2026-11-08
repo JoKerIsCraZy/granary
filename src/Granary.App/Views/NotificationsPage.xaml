@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     The Notifications inbox, as Silo's web shows it: a column of entries with their posters, unread ones marked with a
-    red dot and set off, All and Unread, Mark all read, and the Preferences beside the title. Series, where the server
+    dot in the accent and set off, All and Unread, Mark all read, and the Preferences beside the title. Series, where the server
     lists them, shows which series notify and which won't, with search, reason, sort and Mute. The page is cached.
 -->
 <Page
@@ -183,7 +183,7 @@
                                         </Grid>
                                     </StackPanel>
                                     <TextBlock Text="{x:Bind ViewModel.Preferences.SaveError, Mode=OneWay}" Style="{StaticResource SiloCaptionTextStyle}"
-                                               Foreground="{StaticResource SiloPrimaryBrush}" />
+                                               Foreground="{StaticResource SiloDestructiveBrush}" />
                                     <StackPanel Spacing="12" Visibility="{x:Bind ViewModel.IsSeriesAvailable, Mode=OneWay}">
                                         <Border Height="1" Background="{StaticResource SiloBorderBrush}" />
                                         <HyperlinkButton Content="See which series notify you" Padding="0" FontSize="14"
@@ -201,7 +201,7 @@
                                   AutomationProperties.Name="Show" />
 
             <StackPanel Spacing="16" Visibility="{x:Bind ViewModel.IsInboxView, Mode=OneWay}">
-                <TextBlock Text="{x:Bind ViewModel.MarkAllError, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloPrimaryBrush}"
+                <TextBlock Text="{x:Bind ViewModel.MarkAllError, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloDestructiveBrush}"
                            TextWrapping="Wrap" Visibility="{x:Bind ViewModel.HasMarkAllFailed, Mode=OneWay}" />
                 <TextBlock Text="{x:Bind ViewModel.Notice, Mode=OneWay}" Style="{StaticResource SiloCaptionTextStyle}"
                            Visibility="{x:Bind ViewModel.HasNotice, Mode=OneWay}" />
