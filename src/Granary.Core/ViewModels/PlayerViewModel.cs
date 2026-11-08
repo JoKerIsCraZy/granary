@@ -87,7 +87,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         _spoilers = spoilers;
         _devicePreferences = devicePreferences;
         ShowsTimeLeft = devicePreferences?.TimeLeft == true;
-        Party =InitializeWatchParty(confirmation);
+        Party = InitializeWatchParty(confirmation);
         Look.Edited += OnLookEdited;
         InitializeMarkerEdit();
         _engine.StateChanged += OnStateChanged;
