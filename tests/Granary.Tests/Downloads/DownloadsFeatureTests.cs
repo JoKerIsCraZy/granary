@@ -76,6 +76,57 @@ public sealed class DownloadsFeatureTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task ACancelledRead_IsReadAgainAtTheNextRefresh()
+    {
+        // The first read waits until it is cancelled (as leaving Settings does); the next one is answered.
+        int reads = 0;
+        _h.Silo.OnCancellable(HttpMethod.Get, CapabilityPath, async cancellationToken =>
+        {
+            if (Interlocked.Increment(ref reads) == 1)
+            {
+                await Task.Delay(Timeout.Infinite, cancellationToken);
+            }
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(DownloadPayloads.Capability(), System.Text.Encoding.UTF8, "application/json"),
+            };
+        });
+        var feature = Feature();
+        using var leaving = CancellationTokenSource.CreateLinkedTokenSource(Token);
+        var refresh = feature.RefreshAsync(leaving.Token);
+        await Until(() => _h.Silo.SentTo(HttpMethod.Get, CapabilityPath).Count == 1, "the capability was asked for");
+
+        await leaving.CancelAsync();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => refresh);
+        await feature.RefreshAsync(Token);
+
+        Assert.True(feature.CanDownload);
+        Assert.Equal(2, _h.Silo.SentTo(HttpMethod.Get, CapabilityPath).Count);
+    }
+
+    [Fact]
+    public async Task AnOldProfilesLateAnswer_IsDropped()
+    {
+        var late = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _h.Silo.On(HttpMethod.Get, CapabilityPath, () => late.Task,
+            ScriptedSilo.Json(HttpStatusCode.OK, DownloadPayloads.Capability(enabled: true, allowed: false)));
+        var feature = Feature();
+        var forSeven = feature.RefreshAsync(Token);
+        await Until(() => _h.Silo.SentTo(HttpMethod.Get, CapabilityPath).Count == 1, "profile 7's capability was asked for");
+
+        _h.Session.ProfileId = "8";
+        await feature.RefreshAsync(Token);
+        late.SetResult(new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(DownloadPayloads.Capability(), System.Text.Encoding.UTF8, "application/json"),
+        });
+        await forSeven;
+
+        Assert.Equal((false, false), (feature.CanDownload, feature.IsOffered));
+        Assert.Equal(["7", "8"], _h.Silo.SentTo(HttpMethod.Get, CapabilityPath).Select(r => r.AsProfile));
+    }
+
+    [Fact]
     public async Task EachProfile_IsAskedForItself_AndASignOutOffersNothing()
     {
         Capability(enabled: true, allowed: true);

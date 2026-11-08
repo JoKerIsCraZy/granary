@@ -60,9 +60,16 @@ public sealed partial class DownloadsFeature : ObservableObject
         {
             await ReadAsync(scope, server.BaseUri, cancellationToken);
         }
-        IsOffered = CanDownload || _store.In(scope).Count > 0;
+        // A refresh for a profile that is no longer the active one leaves the entry to that one's refresh.
+        if (DownloadScope.Of(_session) == scope)
+        {
+            IsOffered = CanDownload || _store.In(scope).Count > 0;
+        }
     }
 
+    // A refresh while this one is under way does not read again. One that does not end with an answer (a failure, a
+    // cancellation, the profile changing meanwhile) leaves the next refresh to read again; a slow answer for a profile that is
+    // no longer the active one is dropped.
     private async Task ReadAsync(DownloadScope scope, Uri server, CancellationToken cancellationToken)
     {
         // Another profile's answer is never shown for this one.
@@ -71,18 +78,33 @@ public sealed partial class DownloadsFeature : ObservableObject
             Capability = null;
         }
         _readFor = scope;
+        bool answered = false;
         try
         {
-            Capability = await _api.GetCapabilityAsync(server, scope.ProfileId, cancellationToken);
-            _failed = null;
+            var capability = await _api.GetCapabilityAsync(server, scope.ProfileId, cancellationToken);
+            if (DownloadScope.Of(_session) == scope)
+            {
+                Capability = capability;
+                _failed = null;
+                answered = true;
+            }
         }
         catch (Exception ex) when ((LibraryErrors.IsExpected(ex) || ex is ProfileChangedException) && !cancellationToken.IsCancellationRequested)
         {
             _logger.LogWarning("Could not read whether the server offers downloads ({Failure})",
                 ex is SiloApiException api ? api.Status.ToString(System.Globalization.CultureInfo.InvariantCulture) : ex.GetType().Name);
-            _readFor = null;
             _failed = (scope, _time.GetUtcNow());
-            Capability = null;
+            if (_readFor == scope)
+            {
+                Capability = null;
+            }
+        }
+        finally
+        {
+            if (!answered && _readFor == scope)
+            {
+                _readFor = null;
+            }
         }
     }
 }
