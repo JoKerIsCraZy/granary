@@ -70,7 +70,8 @@ public sealed partial class RequestsViewModel : ObservableObject
     private ITimer? _poll;
 
     public RequestsViewModel(ISessionManager session, RequestsApi requests, INavigationService navigation, TimeProvider time,
-        IUiDispatcher dispatcher, ILogger<RequestsViewModel> logger, MediaCardActions? cardActions = null, CardRequestNotice? requestNotice = null)
+        IUiDispatcher dispatcher, ILogger<RequestsViewModel> logger, MediaCardActions? cardActions = null, CardRequestNotice? requestNotice = null,
+        BrowseHeroSetting? browseHero = null)
     {
         _session = session;
         _requests = requests;
@@ -80,7 +81,7 @@ public sealed partial class RequestsViewModel : ObservableObject
         _logger = logger;
         _cardActions = cardActions;
         RequestNotice = requestNotice ?? CardRequestNotice.None;
-        Hero = new BrowseHeroViewModel(dispatcher, time);
+        Hero = new BrowseHeroViewModel(dispatcher, time, browseHero);
         Hero.PropertyChanged += OnHeroChanged;
         BrandRows =
         [
@@ -100,7 +101,10 @@ public sealed partial class RequestsViewModel : ObservableObject
 
     public ObservableCollection<RequestDiscoverRow> DiscoverRows { get; } = [];
 
-    /// <summary>The title at the top of Discover, following the card the pointer or the keyboard is on, as Home's.</summary>
+    /// <summary>
+    /// The title at the top of Discover, following the card the pointer or the keyboard is on, as Home's; none while the title
+    /// preview is off, when Discover starts with the page's title and its rows.
+    /// </summary>
     public BrowseHeroViewModel Hero { get; }
 
     /// <summary>What the top of the page shows: Discover's hero. Yours shows its title and tabs at the top.</summary>
@@ -179,6 +183,11 @@ public sealed partial class RequestsViewModel : ObservableObject
         {
             _hearsCards = true;
             _cardActions.RequestAnswered += OnCardRequestAnswered;
+        }
+        if (Hero.MissedSwitch)
+        {
+            // The title preview was turned on or off while the page was away.
+            FollowRowsWithHero();
         }
         bool shown = _loadedFor == Key() && DiscoverState != LibraryLoadState.Idle && YoursState != LibraryLoadState.Idle;
         if (!isReturn || !shown)

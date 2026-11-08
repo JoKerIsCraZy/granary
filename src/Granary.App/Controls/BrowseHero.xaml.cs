@@ -23,6 +23,8 @@ namespace Granary.App.Controls;
 /// On a taller page the hero is taller (<see cref="Sizes"/>, <see cref="BrowseHeroLayout.For"/>).
 /// Showing Home's banner (<see cref="SlideNumber"/>), it says which slide over the name and begins the rows lower, for the
 /// banner's buttons. The page lays its rows under it with <see cref="RowsViewMargin"/> and <see cref="RowsPadding"/>.
+/// With the title preview off (Settings → Navigation &amp; Cards, <see cref="BrowseHeroSetting"/>) the page gives it no title
+/// but Home's banner, so it stays hidden, holds no picture and the rows start at the top.
 /// </summary>
 public sealed partial class BrowseHero : UserControl
 {
@@ -125,15 +127,25 @@ public sealed partial class BrowseHero : UserControl
 
     // Static because the pages' x:Bind function bindings call them on the type. With a hero, the rows' view begins at the
     // compact header and the rows a fold's length below it, so at rest they start under the full hero and scroll up under
-    // the header as it folds; without one (loading, empty, an error), as on any page. They take whether the page has a
-    // title, not the title: x:Bind calls a function again only for an argument that is not null, so a title that went
-    // would have left its room behind (BrowseHeroViewModel.HasTitle).
+    // the header as it folds; without one (the title preview off, loading, empty, an error), at the top. They take whether
+    // the page has a title, not the title: x:Bind calls a function again only for an argument that is not null, so a title
+    // that went would have left its room behind (BrowseHeroViewModel.HasTitle).
+
+    /// <summary>
+    /// How far down a page of rows begins without a hero: the web's Home, For You and Requests lay out their own top, 24 px
+    /// (<c>pt-6</c>), rather than the 32 px of its other pages.
+    /// </summary>
+    public const double TopWithoutHero = 24;
 
     /// <summary>Where the rows' scroller begins under a hero of <paramref name="sizes"/>, while the page <paramref name="hasHero"/>.</summary>
     public static Thickness RowsViewMargin(bool hasHero, BrowseHeroSizes sizes) => new(0, hasHero ? sizes.CompactHeight : 0, 0, 0);
 
-    /// <summary>The padding of the rows in that scroller: the pages' 48 px sides and bottom, and the fold's length on top.</summary>
-    public static Thickness RowsPadding(bool hasHero, BrowseHeroSizes sizes) => new(48, hasHero ? sizes.CollapseDistance : 32, 48, 48);
+    /// <summary>
+    /// The padding of the rows in that scroller: the pages' 48 px sides and bottom, and the fold's length on top
+    /// (<see cref="TopWithoutHero"/> without a hero).
+    /// </summary>
+    public static Thickness RowsPadding(bool hasHero, BrowseHeroSizes sizes) =>
+        new(48, hasHero ? sizes.CollapseDistance : TopWithoutHero, 48, 48);
 
     /// <summary>
     /// Folds the hero as <paramref name="scroller"/> scrolls its first <see cref="BrowseHeroSizes.CollapseDistance"/>: the logo
