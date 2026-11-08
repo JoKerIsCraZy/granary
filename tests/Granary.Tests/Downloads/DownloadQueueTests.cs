@@ -707,6 +707,27 @@ public sealed class DownloadQueueTests : IAsyncDisposable
         }
     }
 
+    [Fact]
+    public async Task APause_EndsTheWaitForDownloading_AtOnce()
+    {
+        await _h.AddAsync("dl_1");
+        _h.ServeFile("dl_1", Source);
+        _h.Silo.OnCancellable(HttpMethod.Patch, EntryPath("dl_1"), async cancellationToken =>
+        {
+            await Task.Delay(Timeout.Infinite, cancellationToken);
+            return Answer("dl_1", "downloading");
+        });
+        var queue = _h.StartQueue();
+        await Until(() => _h.Reports("dl_1").Count == 1, "downloading went");
+
+        await _h.Store.UpdateAsync(Scope7, "dl_1", r => r with { IsPausedByViewer = true }, Token);
+
+        await Until(() => _h.Find("dl_1")!.Record.State == DownloadState.Queued, "the transfer stopped");
+        await IdleAsync(queue);
+        Assert.Empty(_h.FileRequests("dl_1"));
+        Assert.NotNull(_h.Find("dl_1")!.Record.PendingReport);
+    }
+
     private static HttpResponseMessage Answer(string id, string status) => new(HttpStatusCode.OK)
     {
         Content = new StringContent(DownloadPayloads.Entry(id, status), System.Text.Encoding.UTF8, "application/json"),

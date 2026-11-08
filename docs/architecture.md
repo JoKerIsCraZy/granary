@@ -913,7 +913,8 @@ missing their folder.
   second time in a row. Refusals go to what the server says (below). A missing folder waits until a recheck finds it.
 - **Status reports.** Turning Downloading or Completed records a `DownloadStatusEvent` with the time of the change in the
   record (`PendingReport`). The transfer takes the place of its download's report sender before it writes "downloading",
-  then sends it itself before it asks for the file, waiting at most `ReportBudget` (15 s). When the server work's send held
+  then sends it itself before it asks for the file, waiting at most `ReportBudget` (15 s), and no longer once the transfer
+  stops (a pause, a new revision, a delete). When the server work's send held
   the place first, the transfer waits for that one and then sends what it left, since it may have looked before
   "downloading" was written. "completed" goes with the server work, so a finished transfer frees its slot at once; while a
   "downloading" is still unsent, "completed" waits behind it (`NextReport`) and follows once it went or was refused. One

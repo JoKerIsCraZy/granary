@@ -59,6 +59,8 @@ public sealed partial class DownloadQueue
             return;
         }
         await SendStartReportAsync(run, sender).ConfigureAwait(false);
+        // A transfer stopped while it waited for its report asks for nothing more.
+        run.Cancel.Token.ThrowIfCancellationRequested();
         (download, var failed) = await FetchAssetsFirstAsync(run, download).ConfigureAwait(false);
         long from = failed?.Bytes ?? ResumePoint(download);
         var outcome = failed ?? await _transfer.RunAsync(JobOf(run, download, from), bytes => OnProgress(key, bytes),
@@ -68,13 +70,14 @@ public sealed partial class DownloadQueue
 
     // The server hears "downloading" before the file is asked for, so "completed" always comes after it. The transfer sends it
     // itself; when a sender held the place first, it waits for that one, which may have looked before "downloading" was
-    // written, and then sends what is left. All of it takes at most ReportBudget. One that did not go waits out its delay, and
-    // the server work sends it then: the loop is woken to know when.
+    // written, and then sends what is left. All of it takes at most ReportBudget, and ends at once when the transfer stops (a
+    // pause, a replace, a delete). One that did not go waits out its delay, and the server work sends it then: the loop is
+    // woken to know when.
     private async Task SendStartReportAsync(Running run, TaskCompletionSource? sender)
     {
         var key = run.Key;
         using var budget = new CancellationTokenSource(ReportBudget, _time);
-        using var linked = CancellationTokenSource.CreateLinkedTokenSource(_stopToken, budget.Token);
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(_stopToken, budget.Token, run.Cancel.Token);
         try
         {
             while (sender is null)
