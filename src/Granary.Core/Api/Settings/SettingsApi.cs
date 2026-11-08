@@ -83,6 +83,13 @@ public sealed class SettingsApi(SiloHttp http)
     public Task ClearValueAsync(Uri server, string key, string scope, CancellationToken cancellationToken = default) =>
         http.SendAsync(HttpMethod.Delete, server, ValuePath(key, scope), SiloAuth.Profile, cancellationToken);
 
+    /// <summary>
+    /// As <see cref="ClearValueAsync"/>, for a value that belongs to profile <paramref name="profileId"/>: it goes out only
+    /// while the server acts as that profile, else it throws <see cref="ProfileChangedException"/> unsent.
+    /// </summary>
+    public Task ClearValueAsProfileAsync(Uri server, string key, string scope, string profileId, CancellationToken cancellationToken = default) =>
+        http.SendAsProfileAsync(HttpMethod.Delete, server, ValuePath(key, scope), profileId, cancellationToken);
+
     private static string ValuePath(string key, string scope) =>
         "api/v2/settings/values/" + SiloHttp.PathSegment(key, nameof(key)) + new QueryBuilder().Add("scope", scope);
 }

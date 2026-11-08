@@ -111,7 +111,8 @@ public sealed partial class TitlePageSettings : ObservableObject
 
     /// <summary>"Show advisory age", the profile's alone.</summary>
     public Task SetShowsAdvisoryAgeAsync(bool shows) =>
-        ChangeAsync(AdvisoryAgeKey, Shown with { ShowsAdvisoryAge = shows }, () => SaveForProfileAsync(AdvisoryAgeKey, shows, clearDevice: false),
+        ChangeAsync(AdvisoryAgeKey, Shown with { ShowsAdvisoryAge = shows },
+            target => SetAsync(target, AdvisoryAgeKey, shows, SettingScopes.Profile),
             confirmed => confirmed with { ShowsAdvisoryAge = shows });
 
     /// <summary>
@@ -122,7 +123,7 @@ public sealed partial class TitlePageSettings : ObservableObject
     {
         bool clearDevice = Shown.ThemeMusicFromDevice;
         return ChangeAsync(ThemeMusicKey, Shown with { PlaysThemeMusic = plays, ThemeMusicFromDevice = false },
-            () => SaveForProfileAndClearDeviceAsync(ThemeMusicKey, plays, clearDevice),
+            target => SaveForProfileAndClearDeviceAsync(target, ThemeMusicKey, plays, clearDevice),
             confirmed => confirmed with { PlaysThemeMusic = plays, ThemeMusicFromDevice = false });
     }
 
@@ -131,17 +132,17 @@ public sealed partial class TitlePageSettings : ObservableObject
     {
         bool clearDevice = Shown.ThemeMusicLoopFromDevice;
         return ChangeAsync(ThemeMusicLoopKey, Shown with { LoopsThemeMusic = loops, ThemeMusicLoopFromDevice = false },
-            () => SaveForProfileAndClearDeviceAsync(ThemeMusicLoopKey, loops, clearDevice),
+            target => SaveForProfileAndClearDeviceAsync(target, ThemeMusicLoopKey, loops, clearDevice),
             confirmed => confirmed with { LoopsThemeMusic = loops, ThemeMusicLoopFromDevice = false });
     }
 
     // The profile's value first, so a failed clear leaves the choice stored, then this PC's, which outranks it.
-    private async Task SaveForProfileAndClearDeviceAsync(string key, bool value, bool clearDevice)
+    private async Task SaveForProfileAndClearDeviceAsync(WriteTarget target, string key, bool value, bool clearDevice)
     {
-        await _api.SetValueAsync(Server, key, Json(value), SettingScopes.Profile);
+        await SetAsync(target, key, value, SettingScopes.Profile);
         if (clearDevice)
         {
-            await ClearAsync(key, SettingScopes.ProfileDevice);
+            await ClearAsync(target, key, SettingScopes.ProfileDevice);
         }
     }
 
@@ -156,7 +157,8 @@ public sealed partial class TitlePageSettings : ObservableObject
             return Task.CompletedTask;
         }
         string scope = Shown.TitleArtForAllDevices ? SettingScopes.Profile : SettingScopes.ProfileDevice;
-        return ChangeAsync(TitleArtKey, Shown with { ShowsTitleArt = shows, TitleArtSource = scope }, () => SetTitleArtAsync(shows, scope),
+        return ChangeAsync(TitleArtKey, Shown with { ShowsTitleArt = shows, TitleArtSource = scope },
+            target => SetAsync(target, TitleArtKey, shows, scope),
             confirmed => confirmed with { ShowsTitleArt = shows, TitleArtSource = scope });
     }
 
@@ -172,14 +174,12 @@ public sealed partial class TitlePageSettings : ObservableObject
         }
         bool shows = Shown.ShowsTitleArt ?? true;
         string scope = allDevices ? SettingScopes.Profile : SettingScopes.ProfileDevice;
-        var owner = Owner();
-        return ChangeAsync(TitleArtKey, Shown with { ShowsTitleArt = shows, TitleArtSource = scope }, async () =>
+        return ChangeAsync(TitleArtKey, Shown with { ShowsTitleArt = shows, TitleArtSource = scope }, async target =>
         {
-            await SetTitleArtAsync(shows, scope);
-            // After a profile switch the clear would remove the other profile's choice.
-            if (!allDevices && Owner() == owner)
+            await SetAsync(target, TitleArtKey, shows, scope);
+            if (!allDevices)
             {
-                await ClearAsync(TitleArtKey, SettingScopes.Profile);
+                await ClearAsync(target, TitleArtKey, SettingScopes.Profile);
             }
         }, confirmed => confirmed with { ShowsTitleArt = shows, TitleArtSource = scope });
     }
@@ -192,12 +192,12 @@ public sealed partial class TitlePageSettings : ObservableObject
     {
         bool allDevices = Shown.TitleArtForAllDevices;
         var owner = Owner();
-        await ChangeAsync(TitleArtKey, Shown with { TitleArtSource = TitlePagePrefs.DefaultSource }, async () =>
+        await ChangeAsync(TitleArtKey, Shown with { TitleArtSource = TitlePagePrefs.DefaultSource }, async target =>
         {
-            await ClearAsync(TitleArtKey, SettingScopes.ProfileDevice);
-            if (allDevices && Owner() == owner)
+            await ClearAsync(target, TitleArtKey, SettingScopes.ProfileDevice);
+            if (allDevices)
             {
-                await ClearAsync(TitleArtKey, SettingScopes.Profile);
+                await ClearAsync(target, TitleArtKey, SettingScopes.Profile);
             }
         }, confirmed => confirmed with { TitleArtSource = TitlePagePrefs.DefaultSource });
         if (Owner() == owner)
@@ -206,13 +206,17 @@ public sealed partial class TitlePageSettings : ObservableObject
         }
     }
 
-    private Task SetTitleArtAsync(bool shows, string scope) => _api.SetValueAsync(Server, TitleArtKey, Json(shows), scope);
+    // Every step of a change goes out as the profile it was made for, the second of two included: should the profile change
+    // between them, the next one is refused unsent (ProfileChangedException), so it never writes or clears the next
+    // profile's value, and the change counts as not saved.
+    private Task SetAsync(WriteTarget target, string key, bool value, string scope) =>
+        _api.SetValueAsProfileAsync(target.Server, key, Json(value), scope, target.ProfileId);
 
-    private async Task ClearAsync(string key, string scope)
+    private async Task ClearAsync(WriteTarget target, string key, string scope)
     {
         try
         {
-            await _api.ClearValueAsync(Server, key, scope);
+            await _api.ClearValueAsProfileAsync(target.Server, key, scope, target.ProfileId);
         }
         catch (SiloApiException ex) when (ex.Status == 404)
         {
@@ -220,13 +224,15 @@ public sealed partial class TitlePageSettings : ObservableObject
         }
     }
 
-    private Uri Server => _session.ActiveServer?.BaseUri ?? throw new InvalidOperationException("No server is signed in.");
+    // The server and profile a change was made for.
+    private readonly record struct WriteTarget(Uri Server, string ProfileId);
 
     // Applies next at once and saves it in turn, for the profile acting when it was made; a refused or lost save puts back
     // what the server has.
-    private Task ChangeAsync(string key, TitlePagePrefs next, Func<Task> save, Func<TitlePagePrefs, TitlePagePrefs> confirm)
+    private Task ChangeAsync(string key, TitlePagePrefs next, Func<WriteTarget, Task> save, Func<TitlePagePrefs, TitlePagePrefs> confirm)
     {
-        if (!CanEdit || !Shown.Offered.Contains(key) || next == Shown)
+        if (!CanEdit || !Shown.Offered.Contains(key) || next == Shown
+            || _session is not { ActiveServer: { } server, ProfileId: { } profileId })
         {
             return Task.CompletedTask;
         }
@@ -234,8 +240,9 @@ public sealed partial class TitlePageSettings : ObservableObject
         SaveFailed = false;
         Shown = next;
         var owner = Owner();
+        var target = new WriteTarget(server.BaseUri, profileId);
         _savesQueued++;
-        return Working = _saves = SaveInTurnAsync(_saves, key, owner, save, confirm);
+        return Working = _saves = SaveInTurnAsync(_saves, key, owner, () => save(target), confirm);
     }
 
     private async Task SaveInTurnAsync(Task previous, string key, (string?, string?) owner, Func<Task> save, Func<TitlePagePrefs, TitlePagePrefs> confirm)
@@ -281,16 +288,12 @@ public sealed partial class TitlePageSettings : ObservableObject
                 _confirmed = confirm(_confirmed);
             }
         }
-        catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex) || ex is InvalidOperationException)
+        catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex) || ex is ProfileChangedException or InvalidOperationException)
         {
             _logger.LogWarning("Saving a title page setting failed: {Failure}", ApiFailureText.Describe(ex));
             _failedKeys.Add(key);
         }
     }
-
-    // As the web's useProfileDefaultWriter: the profile's value, and this device's cleared when it would shadow it.
-    private Task SaveForProfileAsync(string key, bool value, bool clearDevice) =>
-        _settings.SaveAsync(key, Json(value), clearDevice, CancellationToken.None);
 
     private static JsonElement Json(bool value)
     {

@@ -646,6 +646,10 @@ The rest of the web's Title Pages (`web/src/pages/settings/TitlePagesSettings.ts
 batch, at start, with every server or profile, and when the settings page opens; until a profile's are read every one is at
 its default, never the previous profile's. A change shows at once and saves in order; a refused one goes back. A key the
 server's contract does not know (`422`, then read one by one, `ProfileSettings`) offers no switch and stays at its default.
+Every write and clear of a change goes out as the server and profile it was made for (`SettingsApi.SetValueAsProfileAsync`,
+`ClearValueAsProfileAsync`, `SiloHttp.SendAsProfileAsync`), also the second of two: should the profile change between
+them, the next one is refused unsent and the change counts as not saved, so it never writes or clears the next profile's
+value.
 
 - `catalog.show_advisory_age` (revision 10, `profile` only, default `false`): a movie's or series' page names its
   `advisory_age` beside the rating ([7.6](#76-item-detail-get-apiv2catalogitemsid)), as the web's `useShowAdvisoryAge` and
@@ -657,7 +661,7 @@ server's contract does not know (`422`, then read one by one, `ProfileSettings`)
   its title, neither logo nor text, for 1.5 s at most; then the logo shows until the answer comes. Writes:
   - Show title art: `PUT …?scope=profile_device`, or `…?scope=profile` while the source is `profile`.
   - Apply to all devices on: `PUT …?scope=profile` with the current value. Off: `PUT …?scope=profile_device` with the
-    current value, then `DELETE …?scope=profile` (skipped once another profile acts), so this PC keeps its look and the
+    current value, then `DELETE …?scope=profile` (refused unsent once another profile acts), so this PC keeps its look and the
     others go back to their own or the default.
   - Use server default (shown while the source is not `default`): `DELETE …?scope=profile_device`, and `…?scope=profile`
     while that is the source, then read the effective value again; a `404` means there was nothing to clear.

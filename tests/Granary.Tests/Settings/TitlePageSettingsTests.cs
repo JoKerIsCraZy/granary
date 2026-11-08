@@ -403,6 +403,7 @@ public sealed class TitlePageSettingsTests
     public async Task ApplyToAllDevicesOff_ClearsNothing_OnceAnotherProfileActs()
     {
         _harness.Answer(EffectivePath, Answer(titleArtSource: "profile"));
+        _harness.Silo.ActingProfile = () => _harness.Session.ProfileId;
         var settings = Create();
         await settings.StartAsync();
         var release = new TaskCompletionSource();
@@ -545,6 +546,7 @@ public sealed class TitlePageSettingsTests
         Assert.True(settings.Shown.LoopsThemeMusic);
         Assert.Equal(["PUT ?scope=profile {\"value\":true}"], Writes(TitlePageSettings.ThemeMusicKey));
         Assert.Equal(["PUT ?scope=profile {\"value\":true}"], Writes(TitlePageSettings.ThemeMusicLoopKey));
+        Assert.All(_harness.Silo.Sent.Where(r => r.Method == HttpMethod.Put), put => Assert.Equal("7", put.AsProfile));
     }
 
     [Fact]
@@ -560,6 +562,54 @@ public sealed class TitlePageSettingsTests
         Assert.Equal(["PUT ?scope=profile {\"value\":false}", "DELETE ?scope=profile_device", "PUT ?scope=profile {\"value\":true}"],
             Writes(TitlePageSettings.ThemeMusicKey));
         Assert.False(settings.Shown.ThemeMusicFromDevice);
+    }
+
+    [Fact]
+    public async Task AProfileSwitchBetweenTheSaveAndTheClear_ClearsNothingForTheNextProfile_AndIsRefusedUnsent()
+    {
+        _harness.Answer(EffectivePath, Answer(themeMusic: true, themeMusicSource: "profile_device"));
+        _harness.Silo.ActingProfile = () => _harness.Session.ProfileId;
+        var settings = Create();
+        await settings.StartAsync();
+        var release = new TaskCompletionSource();
+        _harness.Silo.On(HttpMethod.Put, ThemeMusicPath, LibraryHarness.Held(release, "{}"));
+
+        var saving = settings.SetPlaysThemeMusicAsync(false);
+        _harness.Session.ProfileId = "8";
+        release.SetResult();
+        await saving;
+
+        Assert.Equal(["PUT ?scope=profile {\"value\":false}"], Writes(TitlePageSettings.ThemeMusicKey));
+        Assert.Equal("7", Assert.Single(_harness.Silo.SentTo(HttpMethod.Put, ThemeMusicPath)).AsProfile);
+        Assert.Empty(_harness.Silo.SentTo(HttpMethod.Delete, ThemeMusicPath));
+    }
+
+    [Fact]
+    public async Task AClearThatFails_CountsAsAnIncompleteSave_AndGoesBack()
+    {
+        _harness.Answer(EffectivePath, Answer(themeMusic: true, themeMusicSource: "profile_device"));
+        _harness.Silo.On(HttpMethod.Delete, ThemeMusicPath, ScriptedSilo.Problem(503, "unavailable"));
+        var settings = Create();
+        await settings.StartAsync();
+
+        await settings.SetPlaysThemeMusicAsync(false);
+
+        Assert.True(settings.SaveFailed);
+        Assert.True(settings.Shown.PlaysThemeMusic);
+        Assert.Equal("7", Assert.Single(_harness.Silo.SentTo(HttpMethod.Delete, ThemeMusicPath)).AsProfile);
+    }
+
+    [Fact]
+    public async Task UseServerDefault_ClearsAsTheProfileItWasChosenFor()
+    {
+        _harness.Answer(EffectivePath, Answer(titleArt: false, titleArtSource: "profile"), Answer());
+        var settings = Create();
+        await settings.StartAsync();
+
+        await settings.UseServerDefaultTitleArtAsync();
+
+        Assert.All(_harness.Silo.SentTo(HttpMethod.Delete, TitleArtPath), clear => Assert.Equal("7", clear.AsProfile));
+        Assert.Equal(2, _harness.Silo.SentTo(HttpMethod.Delete, TitleArtPath).Count);
     }
 
     [Fact]
