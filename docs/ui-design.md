@@ -83,10 +83,11 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
   `MediaCard.BlursImage`), is drawn as the web's `scale-110 blur-xl`: blurred by 24 px at the size it shows, grown a tenth,
   and without the pointer's zoom; its thumbhash shows first as for any card, and the sharp picture is never loaded. The
   image for it is made only for a card that shows one (`x:Load`). The badges, the progress bar and the title stay.
-  A box set's card (`MediaCard.BoxSetFilms`, the web's `BoxSetCard`) sits 6 px lower under two sleeves that read as a
-  stack of films (24 high, 12 px top corners; the back one `#28282E` 10 % in from each side, the front one `#232328` 5 %
-  in and 3 px lower, both with the border colour's edge), with "BOX SET" top left (the web's glass: the surface at 40 %, a
-  15 % white edge, 10 px semibold capitals 0.14 em apart) and its films bottom right ("3 films", 11 px bold on the page's
+  A box set's card (`MediaCard.BoxSetFilms`, the web's `BoxSetCard`) has two sleeves peeking 6 px above its poster that
+  read as a stack of films (24 high, 12 px top corners; the back one `#28282E` 10 % in from each side, the front one
+  `#232328` 5 % in and 3 px lower, both with the border colour's edge). Unlike the web's card, which grows 6 px for them,
+  they stand above the card's own box, so it measures as a film card does and its poster lines up with theirs. "BOX SET"
+  sits top left (the web's glass: the surface at 40 %, a 15 % white edge, 10 px semibold capitals 0.14 em apart) and its films bottom right ("3 films", 11 px bold on the page's
   dark at 60 %, 6 px corners; raised over a watched bar). Under it its name and "1 / 3 WATCHED" once one is watched, else
   its years ("2019 – 2028"), else its films; the watched share is its bar. It has no play disc, buttons or menu. Screen
   readers hear "Masterplan Box Set, box set of 3 films, 1 / 3 WATCHED". The sleeves and marks are made (`x:Load`) for the

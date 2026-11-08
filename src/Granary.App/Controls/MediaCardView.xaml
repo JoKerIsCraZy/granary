@@ -28,11 +28,13 @@
         </Grid.RowDefinitions>
 
         <!--
-            A box set's card (MediaCard.BoxSetFilms), as the web's BoxSetCard.tsx: two sleeves peek 6 px above the poster, which
-            moves down for them, and read as a stack of films; 24 high with 12 px top corners, the back one 10 % in from each
-            side, the front one 5 % in and 3 px lower. Made for the first box set card only (MediaCardView.BoxSet.cs).
+            A box set's card (MediaCard.BoxSetFilms), as the web's BoxSetCard.tsx: two sleeves peek 6 px above the poster and
+            read as a stack of films; 24 high with 12 px top corners, the back one 10 % in from each side, the front one 5 % in
+            and 3 px lower. Unlike the web's, which makes its card 6 px taller for them, they stand above the card's own box (a
+            negative margin; nothing up the tree clips), so the card measures as a film's does, its poster level with theirs
+            and a row holding both stays even. Made for the first box set card only (MediaCardView.BoxSet.cs).
         -->
-        <Grid x:Name="Sleeves" x:Load="False" Height="24" VerticalAlignment="Top" IsHitTestVisible="False"
+        <Grid x:Name="Sleeves" x:Load="False" Height="24" Margin="0,-6,0,0" VerticalAlignment="Top" IsHitTestVisible="False"
               AutomationProperties.AccessibilityView="Raw">
             <Grid>
                 <Grid.ColumnDefinitions>
