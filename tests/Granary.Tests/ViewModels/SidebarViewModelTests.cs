@@ -33,7 +33,7 @@ public sealed class SidebarViewModelTests
     // The next library read waits for this, answering as the libraries did when it was asked.
     private TaskCompletionSource? _holdLibraries;
 
-    private SidebarViewModel Create()
+    private SidebarViewModel Create(Granary.Core.Playback.AudioDelay? audioDelay = null)
     {
         var handler = new FakeHttpMessageHandler(async (request, _) =>
         {
@@ -54,7 +54,7 @@ public sealed class SidebarViewModelTests
         var http = new SiloHttp(new HttpClient(handler));
         var libraries = new VisibleLibraries(new CatalogApi(http), new SettingsApi(http), _logs.For<VisibleLibraries>());
         return new SidebarViewModel(_session, new ProfilesApi(http), libraries, _navigation, new ImmediateDispatcher(), _clock,
-            _logs.For<SidebarViewModel>());
+            _logs.For<SidebarViewModel>(), audioDelay);
     }
 
     private static Func<HttpResponseMessage> Hiding(string ids) => () => FakeSiloServer.Json(200,
@@ -277,6 +277,91 @@ public sealed class SidebarViewModelTests
         Assert.Equal("elena", sidebar.ProfileName);
         Assert.Equal("E", sidebar.ProfileInitials);
         Assert.Contains(_logs.Lines, l => l.StartsWith("Warning", StringComparison.Ordinal));
+    }
+
+    private const string AudioDelayPath = "api/v2/settings/values/player.audio_sync_ms";
+
+    // This device's audio delay on a server of its own, acting as profile 7, with a change waiting to be saved.
+    private Granary.Core.Playback.AudioDelay WaitingAudioDelay(Profiles.ScriptedSilo silo)
+    {
+        _session.State = SessionState.Ready;
+        _session.ActiveServer = Profiles.ScriptedSilo.Server;
+        _session.ProfileId = "7";
+        var delay = new Granary.Core.Playback.AudioDelay(new SettingsApi(silo.Http), _session, new ImmediateDispatcher(), _clock,
+            _logs.For<Granary.Core.Playback.AudioDelay>());
+        delay.Set(250);
+        return delay;
+    }
+
+    [Fact]
+    public async Task SwitchProfile_FirstSavesAnAudioDelayChangedAMomentBefore_AsTheProfileItWasMadeFor()
+    {
+        var silo = new Profiles.ScriptedSilo();
+        int callsAtSave = -1;
+        silo.On(HttpMethod.Put, AudioDelayPath, () =>
+        {
+            callsAtSave = _session.Calls.Count;
+            return Profiles.ScriptedSilo.NoContent()();
+        });
+        using var sidebar = Create(WaitingAudioDelay(silo));
+
+        await sidebar.SwitchProfileCommand.ExecuteAsync(null);
+
+        var save = Assert.Single(silo.SentTo(HttpMethod.Put, AudioDelayPath));
+        Assert.Equal("7", save.AsProfile);
+        Assert.Equal(0, callsAtSave);
+        Assert.Equal(["clear-profile"], _session.Calls);
+    }
+
+    [Fact]
+    public async Task SignOut_FirstSavesAnAudioDelayChangedAMomentBefore()
+    {
+        var silo = new Profiles.ScriptedSilo();
+        int callsAtSave = -1;
+        silo.On(HttpMethod.Put, AudioDelayPath, () =>
+        {
+            callsAtSave = _session.Calls.Count;
+            return Profiles.ScriptedSilo.NoContent()();
+        });
+        using var sidebar = Create(WaitingAudioDelay(silo));
+
+        await sidebar.SignOutCommand.ExecuteAsync(null);
+
+        Assert.Equal("7", Assert.Single(silo.SentTo(HttpMethod.Put, AudioDelayPath)).AsProfile);
+        Assert.Equal(0, callsAtSave);
+        Assert.Equal(["sign-out:active"], _session.Calls);
+    }
+
+    [Fact]
+    public async Task AnAudioDelaySaveThatDoesNotAnswer_HoldsSwitchProfileTwoSecondsAtMost()
+    {
+        var silo = new Profiles.ScriptedSilo();
+        var never = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        silo.On(HttpMethod.Put, AudioDelayPath, () => never.Task);
+        using var sidebar = Create(WaitingAudioDelay(silo));
+
+        var switching = sidebar.SwitchProfileCommand.ExecuteAsync(null);
+        await Playback.ServerPlaybackFixture.Until(() => silo.SentTo(HttpMethod.Put, AudioDelayPath).Count == 1, "the save goes out");
+        _clock.Advance(TimeSpan.FromSeconds(1.9));
+        Assert.Empty(_session.Calls);
+        _clock.Advance(TimeSpan.FromSeconds(0.1));
+        await switching;
+
+        Assert.Equal(["clear-profile"], _session.Calls);
+        never.SetResult(new HttpResponseMessage(System.Net.HttpStatusCode.NoContent));
+    }
+
+    [Fact]
+    public async Task AnAudioDelaySaveThatFails_DoesNotStopSwitchProfile()
+    {
+        var silo = new Profiles.ScriptedSilo();
+        silo.On(HttpMethod.Put, AudioDelayPath, Profiles.ScriptedSilo.Problem(503, "unavailable"));
+        using var sidebar = Create(WaitingAudioDelay(silo));
+
+        await sidebar.SwitchProfileCommand.ExecuteAsync(null);
+
+        Assert.Single(silo.SentTo(HttpMethod.Put, AudioDelayPath));
+        Assert.Equal(["clear-profile"], _session.Calls);
     }
 
     [Fact]

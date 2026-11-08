@@ -78,6 +78,12 @@
                                   SelectedItem="{x:Bind ViewModel.SelectedStillWatching, Mode=TwoWay}" AutomationProperties.Name="Still watching prompt" />
                     </StackPanel>
                 </controls:SettingsRow>
+                <!-- Granary's own: Silo's clients always have the sleep timer. An open player, also the minimized one, follows at once. -->
+                <controls:SettingsRow Label="Sleep timer"
+                                      Description="Show the Sleep button in the player, which pauses playback after a set time or at the end of an episode. Turning it off ends a timer that's running.">
+                    <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.SleepTimerButton, Mode=TwoWay}"
+                                  AutomationProperties.Name="Sleep timer" />
+                </controls:SettingsRow>
                 <!-- mpv reads the file when it starts, and each load starts a new one if the file changed (docs/architecture.md, "Your own mpv.conf"). -->
                 <controls:SettingsRow Label="mpv configuration"
                                       Description="Use your own mpv options from mpv.conf, such as shaders, scaling or debanding. They apply from the next title you play. Granary keeps the options it needs to show the video and follow your Silo server's choices. A wrong option can make playback worse; delete the file to go back to normal.">
@@ -156,6 +162,37 @@
                                   AutomationProperties.Name="Show what's playing in Discord" />
                 </controls:SettingsRow>
             </StackPanel>
+        </controls:SettingsGroup>
+
+        <!--
+            This device's player.audio_sync_ms, as the web's device settings show it (DeviceSettingGroups: the Sound group, a
+            slider with the value and its unit beside it), in the Android app's 50 ms steps. Positive plays the sound later.
+            The view model makes the steps: a slider stepping by itself would move a value another app stored off them. A read
+            that failed says so with Retry, as the Devices page does; a server that does not know the setting has no Sound.
+        -->
+        <controls:SettingsGroup Title="Sound" Description="Audio on this device" Visibility="{x:Bind AudioDelay.IsSupported, Mode=OneWay}">
+            <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Audio sync offset"
+                                  Description="Shift audio earlier or later to correct lip sync on this device.">
+                <Grid>
+                    <StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center" Visibility="{x:Bind AudioDelay.HasLoadMessage, Mode=OneWay}">
+                        <TextBlock Text="{x:Bind AudioDelay.LoadMessage, Mode=OneWay}" Style="{StaticResource SiloSettingsMutedTextStyle}"
+                                   VerticalAlignment="Center" AutomationProperties.LiveSetting="Polite" />
+                        <Button Content="Retry" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Command="{x:Bind AudioDelay.LoadCommand}"
+                                AutomationProperties.Name="Retry loading the audio sync offset" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center" Visibility="{x:Bind AudioDelay.ShowsSlider, Mode=OneWay}">
+                        <Slider x:Name="AudioSyncSlider" Width="160" VerticalAlignment="Center" IsThumbToolTipEnabled="False"
+                                Minimum="{x:Bind settings:AudioDelaySettingsViewModel.Minimum}" Maximum="{x:Bind settings:AudioDelaySettingsViewModel.Maximum}"
+                                StepFrequency="1" SmallChange="50" LargeChange="500"
+                                Value="{x:Bind AudioDelay.Milliseconds, Mode=TwoWay}" IsEnabled="{x:Bind AudioDelay.IsLoaded, Mode=OneWay}"
+                                AutomationProperties.Name="Audio sync offset"
+                                AutomationProperties.HelpText="Shift audio earlier or later to correct lip sync on this device." />
+                        <TextBlock MinWidth="112" Text="{x:Bind AudioDelay.ValueText, Mode=OneWay}" VerticalAlignment="Center" TextAlignment="Right"
+                                   FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium" FontSize="12" Foreground="{StaticResource SiloMutedBrush}"
+                                   Typography.NumeralAlignment="Tabular" AutomationProperties.AccessibilityView="Raw" />
+                    </StackPanel>
+                </Grid>
+            </controls:SettingsRow>
         </controls:SettingsGroup>
 
         <controls:SettingsGroup Title="Connection" Visibility="{x:Bind ViewModel.ShowsConnection, Mode=OneWay}">

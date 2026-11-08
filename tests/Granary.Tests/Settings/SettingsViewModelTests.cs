@@ -361,6 +361,29 @@ public sealed class SettingsViewModelTests : IDisposable
     }
 
     [Fact]
+    public void TheSleepButton_IsThisPcsChoice_OnAtFirst()
+    {
+        var page = Playback();
+        Assert.True(page.SleepTimerButton);
+
+        page.SleepTimerButton = false;
+
+        Assert.Equal([false], _device.SavedSleepTimerButton);
+        Assert.Empty(_settings.Writes);
+    }
+
+    [Fact]
+    public void TheSleepButton_ShowsWhatThisPcHolds_WithoutSavingIt()
+    {
+        _device.SleepTimerButton = false;
+
+        var page = Playback();
+
+        Assert.False(page.SleepTimerButton);
+        Assert.Empty(_device.SavedSleepTimerButton);
+    }
+
+    [Fact]
     public void UpAndDownInThePlayer_IsThisPcsChoice_ControlsAndMenusFirst()
     {
         var page = Playback();

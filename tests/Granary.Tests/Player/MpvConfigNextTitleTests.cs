@@ -72,6 +72,7 @@ public sealed class MpvConfigNextTitleTests : IDisposable
         engine.SetSpeed(1.5);
         engine.SetFill(true);
         engine.SetSubtitleDelay(2);
+        engine.SetAudioDelay(-0.3);
         File.WriteAllText(ConfigFile, "deband=no\nsaturation=-50\nvo=gpu\n");
 
         await PlaysAWav(engine, 0.5);
@@ -84,8 +85,24 @@ public sealed class MpvConfigNextTitleTests : IDisposable
         Assert.Equal("1.500000", engine.Option("speed"));
         Assert.Equal("1.000000", engine.Option("panscan"));
         Assert.Equal("2.000000", engine.Option("sub-delay"));
+        Assert.Equal("-0.300000", engine.Option("audio-delay"));
         Assert.Equal(2, Count(StartLine));
         Assert.Equal(new MpvConfigState(MpvConfigUse.Used, KeptOptions: 1), _status.Current);
+    }
+
+    [Fact]
+    public async Task AnAudioDelayInTheFile_StaysWhileGranaryHasNone_AndGivesWayOnceGranarySetsOne()
+    {
+        using var engine = CreateEngine("audio-delay=0.3\n");
+
+        await PlaysAWav(engine, 0.5);
+        engine.SetAudioDelay(0);
+        Assert.Equal("0.300000", engine.Option("audio-delay"));
+
+        engine.SetAudioDelay(-0.1);
+        Assert.Equal("-0.100000", engine.Option("audio-delay"));
+        engine.SetAudioDelay(0);
+        Assert.Equal("0.000000", engine.Option("audio-delay"));
     }
 
     [Fact]

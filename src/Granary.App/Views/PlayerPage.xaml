@@ -232,9 +232,10 @@
                         <!--
                             The web's sleep timer (SleepTimerMenu, after the volume as in its audiobook player): the moon and "Sleep",
                             "Sleep 29:59" while a duration counts down; white with the amber dot while it is on. The menu: Turn off
-                            while on, the durations, and the end of what plays.
+                            while on, the durations, and the end of what plays. Settings → Playback → This PC can take it away,
+                            dot and all, and the buttons after it close up.
                         -->
-                        <Grid>
+                        <Grid Visibility="{x:Bind ViewModel.ShowsSleepTimer, Mode=OneWay}">
                             <Button x:Name="SleepTimerButton" Style="{StaticResource SiloPlayerIconButtonStyle}" Width="Auto" Padding="8,0"
                                     Foreground="{x:Bind UtilityForeground(ViewModel.IsSleepTimerOn), Mode=OneWay}"
                                     AutomationProperties.Name="Sleep timer" AutomationProperties.ItemStatus="{x:Bind ViewModel.SleepTimerStatus, Mode=OneWay}"
@@ -549,6 +550,45 @@
                                         <!-- A Watch Party plays at the room's speed. -->
                                         <controls:SpeedTrack x:Name="SpeedTrack" Speed="{x:Bind ViewModel.Speed, Mode=OneWay}" SpeedPicked="OnSpeedPicked"
                                                              AutomationProperties.Name="Playback speed" Visibility="{x:Bind Not(ViewModel.IsWatchParty), Mode=OneWay}" />
+
+                                        <!--
+                                            Silo's Android player (Sync): the sound earlier or later, 50 ms a step up to 5 s, and Reset, drawn as
+                                            the subtitle menu's DELAY. This device's player.audio_sync_ms, as Settings → Playback → Sound. The
+                                            line under SPEED goes with it in a Watch Party, where the row comes first. A server that does not know
+                                            the setting has no row.
+                                        -->
+                                        <StackPanel Visibility="{x:Bind ViewModel.ShowsAudioDelay, Mode=OneWay}">
+                                            <Border Height="1" Margin="0,4" Background="#1AFFFFFF" Visibility="{x:Bind Not(ViewModel.IsWatchParty), Mode=OneWay}" />
+                                            <Grid Padding="12,8" ColumnSpacing="12">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="AUDIO DELAY" FontSize="12" CharacterSpacing="25" Foreground="#80FFFFFF" VerticalAlignment="Center"
+                                                           AutomationProperties.AccessibilityView="Raw" />
+                                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                                    <Button Style="{StaticResource SiloPlayerMenuStepButtonStyle}" Click="OnAudioEarlierClick"
+                                                            IsEnabled="{x:Bind ViewModel.CanDelayAudioEarlier, Mode=OneWay}"
+                                                            AutomationProperties.Name="Audio 50 ms earlier">
+                                                        <FontIcon Glyph="&#xE738;" FontSize="12" />
+                                                    </Button>
+                                                    <TextBlock MinWidth="72" Text="{x:Bind ViewModel.AudioDelayText, Mode=OneWay}" FontFamily="Consolas" FontSize="12"
+                                                               Foreground="#CCFFFFFF" TextAlignment="Center" VerticalAlignment="Center"
+                                                               AutomationProperties.LiveSetting="Polite" AutomationProperties.Name="{x:Bind controls:PlayerMenus.AudioDelayName(ViewModel.AudioDelayText), Mode=OneWay}" />
+                                                    <Button Style="{StaticResource SiloPlayerMenuStepButtonStyle}" Click="OnAudioLaterClick"
+                                                            IsEnabled="{x:Bind ViewModel.CanDelayAudioLater, Mode=OneWay}"
+                                                            AutomationProperties.Name="Audio 50 ms later">
+                                                        <FontIcon Glyph="&#xE710;" FontSize="12" />
+                                                    </Button>
+                                                    <Button Style="{StaticResource SiloPlayerMenuStepButtonStyle}" Width="Auto" Padding="8,0" Margin="4,0,0,0"
+                                                            Foreground="#99FFFFFF" Click="OnAudioDelayResetClick"
+                                                            IsEnabled="{x:Bind ViewModel.CanResetAudioDelay, Mode=OneWay}"
+                                                            AutomationProperties.Name="Reset audio delay">
+                                                        <TextBlock Text="Reset" FontSize="12" />
+                                                    </Button>
+                                                </StackPanel>
+                                            </Grid>
+                                        </StackPanel>
 
                                         <StackPanel Visibility="{x:Bind ViewModel.HasVersionOptions, Mode=OneWay}">
                                             <Border Height="1" Margin="0,4" Background="#1AFFFFFF" />

@@ -24,6 +24,9 @@ public static class PlayerMenus
     // "Subtitle delay +300 ms", read when it changes.
     public static string DelayName(string delay) => "Subtitle delay " + delay;
 
+    // "Audio delay −200 ms", read when it changes.
+    public static string AudioDelayName(string delay) => "Audio delay " + delay;
+
     // The subtitle menu marks its chosen row as the web does: a faint light behind it and white text, the others dimmed.
     public static Brush SubtitleRowBackground(bool isSelected) =>
         new SolidColorBrush(isSelected ? Windows.UI.Color.FromArgb(0x0D, 0xFF, 0xFF, 0xFF) : Microsoft.UI.Colors.Transparent);

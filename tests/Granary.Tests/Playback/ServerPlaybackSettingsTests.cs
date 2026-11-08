@@ -251,6 +251,145 @@ public sealed class ServerPlaybackSettingsTests
     }
 
     [Fact]
+    public async Task TheAudioDelay_IsThisDevicesSetting_InSecondsForThePlayer()
+    {
+        _fixture.Silo.On(HttpMethod.Get, "api/v2/settings/values/effective", Ok("""
+            { "items": [ { "key": "player.audio_sync_ms", "value": 250, "source": "profile_device" } ], "revision": 2 }
+            """));
+
+        await _fixture.PlayingAsync();
+
+        Assert.Equal(0.25, _fixture.Engine.AudioDelay);
+        Assert.Equal(250, _fixture.AudioDelay.Milliseconds);
+    }
+
+    [Fact]
+    public async Task AnAudioDelayChangedHereButNotSavedYet_IsTheOneATitleStartsWith()
+    {
+        _fixture.Silo.On(HttpMethod.Get, "api/v2/settings/values/effective", Ok("""
+            { "items": [ { "key": "player.audio_sync_ms", "value": 250, "source": "profile_device" } ], "revision": 2 }
+            """));
+        _fixture.AudioDelay.Set(-400);
+
+        await _fixture.PlayingAsync();
+
+        Assert.Equal(-0.4, _fixture.Engine.AudioDelay);
+    }
+
+    [Fact]
+    public async Task AServerThatDoesNotKnowTheAudioDelay_PlaysWithout_AndDoesNotFollowOne()
+    {
+        _fixture.Silo.OnUrl(HttpMethod.Get, "api/v2/settings/values/effective", (uri, _) =>
+            uri.Query.Contains("player.audio_sync_ms", StringComparison.Ordinal)
+                ? ScriptedSilo.Problem(422, "validation_failed")()
+                : Ok("""{ "items": [], "revision": 1 }""")());
+        _fixture.AudioDelay.Take(300, _fixture.AudioDelay.StartRead());
+
+        var playback = await _fixture.PlayingAsync();
+        Assert.Equal(0, _fixture.Engine.AudioDelay);
+        Assert.True(playback.Preferences.AudioDelayRefused);
+
+        _fixture.AudioDelay.Set(150);
+        Assert.Equal(0, _fixture.Engine.AudioDelay);
+    }
+
+    [Fact]
+    public async Task AnAudioDelayThatCouldNotBeRead_IsTheOneThisRunKnows()
+    {
+        _fixture.Silo.OnUrl(HttpMethod.Get, "api/v2/settings/values/effective", (uri, _) =>
+            uri.Query.Contains("player.audio_sync_ms", StringComparison.Ordinal)
+                ? ScriptedSilo.NetworkError()()
+                : Ok("""{ "items": [], "revision": 1 }""")());
+        _fixture.AudioDelay.Take(300, _fixture.AudioDelay.StartRead());
+
+        await _fixture.PlayingAsync();
+
+        Assert.Equal(0.3, _fixture.Engine.AudioDelay);
+    }
+
+    [Fact]
+    public async Task AnAudioDelayThatCouldNotBeRead_IsNotAnotherProfilesValue()
+    {
+        _fixture.Silo.On(HttpMethod.Put, "api/v2/settings/values/player.audio_sync_ms", ScriptedSilo.NoContent());
+        _fixture.Silo.OnUrl(HttpMethod.Get, "api/v2/settings/values/effective", (uri, _) =>
+            uri.Query.Contains("player.audio_sync_ms", StringComparison.Ordinal)
+                ? ScriptedSilo.NetworkError()()
+                : Ok("""{ "items": [], "revision": 1 }""")());
+        _fixture.AudioDelay.Set(200);
+        _fixture.SessionManager.ProfileId = "8";
+
+        await _fixture.PlayingAsync();
+
+        Assert.Equal(0, _fixture.Engine.AudioDelay);
+        Assert.Equal(0, _fixture.AudioDelay.Milliseconds);
+    }
+
+    [Fact]
+    public async Task ANormalStart_TakesTheServersAudioDelay_OverTheOneHeldBefore()
+    {
+        _fixture.Silo.On(HttpMethod.Get, "api/v2/settings/values/effective", Ok("""
+            { "items": [ { "key": "player.audio_sync_ms", "value": 250, "source": "profile_device" } ], "revision": 2 }
+            """));
+        _fixture.AudioDelay.Take(100, _fixture.AudioDelay.StartRead());
+
+        await _fixture.PlayingAsync();
+
+        Assert.Equal(0.25, _fixture.Engine.AudioDelay);
+        Assert.Equal(250, _fixture.AudioDelay.Milliseconds);
+    }
+
+    [Fact]
+    public async Task AnAudioDelaySavedWhileTheTitleReadIt_IsWhatTheTitlePlays_NotTheValueFromBefore()
+    {
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _fixture.Silo.On(HttpMethod.Put, "api/v2/settings/values/player.audio_sync_ms", ScriptedSilo.NoContent());
+        _fixture.Silo.OnUrl(HttpMethod.Get, "api/v2/settings/values/effective", async (uri, _) =>
+        {
+            if (!uri.Query.Contains("player.audio_sync_ms", StringComparison.Ordinal))
+            {
+                return await Ok("""{ "items": [], "revision": 1 }""")();
+            }
+            await gate.Task;
+            return await Ok("""{ "items": [ { "key": "player.audio_sync_ms", "value": 250, "source": "profile_device" } ], "revision": 2 }""")();
+        });
+
+        var starting = _fixture.StartAsync();
+        await Until(() => _fixture.Silo.SentTo(HttpMethod.Get, "api/v2/settings/values/effective")
+            .Any(r => r.Uri.Query.Contains("player.audio_sync_ms", StringComparison.Ordinal)), "the title reads the delay");
+        _fixture.AudioDelay.Set(-300);
+        await _fixture.AudioDelay.SaveNowAsync();
+        gate.SetResult();
+        await starting;
+
+        Assert.Equal(-0.3, _fixture.Engine.AudioDelay);
+        Assert.Equal(-300, _fixture.AudioDelay.Milliseconds);
+    }
+
+    [Fact]
+    public async Task WithoutAnAudioDelay_ThePlayerStartsWithNone()
+    {
+        _fixture.Engine.SetAudioDelay(0.4);
+
+        await _fixture.PlayingAsync();
+
+        Assert.Equal(0, _fixture.Engine.AudioDelay);
+    }
+
+    [Fact]
+    public async Task AnAudioDelayChangedInSettings_ReachesWhatPlaysAtOnce_UntilTheStop()
+    {
+        var playback = await _fixture.PlayingAsync();
+
+        _fixture.AudioDelay.Set(-150);
+        Assert.Equal(-0.15, _fixture.Engine.AudioDelay);
+
+        await playback.StopAsync();
+        _fixture.AudioDelay.Set(300);
+        Assert.Equal(-0.15, _fixture.Engine.AudioDelay);
+        await playback.DisposeAsync();
+    }
+
+    [Fact]
     public async Task ASpeedSetJustBeforeTheStop_IsSavedWithIt()
     {
         _fixture.Silo.On(HttpMethod.Put, SpeedPath, ScriptedSilo.NoContent());

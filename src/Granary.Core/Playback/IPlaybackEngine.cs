@@ -125,6 +125,12 @@ public interface IPlaybackEngine : IDisposable
     /// </summary>
     void SetFill(bool fill);
 
+    /// <summary>
+    /// Plays the sound this much later than the picture, negative earlier (<see cref="AudioDelay"/>); subtitles keep to the
+    /// picture. It holds across loads.
+    /// </summary>
+    void SetAudioDelay(double seconds);
+
     /// <summary>Reads what the player measures now; safe from any thread.</summary>
     PlaybackStats ReadStats();
 
