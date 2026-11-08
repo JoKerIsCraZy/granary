@@ -117,7 +117,7 @@ public sealed class DownloadActions
         catch (Exception ex)
         {
             // The page's items only miss Download; they never take the page down.
-            _logger.LogError(ex, "Reading whether the server offers downloads failed unexpectedly");
+            _logger.LogError("Reading whether the server offers downloads failed unexpectedly ({Failure})", DownloadLog.Failure(ex));
         }
         follower.OnChanged(this, EventArgs.Empty);
     }
