@@ -28,7 +28,7 @@ public enum BoxSetPageState
 /// One movie box set (docs/api-contract.md, 7.18), as the web's <c>pages/BoxSetPage.tsx</c> shows it: "BOX SET" over its
 /// name, its facts and overview, Play for the film to watch next, then its films in release order. While the page shows, a
 /// change of the viewer's state (a film marked watched on its card, one played) reads it again, so the facts and Play
-/// follow, as Android's <c>BoxSetViewModel</c> does; that read failing keeps the page as it is.
+/// follow, as Android's <c>BoxSetViewModel</c> does; that read failing keeps the page as it is, unless the box set is gone (404).
 /// </summary>
 public sealed partial class BoxSetViewModel : ObservableObject
 {
@@ -57,6 +57,8 @@ public sealed partial class BoxSetViewModel : ObservableObject
     private CatalogItem? _next;
     private bool _isActive;
     private ITimer? _refreshTimer;
+    // The read after a change of the viewer's state; a newer one, or leaving the page, cancels it.
+    private CancellationTokenSource? _refreshRun;
 
     public BoxSetViewModel(ISessionManager session, BoxSetsApi boxSets, ImageParameterCache images, INavigationService navigation,
         IUiDispatcher dispatcher, TimeProvider time, ILogger<BoxSetViewModel> logger, ViewerStateChanges? changes = null)
@@ -208,6 +210,7 @@ public sealed partial class BoxSetViewModel : ObservableObject
         }
         _refreshTimer?.Dispose();
         _refreshTimer = null;
+        StopRefresh();
         LoadCommand.Cancel();
         _generation++;
     }
@@ -240,9 +243,12 @@ public sealed partial class BoxSetViewModel : ObservableObject
             return;
         }
         int generation = ++_generation;
+        StopRefresh();
+        var run = new CancellationTokenSource();
+        _refreshRun = run;
         try
         {
-            var boxSet = await _boxSets.GetAsync(server.BaseUri, route.BoxSetId, route.LibraryId, _imageParameters);
+            var boxSet = await _boxSets.GetAsync(server.BaseUri, route.BoxSetId, route.LibraryId, _imageParameters, run.Token);
             if (generation == _generation)
             {
                 Show(boxSet);
@@ -250,8 +256,26 @@ public sealed partial class BoxSetViewModel : ObservableObject
         }
         catch (Exception ex) when (LibraryErrors.IsExpected(ex))
         {
+            if (run.IsCancellationRequested || generation != _generation)
+            {
+                return;
+            }
+            // Gone meanwhile (box sets turned off, too few films left to see), as Android's refresh says so.
+            if (ex is SiloApiException { Status: 404 })
+            {
+                Show(null);
+                State = BoxSetPageState.Unavailable;
+                return;
+            }
             _logger.LogWarning("Reading box set {BoxSetId} again failed: {Failure}", route.BoxSetId, ApiFailureText.Describe(ex));
         }
+    }
+
+    private void StopRefresh()
+    {
+        _refreshRun?.Cancel();
+        _refreshRun?.Dispose();
+        _refreshRun = null;
     }
 
     private void Show(CatalogBoxSetDetail? boxSet)

@@ -636,7 +636,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   only), playing on from where it was left. A long title is cut rather than widen the hero. Then "Movies", its films as
   the library's posters, each opening its page. The page reads the box set again 400 ms after a change of the viewer's
   state while it shows (a film marked watched on its card, one played in the minimized player), so the badges and Play
-  follow, as Android's page does; a failed reading keeps the page. A read that fails says "Couldn't load this box set"
+  follow, as Android's page does; a newer reading or leaving the page cancels one on its way, a failed one keeps the
+  page, and one that finds the box set gone (404) says it isn't available. A read that fails says "Couldn't load this box set"
   and "Something went wrong while loading it. Try again in a moment." with Try again; a 404 says "This box set isn't
   available" and "Box sets may be turned off for this library, or too few of its movies are here.". Keyboard and remote
   start on Play, and a remote's Play key plays the next film anywhere on the page.

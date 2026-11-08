@@ -210,6 +210,49 @@ public sealed class BoxSetViewModelTests
     }
 
     [Fact]
+    public async Task ABoxSetGoneWhileItShows_SaysItIsNotAvailable()
+    {
+        // As Android's refresh: box sets turned off, or too few films left to see.
+        Answer(Ok(BoxSetPayloads.BoxSet()), ScriptedSilo.Problem(404, "not_found"));
+        var page = await LoadAsync();
+        page.Activate();
+
+        _changes.Report();
+        _time.Advance(BoxSetViewModel.RefreshDelay);
+        await page.Refreshing;
+
+        Assert.True(page.IsUnavailable);
+        Assert.False(page.PlayCommand.CanExecute(null));
+        Assert.Empty(page.Films);
+    }
+
+    [Fact]
+    public async Task LeavingThePage_CancelsAReadingOnItsWay()
+    {
+        Answer(Ok(BoxSetPayloads.BoxSet()));
+        var page = await LoadAsync();
+        page.Activate();
+        CancellationToken reading = default;
+        var held = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _silo.OnCancellable(HttpMethod.Get, BoxSetPath, token =>
+        {
+            reading = token;
+            return held.Task.WaitAsync(token);
+        });
+        _changes.Report();
+        _time.Advance(BoxSetViewModel.RefreshDelay);
+
+        Assert.Equal(2, _silo.SentTo(HttpMethod.Get, BoxSetPath).Count);
+        Assert.False(reading.IsCancellationRequested);
+
+        page.Deactivate();
+
+        Assert.True(reading.IsCancellationRequested);
+        await page.Refreshing;
+        Assert.True(page.IsReady);
+    }
+
+    [Fact]
     public async Task AwayFromThePage_ChangesReadNothing()
     {
         Answer(Ok(BoxSetPayloads.BoxSet()));
