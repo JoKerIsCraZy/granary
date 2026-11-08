@@ -110,6 +110,12 @@
     <!-- Tailwind's amber-300 and amber-400: a watchlist title TMDB lost, in words and as a dot. -->
     <Color x:Key="SiloAttentionColor">#FFFCD34D</Color>
     <Color x:Key="SiloAttentionDotColor">#FFFBBF24</Color>
+    <!--
+        The dot in the player's gear, Granary's own: Tailwind's green-400 while the server sends the original streams (direct
+        play or direct stream), amber-400 while it re-encodes any of them. Both read clearly on the dark bar.
+    -->
+    <Color x:Key="SiloStreamDirectColor">#FF4ADE80</Color>
+    <Color x:Key="SiloStreamTranscodeColor">#FFFBBF24</Color>
 
     <SolidColorBrush x:Key="SiloBackgroundBrush" Color="{StaticResource SiloBackgroundColor}" />
     <SolidColorBrush x:Key="SiloSurfaceBrush" Color="{StaticResource SiloSurfaceColor}" />
@@ -151,6 +157,8 @@
     <SolidColorBrush x:Key="SiloCompleteBrush" Color="{StaticResource SiloCompleteColor}" />
     <SolidColorBrush x:Key="SiloAttentionBrush" Color="{StaticResource SiloAttentionColor}" />
     <SolidColorBrush x:Key="SiloAttentionDotBrush" Color="{StaticResource SiloAttentionDotColor}" />
+    <SolidColorBrush x:Key="SiloStreamDirectBrush" Color="{StaticResource SiloStreamDirectColor}" />
+    <SolidColorBrush x:Key="SiloStreamTranscodeBrush" Color="{StaticResource SiloStreamTranscodeColor}" />
 
     <!-- Plus Jakarta Sans, one file per weight: XAML loads only the face of the file it names. -->
     <FontFamily x:Key="SiloFontRegular">ms-appx:///Assets/Fonts/PlusJakartaSans-Regular.ttf#Plus Jakarta Sans</FontFamily>

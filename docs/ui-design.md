@@ -1334,7 +1334,16 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   Esc closes the panel first; another title closes it.
 - **Settings menu** (the web's QualityMenu): a gear pill (white 8 %) that names the quality ("Auto", "720p Medium"),
   "…" while the plan changes, and, at a speed other than 1×, a white badge with it ("1.5×"). Below 640 px (the web's
-  `sm`) the pill leaves the quality out. SPEED: the value at the right, the speeds 0.5× to 3×
+  `sm`) the pill leaves the quality out. Granary's own, as the web shows none: a dot 6.5 px across fills the gear's hole
+  (its inner circle, clear of the teeth) and says how the server's stream plays: green (`SiloStreamDirectBrush`,
+  Tailwind green-400) for the original video and audio, as direct play or direct stream (a new container, both
+  copied), amber (`SiloStreamTranscodeBrush`, amber-400) while the server re-encodes either, also with the video copied:
+  any transformation of the server's own but a Dolby Vision strip, tone mapping and ones Granary does not know included.
+  It follows the stream the player loads: after a quality, version or audio switch or a restart it changes once the new
+  stream plays, and a plan the player turns down before its stream loads never shows. A file played directly, and a
+  title still loading (a retry too), failed or ended, show the plain gear. The button's name and tooltip add the method in the playback
+  info's words: "Playback settings, Direct Play", "…, Direct Streaming", "…, Transcode"; the name has the speed after
+  it ("Playback settings, Transcode, 1.5×"). SPEED: the value at the right, the speeds 0.5× to 3×
   (0.25 apart up to 2×, then 2.5× and 3×) as stops on a track drawn like the seek bar, the fill from 1× to the
   chosen speed, 0.5×, 1×, 2× and 3× named under it (`SpeedTrack`); it applies at once and is saved as this device's
   `player.playback_speed`. AUDIO DELAY under a line (Silo's Android player has it on its Sync page), drawn as the
@@ -1349,13 +1358,16 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   ("12 Mbps") and a white check on the one the plan delivers; a pick asks for a new plan. A pick of a file or quality
   closes the menu.
 - **Playback info** (the web's PlaybackInfoOverlay): 320 px, black at 85 %, radius 8, under Exit; "Playback Info" with a
-  close button, then PLAYER (mpv, the play method: Direct Play, Direct Streaming or Transcode, the stream's protocol and
-  type, and the file asked for when the server fell back to another), VIDEO INFO (the picture's area and the video in
-  pixels, hardware or software decoding, frames dropped by the output and by the decoder), PLAYBACK STREAM INFO (the
-  codecs the plan delivers: direct, copy or transcoded, as its transformations say) and CURRENT SOURCE FILE (container,
+  close button, then PLAYER (mpv, the play method: Direct Play, Direct Streaming or Transcode, as the settings gear's dot
+  has it, so a remux that converts the audio is a Transcode; the stream's protocol and type, and the file asked for when
+  the server fell back to another), VIDEO INFO (the picture's area and the video in pixels, hardware or software
+  decoding, frames dropped by the output and by the decoder), PLAYBACK STREAM INFO (the codecs the plan delivers: direct,
+  copy or transcoded, as its transformations say; tone mapping to SDR encodes the video, and where a transformation
+  Granary does not know may have touched a stream, its line names the codec alone) and CURRENT SOURCE FILE (container,
   size in GiB, bitrates, codec and profile, range type, colour range, the playing audio track's codec, channels and
-  sample rate). Labels white 60 %, values white 90 % on the right; read again every second while it shows; it stays
-  while the controls fade, until closed.
+  sample rate). It describes the stream the player loaded, as the gear's dot does: during a switch the one
+  before, until the new one loads. Labels white 60 %, values white 90 % on the right; read again every second while it
+  shows; it stays while the controls fade, until closed.
 - **Watch Party panel** (the web's WatchTogetherPanel), while the room plays its title and has not ended or gone to
   another device: 224 px, black at 80 %, a white 10 % border, radius 12, under Exit on the right, fading with the
   controls (faded, it takes no clicks and no keyboard focus). "WATCH PARTY", the connection's dot (emerald connected,
