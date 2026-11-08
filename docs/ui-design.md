@@ -488,14 +488,16 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     episode), Host picks chosen on every opening; "Allow guests to pause" / "Otherwise only you control playback" with a
     switch that shows the profile's saved choice; an error in the hub's red box; the red "Create party & copy invite"
     ("Creating…") across the width; and "You'll land in the room. Nothing plays until you start it. The room can see
-    what members are mid-way through." Cancel closes it. The button waits while the saved choice or the next episode is
-    read and while the chooser is open. It creates the room, sets the pause choice where the room has another (a
+    what members are mid-way through." Cancel closes it; a room already asked for is still made, set up and joined, but
+    the invite is not copied and the room page does not open over the page the viewer stays on. The button waits while the saved choice or the next episode is read and while the chooser is open. It creates the room, sets the pause choice where the room has another (a
     flipped switch is sent even where it does not, so the server keeps it for the next party), stages the title (or, in
     a vote, makes it the first suggestion), copies the invite link and opens the room, which shows what the web toasts
     on the way for 4 seconds ("Invite copied. Room code ABCD1234", "Room created, but that item couldn't be queued.
     Pick it from the room.", "Guests can pause in this party. Change it from the room." when the saved choice could
-    not be read). A failed create stays in the sheet with the server's words or "Could not create the room". A profile
-    or server changed meanwhile closes it without a word, and nothing more is sent. A title playing in the minimized
+    not be read). The room takes the title's name among the recent parties only once the title is up. A failed create,
+    whatever failed, stays in the sheet with the server's words or "Could not create the room"; once the room is made,
+    a step that fails is said in the room and the rest go on. A profile or server changed meanwhile closes it without a
+    word, and nothing more is sent. A title playing in the minimized
     player plays on in the lobby until the host starts the room's, which takes its place, as from the hub. Keyboard
     focus moves into the chooser (the chosen season) as it opens and back to Change as it closes; Cancel returns it to ⋮.
   - The stars, the web's `StarRating` after the heart (ActionBar.tsx), on movies and series only, as on the web: five

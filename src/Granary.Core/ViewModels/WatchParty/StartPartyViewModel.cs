@@ -45,6 +45,8 @@ public sealed partial class StartPartyViewModel : ObservableObject
     private CancellationTokenSource _reads = new();
     // The server and profile the sheet was opened for: it reads, and makes a room, for them only.
     private (string? ServerId, string? ProfileId) _openedFor;
+    // The sheet was put away, or its page left, since it opened.
+    private bool _dismissed;
 
     public StartPartyViewModel(WatchPartySession party, WatchPartyFeature feature, ISessionManager session, CatalogApi catalog, SettingsApi settings,
         INavigationService navigation, ILogger<StartPartyViewModel> logger)
@@ -195,8 +197,24 @@ public sealed partial class StartPartyViewModel : ObservableObject
         _feature.PropertyChanged += OnRoomsChanged;
         _party.PropertyChanged += OnRoomsChanged;
         ShowOffered();
-        // Read once per profile; the sidebar has usually read it already.
-        _ = _feature.RefreshAsync();
+        Refreshing = RefreshRoomsAsync();
+    }
+
+    /// <summary>The read of the server's rooms the last attach started, for tests.</summary>
+    internal Task Refreshing { get; private set; } = Task.CompletedTask;
+
+    // Read once per profile; the sidebar has usually read it already. Nobody waits for it, so nothing may escape: a
+    // failure of any kind only leaves the entry away.
+    private async Task RefreshRoomsAsync()
+    {
+        try
+        {
+            await _feature.RefreshAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Could not read whether the server hosts Watch Party");
+        }
     }
 
     /// <summary>The page left (a profile picked, a sign-out): a sheet still open for it closes.</summary>
@@ -227,6 +245,7 @@ public sealed partial class StartPartyViewModel : ObservableObject
         }
         int opening = ++_opening;
         _openedFor = (_session.ActiveServer?.Id, _session.ProfileId);
+        _dismissed = false;
         _reads.Cancel();
         _reads.Dispose();
         _reads = new CancellationTokenSource();
@@ -246,9 +265,13 @@ public sealed partial class StartPartyViewModel : ObservableObject
         return true;
     }
 
-    /// <summary>The sheet closed: its reads stop. A room on its way is still entered, as the web's is.</summary>
+    /// <summary>
+    /// The sheet closed (Cancel, or the page left): its reads stop. A room on its way is still entered and set up, as the
+    /// web's is, but the invite is not copied and the room page does not open over wherever the viewer went.
+    /// </summary>
     public void Close()
     {
+        _dismissed = true;
         _opening++;
         _reads.Cancel();
         IsReadingSaved = false;
@@ -259,7 +282,8 @@ public sealed partial class StartPartyViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanCreate))]
     private async Task CreateAsync()
     {
-        if (Request is not { } request)
+        // One room per press: a second Create while one is on its way makes none.
+        if (IsBusy || Request is not { } request)
         {
             return;
         }
@@ -270,38 +294,44 @@ public sealed partial class StartPartyViewModel : ObservableObject
             IsDone = true;
             return;
         }
-        var target = Target;
-        string mode = SelectionMode;
-        var choice = (GuestsCanPause, Explicit: _guestsChoice is not null, Known: _savedKnown, Saved: _savedPolicy);
         IsBusy = true;
         Error = "";
-        var notices = new List<string>();
         try
         {
-            var room = await _party.CreateAsync(mode);
-            if (Same(owner))
+            var plan = new StartPartyPlan(request, Target, SelectionMode,
+                (GuestsCanPause, Explicit: _guestsChoice is not null, Known: _savedKnown, Saved: _savedPolicy), owner);
+            if (await MakeRoomAsync(plan.Mode) is not { } room)
             {
-                await ApplyPolicyAsync(room, choice, notices);
-            }
-            if (Same(owner) && target is not null)
-            {
-                await (mode == WatchPartySelectionModes.Vote ? SuggestAsync(target, request, notices) : StageAsync(target, notices));
-            }
-            if (!Same(owner) || _party.Room?.RoomId != room.RoomId)
-            {
-                IsDone = true;
                 return;
             }
-            if (target is not null)
-            {
-                _party.NoteTitle(target.RoomTitle);
-            }
-            if (CopyInvite() is { } copied)
-            {
-                notices.Add(copied);
-            }
+            var notices = await SetUpAsync(room, plan);
+            // Decided before the sheet is done, which closes it: the room opens only over the sheet that asked for it.
+            bool opens = notices is not null && Same(owner) && _party.Room?.RoomId == room.RoomId && !_dismissed;
+            // The room was entered: the sheet is done whatever comes next.
             IsDone = true;
-            _navigation.NavigateTo(AppRoute.WatchPartyRoom, notices.Count > 0 ? new WatchPartyArrival(string.Join("\n", notices)) : null);
+            if (opens && notices is not null)
+            {
+                OpenRoom(notices);
+            }
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    // What the press asked for, as the sheet showed it then.
+    private sealed record StartPartyPlan(StartPartyRequest Request, StartPartyTarget? Target, string Mode,
+        (bool GuestsCanPause, bool Explicit, bool Known, string? Saved) Choice, (string? ServerId, string? ProfileId) Owner);
+
+    // The room, or null with the reason said (in the server's words where it has some). No token: a room asked for is not
+    // called off. Cancel leaves it to finish, as the web's sheet does, and the session enters it rather than leave a room
+    // waiting for a host who never comes.
+    private async Task<WatchPartyRoom?> MakeRoomAsync(string mode)
+    {
+        try
+        {
+            return await _party.CreateAsync(mode);
         }
         catch (WatchPartyStaleException)
         {
@@ -314,9 +344,69 @@ public sealed partial class StartPartyViewModel : ObservableObject
             _logger.LogWarning(ex, "Could not start a Watch Party from a title");
             Error = ex is SiloApiException { Problem.Detail: { Length: > 0 } detail } ? detail : "Could not create the room";
         }
-        finally
+        catch (Exception ex)
         {
-            IsBusy = false;
+            // A command's failure would end the app: anything else is said too.
+            _logger.LogError(ex, "Starting a Watch Party from a title failed unexpectedly");
+            Error = "Could not create the room";
+        }
+        return null;
+    }
+
+    // The pause choice, the title up (staged or suggested, then the room named after it), and the invite copied: what the
+    // room page says of it, or null when the server or profile changed meanwhile. A step that fails says so and the next
+    // goes on; one that fails unexpectedly is logged and the room opens all the same.
+    private async Task<List<string>?> SetUpAsync(WatchPartyRoom room, StartPartyPlan plan)
+    {
+        var notices = new List<string>();
+        try
+        {
+            if (!Same(plan.Owner))
+            {
+                return null;
+            }
+            await ApplyPolicyAsync(room, plan.Choice, notices);
+            if (!Same(plan.Owner))
+            {
+                return null;
+            }
+            if (plan.Target is { } target
+                && await (plan.Mode == WatchPartySelectionModes.Vote ? SuggestAsync(target, plan.Request, notices) : StageAsync(target, notices)))
+            {
+                _party.NoteTitle(target.RoomTitle);
+            }
+            if (!Same(plan.Owner))
+            {
+                return null;
+            }
+            // A sheet put away meanwhile copies nothing: the viewer moved on.
+            if (!_dismissed && CopyInvite() is { } copied)
+            {
+                notices.Add(copied);
+            }
+        }
+        catch (WatchPartyStaleException)
+        {
+            _logger.LogDebug("A Watch Party started for the profile before was not set up");
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "A new Watch Party could not be set up as the sheet asked");
+        }
+        return notices;
+    }
+
+    // The room page, with what happened on the way; one that cannot open leaves the viewer in the room all the same.
+    private void OpenRoom(List<string> notices)
+    {
+        try
+        {
+            _navigation.NavigateTo(AppRoute.WatchPartyRoom, notices.Count > 0 ? new WatchPartyArrival(string.Join("\n", notices)) : null);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "The new Watch Party's room could not be opened");
         }
     }
 
@@ -357,6 +447,11 @@ public sealed partial class StartPartyViewModel : ObservableObject
                 notices.Add(notApplied);
             }
         }
+        catch (WatchPartyStaleException)
+        {
+            // Not a refusal: the room is no longer this profile's, and nothing is said of it.
+            throw;
+        }
         catch (Exception ex) when (LibraryErrors.IsExpected(ex) || ex is InvalidOperationException)
         {
             _logger.LogWarning(ex, "The new Watch Party's pause choice could not be applied");
@@ -364,33 +459,45 @@ public sealed partial class StartPartyViewModel : ObservableObject
         }
     }
 
-    // A host-pick room stages the title: up next, waiting for the host's start.
-    private async Task StageAsync(StartPartyTarget target, List<string> notices)
+    // A host-pick room stages the title: up next, waiting for the host's start. True when it went through.
+    private async Task<bool> StageAsync(StartPartyTarget target, List<string> notices)
     {
         try
         {
             await _party.StageAsync(target.ContentId);
+            return true;
+        }
+        catch (WatchPartyStaleException)
+        {
+            throw;
         }
         catch (Exception ex) when (LibraryErrors.IsExpected(ex) || ex is InvalidOperationException)
         {
             _logger.LogWarning(ex, "The new Watch Party's title could not be staged");
             notices.Add("Room created, but that item couldn't be queued. Pick it from the room.");
+            return false;
         }
     }
 
     // A vote room gets it as its first suggestion, which the web's room page adds on arrival; this device has the room's
-    // proof already, so it is added before the room shows.
-    private async Task SuggestAsync(StartPartyTarget target, StartPartyRequest request, List<string> notices)
+    // proof already, so it is added before the room shows. True when it went through.
+    private async Task<bool> SuggestAsync(StartPartyTarget target, StartPartyRequest request, List<string> notices)
     {
         try
         {
             await _party.SuggestAsync(new WatchPartySuggestionCreate(Guid.NewGuid().ToString(), target.ContentId, target.ContentType, target.Title,
                 target.SuggestionSubtitle, request.PosterPath));
+            return true;
+        }
+        catch (WatchPartyStaleException)
+        {
+            throw;
         }
         catch (Exception ex) when (LibraryErrors.IsExpected(ex) || ex is InvalidOperationException)
         {
             _logger.LogWarning(ex, "The new Watch Party's first suggestion could not be added");
             notices.Add(ex is SiloApiException { Problem.Detail: { Length: > 0 } detail } ? detail : "Could not add the first suggestion");
+            return false;
         }
     }
 

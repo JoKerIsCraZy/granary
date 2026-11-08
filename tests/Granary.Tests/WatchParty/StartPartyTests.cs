@@ -14,8 +14,11 @@ using Granary.Tests.Profiles;
 
 namespace Granary.Tests.WatchParty;
 
-/// <summary>"Start a Watch Party" on a title's page and its sheet, as the web's StartPartySheet.tsx and in its words.</summary>
-public sealed class StartPartyTests : IAsyncDisposable
+/// <summary>
+/// "Start a Watch Party" on a title's page and its sheet, as the web's StartPartySheet.tsx and in its words; what guards it
+/// against failures, a changed profile or server, and a dismissed sheet is in StartPartyTests.Guards.cs.
+/// </summary>
+public sealed partial class StartPartyTests : IAsyncDisposable
 {
     private const string Rooms = "api/v2/watch-together/rooms";
     private const string Room = Rooms + "/" + WatchPartyPayloads.RoomId;
@@ -30,6 +33,7 @@ public sealed class StartPartyTests : IAsyncDisposable
     private readonly WatchPartyApi _api;
     private readonly WatchPartySession _party;
     private readonly WatchPartyFeature _feature;
+    private readonly WatchPartyRecentRooms _recent;
 
     public StartPartyTests()
     {
@@ -37,6 +41,7 @@ public sealed class StartPartyTests : IAsyncDisposable
         _page.Silo.On(HttpMethod.Post, Room + "/ws-ticket", ScriptedSilo.Json(HttpStatusCode.OK, WatchPartyPayloads.TicketAnswer));
         _page.Silo.On(HttpMethod.Get, Effective, ScriptedSilo.Json(HttpStatusCode.OK, Saved("host_only")));
         _api = new WatchPartyApi(_page.Silo.Http);
+        _recent = new WatchPartyRecentRooms(new InMemorySecretStore(), _page.Clock, _page.Logs.For<WatchPartyRecentRooms>());
         _party = new WatchPartySession(_page.Session, _api, () => new WatchPartyConnection(_api, () =>
         {
             var socket = new FakeRealtimeSocket { Picks = WatchPartyApi.Protocol };
@@ -45,9 +50,13 @@ public sealed class StartPartyTests : IAsyncDisposable
                 _sockets.Add(socket);
             }
             return socket;
-        }, TimeProvider.System, _page.Logs.For<WatchPartyConnection>()), new ImmediateDispatcher(), _page.Logs.For<WatchPartySession>());
+        }, TimeProvider.System, _page.Logs.For<WatchPartyConnection>()), new ImmediateDispatcher(), _page.Logs.For<WatchPartySession>(), _recent);
         _feature = new WatchPartyFeature(_page.Session, _api, _page.Clock, _page.Logs.For<WatchPartyFeature>());
     }
+
+    /// <summary>The room's name among this profile's recent parties; null when nothing named it.</summary>
+    private async Task<string?> RecentTitleAsync() =>
+        Assert.Single(await _recent.ListAsync(ScriptedSilo.Server.Id, "7", TestContext.Current.CancellationToken)).Title;
 
     private static string Saved(string policy) =>
         $$"""{ "items": [{ "key": "watch_party.guest_control_policy", "value": "{{policy}}", "source": "profile" }], "revision": 3 }""";
@@ -56,29 +65,30 @@ public sealed class StartPartyTests : IAsyncDisposable
 
     private static Func<Task<HttpResponseMessage>> Answered(string room) => ScriptedSilo.Json(HttpStatusCode.OK, WatchPartyPayloads.Answer(room));
 
-    private StartPartyViewModel Sheet() => new(_party, _feature, _page.Session, new CatalogApi(_page.Silo.Http), new SettingsApi(_page.Silo.Http),
-        _page.Navigation, _page.Logs.For<StartPartyViewModel>())
+    // The clipboard takes the invite unless a test says it fails.
+    private StartPartyViewModel Sheet(INavigationService? navigation = null, bool copies = true) => new(_party, _feature, _page.Session,
+        new CatalogApi(_page.Silo.Http), new SettingsApi(_page.Silo.Http), navigation ?? _page.Navigation, _page.Logs.For<StartPartyViewModel>())
     {
         CopyText = text =>
         {
             _copied.Add(text);
-            return true;
+            return copies;
         },
     };
 
     // The page loaded and the server's rooms read, as the sidebar reads them when the profile is picked.
-    private async Task<(ItemDetailViewModel Page, StartPartyViewModel Sheet)> AttachAsync(string id)
+    private async Task<(ItemDetailViewModel Page, StartPartyViewModel Sheet)> AttachAsync(string id, StartPartyViewModel? sheet = null)
     {
         var page = await _page.LoadAsync(id);
         await _feature.RefreshAsync(TestContext.Current.CancellationToken);
-        var sheet = Sheet();
+        sheet ??= Sheet();
         sheet.Attach(page);
         return (page, sheet);
     }
 
-    private async Task<StartPartyViewModel> OpenAsync(string id)
+    private async Task<StartPartyViewModel> OpenAsync(string id, StartPartyViewModel? sheet = null)
     {
-        var (_, sheet) = await AttachAsync(id);
+        (_, sheet) = await AttachAsync(id, sheet);
         Assert.True(sheet.Open());
         await sheet.Opening;
         return sheet;
@@ -162,6 +172,7 @@ public sealed class StartPartyTests : IAsyncDisposable
         Assert.Equal(Invite, Arrival()?.Notice);
         Assert.True(sheet.IsDone);
         Assert.True(_party.IsInRoom);
+        Assert.Equal("Masterplan · 2026", await RecentTitleAsync());
     }
 
     [Fact]
@@ -198,6 +209,8 @@ public sealed class StartPartyTests : IAsyncDisposable
 
         Assert.Equal("Room created, but that item couldn't be queued. Pick it from the room.\n" + Invite, Arrival()?.Notice);
         Assert.True(sheet.IsDone);
+        // Nothing is up next, so the recent parties do not name the room after the title.
+        Assert.Null(await RecentTitleAsync());
     }
 
     [Fact]
@@ -272,7 +285,7 @@ public sealed class StartPartyTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task ASheetOpenedAgainWhileTheRoomIsMade_WaitsForIt()
+    public async Task ASheetCancelledWhileTheRoomIsMade_JoinsIt_ButLeavesTheViewerWhereTheyAre()
     {
         _page.Movie();
         var answered = new TaskCompletionSource();
@@ -286,11 +299,15 @@ public sealed class StartPartyTests : IAsyncDisposable
 
         var creating = sheet.CreateCommand.ExecuteAsync(null);
         sheet.Close();
+        // Opening it again waits for the room on its way.
         Assert.False(sheet.Open());
         answered.SetResult();
         await creating;
 
-        Assert.Equal(Invite, Arrival()?.Notice);
+        Assert.True(_party.IsInRoom);
+        Assert.Single(_page.Silo.SentTo(HttpMethod.Put, Room + "/staged-selection"));
+        Assert.Empty(_copied);
+        Assert.DoesNotContain(_page.Navigation.Navigations, n => n.Route == AppRoute.WatchPartyRoom);
     }
 
     [Fact]

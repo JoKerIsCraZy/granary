@@ -55,6 +55,10 @@ public sealed partial class WatchPartyFeature : ObservableObject
         try
         {
             var capabilities = await _api.GetCapabilitiesAsync(server.BaseUri, cancellationToken);
+            if (!IsStill(key))
+            {
+                return;
+            }
             Capabilities = capabilities;
             IsAvailable = capabilities.IsAvailable;
             _failed = null;
@@ -62,10 +66,28 @@ public sealed partial class WatchPartyFeature : ObservableObject
         catch (Exception ex) when (LibraryErrors.IsExpected(ex) && !cancellationToken.IsCancellationRequested)
         {
             _logger.LogWarning(ex, "Could not read whether the server offers Watch Party");
+            if (!IsStill(key))
+            {
+                return;
+            }
             _readFor = null;
             _failed = (key, _time.GetUtcNow());
             IsAvailable = false;
             Capabilities = null;
         }
+    }
+
+    // An answer for the server and profile before is not this one's; the one before, picked again, is read again.
+    private bool IsStill((string? ServerId, string? ProfileId) key)
+    {
+        if ((_session.ActiveServer?.Id, _session.ProfileId) == key)
+        {
+            return true;
+        }
+        if (_readFor == key)
+        {
+            _readFor = null;
+        }
+        return false;
     }
 }

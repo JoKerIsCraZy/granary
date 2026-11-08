@@ -81,10 +81,21 @@ public sealed partial class StartPartyViewModel
         {
             // Nothing to choose from: the row with Change comes back, as it was.
             _logger.LogWarning("The series' seasons could not be read for a Watch Party: {Failure}", ex.GetType().Name);
-            if (opening == _opening)
-            {
-                IsChoosing = false;
-            }
+            LeaveChooser(opening);
+        }
+        catch (Exception ex)
+        {
+            // A command's failure would end the app: this one leaves the chooser too.
+            _logger.LogError(ex, "The series' seasons could not be shown for a Watch Party");
+            LeaveChooser(opening);
+        }
+    }
+
+    private void LeaveChooser(int opening)
+    {
+        if (opening == _opening)
+        {
+            IsChoosing = false;
         }
     }
 
@@ -127,6 +138,11 @@ public sealed partial class StartPartyViewModel
         catch (Exception ex) when (LibraryErrors.IsExpected(ex) || ex is ArgumentException)
         {
             _logger.LogWarning("A season's episodes could not be read for a Watch Party: {Failure}", ex.GetType().Name);
+        }
+        catch (Exception ex)
+        {
+            // A command's failure would end the app: the season shows no episodes instead.
+            _logger.LogError(ex, "A season's episodes could not be shown for a Watch Party");
         }
         finally
         {
