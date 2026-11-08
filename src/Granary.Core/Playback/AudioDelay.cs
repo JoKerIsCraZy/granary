@@ -33,6 +33,9 @@ public sealed class AudioDelay(SettingsApi settings, ISessionManager session, IU
     private (string Server, string? Profile)? _unsaved;
     private Task _saving = Task.CompletedTask;
 
+    // Counts the viewer's changes, so a read that answers after one does not put the value from before it back.
+    private long _changes;
+
     /// <summary>The delay in milliseconds, positive for later sound; 0 until a value is read or set.</summary>
     public int Milliseconds { get; private set; }
 
@@ -45,17 +48,26 @@ public sealed class AudioDelay(SettingsApi settings, ISessionManager session, IU
             ? (int)Math.Clamp(Math.Round(ms), -MaxMs, MaxMs)
             : 0;
 
-    /// <summary>Reads this device's value from the server and takes it (<see cref="Take"/>).</summary>
+    /// <summary>
+    /// Reads this device's value from the server and takes it (<see cref="Take"/>), unless the viewer changed the delay or
+    /// another profile took over while it was read.
+    /// </summary>
     public async Task ReadAsync(CancellationToken cancellationToken)
     {
         var server = session.ActiveServer?.BaseUri ?? throw new InvalidOperationException("No server is signed in.");
+        var owner = Owner;
+        long changes = _changes;
         var values = await settings.GetEffectiveAsync(server, [Key], cancellationToken);
-        Take(FromSetting(values.Find(Key)));
+        if (Owner == owner && _changes == changes)
+        {
+            Take(FromSetting(values.Find(Key)));
+        }
     }
 
     /// <summary>
     /// This device's value as the server holds it, read for a title or by Settings. A change made here that the server
-    /// does not have yet is newer, and stays.
+    /// does not have yet is newer and stays, also one whose save failed: that one holds for the rest of the run, or until
+    /// a later save goes through.
     /// </summary>
     public void Take(int milliseconds)
     {
@@ -76,6 +88,7 @@ public sealed class AudioDelay(SettingsApi settings, ISessionManager session, IU
             return;
         }
         _unsaved = Owner;
+        _changes++;
         Show(delay);
         _settle?.Dispose();
         _settle = time.CreateTimer(_ => dispatcher.Post(() => _ = SaveNowAsync()), null, Settle, Timeout.InfiniteTimeSpan);
@@ -100,7 +113,7 @@ public sealed class AudioDelay(SettingsApi settings, ISessionManager session, IU
             _unsaved = null;
             return _saving;
         }
-        return _saving = SaveAsync(_saving, server.BaseUri, Milliseconds);
+        return _saving = SaveAsync(_saving, owner, server.BaseUri, Milliseconds);
     }
 
     private (string Server, string? Profile)? Owner => session.ActiveServer is { } server ? (server.Id, session.ProfileId) : null;
@@ -115,16 +128,25 @@ public sealed class AudioDelay(SettingsApi settings, ISessionManager session, IU
         Changed?.Invoke(this, EventArgs.Empty);
     }
 
-    // After the save before it, so the latest value is the one the server keeps.
-    private async Task SaveAsync(Task previous, Uri server, int delay)
+    // After the save before it, so the latest value is the one the server keeps; not at all once another profile acts.
+    private async Task SaveAsync(Task previous, (string Server, string? Profile) owner, Uri server, int delay)
     {
         await previous;
+        if (Owner != owner)
+        {
+            logger.LogInformation("The audio delay was not saved: the profile changed before it went out");
+            if (_unsaved == owner)
+            {
+                _unsaved = null;
+            }
+            return;
+        }
         using var timeout = new CancellationTokenSource(SaveTimeout, time);
         using var document = JsonDocument.Parse(delay.ToString(CultureInfo.InvariantCulture));
         try
         {
             await settings.SetValueAsync(server, Key, document.RootElement, SettingScopes.ProfileDevice, timeout.Token);
-            if (Milliseconds == delay)
+            if (Milliseconds == delay && _unsaved == owner)
             {
                 _unsaved = null;
             }

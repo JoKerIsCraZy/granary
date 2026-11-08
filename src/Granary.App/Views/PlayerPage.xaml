@@ -547,7 +547,8 @@
 
                                         <!--
                                             Silo's Android player (Sync): the sound earlier or later, 50 ms a step up to 5 s, and Reset, drawn as
-                                            the subtitle menu's DELAY. This device's player.audio_sync_ms, as Settings → Playback → Sound.
+                                            the subtitle menu's DELAY. This device's player.audio_sync_ms, as Settings → Playback → Sound. The
+                                            line under SPEED goes with it in a Watch Party, where the row comes first.
                                         -->
                                         <Border Height="1" Margin="0,4" Background="#1AFFFFFF" Visibility="{x:Bind Not(ViewModel.IsWatchParty), Mode=OneWay}" />
                                         <Grid Padding="12,8" ColumnSpacing="12">

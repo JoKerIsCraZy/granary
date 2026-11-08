@@ -514,9 +514,10 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   settings, takes it unless a change made here is still on its way, sets it at the start, and follows `Changed` until
   its stop, as Android's `SiloPlaybackService` does; Settings → Playback → Sound and the player's settings menu change it
   (a local file starts with it, and a step there goes only to the engine). A change is saved at
-  `profile_device` once it settles for a second, or as the window closes (`PlaybackStops`); a failed save is logged and
-  the value holds for this run. mpv moves only the sound: subtitles keep to the picture, so the subtitle delay and
-  subtitle sync, both timed against the picture, are untouched.
+  `profile_device` once it settles for a second, or as the window closes (`PlaybackStops`), and only for the profile it
+  was made for, also when it waits behind a slow save; a failed save is logged and the value holds for this run. A read
+  that answers after a change made here, or once another profile acts, is dropped. mpv moves only the sound: subtitles
+  keep to the picture, so the subtitle delay and subtitle sync, both timed against the picture, are untouched.
 - **Markers** (11.1, 11.2): the playing file's intro (its single projection, as Android takes it), recaps, credits
   and previews come from the watch detail, then from a second read that names the file once its first frame
   shows (`file_id`, which makes the server fill markers it finds on demand); a failed read changes nothing.

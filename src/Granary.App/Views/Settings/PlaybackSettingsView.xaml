@@ -152,6 +152,7 @@
         <!--
             This device's player.audio_sync_ms, as the web's device settings show it (DeviceSettingGroups: the Sound group, a
             slider with the value and its unit beside it), in the Android app's 50 ms steps. Positive plays the sound later.
+            The view model makes the steps: a slider stepping by itself would move a value another app stored off them.
         -->
         <controls:SettingsGroup Title="Sound" Description="Audio on this device">
             <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Audio sync offset"
@@ -159,7 +160,7 @@
                 <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
                     <Slider x:Name="AudioSyncSlider" Width="160" VerticalAlignment="Center" IsThumbToolTipEnabled="False"
                             Minimum="{x:Bind settings:AudioDelaySettingsViewModel.Minimum}" Maximum="{x:Bind settings:AudioDelaySettingsViewModel.Maximum}"
-                            StepFrequency="50" SmallChange="50" LargeChange="500"
+                            StepFrequency="1" SmallChange="50" LargeChange="500"
                             Value="{x:Bind AudioDelay.Milliseconds, Mode=TwoWay}" IsEnabled="{x:Bind AudioDelay.IsLoaded, Mode=OneWay}"
                             AutomationProperties.Name="Audio sync offset"
                             AutomationProperties.HelpText="Shift audio earlier or later to correct lip sync on this device." />

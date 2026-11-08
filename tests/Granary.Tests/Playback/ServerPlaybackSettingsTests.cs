@@ -262,6 +262,19 @@ public sealed class ServerPlaybackSettingsTests
     }
 
     [Fact]
+    public async Task AnAudioDelayChangedHereButNotSavedYet_IsTheOneATitleStartsWith()
+    {
+        _fixture.Silo.On(HttpMethod.Get, "api/v2/settings/values/effective", Ok("""
+            { "items": [ { "key": "player.audio_sync_ms", "value": 250, "source": "profile_device" } ], "revision": 2 }
+            """));
+        _fixture.AudioDelay.Set(-400);
+
+        await _fixture.PlayingAsync();
+
+        Assert.Equal(-0.4, _fixture.Engine.AudioDelay);
+    }
+
+    [Fact]
     public async Task WithoutAnAudioDelay_ThePlayerStartsWithNone()
     {
         _fixture.Engine.SetAudioDelay(0.4);

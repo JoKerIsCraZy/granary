@@ -138,6 +138,78 @@ public sealed class AudioDelayTests
         Assert.Equal(0, delay.Milliseconds);
     }
 
+    [Fact]
+    public async Task AChangeWaitingBehindASlowSave_IsNotSavedForAProfileThatTookOverMeanwhile()
+    {
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _silo.On(HttpMethod.Put, ValuePath, async () =>
+        {
+            await gate.Task;
+            return new HttpResponseMessage(HttpStatusCode.NoContent);
+        });
+        var delay = Create();
+
+        delay.Set(100);
+        var first = delay.SaveNowAsync();
+        await ServerPlaybackFixture.Until(() => Saves.Count == 1, "the first save goes out");
+        delay.Set(200);
+        var second = delay.SaveNowAsync();
+        _session.ProfileId = "8";
+        gate.SetResult();
+        await Task.WhenAll(first, second);
+
+        Assert.Equal(100, Value(Assert.Single(Saves)));
+        delay.Take(0);
+        Assert.Equal(0, delay.Milliseconds);
+    }
+
+    [Fact]
+    public async Task ARead_ThatAnswersAfterAChangeMadeHere_LeavesTheChange()
+    {
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _silo.On(HttpMethod.Get, EffectivePath, async () =>
+        {
+            await gate.Task;
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("""{ "items": [ { "key": "player.audio_sync_ms", "value": 300 } ], "revision": 3 }""",
+                    System.Text.Encoding.UTF8, "application/json"),
+            };
+        });
+        var delay = Create();
+
+        var read = delay.ReadAsync(TestContext.Current.CancellationToken);
+        delay.Set(100);
+        await delay.SaveNowAsync();
+        gate.SetResult();
+        await read;
+
+        Assert.Equal(100, delay.Milliseconds);
+    }
+
+    [Fact]
+    public async Task ARead_ForAProfileThatIsNoLongerTheOneActing_IsNotTaken()
+    {
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _silo.On(HttpMethod.Get, EffectivePath, async () =>
+        {
+            await gate.Task;
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("""{ "items": [ { "key": "player.audio_sync_ms", "value": 300 } ], "revision": 3 }""",
+                    System.Text.Encoding.UTF8, "application/json"),
+            };
+        });
+        var delay = Create();
+
+        var read = delay.ReadAsync(TestContext.Current.CancellationToken);
+        _session.ProfileId = "8";
+        gate.SetResult();
+        await read;
+
+        Assert.Equal(0, delay.Milliseconds);
+    }
+
     [Theory]
     [InlineData("-250", -250)]
     [InlineData("99000", 5000)]
