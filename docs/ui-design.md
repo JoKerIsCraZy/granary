@@ -1181,14 +1181,15 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   "✕ Exit" pill on the right. Bottom bar
   over a stronger scrim: the `SeekBar` across the width; below it on the left the title and the upper-case
   line "S1 · E1 — EPISODE · 31:55 / 48:41" (a movie shows its year), whose end time a click turns into the
-  time left ("31:55 / -16:46") and back, in the minimized bar too. Granary's own: the web forgets the choice, this PC
+  time left ("31:55 / -16:46") and back; the minimized bar shows the same choice but is not clicked to change it.
+  Granary's own: the web forgets the choice, this PC
   keeps it for the next player and after a restart (`time_left` in `playback-device.json`; the click is its only
   setting). After the times "· ENDS 22:41", in the line's muted upper case, also Granary's own as none of Silo's
   clients has it: the clock time the title ends at the speed it plays, rounded to the minute, in Windows' short time
   (12 or 24 hours as Windows writes it). It moves later while paused or waiting, and with a seek or another speed;
-  it is not there without a known length (a stream without one included) or once nothing is left to play: at the end,
-  also while the player holds at the end of the file before the title is over, as it would only say the time it is
-  now. Screen readers hear "Ends at 22:41". In the middle skip back, the white play/pause disc and skip forward (glass discs showing the
+  it is not there without a known length (a stream without one included), for an end a day or more away, as it would
+  not say which day, or once nothing is left to play: at the end, also while the player holds at the end of the file
+  before the title is over, as it would only say the time it is now. Screen readers hear "Ends at 22:41". In the middle skip back, the white play/pause disc and skip forward (glass discs showing the
   profile's intervals), for an episode with a previous or next one flanked by previous and next episode discs (both
   slots kept while one has an episode, so Play stays in the middle; a movie has none); on the right mute, the volume
   slider, the sleep timer (unless Settings → Playback → This PC turns it off), audio, subtitles, chapters, settings,
