@@ -753,6 +753,34 @@ public sealed class DownloadQueueTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AFolderThatCannotBeDeleted_IsTriedLessAndLessOften_WithoutWritingTheIndexAgain()
+    {
+        var stored = await _h.AddAsync("dl_1", DownloadState.Completed);
+        var queue = _h.StartQueue();
+        await IdleAsync(queue);
+        await using var held = new FileStream(Path.Combine(stored.Folder, "media.mkv"), FileMode.Create, FileAccess.Write, FileShare.None);
+        await _h.Store.RemoveAsync(Scope7, "dl_1", queueServerDelete: false, Token);
+        await IdleAsync(queue);
+        Assert.Equal(1, FolderTries());
+        var written = File.GetLastWriteTimeUtc(_h.IndexPath);
+
+        // A minute after the first try, then two minutes, then four.
+        await _h.AdvanceAsync(TimeSpan.FromMinutes(1), queue);
+        Assert.Equal(2, FolderTries());
+        await _h.AdvanceAsync(TimeSpan.FromMinutes(1), queue);
+        Assert.Equal(2, FolderTries());
+        await _h.AdvanceAsync(TimeSpan.FromMinutes(1), queue);
+        Assert.Equal(3, FolderTries());
+        await _h.AdvanceAsync(TimeSpan.FromMinutes(3), queue);
+        Assert.Equal(3, FolderTries());
+        await _h.AdvanceAsync(TimeSpan.FromMinutes(1), queue);
+        Assert.Equal(4, FolderTries());
+        Assert.Equal(written, File.GetLastWriteTimeUtc(_h.IndexPath));
+    }
+
+    private int FolderTries() => _h.Logs.Lines.Count(line => line.Contains("could not be deleted yet", StringComparison.Ordinal));
+
+    [Fact]
     public async Task AProfileSwitchDuringAPass_StartsNothingForTheOldProfile()
     {
         var queue = _h.StartQueue();

@@ -547,6 +547,8 @@ public sealed class DownloadStoreTests : IDisposable
 
         var again = await store.AddAsync(Record("dl_1"), Token);
         await held.DisposeAsync();
+        // The folder that could not go is tried again a minute later.
+        _time.Advance(TimeSpan.FromMinutes(1));
         store.RecheckFolders();
         await store.FolderWork;
 

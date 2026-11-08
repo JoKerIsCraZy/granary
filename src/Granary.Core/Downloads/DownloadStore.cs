@@ -14,7 +14,7 @@ namespace Granary.Core.Downloads;
 /// caller's thread. Files are written one at a time behind a gate, off the caller's thread, each time with the latest state, so
 /// the last write is the latest. A record that cannot be written is logged, and an index that cannot be written is written
 /// again with every following change; the change holds for this run. A removed download's folder is deleted only once the
-/// index without it is on disk, and tried again while something holds it.
+/// index without it is on disk, and tried again while something holds it or its drive is away, less often each time.
 /// </remarks>
 public sealed partial class DownloadStore
 {
@@ -33,6 +33,12 @@ public sealed partial class DownloadStore
     // The index on disk is older than the state: every write writes it until one gets through.
     private volatile bool _indexDirty;
 
+    // The index as last written; only the writes, one at a time, touch it.
+    private byte[]? _writtenIndex;
+
+    // When each removed download's folder that could not be deleted yet is tried again.
+    private readonly Dictionary<FolderDelete, FolderRetry> _folderRetries = [];
+
     public DownloadStore(string indexPath, IDownloadPreferences preferences, TimeProvider time, ILogger<DownloadStore> logger)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(indexPath);
@@ -42,6 +48,12 @@ public sealed partial class DownloadStore
         _time = time;
         _logger = logger;
     }
+
+    /// <summary>The longest a removed download's folder that could not be deleted waits for its next try.</summary>
+    public static readonly TimeSpan MaxFolderDeleteWait = TimeSpan.FromMinutes(10);
+
+    // The first wait after a folder could not be deleted; each one after doubles it.
+    private static readonly TimeSpan FirstFolderDeleteWait = TimeSpan.FromMinutes(1);
 
     /// <summary><c>downloads.json</c> in the data folder.</summary>
     public static string DefaultIndexPath => Path.Combine(AppPaths.DataDirectory, "downloads.json");
@@ -110,8 +122,21 @@ public sealed partial class DownloadStore
     /// <summary>The server deletes still to be sent for <paramref name="scope"/>.</summary>
     public IReadOnlyList<PendingDelete> PendingDeletes(DownloadScope scope) => [.. Current.PendingDeletes.Where(d => d.Scope == scope)];
 
-    /// <summary>A removed download's folder is still to be deleted, of any scope: a recheck tries it again.</summary>
-    internal bool HasFolderDeletes => Current.FolderDeletes.Count > 0;
+    /// <summary>
+    /// When a recheck next tries a removed download's folder that is still to be deleted, of any scope; null when none is. A
+    /// folder not tried yet is due now.
+    /// </summary>
+    internal DateTimeOffset? NextFolderDeleteAt
+    {
+        get
+        {
+            lock (_gate)
+            {
+                var now = _time.GetUtcNow();
+                return _state.FolderDeletes.Count == 0 ? null : _state.FolderDeletes.Min(d => _folderRetries.TryGetValue(d, out var retry) ? retry.At : now);
+            }
+        }
+    }
 
     /// <summary>
     /// The folder of a removed download that is still to be deleted (something held it, or its drive is not there); null when
@@ -265,10 +290,11 @@ public sealed partial class DownloadStore
     /// <summary>
     /// Looks at every folder again: one that came back is read from its own record, one that went turns into missing files,
     /// and one whose record cannot be read is damaged. <see cref="Changed"/> follows when anything changed. Removed downloads'
-    /// folders still there, and an index not yet written, are tried again in the background.
+    /// folders still there whose next try is due, and an index not yet written, are tried again in the background
+    /// (<see cref="FolderWork"/>).
     /// </summary>
     /// <remarks>It reads the disk on the caller's thread, a drive that is slow to answer included: never call it on the UI thread.
-    /// The queue's loop does.</remarks>
+    /// The queue calls it beside its loop.</remarks>
     public void RecheckFolders()
     {
         var found = new Dictionary<StoredDownload, StoredDownload>();
@@ -410,6 +436,9 @@ public sealed partial class DownloadStore
 
     /// <summary>What a load's look for download folders did: the folders it listed, the records it read, whether it stopped early.</summary>
     internal sealed record ScanCount(int Folders, int Records, bool Capped);
+
+    /// <summary>When a folder that could not be deleted is tried again, and how many tries in a row failed.</summary>
+    private readonly record struct FolderRetry(DateTimeOffset At, int Failures);
 
     private sealed record Snapshot(IReadOnlyList<StoredDownload> Downloads, IReadOnlyList<PendingDelete> PendingDeletes,
         IReadOnlyList<FolderDelete> FolderDeletes)

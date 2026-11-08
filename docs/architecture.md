@@ -824,8 +824,9 @@ Films and episodes kept on this PC as the server's managed downloads (docs/api-c
   written is logged; an index that cannot be written is written again with every following change. Either way the change
   holds for the run, so a full drive still shows a download as failed. A removed row goes first, so the queue lets go of its
   part; its folder goes once the index without it is on disk (each pass deletes only the folders of the index it wrote), and
-  a folder something still holds stays in `folder_deletes`, tried again at the next start and recheck, unless a row lives in
-  that very folder again. A `Changed` handler that throws does not keep a change from being written. Only a folder laid out
+  a folder something still holds, or whose drive is away, stays in `folder_deletes`, tried again at the next start and at a
+  recheck a minute later, then twice as long each time up to `MaxFolderDeleteWait` (10 minutes), unless a row lives in
+  that very folder again. An index the same as the one last written is not written again. A `Changed` handler that throws does not keep a change from being written. Only a folder laid out
   as above is ever deleted. The log names downloads by id: a file system error's message holds the full path, with the
   Windows user name, so only its kind and code are logged.
 - **`SafeFile`** (`IO/SafeFile`) writes every one of these files, the settings and the mpv folder's: whole beside the
@@ -883,9 +884,9 @@ missing their folder.
 - **One loop.** It decides what starts, on a wake: `Wake()`, a session change, `INetworkLink.Changed`, the download
   settings changing, the store changing, a transfer ending, the server work ending, or a timer at the earliest time
   something waits for (a retry, a status report, a delete or a registry read to try again, the next look at preparing
-  copies, a folder recheck). Each pass rechecks the folders when that is due (`RecheckFolders` reads the disk for every
-  download, so only this loop calls it, at most every `FolderRecheck` (60 s) or when a transfer found its folder gone),
-  activates the scope with the server when it becomes the active one (below), starts transfers, and hands what the server is
+  copies, a folder recheck). Each pass starts a folder recheck when that is due, at most every `FolderRecheck` (60 s) or
+  when a transfer found its folder gone; it runs beside the loop, one at a time, since `RecheckFolders` reads the disk for
+  every download, a slow drive's included, and wakes the loop when it ends. The pass then activates the scope with the server when it becomes the active one (below), starts transfers, and hands what the server is
   to hear to the server work. Work that fell due while a pass ran gets the next pass at once; nothing else does, so the loop
   never spins. An iteration that fails, the wait after the pass included, is logged and the loop carries on. The event
   handlers only cancel and wake, so nothing of a transfer ever runs on the UI thread; cancelling goes through `CancelAsync`.
@@ -971,7 +972,8 @@ client guide.
   files go first. The server work looks at the folder when it is about to send, and remembers one still there until the
   next folder recheck, so the loop never reads the disk for a delete. A removed download's folder that goes raises the
   store's `Changed`, so the delete it held back goes at once. While any removed download's folder is still there,
-  with a delete to send or without (a sign-out), the folders are looked at again every minute. One the server takes, or will
+  with a delete to send or without (a sign-out), a recheck tries it again when its next try is due
+  (`DownloadStore.NextFolderDeleteAt`): a minute after the first, then longer, up to ten minutes. One the server takes, or will
   never take (a client error), is forgotten; after one that cannot go now, they wait for the retry delays.
 
 ### Starting and deleting

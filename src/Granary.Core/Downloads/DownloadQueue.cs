@@ -105,6 +105,7 @@ public sealed partial class DownloadQueue : IDisposable
     private TaskCompletionSource _parked = NewSignal();
     private TaskCompletionSource _idle = NewSignal();
     private Task _loop = Task.CompletedTask;
+    private Task _rechecking = Task.CompletedTask;
     private DateTimeOffset? _lastRecheck;
     private bool _recheckRequested;
     private bool _started;
@@ -140,7 +141,7 @@ public sealed partial class DownloadQueue : IDisposable
     /// <summary>Downloads wait now because the connection is metered and Settings → Downloads does not allow it.</summary>
     public bool IsWaitingForUnmetered => _network.Current.IsMetered && !_preferences.DownloadsOnMetered;
 
-    /// <summary>For tests: done once the loop waits with nothing to do, no transfer running and no server work.</summary>
+    /// <summary>For tests: done once the loop waits with nothing to do, no transfer running, no server work and no folder recheck.</summary>
     internal Task Idle
     {
         get
@@ -250,7 +251,7 @@ public sealed partial class DownloadQueue : IDisposable
             {
                 CancelLocked(run);
             }
-            tasks = [_loop, _chores, .. _running.Values.Select(r => r.Task)];
+            tasks = [_loop, _chores, _rechecking, .. _running.Values.Select(r => r.Task)];
         }
         Unsubscribe();
         try

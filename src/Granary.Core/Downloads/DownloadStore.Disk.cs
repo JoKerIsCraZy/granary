@@ -115,7 +115,8 @@ public sealed partial class DownloadStore
         SafeFile.WriteWhole(Path.Combine(download.Folder, DownloadPaths.Record), temp => File.WriteAllBytes(temp, json));
     }
 
-    // Answers whether the index is on disk; one that is not stays due for every following write.
+    // Answers whether the index is on disk; one that is not stays due for every following write. An index the same as the one
+    // last written is not written again.
     private bool WriteIndex(Snapshot state)
     {
         var index = new DownloadIndexFile
@@ -126,9 +127,14 @@ public sealed partial class DownloadStore
         };
         try
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(_indexPath)!);
             byte[] json = JsonSerializer.SerializeToUtf8Bytes(index, DownloadStoreJsonContext.Default.DownloadIndexFile);
+            if (!_indexDirty && _writtenIndex is { } written && json.AsSpan().SequenceEqual(written))
+            {
+                return true;
+            }
+            Directory.CreateDirectory(Path.GetDirectoryName(_indexPath)!);
             SafeFile.WriteWhole(_indexPath, temp => File.WriteAllBytes(temp, json));
+            _writtenIndex = json;
             _indexDirty = false;
             return true;
         }
@@ -161,17 +167,43 @@ public sealed partial class DownloadStore
         return done;
     }
 
-    // Each of these folders, unless a row lives in that very folder again; answers whether any delete is done.
+    // Each of these folders that is due, unless a row lives in that very folder again; answers whether any delete is done. One
+    // that cannot go yet is tried again after a minute, then twice as long each time, up to MaxFolderDeleteWait: a drive that
+    // stays away is not looked for every minute.
     private bool DeleteFolders(IReadOnlyList<FolderDelete> deletes)
     {
         bool done = false;
+        var now = _time.GetUtcNow();
         foreach (var delete in deletes)
         {
+            FolderRetry? retry;
+            lock (_gate)
+            {
+                retry = _folderRetries.GetValueOrDefault(delete);
+            }
             bool owned = Current.Downloads.Any(d => IsSameFolder(d.Folder, delete.Folder));
+            if (!owned && delete.IsUsable && retry is { } waits && waits.At > now)
+            {
+                continue;
+            }
             if (owned || !delete.IsUsable || TryDeleteFolder(delete))
             {
                 Change(state => state with { FolderDeletes = [.. state.FolderDeletes.Where(d => d != delete)] });
                 done = true;
+                continue;
+            }
+            int failures = (retry?.Failures ?? 0) + 1;
+            var wait = TimeSpan.FromTicks(Math.Min(MaxFolderDeleteWait.Ticks, FirstFolderDeleteWait.Ticks << Math.Min(failures - 1, 10)));
+            lock (_gate)
+            {
+                _folderRetries[delete] = new FolderRetry(now + wait, failures);
+            }
+        }
+        lock (_gate)
+        {
+            foreach (var gone in _folderRetries.Keys.Where(d => !_state.FolderDeletes.Contains(d)).ToList())
+            {
+                _folderRetries.Remove(gone);
             }
         }
         return done;
