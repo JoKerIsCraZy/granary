@@ -17,6 +17,7 @@ public sealed class PlayerViewModelButtonsTests
     private readonly FakePlaybackEngine _engine = new();
     private readonly ManualTimeProvider _time = new();
     private readonly InMemoryPlayerButtons _buttons = new();
+    private readonly LogSink _logs = new();
     private readonly List<FakeServerPlayback> _playbacks = [];
 
     private FakeServerPlayback Playback => _playbacks[^1];
@@ -26,7 +27,7 @@ public sealed class PlayerViewModelButtonsTests
         var playback = new FakeServerPlayback { DurationSeconds = 2700 };
         _playbacks.Add(playback);
         return playback;
-    }, new PlaybackStops(), _time, buttons: buttons);
+    }, new PlaybackStops(), _time, logger: _logs.For<PlayerViewModel>(), buttons: buttons);
 
     private async Task<PlayerViewModel> PlayingAsync()
     {
@@ -122,6 +123,21 @@ public sealed class PlayerViewModelButtonsTests
 
         Assert.False(viewModel.IsFillingScreen);
         Assert.False(_engine.Fill);
+    }
+
+    [Fact]
+    public async Task AnEngineThatFailsAsFillGoes_LeavesTheBarApplied_AndIsLogged()
+    {
+        var viewModel = await PlayingAsync();
+        viewModel.ToggleFillCommand.Execute(null);
+        viewModel.TogglePlaybackInfoCommand.Execute(null);
+        _engine.FailFill = new InvalidOperationException("The player has gone away");
+
+        _buttons.Set(PlayerBar.Default.WithShown(PlayerButton.Fill, false).WithShown(PlayerButton.PlaybackInfo, false));
+
+        Assert.False(viewModel.Bar.Fill);
+        Assert.False(viewModel.IsPlaybackInfoShown);
+        Assert.Contains("hidden in Settings", _logs.All, StringComparison.Ordinal);
     }
 
     [Fact]

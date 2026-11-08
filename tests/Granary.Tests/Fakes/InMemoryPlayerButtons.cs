@@ -25,4 +25,7 @@ internal sealed class InMemoryPlayerButtons : IPlayerButtonsLayout
     }
 
     public void SetShown(PlayerButton button, bool shown) => Set(_current.WithShown(button, shown));
+
+    /// <summary>Changes <see cref="Current"/> without saying so, as another profile's bar would read before the player hears of it.</summary>
+    public void SetUnannounced(PlayerBar bar) => _current = bar;
 }

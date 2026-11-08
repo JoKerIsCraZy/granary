@@ -694,6 +694,20 @@ public sealed class PlayerViewModelSleepTimerTests
     }
 
     [Fact]
+    public async Task ATick_FollowsTheBarThePlayerWasGiven_NotWhatTheLayoutReadsMeanwhile()
+    {
+        var viewModel = await PlayingAsync(Ted);
+        Choose(viewModel, "5 min");
+
+        // Another profile's bar, say, that the player has not been told of: its own bar still has the timer.
+        _buttons.SetUnannounced(PlayerBar.Default.WithShown(PlayerButton.SleepTimer, false));
+        _time.Advance(TimeSpan.FromMinutes(5.1));
+
+        Assert.True(_engine.Current.IsPaused);
+        Assert.True(viewModel.ShowsSleepTimer);
+    }
+
+    [Fact]
     public async Task TurnedOffAndOnAgainOnAnotherThread_BeforeTheUiThreadGetsToIt_EndsTheTimer_AndTheButtonShowsAgain()
     {
         var viewModel = await PlayingAsync(Ted, queued: true);

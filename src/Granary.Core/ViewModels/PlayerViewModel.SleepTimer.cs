@@ -136,7 +136,7 @@ public sealed partial class PlayerViewModel
     private void OnSleepTick()
     {
         // Settings has hidden the timer's button, and that change waits behind this tick: it no longer runs out.
-        if (_sleepEnds is not { } ends || _buttons?.Current.SleepTimer == false)
+        if (_sleepEnds is not { } ends || !_barToCome.SleepTimer)
         {
             return;
         }

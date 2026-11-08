@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using Granary.Core.Playback;
+using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.ViewModels;
 
@@ -12,6 +13,10 @@ public sealed partial class PlayerViewModel
 {
     private readonly IPlayerButtonsLayout? _buttons;
 
+    // The latest bar the player was told of, set on the thread that told it: ahead of Bar while a change from another
+    // thread waits for the UI thread, so a sleep tick queued before that change already finds the timer hidden.
+    private volatile PlayerBar _barToCome = PlayerBar.Default;
+
     /// <summary>The bar's buttons in the profile's order, and which it hides; without a layout, as in tests that leave it out, all of them.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowsSleepTimer))]
@@ -21,7 +26,7 @@ public sealed partial class PlayerViewModel
     {
         if (_buttons is { } buttons)
         {
-            Bar = buttons.Current;
+            Bar = _barToCome = buttons.Current;
             buttons.Changed += OnButtonsChanged;
         }
     }
@@ -39,6 +44,7 @@ public sealed partial class PlayerViewModel
     // applies its own bar, so hidden and shown again before the UI thread gets to them still ends the timer.
     private void OnButtonsChanged(object? sender, PlayerBar bar)
     {
+        _barToCome = bar;
         if (_dispatcher.HasThreadAccess)
         {
             ApplyButtons(bar);
@@ -63,14 +69,21 @@ public sealed partial class PlayerViewModel
             EndSleepTimerWithItsButton();
         }
         // Hidden means off: what a button had on goes with it. Subtitles that show, the speed and the sound stay, as the
-        // title's own choices.
-        if (!bar.PlaybackInfo && IsPlaybackInfoShown)
+        // title's own choices. The engine may have gone meanwhile, as this can come posted: the bar holds anyway.
+        try
         {
-            TogglePlaybackInfo();
+            if (!bar.PlaybackInfo && IsPlaybackInfoShown)
+            {
+                TogglePlaybackInfo();
+            }
+            if (!bar.Fill && IsFillingScreen)
+            {
+                ResetFill();
+            }
         }
-        if (!bar.Fill && IsFillingScreen)
+        catch (Exception ex)
         {
-            ResetFill();
+            _logger.LogWarning(ex, "Turning off what a button hidden in Settings had on failed");
         }
     }
 }

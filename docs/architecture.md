@@ -566,7 +566,7 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   saved there, as Android keeps the last one (`ServerPlayback.SetSleepTimerDefault`, `profile_device`). Player buttons
   can hide the button (below): `PlayerViewModel.ShowsSleepTimer` goes false, a running timer ends as Turn off ends it,
   and a hold the timer left after the end lets go (`NextUpFlow.Hold(false)` then starts the countdown). A tick reads the
-  layout's `Current`, so one that waits behind a change from another thread does not run out.
+  latest bar the player was told of, so one that waits behind a change from another thread does not run out.
 - **Player buttons** (`PlayerBar`, `PlayerButtonsLayout`, `PlayerViewModel.Buttons.cs`; Granary's own, Silo's clients
   have no such editor): which of the eleven buttons on the right of the bar may show, and in which order, for each server
   and profile on this PC (`player-buttons.json`, by "server id/profile id", as `SidebarLayout` keeps the sidebar; the
@@ -586,7 +586,8 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   a bar of its own, and Reset gives it today's. The player reads `IPlayerButtonsLayout.Current` as it is made
   and follows `Changed` until it is disposed, so the minimized bar does too: a change on the UI thread applies at once,
   so work already queued there, such as the title's end, finds a hidden Sleep timer off; one from another thread is
-  posted, and does nothing once the player is disposed. Each change carries its own bar, so hidden and shown again before
+  posted, and does nothing once the player is disposed. The player keeps the latest bar it was told of as well, on the
+  telling thread, and a sleep tick reads that, so one queued ahead of a hide from another thread does not run out. Each change carries its own bar, so hidden and shown again before
   the UI thread gets to them still end the timer. Another profile acting raises `Changed` too. The page arranges its
   buttons in `PlayerBar.Order` (`PlayerPage.ArrangeBarButtons`) and shows each one while the bar does and, for one that
   needs something, while there is that (`ShowsButton`); a menu goes with its hidden button. A hidden button is off: the
