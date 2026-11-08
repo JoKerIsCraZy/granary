@@ -886,8 +886,9 @@ says why above the sections.
   and Move down as 32 px ghost buttons (off at the ends, where they still take the keyboard, so a remote's Up and Down go
   along each column), and the switch. Today's bar, the default: Volume, Sleep timer,
   Audio tracks, Subtitles, Chapters, Playback settings, Edit markers, Playback info, Mini view, Fill screen, Full screen,
-  all shown. A move keeps the keyboard on its row, on the button pressed or, once the row is at the end, on the other
-  one, so a remote can go on; after Reset it goes to the first row's switch. Without a profile acting a switch goes back.
+  all shown. A move shows at once, while it is saved, so a held key or a remote's quick presses all count; it keeps the
+  keyboard on its row, on the button pressed or, once the row is at the end, on the other one, so a remote can go on;
+  after Reset it goes to the first row's switch. Without a profile acting a switch goes back.
   An open player, the minimized one too, follows each change at once, and a hidden button is off, keys included (see
   Hidden buttons, under Player). Hiding everything is allowed: the right of the bar is then empty. The transport, the seek bar, Exit and Minimize, the time and title, and the minimized player's bar stay
   as they are.

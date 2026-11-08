@@ -80,6 +80,9 @@ public sealed partial class PlayerButtonsLayout : ObservableObject, IPlayerButto
     /// <summary>The save in flight, for tests.</summary>
     internal Task Saving { get; private set; } = Task.CompletedTask;
 
+    /// <summary>Waited for before each write, inside it, so a test can hold a save back or make it fail.</summary>
+    internal Func<Task> BeforeWrite { get; set; } = static () => Task.CompletedTask;
+
     public PlayerBar Current => Key() is { } key && _profiles.TryGetValue(key, out var bar) ? bar : _start;
 
     /// <summary>The acting profile's bar is not today's; Reset brings that back.</summary>
@@ -117,10 +120,12 @@ public sealed partial class PlayerButtonsLayout : ObservableObject, IPlayerButto
             profiles[key] = bar;
         }
         _profiles = profiles;
+        // The save is on its way before anyone hears of the change.
+        var saving = Saving = SaveAsync();
         Revision++;
         OnPropertyChanged(nameof(IsCustomized));
         Changed?.Invoke(this, bar);
-        return Saving = SaveAsync();
+        return saving;
     }
 
     private void OnSessionChanged(object? sender, EventArgs e) => _dispatcher.Post(() =>
@@ -168,6 +173,7 @@ public sealed partial class PlayerButtonsLayout : ObservableObject, IPlayerButto
         string temp = _filePath + ".tmp";
         try
         {
+            await BeforeWrite().ConfigureAwait(false);
             var file = new PlayerButtonsFile(_profiles.ToDictionary(
                 pair => pair.Key,
                 pair => (PlayerButtonsEntry?)new PlayerButtonsEntry(pair.Value.HasDefaultOrder ? null : IdsOf(pair.Value.Order), IdsOf(pair.Value.Hidden)),

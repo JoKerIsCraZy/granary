@@ -176,11 +176,13 @@ public sealed partial class SidebarRowViewModel : ObservableObject
     [NotifyCanExecuteChangedFor(nameof(MoveDownCommand))]
     public partial bool CanMoveDown { get; private set; }
 
+    // The move shows at once and the save goes on by itself, so the button takes the next press at once: a held key or a
+    // remote's quick presses all count.
     [RelayCommand(CanExecute = nameof(CanMoveUp))]
-    private Task MoveUpAsync() => _owner.MoveAsync(_entry.Section, Tag, -1);
+    private void MoveUp() => _ = _owner.MoveAsync(_entry.Section, Tag, -1);
 
     [RelayCommand(CanExecute = nameof(CanMoveDown))]
-    private Task MoveDownAsync() => _owner.MoveAsync(_entry.Section, Tag, 1);
+    private void MoveDown() => _ = _owner.MoveAsync(_entry.Section, Tag, 1);
 
     internal void Show(bool shown, bool canMoveUp, bool canMoveDown)
     {

@@ -252,7 +252,7 @@ public sealed class PlayerButtonsLayoutTests : IDisposable
         Assert.False(settings.Rows[^1].MoveDownCommand.CanExecute(null));
         var audio = settings.Rows.Single(row => row.Button == PlayerButton.Audio);
 
-        await audio.MoveUpCommand.ExecuteAsync(null);
+        audio.MoveUpCommand.Execute(null);
         settings.Rows.Single(row => row.Button == PlayerButton.PlaybackInfo).IsShown = false;
         await layout.Saving;
 
@@ -311,5 +311,90 @@ public sealed class PlayerButtonsLayoutTests : IDisposable
         Assert.True(settings.Rows.Single(row => row.Button == PlayerButton.MiniView).IsShown);
         Assert.False(settings.IsCustomized);
         Assert.Contains(nameof(PlayerButtonsSettingsViewModel.IsCustomized), changed);
+    }
+
+    [Fact]
+    public async Task MovePressedTwice_WhileTheFirstSaveWaits_MovesTwice_AndBothAreSaved()
+    {
+        var layout = Create();
+        var gate = new TaskCompletionSource();
+        layout.BeforeWrite = () => gate.Task;
+        using var settings = new PlayerButtonsSettingsViewModel(layout);
+        var fullScreen = settings.Rows.Single(row => row.Button == PlayerButton.FullScreen);
+
+        fullScreen.MoveUpCommand.Execute(null);
+        Assert.True(fullScreen.MoveUpCommand.CanExecute(null));
+        fullScreen.MoveUpCommand.Execute(null);
+        gate.SetResult();
+        await layout.Saving;
+
+        PlayerButton[] expected = [PlayerButton.PlaybackInfo, PlayerButton.FullScreen, PlayerButton.MiniView, PlayerButton.Fill];
+        Assert.Equal(expected, layout.Current.Order.TakeLast(4));
+        Assert.Equal(expected, Create().Current.Order.TakeLast(4));
+        Assert.Same(fullScreen, settings.Rows[^3]);
+    }
+
+    [Fact]
+    public async Task ChangesInARow_WhileASaveIsSlow_TheLastIsWhatIsWritten()
+    {
+        var layout = Create();
+        var gate = new TaskCompletionSource();
+        layout.BeforeWrite = () => gate.Task;
+
+        _ = layout.SetShownAsync(PlayerButton.Volume, false);
+        _ = layout.SetShownAsync(PlayerButton.Chapters, false);
+        var last = layout.SetShownAsync(PlayerButton.Volume, true);
+        gate.SetResult();
+        await last;
+
+        var again = Create().Current;
+        Assert.True(again.Volume);
+        Assert.False(again.Chapters);
+    }
+
+    [Fact]
+    public async Task AFailedWrite_KeepsTheChangeForThisRun_AndTheNextWriteSavesEverything()
+    {
+        var layout = Create();
+        int writes = 0;
+        layout.BeforeWrite = () => ++writes == 1 ? throw new IOException("The disk is full") : Task.CompletedTask;
+
+        await layout.SetShownAsync(PlayerButton.Fill, false);
+
+        Assert.False(layout.Current.Fill);
+        Assert.True(layout.IsCustomized);
+        Assert.False(File.Exists(FilePath));
+        Assert.Contains("could not be saved", _logs.All, StringComparison.Ordinal);
+
+        await layout.MoveAsync(PlayerButton.Audio, -1);
+
+        var again = Create().Current;
+        Assert.False(again.Fill);
+        Assert.Equal(PlayerButton.Audio, again.Order[1]);
+    }
+
+    [Fact]
+    public async Task ChangesInARow_AfterAFailedWrite_TheLastWins()
+    {
+        var layout = Create();
+        var gate = new TaskCompletionSource();
+        int writes = 0;
+        layout.BeforeWrite = async () =>
+        {
+            if (++writes == 1)
+            {
+                await gate.Task;
+                throw new IOException("The disk went away");
+            }
+        };
+
+        _ = layout.SetShownAsync(PlayerButton.Settings, false);
+        var last = layout.MoveAsync(PlayerButton.Settings, -1);
+        gate.SetResult();
+        await last;
+
+        var again = Create().Current;
+        Assert.False(again.Settings);
+        Assert.Equal(PlayerButton.Settings, again.Order[4]);
     }
 }

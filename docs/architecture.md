@@ -574,7 +574,10 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   profile's order names buttons by id (`volume`, `sleep_timer`, `audio`, `subtitles`, `chapters`, `settings`,
   `edit_markers`, `playback_info`, `mini_view`, `fill`, `full_screen`); an id this Granary does not know is left out, and a
   button the order lacks, one an update added, takes its own place, after the one before it in the bar's own order, and
-  shows. The order is written only when it is not the bar's own. A file that cannot be read shows today's bar. This PC's
+  shows. The order is written only when it is not the bar's own. A file that cannot be read shows today's bar. A change
+  shows at once and its save follows (one at a time, each writing the layouts as they are then, so the last change is
+  what stays; a failed one is logged and the change holds for the run), so the editor's Move takes the next press at
+  once, as the sidebar editor's does. This PC's
   Sleep timer switch from before the editor (`IPlaybackDevicePreferences.SleepTimerSwitchOff`, `sleep_timer_button:
   false` in `playback-device.json`, which keeps it as it was) is taken over once, while there is no file yet: the file
   is written at once with `start_hidden: ["sleep_timer"]`, the bar of every profile without one of its own; a change
