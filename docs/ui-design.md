@@ -478,10 +478,12 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     scroll over it. It fades to black toward the left (100 % → 92 % at a quarter → 25 % at 65 % → clear) and
     down (clear at 35 % → black at 82 %). Its thumbhash shows first, then the image fades in.
   - Hero, 48 px in, 100 from the top, 14 apart: season and episode
-    breadcrumbs; the logo at most 140 high and 520 wide, taking no room until it is in (or the title in 50 Bold); a
-    season's own name; one meta line in 17 at 60 % white ("2026 · 1h 58m · R · Mystery, Thriller", a series' air years,
-    rating, regular seasons and genres, an episode's "S2 E7 · 54m · 30 Oct 2026"); the tagline in 17 italic; the overview
-    in 16/25, four lines at most and 820 wide.
+    breadcrumbs; the logo at most 140 high and 520 wide, taking no room until it is in (or the title in 50 Bold, also
+    whenever Title Pages → Show title art is off; until the profile's choice is read, a title with a logo shows neither,
+    for 1.5 s at most, then its logo); a season's own name; one meta line in 17 at 60 % white ("2026 · 1h 58m · R · Mystery, Thriller", a series' air years,
+    rating, regular seasons and genres, an episode's "S2 E7 · 54m · 30 Oct 2026"; with Title Pages → Show advisory age a
+    movie's or series' suggested age follows its rating in the web's words, "Common Sense 13+", "MDBList 16+" or "13+");
+    the tagline in 17 italic; the overview in 16/25, four lines at most and 820 wide.
   - Granary's own buttons one size up: the red Play pill ("Resume from 1:02:33" for a movie or episode: the saved
     point, as the web's "Resume at" names it, which is also where playback starts unless Settings → Playback → This PC
     → Rewind on resume sets a lead-in), Start over,
@@ -566,6 +568,13 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   - Granary's rows follow, 56 apart: a series' seasons, all at once in a grid that wraps at the page's width (185 px
     posters, a season opens its own page), or a season's episode grid, more episodes, extras, trailers, cast and crew,
     a movie's box set, more like this.
+  - Theme music (Title Pages → Theme music, off by default): a movie's, series', season's or episode's page plays the
+    first theme of the set the server names for it, quietly under the page (35 %, faded in and out over 300 ms), once,
+    or again and again with Loop theme music. A page that follows with the same theme, a season with its series' set, goes
+    on where it was; another theme takes over. Leaving the page, or minimizing the window, fades it out, and it ends two
+    seconds later unless the same theme shows again. The player, also as its bar, and a trailer stop it at once; it starts
+    over once they close. Nothing on the page shows it; a title without themes, or a server that does not serve them, is
+    silent.
   - Spoilers, as the web's `SeasonEpisodeGrid`, `EpisodeCarousel` and `EpisodeContent` (the profile's Title Pages
     switches, [episode spoilers](api-contract.md#663-episode-spoilers)): in the episode grid and More Episodes an episode
     neither played nor started has its still blurred (only its own still: the series' art standing in for one stays) and
@@ -1013,8 +1022,18 @@ says why above the sections.
   hairlines of the entry's icon and name (Requests and Notifications: "Shows while your server offers it."), up and down
   as 32 px ghost buttons (off at the ends), and the switch; a hidden entry is dimmed. Changes show in the sidebar at
   once.
-- **Title Pages** (`TitlePagesSettingsView` on `TitlePagesSettingsViewModel`, the web's page of that name, so far with
-  its Spoilers group only): "What a movie or show page shows and plays when you open it.", then Spoilers ("Applies to
+- **Title Pages** (`TitlePagesSettingsView` on `TitlePagesSettingsViewModel`, the web's page of that name and its groups
+  in its order): "What a movie or show page shows and plays when you open it.", then Title ("How a movie or show is named
+  at the top of its page.", the web's `TitleArtSettingsGroup`) with "Show title art" ("Use logo artwork as the title when
+  available.") and "Apply to all devices" ("Use this choice on every device signed into this profile."). Under them, in 13
+  px: with Apply to all devices on, in a box of white 5 % with the info icon, "Title art is on on every device signed into
+  this profile. Changing it here changes it everywhere. Turn off “Apply to all devices” to choose per device again."; with
+  neither PC nor profile chosen, muted, "Using the server default (on). Change it here to choose for this PC."; with this
+  PC's own choice "Only affects this PC. Your other devices keep their own setting." (the web says "browser" where
+  Granary says "PC"). A chosen value has "Use server default" with the reset icon under it. A refused change says "Could
+  not save the title art setting". Then Sound ("Plays while a title's page is open.") with "Theme music" ("Play local theme
+  music while browsing movie and show detail pages.") and "Loop theme music" ("Repeat theme music while the detail page
+  stays open."), saved to the profile, this PC's own value cleared with it. Then Spoilers ("Applies to
   episodes you have not started, on every device that uses this profile.") with "Blur unwatched episode images" ("Blur an
   episode's thumbnail until you start watching it, so the image does not give away the story.") and "Hide unwatched episode
   descriptions" ("Hide an episode's description until you start watching it."). Each switch saves to the profile at once and
@@ -1022,7 +1041,11 @@ says why above the sections.
   Watching and Next Up on Home and in a library, Home's banner and hero, and the player's Playing Next screen. A
   switch the server refused goes back, and "Failed to save title page setting" (the web's words) shows above the group
   until the next change. While they load the group says "Loading…"; a failed read or an older server shows a panel instead
-  ("Couldn't load your spoiler settings", "Your server needs an update").
+  ("Couldn't load your spoiler settings", "Your server needs an update"). Age guidance follows, with "Show advisory age"
+  ("Show a suggested minimum viewer age, such as Common Sense Media's, on a title's page. This only shows the age; a
+  household manager can limit a profile by it in the profile's access settings."), saved to the profile at once; open title
+  pages follow it. The other groups' switches are off until the profile's choice is read, and a group the server does not
+  keep is left out.
 - **Devices** (`DevicesSettingsView` on `DevicesViewModel`; the web's Signed-in sessions and Your Devices on one page,
   without the household view and the per-device settings editor): the title and its line with Refresh (outline) on the
   right, then what the last action did in 13 px muted text ("Session signed out", "Couldn't forget"). **Signed-in

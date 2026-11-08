@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Settings → Title Pages, as on Silo's web (pages/settings/TitlePagesSettings.tsx): its Spoilers group. -->
+<!-- Settings → Title Pages, as on Silo's web (pages/settings/TitlePagesSettings.tsx), in its order of groups. -->
 <UserControl
     x:Class="Granary.App.Views.Settings.TitlePagesSettingsView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -17,6 +17,56 @@
                    Text="What a movie or show page shows and plays when you open it." />
         <InfoBar IsOpen="{x:Bind controls:SettingsText.Has(ViewModel.ErrorMessage), Mode=OneWay}" Severity="Error" IsClosable="False"
                  Message="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}" Margin="0,0,0,16" />
+
+        <!-- The web's TitleArtSettingsGroup.tsx: this PC's choice, the profile's for every device, or the server's default. -->
+        <controls:SettingsGroup Title="Title" Description="How a movie or show is named at the top of its page."
+                                Visibility="{x:Bind ViewModel.OffersTitleArt, Mode=OneWay}">
+            <StackPanel>
+                <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Show title art"
+                                      Description="Use logo artwork as the title when available.">
+                    <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.ShowsTitleArt, Mode=TwoWay}"
+                                  IsEnabled="{x:Bind ViewModel.CanEditTitlePage, Mode=OneWay}" AutomationProperties.Name="Show title art" />
+                </controls:SettingsRow>
+                <controls:SettingsRow Label="Apply to all devices" Description="Use this choice on every device signed into this profile.">
+                    <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.TitleArtForAllDevices, Mode=TwoWay}"
+                                  IsEnabled="{x:Bind ViewModel.CanEditTitlePage, Mode=OneWay}" AutomationProperties.Name="Apply to all devices" />
+                </controls:SettingsRow>
+                <Border Margin="0,12,0,0" Padding="14,12" CornerRadius="12" Background="#0DFFFFFF"
+                        Visibility="{x:Bind ViewModel.TitleArtNoteIsBoxed, Mode=OneWay}">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <FontIcon Glyph="&#xE946;" FontSize="16" VerticalAlignment="Top" Margin="0,2,0,0" Foreground="#D9FFFFFF"
+                                  AutomationProperties.AccessibilityView="Raw" />
+                        <TextBlock Text="{x:Bind ViewModel.TitleArtNote, Mode=OneWay}" FontSize="13" LineHeight="20" TextWrapping="Wrap"
+                                   MaxWidth="620" Foreground="#D9FFFFFF" />
+                    </StackPanel>
+                </Border>
+                <TextBlock Margin="0,12,0,0" Text="{x:Bind ViewModel.TitleArtNote, Mode=OneWay}" Style="{StaticResource SiloSettingsMutedTextStyle}"
+                           FontSize="13" Visibility="{x:Bind ViewModel.ShowsTitleArtPlainNote, Mode=OneWay}" />
+                <HyperlinkButton Margin="-4,8,0,0" Padding="4,2" FontSize="13" Foreground="{StaticResource SiloMutedBrush}"
+                                 Command="{x:Bind ViewModel.UseServerDefaultTitleArtCommand}" AutomationProperties.Name="Use server default"
+                                 Visibility="{x:Bind ViewModel.CanUseServerDefaultTitleArt, Mode=OneWay}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <FontIcon Glyph="&#xE7A7;" FontSize="13" AutomationProperties.AccessibilityView="Raw" />
+                        <TextBlock Text="Use server default" />
+                    </StackPanel>
+                </HyperlinkButton>
+            </StackPanel>
+        </controls:SettingsGroup>
+
+        <controls:SettingsGroup Title="Sound" Description="Plays while a title's page is open." Visibility="{x:Bind ViewModel.OffersThemeMusic, Mode=OneWay}">
+            <StackPanel>
+                <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Theme music"
+                                      Description="Play local theme music while browsing movie and show detail pages.">
+                    <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.PlaysThemeMusic, Mode=TwoWay}"
+                                  IsEnabled="{x:Bind ViewModel.CanEditTitlePage, Mode=OneWay}" AutomationProperties.Name="Theme music" />
+                </controls:SettingsRow>
+                <controls:SettingsRow Label="Loop theme music" Description="Repeat theme music while the detail page stays open."
+                                      Visibility="{x:Bind ViewModel.OffersThemeMusicLoop, Mode=OneWay}">
+                    <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.LoopsThemeMusic, Mode=TwoWay}"
+                                  IsEnabled="{x:Bind ViewModel.CanEditTitlePage, Mode=OneWay}" AutomationProperties.Name="Loop theme music" />
+                </controls:SettingsRow>
+            </StackPanel>
+        </controls:SettingsGroup>
 
         <controls:SettingsGroup Title="Spoilers" Description="Applies to episodes you have not started, on every device that uses this profile.">
             <StackPanel>
@@ -44,6 +94,14 @@
                     </controls:SettingsRow>
                 </StackPanel>
             </StackPanel>
+        </controls:SettingsGroup>
+
+        <controls:SettingsGroup Title="Age guidance" Visibility="{x:Bind ViewModel.OffersAdvisoryAge, Mode=OneWay}">
+            <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Show advisory age"
+                                  Description="Show a suggested minimum viewer age, such as Common Sense Media's, on a title's page. This only shows the age; a household manager can limit a profile by it in the profile's access settings.">
+                <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.ShowsAdvisoryAge, Mode=TwoWay}"
+                              IsEnabled="{x:Bind ViewModel.CanEditTitlePage, Mode=OneWay}" AutomationProperties.Name="Show advisory age" />
+            </controls:SettingsRow>
         </controls:SettingsGroup>
     </StackPanel>
 </UserControl>

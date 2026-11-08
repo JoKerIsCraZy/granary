@@ -78,6 +78,7 @@ public sealed partial class MainWindow : Window
         WatchParty = watchParty;
         InitializeComponent();
         InitializeTrailers();
+        InitializeThemeMusic();
         _railHover = DispatcherQueue.CreateTimer();
         _railHover.Interval = RailHoverDelay;
         _railHover.IsRepeating = false;
