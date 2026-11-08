@@ -41,7 +41,7 @@ public sealed class PlayerViewModelAudioDelayTests
     [Fact]
     public async Task AServerTitle_ShowsThisDevicesDelay_AndAStepIsSavedForThisDevice()
     {
-        _delay.Take(100);
+        _delay.Take(100, _delay.StartRead());
         using var viewModel = await PlayingAsync();
         Assert.Equal("+100 ms", viewModel.AudioDelayText);
 
@@ -73,7 +73,7 @@ public sealed class PlayerViewModelAudioDelayTests
     [Fact]
     public async Task TheDelay_StopsAtFiveSecondsEitherWay_AndResetGoesBackToNone()
     {
-        _delay.Take(4980);
+        _delay.Take(4980, _delay.StartRead());
         using var viewModel = await PlayingAsync();
         Assert.True(viewModel.CanDelayAudioLater);
 
@@ -91,7 +91,7 @@ public sealed class PlayerViewModelAudioDelayTests
     [Fact]
     public async Task ALocalFile_PlaysWithThisDevicesDelay_AndAStepIsOnlyThePlayers()
     {
-        _delay.Take(100);
+        _delay.Take(100, _delay.StartRead());
         using var viewModel = Create();
 
         await viewModel.StartAsync(PlayRequest.Direct(@"C:\Videos\clip.mkv"));
@@ -115,7 +115,7 @@ public sealed class PlayerViewModelAudioDelayTests
         using var viewModel = new PlayerViewModel(_engine, new ImmediateDispatcher(), new RecordingNavigation(), () => playback,
             new PlaybackStops(), _time, audioDelay: _delay);
 
-        _delay.Take(300);
+        _delay.Take(300, _delay.StartRead());
 
         await viewModel.StartAsync(PlayRequest.Resume("movie-1"));
         playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));

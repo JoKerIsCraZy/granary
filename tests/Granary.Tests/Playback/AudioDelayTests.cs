@@ -99,19 +99,19 @@ public sealed class AudioDelayTests
         int changes = 0;
         delay.Changed += (_, _) => changes++;
 
-        delay.Take(300);
+        delay.Take(300, delay.StartRead());
         Assert.Equal(300, delay.Milliseconds);
         Assert.Equal(1, changes);
-        delay.Take(300);
+        delay.Take(300, delay.StartRead());
         Assert.Equal(1, changes);
 
         delay.Set(100);
-        delay.Take(300);
+        delay.Take(300, delay.StartRead());
         Assert.Equal(100, delay.Milliseconds);
 
         await SettleAsync(delay);
         Assert.Single(Saves);
-        delay.Take(250);
+        delay.Take(250, delay.StartRead());
         Assert.Equal(250, delay.Milliseconds);
     }
 
@@ -130,13 +130,13 @@ public sealed class AudioDelayTests
         Assert.Contains(_logs.Lines, l => l.Contains("Saving the audio delay failed", StringComparison.Ordinal));
 
         // A title read meanwhile still plays with the viewer's choice.
-        delay.Take(0);
+        delay.Take(0, delay.StartRead());
         Assert.Equal(-200, delay.Milliseconds);
 
         await delay.SaveNowAsync();
         Assert.Equal(2, Saves.Count);
         Assert.Equal(-200, Value(Saves[1]));
-        delay.Take(0);
+        delay.Take(0, delay.StartRead());
         Assert.Equal(0, delay.Milliseconds);
     }
 
@@ -202,7 +202,7 @@ public sealed class AudioDelayTests
 
         Assert.Empty(Saves);
         Assert.Contains(_logs.Lines, l => l.Contains("profile changed", StringComparison.Ordinal));
-        delay.Take(0);
+        delay.Take(0, delay.StartRead());
         Assert.Equal(0, delay.Milliseconds);
     }
 
@@ -303,7 +303,7 @@ public sealed class AudioDelayTests
         Assert.Contains(_logs.Lines, l => l.Contains("profile changed", StringComparison.Ordinal));
         _session.State = SessionState.Ready;
         _session.ProfileId = "7";
-        delay.Take(0);
+        delay.Take(0, delay.StartRead());
         Assert.Equal(0, delay.Milliseconds);
     }
 
@@ -324,7 +324,7 @@ public sealed class AudioDelayTests
         _session.State = SessionState.Ready;
         _session.ActiveServer = ScriptedSilo.Server;
         _session.ProfileId = "7";
-        delay.Take(0);
+        delay.Take(0, delay.StartRead());
         Assert.Equal(0, delay.Milliseconds);
     }
 
@@ -332,7 +332,7 @@ public sealed class AudioDelayTests
     public void AValueThatCouldNotBeReadForATitle_StaysWhenItIsTheActingProfiles()
     {
         var delay = Create();
-        delay.Take(200);
+        delay.Take(200, delay.StartRead());
 
         delay.TakeUnread();
 
@@ -373,7 +373,7 @@ public sealed class AudioDelayTests
         await Task.WhenAll(first, second);
 
         Assert.Equal(100, Value(Assert.Single(Saves)));
-        delay.Take(0);
+        delay.Take(0, delay.StartRead());
         Assert.Equal(0, delay.Milliseconds);
     }
 

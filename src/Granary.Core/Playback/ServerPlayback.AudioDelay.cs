@@ -7,10 +7,10 @@ public sealed partial class ServerPlayback
 {
     private readonly AudioDelay? _audioDelay;
 
-    // The device's value as read for this title, taken unless a change made here is still on its way to the server; when
-    // it could not be read, the one this run knows if it is this profile's, else none. A server that does not know the
-    // setting plays without a delay.
-    private void StartAudioDelay(PlaybackPreferences preferences)
+    // The device's value as read for this title (read: numbered before its settings went out), taken unless the value held
+    // is newer: a change made here still on its way, or a read or a save since. When it could not be read, the one this
+    // run knows if it is this profile's, else none. A server that does not know the setting plays without a delay.
+    private void StartAudioDelay(PlaybackPreferences preferences, long read)
     {
         if (preferences.AudioDelayRefused)
         {
@@ -22,9 +22,9 @@ public sealed partial class ServerPlayback
             _engine.SetAudioDelay((preferences.AudioDelayMs ?? 0) / 1000.0);
             return;
         }
-        if (preferences.AudioDelayMs is { } read)
+        if (preferences.AudioDelayMs is { } fromServer)
         {
-            delay.Take(read);
+            delay.Take(fromServer, read);
         }
         else
         {

@@ -275,6 +275,8 @@ public sealed partial class ServerPlayback : IServerPlayback
 
     private async Task PrepareAndStartAsync(PlayRequest request, CancellationToken cancellationToken)
     {
+        // Before the settings are read: a save of the audio delay done while they are is newer than what they say.
+        long audioDelayRead = _audioDelay?.StartRead() ?? 0;
         try
         {
             _context = await _starter.PrepareAsync(request, cancellationToken);
@@ -296,7 +298,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         // A Watch Party plays at the room's speed: 1x, with the room's own corrections.
         _speed = request.IsWatchParty ? 1 : _context.Preferences.Speed;
         _engine.SetSpeed(_speed);
-        StartAudioDelay(_context.Preferences);
+        StartAudioDelay(_context.Preferences, audioDelayRead);
         SetStatus(Status);
         await StartAttemptAsync(PlaybackStarter.StartPosition(_context.Watch, request.FromBeginning), cancellationToken);
     }

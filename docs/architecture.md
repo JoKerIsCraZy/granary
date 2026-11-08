@@ -528,8 +528,10 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   waiting change first, waiting 2 s at most; a save that fails or does not answer does not stop them. A timer that was
   due as a later change came saves nothing; a failed save is logged and the value holds for this run; a read that
   answers after a change made here, once another profile acts, after a newer read was taken or after a save of that
-  profile went through, is dropped, as its answer is older than the value held. mpv moves only the sound: subtitles keep
-  to the picture, so the subtitle delay and subtitle sync, both timed against the picture, are untouched.
+  profile went through, is dropped, as its answer is older than the value held. A title's read, which goes with its
+  other playback settings, is numbered before they go out (`AudioDelay.StartRead`) and kept to the same rule, so a save
+  done meanwhile is what the title plays. mpv moves only the sound: subtitles keep to the picture, so the subtitle delay
+  and subtitle sync, both timed against the picture, are untouched.
 - **Markers** (11.1, 11.2): the playing file's intro (its single projection, as Android takes it), recaps, credits
   and previews come from the watch detail, then from a second read that names the file once its first frame
   shows (`file_id`, which makes the server fill markers it finds on demand); a failed read changes nothing.

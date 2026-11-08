@@ -82,28 +82,42 @@ public sealed class AudioDelay(SettingsApi settings, ISessionManager session, IU
     {
         var owner = Acting() ?? throw new InvalidOperationException("No profile is signed in.");
         long changes = _changes;
-        long read = ++_ticket;
+        long read = StartRead();
         var values = await settings.GetEffectiveAsync(owner.Server, [Key], cancellationToken);
-        if (Acting() != owner || _changes != changes || _newest.GetValueOrDefault(owner) > read)
+        if (Acting() == owner && _changes == changes)
         {
-            return;
+            Take(FromSetting(values.Find(Key)), read);
         }
-        _newest[owner] = read;
-        Take(FromSetting(values.Find(Key)));
     }
 
     /// <summary>
-    /// This device's value as the server holds it, read for a title or by Settings. A change made here for the same
-    /// profile that the server does not have yet is newer and stays, also one whose save failed: that one holds for the
-    /// rest of the run, or until a later save goes through.
+    /// Numbers a read of this device's value as it goes out, a title's with its playback settings or Settings', for
+    /// <see cref="Take"/>: its answer is taken only if nothing newer made the value since.
     /// </summary>
-    public void Take(int milliseconds)
+    public long StartRead() => ++_ticket;
+
+    /// <summary>
+    /// This device's value as the server held it for read <paramref name="read"/> (<see cref="StartRead"/>), read for a
+    /// title or by Settings. The value held stays when it is newer: a change made here for the same profile that the
+    /// server does not have yet, also one whose save failed (that one holds for the rest of the run, or until a later save
+    /// goes through), or, since the read went out, a newer read taken or a save of that profile done.
+    /// </summary>
+    public void Take(int milliseconds, long read)
     {
-        if (_unsaved is { } pending && pending.Owner == Acting())
+        var acting = Acting();
+        if (_unsaved is { } pending && pending.Owner == acting)
         {
             return;
         }
-        _shownFor = Acting();
+        if (acting is not null)
+        {
+            if (_newest.GetValueOrDefault(acting) > read)
+            {
+                return;
+            }
+            _newest[acting] = read;
+        }
+        _shownFor = acting;
         Show(Math.Clamp(milliseconds, -MaxMs, MaxMs));
     }
 
