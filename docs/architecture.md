@@ -934,7 +934,9 @@ client guide.
   came back), the queue reads the capability once: `proxy_delivery` has transfers ask `/file-proxy`, and
   `revoked_removes_local` lets a revoked download's files go. A capability that cannot be read leaves both off. Then it
   reconciles, both before the scope's first transfer starts, and the server work reads completed downloads' manifests again
-  that are a day old (`ManifestRefresh`).
+  that are a day old (`ManifestRefresh`). The scope counts as active only once that went through: an activation that
+  failed is done again by the next pass, a minute later at the latest. A pass takes the scope, its server and the session's
+  generation together, and starts no transfer once another scope is the active one.
 - **Reconcile.** `ReconcileAsync` reads every page of the registry (the cursor until `has_more` is false) before anything
   counts as gone, and judges only the downloads kept before it started reading, so one created meanwhile is never taken
   for gone. A registry that does not end (no cursor, a cursor that comes back, over 1000 pages) is not whole: nothing
@@ -963,8 +965,10 @@ client guide.
   folder lacks and the subtitles whose revision changed. The finished file is named after the manifest's container.
 - **Deletes.** The deletes still to send (`pending_deletes`) go out for the active scope, bound to its profile, each once
   its folder is gone (`DownloadStore.FolderBeingDeleted`; a folder on a drive that is not there does not hold it back): the
-  files go first. One the server takes, or will never take (a client error), is forgotten; after one that cannot go now,
-  they wait for the retry delays.
+  files go first. The server work looks at the folder when it is about to send, and remembers one still there until the
+  next folder recheck, so the loop never reads the disk for a delete. While any removed download's folder is still there,
+  with a delete to send or without (a sign-out), the folders are looked at again every minute. One the server takes, or will
+  never take (a client error), is forgotten; after one that cannot go now, they wait for the retry delays.
 
 ### Starting and deleting
 
