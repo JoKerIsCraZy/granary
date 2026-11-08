@@ -116,6 +116,26 @@ public sealed class JsonPlaybackDevicePreferencesTests : IDisposable
     }
 
     [Fact]
+    public async Task EveryChoice_SavedTogether_ComesBackAtTheNextStart()
+    {
+        // Each choice away from its default, so one a save leaves out comes back as the default. A new choice joins here.
+        var preferences = Create();
+
+        await preferences.SetDecodesInSoftwareAsync(true);
+        await preferences.SetUpDownAsync(PlayerUpDown.Volume);
+        await preferences.SetTimeLeftAsync(true);
+        await preferences.SetPassoutThresholdAsync(7);
+        await preferences.SetDiscordStatusAsync(true);
+
+        var again = Create();
+        Assert.True(again.DecodesInSoftware);
+        Assert.Equal(PlayerUpDown.Volume, again.UpDown);
+        Assert.True(again.TimeLeft);
+        Assert.Equal(7, again.PassoutThreshold);
+        Assert.True(again.DiscordStatus);
+    }
+
+    [Fact]
     public void AtFirst_TheStillWatchingPromptComesAfterThreeEpisodes() =>
         Assert.Equal(AutoPlayStreak.DefaultThreshold, Create().PassoutThreshold);
 
