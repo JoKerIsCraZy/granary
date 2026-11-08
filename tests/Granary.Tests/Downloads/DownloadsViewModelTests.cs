@@ -185,29 +185,83 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
         await AddFilmAsync("dl_5", "Example Movie Five");
         var page = await AttachedAsync();
 
-        Assert.Equal((true, false, false, true), Offers(Row(page, "dl_1")));
-        Assert.Equal((false, true, false, false), Offers(Row(page, "dl_2")));
-        Assert.Equal((false, false, true, false), Offers(Row(page, "dl_3")));
-        Assert.Equal((false, false, false, false), Offers(Row(page, "dl_4")));
-        Assert.Equal((false, false, false, false), Offers(Row(page, "dl_5")));
+        Assert.Equal((DownloadRowAction.Pause, "Pause", true, true), Offers(Row(page, "dl_1")));
+        Assert.Equal((DownloadRowAction.Resume, "Resume", true, false), Offers(Row(page, "dl_2")));
+        Assert.Equal((DownloadRowAction.Retry, "Retry", true, false), Offers(Row(page, "dl_3")));
+        Assert.Equal((DownloadRowAction.None, "", false, false), Offers(Row(page, "dl_4")));
+        Assert.Equal((DownloadRowAction.None, "", false, false), Offers(Row(page, "dl_5")));
         Assert.Equal(["Downloading · 0%", "Paused", "Failed", "No longer available", "Downloaded"],
             new[] { "dl_1", "dl_2", "dl_3", "dl_4", "dl_5" }.Select(id => Row(page, id).StatusText));
-        Assert.True(Row(page, "dl_1").PauseCommand.CanExecute(null));
-        Assert.False(Row(page, "dl_5").PauseCommand.CanExecute(null));
+        Assert.True(Row(page, "dl_1").PrimaryActionCommand.CanExecute(null));
+        Assert.False(Row(page, "dl_5").PrimaryActionCommand.CanExecute(null));
 
-        await Row(page, "dl_1").PauseCommand.ExecuteAsync(null);
-        await Row(page, "dl_2").ResumeCommand.ExecuteAsync(null);
-        await Row(page, "dl_3").RetryCommand.ExecuteAsync(null);
+        await Row(page, "dl_1").PrimaryActionCommand.ExecuteAsync(null);
+        await Row(page, "dl_2").PrimaryActionCommand.ExecuteAsync(null);
+        await Row(page, "dl_3").PrimaryActionCommand.ExecuteAsync(null);
 
         Assert.True(_h.Find("dl_1")!.Record.IsPausedByViewer);
         Assert.False(_h.Find("dl_2")!.Record.IsPausedByViewer);
         Assert.Equal((DownloadState.Queued, DownloadFailure.None), (_h.Find("dl_3")!.Record.State, _h.Find("dl_3")!.Record.Failure));
-        Assert.Equal(("Paused", true), (Row(page, "dl_1").StatusText, Row(page, "dl_1").CanResume));
-        Assert.Equal(("Queued", true), (Row(page, "dl_2").StatusText, Row(page, "dl_2").CanPause));
-        Assert.Equal(("Queued", false), (Row(page, "dl_3").StatusText, Row(page, "dl_3").CanRetry));
+        Assert.Equal(("Paused", DownloadRowAction.Resume), (Row(page, "dl_1").StatusText, Row(page, "dl_1").PrimaryAction));
+        Assert.Equal(("Queued", DownloadRowAction.Pause), (Row(page, "dl_2").StatusText, Row(page, "dl_2").PrimaryAction));
+        Assert.Equal(("Queued", DownloadRowAction.Pause), (Row(page, "dl_3").StatusText, Row(page, "dl_3").PrimaryAction));
 
-        static (bool Pause, bool Resume, bool Retry, bool Progress) Offers(DownloadRowViewModel row) =>
-            (row.CanPause, row.CanResume, row.CanRetry, row.ShowsProgress);
+        static (DownloadRowAction Action, string Label, bool HasAction, bool Progress) Offers(DownloadRowViewModel row) =>
+            (row.PrimaryAction, row.PrimaryActionLabel, row.HasPrimaryAction, row.ShowsProgress);
+    }
+
+    [Fact]
+    public async Task AStateChange_KeepsTheSectionsTheRowAndItsButton()
+    {
+        await AddFilmAsync("dl_1", "Example Movie", DownloadState.Downloading);
+        await AddEpisodeAsync("dl_15", 1, 5, "Chapter Five");
+        var page = await AttachedAsync();
+        var sections = page.Sections;
+        var row = Row(page, "dl_1");
+        var button = row.PrimaryActionCommand;
+
+        await button.ExecuteAsync(null);
+        Assert.Equal(("Paused", DownloadRowAction.Resume), (row.StatusText, row.PrimaryAction));
+        await button.ExecuteAsync(null);
+        Assert.Equal(("Downloading · 0%", DownloadRowAction.Pause), (row.StatusText, row.PrimaryAction));
+        Assert.Single(_h.Disk.Asked);
+        await _h.Store.UpdateAsync(Scope7, "dl_1", r => r with { State = DownloadState.Completed }, Token);
+        await page.SpaceRead;
+
+        Assert.Equal(("Downloaded", DownloadRowAction.None), (row.StatusText, row.PrimaryAction));
+        Assert.Same(sections, page.Sections);
+        Assert.Same(row, Row(page, "dl_1"));
+        Assert.Same(button, row.PrimaryActionCommand);
+        // The finished file counts as used, and the drive's free space is read again for it.
+        Assert.StartsWith("5.9 KB used · ", page.SpaceText, StringComparison.Ordinal);
+        Assert.Equal(2, _h.Disk.Asked.Count);
+    }
+
+    [Fact]
+    public async Task TheRowsButton_StaysPressableWhileItsPressRuns()
+    {
+        await AddFilmAsync("dl_1", "Example Movie", DownloadState.Downloading);
+        var page = await AttachedAsync();
+        var row = Row(page, "dl_1");
+        var storeBusy = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var release = new ManualResetEventSlim();
+        _h.Store.FolderMade = _ =>
+        {
+            storeBusy.TrySetResult();
+            release.Wait(TimeSpan.FromSeconds(5));
+        };
+        // Another download being added holds the store's writes, so the pause below waits to be written.
+        var adding = AddFilmAsync("dl_2", "Example Movie Two");
+        await storeBusy.Task;
+
+        var pausing = row.PrimaryActionCommand.ExecuteAsync(null);
+
+        Assert.False(pausing.IsCompleted);
+        Assert.Equal(DownloadRowAction.Resume, row.PrimaryAction);
+        Assert.True(row.PrimaryActionCommand.CanExecute(null));
+        release.Set();
+        await pausing;
+        await adding;
     }
 
     [Fact]

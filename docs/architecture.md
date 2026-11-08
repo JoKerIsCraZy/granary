@@ -1023,10 +1023,12 @@ client guide.
   shows nothing, so the services resolve without it.
 - **The Downloads page.** `DownloadsViewModel` follows `Changed` between `Attach` and `Detach` and posts one refresh to the
   UI thread per burst. Progress alone updates its rows from `BytesDone(id)` and the space used from `BytesUsed()`, without
-  `Items`, which asks Windows whether the connection is metered. Anything else reads `Items` again: the rows stay the same
-  objects, and the sections (films, then each series by season, Specials last) are made again only when downloads come or
-  go or one's place, series poster or state changes. The free space is read on the thread pool when the page shows and
-  when the sections change.
+  reading every download again through `Items`. Anything else reads `Items` again: the rows stay the same objects and follow
+  their download's state themselves, and the sections (films, then each series by season, Specials last) are made again
+  only when downloads come, go or move or a series' poster arrives. So pausing a row never makes the page anew: Pause,
+  Resume and Retry are one button per row (`PrimaryAction`), pressable while its press runs, and the focused button stays
+  put as its action changes. The free space is read on the thread pool when the page shows and when a download comes,
+  goes or finishes.
 - **Settings → Downloads.** `DownloadSettingsViewModel` takes a folder only below a drive's or a share's root and once it
   made the folder and wrote and deleted `.granary-write-check` there, on the thread pool; Open makes the folder first.
 

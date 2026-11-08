@@ -17,8 +17,10 @@ public sealed record DownloadGroup(string Title, IReadOnlyList<DownloadRowViewMo
 /// by title with its seasons and episodes by number and Specials last; the space they use and the space left at the top. The
 /// web has no such page, so its words are the apps'. It follows the downloads between <see cref="Attach"/> and
 /// <see cref="Detach"/>: changes come on any thread and are shown on the UI thread, one refresh per burst. A transfer that only
-/// went further updates its row and the space used without reading the other downloads; the sections are made again only
-/// when downloads come or go or one's state changes. The free space is read off the UI thread.
+/// went further updates its row and the space used without reading the other downloads. Rows follow their download's state
+/// themselves; the sections are made again only when downloads come, go or move, so a row and its buttons stay put while the
+/// viewer pauses or resumes it. The free space is read off the UI thread, when the page shows and when a download comes,
+/// goes or finishes.
 /// </summary>
 public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
 {
@@ -46,6 +48,7 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
     // On the UI thread: one row per download, what the sections were made from, and the space as last known.
     private readonly Dictionary<string, DownloadRowViewModel> _rows = new(StringComparer.Ordinal);
     private List<Shape> _shapes = [];
+    private int _completed;
     private long _used;
     private long? _free;
     private int _reads;
@@ -158,13 +161,18 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
         }
     }
 
-    // Everything again: the rows brought up to date, the sections made again when downloads came or went or a state changed.
+    // Everything again: the rows brought up to date, the sections made again only when downloads came, went or moved. A state
+    // change is the row's own: rebuilding for it would take the focus off the button just pressed.
     private void Show(bool readSpace)
     {
         var items = _downloads.Items;
         var shapes = items.Select(Shape.Of).OrderBy(s => s.DownloadId, StringComparer.Ordinal).ToList();
         bool rebuild = readSpace || !shapes.SequenceEqual(_shapes);
         _shapes = shapes;
+        int completed = items.Count(i => i.State == DownloadState.Completed);
+        // A download that came, went or finished changed what the drive has free.
+        bool reread = rebuild || completed != _completed;
+        _completed = completed;
         foreach (var item in items)
         {
             if (_rows.TryGetValue(item.DownloadId, out var row))
@@ -186,9 +194,8 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
             IsEmpty = Sections.Count == 0;
         }
         _used = _downloads.BytesUsed();
-        if (rebuild)
+        if (reread)
         {
-            // Downloads came, went or finished: the drive's free space changed with them.
             ReadSpace();
         }
         else
@@ -264,13 +271,12 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
 
     private static string Size(long bytes) => bytes > 0 ? PrePlayText.FileSize(bytes) : "0 B";
 
-    // What the sections are made from: a download's place on the page, its series' poster and its state; progress is not part
-    // of it, nor is the artwork a row shows itself.
+    // What the sections are made from: a download's place on the page and its series' poster. Its state, its progress and the
+    // artwork a row shows itself are the row's.
     private sealed record Shape(string DownloadId, string Title, string? SeriesId, string? SeriesTitle, int? SeasonNumber, int? EpisodeNumber,
-        string? SeriesPosterPath, DownloadState State, DownloadFailure Failure, bool IsPausedByViewer, bool IsNoLongerAvailable, bool FilesMissing)
+        string? SeriesPosterPath)
     {
         public static Shape Of(DownloadItem item) => new(item.DownloadId, item.Title, item.SeriesId, item.SeriesTitle, item.SeasonNumber,
-            item.EpisodeNumber, item.SeriesId is null ? null : item.SeriesPosterPath, item.State, item.Failure, item.IsPausedByViewer,
-            item.IsNoLongerAvailable, item.FilesMissing);
+            item.EpisodeNumber, item.SeriesId is null ? null : item.SeriesPosterPath);
     }
 }

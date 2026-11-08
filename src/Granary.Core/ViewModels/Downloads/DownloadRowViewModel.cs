@@ -7,11 +7,24 @@ using Granary.Core.ViewModels.Detail;
 
 namespace Granary.Core.ViewModels.Downloads;
 
+/// <summary>What the one transfer button of a Downloads row does now.</summary>
+public enum DownloadRowAction
+{
+    /// <summary>No button: the download is done, or can only be deleted.</summary>
+    None,
+    Pause,
+    Resume,
+
+    /// <summary>A failed download goes on from the bytes it has.</summary>
+    Retry,
+}
+
 /// <summary>
 /// A row of the Downloads page: a film, or an episode under its series and season, with its size and its status in the apps'
-/// words, a bar while it downloads, and Pause, Resume, Retry and Delete; Delete asks the title page's question
-/// (<see cref="DownloadActions.DeleteTitle"/>). The page keeps one row per download and brings it up to date with
-/// <see cref="Update"/>, so a row keeps its place and focus while its download goes further.
+/// words, a bar while it downloads, one button that pauses, resumes or retries it, and Delete, which asks the title page's
+/// question (<see cref="DownloadActions.DeleteTitle"/>). The page keeps one row per download and brings it up to date with
+/// <see cref="Update"/>. Pause, Resume and Retry are one button whose action follows the state, so the button the viewer
+/// pressed stays where it is, with the focus, when the download changes state.
 /// </summary>
 public sealed partial class DownloadRowViewModel : ObservableObject
 {
@@ -68,17 +81,23 @@ public sealed partial class DownloadRowViewModel : ObservableObject
     [ObservableProperty]
     public partial bool ShowsProgress { get; private set; }
 
+    /// <summary>What the row's one transfer button does: Pause while it runs, Resume while paused, Retry once it failed.</summary>
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(PauseCommand))]
-    public partial bool CanPause { get; private set; }
+    [NotifyPropertyChangedFor(nameof(HasPrimaryAction), nameof(PrimaryActionLabel))]
+    [NotifyCanExecuteChangedFor(nameof(PrimaryActionCommand))]
+    public partial DownloadRowAction PrimaryAction { get; private set; }
 
-    [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(ResumeCommand))]
-    public partial bool CanResume { get; private set; }
+    /// <summary>The button shows.</summary>
+    public bool HasPrimaryAction => PrimaryAction != DownloadRowAction.None;
 
-    [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(RetryCommand))]
-    public partial bool CanRetry { get; private set; }
+    /// <summary>"Pause", "Resume" or "Retry": the button's tooltip and automation name; empty without a button.</summary>
+    public string PrimaryActionLabel => PrimaryAction switch
+    {
+        DownloadRowAction.Pause => "Pause",
+        DownloadRowAction.Resume => "Resume",
+        DownloadRowAction.Retry => "Retry",
+        _ => "",
+    };
 
     /// <summary>What the row shows now.</summary>
     internal DownloadItem Item { get; private set; }
@@ -103,24 +122,28 @@ public sealed partial class DownloadRowViewModel : ObservableObject
         bool usable = !item.FilesMissing && !item.IsNoLongerAvailable;
         bool running = item.State is DownloadState.Preparing or DownloadState.Queued or DownloadState.Downloading;
         ShowsProgress = usable && item.State == DownloadState.Downloading;
-        CanPause = usable && running && !item.IsPausedByViewer;
-        CanResume = usable && item.IsPausedByViewer;
-        CanRetry = usable && item.State == DownloadState.Failed;
+        PrimaryAction = !usable ? DownloadRowAction.None
+            : item.IsPausedByViewer ? DownloadRowAction.Resume
+            : running ? DownloadRowAction.Pause
+            : item.State == DownloadState.Failed ? DownloadRowAction.Retry
+            : DownloadRowAction.None;
     }
 
     /// <summary>The series an episode belongs to, by the title it was downloaded with; its own title when that is missing.</summary>
     internal static string SeriesTitleOf(DownloadItem item) =>
         string.IsNullOrWhiteSpace(item.SeriesTitle) ? item.Title : item.SeriesTitle.Trim();
 
-    [RelayCommand(CanExecute = nameof(CanPause))]
-    private Task PauseAsync() => _downloads.PauseAsync(DownloadId);
-
-    [RelayCommand(CanExecute = nameof(CanResume))]
-    private Task ResumeAsync() => _downloads.ResumeAsync(DownloadId);
-
-    /// <summary>A failed download goes on from the bytes it has.</summary>
-    [RelayCommand(CanExecute = nameof(CanRetry))]
-    private Task RetryAsync() => _downloads.ResumeAsync(DownloadId);
+    /// <summary>
+    /// Pauses, resumes or retries, as <see cref="PrimaryAction"/> says. It stays pressable while a press runs, so the button
+    /// keeps the focus while its download changes state under it.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(HasPrimaryAction), AllowConcurrentExecutions = true)]
+    private Task PrimaryActionAsync() => PrimaryAction switch
+    {
+        DownloadRowAction.Pause => _downloads.PauseAsync(DownloadId),
+        DownloadRowAction.Resume or DownloadRowAction.Retry => _downloads.ResumeAsync(DownloadId),
+        _ => Task.CompletedTask,
+    };
 
     /// <summary>Deletes the download from this PC after asking; the server hears it once the files are gone.</summary>
     [RelayCommand]
