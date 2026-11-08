@@ -2,7 +2,9 @@ using System.Numerics;
 using Granary.Core.ViewModels.Detail;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
 using Windows.Foundation;
 
 namespace Granary.App.Controls;
@@ -23,6 +25,9 @@ public sealed partial class DetailExtraCard : UserControl
     // Cancelled when the container is recycled for another extra, so the old still stays out.
     private CancellationTokenSource? _still;
     private double _width;
+    private bool _hovered;
+    // The button around the card, found once it is in the tree.
+    private ButtonBase? _host;
 
     public DetailExtraCard()
     {
@@ -82,13 +87,67 @@ public sealed partial class DetailExtraCard : UserControl
         return base.MeasureOverride(availableSize);
     }
 
+    private void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        ForgetHost();
+        _host = HostButton();
+        if (_host is not null)
+        {
+            _host.GotFocus += OnHostFocusChanged;
+            _host.LostFocus += OnHostFocusChanged;
+        }
+        ShowPresence();
+    }
+
+    private void OnUnloaded(object sender, RoutedEventArgs e)
+    {
+        ForgetHost();
+        SetHovered(false);
+    }
+
+    private void ForgetHost()
+    {
+        if (_host is not null)
+        {
+            _host.GotFocus -= OnHostFocusChanged;
+            _host.LostFocus -= OnHostFocusChanged;
+            _host = null;
+        }
+    }
+
+    // The button around the card, which takes the focus.
+    private ButtonBase? HostButton()
+    {
+        var parent = VisualTreeHelper.GetParent(this);
+        for (int depth = 0; parent is not null && depth < 3; depth++, parent = VisualTreeHelper.GetParent(parent))
+        {
+            if (parent is ButtonBase button)
+            {
+                return button;
+            }
+        }
+        return null;
+    }
+
+    private void OnHostFocusChanged(object sender, RoutedEventArgs e) => ShowPresence();
+
     private void OnPointerEntered(object sender, PointerRoutedEventArgs e) => SetHovered(Extra is not null);
 
     private void OnPointerExited(object sender, PointerRoutedEventArgs e) => SetHovered(false);
 
     private void SetHovered(bool hovered)
     {
-        HoverLayer.Opacity = hovered ? 1 : 0;
-        StillImage.Scale = hovered ? new Vector3(HoverScale, HoverScale, 1) : Vector3.One;
+        _hovered = hovered;
+        ShowPresence();
+    }
+
+    // Under the pointer the picture darkens, the still grows and the disc shows; with the keyboard or a remote on the card
+    // the disc shows alone, as the web's focus-visible, which a click's focus does not count as.
+    private void ShowPresence()
+    {
+        bool keyboard = _host?.FocusState == FocusState.Keyboard;
+        Shade.Opacity = _hovered ? 1 : 0;
+        PlayDisc.Opacity = _hovered || keyboard ? 1 : 0;
+        StillImage.Scale = _hovered ? new Vector3(HoverScale, HoverScale, 1) : Vector3.One;
     }
 }

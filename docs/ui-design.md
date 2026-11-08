@@ -554,7 +554,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     the row and 20 apart, the rows 12 apart as the web's. A wide window takes more columns rather than the web's five
     larger cards. A card shows the still over its thumbhash (the cards' radius, the surface under both), or the thumbhash
     with a muted play mark (28 px at 40 %) when it has no still or the still fails to load, as the web's. Under the
-    pointer the still grows 5 % over 300 ms and a 40 px play disc shows on the picture darkened by 30 %. Under it, 8
+    pointer the still grows 5 % over 300 ms and a 40 px play disc shows on the picture darkened by 30 %; while the
+    keyboard or a remote is on the card the disc shows alone, as the web's focus-visible (not after a click). Under it, 8
     apart, the title in 13 px (without one, its group's label, as the web's card), and its length in 11 px muted
     ("12:22", "1:02:09"; nothing when unknown). Each card is a button: Tab and a remote's arrows go card by card, and a
     click or OK plays the extra in Granary's player from its start, as the Android and Apple apps play an extra; nothing
