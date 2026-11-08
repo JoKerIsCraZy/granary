@@ -382,6 +382,25 @@ public sealed class DownloadManagerTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AMeteredLink_OrTheSettingThatAllowsIt_TellsThePages()
+    {
+        await _h.AddAsync("dl_1", change: r => r with { IsPausedByViewer = true });
+        var queue = _h.StartQueue();
+        var manager = _h.NewManager(queue);
+        await SettleAsync(queue);
+        int changes = 0;
+        manager.Changed += (_, _) => Interlocked.Increment(ref changes);
+
+        _h.Network.SetMetered(true);
+        Assert.True(Interlocked.Exchange(ref changes, 0) > 0);
+        Assert.True(manager.ForItem("mv_1")!.WaitsForUnmetered);
+
+        await _h.Preferences.SetDownloadsOnMeteredAsync(true);
+        Assert.True(changes > 0);
+        Assert.False(manager.ForItem("mv_1")!.WaitsForUnmetered);
+    }
+
+    [Fact]
     public async Task WithoutAProfile_NothingStarts()
     {
         _h.SignOut();

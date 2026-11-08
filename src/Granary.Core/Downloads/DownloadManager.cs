@@ -79,12 +79,15 @@ public sealed partial class DownloadManager
         // The manager lives as long as the app, as the store, the queue and the feature do.
         store.Changed += OnChanged;
         queue.Progressed += OnProgressed;
+        // "Paused · metered connection" comes and goes with the link and Settings → Downloads.
+        queue.ConditionsChanged += OnChanged;
         feature.PropertyChanged += OnFeatureChanged;
     }
 
     /// <summary>
-    /// Raised on any thread when a download changed, went further, or what the server offers did. A transfer that only went
-    /// further comes with <see cref="DownloadProgressedEventArgs"/>, at most every half second for each.
+    /// Raised on any thread when a download changed, went further, or what the server offers did, and when downloads start or
+    /// stop waiting for an unmetered connection. A transfer that only went further comes with
+    /// <see cref="DownloadProgressedEventArgs"/>, at most every half second for each.
     /// </summary>
     public event EventHandler? Changed;
 

@@ -113,8 +113,8 @@ public sealed partial class DownloadQueue : IDisposable
     private bool _disposed;
     private long _passes;
 
-    // What the link and the settings last said (ReadWaitsForUnmetered).
-    private volatile bool _waitsForUnmetered;
+    // What the link and the settings last said (ReadWaitsForUnmetered): 1 when downloads wait.
+    private int _waitsForUnmetered;
 
     // The loop's own: whether the store was read, the scope it last ran, whether that scope's downloads can run, when a pass
     // that failed is tried again, and the activation under way or failed.
@@ -142,11 +142,14 @@ public sealed partial class DownloadQueue : IDisposable
     /// <summary>A download's bytes on disk changed; raised on a transfer's thread, at most every half second for each.</summary>
     public event EventHandler<string>? Progressed;
 
+    /// <summary><see cref="IsWaitingForUnmetered"/> turned, with the link or the settings; raised on any thread.</summary>
+    public event EventHandler? ConditionsChanged;
+
     /// <summary>
     /// Downloads wait now because the connection is metered and Settings → Downloads does not allow it, as the queue last
     /// read it (at each pass and each change of the link or the settings). It asks the system nothing, so the UI thread can.
     /// </summary>
-    public bool IsWaitingForUnmetered => _waitsForUnmetered;
+    public bool IsWaitingForUnmetered => Volatile.Read(ref _waitsForUnmetered) == 1;
 
     /// <summary>For tests: done once the loop waits with nothing to do, no transfer running, no server work and no folder recheck.</summary>
     internal Task Idle
@@ -333,8 +336,25 @@ public sealed partial class DownloadQueue : IDisposable
         }
     }
 
-    // Asks the link (a system call: never on the UI thread) and the settings whether downloads wait, and keeps the answer.
-    private bool ReadWaitsForUnmetered() => _waitsForUnmetered = _network.Current.IsMetered && !_preferences.DownloadsOnMetered;
+    // Asks the link (a system call: never on the UI thread) and the settings whether downloads wait, and keeps the answer;
+    // the pages hear when it turned, whichever read found it.
+    private bool ReadWaitsForUnmetered()
+    {
+        bool waits = _network.Current.IsMetered && !_preferences.DownloadsOnMetered;
+        int now = waits ? 1 : 0;
+        if (Interlocked.Exchange(ref _waitsForUnmetered, now) != now)
+        {
+            try
+            {
+                ConditionsChanged?.Invoke(this, EventArgs.Empty);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning("A follower of the downloads' conditions failed ({Failure})", DownloadLog.Failure(ex));
+            }
+        }
+        return waits;
+    }
 
     // The link or the settings: on a metered link without the setting, everything stops.
     private void OnConditionsChanged(object? sender, EventArgs e)
