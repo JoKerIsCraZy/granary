@@ -39,6 +39,8 @@
         <SolidColorBrush x:Key="TextControlBorderBrush" Color="#26FFFFFF" />
         <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="#40FFFFFF" />
         <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="#B3FFFFFF" />
+        <!-- A text box is 64 px wide at least, so in the 56 px box its right edge was cut off. -->
+        <x:Double x:Key="TextControlThemeMinWidth">0</x:Double>
 
         <Style x:Key="SectionLabelStyle" TargetType="TextBlock">
             <Setter Property="FontFamily" Value="{StaticResource SiloFontSemiBold}" />
@@ -138,7 +140,7 @@
                             <StackPanel Style="{StaticResource RowStyle}">
                                 <TextBlock Text="Opacity" Style="{StaticResource RowLabelStyle}" />
                                 <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <NumberBox Style="{StaticResource PercentBoxStyle}" Minimum="1" Value="{x:Bind ViewModel.Look.TextOpacity, Mode=TwoWay}"
+                                    <NumberBox Style="{StaticResource PercentBoxStyle}" Loaded="OnPercentBoxLoaded" Minimum="1" Value="{x:Bind ViewModel.Look.TextOpacity, Mode=TwoWay}"
                                                AutomationProperties.Name="Text opacity" />
                                     <TextBlock Text="%" FontSize="13" Foreground="#99FFFFFF" VerticalAlignment="Center" />
                                 </StackPanel>
@@ -164,7 +166,7 @@
                                 <StackPanel Style="{StaticResource RowStyle}">
                                     <TextBlock Text="Opacity" Style="{StaticResource RowLabelStyle}" />
                                     <StackPanel Orientation="Horizontal" Spacing="6">
-                                        <NumberBox Style="{StaticResource PercentBoxStyle}" Minimum="0" Value="{x:Bind ViewModel.Look.BackgroundOpacity, Mode=TwoWay}"
+                                        <NumberBox Style="{StaticResource PercentBoxStyle}" Loaded="OnPercentBoxLoaded" Minimum="0" Value="{x:Bind ViewModel.Look.BackgroundOpacity, Mode=TwoWay}"
                                                    AutomationProperties.Name="Background opacity" />
                                         <TextBlock Text="%" FontSize="13" Foreground="#99FFFFFF" VerticalAlignment="Center" />
                                     </StackPanel>

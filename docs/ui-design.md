@@ -1217,7 +1217,9 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   (`#111114` at 95 %, radius 16, white 10 % edge) on black 70 %; "CAPTIONS" over "Subtitle appearance" and a round
   ✕; a 112 px preview strip ("The quick brown fox / jumps over the lazy dog." at the web player's cue sizes); TEXT
   (Size, Font as pills, the chosen one white; Color swatches; Opacity in %; Outline), BACKGROUND (Style pills; Opacity
-  and Color for a box), POSITION (Vertical), scrolling past 52 % of the window; at the bottom "↺ Use fallback style"
+  and Color for a box), POSITION (Vertical), scrolling past 52 % of the window. Each Opacity is the web's PercentField:
+  a 56 px number box with its number at the right, on white 6 % with a faint edge, and "%" beside it. At the bottom
+  "↺ Use fallback style"
   and "CHANGES SAVED AUTOMATICALLY" (or what went wrong). A change shows at once and is saved as the profile's
   `playback.subtitle_appearance`, the latest only while a save is on its way, clearing this device's look as the web
   does; fallback clears both and shows the server's default.

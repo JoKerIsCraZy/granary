@@ -64,6 +64,8 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Fixed
 
+- In the player's Subtitle appearance, the Opacity boxes are no longer cut off at the right, and their number stands at
+  the right as on Silo's web.
 - The display no longer turns off while something plays. It stays on while a title plays or buffers, also minimized or
   in the mini view; paused, it turns off after Windows' usual time again.
 - A card's badges in its right corners, such as the watched mark, are no longer cut off by two pixels at the right.

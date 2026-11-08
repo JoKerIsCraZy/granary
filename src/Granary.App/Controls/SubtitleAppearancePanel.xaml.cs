@@ -49,6 +49,29 @@ public sealed partial class SubtitleAppearancePanel : UserControl
     // Upper case on screen only; screen readers get the line as written.
     public string Upper(string text) => text.ToUpper(CultureInfo.CurrentCulture);
 
+    // The web's PercentField writes its number at the right. NumberBox has no TextAlignment of its own, so its text box
+    // gets it.
+    private void OnPercentBoxLoaded(object sender, RoutedEventArgs e)
+    {
+        if (sender is DependencyObject box && TextBoxIn(box) is { } input)
+        {
+            input.TextAlignment = TextAlignment.Right;
+        }
+    }
+
+    private static TextBox? TextBoxIn(DependencyObject parent)
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+            if ((child as TextBox ?? TextBoxIn(child)) is { } found)
+            {
+                return found;
+            }
+        }
+        return null;
+    }
+
     private void OnBackdropTapped(object sender, TappedRoutedEventArgs e) => _viewModel?.CloseAppearanceCommand.Execute(null);
 
     private void OnCardTapped(object sender, TappedRoutedEventArgs e) => e.Handled = true;
