@@ -125,12 +125,21 @@ public sealed partial class DetailExtraCard : UserControl
     // A still on its way when the card leaves the tree (the page left) stops loading; one that is in stays.
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
+        // WinUI can raise Unloaded while the card is still in the tree, with no Loaded after it: it did twice for a card whose
+        // still was on its way as the page opened, which then stayed blank and showed no disc under the keyboard. Such an
+        // Unloaded changes nothing.
+        if (IsLoaded)
+        {
+            return;
+        }
         ForgetHost();
         SetHovered(false);
         if (_still is not null && !_stillOpened)
         {
             StopStill();
             StillImage.Source = null;
+            // Never a blank card: until a still is in again, the play mark stands in for it.
+            PlayMark.Visibility = Visibility.Visible;
         }
     }
 
