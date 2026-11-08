@@ -658,6 +658,26 @@ public sealed class DownloadQueueTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AReportThatFailsUnexpectedly_WaitsItsDelay_InsteadOfGoingAgainAtOnce()
+    {
+        await _h.AddAsync("dl_1");
+        _h.ServeFile("dl_1", Source);
+        _h.AcceptReports("dl_1", ScriptedSilo.Json(HttpStatusCode.OK, DownloadPayloads.Entry("dl_1", "downloading")),
+            () => throw new InvalidOperationException("The test's server broke."));
+        var queue = _h.StartQueue();
+        await CompletedAsync("dl_1");
+        await Until(() => _h.Reports("dl_1").Count >= 2, "completed was tried");
+
+        await SettleAsync(queue);
+        Assert.Equal(2, _h.Reports("dl_1").Count);
+
+        await _h.AdvanceAsync(TimeSpan.FromSeconds(1), queue);
+        Assert.Equal(3, _h.Reports("dl_1").Count);
+        await _h.AdvanceAsync(TimeSpan.FromSeconds(1), queue);
+        Assert.Equal(3, _h.Reports("dl_1").Count);
+    }
+
+    [Fact]
     public async Task Stopping_WhileTheRegistryIsAsked_DoesNotThrow()
     {
         await _h.AddAsync("dl_1", DownloadState.Completed);

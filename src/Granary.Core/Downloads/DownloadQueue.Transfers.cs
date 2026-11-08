@@ -562,11 +562,18 @@ public sealed partial class DownloadQueue
         }
         catch (Exception ex)
         {
+            bool stopped = ex is OperationCanceledException && stop.IsCancellationRequested;
             lock (_gate)
             {
                 EndSendingLocked(key);
+                if (!stopped)
+                {
+                    // An answer no one expected waits the delays as one that did not come: the server work does not come back
+                    // for it at once.
+                    RetryReportLaterLocked(key);
+                }
             }
-            if (!(ex is OperationCanceledException && stop.IsCancellationRequested))
+            if (!stopped)
             {
                 _logger.LogWarning("The status of download {DownloadId} was not sent ({Failure})", key.Id, DownloadLog.Failure(ex));
             }
@@ -610,8 +617,7 @@ public sealed partial class DownloadQueue
         {
             lock (_gate)
             {
-                int failures = _reportRetries.GetValueOrDefault(key).Failures;
-                _reportRetries[key] = new Retry(_time.GetUtcNow() + RetryDelays[Math.Min(failures, RetryDelays.Count - 1)], failures + 1);
+                RetryReportLaterLocked(key);
             }
             _logger.LogInformation("The status of download {DownloadId} could not be sent ({Failure}); it is sent again",
                 key.Id, ex is SiloApiException api ? api.Status.ToString(System.Globalization.CultureInfo.InvariantCulture) : DownloadLog.Failure(ex));
@@ -632,6 +638,12 @@ public sealed partial class DownloadQueue
             // Deleted meanwhile.
         }
         return true;
+    }
+
+    private void RetryReportLaterLocked(Key key)
+    {
+        int failures = _reportRetries.GetValueOrDefault(key).Failures;
+        _reportRetries[key] = new Retry(_time.GetUtcNow() + RetryDelays[Math.Min(failures, RetryDelays.Count - 1)], failures + 1);
     }
 
     // A client error the same report gets again; not a sign-in, a timeout or a busy server.
