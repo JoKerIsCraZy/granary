@@ -38,6 +38,8 @@ public sealed partial class MpvPlaybackEngine
         // Only that it may have changed, several times a second while the stream loads: it is read when the
         // throttle lets it (ReadBuffered), not with every notice.
         (CacheStateProperty, LibMpv.FormatNone),
+        // Only that the tracks or their choice changed: whether a picture plays is read then (FollowVideoTrack).
+        (VideoTrackProperty, LibMpv.FormatNone),
     ];
 
     private readonly IReadOnlyList<KeyValuePair<string, string>> _core;

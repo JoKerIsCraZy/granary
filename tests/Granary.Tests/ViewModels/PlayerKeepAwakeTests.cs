@@ -113,7 +113,7 @@ public sealed class PlayerKeepAwakeTests
     }
 
     [Fact]
-    public async Task LeavingThePlayer_LetsGoAtOnce_AndThePageGoingAfterAsksNothingMore()
+    public async Task LeavingThePlayer_LetsGoAtOnce_AndDisposingAfterAsksNothingMore()
     {
         var (player, keepAwake) = await PlayingAsync();
 
@@ -125,7 +125,7 @@ public sealed class PlayerKeepAwakeTests
     }
 
     [Fact]
-    public async Task ThePageGoing_LetsGo_AndThePlayersChangesAfterAskNothing()
+    public async Task Disposing_Releases_AndThePlayersChangesAfterAskNothing()
     {
         var (_, keepAwake) = await PlayingAsync();
 
@@ -187,9 +187,9 @@ public sealed class PlayerKeepAwakeTests
         Assert.Equal([KeepAwakeState.Display], _awake.Requests);
     }
 
-    // The bar and the mini view are the same player page: it keeps its PlayerKeepAwake, and only playback decides.
+    // Only playback decides, so the bar and the mini view, which are the same player page, keep the hold (not tested here).
     [Fact]
-    public async Task MinimizedOrInTheMiniView_ATitleThatPlaysOn_KeepsTheDisplayOn()
+    public async Task PlaybackThatGoesOn_KeepsTheDisplayOn_WithoutAskingAgain()
     {
         var (player, _) = await PlayingAsync();
 

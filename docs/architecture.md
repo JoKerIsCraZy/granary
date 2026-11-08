@@ -289,11 +289,14 @@ mpv closes: where no panel holds it, the new one can get its address, and that s
   snapshot it raises is numbered under the lock (`PlaybackSnapshot.Sequence`), and its consumers (`PlayerViewModel`,
   `ServerPlayback`) drop one numbered below the newest they took: a cache read from before a stop never brings the
   stopped file back, and the position never goes back.
-- Once mpv has opened a file, the engine reads whether a picture plays: a video track (`current-tracks/video`) that is
-  not an audio file's cover (`albumart`). Without one, `PlaybackSnapshot.IsAudioOnly` is set, and `PlayerKeepAwake`
-  keeps only the system awake. A load clears it, so a title still loading counts as having a picture. The tracks are
-  read outside the lock, so the answer is kept only for the load that was playing when mpv opened the file
-  (`MpvPlaybackEngine.Opened`): a newer load meanwhile keeps its own.
+- Once mpv has opened a file, the engine reads whether a picture plays: a selected video track
+  (`current-tracks/video`) that is not an audio file's cover (`albumart`). Without one, `PlaybackSnapshot.IsAudioOnly`
+  is set, and `PlayerKeepAwake` keeps only the system awake. It is read again whenever mpv says its tracks or their
+  choice changed (the property is observed without a value), so a stream that names its picture late, or a track
+  switched on or off, counts too. A load clears it, so a title still loading counts as having a picture. The event and
+  the tracks are read outside the lock, so what they say is kept only for the load that was playing when mpv said it
+  (`MpvPlaybackEngine.Opened`, `Started`, `Retracked`): a newer load meanwhile is neither open nor started yet, and keeps
+  its own state.
 
 ## Networking and security
 

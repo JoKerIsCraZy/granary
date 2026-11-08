@@ -19,6 +19,9 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
 
     private const string CacheStateProperty = "demuxer-cache-state";
 
+    // The video track that plays; mpv says it may have changed whenever the tracks or their choice change.
+    private const string VideoTrackProperty = "current-tracks/video";
+
     private readonly ILogger<MpvPlaybackEngine> _logger;
     private readonly MpvEngineOptions _options;
     private readonly TrailingThrottle _bufferedReads;
@@ -460,7 +463,7 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
         // mpv restarts playback after the load and after every seek; the first one is the start.
         if (eventId == LibMpv.EventPlaybackRestart && !Current.HasStarted)
         {
-            Update(s => s with { HasStarted = true }, force: true);
+            Update(s => Started(s, loadId), force: true);
         }
     }
 
@@ -478,13 +481,40 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
     }
 
     /// <summary>
-    /// The state once mpv opened the file of load <paramref name="loadId"/>. Its tracks are read outside the gate: whether
-    /// it has a picture is kept only while no newer load began meanwhile, which has its own file.
+    /// The state once mpv opened the file of load <paramref name="loadId"/>: loaded, with or without a picture. The event
+    /// and the file's tracks are read outside the gate, so a newer load may have begun meanwhile; that one's file is not
+    /// open yet, and its state stays as it is.
     /// </summary>
     internal static PlaybackSnapshot Opened(PlaybackSnapshot state, long loadId, bool audioOnly) =>
-        state with { IsLoaded = true, IsAudioOnly = state.LoadId == loadId ? audioOnly : state.IsAudioOnly };
+        state.LoadId == loadId ? state with { IsLoaded = true, IsAudioOnly = audioOnly } : state;
 
-    // A video track plays, and it is not an audio file's cover, which mpv shows as a one-picture track (albumart).
+    /// <summary>The state once the file of load <paramref name="loadId"/> began to play; a newer load's stays as it is.</summary>
+    internal static PlaybackSnapshot Started(PlaybackSnapshot state, long loadId) =>
+        state.LoadId == loadId ? state with { HasStarted = true } : state;
+
+    /// <summary>
+    /// The state once the video track of load <paramref name="loadId"/> changed after its file opened: a stream that names
+    /// its picture late, or a track switched on or off. Before the file is open the tracks are still the last file's, on
+    /// their way out, and a newer load's are its own, so either state stays as it is.
+    /// </summary>
+    internal static PlaybackSnapshot Retracked(PlaybackSnapshot state, long loadId, bool audioOnly) =>
+        state.LoadId == loadId && state.IsLoaded ? state with { IsAudioOnly = audioOnly } : state;
+
+    // On mpv's event thread, whenever its tracks or their choice changed: raised only when that changes the picture.
+    private void FollowVideoTrack()
+    {
+        if (PlayingLoad is not { } loadId)
+        {
+            return;
+        }
+        bool audioOnly = !HasPicture();
+        if (Retracked(Current, loadId, audioOnly) != Current)
+        {
+            Update(s => Retracked(s, loadId, audioOnly), force: true);
+        }
+    }
+
+    // A video track is selected, and it is not an audio file's cover, which mpv shows as a one-picture track (albumart).
     private bool HasPicture() =>
         _mpv.GetString("current-tracks/video/id") is not null && _mpv.GetString("current-tracks/video/albumart") != "yes";
 
@@ -551,6 +581,9 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
                 break;
             case CacheStateProperty:
                 _bufferedReads.Signal();
+                break;
+            case VideoTrackProperty:
+                FollowVideoTrack();
                 break;
         }
     }
