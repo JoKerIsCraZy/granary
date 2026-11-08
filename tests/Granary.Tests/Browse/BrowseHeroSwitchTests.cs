@@ -1,9 +1,14 @@
+using Granary.Core;
+using Granary.Core.Abstractions;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
 using Granary.Core.Api.Requests;
+using Granary.Core.Auth;
 using Granary.Core.Playback;
 using Granary.Core.ViewModels;
 using Granary.Tests.Fakes;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using static Granary.Tests.Browse.BrowsePayloads;
 
 namespace Granary.Tests.Browse;
@@ -147,6 +152,28 @@ public sealed class BrowseHeroSwitchTests : IDisposable
 
         Assert.False(home.HasHeroTitle);
         Assert.Contains(nameof(HomeViewModel.HasHeroTitle), changed);
+    }
+
+    [Fact]
+    public async Task FromTheContainer_HomeForYouAndDiscover_FollowTheSwitch()
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton<IUiDispatcher, ImmediateDispatcher>();
+        services.AddSingleton<INavigationService, RecordingNavigation>();
+        services.AddSingleton<IConfirmation, FakeConfirmation>();
+        services.AddGranaryCore();
+        Assert.Equal(ServiceLifetime.Singleton, Assert.Single(services, d => d.ServiceType == typeof(BrowseHeroSetting)).Lifetime);
+        // A profile acting, and the switch's file in this test's own folder, never in the data directory.
+        services.Replace(ServiceDescriptor.Singleton<ISessionManager>(_session));
+        services.Replace(ServiceDescriptor.Singleton(_ => SettingFor(_session)));
+        await using var provider = services.BuildServiceProvider();
+
+        await provider.GetRequiredService<BrowseHeroSetting>().SetShownAsync(false);
+
+        Assert.False(provider.GetRequiredService<HomeViewModel>().Hero.IsOn);
+        Assert.False(provider.GetRequiredService<ForYouViewModel>().Hero.IsOn);
+        Assert.False(provider.GetRequiredService<RequestsViewModel>().Hero.IsOn);
     }
 
     [Fact]
