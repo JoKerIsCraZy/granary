@@ -96,6 +96,9 @@ internal sealed class ItemDetailFixture
     /// <summary>The profile's spoiler switches; none unless a test sets them, so nothing is hidden.</summary>
     public EpisodeSpoilerSettings? Spoilers { get; set; }
 
+    /// <summary>The profile's other Title Pages settings; none unless a test sets them, so every one is at its default.</summary>
+    public TitlePageSettings? TitlePage { get; set; }
+
     /// <summary>The calendar's airings a season's grid places its missing and upcoming episodes by; none unless a test sets them.</summary>
     public SeriesAirings? Airings { get; set; }
 
@@ -129,6 +132,7 @@ internal sealed class ItemDetailFixture
         trackPreferences: new TrackPreferencesApi(Silo.Http),
         trackChoices: TrackChoices,
         spoilers: Spoilers,
+        titlePage: TitlePage,
         dispatcher: new ImmediateDispatcher(),
         time: Clock,
         ratings: Ratings,

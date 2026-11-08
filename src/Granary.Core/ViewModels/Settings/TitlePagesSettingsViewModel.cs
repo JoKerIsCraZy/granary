@@ -5,9 +5,10 @@ using Granary.Core.Settings;
 namespace Granary.Core.ViewModels.Settings;
 
 /// <summary>
-/// Settings → Title Pages, as Silo's web has it (<c>pages/settings/TitlePagesSettings.tsx</c>), with its Spoilers group: the
-/// profile's two switches (<see cref="EpisodeSpoilerSettings"/>), each saved at once for the profile. While they cannot be
-/// edited, the page says why instead.
+/// Settings → Title Pages, as Silo's web has it (<c>pages/settings/TitlePagesSettings.tsx</c>): its Spoilers group, the
+/// profile's two switches (<see cref="EpisodeSpoilerSettings"/>), and its Age guidance (<see cref="TitlePageSettings"/>), each
+/// saved at once for the profile. While the spoiler switches cannot be edited, the page says why instead; a group the
+/// server does not keep is left out.
 /// </summary>
 public sealed partial class TitlePagesSettingsViewModel : ObservableObject, IDisposable
 {
@@ -20,11 +21,14 @@ public sealed partial class TitlePagesSettingsViewModel : ObservableObject, IDis
     public const string SaveFailedText = "Failed to save title page setting";
 
     private readonly EpisodeSpoilerSettings _settings;
+    private readonly TitlePageSettings? _titlePage;
 
-    public TitlePagesSettingsViewModel(EpisodeSpoilerSettings settings)
+    public TitlePagesSettingsViewModel(EpisodeSpoilerSettings settings, TitlePageSettings? titlePage = null)
     {
         _settings = settings;
+        _titlePage = titlePage;
         _settings.PropertyChanged += OnSettingsChanged;
+        _titlePage?.PropertyChanged += OnTitlePageChanged;
     }
 
     /// <summary>"Blur unwatched episode images"; the switch saves at once.</summary>
@@ -61,13 +65,32 @@ public sealed partial class TitlePagesSettingsViewModel : ObservableObject, IDis
         _ => "",
     };
 
+    /// <summary>The Age guidance group shows: the server keeps "Show advisory age" for the profile.</summary>
+    public bool OffersAdvisoryAge => Offers(TitlePageSettings.AdvisoryAgeKey);
+
+    /// <summary>"Show advisory age"; the switch saves at once.</summary>
+    public bool ShowsAdvisoryAge
+    {
+        get => _titlePage?.Shown.ShowsAdvisoryAge ?? false;
+        set => _ = _titlePage?.SetShowsAdvisoryAgeAsync(value);
+    }
+
+    /// <summary>The Title Pages switches beside the spoiler ones take changes: the profile's choice is known.</summary>
+    public bool CanEditTitlePage => _titlePage?.CanEdit ?? false;
+
     /// <summary>Why the last change did not stick, above the switches, which went back; empty when it did.</summary>
-    public string ErrorMessage => _settings.SaveFailed ? SaveFailedText : "";
+    public string ErrorMessage => _settings.SaveFailed || _titlePage?.SaveFailed == true ? SaveFailedText : "";
 
     /// <summary>Reads the switches again, as the page opens: another device may have changed them.</summary>
-    public Task LoadAsync() => _settings.RefreshAsync();
+    public Task LoadAsync() => Task.WhenAll(_settings.RefreshAsync(), _titlePage?.RefreshAsync() ?? Task.CompletedTask);
 
-    public void Dispose() => _settings.PropertyChanged -= OnSettingsChanged;
+    public void Dispose()
+    {
+        _settings.PropertyChanged -= OnSettingsChanged;
+        _titlePage?.PropertyChanged -= OnTitlePageChanged;
+    }
+
+    private bool Offers(string key) => _titlePage?.Shown.Offered.Contains(key) ?? false;
 
     private void OnSettingsChanged(object? sender, PropertyChangedEventArgs e)
     {
@@ -84,6 +107,23 @@ public sealed partial class TitlePagesSettingsViewModel : ObservableObject, IDis
                 OnPropertyChanged(nameof(BlockerText));
                 break;
             case nameof(EpisodeSpoilerSettings.SaveFailed):
+                OnPropertyChanged(nameof(ErrorMessage));
+                break;
+        }
+    }
+
+    private void OnTitlePageChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        switch (e.PropertyName)
+        {
+            case nameof(TitlePageSettings.Shown):
+                OnPropertyChanged(nameof(OffersAdvisoryAge));
+                OnPropertyChanged(nameof(ShowsAdvisoryAge));
+                break;
+            case nameof(TitlePageSettings.State):
+                OnPropertyChanged(nameof(CanEditTitlePage));
+                break;
+            case nameof(TitlePageSettings.SaveFailed):
                 OnPropertyChanged(nameof(ErrorMessage));
                 break;
         }

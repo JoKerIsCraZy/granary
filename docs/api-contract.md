@@ -572,6 +572,7 @@ Profile and device settings live on the server (manifest
 | `ui.card_overlays`, `ui.card_overlays_enabled` | profile | server defaults, `true` | card badges ([6.6.1](#661-card-badges)) |
 | `ui.card_presentation` | profile, profile_client, profile_device | `{ "poster_size": "standard", "caption": "title_metadata" }` | poster size and caption ([6.6.2](#662-poster-size-and-caption)) |
 | `catalog.hide_unwatched_episode_images`, `catalog.hide_unwatched_episode_overviews` | profile | `false`, `false` | episode spoilers ([6.6.3](#663-episode-spoilers)) |
+| `catalog.show_advisory_age` | profile | `false` | a title's suggested age on its page ([6.6.4](#664-title-pages)) |
 
 #### 6.6.1 Card badges
 
@@ -636,6 +637,17 @@ spoiler protection". The server never changes catalog answers for them: the clie
   artwork, such as the series' standing in (`false`), for the picture actually shown; absent means unknown, an older server,
   and is treated as a still. `GET /api/v2/images/capabilities` reports `episode_still_provenance: true`.
 - Titles stay; movies, series and seasons are never hidden.
+
+#### 6.6.4 Title pages
+
+The rest of the web's Title Pages (`web/src/pages/settings/TitlePagesSettings.tsx`). `TitlePageSettings` reads them in one
+batch, at start, with every server or profile, and when the settings page opens; until a profile's are read every one is at
+its default, never the previous profile's. A change shows at once and saves in order; a refused one goes back. A key the
+server's contract does not know (`422`, then read one by one, `ProfileSettings`) offers no switch and stays at its default.
+
+- `catalog.show_advisory_age` (revision 10, `profile` only, default `false`): a movie's or series' page names its
+  `advisory_age` beside the rating ([7.6](#76-item-detail-get-apiv2catalogitemsid)), as the web's `useShowAdvisoryAge` and
+  `MetadataBadges`. It only shows the age; the profile's `max_advisory_age` limit is the server's.
 
 ## 7. Catalog
 
@@ -874,6 +886,10 @@ too: `versions[].audio_tracks`, `subtitle_tracks`, `video_tracks` (same shapes),
 its default, as in 8.8.1). Their defaults are what playback picks: the file as `PlaybackStarter.ChooseVersion`, the
 audio `effective_audio_track_index` (else the file's default track, else the first), the subtitle 8.8.1's resolver for
 that audio.
+
+`advisory_age?` (an integer) is a suggested minimum viewer age from an advisory service, not the certification, and
+`advisory_source?` who suggested it (`commonsense`, `mdblist`); absent means none was fetched, never "for everyone". The
+page shows it only with `catalog.show_advisory_age` ([6.6.4](#664-title-pages)).
 
 The Discord status (docs/architecture.md) reads `tmdb_id` here: a string of digits in the schema, absent for an item TMDB
 does not know. It takes the movie's own item, or an episode's series (`series_id` of the watch detail), and only a

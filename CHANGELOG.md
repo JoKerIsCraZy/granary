@@ -8,6 +8,8 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Added
 
+- **Advisory age:** turn on Settings → Title Pages → Show advisory age, and a movie's or series' page names the age an
+  advisory service suggests for it beside its rating, such as "Common Sense 13+", as in Silo's web. It only shows the age.
 - **Start a Watch Party from a title's page:** the ⋮ menu of a movie, series, season or episode now has Start a Watch
   Party. Pick whether the host picks or everyone votes, whether guests may pause, and for a series which episode, then
   Create party & copy invite: the room opens with the title up next (or as the first suggestion of a vote), and the

@@ -16,6 +16,9 @@ public sealed record CatalogItemDetail : CatalogItemBase
 
     public string? Tagline { get; init; }
 
+    /// <summary>Who recommended <see cref="CatalogItemBase.AdvisoryAge"/>: <c>commonsense</c> or <c>mdblist</c>.</summary>
+    public string? AdvisorySource { get; init; }
+
     public IReadOnlyList<string> Countries { get; init => field = value ?? []; } = [];
 
     public string? FirstAirDate { get; init; }

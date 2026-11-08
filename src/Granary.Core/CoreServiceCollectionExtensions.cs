@@ -107,6 +107,7 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<CardOverlaySettings>();
         services.AddSingleton<CardPresentationSettings>();
         services.AddSingleton<EpisodeSpoilerSettings>();
+        services.AddSingleton<TitlePageSettings>();
         services.AddTransient<ImagesApi>();
         services.AddSingleton<ImageParameterCache>();
         AddArtwork(services);

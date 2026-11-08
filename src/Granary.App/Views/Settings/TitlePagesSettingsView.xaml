@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Settings → Title Pages, as on Silo's web (pages/settings/TitlePagesSettings.tsx): its Spoilers group. -->
+<!-- Settings → Title Pages, as on Silo's web (pages/settings/TitlePagesSettings.tsx), in its order of groups. -->
 <UserControl
     x:Class="Granary.App.Views.Settings.TitlePagesSettingsView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -44,6 +44,14 @@
                     </controls:SettingsRow>
                 </StackPanel>
             </StackPanel>
+        </controls:SettingsGroup>
+
+        <controls:SettingsGroup Title="Age guidance" Visibility="{x:Bind ViewModel.OffersAdvisoryAge, Mode=OneWay}">
+            <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Show advisory age"
+                                  Description="Show a suggested minimum viewer age, such as Common Sense Media's, on a title's page. This only shows the age; a household manager can limit a profile by it in the profile's access settings.">
+                <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.ShowsAdvisoryAge, Mode=TwoWay}"
+                              IsEnabled="{x:Bind ViewModel.CanEditTitlePage, Mode=OneWay}" AutomationProperties.Name="Show advisory age" />
+            </controls:SettingsRow>
         </controls:SettingsGroup>
     </StackPanel>
 </UserControl>

@@ -58,6 +58,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
     private readonly TrackPreferencesApi? _trackPreferences;
     private readonly TrackChoiceWrites? _trackChoices;
     private readonly EpisodeSpoilerSettings? _spoilers;
+    private readonly TitlePageSettings? _titlePage;
     private readonly IUiDispatcher? _dispatcher;
     private readonly TimeProvider _time;
     private readonly RatingWrites? _ratings;
@@ -96,6 +97,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         TrackPreferencesApi? trackPreferences = null,
         TrackChoiceWrites? trackChoices = null,
         EpisodeSpoilerSettings? spoilers = null,
+        TitlePageSettings? titlePage = null,
         IUiDispatcher? dispatcher = null,
         TimeProvider? time = null,
         RatingWrites? ratings = null,
@@ -114,6 +116,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         _trackPreferences = trackPreferences;
         _trackChoices = trackChoices;
         _spoilers = spoilers;
+        _titlePage = titlePage;
         _dispatcher = dispatcher;
         _time = time ?? TimeProvider.System;
         _ratings = ratings;
@@ -462,7 +465,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         Breadcrumbs = [];
         Overview = "";
         IsOverviewHidden = false;
-        MetaLine = "";
+        ResetTitlePage();
         BackdropUrl = null;
         BackdropThumbhash = "";
         AvailableVersionLine = "";
@@ -502,7 +505,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         LogoUrl = isEpisode ? null : ArtworkUrl.Resolve(server, item.LogoUrl);
         Breadcrumbs = DetailFacts.Breadcrumbs(item);
         Overview = item.Overview?.Trim() ?? "";
-        MetaLine = DetailFacts.MetaLine(item);
+        ShowMetaLine();
         AvailableVersionLine = DetailFacts.AvailableVersionLine(item) ?? "";
         ShowPrePlay(item);
         InfoSections = DetailFacts.InfoSections(item);
@@ -543,7 +546,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
             return;
         }
         var seasons = OrderSeasons(collection.Items);
-        MetaLine = DetailFacts.MetaLine(item, seasons);
+        ShowMetaLine(seasons);
         InfoSections = DetailFacts.InfoSections(item, seasons);
         if (seasons is [{ ContentId.Length: > 0 }])
         {
@@ -606,7 +609,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
             return;
         }
         ShowEpisodes(_contentId, collection.Items, item.EpisodeCount);
-        MetaLine = DetailFacts.MetaLine(item, listedEpisodes: collection.Items.Count);
+        ShowMetaLine(listedEpisodes: collection.Items.Count);
         InfoSections = DetailFacts.InfoSections(item, listedEpisodes: collection.Items.Count);
         ShowPlayAction();
         StartPlacing(server, item.SeriesId, item.SeasonNumber, generation, cancellationToken);

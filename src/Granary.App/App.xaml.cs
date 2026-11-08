@@ -103,6 +103,8 @@ public partial class App : Application
         _ = Services.GetRequiredService<CardPresentationSettings>().StartAsync();
         // The profile's spoiler switches, likewise.
         _ = Services.GetRequiredService<EpisodeSpoilerSettings>().StartAsync();
+        // And the rest of its Title Pages settings.
+        _ = Services.GetRequiredService<TitlePageSettings>().StartAsync();
         // Home and the sidebar's count follow what happens on other devices (docs/api-contract.md, 12). Closing tells the
         // server the connection goes, but waits for that only a moment: the stop never needs this thread.
         var realtime = Services.GetRequiredService<RealtimeEvents>();
