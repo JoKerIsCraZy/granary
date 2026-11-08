@@ -549,16 +549,18 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   - "Extras" (the web's `ExtrasSection.tsx`): a movie's or series' local extras, when the server lists any, right before
     Trailers & More, as the web puts the extras that play in Silo before YouTube's videos. A group per kind in the
     server's order, headed by the web's label in 12 px semibold muted capitals, 0.05 em apart ("FEATURETTES", "DELETED
-    SCENES", "OTHER" for a kind it does not know), 10 above a grid of 16:9 cards: as many 200 px cards as fit, five a row
-    at most, stretched to the row and 12 apart (the web's two to five columns); groups 24 apart. A card shows the still over
-    its thumbhash (the cards' radius, the surface under both), or the thumbhash with a muted play mark (28 px at 40 %) when
-    it has no still or the still fails to load, as the web's. Under the pointer the still grows 5 % over 300 ms and a 40 px
-    play disc shows on the picture darkened by 30 %. Under it, 8 apart, the title in 13 px (without one, its group's
-    label, as the web's card), and its length in 11 px muted ("12:22", "1:02:09"; nothing when unknown). Each card is a
-    button: Tab and a remote's arrows go card by card, and a click or OK plays the extra in Granary's player from its
-    start, as the Android and Apple apps play an extra; nothing offers to resume one, and as it is no episode nothing
-    plays next. Screen readers hear "Making Of, Featurette, 12:22, plays the extra" (the kind left out on a card named by
-    its group) and each group's label as a heading; the tooltip is the whole title.
+    SCENES", "OTHER" for a kind it does not know), 10 above a grid of 16:9 cards; groups 24 apart. The grid is sized as
+    the season's episode grid, so an extra's card is as wide as an episode's: as many 280 px cards as fit, stretched to
+    the row and 20 apart, the rows 12 apart as the web's. A wide window takes more columns rather than the web's five
+    larger cards. A card shows the still over its thumbhash (the cards' radius, the surface under both), or the thumbhash
+    with a muted play mark (28 px at 40 %) when it has no still or the still fails to load, as the web's. Under the
+    pointer the still grows 5 % over 300 ms and a 40 px play disc shows on the picture darkened by 30 %. Under it, 8
+    apart, the title in 13 px (without one, its group's label, as the web's card), and its length in 11 px muted
+    ("12:22", "1:02:09"; nothing when unknown). Each card is a button: Tab and a remote's arrows go card by card, and a
+    click or OK plays the extra in Granary's player from its start, as the Android and Apple apps play an extra; nothing
+    offers to resume one, and as it is no episode nothing plays next. Screen readers hear "Making Of, Featurette, 12:22,
+    plays the extra" (the kind left out on a card named by its group) and each group's label as a heading; the tooltip is
+    the whole title.
   - "Trailers & More" (the web's `TrailersSection`): the title's YouTube videos in the server's order, each a 280 px card
     with YouTube's thumbnail, a play mark, its name and "Trailer · Official"; other sites are left out. A card is read as
     "Official Trailer, Trailer · Official, plays the trailer", and its tooltip says "Play trailer".

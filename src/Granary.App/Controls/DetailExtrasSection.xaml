@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     A movie's or series' local extras (docs/ui-design.md, "Detail pages"), as the web's ExtrasSection.tsx: "Extras", then a
-    group per kind in the server's order, its label in small capitals over a grid of 16:9 cards, at most five to a row and
-    12 apart, as the web's. A card plays its extra in Granary's player.
+    group per kind in the server's order, its label in small capitals over a grid of 16:9 cards as wide as the episode
+    grid's. A card plays its extra in Granary's player.
 -->
 <UserControl
     x:Class="Granary.App.Controls.DetailExtrasSection"
@@ -34,11 +34,15 @@
                         <TextBlock Text="{x:Bind Heading}" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="12"
                                    CharacterSpacing="50" Foreground="{StaticResource SiloMutedBrush}"
                                    AutomationProperties.Name="{x:Bind Label}" AutomationProperties.HeadingLevel="Level3" />
-                        <!-- The web's 2 to 5 columns by the window's width: as many 200 px cards as fit, five at most, stretched. -->
+                        <!--
+                            Sized as the season's episode grid (ItemDetailPage.xaml), so an extra's card is as wide as an episode's:
+                            as many 280 px cards as fit, stretched, 20 apart. A wide window takes more columns rather than the web's
+                            five larger ones; the rows keep the web's 12.
+                        -->
                         <ItemsRepeater ItemsSource="{x:Bind Extras}" ItemTemplate="{StaticResource ExtraTemplate}">
                             <ItemsRepeater.Layout>
-                                <UniformGridLayout MinItemWidth="200" MinColumnSpacing="12" MinRowSpacing="12" MaximumRowsOrColumns="5"
-                                                   ItemsStretch="Fill" ItemsJustification="Start" />
+                                <UniformGridLayout MinItemWidth="280" MinColumnSpacing="20" MinRowSpacing="12" ItemsStretch="Fill"
+                                                   ItemsJustification="Start" />
                             </ItemsRepeater.Layout>
                         </ItemsRepeater>
                     </StackPanel>

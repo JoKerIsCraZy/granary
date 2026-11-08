@@ -12,8 +12,9 @@ public sealed partial class DetailExtraCard : UserControl
     public static readonly DependencyProperty ExtraProperty =
         DependencyProperty.Register(nameof(Extra), typeof(DetailExtra), typeof(DetailExtraCard), new PropertyMetadata(null, OnExtraChanged));
 
-    // As wide as a card of five in a wide window; in logical pixels, so the display's scale comes on top.
-    private const int StillDecodeWidth = 480;
+    // As wide as a card gets: a card alone in its row stays under two of the grid's 280 px cards and their 20 px gap, where
+    // a second column fits, and more columns are narrower. In logical pixels, so the display's scale comes on top.
+    private const int StillDecodeWidth = 580;
 
     // The web's: the still grows 5 % under the pointer, over 300 ms.
     private const float HoverScale = 1.05f;
