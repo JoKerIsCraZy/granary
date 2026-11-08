@@ -257,6 +257,28 @@ public sealed partial class StartPartyTests
         Assert.True(sheet.IsOffered);
     }
 
+    [Fact]
+    public async Task ASeason_OffersAPartyOnceItsEpisodesAreListed()
+    {
+        var (responder, gate) = Held();
+        _page.Get(ItemDetailFixture.ItemPath(ItemDetailPayloads.Season3Id), ItemDetailFixture.Ok(ItemDetailPayloads.Season))
+            .Get(ItemDetailFixture.SeasonItemEpisodesPath(ItemDetailPayloads.Season3Id), responder);
+        await _feature.RefreshAsync(TestContext.Current.CancellationToken);
+        var page = _page.Create();
+        var sheet = Sheet();
+        sheet.Attach(page);
+
+        var loading = page.LoadCommand.ExecuteAsync(ItemDetailPayloads.Season3Id);
+        await ServerPlaybackFixture.Until(() => page.IsReady, "the season");
+        Assert.False(sheet.IsOffered);
+        gate.SetResult(Ok(ItemDetailPayloads.SeasonEpisodes));
+        await loading;
+
+        Assert.True(sheet.IsOffered);
+        Assert.True(sheet.Open());
+        Assert.Equal(ItemDetailPayloads.Episode2Id, sheet.Target?.ContentId);
+    }
+
     /// <summary>A frame that cannot show the room page.</summary>
     private sealed class FailingNavigation : INavigationService
     {

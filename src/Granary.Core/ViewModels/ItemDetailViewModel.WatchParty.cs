@@ -2,6 +2,7 @@ using System.Globalization;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Images;
 using Granary.Core.Settings;
+using Granary.Core.ViewModels.Detail;
 using Granary.Core.ViewModels.WatchParty;
 
 namespace Granary.Core.ViewModels;
@@ -11,12 +12,15 @@ namespace Granary.Core.ViewModels;
 // with a file (SeasonContent.tsx), and both offer the series' other episodes to pick from instead.
 public sealed partial class ItemDetailViewModel
 {
-    /// <summary>The page has something to start a party with: a movie with a file, or a series, season or episode.</summary>
+    /// <summary>
+    /// The page has something to start a party with: a movie with a file, a series, an episode, or a season once its
+    /// episodes are listed (the page shows before them, and the sheet would open with nothing up).
+    /// </summary>
     public bool OffersWatchParty => State == ItemDetailState.Ready && _item is { } item && item.Type switch
     {
         CatalogItemTypes.Movie => item.Versions.Count > 0,
         CatalogItemTypes.Series => _contentId.Length > 0,
-        CatalogItemTypes.Season => !string.IsNullOrWhiteSpace(item.SeriesId),
+        CatalogItemTypes.Season => !string.IsNullOrWhiteSpace(item.SeriesId) && _listsEpisodes,
         CatalogItemTypes.Episode => item.Versions.Count > 0 || !string.IsNullOrWhiteSpace(item.SeriesId),
         _ => false,
     };
@@ -48,7 +52,13 @@ public sealed partial class ItemDetailViewModel
         };
     }
 
+    // What the offer reads changes with these: the item read (Loading, Ready), and a season's episodes listed or found
+    // empty (the cards, or the empty note, follow every new list).
     partial void OnStateChanged(ItemDetailState value) => OnPropertyChanged(nameof(OffersWatchParty));
+
+    partial void OnEpisodesChanged(IReadOnlyList<DetailEpisode> value) => OnPropertyChanged(nameof(OffersWatchParty));
+
+    partial void OnShowsNoEpisodesChanged(bool value) => OnPropertyChanged(nameof(OffersWatchParty));
 
     // The web's line under the sheet's title: a series' "Series · 3 seasons", a season's name, else the year.
     private static string PartyCaption(CatalogItemDetail item) => item.Type switch

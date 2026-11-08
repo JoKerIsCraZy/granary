@@ -474,8 +474,9 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     line). Pills 50 high with 17 px labels, round buttons 50, 14 apart. An episode or a season has ⋮ with Start a Watch
     Party alone. Under a single file's buttons "Available version: 1080P · H264 · EAC3 · 6.6 GB" in 14 at 45 % white.
   - Start a Watch Party (the web's `DetailWatchTogether.tsx` and `StartPartySheet.tsx`, the people icon) is on a movie
-    with a file, a series, a season and an episode, while the server hosts rooms that stage a title and the profile is in
-    no room, as Android's detail page offers hosting; in a room it is not there, since a new room would leave that one.
+    with a file, a series, an episode, and a season once its episodes are listed, while the server hosts rooms that
+    stage a title and the profile is in no room, as Android's detail page offers hosting; in a room it is not there,
+    since a new room would leave that one.
     It opens the web's sheet as a dialog, 400 wide: "WATCH TOGETHER" over "Start a party with this", a 56 px poster
     (an unwatched episode's own still left out where the profile hides them) beside the title and "2026", "Series · 3
     seasons" or the season's name. A series, season or episode adds a raised row "EPISODE" `S3 E1 "Chapter 1"` with
