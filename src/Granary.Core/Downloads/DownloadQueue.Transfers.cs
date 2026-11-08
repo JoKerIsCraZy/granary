@@ -336,7 +336,8 @@ public sealed partial class DownloadQueue
                 await OnIntegrityAsync(run, failsTwice, outcome).ConfigureAwait(false);
                 return;
             case TransferResult.Expired or TransferResult.Refused or TransferResult.Gone:
-                await OnServerRefusalAsync(run, download, outcome, _stopToken).ConfigureAwait(false);
+                // The transfer's own token: a pause, a replace or a stop ends a prepare request under way at once.
+                await OnServerRefusalAsync(run, download, outcome, run.Cancel.Token).ConfigureAwait(false);
                 return;
             case TransferResult.Busy:
                 lock (_gate)

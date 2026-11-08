@@ -79,6 +79,26 @@ public sealed class DownloadQueueServerTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task APause_StopsAPrepareRequestUnderWay()
+    {
+        await _h.AddAsync("dl_1");
+        _h.ServeFile("dl_1", ScriptedSilo.Problem(409, "prepared_file_expired"));
+        _h.Silo.OnCancellable(HttpMethod.Post, PreparePath("dl_1"), async cancellationToken =>
+        {
+            await Task.Delay(Timeout.Infinite, cancellationToken);
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        });
+        var queue = _h.StartQueue();
+        await Until(() => _h.Silo.SentTo(HttpMethod.Post, PreparePath("dl_1")).Count == 1, "the prepare went");
+
+        await _h.Store.UpdateAsync(Scope7, "dl_1", r => r with { IsPausedByViewer = true }, Token);
+
+        await Until(() => _h.Find("dl_1")!.Record.State == DownloadState.Queued, "the transfer stopped");
+        await IdleAsync(queue);
+        Assert.True(_h.Find("dl_1")!.Record.IsPausedByViewer);
+    }
+
+    [Fact]
     public async Task ARevokedDownload_IsDeleted_WhenTheServerSaysSo()
     {
         var stored = await _h.AddAsync("dl_1", DownloadState.Completed);
