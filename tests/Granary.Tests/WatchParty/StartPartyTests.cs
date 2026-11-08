@@ -425,6 +425,20 @@ public sealed partial class StartPartyTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task ASeriesOfOneSeason_SaysSeason()
+    {
+        var series = JsonNode.Parse(ItemDetailPayloads.Series)!;
+        series["season_count"] = 1;
+        _page.Series(ItemDetailPayloads.SingleSeason)
+            .Get(ItemDetailFixture.ItemPath(ItemDetailPayloads.SeriesId), ItemDetailFixture.Ok(series.ToJsonString()))
+            .Get(ItemDetailFixture.ItemPath(ItemDetailPayloads.EpisodeId), ItemDetailFixture.Ok(ItemDetailPayloads.Episode));
+
+        var sheet = await OpenAsync(ItemDetailPayloads.SeriesId);
+
+        Assert.Equal("Series · 1 season", sheet.Caption);
+    }
+
+    [Fact]
     public async Task ASeason_PutsUpItsFirstUnwatchedEpisode()
     {
         _page.Season();

@@ -60,11 +60,12 @@ public sealed partial class ItemDetailViewModel
 
     partial void OnShowsNoEpisodesChanged(bool value) => OnPropertyChanged(nameof(OffersWatchParty));
 
-    // The web's line under the sheet's title: a series' "Series · 3 seasons", a season's name, else the year.
+    // The web's line under the sheet's title: a series' "Series · 3 seasons", a season's name, else the year. The web says
+    // "seasons" for one too; here one is "1 season".
     private static string PartyCaption(CatalogItemDetail item) => item.Type switch
     {
         CatalogItemTypes.Series => item.SeasonCount is > 0 and var count
-            ? string.Create(CultureInfo.InvariantCulture, $"Series · {count} seasons")
+            ? "Series · " + DetailText.Count(count, "season", "seasons")
             : "Series",
         CatalogItemTypes.Season => item.Title,
         _ => item.Year?.ToString(CultureInfo.InvariantCulture) ?? "",
