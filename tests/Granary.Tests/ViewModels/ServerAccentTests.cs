@@ -58,6 +58,7 @@ public sealed class ServerAccentTests
     [InlineData("#3b82f6", "#3b82f6")]
     [InlineData(" #3B82F6 ", "#3b82f6")]
     [InlineData("#38f", "#3388ff")]
+    [InlineData("#ef4444", "#ef4444")]
     public void AHexAccent_IsTheServers(string accent, string primary)
     {
         Assert.Equal(primary, AccentPalette.From(accent).Primary.ToString());
@@ -69,29 +70,48 @@ public sealed class ServerAccentTests
     [InlineData("blue")]
     [InlineData("#12345")]
     [InlineData("red;} body{display:none")]
-    [InlineData("#ef4444")]
-    public void NoAccent_AnythingButHex_OrGranarysOwnRed_IsTheDefault(string? accent)
+    [InlineData(SavedBranding.NoAccent)]
+    public void NoAccent_OrAnythingButHex_IsTheDefault(string? accent)
     {
         Assert.Same(AccentPalette.Default, AccentPalette.From(accent));
     }
 
     [Fact]
-    public void ADarkAccent_TakesWhiteLabels_AndALightOneTheDarkLabel()
+    public void TheDefault_IsCinemaDarksOwnPrimary_WithItsDarkLabel()
     {
-        var blue = AccentPalette.From("#1d4ed8");
-        var yellow = AccentPalette.From("#facc15");
-
-        Assert.Equal((AccentPalette.White, AccentPalette.White), (blue.Label, blue.BadgeLabel));
-        Assert.Equal((AccentPalette.DarkLabel, AccentPalette.DarkLabel), (yellow.Label, yellow.BadgeLabel));
+        Assert.Equal("#e8e8ec", AccentPalette.Default.Primary.ToString());
+        Assert.Equal("#141417", AccentPalette.Default.Label.ToString());
+        Assert.True(AccentPalette.Default.IsDefault);
     }
 
     [Fact]
-    public void HoverIsLighter_AndPressDarker()
+    public void AServersRed_IsItsOwnAccent_NotTheDefault()
     {
-        var blue = AccentPalette.From("#1d4ed8");
+        var red = AccentPalette.From("#ef4444");
 
-        Assert.True(blue.Hover.Luminance > blue.Primary.Luminance);
-        Assert.True(blue.Pressed.Luminance < blue.Primary.Luminance);
+        Assert.False(red.IsDefault);
+        Assert.Equal(AccentPalette.DarkLabel, red.Label);
+    }
+
+    [Fact]
+    public void ADarkAccent_TakesAWhiteLabel_AndALightOneTheDarkLabel()
+    {
+        Assert.Equal(AccentPalette.White, AccentPalette.From("#1d4ed8").Label);
+        Assert.Equal(AccentPalette.DarkLabel, AccentPalette.From("#facc15").Label);
+    }
+
+    [Theory]
+    [InlineData("#1d4ed8")]
+    [InlineData("#e8e8ec")]
+    [InlineData("#ffffff")]
+    public void HoverAndPress_AreTheAccentSeenThroughOverThePage_AsTheWebsPrimary90(string accent)
+    {
+        var palette = AccentPalette.From(accent);
+
+        Assert.Equal(palette.Primary.Mix(AccentPalette.Page, 0.1), palette.Hover);
+        Assert.Equal(palette.Primary.Mix(AccentPalette.Page, 0.2), palette.Pressed);
+        Assert.NotEqual(palette.Primary, palette.Hover);
+        Assert.True(palette.Pressed.Luminance < palette.Hover.Luminance);
     }
 
     [Fact]
@@ -222,6 +242,18 @@ public sealed class ServerAccentTests
         await accent.Reading;
 
         Assert.Same(AccentPalette.Default, accent.Palette);
+    }
+
+    [Fact]
+    public async Task AServerThatSetRed_IsPaintedRed()
+    {
+        _harness.Silo.On(HttpMethod.Get, BrandingPath, ScriptedSilo.Json(HttpStatusCode.OK, """{ "accent_color": "#ef4444" }"""));
+        var accent = Create();
+
+        await accent.StartAsync();
+
+        Assert.Equal("#ef4444", accent.Palette.Primary.ToString());
+        Assert.Equal(new SavedBranding("#ef4444", null), Remembered());
     }
 
     [Fact]

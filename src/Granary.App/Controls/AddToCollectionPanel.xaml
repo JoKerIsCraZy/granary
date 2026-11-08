@@ -88,7 +88,7 @@
         </StackPanel>
 
         <TextBlock Text="{x:Bind ViewModel.Notice, Mode=OneWay}" Visibility="{x:Bind ViewModel.HasNotice, Mode=OneWay}" FontSize="13" TextWrapping="Wrap"
-                   Foreground="{StaticResource SiloPrimaryBrush}" />
+                   Foreground="{StaticResource SiloDestructiveBrush}" />
         <TextBlock Text="Only manual collections take titles by hand. Ticking saves right away." FontSize="12" TextWrapping="Wrap"
                    Foreground="{StaticResource SiloMutedBrush}" Visibility="{x:Bind ViewModel.HasCollections, Mode=OneWay}" />
         <TextBlock Text="{x:Bind ViewModel.FooterText, Mode=OneWay}" FontSize="12" Foreground="{StaticResource SiloMutedBrush}"

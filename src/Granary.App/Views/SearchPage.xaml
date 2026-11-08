@@ -119,7 +119,7 @@
 
                 <!-- A card's Request that failed, in the web's toast words. -->
                 <TextBlock Text="{x:Bind ViewModel.Requests.RequestNotice.Text, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}"
-                           Foreground="{StaticResource SiloPrimaryBrush}" Visibility="{x:Bind ViewModel.Requests.RequestNotice.HasText, Mode=OneWay}"
+                           Foreground="{StaticResource SiloDestructiveBrush}" Visibility="{x:Bind ViewModel.Requests.RequestNotice.HasText, Mode=OneWay}"
                            AutomationProperties.LiveSetting="Assertive" />
 
                 <controls:MediaGrid ItemsSource="{x:Bind ViewModel.Requests.Cards}" CardInvokedCommand="{x:Bind ViewModel.Requests.OpenCardCommand}"

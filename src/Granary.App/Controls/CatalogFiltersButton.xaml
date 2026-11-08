@@ -35,7 +35,7 @@
             <Border Visibility="{x:Bind Filters.HasActiveFilters, Mode=OneWay}" Background="{StaticResource SiloPrimaryBrush}"
                     CornerRadius="{StaticResource SiloPillCornerRadius}" controls:Pill.IsEnabled="True" MinWidth="20" Height="20" Padding="6,0">
                 <TextBlock Text="{x:Bind CountText(Filters.ActiveCount), Mode=OneWay}" Style="{StaticResource SiloBadgeTextStyle}"
-                           FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                           Foreground="{StaticResource SiloOnPrimaryBadgeBrush}" FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Center" />
             </Border>
         </StackPanel>
         <Button.Flyout>

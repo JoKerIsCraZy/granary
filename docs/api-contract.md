@@ -536,13 +536,20 @@ Signing out keeps the entry but drops its tokens and profile; removing a server 
 over its theme (`web/src/lib/accentColor.ts`): only `#rgb` or `#rrggbb` counts (the admin's setting is free text,
 `branding.accent_color`); it recolours the primary actions, the focus ring and the selection, and labels on it turn
 white when white contrasts more than the dark label `#141417`. Granary reads it for the active server
-(`ServerAccent`) and keeps its own red when there is none.
+(`ServerAccent`) and paints it as the web does (`AccentPalette`, `AccentPainter`).
 
+- **Without an accent** (none set, anything but hex, a server never read, no server at all as on the sign-in pages)
+  Granary uses what the web uses then: Cinema Dark's own primary `#e8e8ec` with the dark label `#141417`
+  (`web/src/app.css`, `[data-theme="midnight-cinema"]`). A server that sets `#ef4444` gets exactly that red. Only what
+  the web paints with `primary`, `ring` and `sidebar-primary` follows the accent; what it paints with `destructive`
+  (`#ef4444`: errors, delete and end actions) stays red in Granary too (`SiloDestructiveBrush`). Hover is the accent at
+  90 % over the page, as the web's `hover:bg-primary/90`, press at 80 %.
 - **Remembered per server.** As Android and Apple keep each server's last branding (`ServerBrandingCache`), Granary keeps
   what the server last answered with its entry in `servers.json`: `"branding": { "accent": "#rrggbb" or "none",
   "wordmark": <its address on the server>? }`. When the server becomes active, that is painted at once, before the read
   answers, and it stays while the read fails. A read that answers differently replaces it. Only a server never read, or
-  one without an accent, shows Granary's red. A file from before has no `branding`; its servers are read as never read.
+  one without an accent, shows the light default. A file from before has no `branding`; its servers are read as never
+  read.
   When an address answers as another server when it is added again, its branding goes and it is read again at once; an
   answer of the server before is not saved for it.
 - **A failed read** (no network yet after a wake or a VPN, a slow server) is tried again after 5 s, 15 s and a minute,

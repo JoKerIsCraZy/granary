@@ -226,7 +226,7 @@
                         AutomationProperties.Name="{x:Bind ViewModel.FavoriteLabel, Mode=OneWay}"
                         ToolTipService.ToolTip="{x:Bind ViewModel.FavoriteLabel, Mode=OneWay}">
                     <FontIcon x:Name="FavoriteIcon" Glyph="{x:Bind controls:DetailHero.HeartGlyph(ViewModel.IsFavorite), Mode=OneWay}" FontSize="20"
-                              Foreground="{x:Bind controls:DetailHero.ActiveForeground(ViewModel.IsFavorite), Mode=OneWay}" />
+                              Foreground="{x:Bind controls:DetailHero.FavoriteForeground(ViewModel.IsFavorite), Mode=OneWay}" />
                 </Button>
                 <!-- The profile's stars after the heart, as in the web's action bar; movies and series only. -->
                 <controls:StarRating x:Name="RatingStars" Height="50" FontSize="20" Visibility="{x:Bind ViewModel.CanRate, Mode=OneWay}"

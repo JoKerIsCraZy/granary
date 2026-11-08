@@ -11,8 +11,6 @@ public sealed partial class BookmarkIcon : UserControl
     public static readonly DependencyProperty IsCheckedProperty =
         DependencyProperty.Register(nameof(IsChecked), typeof(bool), typeof(BookmarkIcon), new PropertyMetadata(false, (sender, _) => ((BookmarkIcon)sender).Show()));
 
-    // The web's fill-primary/20 inside a checked bookmark.
-    private static readonly Brush CheckedFill = new SolidColorBrush(Windows.UI.Color.FromArgb(0x33, 0xEF, 0x44, 0x44));
     private static readonly Brush NoFill = new SolidColorBrush(Colors.Transparent);
 
     public BookmarkIcon()
@@ -32,7 +30,8 @@ public sealed partial class BookmarkIcon : UserControl
     {
         Ribbon.Stroke = Foreground;
         Check.Stroke = Foreground;
-        Ribbon.Fill = IsChecked ? CheckedFill : NoFill;
+        // The web's fill-primary/20 inside a checked bookmark, in the accent as it is now (AccentPainter repaints the tint).
+        Ribbon.Fill = IsChecked ? (Brush)Application.Current.Resources["SiloPrimaryTint20Brush"] : NoFill;
         Check.Visibility = IsChecked ? Visibility.Visible : Visibility.Collapsed;
     }
 }

@@ -183,7 +183,7 @@
                                         </Grid>
                                     </StackPanel>
                                     <TextBlock Text="{x:Bind ViewModel.Preferences.SaveError, Mode=OneWay}" Style="{StaticResource SiloCaptionTextStyle}"
-                                               Foreground="{StaticResource SiloPrimaryBrush}" />
+                                               Foreground="{StaticResource SiloDestructiveBrush}" />
                                     <StackPanel Spacing="12" Visibility="{x:Bind ViewModel.IsSeriesAvailable, Mode=OneWay}">
                                         <Border Height="1" Background="{StaticResource SiloBorderBrush}" />
                                         <HyperlinkButton Content="See which series notify you" Padding="0" FontSize="14"
@@ -201,7 +201,7 @@
                                   AutomationProperties.Name="Show" />
 
             <StackPanel Spacing="16" Visibility="{x:Bind ViewModel.IsInboxView, Mode=OneWay}">
-                <TextBlock Text="{x:Bind ViewModel.MarkAllError, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloPrimaryBrush}"
+                <TextBlock Text="{x:Bind ViewModel.MarkAllError, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloDestructiveBrush}"
                            TextWrapping="Wrap" Visibility="{x:Bind ViewModel.HasMarkAllFailed, Mode=OneWay}" />
                 <TextBlock Text="{x:Bind ViewModel.Notice, Mode=OneWay}" Style="{StaticResource SiloCaptionTextStyle}"
                            Visibility="{x:Bind ViewModel.HasNotice, Mode=OneWay}" />

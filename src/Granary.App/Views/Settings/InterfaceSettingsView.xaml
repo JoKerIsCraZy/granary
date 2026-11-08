@@ -169,9 +169,9 @@
                                             <SolidColorBrush x:Key="ToggleSwitchStrokeOffPointerOver" Color="Transparent" />
                                             <SolidColorBrush x:Key="ToggleSwitchStrokeOn" Color="Transparent" />
                                             <SolidColorBrush x:Key="ToggleSwitchKnobFillOff" Color="#FFE8E8EC" />
-                                            <SolidColorBrush x:Key="ToggleSwitchKnobFillOn" Color="#FFFFFFFF" />
-                                            <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPointerOver" Color="#FFFFFFFF" />
-                                            <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPressed" Color="#FFFFFFFF" />
+                                            <StaticResource x:Key="ToggleSwitchKnobFillOn" ResourceKey="SiloOnPrimaryBrush" />
+                                            <StaticResource x:Key="ToggleSwitchKnobFillOnPointerOver" ResourceKey="SiloOnPrimaryBrush" />
+                                            <StaticResource x:Key="ToggleSwitchKnobFillOnPressed" ResourceKey="SiloOnPrimaryBrush" />
                                         </ToggleSwitch.Resources>
                                     </ToggleSwitch>
                                 </Grid>

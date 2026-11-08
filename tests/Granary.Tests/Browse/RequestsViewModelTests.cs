@@ -173,7 +173,8 @@ public sealed class RequestsViewModelTests
         Assert.Equal("Radarr refused the title", Row(hub, "r4").Note);
         Assert.True(Row(hub, "r4").IsError);
         Assert.Equal(RequestBadgeLook.Destructive, Row(hub, "r4").StateLook);
-        Assert.Equal(RequestBadgeLook.Primary, Row(hub, "r6").StateLook);
+        // As the web's RequestStatusBadge: no request badge takes the accent; Available is secondary.
+        Assert.Equal(RequestBadgeLook.Secondary, Row(hub, "r6").StateLook);
         Assert.Equal(RequestBadgeLook.Muted, Row(hub, "r5").StateLook);
     }
 

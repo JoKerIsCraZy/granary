@@ -127,7 +127,10 @@
                         <FontIcon Glyph="&#xE787;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <!-- Hidden when the server has no inbox for the profile; the unread count in red beside it. -->
+                <!--
+                    Hidden when the server has no inbox for the profile; the unread count beside it in the accent, as the web's
+                    primary (components/AppSidebar.tsx), its number in the label drawn on the accent.
+                -->
                 <NavigationViewItem Content="Notifications" Tag="Notifications"
                                     AutomationProperties.Name="{x:Bind NotificationsName(Notifications.UnreadCount), Mode=OneWay}">
                     <NavigationViewItem.Icon>

@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    The Silo look (docs/ui-design.md): one dark theme taken from Silo's web client, red as the only
-    accent, Plus Jakarta Sans. Fluent controls keep working; their theme brushes are pointed at this palette.
+    The Silo look (docs/ui-design.md): one dark theme taken from Silo's web client (Cinema Dark), one accent, Plus Jakarta
+    Sans. The accent is the server's, or without one Cinema Dark's own near-white primary #E8E8EC; errors and destructive
+    actions stay red (SiloDestructiveBrush), as the web's destructive. Fluent controls keep working; their theme brushes are
+    pointed at this palette.
 -->
 <ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -11,21 +13,23 @@
     <ResourceDictionary.ThemeDictionaries>
         <!-- The app always runs dark (App.xaml); Light and Default point to the same values. -->
         <ResourceDictionary x:Key="Default">
-            <Color x:Key="SystemAccentColor">#FFEF4444</Color>
-            <Color x:Key="SystemAccentColorLight1">#FFF25858</Color>
-            <Color x:Key="SystemAccentColorLight2">#FFEF4444</Color>
-            <Color x:Key="SystemAccentColorLight3">#FFF87171</Color>
-            <Color x:Key="SystemAccentColorDark1">#FFDC2F2F</Color>
-            <Color x:Key="SystemAccentColorDark2">#FFB91C1C</Color>
-            <Color x:Key="SystemAccentColorDark3">#FF991B1B</Color>
-            <SolidColorBrush x:Key="AccentFillColorDefaultBrush" Color="#FFEF4444" />
-            <SolidColorBrush x:Key="AccentFillColorSecondaryBrush" Color="#FFF25858" />
-            <SolidColorBrush x:Key="AccentFillColorTertiaryBrush" Color="#FFDC2F2F" />
-            <SolidColorBrush x:Key="AccentTextFillColorPrimaryBrush" Color="#FFF87171" />
-            <SolidColorBrush x:Key="AccentTextFillColorSecondaryBrush" Color="#FFF87171" />
-            <SolidColorBrush x:Key="AccentTextFillColorTertiaryBrush" Color="#FFEF4444" />
-            <SolidColorBrush x:Key="TextOnAccentFillColorPrimaryBrush" Color="#FFFFFFFF" />
-            <SolidColorBrush x:Key="TextOnAccentFillColorSecondaryBrush" Color="#E6FFFFFF" />
+            <Color x:Key="SystemAccentColor">#FFE8E8EC</Color>
+            <Color x:Key="SystemAccentColorLight1">#FFD2D2D6</Color>
+            <Color x:Key="SystemAccentColorLight2">#FFE8E8EC</Color>
+            <Color x:Key="SystemAccentColorLight3">#FFEEEEF1</Color>
+            <Color x:Key="SystemAccentColorDark1">#FFBCBCC0</Color>
+            <Color x:Key="SystemAccentColorDark2">#FFA7A7AA</Color>
+            <Color x:Key="SystemAccentColorDark3">#FF919194</Color>
+            <SolidColorBrush x:Key="AccentFillColorDefaultBrush" Color="#FFE8E8EC" />
+            <SolidColorBrush x:Key="AccentFillColorSecondaryBrush" Color="#FFD2D2D6" />
+            <SolidColorBrush x:Key="AccentFillColorTertiaryBrush" Color="#FFBCBCC0" />
+            <SolidColorBrush x:Key="AccentTextFillColorPrimaryBrush" Color="#FFEEEEF1" />
+            <SolidColorBrush x:Key="AccentTextFillColorSecondaryBrush" Color="#FFEEEEF1" />
+            <SolidColorBrush x:Key="AccentTextFillColorTertiaryBrush" Color="#FFE8E8EC" />
+            <SolidColorBrush x:Key="TextOnAccentFillColorPrimaryBrush" Color="#FF141417" />
+            <SolidColorBrush x:Key="TextOnAccentFillColorSecondaryBrush" Color="#E6141417" />
+            <SolidColorBrush x:Key="AccentFillColorSelectedTextBackgroundBrush" Color="#FFE8E8EC" />
+            <SolidColorBrush x:Key="TextOnAccentFillColorSelectedTextBrush" Color="#FF141417" />
             <SolidColorBrush x:Key="TextFillColorPrimaryBrush" Color="#FFE8E8EC" />
             <SolidColorBrush x:Key="TextFillColorSecondaryBrush" Color="#FFA4A4AE" />
             <SolidColorBrush x:Key="TextFillColorTertiaryBrush" Color="#FF7C7C86" />
@@ -44,21 +48,23 @@
             <SolidColorBrush x:Key="ControlFillColorInputActiveBrush" Color="#FF161619" />
         </ResourceDictionary>
         <ResourceDictionary x:Key="Dark">
-            <Color x:Key="SystemAccentColor">#FFEF4444</Color>
-            <Color x:Key="SystemAccentColorLight1">#FFF25858</Color>
-            <Color x:Key="SystemAccentColorLight2">#FFEF4444</Color>
-            <Color x:Key="SystemAccentColorLight3">#FFF87171</Color>
-            <Color x:Key="SystemAccentColorDark1">#FFDC2F2F</Color>
-            <Color x:Key="SystemAccentColorDark2">#FFB91C1C</Color>
-            <Color x:Key="SystemAccentColorDark3">#FF991B1B</Color>
-            <SolidColorBrush x:Key="AccentFillColorDefaultBrush" Color="#FFEF4444" />
-            <SolidColorBrush x:Key="AccentFillColorSecondaryBrush" Color="#FFF25858" />
-            <SolidColorBrush x:Key="AccentFillColorTertiaryBrush" Color="#FFDC2F2F" />
-            <SolidColorBrush x:Key="AccentTextFillColorPrimaryBrush" Color="#FFF87171" />
-            <SolidColorBrush x:Key="AccentTextFillColorSecondaryBrush" Color="#FFF87171" />
-            <SolidColorBrush x:Key="AccentTextFillColorTertiaryBrush" Color="#FFEF4444" />
-            <SolidColorBrush x:Key="TextOnAccentFillColorPrimaryBrush" Color="#FFFFFFFF" />
-            <SolidColorBrush x:Key="TextOnAccentFillColorSecondaryBrush" Color="#E6FFFFFF" />
+            <Color x:Key="SystemAccentColor">#FFE8E8EC</Color>
+            <Color x:Key="SystemAccentColorLight1">#FFD2D2D6</Color>
+            <Color x:Key="SystemAccentColorLight2">#FFE8E8EC</Color>
+            <Color x:Key="SystemAccentColorLight3">#FFEEEEF1</Color>
+            <Color x:Key="SystemAccentColorDark1">#FFBCBCC0</Color>
+            <Color x:Key="SystemAccentColorDark2">#FFA7A7AA</Color>
+            <Color x:Key="SystemAccentColorDark3">#FF919194</Color>
+            <SolidColorBrush x:Key="AccentFillColorDefaultBrush" Color="#FFE8E8EC" />
+            <SolidColorBrush x:Key="AccentFillColorSecondaryBrush" Color="#FFD2D2D6" />
+            <SolidColorBrush x:Key="AccentFillColorTertiaryBrush" Color="#FFBCBCC0" />
+            <SolidColorBrush x:Key="AccentTextFillColorPrimaryBrush" Color="#FFEEEEF1" />
+            <SolidColorBrush x:Key="AccentTextFillColorSecondaryBrush" Color="#FFEEEEF1" />
+            <SolidColorBrush x:Key="AccentTextFillColorTertiaryBrush" Color="#FFE8E8EC" />
+            <SolidColorBrush x:Key="TextOnAccentFillColorPrimaryBrush" Color="#FF141417" />
+            <SolidColorBrush x:Key="TextOnAccentFillColorSecondaryBrush" Color="#E6141417" />
+            <SolidColorBrush x:Key="AccentFillColorSelectedTextBackgroundBrush" Color="#FFE8E8EC" />
+            <SolidColorBrush x:Key="TextOnAccentFillColorSelectedTextBrush" Color="#FF141417" />
             <SolidColorBrush x:Key="TextFillColorPrimaryBrush" Color="#FFE8E8EC" />
             <SolidColorBrush x:Key="TextFillColorSecondaryBrush" Color="#FFA4A4AE" />
             <SolidColorBrush x:Key="TextFillColorTertiaryBrush" Color="#FF7C7C86" />
@@ -97,9 +103,9 @@
     <Color x:Key="SiloBorderColor">#B3242428</Color>
     <Color x:Key="SiloForegroundColor">#FFE8E8EC</Color>
     <Color x:Key="SiloMutedColor">#FFA4A4AE</Color>
-    <Color x:Key="SiloPrimaryColor">#FFEF4444</Color>
-    <Color x:Key="SiloPrimaryHoverColor">#FFF25858</Color>
-    <Color x:Key="SiloPrimaryPressedColor">#FFDC2F2F</Color>
+    <Color x:Key="SiloPrimaryColor">#FFE8E8EC</Color>
+    <Color x:Key="SiloPrimaryHoverColor">#FFD2D2D6</Color>
+    <Color x:Key="SiloPrimaryPressedColor">#FFBCBCC0</Color>
     <Color x:Key="SiloBadgeBackgroundColor">#B314141E</Color>
     <Color x:Key="SiloBadgeBorderColor">#26FFFFFF</Color>
     <!-- The IMDb badge's gold, Tailwind's green-500 of a watched mark, emerald-400 of a watched button. -->
@@ -110,6 +116,17 @@
     <!-- Tailwind's amber-300 and amber-400: a watchlist title TMDB lost, in words and as a dot. -->
     <Color x:Key="SiloAttentionColor">#FFFCD34D</Color>
     <Color x:Key="SiloAttentionDotColor">#FFFBBF24</Color>
+    <!--
+        The web's destructive red: errors, and actions that delete or end something. It is never the accent: AccentPainter
+        leaves it alone, so it stays red whatever the server's accent.
+    -->
+    <Color x:Key="SiloDestructiveColor">#FFEF4444</Color>
+    <!--
+        A favourite's heart, red whatever the accent, as the web draws it: Tailwind's red-500 on cards (MediaItemMenu.tsx),
+        red-400 on a title's page (ItemDetail/components/ActionBar.tsx).
+    -->
+    <Color x:Key="SiloFavoriteColor">#FFEF4444</Color>
+    <Color x:Key="SiloFavoriteLightColor">#FFF87171</Color>
 
     <SolidColorBrush x:Key="SiloBackgroundBrush" Color="{StaticResource SiloBackgroundColor}" />
     <SolidColorBrush x:Key="SiloSurfaceBrush" Color="{StaticResource SiloSurfaceColor}" />
@@ -120,6 +137,9 @@
     <!-- A movie's own card in its box set's row: the web's ring-foreground/80. -->
     <SolidColorBrush x:Key="SiloThisFilmRingBrush" Color="{StaticResource SiloForegroundColor}" Opacity="0.8" />
     <SolidColorBrush x:Key="SiloPrimaryBrush" Color="{StaticResource SiloPrimaryColor}" />
+    <SolidColorBrush x:Key="SiloDestructiveBrush" Color="{StaticResource SiloDestructiveColor}" />
+    <SolidColorBrush x:Key="SiloFavoriteBrush" Color="{StaticResource SiloFavoriteColor}" />
+    <SolidColorBrush x:Key="SiloFavoriteLightBrush" Color="{StaticResource SiloFavoriteLightColor}" />
     <!--
         The accent's shades and see-through tints, and the labels drawn on it. AccentPainter repaints these brushes (and the
         Fluent accent brushes above) with the server's accent, keeping each one's alpha; anything in the accent's colour
@@ -127,21 +147,25 @@
     -->
     <SolidColorBrush x:Key="SiloPrimaryHoverBrush" Color="{StaticResource SiloPrimaryHoverColor}" />
     <SolidColorBrush x:Key="SiloPrimaryPressedBrush" Color="{StaticResource SiloPrimaryPressedColor}" />
-    <SolidColorBrush x:Key="SiloPrimaryTint15Brush" Color="#26EF4444" />
-    <SolidColorBrush x:Key="SiloPrimaryTint60Brush" Color="#99EF4444" />
-    <SolidColorBrush x:Key="SiloPrimaryTint75Brush" Color="#BFEF4444" />
-    <!-- Labels on an accent fill: dark on buttons and the play disc, white on small badges (for a custom accent, the web's choice). -->
-    <SolidColorBrush x:Key="SiloOnPrimaryBrush" Color="#FF0E0E10" />
-    <SolidColorBrush x:Key="SiloOnPrimaryBadgeBrush" Color="#FFFFFFFF" />
+    <SolidColorBrush x:Key="SiloPrimaryTint15Brush" Color="#26E8E8EC" />
+    <SolidColorBrush x:Key="SiloPrimaryTint20Brush" Color="#33E8E8EC" />
+    <SolidColorBrush x:Key="SiloPrimaryTint60Brush" Color="#99E8E8EC" />
+    <SolidColorBrush x:Key="SiloPrimaryTint75Brush" Color="#BFE8E8EC" />
+    <!--
+        Labels on an accent fill, buttons and small badges alike: Cinema Dark's dark label on a light accent, white on a dark
+        one, as the web's primary-foreground (AccentPainter).
+    -->
+    <SolidColorBrush x:Key="SiloOnPrimaryBrush" Color="#FF141417" />
+    <SolidColorBrush x:Key="SiloOnPrimaryBadgeBrush" Color="#FF141417" />
     <!-- The signed-out screens' glow at the top left. -->
     <RadialGradientBrush x:Key="SiloAccentGlowBrush" Center="0.18,0.18" GradientOrigin="0.18,0.18" RadiusX="0.26" RadiusY="0.52">
-        <GradientStop Offset="0" Color="#2EEF4444" />
-        <GradientStop Offset="1" Color="#00EF4444" />
+        <GradientStop Offset="0" Color="#2EE8E8EC" />
+        <GradientStop Offset="1" Color="#00E8E8EC" />
     </RadialGradientBrush>
     <!-- A card's glow at its top right, as the web's Start a party card (a blurred accent circle at 20 %). -->
     <RadialGradientBrush x:Key="SiloCardGlowBrush" Center="0.96,0.04" GradientOrigin="0.96,0.04" RadiusX="0.42" RadiusY="0.62">
-        <GradientStop Offset="0" Color="#33EF4444" />
-        <GradientStop Offset="1" Color="#00EF4444" />
+        <GradientStop Offset="0" Color="#33E8E8EC" />
+        <GradientStop Offset="1" Color="#00E8E8EC" />
     </RadialGradientBrush>
     <SolidColorBrush x:Key="SiloBadgeBackgroundBrush" Color="{StaticResource SiloBadgeBackgroundColor}" />
     <SolidColorBrush x:Key="SiloBadgeBorderBrush" Color="{StaticResource SiloBadgeBorderColor}" />
@@ -1066,7 +1090,7 @@
     </Style>
     <!-- "Play Now" on the Playing Next screen: the red pill with white text. -->
     <Style x:Key="SiloNextUpPlayButtonStyle" TargetType="Button" BasedOn="{StaticResource SiloPrimaryButtonStyle}">
-        <Setter Property="Foreground" Value="#FFFFFFFF" />
+        <Setter Property="Foreground" Value="{StaticResource SiloOnPrimaryBrush}" />
         <Setter Property="Padding" Value="24,0,28,0" />
         <Setter Property="FontFamily" Value="{StaticResource SiloFontSemiBold}" />
         <Setter Property="FontWeight" Value="SemiBold" />

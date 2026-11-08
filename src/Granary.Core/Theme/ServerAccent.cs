@@ -13,8 +13,9 @@ namespace Granary.Core.Theme;
 /// The accent of the server Granary uses, from its branding (<c>GET /api/v2/theme/branding</c>, public, so known before
 /// anyone signs in), as the web paints it. Read when Granary starts and whenever another server becomes active. What the
 /// server last answered is kept with it (<see cref="ServerEntry.Branding"/>) and painted at once, before it answers, and
-/// while a read fails; without that, the last accent stays until the new one answers. Granary's own red without a server,
-/// for a server without an accent, and while the read of a server never read fails. A failed read is tried again after
+/// while a read fails; without that, the last accent stays until the new one answers. The web's own light accent
+/// (<see cref="AccentPalette.Default"/>) without a server, for a server without an accent, and while the read of a server
+/// never read fails. A failed read is tried again after
 /// 5 s, 15 s and a minute, then every 5 minutes, and at once when the session signs in or becomes ready, or the network
 /// changes, until the server answers. The branding's wordmark comes with it, for the sidebar.
 /// </summary>
@@ -219,7 +220,7 @@ public sealed partial class ServerAccent : ObservableObject, IDisposable
         _failing = true;
         if (server.Branding is null)
         {
-            // Another server's accent must not stay; Granary's own is the safe one. What this server answered last stays.
+            // Another server's accent must not stay; the web's own is the safe one. What this server answered last stays.
             Palette = AccentPalette.Default;
         }
         RetryIn(RetryDelays[Math.Min(_retries, RetryDelays.Length - 1)], server.Id);

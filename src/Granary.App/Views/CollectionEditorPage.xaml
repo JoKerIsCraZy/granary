@@ -125,7 +125,7 @@
                         </StackPanel>
                     </Grid>
                     <TextBlock Text="{x:Bind ViewModel.DeleteError, Mode=OneWay}" Visibility="{x:Bind ViewModel.HasDeleteError, Mode=OneWay}"
-                               Foreground="{StaticResource SiloPrimaryBrush}" FontSize="13" TextWrapping="Wrap" />
+                               Foreground="{StaticResource SiloDestructiveBrush}" FontSize="13" TextWrapping="Wrap" />
 
                     <!-- Name and description. -->
                     <Border Style="{StaticResource EditorCardStyle}" AutomationProperties.Name="Name and description">
@@ -276,9 +276,9 @@
                                 <Button Content="Undo" Style="{StaticResource EditorSmallButtonStyle}" Command="{x:Bind ViewModel.UndoRemoveCommand}" />
                             </StackPanel>
                             <TextBlock Text="{x:Bind ViewModel.TitlesError, Mode=OneWay}" Visibility="{x:Bind ViewModel.HasTitlesError, Mode=OneWay}"
-                                       Foreground="{StaticResource SiloPrimaryBrush}" FontSize="13" TextWrapping="Wrap" />
+                                       Foreground="{StaticResource SiloDestructiveBrush}" FontSize="13" TextWrapping="Wrap" />
                             <StackPanel Orientation="Horizontal" Spacing="10" Visibility="{x:Bind ViewModel.HasFailedAdds, Mode=OneWay}">
-                                <TextBlock Text="{x:Bind ViewModel.FailedText, Mode=OneWay}" FontSize="13" VerticalAlignment="Center" Foreground="{StaticResource SiloPrimaryBrush}" />
+                                <TextBlock Text="{x:Bind ViewModel.FailedText, Mode=OneWay}" FontSize="13" VerticalAlignment="Center" Foreground="{StaticResource SiloDestructiveBrush}" />
                                 <Button Content="Try again" Style="{StaticResource EditorSmallButtonStyle}" Command="{x:Bind ViewModel.RetryFailedAddsCommand}" />
                             </StackPanel>
 
@@ -684,7 +684,7 @@
                                 </StackPanel>
 
                                 <StackPanel Orientation="Horizontal" Spacing="10" Visibility="{x:Bind ViewModel.HasPosterError, Mode=OneWay}">
-                                    <TextBlock Text="{x:Bind ViewModel.PosterErrorText, Mode=OneWay}" Foreground="{StaticResource SiloPrimaryBrush}" FontSize="12.5"
+                                    <TextBlock Text="{x:Bind ViewModel.PosterErrorText, Mode=OneWay}" Foreground="{StaticResource SiloDestructiveBrush}" FontSize="12.5"
                                                TextWrapping="Wrap" VerticalAlignment="Center" MaxWidth="560" />
                                     <Button Content="Retry" Style="{StaticResource EditorSmallButtonStyle}" Command="{x:Bind ViewModel.SaveCommand}" />
                                     <!-- The failed poster can go on its own, without discarding the rest. -->
@@ -696,7 +696,7 @@
                                                      Command="{x:Bind ViewModel.UndoPosterCommand}" />
                                 </StackPanel>
                                 <TextBlock Text="{x:Bind ViewModel.PosterPickError, Mode=OneWay}" Visibility="{x:Bind ViewModel.HasPosterPickError, Mode=OneWay}"
-                                           Foreground="{StaticResource SiloPrimaryBrush}" FontSize="12.5" TextWrapping="Wrap" />
+                                           Foreground="{StaticResource SiloDestructiveBrush}" FontSize="12.5" TextWrapping="Wrap" />
 
                                 <!-- "Paste a link…": the link the server fetches the poster from. -->
                                 <Border MaxWidth="360" HorizontalAlignment="Left" Padding="14" CornerRadius="12" BorderBrush="{StaticResource SiloBorderBrush}"
@@ -740,7 +740,7 @@
                                    Foreground="{StaticResource SiloForegroundBrush}" TextWrapping="Wrap" />
                         <TextBlock Text="{x:Bind ViewModel.SaveBarHint, Mode=OneWay}" Style="{StaticResource EditorHelpStyle}" FontSize="13" />
                         <TextBlock Text="{x:Bind ViewModel.SaveError, Mode=OneWay}" Visibility="{x:Bind ViewModel.HasSaveError, Mode=OneWay}"
-                                   Foreground="{StaticResource SiloPrimaryBrush}" FontSize="13" TextWrapping="Wrap" />
+                                   Foreground="{StaticResource SiloDestructiveBrush}" FontSize="13" TextWrapping="Wrap" />
                     </StackPanel>
                     <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                         <Button Content="Cancel" Style="{StaticResource EditorGhostButtonStyle}" Command="{x:Bind BackToCollectionsCommand}"

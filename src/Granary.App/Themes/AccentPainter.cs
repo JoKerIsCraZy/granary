@@ -13,10 +13,11 @@ namespace Granary.App.Themes;
 /// </summary>
 internal static class AccentPainter
 {
+    // The selected text's background is Fluent's, drawn in the accent like the rest.
     private static readonly string[] PrimaryKeys =
     [
-        "SiloPrimaryBrush", "SiloPrimaryTint15Brush", "SiloPrimaryTint60Brush", "SiloPrimaryTint75Brush",
-        "AccentFillColorDefaultBrush", "AccentTextFillColorTertiaryBrush",
+        "SiloPrimaryBrush", "SiloPrimaryTint15Brush", "SiloPrimaryTint20Brush", "SiloPrimaryTint60Brush", "SiloPrimaryTint75Brush",
+        "AccentFillColorDefaultBrush", "AccentTextFillColorTertiaryBrush", "AccentFillColorSelectedTextBackgroundBrush",
     ];
 
     private static readonly string[] HoverKeys = ["SiloPrimaryHoverBrush", "AccentFillColorSecondaryBrush"];
@@ -26,12 +27,13 @@ internal static class AccentPainter
     // Fluent's accent text reads on the dark page: a lighter shade.
     private static readonly string[] LightTextKeys = ["AccentTextFillColorPrimaryBrush", "AccentTextFillColorSecondaryBrush"];
 
-    private static readonly string[] LabelKeys = ["SiloOnPrimaryBrush"];
-
-    private static readonly string[] BadgeLabelKeys = ["SiloOnPrimaryBadgeBrush", "TextOnAccentFillColorPrimaryBrush"];
-
-    // Granary's own lighter red for accent text (#F87171), kept for its own accent.
-    private static readonly RgbColor DefaultLightText = new(0xf8, 0x71, 0x71);
+    // Everything drawn on an accent fill, Granary's and Fluent's (a checked box's tick, a toggle's knob, selected text):
+    // the dark label on a light accent such as the web's own, white on a dark one.
+    private static readonly string[] LabelKeys =
+    [
+        "SiloOnPrimaryBrush", "SiloOnPrimaryBadgeBrush",
+        "TextOnAccentFillColorPrimaryBrush", "TextOnAccentFillColorSecondaryBrush", "TextOnAccentFillColorSelectedTextBrush",
+    ];
 
     // The accent's glows: the signed-out screens' and a card's.
     private static readonly string[] GlowKeys = ["SiloAccentGlowBrush", "SiloCardGlowBrush"];
@@ -42,9 +44,8 @@ internal static class AccentPainter
         Paint(dictionaries, PrimaryKeys, palette.Primary);
         Paint(dictionaries, HoverKeys, palette.Hover);
         Paint(dictionaries, PressedKeys, palette.Pressed);
-        Paint(dictionaries, LightTextKeys, palette.IsDefault ? DefaultLightText : palette.Primary.Mix(AccentPalette.White, 0.25));
+        Paint(dictionaries, LightTextKeys, palette.Primary.Mix(AccentPalette.White, 0.25));
         Paint(dictionaries, LabelKeys, palette.Label);
-        Paint(dictionaries, BadgeLabelKeys, palette.BadgeLabel);
         foreach (var dictionary in dictionaries)
         {
             foreach (string key in GlowKeys)

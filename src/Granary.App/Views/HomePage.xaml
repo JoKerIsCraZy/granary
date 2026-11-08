@@ -27,7 +27,7 @@
                                                  Visibility="{x:Bind ViewModel.Banner.HasSlides, Mode=OneWay}" />
                 <StackPanel Spacing="16" Padding="{x:Bind controls:BrowseHero.RowsPadding(ViewModel.HeroTitle, Hero.Sizes), Mode=OneWay}">
                     <TextBlock Text="{x:Bind ViewModel.Notice, Mode=OneWay}" Visibility="{x:Bind HasText(ViewModel.Notice), Mode=OneWay}"
-                               Style="{StaticResource SiloCaptionTextStyle}" Foreground="{StaticResource SiloPrimaryBrush}" TextWrapping="Wrap"
+                               Style="{StaticResource SiloCaptionTextStyle}" Foreground="{StaticResource SiloDestructiveBrush}" TextWrapping="Wrap"
                                AutomationProperties.LiveSetting="Polite" />
                     <!-- Rows are made half a screen past the view, as a grid's cards (MediaGrid). -->
                     <ItemsRepeater ItemsSource="{x:Bind ViewModel.Rows, Mode=OneWay}" VerticalCacheLength="1">

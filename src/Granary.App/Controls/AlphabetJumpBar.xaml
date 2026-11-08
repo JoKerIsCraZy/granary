@@ -61,10 +61,10 @@
             </Setter>
         </Style>
 
-        <!-- The current letter: red with the page's dark text, and no hover. -->
+        <!-- The current letter: the accent with the label drawn on it (dark on a light accent, white on a dark one), and no hover. -->
         <Style x:Key="AlphabetCurrentLetterButtonStyle" TargetType="Button" BasedOn="{StaticResource AlphabetLetterButtonStyle}">
             <Setter Property="Background" Value="{StaticResource SiloPrimaryBrush}" />
-            <Setter Property="Foreground" Value="{StaticResource SiloBackgroundBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource SiloOnPrimaryBrush}" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
