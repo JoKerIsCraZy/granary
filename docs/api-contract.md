@@ -709,7 +709,8 @@ series/season card), `poster_is_episode_still`, `backdrop_is_episode_still` ([6.
 
 ### 7.3 Libraries
 
-- `GET /api/v2/user/libraries` (`listUserLibraries`) → `{ "items": [{ "id", "name", "type", "sort_order", "poster_url"? }] }`.
+- `GET /api/v2/user/libraries` (`listUserLibraries`) → `{ "items": [{ "id", "name", "type", "sort_order", "poster_url"?,
+  "box_sets_enabled" }] }` (box sets, 7.18).
   `type` is free text (`movies`, `series`, `mixed`, …); sort by `sort_order`. The libraries a profile browses are the
   web's `useUserLibraries`: read with the profile settings `ui.disabled_library_ids` (left out) and `ui.library_order`
   (those it names first, in its order, the rest after) in one `GET /api/v2/settings/values/effective?keys=…`. Both are
@@ -826,6 +827,7 @@ sort `-added_at` (phone) / `title` (TV) (`silo-android/shared/.../apiv2/CatalogV
   with `Retry-After`; an expired Meilisearch ranking session answers `invalid_cursor`.
 - People: `GET /api/v2/catalog/people?q=&limit=1..100&media_scope=video` → `{ "items": Person[] }`
   (only when `people_media_scope` is true). A person found opens their page (7.6a).
+- Box sets: `GET /api/v2/catalog/box-sets?q=` (7.18), only when `box_sets` is true.
 - Android: 300 ms debounce, `limit=60` (phone) / 40 (TV), people search in parallel with
   `limit=20` (`silo-android/.../SearchViewModel.kt:142-333`).
 
@@ -1211,6 +1213,38 @@ read): a missing one answers 428, one changed since 412, after which the client 
   rule fields the server takes comes from `GET /api/v2/catalog/search/capabilities` (`extended_query_rules`,
   `show_title_rules`); facet and language values from `GET /api/v2/catalog/filters?source=query`; people from
   `GET /api/v2/catalog/people?q=` (a person rule stores the name).
+
+### 7.18 Movie box sets
+
+A movie or mixed library with `box_sets_enabled` gathers the movies TMDB lists in one collection (a trilogy, a
+franchise) into a box set of at least its `box_set_min_movies` (2 to 10) movies the viewer can see; library browse never
+groups them (`silo-server/docs/catalog-api.md`, "Movie box sets"; `internal/apiv2/catalog_box_sets.go`). A box set
+(`CatalogBoxSet`): `id` (the TMDB collection's, a string), `library_id` (a string), `title` (TMDB's name, a trailing
+"Collection" written "Box Set"), `overview?`, `poster_url?`, `poster_thumbhash?`, `backdrop_url?`, `backdrop_thumbhash?`
+(cached like item artwork, or TMDB's own URL until the server caches it), `movie_count`, `played_count`, `first_year?`,
+`last_year?`. A server without box sets answers these reads 404.
+
+- `GET /api/v2/catalog/items/{id}/box-set[?library_id=]` (`getCatalogItemBoxSet`, image params) → `{ "box_set"?:
+  CatalogBoxSetDetail }`: the box set a movie's page shows, from `library_id` or the first of the movie's libraries with
+  box sets on. `box_set` is absent (`{}`, a 200) when the movie is in none the viewer sees, and for a series; 404 for an
+  id that is missing, hidden or not a catalog title. Granary asks only while one of the profile's libraries has
+  `box_sets_enabled`, as the web's `useItemBoxSet` does, so a server with box sets off is not asked on every movie page.
+  `BoxSetLibraries` reads `GET /api/v2/user/libraries` (the server's list, as the web's `useAvailableUserLibraries`: a
+  library the profile hid from its sidebar still counts) once per server and profile for every page that asks meanwhile,
+  and keeps the answer five minutes (the web's staleTime) unless the session changes or the answer came while another
+  profile acted. A read gives up after 30 s; any failure asks nothing and is not kept. It asks without `library_id`, since its title route carries none: the server then takes the
+  first of the movie's libraries with box sets on, while the web passes the library the movie is being viewed in. A 404
+  or any failure only leaves the row out, unlogged for a 404.
+- `GET /api/v2/catalog/box-sets/{id}?library_id=` (`getCatalogBoxSet`, `library_id` required, image params) →
+  `CatalogBoxSetDetail`: the box set and `items`, its movies in that library the viewer can see as `CatalogItem` cards, in
+  collection (release) order. 404 when the library has box sets off or the viewer sees too few of its movies: the
+  page says so in the web's words.
+- `GET /api/v2/catalog/box-sets?q=&limit=1..20[&library_id=]` (`searchCatalogBoxSets`, no image params) → `{ "items":
+  CatalogBoxSet[] }`, never null: the box sets of libraries with `box_sets_in_search` whose name holds every word of `q`,
+  or two or more of whose movies' titles do, best match first. Search asks with `limit=5`, as the web does, only while
+  `GET /api/v2/catalog/search/capabilities` says `box_sets: true` (as the Apple app checks; the web checks the libraries'
+  `box_sets_enabled` instead) and not for Series, beside the people and titles; a failure, or an answer slower than
+  1.5 s (Android's grace), shows none rather than holding the titles.
 
 ## 8. Playback protocol v3
 

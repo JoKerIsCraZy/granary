@@ -24,7 +24,7 @@ public enum SearchScope
 /// Search as on Silo's web client (docs/api-contract.md, 7.5): titles 300 ms after the last keystroke,
 /// in relevance order and cursor-paged, and the people whose names match in parallel when the server
 /// can search them, and under them the titles TMDB finds that the library does not have (<see cref="Requests"/>).
-/// A person opens their page, as the web's search does.
+/// The box sets the text finds lead, as on the web (<see cref="BoxSets"/>). A person opens their page, as the web's search does.
 /// A new search cancels the previous one, and an answer that arrives for an older text is dropped.
 /// </summary>
 /// <remarks>The commands take no cancellation token: a cancellable toolkit command cancels its running call when executed again.</remarks>
@@ -37,6 +37,9 @@ public sealed partial class SearchViewModel : ObservableObject
 
     internal const string BusyText = "Search is busy, try again in a moment";
 
+    /// <summary>How long the titles wait for the box sets, as Android's search: box sets only add to them.</summary>
+    public static readonly TimeSpan BoxSetGrace = TimeSpan.FromMilliseconds(1500);
+
     private readonly ISessionManager _session;
     private readonly CatalogApi _catalog;
     private readonly ImageParameterCache _images;
@@ -44,6 +47,7 @@ public sealed partial class SearchViewModel : ObservableObject
     private readonly IUiDispatcher _dispatcher;
     private readonly TimeProvider _time;
     private readonly ILogger<SearchViewModel> _logger;
+    private readonly BoxSetsApi? _boxSets;
 
     // One run per search text (its wait, titles and people).
     private CancellationTokenSource? _searchRun;
@@ -58,6 +62,8 @@ public sealed partial class SearchViewModel : ObservableObject
     // What the backdrop shows of each library result, by the card's id. Each search has its own, so one a newer search
     // replaced adds nothing to it.
     private Dictionary<string, BrowseHeroTitle> _backdropTitles = new(StringComparer.Ordinal);
+    // The page each box set card opens, by the card's id.
+    private Dictionary<string, BoxSetRouteParameter> _boxSetPages = new(StringComparer.Ordinal);
     private (bool IsReady, string? ServerId, string? ProfileId)? _sessionKey;
     private bool _isActive;
 
@@ -69,7 +75,8 @@ public sealed partial class SearchViewModel : ObservableObject
         IUiDispatcher dispatcher,
         TimeProvider time,
         RequestToAddViewModel requests,
-        ILogger<SearchViewModel> logger)
+        ILogger<SearchViewModel> logger,
+        BoxSetsApi? boxSets = null)
     {
         _session = session;
         _catalog = catalog;
@@ -78,6 +85,7 @@ public sealed partial class SearchViewModel : ObservableObject
         _dispatcher = dispatcher;
         _time = time;
         _logger = logger;
+        _boxSets = boxSets;
         Backdrop = new BrowseHeroViewModel(dispatcher, time);
         Requests = requests;
         Requests.PropertyChanged += (_, e) =>
@@ -110,6 +118,13 @@ public sealed partial class SearchViewModel : ObservableObject
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(Heading))]
     public partial string ResultsQuery { get; private set; } = "";
+
+    /// <summary>The box sets the text finds, best match first, as cards ahead of people and titles (the web's search).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowsBoxSets), nameof(ShowsTitlesHeading))]
+    public partial IReadOnlyList<MediaCard> BoxSets { get; private set; } = [];
+
+    public bool ShowsBoxSets => BoxSets.Count > 0;
 
     /// <summary>The titles of the search.</summary>
     [ObservableProperty]
@@ -144,8 +159,11 @@ public sealed partial class SearchViewModel : ObservableObject
 
     public bool ShowsPeople => People.Count > 0;
 
-    /// <summary>"Titles" between the people and the library's titles, unless "Request to add" stands in for none.</summary>
-    public bool ShowsTitlesHeading => ShowsPeople && !IsLibraryRescued;
+    /// <summary>
+    /// "Titles" between the box sets or people and the library's titles, so the films don't read as part of the group above,
+    /// unless "Request to add" stands in for none.
+    /// </summary>
+    public bool ShowsTitlesHeading => (ShowsPeople || ShowsBoxSets) && !IsLibraryRescued;
 
     public bool ShowsRequests => Requests.IsShown;
 
@@ -240,6 +258,16 @@ public sealed partial class SearchViewModel : ObservableObject
         }
     }
 
+    /// <summary>Opens a box set's page; the results stay for Back.</summary>
+    [RelayCommand]
+    private void OpenBoxSet(MediaCard? card)
+    {
+        if (card is not null && _boxSetPages.TryGetValue(card.Id, out var page))
+        {
+            _navigation.NavigateTo(AppRoute.BoxSet, page);
+        }
+    }
+
     /// <summary>Opens the person's page; the results stay for Back.</summary>
     [RelayCommand]
     private void OpenPerson(SearchPerson? person)
@@ -288,6 +316,7 @@ public sealed partial class SearchViewModel : ObservableObject
             _backdropTitles = backdrops;
             SetSearchingTitles(true);
             var people = FindPeopleAsync(server, text, cancellationToken);
+            var boxSets = FindBoxSetsAsync(server, text, scope, cancellationToken);
             var requests = Requests.SearchAsync(text, scope);
             BrowseCardPager? titles = null;
             Exception? failure = null;
@@ -303,7 +332,9 @@ public sealed partial class SearchViewModel : ObservableObject
                 failure = ex;
             }
             var found = await people;
+            var foundBoxSets = await boxSets;
             cancellationToken.ThrowIfCancellationRequested();
+            ShowBoxSets(server.BaseUri, foundBoxSets);
             ShowResults(text, titles, found, failure);
             await requests;
         }
@@ -350,6 +381,82 @@ public sealed partial class SearchViewModel : ObservableObject
             _logger.LogWarning("Searching people failed: {Failure}", ApiFailureText.Describe(ex));
             return null;
         }
+    }
+
+    /// <summary>
+    /// The box sets the text finds (docs/api-contract.md, 7.18): only while the server has them (<c>box_sets</c> in the
+    /// search capabilities, as the Apple app asks), and not for Series, as box sets are films. A failed read finds none
+    /// rather than failing the titles, and one slower than <see cref="BoxSetGrace"/> does not hold them up, as Android's.
+    /// </summary>
+    private async Task<IReadOnlyList<CatalogBoxSet>> FindBoxSetsAsync(ServerEntry server, string text, SearchScope scope, CancellationToken cancellationToken)
+    {
+        if (_boxSets is null || scope == SearchScope.Series)
+        {
+            return [];
+        }
+        // The grace starts with the search, before anything is awaited, and ends the read with it.
+        using var run = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        var grace = Task.Delay(BoxSetGrace, _time, run.Token);
+        var read = ReadBoxSetsAsync(_boxSets, server, text, run.Token);
+        var first = await Task.WhenAny(read, grace);
+        await run.CancelAsync();
+        if (first == read)
+        {
+            return await read;
+        }
+        _ = ObserveAsync(read);
+        return [];
+    }
+
+    // A read given up on still ends: what it ends with is logged, so no failure goes unobserved.
+    private async Task ObserveAsync(Task<IReadOnlyList<CatalogBoxSet>> read)
+    {
+        try
+        {
+            await read;
+        }
+        catch (Exception ex) when (ex is not OutOfMemoryException)
+        {
+            _logger.LogWarning("A box set search given up on failed: {Failure}", ApiFailureText.Describe(ex));
+        }
+    }
+
+    private async Task<IReadOnlyList<CatalogBoxSet>> ReadBoxSetsAsync(BoxSetsApi boxSets, ServerEntry server, string text, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var capabilities = await GetCapabilitiesAsync(server, cancellationToken);
+            return capabilities is { BoxSets: true } ? await boxSets.SearchAsync(server.BaseUri, text, cancellationToken: cancellationToken) : [];
+        }
+        catch (Exception ex) when (LibraryErrors.IsExpected(ex))
+        {
+            if (!cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogWarning("Searching box sets failed: {Failure}", ApiFailureText.Describe(ex));
+            }
+            return [];
+        }
+    }
+
+    // A box set without an id or library could not be opened.
+    private void ShowBoxSets(Uri? server, IReadOnlyList<CatalogBoxSet> boxSets)
+    {
+        var pages = new Dictionary<string, BoxSetRouteParameter>(StringComparer.Ordinal);
+        var cards = new List<MediaCard>();
+        foreach (var boxSet in boxSets)
+        {
+            if (server is null || boxSet.Id.Length == 0 || boxSet.LibraryId.Length == 0)
+            {
+                continue;
+            }
+            var card = MediaCardFactory.BoxSet(boxSet, server);
+            if (pages.TryAdd(card.Id, new BoxSetRouteParameter(boxSet.Id, boxSet.LibraryId, boxSet.Title)))
+            {
+                cards.Add(card);
+            }
+        }
+        _boxSetPages = pages;
+        BoxSets = cards;
     }
 
     /// <summary>Read once per session; a failed read is tried again with the next search.</summary>
@@ -476,6 +583,7 @@ public sealed partial class SearchViewModel : ObservableObject
         _resultsState = ("", false);
         ResultsQuery = "";
         People = [];
+        ShowBoxSets(null, []);
         Cards = [];
         ForgetBackdrop();
         IsSearching = false;

@@ -1,4 +1,5 @@
 using Granary.Core.Abstractions;
+using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Requests;
 using Granary.Core.ViewModels;
 using Granary.Tests.Fakes;
@@ -33,7 +34,7 @@ public sealed class SearchRequestToAddTests
         var feature = new RequestsFeature(session, requests, time, silo.Logs.For<RequestsFeature>());
         var requestToAdd = new RequestToAddViewModel(session, requests, feature, navigation, silo.Logs.For<RequestToAddViewModel>());
         return new SearchViewModel(session, silo.Catalog, silo.Images, navigation, new ImmediateDispatcher(), time, requestToAdd,
-            silo.Logs.For<SearchViewModel>());
+            silo.Logs.For<SearchViewModel>(), new BoxSetsApi(silo.Http));
     }
 
     private SearchViewModel Create() => Create(_silo, _session, _navigation, _time);

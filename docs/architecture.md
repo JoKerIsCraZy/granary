@@ -386,7 +386,9 @@ also walks all live XAML that .NET holds (the reference tracker), so its pause g
   in the accent and one more pixel inside it, so the artwork keeps its layout) and its pill are made (`x:Load`) for the
   first marked card only, and its ping is one composition animation that stops while the card is unloaded or parked for
   reuse (the row's `ElementClearing`). The row centres that card once its list is laid out and the scroller's range
-  reaches it (`RowCentring`), following layout for at most 20 passes, so a row that stays hidden stops listening.
+  reaches it (`RowCentring`), following layout for at most 20 passes, so a row that stays hidden stops listening. A
+  movie's This film mark in its box set's row (`MediaCard.CurrentMark`) is made the same way, by its own `x:Load` element,
+  and does not ping.
 - A hidden episode still (`MediaCard.BlursImage`, the profile's spoiler switches) costs the other cards nothing and itself
   less than a picture: its image is made (`x:Load`) for the first card that shows one, and it is a pre-blurred decode
   rather than an effect (Win2D, which a `GaussianBlurEffect` brush needs, is not in the app). `SpoilerArtwork` decodes the

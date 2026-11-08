@@ -318,6 +318,7 @@ public sealed partial class MainWindow
         return focused is not null && ContentFrame.Content switch
         {
             ItemDetailPage page => IsWithin(focused, page) && page.PlayFromKey(),
+            BoxSetPage page => IsWithin(focused, page) && page.PlayFromKey(),
             HomePage home => home.PlayBannerFromKey(focused),
             _ => false,
         };

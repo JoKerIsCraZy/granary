@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Search as on Silo's web client: a large title, a large rounded search box, the type switch, people as
-    round photo cards, the titles, then Request to add. A person opens their page. Cached, so Back keeps the
+    Search as on Silo's web client: a large title, a large rounded search box, the type switch, the box sets found,
+    people as round photo cards, the titles, then Request to add. A person opens their page. Cached, so Back keeps the
     results and the Request to add page.
 -->
 <Page
@@ -57,6 +57,15 @@
                 <SelectorBarItem Text="Movies" />
                 <SelectorBarItem Text="Series" />
             </SelectorBar>
+
+            <!--
+                The box sets the text finds, as the web's search lists them (BoxSetSearchResults.tsx) ahead of people and titles,
+                in the titles' own columns.
+            -->
+            <StackPanel Spacing="14" Visibility="{x:Bind ViewModel.ShowsBoxSets, Mode=OneWay}">
+                <TextBlock Text="Box sets" Style="{StaticResource SiloRowTitleTextStyle}" AutomationProperties.HeadingLevel="Level2" />
+                <controls:MediaGrid ItemsSource="{x:Bind ViewModel.BoxSets, Mode=OneWay}" CardInvokedCommand="{x:Bind ViewModel.OpenBoxSetCommand}" />
+            </StackPanel>
 
             <StackPanel Spacing="14" Visibility="{x:Bind ViewModel.ShowsPeople, Mode=OneWay}">
                 <TextBlock Text="People" Style="{StaticResource SiloRowTitleTextStyle}" AutomationProperties.HeadingLevel="Level2" />

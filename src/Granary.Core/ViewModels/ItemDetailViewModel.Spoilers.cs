@@ -123,7 +123,10 @@ public sealed partial class ItemDetailViewModel
         }
         var spoilers = Spoilers;
         // Matched by content id, as the apps match the episode they show.
-        IReadOnlyList<MediaCard> cards = [.. _siblings.Select(e => MediaCardFactory.Episode(e, server, spoilers) with { IsCurrent = e.ContentId == _contentId })];
+        IReadOnlyList<MediaCard> cards = [.. _siblings.Select(e => MediaCardFactory.Episode(e, server, spoilers) with
+        {
+            CurrentMark = e.ContentId == _contentId ? CurrentMark.NowViewing : CurrentMark.None,
+        })];
         // A new list centres the row on the episode again: only for cards that changed.
         if (!cards.SequenceEqual(MoreEpisodes))
         {

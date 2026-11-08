@@ -8,8 +8,9 @@ using Windows.UI.ViewManagement;
 
 namespace Granary.App.Controls;
 
-// The page's own title among its siblings (MediaCard.IsCurrent), as the web's EpisodeCarousel marks it: a 2 px accent ring
-// round the artwork and the "Now Viewing" pill top left, whose dot pings (Tailwind's animate-ping). Only that card makes
+// The page's own title among its siblings (MediaCard.IsCurrent). An episode as the web's EpisodeCarousel marks it: a 2 px
+// accent ring round the artwork and the "Now Viewing" pill top left, whose dot pings (Tailwind's animate-ping). A movie in
+// its box set's row as the web's MovieBoxSetRow: a light ring and "This film" at the poster's foot. Only that card makes
 // them; a recycled card changes the mark only when it changes.
 public sealed partial class MediaCardView
 {
@@ -20,10 +21,16 @@ public sealed partial class MediaCardView
     private const float PingSettles = 0.75f;
     private static readonly TimeSpan PingDuration = TimeSpan.FromSeconds(1);
 
+    // This film's pill: the web's place (its 19 px with its top 32 px above the foot, inside the two rings' pixels), and its
+    // gap above the bottom badges when the card shows any.
+    private const double ThisFilmFoot = 11;
+    private const double ThisFilmGap = 4;
+
     // Windows' "Animation effects", read once when the app starts: turned off, the dot stands still.
     private static readonly bool Pings = new UISettings().AnimationsEnabled;
 
-    private bool _marked;
+    // How the card is marked as its page's own title.
+    private CurrentMark _mark;
     private bool _parked;
     private bool _loaded;
     private bool _pinging;
@@ -49,31 +56,64 @@ public sealed partial class MediaCardView
         }
     }
 
-    // The ring is the hairline in the accent, with the pixel inside it the mark's own; a brush changes no layout. The
-    // corner's own badges give way to the pill, as the web's carousel card has none there.
+    // The ring is the hairline in the mark's colour, with the pixel inside it the mark's own; a brush changes no layout. Now
+    // Viewing's corner badges give way to its pill, as the web's carousel card has none there; This film's pill is at the foot.
     private void ShowMark(MediaCard? card)
     {
-        bool marked = card?.IsCurrent == true;
-        if (marked != _marked)
+        var mark = card?.CurrentMark ?? CurrentMark.None;
+        if (mark != _mark)
         {
-            _marked = marked;
-            if (marked && NowViewing is null)
+            _mark = mark;
+            _artBorder ??= Art.BorderBrush;
+            if (mark == CurrentMark.NowViewing && NowViewing is null)
             {
-                _artBorder = Art.BorderBrush;
                 FindName(nameof(NowViewing));
             }
-            Art.BorderBrush = marked ? Brush("SiloPrimaryBrush") : _artBorder;
-            NowViewing!.Visibility = Visible(marked);
-            TopLeftBadges.Visibility = Visible(!marked);
+            if (mark == CurrentMark.ThisFilm && ThisFilm is null)
+            {
+                FindName(nameof(ThisFilm));
+                // The bottom badges' height is known only once they are laid out.
+                BottomBadges.SizeChanged += (_, _) => PlaceThisFilm();
+            }
+            Art.BorderBrush = mark switch
+            {
+                CurrentMark.NowViewing => Brush("SiloPrimaryBrush"),
+                CurrentMark.ThisFilm => Brush("SiloThisFilmRingBrush"),
+                _ => _artBorder,
+            };
+            NowViewing?.Visibility = Visible(mark == CurrentMark.NowViewing);
+            ThisFilm?.Visibility = Visible(mark == CurrentMark.ThisFilm);
+            TopLeftBadges.Visibility = Visible(mark != CurrentMark.NowViewing);
         }
+        PlaceThisFilm();
         UpdatePing();
+    }
+
+    // A departure from the web: its MovieBoxSetRow puts the pill's top 2rem above the poster's foot, which is where Granary's
+    // bottom badges sit (the profile's IMDb rating, say), and over them the card read "IMDB. THIS FILM". So while the card
+    // shows bottom badges, the pill stands just above them; without any, at the web's place.
+    private void PlaceThisFilm()
+    {
+        if (_mark != CurrentMark.ThisFilm || ThisFilmPill is null)
+        {
+            return;
+        }
+        bool hasBottomBadges = _cornerViews[2].Count + _cornerViews[3].Count > 0;
+        // The badges' top above the art's inner foot, less the ring's pixel the pill sits inside of.
+        double overBadges = BottomBadges.Margin.Bottom + BottomBadges.ActualHeight * BottomScale.ScaleY + ThisFilmGap
+            - ThisFilm!.BorderThickness.Bottom;
+        double bottom = hasBottomBadges ? Math.Max(ThisFilmFoot, overBadges) : ThisFilmFoot;
+        if (ThisFilmPill.Margin.Bottom != bottom)
+        {
+            ThisFilmPill.Margin = new Thickness(0, 0, 0, bottom);
+        }
     }
 
     // The dot pings on the compositor while its card shows: stopped for a card unloaded, parked or given another title, and
     // set back to its first frame, so the next start begins clean.
     private void UpdatePing()
     {
-        bool pinging = _marked && _loaded && !_parked && Pings;
+        bool pinging = _mark == CurrentMark.NowViewing && _loaded && !_parked && Pings;
         if (pinging == _pinging || NowViewingPing is null)
         {
             return;

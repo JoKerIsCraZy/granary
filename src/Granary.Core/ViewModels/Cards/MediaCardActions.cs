@@ -137,9 +137,9 @@ public sealed class MediaCardActions
             : new MediaCardState(card.IsWatched, card.IsFavorite, card.InWatchlist, card.IsNotInterested);
     }
 
-    public static bool CanPlay(MediaCard card) => card.PlayContentId is { Length: > 0 };
+    public static bool CanPlay(MediaCard card) => card.PlayContentId is { Length: > 0 } && !IsOwnFilm(card);
 
-    public static bool CanMarkWatched(MediaCard card) => DetailFacts.IsVideo(card.Type);
+    public static bool CanMarkWatched(MediaCard card) => DetailFacts.IsVideo(card.Type) && !IsOwnFilm(card);
 
     /// <summary>A movie or episode with a resume point or watched: the web offers "Play from Beginning".</summary>
     public static bool CanPlayFromBeginning(MediaCard card, MediaCardState state) =>
@@ -149,14 +149,17 @@ public sealed class MediaCardActions
     public static bool CanResetProgress(MediaCard card, MediaCardState state) => IsPlayable(card) && HasResumePoint(card, state);
 
     /// <summary>Not interested takes movies and series; the server refuses seasons and episodes.</summary>
-    public static bool CanMarkNotInterested(MediaCard card) => card.Type is CatalogItemTypes.Movie or CatalogItemTypes.Series;
+    public static bool CanMarkNotInterested(MediaCard card) => card.Type is CatalogItemTypes.Movie or CatalogItemTypes.Series && !IsOwnFilm(card);
 
-    private static bool IsPlayable(MediaCard card) => card.Type is CatalogItemTypes.Movie or CatalogItemTypes.Episode;
+    private static bool IsPlayable(MediaCard card) => card.Type is CatalogItemTypes.Movie or CatalogItemTypes.Episode && !IsOwnFilm(card);
+
+    // A movie's own card in its box set's row: the page's buttons hold its state, as the apps leave that card's menu out.
+    private static bool IsOwnFilm(MediaCard card) => card.CurrentMark == CurrentMark.ThisFilm;
 
     private static bool HasResumePoint(MediaCard card, MediaCardState state) => card.Progress is > 0 and < 1 && !state.IsProgressCleared;
 
     /// <summary>Favourites and the watchlist hold movies and series, as on the detail page.</summary>
-    public static bool CanCollect(MediaCard card) => card.Type is CatalogItemTypes.Movie or CatalogItemTypes.Series;
+    public static bool CanCollect(MediaCard card) => card.Type is CatalogItemTypes.Movie or CatalogItemTypes.Series && !IsOwnFilm(card);
 
     /// <summary>A title from TMDB, while the server takes requests and keeps TMDB titles on the watchlist, as the web asks.</summary>
     public bool CanToggleTitleWatchlist(MediaCard card) =>

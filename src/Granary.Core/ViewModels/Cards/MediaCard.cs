@@ -81,12 +81,45 @@ public sealed record MediaCard(string Id, string Type, string Title)
     public Api.Requests.MediaRequestCreate? RequestOffer { get; init; }
 
     /// <summary>
-    /// The title the page is about, among its siblings: an episode's own card in its season's More Episodes, marked "Now
-    /// Viewing" as the web's <c>EpisodeCarousel</c>. No other row sets it.
+    /// How the card marks the title its page is about, among its siblings: an episode's own card in its season's More
+    /// Episodes, and a movie's own in its box set's row. <see cref="CurrentMark.None"/> on every other card.
     /// </summary>
-    public bool IsCurrent { get; init; }
+    public CurrentMark CurrentMark { get; init; }
+
+    /// <summary>The card is its page's own title (<see cref="CurrentMark"/>): its row opens with it in the middle.</summary>
+    public bool IsCurrent => CurrentMark != CurrentMark.None;
+
+    /// <summary>
+    /// A box set's card (Search's Box sets, <see cref="MediaCardFactory.BoxSet"/>): its films, "3 films", in the corner beside
+    /// the BOX SET pill, as the web's <c>BoxSetCard</c>. Null for any other card.
+    /// </summary>
+    public string? BoxSetFilms { get; init; }
 
     /// <summary>The name screen readers announce for the whole card.</summary>
     public string AccessibleName => string.Join(", ",
-        new[] { Title, EpisodeTitle, Subtitle, IsCurrent ? "now viewing" : null }.Where(text => !string.IsNullOrEmpty(text)));
+        new[] { Title, BoxSetFilms is { } films ? $"box set of {films}" : null, EpisodeTitle, Subtitle, CurrentName }
+            .Where(text => !string.IsNullOrEmpty(text)));
+
+    private string? CurrentName => CurrentMark switch
+    {
+        CurrentMark.NowViewing => "now viewing",
+        CurrentMark.ThisFilm => "this film",
+        _ => null,
+    };
+}
+
+/// <summary>How a card marks the title its page is about (<see cref="MediaCard.IsCurrent"/>).</summary>
+public enum CurrentMark
+{
+    /// <summary>Not the page's own title: no mark.</summary>
+    None,
+
+    /// <summary>An episode among its season's: an accent ring and "Now Viewing" top left, as the web's <c>EpisodeCarousel</c>.</summary>
+    NowViewing,
+
+    /// <summary>
+    /// A movie among its box set's films: a light ring and "This film" at the poster's foot, as the web's <c>MovieBoxSetRow</c>.
+    /// Its card offers no actions, as the apps' rows leave its menu out: the page's own buttons hold its state.
+    /// </summary>
+    ThisFilm,
 }
