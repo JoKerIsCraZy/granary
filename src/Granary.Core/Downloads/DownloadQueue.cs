@@ -79,6 +79,9 @@ public sealed partial class DownloadQueue : IDisposable
     // Downloads whose files a new revision replaces: nothing starts them meanwhile.
     private readonly HashSet<Key> _resetting = [];
 
+    // Removed downloads' folders the server work found still there: their deletes wait for the next folder recheck.
+    private readonly HashSet<string> _heldFolders = new(StringComparer.OrdinalIgnoreCase);
+
     // One reconcile at a time, the loop's, the server work's or a caller's.
     private readonly SemaphoreSlim _reconciling = new(1, 1);
     private Capability? _capability;

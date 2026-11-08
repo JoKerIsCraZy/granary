@@ -462,6 +462,10 @@ public sealed partial class DownloadQueue
         }
         foreach (var delete in _store.PendingDeletes(scope).Where(d => IsSendable(scope, d)))
         {
+            if (IsFolderStillThere(scope, delete))
+            {
+                continue;
+            }
             try
             {
                 await _api.DeleteAsync(server, scope.ProfileId, delete.DownloadId, stop).ConfigureAwait(false);
@@ -489,9 +493,34 @@ public sealed partial class DownloadQueue
         }
     }
 
-    // A delete whose folder is gone, or on a drive that is not there: it reads the disk, on the loop's or the server work's thread.
-    private bool IsSendable(DownloadScope scope, PendingDelete delete) =>
-        _store.FolderBeingDeleted(scope, delete.DownloadId) is not { } folder || !Directory.Exists(folder);
+    // A delete whose folder is not known to be held: none is left to delete, or the server work has not found it still there
+    // since the last folder recheck. It reads no disk, so the loop can ask.
+    private bool IsSendable(DownloadScope scope, PendingDelete delete)
+    {
+        if (_store.FolderBeingDeleted(scope, delete.DownloadId) is not { } folder)
+        {
+            return true;
+        }
+        lock (_gate)
+        {
+            return !_heldFolders.Contains(folder);
+        }
+    }
+
+    // On the server work's thread: the delete's folder is still there (held, as by a file another program has open), so its
+    // delete waits for a folder recheck; a folder on a drive that is not there does not hold it back.
+    private bool IsFolderStillThere(DownloadScope scope, PendingDelete delete)
+    {
+        if (_store.FolderBeingDeleted(scope, delete.DownloadId) is not { } folder || !Directory.Exists(folder))
+        {
+            return false;
+        }
+        lock (_gate)
+        {
+            _heldFolders.Add(folder);
+        }
+        return true;
+    }
 
     // A failure of a request to the server, not a bug: an answer, no answer, an answer that is no Silo answer, a profile switch
     // or a timeout of the HTTP client.

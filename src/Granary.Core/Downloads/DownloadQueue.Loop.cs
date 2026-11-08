@@ -163,11 +163,21 @@ public sealed partial class DownloadQueue
             _lastRecheck = now;
         }
         _store.RecheckFolders();
+        ForgetHeldFolders();
         var work = _store.FolderWork;
         if (!work.IsCompleted)
         {
             _ = work.ContinueWith(static (done, state) => ((DownloadQueue)state!).OnFolderWorkDone(done), this, CancellationToken.None,
                 TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+        }
+    }
+
+    // A recheck deletes held folders again: whether they are still there is for the server work to find out once more.
+    private void ForgetHeldFolders()
+    {
+        lock (_gate)
+        {
+            _heldFolders.Clear();
         }
     }
 
@@ -177,6 +187,7 @@ public sealed partial class DownloadQueue
         {
             _logger.LogWarning("Deleting removed downloads' folders failed ({Failure})", DownloadLog.Failure(work.Exception!.GetBaseException()));
         }
+        ForgetHeldFolders();
         Wake();
     }
 

@@ -494,6 +494,27 @@ public sealed class DownloadQueueServerTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task ADeleteWhoseFolderIsHeld_GoesOnceTheRecheckDeletedTheFolder()
+    {
+        var stored = await _h.AddAsync("dl_1", DownloadState.Completed);
+        var queue = _h.StartQueue();
+        await IdleAsync(queue);
+        await using (new FileStream(System.IO.Path.Combine(stored.Folder, "media.mkv"), FileMode.Create, FileAccess.Write, FileShare.None))
+        {
+            await _h.Store.RemoveAsync(Scope7, "dl_1", queueServerDelete: true, Token);
+            await IdleAsync(queue);
+            await IdleAsync(queue);
+            Assert.Empty(_h.Silo.SentTo(HttpMethod.Delete, EntryPath("dl_1")));
+        }
+
+        _h.Time.Advance(DownloadQueue.FolderRecheck);
+
+        await Until(() => _h.Store.PendingDeletes(Scope7).Count == 0, "the delete went");
+        Assert.False(Directory.Exists(stored.Folder));
+        Assert.Single(_h.Silo.SentTo(HttpMethod.Delete, EntryPath("dl_1")));
+    }
+
+    [Fact]
     public async Task ADeleteRefusedForTheSignIn_IsKeptAndSentLater()
     {
         await _h.AddAsync("dl_1", DownloadState.Completed);
