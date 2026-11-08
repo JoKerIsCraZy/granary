@@ -113,6 +113,9 @@ public sealed partial class DownloadQueue : IDisposable
     private bool _disposed;
     private long _passes;
 
+    // What the link and the settings last said (ReadWaitsForUnmetered).
+    private volatile bool _waitsForUnmetered;
+
     // The loop's own: whether the store was read, the scope it last ran, whether that scope's downloads can run, when a pass
     // that failed is tried again, and the activation under way or failed.
     private bool _loaded;
@@ -139,8 +142,11 @@ public sealed partial class DownloadQueue : IDisposable
     /// <summary>A download's bytes on disk changed; raised on a transfer's thread, at most every half second for each.</summary>
     public event EventHandler<string>? Progressed;
 
-    /// <summary>Downloads wait now because the connection is metered and Settings → Downloads does not allow it.</summary>
-    public bool IsWaitingForUnmetered => _network.Current.IsMetered && !_preferences.DownloadsOnMetered;
+    /// <summary>
+    /// Downloads wait now because the connection is metered and Settings → Downloads does not allow it, as the queue last
+    /// read it (at each pass and each change of the link or the settings). It asks the system nothing, so the UI thread can.
+    /// </summary>
+    public bool IsWaitingForUnmetered => _waitsForUnmetered;
 
     /// <summary>For tests: done once the loop waits with nothing to do, no transfer running, no server work and no folder recheck.</summary>
     internal Task Idle
@@ -327,10 +333,13 @@ public sealed partial class DownloadQueue : IDisposable
         }
     }
 
+    // Asks the link (a system call: never on the UI thread) and the settings whether downloads wait, and keeps the answer.
+    private bool ReadWaitsForUnmetered() => _waitsForUnmetered = _network.Current.IsMetered && !_preferences.DownloadsOnMetered;
+
     // The link or the settings: on a metered link without the setting, everything stops.
     private void OnConditionsChanged(object? sender, EventArgs e)
     {
-        bool waits = IsWaitingForUnmetered;
+        bool waits = ReadWaitsForUnmetered();
         lock (_gate)
         {
             if (waits)

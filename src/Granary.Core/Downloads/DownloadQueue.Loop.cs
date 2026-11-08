@@ -146,7 +146,7 @@ public sealed partial class DownloadQueue
         }
         _activeScope = scope;
         _runnable = true;
-        if (!IsWaitingForUnmetered)
+        if (!ReadWaitsForUnmetered())
         {
             StartingTransfers?.Invoke();
             StartTransfers(scope, server, generation);
@@ -388,7 +388,7 @@ public sealed partial class DownloadQueue
         // A removed download's folder something holds or whose drive is away, of any profile and with a server delete or
         // without: a recheck tries it again when it is due (and a delete waiting for it goes after).
         var folderDelete = _store.NextFolderDeleteAt;
-        bool metered = runnable && IsWaitingForUnmetered;
+        bool metered = runnable && ReadWaitsForUnmetered();
         DateTimeOffset? next = _passRetryAt;
         if (_activationRetry is { } activation)
         {

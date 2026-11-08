@@ -364,6 +364,24 @@ public sealed class DownloadManagerTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task Items_AskTheSystemNothing_AndSayWhatTheLinkLastSaid()
+    {
+        await _h.AddAsync("dl_1", change: r => r with { IsPausedByViewer = true });
+        var queue = _h.StartQueue();
+        var manager = _h.NewManager(queue);
+        _h.Network.SetMetered(true);
+        await SettleAsync(queue);
+        int reads = _h.Network.Reads;
+
+        var item = manager.ForItem("mv_1");
+        var items = manager.Items;
+
+        Assert.Equal(reads, _h.Network.Reads);
+        Assert.True(item!.WaitsForUnmetered);
+        Assert.True(Assert.Single(items).WaitsForUnmetered);
+    }
+
+    [Fact]
     public async Task WithoutAProfile_NothingStarts()
     {
         _h.SignOut();

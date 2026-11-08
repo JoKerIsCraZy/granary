@@ -145,13 +145,21 @@ internal sealed class FakeHttpClients(HttpMessageHandler handler) : IHttpClientF
 internal sealed class FakeNetworkLink : INetworkLink
 {
     private NetworkLink _current = new(NetworkTransports.Ethernet, false);
+    private int _reads;
 
     /// <summary>When set, reading <see cref="Current"/> throws it, as a system call that failed.</summary>
     public Exception? Fails { get; set; }
 
+    /// <summary>How often <see cref="Current"/> was read: each read is a system call in the app.</summary>
+    public int Reads => Volatile.Read(ref _reads);
+
     public NetworkLink Current
     {
-        get => Fails is { } failure ? throw failure : _current;
+        get
+        {
+            Interlocked.Increment(ref _reads);
+            return Fails is { } failure ? throw failure : _current;
+        }
         set => _current = value;
     }
 
