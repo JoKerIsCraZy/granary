@@ -1228,9 +1228,11 @@ groups them (`silo-server/docs/catalog-api.md`, "Movie box sets"; `internal/apiv
   CatalogBoxSetDetail }`: the box set a movie's page shows, from `library_id` or the first of the movie's libraries with
   box sets on. `box_set` is absent (`{}`, a 200) when the movie is in none the viewer sees, and for a series; 404 for an
   id that is missing, hidden or not a catalog title. Granary asks only while one of the profile's libraries has
-  `box_sets_enabled` (`GET /api/v2/user/libraries`, read once per server and profile and again once five minutes old, the
-  web's staleTime; a failed read asks nothing), as the web's `useItemBoxSet` does, so a server with box sets off is not
-  asked on every movie page. It asks without `library_id`, since its title route carries none: the server then takes the
+  `box_sets_enabled`, as the web's `useItemBoxSet` does, so a server with box sets off is not asked on every movie page.
+  `BoxSetLibraries` reads `GET /api/v2/user/libraries` (the server's list, as the web's `useAvailableUserLibraries`: a
+  library the profile hid from its sidebar still counts) once per server and profile for every page that asks meanwhile,
+  and keeps the answer five minutes (the web's staleTime) unless the session changes or the answer came while another
+  profile acted. A read gives up after 30 s; any failure asks nothing and is not kept. It asks without `library_id`, since its title route carries none: the server then takes the
   first of the movie's libraries with box sets on, while the web passes the library the movie is being viewed in. A 404
   or any failure only leaves the row out, unlogged for a 404.
 - `GET /api/v2/catalog/box-sets/{id}?library_id=` (`getCatalogBoxSet`, `library_id` required, image params) →

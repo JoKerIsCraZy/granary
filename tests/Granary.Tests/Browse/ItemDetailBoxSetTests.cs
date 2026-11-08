@@ -2,6 +2,7 @@ using Granary.Core.Abstractions;
 using Granary.Core.Api.Catalog;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Cards;
+using Granary.Core.ViewModels.Detail;
 using Granary.Tests.Profiles;
 using static Granary.Tests.Browse.ItemDetailFixture;
 using static Granary.Tests.Browse.ItemDetailPayloads;
@@ -16,7 +17,7 @@ public sealed class ItemDetailBoxSetTests
     public ItemDetailBoxSetTests()
     {
         _fixture.BoxSets = new BoxSetsApi(_fixture.Silo.Http);
-        _fixture.BoxSetLibraries = new BoxSetLibraries(new CatalogApi(_fixture.Silo.Http), new Fakes.ManualTimeProvider(),
+        _fixture.BoxSetLibraries = new BoxSetLibraries(new CatalogApi(_fixture.Silo.Http), _fixture.Session, new Fakes.ManualTimeProvider(),
             _fixture.Logs.For<BoxSetLibraries>());
         _fixture.Get(LibrariesPath, Ok(BoxSetPayloads.Libraries(boxSets: true)));
     }
@@ -47,6 +48,40 @@ public sealed class ItemDetailBoxSetTests
         Assert.Empty(_fixture.Silo.SentTo(HttpMethod.Get, BoxSetPath(MovieId)));
         Assert.Equal(ItemDetailState.Ready, detail.State);
         Assert.False(detail.HasBoxSet);
+    }
+
+    [Fact]
+    public async Task AnyFailureReadingTheLibraries_LeavesTheOtherRows()
+    {
+        // Not an HTTP failure: the sign-in's own steps can throw anything on the way out.
+        _fixture.Movie().Get(LibrariesPath, () => Task.FromException<HttpResponseMessage>(new InvalidOperationException("refresher failed")));
+
+        var detail = await _fixture.LoadAsync(MovieId);
+
+        Assert.Equal(ItemDetailState.Ready, detail.State);
+        Assert.True(detail.HasSimilar);
+        Assert.False(detail.HasBoxSet);
+        Assert.Empty(_fixture.Silo.SentTo(HttpMethod.Get, BoxSetPath(MovieId)));
+    }
+
+    [Fact]
+    public async Task AProfileSwitchDuringTheLoad_AsksForTheProfileThePageWasLoadedFor()
+    {
+        var (held, gate) = Held();
+        _fixture.Get(ItemPath(MovieId), held).Get(SimilarPath(MovieId), Ok(MovieSimilar)).Get(BoxSetPath(MovieId), Ok(BoxSetPayloads.ItemBoxSet));
+        var detail = _fixture.Create();
+        var load = detail.LoadCommand.ExecuteAsync(MovieId);
+
+        _fixture.Session.ProfileId = "8";
+        gate.SetResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+        {
+            Content = new StringContent(Movie, System.Text.Encoding.UTF8, "application/json"),
+        });
+        await load;
+
+        // The page's answer was for profile 7, so nothing is kept for 8, whose page then reads its own.
+        Assert.True(await _fixture.BoxSetLibraries!.AnyAsync(ScriptedSilo.Base, "8", TestContext.Current.CancellationToken));
+        Assert.Equal(2, _fixture.Silo.SentTo(HttpMethod.Get, LibrariesPath).Count);
     }
 
     [Fact]

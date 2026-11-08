@@ -39,20 +39,22 @@ public sealed partial class ItemDetailViewModel
         }
     }
 
-    private async Task LoadBoxSetAsync(Uri server, ImageParameters images, int generation, CancellationToken cancellationToken)
+    // The server and profile are the ones the page was loaded for, not whichever acts by the time the item came.
+    private async Task LoadBoxSetAsync(Uri server, string? profileId, ImageParameters images, int generation, CancellationToken cancellationToken)
     {
-        if (_boxSets is null || _boxSetLibraries is null || _session.ActiveServer is not { } entry)
+        if (_boxSets is null || _boxSetLibraries is null)
+        {
+            return;
+        }
+        // Only while a library has box sets on, as the web's useItemBoxSet: otherwise there is nothing to ask for. It answers
+        // no on any failure of its own.
+        if (!await _boxSetLibraries.AnyAsync(server, profileId, cancellationToken))
         {
             return;
         }
         CatalogBoxSetDetail? boxSet;
         try
         {
-            // Only while a library has box sets on, as the web's useItemBoxSet: otherwise there is nothing to ask for.
-            if (!await _boxSetLibraries.AnyAsync(entry, _session.ProfileId, cancellationToken))
-            {
-                return;
-            }
             boxSet = await _boxSets.GetForItemAsync(server, _contentId, images: images, cancellationToken: cancellationToken);
         }
         catch (Exception ex) when (LibraryErrors.IsExpected(ex))

@@ -381,7 +381,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
             }
             Show(item, server.BaseUri, profileId, ratingMark);
             State = ItemDetailState.Ready;
-            await LoadSectionsAsync(item, server.BaseUri, images, generation, cancellationToken);
+            await LoadSectionsAsync(item, server.BaseUri, profileId, images, generation, cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -520,7 +520,8 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         ShowOverview();
     }
 
-    private Task LoadSectionsAsync(CatalogItemDetail item, Uri server, ImageParameters images, int generation, CancellationToken cancellationToken) =>
+    private Task LoadSectionsAsync(CatalogItemDetail item, Uri server, string? profileId, ImageParameters images, int generation,
+        CancellationToken cancellationToken) =>
         item.Type switch
         {
             CatalogItemTypes.Series => Task.WhenAll(
@@ -528,7 +529,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
                 LoadSimilarAsync(item, server, images, generation, cancellationToken)),
             CatalogItemTypes.Movie => Task.WhenAll(
                 LoadSimilarAsync(item, server, images, generation, cancellationToken),
-                LoadBoxSetAsync(server, images, generation, cancellationToken)),
+                LoadBoxSetAsync(server, profileId, images, generation, cancellationToken)),
             CatalogItemTypes.Season => LoadSeasonEpisodesAsync(item, server, images, generation, cancellationToken),
             CatalogItemTypes.Episode => LoadEpisodeContextAsync(item, server, images, generation, cancellationToken),
             _ => Task.CompletedTask,
