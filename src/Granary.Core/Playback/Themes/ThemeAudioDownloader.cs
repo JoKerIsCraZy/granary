@@ -40,7 +40,10 @@ public sealed class ThemeAudioDownloader(IHttpClientFactory clients)
         UseCookies = false,
         AllowAutoRedirect = false,
         AutomaticDecompression = DecompressionMethods.None,
-        PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+        // A theme is one request. With either set to zero the handler keeps no connection for the next one, so a node's
+        // connection, checked against its rule as it opened, never serves a request made under another rule.
+        PooledConnectionLifetime = TimeSpan.Zero,
+        PooledConnectionIdleTimeout = TimeSpan.Zero,
         ConnectCallback = (context, cancellationToken) => ConnectAsync(context, resolve, cancellationToken),
     };
 

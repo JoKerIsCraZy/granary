@@ -1325,7 +1325,10 @@ plays its first theme, as the web's `useThemeMusic.ts` and the apps do (docs/arc
     on the request, `ThemeNode`): those it does not take are dropped, IPv6 forms carrying an IPv4 address included, and the
     connection goes to one that is left, or the fetch fails. TLS still checks the node's name. A node is reached directly,
     never through a system proxy, which would look the name up out of sight. The server's own origin is not checked so:
-    it connects as it resolves, wherever the server runs, on this PC (`http://localhost:8096`) or on the LAN.
+    it connects as it resolves, wherever the server runs, on this PC (`http://localhost:8096`) or on the LAN. The rule
+    runs as a connection opens, so the handler keeps none for a later request (`PooledConnectionLifetime` and
+    `PooledConnectionIdleTimeout` zero; either alone stops the reuse in .NET 10): each download opens its own, and a
+    node's connection checked under one server's rule never serves a request made under another's.
 
   Anything else is refused unsent. Granary fetches it whole (`ThemeAudioDownloader`: no
   credentials, cookies or redirects, the body as sent, 60 s, at most 32 MB, as the Apple app reads a converted theme), on a

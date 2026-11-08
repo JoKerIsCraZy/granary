@@ -411,6 +411,105 @@ public sealed class ThemeSongsApiTests
     }
 
     [Fact]
+    public async Task EveryThemeDownload_OpensAConnectionOfItsOwn_SoNoRuleOutlivesItsRequest()
+    {
+        await using var silo = new KeepAliveServer([7, 8, 9]);
+        var server = new Uri($"http://127.0.0.1:{silo.Port}/");
+        var (downloader, _) = ResolvingTo("203.0.113.7");
+
+        await downloader.DownloadAsync(server, Parsed(Grant()), ThemeOrigins.Authorized, _token);
+        await downloader.DownloadAsync(server, Parsed(Grant()), ThemeOrigins.Authorized, _token);
+
+        Assert.Equal(2, silo.Requests);
+        Assert.Equal(2, silo.Connections);
+    }
+
+    // A loopback HTTP/1.1 server that keeps each connection open for the next request, and counts both.
+    private sealed class KeepAliveServer : IAsyncDisposable
+    {
+        private readonly System.Net.Sockets.TcpListener _listener = new(IPAddress.Loopback, 0);
+        private readonly CancellationTokenSource _stop = new();
+        private readonly byte[] _body;
+        private readonly Task _loop;
+        private int _connections;
+        private int _requests;
+
+        public KeepAliveServer(byte[] body)
+        {
+            _body = body;
+            _listener.Start();
+            _loop = AcceptAsync();
+        }
+
+        public int Port => ((IPEndPoint)_listener.LocalEndpoint).Port;
+
+        public int Connections => Volatile.Read(ref _connections);
+
+        public int Requests => Volatile.Read(ref _requests);
+
+        private async Task AcceptAsync()
+        {
+            while (!_stop.IsCancellationRequested)
+            {
+                System.Net.Sockets.TcpClient client;
+                try
+                {
+                    client = await _listener.AcceptTcpClientAsync(_stop.Token);
+                }
+                catch (Exception ex) when (ex is OperationCanceledException or ObjectDisposedException or System.Net.Sockets.SocketException)
+                {
+                    return;
+                }
+                Interlocked.Increment(ref _connections);
+                _ = ServeAsync(client);
+            }
+        }
+
+        private async Task ServeAsync(System.Net.Sockets.TcpClient client)
+        {
+            using (client)
+            {
+                var stream = client.GetStream();
+                var buffer = new byte[8192];
+                var head = new System.Text.StringBuilder();
+                try
+                {
+                    while (!_stop.IsCancellationRequested)
+                    {
+                        int read = await stream.ReadAsync(buffer, _stop.Token);
+                        if (read == 0)
+                        {
+                            return;
+                        }
+                        head.Append(System.Text.Encoding.ASCII.GetString(buffer, 0, read));
+                        while (head.ToString().IndexOf("\r\n\r\n", StringComparison.Ordinal) is var end and >= 0)
+                        {
+                            head.Remove(0, end + 4);
+                            Interlocked.Increment(ref _requests);
+                            byte[] answer = System.Text.Encoding.ASCII.GetBytes(
+                                $"HTTP/1.1 200 OK\r\nContent-Type: audio/mpeg\r\nContent-Length: {_body.Length}\r\n\r\n");
+                            await stream.WriteAsync(answer, _stop.Token);
+                            await stream.WriteAsync(_body, _stop.Token);
+                        }
+                    }
+                }
+                catch (Exception ex) when (ex is IOException or OperationCanceledException or System.Net.Sockets.SocketException)
+                {
+                    // The client hung up.
+                }
+            }
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            await _stop.CancelAsync();
+            _listener.Stop();
+            await _loop;
+            _stop.Dispose();
+        }
+    }
+
+    [Fact]
     public async Task AServerOnThisPC_StillFetchesItsOwnTheme_AsItResolves()
     {
         await using var silo = new TinyHttpServer(200, "OK", [7, 8, 9], "audio/mpeg");
