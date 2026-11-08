@@ -35,12 +35,12 @@ public sealed class ThemeAudioDownloader(IHttpClientFactory clients)
         PooledConnectionLifetime = TimeSpan.FromMinutes(5),
     };
 
-    /// <param name="routed">The server's capability says themes are routed, so a grant may name a proxy node's origin.</param>
+    /// <param name="origins">Where the server lets the audio come from: its own origin, or also a proxy node's.</param>
     /// <exception cref="HttpRequestException">The URL is not one Granary fetches, or the answer is not a theme.</exception>
-    public async Task<ThemeAudioSource> DownloadAsync(Uri server, ThemePlayback grant, bool routed, CancellationToken cancellationToken)
+    public async Task<ThemeAudioSource> DownloadAsync(Uri server, ThemePlayback grant, ThemeOrigins origins, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(grant);
-        var url = PlaybackUrl.ResolveTheme(server, grant.Url, routed)
+        var url = PlaybackUrl.ResolveTheme(server, grant.Url, origins)
             ?? throw new HttpRequestException(HttpRequestError.InvalidResponse, "The server named a theme address Granary does not fetch.");
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(Timeout);

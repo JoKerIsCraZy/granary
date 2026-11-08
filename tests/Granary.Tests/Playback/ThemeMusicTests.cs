@@ -101,6 +101,35 @@ public sealed class ThemeMusicTests
         }
     }
 
+    [Theory]
+    [InlineData("""{ "revision": "r", "state": "available", "allowed": true, "features": ["authorized_media_origins_v1"] }""", true)]
+    [InlineData("""{ "revision": "r", "state": "available", "allowed": true, "features": [] }""", false)]
+    [InlineData(null, false)]
+    public async Task AProxyNodeOnAPrivateAddress_IsFetched_WhenTheServerAuthorizesMediaOrigins(string? playbackCapabilities, bool fetched)
+    {
+        var rig = new ThemeMusicRig();
+        rig.Harness.Answer(ThemeMusicRig.PlaybackCapabilitiesPath, playbackCapabilities is null
+            ? ScriptedSilo.Problem(503, "dependency_unavailable")
+            : ScriptedSilo.Json(HttpStatusCode.OK, playbackCapabilities));
+        rig.Harness.Silo.On(HttpMethod.Post, ThemeSongsApiTests.PlaybackPath("movie-1", "11"),
+            ScriptedSilo.Json(HttpStatusCode.OK, ThemeSongsApiTests.Grant("https://192.168.1.20/stream/theme/abc")));
+        await rig.StartedAsync();
+
+        rig.Music.Show(_page, Set("movie-1", "11"));
+
+        await AuthPipeline.Eventually(() => rig.GrantsAsked("movie-1", "11") >= 1);
+        if (fetched)
+        {
+            await AuthPipeline.Eventually(() => rig.Output.Made.Count == 1);
+            Assert.Equal("https://192.168.1.20/stream/theme/abc", Assert.Single(rig.Download.Requests).RequestUri!.AbsoluteUri);
+        }
+        else
+        {
+            Assert.Empty(rig.Download.Requests);
+            Assert.Empty(rig.Output.Made);
+        }
+    }
+
     [Fact]
     public async Task AnUnforeseenFailureReadingTheCapability_IsLoggedByItsType_AndTheNextPageAsksAgain()
     {

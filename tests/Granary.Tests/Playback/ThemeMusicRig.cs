@@ -1,6 +1,7 @@
 using System.Net;
 using Granary.Core.Abstractions;
 using Granary.Core.Api.Catalog;
+using Granary.Core.Api.Playback;
 using Granary.Core.Playback.Themes;
 using Granary.Core.Settings;
 using Granary.Tests.Browse;
@@ -20,6 +21,7 @@ internal sealed class ThemeMusicRig
     {
         Harness.Answer(TitlePageSettingsTests.EffectivePath, TitlePageSettingsTests.Answer(themeMusic: themeMusic, loop: loop));
         Harness.Answer(ThemeSongsApiTests.CapabilityPath, ThemeSongsApiTests.Available);
+        Harness.Answer(PlaybackCapabilitiesPath, """{ "revision": "r", "state": "available", "allowed": true, "features": [] }""");
         foreach (string key in new[] { TitlePageSettings.ThemeMusicKey, TitlePageSettings.ThemeMusicLoopKey })
         {
             Harness.Silo.On(HttpMethod.Put, "api/v2/settings/values/" + key, ScriptedSilo.NoContent());
@@ -29,9 +31,13 @@ internal sealed class ThemeMusicRig
         Grants("movie-2", "31");
         Download = new FakeHttpMessageHandler((_, _) => Task.FromResult(DownloadAnswer()));
         Settings = TitlePageSettingsTests.Create(Harness);
-        Music = new ThemeMusic(Harness.Session, Settings, new ThemesApi(Harness.Silo.Http), new ThemeAudioDownloader(new FakeHttpClients(Download)),
+        Music = new ThemeMusic(Harness.Session, Settings, new ThemesApi(Harness.Silo.Http), new PlaybackApi(Harness.Silo.Http),
+            new ThemeAudioDownloader(new FakeHttpClients(Download)),
             Output, dispatcher ?? new ImmediateDispatcher(), Clock, Harness.Logs.For<ThemeMusic>());
     }
+
+    /// <summary>Whether the server authorizes media origins: none unless a test answers otherwise.</summary>
+    public const string PlaybackCapabilitiesPath = "api/v2/playback/capabilities";
 
     public LibraryHarness Harness { get; } = new();
 

@@ -2,6 +2,7 @@ using System.ComponentModel;
 using Granary.Core.Abstractions;
 using Granary.Core.Api;
 using Granary.Core.Api.Catalog;
+using Granary.Core.Api.Playback;
 using Granary.Core.Auth;
 using Granary.Core.Settings;
 using Granary.Core.ViewModels;
@@ -36,6 +37,7 @@ public sealed class ThemeMusic : IDisposable
     private readonly ISessionManager _session;
     private readonly TitlePageSettings _settings;
     private readonly ThemesApi _api;
+    private readonly PlaybackApi _playback;
     private readonly ThemeAudioDownloader _downloader;
     private readonly IThemeAudioOutput _output;
     private readonly IUiDispatcher _dispatcher;
@@ -53,17 +55,19 @@ public sealed class ThemeMusic : IDisposable
     private int _identityVersion;
     private bool? _available;
     private long _availableAt;
-    // The answer says themes are routed: a grant may name a proxy node's origin.
-    private bool _routed;
+    // Where the answer lets a grant's audio come from: the server's own origin, or also a proxy node's.
+    private ThemeOrigins _origins;
     private bool _readingCapability;
     private bool _disposed;
 
-    public ThemeMusic(ISessionManager session, TitlePageSettings settings, ThemesApi api, ThemeAudioDownloader downloader,
-        IThemeAudioOutput output, IUiDispatcher dispatcher, TimeProvider time, ILogger<ThemeMusic> logger)
+    public ThemeMusic(ISessionManager session, TitlePageSettings settings, ThemesApi api, PlaybackApi playback,
+        ThemeAudioDownloader downloader, IThemeAudioOutput output, IUiDispatcher dispatcher, TimeProvider time,
+        ILogger<ThemeMusic> logger)
     {
         _session = session;
         _settings = settings;
         _api = api;
+        _playback = playback;
         _downloader = downloader;
         _output = output;
         _dispatcher = dispatcher;
@@ -244,12 +248,16 @@ public sealed class ThemeMusic : IDisposable
         }
         _readingCapability = true;
         int version = _identityVersion;
-        ThemeSongsCapability? capability = null;
         bool? available = null;
+        var origins = ThemeOrigins.Server;
         try
         {
-            capability = await _api.GetCapabilityAsync(server.BaseUri);
+            var capability = await _api.GetCapabilityAsync(server.BaseUri);
             available = capability.IsAvailable;
+            if (available == true && capability.IsRouted)
+            {
+                origins = await RoutedOriginsAsync(server.BaseUri);
+            }
         }
         catch (SiloApiException ex) when (ex.Status == 404)
         {
@@ -281,9 +289,25 @@ public sealed class ThemeMusic : IDisposable
         {
             // A failed read keeps the answer before and is tried with the next page, never in a loop.
             _available = answer;
-            _routed = capability?.IsRouted == true;
+            _origins = origins;
             _availableAt = _time.GetTimestamp();
             Apply();
+        }
+    }
+
+    // Routed themes may come from a proxy node. A server whose playback offers authorized_media_origins_v1 vouches for its
+    // nodes, as for video; one that does not, or a read that fails, has them checked conservatively.
+    private async Task<ThemeOrigins> RoutedOriginsAsync(Uri server)
+    {
+        try
+        {
+            var playback = await _playback.GetCapabilitiesAsync(server);
+            return playback.HasFeature(PlaybackFeatures.AuthorizedMediaOriginsV1) ? ThemeOrigins.Authorized : ThemeOrigins.Routed;
+        }
+        catch (Exception ex) when (ApiFailureText.IsRequestFailure(ex))
+        {
+            _logger.LogInformation("Reading whether the server vouches for its media origins failed: {Failure}", ApiFailureText.Describe(ex));
+            return ThemeOrigins.Routed;
         }
     }
 
@@ -312,7 +336,7 @@ public sealed class ThemeMusic : IDisposable
             {
                 return Dropped();
             }
-            var audio = await _downloader.DownloadAsync(server.BaseUri, grant, _routed, cancellationToken);
+            var audio = await _downloader.DownloadAsync(server.BaseUri, grant, _origins, cancellationToken);
             return Identity() == identity ? audio : Dropped();
         }
         catch (Exception ex) when (ex is ArgumentException || ApiFailureText.IsRequestFailure(ex, cancellationToken))
@@ -337,7 +361,7 @@ public sealed class ThemeMusic : IDisposable
         _identity = Identity();
         _identityVersion++;
         _available = null;
-        _routed = false;
+        _origins = ThemeOrigins.Server;
         _readingCapability = false;
         Stop(immediate: true);
     }

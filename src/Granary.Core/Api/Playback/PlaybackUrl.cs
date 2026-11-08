@@ -62,25 +62,32 @@ public static class PlaybackUrl
     }
 
     /// <summary>
-    /// A theme grant's audio URL (docs/api-contract.md 7.19): on the saved server as <see cref="Resolve"/> takes it, or, only
-    /// while the server's capability says themes are <paramref name="routed"/>, on a proxy node's origin: the server's own
-    /// scheme, no user info, no fragment, and a public address, never this machine, a private, unique-local or link-local
-    /// one, nor one of those written as an IPv4-mapped IPv6 address. It carries its own token, so it is fetched without
-    /// credentials.
+    /// A theme grant's audio URL (docs/api-contract.md 7.19): on the saved server as <see cref="Resolve"/> takes it, or, while
+    /// <paramref name="origins"/> lets one, on a proxy node's origin, decided as a video stream's is
+    /// (<c>authorized_media_origins_v1</c>, <see cref="ResolveStream"/>): the server's own scheme, no user info, no fragment, and
+    /// never this machine, a link-local, multicast or unspecified address, also written as an IPv4-mapped IPv6 one. A server
+    /// that authorizes media origins vouches for the node, a private address included; without that, a private or
+    /// unique-local node is taken only from a server that is on a private network itself. It carries its own token, so it is
+    /// fetched without credentials.
     /// </summary>
-    public static Uri? ResolveTheme(Uri server, string? value, bool routed)
+    public static Uri? ResolveTheme(Uri server, string? value, ThemeOrigins origins)
     {
         ArgumentNullException.ThrowIfNull(server);
         if (Resolve(server, value) is { } onServer)
         {
             return IsPlain(onServer.OriginalString) ? onServer : null;
         }
-        if (!routed || !IsElsewhere(server, value) || !IsPlain(value!) || !Uri.TryCreate(value, UriKind.Absolute, out var node))
+        if (origins == ThemeOrigins.Server || !IsElsewhere(server, value) || !IsPlain(value!)
+            || !Uri.TryCreate(value, UriKind.Absolute, out var node))
         {
             return null;
         }
-        bool valid = node.Scheme == server.Scheme && node.UserInfo.Length == 0 && node.Fragment.Length == 0 && IsRemote(node) && IsPublic(node);
-        return valid ? new Uri(node.AbsoluteUri) : null;
+        if (node.Scheme != server.Scheme || node.UserInfo.Length > 0 || node.Fragment.Length > 0 || !IsRemote(node) || IsThisPC(node))
+        {
+            return null;
+        }
+        bool vouched = origins == ThemeOrigins.Authorized || !IsPrivate(node) || IsPrivate(server);
+        return vouched ? new Uri(node.AbsoluteUri) : null;
     }
 
     /// <summary>An absolute HTTP URL that is not on the saved server: a proxy node's, or one the client refuses.</summary>
@@ -127,33 +134,51 @@ public static class PlaybackUrl
         return !ipv4LinkLocal && !address.IsIPv6LinkLocal && !unspecified && !multicast;
     }
 
-    // An address literal on the public internet: an IPv4-mapped IPv6 address is checked as the IPv4 address it is. A name is
-    // not looked up; it is the server that hands it out.
-    private static bool IsPublic(Uri node)
+    // Never a theme's node, whoever names it: this machine, a link-local, multicast or unspecified address, also written as an
+    // IPv4-mapped IPv6 address, which IsRemote reads as IPv6.
+    private static bool IsThisPC(Uri node)
     {
-        if (!IPAddress.TryParse(node.Host.Trim('[', ']'), out var address))
-        {
-            return true;
-        }
-        if (address.IsIPv4MappedToIPv6)
-        {
-            address = address.MapToIPv4();
-        }
-        if (IPAddress.IsLoopback(address) || address.Equals(IPAddress.Any) || address.Equals(IPAddress.IPv6Any))
+        if (Literal(node) is not { } address)
         {
             return false;
         }
         byte[] bytes = address.GetAddressBytes();
+        bool unspecified = address.Equals(IPAddress.Any) || address.Equals(IPAddress.IPv6Any) || (bytes.Length == 4 && bytes[0] == 0);
+        bool linkLocal = (bytes.Length == 4 && bytes[0] == 169 && bytes[1] == 254) || address.IsIPv6LinkLocal;
+        bool multicast = (bytes.Length == 4 && bytes[0] >= 224) || address.IsIPv6Multicast;
+        return IPAddress.IsLoopback(address) || unspecified || linkLocal || multicast;
+    }
+
+    // On a private network: a private (RFC 1918), shared (100.64/10) or unique-local address, or a name only a LAN resolves
+    // (one label, .local, .lan, .internal, .home.arpa). Another name is not looked up, and counts as public.
+    private static bool IsPrivate(Uri uri)
+    {
+        if (Literal(uri) is not { } address)
+        {
+            string host = uri.Host.TrimEnd('.');
+            return !host.Contains('.', StringComparison.Ordinal)
+                || host.EndsWith(".local", StringComparison.OrdinalIgnoreCase)
+                || host.EndsWith(".lan", StringComparison.OrdinalIgnoreCase)
+                || host.EndsWith(".internal", StringComparison.OrdinalIgnoreCase)
+                || host.EndsWith(".home.arpa", StringComparison.OrdinalIgnoreCase);
+        }
+        byte[] bytes = address.GetAddressBytes();
         if (bytes.Length == 4)
         {
-            bool privateRange = bytes[0] == 10 || (bytes[0] == 172 && bytes[1] is >= 16 and <= 31) || (bytes[0] == 192 && bytes[1] == 168);
-            bool sharedRange = bytes[0] == 100 && bytes[1] is >= 64 and <= 127;
-            bool linkLocal = bytes[0] == 169 && bytes[1] == 254;
-            bool multicast = bytes[0] is >= 224;
-            return !privateRange && !sharedRange && !linkLocal && !multicast && bytes[0] != 0;
+            return bytes[0] == 10 || (bytes[0] == 172 && bytes[1] is >= 16 and <= 31) || (bytes[0] == 192 && bytes[1] == 168)
+                || (bytes[0] == 100 && bytes[1] is >= 64 and <= 127);
         }
-        bool uniqueLocal = (bytes[0] & 0xFE) == 0xFC;
-        return !uniqueLocal && !address.IsIPv6LinkLocal && !address.IsIPv6SiteLocal && !address.IsIPv6Multicast;
+        return (bytes[0] & 0xFE) == 0xFC || address.IsIPv6SiteLocal;
+    }
+
+    // The host as an address, an IPv4-mapped IPv6 one as the IPv4 address it is; null for a name.
+    private static IPAddress? Literal(Uri uri)
+    {
+        if (!IPAddress.TryParse(uri.Host.Trim('[', ']'), out var address))
+        {
+            return null;
+        }
+        return address.IsIPv4MappedToIPv6 ? address.MapToIPv4() : address;
     }
 
     private static bool IsSeekOnly(string query) =>

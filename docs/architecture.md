@@ -742,8 +742,9 @@ A title page plays its local theme music while Settings → Title Pages → Them
 
 - **`ThemeMusic`** (Core, a singleton) decides when. A title page's view model shows it a token of its own with the page's
   themes (none while it loads) and hides it as the page leaves; it never holds the page. Nothing plays unless the acting
-  profile's own settings say so and the server's capability says themes are available (read again once a minute old). A page
-  that leaves or loads fades its theme out and pauses it; two seconds later (`ReleaseGrace`) the theme is let go, unless a
+  profile's own settings say so and the server's capability says themes are available (read again once a minute old; when
+  they are routed, with whether the server authorizes media origins, which decides the proxy nodes a theme may come from,
+  `ThemeOrigins`). A page that leaves or loads fades its theme out and pauses it; two seconds later (`ReleaseGrace`) the theme is let go, unless a
   page shows the same theme again, as a season with its series' set does, which goes on where it was. While the player
   holds a title, over the window or as its bar, or a trailer is open, the theme stops at once and starts over after
   (`OtherMediaPlaying`, which MainWindow sets once the window's turn is done, so a player taking over from a trailer does not

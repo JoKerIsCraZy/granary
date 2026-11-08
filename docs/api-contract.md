@@ -1305,9 +1305,20 @@ plays its first theme, as the web's `useThemeMusic.ts` and the apps do (docs/arc
   server sends the original when it matches and otherwise converts it to AAC in audio-only MP4 (`converted`), or answers
   `406` when it cannot. A grant answered after the profile changed is dropped.
 - `url` is a short-lived credential: relative to the server, or, only while the capability says `routed`, absolute on a
-  proxy node's origin (`PlaybackUrl.ResolveTheme`): the server's own scheme, no user info, and a public address, never this
-  machine, a private, shared, unique-local or link-local one, nor one of those written as an IPv4-mapped IPv6 address (a
-  host name is not looked up). Anything else is refused unsent. Granary fetches it whole (`ThemeAudioDownloader`: no
+  proxy node's origin (on the node, `/stream/theme/{token}`; `PlaybackUrl.ResolveTheme`, `ThemeOrigins`). A node is taken as
+  a video stream's is (9.1, `authorized_media_origins_v1`):
+  - Always: the server's own scheme, no user info, no fragment, and never this machine, a link-local, multicast or
+    unspecified address, also written as an IPv4-mapped IPv6 address.
+  - While the server's playback capabilities (`GET /api/v2/playback/capabilities`, read with the themes capability when it
+    says `routed`) offer `authorized_media_origins_v1`, the server vouches for the nodes it names, as for video: any
+    other address is taken, a private one included. The server names no list of its origins; the offer is the check, as
+    it is for a video attempt.
+  - Otherwise, or when that read fails: a public address or a host name is taken (a name is not looked up), and a
+    private (RFC 1918), shared (100.64/10) or unique-local node only while the server's own address is on a private
+    network too (such an address, one label, `.local`, `.lan`, `.internal`, `.home.arpa`): a proxy at `192.168.1.20` beside
+    a server at `192.168.1.10` plays, the same address named by a server on the internet does not.
+
+  Anything else is refused unsent. Granary fetches it whole (`ThemeAudioDownloader`: no
   credentials, cookies or redirects, the body as sent, 60 s, at most 32 MB, as the Apple app reads a converted theme), on a
   client that logs nothing, and hands only the bytes to the player. It never logs or keeps the URL; a failure is logged by
   its status or kind alone.
