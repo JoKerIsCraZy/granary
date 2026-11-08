@@ -52,20 +52,55 @@ public sealed partial class WatchPartyFeature : ObservableObject
             return;
         }
         _readFor = key;
+        bool taken = false;
         try
         {
             var capabilities = await _api.GetCapabilitiesAsync(server.BaseUri, cancellationToken);
+            if (!IsStill(key))
+            {
+                return;
+            }
+            // Read for this server and profile now, also when another's read began meanwhile.
+            _readFor = key;
             Capabilities = capabilities;
             IsAvailable = capabilities.IsAvailable;
             _failed = null;
+            taken = true;
         }
         catch (Exception ex) when (LibraryErrors.IsExpected(ex) && !cancellationToken.IsCancellationRequested)
         {
             _logger.LogWarning(ex, "Could not read whether the server offers Watch Party");
+            if (!IsStill(key))
+            {
+                return;
+            }
             _readFor = null;
             _failed = (key, _time.GetUtcNow());
             IsAvailable = false;
             Capabilities = null;
         }
+        finally
+        {
+            // A read that did not go through (an unexpected failure, a cancelled call) is not a read: the next refresh
+            // reads again, rather than the entry staying away until another profile or server.
+            if (!taken && _readFor == key)
+            {
+                _readFor = null;
+            }
+        }
+    }
+
+    // An answer for the server and profile before is not this one's; the one before, picked again, is read again.
+    private bool IsStill((string? ServerId, string? ProfileId) key)
+    {
+        if ((_session.ActiveServer?.Id, _session.ProfileId) == key)
+        {
+            return true;
+        }
+        if (_readFor == key)
+        {
+            _readFor = null;
+        }
+        return false;
     }
 }

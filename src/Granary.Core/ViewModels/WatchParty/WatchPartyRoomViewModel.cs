@@ -314,6 +314,13 @@ public sealed partial class WatchPartyRoomViewModel : ObservableObject
     /// <summary>The page copied the code or link: it says so.</summary>
     public void Copied(string what) => Say(what);
 
+    /// <summary>The room was just started from a title's page: it says what happened on the way, as the web's toasts did.</summary>
+    public void Arrive(WatchPartyArrival arrival)
+    {
+        ArgumentNullException.ThrowIfNull(arrival);
+        Say(arrival.Notice);
+    }
+
     // True when the room took it.
     private async Task<bool> HostAsync(Func<Task> action, string failure)
     {

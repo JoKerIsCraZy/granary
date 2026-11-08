@@ -192,6 +192,7 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<WatchPartyFeature>();
         services.AddTransient<Granary.Core.ViewModels.WatchParty.WatchPartyHubViewModel>();
         services.AddTransient<Granary.Core.ViewModels.WatchParty.WatchPartyRoomViewModel>();
+        services.AddTransient<Granary.Core.ViewModels.WatchParty.StartPartyViewModel>();
         services.AddTransient<RequestsViewModel>();
         services.AddTransient<TitleViewModel>();
         services.AddTransient<RequestTitlesViewModel>();

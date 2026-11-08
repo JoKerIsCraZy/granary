@@ -38,72 +38,6 @@
             <Setter Property="Height" Value="32" />
             <Setter Property="CornerRadius" Value="8" />
         </Style>
-        <!--
-            One of the web's two "How the room picks" cards (a radio): radius 12, a faint border; chosen, the accent surface
-            (#232328) with the foreground at half for its border; under the pointer, the muted surface at 60 %.
-        -->
-        <Style x:Key="ModeCardStyle" TargetType="RadioButton">
-            <Setter Property="HorizontalAlignment" Value="Stretch" />
-            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-            <Setter Property="VerticalAlignment" Value="Stretch" />
-            <Setter Property="Padding" Value="12" />
-            <Setter Property="UseSystemFocusVisuals" Value="True" />
-            <Setter Property="FocusVisualMargin" Value="-3" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="RadioButton">
-                        <Grid x:Name="Card" CornerRadius="12" BorderThickness="1" BorderBrush="#99242428" Background="Transparent">
-                            <VisualStateManager.VisualStateGroups>
-                                <VisualStateGroup x:Name="CommonStates">
-                                    <VisualState x:Name="Normal" />
-                                    <VisualState x:Name="PointerOver">
-                                        <VisualState.Setters>
-                                            <Setter Target="Hover.Opacity" Value="1" />
-                                        </VisualState.Setters>
-                                    </VisualState>
-                                    <VisualState x:Name="Pressed">
-                                        <VisualState.Setters>
-                                            <Setter Target="Hover.Opacity" Value="1" />
-                                        </VisualState.Setters>
-                                    </VisualState>
-                                    <VisualState x:Name="Disabled">
-                                        <VisualState.Setters>
-                                            <Setter Target="Card.Opacity" Value="0.5" />
-                                        </VisualState.Setters>
-                                    </VisualState>
-                                </VisualStateGroup>
-                                <VisualStateGroup x:Name="CheckStates">
-                                    <VisualState x:Name="Checked">
-                                        <VisualState.Setters>
-                                            <Setter Target="Card.Background" Value="#FF232328" />
-                                            <Setter Target="Card.BorderBrush" Value="#80E8E8EC" />
-                                            <Setter Target="Hover.Visibility" Value="Collapsed" />
-                                        </VisualState.Setters>
-                                    </VisualState>
-                                    <VisualState x:Name="Unchecked" />
-                                    <VisualState x:Name="Indeterminate" />
-                                </VisualStateGroup>
-                            </VisualStateManager.VisualStateGroups>
-                            <Border x:Name="Hover" CornerRadius="11" Background="#991C1C20" Opacity="0" />
-                            <ContentPresenter Padding="{TemplateBinding Padding}" Content="{TemplateBinding Content}"
-                                              ContentTemplate="{TemplateBinding ContentTemplate}" HorizontalContentAlignment="Stretch" />
-                        </Grid>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        <Style x:Key="ModeTitleStyle" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="14" />
-            <Setter Property="FontFamily" Value="{StaticResource SiloFontMedium}" />
-            <Setter Property="FontWeight" Value="Medium" />
-            <Setter Property="Foreground" Value="{StaticResource SiloForegroundBrush}" />
-            <Setter Property="TextWrapping" Value="Wrap" />
-        </Style>
-        <Style x:Key="ModeCaptionStyle" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="12" />
-            <Setter Property="Foreground" Value="{StaticResource SiloMutedBrush}" />
-            <Setter Property="TextWrapping" Value="Wrap" />
-        </Style>
     </Page.Resources>
 
     <ScrollViewer x:Name="Scroller" XYFocusKeyboardNavigation="Enabled" SizeChanged="OnScrollerSizeChanged">
@@ -187,7 +121,7 @@
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-                                <RadioButton GroupName="HubSelectionMode" Style="{StaticResource ModeCardStyle}" IsChecked="{x:Bind ViewModel.IsHostPick, Mode=TwoWay}"
+                                <RadioButton GroupName="HubSelectionMode" Style="{StaticResource SiloModeCardStyle}" IsChecked="{x:Bind ViewModel.IsHostPick, Mode=TwoWay}"
                                              AutomationProperties.Name="Host picks" AutomationProperties.HelpText="You choose, everyone watches.">
                                     <Grid ColumnSpacing="12">
                                         <Grid.ColumnDefinitions>
@@ -198,12 +132,12 @@
                                                   Foreground="{x:Bind views:WatchPartyPage.ModeIconBrush(ViewModel.IsHostPick), Mode=OneWay}"
                                                   Opacity="{x:Bind views:WatchPartyPage.ModeIconOpacity(ViewModel.IsHostPick), Mode=OneWay}" />
                                         <StackPanel Grid.Column="1" Spacing="2">
-                                            <TextBlock Text="Host picks" Style="{StaticResource ModeTitleStyle}" />
-                                            <TextBlock Text="You choose, everyone watches." Style="{StaticResource ModeCaptionStyle}" />
+                                            <TextBlock Text="Host picks" Style="{StaticResource SiloModeTitleTextStyle}" />
+                                            <TextBlock Text="You choose, everyone watches." Style="{StaticResource SiloModeCaptionTextStyle}" />
                                         </StackPanel>
                                     </Grid>
                                 </RadioButton>
-                                <RadioButton Grid.Column="1" GroupName="HubSelectionMode" Style="{StaticResource ModeCardStyle}"
+                                <RadioButton Grid.Column="1" GroupName="HubSelectionMode" Style="{StaticResource SiloModeCardStyle}"
                                              IsChecked="{x:Bind ViewModel.IsVoteMode, Mode=TwoWay}"
                                              AutomationProperties.Name="Everyone votes" AutomationProperties.HelpText="Anyone suggests, the room votes.">
                                     <Grid ColumnSpacing="12">
@@ -215,18 +149,24 @@
                                                   Foreground="{x:Bind views:WatchPartyPage.ModeIconBrush(ViewModel.IsVoteMode), Mode=OneWay}"
                                                   Opacity="{x:Bind views:WatchPartyPage.ModeIconOpacity(ViewModel.IsVoteMode), Mode=OneWay}" />
                                         <StackPanel Grid.Column="1" Spacing="2">
-                                            <TextBlock Text="Everyone votes" Style="{StaticResource ModeTitleStyle}" />
-                                            <TextBlock Text="Anyone suggests, the room votes." Style="{StaticResource ModeCaptionStyle}" />
+                                            <TextBlock Text="Everyone votes" Style="{StaticResource SiloModeTitleTextStyle}" />
+                                            <TextBlock Text="Anyone suggests, the room votes." Style="{StaticResource SiloModeCaptionTextStyle}" />
                                         </StackPanel>
                                     </Grid>
                                 </RadioButton>
                             </Grid>
-                            <!--
-                                The web's hint under the button ("…choose Start a party with this from the menu.") is left out:
-                                Granary's title pages have no such entry yet.
-                            -->
                             <Button Content="{x:Bind ViewModel.CreateLabel, Mode=OneWay}" Style="{StaticResource SiloPrimaryButtonStyle}" HorizontalAlignment="Stretch"
                                     MinHeight="48" FontSize="16" Command="{x:Bind ViewModel.CreateCommand}" />
+                            <!--
+                                The web's hint under the button, 12 px muted with the entry's name in the foreground. The web names it
+                                "Start a party with this", its sheet's title; here it names the menu entry itself, "Start a Watch Party",
+                                which is what the web's menu shows too.
+                            -->
+                            <TextBlock Margin="0,-8,0,0" FontSize="12" LineHeight="20" Foreground="{StaticResource SiloMutedBrush}" TextWrapping="Wrap">
+                                <Run Text="Already know what you want to watch? Open its page and choose" />
+                                <Run Text="Start a Watch Party" Foreground="{StaticResource SiloForegroundBrush}" />
+                                <Run Text="from the menu." />
+                            </TextBlock>
                         </StackPanel>
                     </Grid>
                 </Border>

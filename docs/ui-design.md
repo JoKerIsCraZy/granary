@@ -470,9 +470,38 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     rating, regular seasons and genres, an episode's "S2 E7 · 54m · 30 Oct 2026"); the tagline in 17 italic; the overview
     in 16/25, four lines at most and 820 wide.
   - Granary's own buttons one size up: the red Play pill ("Resume from 1:02:33" for a movie or episode), Start over,
-    "Mark Watched", "Info", the heart, the stars and ⋮ (Watchlist, Add to Collection). Pills 50 high with 17 px labels,
-    round buttons 50, 14 apart. Under a single file's buttons "Available version: 1080P · H264 · EAC3 · 6.6 GB" in 14 at
-    45 % white.
+    "Mark Watched", "Info", the heart, the stars and ⋮ (Watchlist, Add to Collection, then Start a Watch Party below a
+    line). Pills 50 high with 17 px labels, round buttons 50, 14 apart. An episode or a season has ⋮ with Start a Watch
+    Party alone. Under a single file's buttons "Available version: 1080P · H264 · EAC3 · 6.6 GB" in 14 at 45 % white.
+  - Start a Watch Party (the web's `DetailWatchTogether.tsx` and `StartPartySheet.tsx`, the people icon) is on a movie
+    with a file, a series, an episode, and a season once its episodes are listed, while the server hosts rooms that
+    stage a title and the profile is in no room, as Android's detail page offers hosting; in a room it is not there,
+    since a new room would leave that one.
+    It opens the web's sheet as a dialog, 400 wide: "WATCH TOGETHER" over "Start a party with this", a 56 px poster
+    (an unwatched episode's own still left out where the profile hides them) beside the title and "2026", "Series · 3
+    seasons" or the season's name. A series, season or episode adds a raised row "EPISODE" `S3 E1 "Chapter 1"` with
+    Change (Choose while none is): a movie and an episode put up themselves, a series its next episode (read when the
+    sheet opens), a season its first unwatched episode with a file. Change opens the web's chooser in its place: the
+    seasons as pills ("Season 1"…, "Specials" last, the chosen one white), the season's episodes with a file ("E1",
+    the title, "watched"), "No playable episodes here.", and Keep the current pick; a picked episode closes it. Then "HOW
+    TO PICK" as two of the hub's mode cards at radius 8, "Host picks" / "This is up next. You start it when everyone
+    is here." and "Everyone votes" / "This is the first suggestion. Anyone can add and vote." ("Nothing" with no
+    episode), Host picks chosen on every opening; "Allow guests to pause" / "Otherwise only you control playback" with a
+    switch that shows the profile's saved choice; an error in the hub's red box; the red "Create party & copy invite"
+    ("Creating…") across the width; and "You'll land in the room. Nothing plays until you start it. The room can see
+    what members are mid-way through." Cancel closes it; a room already asked for is still made, set up and joined, but
+    quietly: the invite is not copied, the room page does not open over the page the viewer stays on, and what it would
+    have said on the way (such as "couldn't be queued") is not shown. The button waits while the saved choice or the next episode is read and while the chooser is open. It creates the room, sets the pause choice where the room has another (a
+    flipped switch is sent even where it does not, so the server keeps it for the next party), stages the title (or, in
+    a vote, makes it the first suggestion), copies the invite link and opens the room, which shows what the web toasts
+    on the way for 4 seconds ("Invite copied. Room code ABCD1234", "Room created, but that item couldn't be queued.
+    Pick it from the room.", "Guests can pause in this party. Change it from the room." when the saved choice could
+    not be read). The room takes the title's name among the recent parties only once the title is up. A failed create,
+    whatever failed, stays in the sheet with the server's words or "Could not create the room"; once the room is made,
+    a step that fails is said in the room and the rest go on. A profile or server changed meanwhile closes it without a
+    word, and nothing more is sent. A title playing in the minimized
+    player plays on in the lobby until the host starts the room's, which takes its place, as from the hub. Keyboard
+    focus moves into the chooser (the chosen season) as it opens and back to Change as it closes; Cancel returns it to ⋮.
   - The stars, the web's `StarRating` after the heart (ActionBar.tsx), on movies and series only, as on the web: five
     20 px stars (16 below 1400 px) 2 apart in a dark pill as high as the buttons (82 % of the surface colour, a 30 %
     border, a faint light along its top). The profile's rating is yellow and filled (`#FACC15`), the other stars a
@@ -652,8 +681,10 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   its top right and "How the room picks" as two cards: "Host picks" / "You choose, everyone watches." and "Everyone
   votes" / "Anyone suggests, the room votes." (radius 12; the chosen one on #232328 with a half-foreground border, its
   icon full, the other's muted at 60 %). Create Watch Party opens an empty room that picks so. Host picks is chosen on
-  every visit, as the web keeps the choice only on its page. The web's hint under the button ("…choose Start a party
-  with this from the menu.") is left out: Granary's title pages have no such entry. Join a party says "Got a code from
+  every visit, as the web keeps the choice only on its page. Under the button the web's hint in 12 px muted text,
+  "Already know what you want to watch? Open its page and choose Start a Watch Party from the menu.", the entry's name in
+  the foreground; the web names it "Start a party with this", its sheet's title, while its menu says Start a Watch
+  Party, so the hint names the menu entry (Detail pages, above). Join a party says "Got a code from
   the host? Enter it here, or paste the invite link." (the web's second sentence, "Invite links open straight into the
   room.", is not true here: links opened from outside the app do not reach it). Its code box is the web's (Consolas
   18 px, 0.3 em apart, a code in capitals as it is typed, a pasted link as it is), its text kept in the middle; Paste and
@@ -716,7 +747,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     keep only the arrows towards another of their group; the others leave the group where they point. A radio button
     takes every arrow itself, so Down used to switch tabs and never reach the page under them. OK checks the focused
     one, as Space does, every tab and pill in the window but the full player's: WinUI's radio buttons take Space and
-    leave Enter, a remote's OK, unhandled. A held OK checks once.
+    leave Enter, a remote's OK, unhandled. A held OK checks once. A dialog's keys do not reach the window, so the Watch
+    Party start sheet's How to pick cards do the same themselves (`StartPartyPanel`).
   - A title's stars are five buttons, not radio buttons, so the arrows pass them as any other button and rate nothing:
     the star they reach previews its value, OK rates (or clears the current star), and a held OK rates once. Left from
     the first star goes to the heart, Right from the last to ⋮.
