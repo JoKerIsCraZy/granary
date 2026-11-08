@@ -570,6 +570,7 @@ Profile and device settings live on the server (manifest
 | `ui.next_up_mode`, `ui.disabled_library_ids`, `ui.library_order` | profile | `combined`, –, – | Home row behaviour, hidden libraries, library order |
 | `ui.card_overlays`, `ui.card_overlays_enabled` | profile | server defaults, `true` | card badges ([6.6.1](#661-card-badges)) |
 | `ui.card_presentation` | profile, profile_client, profile_device | `{ "poster_size": "standard", "caption": "title_metadata" }` | poster size and caption ([6.6.2](#662-poster-size-and-caption)) |
+| `catalog.hide_unwatched_episode_images`, `catalog.hide_unwatched_episode_overviews` | profile | `false`, `false` | episode spoilers ([6.6.3](#663-episode-spoilers)) |
 
 #### 6.6.1 Card badges
 
@@ -613,6 +614,27 @@ shared with the other desktop clients), so a browser and Granary each keep their
 
   Wide (16:9) row cards are 260 px, 315 from `sm`, at every size. `title` drops the details under the title (year, episode
   title and code, time left), `artwork` the whole caption.
+
+#### 6.6.3 Episode spoilers
+
+The web's Title Pages › Spoilers and the apps' spoiler switches (`web/src/lib/episodeSpoilers.ts`,
+`hooks/useEpisodeSpoilerPrefs.ts`; Apple's `EpisodeSpoilerPreferences.swift`), manifest revision 17, catalog-api.md "Episode
+spoiler protection". The server never changes catalog answers for them: the client hides.
+
+- `catalog.hide_unwatched_episode_images` blurs the still of an episode the profile has not started,
+  `catalog.hide_unwatched_episode_overviews` leaves out its description. Both are booleans at `profile` scope only
+  (`PUT …?scope=profile`), default `false`; anything but `true` reads as off. They are read together, at start, with every
+  server or profile, and when the settings page opens; until a profile's are read nothing is hidden, never the previous
+  profile's choice. A change shows at once and saves in order; a refused one, or one made as the session ends, goes back to
+  what was saved.
+- A server whose effective read refuses the keys (`422`) predates them: nothing is hidden and the switches are not offered.
+- Unwatched: `user_data` missing, or `played` false, `is_in_progress` not true and no positive `position_seconds`. Cards of
+  Continue Watching and Next Up carry `user_state.played` and `position_seconds` instead.
+- Only the episode's own still is blurred. `still_is_episode_still` on episode rows, `poster_is_episode_still` and
+  `backdrop_is_episode_still` on cards and details say whether the picture is the episode's still (`true`) or other
+  artwork, such as the series' standing in (`false`), for the picture actually shown; absent means unknown, an older server,
+  and is treated as a still. `GET /api/v2/images/capabilities` reports `episode_still_provenance: true`.
+- Titles stay; movies, series and seasons are never hidden.
 
 ## 7. Catalog
 
@@ -679,7 +701,8 @@ open string. Useful optional members: `series_id`, `series_title`, `season_numbe
 `poster_url`, `backdrop_url`, `logo_url`, `poster_thumbhash`, `backdrop_thumbhash` (there is no
 `logo_thumbhash`), `position_seconds`,
 `duration_seconds`, `progress_updated_at`, `item_source`, `play_content_id` (episode to play for a
-series/season card), `user_state { played, is_favorite, in_watchlist, not_interested }`,
+series/season card), `poster_is_episode_still`, `backdrop_is_episode_still` ([6.6.3](#663-episode-spoilers)),
+`user_state { played, is_favorite, in_watchlist, not_interested }`,
 `overlay_summary` (resolution, hdr, codecs, audio channels, …), `badges[]`, `rating_imdb`,
 `rating_tmdb`, `added_at`. There is no subtitle field: compose "S1 · E5" or the year on the client
 (`silo-server/internal/apiv2/catalog_types.go:19-90`).
@@ -859,7 +882,8 @@ positive integer; anything else means no TMDB page and no poster.
   `overview?`, `play_content_id?`, `poster_url?`, `user_data?`.
 - `GET /api/v2/catalog/series/{id}/seasons/{num}/episodes` → `{ "items": Episode[] }`; `Episode`:
   `content_id`, `season_number`, `episode_number`, `title`, `runtime` (min), `overview?`,
-  `air_date?`, `still_url?`, `user_data?`, `files?[{ file_id, resolution?, hdr, file_size }]`.
+  `air_date?`, `still_url?`, `still_is_episode_still?` ([6.6.3](#663-episode-spoilers)), `user_data?`,
+  `files?[{ file_id, resolution?, hdr, file_size }]`.
 - `GET /api/v2/catalog/items/{season_id}/episodes` lists episodes of a season item (a series id is
   `404`).
 - Next episode: `play_content_id` on series/season detail and seasons; `/watch` has no

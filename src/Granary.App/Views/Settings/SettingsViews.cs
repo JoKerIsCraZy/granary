@@ -254,6 +254,29 @@ public sealed partial class InterfaceSettingsView : UserControl, IDisposable
     }
 }
 
+/// <summary>
+/// Settings → Title Pages; it reads the profile's spoiler switches when it is shown, and lets go of them as the page leaves.
+/// </summary>
+public sealed partial class TitlePagesSettingsView : UserControl, IDisposable
+{
+    public TitlePagesSettingsView()
+    {
+        ViewModel = ActivatorUtilities.CreateInstance<TitlePagesSettingsViewModel>(App.Services);
+        InitializeComponent();
+        Loaded += OnFirstLoaded;
+    }
+
+    public TitlePagesSettingsViewModel ViewModel { get; }
+
+    public void Dispose() => ViewModel.Dispose();
+
+    private async void OnFirstLoaded(object sender, RoutedEventArgs e)
+    {
+        Loaded -= OnFirstLoaded;
+        await SettingsViewLoad.RunAsync(_ => ViewModel.LoadAsync());
+    }
+}
+
 /// <summary>Settings → Servers; the page disposes it as it leaves, so the list stops following the servers.</summary>
 public sealed partial class ServersSettingsView : UserControl, IDisposable
 {

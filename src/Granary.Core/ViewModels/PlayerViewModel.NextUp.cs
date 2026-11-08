@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Abstractions;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Playback;
+using Granary.Core.Settings;
 using Granary.Core.ViewModels.Cards;
 using Granary.Core.ViewModels.Detail;
 
@@ -57,11 +58,19 @@ public sealed partial class PlayerViewModel
     [ObservableProperty]
     public partial string NextUpMeta { get; private set; } = "";
 
+    /// <summary>Empty for an unwatched episode while the profile hides their descriptions.</summary>
     [ObservableProperty]
     public partial string NextUpOverview { get; private set; } = "";
 
     [ObservableProperty]
     public partial Uri? NextUpStill { get; private set; }
+
+    /// <summary>
+    /// The still is an unwatched episode's own and the profile hides those: the screen blurs it, as the web's
+    /// <c>PlayingNextScreen</c>; the title and the details stay.
+    /// </summary>
+    [ObservableProperty]
+    public partial bool NextUpBlursStill { get; private set; }
 
     /// <summary>"You've finished ted", when no episode follows.</summary>
     [ObservableProperty]
@@ -263,7 +272,10 @@ public sealed partial class PlayerViewModel
             NextUpTitle = next.Title;
             NextUpEpisodeText = string.IsNullOrWhiteSpace(next.Title) ? code : $"{code} — {next.Title}";
             NextUpMeta = string.Join(" • ", new[] { LongDate(next.AirDate), DetailText.Runtime(next.RuntimeMinutes) }.OfType<string>());
-            NextUpOverview = next.Overview ?? "";
+            // The profile's switches as they are now: the screen is shown again with every step of the playback.
+            var spoilers = _spoilers?.Shown ?? EpisodeSpoilers.Off;
+            NextUpOverview = spoilers.HidesOverview(next.IsUnwatched) ? "" : next.Overview ?? "";
+            NextUpBlursStill = spoilers.HidesImage(next.IsUnwatched, next.StillIsEpisodeStill);
             NextUpStill = next.StillUrl;
         }
         NextUpSeriesTitle = _playback?.Episode?.SeriesTitle ?? "";

@@ -185,6 +185,7 @@ public sealed partial class MediaCardView : UserControl
         ArtImage.OpacityTransition = null;
         ArtImage.Opacity = 0;
         ArtImage.Source = null;
+        ShowSpoiler(card);
         if (_artworkUrl is { } url)
         {
             _artwork = new CancellationTokenSource();
@@ -761,6 +762,7 @@ public sealed partial class MediaCardView : UserControl
         RedecodeIfResized();
         PlaceBadges();
         ArtImage.CenterPoint = new Vector3((float)(width / 2), (float)(height / 2), 0);
+        CenterSpoiler();
         SizeActions(width);
     }
 
@@ -1073,10 +1075,16 @@ public sealed partial class MediaCardView : UserControl
         }
     }
 
-    // The artwork decoded as large as the card shows it now: a poster as high, a wide card as wide.
+    // The artwork decoded as large as the card shows it now: a poster as high, a wide card as wide; a hidden still only
+    // blurred, never sharp.
     private void LoadArtwork(Uri url, CancellationToken cancellationToken)
     {
         _decodedWidth = _artWidth;
+        if (_blurs)
+        {
+            _ = LoadSpoilerAsync(url, cancellationToken);
+            return;
+        }
         ArtImage.Source = _landscape
             ? Artwork.Load(url, DecodeSize(_artWidth, LandscapeWidth), cancellationToken)
             : Artwork.LoadAtHeight(url, DecodeSize(_artWidth * 3 / 2, PosterHeight), cancellationToken);

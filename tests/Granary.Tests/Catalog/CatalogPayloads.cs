@@ -311,6 +311,7 @@ internal static class CatalogPayloads
               "title": "Good News About Hell",
               "air_date": "2022-02-18",
               "runtime": 57,
+              "still_is_episode_still": false,
               "user_data": { "watched_count": 1, "unplayed_count": 0, "in_progress_count": 0, "played": false },
               "files": [{ "file_id": "202", "resolution": "1080p", "hdr": false, "file_size": 1 }]
             }

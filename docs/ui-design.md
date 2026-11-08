@@ -79,6 +79,10 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
   a second (`ScrollMotion`), cards hold their artwork back until it slows down or stops: decoding every poster that
   rushed past was half of what made a wide window stutter. The app collects garbage in `SustainedLowLatency` mode, so a
   full blocking collection does not land in a scroll.
+  The still of an episode the profile has not started, while it hides those ([episode spoilers](api-contract.md#663-episode-spoilers),
+  `MediaCard.BlursImage`), is drawn as the web's `scale-110 blur-xl`: blurred by 24 px at the size it shows, grown a tenth,
+  and without the pointer's zoom; its thumbhash shows first as for any card, and the sharp picture is never loaded. The
+  image for it is made only for a card that shows one (`x:Load`). The badges, the progress bar and the title stay.
 - `MediaRow`: row title, optional "EXPLORE ALL" (on every Home and library row, as on the web, also when the row
   already holds all of it; For You and Requests rows only when a page lists more), horizontally scrolling cards 20 px apart
   as wide as the web's for the profile's poster size at the window's breakpoint (posters 120 to 220 px, standard 185 from
@@ -420,6 +424,12 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   place once the changes have been quiet for 2 s (rows keep where they were scrolled to; other pages reload on their
   next visit); another device's playback moves Continue Watching at most every 30 s; a new or read notification sets
   the sidebar's count. Nothing shows the connection itself.
+- Continue Watching and Next Up, on Home and in a library, blur the still of an episode neither played nor started while
+  the profile hides unwatched episode images, as the web's `SectionRow` and `ContinueWatchingCard`: by the provenance of
+  the picture the card shows (its backdrop, else its poster). An episode already started is not blurred, nor a movie, nor
+  any other row's card, nor On Deck under the player's Playing Next screen, as on the web. A change of the switch shows in
+  the rows as they are, without a reload; starting the episode lifts the blur with the reload that follows. The hero at the
+  top of Home does not blur yet.
 - Detail pages: a layout of Granary's own, a deliberate departure from the web's look (the user preferred it).
   - On black, the backdrop stands at the top right, 85 % of the page's height, and stays put while the hero and rows
     scroll over it. It fades to black toward the left (100 % → 92 % at a quarter → 25 % at 65 % → clear) and
@@ -482,6 +492,18 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   - Granary's rows follow, 56 apart: a series' seasons, all at once in a grid that wraps at the page's width (185 px
     posters, a season opens its own page), or a season's episode grid, more episodes, trailers, cast and crew, more like
     this.
+  - Spoilers, as the web's `SeasonEpisodeGrid`, `EpisodeCarousel` and `EpisodeContent` (the profile's Title Pages
+    switches, [episode spoilers](api-contract.md#663-episode-spoilers)): in the episode grid and More Episodes an episode
+    neither played nor started has its still blurred (only its own still: the series' art standing in for one stays) and
+    its description left out; its title, details, badges and progress stay. The episode's own card in More Episodes too.
+    On an unwatched episode's own page the description gives way to the web's link, a struck-through eye and
+    "Description hidden until you watch. Show it" in 14 px muted text; it shows the description until another episode's
+    page opens, and keyboard focus moves on to Play. The Info dialog leaves the overview out meanwhile. The backdrop and
+    the title stay, as on the web. While the page shows, a change of the switches shows at once, and while they hide
+    something so does one of the viewer's state (marking an episode watched on a card, playing one in the minimized
+    player, another device): 400 ms after the last such change the page reads its episode lists, and an episode its own
+    state, again, so marking several cards reads them once. While the switches hide nothing it asks nothing, and reads
+    what changed meanwhile when they are turned on.
   - "More Episodes" on an episode's page (the web's `EpisodeCarousel`): the episode's whole season in the server's
     order, the episode itself included; the row shows only when the season has more than one episode. The episode's own
     card is marked as the web marks it: a 2 px accent ring at its artwork's edge (the hairline in the accent and a pixel
@@ -697,7 +719,7 @@ off the mark stands still.
 
 Opened from the sidebar's Settings; as on Silo's web the app's sidebar gives way to the settings' own (260 px, a shade
 darker, a hairline at its edge): "← Back to App", "Settings", the current profile (its initial in a 32 px disc), then
-the pages by group: PLAYBACK (the profile's), APPEARANCE (Navigation & Cards), ACCOUNT (Devices) and APP (Servers, About). The page open is white 6 % with red text and a
+the pages by group: PLAYBACK (the profile's), APPEARANCE (Navigation & Cards, Title Pages), ACCOUNT (Devices) and APP (Servers, About). The page open is white 6 % with red text and a
 red mark. Pages scroll on the right in a centred column of at most 1120 px, padded 50 px (a column, not MaxWidth on the
 host, which pushed a page of short lines off the right edge): the title (32 px bold) and its line, then sections between hairlines (`SettingsGroup`), their title
 (15 px semibold) and description (13 px muted) in a 256 px column and their rows (`SettingsRow`: label 14 px medium,
@@ -832,6 +854,16 @@ says why above the sections.
   hairlines of the entry's icon and name (Requests and Notifications: "Shows while your server offers it."), up and down
   as 32 px ghost buttons (off at the ends), and the switch; a hidden entry is dimmed. Changes show in the sidebar at
   once.
+- **Title Pages** (`TitlePagesSettingsView` on `TitlePagesSettingsViewModel`, the web's page of that name, so far with
+  its Spoilers group only): "What a movie or show page shows and plays when you open it.", then Spoilers ("Applies to
+  episodes you have not started, on every device that uses this profile.") with "Blur unwatched episode images" ("Blur an
+  episode's thumbnail until you start watching it, so the image does not give away the story.") and "Hide unwatched episode
+  descriptions" ("Hide an episode's description until you start watching it."). Each switch saves to the profile at once and
+  shows on every page that shows episodes: a season's episode grid, More Episodes and an episode's own page, Continue
+  Watching and Next Up on Home and in a library, and the player's Playing Next screen (the Home hero follows later). A
+  switch the server refused goes back, and "Failed to save title page setting" (the web's words) shows above the group
+  until the next change. While they load the group says "Loading…"; a failed read or an older server shows a panel instead
+  ("Couldn't load your spoiler settings", "Your server needs an update").
 - **Devices** (`DevicesSettingsView` on `DevicesViewModel`; the web's Signed-in sessions and Your Devices on one page,
   without the household view and the per-device settings editor): the title and its line with Refresh (outline) on the
   right, then what the last action did in 13 px muted text ("Session signed out", "Couldn't forget"). **Signed-in
@@ -1222,7 +1254,9 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
     playback left, as the apps do.
   - 30 s before the end of an episode the "Playing Next" screen takes the page: its still blurred and darkened behind,
     "PLAYING NEXT", or "STILL WATCHING?" where the Still watching prompt holds the countdown back (11 px, wide spacing, white 40 %), the still (16:9, radius 16, up to 38 % of the page high), the
-    series (18 px bold), "S1:E4 — Title", the air date and runtime, two lines of overview, the red Play Now pill, and
+    series (18 px bold), "S1:E4 — Title", the air date and runtime, two lines of overview (left out for an episode not
+    started while the profile hides descriptions, and its still blurred while it hides images, as on cards), the red Play
+    Now pill, and
     once the episode has ended a 10 s ring in red with the seconds; "Auto-play is on" switches the profile's
     `playback.auto_play_next`. On Deck (Continue Watching without this series) runs along the bottom; Close (Esc) top
     right. The video plays on in a 320 px window top left (radius 16), a click on it returns to it; it fades out at

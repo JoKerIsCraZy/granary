@@ -48,12 +48,15 @@ public sealed partial class ItemDetailPage : Page, IArrivalFocus
         base.OnNavigatedTo(e);
         ViewModel.DisplayScale = Frame?.XamlRoot?.RasterizationScale ?? 1;
         ViewModel.LoadCommand.Execute(e.Parameter as string);
+        // The spoiler switches and the viewer's state from elsewhere, while the page shows.
+        ViewModel.Activate();
     }
 
     protected override void OnNavigatedFrom(NavigationEventArgs e)
     {
         base.OnNavigatedFrom(e);
         ViewModel.LoadCommand.Cancel();
+        ViewModel.Deactivate();
     }
 
     private void OnBackdropOpened(object sender, RoutedEventArgs e) => Backdrop.Opacity = 1;
