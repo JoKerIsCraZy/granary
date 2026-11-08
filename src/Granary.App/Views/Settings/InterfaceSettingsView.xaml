@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Settings → Navigation & Cards, as on Silo's web (pages/settings/InterfaceSettings.tsx, CardOverlaySettings.tsx): Posters, Badges, Sidebar. -->
+<!-- Settings → Navigation & Cards, as on Silo's web (pages/settings/InterfaceSettings.tsx, CardOverlaySettings.tsx): Posters, Badges, Pages (Granary's own), Sidebar. -->
 <UserControl
     x:Class="Granary.App.Views.Settings.InterfaceSettingsView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -380,6 +380,19 @@
                 </StackPanel>
             </Grid>
         </Border>
+
+        <!--
+            Granary's own: the title preview at the top of Home, For You and Discover (BrowseHero) is Granary's, so Silo's
+            clients have no such switch. Kept for this profile on this PC (BrowseHeroSetting). Home's banner, a row marked as
+            the hero on Silo's web, is not this switch's.
+        -->
+        <controls:SettingsGroup Title="Pages" Description="The top of Home, For You and Discover, for this profile on this PC.">
+            <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Title preview at the top"
+                                  Description="Home, For You and Discover open with a large picture of the title you point at. Off, they start with the rows.">
+                <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind TitlePreview.IsShown, Mode=TwoWay}"
+                              AutomationProperties.Name="Title preview at the top" />
+            </controls:SettingsRow>
+        </controls:SettingsGroup>
 
         <!-- The sidebar: Reset beside the title, so laid out by hand as Badges. -->
         <Border Padding="0,32" BorderThickness="0,1,0,0" BorderBrush="{StaticResource SiloSettingsHairlineBrush}">

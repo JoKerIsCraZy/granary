@@ -9,7 +9,8 @@ namespace Granary.Core.ViewModels;
 /// The title at the top of a page of rows (Home, For You): the card the pointer or the keyboard is on, in any row. The first
 /// card pointed at shows at once; after that a card has to keep the pointer for <see cref="SettleTime"/>, so moving across a
 /// row loads no backdrop for every card on the way. Until a card is pointed at, the first card of the first row; a reload
-/// keeps the title while its rows still have it, and the pointer leaving the rows keeps the last one.
+/// keeps the title while its rows still have it, and the pointer leaving the rows keeps the last one. With the title preview
+/// off (<see cref="IsOn"/>) it shows nothing.
 /// </summary>
 public sealed partial class BrowseHeroViewModel : ObservableObject
 {
@@ -18,28 +19,56 @@ public sealed partial class BrowseHeroViewModel : ObservableObject
 
     private readonly IUiDispatcher _dispatcher;
     private readonly TimeProvider _time;
+    private readonly BrowseHeroSetting? _setting;
     private ITimer? _settle;
     private BrowseHeroTitle? _pointed;
     private bool _hasPointed;
     // Each point and reset; a settle timer that fires for an older one does nothing.
     private int _generation;
+    // Whether the title preview was on when the hero last took its page's rows (Follow).
+    private bool _tookRowsOn = true;
 
-    internal BrowseHeroViewModel(IUiDispatcher dispatcher, TimeProvider time)
+    internal BrowseHeroViewModel(IUiDispatcher dispatcher, TimeProvider time, BrowseHeroSetting? setting = null)
     {
         _dispatcher = dispatcher;
         _time = time;
+        _setting = setting;
     }
 
-    /// <summary>The title shown; null while the page has no cards.</summary>
+    /// <summary>The title shown; null while the page has no cards, and while the title preview is off.</summary>
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasTitle))]
     public partial BrowseHeroTitle? Shown { get; private set; }
+
+    /// <summary>
+    /// A title shows, for the page's layout: x:Bind calls a function again only for an argument that is not null, so the rows'
+    /// room under the hero follows this rather than <see cref="Shown"/>, which would leave it when the title goes.
+    /// </summary>
+    public bool HasTitle => Shown is not null;
+
+    /// <summary>
+    /// Whether the page has its hero: Settings → Navigation &amp; Cards → Title preview at the top (<see cref="BrowseHeroSetting"/>),
+    /// on by default. Off, no title shows and a card pointed at starts no timer, so the page starts with its rows.
+    /// </summary>
+    public bool IsOn => _setting?.IsShown != false;
+
+    /// <summary>
+    /// The title preview was turned on or off since the hero last took its page's rows: the page gives them again as it shows,
+    /// so a change in Settings applies there on the next visit.
+    /// </summary>
+    internal bool MissedSwitch => _tookRowsOn != IsOn;
 
     /// <summary>
     /// The pointer or the keyboard came to a card of <paramref name="item"/>, on <paramref name="server"/>; an unwatched
     /// episode shows what <paramref name="spoilers"/> leave of it, as its card does.
     /// </summary>
-    internal void Point(CatalogItemBase item, Uri server, EpisodeSpoilers spoilers) =>
-        Point(BrowseHeroTitle.From(item, server, spoilers));
+    internal void Point(CatalogItemBase item, Uri server, EpisodeSpoilers spoilers)
+    {
+        if (IsOn)
+        {
+            Point(BrowseHeroTitle.From(item, server, spoilers));
+        }
+    }
 
     /// <summary>
     /// The page's rows changed to <paramref name="items"/>, their cards' titles in order, or the spoiler switches changed: the
@@ -48,6 +77,12 @@ public sealed partial class BrowseHeroViewModel : ObservableObject
     /// </summary>
     internal void Follow(IReadOnlyList<CatalogItemBase> items, Uri? server, EpisodeSpoilers spoilers)
     {
+        if (!IsOn)
+        {
+            TurnOff();
+            return;
+        }
+        _tookRowsOn = true;
         if (server is null)
         {
             Reset(null);
@@ -65,6 +100,12 @@ public sealed partial class BrowseHeroViewModel : ObservableObject
     /// </summary>
     internal void Follow(IReadOnlyList<BrowseHeroTitle> titles)
     {
+        if (!IsOn)
+        {
+            TurnOff();
+            return;
+        }
+        _tookRowsOn = true;
         BrowseHeroTitle? Find(string key) => titles.FirstOrDefault(t => t.Key == key);
         Reset((Shown is { } shown ? Find(shown.Key) : null) ?? titles.FirstOrDefault(), Find);
     }
@@ -72,6 +113,10 @@ public sealed partial class BrowseHeroViewModel : ObservableObject
     /// <summary>The pointer or the keyboard came to a card of <paramref name="title"/>.</summary>
     internal void Point(BrowseHeroTitle title)
     {
+        if (!IsOn)
+        {
+            return;
+        }
         if (!_hasPointed)
         {
             _hasPointed = true;
@@ -114,8 +159,22 @@ public sealed partial class BrowseHeroViewModel : ObservableObject
         _hasPointed = false;
     }
 
+    // The title preview is off: nothing shows and nothing waits to settle; once it is on again, the first card pointed at
+    // shows at once.
+    private void TurnOff()
+    {
+        _tookRowsOn = false;
+        Forget();
+        Reset(null);
+    }
+
     private void Settle(int generation)
     {
+        // Turned off while the card waited: the page takes its rows again as it shows (MissedSwitch), and that hides the title.
+        if (!IsOn)
+        {
+            return;
+        }
         if (generation == _generation && _pointed is { } title)
         {
             Reset(title);
