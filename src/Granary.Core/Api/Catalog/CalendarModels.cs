@@ -34,6 +34,12 @@ public sealed record CalendarEvent
 
     public string? EpisodeTitle { get; init; }
 
+    /// <summary>The source's air date, YYYY-MM-DD.</summary>
+    public string? AirDate { get; init; }
+
+    /// <summary>The air date in the zone the calendar was asked for, YYYY-MM-DD: the day the airing is listed under.</summary>
+    public string? LocalAirDate { get; init; }
+
     /// <summary>The airing as an instant, when the network's time and zone are known.</summary>
     public DateTimeOffset? AirAt { get; init; }
 

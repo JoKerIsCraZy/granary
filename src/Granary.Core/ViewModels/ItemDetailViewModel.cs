@@ -61,6 +61,8 @@ public sealed partial class ItemDetailViewModel : ObservableObject
     private readonly IUiDispatcher? _dispatcher;
     private readonly TimeProvider _time;
     private readonly RatingWrites? _ratings;
+    private readonly SeriesAirings? _airings;
+    private readonly EpisodeSpans? _spans;
 
     // A newer load makes the answers of older calls stale.
     private int _generation;
@@ -94,7 +96,9 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         EpisodeSpoilerSettings? spoilers = null,
         IUiDispatcher? dispatcher = null,
         TimeProvider? time = null,
-        RatingWrites? ratings = null)
+        RatingWrites? ratings = null,
+        SeriesAirings? airings = null,
+        EpisodeSpans? spans = null)
     {
         _session = session;
         _catalog = catalog;
@@ -109,6 +113,8 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         _dispatcher = dispatcher;
         _time = time ?? TimeProvider.System;
         _ratings = ratings;
+        _airings = airings;
+        _spans = spans;
     }
 
     /// <summary>The display scale artwork is requested for (1.5 at 150 %); set it before loading.</summary>
@@ -460,6 +466,9 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         LogoUrl = null;
         Seasons = [];
         Episodes = [];
+        StopPlacing();
+        _places = [];
+        EpisodeGrid.Clear();
         ShowsNoEpisodes = false;
         MoreEpisodes = [];
         Trailers = [];
@@ -537,6 +546,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
             if (episodes is not null)
             {
                 ShowEpisodes(only.ContentId, episodes.Items, only.EpisodeCount);
+                StartPlacing(server, _contentId, only.SeasonNumber, generation, cancellationToken);
                 return;
             }
         }
@@ -587,6 +597,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         MetaLine = DetailFacts.MetaLine(item, listedEpisodes: collection.Items.Count);
         InfoSections = DetailFacts.InfoSections(item, listedEpisodes: collection.Items.Count);
         ShowPlayAction();
+        StartPlacing(server, item.SeriesId, item.SeasonNumber, generation, cancellationToken);
     }
 
     // The season crumb links once the season is known; "More Episodes" lists the whole season, this episode marked Now
@@ -662,6 +673,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         {
             Episodes = episodes;
         }
+        ShowEpisodeGrid();
     }
 
     private void ShowSeasonCards()

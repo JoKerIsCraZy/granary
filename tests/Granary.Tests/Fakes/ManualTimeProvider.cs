@@ -23,7 +23,10 @@ internal sealed class ManualTimeProvider(DateTimeOffset start) : TimeProvider
     {
     }
 
-    public override TimeZoneInfo LocalTimeZone => TimeZoneInfo.Utc;
+    /// <summary>The viewer's zone; UTC unless a test sets another.</summary>
+    public TimeZoneInfo Zone { get; set; } = TimeZoneInfo.Utc;
+
+    public override TimeZoneInfo LocalTimeZone => Zone;
 
     public override long TimestampFrequency => TimeSpan.TicksPerSecond;
 

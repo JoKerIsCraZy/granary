@@ -29,6 +29,7 @@ internal sealed class ScriptedSilo
     private readonly List<SentRequest> _sent = [];
     private readonly Dictionary<string, Queue<Func<Task<HttpResponseMessage>>>> _routes = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Func<CancellationToken, Task<HttpResponseMessage>>> _cancellable = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, Func<Uri, CancellationToken, Task<HttpResponseMessage>>> _byUrl = new(StringComparer.Ordinal);
 
     public ScriptedSilo()
     {
@@ -81,6 +82,19 @@ internal sealed class ScriptedSilo
         lock (_gate)
         {
             _cancellable[Key(method, Url(path))] = responder;
+        }
+        return this;
+    }
+
+    /// <summary>
+    /// Answers every request to <paramref name="path"/> through <paramref name="responder"/>, which reads the request's URL and
+    /// query, and sees its cancellation.
+    /// </summary>
+    public ScriptedSilo OnUrl(HttpMethod method, string path, Func<Uri, CancellationToken, Task<HttpResponseMessage>> responder)
+    {
+        lock (_gate)
+        {
+            _byUrl[Key(method, Url(path))] = responder;
         }
         return this;
     }
@@ -138,6 +152,10 @@ internal sealed class ScriptedSilo
             if (_cancellable.TryGetValue(Key(sent.Method, sent.Uri), out var cancellable))
             {
                 return cancellable;
+            }
+            if (_byUrl.TryGetValue(Key(sent.Method, sent.Uri), out var byUrl))
+            {
+                return cancellationToken => byUrl(sent.Uri, cancellationToken);
             }
             if (!_routes.TryGetValue(Key(sent.Method, sent.Uri), out var responders) || responders.Count == 0)
             {
