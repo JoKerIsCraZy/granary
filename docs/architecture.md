@@ -31,6 +31,7 @@ Dependencies point inward only: `App → Player → Core`, and `App → Core`.
   DISPLAY and SYSTEM, or with "Playing audio" under EXECUTION and SYSTEM. A request belongs to its object, not to a
   thread; a lock keeps the state whole if a call came from another thread. Should Windows make no request object, it
   falls back on `SetThreadExecutionState` (`ExecutionStateFlags`), which belongs to the calling thread, the UI's.
+  `IThemeAudioOutput` plays title pages' theme music (see Theme music).
   `IReleaseFiles` gives `SignedReleaseVerifier` a release's SHA256SUMS and its signature, and the package on disk to
   hash and read; Core's own `HttpReleaseFiles` implements it, and the tests fake it (docs/release.md, "Signed
   releases").
@@ -433,7 +434,9 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
 [api-contract.md](api-contract.md), sections 8 to 10.
 
 - **Before the plan** (`PlaybackStarter`): watch detail, the file played last (else the first whole file), the
-  start position (the resume point minus 7 s from 30 s on, 0 to start over, sent explicitly), the profile's
+  start position (the resume point, minus this PC's Rewind on resume from 30 s on as Android rewinds (`ResumeRewind`,
+  read at each start, 0 by default), 0 to start over, sent explicitly; restarts and file switches keep the exact
+  position), the profile's
   quality and bitrate cap (`PlaybackPreferencesReader`), the server's capabilities, and the device report:
   `MpvDeviceProbe` reads the GPU's D3D11VA decoder profiles, and logs them once; HEVC, VP9 and AV1 count only with
   hardware, unless this PC's choice of direct play without hardware decoding (`IPlaybackDevicePreferences`, read once when
@@ -550,7 +553,8 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   by themselves than Settings' Still watching prompt allows (`AutoPlayStreak`, Android's pass-out gate; 3 by default,
   Unlimited never holds back), and the sleep timer does not hold it (`NextUpFlow.Hold`). The next episode starts as a new playback
   from 0; the saved track preferences carry the picks over. The transport's previous and next episode buttons start
-  theirs from the resume point, as the web player does for the viewer; the previous one is the largest episode before
+  theirs from the resume point, as the web player does for the viewer, and exactly there, never rewound, as Android
+  changes episode (`PlayRequest.ResumeWithoutRewind`); the previous one is the largest episode before
   this one in the current season that has a readable file, as the web finds it, none before the season's first.
 - **Sleep timer** (`PlayerViewModel.SleepTimer.cs`; the apps' `SleepTimer` and `SleepTimerController`, the web's
   `SleepTimerMenu`): a duration counts on the player's `TimeProvider` once a second, whatever plays, pauses or loads
@@ -563,7 +567,15 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   offer it. The page hands the menu its rows as it opens and keeps them while it is open (as `DetailHero`'s pickers), so a
   change under it cannot take the focus out. The menu opens on this device's
   `player.sleep_timer_default_minutes` (read with the playback's settings, in a batch of its own); a duration started is
-  saved there, as Android keeps the last one (`ServerPlayback.SetSleepTimerDefault`, `profile_device`).
+  saved there, as Android keeps the last one (`ServerPlayback.SetSleepTimerDefault`, `profile_device`). This PC can
+  hide the button (`IPlaybackDevicePreferences.SleepTimerButton`, `sleep_timer_button` in `playback-device.json`, on when
+  missing): the player reads it as it is made and follows `SleepTimerButtonChanged` until it is disposed, so the
+  minimized bar does too; turned off, `PlayerViewModel.ShowsSleepTimer` goes false, a running timer ends as Turn off
+  ends it, and a hold the timer left after the end lets go (`NextUpFlow.Hold(false)` then starts the countdown). A change
+  on the UI thread applies at once, so work already queued there, such as the title's end, finds the timer off; one from
+  another thread is posted, and does nothing once the player is disposed. Each change carries its own choice, so off and
+  on again before the UI thread gets to them still end the timer, and a tick that waits behind a switch-off does not run
+  out.
 - **Chapters** (11.3): the playing file's `chapters` from the watch detail (mpv reads none through a remux or a
   transcode), in order, empty ones left out, pictures resolved against the server; they make the Chapters menu, the
   seek bar's ticks and the chapter named in its bubble, and Ctrl+Left and Ctrl+Right go to their starts (`ChapterJump`,
@@ -732,6 +744,39 @@ breaks YouTube's terms.
   (see Window modes): from a window the window goes full screen with it and back, in the app's full screen it stays as it
   is. The app under the trailer is hidden meanwhile. When the window leaves full screen another way (F11), the page is
   asked to leave its own.
+
+## Theme music
+
+A title page plays its local theme music while Settings → Title Pages → Theme music is on (docs/api-contract.md, 6.6.4 and
+7.19). Behaviour follows the apps (Android's `ThemeMusicCoordinator` and `ThemeMusicPlayer`, Apple's `ThemeMusicCenter` and
+`ThemeMusicController`), which follow the web's `useThemeMusic.ts` and `lib/themeMusic.ts`.
+
+- **`ThemeMusic`** (Core, a singleton) decides when. A title page's view model shows it a token of its own with the page's
+  themes (none while it loads) and hides it as the page leaves; it never holds the page. Nothing plays unless the acting
+  profile's own settings say so and the server's capability says themes are available (read again once a minute old; when
+  they are routed, with whether the server authorizes media origins, which decides the proxy nodes a theme may come from,
+  `ThemeOrigins`). A page that leaves or loads fades its theme out and pauses it; two seconds later (`ReleaseGrace`) the theme is let go, unless a
+  page shows the same theme again, as a season with its series' set does, which goes on where it was. While the player
+  holds a title, over the window or as its bar, or a trailer is open, the theme stops at once and starts over after
+  (`OtherMediaPlaying`, which MainWindow sets once the window's turn is done, so a player taking over from a trailer does not
+  let it start in between; a title replacing the one that played counts from its Play, while the old player lets the
+  picture go, until it opens or fails to, the player closes, or 3 s have passed, a `DispatcherQueueTimer` through
+  `WeakTick`). A minimized window counts as a page that left (`IsMinimized`, from `AppWindow.Changed`). A
+  profile, server or sign-out stops it at once and forgets the capability.
+- **`ThemeMusicPlayer`** (Core) plays one theme: the set's first, faded in to 35 % in 12 steps over 300 ms once it is heard and
+  out the same way, on `TimeProvider` timers whose ticks go through `IUiDispatcher`. An original loops in place; a conversion
+  ends and plays again from a new grant. A grant or download lost on the way (network, 5xx, timeout) or audio that fails
+  is tried once more with a new grant, audio that plays earning the try back; a refusal (`ThemeFetch.Refused`) is not.
+- **`ThemeAudioDownloader`** (Core) fetches the granted theme whole, without credentials, cookies or redirects, on the
+  `theme-audio` client and its own handler, which logs nothing: the URL carries its own token and stays in Core. The
+  handler's `ConnectCallback` connects a proxy node only to a resolved address the node's rule takes (`ThemeNode`, set on the
+  request by `PlaybackUrl.ResolveTheme`), so a name that resolves to this PC or an unvouched private address is refused
+  where the address is known. A node goes on the `theme-audio-node` client, whose handler never takes the system's proxy
+  (the proxy would resolve the name out of the rule's sight); the server's own origin goes on `theme-audio`, which keeps
+  the proxy and connects as it resolves.
+- **`WindowsThemeAudio`** (App) implements the port on `Windows.Media.Playback.MediaPlayer` from the bytes (a light player beside
+  mpv, not a second mpv), with its command manager off, so it stays out of Windows' media overlay and the media keys stay
+  the player's. Its events come on Windows' threads; Core takes them to the UI thread.
 
 ## Window modes
 

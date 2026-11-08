@@ -16,6 +16,9 @@ public sealed record CatalogItemDetail : CatalogItemBase
 
     public string? Tagline { get; init; }
 
+    /// <summary>Who recommended <see cref="CatalogItemBase.AdvisoryAge"/>: <c>commonsense</c> or <c>mdblist</c>.</summary>
+    public string? AdvisorySource { get; init; }
+
     public IReadOnlyList<string> Countries { get; init => field = value ?? []; } = [];
 
     public string? FirstAirDate { get; init; }
@@ -50,6 +53,9 @@ public sealed record CatalogItemDetail : CatalogItemBase
 
     /// <summary>Local extras (behind the scenes, featurettes, …).</summary>
     public IReadOnlyList<ItemExtra> Extras { get; init => field = value ?? []; } = [];
+
+    /// <summary>The theme music the page plays; absent when the server's lookup failed or it predates themes.</summary>
+    public ThemeSongSet? Themes { get; init; }
 
     /// <summary>The subtitle language the profile's preferences resolve to for this item; empty when the preference is None.</summary>
     public string? EffectiveSubtitleLanguage { get; init; }

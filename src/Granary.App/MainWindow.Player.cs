@@ -51,13 +51,23 @@ public sealed partial class MainWindow : IPlayerOverlay
             // The engine's picture goes to one panel at a time: the new player takes it once the old one let it go.
             if (playing.IsLoaded)
             {
+                // Meanwhile the next title counts as playing, so a page's theme does not start in between.
+                BeginPlayerOpening();
                 playing.Unloaded += OpenAfterUnloaded;
                 return;
 
                 void OpenAfterUnloaded(object sender, RoutedEventArgs e)
                 {
                     playing.Unloaded -= OpenAfterUnloaded;
-                    Open(play);
+                    EndPlayerOpening();
+                    try
+                    {
+                        Open(play);
+                    }
+                    finally
+                    {
+                        ShowOtherMedia();
+                    }
                 }
             }
         }
@@ -74,6 +84,7 @@ public sealed partial class MainWindow : IPlayerOverlay
         page.StopRequested += (_, _) => ClosePlayer();
         page.ViewModel.PropertyChanged += OnPlayerChanged;
         _player = page;
+        ShowOtherMedia();
         PlayerHost.Child = page;
         PlayerHost.Visibility = Visibility.Visible;
         Expand();
@@ -82,11 +93,14 @@ public sealed partial class MainWindow : IPlayerOverlay
 
     public void ClosePlayer()
     {
+        // A title still on its way counts as playing no longer: the player's own close is what the viewer asked for.
+        EndPlayerOpening();
         if (_player is not { } page)
         {
             return;
         }
         _player = null;
+        ShowOtherMedia();
         page.ViewModel.PropertyChanged -= OnPlayerChanged;
         StopDockSlide();
         page.Leave();

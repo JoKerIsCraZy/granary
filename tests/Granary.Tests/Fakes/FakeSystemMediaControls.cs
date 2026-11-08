@@ -35,7 +35,10 @@ internal sealed class QueuedDispatcher : Granary.Core.Abstractions.IUiDispatcher
 {
     private readonly Queue<Action> _work = new();
 
-    public bool HasThreadAccess => true;
+    /// <summary>The UI thread, once a test names one: another thread then has no access. Without one, every thread has.</summary>
+    public Thread? UiThread { get; set; }
+
+    public bool HasThreadAccess => UiThread is null || UiThread == Thread.CurrentThread;
 
     public int Pending => _work.Count;
 

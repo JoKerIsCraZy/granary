@@ -581,11 +581,14 @@ Profile and device settings live on the server (manifest
 | `player.subtitle_sync_ms`, `player.playback_speed` | profile(_device) | – | player offsets and speed |
 | `player.audio_sync_ms` | profile_device only | `0` (−5000 to 5000 ms) | this device's audio delay, positive for later sound (mpv's `audio-delay`, as Android's `DelayAudioProcessor` pads the start with silence); read at each start in a batch of its own, so a server that refuses the key (`422`) keeps the other playback settings and has no audio delay (no Sound in Settings, no row in the player); edited under Settings → Playback → Sound and in the player's settings menu, saved once it settles, bound to the profile it was made for |
 | `player.sleep_timer_default_minutes` | profile_device only (a `profile` write is refused) | `30` (0 to 240; 0 none) | the duration the sleep timer's menu opens on; read in a batch of its own, a started duration saved back |
-| `player.resume_rewind_seconds`, `player.passout_threshold` | **client_local** (never on the server) | `7`, `3` | resume rewind, auto-advance streak limit |
+| `player.resume_rewind_seconds`, `player.passout_threshold` | **client_local** (never on the server) | `7`, `3` | resume rewind ([10.5](#105-resume); 0 to 30 s, Granary's default 0), auto-advance streak limit |
 | `ui.next_up_mode`, `ui.disabled_library_ids`, `ui.library_order` | profile | `combined`, –, – | Home row behaviour, hidden libraries, library order |
 | `ui.card_overlays`, `ui.card_overlays_enabled` | profile | server defaults, `true` | card badges ([6.6.1](#661-card-badges)) |
 | `ui.card_presentation` | profile, profile_client, profile_device | `{ "poster_size": "standard", "caption": "title_metadata" }` | poster size and caption ([6.6.2](#662-poster-size-and-caption)) |
 | `catalog.hide_unwatched_episode_images`, `catalog.hide_unwatched_episode_overviews` | profile | `false`, `false` | episode spoilers ([6.6.3](#663-episode-spoilers)) |
+| `catalog.show_advisory_age` | profile | `false` | a title's suggested age on its page ([6.6.4](#664-title-pages)) |
+| `ui.title_art` | profile, profile_device (the profile's wins) | `true`, or the administrator's | a title's page names it with its logo ([6.6.4](#664-title-pages)) |
+| `ui.theme_music_enabled`, `ui.theme_music_loop` | profile, profile_device | `false`, `false` | title pages' theme music ([6.6.4](#664-title-pages), [7.19](#719-theme-music)) |
 
 #### 6.6.1 Card badges
 
@@ -650,6 +653,39 @@ spoiler protection". The server never changes catalog answers for them: the clie
   artwork, such as the series' standing in (`false`), for the picture actually shown; absent means unknown, an older server,
   and is treated as a still. `GET /api/v2/images/capabilities` reports `episode_still_provenance: true`.
 - Titles stay; movies, series and seasons are never hidden.
+
+#### 6.6.4 Title pages
+
+The rest of the web's Title Pages (`web/src/pages/settings/TitlePagesSettings.tsx`). `TitlePageSettings` reads them in one
+batch, at start, with every server or profile, and when the settings page opens; until a profile's are read every one is at
+its default, never the previous profile's. A change shows at once and saves in order; a refused one goes back. A key the
+server's contract does not know (`422`, then read one by one, `ProfileSettings`) offers no switch and stays at its default.
+Every write and clear of a change goes out as the server and profile it was made for (`SettingsApi.SetValueAsProfileAsync`,
+`ClearValueAsProfileAsync`, `SiloHttp.SendAsProfileAsync`), also the second of two: should the profile change between
+them, the next one is refused unsent and the change counts as not saved, so it never writes or clears the next profile's
+value.
+
+- `catalog.show_advisory_age` (revision 10, `profile` only, default `false`): a movie's or series' page names its
+  `advisory_age` beside the rating ([7.6](#76-item-detail-get-apiv2catalogitemsid)), as the web's `useShowAdvisoryAge` and
+  `MetadataBadges`. It only shows the age; the profile's `max_advisory_age` limit is the server's.
+- `ui.title_art` (revision 16, default `true`, `admin_default`): a title's page names it with its `logo_url` rather than its
+  name in text. Its resolution order is `profile`, then `profile_device`, then the default: a profile value is "Apply to all
+  devices" and wins on every device (the manifest's notes, the web's `useTitleArtSetting`). Anything but `false` reads as on;
+  a server without the key, or a failed first read, shows logos. Until the profile's value is read, a page with a logo holds
+  its title, neither logo nor text, for 1.5 s at most; then the logo shows until the answer comes. Writes:
+  - Show title art: `PUT …?scope=profile_device`, or `…?scope=profile` while the source is `profile`.
+  - Apply to all devices on: `PUT …?scope=profile` with the current value. Off: `PUT …?scope=profile_device` with the
+    current value, then `DELETE …?scope=profile` (refused unsent once another profile acts), so this PC keeps its look and the
+    others go back to their own or the default.
+  - Use server default (shown while the source is not `default`): `DELETE …?scope=profile_device`, and `…?scope=profile`
+    while that is the source, then read the effective value again; a `404` means there was nothing to clear.
+
+  Only a title's page follows it, as on the web; Home's hero keeps the logo.
+- `ui.theme_music_enabled` and `ui.theme_music_loop` (revision 11, `profile` and `profile_device`, this device's value first,
+  default `false`; the manifest lists them for `web` only, which the server does not enforce, and the apps read them too):
+  title pages play their theme music ([7.19](#719-theme-music)), and repeat it. Saved as the web's `useProfileDefaultWriter`
+  writes them: `PUT …?scope=profile`, then `DELETE …?scope=profile_device` when the effective value came from this device.
+  Only the acting profile's own read turns theme music on, never the previous profile's while the next one is read.
 
 ## 7. Catalog
 
@@ -888,6 +924,14 @@ too: `versions[].audio_tracks`, `subtitle_tracks`, `video_tracks` (same shapes),
 its default, as in 8.8.1). Their defaults are what playback picks: the file as `PlaybackStarter.ChooseVersion`, the
 audio `effective_audio_track_index` (else the file's default track, else the first), the subtitle 8.8.1's resolver for
 that audio.
+
+`themes?` is the theme music the page plays ([7.19](#719-theme-music)): `{ owner_id, items[{ id, title, duration_seconds,
+container }] }`, resolved by the server (a season without its own takes its series', an episode its season's, then its
+series'); an empty set keeps the item's id, and a failed lookup leaves the member out.
+
+`advisory_age?` (an integer) is a suggested minimum viewer age from an advisory service, not the certification, and
+`advisory_source?` who suggested it (`commonsense`, `mdblist`); absent means none was fetched, never "for everyone". The
+page shows it only with `catalog.show_advisory_age` ([6.6.4](#664-title-pages)).
 
 The Discord status (docs/architecture.md) reads `tmdb_id` here: a string of digits in the schema, absent for an item TMDB
 does not know. It takes the movie's own item, or an episode's series (`series_id` of the watch detail), and only a
@@ -1260,6 +1304,63 @@ groups them (`silo-server/docs/catalog-api.md`, "Movie box sets"; `internal/apiv
   `GET /api/v2/catalog/search/capabilities` says `box_sets: true` (as the Apple app checks; the web checks the libraries'
   `box_sets_enabled` instead) and not for Series, beside the people and titles; a failure, or an answer slower than
   1.5 s (Android's grace), shows none rather than holding the titles.
+
+### 7.19 Theme music
+
+A movie, series or season can own local theme audio (`theme.mp3` and the like, or a `theme-music/` folder;
+`silo-server/docs/catalog-api.md`, "Local theme songs, V2"). The item detail names the set to play (`themes`, 7.6); Granary
+plays its first theme, as the web's `useThemeMusic.ts` and the apps do (docs/architecture.md, Theme music).
+
+- `GET /api/v2/catalog/themes/capabilities` (profile) → `{ state: available|disabled|not_configured|unsupported, allowed,
+  delivery, transcode, cluster_routing, grant_lifetime_seconds, revision }`. Themes play only while `state` is `available`
+  and `allowed` is not `false`; a `404` is a server that predates themes. `delivery: routed` lets a grant name a proxy
+  node's origin; with `local_direct_play` (or none) the audio comes from the server's own origin only
+  (`silo-server/internal/apiv2/theme_songs.go`). The answer stands 60 s, as the web's query keeps it; a failed read
+  changes nothing and is asked again with the next page.
+- `POST /api/v2/catalog/items/{owner_id}/themes/{theme_id}/playback` (profile) with `{ "accepted_formats": [{ container,
+  audio_codec }] }` → `{ url, expires_at, delivery: original|converted, content_type }`. Granary lists what Windows' media
+  player plays without extensions: `mp3/mp3`, `mp4/aac`, `m4a/aac`, `m4a/alac`, `aac/aac`, `flac/flac`, `wav/pcm`; the
+  server sends the original when it matches and otherwise converts it to AAC in audio-only MP4 (`converted`), or answers
+  `406` when it cannot. A grant answered after the profile changed is dropped.
+- `url` is a short-lived credential: relative to the server, or, only while the capability says `routed`, absolute on a
+  proxy node's origin (on the node, `/stream/theme/{token}`; `PlaybackUrl.ResolveTheme`, `ThemeOrigins`). A node is taken as
+  a video stream's is (9.1, `authorized_media_origins_v1`):
+  - Always: HTTPS, or HTTP beside an HTTP server (never HTTP beside an HTTPS one, as for a video node), no user info, no
+    fragment, and never this machine, a link-local, multicast or
+    unspecified address, however it is written: with the root's trailing dot (`127.0.0.1.`, `localhost.`), as `localhost`
+    or a name under it, as a single number, or inside an IPv6 address (IPv4-mapped, IPv4-compatible, 6to4 `2002::/16`,
+    NAT64 `64:ff9b::/96`), which counts as the IPv4 address it carries (`NetworkAddresses`).
+  - While the server's playback capabilities (`GET /api/v2/playback/capabilities`, read with the themes capability when it
+    says `routed`) offer `authorized_media_origins_v1`, the server vouches for the nodes it names, as for video: any
+    other address is taken, a private one included. The server names no list of its origins; the offer is the check, as
+    it is for a video attempt.
+  - Otherwise, or when that read fails: a public address or a host name is taken (a name is not looked up), and a
+    private (RFC 1918), shared (100.64/10) or unique-local node only while the server's own address is on a private
+    network too (such an address, one label, `.local`, `.lan`, `.internal`, `.home.arpa`): a proxy at `192.168.1.20` beside
+    a server at `192.168.1.10` plays, the same address named by a server on the internet does not.
+  - At the socket: a node's name could resolve anywhere (a rebinding, a wildcard DNS name), so the same rule is applied
+    again to the addresses it resolves to (`ThemeAudioDownloader.CreateHandler`, its `ConnectCallback`; the decision rides
+    on the request, `ThemeNode`): those it does not take are dropped, IPv6 forms carrying an IPv4 address included, and the
+    connection goes to one that is left, or the fetch fails. TLS still checks the node's name. A node is fetched on a
+    client of its own (`theme-audio-node`) that never takes the system's proxy, which would look the name up out of
+    sight: it goes direct, so its theme plays behind a proxy too. The server's own origin is fetched on the `theme-audio`
+    client, which keeps the system's proxy as every other request to the server, and is not checked so: it connects as it
+    resolves, wherever the server runs, on this PC (`http://localhost:8096`) or on the LAN. The rule
+    runs as a connection opens, so the handler keeps none for a later request (`PooledConnectionLifetime` and
+    `PooledConnectionIdleTimeout` zero; either alone stops the reuse in .NET 10): each download opens its own, and a
+    node's connection checked under one server's rule never serves a request made under another's.
+
+  Anything else is refused unsent. Granary fetches it whole (`ThemeAudioDownloader`: no
+  credentials, cookies or redirects, the body as sent, 60 s, at most 32 MB, as the Apple app reads a converted theme), on a
+  client that logs nothing, and hands only the bytes to the player. It never logs or keeps the URL; a failure is logged by
+  its status or kind alone.
+- A converted theme has no length and no byte ranges: to loop, it is played again from a new grant; an original loops in
+  place. What a new grant might get past is tried once more with one: a grant or download lost to the network, a server
+  error or busy answer (5xx, 408, 429) or a timeout, and audio that fails or cannot be played; a theme that plays earns
+  that try back.
+  What would come back the same is not: a refused grant (403, 404, 406 and the like), a download refused (4xx), an
+  address Granary does not fetch, an answer that is no theme (empty, too large, unreadable), and a grant answered after
+  the profile changed. The page keeps such a theme chosen, so showing it again does not ask once more.
 
 ## 8. Playback protocol v3
 
@@ -2128,6 +2229,17 @@ Sources: `silo-server/internal/apiv2/playback.go:206-212,413-426`,
   the resume rewind (client-local `player.resume_rewind_seconds`, default 7 s, applied only when
   the position is ≥ 30 s); it omits `start_position` when there is no saved position. It picks the
   version from `user_data.last_file_id` (`silo-android/androidApp/.../MobileVideoPlaybackStarter.kt:236-318`).
+  The rewind is never applied to Start Over, a Watch Party (the room's position), a retry or session renewal, a version
+  switch or a move to the next episode, which starts at 0 (`suppressResumeRewind`; `PlaybackStartPosition.kt`,
+  `applyResumeRewind`), and the result is clamped at 0. An On Deck pick in the player is an ordinary resume and is
+  rewound (`PlayerViewModel.playOnDeckItemNow`).
+- Granary keeps `player.resume_rewind_seconds` on the PC only (`resume_rewind_seconds` in `playback-device.json`, set
+  under Settings → Playback → This PC, 0 to 30) and writes nothing to the server. Its default is **0**, not the
+  contract's 7: the owner's choice, because viewers expect the exact point. A file without the key, or with a value
+  that is not a whole number from 0 to 30, reads as 0, and a save keeps to 0 to 30. Granary rewinds as Android does: Up Next starts the next episode
+  at 0, and the player's previous and next episode buttons (also in the taskbar preview and on the media keys), which
+  resume as the web player does, resume exactly (`PlayRequest.ResumeWithoutRewind`). Every other resume, On Deck in
+  the player included, is rewound.
 - `DELETE /api/v2/progress/{media_item_id}/position` (`clearResumePosition`) resets a movie or
   episode resume point to 0 (gate on `GET /api/v2/progress/capabilities` → `clear_resume_position`).
 - `POST /api/v2/sync/progress` (batch, **milliseconds**) and the progress bootstrap snapshots are

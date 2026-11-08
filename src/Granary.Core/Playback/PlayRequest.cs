@@ -29,6 +29,9 @@ public sealed record PlayRequest
     /// <summary>Start at 0 instead of the resume point ("Start over").</summary>
     public bool FromBeginning { get; private init; }
 
+    /// <summary>A resume lands on the resume point itself, whatever this PC's Rewind on resume (Android's <c>suppressResumeRewind</c>).</summary>
+    public bool SuppressesResumeRewind { get; private init; }
+
     /// <summary>A local path or URL played without the server (developer shortcut <c>--play</c>).</summary>
     public string? DirectSource { get; private init; }
 
@@ -49,6 +52,16 @@ public sealed record PlayRequest
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(contentId);
         return new PlayRequest { ContentId = contentId, Choice = choice };
+    }
+
+    /// <summary>
+    /// The episode before or after the playing one, from where the profile left it but never rewound: Android rewinds no
+    /// change of episode (<c>suppressResumeRewind</c>).
+    /// </summary>
+    public static PlayRequest ResumeWithoutRewind(string contentId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(contentId);
+        return new PlayRequest { ContentId = contentId, SuppressesResumeRewind = true };
     }
 
     public static PlayRequest FromStart(string contentId, PrePlayChoice? choice = null)

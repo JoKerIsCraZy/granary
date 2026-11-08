@@ -256,17 +256,65 @@ public sealed class ServerPlaybackTests
         Assert.Equal("42", body.GetProperty("file_id").GetString());
         Assert.Equal("7", body.GetProperty("profile_id").GetString());
         Assert.Equal(PlaybackPayloads.InstallationId, body.GetProperty("installation_id").GetString());
-        // 1325.5 s minus the 7 s resume rewind.
-        Assert.Equal(1318.5, body.GetProperty("start_position").GetDouble());
+        // Exactly where the profile left off: Rewind on resume is 0 until the viewer sets one.
+        Assert.Equal(1325.5, body.GetProperty("start_position").GetDouble());
         Assert.Equal("auto", body.GetProperty("quality_preference").GetString());
         Assert.True(Guid.TryParse(body.GetProperty("playback_attempt_id").GetString(), out _));
         Assert.Contains("header_authenticated_media_v1", body.GetProperty("client_features").EnumerateArray().Select(f => f.GetString()));
     }
 
+    [Theory]
+    [InlineData(7, 1318.5)]
+    [InlineData(20, 1305.5)]
+    [InlineData(30, 1295.5)]
+    public async Task Resume_StartsAsFarBackAsThisPcsRewindOnResume(int seconds, double start)
+    {
+        _fixture.DevicePreferences.ResumeRewindSeconds = seconds;
+
+        await _fixture.StartAsync();
+
+        Assert.Equal(start, _fixture.Body(HttpMethod.Post, StartPath).GetProperty("start_position").GetDouble());
+    }
+
+    [Fact]
+    public async Task AChangeOfEpisode_AsksForTheExactResumePoint_WhateverTheRewind()
+    {
+        _fixture.DevicePreferences.ResumeRewindSeconds = ResumeRewind.MaxSeconds;
+
+        await _fixture.StartAsync(PlayRequest.ResumeWithoutRewind(MovieId));
+
+        Assert.Equal(1325.5, _fixture.Body(HttpMethod.Post, StartPath).GetProperty("start_position").GetDouble());
+    }
+
+    [Fact]
+    public async Task ARewindChangedBeforeTheStart_CountsForThatResume()
+    {
+        var playback = _fixture.Create();
+
+        // Read when the title starts, not when the playback was made.
+        _fixture.DevicePreferences.ResumeRewindSeconds = 7;
+        await playback.StartAsync(PlayRequest.Resume(MovieId), Cancellation);
+
+        Assert.Equal(1318.5, _fixture.Body(HttpMethod.Post, StartPath).GetProperty("start_position").GetDouble());
+    }
+
     [Fact]
     public async Task StartOver_AsksForTheBeginning()
     {
+        // Start over is never rewound, whatever the setting.
+        _fixture.DevicePreferences.ResumeRewindSeconds = ResumeRewind.MaxSeconds;
+
         await _fixture.StartAsync(PlayRequest.FromStart(MovieId));
+
+        Assert.Equal(0, _fixture.Body(HttpMethod.Post, StartPath).GetProperty("start_position").GetDouble());
+    }
+
+    [Fact]
+    public async Task AWatchParty_IsNotRewound_TheRoomSaysWhereItPlays()
+    {
+        _fixture.DevicePreferences.ResumeRewindSeconds = ResumeRewind.MaxSeconds;
+
+        await _fixture.StartAsync(PlayRequest.WatchParty(MovieId, "42", selectionRevision: 1));
 
         Assert.Equal(0, _fixture.Body(HttpMethod.Post, StartPath).GetProperty("start_position").GetDouble());
     }
@@ -426,6 +474,8 @@ public sealed class ServerPlaybackTests
     {
         _fixture.Silo.On(HttpMethod.Post, ProgressPath, ScriptedSilo.Problem(404, "not_found"));
         _fixture.Silo.On(HttpMethod.Post, StartPath, Created(PlaybackPayloads.StartOpaqueIds), Created(StartedAgain));
+        // A restart is no resume: Rewind on resume leaves it alone.
+        _fixture.DevicePreferences.ResumeRewindSeconds = ResumeRewind.MaxSeconds;
         var playback = await _fixture.PlayingAsync();
         _fixture.Engine.RaiseState(Frame(300));
 

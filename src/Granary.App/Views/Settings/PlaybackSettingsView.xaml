@@ -57,6 +57,15 @@
                     <ComboBox Style="{StaticResource SiloSettingsComboBoxStyle}" ItemsSource="{x:Bind ViewModel.UpDownChoices}"
                               SelectedItem="{x:Bind ViewModel.SelectedUpDown, Mode=TwoWay}" AutomationProperties.Name="Up and Down in the player" />
                 </controls:SettingsRow>
+                <!-- player.resume_rewind_seconds, kept on the device as the contract has it, with its words and range; 0 by default, Granary's own choice (ResumeRewind). -->
+                <controls:SettingsRow Label="Rewind on resume"
+                                      Description="Skip back this far when resuming a partly watched item, to re-establish context. 0 turns it off.">
+                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <NumberBox Width="80" Minimum="0" Maximum="30" SmallChange="1" LargeChange="5" VerticalAlignment="Center"
+                                   Value="{x:Bind ViewModel.ResumeRewindSeconds, Mode=TwoWay}" AutomationProperties.Name="Rewind on resume in seconds" />
+                        <TextBlock Text="seconds" VerticalAlignment="Center" Foreground="{StaticResource SiloMutedBrush}" />
+                    </StackPanel>
+                </controls:SettingsRow>
                 <!-- player.passout_threshold is kept on the device, as the contract has it, which also sets the highest number; the named choices are the Android app's. -->
                 <controls:SettingsRow Label="Still watching prompt"
                                       Description="How many episodes auto-play in a row before Granary asks whether you're still watching. Unlimited never asks, and Custom takes a number from 1 to 20.">
@@ -68,6 +77,12 @@
                         <ComboBox Style="{StaticResource SiloSettingsComboBoxStyle}" ItemsSource="{x:Bind ViewModel.StillWatchingChoices}"
                                   SelectedItem="{x:Bind ViewModel.SelectedStillWatching, Mode=TwoWay}" AutomationProperties.Name="Still watching prompt" />
                     </StackPanel>
+                </controls:SettingsRow>
+                <!-- Granary's own: Silo's clients always have the sleep timer. An open player, also the minimized one, follows at once. -->
+                <controls:SettingsRow Label="Sleep timer"
+                                      Description="Show the Sleep button in the player, which pauses playback after a set time or at the end of an episode. Turning it off ends a timer that's running.">
+                    <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.SleepTimerButton, Mode=TwoWay}"
+                                  AutomationProperties.Name="Sleep timer" />
                 </controls:SettingsRow>
                 <!-- mpv reads the file when it starts, and each load starts a new one if the file changed (docs/architecture.md, "Your own mpv.conf"). -->
                 <controls:SettingsRow Label="mpv configuration"
