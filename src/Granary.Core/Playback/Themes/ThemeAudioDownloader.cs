@@ -22,11 +22,12 @@ public sealed class ThemeAudioDownloader(IHttpClientFactory clients)
     /// <summary>The whole download, body included.</summary>
     public static readonly TimeSpan Timeout = TimeSpan.FromSeconds(60);
 
+    /// <param name="routed">The server's capability says themes are routed, so a grant may name a proxy node's origin.</param>
     /// <exception cref="HttpRequestException">The URL is not one Granary fetches, or the answer is not a theme.</exception>
-    public async Task<ThemeAudioSource> DownloadAsync(Uri server, ThemePlayback grant, CancellationToken cancellationToken)
+    public async Task<ThemeAudioSource> DownloadAsync(Uri server, ThemePlayback grant, bool routed, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(grant);
-        var url = PlaybackUrl.ResolveTheme(server, grant.Url)
+        var url = PlaybackUrl.ResolveTheme(server, grant.Url, routed)
             ?? throw new HttpRequestException(HttpRequestError.InvalidResponse, "The server named a theme address Granary does not fetch.");
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(Timeout);

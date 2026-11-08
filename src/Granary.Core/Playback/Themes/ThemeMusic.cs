@@ -53,6 +53,8 @@ public sealed class ThemeMusic : IDisposable
     private int _identityVersion;
     private bool? _available;
     private long _availableAt;
+    // The answer says themes are routed: a grant may name a proxy node's origin.
+    private bool _routed;
     private bool _readingCapability;
 
     public ThemeMusic(ISessionManager session, TitlePageSettings settings, ThemesApi api, ThemeAudioDownloader downloader,
@@ -224,10 +226,12 @@ public sealed class ThemeMusic : IDisposable
         }
         _readingCapability = true;
         int version = _identityVersion;
+        ThemeSongsCapability? capability = null;
         bool? available = null;
         try
         {
-            available = (await _api.GetCapabilityAsync(server.BaseUri)).IsAvailable;
+            capability = await _api.GetCapabilityAsync(server.BaseUri);
+            available = capability.IsAvailable;
         }
         catch (SiloApiException ex) when (ex.Status == 404)
         {
@@ -247,6 +251,7 @@ public sealed class ThemeMusic : IDisposable
         {
             // A failed read keeps the answer before and is tried with the next page, never in a loop.
             _available = answer;
+            _routed = capability?.IsRouted == true;
             _availableAt = _time.GetTimestamp();
             Apply();
         }
@@ -267,7 +272,7 @@ public sealed class ThemeMusic : IDisposable
             {
                 return null;
             }
-            var audio = await _downloader.DownloadAsync(server.BaseUri, grant, cancellationToken);
+            var audio = await _downloader.DownloadAsync(server.BaseUri, grant, _routed, cancellationToken);
             return Identity() == identity ? audio : null;
         }
         catch (Exception ex) when (ex is ArgumentException || ApiFailureText.IsRequestFailure(ex, cancellationToken))
@@ -284,6 +289,7 @@ public sealed class ThemeMusic : IDisposable
         _identity = Identity();
         _identityVersion++;
         _available = null;
+        _routed = false;
         _readingCapability = false;
         Stop(immediate: true);
     }

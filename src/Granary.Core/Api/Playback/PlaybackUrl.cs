@@ -62,23 +62,24 @@ public static class PlaybackUrl
     }
 
     /// <summary>
-    /// A theme grant's audio URL (docs/api-contract.md 7.19): on the saved server as <see cref="Resolve"/> takes it, or on a
-    /// proxy node's origin, checked as a node stream is bar its path: HTTPS unless the server itself is plain HTTP, no user
-    /// info, never this machine or a link-local address. It carries its own token, so it is fetched without credentials.
+    /// A theme grant's audio URL (docs/api-contract.md 7.19): on the saved server as <see cref="Resolve"/> takes it, or, only
+    /// while the server's capability says themes are <paramref name="routed"/>, on a proxy node's origin: the server's own
+    /// scheme, no user info, no fragment, and a public address, never this machine, a private, unique-local or link-local
+    /// one, nor one of those written as an IPv4-mapped IPv6 address. It carries its own token, so it is fetched without
+    /// credentials.
     /// </summary>
-    public static Uri? ResolveTheme(Uri server, string? value)
+    public static Uri? ResolveTheme(Uri server, string? value, bool routed)
     {
         ArgumentNullException.ThrowIfNull(server);
         if (Resolve(server, value) is { } onServer)
         {
             return IsPlain(onServer.OriginalString) ? onServer : null;
         }
-        if (!IsElsewhere(server, value) || !IsPlain(value!) || !Uri.TryCreate(value, UriKind.Absolute, out var node))
+        if (!routed || !IsElsewhere(server, value) || !IsPlain(value!) || !Uri.TryCreate(value, UriKind.Absolute, out var node))
         {
             return null;
         }
-        bool secure = node.Scheme == Uri.UriSchemeHttps || (node.Scheme == Uri.UriSchemeHttp && server.Scheme == Uri.UriSchemeHttp);
-        bool valid = secure && node.UserInfo.Length == 0 && node.Fragment.Length == 0 && IsRemote(node);
+        bool valid = node.Scheme == server.Scheme && node.UserInfo.Length == 0 && node.Fragment.Length == 0 && IsRemote(node) && IsPublic(node);
         return valid ? new Uri(node.AbsoluteUri) : null;
     }
 
@@ -124,6 +125,35 @@ public static class PlaybackUrl
         bool unspecified = address.Equals(IPAddress.Any) || address.Equals(IPAddress.IPv6Any);
         bool multicast = address.IsIPv6Multicast || (bytes.Length == 4 && bytes[0] is >= 224 and <= 239);
         return !ipv4LinkLocal && !address.IsIPv6LinkLocal && !unspecified && !multicast;
+    }
+
+    // An address literal on the public internet: an IPv4-mapped IPv6 address is checked as the IPv4 address it is. A name is
+    // not looked up; it is the server that hands it out.
+    private static bool IsPublic(Uri node)
+    {
+        if (!IPAddress.TryParse(node.Host.Trim('[', ']'), out var address))
+        {
+            return true;
+        }
+        if (address.IsIPv4MappedToIPv6)
+        {
+            address = address.MapToIPv4();
+        }
+        if (IPAddress.IsLoopback(address) || address.Equals(IPAddress.Any) || address.Equals(IPAddress.IPv6Any))
+        {
+            return false;
+        }
+        byte[] bytes = address.GetAddressBytes();
+        if (bytes.Length == 4)
+        {
+            bool privateRange = bytes[0] == 10 || (bytes[0] == 172 && bytes[1] is >= 16 and <= 31) || (bytes[0] == 192 && bytes[1] == 168);
+            bool sharedRange = bytes[0] == 100 && bytes[1] is >= 64 and <= 127;
+            bool linkLocal = bytes[0] == 169 && bytes[1] == 254;
+            bool multicast = bytes[0] is >= 224;
+            return !privateRange && !sharedRange && !linkLocal && !multicast && bytes[0] != 0;
+        }
+        bool uniqueLocal = (bytes[0] & 0xFE) == 0xFC;
+        return !uniqueLocal && !address.IsIPv6LinkLocal && !address.IsIPv6SiteLocal && !address.IsIPv6Multicast;
     }
 
     private static bool IsSeekOnly(string query) =>

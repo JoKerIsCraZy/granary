@@ -35,6 +35,15 @@ public sealed record ThemeSongsCapability
     /// <summary>Whether this account and profile may use themes; absent reads as allowed.</summary>
     public bool? Allowed { get; init; }
 
+    /// <summary>
+    /// <c>routed</c>: themes follow the playback routing policy, so a grant may name a proxy node on another origin;
+    /// <c>local_direct_play</c>: the audio comes from the server's own origin only.
+    /// </summary>
+    public string? Delivery { get; init; }
+
+    /// <summary>Theme audio can be served by worker nodes.</summary>
+    public bool ClusterRouting { get; init; }
+
     /// <summary>A theme this PC cannot decode can be converted to AAC.</summary>
     public bool Transcode { get; init; }
 
@@ -43,6 +52,10 @@ public sealed record ThemeSongsCapability
     /// <summary>Themes play: the server serves them and lets this login use them, as the apps read it.</summary>
     [JsonIgnore]
     public bool IsAvailable => State == "available" && Allowed != false;
+
+    /// <summary>A grant may name a proxy node's origin; otherwise only the server's own is fetched.</summary>
+    [JsonIgnore]
+    public bool IsRouted => Delivery == "routed";
 }
 
 /// <summary>A container and codec this PC decodes; an empty codec accepts any codec in the container.</summary>

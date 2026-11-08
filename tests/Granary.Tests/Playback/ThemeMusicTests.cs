@@ -74,6 +74,32 @@ public sealed class ThemeMusicTests
         Assert.Empty(rig.Output.Made);
     }
 
+    [Theory]
+    [InlineData("routed", true)]
+    [InlineData("local_direct_play", false)]
+    public async Task AProxyNodesAddress_IsFetched_OnlyWhileTheServerRoutesThemes(string delivery, bool fetched)
+    {
+        var rig = new ThemeMusicRig();
+        rig.Harness.Answer(ThemeSongsApiTests.CapabilityPath, $$"""{ "state": "available", "allowed": true, "delivery": "{{delivery}}", "revision": "r" }""");
+        rig.Harness.Silo.On(HttpMethod.Post, ThemeSongsApiTests.PlaybackPath("movie-1", "11"),
+            ScriptedSilo.Json(HttpStatusCode.OK, ThemeSongsApiTests.Grant("https://proxy.example/theme-audio/abc?token=t")));
+        await rig.StartedAsync();
+
+        rig.Music.Show(_page, Set("movie-1", "11"));
+
+        await AuthPipeline.Eventually(() => rig.GrantsAsked("movie-1", "11") >= 1);
+        if (fetched)
+        {
+            await AuthPipeline.Eventually(() => rig.Output.Made.Count == 1);
+            Assert.Equal("https://proxy.example/theme-audio/abc?token=t", Assert.Single(rig.Download.Requests).RequestUri!.AbsoluteUri);
+        }
+        else
+        {
+            Assert.Empty(rig.Download.Requests);
+            Assert.Empty(rig.Output.Made);
+        }
+    }
+
     [Fact]
     public async Task TheServersAnswer_StandsAMinute()
     {

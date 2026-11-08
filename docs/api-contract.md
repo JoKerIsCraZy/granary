@@ -1295,15 +1295,19 @@ plays its first theme, as the web's `useThemeMusic.ts` and the apps do (docs/arc
 
 - `GET /api/v2/catalog/themes/capabilities` (profile) → `{ state: available|disabled|not_configured|unsupported, allowed,
   delivery, transcode, cluster_routing, grant_lifetime_seconds, revision }`. Themes play only while `state` is `available`
-  and `allowed` is not `false`; a `404` is a server that predates themes. The answer stands 60 s, as the web's query keeps
-  it; a failed read changes nothing and is asked again with the next page.
+  and `allowed` is not `false`; a `404` is a server that predates themes. `delivery: routed` lets a grant name a proxy
+  node's origin; with `local_direct_play` (or none) the audio comes from the server's own origin only
+  (`silo-server/internal/apiv2/theme_songs.go`). The answer stands 60 s, as the web's query keeps it; a failed read
+  changes nothing and is asked again with the next page.
 - `POST /api/v2/catalog/items/{owner_id}/themes/{theme_id}/playback` (profile) with `{ "accepted_formats": [{ container,
   audio_codec }] }` → `{ url, expires_at, delivery: original|converted, content_type }`. Granary lists what Windows' media
   player plays without extensions: `mp3/mp3`, `mp4/aac`, `m4a/aac`, `m4a/alac`, `aac/aac`, `flac/flac`, `wav/pcm`; the
   server sends the original when it matches and otherwise converts it to AAC in audio-only MP4 (`converted`), or answers
   `406` when it cannot. A grant answered after the profile changed is dropped.
-- `url` is a short-lived credential: relative to the server, or absolute on a proxy node's origin (HTTPS unless the server
-  is plain HTTP, no user info, never this machine or a link-local address; `PlaybackUrl.ResolveTheme`). Granary fetches it
+- `url` is a short-lived credential: relative to the server, or, only while the capability says `routed`, absolute on a
+  proxy node's origin (`PlaybackUrl.ResolveTheme`): the server's own scheme, no user info, and a public address, never this
+  machine, a private, shared, unique-local or link-local one, nor one of those written as an IPv4-mapped IPv6 address (a
+  host name is not looked up). Anything else is refused unsent. Granary fetches it
   whole (`ThemeAudioDownloader`: no credentials, no redirects, 60 s, at most 32 MB, as the Apple app reads a converted
   theme), on a client that logs nothing, and hands only the bytes to the player. It never logs or keeps the URL; a failure
   is logged by its status or kind alone.
