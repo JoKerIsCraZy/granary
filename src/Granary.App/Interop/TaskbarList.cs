@@ -51,11 +51,14 @@ internal sealed unsafe partial class TaskbarList : IDisposable
         }
     }
 
-    /// <summary>Gives the window's toolbar its button; a toolbar takes its buttons once per taskbar button.</summary>
-    public void AddButton(nint hwnd, ThumbButton button) => Call(ThumbBarAddButtonsSlot, hwnd, button);
+    /// <summary>
+    /// Gives the window's toolbar its buttons, in their order there; a toolbar takes its buttons once per taskbar button,
+    /// all in one call.
+    /// </summary>
+    public void AddButtons(nint hwnd, ReadOnlySpan<ThumbButton> buttons) => Call(ThumbBarAddButtonsSlot, hwnd, buttons);
 
-    /// <summary>Changes the button added before, found by its id.</summary>
-    public void UpdateButton(nint hwnd, ThumbButton button) => Call(ThumbBarUpdateButtonsSlot, hwnd, button);
+    /// <summary>Changes buttons added before, each found by its id.</summary>
+    public void UpdateButtons(nint hwnd, ReadOnlySpan<ThumbButton> buttons) => Call(ThumbBarUpdateButtonsSlot, hwnd, buttons);
 
     public void Dispose()
     {
@@ -66,20 +69,29 @@ internal sealed unsafe partial class TaskbarList : IDisposable
         }
     }
 
-    private void Call(int slot, nint hwnd, ThumbButton button)
+    private void Call(int slot, nint hwnd, ReadOnlySpan<ThumbButton> buttons)
     {
         ObjectDisposedException.ThrowIf(_list == 0, this);
-        var native = new NativeThumbButton
+        var natives = new NativeThumbButton[buttons.Length];
+        for (int i = 0; i < buttons.Length; i++)
         {
-            Mask = MaskIconTipFlags,
-            Id = button.Id,
-            Icon = button.Icon,
-            Flags = (button.IsHidden ? FlagHidden : 0) | (button.IsEnabled ? 0 : FlagDisabled),
-        };
-        // Zero-filled: the tip ends with a null.
-        button.Tip.AsSpan(0, Math.Min(button.Tip.Length, TipLength - 1)).CopyTo(new Span<char>(native.Tip, TipLength));
+            var button = buttons[i];
+            var native = new NativeThumbButton
+            {
+                Mask = MaskIconTipFlags,
+                Id = button.Id,
+                Icon = button.Icon,
+                Flags = (button.IsHidden ? FlagHidden : 0) | (button.IsEnabled ? 0 : FlagDisabled),
+            };
+            // Zero-filled: the tip ends with a null.
+            button.Tip.AsSpan(0, Math.Min(button.Tip.Length, TipLength - 1)).CopyTo(new Span<char>(native.Tip, TipLength));
+            natives[i] = native;
+        }
         var method = (delegate* unmanaged[Stdcall]<nint, nint, uint, NativeThumbButton*, int>)(*(nint**)_list)[slot];
-        Marshal.ThrowExceptionForHR(method(_list, hwnd, 1, &native));
+        fixed (NativeThumbButton* first = natives)
+        {
+            Marshal.ThrowExceptionForHR(method(_list, hwnd, (uint)natives.Length, first));
+        }
     }
 
     // THUMBBUTTON (shobjidl_core.h).
