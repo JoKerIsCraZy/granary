@@ -44,6 +44,13 @@ public sealed class AudioDelayTests
     private static Func<Task<HttpResponseMessage>> Effective(string value) => ScriptedSilo.Json(HttpStatusCode.OK,
         $$"""{ "items": [ { "key": "player.audio_sync_ms", "value": {{value}}, "source": "profile_device" } ], "revision": 3 }""");
 
+    // An answer of the server that waits for the test to let it go.
+    private static Func<Task<HttpResponseMessage>> Held(TaskCompletionSource gate, string value) => async () =>
+    {
+        await gate.Task;
+        return await Effective(value)();
+    };
+
     // Lets the settle timer start its save, and waits for that save.
     private async Task SettleAsync(AudioDelay delay)
     {
@@ -368,6 +375,51 @@ public sealed class AudioDelayTests
         Assert.Equal(100, Value(Assert.Single(Saves)));
         delay.Take(0);
         Assert.Equal(0, delay.Milliseconds);
+    }
+
+    [Fact]
+    public async Task AnOlderRead_ThatAnswersAfterANewerOne_IsDropped()
+    {
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _silo.On(HttpMethod.Get, EffectivePath, Held(gate, "300"), Effective("500"));
+        var delay = Create();
+
+        var older = delay.ReadAsync(TestContext.Current.CancellationToken);
+        await delay.ReadAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(500, delay.Milliseconds);
+        gate.SetResult();
+        await older;
+
+        Assert.Equal(500, delay.Milliseconds);
+    }
+
+    [Fact]
+    public async Task ARead_ThatStartedBeforeASaveWentThrough_DoesNotPutTheValueFromBeforeItBack()
+    {
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _silo.On(HttpMethod.Get, EffectivePath, Held(gate, "0"));
+        var delay = Create();
+
+        delay.Set(200);
+        var read = delay.ReadAsync(TestContext.Current.CancellationToken);
+        await delay.SaveNowAsync();
+        gate.SetResult();
+        await read;
+
+        Assert.Equal(200, delay.Milliseconds);
+    }
+
+    [Fact]
+    public async Task ARead_ThatStartedAfterASaveWentThrough_IsTaken()
+    {
+        _silo.On(HttpMethod.Get, EffectivePath, Effective("250"));
+        var delay = Create();
+
+        delay.Set(200);
+        await delay.SaveNowAsync();
+        await delay.ReadAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal(250, delay.Milliseconds);
     }
 
     [Fact]

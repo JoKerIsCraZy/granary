@@ -53,6 +53,11 @@ public sealed class AudioDelay(SettingsApi settings, ISessionManager session, IU
     // Whose value Milliseconds is: the profile it was read or changed for; null when none was acting.
     private Owner? _shownFor;
 
+    // Numbers each read as it starts and each save as it goes through, in one order. Per profile, the latest that made
+    // the value: a read taken, or a save done. A read that started before it answers with what the server held then.
+    private long _ticket;
+    private readonly Dictionary<Owner, long> _newest = [];
+
     /// <summary>The delay in milliseconds, positive for later sound; 0 until a value is read or set.</summary>
     public int Milliseconds { get; private set; }
 
@@ -69,18 +74,22 @@ public sealed class AudioDelay(SettingsApi settings, ISessionManager session, IU
             : 0;
 
     /// <summary>
-    /// Reads this device's value from the server and takes it (<see cref="Take"/>), unless the viewer changed the delay or
-    /// another profile took over while it was read. A server that does not know the setting refuses it (422).
+    /// Reads this device's value from the server and takes it (<see cref="Take"/>), unless, while it was read, the viewer
+    /// changed the delay, another profile took over, a newer read was taken or a save went through: its answer is then
+    /// older than what the delay holds. A server that does not know the setting refuses it (422).
     /// </summary>
     public async Task ReadAsync(CancellationToken cancellationToken)
     {
         var owner = Acting() ?? throw new InvalidOperationException("No profile is signed in.");
         long changes = _changes;
+        long read = ++_ticket;
         var values = await settings.GetEffectiveAsync(owner.Server, [Key], cancellationToken);
-        if (Acting() == owner && _changes == changes)
+        if (Acting() != owner || _changes != changes || _newest.GetValueOrDefault(owner) > read)
         {
-            Take(FromSetting(values.Find(Key)));
+            return;
         }
+        _newest[owner] = read;
+        Take(FromSetting(values.Find(Key)));
     }
 
     /// <summary>
@@ -196,6 +205,8 @@ public sealed class AudioDelay(SettingsApi settings, ISessionManager session, IU
         {
             await settings.SetValueAsProfileAsync(pending.Owner.Server, Key, document.RootElement, SettingScopes.ProfileDevice,
                 pending.Owner.Profile, timeout.Token);
+            // A read on its way since before has the server's value from before this one.
+            _newest[pending.Owner] = ++_ticket;
             Settled(pending);
         }
         catch (ProfileChangedException)
