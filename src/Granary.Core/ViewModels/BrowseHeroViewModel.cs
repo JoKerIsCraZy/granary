@@ -32,7 +32,14 @@ public sealed partial class BrowseHeroViewModel : ObservableObject
 
     /// <summary>The title shown; null while the page has no cards.</summary>
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasTitle))]
     public partial BrowseHeroTitle? Shown { get; private set; }
+
+    /// <summary>
+    /// A title shows, for the page's layout: x:Bind calls a function again only for an argument that is not null, so the rows'
+    /// room under the hero follows this rather than <see cref="Shown"/>, which would leave it when the title goes.
+    /// </summary>
+    public bool HasTitle => Shown is not null;
 
     /// <summary>
     /// The pointer or the keyboard came to a card of <paramref name="item"/>, on <paramref name="server"/>; an unwatched

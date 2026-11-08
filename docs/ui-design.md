@@ -369,7 +369,9 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   the title of the card the pointer or the keyboard is on, in any row, at the top of the page, a deliberate departure from
   the web's Home, which then shows nothing there; with one, the banner's slides, as on the web. A page lays its rows under
   it with `BrowseHero.RowsViewMargin` and `RowsPadding` (with the hero's `Sizes`), and feeds it its rows' titles
-  (`BrowseHeroViewModel.Follow`) and the card pointed at (`Point`); Home feeds it `HomeViewModel.HeroTitle`.
+  (`BrowseHeroViewModel.Follow`) and the card pointed at (`Point`); Home feeds it `HomeViewModel.HeroTitle`, Requests
+  `RequestsViewModel.HeroTitle` (Discover's only). The rows' room follows `HasTitle` / `HasHeroTitle`, not the title:
+  x:Bind calls a function again only for an argument that is not null, so a title that went left its room behind.
   - Its sizes below are a page up to 1040 px high (a 1080 px window). A taller page has a taller hero, which grows with
     the window (`BrowseHeroLayout.For`, in 8 px steps of the page's height): the hero keeps its share of the page's
     height, up to 720 px (643 px on a 3840 × 1600 screen), and the first row moves down with it; the compact header, the

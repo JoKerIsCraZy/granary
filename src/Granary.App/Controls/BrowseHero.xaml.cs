@@ -125,13 +125,15 @@ public sealed partial class BrowseHero : UserControl
 
     // Static because the pages' x:Bind function bindings call them on the type. With a hero, the rows' view begins at the
     // compact header and the rows a fold's length below it, so at rest they start under the full hero and scroll up under
-    // the header as it folds; without one (loading, empty, an error), as on any page.
+    // the header as it folds; without one (loading, empty, an error), as on any page. They take whether the page has a
+    // title, not the title: x:Bind calls a function again only for an argument that is not null, so a title that went
+    // would have left its room behind (BrowseHeroViewModel.HasTitle).
 
-    /// <summary>Where the rows' scroller begins under a hero for <paramref name="hero"/> of <paramref name="sizes"/>.</summary>
-    public static Thickness RowsViewMargin(BrowseHeroTitle? hero, BrowseHeroSizes sizes) => new(0, hero is null ? 0 : sizes.CompactHeight, 0, 0);
+    /// <summary>Where the rows' scroller begins under a hero of <paramref name="sizes"/>, while the page <paramref name="hasHero"/>.</summary>
+    public static Thickness RowsViewMargin(bool hasHero, BrowseHeroSizes sizes) => new(0, hasHero ? sizes.CompactHeight : 0, 0, 0);
 
     /// <summary>The padding of the rows in that scroller: the pages' 48 px sides and bottom, and the fold's length on top.</summary>
-    public static Thickness RowsPadding(BrowseHeroTitle? hero, BrowseHeroSizes sizes) => new(48, hero is null ? 32 : sizes.CollapseDistance, 48, 48);
+    public static Thickness RowsPadding(bool hasHero, BrowseHeroSizes sizes) => new(48, hasHero ? sizes.CollapseDistance : 32, 48, 48);
 
     /// <summary>
     /// Folds the hero as <paramref name="scroller"/> scrolls its first <see cref="BrowseHeroSizes.CollapseDistance"/>: the logo

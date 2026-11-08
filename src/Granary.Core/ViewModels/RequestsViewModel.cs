@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Globalization;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -80,6 +81,7 @@ public sealed partial class RequestsViewModel : ObservableObject
         _cardActions = cardActions;
         RequestNotice = requestNotice ?? CardRequestNotice.None;
         Hero = new BrowseHeroViewModel(dispatcher, time);
+        Hero.PropertyChanged += OnHeroChanged;
         BrandRows =
         [
             new(DiscoverBrowseKind.Studio, "Studios", RetryBrandsAsync),
@@ -89,7 +91,7 @@ public sealed partial class RequestsViewModel : ObservableObject
     }
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsDiscoverTab), nameof(IsYoursTab))]
+    [NotifyPropertyChangedFor(nameof(IsDiscoverTab), nameof(IsYoursTab), nameof(HeroTitle), nameof(HasHeroTitle))]
     public partial RequestsTab Tab { get; set; }
 
     public bool IsDiscoverTab => Tab == RequestsTab.Discover;
@@ -100,6 +102,12 @@ public sealed partial class RequestsViewModel : ObservableObject
 
     /// <summary>The title at the top of Discover, following the card the pointer or the keyboard is on, as Home's.</summary>
     public BrowseHeroViewModel Hero { get; }
+
+    /// <summary>What the top of the page shows: Discover's hero. Yours shows its title and tabs at the top.</summary>
+    public BrowseHeroTitle? HeroTitle => IsDiscoverTab ? Hero.Shown : null;
+
+    /// <summary>The top of the page shows a title, for its layout (see <see cref="BrowseHeroViewModel.HasTitle"/>).</summary>
+    public bool HasHeroTitle => HeroTitle is not null;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsDiscoverLoading), nameof(HasDiscoverError), nameof(IsDiscoverEmpty))]
@@ -207,6 +215,15 @@ public sealed partial class RequestsViewModel : ObservableObject
             _ = RefreshYoursAsync();
         }
     });
+
+    private void OnHeroChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(BrowseHeroViewModel.Shown) or null)
+        {
+            OnPropertyChanged(nameof(HeroTitle));
+            OnPropertyChanged(nameof(HasHeroTitle));
+        }
+    }
 
     [RelayCommand]
     private void SelectTab(RequestsTab tab) => Tab = tab;

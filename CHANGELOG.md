@@ -85,6 +85,8 @@ release's section is what its update says it changes (docs/release.md).
 - Saving mpv.conf or loading a preset no longer fails when Granary happens to be reading the file at that moment.
 - HDR and Dolby Vision films play directly on more graphics cards, because Granary now checks the film's own codec. A
   card that decodes VP9 only in 8 bits had your Silo server convert every HDR film, HEVC ones too.
+- When the large picture at the top of For You or Requests' Discover goes, such as for another profile while its rows
+  load, the page moves up into its place, and Discover no longer keeps showing the title from before.
 
 ## [0.2.1] - 2026-11-05
 
