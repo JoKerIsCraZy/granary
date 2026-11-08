@@ -1,3 +1,4 @@
+using System.Globalization;
 using Granary.Core.Playback;
 using Granary.Tests.Fakes;
 
@@ -121,6 +122,43 @@ public sealed class JsonPlaybackDevicePreferencesTests : IDisposable
         var preferences = Create();
 
         Assert.Equal(AutoPlayStreak.DefaultThreshold, preferences.PassoutThreshold);
+        Assert.Equal(PlayerUpDown.Volume, preferences.UpDown);
+    }
+
+    [Fact]
+    public void AtFirst_AResumeIsNotRewound() => Assert.Equal(0, Create().ResumeRewindSeconds);
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(7)]
+    [InlineData(30)]
+    public async Task RewindOnResume_StaysAtTheNextStart_WithTheOtherChoices(int seconds)
+    {
+        var preferences = Create();
+
+        await preferences.SetUpDownAsync(PlayerUpDown.Volume);
+        await preferences.SetResumeRewindSecondsAsync(seconds);
+
+        var again = Create();
+        Assert.Equal(seconds, again.ResumeRewindSeconds);
+        Assert.Equal(PlayerUpDown.Volume, again.UpDown);
+        Assert.Contains(string.Create(CultureInfo.InvariantCulture, $"\"resume_rewind_seconds\": {seconds}"),
+            await File.ReadAllTextAsync(FilePath, TestContext.Current.CancellationToken), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("{ \"resume_rewind_seconds\": 31, \"up_down\": \"volume\" }")]
+    [InlineData("{ \"resume_rewind_seconds\": -1, \"up_down\": \"volume\" }")]
+    [InlineData("{ \"up_down\": \"volume\" }")]
+    public async Task ARewindOutOfBounds_OrAnOlderFile_MeansNone_AndKeepsTheOtherChoices(string file)
+    {
+        Directory.CreateDirectory(_directory);
+        await File.WriteAllTextAsync(FilePath, file, TestContext.Current.CancellationToken);
+
+        var preferences = Create();
+
+        Assert.Equal(0, preferences.ResumeRewindSeconds);
         Assert.Equal(PlayerUpDown.Volume, preferences.UpDown);
     }
 

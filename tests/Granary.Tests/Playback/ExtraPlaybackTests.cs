@@ -52,7 +52,7 @@ public sealed class ExtraPlaybackTests
 
         await _fixture.StartAsync(PlayRequest.FromStart(ExtraId));
 
-        // Resumed, it would ask for 1318.5 s: the 1325.5 s left less the 7 s rewind.
+        // Resumed, it would ask for the 1325.5 s the profile left.
         Assert.Equal(0, _fixture.Body(HttpMethod.Post, StartPath).GetProperty("start_position").GetDouble());
         Assert.Equal(TimeSpan.Zero, Assert.Single(_fixture.Engine.Loaded).Start);
     }

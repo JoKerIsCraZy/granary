@@ -469,7 +469,9 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     season's own name; one meta line in 17 at 60 % white ("2026 · 1h 58m · R · Mystery, Thriller", a series' air years,
     rating, regular seasons and genres, an episode's "S2 E7 · 54m · 30 Oct 2026"); the tagline in 17 italic; the overview
     in 16/25, four lines at most and 820 wide.
-  - Granary's own buttons one size up: the red Play pill ("Resume from 1:02:33" for a movie or episode), Start over,
+  - Granary's own buttons one size up: the red Play pill ("Resume from 1:02:33" for a movie or episode: the saved
+    point, as the web's "Resume at" names it, which is also where playback starts unless Settings → Playback → This PC
+    → Rewind on resume sets a lead-in), Start over,
     "Mark Watched", "Info", the heart, the stars and ⋮ (Watchlist, Add to Collection, then Start a Watch Party below a
     line). Pills 50 high with 17 px labels, round buttons 50, 14 apart. An episode or a season has ⋮ with Start a Watch
     Party alone. Under a single file's buttons "Available version: 1080P · H264 · EAC3 · 6.6 GB" in 14 at 45 % white.
@@ -856,7 +858,12 @@ says why above the sections.
   connection's learned limit with Reset), This PC ("Kept on this PC, not in your profile.": Direct play without
   hardware decoding, a switch, off by default, counting from the next title, its text saying a fixed Quality can still convert a file; Up and Down in the player, a select with
   Controls and menus (the default, as Silo's TV app) and Volume (the web player's keys), which the
-  player follows at its next key; Still watching prompt, a select with Unlimited, 2 to 5 episodes (the Android app's
+  player follows at its next key; Rewind on resume, the contract's words ("Skip back this far when resuming a partly
+  watched item, to re-establish context. 0 turns it off."), a number box from 0 to 30 in steps of 1 with "seconds"
+  after it, counting from the next resume, 0 by default: a resume lands exactly where the viewer stopped. Silo's
+  contract defaults to 7; Granary departs from it on purpose, the owner's choice, because viewers expect the exact
+  point. As in the Android app, a set rewind applies only to resume points 30 s in or more, never to Start over, a Watch
+  Party, a restart or another file; Still watching prompt, a select with Unlimited, 2 to 5 episodes (the Android app's
   choices, 3 by default) and Custom, which shows a number box from 1 to 20 (the contract's highest), counting from the
   next episode; mpv configuration, see below; and Show what's playing in Discord, a switch at the group's end, off by
   default ("Your Discord status shows the title, the episode and the time left while Granary plays. Needs the Discord app

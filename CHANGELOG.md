@@ -8,6 +8,10 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Added
 
+- **Rewind on resume:** resuming a movie or episode now starts exactly where you stopped, the time the Resume button
+  shows, instead of 7 seconds earlier. To get a few seconds of lead-in back, set Settings → Playback → This PC → Rewind
+  on resume, from 0 to 30 seconds. Silo's settings suggest 7 seconds; Granary starts at 0 on purpose, because you expect
+  to land where you stopped. A rewind never applies to Start over or a Watch Party.
 - **Start a Watch Party from a title's page:** the ⋮ menu of a movie, series, season or episode now has Start a Watch
   Party. Pick whether the host picks or everyone votes, whether guests may pause, and for a series which episode, then
   Create party & copy invite: the room opens with the title up next (or as the first suggestion of a vote), and the

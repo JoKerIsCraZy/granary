@@ -293,7 +293,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         _speed = request.IsWatchParty ? 1 : _context.Preferences.Speed;
         _engine.SetSpeed(_speed);
         SetStatus(Status);
-        await StartAttemptAsync(PlaybackStarter.StartPosition(_context.Watch, request.FromBeginning), cancellationToken);
+        await StartAttemptAsync(_starter.StartPosition(_context.Watch, request.FromBeginning), cancellationToken);
     }
 
     // A new attempt: a fresh attempt id and, from the server, a fresh session.

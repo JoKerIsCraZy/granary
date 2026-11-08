@@ -63,11 +63,6 @@ public sealed class PlaybackStarter(
     ISessionManager session,
     TrackChoiceWrites? trackChoices = null)
 {
-    // A resume point at least this far in rewinds by ResumeRewindSeconds, so the viewer finds the scene again
-    // (Android's player.resume_rewind_seconds, a client-local setting).
-    private const double RewindFromSeconds = 30;
-    private const double ResumeRewindSeconds = 7;
-
     /// <summary>
     /// Gathers what the start of <paramref name="request"/>'s title needs: its <see cref="PlayRequest.PinnedFileId"/> (a
     /// Watch Party's file) or else its <see cref="PlayRequest.Choice"/> (the detail page's picks), or the client's choice.
@@ -284,10 +279,11 @@ public sealed class PlaybackStarter(
     }
 
     /// <summary>
-    /// The start's <c>start_position</c>: 0 to start over, the resume point (rewound) to resume, null without one.
-    /// It is sent explicitly because the server starts a watched title at 0 even during a rewatch (docs/api-contract.md, 10.5).
+    /// The start's <c>start_position</c>: 0 to start over, the resume point to resume, rewound by this PC's Rewind on resume
+    /// as it is now (<see cref="ResumeRewind"/>), null without one. It is sent explicitly because the server starts a
+    /// watched title at 0 even during a rewatch (docs/api-contract.md, 10.5).
     /// </summary>
-    public static double? StartPosition(WatchDetail detail, bool fromBeginning)
+    public double? StartPosition(WatchDetail detail, bool fromBeginning)
     {
         ArgumentNullException.ThrowIfNull(detail);
         if (fromBeginning)
@@ -299,7 +295,7 @@ public sealed class PlaybackStarter(
         {
             return null;
         }
-        return position >= RewindFromSeconds ? position - ResumeRewindSeconds : position;
+        return ResumeRewind.Apply(position, devicePreferences.ResumeRewindSeconds);
     }
 
     /// <summary>
