@@ -87,6 +87,35 @@ public sealed class JsonPlaybackDevicePreferencesTests : IDisposable
     }
 
     [Fact]
+    public void AtFirst_ThePlayersTimeShowsTheDuration() => Assert.False(Create().TimeLeft);
+
+    [Fact]
+    public async Task TheTimeLeft_StaysAtTheNextStart_WithTheOtherChoices()
+    {
+        var preferences = Create();
+
+        await preferences.SetUpDownAsync(PlayerUpDown.Volume);
+        await preferences.SetTimeLeftAsync(true);
+
+        var again = Create();
+        Assert.True(again.TimeLeft);
+        Assert.Equal(PlayerUpDown.Volume, again.UpDown);
+        Assert.Contains("\"time_left\": true", await File.ReadAllTextAsync(FilePath, TestContext.Current.CancellationToken), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AnOlderFile_ShowsTheDuration_AndKeepsTheOtherChoices()
+    {
+        Directory.CreateDirectory(_directory);
+        await File.WriteAllTextAsync(FilePath, "{ \"decodes_in_software\": true, \"up_down\": \"volume\" }", TestContext.Current.CancellationToken);
+
+        var preferences = Create();
+
+        Assert.False(preferences.TimeLeft);
+        Assert.Equal(PlayerUpDown.Volume, preferences.UpDown);
+    }
+
+    [Fact]
     public void AtFirst_TheStillWatchingPromptComesAfterThreeEpisodes() =>
         Assert.Equal(AutoPlayStreak.DefaultThreshold, Create().PassoutThreshold);
 

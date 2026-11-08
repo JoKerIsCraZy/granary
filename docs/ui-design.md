@@ -1139,7 +1139,9 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   "✕ Exit" pill on the right. Bottom bar
   over a stronger scrim: the `SeekBar` across the width; below it on the left the title and the upper-case
   line "S1 · E1 — EPISODE · 31:55 / 48:41" (a movie shows its year), whose end time a click turns into the
-  time left; in the middle skip back, the white play/pause disc and skip forward (glass discs showing the
+  time left ("31:55 / -16:46") and back, in the minimized bar too. Granary's own: the web forgets the choice, this PC
+  keeps it for the next player and after a restart (`time_left` in `playback-device.json`; the click is its only
+  setting). In the middle skip back, the white play/pause disc and skip forward (glass discs showing the
   profile's intervals), for an episode with a previous or next one flanked by previous and next episode discs (both
   slots kept while one has an episode, so Play stays in the middle; a movie has none); on the right mute, the volume
   slider, the sleep timer, audio, subtitles, chapters, settings, playback info, mini view, fill screen and full screen. Audio

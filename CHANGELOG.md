@@ -61,6 +61,8 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Changed
 
+- **Time left stays:** when you click the player's time to show the time left instead of the duration, Granary keeps
+  that on this PC. The next title, and the player after a restart, show the time left too, until you click it back.
 - **Player buttons:** Audio and Subtitles now sit side by side on the player's bar, with Chapters after them, and
   the Audio button shows sound waves, the icon of Silo's web player, where it showed sliders.
 - **More Episodes** on an episode's page lists the whole season, the episode you're on included, so the row no longer

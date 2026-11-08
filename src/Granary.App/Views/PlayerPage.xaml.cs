@@ -31,9 +31,6 @@ public sealed partial class PlayerPage : Page
     public static readonly DependencyProperty IsMiniViewProperty =
         DependencyProperty.Register(nameof(IsMiniView), typeof(bool), typeof(PlayerPage), new PropertyMetadata(false));
 
-    public static readonly DependencyProperty ShowsRemainingProperty =
-        DependencyProperty.Register(nameof(ShowsRemaining), typeof(bool), typeof(PlayerPage), new PropertyMetadata(false));
-
     // MainWindow's title bar row. In a window the top bar starts below it: that strip is the drag area.
     private const double TitleBarHeight = 32;
 
@@ -90,13 +87,6 @@ public sealed partial class PlayerPage : Page
     {
         get => (bool)GetValue(IsMiniViewProperty);
         private set => SetValue(IsMiniViewProperty, value);
-    }
-
-    /// <summary>The end of the seek bar shows the time left instead of the duration.</summary>
-    public bool ShowsRemaining
-    {
-        get => (bool)GetValue(ShowsRemainingProperty);
-        private set => SetValue(ShowsRemainingProperty, value);
     }
 
     private bool HasTransport => ViewModel.Phase is PlayerPhase.Playing or PlayerPhase.Ended;
@@ -293,8 +283,6 @@ public sealed partial class PlayerPage : Page
             RightColumn.MinWidth = width;
         }
     }
-
-    private void OnEndTimeClick(object sender, RoutedEventArgs e) => ShowsRemaining = !ShowsRemaining;
 
     private void OnFullScreenClick(object sender, RoutedEventArgs e) => ToggleFullScreen();
 

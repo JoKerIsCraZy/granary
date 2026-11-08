@@ -43,6 +43,8 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     private readonly ILogger _logger;
     private readonly global::Granary.Core.WatchParty.WatchPartySession? _watchParty;
     private readonly EpisodeSpoilerSettings? _spoilers;
+    // This PC's own player choices; without them, as in tests that leave them out, the defaults hold and nothing is kept.
+    private readonly IPlaybackDevicePreferences? _devicePreferences;
     // A seek's target counts as the position for this long, until the engine reports it: quick skips add up.
     private const long SeekTargetMilliseconds = 3000;
 
@@ -66,7 +68,8 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         Auth.AccountPermissions? permissions = null,
         global::Granary.Core.WatchParty.WatchPartySession? watchParty = null,
         IConfirmation? confirmation = null,
-        EpisodeSpoilerSettings? spoilers = null)
+        EpisodeSpoilerSettings? spoilers = null,
+        IPlaybackDevicePreferences? devicePreferences = null)
     {
         _engine = engine;
         _dispatcher = dispatcher;
@@ -82,7 +85,9 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         _permissions = permissions;
         _watchParty = watchParty;
         _spoilers = spoilers;
-        Party = InitializeWatchParty(confirmation);
+        _devicePreferences = devicePreferences;
+        ShowsTimeLeft = devicePreferences?.TimeLeft == true;
+        Party =InitializeWatchParty(confirmation);
         Look.Edited += OnLookEdited;
         InitializeMarkerEdit();
         _engine.StateChanged += OnStateChanged;
