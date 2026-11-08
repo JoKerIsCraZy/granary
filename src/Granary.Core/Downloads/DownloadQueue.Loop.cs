@@ -124,16 +124,22 @@ public sealed partial class DownloadQueue
             stopped = scope is not null && IsStoppedLocked(scope, out resumed);
         }
         bool activated = scope != _activeScope || resumed;
-        _activeScope = scope;
-        _runnable = scope is not null && server is not null && !stopped;
         if (scope is null || server is null || stopped)
         {
+            _activeScope = scope;
+            _runnable = false;
             return;
         }
         if (activated)
         {
+            // The scope is the active one only once its activation went through: one that failed is done again by the next
+            // pass (a minute later at the latest), capability and registry included.
+            _activeScope = null;
+            _runnable = false;
             await ActivateAsync(scope, server, stop).ConfigureAwait(false);
         }
+        _activeScope = scope;
+        _runnable = true;
         if (!IsWaitingForUnmetered)
         {
             StartTransfers(scope, server, generation);

@@ -319,6 +319,26 @@ public sealed class DownloadQueueServerTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AnActivationThatFails_IsDoneAgain_CapabilityAndRegistry()
+    {
+        await _h.AddAsync("dl_1");
+        _h.Silo.On(HttpMethod.Get, CapabilityPath, () => throw new InvalidOperationException("The test's server broke."),
+            ScriptedSilo.Json(HttpStatusCode.OK, DownloadPayloads.CapabilityWith(proxyDelivery: true)));
+        _h.Silo.On(HttpMethod.Get, "api/v2/downloads/dl_1/file-proxy", DownloadPayloads.Bytes(HttpStatusCode.OK, Source, "\"v1\""));
+        var queue = _h.StartQueue();
+        await Until(() => _h.Logs.All.Contains("A pass of the download queue failed", StringComparison.Ordinal), "the activation failed");
+
+        // The next pass, a minute later at the latest, activates the profile again.
+        await _h.AdvanceAsync(DownloadQueue.RetryDelays[^1], queue);
+
+        await CompletedAsync("dl_1");
+        Assert.Equal(2, _h.Silo.SentTo(HttpMethod.Get, CapabilityPath).Count);
+        Assert.Single(_h.Silo.SentTo(HttpMethod.Get, ListPath));
+        Assert.Single(_h.Silo.SentTo(HttpMethod.Get, "api/v2/downloads/dl_1/file-proxy"));
+        Assert.Empty(_h.FileRequests("dl_1"));
+    }
+
+    [Fact]
     public async Task ARefusalWhoseRegistryReadFails_IsLookedUpAgainLater()
     {
         await _h.AddAsync("dl_1");
