@@ -1110,7 +1110,9 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   time left; in the middle skip back, the white play/pause disc and skip forward (glass discs showing the
   profile's intervals), for an episode with a previous or next one flanked by previous and next episode discs (both
   slots kept while one has an episode, so Play stays in the middle; a movie has none); on the right mute, the volume
-  slider, the sleep timer, audio, chapters, subtitles, settings, playback info, mini view, fill screen and full screen. A utility
+  slider, the sleep timer, audio, subtitles, chapters, settings, playback info, mini view, fill screen and full screen. Audio
+  and subtitles stand side by side, where the web puts chapters between them, as the two track choices belong together; audio
+  shows the web's icon, lucide's AudioLines, drawn as a PathIcon. A utility
   button that is on (sleep timer, playback info, fill screen, subtitles) turns white with the web's amber dot under it. As the
   web's `1fr auto 1fr` row, the right column is never narrower than its buttons: in a narrow window the transport
   moves left rather than the buttons being cut off. Previous and next start that episode from where the
