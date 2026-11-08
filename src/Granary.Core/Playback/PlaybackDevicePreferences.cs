@@ -24,6 +24,12 @@ public interface IPlaybackDevicePreferences
     /// </summary>
     int PassoutThreshold { get; }
 
+    /// <summary>
+    /// How many seconds before the saved point a resume starts, 0 to 30 (<c>player.resume_rewind_seconds</c>, client-local
+    /// in the contract); 0, the exact point, by default (<see cref="ResumeRewind.DefaultSeconds"/>).
+    /// </summary>
+    int ResumeRewindSeconds { get; }
+
     /// <summary>Discord's status shows what plays (<see cref="ViewModels.Player.PlayerRichPresence"/>); off by default.</summary>
     bool DiscordStatus { get; }
 
@@ -44,6 +50,9 @@ public interface IPlaybackDevicePreferences
     Task SetUpDownAsync(PlayerUpDown upDown);
 
     Task SetPassoutThresholdAsync(int episodes);
+
+    /// <summary>Saves <see cref="ResumeRewindSeconds"/>, brought into 0 to 30 first.</summary>
+    Task SetResumeRewindSecondsAsync(int seconds);
 
     Task SetDiscordStatusAsync(bool enabled);
 
@@ -66,12 +75,13 @@ public enum PlayerUpDown
 
 /// <summary>
 /// <see cref="IPlaybackDevicePreferences"/> in <c>playback-device.json</c> in the data directory
-/// (<c>{ "decodes_in_software": true, "up_down": "volume", "passout_threshold": 5, "discord_status": true }</c>). Without the
-/// file, or with one that cannot be read, direct play needs the GPU, Up and Down show the controls and menus, the player
-/// waits after three episodes and Discord's status stays as it is, as by default; a value it does not know, or one an older
-/// file lacks, is the default. One that cannot be written is logged, and the choice still holds for this run. Files are
-/// written off the caller's thread, which is the UI's. The Sleep timer switch from before the player buttons editor
-/// (<c>"sleep_timer_button": false</c>) is read and written back as it was, until the editor has taken it over.
+/// (<c>{ "decodes_in_software": true, "up_down": "volume", "passout_threshold": 5, "resume_rewind_seconds": 7,
+/// "discord_status": true }</c>). Without the file, or with one that cannot be read, direct play needs the GPU, Up and Down
+/// show the controls and menus, the player waits after three episodes, a resume lands on the saved point and Discord's
+/// status stays as it is, as by default; a value it does not know, or one an older file lacks, is the default. One that
+/// cannot be written is logged, and the choice still holds for this run. Files are written off the caller's thread, which
+/// is the UI's. The Sleep timer switch from before the player buttons editor (<c>"sleep_timer_button": false</c>) is read
+/// and written back as it was, until the editor has taken it over.
 /// </summary>
 public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
 {
@@ -86,6 +96,7 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
     private volatile bool _decodesInSoftware;
     private volatile PlayerUpDown _upDown;
     private volatile int _passoutThreshold;
+    private volatile int _resumeRewindSeconds;
     private volatile bool _discordStatus;
     // The file had the Sleep timer switch turned off, and the player buttons editor has not taken it over yet.
     private volatile bool _sleepTimerSwitchOff;
@@ -102,6 +113,9 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
         _passoutThreshold = file?.PassoutThreshold is { } episodes and >= 0 and <= AutoPlayStreak.MaxThreshold
             ? episodes
             : AutoPlayStreak.DefaultThreshold;
+        _resumeRewindSeconds = file?.ResumeRewindSeconds is { } seconds and >= 0 and <= ResumeRewind.MaxSeconds && double.IsInteger(seconds)
+            ? (int)seconds
+            : ResumeRewind.DefaultSeconds;
         _discordStatus = file?.DiscordStatus == true;
         // Off only when turned off: a file from before the switch, or without it, shows the button.
         _sleepTimerSwitchOff = file?.SleepTimerButton == false;
@@ -114,6 +128,8 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
     public PlayerUpDown UpDown => _upDown;
 
     public int PassoutThreshold => _passoutThreshold;
+
+    public int ResumeRewindSeconds => _resumeRewindSeconds;
 
     public bool DiscordStatus => _discordStatus;
 
@@ -160,6 +176,12 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
         return QueueSave();
     }
 
+    public Task SetResumeRewindSecondsAsync(int seconds)
+    {
+        _resumeRewindSeconds = Math.Clamp(seconds, 0, ResumeRewind.MaxSeconds);
+        return QueueSave();
+    }
+
     public Task ForgetSleepTimerSwitchAsync()
     {
         if (!_sleepTimerSwitchOff)
@@ -181,7 +203,6 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
         }
         return save;
     }
-
 
     private PlaybackDeviceFile? Load()
     {
@@ -210,6 +231,7 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
             {
                 var file = new PlaybackDeviceFile(_decodesInSoftware, _upDown == PlayerUpDown.Volume ? VolumeValue : ControlsValue, _passoutThreshold)
                 {
+                    ResumeRewindSeconds = _resumeRewindSeconds,
                     DiscordStatus = _discordStatus,
                     SleepTimerButton = _sleepTimerSwitchOff ? false : null,
                 };
@@ -236,11 +258,44 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
 /// <summary><c>playback-device.json</c>.</summary>
 internal sealed record PlaybackDeviceFile(bool? DecodesInSoftware, string? UpDown, int? PassoutThreshold)
 {
+    // Missing from an older file: a resume then lands on the saved point, the default. Read leniently, so that 7.5,
+    // "seven" or a list typed into the file only loses this value, not the file's other choices.
+    [JsonConverter(typeof(AnyNumberConverter))]
+    public double? ResumeRewindSeconds { get; init; }
+
     public bool? DiscordStatus { get; init; }
 
     // Only in a file that had it: Settings no longer sets it.
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? SleepTimerButton { get; init; }
+}
+
+/// <summary>A JSON number as itself; any other value, an object or a list included, as none.</summary>
+internal sealed class AnyNumberConverter : JsonConverter<double?>
+{
+    public override double? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        if (reader.TokenType == JsonTokenType.Number && reader.TryGetDouble(out double number))
+        {
+            return number;
+        }
+        // Past the whole value, so the next member reads as it should.
+        reader.Skip();
+        return null;
+    }
+
+    public override void Write(Utf8JsonWriter writer, double? value, JsonSerializerOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(writer);
+        if (value is { } number)
+        {
+            writer.WriteNumberValue(number);
+        }
+        else
+        {
+            writer.WriteNullValue();
+        }
+    }
 }
 
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower, WriteIndented = true)]
