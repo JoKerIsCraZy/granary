@@ -52,6 +52,8 @@ public sealed partial class ServerPlayback
             AudioTrack)
         : null;
 
+    public PlaybackPlan? LoadedPlan { get; private set; }
+
     public void SelectQuality(string preference)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(preference);

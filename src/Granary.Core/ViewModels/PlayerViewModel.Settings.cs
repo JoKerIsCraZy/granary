@@ -37,8 +37,9 @@ public sealed partial class PlayerViewModel
     public partial string SettingsLabel { get; private set; } = "";
 
     /// <summary>
-    /// How the server's stream plays, as the dot in the gear shows it (Granary's own): that of the plan taken last, so a
-    /// switch shows its own once the server has answered. None without a server stream, and once playback failed or ended.
+    /// How the server's stream plays, as the dot in the gear shows it (Granary's own): that of the plan whose stream the
+    /// player loaded, so a switch shows its own once the new stream plays, and a plan turned down never shows. None without
+    /// a server stream, and once playback failed or ended.
     /// </summary>
     [ObservableProperty]
     public partial StreamMethod StreamMethod { get; private set; }
@@ -95,7 +96,7 @@ public sealed partial class PlayerViewModel
             }
             StreamMethod = playback.Status.Phase is ServerPlaybackPhase.Failed or ServerPlaybackPhase.Ended
                 ? StreamMethod.None
-                : StreamMethods.Of(playback.StreamInfo?.Plan);
+                : StreamMethods.Of(playback.LoadedPlan);
         }
         else
         {

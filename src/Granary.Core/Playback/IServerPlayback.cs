@@ -178,6 +178,12 @@ public interface IServerPlayback : IAsyncDisposable
     /// <summary>The stream that plays, for the playback info; null before the first plan.</summary>
     PlaybackStreamInfo? StreamInfo { get; }
 
+    /// <summary>
+    /// The plan whose stream the player loaded last: a plan taken since that is still on its way, or was turned down before
+    /// its stream loaded, is not it. Null before the first load.
+    /// </summary>
+    PlaybackPlan? LoadedPlan { get; }
+
     /// <summary>The plan's quality menu, without the source; empty when there is nothing to choose (8.11).</summary>
     IReadOnlyList<AvailableQuality> Qualities { get; }
 

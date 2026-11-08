@@ -44,16 +44,18 @@ public sealed class PlayerViewModelStreamMethodTests
     {
         var viewModel = Create();
         await viewModel.StartAsync(PlayRequest.Resume("movie-1"));
-        Playback.StreamInfo = stream;
-        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));
+        Playback.TakePlan(stream);
+        Playback.PlayStream();
         return viewModel;
     }
 
-    // A pick that replans: the change starts, the server's new plan is taken, and its stream's first frame ends the change.
+    // A pick that replans, in the playback's order: the change starts, the server's new plan is taken, its stream loads
+    // and shows its first frame, and that ends the change.
     private void Replans(PlanChange change, PlaybackStreamInfo stream)
     {
         Playback.RaisePlanChange(change);
-        Playback.RaiseStream(stream);
+        Playback.TakePlan(stream);
+        Playback.PlayStream();
         Playback.RaisePlanChange(PlanChange.None);
     }
 
@@ -74,12 +76,38 @@ public sealed class PlayerViewModelStreamMethodTests
         var viewModel = Create();
         await viewModel.StartAsync(PlayRequest.Resume("movie-1"));
 
-        // The playback takes the plan's tracks before it has the stream's address.
-        Playback.RaiseTracks([], null);
+        Playback.TakePlan(DirectPlay);
         Assert.Equal(StreamMethod.None, viewModel.StreamMethod);
 
-        Playback.StreamInfo = DirectPlay;
-        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));
+        Playback.PlayStream();
+        Assert.Equal(StreamMethod.DirectPlay, viewModel.StreamMethod);
+    }
+
+    [Fact]
+    public async Task ANewPlan_ShowsItsMethod_OnlyOnceItsStreamPlays()
+    {
+        var viewModel = await PlayingAsync(DirectPlay);
+
+        // The server's answer is in, but the stream that plays is still the direct one.
+        Playback.RaisePlanChange(PlanChange.Quality);
+        Playback.TakePlan(Transcode);
+        Assert.Equal(StreamMethod.DirectPlay, viewModel.StreamMethod);
+
+        Playback.PlayStream();
+        Assert.Equal(StreamMethod.Transcode, viewModel.StreamMethod);
+    }
+
+    [Fact]
+    public async Task APlanThePlayerTurnsDown_LeavesTheMethodOfTheStreamThatPlays()
+    {
+        var viewModel = await PlayingAsync(DirectPlay);
+
+        // A plan the player cannot take (one that needs work on this side, an address it does not trust) never loads,
+        // and the change ends with the stream before still playing.
+        Playback.RaisePlanChange(PlanChange.Quality);
+        Playback.TakePlan(Transcode);
+        Playback.RaisePlanChange(PlanChange.None);
+
         Assert.Equal(StreamMethod.DirectPlay, viewModel.StreamMethod);
     }
 
@@ -132,9 +160,7 @@ public sealed class PlayerViewModelStreamMethodTests
     {
         var viewModel = await PlayingAsync(DirectPlay);
 
-        Playback.RaisePlanChange(PlanChange.Restart);
-        Playback.StreamInfo = Transcode;
-        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));
+        Replans(PlanChange.Restart, Transcode);
 
         Assert.Equal(StreamMethod.Transcode, viewModel.StreamMethod);
     }
