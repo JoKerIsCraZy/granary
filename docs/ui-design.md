@@ -72,7 +72,9 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
   reads as the web's grid card (`lib/episodeCardLabels.ts`): the series ("Tracker"), the episode's own title
   ("Safe Harbor"), then "S04E01". The play disc, the card's buttons and its menu are made on first need (the pointer,
   focus on the card's button, the context menu), the progress bar only for a card with progress (`x:Load`): made for
-  every card, they cost a row of cards scrolling in 26–75 ms, now 10–23 ms, and most cards are never hovered.
+  every card, they cost a row of cards scrolling in 26–75 ms, now 10–23 ms, and most cards are never hovered. A card
+  drops its hover look as it leaves the screen, so a card that opened a title is not still hovered when you come back
+  to the page; the pointer's next move over it shows the look again.
   Artwork comes as on the Android app (`ThumbhashImage.kt`): the server's thumbhash (`poster_thumbhash`,
   `backdrop_thumbhash`, `still_thumbhash`) shows at once as a 32 px picture blurred over the box (`ThumbHash`,
   `Thumbhashes`), the title only without one; the artwork, decoded as large as its box shows it, fades in over it in

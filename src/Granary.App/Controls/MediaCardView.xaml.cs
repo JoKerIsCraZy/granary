@@ -843,6 +843,19 @@ public sealed partial class MediaCardView : UserControl
         SetHovered(true);
     }
 
+    // A card that came back under a pointer that stayed put (its hover was dropped as it left the screen), or one recycled
+    // for another title under it, hears no PointerEntered; the pointer's first move over it shows the look again. Only the
+    // look: Request stays disarmed until the pointer really enters, so a click meant for the title never requests it.
+    private void OnPointerMoved(object sender, PointerRoutedEventArgs e)
+    {
+        if (!_hovered && Card is not null && Pick is null)
+        {
+            EnsureActions();
+            ShowState();
+            SetHovered(true);
+        }
+    }
+
     private void OnGotFocus(object sender, RoutedEventArgs e) => ShowState();
 
     // The card's own button takes focus before Tab moves on to the buttons on the card, so they are made then; a TMDB
@@ -1012,6 +1025,9 @@ public sealed partial class MediaCardView : UserControl
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
+        // A click that opens a title takes the page away under the pointer, so the card never hears it leave; a cached
+        // page would show it hovered on the way back until the pointer crossed it again.
+        SetHovered(false);
         _actions.Changed -= OnStateChanged;
         _overlays.PropertyChanged -= OnOverlaysChanged;
         ForgetHost();

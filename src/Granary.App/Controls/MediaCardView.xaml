@@ -13,6 +13,7 @@
     xmlns:controls="using:Granary.App.Controls"
     SizeChanged="OnSizeChanged"
     PointerEntered="OnPointerEntered"
+    PointerMoved="OnPointerMoved"
     PointerExited="OnPointerExited"
     PointerCanceled="OnPointerExited"
     Loaded="OnLoaded"
