@@ -31,8 +31,32 @@ public sealed class BoxSetViewModelTests
         _silo.On(HttpMethod.Get, "api/v2/images/capabilities", ScriptedSilo.Json(HttpStatusCode.OK, CatalogPayloads.ImageCapabilities));
     }
 
-    private BoxSetViewModel Create() => new(_session, new BoxSetsApi(_silo.Http), new ImageParameterCache(new ImagesApi(_silo.Http), _logs.For<ImageParameterCache>()),
-        _navigation, new ImmediateDispatcher(), _time, _logs.For<BoxSetViewModel>(), _changes);
+    private BoxSetViewModel Create(IUiDispatcher? dispatcher = null) => new(_session, new BoxSetsApi(_silo.Http),
+        new ImageParameterCache(new ImagesApi(_silo.Http), _logs.For<ImageParameterCache>()), _navigation, dispatcher ?? new ImmediateDispatcher(), _time,
+        _logs.For<BoxSetViewModel>(), _changes);
+
+    private int Reads => _silo.SentTo(HttpMethod.Get, BoxSetPath).Count;
+
+    private static HttpResponseMessage Json(string json) =>
+        new(HttpStatusCode.OK) { Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json") };
+
+    /// <summary>A UI thread whose posted work waits until the test runs it.</summary>
+    private sealed class QueuedDispatcher : IUiDispatcher
+    {
+        private readonly Queue<Action> _work = new();
+
+        public bool HasThreadAccess => true;
+
+        public void Post(Action action) => _work.Enqueue(action);
+
+        public void RunAll()
+        {
+            while (_work.TryDequeue(out var action))
+            {
+                action();
+            }
+        }
+    }
 
     private void Answer(params Func<Task<HttpResponseMessage>>[] responders) => _silo.On(HttpMethod.Get, BoxSetPath, responders);
 
@@ -250,6 +274,65 @@ public sealed class BoxSetViewModelTests
         Assert.True(reading.IsCancellationRequested);
         await page.Refreshing;
         Assert.True(page.IsReady);
+    }
+
+    [Fact]
+    public async Task AnOlderLoadAnsweringLate_IsNeverShown()
+    {
+        var (held, gate) = ItemDetailFixture.Held();
+        Answer(held, Ok(BoxSetPayloads.BoxSet(played: 2)));
+        var page = Create();
+        var older = page.LoadCommand.ExecuteAsync(Route);
+
+        await page.RetryCommand.ExecuteAsync(null);
+        Assert.Equal("Continue · Endgame", page.PlayLabel);
+        gate.SetResult(Json(BoxSetPayloads.BoxSet(played: 0)));
+        await older;
+
+        Assert.True(page.IsReady);
+        Assert.Equal("Continue · Endgame", page.PlayLabel);
+        Assert.Contains(new DetailChip("2 OF 3 WATCHED"), page.Facts);
+    }
+
+    [Fact]
+    public async Task TwoQuickChanges_ReadOnce_400MillisecondsAfterTheLast()
+    {
+        Answer(Ok(BoxSetPayloads.BoxSet()));
+        var page = await LoadAsync();
+        page.Activate();
+
+        _changes.Report();
+        _time.Advance(TimeSpan.FromMilliseconds(300));
+        _changes.Report();
+        _time.Advance(BoxSetViewModel.RefreshDelay - TimeSpan.FromMilliseconds(1));
+        Assert.Equal(1, Reads);
+
+        _time.Advance(TimeSpan.FromMilliseconds(1));
+        await page.Refreshing;
+
+        Assert.Equal(2, Reads);
+        _time.Advance(BoxSetViewModel.RefreshDelay);
+        Assert.Equal(2, Reads);
+    }
+
+    [Fact]
+    public async Task ATimerThatFiresAfterLeaving_ReadsNothing()
+    {
+        Answer(Ok(BoxSetPayloads.BoxSet()));
+        var dispatcher = new QueuedDispatcher();
+        var page = Create(dispatcher);
+        await page.LoadCommand.ExecuteAsync(Route);
+        page.Activate();
+        _changes.Report();
+        dispatcher.RunAll();
+
+        // The timer fires and posts its read, which the UI thread reaches only once the page has left.
+        _time.Advance(BoxSetViewModel.RefreshDelay);
+        page.Deactivate();
+        dispatcher.RunAll();
+        await page.Refreshing;
+
+        Assert.Equal(1, Reads);
     }
 
     [Fact]
