@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.RegularExpressions;
+using Granary.Core.Api.Playback;
 using Granary.Core.Playback;
 using Granary.Tests.Profiles;
 using static Granary.Tests.Playback.ServerPlaybackFixture;
@@ -82,6 +83,26 @@ public sealed class ServerPlaybackTests
         Assert.Equal("failure_recovery", replan.GetProperty("operation").GetString());
         Assert.Equal("audio_track_unavailable", replan.GetProperty("failure").GetProperty("classification").GetString());
         Assert.Null(Assert.Single(_fixture.Engine.Loaded).AudioStream);
+    }
+
+    [Fact]
+    public async Task APlanTurnedDownBeforeItsStreamLoads_NeverShowsAsTheStreamThatPlays()
+    {
+        // The direct play is taken, then turned down for its missing audio track; the transcode the server sends instead loads.
+        _fixture.Silo.On(HttpMethod.Post, StartPath, Created(SelectingAudio("{ \"id\": \"file:42:audio:3\", \"index\": 3 }")));
+        _fixture.Silo.On(HttpMethod.Post, ReplanPath, Ok(TranscodeInThisSession));
+        var playback = _fixture.Create();
+        var shownAtEachPlan = new List<(string? Delivery, Uri? Url)>();
+        playback.TracksChanged += (_, _) => shownAtEachPlan.Add((playback.StreamInfo?.Plan.Delivery, playback.StreamInfo?.Url));
+
+        await playback.StartAsync(PlayRequest.Resume(MovieId), Cancellation);
+        await playback.Recovery;
+
+        Assert.NotEmpty(shownAtEachPlan);
+        Assert.DoesNotContain(shownAtEachPlan, shown => shown.Delivery == PlaybackDeliveries.OriginalHttp || shown.Url == StreamUrl());
+        var load = Assert.Single(_fixture.Engine.Loaded);
+        Assert.Equal(PlaybackDeliveries.ServerTranscodeHls, playback.StreamInfo?.Plan.Delivery);
+        Assert.Equal(_fixture.RouteOf(load).Upstream, playback.StreamInfo?.Url);
     }
 
     // The first "audio" object of the decision is selected_tracks.audio; the claims have one too.

@@ -14,6 +14,11 @@ release's section is what its update says it changes (docs/release.md).
   keys do nothing; F11 still switches full screen. Don't need the Sleep timer? Switch it off and the button is gone, also
   from a player that's already open; a timer that's running ends. Reset brings back the usual buttons. It's kept for
   each profile on this PC, works with a keyboard and a TV remote, and is Granary's own.
+- **How the stream plays, on the gear:** the player's settings button now has a dot in its gear. Green means your Silo
+  server sends the original video and audio, as Direct Play or Direct Streaming; amber means it transcodes the video,
+  the audio or both. It changes with the quality, version or audio track you pick, and a file you play directly shows
+  no dot. Screen readers and the button's tooltip say it too, for example "Playback settings, Direct Play". Playback
+  info's play method now says the same, so a stream whose audio alone is converted shows as Transcode there too.
 - **Theme music:** turn on Settings → Title Pages → Theme music, and a title's page plays its theme quietly while it is
   open, when your Silo server has theme music for it, as in Silo's web and apps. Loop theme music repeats it. Going from a
   series to one of its seasons keeps the music going; leaving the page or minimizing Granary fades it out, and playing a
