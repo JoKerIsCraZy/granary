@@ -13,6 +13,7 @@ public sealed class BoxSetsApiTests
 {
     private const string ItemPath = "api/v2/catalog/items/movie-tmdb-1001/box-set";
     private const string BoxSetPath = "api/v2/catalog/box-sets/1241";
+    private const string SearchPath = "api/v2/catalog/box-sets";
 
     private static readonly Uri Server = ScriptedSilo.Base;
 
@@ -68,6 +69,18 @@ public sealed class BoxSetsApiTests
         Assert.Equal("/silo/api/v2/catalog/box-sets/1241?library_id=3", Only().Uri.PathAndQuery);
         Assert.Equal("Three jobs, one crew.", boxSet.Overview);
         Assert.Equal(3, boxSet.Items.Count);
+    }
+
+    [Fact]
+    public async Task Search_AsksForFiveBoxSetsAsTheWebDoes()
+    {
+        _silo.On(HttpMethod.Get, SearchPath, ScriptedSilo.Json(HttpStatusCode.OK, BoxSetPayloads.SearchList));
+
+        var found = await Api.SearchAsync(Server, " masterplan ", cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal("/silo/api/v2/catalog/box-sets?q=masterplan&limit=5", Only().Uri.PathAndQuery);
+        Assert.Equal(["Masterplan Box Set", "Groundwork Collection"], found.Select(b => b.Title));
+        Assert.Null(found[1].PosterUrl);
     }
 
     [Fact]

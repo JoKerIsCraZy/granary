@@ -67,7 +67,7 @@ internal static class BrowsePayloads
     public static string People(params (string Id, string Name)[] people) =>
         Serialize(new { items = people.Select(p => new { id = p.Id, name = p.Name, photo_url = $"/api/v2/artwork/people/{p.Id}.webp?sig=p" }) });
 
-    public static string SearchCapabilities(bool people) => Serialize(new
+    public static string SearchCapabilities(bool people, bool boxSets = false) => Serialize(new
     {
         revision = "r1",
         state = "available",
@@ -75,5 +75,6 @@ internal static class BrowsePayloads
         provider = "meilisearch",
         people_media_scope = people,
         video_with_episodes_scope = false,
+        box_sets = boxSets,
     });
 }

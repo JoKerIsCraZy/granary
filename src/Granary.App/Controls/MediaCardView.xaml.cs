@@ -194,6 +194,7 @@ public sealed partial class MediaCardView : UserControl
 
         ShowBadges(card);
         ShowMark(card);
+        ShowBoxSet(card);
 
         TitleText.Text = card?.Title ?? "";
         // A recycled card mostly shows the same shape and colours: each is set only when it changes.

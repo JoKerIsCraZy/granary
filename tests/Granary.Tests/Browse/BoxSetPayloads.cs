@@ -49,6 +49,16 @@ internal static class BoxSetPayloads
           ] }
         """;
 
+    /// <summary>What search finds for "masterplan": the box set, watched in part, and another without artwork.</summary>
+    public const string SearchList = """
+        { "items": [
+            { "id": "1241", "library_id": "3", "title": "Masterplan Box Set",
+              "poster_url": "/api/v2/artwork/box-sets/1241/poster/w342.webp?exp=1&sig=bp", "poster_thumbhash": "1QcSHQRnh493V4dIh4eXh1h4kJUI",
+              "movie_count": 3, "played_count": 1, "first_year": 2019, "last_year": 2028 },
+            { "id": "88", "library_id": "4", "title": "Groundwork Collection", "movie_count": 2, "played_count": 0, "first_year": 2019, "last_year": 2019 }
+          ] }
+        """;
+
     private static string Film(string id, string title, int year, bool played, double? position) => $$"""
         { "content_id": "{{id}}", "type": "movie", "title": "{{title}}", "year": {{year}}, "genres": [], "keywords": [], "status": "matched",
           {{(position is { } at ? $"\"position_seconds\": {at.ToString(System.Globalization.CultureInfo.InvariantCulture)}, \"duration_seconds\": 6000," : "")}}

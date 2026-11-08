@@ -90,9 +90,16 @@ public sealed record MediaCard(string Id, string Type, string Title)
     /// <summary>How <see cref="IsCurrent"/> marks the card.</summary>
     public CurrentMark CurrentMark { get; init; }
 
+    /// <summary>
+    /// A box set's card (Search's Box sets, <see cref="MediaCardFactory.BoxSet"/>): its films, "3 films", in the corner beside
+    /// the BOX SET pill, as the web's <c>BoxSetCard</c>. Null for any other card.
+    /// </summary>
+    public string? BoxSetFilms { get; init; }
+
     /// <summary>The name screen readers announce for the whole card.</summary>
     public string AccessibleName => string.Join(", ",
-        new[] { Title, EpisodeTitle, Subtitle, CurrentName }.Where(text => !string.IsNullOrEmpty(text)));
+        new[] { Title, BoxSetFilms is { } films ? $"box set of {films}" : null, EpisodeTitle, Subtitle, CurrentName }
+            .Where(text => !string.IsNullOrEmpty(text)));
 
     private string? CurrentName => IsCurrent ? CurrentMark == CurrentMark.ThisFilm ? "this film" : "now viewing" : null;
 }

@@ -826,6 +826,7 @@ sort `-added_at` (phone) / `title` (TV) (`silo-android/shared/.../apiv2/CatalogV
   with `Retry-After`; an expired Meilisearch ranking session answers `invalid_cursor`.
 - People: `GET /api/v2/catalog/people?q=&limit=1..100&media_scope=video` → `{ "items": Person[] }`
   (only when `people_media_scope` is true). A person found opens their page (7.6a).
+- Box sets: `GET /api/v2/catalog/box-sets?q=` (7.18), only when `box_sets` is true.
 - Android: 300 ms debounce, `limit=60` (phone) / 40 (TV), people search in parallel with
   `limit=20` (`silo-android/.../SearchViewModel.kt:142-333`).
 
@@ -1232,6 +1233,12 @@ groups them (`silo-server/docs/catalog-api.md`, "Movie box sets"; `internal/apiv
   `CatalogBoxSetDetail`: the box set and `items`, its movies in that library the viewer can see as `CatalogItem` cards, in
   collection (release) order. 404 when the library has box sets off or the viewer sees too few of its movies: the
   page says so in the web's words.
+- `GET /api/v2/catalog/box-sets?q=&limit=1..20[&library_id=]` (`searchCatalogBoxSets`, no image params) → `{ "items":
+  CatalogBoxSet[] }`, never null: the box sets of libraries with `box_sets_in_search` whose name holds every word of `q`,
+  or two or more of whose movies' titles do, best match first. Search asks with `limit=5`, as the web does, only while
+  `GET /api/v2/catalog/search/capabilities` says `box_sets: true` (as the Apple app checks; the web checks the libraries'
+  `box_sets_enabled` instead) and not for Series, beside the people and titles; a failure, or an answer slower than
+  1.5 s (Android's grace), shows none rather than holding the titles.
 
 ## 8. Playback protocol v3
 

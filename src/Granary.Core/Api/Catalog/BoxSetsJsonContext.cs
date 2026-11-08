@@ -9,4 +9,5 @@ namespace Granary.Core.Api.Catalog;
     PropertyNameCaseInsensitive = false)]
 [JsonSerializable(typeof(CatalogItemBoxSet))]
 [JsonSerializable(typeof(CatalogBoxSetDetail))]
+[JsonSerializable(typeof(CatalogBoxSetList))]
 internal sealed partial class BoxSetsJsonContext : JsonSerializerContext;

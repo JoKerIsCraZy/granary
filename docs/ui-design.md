@@ -83,6 +83,14 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
   `MediaCard.BlursImage`), is drawn as the web's `scale-110 blur-xl`: blurred by 24 px at the size it shows, grown a tenth,
   and without the pointer's zoom; its thumbhash shows first as for any card, and the sharp picture is never loaded. The
   image for it is made only for a card that shows one (`x:Load`). The badges, the progress bar and the title stay.
+  A box set's card (`MediaCard.BoxSetFilms`, the web's `BoxSetCard`) sits 6 px lower under two sleeves that read as a
+  stack of films (24 high, 12 px top corners; the back one `#28282E` 10 % in from each side, the front one `#232328` 5 %
+  in and 3 px lower, both with the border colour's edge), with "BOX SET" top left (the web's glass: the surface at 40 %, a
+  15 % white edge, 10 px semibold capitals 0.14 em apart) and its films bottom right ("3 films", 11 px bold on the page's
+  dark at 60 %, 6 px corners; raised over a watched bar). Under it its name and "1 / 3 WATCHED" once one is watched, else
+  its years ("2019 – 2028"), else its films; the watched share is its bar. It has no play disc, buttons or menu. Screen
+  readers hear "Masterplan Box Set, box set of 3 films, 1 / 3 WATCHED". The sleeves and marks are made (`x:Load`) for the
+  first box set card only.
 - `MediaRow`: row title, optional "EXPLORE ALL" (on every Home and library row, as on the web, also when the row
   already holds all of it; For You and Requests rows only when a page lists more), horizontally scrolling cards 20 px apart
   as wide as the web's for the profile's poster size at the window's breakpoint (posters 120 to 220 px, standard 185 from
@@ -329,6 +337,11 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   "In library", "Requested", "Not aired yet"), Cast and More Like This. A series asks "Request seasons" first: a switch
   per season, the aired missing ones on, the others greyed; Latest season, Upcoming seasons and All seasons; an
   untouched pick leaves the seasons to the server. Discover cards and More Like This open it, or the library's title.
+- Search's box sets (`SearchViewModel.BoxSets`, the web's `BoxSetSearchResults` as its catalog search shows it): under
+  the type switch, ahead of People and the titles, "Box sets" as People's heading over the box set cards (`MediaCardView`)
+  in the titles' own columns, up to five, best match first; each opens its box set's page. Only while the server has box
+  sets, and for Movies & Series and Movies, not Series. A search that fails or takes over 1.5 s shows none and never
+  holds the titles; a new text, another type or an empty box clears them.
 - Request to add (`SearchPage`, `RequestToAddViewModel`, the web's `RequestToAddSection` as its catalog search shows it):
   under Search's titles while the server takes requests, the movies and series TMDB finds for a text of two characters
   or more that the library does not have, following the type switch. A heading like People's, "Nothing in your library

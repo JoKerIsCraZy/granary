@@ -27,6 +27,31 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
+        <!--
+            A box set's card (MediaCard.BoxSetFilms), as the web's BoxSetCard.tsx: two sleeves peek 6 px above the poster, which
+            moves down for them, and read as a stack of films; 24 high with 12 px top corners, the back one 10 % in from each
+            side, the front one 5 % in and 3 px lower. Made for the first box set card only (MediaCardView.BoxSet.cs).
+        -->
+        <Grid x:Name="Sleeves" x:Load="False" Height="24" VerticalAlignment="Top" IsHitTestVisible="False"
+              AutomationProperties.AccessibilityView="Raw">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="10*" />
+                    <ColumnDefinition Width="80*" />
+                    <ColumnDefinition Width="10*" />
+                </Grid.ColumnDefinitions>
+                <Border Grid.Column="1" CornerRadius="12,12,0,0" Background="#FF28282E" BorderBrush="#FF28282E" BorderThickness="1" />
+            </Grid>
+            <Grid Margin="0,3,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="5*" />
+                    <ColumnDefinition Width="90*" />
+                    <ColumnDefinition Width="5*" />
+                </Grid.ColumnDefinitions>
+                <Border Grid.Column="1" CornerRadius="12,12,0,0" Background="#FF232328" BorderBrush="#FF28282E" BorderThickness="1" />
+            </Grid>
+        </Grid>
+
         <Grid x:Name="Art" CornerRadius="{StaticResource SiloCardCornerRadius}" Background="{StaticResource SiloSurfaceBrush}"
               BorderBrush="#A628282E" BorderThickness="1">
             <!-- Shown until the artwork arrives, and instead of it when there is none. -->
@@ -124,6 +149,24 @@
                                Foreground="{StaticResource SiloForegroundBrush}" AutomationProperties.AccessibilityView="Raw" />
                 </Border>
             </Border>
+
+            <!--
+                A box set's "BOX SET" pill top left (the web's glass: the surface at 40 % with a 15 % white edge, 10 px semibold
+                capitals 0.14 em apart) and its films bottom right ("3 films", 11 px bold on the page's dark at 60 %), as the
+                web's BoxSetCard.tsx; the count rises clear of a watched bar. Made for the first box set card only.
+            -->
+            <Grid x:Name="BoxSetMarks" x:Load="False" IsHitTestVisible="False" AutomationProperties.AccessibilityView="Raw">
+                <Border Margin="10" Padding="10,5" HorizontalAlignment="Left" VerticalAlignment="Top" CornerRadius="{StaticResource SiloPillCornerRadius}"
+                        controls:Pill.IsEnabled="True" Background="#661C1C20" BorderBrush="#26FFFFFF" BorderThickness="1">
+                    <TextBlock Text="BOX SET" Style="{StaticResource SiloBadgeTextStyle}" CharacterSpacing="140" TextLineBounds="Tight"
+                               Foreground="{StaticResource SiloForegroundBrush}" />
+                </Border>
+                <Border x:Name="BoxSetCount" Margin="0,0,8,10" Padding="8,3" HorizontalAlignment="Right" VerticalAlignment="Bottom" CornerRadius="6"
+                        Background="#990E0E10">
+                    <TextBlock x:Name="BoxSetCountText" FontFamily="{StaticResource SiloFontBold}" FontWeight="Bold" FontSize="11"
+                               Foreground="{StaticResource SiloForegroundBrush}" />
+                </Border>
+            </Grid>
 
             <!-- Made only for a card with progress, the play disc and the card's buttons only on first need (MediaCardView.EnsureActions). -->
             <ProgressBar x:Name="Progress" x:Load="False" Margin="10,0,10,8" VerticalAlignment="Bottom" Height="3" MinHeight="3" CornerRadius="2"

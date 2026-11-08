@@ -104,6 +104,32 @@ public static class MediaCardFactory
         };
     }
 
+    /// <summary>The <see cref="MediaCard.Type"/> of a box set's card, which opens the box set's page.</summary>
+    public const string BoxSetType = "box_set";
+
+    /// <summary>
+    /// A box set's poster as the web's <c>BoxSetCard</c>: its name over "1 / 3 WATCHED" once one is watched, else its years,
+    /// else its films; the films in the corner and the watched share as its bar. Search can find one collection in two
+    /// libraries, so the card's id names the library too. It offers no play disc, buttons or menu: none of them fit a set.
+    /// </summary>
+    public static MediaCard BoxSet(CatalogBoxSetBase boxSet, Uri serverBase)
+    {
+        ArgumentNullException.ThrowIfNull(boxSet);
+        var poster = ArtworkUrl.Resolve(serverBase, boxSet.PosterUrl);
+        string caption = boxSet.PlayedCount > 0
+            ? string.Create(CultureInfo.InvariantCulture, $"{boxSet.PlayedCount} / {boxSet.MovieCount} watched")
+            : BoxSetText.Years(boxSet) ?? BoxSetText.FilmCount(boxSet.MovieCount);
+        return new MediaCard($"{BoxSetType}:{boxSet.LibraryId}:{boxSet.Id}", BoxSetType, boxSet.Title)
+        {
+            Shape = MediaCardShape.Poster,
+            Subtitle = caption.ToUpperInvariant(),
+            ImageUrl = poster ?? ArtworkUrl.Resolve(serverBase, boxSet.BackdropUrl),
+            ImageThumbhash = poster is not null ? boxSet.PosterThumbhash : boxSet.BackdropThumbhash,
+            Progress = boxSet.PlayedCount > 0 && boxSet.MovieCount > 0 ? Math.Min(1, (double)boxSet.PlayedCount / boxSet.MovieCount) : null,
+            BoxSetFilms = BoxSetText.FilmCount(boxSet.MovieCount),
+        };
+    }
+
     /// <summary>"1080P", "4K DV", "1080P HDR" (web: prettyResolution + compactHdrSuffix, upper-cased like its badges).</summary>
     public static string? ResolutionText(CatalogItemOverlay? overlay)
     {

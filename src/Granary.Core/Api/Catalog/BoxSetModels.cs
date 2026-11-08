@@ -37,6 +37,9 @@ public abstract record CatalogBoxSetBase
     public int? LastYear { get; init; }
 }
 
+/// <summary>A box set as search lists it, without its movies.</summary>
+public sealed record CatalogBoxSet : CatalogBoxSetBase;
+
 /// <summary><c>GET /api/v2/catalog/box-sets/{id}</c>: the box set with its movies the viewer can see, in release order.</summary>
 public sealed record CatalogBoxSetDetail : CatalogBoxSetBase
 {
@@ -45,3 +48,9 @@ public sealed record CatalogBoxSetDetail : CatalogBoxSetBase
 
 /// <summary><c>GET /api/v2/catalog/items/{id}/box-set</c>: the movie's box set, or none (an empty object).</summary>
 public sealed record CatalogItemBoxSet(CatalogBoxSetDetail? BoxSet);
+
+/// <summary><c>GET /api/v2/catalog/box-sets?q=</c>: the box sets matching a search, best match first.</summary>
+public sealed record CatalogBoxSetList
+{
+    public IReadOnlyList<CatalogBoxSet> Items { get; init => field = value ?? []; } = [];
+}
