@@ -104,29 +104,7 @@ public sealed class JsonServerRegistry : IServerRegistry
         }, cancellationToken);
     }
 
-    /// <summary>Replaces the entry with the same id. The address of a saved entry cannot change.</summary>
-    public Task UpdateAsync(ServerEntry entry, CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(entry);
-        var address = NormalizeAddress(entry.BaseUri);
-        return ChangeAsync(state =>
-        {
-            int index = state.Servers.FindIndex(s => s.Id == entry.Id);
-            if (index < 0)
-            {
-                _logger.LogDebug("Ignored an update of server {ServerEntryId}, which is no longer saved", entry.Id);
-                return (state, false);
-            }
-            var current = state.Servers[index];
-            if (!SameAddress(current.BaseUri, address))
-            {
-                throw new ArgumentException("The address of a saved server cannot change; add it as a new server instead.", nameof(entry));
-            }
-            var updated = entry with { BaseUri = current.BaseUri };
-            return updated == current ? (state, false) : (state with { Servers = state.Servers.SetItem(index, updated) }, true);
-        }, cancellationToken);
-    }
-
+    /// <summary>Changes the entry with <paramref name="id"/> under the gate. The address of a saved entry cannot change.</summary>
     public Task UpdateAsync(string id, Func<ServerEntry, ServerEntry> change, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrEmpty(id);

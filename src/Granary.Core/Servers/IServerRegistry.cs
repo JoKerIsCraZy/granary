@@ -56,8 +56,6 @@ public interface IServerRegistry
     /// </summary>
     Task<ServerEntry> AddOrUpdateAsync(Uri baseUri, string name, string? serverId, CancellationToken cancellationToken = default);
 
-    Task UpdateAsync(ServerEntry entry, CancellationToken cancellationToken = default);
-
     /// <summary>
     /// Changes the saved entry with <paramref name="id"/> through <paramref name="change"/>, read and written in one step,
     /// so a change made meanwhile by someone else is not lost. Its id and address stay; nothing happens when it is no

@@ -280,11 +280,11 @@ public sealed class JsonServerRegistryTests : IDisposable
         var registry = await LoadedAsync();
         var entry = await registry.AddOrUpdateAsync(new Uri("https://a.example"), "A", null, ct);
 
-        await registry.UpdateAsync(entry with { LastProfileId = "profile-7" }, ct);
+        await registry.UpdateAsync(entry.Id, e => e with { LastProfileId = "profile-7", BaseUri = new Uri("https://b.example") }, ct);
 
-        Assert.Equal("profile-7", (await LoadedAsync()).Find(entry.Id)?.LastProfileId);
-        await Assert.ThrowsAsync<ArgumentException>(() =>
-            registry.UpdateAsync(entry with { BaseUri = new Uri("https://b.example") }, ct));
+        var saved = (await LoadedAsync()).Find(entry.Id);
+        Assert.Equal("profile-7", saved?.LastProfileId);
+        Assert.Equal("https://a.example", saved?.BaseUri.OriginalString);
     }
 
     [Fact]
@@ -296,7 +296,7 @@ public sealed class JsonServerRegistryTests : IDisposable
         registry.Changed += (_, _) => changes++;
 
         var entry = await registry.AddOrUpdateAsync(new Uri("https://a.example"), "A", null, ct);
-        await registry.UpdateAsync(entry with { Name = "Renamed" }, ct);
+        await registry.UpdateAsync(entry.Id, e => e with { Name = "Renamed" }, ct);
         await registry.SetActiveAsync(entry.Id, ct);
         await registry.RemoveAsync(entry.Id, ct);
         await registry.RemoveAsync(entry.Id, ct);
@@ -413,7 +413,7 @@ public sealed class JsonServerRegistryTests : IDisposable
         int changes = 0;
         registry.Changed += (_, _) => changes++;
 
-        await registry.UpdateAsync(new ServerEntry("missing", new Uri("https://a.example"), "A", null, Start, Start, null), ct);
+        await registry.UpdateAsync("missing", e => e with { Name = "A" }, ct);
 
         Assert.Empty(registry.Servers);
         Assert.Equal(0, changes);
