@@ -134,6 +134,19 @@ public sealed partial class PlaybackSettingsViewModel
         }
     }
 
+    /// <summary>The player has its Sleep button (<see cref="IPlaybackDevicePreferences.SleepTimerButton"/>).</summary>
+    [ObservableProperty]
+    public partial bool SleepTimerButton { get; set; }
+
+    partial void OnSleepTimerButtonChanged(bool value)
+    {
+        if (value != _devicePreferences.SleepTimerButton)
+        {
+            // Never fails, as the switch below; an open player, also the minimized one, follows at once.
+            _ = _devicePreferences.SetSleepTimerButtonAsync(value);
+        }
+    }
+
     partial void OnDecodesInSoftwareChanged(bool value)
     {
         if (value != _devicePreferences.DecodesInSoftware)

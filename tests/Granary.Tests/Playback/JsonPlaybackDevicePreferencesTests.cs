@@ -169,6 +169,51 @@ public sealed class JsonPlaybackDevicePreferencesTests : IDisposable
     }
 
     [Fact]
+    public void AtFirst_ThePlayerHasItsSleepButton() => Assert.True(Create().SleepTimerButton);
+
+    [Fact]
+    public async Task TheSleepButtonTurnedOff_StaysOffAtTheNextStart_WithTheOtherChoices()
+    {
+        var preferences = Create();
+
+        await preferences.SetDiscordStatusAsync(true);
+        await preferences.SetSleepTimerButtonAsync(false);
+
+        var again = Create();
+        Assert.False(again.SleepTimerButton);
+        Assert.True(again.DiscordStatus);
+        Assert.Contains("\"sleep_timer_button\": false", await File.ReadAllTextAsync(FilePath, TestContext.Current.CancellationToken), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AnOlderFile_KeepsTheSleepButton_AndTheOtherChoices()
+    {
+        Directory.CreateDirectory(_directory);
+        await File.WriteAllTextAsync(FilePath, "{ \"decodes_in_software\": true, \"discord_status\": true }", TestContext.Current.CancellationToken);
+
+        var preferences = Create();
+
+        Assert.True(preferences.SleepTimerButton);
+        Assert.True(preferences.DecodesInSoftware);
+        Assert.True(preferences.DiscordStatus);
+    }
+
+    [Fact]
+    public async Task TurningTheSleepButtonOffOrOn_SaysSoWithTheNewChoice_ButTheSameChoiceAgainDoesNot()
+    {
+        var preferences = Create();
+        var changes = new List<bool>();
+        preferences.SleepTimerButtonChanged += (_, shown) => changes.Add(shown);
+
+        await preferences.SetSleepTimerButtonAsync(false);
+        await preferences.SetSleepTimerButtonAsync(false);
+        await preferences.SetSleepTimerButtonAsync(true);
+
+        Assert.Equal([false, true], changes);
+        Assert.True(Create().SleepTimerButton);
+    }
+
+    [Fact]
     public async Task AnUnknownUpAndDown_ShowsTheControlsAndMenus()
     {
         Directory.CreateDirectory(_directory);

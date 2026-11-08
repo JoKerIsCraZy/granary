@@ -232,9 +232,10 @@
                         <!--
                             The web's sleep timer (SleepTimerMenu, after the volume as in its audiobook player): the moon and "Sleep",
                             "Sleep 29:59" while a duration counts down; white with the amber dot while it is on. The menu: Turn off
-                            while on, the durations, and the end of what plays.
+                            while on, the durations, and the end of what plays. Settings → Playback → This PC can take it away,
+                            dot and all, and the buttons after it close up.
                         -->
-                        <Grid>
+                        <Grid Visibility="{x:Bind ViewModel.ShowsSleepTimer, Mode=OneWay}">
                             <Button x:Name="SleepTimerButton" Style="{StaticResource SiloPlayerIconButtonStyle}" Width="Auto" Padding="8,0"
                                     Foreground="{x:Bind UtilityForeground(ViewModel.IsSleepTimerOn), Mode=OneWay}"
                                     AutomationProperties.Name="Sleep timer" AutomationProperties.ItemStatus="{x:Bind ViewModel.SleepTimerStatus, Mode=OneWay}"

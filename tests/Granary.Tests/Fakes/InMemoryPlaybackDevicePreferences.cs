@@ -48,6 +48,27 @@ internal sealed class InMemoryPlaybackDevicePreferences : IPlaybackDevicePrefere
         return Task.CompletedTask;
     }
 
+    public bool SleepTimerButton { get; set; } = true;
+
+    public List<bool> SavedSleepTimerButton { get; } = [];
+
+    public event EventHandler<bool>? SleepTimerButtonChanged;
+
+    /// <summary>Something follows <see cref="SleepTimerButton"/>, such as an open player.</summary>
+    public bool IsSleepTimerButtonFollowed => SleepTimerButtonChanged is not null;
+
+    public Task SetSleepTimerButtonAsync(bool shown)
+    {
+        bool changed = shown != SleepTimerButton;
+        SleepTimerButton = shown;
+        SavedSleepTimerButton.Add(shown);
+        if (changed)
+        {
+            SleepTimerButtonChanged?.Invoke(this, shown);
+        }
+        return Task.CompletedTask;
+    }
+
     public Task LatestSave => Task.CompletedTask;
 
     public Task SetDecodesInSoftwareAsync(bool decodesInSoftware)

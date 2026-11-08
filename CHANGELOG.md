@@ -34,7 +34,8 @@ release's section is what its update says it changes (docs/release.md).
   your Silo server has Requests turned on.
 - **Sleep timer:** the player's Sleep button pauses playback after 5 to 60 minutes, counting down on the button, or stops
   at the end of the episode or movie instead of starting the next episode. A timer runs on into the next episode, and the
-  menu opens on the duration you started last on this PC.
+  menu opens on the duration you started last on this PC. Don't need it? Turn off Settings → Playback → This PC → Sleep
+  timer and the button is gone from the player, also from one that's already open; a timer that's running ends.
 - **Play/Pause in the taskbar preview:** hover over Granary's taskbar button while something plays and the window's
   preview has a Play/Pause button, also when Granary is minimized. In a Watch Party it asks the room, as the player's own
   button does.
