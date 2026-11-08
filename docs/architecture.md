@@ -1028,7 +1028,8 @@ client guide.
   only when downloads come, go or move or a series' poster arrives. So pausing a row never makes the page anew: Pause,
   Resume and Retry are one button per row (`PrimaryAction`), pressable while its press runs, and the focused button stays
   put as its action changes. The free space is read on the thread pool when the page shows and when a download comes,
-  goes or finishes.
+  goes or finishes, through `DiskSpaceReads.FreeBytesAsync` as the dialog reads it: a read that fails or takes longer than
+  `DiskSpaceReads.Timeout` (5 s) leaves it unknown, and the top says only the space used.
 - **Settings → Downloads.** `DownloadSettingsViewModel` takes a folder only below a drive's or a share's root and once it
   made the folder and wrote and deleted `.granary-write-check` there, on the thread pool; Open makes the folder first.
 

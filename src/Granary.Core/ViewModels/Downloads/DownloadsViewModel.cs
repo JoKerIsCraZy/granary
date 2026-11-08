@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using Granary.Core.Abstractions;
 using Granary.Core.Downloads;
 using Granary.Core.ViewModels.Detail;
+using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.ViewModels.Downloads;
 
@@ -20,7 +21,8 @@ public sealed record DownloadGroup(string Title, IReadOnlyList<DownloadRowViewMo
 /// went further updates its row and the space used without reading the other downloads. Rows follow their download's state
 /// themselves; the sections are made again only when downloads come, go or move, so a row and its buttons stay put while the
 /// viewer pauses or resumes it. The free space is read off the UI thread, when the page shows and when a download comes,
-/// goes or finishes.
+/// goes or finishes; a read that fails or takes longer than <see cref="DiskSpaceReads.Timeout"/> leaves it unknown, and the
+/// top then says only the space used.
 /// </summary>
 public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
 {
@@ -37,6 +39,8 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
     private readonly INavigationService _navigation;
     private readonly IConfirmation _confirmation;
     private readonly IUiDispatcher _dispatcher;
+    private readonly TimeProvider _time;
+    private readonly ILogger<DownloadsViewModel> _logger;
 
     // What arrived since the last refresh: a change of any kind, or only transfers that went further, by download.
     private readonly Lock _gate = new();
@@ -54,7 +58,7 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
     private int _reads;
 
     public DownloadsViewModel(DownloadManager downloads, IDiskSpace disk, IDownloadPreferences preferences, INavigationService navigation,
-        IConfirmation confirmation, IUiDispatcher dispatcher)
+        IConfirmation confirmation, IUiDispatcher dispatcher, TimeProvider time, ILogger<DownloadsViewModel> logger)
     {
         _downloads = downloads;
         _disk = disk;
@@ -62,6 +66,8 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
         _navigation = navigation;
         _confirmation = confirmation;
         _dispatcher = dispatcher;
+        _time = time;
+        _logger = logger;
     }
 
     /// <summary>"12.0 GB used · 200.0 GB free"; only the space used while the free space is not known.</summary>
@@ -252,9 +258,10 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
         SpaceRead = ReadSpaceAsync(_preferences.Folder, read);
     }
 
+    // Unknown (null) when the drive fails or does not answer in time; the page goes on either way.
     private async Task ReadSpaceAsync(string folder, int read)
     {
-        long? free = await Task.Run(() => _disk.FreeBytes(folder)).ConfigureAwait(false);
+        long? free = await _disk.FreeBytesAsync(folder, _time, _logger).ConfigureAwait(false);
         await _dispatcher.ResumeOnUi();
         if (read == _reads)
         {

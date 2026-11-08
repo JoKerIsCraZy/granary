@@ -338,29 +338,4 @@ public sealed class DownloadOptionsViewModelTests : IAsyncDisposable
         Assert.Equal(["ep_1", "ep_2", "ep_3", "ep_2"], CreateBodies().Select(b => b.GetProperty("episode_id").GetString()));
         Assert.Equal("", options.ErrorText);
     }
-
-    // A drive that answers only once the test lets it, as one waking up does, or a share that does not answer; the test's end
-    // lets a read still waiting go.
-    private sealed class HeldDiskSpace(long free) : IDiskSpace, IDisposable
-    {
-        private readonly TaskCompletionSource _released = new(TaskCreationOptions.RunContinuationsAsynchronously);
-
-        public void Release() => _released.TrySetResult();
-
-        public long? FreeBytes(string folder)
-        {
-            _released.Task.GetAwaiter().GetResult();
-            return free;
-        }
-
-        public void Dispose() => Release();
-    }
-
-    // A drive whose free space cannot be read at all.
-    private sealed class FailingDiskSpace : IDiskSpace
-    {
-        public const string Message = @"The drive at D:\Elena failed.";
-
-        public long? FreeBytes(string folder) => throw new IOException(Message);
-    }
 }

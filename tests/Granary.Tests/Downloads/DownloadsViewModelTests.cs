@@ -23,7 +23,8 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
 
     // The page over the harness's downloads, on a UI thread that runs posted work at once unless the test gives its own.
     private DownloadsViewModel Page(DownloadQueue? queue = null, IUiDispatcher? dispatcher = null, IDiskSpace? disk = null) =>
-        new(_h.NewManager(queue), disk ?? _h.Disk, _h.Preferences, _navigation, _confirmation, dispatcher ?? new ImmediateDispatcher());
+        new(_h.NewManager(queue), disk ?? _h.Disk, _h.Preferences, _navigation, _confirmation, dispatcher ?? new ImmediateDispatcher(), _h.Time,
+            _h.Logs.For<DownloadsViewModel>());
 
     private async Task<DownloadsViewModel> AttachedAsync(DownloadQueue? queue = null)
     {
@@ -118,6 +119,38 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
         var page = await AttachedAsync();
 
         Assert.Equal("0 B used", page.SpaceText);
+    }
+
+    [Fact]
+    public async Task AFreeSpaceReadThatFails_ShowsOnlyTheSpaceUsed()
+    {
+        await AddFilmAsync("dl_1", "Example Movie", size: 12 * GB);
+        var page = Page(disk: new FailingDiskSpace());
+
+        page.Attach();
+        await page.SpaceRead;
+
+        Assert.Equal("12.0 GB used", page.SpaceText);
+        Assert.Single(Rows(page));
+        Assert.Contains(_h.Logs.Lines, line => line.Contains("free space where downloads go could not be read", StringComparison.Ordinal));
+        Assert.DoesNotContain(_h.Logs.Lines, line => line.Contains(FailingDiskSpace.Message, StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task AFreeSpaceReadThatHangs_IsUnknownAfterFiveSeconds()
+    {
+        await AddFilmAsync("dl_1", "Example Movie", size: 12 * GB);
+        using var disk = new HeldDiskSpace(200 * GB);
+        var page = Page(disk: disk);
+
+        page.Attach();
+        _h.Time.Advance(TimeSpan.FromSeconds(4));
+        Assert.False(page.SpaceRead.IsCompleted);
+        _h.Time.Advance(TimeSpan.FromSeconds(1));
+        await page.SpaceRead;
+
+        Assert.Equal("12.0 GB used", page.SpaceText);
+        Assert.Contains(_h.Logs.Lines, line => line.Contains("free space where downloads go did not come within 5 s", StringComparison.Ordinal));
     }
 
     [Fact]
