@@ -221,8 +221,80 @@ public sealed class AudioDelayTests
     }
 
     [Fact]
+    public async Task ASlowSaveForAnotherServer_DoesNotHoldBackTheSaveOfTheProfileActingNow()
+    {
+        // Each server keeps its own sign-in, with its own profile.
+        _silo.ActingProfile = null;
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _silo.On(HttpMethod.Put, ValuePath, async () =>
+        {
+            await gate.Task;
+            return new HttpResponseMessage(HttpStatusCode.NoContent);
+        });
+        _silo.On(HttpMethod.Put, ScriptedSilo.Url(ValuePath, OtherBase), ScriptedSilo.NoContent());
+        var delay = Create();
+
+        delay.Set(100);
+        var hanging = delay.SaveNowAsync();
+        await ServerPlaybackFixture.Until(() => Saves.Count == 1, "the first server's save goes out");
+        _session.ActiveServer = ScriptedSilo.Entry("srv2", OtherBase);
+        _session.ProfileId = "3";
+        delay.Set(-100);
+        var saving = delay.SaveNowAsync();
+
+        await ServerPlaybackFixture.Until(() => _silo.Sent.Any(r => r.Method == HttpMethod.Put && r.Uri.Host == OtherBase.Host),
+            "the acting profile's save goes out while the other one hangs");
+        Assert.False(hanging.IsCompleted);
+        var sent = _silo.Sent.Single(r => r.Method == HttpMethod.Put && r.Uri.Host == OtherBase.Host);
+        Assert.Equal(-100, Value(sent));
+        Assert.Equal("3", sent.AsProfile);
+        gate.SetResult();
+        await Task.WhenAll(hanging, saving);
+    }
+
+    [Fact]
+    public async Task ASignOutWhileAChangeWaits_SendsNothing_LogsIt_AndLeavesNothingWaiting()
+    {
+        var delay = Create();
+
+        delay.Set(400);
+        _session.State = SessionState.SignedOut;
+        _session.ProfileId = null;
+        await SettleAsync(delay);
+
+        Assert.Empty(Saves);
+        Assert.Contains(_logs.Lines, l => l.Contains("profile changed", StringComparison.Ordinal));
+        _session.State = SessionState.Ready;
+        _session.ProfileId = "7";
+        delay.Take(0);
+        Assert.Equal(0, delay.Milliseconds);
+    }
+
+    [Fact]
+    public async Task AChangeMadeWithoutASession_IsNotSaved_AndLeavesNothingWaiting()
+    {
+        _session.State = SessionState.NoServer;
+        _session.ActiveServer = null;
+        _session.ProfileId = null;
+        var delay = Create();
+
+        delay.Set(300);
+        Assert.Equal(300, delay.Milliseconds);
+        _time.Advance(Settle);
+        await delay.SaveNowAsync();
+
+        Assert.Empty(Saves);
+        _session.State = SessionState.Ready;
+        _session.ActiveServer = ScriptedSilo.Server;
+        _session.ProfileId = "7";
+        delay.Take(0);
+        Assert.Equal(0, delay.Milliseconds);
+    }
+
+    [Fact]
     public async Task AChangeWaitingBehindASlowSave_IsNotSavedForAProfileThatTookOverMeanwhile()
     {
+        // Saves of one profile go one after another, so the latest value is the one its server keeps.
         var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         _silo.On(HttpMethod.Put, ValuePath, async () =>
         {

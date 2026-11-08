@@ -44,7 +44,11 @@ public sealed class AudioDelay(SettingsApi settings, ISessionManager session, IU
 
     // The change the latest save started for carries, so it is not sent twice; -1 after a failure, to try again.
     private long _sending = -1;
-    private Task _saving = Task.CompletedTask;
+
+    // Each profile's saves, one after another, so the latest value is the one its server keeps. Another profile's never
+    // waits for them: a save that hangs on one server does not hold back the profile acting now.
+    private readonly Dictionary<Owner, Task> _chains = [];
+    private Task _latest = Task.CompletedTask;
 
     /// <summary>The delay in milliseconds, positive for later sound; 0 until a value is read or set.</summary>
     public int Milliseconds { get; private set; }
@@ -53,7 +57,7 @@ public sealed class AudioDelay(SettingsApi settings, ISessionManager session, IU
     public event EventHandler? Changed;
 
     /// <summary>The latest save: done once it went through, or failed and was logged. Waiting for it starts none.</summary>
-    public Task LatestSave => _saving;
+    public Task LatestSave => _latest;
 
     /// <summary>A stored value within the contract's range, in whole milliseconds; 0, the default, for anything but a number.</summary>
     public static int FromSetting(JsonElement? value) =>
@@ -119,18 +123,24 @@ public sealed class AudioDelay(SettingsApi settings, ISessionManager session, IU
 
     /// <summary>
     /// Saves a waiting change at once instead of when it settles: the app closes, or the profile is about to change.
-    /// Never fails: done once the latest change is saved, or its save failed and was logged.
+    /// Never fails: done once the waiting change is saved, or its save failed and was logged; with none waiting, once the
+    /// acting profile's saves are.
     /// </summary>
     public Task SaveNowAsync()
     {
         _settle?.Dispose();
         _settle = null;
-        if (_unsaved is not { } pending || pending.Change == _sending)
+        if (_unsaved is not { } pending)
         {
-            return _saving;
+            return Acting() is { } acting && _chains.TryGetValue(acting, out var saving) ? saving : Task.CompletedTask;
         }
-        _sending = pending.Change;
-        return _saving = SaveAsync(_saving, pending);
+        if (pending.Change != _sending)
+        {
+            _sending = pending.Change;
+            var before = _chains.GetValueOrDefault(pending.Owner) ?? Task.CompletedTask;
+            _latest = _chains[pending.Owner] = SaveAsync(before, pending);
+        }
+        return _chains[pending.Owner];
     }
 
     private Owner? Acting() =>
@@ -146,7 +156,7 @@ public sealed class AudioDelay(SettingsApi settings, ISessionManager session, IU
         Changed?.Invoke(this, EventArgs.Empty);
     }
 
-    // After the save before it, so the latest value is the one the server keeps.
+    // After the profile's save before it, so the latest value is the one its server keeps.
     private async Task SaveAsync(Task previous, Pending pending)
     {
         await previous;
