@@ -16,7 +16,7 @@ public sealed class LocalRouteMonitorTests : IDisposable
     private readonly ScriptedSilo _silo = new();
     private readonly LocalRoutes _routes = new();
     private readonly FakeProbe _probe = new();
-    private readonly FakeNetwork _network = new();
+    private readonly FakeLocalNetwork _network = new();
     private readonly FakeLanBrowser _browser = new();
     private readonly ManualTimeProvider _time = new();
     private readonly LogSink _logs = new();
@@ -420,17 +420,5 @@ public sealed class LocalRouteMonitorTests : IDisposable
                 ? new LocalRoute(savedOrigin, candidate, pin, new HttpMessageInvoker(new HttpClientHandler()))
                 : null);
         }
-    }
-
-    private sealed class FakeNetwork : ILocalNetwork
-    {
-        public Dictionary<string, IPAddress[]> Addresses { get; } = [];
-
-        public event EventHandler? Changed;
-
-        public Task<IPAddress[]> ResolveAsync(string host, CancellationToken cancellationToken) =>
-            Task.FromResult(Addresses.TryGetValue(host, out var addresses) ? addresses : []);
-
-        public void RaiseChanged() => Changed?.Invoke(this, EventArgs.Empty);
     }
 }

@@ -1,6 +1,7 @@
 using System.Net;
 using Granary.Core.Api;
 using Granary.Core.Api.Theme;
+using Granary.Core.Auth;
 using Granary.Core.Theme;
 using Granary.Tests.Browse;
 using Granary.Tests.Fakes;
@@ -13,10 +14,29 @@ public sealed class ServerAccentTests
 {
     private const string BrandingPath = "api/v2/theme/branding";
 
+    private const string Blue = """{ "server_name": "Elena's Silo", "accent_color": "#1d4ed8" }""";
+
+    private const string NoAccent = """{ "server_name": "Elena's Silo" }""";
+
     private readonly LibraryHarness _harness = new();
+    private readonly FakeLocalNetwork _network = new();
+
+    private static CancellationToken Cancellation => TestContext.Current.CancellationToken;
 
     private ServerAccent Create() =>
-        new(_harness.Session, new BrandingApi(_harness.Silo.Http), new ImmediateDispatcher(), _harness.Logs.For<ServerAccent>());
+        new(_harness.Session, new BrandingApi(_harness.Silo.Http), _network, new ImmediateDispatcher(), _harness.Clock,
+            _harness.Logs.For<ServerAccent>());
+
+    private int Reads(Uri? server = null) =>
+        _harness.Silo.Sent.Count(r => r.Method == HttpMethod.Get && r.Uri.GetLeftPart(UriPartial.Path) == ScriptedSilo.Url(BrandingPath, server).AbsoluteUri);
+
+    // The retry that falls due next, and its read.
+    private async Task<TimeSpan> RetryAsync(ServerAccent accent)
+    {
+        var waited = await _harness.Clock.FireNextTimerAsync(Cancellation);
+        await accent.Reading;
+        return waited;
+    }
 
     [Theory]
     [InlineData("#3b82f6", "#3b82f6")]
@@ -186,5 +206,200 @@ public sealed class ServerAccentTests
         await accent.Reading;
 
         Assert.Same(AccentPalette.Default, accent.Palette);
+    }
+
+    [Fact]
+    public async Task AFailedRead_IsTriedAgain_AndItsAnswerPainted()
+    {
+        _harness.Silo.On(HttpMethod.Get, BrandingPath, ScriptedSilo.NetworkError(),
+            ScriptedSilo.Json(HttpStatusCode.OK, """{ "accent_color": "#1d4ed8", "wordmark_url": "/wordmark.webp" }"""));
+        var accent = Create();
+        await accent.StartAsync();
+        Assert.Same(AccentPalette.Default, accent.Palette);
+
+        await RetryAsync(accent);
+
+        Assert.Equal("#1d4ed8", accent.Palette.Primary.ToString());
+        Assert.EndsWith("/wordmark.webp", accent.Wordmark?.AbsoluteUri, StringComparison.Ordinal);
+        Assert.Equal(2, Reads());
+    }
+
+    [Fact]
+    public async Task FailedReads_AreTriedAgainAfter5s_15s_AMinute_ThenEvery5Minutes()
+    {
+        _harness.Silo.On(HttpMethod.Get, BrandingPath, ScriptedSilo.Problem(503, "unavailable"));
+        var accent = Create();
+        await accent.StartAsync();
+
+        List<TimeSpan> waits = [];
+        for (int i = 0; i < 5; i++)
+        {
+            waits.Add(await RetryAsync(accent));
+        }
+
+        Assert.Equal([TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(15), TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5)], waits);
+        Assert.Equal(6, Reads());
+        Assert.Same(AccentPalette.Default, accent.Palette);
+    }
+
+    [Theory]
+    [InlineData(Blue)]
+    [InlineData(NoAccent)]
+    public async Task AnAnswer_WithOrWithoutAnAccent_IsNotTriedAgain(string branding)
+    {
+        _harness.Silo.On(HttpMethod.Get, BrandingPath, ScriptedSilo.NetworkError(), ScriptedSilo.Json(HttpStatusCode.OK, branding));
+        var accent = Create();
+        await accent.StartAsync();
+        await RetryAsync(accent);
+
+        _harness.Clock.Advance(TimeSpan.FromHours(1));
+        _network.RaiseChanged();
+        _harness.Clock.Advance(TimeSpan.FromMinutes(1));
+
+        Assert.Null(_harness.Clock.NextDue);
+        Assert.Equal(2, Reads());
+    }
+
+    [Fact]
+    public async Task ARead_ThatAnswersAtOnce_SetsNoRetry()
+    {
+        _harness.Silo.On(HttpMethod.Get, BrandingPath, ScriptedSilo.Json(HttpStatusCode.OK, NoAccent));
+        var accent = Create();
+
+        await accent.StartAsync();
+
+        Assert.Null(_harness.Clock.NextDue);
+        Assert.Same(AccentPalette.Default, accent.Palette);
+    }
+
+    [Fact]
+    public async Task AnotherServer_DuringTheWait_EndsTheRetries_AndStartsItsOwnFromTheFirstDelay()
+    {
+        _harness.Silo.On(HttpMethod.Get, BrandingPath, ScriptedSilo.NetworkError());
+        var other = ScriptedSilo.Entry("srv2", new Uri("https://other.example/silo"));
+        _harness.Silo.On(HttpMethod.Get, ScriptedSilo.Url(BrandingPath, other.BaseUri), ScriptedSilo.NetworkError(),
+            ScriptedSilo.Json(HttpStatusCode.OK, """{ "accent_color": "#16a34a" }"""));
+        var accent = Create();
+        await accent.StartAsync();
+        await RetryAsync(accent);
+        Assert.Equal(TimeSpan.FromSeconds(15), _harness.Clock.NextDue);
+
+        _harness.Session.ActiveServer = other;
+        _harness.Session.RaiseChanged();
+        await accent.Reading;
+
+        Assert.Equal(TimeSpan.FromSeconds(5), await RetryAsync(accent));
+        Assert.Equal("#16a34a", accent.Palette.Primary.ToString());
+        _harness.Clock.Advance(TimeSpan.FromHours(1));
+        Assert.Equal(2, Reads());
+        Assert.Equal(2, Reads(other.BaseUri));
+    }
+
+    [Fact]
+    public async Task Disposing_EndsTheRetries()
+    {
+        _harness.Silo.On(HttpMethod.Get, BrandingPath, ScriptedSilo.NetworkError());
+        var accent = Create();
+        await accent.StartAsync();
+        Assert.NotNull(_harness.Clock.NextDue);
+
+        accent.Dispose();
+        _harness.Clock.Advance(TimeSpan.FromHours(1));
+        _harness.Session.State = SessionState.SignedOut;
+        _harness.Session.RaiseChanged();
+        _harness.Session.State = SessionState.Ready;
+        _harness.Session.RaiseChanged();
+
+        Assert.Null(_harness.Clock.NextDue);
+        Assert.False(_network.IsFollowed);
+        Assert.Equal(1, Reads());
+    }
+
+    [Theory]
+    [InlineData(SessionState.SignedOut, SessionState.ProfileRequired)]
+    [InlineData(SessionState.SignedOut, SessionState.Ready)]
+    [InlineData(SessionState.ProfileRequired, SessionState.Ready)]
+    [InlineData(SessionState.PasswordChangeRequired, SessionState.Ready)]
+    public async Task ASignInOrASessionThatBecomesReady_TriesAgainAtOnce(SessionState before, SessionState after)
+    {
+        _harness.Session.State = before;
+        _harness.Silo.On(HttpMethod.Get, BrandingPath, ScriptedSilo.NetworkError(), ScriptedSilo.Json(HttpStatusCode.OK, Blue));
+        var accent = Create();
+        await accent.StartAsync();
+
+        _harness.Session.State = after;
+        _harness.Session.RaiseChanged();
+        await accent.Reading;
+
+        Assert.Equal("#1d4ed8", accent.Palette.Primary.ToString());
+        Assert.Equal(2, Reads());
+        Assert.Null(_harness.Clock.NextDue);
+    }
+
+    [Theory]
+    [InlineData(SessionState.Ready, SessionState.Ready)]
+    [InlineData(SessionState.Ready, SessionState.SignedOut)]
+    [InlineData(SessionState.Ready, SessionState.ProfileRequired)]
+    public async Task OtherSessionChanges_WaitForTheRetry(SessionState before, SessionState after)
+    {
+        _harness.Session.State = before;
+        _harness.Silo.On(HttpMethod.Get, BrandingPath, ScriptedSilo.NetworkError());
+        var accent = Create();
+        await accent.StartAsync();
+
+        _harness.Session.State = after;
+        _harness.Session.RaiseChanged();
+        await accent.Reading;
+
+        Assert.Equal(1, Reads());
+        Assert.Equal(TimeSpan.FromSeconds(5), _harness.Clock.NextDue);
+    }
+
+    [Fact]
+    public async Task TheNetworkChanging_TriesAgainOnceItSettles_AndTheWaitsStartOver()
+    {
+        _harness.Silo.On(HttpMethod.Get, BrandingPath, ScriptedSilo.NetworkError());
+        var accent = Create();
+        await accent.StartAsync();
+        await RetryAsync(accent);
+        await RetryAsync(accent);
+        Assert.Equal(TimeSpan.FromMinutes(1), _harness.Clock.NextDue);
+
+        // A change comes in bursts: an adapter going down, another coming up.
+        _network.RaiseChanged();
+        _network.RaiseChanged();
+
+        Assert.Equal(TimeSpan.FromSeconds(2), await RetryAsync(accent));
+        Assert.Equal(4, Reads());
+        Assert.Equal(TimeSpan.FromSeconds(5), _harness.Clock.NextDue);
+    }
+
+    [Fact]
+    public async Task TheNetworkChanging_ReadsNothing_WhenNothingFailed()
+    {
+        _harness.Silo.On(HttpMethod.Get, BrandingPath, ScriptedSilo.Json(HttpStatusCode.OK, Blue));
+        var accent = Create();
+        await accent.StartAsync();
+
+        _network.RaiseChanged();
+
+        Assert.Null(_harness.Clock.NextDue);
+        Assert.Equal(1, Reads());
+    }
+
+    [Fact]
+    public async Task AStreakOfFailures_IsLoggedOnce_WithoutTheServersAddress()
+    {
+        _harness.Silo.On(HttpMethod.Get, BrandingPath, ScriptedSilo.NetworkError());
+        var accent = Create();
+        await accent.StartAsync();
+
+        for (int i = 0; i < 4; i++)
+        {
+            await RetryAsync(accent);
+        }
+
+        Assert.Single(_harness.Logs.Lines, line => line.Contains("Could not read the server's branding", StringComparison.Ordinal));
+        Assert.DoesNotContain(ScriptedSilo.Base.Host, _harness.Logs.All, StringComparison.OrdinalIgnoreCase);
     }
 }

@@ -88,6 +88,9 @@ release's section is what its update says it changes (docs/release.md).
 - Saving mpv.conf or loading a preset no longer fails when Granary happens to be reading the file at that moment.
 - HDR and Dolby Vision films play directly on more graphics cards, because Granary now checks the film's own codec. A
   card that decodes VP9 only in 8 bits had your Silo server convert every HDR film, HEVC ones too.
+- Granary takes your Silo server's accent colour and logo also when it couldn't reach the server at start, such as right
+  after waking the PC or connecting a VPN: it tries again until the server answers, where it kept its own red until the
+  next start.
 
 ## [0.2.1] - 2026-11-05
 

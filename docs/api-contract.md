@@ -536,7 +536,11 @@ Signing out keeps the entry but drops its tokens and profile; removing a server 
 over its theme (`web/src/lib/accentColor.ts`): only `#rgb` or `#rrggbb` counts (the admin's setting is free text,
 `branding.accent_color`); it recolours the primary actions, the focus ring and the selection, and labels on it turn
 white when white contrasts more than the dark label `#141417`. Granary reads it for the active server
-(`ServerAccent`) and keeps its own red when there is none or the read fails.
+(`ServerAccent`) and keeps its own red when there is none, and while the read fails. A failed read (no network yet after
+a wake or a VPN, a slow server) is tried again after 5 s, 15 s and a minute, then every 5 minutes; at once when the
+session signs in or becomes ready; and 2 s after the network changes (`ILocalNetwork`), which starts the waits over. An
+answer ends the retries, also one without an accent, and so does another server becoming active, which starts afresh. A
+streak of failures is logged once, with the status or the kind of failure only.
 
 ### 6.6 Settings the client reads
 
