@@ -357,8 +357,9 @@ public sealed partial class DownloadQueue
         var downloads = runnable ? _store.In(scope!) : [];
         var pendingDeletes = runnable ? _store.PendingDeletes(scope!) : [];
         bool deletes = pendingDeletes.Any(d => IsSendable(scope!, d));
-        // A removed download's folder something holds: the recheck deletes it again, and its delete goes after.
-        bool heldFolders = pendingDeletes.Any(d => _store.FolderBeingDeleted(scope!, d.DownloadId) is not null);
+        // A removed download's folder something holds, of any profile and with a server delete or without: the recheck deletes
+        // it again (and a delete waiting for it goes after).
+        bool heldFolders = _store.HasFolderDeletes;
         bool metered = runnable && IsWaitingForUnmetered;
         DateTimeOffset? next = _passRetryAt;
         lock (_gate)

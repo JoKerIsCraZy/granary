@@ -658,6 +658,25 @@ public sealed class DownloadQueueTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AHeldFolderOfARemovedDownload_IsDeletedAtTheNextFolderRecheck()
+    {
+        var stored = await _h.AddAsync("dl_1", DownloadState.Completed);
+        var queue = _h.StartQueue();
+        await IdleAsync(queue);
+        // Something holds a file while the download goes, without a server delete (as at a sign-out).
+        await using (new FileStream(Path.Combine(stored.Folder, "media.mkv"), FileMode.Create, FileAccess.Write, FileShare.None))
+        {
+            await _h.Store.RemoveAsync(Scope7, "dl_1", queueServerDelete: false, Token);
+        }
+        await IdleAsync(queue);
+        Assert.True(Directory.Exists(stored.Folder));
+
+        _h.Time.Advance(DownloadQueue.FolderRecheck);
+
+        await Until(() => !Directory.Exists(stored.Folder), "the recheck deleted it");
+    }
+
+    [Fact]
     public async Task AProfileSwitchDuringAPass_StartsNothingForTheOldProfile()
     {
         var queue = _h.StartQueue();

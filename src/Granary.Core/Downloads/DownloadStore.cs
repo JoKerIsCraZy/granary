@@ -107,6 +107,9 @@ public sealed partial class DownloadStore
     /// <summary>The server deletes still to be sent for <paramref name="scope"/>.</summary>
     public IReadOnlyList<PendingDelete> PendingDeletes(DownloadScope scope) => [.. Current.PendingDeletes.Where(d => d.Scope == scope)];
 
+    /// <summary>A removed download's folder is still to be deleted, of any scope: a recheck tries it again.</summary>
+    internal bool HasFolderDeletes => Current.FolderDeletes.Count > 0;
+
     /// <summary>
     /// The folder of a removed download that is still to be deleted (something held it, or its drive is not there); null when
     /// none is. A server delete waits while it is there: the files go first.
