@@ -1012,6 +1012,9 @@ public sealed partial class MediaCardView : UserControl
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
+        // A click that opens a title takes the page away under the pointer, so the card never hears it leave; a cached
+        // page would show it hovered on the way back until the pointer crossed it again.
+        SetHovered(false);
         _actions.Changed -= OnStateChanged;
         _overlays.PropertyChanged -= OnOverlaysChanged;
         ForgetHost();

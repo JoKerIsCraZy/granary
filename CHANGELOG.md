@@ -108,6 +108,8 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Fixed
 
+- A card you clicked no longer keeps its play button and menu showing when you come back with the mouse's Back
+  button, although the pointer is elsewhere.
 - In the player's Subtitle appearance, the Opacity boxes are no longer cut off at the right, and their number stands at
   the right as on Silo's web.
 - The display no longer turns off while something plays. It stays on while a title plays or buffers, also minimized or
