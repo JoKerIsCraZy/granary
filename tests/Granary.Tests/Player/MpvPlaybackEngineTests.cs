@@ -424,6 +424,31 @@ public sealed class MpvPlaybackEngineTests : IDisposable
     }
 
     [Fact]
+    public async Task TheAudioDelay_IsMpvsAudioDelay_BeforeAndWhileAFilePlays_AndForTheNextFile()
+    {
+        using var engine = CreateEngine();
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        engine.StateChanged += (_, s) =>
+        {
+            if (s.HasStarted)
+            {
+                started.TrySetResult();
+            }
+        };
+
+        engine.SetAudioDelay(0.25);
+        Assert.Equal("0.250000", engine.Option("audio-delay"));
+        engine.Load(MediaSource.Local(TempWav(3.0)));
+        await started.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken);
+
+        // Positive is later sound, as mpv has it and as Android's DelayAudioProcessor pads the start with silence.
+        engine.SetAudioDelay(-0.15);
+        Assert.Equal("-0.150000", engine.Option("audio-delay"));
+        engine.Load(MediaSource.Local(TempWav(1.0)));
+        Assert.Equal("-0.150000", engine.Option("audio-delay"));
+    }
+
+    [Fact]
     public async Task VolumeAndMute_AreSetAndReported()
     {
         using var engine = CreateEngine();

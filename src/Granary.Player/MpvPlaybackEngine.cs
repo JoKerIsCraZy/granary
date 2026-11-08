@@ -22,6 +22,8 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
     // The video track that plays; mpv says it may have changed whenever the tracks or their choice change.
     private const string VideoTrackProperty = "current-tracks/video";
 
+    private const string AudioDelayOption = "audio-delay";
+
     private readonly ILogger<MpvPlaybackEngine> _logger;
     private readonly MpvEngineOptions _options;
     private readonly TrailingThrottle _bufferedReads;
@@ -188,6 +190,20 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
 
     // panscan 1 scales the picture up until it fills the area on both sides, as object-fit: cover does on the web.
     public void SetFill(bool fill) => SetGlobal("panscan", fill ? "1" : "0");
+
+    // mpv's audio-delay is positive for later sound, as player.audio_sync_ms is; it takes a change while a file plays. A 0
+    // before any other value leaves an audio-delay of the viewer's own mpv.conf alone; once Granary set one, 0 is its own.
+    public void SetAudioDelay(double seconds)
+    {
+        lock (_globalsGate)
+        {
+            if (seconds == 0 && !_globals.ContainsKey(AudioDelayOption))
+            {
+                return;
+            }
+            SetGlobal(AudioDelayOption, seconds.ToString("0.###", CultureInfo.InvariantCulture));
+        }
+    }
 
     // width and height are the picture as decoded, the drops counted since the file was loaded.
     public PlaybackStats ReadStats() => new(

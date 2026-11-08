@@ -67,7 +67,8 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         global::Granary.Core.WatchParty.WatchPartySession? watchParty = null,
         IConfirmation? confirmation = null,
         EpisodeSpoilerSettings? spoilers = null,
-        IPlaybackDevicePreferences? devicePreferences = null)
+        IPlaybackDevicePreferences? devicePreferences = null,
+        AudioDelay? audioDelay = null)
     {
         _engine = engine;
         _dispatcher = dispatcher;
@@ -83,6 +84,11 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         _permissions = permissions;
         _watchParty = watchParty;
         _spoilers = spoilers;
+        _audioDelay = audioDelay;
+        if (_audioDelay is not null)
+        {
+            _audioDelay.Changed += OnAudioDelayChanged;
+        }
         Party = InitializeWatchParty(confirmation);
         Look.Edited += OnLookEdited;
         InitializeMarkerEdit();
@@ -186,9 +192,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     public partial int SubtitleDelayMs { get; private set; }
 
     /// <summary>"0 ms", "+300 ms", "−1200 ms" (web: formatDelay).</summary>
-    public string SubtitleDelayText => SubtitleDelayMs == 0
-        ? "0 ms"
-        : (SubtitleDelayMs > 0 ? "+" : "\u2212") + Math.Abs(SubtitleDelayMs).ToString(System.Globalization.CultureInfo.InvariantCulture) + " ms";
+    public string SubtitleDelayText => DelayText(SubtitleDelayMs);
 
     // As on the web, the delay is for a subtitle that shows.
     public bool CanDelayEarlier => IsSubtitleOn && SubtitleDelayMs > -PlaybackPreferencesReader.MaxSubtitleDelayMs;
@@ -240,8 +244,10 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         ResetFill();
         ResetLook();
         ShowSleepTimer();
+        ShowAudioDelay();
         if (request.DirectSource is { } direct)
         {
+            _engine.SetAudioDelay(AudioDelayMs / 1000.0);
             StartDirect(direct);
             return;
         }
@@ -630,6 +636,10 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         _syncFeedback?.Dispose();
         _engine.StateChanged -= OnStateChanged;
         _engine.Ended -= OnEnded;
+        if (_audioDelay is not null)
+        {
+            _audioDelay.Changed -= OnAudioDelayChanged;
+        }
         StopPlanChangeTimers();
     }
 }

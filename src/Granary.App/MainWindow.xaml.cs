@@ -632,6 +632,9 @@ public sealed partial class MainWindow : Window
         _player?.ViewModel.Leave();
         // So does a Watch Party's socket, with a close the room sees at once rather than a connection that times out.
         _stops.Track(_room.LeaveAsync());
+        // And an audio delay changed just before, which would otherwise be saved once it settled, with every profile's saves
+        // still on their way.
+        _stops.Track(App.Services.GetRequiredService<AudioDelay>().SaveAllNowAsync());
         var stopped = _stops.WhenStoppedAsync(StopBudget);
         if (stopped.IsCompleted)
         {
