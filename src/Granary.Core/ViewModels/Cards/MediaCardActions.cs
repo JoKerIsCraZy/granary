@@ -154,7 +154,7 @@ public sealed class MediaCardActions
     private static bool IsPlayable(MediaCard card) => card.Type is CatalogItemTypes.Movie or CatalogItemTypes.Episode && !IsOwnFilm(card);
 
     // A movie's own card in its box set's row: the page's buttons hold its state, as the apps leave that card's menu out.
-    private static bool IsOwnFilm(MediaCard card) => card is { IsCurrent: true, CurrentMark: CurrentMark.ThisFilm };
+    private static bool IsOwnFilm(MediaCard card) => card.CurrentMark == CurrentMark.ThisFilm;
 
     private static bool HasResumePoint(MediaCard card, MediaCardState state) => card.Progress is > 0 and < 1 && !state.IsProgressCleared;
 

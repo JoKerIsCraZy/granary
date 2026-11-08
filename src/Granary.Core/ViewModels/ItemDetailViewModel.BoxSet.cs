@@ -77,7 +77,7 @@ public sealed partial class ItemDetailViewModel
     private MediaCard FilmCard(CatalogItem film, Uri server)
     {
         var card = MediaCardFactory.Poster(film, server);
-        return film.ContentId == _contentId ? card with { IsCurrent = true, CurrentMark = CurrentMark.ThisFilm } : card;
+        return film.ContentId == _contentId ? card with { CurrentMark = CurrentMark.ThisFilm } : card;
     }
 
     private void ResetBoxSet()

@@ -24,8 +24,8 @@ public sealed partial class MediaCardView
     // Windows' "Animation effects", read once when the app starts: turned off, the dot stands still.
     private static readonly bool Pings = new UISettings().AnimationsEnabled;
 
-    // How the card is marked as its page's own title; null while it is not.
-    private CurrentMark? _mark;
+    // How the card is marked as its page's own title.
+    private CurrentMark _mark;
     private bool _parked;
     private bool _loaded;
     private bool _pinging;
@@ -55,7 +55,7 @@ public sealed partial class MediaCardView
     // Viewing's corner badges give way to its pill, as the web's carousel card has none there; This film's pill is at the foot.
     private void ShowMark(MediaCard? card)
     {
-        CurrentMark? mark = card?.IsCurrent == true ? card.CurrentMark : null;
+        var mark = card?.CurrentMark ?? CurrentMark.None;
         if (mark != _mark)
         {
             _mark = mark;
@@ -71,7 +71,7 @@ public sealed partial class MediaCardView
             Art.BorderBrush = mark switch
             {
                 CurrentMark.NowViewing => Brush("SiloPrimaryBrush"),
-                CurrentMark.ThisFilm => ThisFilm!.BorderBrush,
+                CurrentMark.ThisFilm => Brush("SiloThisFilmRingBrush"),
                 _ => _artBorder,
             };
             NowViewing?.Visibility = Visible(mark == CurrentMark.NowViewing);

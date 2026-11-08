@@ -81,14 +81,13 @@ public sealed record MediaCard(string Id, string Type, string Title)
     public Api.Requests.MediaRequestCreate? RequestOffer { get; init; }
 
     /// <summary>
-    /// The title the page is about, among its siblings: an episode's own card in its season's More Episodes, marked "Now
-    /// Viewing" as the web's <c>EpisodeCarousel</c>, and a movie's own in its box set's row, marked as <see cref="CurrentMark"/>
-    /// says. No other row sets it.
+    /// How the card marks the title its page is about, among its siblings: an episode's own card in its season's More
+    /// Episodes, and a movie's own in its box set's row. <see cref="CurrentMark.None"/> on every other card.
     /// </summary>
-    public bool IsCurrent { get; init; }
-
-    /// <summary>How <see cref="IsCurrent"/> marks the card.</summary>
     public CurrentMark CurrentMark { get; init; }
+
+    /// <summary>The card is its page's own title (<see cref="CurrentMark"/>): its row opens with it in the middle.</summary>
+    public bool IsCurrent => CurrentMark != CurrentMark.None;
 
     /// <summary>
     /// A box set's card (Search's Box sets, <see cref="MediaCardFactory.BoxSet"/>): its films, "3 films", in the corner beside
@@ -101,12 +100,20 @@ public sealed record MediaCard(string Id, string Type, string Title)
         new[] { Title, BoxSetFilms is { } films ? $"box set of {films}" : null, EpisodeTitle, Subtitle, CurrentName }
             .Where(text => !string.IsNullOrEmpty(text)));
 
-    private string? CurrentName => IsCurrent ? CurrentMark == CurrentMark.ThisFilm ? "this film" : "now viewing" : null;
+    private string? CurrentName => CurrentMark switch
+    {
+        CurrentMark.NowViewing => "now viewing",
+        CurrentMark.ThisFilm => "this film",
+        _ => null,
+    };
 }
 
 /// <summary>How a card marks the title its page is about (<see cref="MediaCard.IsCurrent"/>).</summary>
 public enum CurrentMark
 {
+    /// <summary>Not the page's own title: no mark.</summary>
+    None,
+
     /// <summary>An episode among its season's: an accent ring and "Now Viewing" top left, as the web's <c>EpisodeCarousel</c>.</summary>
     NowViewing,
 

@@ -140,7 +140,7 @@
                 10 px semibold capitals 0.14 em apart, centred with its top 32 px above the poster's foot. Made for the first such
                 card only (MediaCardView.ShowMark); the corners keep their badges.
             -->
-            <Border x:Name="ThisFilm" x:Load="False" BorderBrush="#CCE8E8EC" BorderThickness="1" CornerRadius="15" IsHitTestVisible="False"
+            <Border x:Name="ThisFilm" x:Load="False" BorderBrush="{StaticResource SiloThisFilmRingBrush}" BorderThickness="1" CornerRadius="15" IsHitTestVisible="False"
                     AutomationProperties.AccessibilityView="Raw">
                 <Border Margin="0,0,0,11" Padding="10,6" HorizontalAlignment="Center" VerticalAlignment="Bottom"
                         CornerRadius="{StaticResource SiloPillCornerRadius}" controls:Pill.IsEnabled="True" Background="#D90E0E10">

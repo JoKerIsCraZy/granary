@@ -356,7 +356,7 @@ public sealed class MediaCardActionsTests
     public void TheFilmsOwnCardInItsBoxSet_OffersNothing_AsTheAppsLeaveItsMenuOut()
     {
         // Its page's own buttons hold its state; a card's change would not reach them.
-        var own = Heat with { IsCurrent = true, CurrentMark = CurrentMark.ThisFilm };
+        var own = Heat with { CurrentMark = CurrentMark.ThisFilm };
         var state = new MediaCardState(IsWatched: true, IsFavorite: false, InWatchlist: false);
 
         Assert.False(MediaCardActions.CanPlay(own));
@@ -366,10 +366,21 @@ public sealed class MediaCardActionsTests
         Assert.False(MediaCardActions.CanPlayFromBeginning(own, state));
         Assert.False(MediaCardActions.CanResetProgress(own, state));
         // An episode's own card in More Episodes keeps them, as the web's.
-        var episode = new MediaCard("episode-1", CatalogItemTypes.Episode, "Pilot") { PlayContentId = "episode-1", IsCurrent = true };
+        var episode = new MediaCard("episode-1", CatalogItemTypes.Episode, "Pilot") { PlayContentId = "episode-1", CurrentMark = CurrentMark.NowViewing };
         Assert.True(MediaCardActions.CanPlay(episode));
         Assert.True(MediaCardActions.CanMarkWatched(episode));
         Assert.Equal("Heat, this film", own.AccessibleName);
         Assert.Equal("Pilot, now viewing", episode.AccessibleName);
+    }
+
+    [Fact]
+    public void OnlyAMarkMakesACardCurrent()
+    {
+        // No card is its page's own by default: the mark says how, so none can be one without saying it.
+        Assert.Equal(CurrentMark.None, Heat.CurrentMark);
+        Assert.False(Heat.IsCurrent);
+        Assert.Equal("Heat", Heat.AccessibleName);
+        Assert.True((Heat with { CurrentMark = CurrentMark.NowViewing }).IsCurrent);
+        Assert.True((Heat with { CurrentMark = CurrentMark.ThisFilm }).IsCurrent);
     }
 }

@@ -117,6 +117,8 @@
     <SolidColorBrush x:Key="SiloBorderBrush" Color="{StaticResource SiloBorderColor}" />
     <SolidColorBrush x:Key="SiloForegroundBrush" Color="{StaticResource SiloForegroundColor}" />
     <SolidColorBrush x:Key="SiloMutedBrush" Color="{StaticResource SiloMutedColor}" />
+    <!-- A movie's own card in its box set's row: the web's ring-foreground/80. -->
+    <SolidColorBrush x:Key="SiloThisFilmRingBrush" Color="{StaticResource SiloForegroundColor}" Opacity="0.8" />
     <SolidColorBrush x:Key="SiloPrimaryBrush" Color="{StaticResource SiloPrimaryColor}" />
     <!--
         The accent's shades and see-through tints, and the labels drawn on it. AccentPainter repaints these brushes (and the
