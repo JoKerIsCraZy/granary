@@ -132,11 +132,17 @@ public sealed partial class DownloadQueue
         }
         if (activated)
         {
-            // The scope is the active one only once its activation went through: one that failed is done again by the next
-            // pass (a minute later at the latest), capability and registry included.
+            // The scope is the active one only once its activation went through: one that failed is done again a minute later,
+            // capability and registry included, or at once for another scope or session; a wake before then asks nothing.
             _activeScope = null;
             _runnable = false;
+            if (_activationRetry is { } retry && retry.Scope == scope && retry.Generation == generation && retry.At > _time.GetUtcNow())
+            {
+                return;
+            }
+            _activationRetry = new ActivationRetry(scope, generation, _time.GetUtcNow() + RetryDelays[^1]);
             await ActivateAsync(scope, server, stop).ConfigureAwait(false);
+            _activationRetry = null;
         }
         _activeScope = scope;
         _runnable = true;
@@ -376,6 +382,10 @@ public sealed partial class DownloadQueue
         var folderDelete = _store.NextFolderDeleteAt;
         bool metered = runnable && IsWaitingForUnmetered;
         DateTimeOffset? next = _passRetryAt;
+        if (_activationRetry is { } activation)
+        {
+            next = Earliest(next, activation.At);
+        }
         lock (_gate)
         {
             bool canStart = !metered && !_stopping && _running.Count < MaxConcurrent;

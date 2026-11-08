@@ -113,12 +113,13 @@ public sealed partial class DownloadQueue : IDisposable
     private bool _disposed;
     private long _passes;
 
-    // The loop's own: whether the store was read, the scope it last ran, whether that scope's downloads can run, and when a
-    // pass that failed is tried again.
+    // The loop's own: whether the store was read, the scope it last ran, whether that scope's downloads can run, when a pass
+    // that failed is tried again, and the activation under way or failed.
     private bool _loaded;
     private DownloadScope? _activeScope;
     private bool _runnable;
     private DateTimeOffset? _passRetryAt;
+    private ActivationRetry? _activationRetry;
 
     public DownloadQueue(DownloadStore store, DownloadTransfer transfer, DownloadAssets assets, DownloadsApi api, ISessionManager session,
         INetworkLink network, IDownloadPreferences preferences, TimeProvider time, ILogger<DownloadQueue> logger)
@@ -414,6 +415,9 @@ public sealed partial class DownloadQueue : IDisposable
 
     /// <summary>When a download, a report, a delete or a registry read is tried again, and how many tries in a row failed.</summary>
     private readonly record struct Retry(DateTimeOffset At, int Failures);
+
+    /// <summary>An activation of a scope in a session's generation that did not go through, and when it is done again.</summary>
+    private sealed record ActivationRetry(DownloadScope Scope, long Generation, DateTimeOffset At);
 
     /// <summary>What the capability of the active scope says the queue does: ask <c>/file-proxy</c>, delete revoked copies.</summary>
     private sealed record Capability(DownloadScope Scope, bool ViaProxy, bool RevokedRemovesLocal);
