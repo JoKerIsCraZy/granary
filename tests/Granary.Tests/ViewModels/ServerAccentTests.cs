@@ -200,7 +200,7 @@ public sealed class ServerAccentTests
     }
 
     [Fact]
-    public async Task AFailedRead_IsGranarysOwnRed()
+    public async Task AFailedRead_IsTheWebsLightDefault()
     {
         _harness.Silo.On(HttpMethod.Get, BrandingPath, ScriptedSilo.Problem(500, "internal_error"));
         var accent = Create();
@@ -231,7 +231,7 @@ public sealed class ServerAccentTests
     }
 
     [Fact]
-    public async Task NoServer_IsGranarysOwnRed()
+    public async Task NoServer_IsTheWebsLightDefault()
     {
         _harness.Silo.On(HttpMethod.Get, BrandingPath, ScriptedSilo.Json(HttpStatusCode.OK, """{ "accent_color": "#1d4ed8" }"""));
         var accent = Create();
@@ -485,7 +485,7 @@ public sealed class ServerAccentTests
     }
 
     [Fact]
-    public async Task ARemembered_None_IsGranarysOwnRed()
+    public async Task ARemembered_None_IsTheWebsLightDefault()
     {
         Remember(new SavedBranding(SavedBranding.NoAccent, null));
         _harness.Silo.On(HttpMethod.Get, BrandingPath, ScriptedSilo.NetworkError());
