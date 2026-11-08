@@ -121,6 +121,24 @@ public sealed class PlaybackInfoTests
         }, Rows(sections, "Playback Stream Info"));
     }
 
+    // A transformation of the server's own that Granary does not know may encode either stream: the play method says
+    // Transcode, and a codec line claims neither a copy nor a transcode unless a known encode says which.
+    [Theory]
+    [InlineData(new[] { "server_future_filter" }, "H.264", "AAC")]
+    [InlineData(new[] { "server_future_filter", "audio_to_aac" }, "H.264", "AAC (transcoded)")]
+    [InlineData(new[] { "server_future_filter", "video_to_h264" }, "H.264 (transcoded)", "AAC")]
+    [InlineData(new[] { "server_dv7_to_hdr10" }, "H.264 (copy)", "AAC (copy)")]
+    public void AServerTransformationThisAppDoesNotKnow_IsNeverCalledACopy(string[] transformations, string video, string audio)
+    {
+        var plan = Plan(PlaybackDeliveries.ServerRemuxHls, StreamProtocols.Hls,
+            [.. transformations.Select(name => new PlaybackTransformation { Name = name, Executor = "server" })]);
+        var stream = new PlaybackStreamInfo(plan, new Uri("https://silo.example/api/v2/stream/s/master.m3u8"), Uhd, Uhd, AudioOrdinal: 0);
+
+        var sections = PlaybackInfo.Sections(stream, PlaybackStats.None, 0, 0);
+
+        Assert.Equal(new Dictionary<string, string> { ["Video codec"] = video, ["Audio codec"] = audio }, Rows(sections, "Playback Stream Info"));
+    }
+
     [Theory]
     [InlineData(PlaybackDeliveries.ServerRemuxProgressive, "Direct Streaming")]
     [InlineData(PlaybackDeliveries.ServerRemuxHls, "Direct Streaming")]

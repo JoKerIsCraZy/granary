@@ -66,12 +66,24 @@ public static class StreamMethods
         _ => "",
     };
 
-    /// <summary>The server encodes the video of <paramref name="plan"/>: to another codec, or tone mapped to SDR.</summary>
-    internal static bool EncodesVideo(PlaybackPlan plan) =>
-        ServerDoes(plan, name => name.StartsWith(VideoEncode, StringComparison.Ordinal) || name == ToneMap);
+    /// <summary>
+    /// Whether the server encodes the video of <paramref name="plan"/>: true for an encode to another codec or a tone mapping
+    /// to SDR, false when it copies the video, null when a transformation Granary does not know may have touched it.
+    /// </summary>
+    internal static bool? EncodesVideo(PlaybackPlan plan) => Encodes(plan, IsVideoEncode);
 
-    /// <summary>The server encodes the audio of <paramref name="plan"/>.</summary>
-    internal static bool EncodesAudio(PlaybackPlan plan) => ServerDoes(plan, name => name.StartsWith(AudioEncode, StringComparison.Ordinal));
+    /// <summary>Whether the server encodes the audio of <paramref name="plan"/>; null as for <see cref="EncodesVideo"/>.</summary>
+    internal static bool? EncodesAudio(PlaybackPlan plan) => Encodes(plan, IsAudioEncode);
+
+    // A known encode of the stream says so; otherwise an unknown transformation leaves it open, and without one it is copied.
+    private static bool? Encodes(PlaybackPlan plan, Func<string, bool> isEncode) =>
+        ServerDoes(plan, isEncode) ? true : ServerDoes(plan, name => !IsKnown(name)) ? null : false;
+
+    private static bool IsVideoEncode(string name) => name.StartsWith(VideoEncode, StringComparison.Ordinal) || name == ToneMap;
+
+    private static bool IsAudioEncode(string name) => name.StartsWith(AudioEncode, StringComparison.Ordinal);
+
+    private static bool IsKnown(string name) => IsVideoEncode(name) || IsAudioEncode(name) || MetadataOnly.Contains(name);
 
     private static bool ServerDoes(PlaybackPlan plan, Func<string, bool> transformation) =>
         plan.Transformations.Any(t => t.Executor == ServerExecutor && transformation(t.Name));

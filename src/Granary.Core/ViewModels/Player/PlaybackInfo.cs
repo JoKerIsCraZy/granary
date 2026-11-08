@@ -150,8 +150,9 @@ public static class PlaybackInfo
         ]);
     }
 
-    // What is on the wire and how it got there: the plan says whether the server re-encoded, nothing is guessed.
-    private static string Delivered(PlaybackPlan plan, string? codec, bool encoded)
+    // What is on the wire and how it got there: the plan says whether the server re-encoded, nothing is guessed. Where a
+    // transformation Granary does not know may have touched the stream (encoded is null), the line claims neither.
+    private static string Delivered(PlaybackPlan plan, string? codec, bool? encoded)
     {
         string label = CodecLabel(codec);
         if (label == None)
@@ -162,7 +163,12 @@ public static class PlaybackInfo
         {
             return $"{label} (direct)";
         }
-        return $"{label} ({(encoded ? "transcoded" : "copy")})";
+        return encoded switch
+        {
+            true => $"{label} (transcoded)",
+            false => $"{label} (copy)",
+            null => label,
+        };
     }
 
     private static string VideoRangeType(WatchFileVersion? version, WatchVideoTrack? track)

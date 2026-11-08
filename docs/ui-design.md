@@ -1305,9 +1305,10 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   has it, so a remux that converts the audio is a Transcode; the stream's protocol and type, and the file asked for when
   the server fell back to another), VIDEO INFO (the picture's area and the video in pixels, hardware or software
   decoding, frames dropped by the output and by the decoder), PLAYBACK STREAM INFO (the codecs the plan delivers: direct,
-  copy or transcoded, as its transformations say; tone mapping to SDR encodes the video) and CURRENT SOURCE FILE
-  (container, size in GiB, bitrates, codec and profile, range type, colour range, the playing audio track's codec,
-  channels and sample rate). It describes the stream the player loaded, as the gear's dot does: during a switch the one
+  copy or transcoded, as its transformations say; tone mapping to SDR encodes the video, and where a transformation
+  Granary does not know may have touched a stream, its line names the codec alone) and CURRENT SOURCE FILE (container,
+  size in GiB, bitrates, codec and profile, range type, colour range, the playing audio track's codec, channels and
+  sample rate). It describes the stream the player loaded, as the gear's dot does: during a switch the one
   before, until the new one loads. Labels white 60 %, values white 90 % on the right; read again every second while it
   shows; it stays while the controls fade, until closed.
 - **Watch Party panel** (the web's WatchTogetherPanel), while the room plays its title and has not ended or gone to
