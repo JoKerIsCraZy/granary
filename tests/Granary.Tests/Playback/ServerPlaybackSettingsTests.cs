@@ -106,6 +106,22 @@ public sealed class ServerPlaybackSettingsTests
     }
 
     [Fact]
+    public async Task ALoadThePlayerRefuses_LeavesTheStreamInfoOfTheStreamBefore()
+    {
+        _fixture.Silo.On(HttpMethod.Post, StartPath, Created(Transcode("720p-medium")));
+        _fixture.Silo.On(HttpMethod.Post, ReplanPath, Ok(Transcode("1080p-high")));
+        var playback = await _fixture.StartAsync();
+        _fixture.Engine.RaiseState(Frame(30));
+        _fixture.Engine.FailNextLoad = new InvalidOperationException("The player refused the source.");
+
+        playback.SelectQuality("1080p-high");
+        await playback.Recovery;
+
+        Assert.Single(_fixture.Engine.Loaded);
+        Assert.Equal("720p-medium", playback.StreamInfo?.Plan.ActiveQuality);
+    }
+
+    [Fact]
     public async Task AQualityTheServerRefuses_PlaysOn_AndCanBePickedAgain()
     {
         _fixture.Silo.On(HttpMethod.Post, StartPath, Created(Transcode("720p-medium")));
