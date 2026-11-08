@@ -64,8 +64,8 @@ public static class PlaybackUrl
     /// <summary>
     /// A theme grant's audio URL (docs/api-contract.md 7.19): on the saved server as <see cref="Resolve"/> takes it, or, while
     /// <paramref name="origins"/> lets one, on a proxy node's origin, decided as a video stream's is
-    /// (<c>authorized_media_origins_v1</c>, <see cref="ResolveStream"/>): the server's own scheme, no user info, no fragment,
-    /// and never this machine, a link-local, multicast or unspecified address, however written (<see cref="NetworkAddresses"/>).
+    /// (<c>authorized_media_origins_v1</c>, <see cref="ResolveStream"/>): HTTPS (or HTTP beside an HTTP server), no user info,
+    /// no fragment, and never this machine, a link-local, multicast or unspecified address, however written (<see cref="NetworkAddresses"/>).
     /// A server that authorizes media origins vouches for the node, a private address included; without that, a private or
     /// unique-local node is taken only from a server that is on a private network itself. It carries its own token, so it is
     /// fetched without credentials. A node's connection is checked again on the addresses its name resolves to
@@ -83,7 +83,9 @@ public static class PlaybackUrl
         {
             return null;
         }
-        if (node.Scheme != server.Scheme || node.UserInfo.Length > 0 || node.Fragment.Length > 0)
+        // As a video stream's node: HTTPS, or plain HTTP beside a plain HTTP server, never HTTP beside an HTTPS one.
+        bool secure = node.Scheme == Uri.UriSchemeHttps || (node.Scheme == Uri.UriSchemeHttp && server.Scheme == Uri.UriSchemeHttp);
+        if (!secure || node.UserInfo.Length > 0 || node.Fragment.Length > 0)
         {
             return null;
         }

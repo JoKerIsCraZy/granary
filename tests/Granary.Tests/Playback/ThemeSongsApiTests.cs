@@ -173,10 +173,11 @@ public sealed class ThemeSongsApiTests
     }
 
     [Theory]
-    [InlineData("http://nas.example/silo", "https://proxy.example/theme-audio/abc", false)]
+    [InlineData("http://nas.example/silo", "https://proxy.example/theme-audio/abc", true)]
+    [InlineData("https://nas.example/silo", "https://proxy.example/theme-audio/abc", true)]
     [InlineData("http://nas.example/silo", "http://proxy.example/theme-audio/abc", true)]
     [InlineData("https://nas.example/silo", "http://proxy.example/theme-audio/abc", false)]
-    public void ANodesScheme_IsTheServers(string server, string url, bool fetched)
+    public void ANodesScheme_IsTheServers_OrHttpsBesideAPlainHttpServer(string server, string url, bool fetched)
     {
         foreach (var origins in new[] { ThemeOrigins.Routed, ThemeOrigins.Authorized })
         {

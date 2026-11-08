@@ -1307,7 +1307,8 @@ plays its first theme, as the web's `useThemeMusic.ts` and the apps do (docs/arc
 - `url` is a short-lived credential: relative to the server, or, only while the capability says `routed`, absolute on a
   proxy node's origin (on the node, `/stream/theme/{token}`; `PlaybackUrl.ResolveTheme`, `ThemeOrigins`). A node is taken as
   a video stream's is (9.1, `authorized_media_origins_v1`):
-  - Always: the server's own scheme, no user info, no fragment, and never this machine, a link-local, multicast or
+  - Always: HTTPS, or HTTP beside an HTTP server (never HTTP beside an HTTPS one, as for a video node), no user info, no
+    fragment, and never this machine, a link-local, multicast or
     unspecified address, however it is written: with the root's trailing dot (`127.0.0.1.`, `localhost.`), as `localhost`
     or a name under it, as a single number, or inside an IPv6 address (IPv4-mapped, IPv4-compatible, 6to4 `2002::/16`,
     NAT64 `64:ff9b::/96`), which counts as the IPv4 address it carries (`NetworkAddresses`).
