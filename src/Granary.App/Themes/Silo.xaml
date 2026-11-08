@@ -534,8 +534,9 @@
     <!--
         One of the web's Watch Party mode cards (a radio), the hub's "How the room picks" and the start sheet's "How to
         pick": a faint border; chosen, the accent surface (#232328) with the foreground at half for its border; under the
-        pointer, the muted surface at 60 %. Radius 12, as the hub's; the sheet's are 8.
+        pointer, the muted surface at 60 %, inside the border (its radius 1 less). Radius 12, as the hub's; the sheet's are 8.
     -->
+    <controls:InsetCornerRadius x:Key="SiloInsetCornerRadius" />
     <Style x:Key="SiloModeCardStyle" TargetType="RadioButton">
         <Setter Property="HorizontalAlignment" Value="Stretch" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
@@ -579,7 +580,8 @@
                                 <VisualState x:Name="Indeterminate" />
                             </VisualStateGroup>
                         </VisualStateManager.VisualStateGroups>
-                        <Border x:Name="Hover" CornerRadius="{TemplateBinding CornerRadius}" Background="#991C1C20" Opacity="0" />
+                        <Border x:Name="Hover" Background="#991C1C20" Opacity="0"
+                                CornerRadius="{Binding CornerRadius, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource SiloInsetCornerRadius}}" />
                         <ContentPresenter Padding="{TemplateBinding Padding}" Content="{TemplateBinding Content}"
                                           ContentTemplate="{TemplateBinding ContentTemplate}" HorizontalContentAlignment="Stretch" />
                     </Grid>
