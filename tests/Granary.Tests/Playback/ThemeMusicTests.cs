@@ -101,6 +101,26 @@ public sealed class ThemeMusicTests
     }
 
     [Fact]
+    public async Task AnUnforeseenFailureReadingTheCapability_IsLoggedByItsType_AndTheNextPageAsksAgain()
+    {
+        var rig = new ThemeMusicRig();
+        rig.Harness.Answer(ThemeSongsApiTests.CapabilityPath,
+            () => Task.FromException<HttpResponseMessage>(new InvalidOperationException("unforeseen")),
+            ScriptedSilo.Json(HttpStatusCode.OK, ThemeSongsApiTests.Available));
+        await rig.StartedAsync();
+
+        rig.Music.Show(_page, Set("movie-1", "11"));
+        await AuthPipeline.Eventually(() => rig.CapabilityReads == 1);
+        await AuthPipeline.Eventually(() => rig.Harness.Logs.All.Contains("InvalidOperationException", StringComparison.Ordinal));
+        Assert.Empty(rig.Output.Made);
+        rig.Music.Show(_nextPage, Set("movie-1", "11"));
+
+        await AuthPipeline.Eventually(() => rig.Output.Made.Count == 1);
+        Assert.Equal(2, rig.CapabilityReads);
+        Assert.DoesNotContain("unforeseen", rig.Harness.Logs.All, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task TheServersAnswer_StandsAMinute()
     {
         var rig = await new ThemeMusicRig().StartedAsync();

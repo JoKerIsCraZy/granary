@@ -242,11 +242,23 @@ public sealed class ThemeMusic : IDisposable
         {
             _logger.LogInformation("Reading whether the server plays theme music failed: {Failure}", ApiFailureText.Describe(ex));
         }
+        catch (Exception ex)
+        {
+            // Unforeseen: by its type alone. Themes are optional; the next page asks again.
+            _logger.LogWarning("Reading whether the server plays theme music failed unexpectedly: {Failure}", ex.GetType().Name);
+        }
+        finally
+        {
+            // Only this identity's read: a reset meanwhile cleared the flag, and a newer read may hold it now.
+            if (version == _identityVersion)
+            {
+                _readingCapability = false;
+            }
+        }
         if (version != _identityVersion)
         {
             return;
         }
-        _readingCapability = false;
         if (available is { } answer)
         {
             // A failed read keeps the answer before and is tried with the next page, never in a loop.
