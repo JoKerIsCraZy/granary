@@ -1,4 +1,5 @@
 using Granary.Core.Abstractions;
+using Granary.Core.Api.Catalog;
 using Granary.Core.Playback;
 using Granary.Core.ViewModels.Detail;
 using Granary.Tests.Profiles;
@@ -152,6 +153,78 @@ public sealed class ItemDetailExtrasTests
 
         Assert.False(detail.HasExtras);
         Assert.Empty(detail.ExtraGroups);
+    }
+
+    [Fact]
+    public async Task AnEmptyPlaceInTheList_IsSkipped()
+    {
+        const string WithNull = """
+            "extras": [
+              null,
+              { "content_id": "extra-72", "kind": "deleted_scene", "title": "Alternate Ending" }
+            ],
+            "subtitles": []
+            """;
+
+        var detail = await MovieWithExtras(WithNull).LoadAsync(MovieId);
+
+        Assert.Equal("extra-72", Assert.Single(Assert.Single(detail.ExtraGroups).Extras).ContentId);
+    }
+
+    [Fact]
+    public async Task PlayingNoExtra_OpensNothing()
+    {
+        var detail = await MovieWithExtras().LoadAsync(MovieId);
+        int navigations = _fixture.Navigation.Navigations.Count;
+
+        detail.PlayExtraCommand.Execute(null);
+
+        Assert.Equal(navigations, _fixture.Navigation.Navigations.Count);
+    }
+
+    [Fact]
+    public async Task TheSameTitleLoadedAgain_DropsExtrasTheServerNoLongerLists()
+    {
+        MovieWithExtras();
+        var detail = _fixture.Create();
+        await detail.LoadCommand.ExecuteAsync(MovieId);
+        Assert.True(detail.HasExtras);
+        _fixture.Get(ItemPath(MovieId), Ok(Movie));
+
+        await detail.LoadCommand.ExecuteAsync(MovieId);
+
+        Assert.False(detail.HasExtras);
+        Assert.Empty(detail.ExtraGroups);
+    }
+
+    [Theory]
+    [InlineData(3600L, "1:00:00")]
+    [InlineData(59L, "0:59")]
+    [InlineData(0L, "")]
+    [InlineData(-5L, "")]
+    [InlineData(null, "")]
+    public void AnExtrasLength_IsWrittenAsTheWebsClock(long? seconds, string expected)
+    {
+        var extra = DetailExtra.From(new ItemExtra("extra-1", "clip", "Clip", seconds, null, null, null), ScriptedSilo.Base);
+
+        Assert.Equal(expected, extra!.Duration);
+    }
+
+    [Theory]
+    [InlineData("Behind the Scenes", "Behind the Scenes", "behind_the_scenes")]
+    [InlineData("behindthescenes", "Behind the Scenes", "behind_the_scenes")]
+    [InlineData("deleted-scene", "Deleted Scene", "deleted_scene")]
+    [InlineData("deleted_scenes", "Deleted Scene", "deleted_scene")]
+    [InlineData(" Trailer ", "Trailer", "trailer")]
+    [InlineData("interview", "Extra", "other")]
+    [InlineData("", "Extra", "other")]
+    [InlineData(null, "Extra", "other")]
+    public void ExtraKinds_TakeTheirOtherSpellings(string? kind, string label, string key)
+    {
+        Assert.Equal(label, ExtraKinds.Label(kind));
+        Assert.Equal(key, ExtraKinds.Key(kind));
+        // Trailers word their kinds the same way.
+        Assert.Equal(label, DetailTrailer.KindText(kind));
     }
 
     [Theory]
