@@ -10,7 +10,7 @@ namespace Granary.Core.ViewModels;
 // ends, "Ends 22:41".
 public sealed partial class PlayerViewModel
 {
-    // How often the end is worked out again while it shows: paused or waiting, it moves later as the clock runs on.
+    // How often the end is worked out again while paused or waiting: it moves later as the clock runs on.
     private static readonly TimeSpan EndsAtTick = TimeSpan.FromSeconds(1);
 
     // The end is rounded again only once it moved this far, so positions that arrive a moment early or late cannot turn
@@ -19,11 +19,22 @@ public sealed partial class PlayerViewModel
 
     private static readonly TimeSpan EndsAtHorizon = TimeSpan.FromDays(1);
 
+    // Runs only while paused or waiting. Playing, the end stands still and the engine's positions move it; a tick
+    // between them would read a position a moment old as the time left.
     private ITimer? _endsAtTicks;
 
     // The end the minute shown was rounded from, and that minute; null while no end shows.
     private DateTimeOffset? _endsAtBasis;
     private DateTimeOffset? _endsAt;
+
+    // The zone and culture the end was written in: Windows' time settings changed, it is written again.
+    private TimeZoneInfo? _endsAtZone;
+    private CultureInfo? _endsAtCulture;
+
+    // The engine's latest load as the title began, and whether a position of the title's own has come since: until then
+    // the position is the title before's, whose end would be the new one's wrong end.
+    private long _endsAtLoadsBefore;
+    private bool _endsAtHasPosition;
 
     /// <summary>The times end with the time left ("-16:46") instead of the duration, as the viewer last chose on this PC.</summary>
     [ObservableProperty]
@@ -31,8 +42,8 @@ public sealed partial class PlayerViewModel
 
     /// <summary>
     /// "Ends 22:41": when what plays ends at its speed, to the minute, in this PC's short time (12 or 24 hours as Windows
-    /// writes it). Empty while nothing plays toward a known end: a length unknown or 0, a stream without one, the end
-    /// reached, the player left.
+    /// writes it). Empty while nothing plays toward a known end: before the title's first position, a length unknown or 0,
+    /// a stream without one, the end reached, the player left.
     /// </summary>
     [ObservableProperty]
     public partial string EndsAtText { get; private set; } = "";
@@ -58,10 +69,22 @@ public sealed partial class PlayerViewModel
 
     partial void OnHasLeftChanged(bool value) => ShowEndsAt();
 
+    // As a title begins (PlayAsync): no end until a position of its own comes from a load after this one.
+    private void ResetEndsAt()
+    {
+        _endsAtLoadsBefore = _engine.Current.LoadId;
+        _endsAtHasPosition = false;
+        ShowEndsAt();
+    }
+
     // Playing, the end stays where it is as the position moves on; paused or waiting it moves later, which the ticks
     // follow. It is only worked out on the UI thread.
     private void ShowEndsAt()
     {
+        if (!_endsAtHasPosition && _engineState is { HasStarted: true, LoadId: var load } && load > _endsAtLoadsBefore)
+        {
+            _endsAtHasPosition = true;
+        }
         if (EndsAtNow() is not { } ends)
         {
             StopTimer(ref _endsAtTicks);
@@ -75,14 +98,25 @@ public sealed partial class PlayerViewModel
             SetEndsAt(new DateTimeOffset((ends.UtcTicks + TimeSpan.TicksPerMinute / 2) / TimeSpan.TicksPerMinute * TimeSpan.TicksPerMinute,
                 TimeSpan.Zero));
         }
-        _endsAtTicks ??= _time.CreateTimer(_ => _dispatcher.Post(ShowEndsAt), null, EndsAtTick, EndsAtTick);
+        else
+        {
+            SetEndsAt(_endsAt);
+        }
+        if (IsPaused || IsBuffering)
+        {
+            _endsAtTicks ??= _time.CreateTimer(_ => _dispatcher.Post(ShowEndsAt), null, EndsAtTick, EndsAtTick);
+        }
+        else
+        {
+            StopTimer(ref _endsAtTicks);
+        }
     }
 
     // Now plus what is left of the title at the speed it plays; null while nothing plays toward a known end. A length
     // that is not a number or endless is a stream's without one, and an end a day or more away would not say which day.
     private DateTimeOffset? EndsAtNow()
     {
-        if (HasLeft || Phase != PlayerPhase.Playing || !(DurationSeconds > 0))
+        if (_disposed || HasLeft || Phase != PlayerPhase.Playing || !_endsAtHasPosition || !(DurationSeconds > 0))
         {
             return null;
         }
@@ -90,16 +124,24 @@ public sealed partial class PlayerViewModel
         return left < EndsAtHorizon.TotalSeconds ? _time.GetUtcNow() + TimeSpan.FromSeconds(left) : null;
     }
 
+    // Written again when the minute changed, or the zone or the time format did: in this PC's zone and short time ("t",
+    // the culture's short time pattern, which follows Windows' own time format).
     private void SetEndsAt(DateTimeOffset? minute)
     {
-        if (minute == _endsAt)
+        var zone = _time.LocalTimeZone;
+        var culture = CultureInfo.CurrentCulture;
+        if (minute == _endsAt && ReferenceEquals(zone, _endsAtZone) && ReferenceEquals(culture, _endsAtCulture))
         {
             return;
         }
         _endsAt = minute;
-        // "t" is the culture's short time pattern, which follows Windows' own time format.
-        string time = minute is { } at ? TimeZoneInfo.ConvertTime(at, _time.LocalTimeZone).ToString("t", CultureInfo.CurrentCulture) : "";
+        _endsAtZone = zone;
+        _endsAtCulture = culture;
+        string time = minute is { } at ? TimeZoneInfo.ConvertTime(at, zone).ToString("t", culture) : "";
         EndsAtText = minute is null ? "" : "Ends " + time;
         EndsAtSpoken = minute is null ? "" : "Ends at " + time;
     }
+
+    // For good, as the player is disposed: a tick already posted finds it disposed and starts none.
+    private void StopEndsAt() => StopTimer(ref _endsAtTicks);
 }

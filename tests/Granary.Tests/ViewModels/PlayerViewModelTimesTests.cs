@@ -7,8 +7,9 @@ namespace Granary.Tests.ViewModels;
 
 /// <summary>
 /// The times under the player's title: the duration or the time left, as this PC chose last, and the clock time the
-/// title ends.
+/// title ends. Some tests change the current culture, so the class runs on its own.
 /// </summary>
+[Collection(nameof(CurrentCultureChanges))]
 public sealed class PlayerViewModelTimesTests
 {
     // 45 minutes; the clock starts at 12:00 UTC, 14:00 on this PC.
@@ -30,15 +31,24 @@ public sealed class PlayerViewModelTimesTests
     {
         var viewModel = new PlayerViewModel(_engine, new ImmediateDispatcher(), new RecordingNavigation(),
             () => _playback = new FakeServerPlayback { DurationSeconds = length }, new PlaybackStops(), _time);
-        await viewModel.StartAsync(PlayRequest.Resume("movie-1"));
-        _playback!.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));
+        await StartsAsync(viewModel, "movie-1");
         At(position, paused);
         return viewModel;
     }
 
-    private void At(double position, bool paused = false, double? length = null) =>
+    // A server title starts: its playback says it plays, and loads its stream into the engine, as ServerPlayback does.
+    private async Task StartsAsync(PlayerViewModel viewModel, string contentId)
+    {
+        await viewModel.StartAsync(PlayRequest.Resume(contentId));
+        _playback!.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));
+        Loads();
+    }
+
+    private void Loads() => _engine.Load(new MediaSource(new Uri("https://media.example/stream"), []));
+
+    private void At(double position, bool paused = false, double? length = null, bool buffering = false) =>
         _engine.RaiseState(new PlaybackSnapshot(true, paused, TimeSpan.FromSeconds(position),
-            length is { } seconds ? TimeSpan.FromSeconds(seconds) : null, null, HasStarted: true));
+            length is { } seconds ? TimeSpan.FromSeconds(seconds) : null, null, HasStarted: true, IsBuffering: buffering));
 
     private static string Time(int hour, int minute) => new DateTime(2026, 10, 1, hour, minute, 0).ToString("t", CultureInfo.CurrentCulture);
 
@@ -249,4 +259,187 @@ public sealed class PlayerViewModelTimesTests
 
         Assert.Equal("", viewModel.EndsAtText);
     }
+
+    [Fact]
+    public async Task WhilePlaying_TheEndWaitsForThePositions_AndNothingTicks()
+    {
+        // 35:32 left: the end, 14:35:28, is two seconds short of the next minute.
+        using var viewModel = await PlayingAsync(572);
+
+        // The engine says nothing for a moment: the position it said last is no reason for the end to move.
+        _time.Advance(TimeSpan.FromSeconds(5));
+
+        Assert.Equal(Ends(14, 35), viewModel.EndsAtText);
+        Assert.Null(_time.NextDue);
+    }
+
+    [Fact]
+    public async Task APause_StartsTheClock_AndPlayingAgainStopsIt()
+    {
+        using var viewModel = await PlayingAsync(600);
+
+        At(600, paused: true);
+        _time.Advance(TimeSpan.FromMinutes(1));
+        Assert.Equal(Ends(14, 36), viewModel.EndsAtText);
+
+        At(600);
+        Assert.Null(_time.NextDue);
+        _time.Advance(TimeSpan.FromMinutes(1));
+        Assert.Equal(Ends(14, 36), viewModel.EndsAtText);
+    }
+
+    [Fact]
+    public async Task ASeekWhilePaused_MovesTheEnd_AndTheClockRunsOn()
+    {
+        using var viewModel = await PlayingAsync(600, paused: true);
+
+        viewModel.SeekTo(1800);
+        At(1800, paused: true);
+        Assert.Equal(Ends(14, 15), viewModel.EndsAtText);
+
+        _time.Advance(TimeSpan.FromMinutes(1));
+        Assert.Equal(Ends(14, 16), viewModel.EndsAtText);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task WhileTheStreamWaits_TheEndMovesLater(bool reconnecting)
+    {
+        using var viewModel = await PlayingAsync(600);
+
+        if (reconnecting)
+        {
+            _playback!.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Reconnecting));
+        }
+        else
+        {
+            At(600, buffering: true);
+        }
+        _time.Advance(TimeSpan.FromMinutes(1));
+
+        Assert.Equal(Ends(14, 36), viewModel.EndsAtText);
+    }
+
+    [Fact]
+    public async Task TheNextTitle_ShowsNoEnd_UntilItsOwnPositionComes()
+    {
+        // Ten seconds before the end of the first title.
+        using var viewModel = await PlayingAsync(2690);
+        Assert.Equal(Ends(14, 0), viewModel.EndsAtText);
+
+        await viewModel.StartAsync(PlayRequest.Resume("movie-2"));
+        _playback!.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));
+        // The title before's last position, late: the new title's length less that would be a wrong end.
+        At(2695);
+        Assert.Equal("", viewModel.EndsAtText);
+
+        Loads();
+        At(0);
+        Assert.Equal(Ends(14, 45), viewModel.EndsAtText);
+    }
+
+    [Fact]
+    public async Task Disposed_NothingTicks_AndATickPostedBeforeDoesNothing()
+    {
+        var dispatcher = new QueuedDispatcher();
+        var viewModel = new PlayerViewModel(_engine, dispatcher, new RecordingNavigation(),
+            () => _playback = new FakeServerPlayback { DurationSeconds = Length }, new PlaybackStops(), _time);
+        await StartsAsync(viewModel, "movie-1");
+        At(600, paused: true);
+        dispatcher.RunAll();
+        Assert.Equal(Ends(14, 35), viewModel.EndsAtText);
+        _time.Advance(TimeSpan.FromSeconds(1));
+
+        viewModel.Dispose();
+        Assert.Null(_time.NextDue);
+        dispatcher.RunAll();
+
+        Assert.Null(_time.NextDue);
+    }
+
+    [Theory]
+    [InlineData(0.0)]
+    [InlineData(-1.0)]
+    [InlineData(double.NaN)]
+    public async Task ASpeedThatIsNoSpeed_CountsAsNormal(double speed)
+    {
+        using var viewModel = await PlayingAsync(600);
+
+        viewModel.SetSpeed(speed);
+
+        Assert.Equal(Ends(14, 35), viewModel.EndsAtText);
+    }
+
+    [Fact]
+    public async Task APositionPastTheLength_EndsNow()
+    {
+        using var viewModel = await PlayingAsync(3000);
+
+        Assert.Equal(Ends(14, 0), viewModel.EndsAtText);
+    }
+
+    [Fact]
+    public async Task APositionThatIsNotANumber_ShowsNoEnd()
+    {
+        using var viewModel = await PlayingAsync(600);
+
+        _playback!.TimelineOffsetSeconds = double.NaN;
+        At(600);
+
+        Assert.Equal("", viewModel.EndsAtText);
+    }
+
+    [Theory]
+    [InlineData(86_399.0, true)]
+    [InlineData(86_400.0, false)]
+    [InlineData(86_401.0, false)]
+    public async Task AnEndShows_OnlyLessThanADayAway(double length, bool shows)
+    {
+        using var viewModel = await PlayingAsync(0, length);
+
+        // 23:59:59 from 14:00 is 13:59:59 the next day: 14:00 to the minute.
+        Assert.Equal(shows ? Ends(14, 0) : "", viewModel.EndsAtText);
+    }
+
+    [Fact]
+    public async Task AnEndAfterTheChangeFromSummerTime_IsInWinterTime()
+    {
+        // 02:30 summer time in Berlin, half an hour before the clocks go back from 03:00 to 02:00.
+        var berlin = TimeZoneInfo.FindSystemTimeZoneById("W. Europe Standard Time");
+        var time = new ManualTimeProvider(new DateTimeOffset(2026, 10, 25, 0, 30, 0, TimeSpan.Zero)) { Zone = berlin };
+        using var viewModel = new PlayerViewModel(_engine, new ImmediateDispatcher(), new RecordingNavigation(), () => new FakeServerPlayback(),
+            new PlaybackStops(), time);
+
+        await viewModel.StartAsync(PlayRequest.Direct(@"C:\media\film.mkv"));
+        At(0, length: 3600);
+
+        // An hour later the clocks say 02:30 again, not 03:30.
+        Assert.Equal("Ends " + new DateTime(2026, 10, 25, 2, 30, 0).ToString("t", CultureInfo.CurrentCulture), viewModel.EndsAtText);
+    }
+
+    [Fact]
+    public async Task AnotherZoneOrTimeFormat_IsWrittenAtTheNextPosition()
+    {
+        using var viewModel = await PlayingAsync(600);
+        var before = CultureInfo.CurrentCulture;
+        try
+        {
+            _time.Zone = TimeZoneInfo.CreateCustomTimeZone("Granary test +3", TimeSpan.FromHours(3), "Granary test +3", "Granary test +3");
+            At(601);
+            Assert.Equal(Ends(15, 35), viewModel.EndsAtText);
+
+            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("en-US");
+            At(602);
+            Assert.Matches(@"^Ends 3:35\sPM$", viewModel.EndsAtText);
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = before;
+        }
+    }
 }
+
+/// <summary>Tests that set the current culture run on their own, so no other test reads a culture they set.</summary>
+[CollectionDefinition(nameof(CurrentCultureChanges), DisableParallelization = true)]
+public sealed class CurrentCultureChanges;

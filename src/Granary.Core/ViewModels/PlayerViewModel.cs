@@ -241,6 +241,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         LeavePlayback();
         ResetFill();
         ResetLook();
+        ResetEndsAt();
         ShowSleepTimer();
         if (request.DirectSource is { } direct)
         {
@@ -633,5 +634,6 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         _engine.StateChanged -= OnStateChanged;
         _engine.Ended -= OnEnded;
         StopPlanChangeTimers();
+        StopEndsAt();
     }
 }
