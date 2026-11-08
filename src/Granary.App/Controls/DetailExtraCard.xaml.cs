@@ -22,8 +22,11 @@ public sealed partial class DetailExtraCard : UserControl
     private const float HoverScale = 1.05f;
     private static readonly TimeSpan ZoomDuration = TimeSpan.FromMilliseconds(300);
 
-    // Cancelled when the container is recycled for another extra, so the old still stays out.
+    // Cancelled when the container is recycled for another extra, so the old still stays out, and when the card leaves the
+    // tree before its still is in. Null while no still is loading or in.
     private CancellationTokenSource? _still;
+    private bool _stillOpened;
+    private bool _stillFailed;
     private double _width;
     private bool _hovered;
     // The button around the card, found once it is in the tree.
@@ -48,26 +51,41 @@ public sealed partial class DetailExtraCard : UserControl
     // null, and containers are recycled.
     private void Show(DetailExtra? extra)
     {
-        _still?.Cancel();
-        _still = null;
+        StopStill();
+        _stillOpened = false;
+        _stillFailed = false;
         BlurImage.Source = Thumbhashes.Get(extra?.StillThumbhash);
-        StillImage.Source = null;
-        if (extra?.StillUrl is { } url)
-        {
-            _still = new CancellationTokenSource();
-            StillImage.Source = Artwork.Load(url, StillDecodeWidth, _still.Token);
-        }
-        PlayMark.Visibility = StillImage.Source is null ? Visibility.Visible : Visibility.Collapsed;
+        LoadStill(extra?.StillUrl);
         TitleText.Text = extra?.Title ?? "";
         DurationText.Text = extra?.Duration ?? "";
         DurationText.Visibility = string.IsNullOrEmpty(extra?.Duration) ? Visibility.Collapsed : Visibility.Visible;
         SetHovered(false);
     }
 
+    private void LoadStill(Uri? url)
+    {
+        StillImage.Source = null;
+        if (url is not null)
+        {
+            _still = new CancellationTokenSource();
+            StillImage.Source = Artwork.Load(url, StillDecodeWidth, _still.Token);
+        }
+        PlayMark.Visibility = StillImage.Source is null ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void StopStill()
+    {
+        _still?.Cancel();
+        _still = null;
+    }
+
+    private void OnStillOpened(object sender, RoutedEventArgs e) => _stillOpened = true;
+
     // A still that fails to load (an expired address, a deleted file) leaves the thumbhash with the play mark, as the web's
     // falls back to its placeholder rather than an empty frame.
     private void OnStillFailed(object sender, ExceptionRoutedEventArgs e)
     {
+        _stillFailed = true;
         StillImage.Source = null;
         PlayMark.Visibility = Visibility.Visible;
     }
@@ -96,13 +114,24 @@ public sealed partial class DetailExtraCard : UserControl
             _host.GotFocus += OnHostFocusChanged;
             _host.LostFocus += OnHostFocusChanged;
         }
+        // Back in the tree with its still stopped on the way: it loads again.
+        if (_still is null && !_stillOpened && !_stillFailed && Extra?.StillUrl is { } url)
+        {
+            LoadStill(url);
+        }
         ShowPresence();
     }
 
+    // A still on its way when the card leaves the tree (the page left) stops loading; one that is in stays.
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
         ForgetHost();
         SetHovered(false);
+        if (_still is not null && !_stillOpened)
+        {
+            StopStill();
+            StillImage.Source = null;
+        }
     }
 
     private void ForgetHost()

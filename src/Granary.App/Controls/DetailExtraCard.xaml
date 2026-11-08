@@ -26,7 +26,8 @@
             <Image x:Name="BlurImage" Stretch="UniformToFill" AutomationProperties.AccessibilityView="Raw" />
             <FontIcon x:Name="PlayMark" Glyph="&#xE768;" FontSize="28" Foreground="{StaticResource SiloMutedBrush}" Opacity="0.4"
                       AutomationProperties.AccessibilityView="Raw" />
-            <Image x:Name="StillImage" Stretch="UniformToFill" ImageFailed="OnStillFailed" AutomationProperties.AccessibilityView="Raw" />
+            <Image x:Name="StillImage" Stretch="UniformToFill" ImageOpened="OnStillOpened" ImageFailed="OnStillFailed"
+                   AutomationProperties.AccessibilityView="Raw" />
             <!-- Darker under the pointer only, as the web's group-hover. -->
             <Grid x:Name="Shade" Background="#4D000000" Opacity="0" IsHitTestVisible="False">
                 <Grid.OpacityTransition>
