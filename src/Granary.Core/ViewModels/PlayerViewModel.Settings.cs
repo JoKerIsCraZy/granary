@@ -78,8 +78,13 @@ public sealed partial class PlayerViewModel
             // A Watch Party plays one file for everyone, as the web player keeps it.
             VersionOptions = IsWatchParty ? [] : VersionOption.For(playback.Versions, playback.PlayingFileId, playback.RequestedFileId);
             Speed = playback.Speed;
-            // The server's answer to the setting is in once the title is prepared.
+            // The server's answer to the setting is in once the title is prepared. Without the setting, the title has no
+            // delay, not even another server's in the hidden row.
             ShowsAudioDelay = !playback.Preferences.AudioDelayRefused;
+            if (!ShowsAudioDelay)
+            {
+                AudioDelayMs = 0;
+            }
         }
         else
         {

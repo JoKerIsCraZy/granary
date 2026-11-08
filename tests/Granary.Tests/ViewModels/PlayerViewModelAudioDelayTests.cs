@@ -115,9 +115,15 @@ public sealed class PlayerViewModelAudioDelayTests
         using var viewModel = new PlayerViewModel(_engine, new ImmediateDispatcher(), new RecordingNavigation(), () => playback,
             new PlaybackStops(), _time, audioDelay: _delay);
 
+        _delay.Take(300);
+
         await viewModel.StartAsync(PlayRequest.Resume("movie-1"));
         playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));
 
         Assert.False(viewModel.ShowsAudioDelay);
+        // Another server's delay is not this title's, not even in the hidden row.
+        Assert.Equal(0, viewModel.AudioDelayMs);
+        _delay.Set(-100);
+        Assert.Equal(0, viewModel.AudioDelayMs);
     }
 }

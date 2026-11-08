@@ -306,6 +306,23 @@ public sealed class ServerPlaybackSettingsTests
     }
 
     [Fact]
+    public async Task AnAudioDelayThatCouldNotBeRead_IsNotAnotherProfilesValue()
+    {
+        _fixture.Silo.On(HttpMethod.Put, "api/v2/settings/values/player.audio_sync_ms", ScriptedSilo.NoContent());
+        _fixture.Silo.OnUrl(HttpMethod.Get, "api/v2/settings/values/effective", (uri, _) =>
+            uri.Query.Contains("player.audio_sync_ms", StringComparison.Ordinal)
+                ? ScriptedSilo.NetworkError()()
+                : Ok("""{ "items": [], "revision": 1 }""")());
+        _fixture.AudioDelay.Set(200);
+        _fixture.SessionManager.ProfileId = "8";
+
+        await _fixture.PlayingAsync();
+
+        Assert.Equal(0, _fixture.Engine.AudioDelay);
+        Assert.Equal(0, _fixture.AudioDelay.Milliseconds);
+    }
+
+    [Fact]
     public async Task WithoutAnAudioDelay_ThePlayerStartsWithNone()
     {
         _fixture.Engine.SetAudioDelay(0.4);

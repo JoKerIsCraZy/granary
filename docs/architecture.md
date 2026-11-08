@@ -514,8 +514,9 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
 - **Audio delay** (6.6): mpv's `audio-delay`, positive for later sound as Android's `DelayAudioProcessor` has it, from
   this device's `player.audio_sync_ms` (±5 s). `AudioDelay` is one for the app: the playback reads the value in a batch
   of its own, so a server that refuses the key keeps the other settings and plays without a delay (no row, no Sound);
-  it takes the value unless a change made here is still on its way, keeps the one this run knows when the read failed,
-  sets it at the start, and follows `Changed` until its stop, as Android's `SiloPlaybackService` does. Settings →
+  it takes the value unless a change made here is still on its way, keeps the one this run knows when the read failed
+  if it is the acting profile's on this server (`AudioDelay` remembers whose value it holds) and plays with none
+  otherwise, sets it at the start, and follows `Changed` until its stop, as Android's `SiloPlaybackService` does. Settings →
   Playback → Sound and the player's settings menu change it (a local file starts with the delay as far as this run
   knows it, and a step there goes only to the engine). A change belongs to the server and profile acting when it was
   made: it is saved at `profile_device` once it settles for a second, or as the window closes (`PlaybackStops`), to that

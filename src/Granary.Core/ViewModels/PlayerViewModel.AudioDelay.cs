@@ -59,7 +59,7 @@ public sealed partial class PlayerViewModel
 
     private void OnAudioDelayChanged(object? sender, EventArgs e)
     {
-        if (_playback is not null && _audioDelay is { } shared)
+        if (_playback is { Preferences.AudioDelayRefused: false } && _audioDelay is { } shared)
         {
             AudioDelayMs = shared.Milliseconds;
         }

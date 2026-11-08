@@ -50,6 +50,9 @@ public sealed class AudioDelay(SettingsApi settings, ISessionManager session, IU
     private readonly Dictionary<Owner, Task> _chains = [];
     private Task _latest = Task.CompletedTask;
 
+    // Whose value Milliseconds is: the profile it was read or changed for; null when none was acting.
+    private Owner? _shownFor;
+
     /// <summary>The delay in milliseconds, positive for later sound; 0 until a value is read or set.</summary>
     public int Milliseconds { get; private set; }
 
@@ -91,7 +94,23 @@ public sealed class AudioDelay(SettingsApi settings, ISessionManager session, IU
         {
             return;
         }
+        _shownFor = Acting();
         Show(Math.Clamp(milliseconds, -MaxMs, MaxMs));
+    }
+
+    /// <summary>
+    /// This device's value could not be read for a title: the one known stays when it is the acting profile's on this
+    /// server, else the title plays with none rather than with another profile's.
+    /// </summary>
+    public void TakeUnread()
+    {
+        var acting = Acting();
+        if (_shownFor == acting)
+        {
+            return;
+        }
+        _shownFor = acting;
+        Show(0);
     }
 
     /// <summary>The viewer's delay: what plays follows at once, and it is saved for this device once the changes settle.</summary>
@@ -108,7 +127,8 @@ public sealed class AudioDelay(SettingsApi settings, ISessionManager session, IU
             _ = SaveNowAsync();
         }
         long change = ++_changes;
-        _unsaved = Acting() is { } owner ? new Pending(owner, delay, change) : null;
+        _shownFor = Acting();
+        _unsaved = _shownFor is { } owner ? new Pending(owner, delay, change) : null;
         Show(delay);
         _settle?.Dispose();
         _settle = time.CreateTimer(_ => dispatcher.Post(() =>

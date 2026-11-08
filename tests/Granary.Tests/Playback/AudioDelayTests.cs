@@ -292,6 +292,29 @@ public sealed class AudioDelayTests
     }
 
     [Fact]
+    public void AValueThatCouldNotBeReadForATitle_StaysWhenItIsTheActingProfiles()
+    {
+        var delay = Create();
+        delay.Take(200);
+
+        delay.TakeUnread();
+
+        Assert.Equal(200, delay.Milliseconds);
+    }
+
+    [Fact]
+    public void AValueThatCouldNotBeReadForATitle_IsNoneWhenTheOneKnownIsAnotherProfiles()
+    {
+        var delay = Create();
+        delay.Set(200);
+        _session.ProfileId = "8";
+
+        delay.TakeUnread();
+
+        Assert.Equal(0, delay.Milliseconds);
+    }
+
+    [Fact]
     public async Task AChangeWaitingBehindASlowSave_IsNotSavedForAProfileThatTookOverMeanwhile()
     {
         // Saves of one profile go one after another, so the latest value is the one its server keeps.
