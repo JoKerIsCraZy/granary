@@ -112,15 +112,20 @@ public sealed class SearchBoxSetsTests
     public async Task ASlowBoxSetSearch_DoesNotHoldTheTitles()
     {
         var never = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var sent = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         CancellationToken read = default;
         _silo.Map(BoxSetsPath, (_, cancellationToken) =>
         {
             read = cancellationToken;
+            sent.TrySetResult();
             return never.Task;
         });
         var search = Create();
         var searching = search.ActivateAsync("masterplan");
 
+        // The cancellation asserted below needs the box set request out before the grace ends: a grace that ended while
+        // the capabilities were still read would cancel the read before it sent anything. So wait for it to go out.
+        await sent.Task.WaitAsync(TestContext.Current.CancellationToken);
         _time.Advance(SearchViewModel.BoxSetGrace);
         await searching;
 
