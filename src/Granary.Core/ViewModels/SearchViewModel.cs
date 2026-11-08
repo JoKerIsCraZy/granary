@@ -391,13 +391,31 @@ public sealed partial class SearchViewModel : ObservableObject
         {
             return [];
         }
-        // The grace starts with the search, before anything is awaited.
-        using var graceRun = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        var grace = Task.Delay(BoxSetGrace, _time, graceRun.Token);
-        var read = ReadBoxSetsAsync(_boxSets, server, text, cancellationToken);
+        // The grace starts with the search, before anything is awaited, and ends the read with it.
+        using var run = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        var grace = Task.Delay(BoxSetGrace, _time, run.Token);
+        var read = ReadBoxSetsAsync(_boxSets, server, text, run.Token);
         var first = await Task.WhenAny(read, grace);
-        await graceRun.CancelAsync();
-        return first == read ? await read : [];
+        await run.CancelAsync();
+        if (first == read)
+        {
+            return await read;
+        }
+        _ = ObserveAsync(read);
+        return [];
+    }
+
+    // A read given up on still ends: what it ends with is logged, so no failure goes unobserved.
+    private async Task ObserveAsync(Task<IReadOnlyList<CatalogBoxSet>> read)
+    {
+        try
+        {
+            await read;
+        }
+        catch (Exception ex) when (ex is not OutOfMemoryException)
+        {
+            _logger.LogWarning("A box set search given up on failed: {Failure}", ApiFailureText.Describe(ex));
+        }
     }
 
     private async Task<IReadOnlyList<CatalogBoxSet>> ReadBoxSetsAsync(BoxSetsApi boxSets, ServerEntry server, string text, CancellationToken cancellationToken)

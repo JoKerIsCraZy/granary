@@ -112,7 +112,12 @@ public sealed class SearchBoxSetsTests
     public async Task ASlowBoxSetSearch_DoesNotHoldTheTitles()
     {
         var never = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
-        _silo.Map(BoxSetsPath, (_, _) => never.Task);
+        CancellationToken read = default;
+        _silo.Map(BoxSetsPath, (_, cancellationToken) =>
+        {
+            read = cancellationToken;
+            return never.Task;
+        });
         var search = Create();
         var searching = search.ActivateAsync("masterplan");
 
@@ -121,6 +126,8 @@ public sealed class SearchBoxSetsTests
 
         Assert.Equal(["movie-tmdb-1001"], search.Cards.Select(c => c.Id));
         Assert.Empty(search.BoxSets);
+        // Given up on with the grace, not left running.
+        Assert.True(read.IsCancellationRequested);
     }
 
     [Fact]
