@@ -335,7 +335,7 @@ public static class DetailFacts
     }
 
     // "1:02:33", "12:05".
-    private static string Clock(double seconds)
+    internal static string Clock(double seconds)
     {
         var time = TimeSpan.FromSeconds(Math.Floor(seconds));
         return time.TotalHours >= 1

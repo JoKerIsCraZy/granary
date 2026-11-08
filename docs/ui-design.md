@@ -121,7 +121,8 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
 - Page-specific pieces: `PersonCard` (search people, opening the person's page), `AlphabetJumpBar` (library A–Z: "#" and A–Z on a
   26 px round panel, letters without titles at 35 %, the top row's letter red with dark text; a letter
   scrolls the grid to its first title, as the web's `LetterBar`),
-  `DetailHero`, `DetailShelf`, `DetailEpisodeCard`, `DetailEpisodePlaceholderCard`, `DetailInfoPanel`, `DetailTrailerCard`, `PersonCreditCard`
+  `DetailHero`, `DetailShelf`, `DetailEpisodeCard`, `DetailEpisodePlaceholderCard`, `DetailExtrasSection`, `DetailExtraCard`,
+  `DetailInfoPanel`, `DetailTrailerCard`, `PersonCreditCard`
   (detail pages; a card with a person opens their page, one without, as a TMDB title's cast, is only a card),
   `TrailerOverlay` (a trailer over the window, in YouTube's player),
   `SeekBar` and `MpvVideoHost` (player).
@@ -503,8 +504,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     instead of in the hero. Its list is one keyboard stop that arrows and Page Down scroll; only the overview can be
     selected.
   - Granary's rows follow, 56 apart: a series' seasons, all at once in a grid that wraps at the page's width (185 px
-    posters, a season opens its own page), or a season's episode grid, more episodes, trailers, cast and crew, more like
-    this.
+    posters, a season opens its own page), or a season's episode grid, more episodes, extras, trailers, cast and crew,
+    more like this.
   - Spoilers, as the web's `SeasonEpisodeGrid`, `EpisodeCarousel` and `EpisodeContent` (the profile's Title Pages
     switches, [episode spoilers](api-contract.md#663-episode-spoilers)): in the episode grid and More Episodes an episode
     neither played nor started has its still blurred (only its own still: the series' art standing in for one stays) and
@@ -545,6 +546,22 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     With the keyboard or a remote, Up or Down into the row lands on it, as the TV app's episode rail starts on its page's
     episode, also once the row has been scrolled away from it (the row brings it back to its middle); Left and Right then
     go card by card, and Back to the page returns to the card it was left from.
+  - "Extras" (the web's `ExtrasSection.tsx`): a movie's or series' local extras, when the server lists any, right before
+    Trailers & More, as the web puts the extras that play in Silo before YouTube's videos. A group per kind in the
+    server's order, headed by the web's label in 12 px semibold muted capitals, 0.05 em apart ("FEATURETTES", "DELETED
+    SCENES", "OTHER" for a kind it does not know), 10 above a grid of 16:9 cards; groups 24 apart. The grid is sized as
+    the season's episode grid, so an extra's card is as wide as an episode's: as many 280 px cards as fit, stretched to
+    the row and 20 apart, the rows 12 apart as the web's. A wide window takes more columns rather than the web's five
+    larger cards. A card shows the still over its thumbhash (the cards' radius, the surface under both), or the thumbhash
+    with a muted play mark (28 px at 40 %) when it has no still or the still fails to load, as the web's. Under the
+    pointer the still grows 5 % over 300 ms and a 40 px play disc shows on the picture darkened by 30 %; while the
+    keyboard or a remote is on the card the disc shows alone, as the web's focus-visible (not after a click). Under it, 8
+    apart, the title in 13 px (without one, its group's label, as the web's card), and its length in 11 px muted
+    ("12:22", "1:02:09"; nothing when unknown). Each card is a button: Tab and a remote's arrows go card by card, and a
+    click or OK plays the extra in Granary's player from its start, as the Android and Apple apps play an extra; nothing
+    offers to resume one, and as it is no episode nothing plays next. Screen readers hear "Making Of, Featurette, 12:22,
+    plays the extra" (the kind left out on a card named by its group) and each group's label as a heading; the tooltip is
+    the whole title.
   - "Trailers & More" (the web's `TrailersSection`): the title's YouTube videos in the server's order, each a 280 px card
     with YouTube's thumbnail, a play mark, its name and "Trailer · Official"; other sites are left out. A card is read as
     "Official Trailer, Trailer · Official, plays the trailer", and its tooltip says "Play trailer".

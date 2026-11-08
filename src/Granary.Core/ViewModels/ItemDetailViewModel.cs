@@ -471,6 +471,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         EpisodeGrid.Clear();
         ShowsNoEpisodes = false;
         MoreEpisodes = [];
+        ExtraGroups = [];
         Trailers = [];
         Credits = [];
         Similar = [];
@@ -500,6 +501,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         InfoSections = DetailFacts.InfoSections(item);
         Credits = DetailCredits.Row(DetailCredits.Groups(item, server));
         PeopleTitle = DetailCredits.PeopleTitle(People);
+        ExtraGroups = DetailExtraGroup.From(item.Extras, server);
         Trailers = DetailTrailer.From(item.Videos);
         ShowsWatchedAction = DetailFacts.IsVideo(item.Type);
         CanFavorite = item.Type is CatalogItemTypes.Movie or CatalogItemTypes.Series;

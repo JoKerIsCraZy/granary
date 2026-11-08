@@ -876,6 +876,14 @@ The Discord status (docs/architecture.md) reads `tmdb_id` here: a string of digi
 does not know. It takes the movie's own item, or an episode's series (`series_id` of the watch detail), and only a
 positive integer; anything else means no TMDB page and no poster.
 
+`extras[]` are the title's local extras, a movie's or series' only (the server leaves them out for other types), in the
+server's order, sorted by kind: `content_id`, `kind` (`trailer`, `teaser`, `featurette`, `clip`, `behind_the_scenes`,
+`bloopers`, `deleted_scene`, `other`; the server folds a kind it does not know to `other`), `title?`, `duration_seconds?`
+(an integer), `file_id?` (an integer, 7.9), `still_url?` (16:9, presigned and short-lived like all images, 7.10) and
+`still_thumbhash?`. An extra's `content_id` is a watch target of its own: `GET /api/v2/watch/{id}` (7.8) answers
+`type: "extra"` with the parent's year and art, and `series_id` and `series_title` only for a series' extra. Granary plays
+it as Silo's apps do, from its start (`PlayRequest.FromStart`), and as it is no episode nothing plays next after it.
+
 ### 7.7 Series → seasons → episodes
 
 - `GET /api/v2/catalog/series/{id}/seasons` → `{ "items": Season[] }`; `Season`: `content_id`,
@@ -902,7 +910,7 @@ positive integer; anything else means no TMDB page and no poster.
 
 ### 7.8 Watch detail: `GET /api/v2/watch/{id}`
 
-The call right before playback (movie or episode; a series is `422`). Query: `file_id` (preferred
+The call right before playback (movie, episode or local extra, 7.6; a series is `422`). Query: `file_id` (preferred
 version; fills its on-demand markers), `library_id`, image params; header `X-Silo-Device-Id`.
 Returns `WatchDetail`: `content_id`, `type`, `title`, series context, `poster_url`/`backdrop_url`
 (for the OS media controls), `user_data` (resume, see [10.5](#105-resume)), `versions[]`
