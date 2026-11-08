@@ -919,7 +919,8 @@ missing their folder.
   "downloading" was written. "completed" goes with the server work, so a finished transfer frees its slot at once; while a
   "downloading" is still unsent, "completed" waits behind it (`NextReport`) and follows once it went or was refused. One
   that does not go is sent again as it is, time included, after the retry delays, whoever sends it; the loop is woken to
-  know when, also when the transfer's own send ran out of time. One the server will not take (another revision, an entry
+  know when, also when the transfer's own send ran out of time. A new report (a new transfer's "downloading", or none after
+  a new revision) does not wait out the delay of the one it replaces. One the server will not take (another revision, an entry
   preparing again, a time it refuses) is dropped. A completed transfer renames `media.part` to its media name before the
   record says Completed.
 - **Stop.** `StopAsync` stops the loop, the transfers and the server work and waits up to `StopBudget` (2 s) for them to let

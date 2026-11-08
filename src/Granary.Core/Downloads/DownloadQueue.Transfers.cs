@@ -233,20 +233,22 @@ public sealed partial class DownloadQueue
     }
 
     // The record turns Downloading, with a status report for the server when it was not before; null when the download went, or
-    // is no longer to run, since the loop chose it.
+    // is no longer to run, since the loop chose it. A new report does not wait out the delay of the one it replaces.
     private async Task<StoredDownload?> MarkDownloadingAsync(Running run)
     {
         var key = run.Key;
         var now = _time.GetUtcNow();
         bool start = false;
+        bool reported = false;
         try
         {
             var download = await _store.UpdateAsync(key.Scope, key.Id, r =>
             {
                 start = r.Revision == run.Revision
                     && r is { State: DownloadState.Queued or DownloadState.Downloading, IsPausedByViewer: false, IsNoLongerAvailable: false };
+                reported = start && r.State != DownloadState.Downloading;
                 return !start ? r
-                    : r.State == DownloadState.Downloading ? r with { Failure = DownloadFailure.None }
+                    : !reported ? r with { Failure = DownloadFailure.None }
                     : r with
                     {
                         State = DownloadState.Downloading,
@@ -255,6 +257,13 @@ public sealed partial class DownloadQueue
                         NextReport = null,
                     };
             }, run.Cancel.Token).ConfigureAwait(false);
+            if (reported)
+            {
+                lock (_gate)
+                {
+                    _reportRetries.Remove(key);
+                }
+            }
             return start && !download.FilesMissing ? download : null;
         }
         catch (KeyNotFoundException)

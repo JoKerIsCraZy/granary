@@ -312,6 +312,8 @@ public sealed partial class DownloadQueue
             {
                 _bytes[key] = 0;
                 _retries.Remove(key);
+                // The old revision's report is gone, and so is its delay: the new one's "downloading" goes at once.
+                _reportRetries.Remove(key);
                 _integrityFailed.Remove(key);
                 _resumeWithMargin.Remove(key);
             }

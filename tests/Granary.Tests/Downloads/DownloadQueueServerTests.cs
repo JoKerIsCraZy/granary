@@ -369,6 +369,24 @@ public sealed class DownloadQueueServerTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task ANewRevision_IsReportedBeforeItsFile_ThoughTheOldReportWaitsItsDelay()
+    {
+        await _h.AddAsync("dl_1");
+        _h.ServeGated("dl_1", Source, "\"v1\"", DownloadPayloads.Bytes(HttpStatusCode.OK, Source, "\"v2\""));
+        _h.AcceptReports("dl_1", ScriptedSilo.Problem(503, "dependency_unavailable"),
+            ScriptedSilo.Json(HttpStatusCode.OK, DownloadPayloads.Entry("dl_1", "downloading", revision: 2)));
+        var queue = _h.StartQueue();
+        await Until(() => _h.FileRequests("dl_1").Count == 1, "the first revision's file was asked for, its report not sent");
+
+        _h.List(DownloadPayloads.Entry("dl_1", "ready", revision: 2));
+        await queue.ReconcileAsync(Token);
+
+        await Until(() => _h.FileRequests("dl_1").Count == 2, "the new revision's file was asked for");
+        Assert.Equal(2, _h.Reports("dl_1").Count);
+        Assert.Contains("\"revision\":2", _h.Reports("dl_1")[1].Body, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task AnActivationThatFails_IsDoneAgain_CapabilityAndRegistry()
     {
         await _h.AddAsync("dl_1");
