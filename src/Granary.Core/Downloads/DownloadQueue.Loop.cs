@@ -113,11 +113,14 @@ public sealed partial class DownloadQueue
         ForgetGone();
         DownloadScope? scope;
         Uri? server;
+        long generation;
         bool stopped;
         bool resumed = false;
         lock (_gate)
         {
+            // The scope, its server and the session's generation as one: a transfer is started for them, or not at all.
             (scope, server) = _current;
+            generation = _sessionGeneration;
             stopped = scope is not null && IsStoppedLocked(scope, out resumed);
         }
         bool activated = scope != _activeScope || resumed;
@@ -133,7 +136,7 @@ public sealed partial class DownloadQueue
         }
         if (!IsWaitingForUnmetered)
         {
-            StartTransfers(scope, server);
+            StartTransfers(scope, server, generation);
         }
         StartChores(scope, server);
     }
@@ -209,7 +212,9 @@ public sealed partial class DownloadQueue
         }
     }
 
-    private void StartTransfers(DownloadScope scope, Uri server)
+    // Starts the scope's transfers, while it is still the active one: a session change since the pass took it has the next pass
+    // start the new scope's, and none of this one's.
+    private void StartTransfers(DownloadScope scope, Uri server, long generation)
     {
         var now = _time.GetUtcNow();
         foreach (var download in _store.In(scope).Where(IsWanted).OrderBy(d => d.Record.CreatedAt))
@@ -217,7 +222,7 @@ public sealed partial class DownloadQueue
             var key = Key.Of(download.Record);
             lock (_gate)
             {
-                if (_stopping || _running.Count >= MaxConcurrent)
+                if (_stopping || _running.Count >= MaxConcurrent || _current.Scope != scope || _current.Server != server)
                 {
                     return;
                 }
@@ -225,7 +230,7 @@ public sealed partial class DownloadQueue
                 {
                     continue;
                 }
-                var run = new Running(key, server, download.Record.Revision, _sessionGeneration);
+                var run = new Running(key, server, download.Record.Revision, generation);
                 _running[key] = run;
                 run.Task = Task.Run(() => RunAsync(run));
             }

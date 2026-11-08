@@ -658,6 +658,33 @@ public sealed class DownloadQueueTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AProfileSwitchDuringAPass_StartsNothingForTheOldProfile()
+    {
+        var queue = _h.StartQueue();
+        await IdleAsync(queue);
+        _h.ServeFile("dl_1", Source);
+        // The profile changes while the pass that took profile 7's scope asks for the network link, before it starts anything.
+        int switched = 0;
+        _h.Network.OnRead = () =>
+        {
+            if (Interlocked.Exchange(ref switched, 1) == 0)
+            {
+                _h.SwitchProfile("8");
+            }
+        };
+
+        await _h.AddAsync("dl_1");
+        await Until(() => Volatile.Read(ref switched) == 1, "the profile switched");
+        await IdleAsync(queue);
+
+        Assert.Empty(_h.FileRequests("dl_1"));
+        _h.Network.OnRead = null;
+        _h.SwitchProfile("7");
+        await CompletedAsync("dl_1");
+        Assert.All(_h.FileRequests("dl_1"), r => Assert.Equal("7", r.AsProfile));
+    }
+
+    [Fact]
     public async Task AReportThatFailsUnexpectedly_WaitsItsDelay_InsteadOfGoingAgainAtOnce()
     {
         await _h.AddAsync("dl_1");

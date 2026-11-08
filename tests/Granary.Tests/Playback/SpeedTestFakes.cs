@@ -149,9 +149,16 @@ internal sealed class FakeNetworkLink : INetworkLink
     /// <summary>When set, reading <see cref="Current"/> throws it, as a system call that failed.</summary>
     public Exception? Fails { get; set; }
 
+    /// <summary>Runs at each read of <see cref="Current"/>, on the reader's thread: something that happens while it asks.</summary>
+    public Action? OnRead { get; set; }
+
     public NetworkLink Current
     {
-        get => Fails is { } failure ? throw failure : _current;
+        get
+        {
+            OnRead?.Invoke();
+            return Fails is { } failure ? throw failure : _current;
+        }
         set => _current = value;
     }
 
