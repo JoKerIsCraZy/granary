@@ -2,6 +2,7 @@ using System.Net;
 using Granary.Core.Auth;
 using Granary.Core.Playback.Themes;
 using Granary.Tests.Auth;
+using Granary.Tests.Fakes;
 using Granary.Tests.Profiles;
 using static Granary.Tests.Playback.ThemeMusicRig;
 
@@ -191,6 +192,27 @@ public sealed class ThemeMusicTests
         Assert.Same(audio, rig.Playing());
         Assert.Equal(ThemeMusicPlayer.Volume, audio.Volume, 6);
         Assert.Equal(1, rig.GrantsAsked("series-1", "21"));
+    }
+
+    [Fact]
+    public async Task ALetGoPostedByAGraceAlreadyCancelled_LeavesTheNextGraceAlone()
+    {
+        var ui = new QueuedDispatcher();
+        var rig = await new ThemeMusicRig(dispatcher: ui).StartedAsync();
+        rig.Music.Show(_page, Set("series-1", "21"));
+        await AuthPipeline.Eventually(() => rig.Output.Made.Count == 1);
+        var audio = rig.Playing();
+
+        rig.Music.Hide(_page);
+        rig.Clock.Advance(ThemeMusic.ReleaseGrace);
+        rig.Music.Show(_nextPage, Set("series-1", "21"));
+        rig.Music.Hide(_nextPage);
+        ui.RunAll();
+
+        Assert.False(audio.IsDisposed);
+        rig.Clock.Advance(ThemeMusic.ReleaseGrace);
+        ui.RunAll();
+        Assert.True(audio.IsDisposed);
     }
 
     [Fact]

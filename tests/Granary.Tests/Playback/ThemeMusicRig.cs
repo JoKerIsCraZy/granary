@@ -1,4 +1,5 @@
 using System.Net;
+using Granary.Core.Abstractions;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Playback.Themes;
 using Granary.Core.Settings;
@@ -15,7 +16,7 @@ namespace Granary.Tests.Playback;
 /// </summary>
 internal sealed class ThemeMusicRig
 {
-    public ThemeMusicRig(bool themeMusic = true, bool loop = false)
+    public ThemeMusicRig(bool themeMusic = true, bool loop = false, IUiDispatcher? dispatcher = null)
     {
         Harness.Answer(TitlePageSettingsTests.EffectivePath, TitlePageSettingsTests.Answer(themeMusic: themeMusic, loop: loop));
         Harness.Answer(ThemeSongsApiTests.CapabilityPath, ThemeSongsApiTests.Available);
@@ -29,7 +30,7 @@ internal sealed class ThemeMusicRig
         Download = new FakeHttpMessageHandler((_, _) => Task.FromResult(DownloadAnswer()));
         Settings = TitlePageSettingsTests.Create(Harness);
         Music = new ThemeMusic(Harness.Session, Settings, new ThemesApi(Harness.Silo.Http), new ThemeAudioDownloader(new FakeHttpClients(Download)),
-            Output, new ImmediateDispatcher(), Clock, Harness.Logs.For<ThemeMusic>());
+            Output, dispatcher ?? new ImmediateDispatcher(), Clock, Harness.Logs.For<ThemeMusic>());
     }
 
     public LibraryHarness Harness { get; } = new();

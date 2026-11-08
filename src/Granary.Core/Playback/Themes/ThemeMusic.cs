@@ -177,14 +177,17 @@ public sealed class ThemeMusic : IDisposable
         _player.Suspend();
         if (_release is null)
         {
-            _release = _time.CreateTimer(_ => _dispatcher.Post(Release), null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
-            _release.Change(ReleaseGrace, Timeout.InfiniteTimeSpan);
+            ITimer? release = null;
+            release = _release = _time.CreateTimer(_ => _dispatcher.Post(() => Release(release)), null, Timeout.InfiniteTimeSpan,
+                Timeout.InfiniteTimeSpan);
+            release.Change(ReleaseGrace, Timeout.InfiniteTimeSpan);
         }
     }
 
-    private void Release()
+    // Only the grace that runs now lets go: one cancelled after its tick was posted leaves the next one alone.
+    private void Release(ITimer? release)
     {
-        if (_release is null)
+        if (release is null || !ReferenceEquals(_release, release))
         {
             return;
         }
