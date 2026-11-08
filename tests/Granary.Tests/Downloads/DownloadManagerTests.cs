@@ -181,7 +181,7 @@ public sealed class DownloadManagerTests : IAsyncDisposable
 
         await manager.PauseAsync("dl_1");
         await Until(() => _h.Find("dl_1")!.Record.State == DownloadState.Queued, "the transfer stopped");
-        await queue.Idle.WaitAsync(Settle, Token);
+        await SettleAsync(queue);
         var paused = Assert.Single(manager.Items);
         Assert.Equal(("Paused", 1024L), (DownloadText.Status(paused), paused.BytesDone));
         Assert.Single(_h.FileRequests("dl_1"));
@@ -267,22 +267,22 @@ public sealed class DownloadManagerTests : IAsyncDisposable
         _h.Silo.On(HttpMethod.Delete, EntryPath("dl_1"), ScriptedSilo.NetworkError(), ScriptedSilo.NetworkError(), ScriptedSilo.NoContent());
         var queue = _h.StartQueue();
         var manager = _h.NewManager(queue);
-        await queue.Idle.WaitAsync(Settle, Token);
+        await SettleAsync(queue);
 
         await manager.DeleteAsync("dl_1", Token);
         await Until(() => DeletesSent("dl_1").Count == 1, "the server was asked");
-        await queue.Idle.WaitAsync(Settle, Token);
+        await SettleAsync(queue);
         Assert.Null(_h.Find("dl_1"));
         Assert.Equal([new PendingDelete(Scope7, "dl_1")], _h.Store.PendingDeletes(Scope7));
 
         // A wake before the retry delay asks nothing.
         queue.Wake();
-        await queue.Idle.WaitAsync(Settle, Token);
+        await SettleAsync(queue);
         Assert.Single(DeletesSent("dl_1"));
 
         await _h.AdvanceAsync(TimeSpan.FromSeconds(1), queue);
         await Until(() => DeletesSent("dl_1").Count == 2, "asked again after 1 s");
-        await queue.Idle.WaitAsync(Settle, Token);
+        await SettleAsync(queue);
         await _h.AdvanceAsync(TimeSpan.FromSeconds(1), queue);
         Assert.Equal(2, DeletesSent("dl_1").Count);
 
@@ -297,7 +297,7 @@ public sealed class DownloadManagerTests : IAsyncDisposable
         await _h.AddAsync("dl_8", DownloadState.Completed, scope: Scope8);
         await _h.Store.RemoveAsync(Scope8, "dl_8", queueServerDelete: true, Token);
         var queue = _h.StartQueue();
-        await queue.Idle.WaitAsync(Settle, Token);
+        await SettleAsync(queue);
 
         Assert.Empty(DeletesSent("dl_8"));
         Assert.Single(_h.Store.PendingDeletes(Scope8));

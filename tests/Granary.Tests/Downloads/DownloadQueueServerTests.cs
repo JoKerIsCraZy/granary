@@ -23,7 +23,8 @@ public sealed class DownloadQueueServerTests : IAsyncDisposable
     private Task CompletedAsync(string id) =>
         Until(() => _h.Find(id)?.Record.State == DownloadState.Completed, id + " completed");
 
-    private static Task IdleAsync(DownloadQueue queue) => queue.Idle.WaitAsync(Settle, Token);
+    // A fresh look of the queue, so what it did not start is not taken from a look before the event.
+    private static Task IdleAsync(DownloadQueue queue) => SettleAsync(queue);
 
     private static string File(StoredDownload download, string name) => Path.Combine(download.Folder, name);
 

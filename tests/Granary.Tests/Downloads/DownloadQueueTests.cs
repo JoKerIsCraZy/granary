@@ -13,7 +13,6 @@ namespace Granary.Tests.Downloads;
 public sealed class DownloadQueueTests : IAsyncDisposable
 {
     private static readonly byte[] Source = DownloadPayloads.Source(3000);
-    private static readonly TimeSpan Settle = TimeSpan.FromSeconds(5);
 
     private readonly DownloadHarness _h = new();
 
@@ -22,7 +21,8 @@ public sealed class DownloadQueueTests : IAsyncDisposable
     private Task CompletedAsync(string id) =>
         Until(() => _h.Find(id)?.Record.State == DownloadState.Completed, id + " completed");
 
-    private static Task IdleAsync(DownloadQueue queue) => queue.Idle.WaitAsync(Settle, Token);
+    // A fresh look of the queue, so what it did not start is not taken from a look before the event.
+    private static Task IdleAsync(DownloadQueue queue) => SettleAsync(queue);
 
     [Fact]
     public async Task TwoRunAtOnce_TheThirdWaits()
@@ -36,7 +36,7 @@ public sealed class DownloadQueueTests : IAsyncDisposable
 
         var queue = _h.StartQueue();
         await Until(() => _h.Find("dl_1")!.Record.Validator is not null && _h.Find("dl_2")!.Record.Validator is not null, "two transfers ran");
-        await queue.Parked.WaitAsync(Settle, Token);
+        await SettleRunningAsync(queue);
 
         Assert.Empty(_h.FileRequests("dl_3"));
         first.ReleaseAll();
@@ -401,4 +401,229 @@ public sealed class DownloadQueueTests : IAsyncDisposable
         await Until(() => _h.Find("dl_8", Scope8)?.Record.State == DownloadState.Completed, "profile 8's download completed");
         Assert.Equal("8", _h.FileRequests("dl_8")[0].AsProfile);
     }
+
+    [Theory]
+    [InlineData(503, null)]
+    [InlineData(429, 0)]
+    public async Task ABusyServerThatNamesNoWait_IsAskedLessAndLessOften(int status, int? retryAfter)
+    {
+        await _h.AddAsync("dl_1");
+        var busy = ScriptedSilo.Problem(status, status == 429 ? "rate_limited" : "dependency_unavailable",
+            retryAfter is { } seconds ? TimeSpan.FromSeconds(seconds) : null);
+        _h.ServeFile("dl_1", busy, busy, busy, DownloadPayloads.Bytes(HttpStatusCode.OK, Source, "\"v1\""));
+        var queue = _h.StartQueue();
+        await Until(() => _h.FileRequests("dl_1").Count == 1, "the first try");
+        await IdleAsync(queue);
+
+        // 1 s, then 2 s, then 4 s: never at once, never at a fixed short pace.
+        Assert.Single(_h.FileRequests("dl_1"));
+        await _h.AdvanceAsync(TimeSpan.FromSeconds(1), queue);
+        await Until(() => _h.FileRequests("dl_1").Count == 2, "the second try");
+        await IdleAsync(queue);
+        await _h.AdvanceAsync(TimeSpan.FromSeconds(1), queue);
+        Assert.Equal(2, _h.FileRequests("dl_1").Count);
+        await _h.AdvanceAsync(TimeSpan.FromSeconds(1), queue);
+        await Until(() => _h.FileRequests("dl_1").Count == 3, "the third try");
+        await IdleAsync(queue);
+        await _h.AdvanceAsync(TimeSpan.FromSeconds(3), queue);
+        Assert.Equal(3, _h.FileRequests("dl_1").Count);
+        _h.Time.Advance(TimeSpan.FromSeconds(1));
+        await CompletedAsync("dl_1");
+    }
+
+    [Fact]
+    public async Task ARefusedSignIn_AfterTheSessionChangedMeanwhile_DoesNotStopTheProfile()
+    {
+        await _h.AddAsync("dl_1");
+        // The session changes (a sign-in that came back) while the refused request is under way.
+        _h.ServeFile("dl_1", () =>
+        {
+            _h.Session.RaiseChanged();
+            return ScriptedSilo.Problem(401, "invalid_token")();
+        }, DownloadPayloads.Bytes(HttpStatusCode.OK, Source, "\"v1\""));
+
+        _h.StartQueue();
+
+        await CompletedAsync("dl_1");
+        Assert.Equal(2, _h.FileRequests("dl_1").Count);
+    }
+
+    [Fact]
+    public async Task AReportInItsBackoff_IsNotSentAgainAtEveryWake()
+    {
+        await _h.AddAsync("dl_1");
+        _h.ServeGated("dl_1", Source);
+        _h.AcceptReports("dl_1", ScriptedSilo.Problem(503, "dependency_unavailable"), ScriptedSilo.Json(HttpStatusCode.OK, DownloadPayloads.Entry("dl_1", "downloading")));
+        var queue = _h.StartQueue();
+        await Until(() => _h.Reports("dl_1").Count >= 1, "the first report");
+
+        await SettleRunningAsync(queue);
+        await SettleRunningAsync(queue);
+        Assert.Single(_h.Reports("dl_1"));
+
+        _h.Time.Advance(TimeSpan.FromSeconds(1));
+        await Until(() => _h.Find("dl_1")!.Record.PendingReport is null, "the report went after its delay");
+        Assert.Equal(2, _h.Reports("dl_1").Count);
+    }
+
+    [Fact]
+    public async Task ARefusedSignInOnAReport_KeepsIt_ForLater()
+    {
+        await _h.AddAsync("dl_1");
+        _h.ServeGated("dl_1", Source);
+        _h.AcceptReports("dl_1", ScriptedSilo.Problem(401, "session_expired"), ScriptedSilo.Json(HttpStatusCode.OK, DownloadPayloads.Entry("dl_1", "downloading")));
+        var queue = _h.StartQueue();
+        await Until(() => _h.Reports("dl_1").Count >= 1, "the first report");
+        await SettleRunningAsync(queue);
+
+        Assert.NotNull(_h.Find("dl_1")!.Record.PendingReport);
+        _h.Time.Advance(TimeSpan.FromSeconds(1));
+        await Until(() => _h.Find("dl_1")!.Record.PendingReport is null, "the report went again");
+        Assert.Equal(_h.Reports("dl_1")[0].Body, _h.Reports("dl_1")[1].Body);
+    }
+
+    [Fact]
+    public async Task AStatusReportThatHangs_HoldsBackNoOtherTransfer()
+    {
+        await _h.AddAsync("dl_1");
+        await _h.AddAsync("dl_2");
+        await _h.AddAsync("dl_3");
+        var hanging = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        try
+        {
+            _h.ServeFile("dl_1", Source);
+            _h.AcceptReports("dl_1", ScriptedSilo.Json(HttpStatusCode.OK, DownloadPayloads.Entry("dl_1", "downloading")), () => hanging.Task);
+            _h.ServeGated("dl_2", Source);
+            _h.ServeFile("dl_3", Source);
+
+            _h.StartQueue();
+
+            await CompletedAsync("dl_1");
+            await CompletedAsync("dl_3");
+            Assert.NotNull(_h.Find("dl_1")!.Record.PendingReport);
+        }
+        finally
+        {
+            hanging.TrySetResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(DownloadPayloads.Entry("dl_1", "completed"), System.Text.Encoding.UTF8, "application/json"),
+            });
+        }
+    }
+
+    [Fact]
+    public async Task FoldersAreLookedAtAgainOnceAMinute_NotAtEveryWake()
+    {
+        var stored = await _h.AddAsync("dl_1", DownloadState.Completed);
+        var queue = _h.StartQueue();
+        await IdleAsync(queue);
+
+        Directory.Move(stored.Folder, stored.Folder + "-away");
+        await IdleAsync(queue);
+        Assert.False(_h.Find("dl_1")!.FilesMissing);
+
+        await _h.AdvanceAsync(TimeSpan.FromMinutes(1), queue);
+        Assert.True(_h.Find("dl_1")!.FilesMissing);
+    }
+
+    [Fact]
+    public async Task ALookThatFails_DoesNotEndTheQueue()
+    {
+        await _h.AddAsync("dl_1");
+        _h.ServeFile("dl_1", Source);
+        _h.Network.Fails = new InvalidOperationException("The system did not answer.");
+        var queue = _h.StartQueue();
+        await Until(() => _h.Logs.All.Contains("failed", StringComparison.Ordinal), "the failure was logged");
+        await Until(() => queue.Passes >= 1, "a pass ended");
+
+        _h.Network.Fails = null;
+        queue.Wake();
+        await CompletedAsync("dl_1");
+    }
+
+    [Fact]
+    public async Task Stop_WaitsAtMostItsBudget_ForATransferThatDoesNotLetGo()
+    {
+        await _h.AddAsync("dl_1");
+        var stubborn = new StubbornStream();
+        _h.ServeFile("dl_1", DownloadPayloads.Streamed(HttpStatusCode.OK, stubborn, 3000, "\"v1\""));
+        var queue = _h.StartQueue();
+        await stubborn.Reading.WaitAsync(TimeSpan.FromSeconds(5), Token);
+
+        var stop = queue.StopAsync();
+        await _h.Time.WaitUntilAsync(() => _h.Time.NextDue is { } due && due <= DownloadQueue.StopBudget, Token);
+        Assert.False(stop.IsCompleted);
+        _h.Time.Advance(DownloadQueue.StopBudget);
+        await stop.WaitAsync(TimeSpan.FromSeconds(5), Token);
+
+        Assert.Contains("did not stop within", _h.Logs.All, StringComparison.Ordinal);
+        stubborn.Release();
+    }
+
+    [Fact]
+    public async Task Dispose_StopsFollowing_AndCanBeCalledTwice()
+    {
+        await _h.AddAsync("dl_8", scope: Scope8);
+        _h.ServeFile("dl_8", Source);
+        var queue = _h.StartQueue();
+        await IdleAsync(queue);
+        long passes = queue.Passes;
+
+        queue.Dispose();
+        queue.Dispose();
+        _h.SwitchProfile("8");
+        _h.Network.SetMetered(false);
+        await queue.StopAsync();
+
+        Assert.Equal(passes, queue.Passes);
+        Assert.Empty(_h.FileRequests("dl_8"));
+    }
+}
+
+/// <summary>A media body whose read waits until the test lets it end, whatever the cancellation says.</summary>
+internal sealed class StubbornStream : Stream
+{
+    private readonly TaskCompletionSource _release = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly TaskCompletionSource _reading = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+    /// <summary>Completes once a read waits.</summary>
+    public Task Reading => _reading.Task;
+
+    public void Release() => _release.TrySetResult();
+
+    public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+    {
+        _reading.TrySetResult();
+        await _release.Task;
+        return 0;
+    }
+
+    public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) =>
+        ReadAsync(buffer.AsMemory(offset, count), cancellationToken).AsTask();
+
+    public override int Read(byte[] buffer, int offset, int count) => ReadAsync(buffer, offset, count).GetAwaiter().GetResult();
+
+    public override bool CanRead => true;
+
+    public override bool CanSeek => false;
+
+    public override bool CanWrite => false;
+
+    public override long Length => throw new NotSupportedException();
+
+    public override long Position
+    {
+        get => throw new NotSupportedException();
+        set => throw new NotSupportedException();
+    }
+
+    public override void Flush()
+    {
+    }
+
+    public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+
+    public override void SetLength(long value) => throw new NotSupportedException();
+
+    public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
 }

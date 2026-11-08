@@ -2536,9 +2536,9 @@ branches on are `prepared_file_expired` and `capability_unsupported` (`ProblemCo
 - `PATCH /api/v2/downloads/{id}` `{ status: "downloading"|"completed", updated_at, revision }` → `200` `DownloadEntry`. The
   time is taken when the PC's state changes and a retry sends the same event; an older or equal event leaves the entry as
   it is. A time more than 2 minutes ahead of the server's is 400, another revision 409, `downloading` for a preparing entry
-  404. Granary sends `downloading` when a transfer starts and `completed` once the file is whole and named. A 401, 408, 429,
-  5xx or no answer keeps the event for the next wake and the retry delays; any other client error drops it, and a 409 also
-  reads the registry again.
+  404. Granary sends `downloading` before a transfer asks for the file and `completed` once the file is whole and named. A
+  401, 408, 429, 5xx or no answer keeps the event, sent again as it was after the retry delays; any other client error drops
+  it, and a 409 also reads the registry again.
 
 ### 14.4 Media file
 
@@ -2551,8 +2551,9 @@ branches on are `prepared_file_expired` and `capability_unsupported` (`ProblemCo
   sizes are int64 end to end (`ByteRange`), for files over 4 GB.
 - What the queue does with an answer: `200`/`206` write the part; `409 prepared_file_expired` → `/prepare` (14.6); another
   `409` or `404` → the download fails and the registry is read again (14.3); `429`/`503` → asked again after `Retry-After`
-  (0 to 5 minutes; 5 s without one); `401` or `403 profile_verification_required` → the profile's downloads wait for the
-  sign-in; `5xx`, no answer or a body that broke off → asked again after 1, 2, 4 ... 60 s with `Range` from the bytes kept.
+  (1 s to 5 minutes; without one, or below a second, after 1, 2, 4 ... 60 s, longer with each busy answer in a row); `401`
+  or `403 profile_verification_required` → the profile's downloads wait for the sign-in; `5xx`, no answer or a body that
+  broke off → asked again after 1, 2, 4 ... 60 s with `Range` from the bytes kept.
 - `GET /api/v2/downloads/{id}/file-proxy`, when the capability has `proxy_delivery`: the same, or `307` to a proxy node.
   Granary follows one 307 on a client of its own (`DownloadsApi.HopClientName`: no credentials, identity headers, redirects,
   cookies or log), with the same method, `Range` and `If-Range`. The target must be HTTPS (HTTP only when the server itself

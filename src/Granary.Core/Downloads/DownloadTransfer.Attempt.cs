@@ -259,7 +259,7 @@ public sealed partial class DownloadTransfer
                 403 when code == ProblemCodes.ProfileVerificationRequired => Outcome(TransferResult.SignedOut),
                 404 => Outcome(TransferResult.Gone),
                 409 when code == ProblemCodes.PreparedFileExpired => Outcome(TransferResult.Expired),
-                429 or 503 => Outcome(TransferResult.Busy, SiloHttp.RetryAfter(response) ?? BusyWait),
+                429 or 503 => Outcome(TransferResult.Busy, SiloHttp.RetryAfter(response)),
                 >= 500 => Outcome(TransferResult.Unreachable),
                 _ => Outcome(TransferResult.Refused),
             };

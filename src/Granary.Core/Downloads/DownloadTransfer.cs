@@ -42,7 +42,7 @@ public enum TransferResult
     /// <summary>404: the entry or its title is gone, or outside the profile's access.</summary>
     Gone,
 
-    /// <summary>429 or 503: the server asks to wait <see cref="TransferOutcome.RetryAfter"/>.</summary>
+    /// <summary>429 or 503: the server asks to wait <see cref="TransferOutcome.RetryAfter"/>, or did not say how long (null).</summary>
     Busy,
 
     /// <summary>No answer, a lost or stalled connection, a server error, or a part of the file and no more: try again later.</summary>
@@ -63,7 +63,8 @@ public enum TransferResult
 
 /// <summary>
 /// A transfer's end: its <paramref name="Result"/>, the <paramref name="Validator"/> the bytes on disk came with (for the next
-/// <c>If-Range</c>), how long to wait for <see cref="TransferResult.Busy"/>, and the bytes on disk.
+/// <c>If-Range</c>), the server's <c>Retry-After</c> for <see cref="TransferResult.Busy"/> (null when it named none), and the
+/// bytes on disk.
 /// </summary>
 public sealed record TransferOutcome(TransferResult Result, string? Validator = null, TimeSpan? RetryAfter = null, long Bytes = 0);
 
@@ -91,9 +92,6 @@ public sealed partial class DownloadTransfer(DownloadsApi api, IDiskSpace disk, 
     private const int HandleDiskFull = unchecked((int)0x80070027);
     private const int NotReady = unchecked((int)0x80070015);
     private const int DeviceNotConnected = unchecked((int)0x8007048F);
-
-    // A 429 or 503 without a Retry-After waits this long, as the server's artwork answers name.
-    private static readonly TimeSpan BusyWait = TimeSpan.FromSeconds(5);
 
     // The problem codes the log may name; anything else a server sends is not written down.
     private static readonly HashSet<string> KnownCodes = new(StringComparer.Ordinal)

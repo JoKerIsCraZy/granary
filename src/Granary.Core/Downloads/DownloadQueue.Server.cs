@@ -40,14 +40,17 @@ public sealed partial class DownloadQueue
         }
     }
 
-    // A scope becomes active (a start, a profile switch, a sign-in back): what the server offers, what it lists, and the
-    // completed downloads' manifests that are a day old.
+    // A scope becomes active (a start, a profile switch, a sign-in back): what the server offers and what it lists, before any
+    // of its transfers starts; the completed downloads' manifests that are a day old are left to the server work.
     private async Task ActivateAsync(DownloadScope scope, Uri server, CancellationToken stop)
     {
         _logger.LogInformation("The downloads of the active profile run");
         await ReadCapabilityAsync(scope, server, stop).ConfigureAwait(false);
         await ReconcileAsync(scope, server, stop).ConfigureAwait(false);
-        await RefreshManifestsAsync(scope, server, stop).ConfigureAwait(false);
+        lock (_gate)
+        {
+            _refreshFor = scope;
+        }
     }
 
     // A capability that cannot be read asks /file and never deletes a revoked copy.
@@ -76,9 +79,13 @@ public sealed partial class DownloadQueue
         bool preparing = _store.In(scope).Any(d => !d.FilesMissing && d.Record.State == DownloadState.Preparing);
         lock (_gate)
         {
-            return _reconcileRequested || (preparing && (_lastReconcile is not { } last || now - last >= PreparingPoll));
+            return IsReconcileDueLocked(preparing, now);
         }
     }
+
+    // Asked for, or a preparing copy to look at again.
+    private bool IsReconcileDueLocked(bool preparing, DateTimeOffset now) =>
+        _reconcileRequested || (preparing && (_lastReconcile is not { } last || now - last >= PreparingPoll));
 
     private void RequestReconcile()
     {
@@ -399,25 +406,19 @@ public sealed partial class DownloadQueue
     }
 
     // The server deletes of the active scope, each once its folder is gone (the files go first; a folder on a drive that is not
-    // there does not hold it back). Each is forgotten once the server took it or will never take it. After one that could not
-    // go, they wait for the retry delays; one whose folder is still there is looked at again after a minute at the latest.
+    // there does not hold it back): one whose folder something still holds goes after a folder recheck deleted it. Each is
+    // forgotten once the server took it or will never take it. After one that could not go, they wait for the retry delays.
     private async Task SendPendingDeletesAsync(DownloadScope scope, Uri server, CancellationToken stop)
     {
         lock (_gate)
         {
-            if (_deleteRetry is { Failures: > 0 } failed && failed.At > _time.GetUtcNow())
+            if (_deleteRetry is { } failed && failed.At > _time.GetUtcNow())
             {
                 return;
             }
         }
-        bool heldBack = false;
-        foreach (var delete in _store.PendingDeletes(scope))
+        foreach (var delete in _store.PendingDeletes(scope).Where(d => IsSendable(scope, d)))
         {
-            if (_store.FolderBeingDeleted(scope, delete.DownloadId) is { } folder && Directory.Exists(folder))
-            {
-                heldBack = true;
-                continue;
-            }
             try
             {
                 await _api.DeleteAsync(server, scope.ProfileId, delete.DownloadId, stop).ConfigureAwait(false);
@@ -443,18 +444,11 @@ public sealed partial class DownloadQueue
                 _deleteRetry = null;
             }
         }
-        if (heldBack)
-        {
-            var now = _time.GetUtcNow();
-            lock (_gate)
-            {
-                if (_deleteRetry is not { } retry || retry.At <= now)
-                {
-                    _deleteRetry = new Retry(now + RetryDelays[^1], _deleteRetry?.Failures ?? 0);
-                }
-            }
-        }
     }
+
+    // A delete whose folder is gone, or on a drive that is not there: it reads the disk, on the loop's or the server work's thread.
+    private bool IsSendable(DownloadScope scope, PendingDelete delete) =>
+        _store.FolderBeingDeleted(scope, delete.DownloadId) is not { } folder || !Directory.Exists(folder);
 
     // A failure of a request to the server, not a bug: an answer, no answer, an answer that is no Silo answer, a profile switch
     // or a timeout of the HTTP client.

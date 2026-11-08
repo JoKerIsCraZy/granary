@@ -866,7 +866,7 @@ deleted here; every result but Completed keeps what was written.
 - **Answers.** 200 and 206 bring bytes. 409 `prepared_file_expired` is Expired (the queue prepares it again); another 409,
   a 403 or another 4xx, a redirect Granary does not follow (`DownloadRedirectRefusedException`, or a second one), and a
   request that cannot be made (an id or validator the API refuses) are Refused, since asking again gets the same answer;
-  404 Gone; 429 and 503 Busy for their `Retry-After`, else 5 s; 401, or 403 `profile_verification_required`, Signed out; a
+  404 Gone; 429 and 503 Busy, with their `Retry-After` when they name one; 401, or 403 `profile_verification_required`, Signed out; a
   5xx, a lost connection or a body that ended before the file did is Unreachable, to try again later; a request the server
   would get as another profile is not sent (Profile changed). The log names the download and the status, and a problem
   code only when it is one Granary knows, never an address or a local path: a network error's message can name the
@@ -879,12 +879,17 @@ Silo's Apple app), oldest first: those queued or under way, not paused by the vi
 missing their folder.
 
 - **One loop.** It decides what starts, on a wake: `Wake()`, a session change, `INetworkLink.Changed`, the download
-  settings changing, the store changing, a transfer ending, or a timer at the earliest time something waits for (a retry,
-  a status report or a delete to send again, the next look at preparing copies, a missing folder's recheck). Each pass
-  rechecks the folders (`RecheckFolders`, which reads the disk, so only this loop calls it), activates or reconciles the
-  scope with the server (below), sends its pending deletes and status reports and starts transfers. Work that fell due
-  while a pass ran gets the next pass at once; nothing else does, so the loop never spins. The event handlers only cancel
-  and wake, so nothing of a transfer ever runs on the UI thread; cancelling goes through `CancelAsync`.
+  settings changing, the store changing, a transfer ending, the server work ending, or a timer at the earliest time
+  something waits for (a retry, a status report, a delete or a registry read to try again, the next look at preparing
+  copies, a folder recheck). Each pass rechecks the folders when that is due (`RecheckFolders` reads the disk for every
+  download, so only this loop calls it, at most every `FolderRecheck` (60 s) or when a transfer found its folder gone),
+  activates the scope with the server when it becomes the active one (below), starts transfers, and hands what the server is
+  to hear to the server work. Work that fell due while a pass ran gets the next pass at once; nothing else does, so the loop
+  never spins. An iteration that fails, the wait after the pass included, is logged and the loop carries on. The event
+  handlers only cancel and wake, so nothing of a transfer ever runs on the UI thread; cancelling goes through `CancelAsync`.
+- **The server work.** Reading the registry, refreshing manifests and sending deletes and status reports run in one task
+  beside the loop, one at a time, which the loop does not wait for: a server slow to answer never holds a transfer back. It
+  wakes the loop when it ends; one that fails unexpectedly waits a minute.
 - **Stopping a transfer.** A transfer stops at once, keeping its bytes, when its download is deleted (the store's
   `Changed` comes before the folder is deleted, so the part is let go first), paused by the viewer or no longer to be
   fetched, when the connection turns metered without Settings → Downloads allowing it (`IsWaitingForUnmetered`; nothing
@@ -898,17 +903,21 @@ missing their folder.
   meanwhile ends its transfer as a stopped one.
 - **Outcomes.** A lost connection, a server error or a folder whose drive does not answer is tried again after 1, 2, 4,
   8, 16, 32 and then every 60 s (`RetryDelays`), from the start again once a transfer got further. A busy server's
-  `Retry-After` is waited for, within 0 and 5 minutes (`MaxBusyWait`). 401, or a profile that wants its PIN again, stops
-  the profile's downloads until the session changes; a request that would have gone as another profile does the same. A
-  full drive fails the download as "not enough space", its bytes kept for Resume. A file of another length starts over from
-  its first byte once, and fails the second time in a row. Refusals go to what the server says (below). A missing folder
-  waits until a recheck finds it, at least every minute.
+  `Retry-After` is waited for, from 1 s up to 5 minutes (`MaxBusyWait`); one that names no wait, or less than a second, gets
+  the retry delays, longer with each busy answer in a row. 401, or a profile that wants its PIN again, stops the profile's
+  downloads until the session changes from the one the transfer started in (a session that changed meanwhile has them run
+  again at once); a request that would have gone as another profile does the same. A full drive fails the download as "not
+  enough space", its bytes kept for Resume. A file of another length starts over from its first byte once, and fails the
+  second time in a row. Refusals go to what the server says (below). A missing folder waits until a recheck finds it.
 - **Status reports.** Turning Downloading or Completed records a `DownloadStatusEvent` with the time of the change in the
-  record (`PendingReport`) and sends it; one that does not go is sent again as it is, time included, at the next wake and
-  after the retry delays. One the server will not take (another revision, an entry preparing again, a time it refuses) is
-  dropped. A completed transfer renames `media.part` to its media name before the record says Completed.
-- **Stop.** `StopAsync` stops the loop and the transfers and waits up to `StopBudget` (2 s) for them to let go of their
-  files.
+  record (`PendingReport`). The transfer sends "downloading" itself before it asks for the file, waiting at most
+  `ReportBudget` (15 s), so "completed" always comes after it; "completed" goes with the server work, so a finished transfer
+  frees its slot at once. One that does not go is sent again as it is, time included, after the retry delays, whoever
+  sends it. One the server will not take (another revision, an entry preparing again, a time it refuses) is dropped. A
+  completed transfer renames `media.part` to its media name before the record says Completed.
+- **Stop.** `StopAsync` stops the loop, the transfers and the server work and waits up to `StopBudget` (2 s) for them to let
+  go of their files, logging when they did not. `Dispose` stops everything without waiting and lets go of the queue's
+  cancellation source and its reconcile gate; twice is no change.
 
 ### What the server says
 
@@ -918,7 +927,8 @@ client guide.
 - **Scope activation.** When a profile's downloads become the active ones (a start, a profile switch, a sign-in that
   came back), the queue reads the capability once: `proxy_delivery` has transfers ask `/file-proxy`, and
   `revoked_removes_local` lets a revoked download's files go. A capability that cannot be read leaves both off. Then it
-  reconciles, and reads completed downloads' manifests again that are a day old (`ManifestRefresh`).
+  reconciles, both before the scope's first transfer starts, and the server work reads completed downloads' manifests again
+  that are a day old (`ManifestRefresh`).
 - **Reconcile.** `ReconcileAsync` reads every page of the registry (the cursor until `has_more` is false) before anything
   counts as gone, and judges only the downloads kept before it started reading, so one created meanwhile is never taken
   for gone. Per entry: `preparing` makes a download that is under way Preparing, with the server's progress;

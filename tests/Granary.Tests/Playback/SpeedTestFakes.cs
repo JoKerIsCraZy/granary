@@ -144,14 +144,23 @@ internal sealed class FakeHttpClients(HttpMessageHandler handler) : IHttpClientF
 
 internal sealed class FakeNetworkLink : INetworkLink
 {
-    public NetworkLink Current { get; set; } = new(NetworkTransports.Ethernet, false);
+    private NetworkLink _current = new(NetworkTransports.Ethernet, false);
+
+    /// <summary>When set, reading <see cref="Current"/> throws it, as a system call that failed.</summary>
+    public Exception? Fails { get; set; }
+
+    public NetworkLink Current
+    {
+        get => Fails is { } failure ? throw failure : _current;
+        set => _current = value;
+    }
 
     public event EventHandler? Changed;
 
     /// <summary>The link turns metered or unmetered, as a hotspot does, and says so.</summary>
     public void SetMetered(bool metered)
     {
-        Current = Current with { IsMetered = metered };
+        _current = _current with { IsMetered = metered };
         Changed?.Invoke(this, EventArgs.Empty);
     }
 }

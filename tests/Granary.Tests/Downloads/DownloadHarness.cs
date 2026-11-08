@@ -228,10 +228,31 @@ internal sealed class DownloadHarness : IAsyncDisposable
         Session.RaiseChanged();
     }
 
-    /// <summary>Moves the clock and lets what its timers started reach the scripted server.</summary>
+    /// <summary>Moves the clock and lets what its timers started reach the scripted server, then settles the queue.</summary>
     public async Task AdvanceAsync(TimeSpan by, DownloadQueue queue)
     {
         Time.Advance(by);
+        await SettleAsync(queue);
+    }
+
+    /// <summary>As <see cref="SettleAsync"/>, while transfers run: the queue has looked again and waits.</summary>
+    public static async Task SettleRunningAsync(DownloadQueue queue)
+    {
+        long passes = queue.Passes;
+        queue.Wake();
+        await Until(() => queue.Passes > passes, "the queue looked again");
+        await queue.Parked.WaitAsync(TimeSpan.FromSeconds(5), Token);
+    }
+
+    /// <summary>
+    /// Has the queue look once more and waits until it is idle after that look: whatever it could start now, it has started,
+    /// so "nothing started" is not taken from a look before the event the test is about.
+    /// </summary>
+    public static async Task SettleAsync(DownloadQueue queue)
+    {
+        long passes = queue.Passes;
+        queue.Wake();
+        await Until(() => queue.Passes > passes, "the queue looked again");
         await queue.Idle.WaitAsync(TimeSpan.FromSeconds(5), Token);
     }
 

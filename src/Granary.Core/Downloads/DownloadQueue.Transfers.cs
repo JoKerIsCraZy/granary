@@ -37,22 +37,21 @@ public sealed partial class DownloadQueue
         {
             return;
         }
-        // The server hears of the transfer while it runs; the outcome waits for that report, so the next one follows it.
-        var reports = SendReportsAsync(run.Server, key, _stop.Token);
-        long from;
-        TransferOutcome outcome;
-        try
-        {
-            (download, var failed) = await FetchAssetsFirstAsync(run, download).ConfigureAwait(false);
-            from = failed?.Bytes ?? ResumePoint(download);
-            outcome = failed ?? await _transfer.RunAsync(JobOf(run, download, from), bytes => OnProgress(key, bytes),
-                (validator, token) => KeepValidatorAsync(run, validator, token), run.Cancel.Token).ConfigureAwait(false);
-        }
-        finally
-        {
-            await reports.ConfigureAwait(false);
-        }
+        await SendStartReportAsync(run).ConfigureAwait(false);
+        (download, var failed) = await FetchAssetsFirstAsync(run, download).ConfigureAwait(false);
+        long from = failed?.Bytes ?? ResumePoint(download);
+        var outcome = failed ?? await _transfer.RunAsync(JobOf(run, download, from), bytes => OnProgress(key, bytes),
+            (validator, token) => KeepValidatorAsync(run, validator, token), run.Cancel.Token).ConfigureAwait(false);
         await OnOutcomeAsync(run, download, from, outcome).ConfigureAwait(false);
+    }
+
+    // The server hears "downloading" before the file is asked for, so "completed" always comes after it. The transfer waits
+    // for that report at most ReportBudget; one that does not go now is sent again by the server work.
+    private async Task SendStartReportAsync(Running run)
+    {
+        using var budget = new CancellationTokenSource(ReportBudget, _time);
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(_stopToken, budget.Token);
+        await SendReportsAsync(run.Server, run.Key, linked.Token).ConfigureAwait(false);
     }
 
     private TransferJob JobOf(Running run, StoredDownload download, long from)
@@ -114,7 +113,7 @@ public sealed partial class DownloadQueue
         SiloApiException { Status: 401 } => (TransferResult.SignedOut, null),
         SiloApiException { Status: 403, Code: ProblemCodes.ProfileVerificationRequired } => (TransferResult.SignedOut, null),
         SiloApiException { Status: 404 } => (TransferResult.Gone, null),
-        SiloApiException { Status: 429 or 503 } busy => (TransferResult.Busy, busy.RetryAfter ?? RetryDelays[0]),
+        SiloApiException { Status: 429 or 503 } busy => (TransferResult.Busy, busy.RetryAfter),
         SiloApiException { Status: >= 500 } => (TransferResult.Unreachable, null),
         SiloApiException or JsonException => (TransferResult.Refused, null),
         DirectoryNotFoundException => (TransferResult.FolderMissing, null),
@@ -284,26 +283,30 @@ public sealed partial class DownloadQueue
                 await OnIntegrityAsync(run, failsTwice, outcome).ConfigureAwait(false);
                 return;
             case TransferResult.Expired or TransferResult.Refused or TransferResult.Gone:
-                await OnServerRefusalAsync(run, download, outcome, _stop.Token).ConfigureAwait(false);
+                await OnServerRefusalAsync(run, download, outcome, _stopToken).ConfigureAwait(false);
                 return;
             case TransferResult.Busy:
                 lock (_gate)
                 {
-                    _retries[key] = new Retry(_time.GetUtcNow() + BusyWait(outcome.RetryAfter), _retries.GetValueOrDefault(key).Failures);
+                    int failures = _retries.GetValueOrDefault(key).Failures;
+                    _retries[key] = new Retry(_time.GetUtcNow() + BusyWait(outcome.RetryAfter, failures), failures + 1);
                 }
                 break;
             case TransferResult.SignedOut or TransferResult.ProfileChanged:
                 _logger.LogInformation("The downloads of this profile wait for its sign-in ({Result})", outcome.Result);
                 lock (_gate)
                 {
-                    _stoppedScopes[key.Scope] = _sessionGeneration;
+                    // The generation the transfer started in: a session that changed meanwhile has the profile run again.
+                    _stoppedScopes[key.Scope] = run.Generation;
                 }
                 break;
             default:
-                // Unreachable or a missing folder: tried again later, soon again when the transfer got further.
+                // Unreachable or a missing folder: tried again later, soon again when the transfer got further. A folder found
+                // gone is looked at again at the next pass.
                 lock (_gate)
                 {
                     RetryLaterLocked(key, progressed: outcome.Bytes > from);
+                    _recheckRequested |= outcome.Result == TransferResult.FolderMissing;
                 }
                 break;
         }
@@ -364,8 +367,8 @@ public sealed partial class DownloadQueue
         {
             _retries.Remove(key);
         }
+        // The server work sends "completed": the transfer's slot is free for the next one meanwhile.
         _logger.LogInformation("Download {DownloadId} is on this PC", key.Id);
-        await SendReportsAsync(run.Server, key, _stop.Token).ConfigureAwait(false);
     }
 
     // The container the finished file is named after, from the manifest kept beside it.
@@ -404,25 +407,35 @@ public sealed partial class DownloadQueue
         _retries[key] = new Retry(_time.GetUtcNow() + RetryDelays[Math.Min(failures, RetryDelays.Count - 1)], failures + 1);
     }
 
-    // A busy server's wait, within 0 and MaxBusyWait: a date already past is now, hours are five minutes.
-    private static TimeSpan BusyWait(TimeSpan? retryAfter) => retryAfter switch
+    // A busy server's wait: its Retry-After from a second up to MaxBusyWait (hours are five minutes); without one, or with less
+    // than a second (a date already past, 0), the retry delays, longer with each busy answer in a row.
+    private static TimeSpan BusyWait(TimeSpan? retryAfter, int failures) => retryAfter switch
     {
-        null => RetryDelays[0],
-        { } wait when wait < TimeSpan.Zero => TimeSpan.Zero,
-        { } wait when wait > MaxBusyWait => MaxBusyWait,
-        { } wait => wait,
+        { } wait when wait >= RetryDelays[0] => wait > MaxBusyWait ? MaxBusyWait : wait,
+        _ => RetryDelays[Math.Min(failures, RetryDelays.Count - 1)],
     };
 
+    // The scope's reports, but none that waits out its delay after one that could not go.
     private async Task SendPendingReportsAsync(DownloadScope scope, Uri server, CancellationToken stop)
     {
         foreach (var download in _store.In(scope).Where(d => d.Record.PendingReport is not null))
         {
-            await SendReportsAsync(server, Key.Of(download.Record), stop).ConfigureAwait(false);
+            var key = Key.Of(download.Record);
+            bool due;
+            lock (_gate)
+            {
+                due = IsReportDueLocked(key, _time.GetUtcNow());
+            }
+            if (due)
+            {
+                await SendReportsAsync(server, key, stop).ConfigureAwait(false);
+            }
         }
     }
 
     // Sends a download's status reports until none is left or one could not go. One sender per download at a time: a second
-    // caller has the one under way look once more when it is done. Never throws.
+    // caller has the one under way look once more when it is done, but a report that could not go waits out its delay. Never
+    // throws.
     private async Task SendReportsAsync(Uri server, Key key, CancellationToken stop)
     {
         lock (_gate)
@@ -443,7 +456,7 @@ public sealed partial class DownloadQueue
                 {
                     lock (_gate)
                     {
-                        if (!_reportAgain.Remove(key))
+                        if (!_reportAgain.Remove(key) || (report is not null && !IsReportDueLocked(key, _time.GetUtcNow(), sending: true)))
                         {
                             _reporting.Remove(key);
                             return;
@@ -451,6 +464,16 @@ public sealed partial class DownloadQueue
                     }
                     kept = null;
                     continue;
+                }
+                lock (_gate)
+                {
+                    // One that could not go a moment ago waits out its delay, whoever asks to send it.
+                    if (!IsReportDueLocked(key, _time.GetUtcNow(), sending: true))
+                    {
+                        _reporting.Remove(key);
+                        _reportAgain.Remove(key);
+                        return;
+                    }
                 }
                 if (!await SendReportAsync(server, key, report, stop).ConfigureAwait(false))
                 {
