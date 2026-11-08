@@ -8,133 +8,50 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Added
 
-- **Player buttons:** Settings → Playback → Player buttons chooses which buttons the player shows on the right, from
-  Volume to Full screen, and in which order: switch one off and it's gone from the player, move it up or down to change
-  its place. A hidden button is off, keys included: hide Subtitles and C does nothing, hide Volume and M and the volume
-  keys do nothing in the player, while the minimized player keeps its own Mute and volume keys; F11 still switches
-  full screen. Don't need the Sleep timer? Switch it off and the button is gone, also from a player that's already
-  open; a timer that's running ends. Reset brings back the usual buttons. It's kept for each profile on this PC, works
-  with a keyboard and a TV remote, and is Granary's own.
-- **When it ends:** the line under the player's title now says when the title will end on the clock, such as
-  "Ends 22:41", in Windows' 12 or 24 hour time. It counts in the playback speed, moves later while you pause, and
-  follows a seek. The minimized player shows it after the times while it has room. It's not shown when the length
-  isn't known, such as for a live stream.
-- **Turn off the title preview:** Settings → Navigation & Cards → Pages → Title preview at the top. Off, Home, For You
-  and Discover no longer open with a large picture of the title you point at, and start with their rows. It's on by
-  default and kept for each profile on this PC. A row your Silo server shows as the hero banner on Home stays; you set
-  that on Silo's web.
-- **How the stream plays, on the gear:** the player's settings button now has a dot in its gear. Green means your Silo
-  server sends the original video and audio, as Direct Play or Direct Streaming; amber means it transcodes the video,
-  the audio or both. It changes with the quality, version or audio track you pick, and a file you play directly shows
-  no dot. Screen readers and the button's tooltip say it too, for example "Playback settings, Direct Play". Playback
-  info's play method now says the same, so a stream whose audio alone is converted shows as Transcode there too.
-- **Theme music:** turn on Settings → Title Pages → Theme music, and a title's page plays its theme quietly while it is
-  open, when your Silo server has theme music for it, as in Silo's web and apps. Loop theme music repeats it. Going from a
-  series to one of its seasons keeps the music going; leaving the page or minimizing Granary fades it out, and playing a
-  title or a trailer stops it at once.
-- **Title art:** Settings → Title Pages → Show title art decides whether a title's page names it with its logo or with
-  its name in text, for this PC or, with Apply to all devices, for every device signed into your profile. Use server
-  default goes back to what your Silo server's admin set.
-- **Advisory age:** turn on Settings → Title Pages → Show advisory age, and a movie's or series' page names the age an
-  advisory service suggests for it beside its rating, such as "Common Sense 13+", as in Silo's web. It only shows the age.
-- **Rewind on resume:** resuming a movie or episode now starts exactly where you stopped, the time the Resume button
-  shows, instead of 7 seconds earlier. To get a few seconds of lead-in back, set Settings → Playback → This PC → Rewind
-  on resume, from 0 to 30 seconds. Silo's settings suggest 7 seconds; Granary starts at 0 on purpose, because you expect
-  to land where you stopped. A rewind never applies to Start over, a Watch Party, or the player's previous and next
-  episode.
-- **Start a Watch Party from a title's page:** the ⋮ menu of a movie, series, season or episode now has Start a Watch
-  Party. Pick whether the host picks or everyone votes, whether guests may pause, and for a series which episode, then
-  Create party & copy invite: the room opens with the title up next (or as the first suggestion of a vote), and the
-  invite link is on your clipboard. Nothing plays until you start it. It shows while your Silo server hosts Watch Party
-  and you're not in one already.
-- **Audio sync offset:** Settings → Playback → Sound, or Audio delay in the player's settings menu, moves the sound up to
-  5 seconds earlier or later than the picture, in steps of 50 ms, for Bluetooth headphones or an AV receiver that lag
-  behind. It's kept for this PC on your Silo server, and a title that plays follows a change at once.
-- **Box sets:** a film that belongs to a box set, such as a trilogy, now shows the set's films in release order on its
-  page, the film you're on marked "This film". Explore all opens the box set's own page, with its films, how many you've
-  watched, and Play for the next one you haven't seen. Box sets show when your Silo server has them turned on for the
-  library.
-- **Box sets in Search:** a search now lists the box sets that match ahead of people and titles, each marked "Box set"
-  with its number of films and how many you've watched, and opens the box set's page.
-- **Extras on title pages:** a movie's or series' page now shows the featurettes, deleted scenes and other extras your
-  Silo server has for it, in groups by kind as in Silo's web, right before Trailers & More. Click one, or press OK on a
-  TV remote, and it plays in Granary from the start.
-- **Missing and upcoming episodes:** a season's episodes now show a quiet card marked Missing where one is gone, such as
-  S01E05 between E04 and E06 after its file was deleted, and the episodes still to air after the last one, with the day.
-- **Discord status:** turn on Settings → Playback → This PC → Show what's playing in Discord, and while Granary plays,
-  your Discord status says what you're watching: the series or film, the season and episode, the poster and the time
-  left, with a link to the title on TMDB. Paused shows as paused, and the status goes when you stop. Only titles from
-  your Silo server show, never a file you play directly. It needs the Discord app on this PC, and the poster shows when
-  your Silo server has Requests turned on.
-- **Sleep timer:** the player's Sleep button pauses playback after 5 to 60 minutes, counting down on the button, or stops
-  at the end of the episode or movie instead of starting the next episode. A timer runs on into the next episode, and the
-  menu opens on the duration you started last on this PC.
-- **Play/Pause in the taskbar preview:** hover over Granary's taskbar button while something plays and the window's
-  preview has a Play/Pause button, also when Granary is minimized. In a Watch Party it asks the room, as the player's own
-  button does.
-- **Previous and Next episode in the taskbar preview:** while an episode plays, the preview has Previous episode and Next
-  episode either side of Play/Pause, and they start the episode before or after, as the player's own buttons do. They
-  are greyed at the season's first episode or the series' last, while an episode loads, and in a Watch Party, where the
-  room decides what plays. A movie or a file you play directly has Play/Pause alone.
-- **Cast & Crew in groups:** a title's Cast & Crew row now labels where its writers and its cast begin, with a thin line
-  and "WRITERS" or "CAST" right before their cards, after the director or the series' creators. Screen readers read each
-  card with its role, such as "Writer".
-- **Chapter keys:** in the player, Ctrl+Right jumps to the next chapter and Ctrl+Left back to the start of the chapter
-  that plays, or to the one before when you are in its first second. So you can skip an intro or the credits that the
-  file marks as a chapter before your Silo server offers Skip Intro.
-- **Home's hero banner:** a Home row set as the hero banner in Silo's web ("Use as hero banner", in Admin → Sections or
-  in your own Settings → Home Screen) now shows at the top of Home as a banner instead of as a row, as in Silo's web: its
-  titles one at a time with Play and More Info, moving on every 8 seconds. Arrows change the slide, the pause button stops
-  the slides until you press it again, and pointing at the banner, or moving to its buttons with the keyboard or a TV
-  remote, holds the slide meanwhile.
-  Without such a row, the top of Home still shows the title you point at.
-- **Star ratings:** a movie's or series' page has five stars after the heart, as on the web. Click a star to rate the
-  title from 1 to 5, or your current star to clear the rating; with a TV remote, move to a star and press OK. When your
-  profile has Send ratings turned on for a watch provider in the web's settings, your Silo server passes the rating on.
-- **Spoilers:** Settings → Title Pages → Blur unwatched episode images and Hide unwatched episode descriptions, the same
-  switches as in Silo's apps, blur the still and hide the description of episodes you haven't started, in a season's
-  episodes, More Episodes, Continue Watching, Next Up, Home's banner and the title at the top of Home, and the player's
-  Playing Next screen; on an episode's page, Show it brings its description back.
+- **Player buttons:** Settings → Playback → Player buttons shows, hides and orders the player's buttons. A hidden
+  button's keys are off too.
+- **When it ends:** the player shows the clock time the title ends, such as "Ends 22:41".
+- **Stream dot:** a dot in the player's gear is green for Direct Play or Direct Stream and amber while your Silo server
+  transcodes.
+- **Sleep timer:** pauses after 5 to 60 minutes, or at the end of the episode or movie.
+- **Audio sync offset:** moves the sound up to 5 seconds earlier or later, in Settings → Playback or the player's menu.
+- **Chapter keys:** Ctrl+Right and Ctrl+Left jump between chapters.
+- **Taskbar preview:** Play/Pause, and Previous and Next episode, in the preview of Granary's taskbar button.
+- **Discord status:** Settings → Playback → This PC can show what you're watching in Discord.
+- **Theme music:** a title's page can play its theme quietly (Settings → Title Pages), when your Silo server has one.
+- **Title art and advisory age:** Settings → Title Pages chooses a title's logo or its name, and can show an advisory
+  age such as "Common Sense 13+".
+- **Spoilers:** Settings → Title Pages can blur the pictures and hide the descriptions of episodes you haven't watched.
+- **Star ratings:** rate a movie or series from 1 to 5 stars on its page.
+- **Box sets:** a film's page lists its box set, which has its own page and shows in Search.
+- **Extras:** title pages show the featurettes, deleted scenes and other extras your Silo server has.
+- **Missing and upcoming episodes:** a season marks missing episodes and lists the ones still to air.
+- **Cast & Crew:** the row marks where the writers and the cast begin.
+- **Watch Party from a title's page:** its ⋮ menu starts a party with that title and copies the invite.
+- **Home's hero banner:** a Home row set as the hero banner on Silo's web slides through its titles at the top of Home.
+- **Title preview switch:** Settings → Navigation & Cards can turn off the large title preview at the top of Home, For
+  You and Discover.
 
 ### Changed
 
-- **Time left stays:** when you click the player's time to show the time left instead of the duration, Granary keeps
-  that on this PC. The next title, and the player after a restart, show the time left too, until you click it back.
-- **Player buttons:** Audio and Subtitles now sit side by side on the player's bar, with Chapters after them, and
-  the Audio button shows sound waves, the icon of Silo's web player, where it showed sliders.
-- **More Episodes** on an episode's page lists the whole season, the episode you're on included, so the row no longer
-  jumps from the episode before it to the one after. That episode is marked Now Viewing, as on Silo's web app, and
-  the row opens with it in the middle. With the keyboard or a TV remote, Down into the row lands on it.
+- **Resume** starts exactly where you stopped instead of 7 seconds earlier. Settings → Playback → This PC → Rewind on
+  resume brings a lead-in back.
+- **Time left stays:** the player remembers whether it shows the duration or the time left.
+- **Player bar:** Audio and Subtitles sit side by side, and Audio has the sound-wave icon of Silo's web player.
+- **More Episodes** shows the whole season, with the episode you're on marked Now Viewing.
 
 ### Fixed
 
-- A card you clicked no longer keeps its play button and menu showing when you come back with the mouse's Back
-  button, although the pointer is elsewhere.
-- In the player's Subtitle appearance, the Opacity boxes are no longer cut off at the right, and their number stands at
-  the right as on Silo's web.
-- The display no longer turns off while something plays. It stays on while a title plays or buffers, also minimized or
-  in the mini view; paused, it turns off after Windows' usual time again.
-- A card's badges in its right corners, such as the watched mark, are no longer cut off by two pixels at the right.
-- A TV remote's arrows work as soon as Granary has started into Home, and after you pick a profile with OK: focus starts
-  on the first card. Right after the start, the first arrow or OK shows where you are before anything moves.
-- A TV remote's OK switches tabs and picks choices, such as a library's Recommended, Library and Collections, where it
-  did nothing.
-- The mouse cursor no longer stays over the playing picture while you use a TV remote: it hides with the controls, also
-  when the remote's Back hides them, and only moving the mouse brings it back, not a key.
-- Dolby Vision files with an HDR10, HLG or SDR base layer play directly on a server that wants each base layer named,
-  where it converted them.
-- Saving mpv.conf or loading a preset no longer fails when Granary happens to be reading the file at that moment.
-- HDR and Dolby Vision films play directly on more graphics cards, because Granary now checks the film's own codec. A
-  card that decodes VP9 only in 8 bits had your Silo server convert every HDR film, HEVC ones too.
-- When the large picture at the top of For You or Requests' Discover goes, such as for another profile while its rows
-  load, the page moves up into its place, and Discover no longer keeps showing the title from before.
-- Granary takes your Silo server's accent colour and logo also when it couldn't reach the server at start, such as right
-  after waking the PC or connecting a VPN: it tries again until the server answers, where it kept its own red until the
-  next start. It also remembers each server's colour and logo, so they show at once the next time, and stay while the
-  server can't be reached.
-- Without an accent colour set on your Silo server, Granary uses the same light accent as Silo's web instead of red: Play,
-  progress, selection and the other accented parts are near-white with dark labels, also on the sign-in pages. A server
-  that sets red gets red. Errors and delete or end actions stay red, as on the web.
+- Granary takes your Silo server's accent colour and logo also when the server was out of reach at start, and
+  remembers them. Without an accent set on the server it uses Silo's web light accent instead of red.
+- The display no longer turns off while something plays.
+- HDR and Dolby Vision films play directly on more graphics cards and servers.
+- A TV remote works right after start and after picking a profile, its OK switches tabs and choices, and the mouse
+  cursor hides over the picture while you use it.
+- For You and Discover no longer keep an empty space or an old title where their preview was.
+- A card you clicked no longer stays highlighted when you come back with the mouse's Back button.
+- Saving mpv.conf or loading a preset no longer fails now and then.
+- The Opacity boxes in Subtitle appearance and the badges in a card's right corners are no longer cut off.
 
 ## [0.2.1] - 2026-11-05
 
