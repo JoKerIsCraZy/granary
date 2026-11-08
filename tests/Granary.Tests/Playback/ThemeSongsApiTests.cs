@@ -236,6 +236,39 @@ public sealed class ThemeSongsApiTests
         }
     }
 
+    [Theory]
+    [InlineData("http://localhost./stream/theme/abc")]
+    [InlineData("http://LOCALHOST./stream/theme/abc")]
+    [InlineData("http://foo.localhost/stream/theme/abc")]
+    [InlineData("http://foo.localhost./stream/theme/abc")]
+    [InlineData("http://127.0.0.1./stream/theme/abc")]
+    [InlineData("http://127.1.2.3./stream/theme/abc")]
+    [InlineData("http://0.0.0.0./stream/theme/abc")]
+    [InlineData("http://169.254.169.254./latest")]
+    [InlineData("http://2130706433./stream/theme/abc")]
+    [InlineData("http://[2002:7f00:1::]/stream/theme/abc")]
+    [InlineData("http://[2002:a9fe:a9fe::]/latest")]
+    [InlineData("http://[64:ff9b::7f00:1]/stream/theme/abc")]
+    [InlineData("http://[::7f00:1]/stream/theme/abc")]
+    public void ThisPC_SpelledAnotherWay_IsNeverFetched(string url)
+    {
+        foreach (string server in new[] { "http://silo.example", "http://192.168.1.10:8095" })
+        {
+            Assert.Null(PlaybackUrl.ResolveTheme(new Uri(server), url, ThemeOrigins.Authorized));
+            Assert.Null(PlaybackUrl.ResolveTheme(new Uri(server), url, ThemeOrigins.Routed));
+        }
+    }
+
+    [Theory]
+    [InlineData("http://192.168.1.20./stream/theme/abc")]
+    [InlineData("http://[2002:c0a8:114::]/stream/theme/abc")]
+    [InlineData("http://[64:ff9b::c0a8:114]/stream/theme/abc")]
+    public void APrivateNodeSpelledAnotherWay_IsStillPrivate(string url)
+    {
+        Assert.Null(PlaybackUrl.ResolveTheme(new Uri("http://silo.example"), url, ThemeOrigins.Routed));
+        Assert.NotNull(PlaybackUrl.ResolveTheme(new Uri("http://192.168.1.10:8095"), url, ThemeOrigins.Routed));
+    }
+
     [Fact]
     public void WithoutRouting_OnlyTheServersOwnOriginIsFetched()
     {

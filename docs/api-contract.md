@@ -1308,7 +1308,9 @@ plays its first theme, as the web's `useThemeMusic.ts` and the apps do (docs/arc
   proxy node's origin (on the node, `/stream/theme/{token}`; `PlaybackUrl.ResolveTheme`, `ThemeOrigins`). A node is taken as
   a video stream's is (9.1, `authorized_media_origins_v1`):
   - Always: the server's own scheme, no user info, no fragment, and never this machine, a link-local, multicast or
-    unspecified address, also written as an IPv4-mapped IPv6 address.
+    unspecified address, however it is written: with the root's trailing dot (`127.0.0.1.`, `localhost.`), as `localhost`
+    or a name under it, as a single number, or inside an IPv6 address (IPv4-mapped, IPv4-compatible, 6to4 `2002::/16`,
+    NAT64 `64:ff9b::/96`), which counts as the IPv4 address it carries (`NetworkAddresses`).
   - While the server's playback capabilities (`GET /api/v2/playback/capabilities`, read with the themes capability when it
     says `routed`) offer `authorized_media_origins_v1`, the server vouches for the nodes it names, as for video: any
     other address is taken, a private one included. The server names no list of its origins; the offer is the check, as
