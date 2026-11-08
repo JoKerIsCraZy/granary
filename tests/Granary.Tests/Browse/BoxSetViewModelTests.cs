@@ -336,6 +336,28 @@ public sealed class BoxSetViewModelTests
     }
 
     [Fact]
+    public async Task Play_NeverOffersAFilmItCannotOpen()
+    {
+        // A film without an id gets no card, so Play passes it over too.
+        Answer(Ok("""
+            { "id": "1241", "library_id": "3", "title": "Masterplan Box Set", "movie_count": 3, "played_count": 1,
+              "items": [
+                { "content_id": "movie-tmdb-1000", "type": "movie", "title": "Groundwork", "genres": [], "keywords": [], "status": "matched",
+                  "user_state": { "played": true, "is_favorite": false, "in_watchlist": false, "not_interested": false } },
+                { "content_id": "", "type": "movie", "title": "Lost Reel", "genres": [], "keywords": [], "status": "matched" },
+                { "content_id": "movie-tmdb-1003", "type": "movie", "title": "Endgame", "genres": [], "keywords": [], "status": "matched" }
+              ] }
+            """));
+
+        var page = await LoadAsync();
+
+        Assert.Equal(["Groundwork", "Endgame"], page.Films.Select(c => c.Title));
+        Assert.Equal("Continue · Endgame", page.PlayLabel);
+        page.PlayCommand.Execute(null);
+        Assert.Equal(BoxSetPayloads.LastId, Assert.IsType<PlayRequest>(Assert.Single(_navigation.Navigations).Parameter).ContentId);
+    }
+
+    [Fact]
     public async Task AwayFromThePage_ChangesReadNothing()
     {
         Answer(Ok(BoxSetPayloads.BoxSet()));

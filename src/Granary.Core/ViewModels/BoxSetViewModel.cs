@@ -288,8 +288,10 @@ public sealed partial class BoxSetViewModel : ObservableObject
         BackdropUrl = server is null ? null : ArtworkUrl.Resolve(server, boxSet?.BackdropUrl);
         BackdropThumbhash = boxSet?.BackdropThumbhash ?? "";
         Facts = boxSet is null ? [] : [.. BoxSetText.Facts(boxSet).Select(fact => new DetailChip(fact.ToUpperInvariant()))];
-        Films = boxSet is null || server is null ? [] : [.. boxSet.Items.Where(film => film.ContentId.Length > 0).Select(film => MediaCardFactory.Poster(film, server))];
-        _next = boxSet is null ? null : BoxSetText.NextFilm(boxSet.Items);
+        // A film without an id could not be opened or played: it gets no card, and Play passes it over.
+        IReadOnlyList<CatalogItem> films = boxSet is null ? [] : [.. boxSet.Items.Where(film => film.ContentId.Length > 0)];
+        Films = server is null ? [] : [.. films.Select(film => MediaCardFactory.Poster(film, server))];
+        _next = BoxSetText.NextFilm(films);
         PlayLabel = boxSet is not null && _next is { } next ? BoxSetText.PlayLabel(boxSet, next) : "";
     }
 }
