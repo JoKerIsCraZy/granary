@@ -184,28 +184,36 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
     [Fact]
     public async Task Progress_UpdatesTheRowInPlace()
     {
+        // A UI thread of its own, as the app's: the refreshes a running transfer posts run one after another, never side by side.
+        using var ui = new SerialDispatcher();
         await AddFilmAsync("dl_1", "Example Movie", DownloadState.Queued);
         var body = _h.ServeGated("dl_1", DownloadPayloads.Source(3000));
-        var page = await AttachedAsync(_h.StartQueue());
-        var row = Row(page, "dl_1");
-        await Until(() => row.StatusText == "Downloading · 0%", "the row said it is downloading");
-        var sections = page.Sections;
+        var page = Page(_h.StartQueue(), ui);
+        await ui.RunAsync(() =>
+        {
+            page.Attach();
+            return page.SpaceRead;
+        });
+        var row = ui.Read(() => Row(page, "dl_1"));
+        await Until(() => ui.Read(() => row.StatusText) == "Downloading · 0%", "the row said it is downloading");
+        var sections = ui.Read(() => page.Sections);
 
         body.Release(1800);
 
-        await Until(() => row.StatusText == "Downloading · 60%", "the row showed the progress");
-        Assert.Same(sections, page.Sections);
-        Assert.Same(row, Row(page, "dl_1"));
-        Assert.True(row.ShowsProgress);
-        Assert.Equal(0.6, row.Progress, 3);
+        await Until(() => ui.Read(() => row.StatusText) == "Downloading · 60%", "the row showed the progress");
+        Assert.Same(sections, ui.Read(() => page.Sections));
+        Assert.Same(row, ui.Read(() => Row(page, "dl_1")));
+        Assert.True(ui.Read(() => row.ShowsProgress));
+        Assert.Equal(0.6, ui.Read(() => row.Progress), 3);
 
         _h.Time.Advance(TimeSpan.FromSeconds(1));
         body.Release(600);
 
-        await Until(() => row.StatusText == "Downloading · 80%", "the row showed the next progress");
-        Assert.Same(sections, page.Sections);
+        await Until(() => ui.Read(() => row.StatusText) == "Downloading · 80%", "the row showed the next progress");
+        Assert.Same(sections, ui.Read(() => page.Sections));
         // 2400 bytes so far.
-        Assert.StartsWith("2.3 KB used · ", page.SpaceText, StringComparison.Ordinal);
+        Assert.StartsWith("2.3 KB used · ", ui.Read(() => page.SpaceText), StringComparison.Ordinal);
+        Assert.Empty(ui.Failures);
     }
 
     [Fact]
