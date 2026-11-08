@@ -12,6 +12,11 @@ release's section is what its update says it changes (docs/release.md).
   "Ends 22:41", in Windows' 12 or 24 hour time. It counts in the playback speed, moves later while you pause, and
   follows a seek. The minimized player shows it after the times while it has room. It's not shown when the length
   isn't known, such as for a live stream.
+- **Rewind on resume:** resuming a movie or episode now starts exactly where you stopped, the time the Resume button
+  shows, instead of 7 seconds earlier. To get a few seconds of lead-in back, set Settings → Playback → This PC → Rewind
+  on resume, from 0 to 30 seconds. Silo's settings suggest 7 seconds; Granary starts at 0 on purpose, because you expect
+  to land where you stopped. A rewind never applies to Start over, a Watch Party, or the player's previous and next
+  episode.
 - **Start a Watch Party from a title's page:** the ⋮ menu of a movie, series, season or episode now has Start a Watch
   Party. Pick whether the host picks or everyone votes, whether guests may pause, and for a series which episode, then
   Create party & copy invite: the room opens with the title up next (or as the first suggestion of a vote), and the

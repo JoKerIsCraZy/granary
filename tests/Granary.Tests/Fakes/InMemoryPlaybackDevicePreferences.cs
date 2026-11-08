@@ -42,6 +42,17 @@ internal sealed class InMemoryPlaybackDevicePreferences : IPlaybackDevicePrefere
         return Task.CompletedTask;
     }
 
+    public int ResumeRewindSeconds { get; set; } = ResumeRewind.DefaultSeconds;
+
+    public List<int> SavedResumeRewindSeconds { get; } = [];
+
+    public Task SetResumeRewindSecondsAsync(int seconds)
+    {
+        ResumeRewindSeconds = seconds;
+        SavedResumeRewindSeconds.Add(seconds);
+        return Task.CompletedTask;
+    }
+
     public bool DiscordStatus { get; set; }
 
     public List<bool> SavedDiscordStatus { get; } = [];

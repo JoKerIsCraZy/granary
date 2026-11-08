@@ -433,7 +433,9 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
 [api-contract.md](api-contract.md), sections 8 to 10.
 
 - **Before the plan** (`PlaybackStarter`): watch detail, the file played last (else the first whole file), the
-  start position (the resume point minus 7 s from 30 s on, 0 to start over, sent explicitly), the profile's
+  start position (the resume point, minus this PC's Rewind on resume from 30 s on as Android rewinds (`ResumeRewind`,
+  read at each start, 0 by default), 0 to start over, sent explicitly; restarts and file switches keep the exact
+  position), the profile's
   quality and bitrate cap (`PlaybackPreferencesReader`), the server's capabilities, and the device report:
   `MpvDeviceProbe` reads the GPU's D3D11VA decoder profiles, and logs them once; HEVC, VP9 and AV1 count only with
   hardware, unless this PC's choice of direct play without hardware decoding (`IPlaybackDevicePreferences`, read once when
@@ -550,7 +552,8 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   by themselves than Settings' Still watching prompt allows (`AutoPlayStreak`, Android's pass-out gate; 3 by default,
   Unlimited never holds back), and the sleep timer does not hold it (`NextUpFlow.Hold`). The next episode starts as a new playback
   from 0; the saved track preferences carry the picks over. The transport's previous and next episode buttons start
-  theirs from the resume point, as the web player does for the viewer; the previous one is the largest episode before
+  theirs from the resume point, as the web player does for the viewer, and exactly there, never rewound, as Android
+  changes episode (`PlayRequest.ResumeWithoutRewind`); the previous one is the largest episode before
   this one in the current season that has a readable file, as the web finds it, none before the season's first.
 - **Sleep timer** (`PlayerViewModel.SleepTimer.cs`; the apps' `SleepTimer` and `SleepTimerController`, the web's
   `SleepTimerMenu`): a duration counts on the player's `TimeProvider` once a second, whatever plays, pauses or loads

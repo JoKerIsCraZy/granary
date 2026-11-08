@@ -27,6 +27,12 @@ public interface IPlaybackDevicePreferences
     /// </summary>
     int PassoutThreshold { get; }
 
+    /// <summary>
+    /// How many seconds before the saved point a resume starts, 0 to 30 (<c>player.resume_rewind_seconds</c>, client-local
+    /// in the contract); 0, the exact point, by default (<see cref="ResumeRewind.DefaultSeconds"/>).
+    /// </summary>
+    int ResumeRewindSeconds { get; }
+
     /// <summary>Discord's status shows what plays (<see cref="ViewModels.Player.PlayerRichPresence"/>); off by default.</summary>
     bool DiscordStatus { get; }
 
@@ -53,6 +59,9 @@ public interface IPlaybackDevicePreferences
 
     Task SetPassoutThresholdAsync(int episodes);
 
+    /// <summary>Saves <see cref="ResumeRewindSeconds"/>, brought into 0 to 30 first.</summary>
+    Task SetResumeRewindSecondsAsync(int seconds);
+
     Task SetDiscordStatusAsync(bool enabled);
 
     Task SetSleepTimerButtonAsync(bool shown);
@@ -73,9 +82,10 @@ public enum PlayerUpDown
 
 /// <summary>
 /// <see cref="IPlaybackDevicePreferences"/> in <c>playback-device.json</c> in the data directory
-/// (<c>{ "decodes_in_software": true, "up_down": "volume", "time_left": true, "passout_threshold": 5, "discord_status": true,
-/// "sleep_timer_button": false }</c>). Without the file, or with one that cannot be read, direct play needs the GPU, Up and
-/// Down show the controls and menus, the player's time shows the duration, the player waits after three episodes,
+/// (<c>{ "decodes_in_software": true, "up_down": "volume", "time_left": true, "passout_threshold": 5,
+/// "resume_rewind_seconds": 7, "discord_status": true, "sleep_timer_button": false }</c>).
+/// Without the file, or with one that cannot be read, direct play needs the GPU, Up and Down show the controls and menus,
+/// the player's time shows the duration, the player waits after three episodes, a resume lands on the saved point,
 /// Discord's status stays as it is and the player has its Sleep button, as by default; a value it does not know, or one an
 /// older file lacks, is the default. One that cannot be written is logged, and the choice still holds for this run. Files
 /// are written off the caller's thread, which is the UI's.
@@ -94,6 +104,7 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
     private volatile PlayerUpDown _upDown;
     private volatile bool _timeLeft;
     private volatile int _passoutThreshold;
+    private volatile int _resumeRewindSeconds;
     private volatile bool _discordStatus;
     private volatile bool _sleepTimerButton;
     private Task _latestSave = Task.CompletedTask;
@@ -110,6 +121,9 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
         _passoutThreshold = file?.PassoutThreshold is { } episodes and >= 0 and <= AutoPlayStreak.MaxThreshold
             ? episodes
             : AutoPlayStreak.DefaultThreshold;
+        _resumeRewindSeconds = file?.ResumeRewindSeconds is { } seconds and >= 0 and <= ResumeRewind.MaxSeconds && double.IsInteger(seconds)
+            ? (int)seconds
+            : ResumeRewind.DefaultSeconds;
         _discordStatus = file?.DiscordStatus == true;
         // Off only when turned off: a file from before the switch shows the button.
         _sleepTimerButton = file?.SleepTimerButton != false;
@@ -124,6 +138,8 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
     public bool TimeLeft => _timeLeft;
 
     public int PassoutThreshold => _passoutThreshold;
+
+    public int ResumeRewindSeconds => _resumeRewindSeconds;
 
     public bool DiscordStatus => _discordStatus;
 
@@ -175,6 +191,12 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
     public Task SetPassoutThresholdAsync(int episodes)
     {
         _passoutThreshold = episodes;
+        return QueueSave();
+    }
+
+    public Task SetResumeRewindSecondsAsync(int seconds)
+    {
+        _resumeRewindSeconds = Math.Clamp(seconds, 0, ResumeRewind.MaxSeconds);
         return QueueSave();
     }
 
@@ -230,6 +252,7 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
                 var file = new PlaybackDeviceFile(_decodesInSoftware, _upDown == PlayerUpDown.Volume ? VolumeValue : ControlsValue, _passoutThreshold)
                 {
                     TimeLeft = _timeLeft,
+                    ResumeRewindSeconds = _resumeRewindSeconds,
                     DiscordStatus = _discordStatus,
                     SleepTimerButton = _sleepTimerButton,
                 };
@@ -258,9 +281,42 @@ internal sealed record PlaybackDeviceFile(bool? DecodesInSoftware, string? UpDow
 {
     public bool? TimeLeft { get; init; }
 
+    // Missing from an older file: a resume then lands on the saved point, the default. Read leniently, so that 7.5,
+    // "seven" or a list typed into the file only loses this value, not the file's other choices.
+    [JsonConverter(typeof(AnyNumberConverter))]
+    public double? ResumeRewindSeconds { get; init; }
+
     public bool? DiscordStatus { get; init; }
 
     public bool? SleepTimerButton { get; init; }
+}
+
+/// <summary>A JSON number as itself; any other value, an object or a list included, as none.</summary>
+internal sealed class AnyNumberConverter : JsonConverter<double?>
+{
+    public override double? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        if (reader.TokenType == JsonTokenType.Number && reader.TryGetDouble(out double number))
+        {
+            return number;
+        }
+        // Past the whole value, so the next member reads as it should.
+        reader.Skip();
+        return null;
+    }
+
+    public override void Write(Utf8JsonWriter writer, double? value, JsonSerializerOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(writer);
+        if (value is { } number)
+        {
+            writer.WriteNumberValue(number);
+        }
+        else
+        {
+            writer.WriteNullValue();
+        }
+    }
 }
 
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower, WriteIndented = true)]
