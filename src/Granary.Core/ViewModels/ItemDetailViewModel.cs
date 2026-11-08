@@ -179,13 +179,14 @@ public sealed partial class ItemDetailViewModel : ObservableObject
     [ObservableProperty]
     public partial string BackdropThumbhash { get; private set; } = "";
 
+    /// <summary>The logo the hero names the title with; none when the profile turned title art off (ItemDetailViewModel.TitlePage.cs).</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowsLogo), nameof(ShowsTitleText))]
     public partial Uri? LogoUrl { get; private set; }
 
     public bool ShowsLogo => LogoUrl is not null && !_logoFailed;
 
-    public bool ShowsTitleText => !ShowsLogo;
+    public bool ShowsTitleText => !ShowsLogo && !HoldsTitle;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasBreadcrumbs))]
@@ -502,7 +503,8 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         BackdropUrl = ArtworkUrl.Resolve(server, item.BackdropUrl);
         BackdropThumbhash = item.BackdropThumbhash ?? "";
         // An episode's logo would be its series': the episode's own title stays visible instead.
-        LogoUrl = isEpisode ? null : ArtworkUrl.Resolve(server, item.LogoUrl);
+        _titleLogo = isEpisode ? null : ArtworkUrl.Resolve(server, item.LogoUrl);
+        ShowTitleArt();
         Breadcrumbs = DetailFacts.Breadcrumbs(item);
         Overview = item.Overview?.Trim() ?? "";
         ShowMetaLine();

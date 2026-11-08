@@ -573,6 +573,7 @@ Profile and device settings live on the server (manifest
 | `ui.card_presentation` | profile, profile_client, profile_device | `{ "poster_size": "standard", "caption": "title_metadata" }` | poster size and caption ([6.6.2](#662-poster-size-and-caption)) |
 | `catalog.hide_unwatched_episode_images`, `catalog.hide_unwatched_episode_overviews` | profile | `false`, `false` | episode spoilers ([6.6.3](#663-episode-spoilers)) |
 | `catalog.show_advisory_age` | profile | `false` | a title's suggested age on its page ([6.6.4](#664-title-pages)) |
+| `ui.title_art` | profile, profile_device (the profile's wins) | `true`, or the administrator's | a title's page names it with its logo ([6.6.4](#664-title-pages)) |
 
 #### 6.6.1 Card badges
 
@@ -648,6 +649,19 @@ server's contract does not know (`422`, then read one by one, `ProfileSettings`)
 - `catalog.show_advisory_age` (revision 10, `profile` only, default `false`): a movie's or series' page names its
   `advisory_age` beside the rating ([7.6](#76-item-detail-get-apiv2catalogitemsid)), as the web's `useShowAdvisoryAge` and
   `MetadataBadges`. It only shows the age; the profile's `max_advisory_age` limit is the server's.
+- `ui.title_art` (revision 16, default `true`, `admin_default`): a title's page names it with its `logo_url` rather than its
+  name in text. Its resolution order is `profile`, then `profile_device`, then the default: a profile value is "Apply to all
+  devices" and wins on every device (the manifest's notes, the web's `useTitleArtSetting`). Anything but `false` reads as on;
+  a server without the key, or a failed first read, shows logos. Until the profile's value is read, a page with a logo holds
+  its title, neither logo nor text. Writes:
+  - Show title art: `PUT …?scope=profile_device`, or `…?scope=profile` while the source is `profile`.
+  - Apply to all devices on: `PUT …?scope=profile` with the current value. Off: `PUT …?scope=profile_device` with the
+    current value, then `DELETE …?scope=profile` (skipped once another profile acts), so this PC keeps its look and the
+    others go back to their own or the default.
+  - Use server default (shown while the source is not `default`): `DELETE …?scope=profile_device`, and `…?scope=profile`
+    while that is the source, then read the effective value again; a `404` means there was nothing to clear.
+
+  Only a title's page follows it, as on the web; Home's hero keeps the logo.
 
 ## 7. Catalog
 

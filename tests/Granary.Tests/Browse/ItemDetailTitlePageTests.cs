@@ -91,6 +91,77 @@ public sealed class ItemDetailTitlePageTests
     }
 
     [Fact]
+    public async Task WithTitleArt_TheLogoNamesTheTitle()
+    {
+        var fixture = new ItemDetailFixture().Movie();
+        fixture.TitlePage = await TitlePageSwitches.StartedAsync(TitlePageSettingsTests.Answer(titleArt: true));
+
+        var detail = await OpenAsync(fixture, MovieId);
+
+        Assert.NotNull(detail.LogoUrl);
+        Assert.True(detail.ShowsLogo);
+        Assert.False(detail.ShowsTitleText);
+        Assert.False(detail.HoldsTitle);
+    }
+
+    [Fact]
+    public async Task WithoutTitleArt_TheNameShowsInText()
+    {
+        var fixture = new ItemDetailFixture().Movie();
+        fixture.TitlePage = await TitlePageSwitches.StartedAsync(TitlePageSettingsTests.Answer(titleArt: false));
+
+        var detail = await OpenAsync(fixture, MovieId);
+
+        Assert.Null(detail.LogoUrl);
+        Assert.False(detail.ShowsLogo);
+        Assert.True(detail.ShowsTitleText);
+    }
+
+    [Fact]
+    public async Task UntilTheChoiceIsKnown_TheTitleIsHeld_ThenItsLogoShows()
+    {
+        var fixture = new ItemDetailFixture().Movie();
+        var settings = TitlePageSwitches.Unread(TitlePageSettingsTests.Answer(titleArt: true));
+        fixture.TitlePage = settings;
+        var detail = await OpenAsync(fixture, MovieId);
+
+        Assert.True(detail.HoldsTitle);
+        Assert.False(detail.ShowsLogo);
+        Assert.False(detail.ShowsTitleText);
+
+        await settings.StartAsync();
+
+        Assert.False(detail.HoldsTitle);
+        Assert.True(detail.ShowsLogo);
+    }
+
+    [Fact]
+    public async Task ATitleWithoutALogo_IsNeverHeld()
+    {
+        var fixture = new ItemDetailFixture().Episode();
+        fixture.TitlePage = TitlePageSwitches.Unread(TitlePageSettingsTests.Answer());
+
+        var detail = await OpenAsync(fixture, EpisodeId);
+
+        Assert.False(detail.HoldsTitle);
+        Assert.True(detail.ShowsTitleText);
+    }
+
+    [Fact]
+    public async Task TurningTitleArtOff_OnAnOpenPage_ShowsTheName()
+    {
+        var fixture = new ItemDetailFixture().Movie();
+        var settings = await TitlePageSwitches.StartedAsync(TitlePageSettingsTests.Answer(titleArt: true));
+        fixture.TitlePage = settings;
+        var detail = await OpenAsync(fixture, MovieId);
+
+        await settings.SetShowsTitleArtAsync(false);
+
+        Assert.False(detail.ShowsLogo);
+        Assert.True(detail.ShowsTitleText);
+    }
+
+    [Fact]
     public async Task ALeftPage_NoLongerFollowsTheSwitch()
     {
         var fixture = new ItemDetailFixture().Movie().Get(ItemPath(MovieId), Ok(AdvisedMovie));

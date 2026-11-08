@@ -465,7 +465,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     scroll over it. It fades to black toward the left (100 % → 92 % at a quarter → 25 % at 65 % → clear) and
     down (clear at 35 % → black at 82 %). Its thumbhash shows first, then the image fades in.
   - Hero, 48 px in, 100 from the top, 14 apart: season and episode
-    breadcrumbs; the logo at most 140 high and 520 wide, taking no room until it is in (or the title in 50 Bold); a
+    breadcrumbs; the logo at most 140 high and 520 wide, taking no room until it is in (or the title in 50 Bold, also
+    whenever Title Pages → Show title art is off; until the profile's choice is read, a title with a logo shows neither); a
     season's own name; one meta line in 17 at 60 % white ("2026 · 1h 58m · R · Mystery, Thriller", a series' air years,
     rating, regular seasons and genres, an episode's "S2 E7 · 54m · 30 Oct 2026"; with Title Pages → Show advisory age a
     movie's or series' suggested age follows its rating in the web's words, "Common Sense 13+", "MDBList 16+" or "13+");
@@ -988,7 +989,15 @@ says why above the sections.
   as 32 px ghost buttons (off at the ends), and the switch; a hidden entry is dimmed. Changes show in the sidebar at
   once.
 - **Title Pages** (`TitlePagesSettingsView` on `TitlePagesSettingsViewModel`, the web's page of that name and its groups
-  in its order): "What a movie or show page shows and plays when you open it.", then Spoilers ("Applies to
+  in its order): "What a movie or show page shows and plays when you open it.", then Title ("How a movie or show is named
+  at the top of its page.", the web's `TitleArtSettingsGroup`) with "Show title art" ("Use logo artwork as the title when
+  available.") and "Apply to all devices" ("Use this choice on every device signed into this profile."). Under them, in 13
+  px: with Apply to all devices on, in a box of white 5 % with the info icon, "Title art is on on every device signed into
+  this profile. Changing it here changes it everywhere. Turn off “Apply to all devices” to choose per device again."; with
+  neither PC nor profile chosen, muted, "Using the server default (on). Change it here to choose for this PC."; with this
+  PC's own choice "Only affects this PC. Your other devices keep their own setting." (the web says "browser" where
+  Granary says "PC"). A chosen value has "Use server default" with the reset icon under it. A refused change says "Could
+  not save the title art setting". Then Spoilers ("Applies to
   episodes you have not started, on every device that uses this profile.") with "Blur unwatched episode images" ("Blur an
   episode's thumbnail until you start watching it, so the image does not give away the story.") and "Hide unwatched episode
   descriptions" ("Hide an episode's description until you start watching it."). Each switch saves to the profile at once and

@@ -1,14 +1,15 @@
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Settings;
 
 namespace Granary.Core.ViewModels.Settings;
 
 /// <summary>
-/// Settings → Title Pages, as Silo's web has it (<c>pages/settings/TitlePagesSettings.tsx</c>): its Spoilers group, the
-/// profile's two switches (<see cref="EpisodeSpoilerSettings"/>), and its Age guidance (<see cref="TitlePageSettings"/>), each
-/// saved at once for the profile. While the spoiler switches cannot be edited, the page says why instead; a group the
-/// server does not keep is left out.
+/// Settings → Title Pages, as Silo's web has it (<c>pages/settings/TitlePagesSettings.tsx</c>): its Title group, as the web's
+/// <c>TitleArtSettingsGroup.tsx</c>, its Spoilers, the profile's two switches (<see cref="EpisodeSpoilerSettings"/>), and its
+/// Age guidance (<see cref="TitlePageSettings"/>), each saved at once. While the spoiler switches cannot be edited, the page
+/// says why instead; a group the server does not keep is left out.
 /// </summary>
 public sealed partial class TitlePagesSettingsViewModel : ObservableObject, IDisposable
 {
@@ -19,6 +20,9 @@ public sealed partial class TitlePagesSettingsViewModel : ObservableObject, IDis
 
     /// <summary>The web's words when a switch did not save.</summary>
     public const string SaveFailedText = "Failed to save title page setting";
+
+    /// <summary>The web's words when the title art did not save.</summary>
+    public const string TitleArtSaveFailedText = "Could not save the title art setting";
 
     private readonly EpisodeSpoilerSettings _settings;
     private readonly TitlePageSettings? _titlePage;
@@ -65,6 +69,47 @@ public sealed partial class TitlePagesSettingsViewModel : ObservableObject, IDis
         _ => "",
     };
 
+    /// <summary>The Title group shows: the server keeps "Show title art" for the profile.</summary>
+    public bool OffersTitleArt => Offers(TitlePageSettings.TitleArtKey);
+
+    /// <summary>"Show title art"; saved at once, for this PC or, with <see cref="TitleArtForAllDevices"/>, for the profile.</summary>
+    public bool ShowsTitleArt
+    {
+        get => _titlePage?.Shown.ShowsTitleArt ?? true;
+        set => _ = _titlePage?.SetShowsTitleArtAsync(value);
+    }
+
+    /// <summary>"Apply to all devices".</summary>
+    public bool TitleArtForAllDevices
+    {
+        get => _titlePage?.Shown.TitleArtForAllDevices ?? false;
+        set => _ = _titlePage?.SetTitleArtForAllDevicesAsync(value);
+    }
+
+    /// <summary>The web's note under the switches: which devices the choice covers, or that the server's default applies.</summary>
+    public string TitleArtNote => _titlePage?.Shown switch
+    {
+        { TitleArtForAllDevices: true, ShowsTitleArt: var on } =>
+            $"Title art is {OnOff(on)} on every device signed into this profile. Changing it here changes it everywhere. Turn off “Apply to all devices” to choose per device again.",
+        { TitleArtFollowsServerDefault: true, ShowsTitleArt: var on } when CanEditTitlePage =>
+            $"Using the server default ({OnOff(on)}). Change it here to choose for this PC.",
+        { TitleArtSource: Api.Settings.SettingScopes.ProfileDevice } => "Only affects this PC. Your other devices keep their own setting.",
+        _ => "",
+    };
+
+    /// <summary>The note speaks for the profile's choice on every device, in the web's highlighted box.</summary>
+    public bool TitleArtNoteIsBoxed => _titlePage?.Shown.TitleArtForAllDevices ?? false;
+
+    /// <summary>The note shows in plain muted text.</summary>
+    public bool ShowsTitleArtPlainNote => TitleArtNote.Length > 0 && !TitleArtNoteIsBoxed;
+
+    /// <summary>"Use server default" shows: this PC or the profile chose.</summary>
+    public bool CanUseServerDefaultTitleArt => CanEditTitlePage && _titlePage?.Shown.TitleArtFollowsServerDefault == false;
+
+    /// <summary>Clears this PC's choice, and the profile's while it applies to all devices, so the server's default applies.</summary>
+    [RelayCommand]
+    private Task UseServerDefaultTitleArtAsync() => _titlePage?.UseServerDefaultTitleArtAsync() ?? Task.CompletedTask;
+
     /// <summary>The Age guidance group shows: the server keeps "Show advisory age" for the profile.</summary>
     public bool OffersAdvisoryAge => Offers(TitlePageSettings.AdvisoryAgeKey);
 
@@ -79,7 +124,9 @@ public sealed partial class TitlePagesSettingsViewModel : ObservableObject, IDis
     public bool CanEditTitlePage => _titlePage?.CanEdit ?? false;
 
     /// <summary>Why the last change did not stick, above the switches, which went back; empty when it did.</summary>
-    public string ErrorMessage => _settings.SaveFailed || _titlePage?.SaveFailed == true ? SaveFailedText : "";
+    public string ErrorMessage => _titlePage is { SaveFailed: true, OnlyTitleArtFailed: true } && !_settings.SaveFailed
+        ? TitleArtSaveFailedText
+        : _settings.SaveFailed || _titlePage?.SaveFailed == true ? SaveFailedText : "";
 
     /// <summary>Reads the switches again, as the page opens: another device may have changed them.</summary>
     public Task LoadAsync() => Task.WhenAll(_settings.RefreshAsync(), _titlePage?.RefreshAsync() ?? Task.CompletedTask);
@@ -91,6 +138,16 @@ public sealed partial class TitlePagesSettingsViewModel : ObservableObject, IDis
     }
 
     private bool Offers(string key) => _titlePage?.Shown.Offered.Contains(key) ?? false;
+
+    private static string OnOff(bool? on) => on == false ? "off" : "on";
+
+    private void OnTitleArtNoteChanged()
+    {
+        OnPropertyChanged(nameof(TitleArtNote));
+        OnPropertyChanged(nameof(TitleArtNoteIsBoxed));
+        OnPropertyChanged(nameof(ShowsTitleArtPlainNote));
+        OnPropertyChanged(nameof(CanUseServerDefaultTitleArt));
+    }
 
     private void OnSettingsChanged(object? sender, PropertyChangedEventArgs e)
     {
@@ -117,11 +174,16 @@ public sealed partial class TitlePagesSettingsViewModel : ObservableObject, IDis
         switch (e.PropertyName)
         {
             case nameof(TitlePageSettings.Shown):
+                OnPropertyChanged(nameof(OffersTitleArt));
+                OnPropertyChanged(nameof(ShowsTitleArt));
+                OnPropertyChanged(nameof(TitleArtForAllDevices));
+                OnTitleArtNoteChanged();
                 OnPropertyChanged(nameof(OffersAdvisoryAge));
                 OnPropertyChanged(nameof(ShowsAdvisoryAge));
                 break;
             case nameof(TitlePageSettings.State):
                 OnPropertyChanged(nameof(CanEditTitlePage));
+                OnTitleArtNoteChanged();
                 break;
             case nameof(TitlePageSettings.SaveFailed):
                 OnPropertyChanged(nameof(ErrorMessage));

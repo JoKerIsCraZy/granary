@@ -18,6 +18,41 @@
         <InfoBar IsOpen="{x:Bind controls:SettingsText.Has(ViewModel.ErrorMessage), Mode=OneWay}" Severity="Error" IsClosable="False"
                  Message="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}" Margin="0,0,0,16" />
 
+        <!-- The web's TitleArtSettingsGroup.tsx: this PC's choice, the profile's for every device, or the server's default. -->
+        <controls:SettingsGroup Title="Title" Description="How a movie or show is named at the top of its page."
+                                Visibility="{x:Bind ViewModel.OffersTitleArt, Mode=OneWay}">
+            <StackPanel>
+                <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Show title art"
+                                      Description="Use logo artwork as the title when available.">
+                    <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.ShowsTitleArt, Mode=TwoWay}"
+                                  IsEnabled="{x:Bind ViewModel.CanEditTitlePage, Mode=OneWay}" AutomationProperties.Name="Show title art" />
+                </controls:SettingsRow>
+                <controls:SettingsRow Label="Apply to all devices" Description="Use this choice on every device signed into this profile.">
+                    <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.TitleArtForAllDevices, Mode=TwoWay}"
+                                  IsEnabled="{x:Bind ViewModel.CanEditTitlePage, Mode=OneWay}" AutomationProperties.Name="Apply to all devices" />
+                </controls:SettingsRow>
+                <Border Margin="0,12,0,0" Padding="14,12" CornerRadius="12" Background="#0DFFFFFF"
+                        Visibility="{x:Bind ViewModel.TitleArtNoteIsBoxed, Mode=OneWay}">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <FontIcon Glyph="&#xE946;" FontSize="16" VerticalAlignment="Top" Margin="0,2,0,0" Foreground="#D9FFFFFF"
+                                  AutomationProperties.AccessibilityView="Raw" />
+                        <TextBlock Text="{x:Bind ViewModel.TitleArtNote, Mode=OneWay}" FontSize="13" LineHeight="20" TextWrapping="Wrap"
+                                   MaxWidth="620" Foreground="#D9FFFFFF" />
+                    </StackPanel>
+                </Border>
+                <TextBlock Margin="0,12,0,0" Text="{x:Bind ViewModel.TitleArtNote, Mode=OneWay}" Style="{StaticResource SiloSettingsMutedTextStyle}"
+                           FontSize="13" Visibility="{x:Bind ViewModel.ShowsTitleArtPlainNote, Mode=OneWay}" />
+                <HyperlinkButton Margin="-4,8,0,0" Padding="4,2" FontSize="13" Foreground="{StaticResource SiloMutedBrush}"
+                                 Command="{x:Bind ViewModel.UseServerDefaultTitleArtCommand}"
+                                 Visibility="{x:Bind ViewModel.CanUseServerDefaultTitleArt, Mode=OneWay}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <FontIcon Glyph="&#xE7A7;" FontSize="13" AutomationProperties.AccessibilityView="Raw" />
+                        <TextBlock Text="Use server default" />
+                    </StackPanel>
+                </HyperlinkButton>
+            </StackPanel>
+        </controls:SettingsGroup>
+
         <controls:SettingsGroup Title="Spoilers" Description="Applies to episodes you have not started, on every device that uses this profile.">
             <StackPanel>
                 <TextBlock Text="Loading…" Style="{StaticResource SiloSettingsMutedTextStyle}" FontSize="14"

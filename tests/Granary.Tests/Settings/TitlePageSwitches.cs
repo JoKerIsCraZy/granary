@@ -19,9 +19,10 @@ internal static class TitlePageSwitches
     {
         var harness = new LibraryHarness();
         harness.Answer(TitlePageSettingsTests.EffectivePath, answer);
-        foreach (string key in new[] { TitlePageSettings.AdvisoryAgeKey })
+        foreach (string key in new[] { TitlePageSettings.AdvisoryAgeKey, TitlePageSettings.TitleArtKey })
         {
             harness.Silo.On(HttpMethod.Put, "api/v2/settings/values/" + key, ScriptedSilo.NoContent());
+            harness.Silo.On(HttpMethod.Delete, "api/v2/settings/values/" + key, ScriptedSilo.NoContent());
         }
         return TitlePageSettingsTests.Create(harness);
     }

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Granary.Core.Abstractions;
+using Granary.Core.Api;
 using Granary.Core.Api.Settings;
 using Granary.Core.Auth;
 using Granary.Core.ViewModels;
@@ -28,11 +29,13 @@ public enum TitlePageState
 public sealed partial class TitlePageSettings : ObservableObject
 {
     public const string AdvisoryAgeKey = "catalog.show_advisory_age";
+    public const string TitleArtKey = "ui.title_art";
 
-    private static readonly string[] Keys = [AdvisoryAgeKey];
+    private static readonly string[] Keys = [AdvisoryAgeKey, TitleArtKey];
 
     private readonly ISessionManager _session;
     private readonly IProfileSettings _settings;
+    private readonly SettingsApi _api;
     private readonly IUiDispatcher _dispatcher;
     private readonly ILogger<TitlePageSettings> _logger;
     private bool _following;
@@ -50,10 +53,12 @@ public sealed partial class TitlePageSettings : ObservableObject
     // The settings whose last save was refused or lost; a later save of the same one that lands takes it out.
     private readonly HashSet<string> _failedKeys = new(StringComparer.Ordinal);
 
-    public TitlePageSettings(ISessionManager session, IProfileSettings settings, IUiDispatcher dispatcher, ILogger<TitlePageSettings> logger)
+    public TitlePageSettings(ISessionManager session, IProfileSettings settings, SettingsApi api, IUiDispatcher dispatcher,
+        ILogger<TitlePageSettings> logger)
     {
         _session = session;
         _settings = settings;
+        _api = api;
         _dispatcher = dispatcher;
         _logger = logger;
     }
@@ -71,6 +76,9 @@ public sealed partial class TitlePageSettings : ObservableObject
     /// <summary>The last change was refused or lost, and went back to what the server has; the next change clears it.</summary>
     [ObservableProperty]
     public partial bool SaveFailed { get; private set; }
+
+    /// <summary>What did not save was the title art alone, which the web words apart.</summary>
+    public bool OnlyTitleArtFailed { get; private set; }
 
     /// <summary>The read or save in flight, for tests.</summary>
     internal Task Working { get; private set; } = Task.CompletedTask;
@@ -97,6 +105,83 @@ public sealed partial class TitlePageSettings : ObservableObject
     public Task SetShowsAdvisoryAgeAsync(bool shows) =>
         ChangeAsync(AdvisoryAgeKey, Shown with { ShowsAdvisoryAge = shows }, () => SaveForProfileAsync(AdvisoryAgeKey, shows, clearDevice: false),
             confirmed => confirmed with { ShowsAdvisoryAge = shows });
+
+    /// <summary>
+    /// "Show title art", as the web's <c>useTitleArtSetting</c> writes it: this PC's own value, or the profile's while "Apply to
+    /// all devices" is on.
+    /// </summary>
+    public Task SetShowsTitleArtAsync(bool shows)
+    {
+        if (Shown.ShowsTitleArt == shows)
+        {
+            return Task.CompletedTask;
+        }
+        string scope = Shown.TitleArtForAllDevices ? SettingScopes.Profile : SettingScopes.ProfileDevice;
+        return ChangeAsync(TitleArtKey, Shown with { ShowsTitleArt = shows, TitleArtSource = scope }, () => SetTitleArtAsync(shows, scope),
+            confirmed => confirmed with { ShowsTitleArt = shows, TitleArtSource = scope });
+    }
+
+    /// <summary>
+    /// "Apply to all devices": on writes the current choice for the profile, which outranks every device's. Off keeps this PC's
+    /// look as its own value first, then clears the profile's, so every other device goes back to its own or the default.
+    /// </summary>
+    public Task SetTitleArtForAllDevicesAsync(bool allDevices)
+    {
+        if (Shown.TitleArtForAllDevices == allDevices)
+        {
+            return Task.CompletedTask;
+        }
+        bool shows = Shown.ShowsTitleArt ?? true;
+        string scope = allDevices ? SettingScopes.Profile : SettingScopes.ProfileDevice;
+        var owner = Owner();
+        return ChangeAsync(TitleArtKey, Shown with { ShowsTitleArt = shows, TitleArtSource = scope }, async () =>
+        {
+            await SetTitleArtAsync(shows, scope);
+            // After a profile switch the clear would remove the other profile's choice.
+            if (!allDevices && Owner() == owner)
+            {
+                await ClearTitleArtAsync(SettingScopes.Profile);
+            }
+        }, confirmed => confirmed with { ShowsTitleArt = shows, TitleArtSource = scope });
+    }
+
+    /// <summary>
+    /// "Use server default": clears this PC's value, and the profile's while it applies to all devices, rather than saving the
+    /// default as a choice; then reads what the default is.
+    /// </summary>
+    public async Task UseServerDefaultTitleArtAsync()
+    {
+        bool allDevices = Shown.TitleArtForAllDevices;
+        var owner = Owner();
+        await ChangeAsync(TitleArtKey, Shown with { TitleArtSource = TitlePagePrefs.DefaultSource }, async () =>
+        {
+            await ClearTitleArtAsync(SettingScopes.ProfileDevice);
+            if (allDevices && Owner() == owner)
+            {
+                await ClearTitleArtAsync(SettingScopes.Profile);
+            }
+        }, confirmed => confirmed with { TitleArtSource = TitlePagePrefs.DefaultSource });
+        if (Owner() == owner)
+        {
+            await RefreshAsync();
+        }
+    }
+
+    private Task SetTitleArtAsync(bool shows, string scope) => _api.SetValueAsync(Server, TitleArtKey, Json(shows), scope);
+
+    private async Task ClearTitleArtAsync(string scope)
+    {
+        try
+        {
+            await _api.ClearValueAsync(Server, TitleArtKey, scope);
+        }
+        catch (SiloApiException ex) when (ex.Status == 404)
+        {
+            // Nothing to clear is what this asked for.
+        }
+    }
+
+    private Uri Server => _session.ActiveServer?.BaseUri ?? throw new InvalidOperationException("No server is signed in.");
 
     // Applies next at once and saves it in turn, for the profile acting when it was made; a refused or lost save puts back
     // what the server has.
@@ -127,6 +212,7 @@ public sealed partial class TitlePageSettings : ObservableObject
             {
                 // Refused or lost: once nothing else is on its way, back to what was saved, then what the server has. This save
                 // is the last one on its way, so the read does not wait for it.
+                OnlyTitleArtFailed = _failedKeys.All(failed => failed == TitleArtKey);
                 _failedKeys.Clear();
                 SaveFailed = true;
                 if (_readFor == Owner())
@@ -234,7 +320,9 @@ public sealed partial class TitlePageSettings : ObservableObject
             _loadedFor = null;
             if (_readFor != owner)
             {
+                // Nothing of the profile's is known: the contract's defaults, so the page names its title with its logo.
                 State = TitlePageState.Unavailable;
+                Shown = _confirmed = TitlePagePrefs.Defaults;
             }
             return;
         }

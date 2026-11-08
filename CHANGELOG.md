@@ -8,6 +8,9 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Added
 
+- **Title art:** Settings → Title Pages → Show title art decides whether a title's page names it with its logo or with
+  its name in text, for this PC or, with Apply to all devices, for every device signed into your profile. Use server
+  default goes back to what your Silo server's admin set.
 - **Advisory age:** turn on Settings → Title Pages → Show advisory age, and a movie's or series' page names the age an
   advisory service suggests for it beside its rating, such as "Common Sense 13+", as in Silo's web. It only shows the age.
 - **Start a Watch Party from a title's page:** the ⋮ menu of a movie, series, season or episode now has Start a Watch

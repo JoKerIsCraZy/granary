@@ -13,6 +13,7 @@ public sealed class TitlePageSettingsTests
 {
     internal const string EffectivePath = "api/v2/settings/values/effective";
     private const string AdvisoryPath = "api/v2/settings/values/catalog.show_advisory_age";
+    private const string TitleArtPath = "api/v2/settings/values/ui.title_art";
 
     private readonly LibraryHarness _harness = new();
 
@@ -20,18 +21,25 @@ public sealed class TitlePageSettingsTests
     {
         _harness.Answer(EffectivePath, Answer());
         _harness.Silo.On(HttpMethod.Put, AdvisoryPath, ScriptedSilo.NoContent());
+        _harness.Silo.On(HttpMethod.Put, TitleArtPath, ScriptedSilo.NoContent());
+        _harness.Silo.On(HttpMethod.Delete, TitleArtPath, ScriptedSilo.NoContent());
     }
 
     /// <summary>The effective values of the Title Pages settings, as the server answers them.</summary>
-    internal static string Answer(bool advisory = false) => $$"""
+    internal static string Answer(bool advisory = false, bool titleArt = true, string titleArtSource = "default") => $$"""
         { "items": [
-            { "key": "catalog.show_advisory_age", "source": "{{(advisory ? "profile" : "default")}}", "value": {{(advisory ? "true" : "false")}} }
+            { "key": "catalog.show_advisory_age", "source": "{{(advisory ? "profile" : "default")}}", "value": {{(advisory ? "true" : "false")}} },
+            { "key": "ui.title_art", "source": "{{titleArtSource}}", "value": {{(titleArt ? "true" : "false")}} }
           ], "revision": 6 }
         """;
 
     internal static TitlePageSettings Create(LibraryHarness harness) =>
         new(harness.Session, new ProfileSettings(new SettingsApi(harness.Silo.Http), harness.Session, harness.Logs.For<ProfileSettings>()),
-            new ImmediateDispatcher(), harness.Logs.For<TitlePageSettings>());
+            new SettingsApi(harness.Silo.Http), new ImmediateDispatcher(), harness.Logs.For<TitlePageSettings>());
+
+    private List<string> TitleArtWrites() =>
+        [.. _harness.Silo.Sent.Where(r => r.Uri.AbsolutePath.EndsWith("/ui.title_art", StringComparison.Ordinal))
+            .Select(r => $"{r.Method} {r.Uri.Query} {r.Body}".TrimEnd())];
 
     private TitlePageSettings Create() => Create(_harness);
 
@@ -279,5 +287,226 @@ public sealed class TitlePageSettingsTests
 
         Assert.False(settings.Shown.ShowsAdvisoryAge);
         Assert.Equal(TitlePageState.Loading, settings.State);
+    }
+
+    [Fact]
+    public async Task TitleArt_IsNotKnown_UntilTheProfilesChoiceIsRead()
+    {
+        _harness.Answer(EffectivePath, Answer(titleArt: false, titleArtSource: "profile_device"));
+        var settings = Create();
+
+        Assert.Null(settings.Shown.ShowsTitleArt);
+        await settings.StartAsync();
+
+        Assert.False(settings.Shown.ShowsTitleArt);
+        Assert.Equal("profile_device", settings.Shown.TitleArtSource);
+        Assert.False(settings.Shown.TitleArtForAllDevices);
+        Assert.False(settings.Shown.TitleArtFollowsServerDefault);
+    }
+
+    [Fact]
+    public async Task TheServersDefault_Applies_WithoutAChoice()
+    {
+        _harness.Answer(EffectivePath, Answer(titleArt: false));
+        var settings = Create();
+
+        await settings.StartAsync();
+
+        Assert.False(settings.Shown.ShowsTitleArt);
+        Assert.True(settings.Shown.TitleArtFollowsServerDefault);
+    }
+
+    [Fact]
+    public async Task AnOlderServer_OrAFailedRead_NamesTitlesWithTheirLogos()
+    {
+        _harness.Silo.On(HttpMethod.Get, EffectivePath, ScriptedSilo.Problem(422, "unknown_setting"));
+        var older = Create();
+        await older.StartAsync();
+        var failing = new LibraryHarness();
+        failing.Silo.On(HttpMethod.Get, EffectivePath, ScriptedSilo.Problem(503, "unavailable"));
+        var failed = Create(failing);
+        await failed.StartAsync();
+
+        Assert.True(older.Shown.ShowsTitleArt);
+        Assert.DoesNotContain(TitlePageSettings.TitleArtKey, older.Shown.Offered);
+        Assert.True(failed.Shown.ShowsTitleArt);
+        Assert.Equal(TitlePageState.Unavailable, failed.State);
+    }
+
+    [Fact]
+    public async Task TheTitleArtSwitch_SavesForThisPC()
+    {
+        var settings = Create();
+        await settings.StartAsync();
+
+        await settings.SetShowsTitleArtAsync(false);
+
+        Assert.False(settings.Shown.ShowsTitleArt);
+        Assert.Equal("profile_device", settings.Shown.TitleArtSource);
+        Assert.Equal(["PUT ?scope=profile_device {\"value\":false}"], TitleArtWrites());
+    }
+
+    [Fact]
+    public async Task WhileItAppliesToAllDevices_TheTitleArtSwitch_SavesForTheProfile()
+    {
+        _harness.Answer(EffectivePath, Answer(titleArtSource: "profile"));
+        var settings = Create();
+        await settings.StartAsync();
+
+        await settings.SetShowsTitleArtAsync(false);
+
+        Assert.True(settings.Shown.TitleArtForAllDevices);
+        Assert.Equal(["PUT ?scope=profile {\"value\":false}"], TitleArtWrites());
+    }
+
+    [Fact]
+    public async Task ApplyToAllDevices_SavesTheChoiceForTheProfile()
+    {
+        _harness.Answer(EffectivePath, Answer(titleArt: false, titleArtSource: "profile_device"));
+        var settings = Create();
+        await settings.StartAsync();
+
+        await settings.SetTitleArtForAllDevicesAsync(true);
+
+        Assert.True(settings.Shown.TitleArtForAllDevices);
+        Assert.False(settings.Shown.ShowsTitleArt);
+        Assert.Equal(["PUT ?scope=profile {\"value\":false}"], TitleArtWrites());
+    }
+
+    [Fact]
+    public async Task ApplyToAllDevicesOff_KeepsThisPCsLook_ThenClearsTheProfiles()
+    {
+        _harness.Answer(EffectivePath, Answer(titleArt: false, titleArtSource: "profile"));
+        var settings = Create();
+        await settings.StartAsync();
+
+        await settings.SetTitleArtForAllDevicesAsync(false);
+
+        Assert.False(settings.Shown.TitleArtForAllDevices);
+        Assert.False(settings.Shown.ShowsTitleArt);
+        Assert.Equal(["PUT ?scope=profile_device {\"value\":false}", "DELETE ?scope=profile"], TitleArtWrites());
+    }
+
+    [Fact]
+    public async Task ApplyToAllDevicesOff_ClearsNothing_OnceAnotherProfileActs()
+    {
+        _harness.Answer(EffectivePath, Answer(titleArtSource: "profile"));
+        var settings = Create();
+        await settings.StartAsync();
+        var release = new TaskCompletionSource();
+        _harness.Silo.On(HttpMethod.Put, TitleArtPath, LibraryHarness.Held(release, "{}"));
+
+        var saving = settings.SetTitleArtForAllDevicesAsync(false);
+        _harness.Session.ProfileId = "8";
+        release.SetResult();
+        await saving;
+
+        Assert.Equal(["PUT ?scope=profile_device {\"value\":true}"], TitleArtWrites());
+    }
+
+    [Fact]
+    public async Task UseServerDefault_ClearsThisPCsChoice_ThenReadsTheDefault()
+    {
+        _harness.Answer(EffectivePath, Answer(titleArt: false, titleArtSource: "profile_device"), Answer(titleArt: true));
+        var settings = Create();
+        await settings.StartAsync();
+
+        await settings.UseServerDefaultTitleArtAsync();
+
+        Assert.Equal(["DELETE ?scope=profile_device"], TitleArtWrites());
+        Assert.True(settings.Shown.TitleArtFollowsServerDefault);
+        Assert.True(settings.Shown.ShowsTitleArt);
+        Assert.Equal(2, _harness.Count(EffectivePath));
+    }
+
+    [Fact]
+    public async Task UseServerDefault_AlsoClearsTheProfiles_WhileItAppliesToAllDevices()
+    {
+        _harness.Answer(EffectivePath, Answer(titleArt: false, titleArtSource: "profile"), Answer(titleArt: true));
+        _harness.Silo.On(HttpMethod.Delete, TitleArtPath, ScriptedSilo.Problem(404, "not_found"), ScriptedSilo.NoContent());
+        var settings = Create();
+        await settings.StartAsync();
+
+        await settings.UseServerDefaultTitleArtAsync();
+
+        Assert.Equal(["DELETE ?scope=profile_device", "DELETE ?scope=profile"], TitleArtWrites());
+        Assert.False(settings.SaveFailed);
+        Assert.True(settings.Shown.ShowsTitleArt);
+    }
+
+    [Theory]
+    [InlineData("default", true, "Using the server default (on). Change it here to choose for this PC.", false, false)]
+    [InlineData("default", false, "Using the server default (off). Change it here to choose for this PC.", false, false)]
+    [InlineData("profile_device", false, "Only affects this PC. Your other devices keep their own setting.", false, true)]
+    [InlineData("profile", false,
+        "Title art is off on every device signed into this profile. Changing it here changes it everywhere. Turn off “Apply to all devices” to choose per device again.",
+        true, true)]
+    public async Task ThePage_SaysWhoseTitleArtChoiceApplies(string source, bool titleArt, string note, bool boxed, bool offersDefault)
+    {
+        _harness.Answer(EffectivePath, Answer(titleArt: titleArt, titleArtSource: source));
+        var settings = Create();
+        await settings.StartAsync();
+        using var page = new TitlePagesSettingsViewModel(await SpoilerSwitches.StartedAsync(), settings);
+
+        Assert.True(page.OffersTitleArt);
+        Assert.Equal(titleArt, page.ShowsTitleArt);
+        Assert.Equal(source == "profile", page.TitleArtForAllDevices);
+        Assert.Equal(note, page.TitleArtNote);
+        Assert.Equal(boxed, page.TitleArtNoteIsBoxed);
+        Assert.Equal(offersDefault, page.CanUseServerDefaultTitleArt);
+    }
+
+    [Fact]
+    public async Task ThePage_TitleArtSwitches_SaveAndFollow()
+    {
+        _harness.Answer(EffectivePath, Answer(), Answer(titleArt: true));
+        var settings = Create();
+        await settings.StartAsync();
+        using var page = new TitlePagesSettingsViewModel(await SpoilerSwitches.StartedAsync(), settings);
+        var changed = new List<string?>();
+        page.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+
+        page.ShowsTitleArt = false;
+        await settings.Working;
+        page.TitleArtForAllDevices = true;
+        await settings.Working;
+        Assert.True(page.CanUseServerDefaultTitleArt);
+        await page.UseServerDefaultTitleArtCommand.ExecuteAsync(null);
+
+        Assert.Equal(
+            ["PUT ?scope=profile_device {\"value\":false}", "PUT ?scope=profile {\"value\":false}", "DELETE ?scope=profile_device", "DELETE ?scope=profile"],
+            TitleArtWrites());
+        Assert.True(page.ShowsTitleArt);
+        Assert.False(page.CanUseServerDefaultTitleArt);
+        Assert.Contains(nameof(TitlePagesSettingsViewModel.TitleArtNote), changed);
+    }
+
+    [Fact]
+    public async Task ThePage_SaysWhenTheTitleArtDidNotSave_InTheWebsWords()
+    {
+        var settings = Create();
+        await settings.StartAsync();
+        using var page = new TitlePagesSettingsViewModel(await SpoilerSwitches.StartedAsync(), settings);
+        _harness.Silo.On(HttpMethod.Put, TitleArtPath, ScriptedSilo.Problem(503, "unavailable"));
+
+        page.ShowsTitleArt = false;
+        await settings.Working;
+
+        Assert.True(page.ShowsTitleArt);
+        Assert.Equal(TitlePagesSettingsViewModel.TitleArtSaveFailedText, page.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task ARefusedTitleArtSave_GoesBack()
+    {
+        var settings = Create();
+        await settings.StartAsync();
+        _harness.Silo.On(HttpMethod.Put, TitleArtPath, ScriptedSilo.Problem(503, "unavailable"));
+
+        await settings.SetShowsTitleArtAsync(false);
+
+        Assert.True(settings.Shown.ShowsTitleArt);
+        Assert.True(settings.Shown.TitleArtFollowsServerDefault);
+        Assert.True(settings.SaveFailed);
     }
 }
