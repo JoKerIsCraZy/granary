@@ -563,15 +563,28 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   offer it. The page hands the menu its rows as it opens and keeps them while it is open (as `DetailHero`'s pickers), so a
   change under it cannot take the focus out. The menu opens on this device's
   `player.sleep_timer_default_minutes` (read with the playback's settings, in a batch of its own); a duration started is
-  saved there, as Android keeps the last one (`ServerPlayback.SetSleepTimerDefault`, `profile_device`). This PC can
-  hide the button (`IPlaybackDevicePreferences.SleepTimerButton`, `sleep_timer_button` in `playback-device.json`, on when
-  missing): the player reads it as it is made and follows `SleepTimerButtonChanged` until it is disposed, so the
-  minimized bar does too; turned off, `PlayerViewModel.ShowsSleepTimer` goes false, a running timer ends as Turn off
-  ends it, and a hold the timer left after the end lets go (`NextUpFlow.Hold(false)` then starts the countdown). A change
-  on the UI thread applies at once, so work already queued there, such as the title's end, finds the timer off; one from
-  another thread is posted, and does nothing once the player is disposed. Each change carries its own choice, so off and
-  on again before the UI thread gets to them still end the timer, and a tick that waits behind a switch-off does not run
-  out.
+  saved there, as Android keeps the last one (`ServerPlayback.SetSleepTimerDefault`, `profile_device`). Player buttons
+  can hide the button (below): `PlayerViewModel.ShowsSleepTimer` goes false, a running timer ends as Turn off ends it,
+  and a hold the timer left after the end lets go (`NextUpFlow.Hold(false)` then starts the countdown). A tick reads the
+  layout's `Current`, so one that waits behind a change from another thread does not run out.
+- **Player buttons** (`PlayerBar`, `PlayerButtonsLayout`, `PlayerViewModel.Buttons.cs`; Granary's own, Silo's clients
+  have no such editor): which of the eleven buttons on the right of the bar may show, and in which order, for each server
+  and profile on this PC (`player-buttons.json`, by "server id/profile id", as `SidebarLayout` keeps the sidebar; the
+  server keeps nothing). A `PlayerBar` is immutable: every `PlayerButton` in the profile's order and the hidden ones. A
+  profile's order names buttons by id (`volume`, `sleep_timer`, `audio`, `subtitles`, `chapters`, `settings`,
+  `edit_markers`, `playback_info`, `mini_view`, `fill`, `full_screen`); an id this Granary does not know is left out, and a
+  button the order lacks, one an update added, takes its own place, after the one before it in the bar's own order, and
+  shows. The order is written only when it is not the bar's own. A file that cannot be read shows today's bar. This PC's
+  Sleep timer switch from before the editor (`IPlaybackDevicePreferences.SleepTimerSwitchOff`, `sleep_timer_button:
+  false` in `playback-device.json`, which keeps it as it was) is taken over once, while there is no file yet: the file
+  is written at once with `start_hidden: ["sleep_timer"]`, the bar of every profile without one of its own; a change
+  gives the profile its own, and Reset gives it today's. The player reads `IPlayerButtonsLayout.Current` as it is made
+  and follows `Changed` until it is disposed, so the minimized bar does too: a change on the UI thread applies at once,
+  so work already queued there, such as the title's end, finds a hidden Sleep timer off; one from another thread is
+  posted, and does nothing once the player is disposed. Each change carries its own bar, so hidden and shown again before
+  the UI thread gets to them still end the timer. Another profile acting raises `Changed` too. The page arranges its
+  buttons in `PlayerBar.Order` (`PlayerPage.ArrangeBarButtons`) and shows each one while the bar does and, for one that
+  needs something, while there is that (`ShowsButton`); a menu goes with its hidden button.
 - **Chapters** (11.3): the playing file's `chapters` from the watch detail (mpv reads none through a remux or a
   transcode), in order, empty ones left out, pictures resolved against the server; they make the Chapters menu, the
   seek bar's ticks and the chapter named in its bubble, and Ctrl+Left and Ctrl+Right go to their starts (`ChapterJump`,

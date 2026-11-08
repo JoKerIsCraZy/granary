@@ -69,12 +69,6 @@
                                   SelectedItem="{x:Bind ViewModel.SelectedStillWatching, Mode=TwoWay}" AutomationProperties.Name="Still watching prompt" />
                     </StackPanel>
                 </controls:SettingsRow>
-                <!-- Granary's own: Silo's clients always have the sleep timer. An open player, also the minimized one, follows at once. -->
-                <controls:SettingsRow Label="Sleep timer"
-                                      Description="Show the Sleep button in the player, which pauses playback after a set time or at the end of an episode. Turning it off ends a timer that's running.">
-                    <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.SleepTimerButton, Mode=TwoWay}"
-                                  AutomationProperties.Name="Sleep timer" />
-                </controls:SettingsRow>
                 <!-- mpv reads the file when it starts, and each load starts a new one if the file changed (docs/architecture.md, "Your own mpv.conf"). -->
                 <controls:SettingsRow Label="mpv configuration"
                                       Description="Use your own mpv options from mpv.conf, such as shaders, scaling or debanding. They apply from the next title you play. Granary keeps the options it needs to show the video and follow your Silo server's choices. A wrong option can make playback worse; delete the file to go back to normal.">
@@ -154,6 +148,75 @@
                 </controls:SettingsRow>
             </StackPanel>
         </controls:SettingsGroup>
+
+        <!--
+            Granary's own: Silo's clients have no such editor. The right of the player's bar, for this profile on this PC
+            (PlayerButtonsLayout), as Navigation & Cards arranges the sidebar: Reset beside the title, so laid out by hand.
+            Move up and Move down keep the keyboard on their row as it moves (OnMovePlayerButtonClick), and take it while they are off at the ends,
+            so a remote's Up and Down go along each column.
+        -->
+        <Border Padding="0,32" BorderThickness="0,1,0,0" BorderBrush="{StaticResource SiloSettingsHairlineBrush}">
+            <Grid ColumnSpacing="48">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="256" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Spacing="6">
+                    <Grid>
+                        <TextBlock Text="Player buttons" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="15"
+                                   Foreground="{StaticResource SiloForegroundBrush}" VerticalAlignment="Center" AutomationProperties.HeadingLevel="Level2" />
+                        <Button x:Name="ResetPlayerButtonsButton" HorizontalAlignment="Right" Padding="8,4" Background="Transparent" BorderThickness="0"
+                                Click="OnResetPlayerButtonsClick" Visibility="{x:Bind PlayerButtons.IsCustomized, Mode=OneWay}"
+                                AutomationProperties.Name="Reset player buttons">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <FontIcon Glyph="&#xE7A7;" FontSize="12" />
+                                <TextBlock Text="Reset" FontFamily="{StaticResource SiloFontMedium}" FontSize="14" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+                    <TextBlock Style="{StaticResource SiloSettingsMutedTextStyle}"
+                               Text="Which buttons the player shows on the right of its controls, and in which order, for this profile on this PC. Some show only when a title has what they need." />
+                </StackPanel>
+                <ItemsControl x:Name="PlayerButtonRows" Grid.Column="1" ItemsSource="{x:Bind PlayerButtons.Rows}" IsTabStop="False"
+                              BorderThickness="0,0,0,1" BorderBrush="{StaticResource SiloSettingsHairlineBrush}">
+                    <ItemsControl.ItemTemplate>
+                        <!-- One button: its icon and name, earlier or later in the bar, and its switch. -->
+                        <DataTemplate x:DataType="settings:PlayerButtonRowViewModel">
+                            <Grid Padding="0,10" ColumnSpacing="16" BorderThickness="0,1,0,0" BorderBrush="{StaticResource SiloSettingsHairlineBrush}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="20" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <FontIcon Glyph="{x:Bind controls:PlayerButtonGlyphs.Of(Button)}" FontSize="16" Foreground="{StaticResource SiloMutedBrush}"
+                                          Opacity="{x:Bind controls:SettingsText.Dim(IsShown), Mode=OneWay}" />
+                                <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center" Opacity="{x:Bind controls:SettingsText.Dim(IsShown), Mode=OneWay}">
+                                    <TextBlock Text="{x:Bind Label}" FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium" FontSize="14"
+                                               TextTrimming="CharacterEllipsis" Foreground="{StaticResource SiloForegroundBrush}" />
+                                    <TextBlock Text="{x:Bind Note}" Style="{StaticResource SiloSettingsMutedTextStyle}" FontSize="12"
+                                               Visibility="{x:Bind controls:SettingsText.Shows(Note)}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
+                                    <Button Tag="up" Style="{StaticResource SiloSettingsGhostButtonStyle}" Width="32" Height="32" Padding="0"
+                                            Click="OnMovePlayerButtonClick" AllowFocusWhenDisabled="True" IsEnabled="{x:Bind CanMoveUp, Mode=OneWay}"
+                                            AutomationProperties.Name="{x:Bind controls:BadgeSettingsLook.MoveUpName(Label)}" ToolTipService.ToolTip="Move up">
+                                        <FontIcon Glyph="&#xE70E;" FontSize="12" />
+                                    </Button>
+                                    <Button Tag="down" Style="{StaticResource SiloSettingsGhostButtonStyle}" Width="32" Height="32" Padding="0"
+                                            Click="OnMovePlayerButtonClick" AllowFocusWhenDisabled="True" IsEnabled="{x:Bind CanMoveDown, Mode=OneWay}"
+                                            AutomationProperties.Name="{x:Bind controls:BadgeSettingsLook.MoveDownName(Label)}" ToolTipService.ToolTip="Move down">
+                                        <FontIcon Glyph="&#xE70D;" FontSize="12" />
+                                    </Button>
+                                </StackPanel>
+                                <ToggleSwitch Grid.Column="3" Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind IsShown, Mode=TwoWay}"
+                                              VerticalAlignment="Center" AutomationProperties.Name="{x:Bind controls:BadgeSettingsLook.ShowName(Label)}" />
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Grid>
+        </Border>
 
         <!--
             This device's player.audio_sync_ms, as the web's device settings show it (DeviceSettingGroups: the Sound group, a

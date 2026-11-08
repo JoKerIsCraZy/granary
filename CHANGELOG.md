@@ -8,6 +8,11 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Added
 
+- **Player buttons:** Settings → Playback → Player buttons chooses which buttons the player shows on the right, from
+  Volume to Full screen, and in which order: switch one off and it's gone from the player, move it up or down to change
+  its place. Don't need the Sleep timer? Switch it off and the button is gone, also from a player that's already open; a
+  timer that's running ends. Reset brings back the usual buttons. It's kept for each profile on this PC, works with a
+  keyboard and a TV remote, and is Granary's own.
 - **Start a Watch Party from a title's page:** the ⋮ menu of a movie, series, season or episode now has Start a Watch
   Party. Pick whether the host picks or everyone votes, whether guests may pause, and for a series which episode, then
   Create party & copy invite: the room opens with the title up next (or as the first suggestion of a vote), and the
@@ -34,8 +39,7 @@ release's section is what its update says it changes (docs/release.md).
   your Silo server has Requests turned on.
 - **Sleep timer:** the player's Sleep button pauses playback after 5 to 60 minutes, counting down on the button, or stops
   at the end of the episode or movie instead of starting the next episode. A timer runs on into the next episode, and the
-  menu opens on the duration you started last on this PC. Don't need it? Turn off Settings → Playback → This PC → Sleep
-  timer and the button is gone from the player, also from one that's already open; a timer that's running ends.
+  menu opens on the duration you started last on this PC.
 - **Play/Pause in the taskbar preview:** hover over Granary's taskbar button while something plays and the window's
   preview has a Play/Pause button, also when Granary is minimized. In a Watch Party it asks the room, as the player's own
   button does.

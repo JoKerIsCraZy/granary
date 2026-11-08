@@ -13,6 +13,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Automation.Peers;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
@@ -66,6 +67,7 @@ public sealed partial class PlayerPage : Page
         InitializeDock();
         InitializeNotices();
         InitializePartyPanel();
+        ArrangeBarButtons();
         RegisterPropertyChangedCallback(IsMiniViewProperty, (_, _) =>
         {
             ShowNextUpScreen();
@@ -191,10 +193,8 @@ public sealed partial class PlayerPage : Page
             case nameof(PlayerViewModel.HasSkipPrompt) when ViewModel.HasSkipPrompt:
                 AnnounceSkipCaption();
                 break;
-            case nameof(PlayerViewModel.ShowsSleepTimer) when !ViewModel.ShowsSleepTimer:
-                // Settings took the Sleep button away: its menu goes with it, and focus that was on it stays in the page.
-                SleepTimerMenu.Hide();
-                KeepFocusInPage();
+            case nameof(PlayerViewModel.Bar):
+                ShowBar();
                 break;
             case nameof(PlayerViewModel.HasSkipPrompt):
             case nameof(PlayerViewModel.HasSyncNotice) when !ViewModel.HasSyncNotice:
@@ -298,6 +298,62 @@ public sealed partial class PlayerPage : Page
             RightColumn.MinWidth = width;
         }
     }
+
+    // Settings → Playback → Player buttons changed the bar: the buttons take its order, a menu goes with its button, and
+    // focus that was on a button that went stays in the page.
+    private void ShowBar()
+    {
+        ArrangeBarButtons();
+        var bar = ViewModel.Bar;
+        (bool Shown, FlyoutBase Menu)[] menus =
+        [
+            (bar.SleepTimer, SleepTimerMenu), (bar.Audio, AudioMenu), (bar.Subtitles, SubtitleMenu), (bar.Chapters, ChaptersMenu),
+            (bar.Settings, SettingsMenu),
+        ];
+        foreach (var (shown, menu) in menus)
+        {
+            if (!shown)
+            {
+                menu.Hide();
+            }
+        }
+        KeepFocusInPage();
+    }
+
+    // Each button's elements in the bar's order, moved only where that differs from the order shown. Tab and a remote's
+    // arrows follow it.
+    private void ArrangeBarButtons()
+    {
+        var children = RightControls.Children;
+        int index = 0;
+        foreach (var button in ViewModel.Bar.Order)
+        {
+            foreach (var element in ElementsOf(button))
+            {
+                int at = children.IndexOf(element);
+                if (at != index)
+                {
+                    children.Move((uint)at, (uint)index);
+                }
+                index++;
+            }
+        }
+    }
+
+    private UIElement[] ElementsOf(PlayerButton button) => button switch
+    {
+        PlayerButton.Volume => [MuteButton, VolumeSlider],
+        PlayerButton.SleepTimer => [SleepTimerSlot],
+        PlayerButton.Audio => [AudioButton],
+        PlayerButton.Subtitles => [SubtitleSlot],
+        PlayerButton.Chapters => [ChaptersButton],
+        PlayerButton.Settings => [SettingsButton],
+        PlayerButton.EditMarkers => [EditMarkersSlot],
+        PlayerButton.PlaybackInfo => [PlaybackInfoSlot],
+        PlayerButton.MiniView => [MiniViewButton],
+        PlayerButton.Fill => [FillSlot],
+        _ => [FullScreenButton],
+    };
 
     private void OnEndTimeClick(object sender, RoutedEventArgs e) => ShowsRemaining = !ShowsRemaining;
 
@@ -508,4 +564,7 @@ public sealed partial class PlayerPage : Page
         phase == PlayerPhase.Preparing || isChangingPlan ? "Loading" : "Buffering";
 
     public Visibility Shows(string text) => string.IsNullOrEmpty(text) ? Visibility.Collapsed : Visibility.Visible;
+
+    // A bar button that needs something, such as chapters, while there is that and Settings lets it show.
+    public Visibility ShowsButton(bool has, bool shown) => has && shown ? Visibility.Visible : Visibility.Collapsed;
 }

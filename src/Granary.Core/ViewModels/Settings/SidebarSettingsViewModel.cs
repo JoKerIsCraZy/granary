@@ -132,28 +132,9 @@ public sealed partial class SidebarGroupViewModel(string title, SidebarSection s
     [ObservableProperty]
     public partial bool HasRows { get; private set; }
 
-    // Moves rows rather than making the list anew.
     internal void Sync(IReadOnlyList<SidebarRowViewModel> rows)
     {
-        for (int index = Rows.Count - 1; index >= 0; index--)
-        {
-            if (!rows.Contains(Rows[index]))
-            {
-                Rows.RemoveAt(index);
-            }
-        }
-        for (int index = 0; index < rows.Count; index++)
-        {
-            int at = Rows.IndexOf(rows[index]);
-            if (at < 0)
-            {
-                Rows.Insert(index, rows[index]);
-            }
-            else if (at != index)
-            {
-                Rows.Move(at, index);
-            }
-        }
+        ObservableRows.Sync(Rows, rows);
         HasRows = Rows.Count > 0;
     }
 }

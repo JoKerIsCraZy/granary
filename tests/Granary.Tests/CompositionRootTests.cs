@@ -54,6 +54,8 @@ public sealed class CompositionRootTests
         // Made by their views, so nothing else checks what they ask for.
         Assert.NotNull(ActivatorUtilities.CreateInstance<MpvConfigEditorViewModel>(provider));
         using var presets = ActivatorUtilities.CreateInstance<MpvSettingsViewModel>(provider);
+        using var buttons = ActivatorUtilities.CreateInstance<PlayerButtonsSettingsViewModel>(provider);
+        Assert.Same(provider.GetRequiredService<PlayerButtonsLayout>(), provider.GetRequiredService<IPlayerButtonsLayout>());
     }
 
     [Fact]

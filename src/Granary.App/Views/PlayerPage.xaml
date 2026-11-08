@@ -202,15 +202,22 @@
                         </Grid>
                     </StackPanel>
 
+                    <!--
+                        The buttons Settings → Playback → Player buttons can hide and move (Granary's own; Silo's clients have no
+                        such editor), in its order (ArrangeBarButtons). Each shows when the editor lets it and, where it needs
+                        something, such as chapters, while there is that.
+                    -->
                     <StackPanel x:Name="RightControls" Grid.Column="2" Orientation="Horizontal" Spacing="4" HorizontalAlignment="Right" VerticalAlignment="Center"
                                 LayoutUpdated="OnRightControlsLayoutUpdated">
                         <Button x:Name="MuteButton" Style="{StaticResource SiloPlayerIconButtonStyle}" Command="{x:Bind ViewModel.ToggleMuteCommand}"
+                                Visibility="{x:Bind ViewModel.Bar.Volume, Mode=OneWay}"
                                 AutomationProperties.Name="{x:Bind MuteName(ViewModel.IsMuted), Mode=OneWay}" AutomationProperties.AcceleratorKey="M"
                                 ToolTipService.ToolTip="{x:Bind MuteToolTip(ViewModel.IsMuted), Mode=OneWay}">
                             <FontIcon Glyph="{x:Bind VolumeGlyph(ViewModel.IsMuted, ViewModel.Volume), Mode=OneWay}" FontSize="18" />
                         </Button>
                         <!-- Muted, the slider keeps the level to come back to and only dims. -->
                         <Slider x:Name="VolumeSlider" Width="96" Margin="0,0,4,0" VerticalAlignment="Center" Minimum="0" Maximum="100"
+                                Visibility="{x:Bind ViewModel.Bar.Volume, Mode=OneWay}"
                                 StepFrequency="1" SmallChange="5" LargeChange="10" IsThumbToolTipEnabled="False"
                                 Value="{x:Bind ViewModel.Volume, Mode=TwoWay}" Opacity="{x:Bind VolumeOpacity(ViewModel.IsMuted), Mode=OneWay}"
                                 AutomationProperties.Name="Volume">
@@ -232,10 +239,10 @@
                         <!--
                             The web's sleep timer (SleepTimerMenu, after the volume as in its audiobook player): the moon and "Sleep",
                             "Sleep 29:59" while a duration counts down; white with the amber dot while it is on. The menu: Turn off
-                            while on, the durations, and the end of what plays. Settings → Playback → This PC can take it away,
-                            dot and all, and the buttons after it close up.
+                            while on, the durations, and the end of what plays. Hidden in Settings, it goes dot and all, and a timer
+                            that runs ends.
                         -->
-                        <Grid Visibility="{x:Bind ViewModel.ShowsSleepTimer, Mode=OneWay}">
+                        <Grid x:Name="SleepTimerSlot" Visibility="{x:Bind ViewModel.ShowsSleepTimer, Mode=OneWay}">
                             <Button x:Name="SleepTimerButton" Style="{StaticResource SiloPlayerIconButtonStyle}" Width="Auto" Padding="8,0"
                                     Foreground="{x:Bind UtilityForeground(ViewModel.IsSleepTimerOn), Mode=OneWay}"
                                     AutomationProperties.Name="Sleep timer" AutomationProperties.ItemStatus="{x:Bind ViewModel.SleepTimerStatus, Mode=OneWay}"
@@ -269,7 +276,8 @@
                             subtitles stand side by side, where the web puts chapters between them: the two track choices belong together.
                         -->
                         <Button x:Name="AudioButton" Style="{StaticResource SiloPlayerIconButtonStyle}"
-                                Visibility="{x:Bind ViewModel.HasAudioTracks, Mode=OneWay}" IsEnabled="{x:Bind ViewModel.CanChooseAudio, Mode=OneWay}"
+                                Visibility="{x:Bind ShowsButton(ViewModel.HasAudioTracks, ViewModel.Bar.Audio), Mode=OneWay}"
+                                IsEnabled="{x:Bind ViewModel.CanChooseAudio, Mode=OneWay}"
                                 AutomationProperties.Name="Audio tracks" ToolTipService.ToolTip="Audio tracks">
                             <!-- The web's icon, lucide's AudioLines: its six strokes, drawn at 18 px as filled rounded bars. -->
                             <PathIcon Width="18" Height="18"
@@ -323,7 +331,7 @@
                             Subtitles: there for every server title, as its menu also adds them. White with the amber dot while one
                             shows; struck through while none does, as the web's CaptionsOff.
                         -->
-                        <Grid Visibility="{x:Bind ViewModel.HasSubtitleMenu, Mode=OneWay}">
+                        <Grid x:Name="SubtitleSlot" Visibility="{x:Bind ShowsButton(ViewModel.HasSubtitleMenu, ViewModel.Bar.Subtitles), Mode=OneWay}">
                         <Button x:Name="SubtitleButton" Style="{StaticResource SiloPlayerIconButtonStyle}"
                                 Foreground="{x:Bind UtilityForeground(ViewModel.IsSubtitleOn), Mode=OneWay}"
                                 AutomationProperties.Name="Subtitles" AutomationProperties.ItemStatus="{x:Bind OnStatus(ViewModel.IsSubtitleOn), Mode=OneWay}"
@@ -485,7 +493,7 @@
                         </Grid>
                         <!-- The web player's Chapters menu: a picture, the title and its start; a row seeks there and closes. -->
                         <Button x:Name="ChaptersButton" Style="{StaticResource SiloPlayerIconButtonStyle}"
-                                Visibility="{x:Bind ViewModel.HasChapters, Mode=OneWay}"
+                                Visibility="{x:Bind ShowsButton(ViewModel.HasChapters, ViewModel.Bar.Chapters), Mode=OneWay}"
                                 AutomationProperties.Name="Chapters" ToolTipService.ToolTip="Chapters">
                             <FontIcon Glyph="&#xE8FD;" FontSize="18" />
                             <Button.Flyout>
@@ -531,6 +539,7 @@
                             beside it. SPEED always; VERSION with more than one file; QUALITY when the plan offers rungs.
                         -->
                         <Button x:Name="SettingsButton" Style="{StaticResource SiloPlayerIconButtonStyle}" Width="Auto" Padding="10,0,12,0"
+                                Visibility="{x:Bind ViewModel.Bar.Settings, Mode=OneWay}"
                                 Background="#14FFFFFF" AutomationProperties.Name="{x:Bind SettingsName(ViewModel.SpeedBadge), Mode=OneWay}"
                                 ToolTipService.ToolTip="Playback settings">
                             <StackPanel Orientation="Horizontal" Spacing="6">
@@ -646,7 +655,7 @@
                             </Button.Flyout>
                         </Button>
                         <!-- Edit markers, for an account that may: the web's tag button, white with the dot while the panel is open. -->
-                        <Grid Visibility="{x:Bind ViewModel.CanEditMarkers, Mode=OneWay}">
+                        <Grid x:Name="EditMarkersSlot" Visibility="{x:Bind ShowsButton(ViewModel.CanEditMarkers, ViewModel.Bar.EditMarkers), Mode=OneWay}">
                             <Button x:Name="EditMarkersButton" Style="{StaticResource SiloPlayerIconButtonStyle}" Command="{x:Bind ViewModel.ToggleMarkerEditCommand}"
                                     Foreground="{x:Bind UtilityForeground(ViewModel.MarkerEditor.IsEditing), Mode=OneWay}"
                                     AutomationProperties.Name="Edit markers" AutomationProperties.ItemStatus="{x:Bind OnStatus(ViewModel.MarkerEditor.IsEditing), Mode=OneWay}"
@@ -656,7 +665,7 @@
                             <Ellipse Style="{StaticResource SiloPlayerActiveDotStyle}" Visibility="{x:Bind ViewModel.MarkerEditor.IsEditing, Mode=OneWay}" />
                         </Grid>
                         <!-- Playback info, the mini view (the web's Picture in Picture) and Fill screen, as on the web. -->
-                        <Grid>
+                        <Grid x:Name="PlaybackInfoSlot" Visibility="{x:Bind ViewModel.Bar.PlaybackInfo, Mode=OneWay}">
                             <Button x:Name="PlaybackInfoButton" Style="{StaticResource SiloPlayerIconButtonStyle}" Command="{x:Bind ViewModel.TogglePlaybackInfoCommand}"
                                     Foreground="{x:Bind UtilityForeground(ViewModel.IsPlaybackInfoShown), Mode=OneWay}"
                                     AutomationProperties.Name="Playback info" AutomationProperties.ItemStatus="{x:Bind OnStatus(ViewModel.IsPlaybackInfoShown), Mode=OneWay}"
@@ -666,10 +675,11 @@
                             <Ellipse Style="{StaticResource SiloPlayerActiveDotStyle}" Visibility="{x:Bind ViewModel.IsPlaybackInfoShown, Mode=OneWay}" />
                         </Grid>
                         <Button x:Name="MiniViewButton" Style="{StaticResource SiloPlayerIconButtonStyle}" Click="OnMiniViewClick"
+                                Visibility="{x:Bind ViewModel.Bar.MiniView, Mode=OneWay}"
                                 AutomationProperties.Name="Mini view" AutomationProperties.AcceleratorKey="P" ToolTipService.ToolTip="Mini view (P)">
                             <FontIcon Glyph="&#xE93A;" FontSize="18" />
                         </Button>
-                        <Grid>
+                        <Grid x:Name="FillSlot" Visibility="{x:Bind ViewModel.Bar.Fill, Mode=OneWay}">
                             <Button x:Name="FillButton" Style="{StaticResource SiloPlayerIconButtonStyle}" Command="{x:Bind ViewModel.ToggleFillCommand}"
                                     Foreground="{x:Bind UtilityForeground(ViewModel.IsFillingScreen), Mode=OneWay}"
                                     AutomationProperties.Name="Fill screen" AutomationProperties.ItemStatus="{x:Bind OnStatus(ViewModel.IsFillingScreen), Mode=OneWay}"
@@ -679,6 +689,7 @@
                             <Ellipse Style="{StaticResource SiloPlayerActiveDotStyle}" Visibility="{x:Bind ViewModel.IsFillingScreen, Mode=OneWay}" />
                         </Grid>
                         <Button x:Name="FullScreenButton" Style="{StaticResource SiloPlayerIconButtonStyle}" Click="OnFullScreenClick"
+                                Visibility="{x:Bind ViewModel.Bar.FullScreen, Mode=OneWay}"
                                 AutomationProperties.Name="{x:Bind FullScreenName(IsFullScreen), Mode=OneWay}" AutomationProperties.AcceleratorKey="F"
                                 ToolTipService.ToolTip="{x:Bind FullScreenToolTip(IsFullScreen), Mode=OneWay}">
                             <FontIcon Glyph="{x:Bind FullScreenGlyph(IsFullScreen), Mode=OneWay}" FontSize="16" />
