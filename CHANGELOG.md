@@ -56,6 +56,8 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Changed
 
+- **Player buttons:** Audio and Subtitles now sit side by side on the player's bar, with Chapters after them, and
+  the Audio button shows sound waves, the icon of Silo's web player, where it showed sliders.
 - **More Episodes** on an episode's page lists the whole season, the episode you're on included, so the row no longer
   jumps from the episode before it to the one after. That episode is marked Now Viewing, as on Silo's web app, and
   the row opens with it in the middle. With the keyboard or a TV remote, Down into the row lands on it.
