@@ -124,6 +124,81 @@ public sealed class SearchBoxSetsTests
     }
 
     [Fact]
+    public async Task BoxSetsAnsweringAfterTheTitles_WithinTheGrace_StillShow()
+    {
+        var answer = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _silo.Map(BoxSetsPath, async (_, _) =>
+        {
+            await answer.Task;
+            return BrowseFakeSilo.Json(BoxSetPayloads.SearchList);
+        });
+        var search = Create();
+        var searching = search.ActivateAsync("masterplan");
+
+        _time.Advance(SearchViewModel.BoxSetGrace - TimeSpan.FromMilliseconds(500));
+        answer.SetResult();
+        await searching;
+
+        Assert.Equal(2, search.BoxSets.Count);
+        Assert.Equal(["movie-tmdb-1001"], search.Cards.Select(c => c.Id));
+    }
+
+    [Fact]
+    public async Task ABoxSetAnswerForAnOlderText_IsDropped()
+    {
+        var older = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _silo.Map(BoxSetsPath, async (request, _) =>
+        {
+            string? q = new BrowseRequest(request.Method, request.RequestUri!, null).Query("q");
+            if (q == "lantern")
+            {
+                // The older answer comes late whatever happens to its request.
+                await older.Task;
+                return BrowseFakeSilo.Json("""{ "items": [ { "id": "7", "library_id": "3", "title": "Lantern Box Set", "movie_count": 2, "played_count": 0 } ] }""");
+            }
+            return BrowseFakeSilo.Json(BoxSetPayloads.SearchList);
+        });
+        var search = Create();
+        var first = search.ActivateAsync("lantern");
+
+        search.Query = "masterplan";
+        await search.SearchNowCommand.ExecuteAsync(null);
+        older.SetResult();
+        await first;
+
+        Assert.Equal("masterplan", search.ResultsQuery);
+        Assert.Equal(["Masterplan Box Set", "Groundwork Collection"], search.BoxSets.Select(c => c.Title));
+    }
+
+    [Fact]
+    public async Task UnreadableCapabilities_AskForNoBoxSets()
+    {
+        _silo.Map(CapabilitiesPath, _ => BrowseFakeSilo.Problem(500, "internal_error"));
+
+        var search = await SearchAsync("masterplan");
+
+        Assert.Empty(_silo.To(BoxSetsPath));
+        Assert.Empty(search.BoxSets);
+        Assert.Equal(["movie-tmdb-1001"], search.Cards.Select(c => c.Id));
+    }
+
+    [Fact]
+    public async Task BoxSetsOff_NoTypeAsksForThem()
+    {
+        _silo.Map(CapabilitiesPath, SearchCapabilities(people: false, boxSets: false));
+        var search = Create();
+        search.Scope = SearchScope.Movies;
+        await search.ActivateAsync("masterplan");
+
+        search.Scope = SearchScope.MoviesAndSeries;
+        await search.Searching;
+
+        Assert.Equal(2, _silo.To(CatalogPath).Count);
+        Assert.Empty(_silo.To(BoxSetsPath));
+        Assert.Empty(search.BoxSets);
+    }
+
+    [Fact]
     public async Task ClearingTheBox_ClearsTheBoxSets()
     {
         var search = await SearchAsync("masterplan");
