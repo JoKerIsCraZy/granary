@@ -44,7 +44,7 @@
             </Border>
 
             <Border Style="{StaticResource SiloAuthErrorStyle}" Visibility="{x:Bind HasText(ViewModel.Status), Mode=OneWay}">
-                <TextBlock Text="{x:Bind ViewModel.Status, Mode=OneWay}" Style="{StaticResource SiloAuthTextStyle}" Foreground="#FFF87171" />
+                <TextBlock Text="{x:Bind ViewModel.Status, Mode=OneWay}" Style="{StaticResource SiloAuthTextStyle}" Foreground="{StaticResource SiloDestructiveBrush}" />
             </Border>
 
             <StackPanel Spacing="16" Visibility="{x:Bind ShowsPasswordForm(ViewModel.CanUseCredentials, ViewModel.IsPasswordSignInAvailable), Mode=OneWay}">

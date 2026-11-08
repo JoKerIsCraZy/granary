@@ -19,7 +19,7 @@
             <TextBlock Text="{x:Bind Tile.Sub, Mode=OneWay}" Visibility="{x:Bind Tile.IsAvailable, Mode=OneWay}" FontSize="11"
                        Foreground="{StaticResource SiloMutedBrush}" TextTrimming="CharacterEllipsis" />
             <TextBlock Text="Unavailable" Visibility="{x:Bind Tile.IsUnavailable, Mode=OneWay}" FontSize="14"
-                       Foreground="#FFEF4444" />
+                       Foreground="{StaticResource SiloDestructiveBrush}" />
         </StackPanel>
     </Border>
 </UserControl>
