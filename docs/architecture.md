@@ -872,6 +872,42 @@ deleted here; every result but Completed keeps what was written.
   code only when it is one Granary knows, never an address or a local path: a network error's message can name the
   server and a file error's the Windows user's folder, so only their kinds are logged.
 
+### The queue
+
+`DownloadQueue` (a singleton the app starts) runs the active profile's downloads, at most two at once (`MaxConcurrent`, as
+Silo's Apple app), oldest first: those queued or under way, not paused by the viewer, not gone from the server and not
+missing their folder.
+
+- **One loop.** It decides what starts, on a wake: `Wake()`, a session change, `INetworkLink.Changed`, the download
+  settings changing, the store changing, a transfer ending, or a timer at the earliest time something waits for (a retry,
+  a status report, a missing folder's recheck). Each pass rechecks the folders (`RecheckFolders`, which reads the disk, so
+  only this loop calls it), sends the scope's pending status reports and starts transfers. The event handlers only cancel
+  and wake, so nothing of a transfer ever runs on the UI thread; cancelling goes through `CancelAsync`.
+- **Stopping a transfer.** A transfer stops at once, keeping its bytes, when its download is deleted (the store's
+  `Changed` comes before the folder is deleted, so the part is let go first), paused by the viewer or no longer to be
+  fetched, when the connection turns metered without Settings → Downloads allowing it (`IsWaitingForUnmetered`; nothing
+  starts then either), when the session's profile changes (only the active profile's downloads run; another profile's
+  carry on when it is active again), and when the queue stops. A stopped transfer is queued again; one the queue's own stop
+  ended stays Downloading.
+- **Resume.** Within one run a transfer carries on from its whole part. One found Downloading at the start (Granary or
+  Windows stopped in the middle) gives up `ResumeMargin` (4 MiB) of its part: the transfer flushes every 3 MiB of 1 MiB
+  writes, so no more was written but not on the disk. The validator is in the record before the bytes it belongs to are
+  written (`onValidator`, written with `UpdateAsync`), so a stop or a kill resumes with `If-Range`; a download deleted
+  meanwhile ends its transfer as a stopped one.
+- **Outcomes.** A lost connection, a server error or a folder whose drive does not answer is tried again after 1, 2, 4,
+  8, 16, 32 and then every 60 s (`RetryDelays`), from the start again once a transfer got further. A busy server's
+  `Retry-After` is waited for, within 0 and 5 minutes (`MaxBusyWait`). 401, or a profile that wants its PIN again, stops
+  the profile's downloads until the session changes; a request that would have gone as another profile does the same. A
+  full drive fails the download as "not enough space", its bytes kept for Resume. A file of another length starts over from
+  its first byte once, and fails the second time in a row. Refusals (an expired prepared file, revoked, 404) fail it for
+  now. A missing folder waits until a recheck finds it, at least every minute.
+- **Status reports.** Turning Downloading or Completed records a `DownloadStatusEvent` with the time of the change in the
+  record (`PendingReport`) and sends it; one that does not go is sent again as it is, time included, at the next wake and
+  after the retry delays. One the server will not take (another revision, an entry preparing again, a time it refuses) is
+  dropped. A completed transfer renames `media.part` to its media name before the record says Completed.
+- **Stop.** `StopAsync` stops the loop and the transfers and waits up to `StopBudget` (2 s) for them to let go of their
+  files.
+
 ## Windows App SDK
 
 The App is unpackaged and self-contained (`WindowsPackageType=None`, `WindowsAppSDKSelfContained=true`): the Windows

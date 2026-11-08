@@ -20,10 +20,23 @@ public sealed record NetworkLink(string Transport, bool IsMetered)
 public interface INetworkLink
 {
     NetworkLink Current { get; }
+
+    /// <summary>Raised on any thread when the link may have changed, as when a hotspot replaces the home Wi-Fi.</summary>
+    event EventHandler? Changed;
 }
 
-/// <summary>Without the system's view: every link is <see cref="NetworkLink.Unknown"/>.</summary>
+/// <summary>Without the system's view: every link is <see cref="NetworkLink.Unknown"/>, and it never changes.</summary>
 public sealed class UnknownNetworkLink : INetworkLink
 {
     public NetworkLink Current => NetworkLink.Unknown;
+
+    public event EventHandler? Changed
+    {
+        add
+        {
+        }
+        remove
+        {
+        }
+    }
 }

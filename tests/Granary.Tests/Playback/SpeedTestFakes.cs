@@ -145,6 +145,15 @@ internal sealed class FakeHttpClients(HttpMessageHandler handler) : IHttpClientF
 internal sealed class FakeNetworkLink : INetworkLink
 {
     public NetworkLink Current { get; set; } = new(NetworkTransports.Ethernet, false);
+
+    public event EventHandler? Changed;
+
+    /// <summary>The link turns metered or unmetered, as a hotspot does, and says so.</summary>
+    public void SetMetered(bool metered)
+    {
+        Current = Current with { IsMetered = metered };
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
 }
 
 internal static class ProbeAnswers

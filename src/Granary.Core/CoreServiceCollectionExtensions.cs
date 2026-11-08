@@ -297,6 +297,11 @@ public static class CoreServiceCollectionExtensions
             new JsonDownloadPreferences(JsonDownloadPreferences.DefaultPath, sp.GetRequiredService<ILogger<JsonDownloadPreferences>>()));
         services.AddSingleton(sp => new DownloadStore(DownloadStore.DefaultIndexPath, sp.GetRequiredService<IDownloadPreferences>(),
             sp.GetRequiredService<TimeProvider>(), sp.GetRequiredService<ILogger<DownloadStore>>()));
+        // The app puts Windows' own count of free space in first, which also measures network shares.
+        services.TryAddSingleton<IDiskSpace, DriveInfoDiskSpace>();
+        services.AddTransient<DownloadTransfer>();
+        // One queue runs the active profile's transfers; the app starts it and stops it when the window closes.
+        services.AddSingleton<DownloadQueue>();
     }
 
     // Artwork URLs are presigned and public: no credentials, no identity headers. HTTP/2 lets a page's images
