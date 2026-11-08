@@ -17,7 +17,7 @@ namespace Granary.App.Controls;
 public sealed partial class DetailHero : UserControl
 {
     public static readonly DependencyProperty ViewModelProperty =
-        DependencyProperty.Register(nameof(ViewModel), typeof(ItemDetailViewModel), typeof(DetailHero), new PropertyMetadata(null));
+        DependencyProperty.Register(nameof(ViewModel), typeof(ItemDetailViewModel), typeof(DetailHero), new PropertyMetadata(null, OnViewModelChanged));
 
     // The Info dialog: wide, most of the window's height.
     private const double InfoWidth = 980;
@@ -52,6 +52,23 @@ public sealed partial class DetailHero : UserControl
     }
 
     private int _loads;
+
+    // A view model set or swapped while the hero shows: the Watch Party entry follows the new one, and none without one.
+    private static void OnViewModelChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is not DetailHero { _loads: > 0 } hero)
+        {
+            return;
+        }
+        if (e.NewValue is ItemDetailViewModel page)
+        {
+            hero.Party.Attach(page);
+        }
+        else
+        {
+            hero.Party.Detach();
+        }
+    }
 
     /// <summary>"Start a Watch Party" in the More menu, and the sheet it opens.</summary>
     public StartPartyViewModel Party { get; }
