@@ -45,6 +45,7 @@ public interface IPlaybackDevicePreferences
 
     Task SetPassoutThresholdAsync(int episodes);
 
+    /// <summary>Saves <see cref="ResumeRewindSeconds"/>, brought into 0 to 30 first.</summary>
     Task SetResumeRewindSecondsAsync(int seconds);
 
     Task SetDiscordStatusAsync(bool enabled);
@@ -99,8 +100,8 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
         _passoutThreshold = file?.PassoutThreshold is { } episodes and >= 0 and <= AutoPlayStreak.MaxThreshold
             ? episodes
             : AutoPlayStreak.DefaultThreshold;
-        _resumeRewindSeconds = file?.ResumeRewindSeconds is { } seconds and >= 0 and <= ResumeRewind.MaxSeconds
-            ? seconds
+        _resumeRewindSeconds = file?.ResumeRewindSeconds is { } seconds and >= 0 and <= ResumeRewind.MaxSeconds && double.IsInteger(seconds)
+            ? (int)seconds
             : ResumeRewind.DefaultSeconds;
         _discordStatus = file?.DiscordStatus == true;
     }
@@ -160,7 +161,7 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
 
     public Task SetResumeRewindSecondsAsync(int seconds)
     {
-        _resumeRewindSeconds = seconds;
+        _resumeRewindSeconds = Math.Clamp(seconds, 0, ResumeRewind.MaxSeconds);
         return QueueSave();
     }
 
@@ -229,8 +230,9 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
 /// <summary><c>playback-device.json</c>.</summary>
 internal sealed record PlaybackDeviceFile(bool? DecodesInSoftware, string? UpDown, int? PassoutThreshold)
 {
-    // Missing from an older file: a resume then lands on the saved point, the default.
-    public int? ResumeRewindSeconds { get; init; }
+    // Missing from an older file: a resume then lands on the saved point, the default. A number of any kind, so that
+    // 7.5 typed into the file only loses this value, not the file's other choices.
+    public double? ResumeRewindSeconds { get; init; }
 
     public bool? DiscordStatus { get; init; }
 }

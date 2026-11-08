@@ -2120,7 +2120,7 @@ Sources: `silo-server/internal/apiv2/playback.go:206-212,413-426`,
 - Granary keeps `player.resume_rewind_seconds` on the PC only (`resume_rewind_seconds` in `playback-device.json`, set
   under Settings → Playback → This PC, 0 to 30) and writes nothing to the server. Its default is **0**, not the
   contract's 7: the owner's choice, because viewers expect the exact point. A file without the key, or with a value
-  outside 0 to 30, reads as 0. Granary rewinds as Android does: Up Next starts the next episode
+  that is not a whole number from 0 to 30, reads as 0, and a save keeps to 0 to 30. Granary rewinds as Android does: Up Next starts the next episode
   at 0, and the player's previous and next episode buttons (also in the taskbar preview and on the media keys), which
   resume as the web player does, resume exactly (`PlayRequest.ResumeWithoutRewind`). Every other resume, On Deck in
   the player included, is rewound.

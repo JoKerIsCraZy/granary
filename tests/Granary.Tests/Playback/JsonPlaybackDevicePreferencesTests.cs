@@ -148,10 +148,25 @@ public sealed class JsonPlaybackDevicePreferencesTests : IDisposable
     }
 
     [Theory]
+    [InlineData(99, 30)]
+    [InlineData(-5, 0)]
+    public async Task ARewindOutOfBounds_IsSavedAsTheNearestAllowed(int asked, int kept)
+    {
+        var preferences = Create();
+
+        await preferences.SetResumeRewindSecondsAsync(asked);
+
+        Assert.Equal(kept, preferences.ResumeRewindSeconds);
+        Assert.Contains(string.Create(CultureInfo.InvariantCulture, $"\"resume_rewind_seconds\": {kept}"),
+            await File.ReadAllTextAsync(FilePath, TestContext.Current.CancellationToken), StringComparison.Ordinal);
+    }
+
+    [Theory]
     [InlineData("{ \"resume_rewind_seconds\": 31, \"up_down\": \"volume\" }")]
     [InlineData("{ \"resume_rewind_seconds\": -1, \"up_down\": \"volume\" }")]
+    [InlineData("{ \"resume_rewind_seconds\": 7.5, \"up_down\": \"volume\" }")]
     [InlineData("{ \"up_down\": \"volume\" }")]
-    public async Task ARewindOutOfBounds_OrAnOlderFile_MeansNone_AndKeepsTheOtherChoices(string file)
+    public async Task ARewindOutOfBounds_NotWhole_OrMissing_MeansNone_AndKeepsTheOtherChoices(string file)
     {
         Directory.CreateDirectory(_directory);
         await File.WriteAllTextAsync(FilePath, file, TestContext.Current.CancellationToken);
