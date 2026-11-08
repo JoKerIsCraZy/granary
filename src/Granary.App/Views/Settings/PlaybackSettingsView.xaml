@@ -69,6 +69,12 @@
                                   SelectedItem="{x:Bind ViewModel.SelectedStillWatching, Mode=TwoWay}" AutomationProperties.Name="Still watching prompt" />
                     </StackPanel>
                 </controls:SettingsRow>
+                <!-- Granary's own: Silo's clients always have the sleep timer. An open player, also the minimized one, follows at once. -->
+                <controls:SettingsRow Label="Sleep timer"
+                                      Description="Show the Sleep button in the player, which pauses playback after a set time or at the end of an episode. Turning it off ends a timer that's running.">
+                    <ToggleSwitch Style="{StaticResource SiloSettingsSwitchStyle}" IsOn="{x:Bind ViewModel.SleepTimerButton, Mode=TwoWay}"
+                                  AutomationProperties.Name="Sleep timer" />
+                </controls:SettingsRow>
                 <!-- mpv reads the file when it starts, and each load starts a new one if the file changed (docs/architecture.md, "Your own mpv.conf"). -->
                 <controls:SettingsRow Label="mpv configuration"
                                       Description="Use your own mpv options from mpv.conf, such as shaders, scaling or debanding. They apply from the next title you play. Granary keeps the options it needs to show the video and follow your Silo server's choices. A wrong option can make playback worse; delete the file to go back to normal.">

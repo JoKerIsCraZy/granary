@@ -21,6 +21,7 @@ public sealed class PlayerViewModelSleepTimerTests
     private readonly ManualTimeProvider _time = new();
     private readonly RecordingNavigation _navigation = new();
     private readonly FakeUpNextSource _source = new();
+    private readonly InMemoryPlaybackDevicePreferences _device = new();
     private readonly List<FakeServerPlayback> _playbacks = [];
     private double _position;
 
@@ -39,7 +40,7 @@ public sealed class PlayerViewModelSleepTimerTests
             };
             _playbacks.Add(playback);
             return playback;
-        }, new PlaybackStops(), _time, _source);
+        }, new PlaybackStops(), _time, _source, devicePreferences: _device);
         _navigation.NavigateTo(AppRoute.Item, "detail");
         _navigation.NavigateTo(AppRoute.Player);
         await viewModel.StartAsync(PlayRequest.Resume(episode?.ContentId ?? "movie-1"));
@@ -445,6 +446,106 @@ public sealed class PlayerViewModelSleepTimerTests
 
         Assert.Equal([15], Playback.SleepTimerDefaults);
         Assert.Equal("15 min", Assert.Single(viewModel.SleepTimerOptions, o => o.IsDefault).Label);
+    }
+
+    [Fact]
+    public async Task TheButton_ShowsAsThisPcHasIt_ByDefault()
+    {
+        var viewModel = await PlayingAsync(Ted);
+
+        Assert.True(viewModel.ShowsSleepTimer);
+    }
+
+    [Fact]
+    public async Task APlayerOpenedWithTheButtonOff_HasNone()
+    {
+        await _device.SetSleepTimerButtonAsync(false);
+
+        var viewModel = await PlayingAsync(Ted);
+
+        Assert.False(viewModel.ShowsSleepTimer);
+    }
+
+    [Fact]
+    public async Task ThePlayer_FollowsTheSettingAtOnce()
+    {
+        var viewModel = await PlayingAsync(Ted);
+
+        await _device.SetSleepTimerButtonAsync(false);
+        Assert.False(viewModel.ShowsSleepTimer);
+
+        await _device.SetSleepTimerButtonAsync(true);
+        Assert.True(viewModel.ShowsSleepTimer);
+    }
+
+    [Fact]
+    public async Task TurnedOffWhileADurationRuns_TheTimerEnds_AndNothingPauses()
+    {
+        var viewModel = await PlayingAsync(Ted);
+        Choose(viewModel, "5 min");
+        _time.Advance(TimeSpan.FromMinutes(2));
+
+        await _device.SetSleepTimerButtonAsync(false);
+        _time.Advance(TimeSpan.FromMinutes(10));
+
+        Assert.False(viewModel.IsSleepTimerOn);
+        Assert.Equal("Sleep", viewModel.SleepTimerText);
+        Assert.Equal("", viewModel.SleepTimerStatus);
+        Assert.False(_engine.Current.IsPaused);
+    }
+
+    [Fact]
+    public async Task TurnedOffWithEndOfEpisode_TheNextEpisodeComesAsUsual()
+    {
+        var viewModel = await PlayingAsync(Ted);
+        Choose(viewModel, "End of episode");
+
+        await _device.SetSleepTimerButtonAsync(false);
+        PlaysToItsEnd();
+
+        Assert.False(viewModel.IsSleepTimerOn);
+        Assert.True(viewModel.IsNextUpCountingDown);
+    }
+
+    [Fact]
+    public async Task TurnedOffAndOnAgain_TheMenuStillOpensOnTheDurationStartedLast_AndNothingMoreIsSaved()
+    {
+        var viewModel = await PlayingAsync(Ted);
+        Choose(viewModel, "15 min");
+
+        await _device.SetSleepTimerButtonAsync(false);
+        await _device.SetSleepTimerButtonAsync(true);
+
+        Assert.Equal([15], Playback.SleepTimerDefaults);
+        Assert.Equal("15 min", Assert.Single(viewModel.SleepTimerOptions, o => o.IsDefault).Label);
+        Assert.False(viewModel.IsSleepTimerOn);
+    }
+
+    [Fact]
+    public async Task ARowFromAMenuOpenedBeforeTheButtonWent_StartsNothing()
+    {
+        var viewModel = await PlayingAsync(Ted);
+        var rows = viewModel.SleepTimerOptions;
+
+        await _device.SetSleepTimerButtonAsync(false);
+        viewModel.ChooseSleepTimer(rows.Single(o => o.Label == "5 min"));
+        viewModel.ChooseSleepTimer(rows.Single(o => o.Label == "End of episode"));
+        _time.Advance(TimeSpan.FromMinutes(10));
+
+        Assert.False(viewModel.IsSleepTimerOn);
+        Assert.False(_engine.Current.IsPaused);
+        Assert.Empty(Playback.SleepTimerDefaults);
+    }
+
+    [Fact]
+    public async Task APlayerDisposed_NoLongerFollowsTheSetting()
+    {
+        var viewModel = await PlayingAsync(Ted);
+        Assert.True(_device.IsSleepTimerButtonFollowed);
+
+        viewModel.Dispose();
+
+        Assert.False(_device.IsSleepTimerButtonFollowed);
     }
 
     private sealed class FakeUpNextSource : IUpNextSource

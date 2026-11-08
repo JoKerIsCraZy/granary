@@ -30,6 +30,12 @@ public interface IPlaybackDevicePreferences
     /// <summary>Raised on the caller's thread when <see cref="DiscordStatus"/> was turned on or off, so a title that plays follows.</summary>
     event EventHandler? DiscordStatusChanged;
 
+    /// <summary>The player has its Sleep button (<see cref="ViewModels.PlayerViewModel.ShowsSleepTimer"/>); on by default.</summary>
+    bool SleepTimerButton { get; }
+
+    /// <summary>Raised on the caller's thread when <see cref="SleepTimerButton"/> was turned on or off, so an open player follows.</summary>
+    event EventHandler? SleepTimerButtonChanged;
+
     /// <summary>The latest save: done once it is on disk, or failed and logged. The window waits for it briefly as it closes.</summary>
     Task LatestSave { get; }
 
@@ -40,6 +46,8 @@ public interface IPlaybackDevicePreferences
     Task SetPassoutThresholdAsync(int episodes);
 
     Task SetDiscordStatusAsync(bool enabled);
+
+    Task SetSleepTimerButtonAsync(bool shown);
 }
 
 /// <summary>Up and Down in the player, with focus on the picture.</summary>
@@ -57,9 +65,10 @@ public enum PlayerUpDown
 
 /// <summary>
 /// <see cref="IPlaybackDevicePreferences"/> in <c>playback-device.json</c> in the data directory
-/// (<c>{ "decodes_in_software": true, "up_down": "volume", "passout_threshold": 5, "discord_status": true }</c>). Without the
-/// file, or with one that cannot be read, direct play needs the GPU, Up and Down show the controls and menus, the player
-/// waits after three episodes and Discord's status stays as it is, as by default; a value it does not know is the default. One that cannot be written is logged, and the choice still holds for this run. Files are
+/// (<c>{ "decodes_in_software": true, "up_down": "volume", "passout_threshold": 5, "discord_status": true, "sleep_timer_button": false }</c>).
+/// Without the file, or with one that cannot be read, direct play needs the GPU, Up and Down show the controls and menus,
+/// the player waits after three episodes, Discord's status stays as it is and the player has its Sleep button, as by
+/// default; a value it does not know, or one an older file lacks, is the default. One that cannot be written is logged, and the choice still holds for this run. Files are
 /// written off the caller's thread, which is the UI's.
 /// </summary>
 public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
@@ -76,6 +85,7 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
     private volatile PlayerUpDown _upDown;
     private volatile int _passoutThreshold;
     private volatile bool _discordStatus;
+    private volatile bool _sleepTimerButton;
     private Task _latestSave = Task.CompletedTask;
 
     public JsonPlaybackDevicePreferences(string filePath, ILogger<JsonPlaybackDevicePreferences> logger)
@@ -90,6 +100,8 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
             ? episodes
             : AutoPlayStreak.DefaultThreshold;
         _discordStatus = file?.DiscordStatus == true;
+        // Off only when turned off: a file from before the switch shows the button.
+        _sleepTimerButton = file?.SleepTimerButton != false;
     }
 
     public static string DefaultPath => Path.Combine(AppPaths.DataDirectory, "playback-device.json");
@@ -103,6 +115,10 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
     public bool DiscordStatus => _discordStatus;
 
     public event EventHandler? DiscordStatusChanged;
+
+    public bool SleepTimerButton => _sleepTimerButton;
+
+    public event EventHandler? SleepTimerButtonChanged;
 
     public Task LatestSave
     {
@@ -155,6 +171,18 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
         return save;
     }
 
+    public Task SetSleepTimerButtonAsync(bool shown)
+    {
+        bool changed = shown != _sleepTimerButton;
+        _sleepTimerButton = shown;
+        var save = QueueSave();
+        if (changed)
+        {
+            SleepTimerButtonChanged?.Invoke(this, EventArgs.Empty);
+        }
+        return save;
+    }
+
     private PlaybackDeviceFile? Load()
     {
         try
@@ -183,6 +211,7 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
                 var file = new PlaybackDeviceFile(_decodesInSoftware, _upDown == PlayerUpDown.Volume ? VolumeValue : ControlsValue, _passoutThreshold)
                 {
                     DiscordStatus = _discordStatus,
+                    SleepTimerButton = _sleepTimerButton,
                 };
                 await JsonSerializer.SerializeAsync(stream, file, PlaybackDeviceJsonContext.Default.PlaybackDeviceFile).ConfigureAwait(false);
             }
@@ -208,6 +237,8 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
 internal sealed record PlaybackDeviceFile(bool? DecodesInSoftware, string? UpDown, int? PassoutThreshold)
 {
     public bool? DiscordStatus { get; init; }
+
+    public bool? SleepTimerButton { get; init; }
 }
 
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower, WriteIndented = true)]

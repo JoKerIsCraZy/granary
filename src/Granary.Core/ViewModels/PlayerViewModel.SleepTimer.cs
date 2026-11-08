@@ -32,6 +32,16 @@ public sealed partial class PlayerViewModel
     // The duration the viewer started last here, which is saved as this device's; the running one while _sleepEnds is set.
     private int? _sleepPicked;
 
+    // Whether this PC shows the Sleep button (Settings → Playback → This PC); without it, as in tests that leave it out, it shows.
+    private readonly IPlaybackDevicePreferences? _devicePreferences;
+
+    /// <summary>
+    /// The bar has the Sleep button, as Settings → Playback → This PC has it (Granary's own switch, on by default). Turned off,
+    /// a timer that runs ends, as Turn off ends it.
+    /// </summary>
+    [ObservableProperty]
+    public partial bool ShowsSleepTimer { get; private set; } = true;
+
     /// <summary>A duration counts down, or "End of episode" is on: the button is white with the amber dot.</summary>
     [ObservableProperty]
     public partial bool IsSleepTimerOn { get; private set; }
@@ -58,6 +68,11 @@ public sealed partial class PlayerViewModel
     public void ChooseSleepTimer(SleepTimerOption option)
     {
         ArgumentNullException.ThrowIfNull(option);
+        // A row from a menu opened before Settings took the button away: the timer stays off.
+        if (!ShowsSleepTimer)
+        {
+            return;
+        }
         switch (option.Action)
         {
             case SleepTimerAction.Minutes when option.Minutes > 0:
@@ -231,6 +246,44 @@ public sealed partial class PlayerViewModel
 
     // The end row comes and goes with the title's end.
     partial void OnPhaseChanged(PlayerPhase value) => ShowSleepTimer();
+
+    private void FollowSleepTimerButton()
+    {
+        if (_devicePreferences is { } preferences)
+        {
+            ShowsSleepTimer = preferences.SleepTimerButton;
+            preferences.SleepTimerButtonChanged += OnSleepTimerButtonChanged;
+        }
+    }
+
+    private void StopFollowingSleepTimerButton()
+    {
+        if (_devicePreferences is { } preferences)
+        {
+            preferences.SleepTimerButtonChanged -= OnSleepTimerButtonChanged;
+        }
+    }
+
+    // Raised on the thread that changed the setting, which is the UI's; what holds is read once the change has its turn.
+    private void OnSleepTimerButtonChanged(object? sender, EventArgs e) => _dispatcher.Post(ApplySleepTimerButton);
+
+    private void ApplySleepTimerButton()
+    {
+        bool shows = _devicePreferences?.SleepTimerButton != false;
+        if (shows == ShowsSleepTimer)
+        {
+            return;
+        }
+        ShowsSleepTimer = shows;
+        if (!shows)
+        {
+            if (IsSleepTimerOn)
+            {
+                _logger.LogInformation("Sleep timer turned off with its button in Settings");
+            }
+            StopSleepTimer();
+        }
+    }
 
     // "30 min", as the web's rows say it.
     private static string MinutesLabel(int minutes) => string.Create(CultureInfo.InvariantCulture, $"{minutes} min");
