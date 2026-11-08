@@ -505,7 +505,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     selected.
   - Granary's rows follow, 56 apart: a series' seasons, all at once in a grid that wraps at the page's width (185 px
     posters, a season opens its own page), or a season's episode grid, more episodes, extras, trailers, cast and crew,
-    more like this.
+    a movie's box set, more like this.
   - Spoilers, as the web's `SeasonEpisodeGrid`, `EpisodeCarousel` and `EpisodeContent` (the profile's Title Pages
     switches, [episode spoilers](api-contract.md#663-episode-spoilers)): in the episode grid and More Episodes an episode
     neither played nor started has its still blurred (only its own still: the series' art standing in for one stays) and
@@ -599,10 +599,34 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     10 to the label, 12 to the first card. The separator is not a stop for the keyboard or the remote, so the arrows
     move from card to card over it, and screen readers skip it, as the web's `aria-hidden`; a card is read with its role
     instead ("Elena Moreau, Writer"). A card with a person opens their page.
+  - A movie's box set (the web's `MovieBoxSetRow`, where `MovieContent.tsx` puts it, before More Like This): a row
+    titled with the box set's name ("Masterplan Box Set") and EXPLORE ALL, which opens the box set's page; its films in
+    release order as the row's usual posters, with the profile's poster size, caption and badges, watched progress
+    included. The movie on screen is marked as the web marks it: a 2 px ring in the text colour at 80 % (the artwork's
+    hairline and a pixel inside it) and "THIS FILM" (10 px semibold capitals 0.14 em apart, on the page's dark at 85 %),
+    centred with its top 32 px above the poster's foot; its corners keep their badges. Screen readers hear "Masterplan,
+    2026, this film". The row opens with that card in its middle and Up or Down into it lands on it, as More Episodes;
+    clicking it stays on the page, and as in the apps it has no play disc, buttons or menu, since the page's own buttons
+    hold its state. Another film opens its page. The row shows nothing while it loads, for a movie in no box set, and on
+    a server without box sets or when the read fails; a box set of one film shows that one (the server keeps sets of
+    fewer than its minimum out).
   - Below a 1400 px window everything steps down (hero 84 from the top and 12 apart, logo 116, meta 15, overview 14/22,
     buttons 44, rows 44 apart), so a 1280×800 window keeps it whole. The step sets sizes, not styles, so a focused
     button keeps its focus when the window crosses it.
   - An episode without a backdrop of its own shows its thumbhash or black, never its poster stretched across.
+- A box set (`BoxSetPage`, `BoxSetViewModel`, the web's `pages/BoxSetPage.tsx`): a detail page, so the sidebar narrows
+  to its rail. Its hero is laid out as a title from TMDB's (the web's `DetailHero` with its poster): over the backdrop
+  (its thumbhash first) the 220 px poster, "BOX SET" in the overline style, the name, the web's metadata badges in
+  capitals ("3 FILMS", "2019 – 2028", "1 OF 3 WATCHED" once one is watched), the overview, and the red Play pill for the
+  film to watch next: the first in release order not played, or the first once all are, "Play Groundwork" or, once some
+  are played and not all or that film is started, "Continue · Masterplan" (Android's label; the web looks at the count
+  only), playing on from where it was left. A long title is cut rather than widen the hero. Then "Movies", its films as
+  the library's posters, each opening its page. The page reads the box set again 400 ms after a change of the viewer's
+  state while it shows (a film marked watched on its card, one played in the minimized player), so the badges and Play
+  follow, as Android's page does; a failed reading keeps the page. A read that fails says "Couldn't load this box set"
+  and "Something went wrong while loading it. Try again in a moment." with Try again; a 404 says "This box set isn't
+  available" and "Box sets may be turned off for this library, or too few of its movies are here.". Keyboard and remote
+  start on Play, and a remote's Play key plays the next film anywhere on the page.
 - Watch Party (`WatchPartyPage`, the web's `pages/watchtogether/WatchPartyHub.tsx`): "WATCH PARTY", "Watch together,
   wherever everyone is." and "Open a room, share the code, and everyone plays in sync. The host picks what's on, or the
   whole room votes."; beside each other "Start a party" and "Join a party". Start a party has the web's accent glow at

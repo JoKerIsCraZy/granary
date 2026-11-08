@@ -63,6 +63,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
     private readonly RatingWrites? _ratings;
     private readonly SeriesAirings? _airings;
     private readonly EpisodeSpans? _spans;
+    private readonly BoxSetsApi? _boxSets;
 
     // A newer load makes the answers of older calls stale.
     private int _generation;
@@ -98,7 +99,8 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         TimeProvider? time = null,
         RatingWrites? ratings = null,
         SeriesAirings? airings = null,
-        EpisodeSpans? spans = null)
+        EpisodeSpans? spans = null,
+        BoxSetsApi? boxSets = null)
     {
         _session = session;
         _catalog = catalog;
@@ -115,6 +117,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         _ratings = ratings;
         _airings = airings;
         _spans = spans;
+        _boxSets = boxSets;
     }
 
     /// <summary>The display scale artwork is requested for (1.5 at 150 %); set it before loading.</summary>
@@ -475,6 +478,7 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         Trailers = [];
         Credits = [];
         Similar = [];
+        ResetBoxSet();
     }
 
     private void Show(CatalogItemDetail item, Uri server, string? profileId, long ratingMark)
@@ -519,7 +523,9 @@ public sealed partial class ItemDetailViewModel : ObservableObject
             CatalogItemTypes.Series => Task.WhenAll(
                 LoadSeasonsAsync(item, server, images, generation, cancellationToken),
                 LoadSimilarAsync(item, server, images, generation, cancellationToken)),
-            CatalogItemTypes.Movie => LoadSimilarAsync(item, server, images, generation, cancellationToken),
+            CatalogItemTypes.Movie => Task.WhenAll(
+                LoadSimilarAsync(item, server, images, generation, cancellationToken),
+                LoadBoxSetAsync(server, images, generation, cancellationToken)),
             CatalogItemTypes.Season => LoadSeasonEpisodesAsync(item, server, images, generation, cancellationToken),
             CatalogItemTypes.Episode => LoadEpisodeContextAsync(item, server, images, generation, cancellationToken),
             _ => Task.CompletedTask,

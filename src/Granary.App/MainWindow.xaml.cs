@@ -607,8 +607,8 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    // A title's page and a person's, the web's detail pages: the sidebar narrows to its rail beside them.
-    private static bool IsDetail(AppRoute? route) => route is AppRoute.Item or AppRoute.Person;
+    // A title's page, a person's and a box set's, the web's detail pages: the sidebar narrows to its rail beside them.
+    private static bool IsDetail(AppRoute? route) => route is AppRoute.Item or AppRoute.Person or AppRoute.BoxSet;
 
     // The headers fold their sections in the open pane; in the icon-only rail each is the web's short divider. Set here,
     // not by NavigationView's pane states, which lag behind after the player's minimal mode. LIBRARIES only with libraries.

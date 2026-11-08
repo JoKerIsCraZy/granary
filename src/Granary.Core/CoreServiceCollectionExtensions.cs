@@ -94,6 +94,7 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<SettingsApi>();
         services.AddTransient<LibraryPageApi>();
         services.AddTransient<CollectionsApi>();
+        services.AddTransient<BoxSetsApi>();
         services.AddTransient<RecommendationsApi>();
         services.AddTransient<CalendarApi>();
         services.AddTransient<NotificationsApi>();
@@ -196,6 +197,7 @@ public static class CoreServiceCollectionExtensions
         services.AddTransient<PlayerViewModel>();
         services.AddTransient<Granary.Core.ViewModels.Player.AddSubtitlesViewModel>();
         services.AddTransient<ItemDetailViewModel>();
+        services.AddTransient<BoxSetViewModel>();
         // One writer per title's stars for the whole app, so a title's page opened again joins the writes still on their way.
         services.AddSingleton<ViewModels.Detail.RatingWrites>();
         // The calendar's airings a season's grid places missing and upcoming episodes by, and the double episodes' files it

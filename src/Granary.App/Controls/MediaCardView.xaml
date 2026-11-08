@@ -109,6 +109,22 @@
                 </Border>
             </Border>
 
+            <!--
+                A movie's own card in its box set's row, as the web's MovieBoxSetRow.tsx marks it: a 2 px ring in the text colour at
+                80 % (the art's hairline and one pixel inside it, as Now Viewing's) and "THIS FILM" in the page's dark at 85 %,
+                10 px semibold capitals 0.14 em apart, centred with its top 32 px above the poster's foot. Made for the first such
+                card only (MediaCardView.ShowMark); the corners keep their badges.
+            -->
+            <Border x:Name="ThisFilm" x:Load="False" BorderBrush="#CCE8E8EC" BorderThickness="1" CornerRadius="15" IsHitTestVisible="False"
+                    AutomationProperties.AccessibilityView="Raw">
+                <Border Margin="0,0,0,11" Padding="10,6" HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                        CornerRadius="{StaticResource SiloPillCornerRadius}" controls:Pill.IsEnabled="True" Background="#D90E0E10">
+                    <!-- The card's name says it already ("…, this film"). -->
+                    <TextBlock Text="THIS FILM" Style="{StaticResource SiloBadgeTextStyle}" CharacterSpacing="140" TextLineBounds="Tight"
+                               Foreground="{StaticResource SiloForegroundBrush}" AutomationProperties.AccessibilityView="Raw" />
+                </Border>
+            </Border>
+
             <!-- Made only for a card with progress, the play disc and the card's buttons only on first need (MediaCardView.EnsureActions). -->
             <ProgressBar x:Name="Progress" x:Load="False" Margin="10,0,10,8" VerticalAlignment="Bottom" Height="3" MinHeight="3" CornerRadius="2"
                          Maximum="1" Foreground="{StaticResource SiloPrimaryBrush}" Background="#66000000"

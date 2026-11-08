@@ -8,6 +8,10 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Added
 
+- **Box sets:** a film that belongs to a box set, such as a trilogy, now shows the set's films in release order on its
+  page, the film you're on marked "This film". Explore all opens the box set's own page, with its films, how many you've
+  watched, and Play for the next one you haven't seen. Box sets show when your Silo server has them turned on for the
+  library.
 - **Extras on title pages:** a movie's or series' page now shows the featurettes, deleted scenes and other extras your
   Silo server has for it, in groups by kind as in Silo's web, right before Trailers & More. Click one, or press OK on a
   TV remote, and it plays in Granary from the start.

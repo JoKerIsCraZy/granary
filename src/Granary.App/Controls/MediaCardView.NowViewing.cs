@@ -8,8 +8,9 @@ using Windows.UI.ViewManagement;
 
 namespace Granary.App.Controls;
 
-// The page's own title among its siblings (MediaCard.IsCurrent), as the web's EpisodeCarousel marks it: a 2 px accent ring
-// round the artwork and the "Now Viewing" pill top left, whose dot pings (Tailwind's animate-ping). Only that card makes
+// The page's own title among its siblings (MediaCard.IsCurrent). An episode as the web's EpisodeCarousel marks it: a 2 px
+// accent ring round the artwork and the "Now Viewing" pill top left, whose dot pings (Tailwind's animate-ping). A movie in
+// its box set's row as the web's MovieBoxSetRow: a light ring and "This film" at the poster's foot. Only that card makes
 // them; a recycled card changes the mark only when it changes.
 public sealed partial class MediaCardView
 {
@@ -23,7 +24,8 @@ public sealed partial class MediaCardView
     // Windows' "Animation effects", read once when the app starts: turned off, the dot stands still.
     private static readonly bool Pings = new UISettings().AnimationsEnabled;
 
-    private bool _marked;
+    // How the card is marked as its page's own title; null while it is not.
+    private CurrentMark? _mark;
     private bool _parked;
     private bool _loaded;
     private bool _pinging;
@@ -49,22 +51,32 @@ public sealed partial class MediaCardView
         }
     }
 
-    // The ring is the hairline in the accent, with the pixel inside it the mark's own; a brush changes no layout. The
-    // corner's own badges give way to the pill, as the web's carousel card has none there.
+    // The ring is the hairline in the mark's colour, with the pixel inside it the mark's own; a brush changes no layout. Now
+    // Viewing's corner badges give way to its pill, as the web's carousel card has none there; This film's pill is at the foot.
     private void ShowMark(MediaCard? card)
     {
-        bool marked = card?.IsCurrent == true;
-        if (marked != _marked)
+        CurrentMark? mark = card?.IsCurrent == true ? card.CurrentMark : null;
+        if (mark != _mark)
         {
-            _marked = marked;
-            if (marked && NowViewing is null)
+            _mark = mark;
+            _artBorder ??= Art.BorderBrush;
+            if (mark == CurrentMark.NowViewing && NowViewing is null)
             {
-                _artBorder = Art.BorderBrush;
                 FindName(nameof(NowViewing));
             }
-            Art.BorderBrush = marked ? Brush("SiloPrimaryBrush") : _artBorder;
-            NowViewing!.Visibility = Visible(marked);
-            TopLeftBadges.Visibility = Visible(!marked);
+            if (mark == CurrentMark.ThisFilm && ThisFilm is null)
+            {
+                FindName(nameof(ThisFilm));
+            }
+            Art.BorderBrush = mark switch
+            {
+                CurrentMark.NowViewing => Brush("SiloPrimaryBrush"),
+                CurrentMark.ThisFilm => ThisFilm!.BorderBrush,
+                _ => _artBorder,
+            };
+            NowViewing?.Visibility = Visible(mark == CurrentMark.NowViewing);
+            ThisFilm?.Visibility = Visible(mark == CurrentMark.ThisFilm);
+            TopLeftBadges.Visibility = Visible(mark != CurrentMark.NowViewing);
         }
         UpdatePing();
     }
@@ -73,7 +85,7 @@ public sealed partial class MediaCardView
     // set back to its first frame, so the next start begins clean.
     private void UpdatePing()
     {
-        bool pinging = _marked && _loaded && !_parked && Pings;
+        bool pinging = _mark == CurrentMark.NowViewing && _loaded && !_parked && Pings;
         if (pinging == _pinging || NowViewingPing is null)
         {
             return;

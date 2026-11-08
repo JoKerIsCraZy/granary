@@ -102,6 +102,9 @@ internal sealed class ItemDetailFixture
     /// <summary>The reads of a listed episode's multi-episode file the places are checked with; none unless a test sets them.</summary>
     public EpisodeSpans? Spans { get; set; }
 
+    /// <summary>The box set reads a movie's row comes from; none unless a test sets them, so the row stays out.</summary>
+    public BoxSetsApi? BoxSets { get; set; }
+
     /// <summary>The clock of the ratings' remembered ends.</summary>
     public ManualTimeProvider Time { get; } = new();
 
@@ -127,7 +130,8 @@ internal sealed class ItemDetailFixture
         time: Clock,
         ratings: Ratings,
         airings: Airings,
-        spans: Spans);
+        spans: Spans,
+        boxSets: BoxSets);
 
     /// <summary>The page once loaded, the places of a season's missing and upcoming episodes included, which come after.</summary>
     public async Task<ItemDetailViewModel> LoadAsync(string id)

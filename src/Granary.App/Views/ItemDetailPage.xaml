@@ -238,6 +238,11 @@
                         </controls:DetailShelf.ShelfContent>
                     </controls:DetailShelf>
 
+                    <!-- A movie's box set, where the web's MovieContent.tsx puts it: its films, this one marked; Explore all opens its page. -->
+                    <controls:MediaRow Title="{x:Bind ViewModel.BoxSetTitle, Mode=OneWay}" ItemsSource="{x:Bind ViewModel.BoxSetFilms, Mode=OneWay}"
+                                       CardInvokedCommand="{x:Bind ViewModel.OpenCardCommand}" ExploreAllCommand="{x:Bind ViewModel.OpenBoxSetCommand}"
+                                       Visibility="{x:Bind ViewModel.HasBoxSet, Mode=OneWay}" />
+
                     <controls:MediaRow Title="More Like This" ItemsSource="{x:Bind ViewModel.Similar, Mode=OneWay}"
                                        CardInvokedCommand="{x:Bind ViewModel.OpenCardCommand}"
                                        Visibility="{x:Bind ViewModel.HasSimilar, Mode=OneWay}" />

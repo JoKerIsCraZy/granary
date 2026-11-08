@@ -1212,6 +1212,27 @@ read): a missing one answers 428, one changed since 412, after which the client 
   `show_title_rules`); facet and language values from `GET /api/v2/catalog/filters?source=query`; people from
   `GET /api/v2/catalog/people?q=` (a person rule stores the name).
 
+### 7.18 Movie box sets
+
+A movie or mixed library with `box_sets_enabled` gathers the movies TMDB lists in one collection (a trilogy, a
+franchise) into a box set of at least its `box_set_min_movies` (2 to 10) movies the viewer can see; library browse never
+groups them (`silo-server/docs/catalog-api.md`, "Movie box sets"; `internal/apiv2/catalog_box_sets.go`). A box set
+(`CatalogBoxSet`): `id` (the TMDB collection's, a string), `library_id` (a string), `title` (TMDB's name, a trailing
+"Collection" written "Box Set"), `overview?`, `poster_url?`, `poster_thumbhash?`, `backdrop_url?`, `backdrop_thumbhash?`
+(cached like item artwork, or TMDB's own URL until the server caches it), `movie_count`, `played_count`, `first_year?`,
+`last_year?`. A server without box sets answers these reads 404.
+
+- `GET /api/v2/catalog/items/{id}/box-set[?library_id=]` (`getCatalogItemBoxSet`, image params) → `{ "box_set"?:
+  CatalogBoxSetDetail }`: the box set a movie's page shows, from `library_id` or the first of the movie's libraries with
+  box sets on. `box_set` is absent (`{}`, a 200) when the movie is in none the viewer sees, and for a series; 404 for an
+  id that is missing, hidden or not a catalog title. Granary asks for every movie's page without `library_id` (its title
+  route carries none), as the Apple app asks for every movie: a 404 or any failure only leaves the row out, unlogged for
+  a 404.
+- `GET /api/v2/catalog/box-sets/{id}?library_id=` (`getCatalogBoxSet`, `library_id` required, image params) →
+  `CatalogBoxSetDetail`: the box set and `items`, its movies in that library the viewer can see as `CatalogItem` cards, in
+  collection (release) order. 404 when the library has box sets off or the viewer sees too few of its movies: the
+  page says so in the web's words.
+
 ## 8. Playback protocol v3
 
 The server decides **how** a file is delivered; the client reports honestly what it can play and
