@@ -204,6 +204,24 @@ public sealed class ItemDetailDownloadsTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task ASeason_LeavesOutTheEpisodesOnThisPC_AndGoesOnceAllAre()
+    {
+        Creates(Created(DownloadPayloads.Entry("dl_5", "ready", episodeId: EpisodeId)));
+        _dialog.WhileShown = options => options.StartAsync();
+        await _h.AddAsync("dl_1", DownloadState.Completed, mediaItemId: "ep_1");
+        var page = await FollowedAsync(SeasonId);
+        await Until(() => page.ShowsDownload, "Download season showed");
+
+        await page.OpenDownloadCommand.ExecuteAsync(null);
+
+        // Only the fifth episode starts: the dialog says so, with its file's size.
+        Assert.Equal("1 episode · 2.0 GB", Assert.Single(_dialog.Shown).SizeText);
+        Assert.Equal([EpisodeId], CreateBodies().Select(b => b.GetProperty("episode_id").GetString()));
+        await Until(() => !page.ShowsDownload, "Download season went once every episode is on this PC");
+        Assert.False(page.ShowsMoreMenu);
+    }
+
+    [Fact]
     public async Task TheSeasonsEpisodeCards_GetDownloadEntries()
     {
         var page = await FollowedAsync(SeasonId);

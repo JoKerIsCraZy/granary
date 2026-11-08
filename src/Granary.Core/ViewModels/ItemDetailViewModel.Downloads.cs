@@ -84,7 +84,7 @@ public sealed partial class ItemDetailViewModel : ICardMenuSource
         }
         if (item.Type == CatalogItemTypes.Season)
         {
-            if (downloads.CanDownload && SeasonOffer(item) is { } season)
+            if (downloads.CanDownload && SeasonOffer(downloads, item) is { } season)
             {
                 await downloads.OfferSeasonAsync(season.Request, season.Title, season.KnownBytes);
             }
@@ -160,7 +160,7 @@ public sealed partial class ItemDetailViewModel : ICardMenuSource
         }
         if (item.Type == CatalogItemTypes.Season)
         {
-            return downloads.CanDownload && SeasonOffer(item) is not null
+            return downloads.CanDownload && SeasonOffer(downloads, item) is not null
                 ? new TitleDownloadState(true, DownloadActions.DownloadSeasonLabel, OpensDownloads: false, CanDelete: false)
                 : TitleDownloadState.Hidden;
         }
@@ -198,14 +198,16 @@ public sealed partial class ItemDetailViewModel : ICardMenuSource
     private int RuntimeSeconds(CatalogItemDetail item) =>
         item.Runtime is { } minutes && minutes > 0 ? minutes * 60 : (int)Math.Clamp(Pickers.Version?.Duration ?? 0, 0, int.MaxValue);
 
-    // The season's episodes that have a file the server can read, each one download; the size is their first files'.
-    private (SeasonDownloadRequest Request, string Title, long KnownBytes)? SeasonOffer(CatalogItemDetail item)
+    // The season's episodes that have a file the server can read and are not on this PC yet, each one download, so the dialog
+    // counts and sizes what starts; the size is their first files'. None left: no Download season.
+    private (SeasonDownloadRequest Request, string Title, long KnownBytes)? SeasonOffer(DownloadActions downloads, CatalogItemDetail item)
     {
         if (item.SeriesId is not { Length: > 0 } seriesId || item.SeasonNumber is not { } number)
         {
             return null;
         }
-        var episodes = _episodes.Where(e => e.ContentId.Length > 0 && UsableFiles(e).Count > 0).ToList();
+        var episodes = _episodes.Where(e => e.ContentId.Length > 0 && UsableFiles(e).Count > 0 && !downloads.StateOf(e.ContentId).OpensDownloads)
+            .ToList();
         if (episodes.Count == 0)
         {
             return null;
