@@ -306,7 +306,8 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<DownloadsFeature>();
         services.AddSingleton<DownloadManager>();
         // The title pages' Download items, and a download dialog's view model per offer, which the app's dialog shows
-        // (IDownloadOptionsDialog).
+        // (IDownloadOptionsDialog; one that shows nothing until the app registers its own).
+        services.TryAddSingleton<IDownloadOptionsDialog, NoDownloadOptionsDialog>();
         services.AddSingleton<Func<ViewModels.Downloads.DownloadOptionsViewModel>>(sp =>
             () => ActivatorUtilities.CreateInstance<ViewModels.Downloads.DownloadOptionsViewModel>(sp));
         services.AddSingleton<DownloadActions>();

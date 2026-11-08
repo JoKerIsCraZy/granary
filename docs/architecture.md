@@ -1016,6 +1016,8 @@ client guide.
   while it shows (`Follow`), which reads the capability and posts one refresh to the UI thread per burst of `Changed`. The
   download dialog's `DownloadOptionsViewModel` reads the free space once per dialog on the thread pool (`SpaceRead`) and
   shows it on the UI thread; Download waits for that read and does not start what would reach the transfer's reserve.
+  The app shows the dialog through `IDownloadOptionsDialog`; until it registers its own, Core's `NoDownloadOptionsDialog`
+  shows nothing, so the services resolve without it.
 - **The Downloads page.** `DownloadsViewModel` follows `Changed` between `Attach` and `Detach` and posts one refresh to the
   UI thread per burst. Progress alone updates its rows from `BytesDone(id)` and the space used from `BytesUsed()`, without
   `Items`, which asks Windows whether the connection is metered. Anything else reads `Items` again: the rows stay the same

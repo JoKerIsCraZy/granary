@@ -58,6 +58,26 @@ public sealed class CompositionRootTests
     }
 
     [Fact]
+    public void WithoutTheAppsDownloadDialog_TheServicesStillResolve()
+    {
+        Assert.SkipUnless(File.Exists(Path.Combine(AppContext.BaseDirectory, "libmpv-2.dll")),
+            "libmpv-2.dll not found; run scripts/fetch-native.ps1.");
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton<IUiDispatcher, ImmediateDispatcher>();
+        services.AddSingleton<INavigationService, RecordingNavigation>();
+        services.AddSingleton<IConfirmation, FakeConfirmation>();
+        services.AddSingleton<IFileLauncher, RecordingFileLauncher>();
+        services.AddGranaryCore();
+        services.AddGranaryPlayer(new MpvEngineOptions { VideoOutput = VideoOutputKind.None });
+
+        using var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });
+
+        Assert.NotNull(provider.GetRequiredService<Granary.Core.Downloads.DownloadActions>());
+        Assert.IsType<Granary.Core.Downloads.NoDownloadOptionsDialog>(provider.GetRequiredService<IDownloadOptionsDialog>());
+    }
+
+    [Fact]
     public void SiloApiException_ExposesTheProblemWithoutItsDetail()
     {
         var problem = new ApiProblem($"{ApiProblem.TypeOrigin}{ProblemCodes.RateLimited}", "Rate limited", 429,
