@@ -806,8 +806,8 @@ Films and episodes kept on this PC as the server's managed downloads (docs/api-c
 - **What files say.** JSON can say null or anything for every member, so each is checked (`DownloadRecords`). An index
   entry without its scope, id or title, or whose folder is not laid out as above for its scope and id, is left out and
   logged; such a folder is never read, written or deleted. A record with a member missing or impossible (a negative size,
-  an unknown state) is damaged; a validator `If-Range` does not take, or a media file name the store does not make, is
-  dropped. A load that fails is tried again by the next call.
+  an unknown state) is damaged; a validator `If-Range` does not take, or a media or artwork file name the store does not
+  make, is dropped. A load that fails is tried again by the next call.
 - **Missing folders.** A folder that is not there at the start, as on a drive that is not plugged in, keeps its row from
   the index as missing files (`StoredDownload.FilesMissing`), and its record is not written over meanwhile.
   `RecheckFolders` reads it again from its own record once it is back, and turns a folder that went into missing files; it
@@ -899,14 +899,50 @@ missing their folder.
   `Retry-After` is waited for, within 0 and 5 minutes (`MaxBusyWait`). 401, or a profile that wants its PIN again, stops
   the profile's downloads until the session changes; a request that would have gone as another profile does the same. A
   full drive fails the download as "not enough space", its bytes kept for Resume. A file of another length starts over from
-  its first byte once, and fails the second time in a row. Refusals (an expired prepared file, revoked, 404) fail it for
-  now. A missing folder waits until a recheck finds it, at least every minute.
+  its first byte once, and fails the second time in a row. Refusals go to what the server says (below). A missing folder
+  waits until a recheck finds it, at least every minute.
 - **Status reports.** Turning Downloading or Completed records a `DownloadStatusEvent` with the time of the change in the
   record (`PendingReport`) and sends it; one that does not go is sent again as it is, time included, at the next wake and
   after the retry delays. One the server will not take (another revision, an entry preparing again, a time it refuses) is
   dropped. A completed transfer renames `media.part` to its media name before the record says Completed.
 - **Stop.** `StopAsync` stops the loop and the transfers and waits up to `StopBudget` (2 s) for them to let go of their
   files.
+
+### What the server says
+
+The queue keeps the PC's downloads in line with the server's registry (`DownloadQueue.Server`), following the server's
+client guide.
+
+- **Scope activation.** When a profile's downloads become the active ones (a start, a profile switch, a sign-in that
+  came back), the queue reads the capability once: `proxy_delivery` has transfers ask `/file-proxy`, and
+  `revoked_removes_local` lets a revoked download's files go. A capability that cannot be read leaves both off. Then it
+  reconciles, and reads completed downloads' manifests again that are a day old (`ManifestRefresh`).
+- **Reconcile.** `ReconcileAsync` reads every page of the registry (the cursor until `has_more` is false) before anything
+  counts as gone, and judges only the downloads kept before it started reading, so one created meanwhile is never taken
+  for gone. Per entry: `preparing` makes a download that is under way Preparing, with the server's progress;
+  `ready`, `downloading` or `completed` queues a preparing one, and takes the entry's size, which is exact once it is
+  ready (a preparing entry's is an estimate, and a transfer against it would fail its integrity); a larger `revision`
+  stops the transfer, deletes the media, the part and the manifest and queues the download again for the new bytes, with
+  its subtitles fetched again; `revoked` with `revoked_removes_local` deletes the files, then the entry, and otherwise,
+  like `cancelled`, keeps a completed download playable and fails one still to fetch, both "no longer available" and never
+  fetched again; `failed` fails one under way. A download the whole registry no longer lists is no longer available
+  unless it is completed: that one stays as it is. A registry that cannot be read changes nothing. Failed downloads stay
+  failed: only Resume tries them again, so a refusal never turns into a loop.
+- **Preparing.** While a download of the scope is Preparing, the registry is read every `PreparingPoll` (10 s).
+- **Refusals.** `409 prepared_file_expired` from the file route asks `POST /prepare` once for that answer and waits as
+  Preparing until the registry says ready. A revoked entry, another 409 or a 404 fails the download and reconciles, which
+  tells revoked, replaced and gone apart. A status report the server refuses for another revision reconciles too.
+- **Assets.** Before a download's first transfer, `DownloadAssets.FetchAsync` reads the manifest and keeps it as sent
+  (`manifest.json`; its `integrity.expected_bytes` becomes the file's exact length), then the `poster`, `backdrop` and
+  `series_poster` artwork (`<kind>.<ext>`, named after the image type) and every subtitle (`sub-<n>.<format>`). Only paths
+  that are this download's own artwork or subtitles are asked for (`DownloadsApi.AssetPath`), since they carry the
+  profile's credentials. Artwork or a subtitle that does not come (404, a busy store's 503, a stall of 60 s, over 512 MiB)
+  is logged and left out, to be tried at the next refresh; a manifest that does not come ends the attempt as the file
+  would have. The record keeps the artwork's file names and each subtitle's revision; a refresh fetches the artwork the
+  folder lacks and the subtitles whose revision changed. The finished file is named after the manifest's container.
+- **Deletes.** The deletes still to send (`pending_deletes`) go out for the active scope at every pass; one the server
+  takes, or will never take (a client error), is forgotten, and one that cannot go now is tried at the next wake and after
+  the retry delays.
 
 ## Windows App SDK
 

@@ -35,17 +35,37 @@ internal static class DownloadPayloads
             """;
     }
 
-    /// <summary>One registry entry: a film's (<c>mv_1</c>), or with <paramref name="episodeId"/> an episode of <c>sr_1</c>.</summary>
-    public static string Entry(string id, string status, long revision = 1, long size = 3000, string? episodeId = null)
+    /// <summary>
+    /// One registry entry: a film's (<c>mv_1</c>), or with <paramref name="episodeId"/> an episode of <c>sr_1</c>. A preparing one
+    /// with <paramref name="progress"/> lists its encode's progress, as <c>GET /downloads</c> does.
+    /// </summary>
+    public static string Entry(string id, string status, long revision = 1, long size = 3000, string? episodeId = null, double? progress = null)
     {
         string content = episodeId is null ? "\"content_id\": \"mv_1\"" : $"\"content_id\": \"sr_1\", \"episode_id\": \"{episodeId}\"";
+        string preparation = progress is { } fraction
+            ? $$""", "preparation": { "state": "running", "progress": {{fraction.ToString(CultureInfo.InvariantCulture)}}, "remaining_seconds": 120 }"""
+            : "";
         return $$"""
             { "id": "{{id}}", {{content}}, "media_file_id": "4567", "device_id": "device-1",
               "file_size": {{size.ToString(CultureInfo.InvariantCulture)}}, "bytes_sent": 0, "kind": "queued", "status": "{{status}}",
               "quality": "original", "effective_quality": "original", "delivery_format": "original", "target_bitrate_kbps": 0,
-              "revision": {{revision.ToString(CultureInfo.InvariantCulture)}}, "created_at": "2026-10-01T11:00:00Z" }
+              "revision": {{revision.ToString(CultureInfo.InvariantCulture)}}, "created_at": "2026-10-01T11:00:00Z"{{preparation}} }
             """;
     }
+
+    /// <summary>The capability with the two flags the queue reads set as given.</summary>
+    public static string CapabilityWith(bool proxyDelivery = false, bool revokedRemovesLocal = true) =>
+        Capability()
+            .Replace("\"proxy_delivery\": false", $"\"proxy_delivery\": {Bool(proxyDelivery)}", StringComparison.Ordinal)
+            .Replace("\"revoked_removes_local\": true", $"\"revoked_removes_local\": {Bool(revokedRemovesLocal)}", StringComparison.Ordinal);
+
+    /// <summary>An artwork or subtitle answer: its bytes as <paramref name="mediaType"/>.</summary>
+    public static Func<Task<HttpResponseMessage>> Asset(byte[] body, string mediaType) => () =>
+    {
+        var content = new ByteArrayContent(body);
+        content.Headers.ContentType = new MediaTypeHeaderValue(mediaType);
+        return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = content });
+    };
 
     /// <summary>A page of entries, as <c>GET /downloads</c> and <c>POST /downloads</c> answer.</summary>
     public static string Page(string? nextCursor, params string[] entries)
@@ -58,7 +78,7 @@ internal static class DownloadPayloads
     /// The guide's manifest (section 6) for episode 5 of "Example Series", season 1: two audio tracks, the second chosen; a
     /// chapter, intro and credits markers; one external SRT; poster, backdrop and series poster.
     /// </summary>
-    public static string Manifest(string id, string container = "mkv", long expectedBytes = 3000)
+    public static string Manifest(string id, string container = "mkv", long expectedBytes = 3000, string subtitleRevision = "r1")
     {
         string bytes = expectedBytes.ToString(CultureInfo.InvariantCulture);
         return $$"""
@@ -89,7 +109,7 @@ internal static class DownloadPayloads
               ],
               "subtitles": [
                 { "language": "en", "format": "srt", "forced": false, "hearing_impaired": false, "external": true,
-                  "fetch_url": "/api/v2/downloads/{{id}}/subtitles/external:0", "file_size": 41234, "revision": "r1" }
+                  "fetch_url": "/api/v2/downloads/{{id}}/subtitles/external:0", "file_size": 41234, "revision": "{{subtitleRevision}}" }
               ],
               "stable_identity": { "stable_type": "episode", "provider_ids": { "tmdb": "12345" } },
               "integrity": { "expected_bytes": {{bytes}}, "media_file_hash": "sha256-example", "metadata_etag": "m1" },

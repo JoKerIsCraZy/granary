@@ -92,15 +92,23 @@ public sealed class DownloadStoreTests : IDisposable
     [Fact]
     public async Task AtTheNextStart_EveryDownloadIsBack()
     {
-        var record = Record() with { MediaFile = "media.mkv", State = DownloadState.Completed, Failure = DownloadFailure.None, IsPausedByViewer = true };
+        var record = Record() with
+        {
+            MediaFile = "media.mkv",
+            State = DownloadState.Completed,
+            Failure = DownloadFailure.None,
+            IsPausedByViewer = true,
+            ArtworkFiles = new Dictionary<string, string> { ["poster"] = "poster.jpg", ["series_poster"] = "series_poster.img" },
+        };
         await (await LoadedAsync()).AddAsync(record, Token);
 
         var again = await LoadedAsync();
 
         var back = Assert.Single(again.All);
         Assert.False(back.FilesMissing);
-        Assert.Equal(record, back.Record with { SubtitleRevisions = record.SubtitleRevisions });
+        Assert.Equal(record, back.Record with { SubtitleRevisions = record.SubtitleRevisions, ArtworkFiles = record.ArtworkFiles });
         Assert.Equal(record.SubtitleRevisions, back.Record.SubtitleRevisions);
+        Assert.Equal(record.ArtworkFiles, back.Record.ArtworkFiles);
         Assert.Equal(Path.Combine(back.Folder, "media.mkv"), back.MediaPath);
         Assert.Same(back, again.Find(Scope7, "dl_1"));
         Assert.Same(back, again.FindByItem(Scope7, "ep_5"));
@@ -357,6 +365,23 @@ public sealed class DownloadStoreTests : IDisposable
         Assert.Null(row.Record.Validator);
         Assert.Null(row.Record.MediaFile);
         Assert.Null(row.MediaPath);
+    }
+
+    [Fact]
+    public async Task AnArtworkNameTheStoreDoesNotMake_IsLeftOut()
+    {
+        var files = new Dictionary<string, string>
+        {
+            ["poster"] = "poster.png",
+            ["backdrop"] = "..\\..\\elsewhere.jpg",
+            ["series_poster"] = "poster.jpg",
+            ["logo"] = "logo.exe",
+        };
+        await (await LoadedAsync()).AddAsync(Record("dl_1") with { ArtworkFiles = files }, Token);
+
+        var row = Assert.Single((await LoadedAsync()).All);
+
+        Assert.Equal(new Dictionary<string, string> { ["poster"] = "poster.png" }, row.Record.ArtworkFiles);
     }
 
     [Fact]

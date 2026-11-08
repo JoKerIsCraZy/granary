@@ -300,6 +300,7 @@ public static class CoreServiceCollectionExtensions
         // The app puts Windows' own count of free space in first, which also measures network shares.
         services.TryAddSingleton<IDiskSpace, DriveInfoDiskSpace>();
         services.AddTransient<DownloadTransfer>();
+        services.AddTransient<DownloadAssets>();
         // One queue runs the active profile's transfers; the app starts it and stops it when the window closes.
         services.AddSingleton<DownloadQueue>();
     }

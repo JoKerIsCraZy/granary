@@ -41,6 +41,7 @@ public sealed partial class DownloadQueue : IDisposable
 
     private readonly DownloadStore _store;
     private readonly DownloadTransfer _transfer;
+    private readonly DownloadAssets _assets;
     private readonly DownloadsApi _api;
     private readonly ISessionManager _session;
     private readonly INetworkLink _network;
@@ -62,6 +63,16 @@ public sealed partial class DownloadQueue : IDisposable
     private readonly HashSet<Key> _reporting = [];
     private readonly HashSet<Key> _reportAgain = [];
 
+    // Downloads whose files a new revision replaces: nothing starts them meanwhile.
+    private readonly HashSet<Key> _resetting = [];
+
+    // One reconcile at a time, the loop's or a caller's.
+    private readonly SemaphoreSlim _reconciling = new(1, 1);
+    private Capability? _capability;
+    private bool _reconcileRequested;
+    private DateTimeOffset? _lastReconcile;
+    private Retry? _deleteRetry;
+
     // A scope whose sign-in failed waits for the session to change from the generation it failed in.
     private readonly Dictionary<DownloadScope, long> _stoppedScopes = [];
     private long _sessionGeneration;
@@ -78,11 +89,12 @@ public sealed partial class DownloadQueue : IDisposable
     private bool _loaded;
     private DownloadScope? _activeScope;
 
-    public DownloadQueue(DownloadStore store, DownloadTransfer transfer, DownloadsApi api, ISessionManager session, INetworkLink network,
-        IDownloadPreferences preferences, TimeProvider time, ILogger<DownloadQueue> logger)
+    public DownloadQueue(DownloadStore store, DownloadTransfer transfer, DownloadAssets assets, DownloadsApi api, ISessionManager session,
+        INetworkLink network, IDownloadPreferences preferences, TimeProvider time, ILogger<DownloadQueue> logger)
     {
         _store = store;
         _transfer = transfer;
+        _assets = assets;
         _api = api;
         _session = session;
         _network = network;
@@ -326,12 +338,13 @@ public sealed partial class DownloadQueue : IDisposable
         DownloadScope? scope;
         Uri? server;
         bool stopped;
+        bool resumed = false;
         lock (_gate)
         {
             (scope, server) = _current;
-            stopped = scope is not null && IsStoppedLocked(scope);
+            stopped = scope is not null && IsStoppedLocked(scope, out resumed);
         }
-        bool activated = scope != _activeScope;
+        bool activated = scope != _activeScope || resumed;
         _activeScope = scope;
         if (scope is null || server is null || stopped)
         {
@@ -339,8 +352,13 @@ public sealed partial class DownloadQueue : IDisposable
         }
         if (activated)
         {
-            _logger.LogInformation("The downloads of the active profile run");
+            await ActivateAsync(scope, server, stop).ConfigureAwait(false);
         }
+        else if (IsReconcileDue(scope))
+        {
+            await ReconcileAsync(scope, server, stop).ConfigureAwait(false);
+        }
+        await SendPendingDeletesAsync(scope, server, stop).ConfigureAwait(false);
         await SendPendingReportsAsync(scope, server, stop).ConfigureAwait(false);
         if (IsWaitingForUnmetered)
         {
@@ -399,7 +417,7 @@ public sealed partial class DownloadQueue : IDisposable
                 {
                     return;
                 }
-                if (_running.ContainsKey(key) || (_retries.TryGetValue(key, out var retry) && retry.At > now))
+                if (_running.ContainsKey(key) || _resetting.Contains(key) || (_retries.TryGetValue(key, out var retry) && retry.At > now))
                 {
                     continue;
                 }
@@ -410,16 +428,26 @@ public sealed partial class DownloadQueue : IDisposable
         }
     }
 
-    // The earliest time the loop has to look again: a download's retry, a report's, a missing folder's recheck, or a pass
-    // that failed. Times already past are not waited for: what they let start starts when a transfer ends.
+    // The earliest time the loop has to look again: a download's retry, a report's or a delete's, the next look at preparing
+    // copies, a missing folder's recheck, or a pass that failed. Times already past are not waited for: what they let start
+    // starts when a transfer ends.
     private TimeSpan? NextWake()
     {
         var now = _time.GetUtcNow();
         var scope = _activeScope;
         var downloads = scope is null ? [] : _store.In(scope);
+        bool deletes = scope is not null && _store.PendingDeletes(scope).Count > 0;
         DateTimeOffset? next = _passRetryAt is { } passRetry ? Earliest(null, passRetry, now) : null;
         lock (_gate)
         {
+            if (downloads.Any(d => !d.FilesMissing && d.Record.State == DownloadState.Preparing))
+            {
+                next = Earliest(next, (_lastReconcile ?? now) + PreparingPoll, now);
+            }
+            if (deletes && _deleteRetry is { } deleteRetry)
+            {
+                next = Earliest(next, deleteRetry.At, now);
+            }
             foreach (var download in downloads)
             {
                 var key = Key.Of(download.Record);
@@ -448,8 +476,10 @@ public sealed partial class DownloadQueue : IDisposable
         !download.FilesMissing
         && download.Record is { State: DownloadState.Queued or DownloadState.Downloading, IsPausedByViewer: false, IsNoLongerAvailable: false };
 
-    private bool IsStoppedLocked(DownloadScope scope)
+    // A scope whose sign-in failed waits until the session changed; then it is active again, as at a profile switch.
+    private bool IsStoppedLocked(DownloadScope scope, out bool resumed)
     {
+        resumed = false;
         if (!_stoppedScopes.TryGetValue(scope, out long generation))
         {
             return false;
@@ -459,6 +489,7 @@ public sealed partial class DownloadQueue : IDisposable
             return true;
         }
         _stoppedScopes.Remove(scope);
+        resumed = true;
         return false;
     }
 
@@ -514,6 +545,9 @@ public sealed partial class DownloadQueue : IDisposable
 
     /// <summary>When a download, or its status report, is tried again, and how many tries in a row failed.</summary>
     private readonly record struct Retry(DateTimeOffset At, int Failures);
+
+    /// <summary>What the capability of the active scope says the queue does: ask <c>/file-proxy</c>, delete revoked copies.</summary>
+    private sealed record Capability(DownloadScope Scope, bool ViaProxy, bool RevokedRemovesLocal);
 
     /// <summary>One transfer under way, for the revision of the download it started with.</summary>
     private sealed class Running(Key key, Uri server, long revision)

@@ -102,6 +102,13 @@ public sealed record DownloadRecord
         get;
         init => field = value ?? new Dictionary<string, string>();
     } = new Dictionary<string, string>();
+
+    /// <summary>The artwork kept in the folder, its file name by kind (<c>poster</c> → <c>poster.jpg</c>).</summary>
+    public IReadOnlyDictionary<string, string> ArtworkFiles
+    {
+        get;
+        init => field = value ?? new Dictionary<string, string>();
+    } = new Dictionary<string, string>();
 }
 
 /// <summary>

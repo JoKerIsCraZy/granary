@@ -101,8 +101,8 @@ internal static class DownloadRecords
 
     /// <summary>
     /// The record as it can be used, or null when a member it needs is missing or impossible: a damaged record. A validator
-    /// <c>If-Range</c> does not take, or a media file name the store does not make, is dropped (the download starts over or is
-    /// not played from that name).
+    /// <c>If-Range</c> does not take, or a media or artwork file name the store does not make, is dropped (the download starts
+    /// over, or is not played or shown from that name).
     /// </summary>
     public static DownloadRecord? Clean(DownloadRecord? record)
     {
@@ -119,6 +119,7 @@ internal static class DownloadRecords
             PreparationProgress = record.PreparationProgress is >= 0 and <= 1 ? record.PreparationProgress : null,
             PendingReport = record.PendingReport is { Status: { Length: > 0 } } report && report.Revision >= 0 ? report : null,
             SubtitleRevisions = record.SubtitleRevisions.Where(r => r.Key is not null && r.Value is not null).ToDictionary(),
+            ArtworkFiles = record.ArtworkFiles.Where(a => DownloadPaths.IsArtworkName(a.Key, a.Value)).ToDictionary(),
         };
     }
 }

@@ -34,7 +34,18 @@ internal sealed class DownloadHarness : IAsyncDisposable
         Hop = new FakeHttpMessageHandler((_, _) => throw new InvalidOperationException("No hop was expected"));
         Api = new DownloadsApi(Silo.Http, new FakeHttpClients(Hop), Time);
         Store = NewStore();
+        Silo.On(HttpMethod.Get, CapabilityPath, ScriptedSilo.Json(HttpStatusCode.OK, DownloadPayloads.Capability()));
+        // Until a test lists entries of its own, the server lists every download of the acting profile as the PC keeps it.
+        Silo.On(HttpMethod.Get, ListPath, () => ScriptedSilo.Json(HttpStatusCode.OK, ListOfStore())());
     }
+
+    public const string CapabilityPath = "api/v2/capabilities/downloads";
+
+    public const string ListPath = "api/v2/downloads";
+
+    public static readonly byte[] PosterBytes = [0xFF, 0xD8, 0xFF, 0xE0, 1, 2, 3];
+
+    public static readonly byte[] SubtitleBytes = DownloadPayloads.Utf8("1\n00:00:01,000 --> 00:00:02,000\nHello, Elena.\n");
 
     public string Directory { get; } = Path.Combine(Path.GetTempPath(), "granary-tests", Guid.NewGuid().ToString("N"));
 
@@ -68,7 +79,8 @@ internal sealed class DownloadHarness : IAsyncDisposable
     public DownloadQueue NewQueue()
     {
         var transfer = new DownloadTransfer(Api, Disk, Time, Logs.For<DownloadTransfer>());
-        var queue = new DownloadQueue(Store, transfer, Api, Session, Network, Preferences, Time, Logs.For<DownloadQueue>());
+        var assets = new DownloadAssets(Api, Time, Logs.For<DownloadAssets>());
+        var queue = new DownloadQueue(Store, transfer, assets, Api, Session, Network, Preferences, Time, Logs.For<DownloadQueue>());
         _queues.Add(queue);
         return queue;
     }
@@ -94,9 +106,12 @@ internal sealed class DownloadHarness : IAsyncDisposable
         await Store.LoadAsync(Token);
     }
 
-    /// <summary>Keeps a download of <paramref name="scope"/> (profile 7's by default), created a minute after the one before.</summary>
+    /// <summary>
+    /// Keeps a download of <paramref name="scope"/> (profile 7's by default), created a minute after the one before, and has the
+    /// server answer for it: its manifest for <paramref name="size"/> bytes, artwork and subtitle, reports and delete.
+    /// </summary>
     public async Task<StoredDownload> AddAsync(string id, DownloadState state = DownloadState.Queued, long size = 3000,
-        DownloadScope? scope = null, string? validator = null, string mediaItemId = "mv_1")
+        DownloadScope? scope = null, string? validator = null, string mediaItemId = "mv_1", Func<DownloadRecord, DownloadRecord>? change = null)
     {
         await Store.LoadAsync(Token);
         var record = new DownloadRecord
@@ -112,8 +127,29 @@ internal sealed class DownloadHarness : IAsyncDisposable
             Validator = validator,
             CreatedAt = ManualTimeProvider.DefaultStart.AddMinutes(Store.All.Count),
         };
-        return await Store.AddAsync(record, Token);
+        ServeAssets(id, size);
+        return await Store.AddAsync(change is null ? record : change(record), Token);
     }
+
+    /// <summary>The manifest of <paramref name="id"/> for <paramref name="size"/> bytes, its artwork and its subtitle.</summary>
+    public void ServeAssets(string id, long size = 3000, string subtitleRevision = "r1")
+    {
+        Silo.On(HttpMethod.Get, ManifestPath(id), ScriptedSilo.Json(HttpStatusCode.OK, DownloadPayloads.Manifest(id, "mkv", size, subtitleRevision)));
+        foreach (string kind in new[] { "poster", "backdrop", "series_poster" })
+        {
+            Silo.On(HttpMethod.Get, ArtworkPath(id, kind), DownloadPayloads.Asset(PosterBytes, "image/jpeg"));
+        }
+        Silo.On(HttpMethod.Get, SubtitlePath(id), DownloadPayloads.Asset(SubtitleBytes, "application/x-subrip"));
+        Silo.On(HttpMethod.Delete, EntryPath(id), ScriptedSilo.NoContent());
+        AcceptReports(id);
+    }
+
+    /// <summary>The registry lists these entries, on one page, from now on.</summary>
+    public void List(params string[] entries) => Silo.On(HttpMethod.Get, ListPath, ScriptedSilo.Json(HttpStatusCode.OK, DownloadPayloads.Page(null, entries)));
+
+    /// <summary>The registry answers these pages in turn, the last one repeating.</summary>
+    public void ListPages(params string[] pages) =>
+        Silo.On(HttpMethod.Get, ListPath, [.. pages.Select(page => ScriptedSilo.Json(HttpStatusCode.OK, page))]);
 
     public StoredDownload? Find(string id, DownloadScope? scope = null) => Store.Find(scope ?? Scope7, id);
 
@@ -147,6 +183,28 @@ internal sealed class DownloadHarness : IAsyncDisposable
     public static string FilePath(string id) => $"api/v2/downloads/{id}/file";
 
     public static string EntryPath(string id) => $"api/v2/downloads/{id}";
+
+    public static string ManifestPath(string id) => $"api/v2/downloads/{id}/manifest";
+
+    public static string ArtworkPath(string id, string kind) => $"api/v2/downloads/{id}/artwork/{kind}";
+
+    public static string SubtitlePath(string id) => $"api/v2/downloads/{id}/subtitles/external:0";
+
+    public static string PreparePath(string id) => $"api/v2/downloads/{id}/prepare";
+
+    // Each download of the acting profile as the PC keeps it: completed ones completed, preparing ones preparing, the rest ready.
+    private string ListOfStore()
+    {
+        var entries = DownloadScope.Of(Session) is { } scope
+            ? Store.In(scope).Select(d => DownloadPayloads.Entry(d.Record.DownloadId, d.Record.State switch
+            {
+                DownloadState.Completed => DownloadStatuses.Completed,
+                DownloadState.Preparing => DownloadStatuses.Preparing,
+                _ => DownloadStatuses.Ready,
+            }, d.Record.Revision, d.Record.ExpectedBytes))
+            : [];
+        return DownloadPayloads.Page(null, [.. entries]);
+    }
 
     /// <summary>The session acts as <paramref name="profileId"/> now, and says so.</summary>
     public void SwitchProfile(string profileId)

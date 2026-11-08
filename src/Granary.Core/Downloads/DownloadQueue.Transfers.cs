@@ -43,11 +43,10 @@ public sealed partial class DownloadQueue
         TransferOutcome outcome;
         try
         {
-            from = ResumePoint(download);
-            var job = new TransferJob(run.Server, key.Scope, key.Id, download.Folder, download.Record.ExpectedBytes, from, download.Record.Validator,
-                ViaProxy: false);
-            outcome = await _transfer.RunAsync(job, bytes => OnProgress(key, bytes), (validator, token) => KeepValidatorAsync(run, validator, token),
-                run.Cancel.Token).ConfigureAwait(false);
+            (download, var failed) = await FetchAssetsFirstAsync(run, download).ConfigureAwait(false);
+            from = failed?.Bytes ?? ResumePoint(download);
+            outcome = failed ?? await _transfer.RunAsync(JobOf(run, download, from), bytes => OnProgress(key, bytes),
+                (validator, token) => KeepValidatorAsync(run, validator, token), run.Cancel.Token).ConfigureAwait(false);
         }
         finally
         {
@@ -55,6 +54,77 @@ public sealed partial class DownloadQueue
         }
         await OnOutcomeAsync(run, download, from, outcome).ConfigureAwait(false);
     }
+
+    private TransferJob JobOf(Running run, StoredDownload download, long from)
+    {
+        bool viaProxy;
+        lock (_gate)
+        {
+            viaProxy = _capability is { ViaProxy: true } capability && capability.Scope == run.Key.Scope;
+        }
+        return new TransferJob(run.Server, run.Key.Scope, run.Key.Id, download.Folder, download.Record.ExpectedBytes, from, download.Record.Validator,
+            viaProxy);
+    }
+
+    // Before its first transfer a download gets its manifest, which says the file's exact length, and its artwork and subtitles.
+    // A manifest that does not come ends the attempt as the file's request would have.
+    private async Task<(StoredDownload Download, TransferOutcome? Failed)> FetchAssetsFirstAsync(Running run, StoredDownload download)
+    {
+        var key = run.Key;
+        if (download.Record.ManifestReadAt is not null && File.Exists(Path.Combine(download.Folder, DownloadPaths.Manifest)))
+        {
+            return (download, null);
+        }
+        try
+        {
+            var fetched = await _assets.FetchAsync(run.Server, download, run.Cancel.Token).ConfigureAwait(false);
+            var now = _time.GetUtcNow();
+            long expected = fetched.Manifest.Integrity is { ExpectedBytes: > 0 } integrity ? integrity.ExpectedBytes : download.Record.ExpectedBytes;
+            var updated = await _store.UpdateAsync(key.Scope, key.Id, r => r.Revision != run.Revision ? r : r with
+            {
+                ExpectedBytes = expected,
+                ManifestReadAt = now,
+                ArtworkFiles = fetched.ArtworkFiles,
+                SubtitleRevisions = fetched.SubtitleRevisions,
+            }, run.Cancel.Token).ConfigureAwait(false);
+            return (updated, null);
+        }
+        catch (KeyNotFoundException)
+        {
+            // Deleted meanwhile: the transfer ends as a stopped one.
+            lock (_gate)
+            {
+                CancelLocked(run);
+            }
+            throw new OperationCanceledException("The download was deleted.", run.Cancel.Token);
+        }
+        catch (Exception ex) when (!(ex is OperationCanceledException && run.Cancel.IsCancellationRequested))
+        {
+            var (result, retryAfter) = ResultOf(ex);
+            _logger.LogInformation("The manifest of download {DownloadId} did not come ({Failure}): {Result}", key.Id,
+                ex is SiloApiException api ? api.Status.ToString(System.Globalization.CultureInfo.InvariantCulture) : DownloadLog.Failure(ex), result);
+            return (download, new TransferOutcome(result, download.Record.Validator, retryAfter, PartLength(download)));
+        }
+    }
+
+    // A request that did not get the download's bytes, as the transfer would have taken its answer.
+    private static (TransferResult Result, TimeSpan? RetryAfter) ResultOf(Exception ex) => ex switch
+    {
+        ProfileChangedException => (TransferResult.ProfileChanged, null),
+        SiloApiException { Status: 401 } => (TransferResult.SignedOut, null),
+        SiloApiException { Status: 403, Code: ProblemCodes.ProfileVerificationRequired } => (TransferResult.SignedOut, null),
+        SiloApiException { Status: 404 } => (TransferResult.Gone, null),
+        SiloApiException { Status: 429 or 503 } busy => (TransferResult.Busy, busy.RetryAfter ?? RetryDelays[0]),
+        SiloApiException { Status: >= 500 } => (TransferResult.Unreachable, null),
+        SiloApiException or JsonException => (TransferResult.Refused, null),
+        DirectoryNotFoundException => (TransferResult.FolderMissing, null),
+        IOException { HResult: DiskFull or HandleDiskFull } => (TransferResult.NotEnoughSpace, null),
+        _ => (TransferResult.Unreachable, null),
+    };
+
+    // Windows' errors for a full drive.
+    private const int DiskFull = unchecked((int)0x80070070);
+    private const int HandleDiskFull = unchecked((int)0x80070027);
 
     // A transfer stopped (its download deleted, paused or out of scope, a metered link) waits as queued, its bytes kept. One the
     // queue's own stop ended stays Downloading: the next start resumes it with the margin.
@@ -214,7 +284,7 @@ public sealed partial class DownloadQueue
                 await OnIntegrityAsync(run, failsTwice, outcome).ConfigureAwait(false);
                 return;
             case TransferResult.Expired or TransferResult.Refused or TransferResult.Gone:
-                await OnServerRefusalAsync(download, outcome, _stop.Token).ConfigureAwait(false);
+                await OnServerRefusalAsync(run, download, outcome, _stop.Token).ConfigureAwait(false);
                 return;
             case TransferResult.Busy:
                 lock (_gate)
@@ -298,17 +368,20 @@ public sealed partial class DownloadQueue
         await SendReportsAsync(run.Server, key, _stop.Token).ConfigureAwait(false);
     }
 
-    // The container the finished file is named after.
-    private static string? ContainerOf(StoredDownload download) => null;
-
-    // Until the server's answers are read: a refusal fails the download.
-    private Task OnServerRefusalAsync(StoredDownload download, TransferOutcome outcome, CancellationToken cancellationToken) =>
-        ChangeOwnAsync(Key.Of(download.Record), download.Record.Revision, r => r with
+    // The container the finished file is named after, from the manifest kept beside it.
+    private string? ContainerOf(StoredDownload download)
+    {
+        try
         {
-            State = DownloadState.Failed,
-            Failure = DownloadFailure.Server,
-            Validator = outcome.Validator,
-        }, cancellationToken);
+            return OfflineManifest.Read(File.ReadAllBytes(Path.Combine(download.Folder, DownloadPaths.Manifest))).Container;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
+        {
+            _logger.LogInformation("The manifest of download {DownloadId} could not be read ({Failure}); its file is named without its container",
+                download.Record.DownloadId, DownloadLog.Failure(ex));
+            return null;
+        }
+    }
 
     // Changes the record a transfer ran for, while it is still that transfer's: Downloading, of the same revision. Anything
     // else changed it meanwhile and stays; a download that went is no change.

@@ -128,6 +128,11 @@ public static class DownloadPaths
     public static string ArtworkName(string kind, string? mediaType) =>
         Segment(kind) + "." + (mediaType is not null && ImageExtensions.TryGetValue(mediaType.Trim(), out var extension) ? extension : "img");
 
+    /// <summary><paramref name="name"/> is a name <see cref="ArtworkName"/> makes for <paramref name="kind"/>, whatever its media type.</summary>
+    public static bool IsArtworkName(string? kind, string? name) =>
+        !string.IsNullOrEmpty(kind) && name is not null
+        && ImageExtensions.Values.Append("img").Any(extension => name == Segment(kind) + "." + extension);
+
     /// <summary>The manifest's subtitle <paramref name="index"/>, <c>sub-0.srt</c>, after its format (<c>sub</c> when unknown).</summary>
     public static string SubtitleName(int index, string? format)
     {

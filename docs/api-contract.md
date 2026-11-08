@@ -2495,7 +2495,10 @@ branches on are `prepared_file_expired` and `capability_unsupported` (`ProblemCo
   `quality_presets` (always an array, best first; empty without downloads), `quality_options` (`[{ preset, bitrate_kbps?,
   max_height? }]`, one per preset, both numbers absent for `original`), `proxy_delivery`, `preparation_progress`,
   `prepare_again`, `revoked_removes_local`. Granary reads it at sign-in and profile switch (the guide's 9.3) and offers
-  downloads only when `enabled && allowed` (`DownloadCapability.IsUsable`). It does not send `If-None-Match`.
+  downloads only when `enabled && allowed` (`DownloadCapability.IsUsable`). It does not send `If-None-Match`. The download
+  queue reads it again whenever a profile's downloads become the active ones: `proxy_delivery` has transfers ask
+  `/file-proxy` (14.4), `revoked_removes_local` lets a revoked download's files go (14.6); a read that fails leaves both
+  off.
 
 ### 14.2 Create
 
@@ -2517,10 +2520,20 @@ branches on are `prepared_file_expired` and `capability_unsupported` (`ProblemCo
   `downloading`, `completed`, `failed`, `revoked`, `cancelled`; `DownloadStatuses`), `quality`, `delivery_format`,
   `revision`, and on listed preparing entries `preparation { state, queue_position?, progress? (0 to 1),
   remaining_seconds? }`.
+- Granary reads the whole registry (every page) when a profile's downloads become the active ones, every 10 s while one of
+  them is preparing, and after the file route or a status report refused a download. It judges only the downloads it kept
+  before it started reading, and an entry missing only after every page was read. What it does with each status:
+  `preparing` → the download waits as Preparing, with `preparation.progress`; `ready`, `downloading`, `completed` → a
+  preparing download is queued, with `file_size` as its exact length; a larger `revision` → the media, the part and the
+  manifest are deleted and fetched again; `revoked` → 14.6; `cancelled` → kept if complete, else failed, both no longer
+  available; `failed` → a download under way fails. Missing from the whole registry: a download still to fetch is no longer
+  available, a completed one stays. A registry that cannot be read changes nothing.
 - `PATCH /api/v2/downloads/{id}` `{ status: "downloading"|"completed", updated_at, revision }` → `200` `DownloadEntry`. The
   time is taken when the PC's state changes and a retry sends the same event; an older or equal event leaves the entry as
   it is. A time more than 2 minutes ahead of the server's is 400, another revision 409, `downloading` for a preparing entry
-  404.
+  404. Granary sends `downloading` when a transfer starts and `completed` once the file is whole and named. A 401, 408, 429,
+  5xx or no answer keeps the event for the next wake and the retry delays; any other client error drops it, and a 409 also
+  reads the registry again.
 
 ### 14.4 Media file
 
@@ -2531,6 +2544,10 @@ branches on are `prepared_file_expired` and `capability_unsupported` (`ProblemCo
   match); `416`; `409 prepared_file_expired` (call 14.6's `/prepare`); `409 conflict` (revoked or not servable); `404`
   (missing, or outside the profile's access). A failure after the body started ends the stream without JSON. Offsets and
   sizes are int64 end to end (`ByteRange`), for files over 4 GB.
+- What the queue does with an answer: `200`/`206` write the part; `409 prepared_file_expired` → `/prepare` (14.6); another
+  `409` or `404` → the download fails and the registry is read again (14.3); `429`/`503` → asked again after `Retry-After`
+  (0 to 5 minutes; 5 s without one); `401` or `403 profile_verification_required` → the profile's downloads wait for the
+  sign-in; `5xx`, no answer or a body that broke off → asked again after 1, 2, 4 ... 60 s with `Range` from the bytes kept.
 - `GET /api/v2/downloads/{id}/file-proxy`, when the capability has `proxy_delivery`: the same, or `307` to a proxy node.
   Granary follows one 307 on a client of its own (`DownloadsApi.HopClientName`: no credentials, identity headers, redirects,
   cookies or log), with the same method, `Range` and `If-Range`. The target must be HTTPS (HTTP only when the server itself
@@ -2558,15 +2575,26 @@ branches on are `prepared_file_expired` and `capability_unsupported` (`ProblemCo
 - Granary asks for an asset only when its URL is this download's artwork or subtitle (`DownloadsApi.AssetPath`): the path
   from `api/v2/downloads/{id}/` on, rebuilt under the saved address, so a reverse proxy's prefix stays; absolute URLs, dot
   segments, encoded slashes and queries are refused, since these requests carry the profile's credentials.
+- When: the manifest before a download's first transfer (its `integrity.expected_bytes` is the file's exact length, its
+  `container` names the finished file), then the `poster`, `backdrop` and `series_poster` artwork and every subtitle. A
+  manifest that does not come ends the attempt as the file route's answer would (14.4); artwork or a subtitle that does not
+  come (404, 503, a stall of 60 s, over 512 MiB) is left out. A completed download's manifest is read again at the first
+  activation a day after the last read, with the artwork the PC lacks and the subtitles whose `revision` changed. Granary
+  does not send `If-None-Match` for subtitles: the manifest's `revision` tells it which changed.
 
 ### 14.6 Prepare again, revoked, delete
 
 - `POST /api/v2/downloads/{id}/prepare` (no body; capability `prepare_again`) → `200` `DownloadEntry`: `preparing` again with
   the same revision when its prepared file had expired, else unchanged. 409 `conflict` for a revoked, failed or cancelled
-  entry, 429 at the account's cap, 501 when transcoding is now off.
+  entry, 429 at the account's cap, 501 when transcoding is now off. Granary asks once for each `prepared_file_expired`
+  answer and waits as Preparing until the registry says ready; 429 or 503 asks the file again after `Retry-After`, 409
+  fails the download and reads the registry, another client error fails it.
 - A `revoked` entry was revoked by an administrator: with `revoked_removes_local`, the PC deletes its copy, then the entry.
+  Without that flag, or when the capability could not be read, the copy stays playable, is shown as no longer available
+  and is never fetched again.
 - `DELETE /api/v2/downloads/{id}` → `204`; `404` when the entry is missing or not this profile's and PC's, which
-  `DownloadsApi.DeleteAsync` takes as done. The server deletes nothing on the PC: the client removes its own files.
+  `DownloadsApi.DeleteAsync` takes as done. The server deletes nothing on the PC: the client removes its own files. A delete
+  that cannot be sent is kept (`pending_deletes`) and sent while its profile is the active one; a client error drops it.
 
 ## Appendix: where docs and code disagree
 
