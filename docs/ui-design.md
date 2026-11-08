@@ -618,7 +618,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     release order as the row's usual posters, with the profile's poster size, caption and badges, watched progress
     included. The movie on screen is marked as the web marks it: a 2 px ring in the text colour at 80 % (the artwork's
     hairline and a pixel inside it) and "THIS FILM" (10 px semibold capitals 0.14 em apart, on the page's dark at 85 %),
-    centred with its top 32 px above the poster's foot; its corners keep their badges. Screen readers hear "Masterplan,
+    centred with its top 32 px above the poster's foot; its corners keep their badges. While the card shows bottom badges
+    (the profile's rating, say), the pill stands 4 px above them instead, a departure from the web, where the two overlap. Screen readers hear "Masterplan,
     2026, this film". The row opens with that card in its middle and Up or Down into it lands on it, as More Episodes;
     clicking it stays on the page, and as in the apps it has no play disc, buttons or menu, since the page's own buttons
     hold its state. Another film opens its page. It is asked for only while one of the profile's libraries has box sets

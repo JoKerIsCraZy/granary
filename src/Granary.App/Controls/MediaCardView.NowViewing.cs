@@ -21,6 +21,11 @@ public sealed partial class MediaCardView
     private const float PingSettles = 0.75f;
     private static readonly TimeSpan PingDuration = TimeSpan.FromSeconds(1);
 
+    // This film's pill: the web's place (its 19 px with its top 32 px above the foot, inside the two rings' pixels), and its
+    // gap above the bottom badges when the card shows any.
+    private const double ThisFilmFoot = 11;
+    private const double ThisFilmGap = 4;
+
     // Windows' "Animation effects", read once when the app starts: turned off, the dot stands still.
     private static readonly bool Pings = new UISettings().AnimationsEnabled;
 
@@ -67,6 +72,8 @@ public sealed partial class MediaCardView
             if (mark == CurrentMark.ThisFilm && ThisFilm is null)
             {
                 FindName(nameof(ThisFilm));
+                // The bottom badges' height is known only once they are laid out.
+                BottomBadges.SizeChanged += (_, _) => PlaceThisFilm();
             }
             Art.BorderBrush = mark switch
             {
@@ -78,7 +85,28 @@ public sealed partial class MediaCardView
             ThisFilm?.Visibility = Visible(mark == CurrentMark.ThisFilm);
             TopLeftBadges.Visibility = Visible(mark != CurrentMark.NowViewing);
         }
+        PlaceThisFilm();
         UpdatePing();
+    }
+
+    // A departure from the web: its MovieBoxSetRow puts the pill's top 2rem above the poster's foot, which is where Granary's
+    // bottom badges sit (the profile's IMDb rating, say), and over them the card read "IMDB. THIS FILM". So while the card
+    // shows bottom badges, the pill stands just above them; without any, at the web's place.
+    private void PlaceThisFilm()
+    {
+        if (_mark != CurrentMark.ThisFilm || ThisFilmPill is null)
+        {
+            return;
+        }
+        bool hasBottomBadges = _cornerViews[2].Count + _cornerViews[3].Count > 0;
+        // The badges' top above the art's inner foot, less the ring's pixel the pill sits inside of.
+        double overBadges = BottomBadges.Margin.Bottom + BottomBadges.ActualHeight * BottomScale.ScaleY + ThisFilmGap
+            - ThisFilm!.BorderThickness.Bottom;
+        double bottom = hasBottomBadges ? Math.Max(ThisFilmFoot, overBadges) : ThisFilmFoot;
+        if (ThisFilmPill.Margin.Bottom != bottom)
+        {
+            ThisFilmPill.Margin = new Thickness(0, 0, 0, bottom);
+        }
     }
 
     // The dot pings on the compositor while its card shows: stopped for a card unloaded, parked or given another title, and

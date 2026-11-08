@@ -680,6 +680,7 @@ public sealed partial class MediaCardView : UserControl
         TopBadges.Margin = new Thickness(inset, inset, right, 0);
         BottomBadges.Margin = new Thickness(inset, 0, right, inset + (lifted ? EdgeInset : 0));
         TopScale.ScaleX = TopScale.ScaleY = BottomScale.ScaleX = BottomScale.ScaleY = scale;
+        PlaceThisFilm();
     }
 
     // The profile chose other badges, or they arrived: from any thread the setting changes on, here on the card's.
