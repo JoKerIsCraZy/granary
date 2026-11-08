@@ -1,3 +1,4 @@
+using System.Net;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Playback;
 
@@ -21,6 +22,18 @@ public sealed class ThemeAudioDownloader(IHttpClientFactory clients)
 
     /// <summary>The whole download, body included.</summary>
     public static readonly TimeSpan Timeout = TimeSpan.FromSeconds(60);
+
+    /// <summary>
+    /// The theme client's own handler: it keeps no cookie a node sets, follows no redirect, and takes the body as it was
+    /// sent, so the size limit counts what came over the wire.
+    /// </summary>
+    internal static SocketsHttpHandler CreateHandler() => new()
+    {
+        UseCookies = false,
+        AllowAutoRedirect = false,
+        AutomaticDecompression = DecompressionMethods.None,
+        PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+    };
 
     /// <param name="routed">The server's capability says themes are routed, so a grant may name a proxy node's origin.</param>
     /// <exception cref="HttpRequestException">The URL is not one Granary fetches, or the answer is not a theme.</exception>

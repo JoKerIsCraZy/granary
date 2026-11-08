@@ -1307,10 +1307,10 @@ plays its first theme, as the web's `useThemeMusic.ts` and the apps do (docs/arc
 - `url` is a short-lived credential: relative to the server, or, only while the capability says `routed`, absolute on a
   proxy node's origin (`PlaybackUrl.ResolveTheme`): the server's own scheme, no user info, and a public address, never this
   machine, a private, shared, unique-local or link-local one, nor one of those written as an IPv4-mapped IPv6 address (a
-  host name is not looked up). Anything else is refused unsent. Granary fetches it
-  whole (`ThemeAudioDownloader`: no credentials, no redirects, 60 s, at most 32 MB, as the Apple app reads a converted
-  theme), on a client that logs nothing, and hands only the bytes to the player. It never logs or keeps the URL; a failure
-  is logged by its status or kind alone.
+  host name is not looked up). Anything else is refused unsent. Granary fetches it whole (`ThemeAudioDownloader`: no
+  credentials, cookies or redirects, the body as sent, 60 s, at most 32 MB, as the Apple app reads a converted theme), on a
+  client that logs nothing, and hands only the bytes to the player. It never logs or keeps the URL; a failure is logged by
+  its status or kind alone.
 - A converted theme has no length and no byte ranges: to loop, it is played again from a new grant; an original loops in
   place. A refused grant, a failed download and audio that fails or cannot be played are tried once more with a new grant,
   and a theme that plays earns that try back. A grant answered after the profile changed is not tried again.

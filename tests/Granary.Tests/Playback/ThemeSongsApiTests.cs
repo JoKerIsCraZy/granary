@@ -1,12 +1,14 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
+using Granary.Core;
 using Granary.Core.Api;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Playback;
 using Granary.Core.Playback.Themes;
 using Granary.Tests.Fakes;
 using Granary.Tests.Profiles;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Granary.Tests.Playback;
 
@@ -206,6 +208,26 @@ public sealed class ThemeSongsApiTests
         await Assert.ThrowsAsync<HttpRequestException>(() => downloader.DownloadAsync(ScriptedSilo.Base, Parsed(Grant(url)), routed: true, _token));
 
         Assert.Empty(handler.Requests);
+    }
+
+    [Fact]
+    public void TheThemeClient_KeepsNoCookies_FollowsNoRedirect_AndTakesTheBodyAsSent()
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddGranaryCore();
+        using var provider = services.BuildServiceProvider();
+
+        var handler = provider.GetRequiredService<IHttpMessageHandlerFactory>().CreateHandler(ThemeAudioDownloader.HttpClientName);
+        while (handler is DelegatingHandler delegating)
+        {
+            handler = delegating.InnerHandler!;
+        }
+
+        var sockets = Assert.IsType<SocketsHttpHandler>(handler);
+        Assert.False(sockets.UseCookies);
+        Assert.False(sockets.AllowAutoRedirect);
+        Assert.Equal(DecompressionMethods.None, sockets.AutomaticDecompression);
     }
 
     [Fact]

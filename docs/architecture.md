@@ -753,8 +753,8 @@ A title page plays its local theme music while Settings → Title Pages → Them
   out the same way, on `TimeProvider` timers whose ticks go through `IUiDispatcher`. An original loops in place; a conversion
   ends and plays again from a new grant. A refused grant, a failed download or audio that fails is tried once more with a
   new grant; audio that plays earns the try back.
-- **`ThemeAudioDownloader`** (Core) fetches the granted theme whole, without credentials or redirects, on the `theme-audio`
-  client, which logs nothing: the URL carries its own token and stays in Core.
+- **`ThemeAudioDownloader`** (Core) fetches the granted theme whole, without credentials, cookies or redirects, on the
+  `theme-audio` client and its own handler, which logs nothing: the URL carries its own token and stays in Core.
 - **`WindowsThemeAudio`** (App) implements the port on `Windows.Media.Playback.MediaPlayer` from the bytes (a light player beside
   mpv, not a second mpv), with its command manager off, so it stays out of Windows' media overlay and the media keys stay
   the player's. Its events come on Windows' threads; Core takes them to the UI thread.

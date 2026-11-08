@@ -290,12 +290,12 @@ public static class CoreServiceCollectionExtensions
         services.TryAddSingleton<INetworkLink, UnknownNetworkLink>();
     }
 
-    // Title pages' theme music, one player for the app. Its audio URL carries its own token: fetched without credentials or
-    // redirects, and kept out of the log. The app puts its own output in first; without it themes are silent.
+    // Title pages' theme music, one player for the app. Its audio URL carries its own token: fetched without credentials,
+    // cookies or redirects, and kept out of the log. The app puts its own output in first; without it themes are silent.
     private static void AddThemeMusic(IServiceCollection services)
     {
         services.AddHttpClient(ThemeAudioDownloader.HttpClientName, client => client.Timeout = Timeout.InfiniteTimeSpan)
-            .ConfigurePrimaryHttpMessageHandler(CreateSocketsHandler)
+            .ConfigurePrimaryHttpMessageHandler(ThemeAudioDownloader.CreateHandler)
             .RemoveAllLoggers();
         services.AddTransient<ThemesApi>();
         services.AddTransient<ThemeAudioDownloader>();
