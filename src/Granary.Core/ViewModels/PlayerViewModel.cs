@@ -43,6 +43,9 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     private readonly ILogger _logger;
     private readonly global::Granary.Core.WatchParty.WatchPartySession? _watchParty;
     private readonly EpisodeSpoilerSettings? _spoilers;
+    // This PC's own player choices, such as the Sleep button and the time left; without them, as in tests that leave them
+    // out, the defaults hold (the button shows, the duration) and nothing is kept.
+    private readonly IPlaybackDevicePreferences? _devicePreferences;
     // A seek's target counts as the position for this long, until the engine reports it: quick skips add up.
     private const long SeekTargetMilliseconds = 3000;
 
@@ -93,6 +96,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         Look.Edited += OnLookEdited;
         InitializeMarkerEdit();
         _devicePreferences = devicePreferences;
+        ShowsTimeLeft = devicePreferences?.TimeLeft == true;
         FollowSleepTimerButton();
         _engine.StateChanged += OnStateChanged;
         _engine.Ended += OnEnded;
@@ -243,6 +247,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         LeavePlayback();
         ResetFill();
         ResetLook();
+        ResetEndsAt();
         ShowSleepTimer();
         ShowAudioDelay();
         if (request.DirectSource is { } direct)
@@ -321,6 +326,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         {
             _engine.Seek(TimeSpan.FromSeconds(target));
         }
+        RoundEndsAtAgain();
     }
 
     /// <summary>
@@ -395,8 +401,11 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     private void SkipForward() => SeekTo(SkipOrigin + SkipForwardSeconds);
 
     // Where a skip goes from: a seek on its way, else the position.
-    private double SkipOrigin =>
-        _party?.PendingSeekSeconds ?? (_seekTarget is { } target && Environment.TickCount64 - _seekTargetAt < SeekTargetMilliseconds ? target : PositionSeconds);
+    private double SkipOrigin => _party?.PendingSeekSeconds ?? PendingSeek ?? PositionSeconds;
+
+    // The target of a seek of the player's own while it is on its way: until the engine reports it, for a few seconds.
+    private double? PendingSeek =>
+        _seekTarget is { } target && Environment.TickCount64 - _seekTargetAt < SeekTargetMilliseconds ? target : null;
 
     [RelayCommand]
     private void ToggleMute() => _engine.SetMuted(!IsMuted);
@@ -603,6 +612,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         FollowNextUp();
         // During a plan change the spinner waits for the picture to stop.
         FollowWait();
+        ShowEndsAt();
     }
 
     private void OnEnded(object? sender, PlaybackEnded ended) => _dispatcher.Post(() =>
@@ -642,5 +652,6 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
             _audioDelay.Changed -= OnAudioDelayChanged;
         }
         StopPlanChangeTimers();
+        StopEndsAt();
     }
 }

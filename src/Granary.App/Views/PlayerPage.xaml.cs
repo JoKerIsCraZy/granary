@@ -31,9 +31,6 @@ public sealed partial class PlayerPage : Page
     public static readonly DependencyProperty IsMiniViewProperty =
         DependencyProperty.Register(nameof(IsMiniView), typeof(bool), typeof(PlayerPage), new PropertyMetadata(false));
 
-    public static readonly DependencyProperty ShowsRemainingProperty =
-        DependencyProperty.Register(nameof(ShowsRemaining), typeof(bool), typeof(PlayerPage), new PropertyMetadata(false));
-
     // MainWindow's title bar row. In a window the top bar starts below it: that strip is the drag area.
     private const double TitleBarHeight = 32;
 
@@ -90,13 +87,6 @@ public sealed partial class PlayerPage : Page
     {
         get => (bool)GetValue(IsMiniViewProperty);
         private set => SetValue(IsMiniViewProperty, value);
-    }
-
-    /// <summary>The end of the seek bar shows the time left instead of the duration.</summary>
-    public bool ShowsRemaining
-    {
-        get => (bool)GetValue(ShowsRemainingProperty);
-        private set => SetValue(ShowsRemainingProperty, value);
     }
 
     private bool HasTransport => ViewModel.Phase is PlayerPhase.Playing or PlayerPhase.Ended;
@@ -299,8 +289,6 @@ public sealed partial class PlayerPage : Page
         }
     }
 
-    private void OnEndTimeClick(object sender, RoutedEventArgs e) => ShowsRemaining = !ShowsRemaining;
-
     private void OnFullScreenClick(object sender, RoutedEventArgs e) => ToggleFullScreen();
 
     private void OnMiniViewClick(object sender, RoutedEventArgs e) => SetMiniView(!_modes.IsMiniView);
@@ -482,6 +470,12 @@ public sealed partial class PlayerPage : Page
     public string TimesText(double position, double duration, bool showsRemaining) =>
         PlayerTime.Format(position, duration) + " / "
         + (showsRemaining ? PlayerTime.Remaining(position, duration) : PlayerTime.Format(duration));
+
+    // The bar's times for screen readers, with its end clock, which a narrow bar leaves out: "4:05 / 48:41, ends at 22:41".
+    public string DockTimesName(double position, double duration, bool showsTimeLeft, string endsAtSpoken) =>
+        endsAtSpoken.Length == 0
+            ? TimesText(position, duration, showsTimeLeft)
+            : $"{TimesText(position, duration, showsTimeLeft)}, {char.ToLowerInvariant(endsAtSpoken[0])}{endsAtSpoken[1..]}";
 
     // Upper case on screen only: screen readers get the line as written, so "S1 · E1" is not spelled out.
     public string MetaText(string subtitle) => subtitle.ToUpper(CultureInfo.CurrentCulture);

@@ -88,6 +88,59 @@ public sealed class JsonPlaybackDevicePreferencesTests : IDisposable
     }
 
     [Fact]
+    public void AtFirst_ThePlayersTimeShowsTheDuration() => Assert.False(Create().TimeLeft);
+
+    [Fact]
+    public async Task TheTimeLeft_StaysAtTheNextStart_WithTheOtherChoices()
+    {
+        var preferences = Create();
+
+        await preferences.SetUpDownAsync(PlayerUpDown.Volume);
+        await preferences.SetTimeLeftAsync(true);
+
+        var again = Create();
+        Assert.True(again.TimeLeft);
+        Assert.Equal(PlayerUpDown.Volume, again.UpDown);
+        Assert.Contains("\"time_left\": true", await File.ReadAllTextAsync(FilePath, TestContext.Current.CancellationToken), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AnOlderFile_ShowsTheDuration_AndKeepsTheOtherChoices()
+    {
+        Directory.CreateDirectory(_directory);
+        await File.WriteAllTextAsync(FilePath, "{ \"decodes_in_software\": true, \"up_down\": \"volume\" }", TestContext.Current.CancellationToken);
+
+        var preferences = Create();
+
+        Assert.False(preferences.TimeLeft);
+        Assert.Equal(PlayerUpDown.Volume, preferences.UpDown);
+    }
+
+    [Fact]
+    public async Task EveryChoice_SavedTogether_ComesBackAtTheNextStart()
+    {
+        // Each choice away from its default, so one a save leaves out comes back as the default. A new choice joins here.
+        var preferences = Create();
+
+        await preferences.SetDecodesInSoftwareAsync(true);
+        await preferences.SetUpDownAsync(PlayerUpDown.Volume);
+        await preferences.SetTimeLeftAsync(true);
+        await preferences.SetPassoutThresholdAsync(7);
+        await preferences.SetResumeRewindSecondsAsync(12);
+        await preferences.SetDiscordStatusAsync(true);
+        await preferences.SetSleepTimerButtonAsync(false);
+
+        var again = Create();
+        Assert.True(again.DecodesInSoftware);
+        Assert.Equal(PlayerUpDown.Volume, again.UpDown);
+        Assert.True(again.TimeLeft);
+        Assert.Equal(7, again.PassoutThreshold);
+        Assert.Equal(12, again.ResumeRewindSeconds);
+        Assert.True(again.DiscordStatus);
+        Assert.False(again.SleepTimerButton);
+    }
+
+    [Fact]
     public void AtFirst_TheStillWatchingPromptComesAfterThreeEpisodes() =>
         Assert.Equal(AutoPlayStreak.DefaultThreshold, Create().PassoutThreshold);
 

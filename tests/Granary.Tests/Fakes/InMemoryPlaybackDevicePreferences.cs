@@ -19,6 +19,18 @@ internal sealed class InMemoryPlaybackDevicePreferences : IPlaybackDevicePrefere
         SavedUpDown.Add(upDown);
         return Task.CompletedTask;
     }
+
+    public bool TimeLeft { get; set; }
+
+    public List<bool> SavedTimeLeft { get; } = [];
+
+    public Task SetTimeLeftAsync(bool shown)
+    {
+        TimeLeft = shown;
+        SavedTimeLeft.Add(shown);
+        return Task.CompletedTask;
+    }
+
     public int PassoutThreshold { get; set; } = AutoPlayStreak.DefaultThreshold;
 
     public List<int> SavedPassoutThreshold { get; } = [];
