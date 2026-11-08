@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Globalization;
 using Granary.App.Controls;
 using Granary.App.Services;
@@ -331,6 +332,12 @@ public sealed partial class PlayerPage : Page
             foreach (var element in ElementsOf(button))
             {
                 int at = children.IndexOf(element);
+                // Each button's elements are the bar's own children; one that is not stays out of the order.
+                Debug.Assert(at >= 0, "A bar button's element is not in RightControls");
+                if (at < 0)
+                {
+                    continue;
+                }
                 if (at != index)
                 {
                     children.Move((uint)at, (uint)index);
