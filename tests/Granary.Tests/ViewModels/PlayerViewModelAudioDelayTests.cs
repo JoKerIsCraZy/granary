@@ -4,7 +4,6 @@ using Granary.Core.Auth;
 using Granary.Core.Playback;
 using Granary.Core.ViewModels;
 using Granary.Tests.Fakes;
-using Granary.Tests.Playback;
 using Granary.Tests.Profiles;
 
 namespace Granary.Tests.ViewModels;
@@ -52,9 +51,10 @@ public sealed class PlayerViewModelAudioDelayTests
         Assert.Equal(200, viewModel.AudioDelayMs);
         Assert.Equal(200, _delay.Milliseconds);
         _time.Advance(TimeSpan.FromSeconds(1));
-        await ServerPlaybackFixture.Until(() => Saves.Count == 1, "the delay is saved");
-        Assert.Equal(200, JsonDocument.Parse(Saves[0].Body!).RootElement.GetProperty("value").GetInt32());
-        Assert.Equal("?scope=profile_device", Saves[0].Uri.Query);
+        await _delay.LatestSave;
+        var save = Assert.Single(Saves);
+        Assert.Equal(200, JsonDocument.Parse(save.Body!).RootElement.GetProperty("value").GetInt32());
+        Assert.Equal("?scope=profile_device", save.Uri.Query);
     }
 
     [Fact]
@@ -103,7 +103,7 @@ public sealed class PlayerViewModelAudioDelayTests
         Assert.Equal(50, viewModel.AudioDelayMs);
         Assert.Equal(100, _delay.Milliseconds);
         _time.Advance(TimeSpan.FromSeconds(2));
-        await Task.Delay(50, TestContext.Current.CancellationToken);
+        await _delay.LatestSave;
         Assert.Empty(Saves);
     }
 }

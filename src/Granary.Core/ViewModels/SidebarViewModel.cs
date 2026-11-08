@@ -6,6 +6,7 @@ using Granary.Core.Api;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Profiles;
 using Granary.Core.Auth;
+using Granary.Core.Playback;
 using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.ViewModels;
@@ -27,6 +28,9 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
     /// <summary>As the web's staleTime for the library list and its preferences.</summary>
     public static readonly TimeSpan StaleAfter = TimeSpan.FromMinutes(5);
 
+    // How long Switch profile and Sign out wait for an audio delay changed a moment before to be saved.
+    private static readonly TimeSpan AudioDelayWait = TimeSpan.FromSeconds(2);
+
     private readonly ISessionManager _session;
     private readonly ProfilesApi _profiles;
     private readonly VisibleLibraries _libraries;
@@ -34,6 +38,7 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
     private readonly IUiDispatcher _dispatcher;
     private readonly TimeProvider _time;
     private readonly ILogger<SidebarViewModel> _logger;
+    private readonly AudioDelay? _audioDelay;
     private (string? ServerId, string? ProfileId)? _loaded;
     private (string? ServerId, string? ProfileId)? _shown;
     private int _generation;
@@ -46,7 +51,8 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
         INavigationService navigation,
         IUiDispatcher dispatcher,
         TimeProvider time,
-        ILogger<SidebarViewModel> logger)
+        ILogger<SidebarViewModel> logger,
+        AudioDelay? audioDelay = null)
     {
         _session = session;
         _profiles = profiles;
@@ -55,6 +61,7 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
         _dispatcher = dispatcher;
         _time = time;
         _logger = logger;
+        _audioDelay = audioDelay;
         _session.Changed += OnSessionChanged;
     }
 
@@ -192,10 +199,28 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
     }
 
     [RelayCommand]
-    private Task SwitchProfileAsync() => _session.ClearProfileAsync();
+    private async Task SwitchProfileAsync()
+    {
+        await SaveAudioDelayAsync();
+        await _session.ClearProfileAsync();
+    }
 
     [RelayCommand]
-    private Task SignOutAsync() => _session.SignOutAsync();
+    private async Task SignOutAsync()
+    {
+        await SaveAudioDelayAsync();
+        await _session.SignOutAsync();
+    }
+
+    // An audio delay changed a moment ago is this profile's, and could not be saved as it once another acts: it goes out
+    // first, waited for a moment at most.
+    private async Task SaveAudioDelayAsync()
+    {
+        if (_audioDelay?.SaveNowAsync() is { IsCompleted: false } save)
+        {
+            await Task.WhenAny(save, Task.Delay(AudioDelayWait, _time));
+        }
+    }
 
     /// <summary>The servers live in Settings → Servers, as the apps keep them under their settings.</summary>
     [RelayCommand]

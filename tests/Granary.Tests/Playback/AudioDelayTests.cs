@@ -1,5 +1,8 @@
 using System.Net;
+using System.Text;
 using System.Text.Json;
+using Granary.Core.Abstractions;
+using Granary.Core.Api;
 using Granary.Core.Api.Settings;
 using Granary.Core.Auth;
 using Granary.Core.Playback;
@@ -8,33 +11,48 @@ using Granary.Tests.Profiles;
 
 namespace Granary.Tests.Playback;
 
-/// <summary>This device's audio delay (player.audio_sync_ms), shared by Settings and the player, as Silo's Android app keeps it.</summary>
+/// <summary>
+/// This device's audio delay (player.audio_sync_ms), shared by Settings and the player, as Silo's Android app keeps it.
+/// The clock is the test's: a save the settle timer starts is waited for through <see cref="AudioDelay.LatestSave"/>.
+/// </summary>
 public sealed class AudioDelayTests
 {
     private const string ValuePath = "api/v2/settings/values/" + AudioDelay.Key;
     private const string EffectivePath = "api/v2/settings/values/effective";
+    private static readonly TimeSpan Settle = TimeSpan.FromSeconds(1);
+    private static readonly Uri OtherBase = new("https://other.example/silo");
 
     private readonly ScriptedSilo _silo = new();
     private readonly ManualTimeProvider _time = new();
     private readonly LogSink _logs = new();
     private readonly FakeSessionManager _session = new() { State = SessionState.Ready, ActiveServer = ScriptedSilo.Server, ProfileId = "7" };
 
-    public AudioDelayTests() => _silo.On(HttpMethod.Put, ValuePath, ScriptedSilo.NoContent());
+    public AudioDelayTests()
+    {
+        _silo.On(HttpMethod.Put, ValuePath, ScriptedSilo.NoContent());
+        // The authentication handler sends a write made for a profile only as that profile.
+        _silo.ActingProfile = () => _session.ActiveServer == ScriptedSilo.Server ? _session.ProfileId : "7";
+    }
 
-    private AudioDelay Create() => new(new SettingsApi(_silo.Http), _session, new ImmediateDispatcher(), _time, _logs.For<AudioDelay>());
+    private AudioDelay Create(IUiDispatcher? dispatcher = null) =>
+        new(new SettingsApi(_silo.Http), _session, dispatcher ?? new ImmediateDispatcher(), _time, _logs.For<AudioDelay>());
 
     private IReadOnlyList<SentRequest> Saves => _silo.SentTo(HttpMethod.Put, ValuePath);
 
     private static int Value(SentRequest save) => JsonDocument.Parse(save.Body!).RootElement.GetProperty("value").GetInt32();
 
-    private async Task AdvanceAsync(TimeSpan by)
+    private static Func<Task<HttpResponseMessage>> Effective(string value) => ScriptedSilo.Json(HttpStatusCode.OK,
+        $$"""{ "items": [ { "key": "player.audio_sync_ms", "value": {{value}}, "source": "profile_device" } ], "revision": 3 }""");
+
+    // Lets the settle timer start its save, and waits for that save.
+    private async Task SettleAsync(AudioDelay delay)
     {
-        _time.Advance(by);
-        await Task.Delay(50, TestContext.Current.CancellationToken);
+        _time.Advance(Settle);
+        await delay.LatestSave;
     }
 
     [Fact]
-    public async Task AChange_ReachesWhatPlaysAtOnce_AndIsSavedForThisDeviceOnceItSettles()
+    public async Task AChange_ReachesWhatPlaysAtOnce_AndIsSavedForThisDeviceAsThisProfileOnceItSettles()
     {
         var delay = Create();
         var seen = new List<int>();
@@ -46,11 +64,13 @@ public sealed class AudioDelayTests
 
         Assert.Equal([100, 150, 200], seen);
         Assert.Empty(Saves);
-        await AdvanceAsync(TimeSpan.FromSeconds(1));
+        await SettleAsync(delay);
         var save = Assert.Single(Saves);
         Assert.Equal("?scope=profile_device", save.Uri.Query);
+        Assert.Equal("7", save.AsProfile);
         Assert.Equal(200, Value(save));
-        await AdvanceAsync(TimeSpan.FromSeconds(5));
+        _time.Advance(TimeSpan.FromSeconds(5));
+        await delay.LatestSave;
         Assert.Single(Saves);
     }
 
@@ -82,22 +102,25 @@ public sealed class AudioDelayTests
         delay.Take(300);
         Assert.Equal(100, delay.Milliseconds);
 
-        await AdvanceAsync(TimeSpan.FromSeconds(1));
+        await SettleAsync(delay);
         Assert.Single(Saves);
         delay.Take(250);
         Assert.Equal(250, delay.Milliseconds);
     }
 
-    [Fact]
-    public async Task AFailedSave_KeepsTheChoiceForThisRun_AndTheCloseTriesAgain()
+    [Theory]
+    [InlineData(503, "unavailable")]
+    [InlineData(412, "precondition_failed")]
+    [InlineData(422, "validation_failed")]
+    public async Task ASaveTheServerRefuses_IsLogged_KeepsTheChoiceForThisRun_AndTheCloseTriesAgain(int status, string code)
     {
-        _silo.On(HttpMethod.Put, ValuePath, ScriptedSilo.Problem(503, "unavailable"), ScriptedSilo.NoContent());
+        _silo.On(HttpMethod.Put, ValuePath, ScriptedSilo.Problem(status, code), ScriptedSilo.NoContent());
         var delay = Create();
 
         delay.Set(-200);
-        await AdvanceAsync(TimeSpan.FromSeconds(1));
+        await SettleAsync(delay);
         Assert.Single(Saves);
-        Assert.Contains(_logs.Lines, l => l.Contains("audio delay", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(_logs.Lines, l => l.Contains("Saving the audio delay failed", StringComparison.Ordinal));
 
         // A title read meanwhile still plays with the viewer's choice.
         delay.Take(0);
@@ -117,25 +140,84 @@ public sealed class AudioDelayTests
 
         delay.Set(250);
         await delay.SaveNowAsync();
+        await delay.SaveNowAsync();
 
         Assert.Equal(250, Value(Assert.Single(Saves)));
-        await AdvanceAsync(TimeSpan.FromSeconds(2));
+        _time.Advance(TimeSpan.FromSeconds(2));
         await delay.SaveNowAsync();
         Assert.Single(Saves);
     }
 
     [Fact]
-    public async Task AChangeMadeForAnotherProfile_IsNotSaved_AndTheNewProfilesValueIsTaken()
+    public async Task ASettleTimerThatWasDueAsALaterChangeCame_SavesNothingEarly()
+    {
+        var dispatcher = new QueuedDispatcher();
+        var delay = Create(dispatcher);
+
+        delay.Set(100);
+        // Its timer is due: its save waits on the busy UI thread while the next change comes.
+        _time.Advance(Settle);
+        delay.Set(200);
+        dispatcher.RunAll();
+        Assert.Empty(Saves);
+
+        _time.Advance(Settle);
+        dispatcher.RunAll();
+        await delay.LatestSave;
+        Assert.Equal(200, Value(Assert.Single(Saves)));
+    }
+
+    [Fact]
+    public async Task AChangeMadeJustBeforeASwitchToAnotherServer_StillReachesItsOwnServer_AsItsProfile()
+    {
+        var other = ScriptedSilo.Entry("srv2", OtherBase);
+        var delay = Create();
+
+        delay.Set(400);
+        _session.ActiveServer = other;
+        _session.ProfileId = "3";
+        await SettleAsync(delay);
+
+        var save = Assert.Single(Saves);
+        Assert.Equal(400, Value(save));
+        Assert.Equal("7", save.AsProfile);
+        Assert.Equal(ScriptedSilo.Url(ValuePath).AbsolutePath, save.Uri.AbsolutePath);
+    }
+
+    [Fact]
+    public async Task AChangeForAProfileItsServerNoLongerActsAs_IsNeverSentAsTheNewOne()
     {
         var delay = Create();
 
         delay.Set(400);
         _session.ProfileId = "8";
-        await AdvanceAsync(TimeSpan.FromSeconds(1));
+        await SettleAsync(delay);
 
         Assert.Empty(Saves);
+        Assert.Contains(_logs.Lines, l => l.Contains("profile changed", StringComparison.Ordinal));
         delay.Take(0);
         Assert.Equal(0, delay.Milliseconds);
+    }
+
+    [Fact]
+    public async Task AChangeLeftWaitingByAnotherProfile_GoesOutBeforeTheNewProfilesChangeTakesItsPlace()
+    {
+        // Each server keeps its own sign-in, with its own profile.
+        _silo.ActingProfile = null;
+        var other = ScriptedSilo.Entry("srv2", OtherBase);
+        var delay = Create();
+
+        delay.Set(400);
+        _session.ActiveServer = other;
+        _session.ProfileId = "3";
+        _silo.On(HttpMethod.Put, ScriptedSilo.Url(ValuePath, OtherBase), ScriptedSilo.NoContent());
+        delay.Set(-100);
+        await delay.SaveNowAsync();
+        await SettleAsync(delay);
+
+        Assert.Equal([400], Saves.Select(Value));
+        Assert.Equal("7", Saves[0].AsProfile);
+        Assert.Contains(_silo.Sent, r => r.Method == HttpMethod.Put && r.Uri.Host == OtherBase.Host && Value(r) == -100 && r.AsProfile == "3");
     }
 
     [Fact]
@@ -170,11 +252,7 @@ public sealed class AudioDelayTests
         _silo.On(HttpMethod.Get, EffectivePath, async () =>
         {
             await gate.Task;
-            return new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent("""{ "items": [ { "key": "player.audio_sync_ms", "value": 300 } ], "revision": 3 }""",
-                    System.Text.Encoding.UTF8, "application/json"),
-            };
+            return await Effective("300")();
         });
         var delay = Create();
 
@@ -194,11 +272,7 @@ public sealed class AudioDelayTests
         _silo.On(HttpMethod.Get, EffectivePath, async () =>
         {
             await gate.Task;
-            return new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent("""{ "items": [ { "key": "player.audio_sync_ms", "value": 300 } ], "revision": 3 }""",
-                    System.Text.Encoding.UTF8, "application/json"),
-            };
+            return await Effective("300")();
         });
         var delay = Create();
 
@@ -207,6 +281,18 @@ public sealed class AudioDelayTests
         gate.SetResult();
         await read;
 
+        Assert.Equal(0, delay.Milliseconds);
+    }
+
+    [Fact]
+    public async Task ARead_TheServerRefuses_SaysSo()
+    {
+        _silo.On(HttpMethod.Get, EffectivePath, ScriptedSilo.Problem(422, "validation_failed"));
+        var delay = Create();
+
+        var refused = await Assert.ThrowsAsync<SiloApiException>(() => delay.ReadAsync(TestContext.Current.CancellationToken));
+
+        Assert.Equal(422, refused.Status);
         Assert.Equal(0, delay.Milliseconds);
     }
 
@@ -219,8 +305,7 @@ public sealed class AudioDelayTests
     [InlineData("null", 0)]
     public async Task Read_TakesThisDevicesValue_WithinTheRange(string value, int expected)
     {
-        _silo.On(HttpMethod.Get, EffectivePath, ScriptedSilo.Json(HttpStatusCode.OK,
-            $$"""{ "items": [ { "key": "player.audio_sync_ms", "value": {{value}}, "source": "profile_device" } ], "revision": 3 }"""));
+        _silo.On(HttpMethod.Get, EffectivePath, Effective(value));
         var delay = Create();
 
         await delay.ReadAsync(TestContext.Current.CancellationToken);

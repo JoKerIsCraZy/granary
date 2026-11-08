@@ -5,7 +5,6 @@ using Granary.Core.Auth;
 using Granary.Core.Playback;
 using Granary.Core.ViewModels.Settings;
 using Granary.Tests.Fakes;
-using Granary.Tests.Playback;
 using Granary.Tests.Profiles;
 
 namespace Granary.Tests.Settings;
@@ -67,9 +66,10 @@ public sealed class AudioDelaySettingsViewModelTests
         Assert.Equal("150 milliseconds", page.ValueText);
         Assert.Equal(150, _delay.Milliseconds);
         _time.Advance(TimeSpan.FromSeconds(1));
-        await ServerPlaybackFixture.Until(() => Saves.Count == 1, "the offset is saved");
-        Assert.Equal(150, JsonDocument.Parse(Saves[0].Body!).RootElement.GetProperty("value").GetInt32());
-        Assert.Equal("?scope=profile_device", Saves[0].Uri.Query);
+        await _delay.LatestSave;
+        var save = Assert.Single(Saves);
+        Assert.Equal(150, JsonDocument.Parse(save.Body!).RootElement.GetProperty("value").GetInt32());
+        Assert.Equal("?scope=profile_device", save.Uri.Query);
     }
 
     [Fact]

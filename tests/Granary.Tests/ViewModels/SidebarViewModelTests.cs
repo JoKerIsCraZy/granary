@@ -33,7 +33,7 @@ public sealed class SidebarViewModelTests
     // The next library read waits for this, answering as the libraries did when it was asked.
     private TaskCompletionSource? _holdLibraries;
 
-    private SidebarViewModel Create()
+    private SidebarViewModel Create(Granary.Core.Playback.AudioDelay? audioDelay = null)
     {
         var handler = new FakeHttpMessageHandler(async (request, _) =>
         {
@@ -54,7 +54,7 @@ public sealed class SidebarViewModelTests
         var http = new SiloHttp(new HttpClient(handler));
         var libraries = new VisibleLibraries(new CatalogApi(http), new SettingsApi(http), _logs.For<VisibleLibraries>());
         return new SidebarViewModel(_session, new ProfilesApi(http), libraries, _navigation, new ImmediateDispatcher(), _clock,
-            _logs.For<SidebarViewModel>());
+            _logs.For<SidebarViewModel>(), audioDelay);
     }
 
     private static Func<HttpResponseMessage> Hiding(string ids) => () => FakeSiloServer.Json(200,
@@ -277,6 +277,32 @@ public sealed class SidebarViewModelTests
         Assert.Equal("elena", sidebar.ProfileName);
         Assert.Equal("E", sidebar.ProfileInitials);
         Assert.Contains(_logs.Lines, l => l.StartsWith("Warning", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task SwitchProfile_FirstSavesAnAudioDelayChangedAMomentBefore_AsTheProfileItWasMadeFor()
+    {
+        var silo = new Profiles.ScriptedSilo();
+        int callsAtSave = -1;
+        silo.On(HttpMethod.Put, "api/v2/settings/values/player.audio_sync_ms", () =>
+        {
+            callsAtSave = _session.Calls.Count;
+            return Profiles.ScriptedSilo.NoContent()();
+        });
+        _session.State = SessionState.Ready;
+        _session.ActiveServer = Profiles.ScriptedSilo.Server;
+        _session.ProfileId = "7";
+        var delay = new Granary.Core.Playback.AudioDelay(new SettingsApi(silo.Http), _session, new ImmediateDispatcher(), _clock,
+            _logs.For<Granary.Core.Playback.AudioDelay>());
+        using var sidebar = Create(delay);
+        delay.Set(250);
+
+        await sidebar.SwitchProfileCommand.ExecuteAsync(null);
+
+        var save = Assert.Single(silo.SentTo(HttpMethod.Put, "api/v2/settings/values/player.audio_sync_ms"));
+        Assert.Equal("7", save.AsProfile);
+        Assert.Equal(0, callsAtSave);
+        Assert.Equal(["clear-profile"], _session.Calls);
     }
 
     [Fact]
