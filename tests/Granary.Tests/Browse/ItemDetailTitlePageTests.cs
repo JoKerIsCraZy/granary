@@ -1,4 +1,6 @@
 using Granary.Core.Playback.Themes;
+using Granary.Core.Settings;
+using Granary.Core.ViewModels;
 using Granary.Tests.Auth;
 using Granary.Tests.Playback;
 using Granary.Tests.Settings;
@@ -136,6 +138,52 @@ public sealed class ItemDetailTitlePageTests
 
         Assert.False(detail.HoldsTitle);
         Assert.True(detail.ShowsLogo);
+    }
+
+    [Fact]
+    public async Task ATitleHeldTooLong_ShowsItsLogo_WhileTheChoiceIsStillOnItsWay()
+    {
+        var fixture = new ItemDetailFixture().Movie();
+        var settings = TitlePageSwitches.Unread(TitlePageSettingsTests.Answer(titleArt: false));
+        fixture.TitlePage = settings;
+        var detail = await OpenAsync(fixture, MovieId);
+
+        fixture.Clock.Advance(ItemDetailViewModel.TitleHoldLimit - TimeSpan.FromMilliseconds(1));
+        Assert.True(detail.HoldsTitle);
+        fixture.Clock.Advance(TimeSpan.FromMilliseconds(1));
+
+        Assert.False(detail.HoldsTitle);
+        Assert.True(detail.ShowsLogo);
+        Assert.Equal(TitlePageState.Loading, settings.State);
+        Assert.Null(settings.Shown.ShowsTitleArt);
+    }
+
+    [Fact]
+    public async Task AChoiceReadAfterTheHoldGaveWay_StillApplies()
+    {
+        var fixture = new ItemDetailFixture().Movie();
+        var settings = TitlePageSwitches.Unread(TitlePageSettingsTests.Answer(titleArt: false));
+        fixture.TitlePage = settings;
+        var detail = await OpenAsync(fixture, MovieId);
+        fixture.Clock.Advance(ItemDetailViewModel.TitleHoldLimit);
+
+        await settings.StartAsync();
+
+        Assert.False(detail.ShowsLogo);
+        Assert.True(detail.ShowsTitleText);
+    }
+
+    [Fact]
+    public async Task ALeftPage_LetsGoOfItsHold()
+    {
+        var fixture = new ItemDetailFixture().Movie();
+        fixture.TitlePage = TitlePageSwitches.Unread(TitlePageSettingsTests.Answer());
+        var detail = await OpenAsync(fixture, MovieId);
+        Assert.NotNull(fixture.Clock.NextDue);
+
+        detail.Deactivate();
+
+        Assert.Null(fixture.Clock.NextDue);
     }
 
     [Fact]

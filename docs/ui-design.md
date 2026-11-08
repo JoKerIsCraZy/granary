@@ -466,8 +466,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     down (clear at 35 % → black at 82 %). Its thumbhash shows first, then the image fades in.
   - Hero, 48 px in, 100 from the top, 14 apart: season and episode
     breadcrumbs; the logo at most 140 high and 520 wide, taking no room until it is in (or the title in 50 Bold, also
-    whenever Title Pages → Show title art is off; until the profile's choice is read, a title with a logo shows neither); a
-    season's own name; one meta line in 17 at 60 % white ("2026 · 1h 58m · R · Mystery, Thriller", a series' air years,
+    whenever Title Pages → Show title art is off; until the profile's choice is read, a title with a logo shows neither,
+    for 1.5 s at most, then its logo); a season's own name; one meta line in 17 at 60 % white ("2026 · 1h 58m · R · Mystery, Thriller", a series' air years,
     rating, regular seasons and genres, an episode's "S2 E7 · 54m · 30 Oct 2026"; with Title Pages → Show advisory age a
     movie's or series' suggested age follows its rating in the web's words, "Common Sense 13+", "MDBList 16+" or "13+");
     the tagline in 17 italic; the overview in 16/25, four lines at most and 820 wide.

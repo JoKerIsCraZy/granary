@@ -16,8 +16,14 @@ public sealed partial class ItemDetailViewModel
     private IReadOnlyList<Season>? _metaSeasons;
     private int? _metaListedEpisodes;
 
+    /// <summary>How long a title with a logo is held for the profile's choice of title art before its logo shows anyway.</summary>
+    public static readonly TimeSpan TitleHoldLimit = TimeSpan.FromMilliseconds(1500);
+
     // The title's logo, which LogoUrl shows while title art is on.
     private Uri? _titleLogo;
+    private ITimer? _titleHold;
+    // The hold gave way for this title: the logo shows until the profile's choice is known.
+    private bool _titleHoldOver;
 
     private static readonly ThemeSongSet NoThemes = new();
 
@@ -40,6 +46,8 @@ public sealed partial class ItemDetailViewModel
         _metaSeasons = null;
         _metaListedEpisodes = null;
         _titleLogo = null;
+        StopTitleHold();
+        _titleHoldOver = false;
         HoldsTitle = false;
         MetaLine = "";
     }
@@ -55,6 +63,7 @@ public sealed partial class ItemDetailViewModel
     {
         _titlePage?.PropertyChanged -= OnTitlePageChanged;
         _themeMusic?.Hide(_themePage);
+        StopTitleHold();
     }
 
     // As the web's useThemeMusic: no themes while the page loads, which pauses the one playing; the item's once it is in, the
@@ -90,12 +99,39 @@ public sealed partial class ItemDetailViewModel
         ShowMetaLine();
     }
 
-    // As the web's DetailHero: the logo while title art is on, the name in text while it is off, neither until it is known.
+    // As the web's DetailHero: the logo while title art is on, the name in text while it is off, neither until it is known. A
+    // read that keeps the page waiting gives way after TitleHoldLimit to the contract's default, the logo, until it answers.
     private void ShowTitleArt()
     {
-        bool? titleArt = TitlePage.ShowsTitleArt;
+        bool? titleArt = TitlePage.ShowsTitleArt ?? (_titleHoldOver ? true : null);
         LogoUrl = titleArt == true ? _titleLogo : null;
         HoldsTitle = titleArt is null && _titleLogo is not null;
+        if (HoldsTitle)
+        {
+            _titleHold ??= _time.CreateTimer(static page => ((ItemDetailViewModel)page!).OnTitleHoldOver(), this, TitleHoldLimit,
+                Timeout.InfiniteTimeSpan);
+        }
+        else
+        {
+            StopTitleHold();
+        }
+    }
+
+    private void OnTitleHoldOver() => OnUiThread(() =>
+    {
+        if (_titleHold is null)
+        {
+            return;
+        }
+        StopTitleHold();
+        _titleHoldOver = true;
+        ShowTitleArt();
+    });
+
+    private void StopTitleHold()
+    {
+        _titleHold?.Dispose();
+        _titleHold = null;
     }
 
     // The advisory age follows the rating while the profile asked for it, as the web's MetadataBadges shows it.

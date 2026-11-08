@@ -654,7 +654,7 @@ server's contract does not know (`422`, then read one by one, `ProfileSettings`)
   name in text. Its resolution order is `profile`, then `profile_device`, then the default: a profile value is "Apply to all
   devices" and wins on every device (the manifest's notes, the web's `useTitleArtSetting`). Anything but `false` reads as on;
   a server without the key, or a failed first read, shows logos. Until the profile's value is read, a page with a logo holds
-  its title, neither logo nor text. Writes:
+  its title, neither logo nor text, for 1.5 s at most; then the logo shows until the answer comes. Writes:
   - Show title art: `PUT …?scope=profile_device`, or `…?scope=profile` while the source is `profile`.
   - Apply to all devices on: `PUT …?scope=profile` with the current value. Off: `PUT …?scope=profile_device` with the
     current value, then `DELETE …?scope=profile` (skipped once another profile acts), so this PC keeps its look and the
