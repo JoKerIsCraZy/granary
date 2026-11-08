@@ -47,7 +47,8 @@ internal sealed partial class WindowsKeepAwake : IKeepAwake, IDisposable
             {
                 return state == KeepAwakeState.None;
             }
-            if (state == _state)
+            // Unchanged only when Windows holds just what the state wants: a change that stopped half-way is finished now.
+            if (state == _state && (_requests is null || Holds(state)))
             {
                 return true;
             }
@@ -126,20 +127,32 @@ internal sealed partial class WindowsKeepAwake : IKeepAwake, IDisposable
         }
     }
 
+    private bool Holds(KeepAwakeState state) => KeepAwakeRequests.Changes(_active, state) is { Set.Count: 0, Clear.Count: 0 };
+
     // Under the gate. The new requests first, then the old ones cleared, so nothing lapses in between; true once Windows
-    // holds just what the state wants. One that stopped is picked up by the next change where it stopped.
+    // holds just what the state wants. A set Windows refuses takes back the ones this pass set, so what was held before
+    // still is; a clear it refuses is tried again by the next call.
     private bool Change(Dictionary<string, nint> requests, KeepAwakeState state)
     {
         var (set, clear) = KeepAwakeRequests.Changes(_active, state);
+        var setNow = new List<PowerRequest>();
         foreach (var request in set)
         {
             if (!PowerSetRequest(requests[request.Reason], request.Type))
             {
                 _logger.LogWarning("Windows refused the power request {Type} for \"{Reason}\" (error {Error})", request.Type, request.Reason,
                     Marshal.GetLastPInvokeError());
+                foreach (var taken in setNow)
+                {
+                    if (PowerClearRequest(requests[taken.Reason], taken.Type))
+                    {
+                        _active.Remove(taken);
+                    }
+                }
                 return false;
             }
             _active.Add(request);
+            setNow.Add(request);
         }
         bool cleared = true;
         foreach (var request in clear)
