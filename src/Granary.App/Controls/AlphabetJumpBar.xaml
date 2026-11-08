@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     The A–Z bar on the right edge of a title-ordered grid, as on Silo's web client: "#" and the letters A to Z on a
-    round panel, the letter of the top row red. Letters without titles are greyed. One tab stop: the arrow keys move
+    round panel, the letter of the top row in the accent. Letters without titles are greyed. One tab stop: the arrow keys move
     between letters, typing a letter goes to it, and Enter jumps. It shrinks to fit short windows.
 -->
 <UserControl

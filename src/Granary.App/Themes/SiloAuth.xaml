@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     The inputs of Silo's web login (its shadcn Input): a 36 px field on the page background with a faint
-    outline, red when focused, the placeholder muted. A page with SiloAuthShellStyle merges this into its
+    outline, in the accent when focused, the placeholder muted. A page with SiloAuthShellStyle merges this into its
     resources, so WinUI's text boxes there take these brushes in every state instead of the Fluent ones
     (whose focus is an accent underline).
 -->
@@ -15,7 +15,7 @@
     <SolidColorBrush x:Key="TextControlBorderBrush" Color="#FF28282E" />
     <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="#FF3A3A42" />
     <StaticResource x:Key="TextControlBorderBrushFocused" ResourceKey="SiloPrimaryBrush" />
-    <!-- The web adds a 3 px half-red ring around the red outline; a 2 px outline stands for both. -->
+    <!-- The web adds a 3 px ring of the accent at half strength (ring-ring/50) around the accent's outline; a 2 px outline stands for both. -->
     <Thickness x:Key="TextControlBorderThemeThickness">1</Thickness>
     <Thickness x:Key="TextControlBorderThemeThicknessFocused">2</Thickness>
     <SolidColorBrush x:Key="TextControlForeground" Color="#FFE8E8EC" />

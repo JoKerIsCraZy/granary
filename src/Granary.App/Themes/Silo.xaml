@@ -275,6 +275,7 @@
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="FontSize" Value="10" />
         <Setter Property="CharacterSpacing" Value="25" />
+        <!-- White on artwork and dark pills; a badge on an accent fill sets SiloOnPrimaryBadgeBrush instead. -->
         <Setter Property="Foreground" Value="White" />
     </Style>
 
@@ -303,7 +304,7 @@
     </Style>
 
     <!--
-        Pill buttons as on Silo's web: the red primary (Play) with dark bold text, the dark secondary (Mark watched)
+        Pill buttons as on Silo's web: the primary (Play) in the accent with its label in bold, the dark secondary (Mark watched)
         with a faint light along its top edge, and round icon buttons of the secondary kind.
     -->
     <Style x:Key="SiloPrimaryButtonStyle" TargetType="Button">
@@ -645,7 +646,7 @@
 
     <!--
         The signed-out screens (adding a server, signing in) as Silo's web draws its login: a 448 px card in the
-        middle, on the background with a red glow at the top left and a light one at the top right. Above it Granary's
+        middle, on the background with a glow of the accent at the top left and a light one at the top right. Above it Granary's
         own name and what it is, the screen's identity as Silo's developers asked; Silo's mark only refers to the
         server, inside the card (SiloAuthMarkStyle, Assets/Brand/NOTICE.txt). The page puts its form in as the content
         and merges Themes/SiloAuth.xaml for the inputs. The glows are the web's circles stretched with the window.
@@ -781,7 +782,7 @@
         <Setter Property="FontFamily" Value="{StaticResource SiloFontMedium}" />
         <Setter Property="FontWeight" Value="Medium" />
     </Style>
-    <!-- A refusal in the card (the web's destructive alert); its text a lighter red, to read on the dark. -->
+    <!-- A refusal in the card, the web's destructive alert (Login.tsx); its text SiloDestructiveBrush, as text-destructive. -->
     <Style x:Key="SiloAuthErrorStyle" TargetType="Border">
         <Setter Property="Background" Value="#1AEF4444" />
         <Setter Property="BorderBrush" Value="#4DEF4444" />
@@ -1096,7 +1097,7 @@
         <Setter Property="FontFamily" Value="{StaticResource SiloFontRegular}" />
         <Setter Property="FontWeight" Value="Normal" />
     </Style>
-    <!-- "Play Now" on the Playing Next screen: the red pill with white text. -->
+    <!-- "Play Now" on the Playing Next screen: the accent's pill with its label (bg-primary text-primary-foreground). -->
     <Style x:Key="SiloNextUpPlayButtonStyle" TargetType="Button" BasedOn="{StaticResource SiloPrimaryButtonStyle}">
         <Setter Property="Foreground" Value="{StaticResource SiloOnPrimaryBrush}" />
         <Setter Property="Padding" Value="24,0,28,0" />
@@ -1325,7 +1326,7 @@
         </Setter>
     </Style>
 
-    <!-- The red play disc in the middle of a card under the pointer; it grows a little under the pointer itself. -->
+    <!-- The play disc in the accent in the middle of a card under the pointer; it grows a little under the pointer itself. -->
     <Style x:Key="SiloCardPlayButtonStyle" TargetType="Button">
         <Setter Property="IsTabStop" Value="False" />
         <Setter Property="Foreground" Value="{StaticResource SiloOnPrimaryBrush}" />

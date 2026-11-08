@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     The Notifications inbox, as Silo's web shows it: a column of entries with their posters, unread ones marked with a
-    red dot and set off, All and Unread, Mark all read, and the Preferences beside the title. Series, where the server
+    dot in the accent and set off, All and Unread, Mark all read, and the Preferences beside the title. Series, where the server
     lists them, shows which series notify and which won't, with search, reason, sort and Mute. The page is cached.
 -->
 <Page

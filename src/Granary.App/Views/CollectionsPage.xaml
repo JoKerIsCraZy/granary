@@ -36,7 +36,7 @@
                     <TextBlock Text="{x:Bind ViewModel.Subtitle, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}"
                                Foreground="{StaticResource SiloMutedBrush}" TextWrapping="Wrap" />
                 </StackPanel>
-                <!-- The web's red New collection at the title's right. -->
+                <!-- The web's New collection in the accent at the title's right. -->
                 <Button Grid.Column="1" Style="{StaticResource SiloPrimaryButtonStyle}" VerticalAlignment="Top" Click="OnNewCollectionClick"
                         AutomationProperties.Name="New collection">
                     <StackPanel Orientation="Horizontal" Spacing="8">

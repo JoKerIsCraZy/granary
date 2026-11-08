@@ -136,7 +136,7 @@ public sealed partial class MediaRow : UserControl
         set => SetValue(CardRemoveLabelProperty, value);
     }
 
-    /// <summary>A red pill beside the title ("TODAY" on the calendar); empty for none.</summary>
+    /// <summary>A pill in the accent beside the title ("TODAY" on the calendar); empty for none.</summary>
     public string TitleBadge
     {
         get => (string)GetValue(TitleBadgeProperty);

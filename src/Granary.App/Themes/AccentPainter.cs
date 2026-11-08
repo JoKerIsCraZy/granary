@@ -9,7 +9,9 @@ namespace Granary.App.Themes;
 /// Paints the server's accent (<see cref="ServerAccent"/>) into the app's resources, as the web lays its accent over Cinema
 /// Dark: the accent brushes of Themes/Silo.xaml and the Fluent accent brushes of its theme dictionaries take the new
 /// colour and keep their own alpha, so every element that refers to one changes at once. The page dictionaries
-/// (SiloSettings, SiloAuth) refer to the same brushes. Runs on the UI thread.
+/// (SiloSettings, SiloAuth) refer to the same brushes. Without a server accent the palette is the web's own near-white
+/// default (<see cref="AccentPalette.Default"/>). The destructive and favourite reds are not accent brushes and stay red.
+/// Runs on the UI thread.
 /// </summary>
 internal static class AccentPainter
 {
