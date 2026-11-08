@@ -90,6 +90,9 @@ internal sealed class ItemDetailFixture
     /// <summary>The app's queue of track choices on their way to the server, which a start waits for.</summary>
     public TrackChoiceWrites TrackChoices => field ??= new(Session, TimeProvider.System, NullLogger<TrackChoiceWrites>.Instance);
 
+    /// <summary>The page's UI thread; work runs at once unless a test sets another.</summary>
+    public Core.Abstractions.IUiDispatcher Dispatcher { get; set; } = new ImmediateDispatcher();
+
     /// <summary>Drives the wait before the page reads changes of the viewer's state.</summary>
     public ManualTimeProvider Clock { get; } = new();
 
@@ -137,7 +140,7 @@ internal sealed class ItemDetailFixture
         spoilers: Spoilers,
         titlePage: TitlePage,
         themeMusic: ThemeMusic,
-        dispatcher: new ImmediateDispatcher(),
+        dispatcher: Dispatcher,
         time: Clock,
         ratings: Ratings,
         airings: Airings,

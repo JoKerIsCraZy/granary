@@ -174,6 +174,44 @@ public sealed class ItemDetailTitlePageTests
     }
 
     [Fact]
+    public async Task AHoldsEndPostedBeforeTheTitleLoadedAgain_LeavesTheNewHoldAlone()
+    {
+        var ui = new TimerThreadDispatcher();
+        var fixture = new ItemDetailFixture().Movie();
+        fixture.Dispatcher = ui;
+        fixture.TitlePage = TitlePageSwitches.Unread(TitlePageSettingsTests.Answer());
+        var detail = await OpenAsync(fixture, MovieId);
+        fixture.Clock.Advance(ItemDetailViewModel.TitleHoldLimit);
+
+        await detail.LoadCommand.ExecuteAsync(MovieId);
+        ui.RunAll();
+
+        Assert.True(detail.HoldsTitle);
+        fixture.Clock.Advance(ItemDetailViewModel.TitleHoldLimit);
+        ui.RunAll();
+        Assert.False(detail.HoldsTitle);
+        Assert.True(detail.ShowsLogo);
+    }
+
+    // The page's UI thread as a timer's tick sees it: not this thread, so the tick's work waits until the test runs it.
+    private sealed class TimerThreadDispatcher : Core.Abstractions.IUiDispatcher
+    {
+        private readonly Queue<Action> _work = new();
+
+        public bool HasThreadAccess => false;
+
+        public void Post(Action action) => _work.Enqueue(action);
+
+        public void RunAll()
+        {
+            while (_work.TryDequeue(out var action))
+            {
+                action();
+            }
+        }
+    }
+
+    [Fact]
     public async Task ALeftPage_LetsGoOfItsHold()
     {
         var fixture = new ItemDetailFixture().Movie();

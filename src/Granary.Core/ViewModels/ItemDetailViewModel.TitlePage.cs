@@ -108,8 +108,11 @@ public sealed partial class ItemDetailViewModel
         HoldsTitle = titleArt is null && _titleLogo is not null;
         if (HoldsTitle)
         {
-            _titleHold ??= _time.CreateTimer(static page => ((ItemDetailViewModel)page!).OnTitleHoldOver(), this, TitleHoldLimit,
-                Timeout.InfiniteTimeSpan);
+            if (_titleHold is null)
+            {
+                ITimer? hold = null;
+                hold = _titleHold = _time.CreateTimer(_ => OnTitleHoldOver(hold), null, TitleHoldLimit, Timeout.InfiniteTimeSpan);
+            }
         }
         else
         {
@@ -117,9 +120,10 @@ public sealed partial class ItemDetailViewModel
         }
     }
 
-    private void OnTitleHoldOver() => OnUiThread(() =>
+    // Only the hold that runs now gives way: one stopped after its tick was posted leaves the next one alone.
+    private void OnTitleHoldOver(ITimer? hold) => OnUiThread(() =>
     {
-        if (_titleHold is null)
+        if (hold is null || !ReferenceEquals(_titleHold, hold))
         {
             return;
         }
