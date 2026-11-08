@@ -6,6 +6,7 @@ using Granary.Core.Abstractions;
 using Granary.Core.Diagnostics;
 using Granary.Core.Overlays;
 using Granary.Core.Playback;
+using Granary.Core.Playback.Themes;
 using Granary.Core.Realtime;
 using Granary.Core.Servers;
 using Granary.Core.Settings;
@@ -103,6 +104,8 @@ public partial class App : Application
         _ = Services.GetRequiredService<CardPresentationSettings>().StartAsync();
         // The profile's spoiler switches, likewise.
         _ = Services.GetRequiredService<EpisodeSpoilerSettings>().StartAsync();
+        // And the rest of its Title Pages settings.
+        _ = Services.GetRequiredService<TitlePageSettings>().StartAsync();
         // Home and the sidebar's count follow what happens on other devices (docs/api-contract.md, 12). Closing tells the
         // server the connection goes, but waits for that only a moment: the stop never needs this thread.
         var realtime = Services.GetRequiredService<RealtimeEvents>();
@@ -171,6 +174,8 @@ public partial class App : Application
         services.AddSingleton<ITaskbarToolbar, WindowsTaskbarToolbar>();
         // Keeps the display on while a title plays.
         services.AddSingleton<IKeepAwake, WindowsKeepAwake>();
+        // Title pages' theme music, through Windows' own media player beside mpv.
+        services.AddSingleton<IThemeAudioOutput, WindowsThemeAudio>();
         services.AddGranaryCore();
         // mpv reads the viewer's own mpv.conf from its folder when it starts (Settings → Playback → This PC).
         services.AddGranaryPlayer(new MpvEngineOptions { ConfigDirectory = MpvConfigFolder.DefaultDirectory });

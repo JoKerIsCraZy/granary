@@ -148,18 +148,22 @@ public static class DetailFacts
     /// <summary>
     /// The one line under the title: a movie's "2026 · 1h 58m · R · Mystery, Thriller", a
     /// series' air years, rating, regular seasons and genres, a season's year and episodes, an episode's
-    /// "S3 E1 · 47m · 8 Jan 2021 · TV-MA". Unknown parts are left out.
+    /// "S3 E1 · 47m · 8 Jan 2021 · TV-MA". Unknown parts are left out. With <paramref name="showsAdvisoryAge"/>, a movie's
+    /// or series' <see cref="AdvisoryAge"/> follows its rating, as the web's MetadataBadges places it.
     /// </summary>
-    public static string MetaLine(CatalogItemDetail item, IReadOnlyList<Season>? seasons = null, int? listedEpisodes = null)
+    public static string MetaLine(CatalogItemDetail item, IReadOnlyList<Season>? seasons = null, int? listedEpisodes = null,
+        bool showsAdvisoryAge = false)
     {
         ArgumentNullException.ThrowIfNull(item);
         string? genres = item.Genres.Count > 0 ? string.Join(", ", item.Genres.Where(g => !string.IsNullOrWhiteSpace(g)).Take(MetaGenres)) : null;
+        string? advisory = showsAdvisoryAge ? AdvisoryAge(item) : null;
         string?[] parts = item.Type switch
         {
             CatalogItemTypes.Series =>
             [
                 DetailText.AirYears(item.FirstAirDate, item.LastAirDate, item.Year),
                 item.ContentRating,
+                advisory,
                 Counted(seasons?.Count(s => !IsSpecials(s)) is > 0 and var regular ? regular : item.SeasonCount, "season", "seasons"),
                 genres,
             ],
@@ -182,10 +186,33 @@ public static class DetailFacts
                 DetailText.Year(item.Year) ?? DetailText.YearOf(item.ReleaseDate),
                 DetailText.Runtime(RuntimeMinutes(item)),
                 item.ContentRating,
+                item.Type == CatalogItemTypes.Movie ? advisory : null,
                 genres,
             ],
         };
         return string.Join(" · ", parts.Where(p => !string.IsNullOrWhiteSpace(p)).Select(p => p!.Trim()));
+    }
+
+    /// <summary>
+    /// A suggested minimum viewer age as the web's MetadataBadges words it: "Common Sense 13+", "MDBList 16+", or "13+" from
+    /// a source it does not name; null without a positive age. It is not the certification, only shown beside it.
+    /// </summary>
+    public static string? AdvisoryAge(CatalogItemDetail item)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        if (item.AdvisoryAge is not { } age || age <= 0)
+        {
+            return null;
+        }
+        string? source = item.AdvisorySource?.Trim() switch
+        {
+            "commonsense" => "Common Sense",
+            "mdblist" => "MDBList",
+            _ => null,
+        };
+        return source is null
+            ? string.Create(CultureInfo.InvariantCulture, $"{age}+")
+            : string.Create(CultureInfo.InvariantCulture, $"{source} {age}+");
     }
 
     /// <summary>

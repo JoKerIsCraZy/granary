@@ -1,0 +1,151 @@
+using System.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
+using Granary.Core.Api.Catalog;
+using Granary.Core.Playback.Themes;
+using Granary.Core.Settings;
+using Granary.Core.ViewModels.Detail;
+
+namespace Granary.Core.ViewModels;
+
+// The profile's Title Pages settings on this page (Settings → Title Pages, the web's TitlePagesSettings.tsx): the title
+// named with its logo or in text, the advisory age in the meta line, and the theme music while the page shows (ThemeMusic
+// decides when it plays). An open page follows a change.
+public sealed partial class ItemDetailViewModel
+{
+    // The counts the sections brought for the meta line, kept so the line can be written again when a setting changes.
+    private IReadOnlyList<Season>? _metaSeasons;
+    private int? _metaListedEpisodes;
+
+    /// <summary>How long a title with a logo is held for the profile's choice of title art before its logo shows anyway.</summary>
+    public static readonly TimeSpan TitleHoldLimit = TimeSpan.FromMilliseconds(1500);
+
+    // The title's logo, which LogoUrl shows while title art is on.
+    private Uri? _titleLogo;
+    private ITimer? _titleHold;
+    // The hold gave way for this title: the logo shows until the profile's choice is known.
+    private bool _titleHoldOver;
+
+    private static readonly ThemeSongSet NoThemes = new();
+
+    // What this page is to the theme music: a token of its own, so the app-wide player never holds the page.
+    private readonly object _themePage = new();
+
+    /// <summary>
+    /// The title has a logo and the profile's choice of title art is not known yet: neither the logo nor the text shows, as
+    /// the web's DetailHero holds the title rather than flash the wrong one.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowsTitleText))]
+    public partial bool HoldsTitle { get; private set; }
+
+    // A page made without the settings keeps the contract's defaults, the logo among them.
+    private TitlePagePrefs TitlePage => _titlePage?.Shown ?? TitlePagePrefs.Defaults;
+
+    private void ResetTitlePage()
+    {
+        _metaSeasons = null;
+        _metaListedEpisodes = null;
+        _titleLogo = null;
+        StopTitleHold();
+        _titleHoldOver = false;
+        HoldsTitle = false;
+        MetaLine = "";
+    }
+
+    private void FollowTitlePage()
+    {
+        _titlePage?.PropertyChanged += OnTitlePageChanged;
+        ShowTitlePage();
+        ShowThemes();
+    }
+
+    private void LeaveTitlePage()
+    {
+        _titlePage?.PropertyChanged -= OnTitlePageChanged;
+        _themeMusic?.Hide(_themePage);
+        StopTitleHold();
+    }
+
+    // As the web's useThemeMusic: no themes while the page loads, which pauses the one playing; the item's once it is in, the
+    // set its season or series resolved to for a season or episode; none for a title that failed.
+    private void ShowThemes()
+    {
+        if (!_isActive || _themeMusic is null)
+        {
+            return;
+        }
+        _themeMusic.Show(_themePage, State switch
+        {
+            ItemDetailState.Loading => null,
+            ItemDetailState.Ready => _item?.Themes ?? NoThemes,
+            _ => NoThemes,
+        });
+    }
+
+    // The two-value hook: the one-value hook is the Watch Party offer's (ItemDetailViewModel.WatchParty.cs).
+    partial void OnStateChanged(ItemDetailState oldValue, ItemDetailState newValue) => ShowThemes();
+
+    private void OnTitlePageChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(TitlePageSettings.Shown))
+        {
+            ShowTitlePage();
+        }
+    }
+
+    private void ShowTitlePage()
+    {
+        ShowTitleArt();
+        ShowMetaLine();
+    }
+
+    // As the web's DetailHero: the logo while title art is on, the name in text while it is off, neither until it is known. A
+    // read that keeps the page waiting gives way after TitleHoldLimit to the contract's default, the logo, until it answers.
+    private void ShowTitleArt()
+    {
+        bool? titleArt = TitlePage.ShowsTitleArt ?? (_titleHoldOver ? true : null);
+        LogoUrl = titleArt == true ? _titleLogo : null;
+        HoldsTitle = titleArt is null && _titleLogo is not null;
+        if (HoldsTitle)
+        {
+            if (_titleHold is null)
+            {
+                ITimer? hold = null;
+                hold = _titleHold = _time.CreateTimer(_ => OnTitleHoldOver(hold), null, TitleHoldLimit, Timeout.InfiniteTimeSpan);
+            }
+        }
+        else
+        {
+            StopTitleHold();
+        }
+    }
+
+    // Only the hold that runs now gives way: one stopped after its tick was posted leaves the next one alone.
+    private void OnTitleHoldOver(ITimer? hold) => OnUiThread(() =>
+    {
+        if (hold is null || !ReferenceEquals(_titleHold, hold))
+        {
+            return;
+        }
+        StopTitleHold();
+        _titleHoldOver = true;
+        ShowTitleArt();
+    });
+
+    private void StopTitleHold()
+    {
+        _titleHold?.Dispose();
+        _titleHold = null;
+    }
+
+    // The advisory age follows the rating while the profile asked for it, as the web's MetadataBadges shows it.
+    private void ShowMetaLine(IReadOnlyList<Season>? seasons = null, int? listedEpisodes = null)
+    {
+        _metaSeasons = seasons ?? _metaSeasons;
+        _metaListedEpisodes = listedEpisodes ?? _metaListedEpisodes;
+        if (_item is { } item)
+        {
+            MetaLine = DetailFacts.MetaLine(item, _metaSeasons, _metaListedEpisodes, TitlePage.ShowsAdvisoryAge);
+        }
+    }
+}

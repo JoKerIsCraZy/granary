@@ -52,6 +52,7 @@ public sealed partial class ItemDetailViewModel
         _spoilers?.PropertyChanged += OnSpoilersChanged;
         _changes?.Changed += OnViewerStateChanged;
         ShowSpoilers();
+        FollowTitlePage();
     }
 
     /// <summary>The page left: stop following, and drop a read of the state, and the placing of missing episodes, on its way.</summary>
@@ -63,6 +64,7 @@ public sealed partial class ItemDetailViewModel
             return;
         }
         _isActive = false;
+        LeaveTitlePage();
         _spoilers?.PropertyChanged -= OnSpoilersChanged;
         _changes?.Changed -= OnViewerStateChanged;
         _refreshTimer?.Dispose();
