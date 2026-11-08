@@ -279,14 +279,16 @@ public sealed class PlaybackStarter(
     }
 
     /// <summary>
-    /// The start's <c>start_position</c>: 0 to start over, the resume point to resume, rewound by this PC's Rewind on resume
-    /// as it is now (<see cref="ResumeRewind"/>), null without one. It is sent explicitly because the server starts a
-    /// watched title at 0 even during a rewatch (docs/api-contract.md, 10.5).
+    /// The start's <c>start_position</c> for <paramref name="request"/>: 0 to start over, the resume point to resume,
+    /// rewound by this PC's Rewind on resume as it is now (<see cref="ResumeRewind"/>) unless the request suppresses it,
+    /// null without one. It is sent explicitly because the server starts a watched title at 0 even during a rewatch
+    /// (docs/api-contract.md, 10.5).
     /// </summary>
-    public double? StartPosition(WatchDetail detail, bool fromBeginning)
+    public double? StartPosition(WatchDetail detail, PlayRequest request)
     {
         ArgumentNullException.ThrowIfNull(detail);
-        if (fromBeginning)
+        ArgumentNullException.ThrowIfNull(request);
+        if (request.FromBeginning)
         {
             return 0;
         }
@@ -295,7 +297,7 @@ public sealed class PlaybackStarter(
         {
             return null;
         }
-        return ResumeRewind.Apply(position, devicePreferences.ResumeRewindSeconds);
+        return request.SuppressesResumeRewind ? position : ResumeRewind.Apply(position, devicePreferences.ResumeRewindSeconds);
     }
 
     /// <summary>

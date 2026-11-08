@@ -2114,12 +2114,16 @@ Sources: `silo-server/internal/apiv2/playback.go:206-212,413-426`,
   the position is ≥ 30 s); it omits `start_position` when there is no saved position. It picks the
   version from `user_data.last_file_id` (`silo-android/androidApp/.../MobileVideoPlaybackStarter.kt:236-318`).
   The rewind is never applied to Start Over, a Watch Party (the room's position), a retry or session renewal, a version
-  switch or the next episode (`suppressResumeRewind`; `PlaybackStartPosition.kt`, `applyResumeRewind`), and the result
-  is clamped at 0.
+  switch or a move to the next episode, which starts at 0 (`suppressResumeRewind`; `PlaybackStartPosition.kt`,
+  `applyResumeRewind`), and the result is clamped at 0. An On Deck pick in the player is an ordinary resume and is
+  rewound (`PlayerViewModel.playOnDeckItemNow`).
 - Granary keeps `player.resume_rewind_seconds` on the PC only (`resume_rewind_seconds` in `playback-device.json`, set
   under Settings → Playback → This PC, 0 to 30) and writes nothing to the server. Its default is **0**, not the
   contract's 7: the owner's choice, because viewers expect the exact point. A file without the key, or with a value
-  outside 0 to 30, reads as 0.
+  outside 0 to 30, reads as 0. Granary rewinds as Android does: Up Next starts the next episode
+  at 0, and the player's previous and next episode buttons (also in the taskbar preview and on the media keys), which
+  resume as the web player does, resume exactly (`PlayRequest.ResumeWithoutRewind`). Every other resume, On Deck in
+  the player included, is rewound.
 - `DELETE /api/v2/progress/{media_item_id}/position` (`clearResumePosition`) resets a movie or
   episode resume point to 0 (gate on `GET /api/v2/progress/capabilities` → `clear_resume_position`).
 - `POST /api/v2/sync/progress` (batch, **milliseconds**) and the progress bootstrap snapshots are

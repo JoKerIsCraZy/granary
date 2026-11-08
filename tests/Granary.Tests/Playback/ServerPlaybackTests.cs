@@ -277,6 +277,16 @@ public sealed class ServerPlaybackTests
     }
 
     [Fact]
+    public async Task AChangeOfEpisode_AsksForTheExactResumePoint_WhateverTheRewind()
+    {
+        _fixture.DevicePreferences.ResumeRewindSeconds = ResumeRewind.MaxSeconds;
+
+        await _fixture.StartAsync(PlayRequest.ResumeWithoutRewind(MovieId));
+
+        Assert.Equal(1325.5, _fixture.Body(HttpMethod.Post, StartPath).GetProperty("start_position").GetDouble());
+    }
+
+    [Fact]
     public async Task ARewindChangedBeforeTheStart_CountsForThatResume()
     {
         var playback = _fixture.Create();

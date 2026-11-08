@@ -3,7 +3,8 @@ namespace Granary.Core.Playback;
 /// <summary>
 /// Rewind on resume (<c>player.resume_rewind_seconds</c>, client-local in the contract): a resume starts this far before
 /// the saved point, so the viewer finds the scene again. Applied as Silo's Android app does (PlaybackStartPosition.kt,
-/// <c>applyResumeRewind</c>): only to a resume, never to Start over, a Watch Party, a restart or another file.
+/// <c>applyResumeRewind</c>): only to a resume, never to Start over, a Watch Party, a restart, another file or a change
+/// of episode (<see cref="PlayRequest.ResumeWithoutRewind"/>).
 /// </summary>
 public static class ResumeRewind
 {

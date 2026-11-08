@@ -863,7 +863,7 @@ says why above the sections.
   after it, counting from the next resume, 0 by default: a resume lands exactly where the viewer stopped. Silo's
   contract defaults to 7; Granary departs from it on purpose, the owner's choice, because viewers expect the exact
   point. As in the Android app, a set rewind applies only to resume points 30 s in or more, never to Start over, a Watch
-  Party, a restart or another file; Still watching prompt, a select with Unlimited, 2 to 5 episodes (the Android app's
+  Party, a restart, another file or the player's previous and next episode; Still watching prompt, a select with Unlimited, 2 to 5 episodes (the Android app's
   choices, 3 by default) and Custom, which shows a number box from 1 to 20 (the contract's highest), counting from the
   next episode; mpv configuration, see below; and Show what's playing in Discord, a switch at the group's end, off by
   default ("Your Discord status shows the title, the episode and the time left while Granary plays. Needs the Discord app

@@ -528,7 +528,8 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   by themselves than Settings' Still watching prompt allows (`AutoPlayStreak`, Android's pass-out gate; 3 by default,
   Unlimited never holds back), and the sleep timer does not hold it (`NextUpFlow.Hold`). The next episode starts as a new playback
   from 0; the saved track preferences carry the picks over. The transport's previous and next episode buttons start
-  theirs from the resume point, as the web player does for the viewer; the previous one is the largest episode before
+  theirs from the resume point, as the web player does for the viewer, and exactly there, never rewound, as Android
+  changes episode (`PlayRequest.ResumeWithoutRewind`); the previous one is the largest episode before
   this one in the current season that has a readable file, as the web finds it, none before the season's first.
 - **Sleep timer** (`PlayerViewModel.SleepTimer.cs`; the apps' `SleepTimer` and `SleepTimerController`, the web's
   `SleepTimerMenu`): a duration counts on the player's `TimeProvider` once a second, whatever plays, pauses or loads
