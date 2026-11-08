@@ -83,9 +83,10 @@ public sealed partial class DownloadQueue
         }
     }
 
-    // Asked for, or a preparing copy to look at again.
+    // Asked for and not waiting out its delay after a read that failed, or a preparing copy to look at again.
     private bool IsReconcileDueLocked(bool preparing, DateTimeOffset now) =>
-        _reconcileRequested || (preparing && (_lastReconcile is not { } last || now - last >= PreparingPoll));
+        (_reconcileRequested && (_reconcileRetry is not { } retry || retry.At <= now))
+        || (preparing && (_lastReconcile is not { } last || now - last >= PreparingPoll));
 
     private void RequestReconcile()
     {
@@ -103,12 +104,29 @@ public sealed partial class DownloadQueue
         {
             // Only downloads kept before the registry is read are judged: one added meanwhile may be missing from it.
             var judged = _store.In(scope).Where(d => !d.FilesMissing).Select(d => d.Record.DownloadId).ToList();
+            bool asked;
             lock (_gate)
             {
+                asked = _reconcileRequested;
                 _reconcileRequested = false;
                 _lastReconcile = _time.GetUtcNow();
             }
             var (entries, complete) = await ListAllAsync(scope, server, cancellationToken).ConfigureAwait(false);
+            lock (_gate)
+            {
+                // A read that was asked for (a refusal, a report the server did not take) and failed is asked for again, after
+                // the retry delays.
+                if (entries is null && asked)
+                {
+                    int failures = _reconcileRetry?.Failures ?? 0;
+                    _reconcileRequested = true;
+                    _reconcileRetry = new Retry(_time.GetUtcNow() + RetryDelays[Math.Min(failures, RetryDelays.Count - 1)], failures + 1);
+                }
+                else if (entries is not null)
+                {
+                    _reconcileRetry = null;
+                }
+            }
             if (entries is null)
             {
                 return;
@@ -135,11 +153,13 @@ public sealed partial class DownloadQueue
         }
     }
 
-    // Every page of the registry by its cursor; null when it could not be read, not complete when it did not end.
+    // Every page of the registry by its cursor; null when it could not be read, not complete when it did not end (no cursor, a
+    // cursor that came back, or more than MaxPages pages).
     private async Task<(Dictionary<string, DownloadEntry>? Entries, bool Complete)> ListAllAsync(DownloadScope scope, Uri server,
         CancellationToken cancellationToken)
     {
         var entries = new Dictionary<string, DownloadEntry>(StringComparer.Ordinal);
+        var cursors = new HashSet<string>(StringComparer.Ordinal);
         string? cursor = null;
         try
         {
@@ -154,7 +174,7 @@ public sealed partial class DownloadQueue
                 {
                     return (entries, true);
                 }
-                if (read.Page.NextCursor is not { Length: > 0 } next)
+                if (read.Page.NextCursor is not { Length: > 0 } next || !cursors.Add(next))
                 {
                     break;
                 }
@@ -172,15 +192,23 @@ public sealed partial class DownloadQueue
 
     private async Task ApplyAsync(DownloadScope scope, Uri server, StoredDownload download, DownloadEntry entry, CancellationToken cancellationToken)
     {
+        long revision = entry.Revision;
         if (entry.Revision > download.Record.Revision)
         {
-            if (await ReplaceAsync(download, entry).ConfigureAwait(false) is not { } replaced)
+            if (entry.Status is DownloadStatuses.Revoked or DownloadStatuses.Failed or DownloadStatuses.Cancelled)
+            {
+                // New bytes that will never come: the copy on this PC is not deleted for them, and takes the status as it is.
+                revision = download.Record.Revision;
+            }
+            else if (await ReplaceAsync(download, entry).ConfigureAwait(false) is { } replaced)
+            {
+                download = replaced;
+            }
+            else
             {
                 return;
             }
-            download = replaced;
         }
-        long revision = entry.Revision;
         switch (entry.Status)
         {
             case DownloadStatuses.Revoked when RemovesRevoked(scope):
@@ -284,7 +312,9 @@ public sealed partial class DownloadQueue
         {
             lock (_gate)
             {
+                // A pass that passed it over meanwhile does not look again by itself.
                 _resetting.Remove(key);
+                WakeLocked();
             }
         }
     }

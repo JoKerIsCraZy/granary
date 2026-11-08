@@ -931,15 +931,18 @@ client guide.
   that are a day old (`ManifestRefresh`).
 - **Reconcile.** `ReconcileAsync` reads every page of the registry (the cursor until `has_more` is false) before anything
   counts as gone, and judges only the downloads kept before it started reading, so one created meanwhile is never taken
-  for gone. Per entry: `preparing` makes a download that is under way Preparing, with the server's progress;
+  for gone. A registry that does not end (no cursor, a cursor that comes back, over 1000 pages) is not whole: nothing
+  counts as gone from it. Per entry: `preparing` makes a download that is under way Preparing, with the server's progress;
   `ready`, `downloading` or `completed` queues a preparing one, and takes the entry's size, which is exact once it is
   ready (a preparing entry's is an estimate, and a transfer against it would fail its integrity); a larger `revision`
   stops the transfer, deletes the media, the part and the manifest and queues the download again for the new bytes, with
-  its subtitles fetched again; `revoked` with `revoked_removes_local` deletes the files, then the entry, and otherwise,
-  like `cancelled`, keeps a completed download playable and fails one still to fetch, both "no longer available" and never
-  fetched again; `failed` fails one under way. A download the whole registry no longer lists is no longer available
-  unless it is completed: that one stays as it is. A registry that cannot be read changes nothing. Failed downloads stay
-  failed: only Resume tries them again, so a refusal never turns into a loop.
+  its subtitles fetched again, and wakes the loop once that is done; `revoked` with `revoked_removes_local` deletes the
+  files, then the entry, and otherwise, like `cancelled`, keeps a completed download playable and fails one still to fetch,
+  both "no longer available" and never fetched again; `failed` fails one under way. A larger revision that is `revoked`,
+  `failed` or `cancelled` replaces nothing: the copy on this PC takes the status as it is. A download the whole registry no
+  longer lists is no longer available unless it is completed: that one stays as it is. A registry that cannot be read
+  changes nothing; a read that was asked for (a refusal, a report the server did not take) is asked for again after the
+  retry delays. Failed downloads stay failed: only Resume tries them again, so a refusal never turns into a loop.
 - **Preparing.** While a download of the scope is Preparing, the registry is read every `PreparingPoll` (10 s).
 - **Refusals.** `409 prepared_file_expired` from the file route asks `POST /prepare` once for that answer and waits as
   Preparing until the registry says ready. A revoked entry, another 409 or a 404 fails the download and reconciles, which

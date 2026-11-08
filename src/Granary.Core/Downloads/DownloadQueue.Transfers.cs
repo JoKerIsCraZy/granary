@@ -511,13 +511,13 @@ public sealed partial class DownloadQueue
         catch (Exception ex) when (ex is HttpRequestException or SiloApiException or ProfileChangedException or JsonException
             || (ex is OperationCanceledException && !stop.IsCancellationRequested))
         {
-            _logger.LogInformation("The status of download {DownloadId} could not be sent ({Failure}); it is sent again",
-                key.Id, ex is SiloApiException api ? api.Status.ToString(System.Globalization.CultureInfo.InvariantCulture) : DownloadLog.Failure(ex));
             lock (_gate)
             {
                 int failures = _reportRetries.GetValueOrDefault(key).Failures;
                 _reportRetries[key] = new Retry(_time.GetUtcNow() + RetryDelays[Math.Min(failures, RetryDelays.Count - 1)], failures + 1);
             }
+            _logger.LogInformation("The status of download {DownloadId} could not be sent ({Failure}); it is sent again",
+                key.Id, ex is SiloApiException api ? api.Status.ToString(System.Globalization.CultureInfo.InvariantCulture) : DownloadLog.Failure(ex));
             return false;
         }
         lock (_gate)

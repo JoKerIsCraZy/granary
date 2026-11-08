@@ -2530,9 +2530,11 @@ branches on are `prepared_file_expired` and `capability_unsupported` (`ProblemCo
   before it started reading, and an entry missing only after every page was read. What it does with each status:
   `preparing` → the download waits as Preparing, with `preparation.progress`; `ready`, `downloading`, `completed` → a
   preparing download is queued, with `file_size` as its exact length; a larger `revision` → the media, the part and the
-  manifest are deleted and fetched again; `revoked` → 14.6; `cancelled` → kept if complete, else failed, both no longer
-  available; `failed` → a download under way fails. Missing from the whole registry: a download still to fetch is no longer
-  available, a completed one stays. A registry that cannot be read changes nothing.
+  manifest are deleted and fetched again, unless that revision is `revoked`, `failed` or `cancelled`; `revoked` → 14.6;
+  `cancelled` → kept if complete, else failed, both no longer available; `failed` → a download under way fails. Missing from
+  the whole registry: a download still to fetch is no longer available, a completed one stays. A registry that cannot be
+  read changes nothing (a read after a refusal is tried again after 1, 2, 4 ... 60 s); a cursor that comes back ends the
+  read as not whole.
 - `PATCH /api/v2/downloads/{id}` `{ status: "downloading"|"completed", updated_at, revision }` → `200` `DownloadEntry`. The
   time is taken when the PC's state changes and a retry sends the same event; an older or equal event leaves the entry as
   it is. A time more than 2 minutes ahead of the server's is 400, another revision 409, `downloading` for a preparing entry

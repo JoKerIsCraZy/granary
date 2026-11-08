@@ -82,6 +82,7 @@ public sealed partial class DownloadQueue : IDisposable
     private readonly SemaphoreSlim _reconciling = new(1, 1);
     private Capability? _capability;
     private bool _reconcileRequested;
+    private Retry? _reconcileRetry;
     private DateTimeOffset? _lastReconcile;
     private Retry? _deleteRetry;
 

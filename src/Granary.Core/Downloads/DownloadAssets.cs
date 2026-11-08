@@ -32,6 +32,9 @@ public sealed class DownloadAssets(DownloadsApi api, TimeProvider time, ILogger<
 
     private const int BufferSize = 81920;
 
+    /// <summary>The cap an asset is held to; <see cref="MaxAssetBytes"/>, lower for tests.</summary>
+    internal long MaxBytes { get; init; } = MaxAssetBytes;
+
     /// <summary>
     /// Reads the manifest and keeps it in the folder, then fetches the artwork the folder lacks and the subtitles that are new
     /// or whose revision changed.
@@ -162,7 +165,7 @@ public sealed class DownloadAssets(DownloadsApi api, TimeProvider time, ILogger<
     // The body into a file beside the target, then moved over it whole; at most MaxAssetBytes, and given up after a stall.
     private async Task SaveAsync(HttpResponseMessage response, string target, CancellationToken cancellationToken)
     {
-        if (response.Content.Headers.ContentLength > MaxAssetBytes)
+        if (response.Content.Headers.ContentLength > MaxBytes)
         {
             throw new HttpRequestException(HttpRequestError.InvalidResponse, "The asset is larger than Granary keeps.");
         }
@@ -183,7 +186,7 @@ public sealed class DownloadAssets(DownloadsApi api, TimeProvider time, ILogger<
                     {
                         break;
                     }
-                    if (file.Length + read > MaxAssetBytes)
+                    if (file.Length + read > MaxBytes)
                     {
                         throw new HttpRequestException(HttpRequestError.InvalidResponse, "The asset is larger than Granary keeps.");
                     }

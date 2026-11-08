@@ -267,7 +267,7 @@ public sealed class DownloadQueueTests : IAsyncDisposable
         _h.AcceptReports("dl_1", ScriptedSilo.Problem(503, "dependency_unavailable"), ScriptedSilo.Json(HttpStatusCode.OK, DownloadPayloads.Entry("dl_1", "downloading")));
         var queue = _h.StartQueue();
         // A pass the transfer's own writes start may send it again before the test looks.
-        await Until(() => _h.Reports("dl_1").Count >= 1, "the first report");
+        await Until(() => _h.Logs.All.Contains("could not be sent", StringComparison.Ordinal), "the first report failed");
 
         _h.Time.Advance(TimeSpan.FromMinutes(1));
         queue.Wake();
@@ -455,7 +455,7 @@ public sealed class DownloadQueueTests : IAsyncDisposable
         _h.ServeGated("dl_1", Source);
         _h.AcceptReports("dl_1", ScriptedSilo.Problem(503, "dependency_unavailable"), ScriptedSilo.Json(HttpStatusCode.OK, DownloadPayloads.Entry("dl_1", "downloading")));
         var queue = _h.StartQueue();
-        await Until(() => _h.Reports("dl_1").Count >= 1, "the first report");
+        await Until(() => _h.Logs.All.Contains("could not be sent", StringComparison.Ordinal), "the first report failed");
 
         await SettleRunningAsync(queue);
         await SettleRunningAsync(queue);
@@ -473,7 +473,7 @@ public sealed class DownloadQueueTests : IAsyncDisposable
         _h.ServeGated("dl_1", Source);
         _h.AcceptReports("dl_1", ScriptedSilo.Problem(401, "session_expired"), ScriptedSilo.Json(HttpStatusCode.OK, DownloadPayloads.Entry("dl_1", "downloading")));
         var queue = _h.StartQueue();
-        await Until(() => _h.Reports("dl_1").Count >= 1, "the first report");
+        await Until(() => _h.Logs.All.Contains("could not be sent", StringComparison.Ordinal), "the first report failed");
         await SettleRunningAsync(queue);
 
         Assert.NotNull(_h.Find("dl_1")!.Record.PendingReport);

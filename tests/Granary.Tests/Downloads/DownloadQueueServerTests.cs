@@ -14,7 +14,6 @@ namespace Granary.Tests.Downloads;
 public sealed class DownloadQueueServerTests : IAsyncDisposable
 {
     private static readonly byte[] Source = DownloadPayloads.Source(3000);
-    private static readonly TimeSpan Settle = TimeSpan.FromSeconds(5);
 
     private readonly DownloadHarness _h = new();
 
@@ -317,5 +316,147 @@ public sealed class DownloadQueueServerTests : IAsyncDisposable
         Assert.Equal(2, _h.Silo.SentTo(HttpMethod.Get, ListPath).Count);
         Assert.Single(_h.FileRequests("dl_1"));
         Assert.Equal(DownloadState.Failed, _h.Find("dl_1")!.Record.State);
+    }
+
+    [Fact]
+    public async Task ARefusalWhoseRegistryReadFails_IsLookedUpAgainLater()
+    {
+        await _h.AddAsync("dl_1");
+        _h.ServeFile("dl_1", ScriptedSilo.Problem(404, "not_found"));
+        _h.Silo.On(HttpMethod.Get, ListPath,
+            ScriptedSilo.Json(HttpStatusCode.OK, DownloadPayloads.Page(null, DownloadPayloads.Entry("dl_1", "ready"))),
+            ScriptedSilo.Problem(503, "dependency_unavailable"),
+            ScriptedSilo.Json(HttpStatusCode.OK, DownloadPayloads.Page(null)));
+
+        var queue = _h.StartQueue();
+        await Until(() => _h.Silo.SentTo(HttpMethod.Get, ListPath).Count == 2, "the registry was read after the refusal");
+        await IdleAsync(queue);
+        Assert.False(_h.Find("dl_1")!.Record.IsNoLongerAvailable);
+
+        await _h.AdvanceAsync(TimeSpan.FromSeconds(1), queue);
+        await Until(() => _h.Find("dl_1")!.Record.IsNoLongerAvailable, "it was looked up again");
+        Assert.Equal(3, _h.Silo.SentTo(HttpMethod.Get, ListPath).Count);
+    }
+
+    [Fact]
+    public async Task AReconcileFromOutside_ThatReplacesARevision_StartsTheNewTransfer()
+    {
+        var stored = await _h.AddAsync("dl_1", DownloadState.Completed, change: r => r with
+        {
+            MediaFile = "media.mkv",
+            ManifestReadAt = ManualTimeProvider.DefaultStart,
+        });
+        await System.IO.File.WriteAllBytesAsync(File(stored, "media.mkv"), DownloadPayloads.Source(3000, seed: 9), Token);
+        _h.ServeFile("dl_1", Source, "\"v2\"");
+        var queue = _h.StartQueue();
+        await IdleAsync(queue);
+        // The replace holds until the loop has made the pass its change woke, which passes the download over while it is
+        // being replaced: only a wake once the replace is done starts it.
+        int held = 0;
+        _h.Store.Changed += (_, _) =>
+        {
+            if (_h.Find("dl_1")?.Record.Revision == 2 && Interlocked.Exchange(ref held, 1) == 0)
+            {
+                long passes = queue.Passes;
+                SpinWait.SpinUntil(() => queue.Passes > passes, TimeSpan.FromSeconds(2));
+            }
+        };
+
+        _h.List(DownloadPayloads.Entry("dl_1", "ready", revision: 2));
+        await queue.ReconcileAsync(Token);
+
+        await CompletedAsync("dl_1");
+        Assert.Equal(2, _h.Find("dl_1")!.Record.Revision);
+        Assert.Equal(Source, await System.IO.File.ReadAllBytesAsync(_h.Find("dl_1")!.MediaPath!, Token));
+    }
+
+    [Theory]
+    [InlineData("revoked")]
+    [InlineData("cancelled")]
+    [InlineData("failed")]
+    public async Task ANewRevisionThatIsOver_KeepsThePlayableCopy(string status)
+    {
+        var stored = await _h.AddAsync("dl_1", DownloadState.Completed, change: r => r with
+        {
+            MediaFile = "media.mkv",
+            ManifestReadAt = ManualTimeProvider.DefaultStart,
+        });
+        await System.IO.File.WriteAllBytesAsync(File(stored, "media.mkv"), Source, Token);
+        _h.Silo.On(HttpMethod.Get, CapabilityPath, ScriptedSilo.Json(HttpStatusCode.OK, DownloadPayloads.CapabilityWith(revokedRemovesLocal: false)));
+        _h.List(DownloadPayloads.Entry("dl_1", status, revision: 2));
+
+        var queue = _h.StartQueue();
+        await IdleAsync(queue);
+
+        var download = _h.Find("dl_1")!;
+        Assert.Equal((DownloadState.Completed, 1L), (download.Record.State, download.Record.Revision));
+        Assert.Equal(Source, await System.IO.File.ReadAllBytesAsync(download.MediaPath!, Token));
+        Assert.Equal(status != "failed", download.Record.IsNoLongerAvailable);
+        Assert.Empty(_h.FileRequests("dl_1"));
+    }
+
+    [Fact]
+    public async Task ARegistryWhoseCursorComesBack_IsNotReadForever_NorTakenAsWhole()
+    {
+        await _h.AddAsync("dl_1", DownloadState.Completed);
+        await _h.AddAsync("dl_2", DownloadState.Preparing);
+        _h.ListPages(
+            DownloadPayloads.Page("c1", DownloadPayloads.Entry("dl_1", "completed")),
+            DownloadPayloads.Page("c1"));
+
+        var queue = _h.StartQueue();
+        await IdleAsync(queue);
+
+        Assert.Equal(2, _h.Silo.SentTo(HttpMethod.Get, ListPath).Count);
+        Assert.Equal((DownloadState.Preparing, false), (_h.Find("dl_2")!.Record.State, _h.Find("dl_2")!.Record.IsNoLongerAvailable));
+    }
+
+    [Fact]
+    public async Task AManifestOfAnotherDownload_FailsTheDownload()
+    {
+        await _h.AddAsync("dl_1");
+        _h.Silo.On(HttpMethod.Get, ManifestPath("dl_1"), ScriptedSilo.Json(HttpStatusCode.OK, DownloadPayloads.Manifest("dl_2")));
+        _h.ServeFile("dl_1", Source);
+
+        var queue = _h.StartQueue();
+        await Until(() => _h.Find("dl_1")!.Record.State == DownloadState.Failed, "it failed");
+        await IdleAsync(queue);
+
+        Assert.Equal(DownloadFailure.Server, _h.Find("dl_1")!.Record.Failure);
+        Assert.Empty(_h.FileRequests("dl_1"));
+        Assert.False(System.IO.File.Exists(File(_h.Find("dl_1")!, DownloadPaths.Manifest)));
+    }
+
+    [Fact]
+    public async Task AManifestTheServerRefuses_FailsTheDownload_AndLooksItUp()
+    {
+        await _h.AddAsync("dl_1");
+        _h.Silo.On(HttpMethod.Get, ManifestPath("dl_1"), ScriptedSilo.Problem(409, "conflict"));
+        _h.ServeFile("dl_1", Source);
+
+        var queue = _h.StartQueue();
+        await Until(() => _h.Find("dl_1")!.Record.State == DownloadState.Failed, "it failed");
+        await IdleAsync(queue);
+
+        Assert.Equal(DownloadFailure.Server, _h.Find("dl_1")!.Record.Failure);
+        Assert.Empty(_h.FileRequests("dl_1"));
+        Assert.Equal(2, _h.Silo.SentTo(HttpMethod.Get, ListPath).Count);
+    }
+
+    [Fact]
+    public async Task ADeleteRefusedForTheSignIn_IsKeptAndSentLater()
+    {
+        await _h.AddAsync("dl_1", DownloadState.Completed);
+        _h.Silo.On(HttpMethod.Delete, EntryPath("dl_1"), ScriptedSilo.Problem(401, "session_expired"), ScriptedSilo.NoContent());
+        await _h.Store.RemoveAsync(Scope7, "dl_1", queueServerDelete: true, Token);
+
+        var queue = _h.StartQueue();
+        await Until(() => _h.Silo.SentTo(HttpMethod.Delete, EntryPath("dl_1")).Count == 1, "the server was asked");
+        await IdleAsync(queue);
+        Assert.Single(_h.Store.PendingDeletes(Scope7));
+
+        await _h.AdvanceAsync(TimeSpan.FromSeconds(1), queue);
+        await Until(() => _h.Store.PendingDeletes(Scope7).Count == 0, "the delete went");
+        Assert.Equal(2, _h.Silo.SentTo(HttpMethod.Delete, EntryPath("dl_1")).Count);
     }
 }

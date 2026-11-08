@@ -370,6 +370,10 @@ public sealed partial class DownloadQueue
         {
             next = Earliest(next, (_lastReconcile ?? now) + PreparingPoll);
         }
+        if (_reconcileRequested && _reconcileRetry is { } reconcile)
+        {
+            next = Earliest(next, reconcile.At);
+        }
         if (deletes && _deleteRetry is { } delete)
         {
             next = Earliest(next, delete.At);
