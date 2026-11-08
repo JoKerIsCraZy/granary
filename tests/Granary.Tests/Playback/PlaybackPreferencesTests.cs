@@ -33,6 +33,7 @@ public sealed class PlaybackPreferencesTests
                 "?keys=playback.preferred_quality&keys=playback.max_bitrate_kbps&keys=player.video_skip_back_seconds&keys=player.video_skip_forward_seconds"
                     + "&keys=player.playback_speed",
                 "?keys=playback.subtitle_appearance&keys=player.subtitle_sync_ms",
+                "?keys=player.audio_sync_ms",
                 "?keys=player.sleep_timer_default_minutes",
             ],
             _silo.SentTo(HttpMethod.Get, EffectivePath).Select(r => r.Uri.Query).Order(StringComparer.Ordinal));
@@ -81,7 +82,8 @@ public sealed class PlaybackPreferencesTests
 
         var preferences = await Create().ReadAsync(ScriptedSilo.Base, Token);
 
-        Assert.Equal(new PlaybackPreferences("1080p", 8000, 15, 45), preferences);
+        // The answer has no audio delay: the default, none.
+        Assert.Equal(new PlaybackPreferences("1080p", 8000, 15, 45) { AudioDelayMs = 0 }, preferences);
     }
 
     [Fact]
@@ -101,7 +103,7 @@ public sealed class PlaybackPreferencesTests
 
         var preferences = await Create().ReadAsync(ScriptedSilo.Base, Token);
 
-        Assert.Equal(PlaybackPreferences.Default, preferences);
+        Assert.Equal(PlaybackPreferences.Default with { AudioDelayMs = 0 }, preferences);
     }
 
     [Fact]
@@ -112,7 +114,7 @@ public sealed class PlaybackPreferencesTests
 
         var preferences = await Create().ReadAsync(ScriptedSilo.Base, Token);
 
-        Assert.Equal(PlaybackPreferences.Default, preferences);
+        Assert.Equal(PlaybackPreferences.Default with { AudioDelayRefused = true }, preferences);
         Assert.Contains(_logs.Lines, l => l.Contains("settings", StringComparison.OrdinalIgnoreCase));
     }
 
@@ -145,6 +147,59 @@ public sealed class PlaybackPreferencesTests
             preferences.Subtitles);
         Assert.Equal(-250, preferences.SubtitleDelayMs);
         Assert.True(preferences.SubtitleDelayOnDevice);
+    }
+
+    [Theory]
+    [InlineData("-250", -250)]
+    [InlineData("8000", 5000)]
+    [InlineData("\"late\"", 0)]
+    public async Task Read_TakesThisDevicesAudioDelay_WithinFiveSeconds(string value, int expected)
+    {
+        _silo.On(HttpMethod.Get, EffectivePath, ScriptedSilo.Json(HttpStatusCode.OK,
+            $$"""{ "items": [ { "key": "player.audio_sync_ms", "value": {{value}}, "source": "profile_device" } ], "revision": 3 }"""));
+
+        Assert.Equal(expected, (await Create().ReadAsync(ScriptedSilo.Base, Token)).AudioDelayMs);
+    }
+
+    [Fact]
+    public async Task Read_AServerThatRefusesOnlyTheAudioDelay_StillGivesEverythingElse()
+    {
+        _silo.OnUrl(HttpMethod.Get, EffectivePath, (uri, _) => uri.Query.Contains("player.audio_sync_ms", StringComparison.Ordinal)
+            ? ScriptedSilo.Problem(422, "validation_failed")()
+            : ScriptedSilo.Json(HttpStatusCode.OK, """
+                {
+                  "items": [
+                    { "key": "playback.preferred_quality", "value": "720p", "source": "profile" },
+                    { "key": "playback.max_bitrate_kbps", "value": 4000, "source": "profile" },
+                    { "key": "player.video_skip_back_seconds", "value": 5, "source": "profile" },
+                    { "key": "player.video_skip_forward_seconds", "value": 15, "source": "profile" },
+                    { "key": "player.playback_speed", "value": 1.5, "source": "profile_device" },
+                    { "key": "player.sleep_timer_default_minutes", "value": 45, "source": "profile_device" }
+                  ],
+                  "revision": 4
+                }
+                """)());
+
+        var preferences = await Create().ReadAsync(ScriptedSilo.Base, Token);
+
+        Assert.Equal(new PlaybackPreferences("720p", 4000, 5, 15), preferences with { Speed = 1, SleepTimerMinutes = 30, AudioDelayRefused = false });
+        Assert.Equal(1.5, preferences.Speed);
+        Assert.Equal(45, preferences.SleepTimerMinutes);
+        Assert.True(preferences.AudioDelayRefused);
+        Assert.Null(preferences.AudioDelayMs);
+    }
+
+    [Fact]
+    public async Task Read_AnAudioDelayThatCouldNotBeRead_IsUnknown_NotRefused()
+    {
+        _silo.OnUrl(HttpMethod.Get, EffectivePath, (uri, _) => uri.Query.Contains("player.audio_sync_ms", StringComparison.Ordinal)
+            ? ScriptedSilo.NetworkError()()
+            : ScriptedSilo.Json(HttpStatusCode.OK, """{ "items": [], "revision": 1 }""")());
+
+        var preferences = await Create().ReadAsync(ScriptedSilo.Base, Token);
+
+        Assert.Null(preferences.AudioDelayMs);
+        Assert.False(preferences.AudioDelayRefused);
     }
 
     [Fact]

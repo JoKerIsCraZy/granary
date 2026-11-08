@@ -72,7 +72,9 @@ Settings → Playback → This PC opens `mpv.conf` in the data directory's `mpv`
 syntax holds: profiles, `profile-cond` (mpv's built-in `auto_profiles.lua`), `include`, and `~~/` for the folder
 (`glsl-shaders=~~/shaders/…`). The file is the viewer's own and trusted as mpv trusts it, within the limits below.
 Without it, mpv starts exactly as before: the same options in the same order (`MpvOwnOptions.Core`), `config=no`
-(libmpv's default), and its log asked for after the start.
+(libmpv's default), and its log asked for after the start. An `audio-delay` in the file stays as long as the audio sync
+offset is 0 and nothing in this run gave the engine another (`MpvPlaybackEngine.SetAudioDelay`); after that Granary's
+value holds, 0 included.
 
 **Start order** (`MpvPlaybackEngine.Start.cs`). Found with libmpv v0.41.0-dev (`player/main.c`, `mp_initialize`;
 `player/loadfile.c`, `play_current_file`) and checked in a spike and in `MpvUserConfigTests`:
@@ -136,7 +138,7 @@ Without it, mpv starts exactly as before: the same options in the same order (`M
   `mpv.conf keeps changing log-file; Granary stopped and plays without your mpv.conf`. The title that played ends as a
   failure (`PlaybackEndReason.Error`): a server playback reconnects by itself and loads it into the new mpv, and the
   player of a local file shows the failure with Retry. The engine's own settings carry over (volume, mute, speed,
-  subtitle look and delay, fill, the picture's size), and a new swap chain reaches `MpvVideoHost` through
+  audio delay, subtitle look and delay, fill, the picture's size), and a new swap chain reaches `MpvVideoHost` through
   `SwapChainChanged`. A call that still reaches the old one finds it closed and does nothing (`MpvClient`). The new
   mpv starts on the thread pool, so a load can come between the stop and that start: the load then makes the start
   itself, under `_restartGate`, and its title plays in the new mpv (`StartWithoutConfig`, once per stop, counted by
@@ -509,6 +511,28 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   broke off meanwhile reconnects once the refusal is in. The speed is mpv's `speed`, read
   from this device's `player.playback_speed` and saved there once it settles for a second (a drag passes several
   stops), or at the stop.
+- **Audio delay** (6.6): mpv's `audio-delay`, positive for later sound as Android's `DelayAudioProcessor` has it, from
+  this device's `player.audio_sync_ms` (±5 s). `AudioDelay` is one for the app: the playback reads the value in a batch
+  of its own, so a server that refuses the key keeps the other settings and plays without a delay (no row, no Sound); it
+  takes the value unless a change made here is still on its way, keeps the one this run knows when the read failed if it
+  is the acting profile's on this server (`AudioDelay` remembers whose value it holds) and plays with none otherwise,
+  sets it at the start, and follows `Changed` until its stop, as Android's `SiloPlaybackService` does. Settings →
+  Playback → Sound and the player's settings menu change it (a local file starts with the delay as far as this run knows
+  it and follows a change made in Settings, and a step there goes only to the engine). A change belongs to the server
+  and profile acting when it was made: it is saved at `profile_device` once it settles for a second, or as the window
+  closes (`PlaybackStops`, which waits within its budget for every profile's saves still on their way,
+  `SaveAllNowAsync`), to that server and bound to that profile (`SettingsApi.SetValueAsProfileAsync`), so a server
+  switched to meanwhile does not lose it (the one before stays signed in) and a profile its server no longer acts as is
+  never written for the new one. Saves of one profile go one after another, so the latest value is the one its server
+  keeps; another profile's never wait for them, so a save that hangs on one server does not hold back the profile acting
+  now. Switch profile and Sign out in the sidebar save a waiting change first, waiting 2 s at most; a save that fails or
+  does not answer does not stop them. A timer that was due as a later change came saves nothing; a failed save is logged
+  and the value holds for this run; a read that answers after a change made here, once another profile acts, after a
+  newer read was taken or after a save of that profile went through, is dropped, as its answer is older than the value
+  held. A title's read, which goes with its other playback settings, is numbered before they go out
+  (`AudioDelay.StartRead`) and kept to the same rule, so a save done meanwhile is what the title plays. mpv moves only
+  the sound: subtitles keep to the picture, so the subtitle delay and subtitle sync, both timed against the picture, are
+  untouched.
 - **Markers** (11.1, 11.2): the playing file's intro (its single projection, as Android takes it), recaps, credits
   and previews come from the watch detail, then from a second read that names the file once its first frame
   shows (`file_id`, which makes the server fill markers it finds on demand); a failed read changes nothing.
@@ -539,7 +563,15 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   offer it. The page hands the menu its rows as it opens and keeps them while it is open (as `DetailHero`'s pickers), so a
   change under it cannot take the focus out. The menu opens on this device's
   `player.sleep_timer_default_minutes` (read with the playback's settings, in a batch of its own); a duration started is
-  saved there, as Android keeps the last one (`ServerPlayback.SetSleepTimerDefault`, `profile_device`).
+  saved there, as Android keeps the last one (`ServerPlayback.SetSleepTimerDefault`, `profile_device`). This PC can
+  hide the button (`IPlaybackDevicePreferences.SleepTimerButton`, `sleep_timer_button` in `playback-device.json`, on when
+  missing): the player reads it as it is made and follows `SleepTimerButtonChanged` until it is disposed, so the
+  minimized bar does too; turned off, `PlayerViewModel.ShowsSleepTimer` goes false, a running timer ends as Turn off
+  ends it, and a hold the timer left after the end lets go (`NextUpFlow.Hold(false)` then starts the countdown). A change
+  on the UI thread applies at once, so work already queued there, such as the title's end, finds the timer off; one from
+  another thread is posted, and does nothing once the player is disposed. Each change carries its own choice, so off and
+  on again before the UI thread gets to them still end the timer, and a tick that waits behind a switch-off does not run
+  out.
 - **Chapters** (11.3): the playing file's `chapters` from the watch detail (mpv reads none through a remux or a
   transcode), in order, empty ones left out, pictures resolved against the server; they make the Chapters menu, the
   seek bar's ticks and the chapter named in its bubble, and Ctrl+Left and Ctrl+Right go to their starts (`ChapterJump`,
