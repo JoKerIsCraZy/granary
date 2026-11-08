@@ -77,6 +77,7 @@ public sealed partial class PlaybackSettingsViewModel : ObservableObject, IDispo
         DecodesInSoftware = devicePreferences.DecodesInSoftware;
         SelectedUpDown = UpDownChoices[devicePreferences.UpDown == PlayerUpDown.Volume ? 1 : 0];
         ShowStillWatching(devicePreferences.PassoutThreshold);
+        ResumeRewindSeconds = devicePreferences.ResumeRewindSeconds;
         DiscordStatus = devicePreferences.DiscordStatus;
         SleepTimerButton = devicePreferences.SleepTimerButton;
         _saves = new SettingSaves(logger);

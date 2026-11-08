@@ -127,7 +127,7 @@ public sealed class PlayerTaskbarToolbarTests
         _toolbar.Press(button);
 
         Assert.Equal(2, _playbacks.Count);
-        Assert.Equal(PlayRequest.Resume(started), Playback.Started);
+        Assert.Equal(PlayRequest.ResumeWithoutRewind(started), Playback.Started);
     }
 
     [Fact]
