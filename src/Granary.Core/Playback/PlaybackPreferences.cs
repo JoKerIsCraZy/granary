@@ -32,6 +32,9 @@ public sealed record PlaybackPreferences(string Quality, int? MaxBitrateKbps, do
     /// <summary>This device's playback speed (<c>player.playback_speed</c>).</summary>
     public double Speed { get; init; } = 1;
 
+    /// <summary>This device's audio delay in milliseconds, positive for later sound (<see cref="AudioDelay"/>), within ±5 s.</summary>
+    public int AudioDelayMs { get; init; }
+
     /// <summary>The contract's default for <see cref="SleepTimerMinutes"/>.</summary>
     public const int DefaultSleepTimerMinutes = 30;
 
@@ -52,6 +55,7 @@ public sealed class PlaybackPreferencesReader(SettingsApi settings, ILogger<Play
         "player.video_skip_back_seconds",
         "player.video_skip_forward_seconds",
         "player.playback_speed",
+        AudioDelay.Key,
     ];
 
     /// <summary>The setting's range (settings contract): the apps and the server keep to it.</summary>
@@ -182,6 +186,7 @@ public sealed class PlaybackPreferencesReader(SettingsApi settings, ILogger<Play
             Number(values.Find(Keys[3])) is { } forward && forward is > 0 and <= MaxSkipSeconds ? forward : defaults.SkipForwardSeconds)
         {
             Speed = Number(values.Find(Keys[4])) is { } speed && speed is >= MinSpeed and <= MaxSpeed ? speed : defaults.Speed,
+            AudioDelayMs = AudioDelay.FromSetting(values.Find(Keys[5])),
         };
     }
 

@@ -249,6 +249,43 @@ public sealed class ServerPlaybackSettingsTests
     }
 
     [Fact]
+    public async Task TheAudioDelay_IsThisDevicesSetting_InSecondsForThePlayer()
+    {
+        _fixture.Silo.On(HttpMethod.Get, "api/v2/settings/values/effective", Ok("""
+            { "items": [ { "key": "player.audio_sync_ms", "value": 250, "source": "profile_device" } ], "revision": 2 }
+            """));
+
+        await _fixture.PlayingAsync();
+
+        Assert.Equal(0.25, _fixture.Engine.AudioDelay);
+        Assert.Equal(250, _fixture.AudioDelay.Milliseconds);
+    }
+
+    [Fact]
+    public async Task WithoutAnAudioDelay_ThePlayerStartsWithNone()
+    {
+        _fixture.Engine.SetAudioDelay(0.4);
+
+        await _fixture.PlayingAsync();
+
+        Assert.Equal(0, _fixture.Engine.AudioDelay);
+    }
+
+    [Fact]
+    public async Task AnAudioDelayChangedInSettings_ReachesWhatPlaysAtOnce_UntilTheStop()
+    {
+        var playback = await _fixture.PlayingAsync();
+
+        _fixture.AudioDelay.Set(-150);
+        Assert.Equal(-0.15, _fixture.Engine.AudioDelay);
+
+        await playback.StopAsync();
+        _fixture.AudioDelay.Set(300);
+        Assert.Equal(-0.15, _fixture.Engine.AudioDelay);
+        await playback.DisposeAsync();
+    }
+
+    [Fact]
     public async Task ASpeedSetJustBeforeTheStop_IsSavedWithIt()
     {
         _fixture.Silo.On(HttpMethod.Put, SpeedPath, ScriptedSilo.NoContent());

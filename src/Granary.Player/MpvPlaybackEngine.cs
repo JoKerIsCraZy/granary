@@ -189,6 +189,10 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
     // panscan 1 scales the picture up until it fills the area on both sides, as object-fit: cover does on the web.
     public void SetFill(bool fill) => SetGlobal("panscan", fill ? "1" : "0");
 
+    // mpv's audio-delay is positive for later sound, as player.audio_sync_ms is; it takes a change while a file plays.
+    public void SetAudioDelay(double seconds) =>
+        SetGlobal("audio-delay", seconds.ToString("0.###", CultureInfo.InvariantCulture));
+
     // width and height are the picture as decoded, the drops counted since the file was loaded.
     public PlaybackStats ReadStats() => new(
         (int)(_mpv.GetInt64("width") ?? 0),

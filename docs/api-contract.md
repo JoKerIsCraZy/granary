@@ -564,7 +564,8 @@ Profile and device settings live on the server (manifest
 | `playback.intro_skip_mode` | profile, profile_device | `ask` | [11.2](#112-intro-skip-mode) |
 | `playback.auto_play_next`, `playback.next_up_prompt_seconds` | profile, profile_device | `true`, `30` | [10.7](#107-next-episode) |
 | `player.video_skip_back_seconds`, `player.video_skip_forward_seconds` | profile | `10`, `30` | skip buttons, arrow keys, media keys ([13.5](#135-system-media-controls-and-input)) |
-| `player.subtitle_sync_ms`, `player.audio_sync_ms`, `player.playback_speed` | profile(_device) | – | player offsets and speed |
+| `player.subtitle_sync_ms`, `player.playback_speed` | profile(_device) | – | player offsets and speed |
+| `player.audio_sync_ms` | profile_device only | `0` (−5000 to 5000 ms) | this device's audio delay, positive for later sound (mpv's `audio-delay`, as Android's `DelayAudioProcessor` pads the start with silence); read with the playback settings at each start, edited under Settings → Playback → Sound and saved once it settles |
 | `player.sleep_timer_default_minutes` | profile_device only (a `profile` write is refused) | `30` (0 to 240; 0 none) | the duration the sleep timer's menu opens on; read in a batch of its own, a started duration saved back |
 | `player.resume_rewind_seconds`, `player.passout_threshold` | **client_local** (never on the server) | `7`, `3` | resume rewind, auto-advance streak limit |
 | `ui.next_up_mode`, `ui.disabled_library_ids`, `ui.library_order` | profile | `combined`, –, – | Home row behaviour, hidden libraries, library order |

@@ -8,6 +8,9 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Added
 
+- **Audio sync offset:** Settings → Playback → Sound moves the sound up to 5 seconds earlier or later than the picture,
+  in steps of 50 ms, for Bluetooth headphones or an AV receiver that lag behind. It's kept for this PC on your Silo
+  server, and a title that plays follows a change at once.
 - **Box sets:** a film that belongs to a box set, such as a trilogy, now shows the set's films in release order on its
   page, the film you're on marked "This film". Explore all opens the box set's own page, with its films, how many you've
   watched, and Play for the next one you haven't seen. Box sets show when your Silo server has them turned on for the

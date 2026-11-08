@@ -149,6 +149,27 @@
             </StackPanel>
         </controls:SettingsGroup>
 
+        <!--
+            This device's player.audio_sync_ms, as the web's device settings show it (DeviceSettingGroups: the Sound group, a
+            slider with the value and its unit beside it), in the Android app's 50 ms steps. Positive plays the sound later.
+        -->
+        <controls:SettingsGroup Title="Sound" Description="Audio on this device">
+            <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Audio sync offset"
+                                  Description="Shift audio earlier or later to correct lip sync on this device.">
+                <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                    <Slider x:Name="AudioSyncSlider" Width="160" VerticalAlignment="Center" IsThumbToolTipEnabled="False"
+                            Minimum="{x:Bind settings:AudioDelaySettingsViewModel.Minimum}" Maximum="{x:Bind settings:AudioDelaySettingsViewModel.Maximum}"
+                            StepFrequency="50" SmallChange="50" LargeChange="500"
+                            Value="{x:Bind AudioDelay.Milliseconds, Mode=TwoWay}" IsEnabled="{x:Bind AudioDelay.IsLoaded, Mode=OneWay}"
+                            AutomationProperties.Name="Audio sync offset"
+                            AutomationProperties.HelpText="Shift audio earlier or later to correct lip sync on this device." />
+                    <TextBlock MinWidth="112" Text="{x:Bind AudioDelay.ValueText, Mode=OneWay}" VerticalAlignment="Center" TextAlignment="Right"
+                               FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium" FontSize="12" Foreground="{StaticResource SiloMutedBrush}"
+                               Typography.NumeralAlignment="Tabular" AutomationProperties.AccessibilityView="Raw" />
+                </StackPanel>
+            </controls:SettingsRow>
+        </controls:SettingsGroup>
+
         <controls:SettingsGroup Title="Connection" Visibility="{x:Bind ViewModel.ShowsConnection, Mode=OneWay}">
             <StackPanel Spacing="16">
                 <controls:SettingsRow Style="{StaticResource SiloSettingsFirstRowStyle}" Label="Connection speed"

@@ -31,7 +31,7 @@ public sealed class PlaybackPreferencesTests
                 "?keys=playback.intro_skip_mode&keys=playback.auto_skip_credits&keys=playback.auto_skip_recap&keys=playback.auto_play_next"
                     + "&keys=playback.next_up_prompt_seconds",
                 "?keys=playback.preferred_quality&keys=playback.max_bitrate_kbps&keys=player.video_skip_back_seconds&keys=player.video_skip_forward_seconds"
-                    + "&keys=player.playback_speed",
+                    + "&keys=player.playback_speed&keys=player.audio_sync_ms",
                 "?keys=playback.subtitle_appearance&keys=player.subtitle_sync_ms",
                 "?keys=player.sleep_timer_default_minutes",
             ],
@@ -145,6 +145,18 @@ public sealed class PlaybackPreferencesTests
             preferences.Subtitles);
         Assert.Equal(-250, preferences.SubtitleDelayMs);
         Assert.True(preferences.SubtitleDelayOnDevice);
+    }
+
+    [Theory]
+    [InlineData("-250", -250)]
+    [InlineData("8000", 5000)]
+    [InlineData("\"late\"", 0)]
+    public async Task Read_TakesThisDevicesAudioDelay_WithinFiveSeconds(string value, int expected)
+    {
+        _silo.On(HttpMethod.Get, EffectivePath, ScriptedSilo.Json(HttpStatusCode.OK,
+            $$"""{ "items": [ { "key": "player.audio_sync_ms", "value": {{value}}, "source": "profile_device" } ], "revision": 3 }"""));
+
+        Assert.Equal(expected, (await Create().ReadAsync(ScriptedSilo.Base, Token)).AudioDelayMs);
     }
 
     [Fact]

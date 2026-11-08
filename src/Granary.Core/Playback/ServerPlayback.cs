@@ -119,7 +119,8 @@ public sealed partial class ServerPlayback : IServerPlayback
         ILoggerFactory loggers,
         ServerPlaybackOptions? options = null,
         Func<PlaybackControlLane>? controlLanes = null,
-        SubtitleSyncApi? subtitleSync = null)
+        SubtitleSyncApi? subtitleSync = null,
+        AudioDelay? audioDelay = null)
     {
         _starter = starter;
         _api = api;
@@ -135,6 +136,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         _logger = loggers.CreateLogger<ServerPlayback>();
         _options = options ?? ServerPlaybackOptions.Default;
         _controlLane = controlLanes?.Invoke();
+        _audioDelay = audioDelay;
         if (subtitleSync is not null)
         {
             SubtitleSync = new SubtitleSyncTracker(subtitleSync, dispatcher, time, loggers.CreateLogger<SubtitleSyncTracker>());
@@ -238,6 +240,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         // A delay or a speed the viewer just set is saved now, not when its wait would have ended.
         SaveSubtitleDelayNow();
         SaveSpeedNow();
+        StopAudioDelay();
         StopTimers();
         StopTrickplay();
         StopControlLane();
@@ -253,6 +256,7 @@ public sealed partial class ServerPlayback : IServerPlayback
     {
         _engine.StateChanged -= OnEngineStateChanged;
         _engine.Ended -= OnEngineEnded;
+        StopAudioDelay();
         StopTimers();
         StopTrickplay();
         // Saves still waiting go with the stop; without one there is nobody left to save for.
@@ -292,6 +296,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         // A Watch Party plays at the room's speed: 1x, with the room's own corrections.
         _speed = request.IsWatchParty ? 1 : _context.Preferences.Speed;
         _engine.SetSpeed(_speed);
+        StartAudioDelay(_context.Preferences.AudioDelayMs);
         SetStatus(Status);
         await StartAttemptAsync(PlaybackStarter.StartPosition(_context.Watch, request.FromBeginning), cancellationToken);
     }
