@@ -9,7 +9,7 @@
     <Product>Granary</Product>
     <Company>Granary contributors</Company>
     <Copyright>Copyright (C) 2026 Granary contributors. AGPL-3.0-or-later.</Copyright>
-    <Version>0.2.1</Version>
+    <Version>0.3.0</Version>
   </PropertyGroup>
 
 </Project>

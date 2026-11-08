@@ -6,6 +6,8 @@ release's section is what its update says it changes (docs/release.md).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-08
+
 ### Added
 
 - **Player buttons:** Settings → Playback → Player buttons shows, hides and orders the player's buttons. A hidden
