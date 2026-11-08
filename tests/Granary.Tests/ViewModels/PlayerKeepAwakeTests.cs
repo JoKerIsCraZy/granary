@@ -243,6 +243,21 @@ public sealed class PlayerKeepAwakeTests
         Assert.Equal(KeepAwakeState.Display, _awake.Current);
     }
 
+    // A release Windows refused part-way may have let the display go all the same: playing on asks for it again rather
+    // than counting on what was held before.
+    [Fact]
+    public async Task AReleaseRefusedOnPause_PlayingOnAsksForTheDisplayAgain()
+    {
+        await PlayingAsync();
+        _awake.RefuseNext = 1;
+        At(30, paused: true);
+
+        At(31, paused: false);
+
+        Assert.Equal([KeepAwakeState.Display, KeepAwakeState.None, KeepAwakeState.Display], _awake.Requests);
+        Assert.Equal(KeepAwakeState.Display, _awake.Current);
+    }
+
     [Fact]
     public async Task AReleaseWindowsRefused_IsAskedAgain_WithThePlayersNextChange_NotWithAPositionTick()
     {

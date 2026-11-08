@@ -25,7 +25,8 @@ public sealed class PlayerKeepAwake : IDisposable
 
     private readonly PlayerViewModel _player;
     private readonly IKeepAwake _keepAwake;
-    private KeepAwakeState _held;
+    // Null while a request Windows refused leaves it unknown.
+    private KeepAwakeState? _held = KeepAwakeState.None;
     private bool _disposed;
 
     public PlayerKeepAwake(PlayerViewModel player, IKeepAwake keepAwake)
@@ -72,12 +73,14 @@ public sealed class PlayerKeepAwake : IDisposable
         _ => KeepAwakeState.None,
     };
 
-    // Asked only when it differs from what Windows holds; one it refused is asked again with the player's next change.
+    // Asked only when it differs from what Windows holds. A request it refused may have changed part of what was held, so
+    // nothing counts as held then, and the player's next change asks again, the state before included.
     private void Hold(KeepAwakeState state)
     {
-        if (state != _held && _keepAwake.Set(state))
+        if (state == _held)
         {
-            _held = state;
+            return;
         }
+        _held = _keepAwake.Set(state) ? state : null;
     }
 }
