@@ -191,6 +191,11 @@ public sealed partial class PlayerPage : Page
             case nameof(PlayerViewModel.HasSkipPrompt) when ViewModel.HasSkipPrompt:
                 AnnounceSkipCaption();
                 break;
+            case nameof(PlayerViewModel.ShowsSleepTimer) when !ViewModel.ShowsSleepTimer:
+                // Settings took the Sleep button away: its menu goes with it, and focus that was on it stays in the page.
+                SleepTimerMenu.Hide();
+                KeepFocusInPage();
+                break;
             case nameof(PlayerViewModel.HasSkipPrompt):
             case nameof(PlayerViewModel.HasSyncNotice) when !ViewModel.HasSyncNotice:
                 // A pill or the sync card that had the keyboard is gone.
@@ -396,6 +401,12 @@ public sealed partial class PlayerPage : Page
     private void OnSubtitleLaterClick(object sender, RoutedEventArgs e) => ViewModel.ChangeSubtitleDelay(SubtitleDelayStepMs);
 
     private void OnSubtitleDelayResetClick(object sender, RoutedEventArgs e) => ViewModel.ResetSubtitleDelay();
+
+    private void OnAudioEarlierClick(object sender, RoutedEventArgs e) => ViewModel.ChangeAudioDelay(-PlayerViewModel.AudioDelayStepMs);
+
+    private void OnAudioLaterClick(object sender, RoutedEventArgs e) => ViewModel.ChangeAudioDelay(PlayerViewModel.AudioDelayStepMs);
+
+    private void OnAudioDelayResetClick(object sender, RoutedEventArgs e) => ViewModel.ResetAudioDelay();
 
     private void OnSubtitleTrackClick(object sender, RoutedEventArgs e)
     {

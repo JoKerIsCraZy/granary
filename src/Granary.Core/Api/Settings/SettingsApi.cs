@@ -70,6 +70,15 @@ public sealed class SettingsApi(SiloHttp http)
         http.SendAsync(HttpMethod.Put, server, ValuePath(key, scope), SiloAuth.Profile, new SettingValueRequest(value),
             SiloJsonContext.Default.SettingValueRequest, cancellationToken);
 
+    /// <summary>
+    /// As <see cref="SetValueAsync"/>, for a value that belongs to profile <paramref name="profileId"/>: it goes out only
+    /// while the server acts as that profile, else it throws <see cref="ProfileChangedException"/> unsent.
+    /// </summary>
+    public Task SetValueAsProfileAsync(Uri server, string key, JsonElement value, string scope, string profileId,
+        CancellationToken cancellationToken = default) =>
+        http.SendAsProfileAsync(HttpMethod.Put, server, ValuePath(key, scope), profileId, new SettingValueRequest(value),
+            SiloJsonContext.Default.SettingValueRequest, cancellationToken);
+
     /// <summary>Removes the explicit value of <paramref name="key"/> at <paramref name="scope"/>, so it inherits again; 404 when there is none.</summary>
     public Task ClearValueAsync(Uri server, string key, string scope, CancellationToken cancellationToken = default) =>
         http.SendAsync(HttpMethod.Delete, server, ValuePath(key, scope), SiloAuth.Profile, cancellationToken);

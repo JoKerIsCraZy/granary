@@ -12,11 +12,19 @@ release's section is what its update says it changes (docs/release.md).
   and Discover no longer open with a large picture of the title you point at, and start with their rows. It's on by
   default and kept for each profile on this PC. A row your Silo server shows as the hero banner on Home stays; you set
   that on Silo's web.
+- **Rewind on resume:** resuming a movie or episode now starts exactly where you stopped, the time the Resume button
+  shows, instead of 7 seconds earlier. To get a few seconds of lead-in back, set Settings → Playback → This PC → Rewind
+  on resume, from 0 to 30 seconds. Silo's settings suggest 7 seconds; Granary starts at 0 on purpose, because you expect
+  to land where you stopped. A rewind never applies to Start over, a Watch Party, or the player's previous and next
+  episode.
 - **Start a Watch Party from a title's page:** the ⋮ menu of a movie, series, season or episode now has Start a Watch
   Party. Pick whether the host picks or everyone votes, whether guests may pause, and for a series which episode, then
   Create party & copy invite: the room opens with the title up next (or as the first suggestion of a vote), and the
   invite link is on your clipboard. Nothing plays until you start it. It shows while your Silo server hosts Watch Party
   and you're not in one already.
+- **Audio sync offset:** Settings → Playback → Sound, or Audio delay in the player's settings menu, moves the sound up to
+  5 seconds earlier or later than the picture, in steps of 50 ms, for Bluetooth headphones or an AV receiver that lag
+  behind. It's kept for this PC on your Silo server, and a title that plays follows a change at once.
 - **Box sets:** a film that belongs to a box set, such as a trilogy, now shows the set's films in release order on its
   page, the film you're on marked "This film". Explore all opens the box set's own page, with its films, how many you've
   watched, and Play for the next one you haven't seen. Box sets show when your Silo server has them turned on for the
@@ -35,7 +43,8 @@ release's section is what its update says it changes (docs/release.md).
   your Silo server has Requests turned on.
 - **Sleep timer:** the player's Sleep button pauses playback after 5 to 60 minutes, counting down on the button, or stops
   at the end of the episode or movie instead of starting the next episode. A timer runs on into the next episode, and the
-  menu opens on the duration you started last on this PC.
+  menu opens on the duration you started last on this PC. Don't need it? Turn off Settings → Playback → This PC → Sleep
+  timer and the button is gone from the player, also from one that's already open; a timer that's running ends.
 - **Play/Pause in the taskbar preview:** hover over Granary's taskbar button while something plays and the window's
   preview has a Play/Pause button, also when Granary is minimized. In a Watch Party it asks the room, as the player's own
   button does.

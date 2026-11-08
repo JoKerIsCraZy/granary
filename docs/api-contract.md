@@ -564,9 +564,10 @@ Profile and device settings live on the server (manifest
 | `playback.intro_skip_mode` | profile, profile_device | `ask` | [11.2](#112-intro-skip-mode) |
 | `playback.auto_play_next`, `playback.next_up_prompt_seconds` | profile, profile_device | `true`, `30` | [10.7](#107-next-episode) |
 | `player.video_skip_back_seconds`, `player.video_skip_forward_seconds` | profile | `10`, `30` | skip buttons, arrow keys, media keys ([13.5](#135-system-media-controls-and-input)) |
-| `player.subtitle_sync_ms`, `player.audio_sync_ms`, `player.playback_speed` | profile(_device) | – | player offsets and speed |
+| `player.subtitle_sync_ms`, `player.playback_speed` | profile(_device) | – | player offsets and speed |
+| `player.audio_sync_ms` | profile_device only | `0` (−5000 to 5000 ms) | this device's audio delay, positive for later sound (mpv's `audio-delay`, as Android's `DelayAudioProcessor` pads the start with silence); read at each start in a batch of its own, so a server that refuses the key (`422`) keeps the other playback settings and has no audio delay (no Sound in Settings, no row in the player); edited under Settings → Playback → Sound and in the player's settings menu, saved once it settles, bound to the profile it was made for |
 | `player.sleep_timer_default_minutes` | profile_device only (a `profile` write is refused) | `30` (0 to 240; 0 none) | the duration the sleep timer's menu opens on; read in a batch of its own, a started duration saved back |
-| `player.resume_rewind_seconds`, `player.passout_threshold` | **client_local** (never on the server) | `7`, `3` | resume rewind, auto-advance streak limit |
+| `player.resume_rewind_seconds`, `player.passout_threshold` | **client_local** (never on the server) | `7`, `3` | resume rewind ([10.5](#105-resume); 0 to 30 s, Granary's default 0), auto-advance streak limit |
 | `ui.next_up_mode`, `ui.disabled_library_ids`, `ui.library_order` | profile | `combined`, –, – | Home row behaviour, hidden libraries, library order |
 | `ui.card_overlays`, `ui.card_overlays_enabled` | profile | server defaults, `true` | card badges ([6.6.1](#661-card-badges)) |
 | `ui.card_presentation` | profile, profile_client, profile_device | `{ "poster_size": "standard", "caption": "title_metadata" }` | poster size and caption ([6.6.2](#662-poster-size-and-caption)) |
@@ -2113,6 +2114,17 @@ Sources: `silo-server/internal/apiv2/playback.go:206-212,413-426`,
   the resume rewind (client-local `player.resume_rewind_seconds`, default 7 s, applied only when
   the position is ≥ 30 s); it omits `start_position` when there is no saved position. It picks the
   version from `user_data.last_file_id` (`silo-android/androidApp/.../MobileVideoPlaybackStarter.kt:236-318`).
+  The rewind is never applied to Start Over, a Watch Party (the room's position), a retry or session renewal, a version
+  switch or a move to the next episode, which starts at 0 (`suppressResumeRewind`; `PlaybackStartPosition.kt`,
+  `applyResumeRewind`), and the result is clamped at 0. An On Deck pick in the player is an ordinary resume and is
+  rewound (`PlayerViewModel.playOnDeckItemNow`).
+- Granary keeps `player.resume_rewind_seconds` on the PC only (`resume_rewind_seconds` in `playback-device.json`, set
+  under Settings → Playback → This PC, 0 to 30) and writes nothing to the server. Its default is **0**, not the
+  contract's 7: the owner's choice, because viewers expect the exact point. A file without the key, or with a value
+  that is not a whole number from 0 to 30, reads as 0, and a save keeps to 0 to 30. Granary rewinds as Android does: Up Next starts the next episode
+  at 0, and the player's previous and next episode buttons (also in the taskbar preview and on the media keys), which
+  resume as the web player does, resume exactly (`PlayRequest.ResumeWithoutRewind`). Every other resume, On Deck in
+  the player included, is rewound.
 - `DELETE /api/v2/progress/{media_item_id}/position` (`clearResumePosition`) resets a movie or
   episode resume point to 0 (gate on `GET /api/v2/progress/capabilities` → `clear_resume_position`).
 - `POST /api/v2/sync/progress` (batch, **milliseconds**) and the progress bootstrap snapshots are

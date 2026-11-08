@@ -40,7 +40,11 @@ internal sealed class ServerPlaybackFixture
         Silo.On(HttpMethod.Post, ProgressPath, Ok("""{ "outcome": "applied" }"""));
         Silo.On(HttpMethod.Delete, StopPath, Ok(PlaybackPayloads.StopCompleted));
         Silo.On(HttpMethod.Post, RouteEventsPath, ScriptedSilo.Json(HttpStatusCode.Accepted, PlaybackPayloads.RouteEventAccepted));
+        AudioDelay = new AudioDelay(new SettingsApi(Silo.Http), SessionManager, new ImmediateDispatcher(), Time, Logs.For<AudioDelay>());
     }
+
+    /// <summary>This device's audio delay, which Settings changes while a title plays.</summary>
+    public AudioDelay AudioDelay { get; }
 
     public ScriptedSilo Silo { get; } = new();
 
@@ -114,7 +118,8 @@ internal sealed class ServerPlaybackFixture
             Logs.AsFactory(),
             new ServerPlaybackOptions(new PlaybackRetryPolicy(TimeSpan.Zero, TimeSpan.Zero, TimeSpan.FromSeconds(5))),
             ControlLane is { } lane ? () => lane : null,
-            SyncsSubtitles ? new SubtitleSyncApi(Silo.Http) : null);
+            SyncsSubtitles ? new SubtitleSyncApi(Silo.Http) : null,
+            AudioDelay);
         playback.StatusChanged += (_, status) => Statuses.Add(status);
         return playback;
     }

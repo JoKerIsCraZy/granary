@@ -127,7 +127,7 @@ public sealed class PlayerSystemMediaTests
 
         _controls.Press(SystemMediaButton.Next);
 
-        Assert.Equal(PlayRequest.Resume("episode-1-4"), Playback.Started);
+        Assert.Equal(PlayRequest.ResumeWithoutRewind("episode-1-4"), Playback.Started);
     }
 
     [Fact]
@@ -138,7 +138,7 @@ public sealed class PlayerSystemMediaTests
 
         _controls.Press(SystemMediaButton.Previous);
 
-        Assert.Equal(PlayRequest.Resume("episode-1-2"), Playback.Started);
+        Assert.Equal(PlayRequest.ResumeWithoutRewind("episode-1-2"), Playback.Started);
     }
 
     [Fact]

@@ -482,7 +482,9 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     season's own name; one meta line in 17 at 60 % white ("2026 · 1h 58m · R · Mystery, Thriller", a series' air years,
     rating, regular seasons and genres, an episode's "S2 E7 · 54m · 30 Oct 2026"); the tagline in 17 italic; the overview
     in 16/25, four lines at most and 820 wide.
-  - Granary's own buttons one size up: the red Play pill ("Resume from 1:02:33" for a movie or episode), Start over,
+  - Granary's own buttons one size up: the red Play pill ("Resume from 1:02:33" for a movie or episode: the saved
+    point, as the web's "Resume at" names it, which is also where playback starts unless Settings → Playback → This PC
+    → Rewind on resume sets a lead-in), Start over,
     "Mark Watched", "Info", the heart, the stars and ⋮ (Watchlist, Add to Collection, then Start a Watch Party below a
     line). Pills 50 high with 17 px labels, round buttons 50, 14 apart. An episode or a season has ⋮ with Start a Watch
     Party alone. Under a single file's buttons "Available version: 1080P · H264 · EAC3 · 6.6 GB" in 14 at 45 % white.
@@ -869,12 +871,27 @@ says why above the sections.
   connection's learned limit with Reset), This PC ("Kept on this PC, not in your profile.": Direct play without
   hardware decoding, a switch, off by default, counting from the next title, its text saying a fixed Quality can still convert a file; Up and Down in the player, a select with
   Controls and menus (the default, as Silo's TV app) and Volume (the web player's keys), which the
-  player follows at its next key; Still watching prompt, a select with Unlimited, 2 to 5 episodes (the Android app's
+  player follows at its next key; Rewind on resume, the contract's words ("Skip back this far when resuming a partly
+  watched item, to re-establish context. 0 turns it off."), a number box from 0 to 30 in steps of 1 with "seconds"
+  after it, counting from the next resume, 0 by default: a resume lands exactly where the viewer stopped. Silo's
+  contract defaults to 7; Granary departs from it on purpose, the owner's choice, because viewers expect the exact
+  point. As in the Android app, a set rewind applies only to resume points 30 s in or more, never to Start over, a Watch
+  Party, a restart, another file or the player's previous and next episode; Still watching prompt, a select with Unlimited, 2 to 5 episodes (the Android app's
   choices, 3 by default) and Custom, which shows a number box from 1 to 20 (the contract's highest), counting from the
-  next episode; mpv configuration, see below; and Show what's playing in Discord, a switch at the group's end, off by
+  next episode; Sleep timer, a switch, on by default ("Show the Sleep button in the player, which pauses playback after
+  a set time or at the end of an episode. Turning it off ends a timer that's running."), which an open player follows at
+  once, the minimized one too (see the Sleep timer, under Player); mpv configuration, see below; and Show what's playing in Discord, a switch at the group's end, off by
   default ("Your Discord status shows the title, the episode and the time left while Granary plays. Needs the Discord app
   on this PC."), which a title that plays follows at once (the Discord status, under Player). Granary's own and kept on
-  the PC, so nothing saves to the server), Connection (the latest speed reading and what Auto plays without converting), Skipping (skip
+  the PC, so nothing saves to the server), Sound ("Audio on this device", as the web's device settings group it: Audio
+  sync offset, "Shift audio earlier or later to correct lip sync on this device.", a 160 px slider from −5000 to 5000 ms
+  in the Android app's 50 ms steps with the value and its unit beside it, "-250 milliseconds" in 12 px muted, as the
+  web's slider reads it out; off until this device's value was read; a read that failed shows "Couldn't load your audio
+  sync offset. Try again." in 13 px muted in the slider's place with a Retry outline button, as the Devices page does,
+  and a server that does not know the setting (422) has no Sound group; a title that plays, in the mini player too,
+  follows a change at once, and it is saved as this device's `player.audio_sync_ms` once it settles for a second, or as
+  the app closes, or before Switch profile and Sign out; an `audio-delay` of your own mpv.conf stays while the offset is
+  0 and nothing changed it in this run), Connection (the latest speed reading and what Auto plays without converting), Skipping (skip
   intros, auto-skip recaps and credits), Next episode (start next at preview, auto-play), Seek controls (rewind and
   fast-forward intervals).
 - **This PC → mpv configuration**: "Use your own mpv options from mpv.conf, such as shaders, scaling or debanding.
@@ -1160,7 +1177,8 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   time left; in the middle skip back, the white play/pause disc and skip forward (glass discs showing the
   profile's intervals), for an episode with a previous or next one flanked by previous and next episode discs (both
   slots kept while one has an episode, so Play stays in the middle; a movie has none); on the right mute, the volume
-  slider, the sleep timer, audio, subtitles, chapters, settings, playback info, mini view, fill screen and full screen. Audio
+  slider, the sleep timer (unless Settings → Playback → This PC turns it off), audio, subtitles, chapters, settings,
+  playback info, mini view, fill screen and full screen. Audio
   and subtitles stand side by side, where the web puts chapters between them, as the two track choices belong together; audio
   shows the web's icon, lucide's AudioLines, drawn as a PathIcon. A utility
   button that is on (sleep timer, playback info, fill screen, subtitles) turns white with the web's amber dot under it. As the
@@ -1194,6 +1212,12 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   Apple's player does; a room that takes over ends a timer set before. Tab reaches the button, and so do the arrows of a
   remote moving through the controls (Right from Mute passes the slider); OK or Enter opens the menu, Up and Down move
   through it, OK picks, Esc or the remote's Back closes it.
+  Settings → Playback → This PC → Sleep timer (Granary's own; Silo's clients always have it), turned off, takes the button
+  and its dot away and the buttons after it close up; the arrows go from Mute straight to the next button shown (audio,
+  else subtitles, chapters or settings), and Tab from the slider. A timer that runs then ends, as Turn off ends it, and a Playing Next screen it left waiting (End of
+  episode, or a duration that ran out at the end) counts down again, so the next episode starts by itself as usual; the
+  duration this device starts on stays. The player follows at once, also as the minimized bar, and a player opened later
+  starts without the button.
 - **Audio menu** (`AudioTrackOption`, wording in `TrackText` after the web's `AudioTrackMenu`): the button shows
   once the file has a track and opens with two or more. Above it, 280 to 360 px wide: "AUDIO", then a row per
   track with its name (its title, else the embedded title, else language, codec and channels), chips for the
@@ -1290,10 +1314,17 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   `sm`) the pill leaves the quality out. SPEED: the value at the right, the speeds 0.5× to 3×
   (0.25 apart up to 2×, then 2.5× and 3×) as stops on a track drawn like the seek bar, the fill from 1× to the
   chosen speed, 0.5×, 1×, 2× and 3× named under it (`SpeedTrack`); it applies at once and is saved as this device's
-  `player.playback_speed`. VERSION with more than one file ("2160p HEVC HDR", "Playing" / "Requested" chips): a pick
-  plays that file from where the viewer is. QUALITY when the plan offers rungs: Auto ("Auto · limited after buffering"
-  under a learned limit), then the rungs with their bitrate muted at the right ("12 Mbps") and a white check on the
-  one the plan delivers; a pick asks for a new plan. A pick of a file or quality closes the menu.
+  `player.playback_speed`. AUDIO DELAY under a line (Silo's Android player has it on its Sync page), drawn as the
+  subtitle menu's DELAY: earlier and later in 50 ms steps up to 5 s either way, the value ("+150 ms", "−200 ms") and
+  Reset; a server title follows it at once and it is saved as this device's `player.audio_sync_ms` (Settings → Playback
+  → Sound shows the same value, and a change there shows here); a server that does not know the setting has no row, and
+  its title plays with no delay, not another server's; a local file starts with the delay as far as this run knows it
+  (none on a cold `--play`, which reads nothing from the server) and follows a change made in Settings, also in the
+  docked or minimized player, and a step there is only the player's. VERSION with more than one file ("2160p HEVC HDR",
+  "Playing" / "Requested" chips): a pick plays that file from where the viewer is. QUALITY when the plan offers rungs:
+  Auto ("Auto · limited after buffering" under a learned limit), then the rungs with their bitrate muted at the right
+  ("12 Mbps") and a white check on the one the plan delivers; a pick asks for a new plan. A pick of a file or quality
+  closes the menu.
 - **Playback info** (the web's PlaybackInfoOverlay): 320 px, black at 85 %, radius 8, under Exit; "Playback Info" with a
   close button, then PLAYER (mpv, the play method: Direct Play, Direct Streaming or Transcode, the stream's protocol and
   type, and the file asked for when the server fell back to another), VIDEO INFO (the picture's area and the video in
