@@ -12,6 +12,15 @@ release's section is what its update says it changes (docs/release.md).
   "Ends 22:41", in Windows' 12 or 24 hour time. It counts in the playback speed, moves later while you pause, and
   follows a seek. The minimized player shows it after the times while it has room. It's not shown when the length
   isn't known, such as for a live stream.
+- **Theme music:** turn on Settings → Title Pages → Theme music, and a title's page plays its theme quietly while it is
+  open, when your Silo server has theme music for it, as in Silo's web and apps. Loop theme music repeats it. Going from a
+  series to one of its seasons keeps the music going; leaving the page or minimizing Granary fades it out, and playing a
+  title or a trailer stops it at once.
+- **Title art:** Settings → Title Pages → Show title art decides whether a title's page names it with its logo or with
+  its name in text, for this PC or, with Apply to all devices, for every device signed into your profile. Use server
+  default goes back to what your Silo server's admin set.
+- **Advisory age:** turn on Settings → Title Pages → Show advisory age, and a movie's or series' page names the age an
+  advisory service suggests for it beside its rating, such as "Common Sense 13+", as in Silo's web. It only shows the age.
 - **Rewind on resume:** resuming a movie or episode now starts exactly where you stopped, the time the Resume button
   shows, instead of 7 seconds earlier. To get a few seconds of lead-in back, set Settings → Playback → This PC → Rewind
   on resume, from 0 to 30 seconds. Silo's settings suggest 7 seconds; Granary starts at 0 on purpose, because you expect
