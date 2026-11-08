@@ -50,6 +50,42 @@ public sealed class SearchBoxSetsTests
     }
 
     [Fact]
+    public async Task BoxSetsWithoutPeople_GiveTheTitlesTheirOwnHeading()
+    {
+        // Without it the films under the box sets read as part of the Box sets group.
+        var search = await SearchAsync("masterplan");
+
+        Assert.Empty(search.People);
+        Assert.True(search.ShowsBoxSets);
+        Assert.True(search.ShowsTitlesHeading);
+    }
+
+    [Fact]
+    public async Task BoxSetsThatCome_ShowTheTitlesHeading_AndThoseThatGoHideIt()
+    {
+        _silo.Map(BoxSetsPath, request => new BrowseRequest(request.Method, request.RequestUri!, null).Query("q") == "masterplan"
+            ? BrowseFakeSilo.Json(BoxSetPayloads.SearchList)
+            : BrowseFakeSilo.Json("""{ "items": [] }"""));
+        var search = await SearchAsync("lantern");
+        Assert.False(search.ShowsTitlesHeading);
+        var changed = new List<string?>();
+        search.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+
+        search.Query = "masterplan";
+        await search.SearchNowCommand.ExecuteAsync(null);
+
+        Assert.True(search.ShowsTitlesHeading);
+        Assert.Contains(nameof(SearchViewModel.ShowsTitlesHeading), changed);
+        changed.Clear();
+
+        search.Query = "lantern";
+        await search.SearchNowCommand.ExecuteAsync(null);
+
+        Assert.False(search.ShowsTitlesHeading);
+        Assert.Contains(nameof(SearchViewModel.ShowsTitlesHeading), changed);
+    }
+
+    [Fact]
     public async Task ABoxSetCard_OpensTheBoxSetsPage()
     {
         var search = await SearchAsync("masterplan");

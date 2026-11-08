@@ -340,7 +340,9 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   untouched pick leaves the seasons to the server. Discover cards and More Like This open it, or the library's title.
 - Search's box sets (`SearchViewModel.BoxSets`, the web's `BoxSetSearchResults` as its catalog search shows it): under
   the type switch, ahead of People and the titles, "Box sets" as People's heading over the box set cards (`MediaCardView`)
-  in the titles' own columns, up to five, best match first; each opens its box set's page. Only while the server has box
+  in the titles' own columns, up to five, best match first; each opens its box set's page. Below box sets or people the
+  library's titles get their own heading, "Titles", so the films don't read as part of the group above them (Request to
+  add standing in for no titles takes it away). Only while the server has box
   sets, and for Movies & Series and Movies, not Series. A search that fails or takes over 1.5 s shows none and never
   holds the titles; a new text, another type or an empty box clears them.
 - Request to add (`SearchPage`, `RequestToAddViewModel`, the web's `RequestToAddSection` as its catalog search shows it):

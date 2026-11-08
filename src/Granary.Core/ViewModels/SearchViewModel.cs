@@ -121,7 +121,7 @@ public sealed partial class SearchViewModel : ObservableObject
 
     /// <summary>The box sets the text finds, best match first, as cards ahead of people and titles (the web's search).</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ShowsBoxSets))]
+    [NotifyPropertyChangedFor(nameof(ShowsBoxSets), nameof(ShowsTitlesHeading))]
     public partial IReadOnlyList<MediaCard> BoxSets { get; private set; } = [];
 
     public bool ShowsBoxSets => BoxSets.Count > 0;
@@ -159,8 +159,11 @@ public sealed partial class SearchViewModel : ObservableObject
 
     public bool ShowsPeople => People.Count > 0;
 
-    /// <summary>"Titles" between the people and the library's titles, unless "Request to add" stands in for none.</summary>
-    public bool ShowsTitlesHeading => ShowsPeople && !IsLibraryRescued;
+    /// <summary>
+    /// "Titles" between the box sets or people and the library's titles, so the films don't read as part of the group above,
+    /// unless "Request to add" stands in for none.
+    /// </summary>
+    public bool ShowsTitlesHeading => (ShowsPeople || ShowsBoxSets) && !IsLibraryRescued;
 
     public bool ShowsRequests => Requests.IsShown;
 
