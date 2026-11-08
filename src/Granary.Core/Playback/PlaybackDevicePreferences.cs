@@ -230,11 +230,40 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
 /// <summary><c>playback-device.json</c>.</summary>
 internal sealed record PlaybackDeviceFile(bool? DecodesInSoftware, string? UpDown, int? PassoutThreshold)
 {
-    // Missing from an older file: a resume then lands on the saved point, the default. A number of any kind, so that
-    // 7.5 typed into the file only loses this value, not the file's other choices.
+    // Missing from an older file: a resume then lands on the saved point, the default. Read leniently, so that 7.5,
+    // "seven" or a list typed into the file only loses this value, not the file's other choices.
+    [JsonConverter(typeof(AnyNumberConverter))]
     public double? ResumeRewindSeconds { get; init; }
 
     public bool? DiscordStatus { get; init; }
+}
+
+/// <summary>A JSON number as itself; any other value, an object or a list included, as none.</summary>
+internal sealed class AnyNumberConverter : JsonConverter<double?>
+{
+    public override double? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        if (reader.TokenType == JsonTokenType.Number && reader.TryGetDouble(out double number))
+        {
+            return number;
+        }
+        // Past the whole value, so the next member reads as it should.
+        reader.Skip();
+        return null;
+    }
+
+    public override void Write(Utf8JsonWriter writer, double? value, JsonSerializerOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(writer);
+        if (value is { } number)
+        {
+            writer.WriteNumberValue(number);
+        }
+        else
+        {
+            writer.WriteNullValue();
+        }
+    }
 }
 
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower, WriteIndented = true)]

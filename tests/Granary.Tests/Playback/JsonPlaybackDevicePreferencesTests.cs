@@ -165,8 +165,13 @@ public sealed class JsonPlaybackDevicePreferencesTests : IDisposable
     [InlineData("{ \"resume_rewind_seconds\": 31, \"up_down\": \"volume\" }")]
     [InlineData("{ \"resume_rewind_seconds\": -1, \"up_down\": \"volume\" }")]
     [InlineData("{ \"resume_rewind_seconds\": 7.5, \"up_down\": \"volume\" }")]
+    [InlineData("{ \"resume_rewind_seconds\": \"seven\", \"up_down\": \"volume\" }")]
+    [InlineData("{ \"resume_rewind_seconds\": true, \"up_down\": \"volume\" }")]
+    [InlineData("{ \"resume_rewind_seconds\": { \"seconds\": 7, \"more\": [1, { \"up_down\": \"controls\" }] }, \"up_down\": \"volume\" }")]
+    [InlineData("{ \"resume_rewind_seconds\": [7, [8], { \"up_down\": \"controls\" }], \"up_down\": \"volume\" }")]
+    [InlineData("{ \"resume_rewind_seconds\": null, \"up_down\": \"volume\" }")]
     [InlineData("{ \"up_down\": \"volume\" }")]
-    public async Task ARewindOutOfBounds_NotWhole_OrMissing_MeansNone_AndKeepsTheOtherChoices(string file)
+    public async Task ARewindOutOfBounds_NotWhole_NotANumber_OrMissing_MeansNone_AndKeepsTheOtherChoices(string file)
     {
         Directory.CreateDirectory(_directory);
         await File.WriteAllTextAsync(FilePath, file, TestContext.Current.CancellationToken);
