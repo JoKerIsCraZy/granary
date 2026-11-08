@@ -1008,13 +1008,22 @@ client guide.
   while the server cannot be reached and sent while that profile is the active one. A row whose files are missing is taken
   off the index the same way, and the server still hears it.
 - **Items.** `Items` lists the active profile's downloads newest first as `DownloadItem`s: the record, the bytes so far
-  (the queue's count, the whole file once downloaded), whether the connection holds it back, and the poster's file as the
-  record names it, so a page never reads the disk for them. `DownloadText` words their status, as the apps do. `Changed`
-  follows the store, the queue's progress and the feature, on any thread.
+  (the queue's count, the whole file once downloaded), whether the connection holds it back, and the poster's and the
+  series poster's files as the record names them, so a page never reads the disk for them. `DownloadText` words their
+  status, as the apps do. `Changed` follows the store, the queue's progress and the feature, on any thread; progress alone
+  comes as `DownloadProgressedEventArgs` naming its download, whose bytes `BytesDone(id)` gives.
 - **The title page.** `DownloadActions` gives a title its Download item from `ForItem` and the feature; a page follows it
   while it shows (`Follow`), which reads the capability and posts one refresh to the UI thread per burst of `Changed`. The
   download dialog's `DownloadOptionsViewModel` reads the free space once per dialog on the thread pool (`SpaceRead`) and
   shows it on the UI thread; Download waits for that read and does not start what would reach the transfer's reserve.
+- **The Downloads page.** `DownloadsViewModel` follows `Changed` between `Attach` and `Detach` and posts one refresh to the
+  UI thread per burst. Progress alone updates its rows from `BytesDone(id)` and the space used from `BytesUsed()`, without
+  `Items`, which asks Windows whether the connection is metered. Anything else reads `Items` again: the rows stay the same
+  objects, and the sections (films, then each series by season, Specials last) are made again only when downloads come or
+  go or one's place, series poster or state changes. The free space is read on the thread pool when the page shows and
+  when the sections change.
+- **Settings → Downloads.** `DownloadSettingsViewModel` takes a folder only below a drive's or a share's root and once it
+  made the folder and wrote and deleted `.granary-write-check` there, on the thread pool; Open makes the folder first.
 
 ## Windows App SDK
 

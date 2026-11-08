@@ -98,8 +98,8 @@ public sealed class JsonDownloadPreferences : IDownloadPreferences
     }
 
     // The full path of a folder downloads may go to, or null: not a relative path, a drive or share root, or a path with a
-    // colon past its drive (another stream of a file).
-    private static string? FullFolder(string? folder)
+    // colon past its drive (another stream of a file). Settings → Downloads asks it before it writes to a folder.
+    internal static string? FullFolder(string? folder)
     {
         if (string.IsNullOrWhiteSpace(folder) || !Path.IsPathFullyQualified(folder))
         {

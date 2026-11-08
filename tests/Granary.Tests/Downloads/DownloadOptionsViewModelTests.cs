@@ -297,33 +297,6 @@ public sealed class DownloadOptionsViewModelTests : IAsyncDisposable
         Assert.Equal("", options.ErrorText);
     }
 
-    // Notes whether each read of the free space ran on the UI thread.
-    private sealed class ThreadNotingDiskSpace(SerialDispatcher ui, long free) : IDiskSpace
-    {
-        private readonly Lock _gate = new();
-        private readonly List<bool> _readOnUi = [];
-
-        public IReadOnlyList<bool> ReadOnUi
-        {
-            get
-            {
-                lock (_gate)
-                {
-                    return [.. _readOnUi];
-                }
-            }
-        }
-
-        public long? FreeBytes(string folder)
-        {
-            lock (_gate)
-            {
-                _readOnUi.Add(ui.HasThreadAccess);
-            }
-            return free;
-        }
-    }
-
     // A drive that answers only once the test lets it, as one waking up does.
     private sealed class HeldDiskSpace(long free) : IDiskSpace, IDisposable
     {

@@ -196,6 +196,25 @@ public sealed class SidebarLayoutTests : IDisposable
     }
 
     [Fact]
+    public async Task Downloads_ComesAfterTheEntriesAProfileArrangedBeforeItExisted()
+    {
+        Directory.CreateDirectory(_directory);
+        await File.WriteAllTextAsync(FilePath, """
+            { "profiles": { "srv1/7": { "hidden": [], "order": { "your_stuff": ["List:history", "List:favorites", "List:watchlist", "WatchParty", "Collections"] } } } }
+            """, TestContext.Current.CancellationToken);
+        var layout = Create();
+        using var libraries = Libraries();
+        using var settings = new SidebarSettingsViewModel(layout, libraries);
+
+        var rows = settings.Groups[2].Rows;
+
+        Assert.Equal(["List:history", "List:favorites", "List:watchlist", "WatchParty", "Collections", "Downloads"], rows.Select(row => row.Tag));
+        Assert.Equal(SidebarSettingsViewModel.ServerOfferNote, rows[^1].Note);
+        await rows[^1].MoveUpCommand.ExecuteAsync(null);
+        Assert.Equal("Downloads", settings.Groups[2].Rows[^2].Tag);
+    }
+
+    [Fact]
     public async Task TheServersLogo_ShowsAtFirst_AndCanBeTurnedOff_UntilTheNextStartAndBeyond()
     {
         var layout = Create();

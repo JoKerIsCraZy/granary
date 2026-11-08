@@ -737,7 +737,7 @@ says why above the sections.
   badge settings shows its own, and the page says so. Every change saves to the profile at once. Then Sidebar, with
   Reset beside the title while something is hidden or moved: Server logo ("Shows the logo your Silo server's admin set in
   place of the server's name. A server without one shows its name."), then Libraries, Discover and Your Stuff, each a list between
-  hairlines of the entry's icon and name (Requests and Notifications: "Shows while your server offers it."), up and down
+  hairlines of the entry's icon and name (Requests, Notifications, Watch Party and Downloads: "Shows while your server offers it."), up and down
   as 32 px ghost buttons (off at the ends), and the switch; a hidden entry is dimmed. Changes show in the sidebar at
   once.
 - **Devices** (`DevicesSettingsView` on `DevicesViewModel`; the web's Signed-in sessions and Your Devices on one page,

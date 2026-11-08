@@ -36,6 +36,15 @@ public sealed record SeasonEpisode(string EpisodeId, int EpisodeNumber, string T
 public sealed record SeasonStartResult(int Started, int AlreadyThere, int Failed);
 
 /// <summary>
+/// What <see cref="DownloadManager.Changed"/> carries when only a transfer went further: the download it is, so a page can show
+/// that row's bytes (<see cref="DownloadManager.BytesDone(string)"/>) without reading every download again.
+/// </summary>
+public sealed class DownloadProgressedEventArgs(string downloadId) : EventArgs
+{
+    public string DownloadId { get; } = downloadId;
+}
+
+/// <summary>
 /// What the view models do with downloads (docs/architecture.md, "Starting and deleting"): the active profile's downloads as
 /// <see cref="DownloadItem"/>s, starting a film, an episode or a season, pausing, resuming and deleting. The queue does the
 /// transfers and sends the server's deletes.
@@ -73,7 +82,10 @@ public sealed partial class DownloadManager
         feature.PropertyChanged += OnFeatureChanged;
     }
 
-    /// <summary>Raised on any thread when a download changed, went further, or what the server offers did.</summary>
+    /// <summary>
+    /// Raised on any thread when a download changed, went further, or what the server offers did. A transfer that only went
+    /// further comes with <see cref="DownloadProgressedEventArgs"/>, at most every half second for each.
+    /// </summary>
     public event EventHandler? Changed;
 
     /// <summary>The active profile's downloads, newest first.</summary>
@@ -93,6 +105,13 @@ public sealed partial class DownloadManager
     /// <summary>The active profile's download of a film or an episode, by its own id.</summary>
     public DownloadItem? ForItem(string mediaItemId) =>
         DownloadScope.Of(_session) is { } scope && _store.FindByItem(scope, mediaItemId) is { } download ? ItemOf(download, _queue.IsWaitingForUnmetered) : null;
+
+    /// <summary>
+    /// The bytes one of the active profile's downloads has on this PC, as <see cref="DownloadItem.BytesDone"/> counts them; 0
+    /// when it is not there. It reads neither the disk nor the connection, so a page can follow a transfer with it.
+    /// </summary>
+    public long BytesDone(string downloadId) =>
+        DownloadScope.Of(_session) is { } scope && _store.Find(scope, downloadId) is { } download ? BytesDone(scope, download.Record) : 0;
 
     /// <summary>The bytes the active profile's downloads take: the finished files and the parts so far, as the queue knows them.</summary>
     public long BytesUsed() =>
@@ -157,18 +176,22 @@ public sealed partial class DownloadManager
     private DownloadItem ItemOf(StoredDownload download, bool waitsForUnmetered)
     {
         var record = download.Record;
-        string? poster = !download.FilesMissing && record.ArtworkFiles.TryGetValue("poster", out string? name) ? Path.Combine(download.Folder, name) : null;
         return new DownloadItem(record.DownloadId, record.MediaItemId, record.Title, record.SeriesId, record.SeriesTitle, record.SeasonNumber,
             record.EpisodeNumber, record.State, record.Failure, record.IsPausedByViewer, record.IsNoLongerAvailable, download.FilesMissing,
-            waitsForUnmetered, record.ExpectedBytes, BytesDone(record.Scope, record), record.PreparationProgress, poster, record.MediaFileId);
+            waitsForUnmetered, record.ExpectedBytes, BytesDone(record.Scope, record), record.PreparationProgress, ArtworkPath(download, "poster"),
+            record.MediaFileId, ArtworkPath(download, "series_poster"));
     }
+
+    // The record names its artwork, so nothing is read from the disk; none while the folder is missing.
+    private static string? ArtworkPath(StoredDownload download, string kind) =>
+        !download.FilesMissing && download.Record.ArtworkFiles.TryGetValue(kind, out string? name) ? Path.Combine(download.Folder, name) : null;
 
     private long BytesDone(DownloadScope scope, DownloadRecord record) =>
         record.State == DownloadState.Completed ? record.ExpectedBytes : _queue.BytesDone(scope, record.DownloadId);
 
     private void OnChanged(object? sender, EventArgs e) => Changed?.Invoke(this, EventArgs.Empty);
 
-    private void OnProgressed(object? sender, string downloadId) => Changed?.Invoke(this, EventArgs.Empty);
+    private void OnProgressed(object? sender, string downloadId) => Changed?.Invoke(this, new DownloadProgressedEventArgs(downloadId));
 
     private void OnFeatureChanged(object? sender, PropertyChangedEventArgs e) => Changed?.Invoke(this, EventArgs.Empty);
 }

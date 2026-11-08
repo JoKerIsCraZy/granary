@@ -159,4 +159,18 @@ public static class DownloadQualities
     public const string Original = "original";
 
     public static IReadOnlyList<string> Ladder { get; } = [Original, "20mbps", "10mbps", "5mbps", "2mbps", "1mbps"];
+
+    /// <summary>
+    /// Each preset of <see cref="Ladder"/> with the bitrate and tallest output the guide's capability example lists
+    /// (downloads-api.md, 3), for a label before the server said what it offers; a server's own may be smaller.
+    /// </summary>
+    public static IReadOnlyList<DownloadQualityOption> GuideOptions { get; } =
+    [
+        new(Original, null, null),
+        new("20mbps", 20000, 2160),
+        new("10mbps", 10000, 1080),
+        new("5mbps", 5000, 1080),
+        new("2mbps", 2000, 720),
+        new("1mbps", 1000, 480),
+    ];
 }

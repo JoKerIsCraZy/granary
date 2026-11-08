@@ -310,6 +310,8 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<Func<ViewModels.Downloads.DownloadOptionsViewModel>>(sp =>
             () => ActivatorUtilities.CreateInstance<ViewModels.Downloads.DownloadOptionsViewModel>(sp));
         services.AddSingleton<DownloadActions>();
+        // The Downloads page's view model, one per page. Settings → Downloads makes its own with the app's folder picker.
+        services.AddTransient<ViewModels.Downloads.DownloadsViewModel>();
     }
 
     // Artwork URLs are presigned and public: no credentials, no identity headers. HTTP/2 lets a page's images
