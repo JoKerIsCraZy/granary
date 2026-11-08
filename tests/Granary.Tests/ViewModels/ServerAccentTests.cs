@@ -545,6 +545,59 @@ public sealed class ServerAccentTests
     }
 
     [Fact]
+    public async Task TheAddressAnsweringAsAnotherServer_IsReadAgainAtOnce()
+    {
+        Remember(new SavedBranding("#16a34a", WordmarkUrl));
+        _harness.Silo.On(HttpMethod.Get, BrandingPath, ScriptedSilo.Json(HttpStatusCode.OK, Blue),
+            ScriptedSilo.Json(HttpStatusCode.OK, """{ "accent_color": "#facc15" }"""));
+        var accent = Create();
+        await accent.StartAsync();
+        Assert.Equal("#1d4ed8", accent.Palette.Primary.ToString());
+
+        // Added again, the address answers as another server: its saved branding went with the old one.
+        var another = ScriptedSilo.Server with { ServerId = "server-another" };
+        _registry.Add(another);
+        _harness.Session.ActiveServer = another;
+        _harness.Session.RaiseChanged();
+        await accent.Reading;
+
+        Assert.Equal(2, Reads());
+        Assert.Equal("#facc15", accent.Palette.Primary.ToString());
+        Assert.Equal(new SavedBranding("#facc15", null), Remembered());
+    }
+
+    [Fact]
+    public async Task TheSavedBrandingGone_ReadsTheServerAgain()
+    {
+        Remember(new SavedBranding("#16a34a", null));
+        _harness.Silo.On(HttpMethod.Get, BrandingPath, ScriptedSilo.Json(HttpStatusCode.OK, Blue));
+        var accent = Create();
+        await accent.StartAsync();
+
+        _harness.Session.ActiveServer = ScriptedSilo.Server;
+        _harness.Session.RaiseChanged();
+        await accent.Reading;
+
+        Assert.Equal(2, Reads());
+    }
+
+    [Fact]
+    public async Task AnAnswerFromBeforeTheAddressAnsweredAsAnotherServer_IsNotSaved()
+    {
+        _harness.Silo.On(HttpMethod.Get, BrandingPath, ScriptedSilo.Json(HttpStatusCode.OK, Blue));
+        var hold = _registry.HoldNextUpdate();
+        var accent = Create();
+
+        var reading = accent.StartAsync();
+        await hold.Reached.Task.WaitAsync(Cancellation);
+        _registry.Add(ScriptedSilo.Server with { ServerId = "server-another" });
+        hold.Release();
+        await reading;
+
+        Assert.Null(Remembered());
+    }
+
+    [Fact]
     public async Task AFailedSave_KeepsTheAccent_AndIsLogged()
     {
         _harness.Silo.On(HttpMethod.Get, BrandingPath, ScriptedSilo.Json(HttpStatusCode.OK, Blue));

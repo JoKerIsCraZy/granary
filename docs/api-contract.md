@@ -543,7 +543,8 @@ white when white contrasts more than the dark label `#141417`. Granary reads it 
   "wordmark": <its address on the server>? }`. When the server becomes active, that is painted at once, before the read
   answers, and it stays while the read fails. A read that answers differently replaces it. Only a server never read, or
   one without an accent, shows Granary's red. A file from before has no `branding`; its servers are read as never read.
-  When an address answers as another server when it is added again, its branding goes.
+  When an address answers as another server when it is added again, its branding goes and it is read again at once; an
+  answer of the server before is not saved for it.
 - **A failed read** (no network yet after a wake or a VPN, a slow server) is tried again after 5 s, 15 s and a minute,
   then every 5 minutes; at once when the session signs in or becomes ready; and 2 s after the network changes
   (`ILocalNetwork`), which starts the waits over. An answer ends the retries, also one without an accent, and so does

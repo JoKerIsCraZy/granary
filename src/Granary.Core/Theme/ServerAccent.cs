@@ -37,7 +37,13 @@ public sealed partial class ServerAccent : ObservableObject, IDisposable
     private bool _disposed;
     private bool _hasRead;
     private string? _readFor;
+    // The server that answered at the saved address, and the branding last seen saved with it: either changing means
+    // another server answers there now (it was added again), which is read as a new one.
+    private string? _readServerId;
+    private SavedBranding? _seenBranding;
     private SessionState _state;
+    // Cancelled, never disposed: a read still running holds its token, and a source without a timer holds nothing to
+    // release.
     private CancellationTokenSource? _run;
     private ITimer? _retry;
     // Whether the active server's last read failed; its streak is logged once.
@@ -106,13 +112,16 @@ public sealed partial class ServerAccent : ObservableObject, IDisposable
         var server = _session.ActiveServer;
         var was = _state;
         _state = _session.State;
-        if (_hasRead && server?.Id == _readFor)
+        if (_hasRead && server?.Id == _readFor && !AnotherServerAt(server))
         {
+            _seenBranding = server?.Branding;
             // A sign-in, or a session that became ready, shows the server answers again.
             return _failing && server is not null && SignsIn(was, _state) ? ReadAgain(server) : Reading;
         }
         _hasRead = true;
         _readFor = server?.Id;
+        _readServerId = server?.ServerId;
+        _seenBranding = server?.Branding;
         _run?.Cancel();
         StopRetrying();
         _failing = false;
@@ -170,15 +179,16 @@ public sealed partial class ServerAccent : ObservableObject, IDisposable
         var wordmark = OnTheServer(server.BaseUri, ArtworkUrl.Resolve(server.BaseUri, branding.WordmarkUrl));
         Palette = AccentPalette.From(branding.AccentColor);
         Wordmark = wordmark;
-        await RememberAsync(server.Id, new SavedBranding(AccentPalette.Parse(branding.AccentColor)?.ToString() ?? SavedBranding.NoAccent, wordmark?.AbsoluteUri));
+        await RememberAsync(server, new SavedBranding(AccentPalette.Parse(branding.AccentColor)?.ToString() ?? SavedBranding.NoAccent, wordmark?.AbsoluteUri));
     }
 
-    // Saved with the server; the registry writes only what differs from what it has.
-    private async Task RememberAsync(string serverId, SavedBranding branding)
+    // Saved with the server, unless another server answers at its address by now; the registry writes only what differs
+    // from what it has.
+    private async Task RememberAsync(ServerEntry server, SavedBranding branding)
     {
         try
         {
-            await _registry.UpdateAsync(serverId, entry => entry with { Branding = branding });
+            await _registry.UpdateAsync(server.Id, entry => entry.ServerId == server.ServerId ? entry with { Branding = branding } : entry);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
@@ -221,6 +231,9 @@ public sealed partial class ServerAccent : ObservableObject, IDisposable
         _retry?.Dispose();
         _retry = null;
     }
+
+    private bool AnotherServerAt(ServerEntry? server) =>
+        server is not null && (server.ServerId != _readServerId || (_seenBranding is not null && server.Branding is null));
 
     // Signed in where it was not, or ready where it was not.
     private static bool SignsIn(SessionState was, SessionState now) =>
