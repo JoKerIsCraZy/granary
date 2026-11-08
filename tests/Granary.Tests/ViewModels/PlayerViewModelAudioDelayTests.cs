@@ -109,6 +109,27 @@ public sealed class PlayerViewModelAudioDelayTests
     }
 
     [Fact]
+    public async Task ALocalFile_FollowsAChangeMadeInSettings_WhileItsOwnStepsStayThePlayers()
+    {
+        using var viewModel = Create();
+        await viewModel.StartAsync(PlayRequest.Direct(@"C:\Videos\clip.mkv"));
+
+        // The Settings slider, the docked or minimized player playing on.
+        _delay.Set(250);
+        Assert.Equal(0.25, _engine.AudioDelay);
+        Assert.Equal(250, viewModel.AudioDelayMs);
+
+        viewModel.ChangeAudioDelay(PlayerViewModel.AudioDelayStepMs);
+        Assert.Equal(0.3, _engine.AudioDelay, 6);
+        Assert.Equal(250, _delay.Milliseconds);
+
+        // Once the player is left, nothing plays to follow it.
+        viewModel.Leave();
+        _delay.Set(-100);
+        Assert.Equal(0.3, _engine.AudioDelay, 6);
+    }
+
+    [Fact]
     public async Task AServerThatDoesNotKnowTheSetting_GetsNoRow()
     {
         var playback = new FakeServerPlayback { Preferences = PlaybackPreferences.Default with { AudioDelayRefused = true } };

@@ -7,7 +7,8 @@ namespace Granary.Core.ViewModels;
 // earlier or later a step, within 5 s either way, and Reset. A server title's delay is this device's (AudioDelay): the
 // title follows a step at once and it is saved for this device, and a change made in Settings shows here; a server that
 // does not know the setting gets no row. A local file starts with the delay as far as this run knows it (none on a cold
-// --play, which reads nothing from the server), and a step there is only the player's.
+// --play, which reads nothing from the server) and follows a change made in Settings, but a step there is only the
+// player's.
 public sealed partial class PlayerViewModel
 {
     /// <summary>A step of Android's audio delay stepper.</summary>
@@ -57,10 +58,21 @@ public sealed partial class PlayerViewModel
         ShowsAudioDelay = _playback is not { } playback || !playback.Preferences.AudioDelayRefused;
     }
 
+    // Settings changed the delay, or a server title read it. A server title's playback moves the sound itself; a local file
+    // that plays, also in the docked or minimized player, takes it here.
     private void OnAudioDelayChanged(object? sender, EventArgs e)
     {
-        if (_playback is { Preferences.AudioDelayRefused: false } && _audioDelay is { } shared)
+        if (_audioDelay is not { } shared)
         {
+            return;
+        }
+        if (_playback is { Preferences.AudioDelayRefused: false })
+        {
+            AudioDelayMs = shared.Milliseconds;
+        }
+        else if (_playback is null && !HasLeft && _request?.DirectSource is not null)
+        {
+            _engine.SetAudioDelay(shared.Milliseconds / 1000.0);
             AudioDelayMs = shared.Milliseconds;
         }
     }

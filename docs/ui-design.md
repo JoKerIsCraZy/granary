@@ -1285,11 +1285,12 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   Reset; a server title follows it at once and it is saved as this device's `player.audio_sync_ms` (Settings → Playback
   → Sound shows the same value, and a change there shows here); a server that does not know the setting has no row, and
   its title plays with no delay, not another server's; a local file starts with the delay as far as this run knows it
-  (none on a cold `--play`, which reads nothing from the server), and a step there is only the player's. VERSION with
-  more than one file ("2160p HEVC HDR", "Playing" / "Requested" chips): a pick plays that file from where the viewer
-  is. QUALITY when the plan offers rungs: Auto ("Auto · limited after buffering" under a learned limit), then the rungs
-  with their bitrate muted at the right ("12 Mbps") and a white check on the one the plan delivers; a pick asks for a
-  new plan. A pick of a file or quality closes the menu.
+  (none on a cold `--play`, which reads nothing from the server) and follows a change made in Settings, also in the
+  docked or minimized player, and a step there is only the player's. VERSION with more than one file ("2160p HEVC HDR",
+  "Playing" / "Requested" chips): a pick plays that file from where the viewer is. QUALITY when the plan offers rungs:
+  Auto ("Auto · limited after buffering" under a learned limit), then the rungs with their bitrate muted at the right
+  ("12 Mbps") and a white check on the one the plan delivers; a pick asks for a new plan. A pick of a file or quality
+  closes the menu.
 - **Playback info** (the web's PlaybackInfoOverlay): 320 px, black at 85 %, radius 8, under Exit; "Playback Info" with a
   close button, then PLAYER (mpv, the play method: Direct Play, Direct Streaming or Transcode, the stream's protocol and
   type, and the file asked for when the server fell back to another), VIDEO INFO (the picture's area and the video in
