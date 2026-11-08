@@ -88,21 +88,21 @@ public sealed class ServerPlaybackSettingsTests
     }
 
     [Fact]
-    public async Task TheLoadedPlan_StaysTheOneThatPlays_UntilTheNewPlansStreamLoads()
+    public async Task TheStreamInfo_StaysTheStreamThatPlays_UntilTheNewPlansStreamLoads()
     {
         _fixture.Silo.On(HttpMethod.Post, StartPath, Created(Transcode("720p-medium")));
         _fixture.Silo.On(HttpMethod.Post, ReplanPath, Ok(Transcode("1080p-high")));
         var playback = await _fixture.StartAsync();
         _fixture.Engine.RaiseState(Frame(30));
-        Assert.Equal("720p-medium", playback.LoadedPlan?.ActiveQuality);
-        var whenTaken = new List<(string? Taken, string? Loaded)>();
-        playback.TracksChanged += (_, _) => whenTaken.Add((playback.ActiveQuality, playback.LoadedPlan?.ActiveQuality));
+        Assert.Equal("720p-medium", playback.StreamInfo?.Plan.ActiveQuality);
+        var whenTaken = new List<(string? Taken, string? Playing)>();
+        playback.TracksChanged += (_, _) => whenTaken.Add((playback.ActiveQuality, playback.StreamInfo?.Plan.ActiveQuality));
 
         playback.SelectQuality("1080p-high");
         await Until(() => _fixture.Engine.Loaded.Count == 2, "the new plan's stream loads");
 
         Assert.Contains(("1080p-high", "720p-medium"), whenTaken);
-        Assert.Equal("1080p-high", playback.LoadedPlan?.ActiveQuality);
+        Assert.Equal("1080p-high", playback.StreamInfo?.Plan.ActiveQuality);
     }
 
     [Fact]
@@ -119,7 +119,7 @@ public sealed class ServerPlaybackSettingsTests
         Assert.Equal(ServerPlaybackPhase.Playing, playback.Status.Phase);
         Assert.Equal(0, _fixture.Engine.Stops);
         Assert.Equal("auto", playback.QualityPreference);
-        Assert.Equal("720p-medium", playback.LoadedPlan?.ActiveQuality);
+        Assert.Equal("720p-medium", playback.StreamInfo?.Plan.ActiveQuality);
 
         playback.SelectQuality("1080p-high");
         await Until(() => playback.ActiveQuality == "1080p-high", "the pick made again is taken");

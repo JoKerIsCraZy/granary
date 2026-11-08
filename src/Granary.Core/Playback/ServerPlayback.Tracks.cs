@@ -27,11 +27,11 @@ public sealed partial class ServerPlayback
     public int? AudioTrack => _tracks.Audio is { } audio ? Ordinal(audio) : null;
 
     // The file the plan plays: the chosen one, or after an edition fallback another file of the title.
-    private WatchFileVersion? PlayingVersion => _plan is { } plan && _context is { } context
-        ? plan.EffectiveMediaFileId.Length == 0
-            ? context.Version
-            : context.Watch.Versions.FirstOrDefault(v => v.FileId == plan.EffectiveMediaFileId)
-        : null;
+    private WatchFileVersion? PlayingVersion => _plan is { } plan ? FileOf(plan) : null;
+
+    private WatchFileVersion? FileOf(PlaybackPlan plan) => _context is not { } context ? null
+        : plan.EffectiveMediaFileId.Length == 0 ? context.Version
+        : context.Watch.Versions.FirstOrDefault(v => v.FileId == plan.EffectiveMediaFileId);
 
     public void SelectAudio(int ordinal)
     {

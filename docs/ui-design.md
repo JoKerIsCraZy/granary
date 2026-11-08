@@ -1307,8 +1307,9 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   decoding, frames dropped by the output and by the decoder), PLAYBACK STREAM INFO (the codecs the plan delivers: direct,
   copy or transcoded, as its transformations say; tone mapping to SDR encodes the video) and CURRENT SOURCE FILE
   (container, size in GiB, bitrates, codec and profile, range type, colour range, the playing audio track's codec,
-  channels and sample rate). Labels white 60 %, values white 90 % on the right; read again every second while it shows;
-  it stays while the controls fade, until closed.
+  channels and sample rate). It describes the stream the player loaded, as the gear's dot does: during a switch the one
+  before, until the new one loads. Labels white 60 %, values white 90 % on the right; read again every second while it
+  shows; it stays while the controls fade, until closed.
 - **Watch Party panel** (the web's WatchTogetherPanel), while the room plays its title and has not ended or gone to
   another device: 224 px, black at 80 %, a white 10 % border, radius 12, under Exit on the right, fading with the
   controls (faded, it takes no clicks and no keyboard focus). "WATCH PARTY", the connection's dot (emerald connected,

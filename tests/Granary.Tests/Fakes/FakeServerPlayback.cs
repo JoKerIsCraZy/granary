@@ -141,19 +141,22 @@ internal sealed class FakeServerPlayback : IServerPlayback
 
     public PlaybackStreamInfo? StreamInfo { get; set; }
 
-    public PlaybackPlan? LoadedPlan { get; set; }
+    private PlaybackStreamInfo? _taken;
 
-    /// <summary>Takes the server's new plan for <paramref name="stream"/>, as TracksChanged reports it; its stream has not loaded yet.</summary>
+    /// <summary>
+    /// Takes the server's new plan for <paramref name="stream"/>, as TracksChanged reports it; until its stream loads,
+    /// <see cref="StreamInfo"/> stays the stream that plays.
+    /// </summary>
     public void TakePlan(PlaybackStreamInfo stream)
     {
-        StreamInfo = stream;
+        _taken = stream;
         TracksChanged?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>The plan taken last loads its stream, which shows its first frame: the playback says Playing again.</summary>
     public void PlayStream()
     {
-        LoadedPlan = StreamInfo?.Plan;
+        StreamInfo = _taken;
         Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));
     }
 

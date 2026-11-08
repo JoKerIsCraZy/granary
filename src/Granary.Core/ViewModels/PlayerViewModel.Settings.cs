@@ -95,7 +95,7 @@ public sealed partial class PlayerViewModel
                 AudioDelayMs = 0;
             }
             StreamMethod = playback.Status.Phase is ServerPlaybackPhase.Playing or ServerPlaybackPhase.Reconnecting
-                ? StreamMethods.Of(playback.LoadedPlan)
+                ? StreamMethods.Of(playback.StreamInfo?.Plan)
                 : StreamMethod.None;
         }
         else

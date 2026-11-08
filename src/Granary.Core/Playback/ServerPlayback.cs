@@ -475,8 +475,8 @@ public sealed partial class ServerPlayback : IServerPlayback
         CloseRoute();
         _route = _proxy.Open(_streamUrl!, _plan.Stream.Protocol == StreamProtocols.Hls ? MediaRouteScope.Directory : MediaRouteScope.File,
             (refused, cancellationToken) => _auth.GetAsync(server, refused, cancellationToken), media);
-        // From here the player plays this plan's stream (the settings gear's dot says how).
-        LoadedPlan = _plan;
+        // From here the player plays this plan's stream (the playback info and the settings gear's dot describe it).
+        _loaded = (_plan!, _streamUrl!);
         // Subtitles are the plan's to choose; left to itself, mpv would show one the file marks as default.
         _loadId = _engine.Load(new MediaSource(_route.LocalUrl, [], TimeSpan.FromSeconds(_playerPosition), audio, SubtitleStream: 0));
         if (!_titleLoaded)
