@@ -467,6 +467,8 @@ public sealed class ServerAccentTests
 
     [Theory]
     [InlineData("https://elsewhere.example/wordmark.webp")]
+    [InlineData("https://nas.example:8443/silo/api/v2/branding/assets/wordmark.webp")]
+    [InlineData("http://nas.example/silo/api/v2/branding/assets/wordmark.webp")]
     [InlineData("file:///C:/Windows/win.ini")]
     [InlineData("/api/v2/branding/assets/wordmark.webp")]
     [InlineData("not a url")]
@@ -595,6 +597,75 @@ public sealed class ServerAccentTests
         await reading;
 
         Assert.Null(Remembered());
+    }
+
+    // The answer to a read that was replaced, held until the newer one has answered.
+    private static Func<Task<HttpResponseMessage>> Held(TaskCompletionSource release) => async () =>
+    {
+        await release.Task;
+        return await ScriptedSilo.Json(HttpStatusCode.OK, """{ "accent_color": "#facc15" }""")();
+    };
+
+    [Fact]
+    public async Task AnAnswerFromBeforeTheServerWasLeftAndChosenAgain_IsDropped()
+    {
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _harness.Silo.On(HttpMethod.Get, BrandingPath, Held(release), ScriptedSilo.Json(HttpStatusCode.OK, Blue));
+        var other = ScriptedSilo.Entry("srv2", new Uri("https://other.example/silo"));
+        _harness.Silo.On(HttpMethod.Get, ScriptedSilo.Url(BrandingPath, other.BaseUri), ScriptedSilo.Json(HttpStatusCode.OK, """{ "accent_color": "#16a34a" }"""));
+        var accent = Create();
+        var first = accent.StartAsync();
+
+        _harness.Session.ActiveServer = other;
+        _harness.Session.RaiseChanged();
+        await accent.Reading;
+        _harness.Session.ActiveServer = ScriptedSilo.Server;
+        _harness.Session.RaiseChanged();
+        await accent.Reading;
+        release.SetResult();
+        await first;
+
+        Assert.Equal("#1d4ed8", accent.Palette.Primary.ToString());
+        Assert.Equal(new SavedBranding("#1d4ed8", null), Remembered());
+    }
+
+    [Fact]
+    public async Task AnAnswerToARetry_ThatASignInReadAgain_IsDropped()
+    {
+        _harness.Session.State = SessionState.ProfileRequired;
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _harness.Silo.On(HttpMethod.Get, BrandingPath, ScriptedSilo.NetworkError(), Held(release), ScriptedSilo.Json(HttpStatusCode.OK, Blue));
+        var accent = Create();
+        await accent.StartAsync();
+        await _harness.Clock.FireNextTimerAsync(Cancellation);
+        var retry = accent.Reading;
+
+        _harness.Session.State = SessionState.Ready;
+        _harness.Session.RaiseChanged();
+        await accent.Reading;
+        release.SetResult();
+        await retry;
+
+        Assert.Equal(3, Reads());
+        Assert.Equal("#1d4ed8", accent.Palette.Primary.ToString());
+        Assert.Equal(new SavedBranding("#1d4ed8", null), Remembered());
+    }
+
+    [Fact]
+    public async Task AnAnswerAfterDisposing_IsDropped()
+    {
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _harness.Silo.On(HttpMethod.Get, BrandingPath, Held(release));
+        var accent = Create();
+        var reading = accent.StartAsync();
+
+        accent.Dispose();
+        release.SetResult();
+        await reading;
+
+        Assert.Same(AccentPalette.Default, accent.Palette);
+        Assert.Null(Remembered());
+        Assert.Null(_harness.Clock.NextDue);
     }
 
     [Fact]
