@@ -148,10 +148,26 @@ internal sealed class MediaRoute : IMediaRoute
         using var watch = new UpstreamWatch(UpstreamIdleTimeout, _time, token);
         while (true)
         {
+            using var request = new HttpRequestMessage(head ? HttpMethod.Head : HttpMethod.Get, upstream);
+            foreach (string name in ForwardedRequestHeaders)
+            {
+                if (context.Request.Headers[name] is { } value)
+                {
+                    request.Headers.TryAddWithoutValidation(name, value);
+                }
+            }
+            // One wait for the server, timed whole: the headers (a token refresh among them), then the answer.
             MediaCredentials credentials;
+            HttpResponseMessage answer;
+            var waiting = watch.Arm();
             try
             {
-                credentials = await CredentialsAsync(refused, token).ConfigureAwait(false);
+                credentials = await CredentialsAsync(refused, waiting).ConfigureAwait(false);
+                foreach (var (name, value) in credentials.Headers)
+                {
+                    request.Headers.TryAddWithoutValidation(name, value);
+                }
+                answer = await client.SendAsync(request, waiting).ConfigureAwait(false);
             }
             catch (MediaAuthorizationException ex)
             {
@@ -161,24 +177,6 @@ internal sealed class MediaRoute : IMediaRoute
                     ? (int)HttpStatusCode.ServiceUnavailable
                     : (int)HttpStatusCode.Unauthorized;
                 return;
-            }
-            using var request = new HttpRequestMessage(head ? HttpMethod.Head : HttpMethod.Get, upstream);
-            foreach (string name in ForwardedRequestHeaders)
-            {
-                if (context.Request.Headers[name] is { } value)
-                {
-                    request.Headers.TryAddWithoutValidation(name, value);
-                }
-            }
-            foreach (var (name, value) in credentials.Headers)
-            {
-                request.Headers.TryAddWithoutValidation(name, value);
-            }
-            HttpResponseMessage answer;
-            var waiting = watch.Arm();
-            try
-            {
-                answer = await client.SendAsync(request, waiting).ConfigureAwait(false);
             }
             catch (Exception ex) when (watch.IsCutOff)
             {
@@ -232,7 +230,8 @@ internal sealed class MediaRoute : IMediaRoute
             if (_current is null || rejected || ending)
             {
                 _renewedAt = _time.GetTimestamp();
-                _current = await _source(rejected, cancellationToken).ConfigureAwait(false);
+                // Bounded by the token also where the source does not watch it.
+                _current = await _source(rejected, cancellationToken).WaitAsync(cancellationToken).ConfigureAwait(false);
             }
             return _current;
         }

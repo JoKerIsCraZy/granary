@@ -676,20 +676,19 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   The engine keeps the last real position and pause from the refusal until the next load, so the end of that
   data is never taken for the viewer's position.
 - **Media proxy** (`MediaProxy`, the Apple client's design): an `HttpListener` on 127.0.0.1 between mpv and the
-  server. Each load opens a route (`IMediaRoute`); mpv gets `http://127.0.0.1:{port}/{secret}/{route}/{the plan
-  URL's path and query, byte for byte}`. The route forwards GET and HEAD with the range headers to its own stream
-  only (a progressive stream: its exact URL; HLS: the playlist and what lies beside it, no dot segments), adds
-  the headers per request, renews a token within 60 s of its end, and on a 401 renews it once and repeats the
-  request, so mpv never sees an expiry. Redirects are not followed, cookies and the upstream's other headers
-  stay behind, and a body that breaks off aborts the response so mpv sees a lost connection, not an end. A
-  server that sends nothing for 60 s, before its answer or within its body (`UpstreamWatch`), is cut off and the
-  response aborted the same way: the server closes a stream a paused player stopped reading after 180 s, and
-  word of that close may never arrive. Only waits for the server are timed, never a write the player is not
-  taking. mpv's curl reader then asks again from its offset where the stream can seek; a remux ends and the
-  playback reconnects. Cuts and bodies that broke off are logged without URL or headers. The
-  secret keeps other programs on the machine out; the log redactor masks it. A new load, the stop and a failure
-  close the route and its requests. Before the proxy, mpv kept the headers for the whole load and would have
-  sent them wherever a redirect or a playlist pointed.
+  server. Each load opens a route (`IMediaRoute`); mpv gets `http://127.0.0.1:{port}/{secret}/{route}/{the plan URL's
+  path and query, byte for byte}`. The route forwards GET and HEAD with the range headers to its own stream only (a
+  progressive stream: its exact URL; HLS: the playlist and what lies beside it, no dot segments), adds the headers per
+  request, renews a token within 60 s of its end, and on a 401 renews it once and repeats the request, so mpv never
+  sees an expiry. Redirects are not followed, cookies and the upstream's other headers stay behind, and a body that
+  breaks off aborts the response so mpv sees a lost connection, not an end. A server that sends nothing for 60 s,
+  before its answer (a token refresh included) or within its body (`UpstreamWatch`), is cut off and the response
+  aborted the same way: the server closes a stream a paused player stopped reading after 180 s, and word of that close
+  may never arrive. Only waits for the server are timed, never a write the player is not taking. mpv's curl reader
+  then asks again from its offset where the stream can seek; a remux ends and the playback reconnects. Cuts and bodies
+  that broke off are logged without URL or headers. The secret keeps other programs on the machine out; the log
+  redactor masks it. A new load, the stop and a failure close the route and its requests. Before the proxy, mpv kept
+  the headers for the whole load and would have sent them wherever a redirect or a playlist pointed.
 - `--play <file or URL>` plays without the server and `--play-item <content id>` plays a title of the
   signed-in server, for development.
 

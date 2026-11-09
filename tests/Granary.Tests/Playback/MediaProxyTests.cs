@@ -289,6 +289,21 @@ public sealed class MediaProxyTests : IDisposable
     }
 
     [Fact]
+    public async Task HeadersThatNeverCome_AreCutOffAfterAMinute()
+    {
+        // A token refresh that hangs is part of the wait for the server: the player's request must not hang with it.
+        var never = new TaskCompletionSource<MediaCredentials>();
+        using var route = Proxy.Open(Stream, MediaRouteScope.File, (_, _) => never.Task);
+        var request = _player.GetAsync(route.LocalUrl, Cancellation);
+        await _time.WaitForTimerAsync(Cancellation);
+
+        _time.Advance(MediaRoute.UpstreamIdleTimeout);
+
+        await Assert.ThrowsAnyAsync<HttpRequestException>(() => request);
+        Assert.Empty(_sent);
+    }
+
+    [Fact]
     public async Task APlayerThatStopsReading_IsWaitedFor_HoweverLong()
     {
         // A paused player fills its cache and stops reading. That wait is the player's, not the server's: the stream goes
