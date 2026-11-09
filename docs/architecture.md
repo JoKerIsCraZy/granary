@@ -130,6 +130,11 @@ value holds, 0 included.
   (`KeepsOwn`), comparing the value as mpv writes it without regard to case. Between the profile and the set-back, mpv plays a moment with the
   file's value; it never holds server credentials, only the loopback address with the media proxy's secret (Server
   playback, "Media proxy"). `d3d11-composition-size` is kept at the start only, as the engine changes it itself.
+- The viewer's kept volume and mute (Server playback, "Volume") are set back the same way once Granary has set them
+  (`KeepsViewersSound`, `MpvPlaybackEngine.Volume.cs`): a profile's `volume=` or `mute=` as a file opens or while it
+  plays gives way to them. That is the viewer's choice, not a protection: after `SetBackLimit` set-backs within a title
+  the profile has its way for the rest of it, and the file stays in use. A notice older than Granary's latest value
+  (what mpv holds now is Granary's) is passed over rather than set back. Before Granary sets either, a profile's stands.
 - The protection fails closed (`MpvPlaybackEngine.FailClosed.cs`). A profile whose condition follows the option itself
   would set it again after every set-back; after five set-backs of one option within one title (`SetBackLimit`; the
   count starts again with each load, so a profile that changes it once per title never gets there), at the next change, or
@@ -569,9 +574,9 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   meanwhile does not move the slider back, and the next Mute toggles what shows, so quick presses take turns. A first
   Mute without a kept volume keeps the level the engine plays at. A change is saved once it has settled for 500 ms on
   the player's `TimeProvider`, and at once by `Leave`, which closing the player, the window and `Dispose` all go
-  through. Set after mpv read the viewer's mpv.conf, a kept volume and mute win over a `volume=` or `mute=` there;
-  without a kept one nothing is set, so mpv.conf keeps its say. A `volume` that is not a number or a `muted` that is not
-  true or false in the file only loses itself.
+  through. Set after mpv read the viewer's mpv.conf, and kept against its profiles ("Your own mpv.conf"), a kept volume
+  and mute win over a `volume=` or `mute=` there; without a kept one nothing is set, so mpv.conf keeps its say. A
+  `volume` that is not a number or a `muted` that is not true or false in the file only loses itself.
 - **Sleep timer** (`PlayerViewModel.SleepTimer.cs`; the apps' `SleepTimer` and `SleepTimerController`, the web's
   `SleepTimerMenu`): a duration counts on the player's `TimeProvider` once a second, whatever plays, pauses or loads
   meanwhile, so it runs on into the next episode, and then pauses what plays, with no fade (a title already paused is left

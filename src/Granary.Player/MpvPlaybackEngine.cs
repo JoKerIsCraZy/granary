@@ -180,9 +180,9 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
         _mpv.Command("seek", position.TotalSeconds.ToString("0.###", CultureInfo.InvariantCulture), "absolute");
 
     public void SetVolume(double percent) =>
-        SetGlobal("volume", Math.Clamp(percent, 0, 100).ToString("0.##", CultureInfo.InvariantCulture));
+        SetGlobal(VolumeOption, Math.Clamp(percent, 0, 100).ToString("0.##", CultureInfo.InvariantCulture));
 
-    public void SetMuted(bool muted) => SetGlobal("mute", muted ? "yes" : "no");
+    public void SetMuted(bool muted) => SetGlobal(MuteOption, muted ? "yes" : "no");
 
     // A global option: it stays for the next file. mpv keeps the pitch (audio-pitch-correction).
     public void SetSpeed(double speed) =>
@@ -559,7 +559,7 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
 
     private void OnPropertyChanged(string name, object? value)
     {
-        if (KeepsOwn(name, value) || (name is "time-pos" or "eof-reached" && FileBeforePlays))
+        if (KeepsOwn(name, value) || KeepsViewersSound(name, value) || (name is "time-pos" or "eof-reached" && FileBeforePlays))
         {
             return;
         }

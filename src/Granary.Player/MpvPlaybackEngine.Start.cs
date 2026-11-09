@@ -311,21 +311,7 @@ public sealed partial class MpvPlaybackEngine
         {
             return true;
         }
-        // Counted per title. A notice of the title before that arrives after a new load is counted for the new one: at
-        // most the one in flight, as each set-back waits for the one before, so a profile that changes the option once
-        // per title stays far below the limit, and one that loops still reaches it within the title.
-        long title;
-        lock (_gate)
-        {
-            title = _loads;
-        }
-        if (title != _setBacksTitle)
-        {
-            _setBacks.Clear();
-            _setBacksTitle = title;
-        }
-        int times = _setBacks.GetValueOrDefault(name) + 1;
-        _setBacks[name] = times;
+        int times = CountSetBack(name);
         if (times > SetBackLimit)
         {
             FailClosed($"keeps changing {name}");
@@ -341,6 +327,27 @@ public sealed partial class MpvPlaybackEngine
             FailClosed($"changes {name}, and mpv did not take Granary's back ({LibMpv.Error(rc)})");
         }
         return true;
+    }
+
+    // On mpv's event thread: the set-backs of an option in the title that plays, this one included. Counted per title. A
+    // notice of the title before that arrives after a new load is counted for the new one: at most the one in flight, as
+    // each set-back waits for the one before, so a profile that changes the option once per title stays far below the
+    // limit, and one that loops still reaches it within the title.
+    private int CountSetBack(string name)
+    {
+        long title;
+        lock (_gate)
+        {
+            title = _loads;
+        }
+        if (title != _setBacksTitle)
+        {
+            _setBacks.Clear();
+            _setBacksTitle = title;
+        }
+        int times = _setBacks.GetValueOrDefault(name) + 1;
+        _setBacks[name] = times;
+        return times;
     }
 
     private void Close() => Close(_mpv);
