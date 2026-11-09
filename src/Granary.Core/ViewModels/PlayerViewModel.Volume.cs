@@ -43,19 +43,20 @@ public sealed partial class PlayerViewModel
         Choose(new PlayerVolume(_chosenVolume?.Percent ?? Volume, muted));
     }
 
-    // A value the engine does not have yet is the viewer's change: it also ends a mute, as on the web player. One the engine
-    // reported is not, even when the engine has moved on since: a new mpv says its own volume before it gets the viewer's.
+    // A value shown from the engine is not the viewer's change, even when the engine has moved on since: a new mpv says its
+    // own volume before it gets the viewer's. Any other is (the slider, the volume keys), and goes to the engine even when
+    // the engine seems to have it: mpv says a volume a moment after it was set, so what it said last may be older than
+    // the viewer's last change, as when a drag goes away and back before mpv answers. It also ends a mute, as on the web
+    // player, likewise even when none seems on: a Mute just pressed may not be reported yet.
     partial void OnVolumeChanged(double value)
     {
-        if (!_showingEngineState && Math.Abs(_engine.Current.Volume - value) > 0.01)
+        if (_showingEngineState)
         {
-            if (_engine.Current.IsMuted)
-            {
-                _engine.SetMuted(false);
-            }
-            _engine.SetVolume(value);
-            Choose(new PlayerVolume(value, IsMuted: false));
+            return;
         }
+        _engine.SetMuted(false);
+        _engine.SetVolume(value);
+        Choose(new PlayerVolume(value, IsMuted: false));
     }
 
     // What this PC kept shows at once, before the engine says anything.

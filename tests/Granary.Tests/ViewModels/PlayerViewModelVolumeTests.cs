@@ -209,6 +209,39 @@ public sealed class PlayerViewModelVolumeTests
     }
 
     [Fact]
+    public async Task ADragAndBack_BeforeTheEngineAnswers_ReachesTheEngine_AndIsKept()
+    {
+        using var viewModel = Create();
+        await PlayFileAsync(viewModel);
+        _engine.RaiseState(Playing());
+        // mpv says its new volume a moment after it was set: until then it still says 100.
+        _engine.ReportsVolumeLater = true;
+
+        viewModel.Volume = 60;
+        viewModel.Volume = 100;
+        _time.Advance(Settled);
+
+        Assert.Equal([60.0, 100], _engine.VolumeRequests);
+        Assert.Equal([new PlayerVolume(100, IsMuted: false)], _preferences.SavedVolume);
+    }
+
+    [Fact]
+    public async Task AVolumeChangeRightAfterMute_EndsTheMute_BeforeTheEngineAnswers()
+    {
+        using var viewModel = Create();
+        await PlayFileAsync(viewModel);
+        _engine.RaiseState(Playing());
+        _engine.ReportsVolumeLater = true;
+
+        viewModel.ToggleMuteCommand.Execute(null);
+        viewModel.Volume = 50;
+        _time.Advance(Settled);
+
+        Assert.Equal([true, false], _engine.MuteRequests);
+        Assert.Equal([new PlayerVolume(50, IsMuted: false)], _preferences.SavedVolume);
+    }
+
+    [Fact]
     public async Task AServerTitle_AndTheNextOne_StartWithTheViewersVolume()
     {
         _preferences.Volume = new PlayerVolume(40, IsMuted: false);

@@ -561,9 +561,12 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   `PlayAsync` sets both on the engine as each title starts, a direct file included, since mpv keeps them across files but
   not past a start of Granary. Only the viewer's changes count (the slider, M, the volume keys, the minimized bar's): a
   volume the engine reports by itself, a new mpv's own or an administrator's `set_volume` (`ServerPlayback.Control.cs`),
-  plays but is not kept, and Mute keeps the viewer's own level with it. A Watch Party sets neither. A change is saved
-  once it has settled for 500 ms on the player's `TimeProvider`, and at once by `Leave`, which closing the player, the
-  window and `Dispose` all go through. Without a kept volume nothing is set, so the viewer's mpv.conf keeps its say.
+  plays but is not kept, and Mute keeps the viewer's own level with it. A Watch Party sets neither. Who set the value
+  decides, not a comparison with the engine's: a value shown from an engine snapshot (`ShowVolume`) is the engine's, any
+  other the viewer's, and it always goes to the engine with an unmute, as mpv reports a volume or mute a moment after it
+  was set and what it said last can be older than the viewer's last change. A change is saved once it has settled for
+  500 ms on the player's `TimeProvider`, and at once by `Leave`, which closing the player, the window and `Dispose` all go
+  through. Without a kept volume nothing is set, so the viewer's mpv.conf keeps its say.
 - **Sleep timer** (`PlayerViewModel.SleepTimer.cs`; the apps' `SleepTimer` and `SleepTimerController`, the web's
   `SleepTimerMenu`): a duration counts on the player's `TimeProvider` once a second, whatever plays, pauses or loads
   meanwhile, so it runs on into the next episode, and then pauses what plays, with no fade (a title already paused is left
