@@ -29,13 +29,14 @@ public sealed partial class PlayerViewModel
     // Set while the volume shown follows the engine's (OnVolumeChanged).
     private bool _showingEngineState;
 
-    // What was last asked of the engine (the viewer's change, a title's start), until the engine reports it or RequestHolds
-    // has passed. mpv reports a volume or mute a moment after it was set, so a snapshot taken meanwhile still has the one
-    // before: the request shows instead, so the slider does not jump back for a moment, and a second Mute pressed before
-    // mpv reported the first unmutes.
+    // What was last asked of the engine (the viewer's change, a title's start), each until the engine reports it or
+    // RequestHolds has passed since it was asked. mpv reports a volume or mute a moment after it was set, so a snapshot taken
+    // meanwhile still has the one before: the request shows instead, so the slider does not jump back for a moment, and a
+    // second Mute pressed before mpv reported the first unmutes.
     private double? _askedVolume;
+    private long _volumeAskedAt;
     private bool? _askedMute;
-    private long _askedAt;
+    private long _muteAskedAt;
 
     /// <summary>0 to 100; muted, it keeps the level that Unmute goes back to.</summary>
     [ObservableProperty]
@@ -54,7 +55,7 @@ public sealed partial class PlayerViewModel
     {
         bool muted = !IsMuted;
         _engine.SetMuted(muted);
-        Ask(null, muted);
+        AskMute(muted);
         IsMuted = muted;
         Choose(new PlayerVolume(_chosenVolume?.Percent ?? _engine.Current.Volume, muted));
     }
@@ -63,19 +64,21 @@ public sealed partial class PlayerViewModel
     // own volume before it gets the viewer's. Any other is (the slider, the volume keys), and goes to the engine even when
     // the engine seems to have it: mpv says a volume a moment after it was set, so what it said last may be older than
     // the viewer's last change, as when a drag goes away and back before mpv answers. It also ends a mute, as on the web
-    // player: one shown, a Mute still on its way included, or one the engine has.
+    // player: one shown, a Mute still on its way included, or one the engine has, unless an unmute is already on its way.
     partial void OnVolumeChanged(double value)
     {
         if (_showingEngineState)
         {
             return;
         }
-        if (IsMuted || _engine.Current.IsMuted)
+        bool unmuteOnItsWay = _askedMute == false && Held(_muteAskedAt);
+        if (IsMuted || (!unmuteOnItsWay && _engine.Current.IsMuted))
         {
             _engine.SetMuted(false);
+            AskMute(false);
         }
         _engine.SetVolume(value);
-        Ask(value, false);
+        AskVolume(value);
         IsMuted = false;
         Choose(new PlayerVolume(value, IsMuted: false));
     }
@@ -100,27 +103,34 @@ public sealed partial class PlayerViewModel
         }
         _engine.SetVolume(chosen.Percent);
         _engine.SetMuted(chosen.IsMuted);
-        Ask(chosen.Percent, chosen.IsMuted);
+        AskVolume(chosen.Percent);
+        AskMute(chosen.IsMuted);
         ShowVolume(chosen.Percent, chosen.IsMuted);
     }
 
-    // A null leaves what was asked before.
-    private void Ask(double? volume, bool? muted)
+    private void AskVolume(double volume)
     {
-        _askedVolume = volume ?? _askedVolume;
-        _askedMute = muted ?? _askedMute;
-        _askedAt = _time.GetTimestamp();
+        _askedVolume = volume;
+        _volumeAskedAt = _time.GetTimestamp();
     }
+
+    private void AskMute(bool muted)
+    {
+        _askedMute = muted;
+        _muteAskedAt = _time.GetTimestamp();
+    }
+
+    // A request asked less than RequestHolds ago still waits for the engine to report it.
+    private bool Held(long askedAt) => _time.GetElapsedTime(askedAt) < RequestHolds;
 
     // The engine's volume and mute, unless it has yet to report what was asked of it.
     private void ShowEngineVolume(PlaybackSnapshot state)
     {
-        bool held = _time.GetElapsedTime(_askedAt) < RequestHolds;
-        if (_askedVolume is { } volume && (!held || Math.Abs(state.Volume - volume) < 0.01))
+        if (_askedVolume is { } volume && (!Held(_volumeAskedAt) || Math.Abs(state.Volume - volume) < 0.01))
         {
             _askedVolume = null;
         }
-        if (_askedMute is { } muted && (!held || state.IsMuted == muted))
+        if (_askedMute is { } muted && (!Held(_muteAskedAt) || state.IsMuted == muted))
         {
             _askedMute = null;
         }

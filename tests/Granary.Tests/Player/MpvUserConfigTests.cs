@@ -141,34 +141,53 @@ public sealed class MpvUserConfigTests : IDisposable
         using var engine = CreateEngine("deband=yes\n[loud]\nvolume=10\nmute=yes\n");
         await PlaysAWav(engine);
 
+        // Without a volume or mute of the viewer's, the profile's stand.
         Assert.Equal(0, engine.Command("apply-profile", "loud"));
-
         await Until(() => engine.Current is { Volume: 10, IsMuted: true }, () => _logs.All);
         Assert.Equal("10.000000", engine.Option("volume"));
         Assert.Equal("yes", engine.Option("mute"));
         Assert.False(Logged("Granary keeps the viewer's"));
+
+        // Once the viewer has set them, the profile gives way.
+        engine.SetVolume(40);
+        engine.SetMuted(false);
+        await Until(() => engine.Current is { Volume: 40, IsMuted: false }, () => _logs.All);
+        Assert.Equal(0, engine.Command("apply-profile", "loud"));
+
+        await Until(() => engine.Option("volume") == "40.000000" && engine.Option("mute") == "no"
+                && Logged("mpv.conf set volume; Granary keeps the viewer's") && Logged("mpv.conf set mute; Granary keeps the viewer's"),
+            () => $"volume {engine.Option("volume")}, mute {engine.Option("mute")}; {_logs.All}");
     }
 
-    [Fact]
-    public async Task AProfileThatKeepsSettingTheVolume_HasItsWayForTheTitle_AndTheFileStaysInUse()
+    [Theory]
+    [InlineData("volume=10", "volume", "40.000000", "10.000000")]
+    [InlineData("mute=yes", "mute", "no", "yes")]
+    public async Task AProfileThatKeepsSettingTheVolumeOrMute_HasItsWayForTheTitle_AndTheFileStaysInUse(string line, string option,
+        string viewers, string profiles)
     {
-        using var engine = CreateEngine("deband=yes\n[loud]\nvolume=10\n");
+        using var engine = CreateEngine($"deband=yes\n[loud]\n{line}\n");
         engine.SetVolume(40);
+        engine.SetMuted(false);
         await PlaysAWav(engine);
 
         // Set back five times; the sixth stays, and the protection of Granary's own options is not stopped for it.
         for (int applied = 1; applied <= 6; applied++)
         {
             Assert.Equal(0, engine.Command("apply-profile", "loud"));
-            string expected = applied <= 5 ? "40.000000" : "10.000000";
-            await Until(() => engine.Option("volume") == expected && engine.Current.Volume == double.Parse(expected, CultureInfo.InvariantCulture),
-                () => $"after {applied}: volume {engine.Option("volume")}; {_logs.All}");
+            string expected = applied <= 5 ? viewers : profiles;
+            await Until(() => engine.Option(option) == expected && Shows(engine, option, expected),
+                () => $"after {applied}: {option} {engine.Option(option)}; {_logs.All}");
         }
 
-        await Until(() => Logged("mpv.conf keeps changing volume; it stays as the file sets it for this title"), () => _logs.All);
-        Assert.Equal(1, Count("mpv.conf set volume; Granary keeps the viewer's"));
+        await Until(() => Logged($"mpv.conf keeps changing {option}; it stays as the file sets it for this title"), () => _logs.All);
+        Assert.Equal(1, Count($"mpv.conf set {option}; Granary keeps the viewer's"));
         Assert.Equal(MpvConfigUse.Used, _status.Current.Use);
     }
+
+    // Whether the engine's state says what mpv writes for the volume or the mute.
+    private static bool Shows(MpvPlaybackEngine engine, string option, string value) => option == "volume"
+        ? engine.Current.Volume == double.Parse(value, CultureInfo.InvariantCulture)
+        : engine.Current.IsMuted == (value == "yes");
 
     [Fact]
     public async Task AFileMpvRefuses_PlaysAsIfThereWereNone()

@@ -308,6 +308,51 @@ public sealed class PlayerViewModelVolumeTests
     }
 
     [Fact]
+    public async Task AnUnmuteTheEngineNeverReports_ShowsItsMuteASecondLater_ThoughTheSliderKeepsMoving()
+    {
+        using var viewModel = Create();
+        await PlayFileAsync(viewModel);
+        _engine.RaiseState(Playing() with { IsMuted = true });
+        _engine.ReportsVolumeLater = true;
+
+        viewModel.ToggleMuteCommand.Execute(null);
+        for (int step = 1; step <= 3; step++)
+        {
+            _time.Advance(TimeSpan.FromMilliseconds(300));
+            viewModel.Volume = 100 - (10 * step);
+            _engine.RaiseState(Playing() with { IsMuted = true });
+            Assert.False(viewModel.IsMuted);
+        }
+        _time.Advance(TimeSpan.FromMilliseconds(100));
+        _engine.RaiseState(Playing() with { Volume = 70, IsMuted = true });
+
+        Assert.True(viewModel.IsMuted);
+        // The slider asked for no unmute of its own while the one of Mute was on its way.
+        Assert.Equal([false], _engine.MuteRequests);
+    }
+
+    [Fact]
+    public async Task AVolumeTheEngineNeverReports_ShowsItsLevelASecondLater_ThoughMuteIsPressed()
+    {
+        using var viewModel = Create();
+        await PlayFileAsync(viewModel);
+        _engine.RaiseState(Playing());
+        _engine.ReportsVolumeLater = true;
+
+        viewModel.Volume = 60;
+        _time.Advance(TimeSpan.FromMilliseconds(600));
+        viewModel.ToggleMuteCommand.Execute(null);
+        _time.Advance(TimeSpan.FromMilliseconds(300));
+        viewModel.ToggleMuteCommand.Execute(null);
+        _engine.RaiseState(Playing());
+        Assert.Equal(60, viewModel.Volume);
+        _time.Advance(TimeSpan.FromMilliseconds(100));
+        _engine.RaiseState(Playing());
+
+        Assert.Equal(100, viewModel.Volume);
+    }
+
+    [Fact]
     public async Task AFirstMute_WithoutAKeptVolume_KeepsTheLevelThatPlays()
     {
         // The viewer's own mpv.conf set 70: muting keeps that level to come back to, as the viewer's own from then on.

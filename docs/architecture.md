@@ -569,9 +569,10 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   (`ServerPlayback.Control.cs`), plays but is not kept, and Mute keeps the viewer's own level with it. The room of a Watch
   Party never changes either. Who set the value decides, not a comparison with the engine's: a value shown from an engine
   snapshot (`ShowVolume`) is the engine's, any other the viewer's, and it always goes to the engine, with an unmute when
-  a mute shows or the engine has one. mpv reports a volume or mute a moment after it was set, so what was asked of it
-  (a change, a title's start) shows until mpv reports it, or for a second at most (`RequestHolds`): a snapshot taken
-  meanwhile does not move the slider back, and the next Mute toggles what shows, so quick presses take turns. A first
+  a mute shows or the engine has one, unless an unmute is on its way. mpv reports a volume or mute a moment after it was
+  set, so what was asked of it (a change, a title's start) shows until mpv reports it, or for a second at most after it
+  was asked (`RequestHolds`, for the volume and the mute each, so the slider moving keeps no mute waiting): a snapshot
+  taken meanwhile does not move the slider back, and the next Mute toggles what shows, so quick presses take turns. A first
   Mute without a kept volume keeps the level the engine plays at. A change is saved once it has settled for 500 ms on
   the player's `TimeProvider`, and at once by `Leave`, which closing the player, the window and `Dispose` all go
   through. Set after mpv read the viewer's mpv.conf, and kept against its profiles ("Your own mpv.conf"), a kept volume

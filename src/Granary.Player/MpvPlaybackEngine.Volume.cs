@@ -15,26 +15,31 @@ public sealed partial class MpvPlaybackEngine
     private const string MuteOption = "mute";
 
     // On mpv's event thread, for a notice of the volume or the mute while mpv runs with a mpv.conf. True when it is not to
-    // be shown: a profile's value, being set back, or one older than Granary's latest, which a newer notice follows.
+    // be shown: a profile's value, being set back, or one older than Granary's latest, which a newer notice follows. A
+    // notice without a value, or a value mpv cannot give, leaves nothing to set back.
     private bool KeepsViewersSound(string name, object? value)
     {
-        if (name is not (VolumeOption or MuteOption) || _kept is null || Volatile.Read(ref _failingClosed) != 0)
+        if (name is not (VolumeOption or MuteOption) || value is null || _kept is null || Volatile.Read(ref _failingClosed) != 0)
         {
             return false;
         }
-        string? own;
         lock (_globalsGate)
         {
-            _globals.TryGetValue(name, out own);
-        }
-        if (own is null || SameSound(name, value, own))
-        {
-            return false;
-        }
-        // A notice can be older than Granary's latest value: what mpv holds now decides.
-        if (SameSound(name, _mpv.GetString(name), own))
-        {
-            return true;
+            // Under the gate, so a change of the viewer's cannot come between: what mpv holds now is weighed against the
+            // latest, and a notice older than that is no profile's.
+            if (!_globals.TryGetValue(name, out string? own) || SameSound(name, value, own))
+            {
+                return false;
+            }
+            string? now = _mpv.GetString(name);
+            if (now is null)
+            {
+                return false;
+            }
+            if (SameSound(name, now, own))
+            {
+                return true;
+            }
         }
         int times = CountSetBack(name);
         if (times > SetBackLimit)
@@ -51,8 +56,11 @@ public sealed partial class MpvPlaybackEngine
         }
         lock (_globalsGate)
         {
-            // The latest the viewer chose, should it have changed meanwhile.
-            _mpv.SetProperty(name, _globals[name]);
+            // The latest the viewer chose, should it have changed since.
+            if (_globals.TryGetValue(name, out string? latest))
+            {
+                _mpv.SetProperty(name, latest);
+            }
         }
         return true;
     }
