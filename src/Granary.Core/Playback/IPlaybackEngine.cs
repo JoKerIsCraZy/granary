@@ -109,6 +109,19 @@ public interface IPlaybackEngine : IDisposable
 
     void SetPaused(bool paused);
 
+    /// <summary>
+    /// The latest <see cref="SetPaused"/> asked for a pause: what the viewer, a Watch Party's room or the server's control
+    /// lane wants. The player's own pauses are never asked, such as mpv's at the end of the data it had (keep-open), so
+    /// this can differ from <see cref="PlaybackSnapshot.IsPaused"/>. False until anything is asked; it holds across loads.
+    /// </summary>
+    bool IsPauseAsked { get; }
+
+    /// <summary>
+    /// Pauses or plays as last asked (<see cref="IsPauseAsked"/>), in one step with the asks: a pause or play asked at the
+    /// same moment is never undone by the older ask. A load's pause waits for its file, as with <see cref="SetPaused"/>.
+    /// </summary>
+    void ApplyAskedPause();
+
     void Seek(TimeSpan position);
 
     /// <summary>Sets the volume in percent; values outside 0 to 100 are clamped.</summary>

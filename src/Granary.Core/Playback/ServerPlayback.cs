@@ -89,7 +89,7 @@ public sealed partial class ServerPlayback : IServerPlayback
     // The load showed its first frame.
     private bool _started;
 
-    // The title was handed to the engine once: a later load (a replan, a reconnect) keeps whether it is paused.
+    // The title was handed to the engine once: a later load (a replan, a reconnect) plays or pauses as last asked.
     private bool _titleLoaded;
 
     // The plan showed a first frame in one of its loads: a later failure is a lost connection, not a failed route.
@@ -462,6 +462,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         _generation++;
         _started = false;
         _endedDuringRecovery = null;
+        ForgetBuffering();
         // Until its first frame the viewer is at the load's start, in this plan's time.
         _playerPosition = Math.Max(0, playerStart);
         _loadedAt = _time.GetTimestamp();
@@ -486,6 +487,14 @@ public sealed partial class ServerPlayback : IServerPlayback
             // at a file's end (keep-open), which is where the next episode starts from.
             _titleLoaded = true;
             _engine.SetPaused(false);
+        }
+        else
+        {
+            // A reload plays or pauses as last asked, by the viewer, a Watch Party's room or the control lane, as
+            // Apple's reconnect carries the viewer's play intent. mpv's own pause where a stream that broke off ran
+            // out of data (keep-open) was never asked, so that stream comes back playing. The engine applies the asks in
+            // one step, so one made in that moment is not undone.
+            _engine.ApplyAskedPause();
         }
         WatchFirstFrame(_loadId);
     }
@@ -529,6 +538,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         // plays on says where the viewer is.
         if (state.IsAtEnd)
         {
+            ForgetBuffering();
             return;
         }
         bool playing = state is { IsLoaded: true, HasStarted: true };
@@ -548,6 +558,7 @@ public sealed partial class ServerPlayback : IServerPlayback
             // The server learns about a pause only from a sample, and a paused session lives 30 minutes, not 45 s.
             SchedulePauseReport();
         }
+        FollowBuffering(state);
     }
 
     private void OnStreamStarted(PlaybackSnapshot state)
@@ -599,6 +610,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         _loadId = 0;
         _started = false;
         StopFirstFrameWatch();
+        ForgetBuffering();
         if (_recovering)
         {
             _endedDuringRecovery = (ended, played);
@@ -830,6 +842,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         _pauseReport?.Dispose();
         _pauseReport = null;
         StopFirstFrameWatch();
+        StopStallWatch();
     }
 
     // Work started from an event or a timer has no caller to report to: log what it did not expect.

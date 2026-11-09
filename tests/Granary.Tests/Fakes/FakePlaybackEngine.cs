@@ -50,7 +50,46 @@ internal sealed class FakePlaybackEngine : IPlaybackEngine
     public void SetPaused(bool paused)
     {
         PauseRequests.Add(paused);
+        _pauseAsked = paused;
         Current = Current with { IsPaused = paused };
+    }
+
+    /// <summary>The latest pause asked; a state a test raises (mpv's own pause at the end, say) leaves it.</summary>
+    public bool IsPauseAsked
+    {
+        get
+        {
+            bool asked = _pauseAsked;
+            // Read now, set later: an ask in between finds the value read already old.
+            Interleave();
+            return asked;
+        }
+    }
+
+    /// <summary>
+    /// Runs once as the pause is next set from the asks, between reading them and setting the pause: an ask of the viewer
+    /// or a room that arrives in that moment.
+    /// </summary>
+    public Action? WhilePauseIsApplied { get; set; }
+
+    /// <summary>How often the latest ask was applied (<see cref="ApplyAskedPause"/>).</summary>
+    public int AppliedAsks { get; private set; }
+
+    private bool _pauseAsked;
+
+    public void ApplyAskedPause()
+    {
+        // The engine applies the asks in one step: an ask in that moment comes first or after, never in between.
+        Interleave();
+        AppliedAsks++;
+        Current = Current with { IsPaused = _pauseAsked };
+    }
+
+    private void Interleave()
+    {
+        var interleaved = WhilePauseIsApplied;
+        WhilePauseIsApplied = null;
+        interleaved?.Invoke();
     }
 
     public void Seek(TimeSpan position) => Seeks.Add(position);

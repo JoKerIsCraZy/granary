@@ -11,6 +11,10 @@ release's section is what its update says it changes (docs/release.md).
 - **Volume stays:** the player remembers its volume and mute on this PC, for the next title and after a restart.
 - **Window place:** Granary opens where you closed it, at the same size, maximized if it was.
 
+### Fixed
+
+- Playback no longer buffers without end when you press Play after a long pause.
+
 ## [0.3.0] - 2026-11-08
 
 ### Added

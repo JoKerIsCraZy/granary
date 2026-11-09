@@ -669,6 +669,21 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   on → a new attempt at the position, and the old session is stopped; an administrator's stop (410) → leave; a
   seek outside a remux or transcode window → `seek_reanchor`. Replans that meet a busy or unreachable server
   are resent unchanged (1, 2, 4, 8 s). A start answered after the stop has its new session stopped at once.
+- **Stalls** (`ServerPlayback.Stall.cs`): a stream that waits for data (mpv's `paused-for-cache`) for 90 s at one
+  position, with what mpv holds ahead growing by no more than half a second of the title, while the viewer wants to
+  play is stopped and reconnected like a lost connection, as Android gives a stalled load 90 s. A slow link whose
+  cache still grows (a remote server, a high bitrate, a long `cache-pause-wait`) is left to fill it, as Apple's
+  detector counts bytes, not time. Not while the viewer (or a Watch Party's room) has paused, also with a pause
+  asked that mpv has not shown yet. The 90 s are above the server's longest hold of a request (a playlist 30 s, a
+  segment 12 s plus 30 s after a seek; docs/api-contract.md, 9.5) and the media proxy's 60 s, after which mpv asks
+  again by itself and usually recovers in place. Buffering's start and end are logged with the position and what mpv
+  holds ahead.
+- **Play intent across reloads**: a reload (a replan, a reconnect) plays or pauses as last asked of the engine
+  (`IPlaybackEngine.IsPauseAsked`: the viewer, a Watch Party's room, the control lane), as Apple's reconnect
+  carries the viewer's play intent. A stream that broke off plays to the end of the data mpv had and mpv pauses
+  itself there (keep-open, `PlaybackSnapshot.IsAtEnd`). Nobody asked for that pause, so the stream comes back
+  playing; a pause asked meanwhile, also by a room while the stream was down, stays. The engine applies the last
+  ask in one step with the asks (`ApplyAskedPause`), so one made in that moment is never undone by an older one.
 - **One recovery at a time**: the server refuses a second replan while one is open, so what happens meanwhile
   (the replaced stream's end, a progress answer) is dropped or comes up again once the new stream plays, and a
   seek waits for that stream. Engine states and ends carry the id of their load (`PlaybackSnapshot.LoadId`):
@@ -686,15 +701,19 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   The engine keeps the last real position and pause from the refusal until the next load, so the end of that
   data is never taken for the viewer's position.
 - **Media proxy** (`MediaProxy`, the Apple client's design): an `HttpListener` on 127.0.0.1 between mpv and the
-  server. Each load opens a route (`IMediaRoute`); mpv gets `http://127.0.0.1:{port}/{secret}/{route}/{the plan
-  URL's path and query, byte for byte}`. The route forwards GET and HEAD with the range headers to its own stream
-  only (a progressive stream: its exact URL; HLS: the playlist and what lies beside it, no dot segments), adds
-  the headers per request, renews a token within 60 s of its end, and on a 401 renews it once and repeats the
-  request, so mpv never sees an expiry. Redirects are not followed, cookies and the upstream's other headers
-  stay behind, and a body that breaks off aborts the response so mpv sees a lost connection, not an end. The
-  secret keeps other programs on the machine out; the log redactor masks it. A new load, the stop and a failure
-  close the route and its requests. Before the proxy, mpv kept the headers for the whole load and would have
-  sent them wherever a redirect or a playlist pointed.
+  server. Each load opens a route (`IMediaRoute`); mpv gets `http://127.0.0.1:{port}/{secret}/{route}/{the plan URL's
+  path and query, byte for byte}`. The route forwards GET and HEAD with the range headers to its own stream only (a
+  progressive stream: its exact URL; HLS: the playlist and what lies beside it, no dot segments), adds the headers per
+  request, renews a token within 60 s of its end, and on a 401 renews it once and repeats the request, so mpv never
+  sees an expiry. Redirects are not followed, cookies and the upstream's other headers stay behind, and a body that
+  breaks off aborts the response so mpv sees a lost connection, not an end. A server that sends nothing for 60 s,
+  before its answer (a token refresh included) or within its body (`UpstreamWatch`), is cut off and the response
+  aborted the same way: the server closes a stream a paused player stopped reading after 180 s, and word of that close
+  may never arrive. Only waits for the server are timed, never a write the player is not taking. mpv's curl reader
+  then asks again from its offset where the stream can seek; a remux ends and the playback reconnects. Cuts and bodies
+  that broke off are logged without URL or headers. The secret keeps other programs on the machine out; the log
+  redactor masks it. A new load, the stop and a failure close the route and its requests. Before the proxy, mpv kept
+  the headers for the whole load and would have sent them wherever a redirect or a playlist pointed.
 - `--play <file or URL>` plays without the server and `--play-item <content id>` plays a title of the
   signed-in server, for development.
 

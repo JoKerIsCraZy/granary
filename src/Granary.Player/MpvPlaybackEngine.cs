@@ -38,6 +38,13 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
     // The audio stream the latest load asked for; checked once mpv opened the file.
     private int? _loadAudio;
 
+    // The latest pause or play asked (IsPauseAsked); mpv's own pauses leave it.
+    private bool _pauseAsked;
+
+    // Held from a pause's ask, or from reading the asks, until mpv has it: a newer ask is never overtaken by an older one.
+    // Taken before _gate, never inside it; mpv's event thread never takes it.
+    private readonly Lock _pauseGate = new();
+
     private SubtitlePosition _subtitlePosition = SubtitlePosition.Bottom;
     private double _subtitleLift;
 
@@ -163,17 +170,39 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
         && value.All(c => c is >= ' ' and <= '~' and not ',' and not '\\')
         && (value.Length == 0 || value[0] is not ('"' or '\'' or '[' or '{' or '%'));
 
-    public void SetPaused(bool paused)
+    public bool IsPauseAsked
     {
-        lock (_gate)
+        get
         {
-            if (_pauseWaits)
+            lock (_gate)
             {
-                _pauseOnOpen = paused;
-                return;
+                return _pauseAsked;
             }
         }
-        _mpv.SetProperty("pause", paused ? "yes" : "no");
+    }
+
+    public void SetPaused(bool paused) => ApplyPause(paused);
+
+    public void ApplyAskedPause() => ApplyPause(asked: null);
+
+    // Under _pauseGate from the ask to mpv: the latest ask is the one mpv keeps. A load's pause waits for its file.
+    private void ApplyPause(bool? asked)
+    {
+        lock (_pauseGate)
+        {
+            bool paused;
+            lock (_gate)
+            {
+                _pauseAsked = asked ?? _pauseAsked;
+                paused = _pauseAsked;
+                if (_pauseWaits)
+                {
+                    _pauseOnOpen = paused;
+                    return;
+                }
+            }
+            _mpv.SetProperty("pause", paused ? "yes" : "no");
+        }
     }
 
     public void Seek(TimeSpan position) =>

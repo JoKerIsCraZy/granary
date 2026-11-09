@@ -115,6 +115,7 @@ public sealed class MpvPlaybackEngineTests : IDisposable
         await reloaded.Task.WaitAsync(Timeout, TestContext.Current.CancellationToken);
 
         Assert.True(engine.Current.IsPaused);
+        Assert.True(engine.IsPauseAsked);
     }
 
     [Fact]

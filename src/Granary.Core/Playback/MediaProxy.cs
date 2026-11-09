@@ -178,6 +178,13 @@ public sealed class MediaProxy : IMediaProxy, IDisposable
             _logger.LogInformation("The server could not be reached for a media request: {Failure}", ex.HttpRequestError);
             TrySetStatus(response, HttpStatusCode.BadGateway);
         }
+        catch (MediaUpstreamException ex)
+        {
+            // Aborted on both sides, even before an answer: curl takes no answer for a lost connection and asks again
+            // from where it was; a status would end the stream instead.
+            _logger.LogInformation("A media request ended: the server {Failure}", ex.Message);
+            response.Abort();
+        }
         catch (Exception ex) when (ex is OperationCanceledException or HttpListenerException or IOException or ObjectDisposedException)
         {
             // The player went away (a seek, a new load), the route closed, or the upstream broke off. Aborted, so an
