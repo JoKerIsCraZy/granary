@@ -175,10 +175,10 @@ internal sealed class MediaRoute : IMediaRoute
                 request.Headers.TryAddWithoutValidation(name, value);
             }
             HttpResponseMessage answer;
-            watch.Arm();
+            var waiting = watch.Arm();
             try
             {
-                answer = await client.SendAsync(request, watch.Token).ConfigureAwait(false);
+                answer = await client.SendAsync(request, waiting).ConfigureAwait(false);
             }
             catch (Exception ex) when (watch.IsCutOff)
             {
@@ -316,10 +316,10 @@ internal sealed class MediaRoute : IMediaRoute
             while (true)
             {
                 int read;
-                watch.Arm();
+                var waiting = watch.Arm();
                 try
                 {
-                    read = await body.ReadAsync(buffer, watch.Token).ConfigureAwait(false);
+                    read = await body.ReadAsync(buffer, waiting).ConfigureAwait(false);
                 }
                 catch (Exception ex) when (watch.IsCutOff)
                 {

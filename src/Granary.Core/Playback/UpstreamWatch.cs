@@ -5,20 +5,25 @@ namespace Granary.Core.Playback;
 /// <summary>
 /// Times one media request's waits for the server: for the answer, then for each piece of its body, each between
 /// <see cref="Arm"/> and <see cref="Disarm"/>. Time the request spends waiting for the player does not count: a paused
-/// player stops reading for as long as it likes. A wait that lasts the limit cancels <see cref="Token"/> and counts as
-/// <see cref="IsCutOff"/>.
+/// player stops reading for as long as it likes. A wait that lasts the limit is cut: its token is cancelled and the watch
+/// reads <see cref="IsCutOff"/>.
 /// </summary>
 internal sealed class UpstreamWatch : IDisposable
 {
     private readonly TimeSpan _limit;
     private readonly TimeProvider _time;
     private readonly CancellationToken _closing;
-    private readonly CancellationTokenSource _waits;
     private readonly ITimer _timer;
     private readonly Lock _gate = new();
 
-    // When the wait that is timed began; null between waits.
+    // The latest wait's own token source, linked to the closing: a cut ends that wait alone, also one whose bytes came in
+    // the same moment, and the next wait starts clean. Null before the first wait.
+    private CancellationTokenSource? _wait;
+
+    // When the timed wait began; null between waits.
     private long? _armedAt;
+
+    // The latest wait was cut.
     private bool _cut;
 
     /// <param name="closing">Ends the waits without a failure of the server's: the route closed, or the player left.</param>
@@ -27,14 +32,10 @@ internal sealed class UpstreamWatch : IDisposable
         _limit = limit;
         _time = time;
         _closing = closing;
-        _waits = CancellationTokenSource.CreateLinkedTokenSource(closing);
         _timer = time.CreateTimer(static state => ((UpstreamWatch)state!).Expire(), this, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
     }
 
-    /// <summary>For the waits on the server: cancelled when the route closes or a wait lasted the limit.</summary>
-    public CancellationToken Token => _waits.Token;
-
-    /// <summary>A wait lasted the limit: the server went silent. A route that closed is not that.</summary>
+    /// <summary>The latest wait lasted the limit: the server went silent. A route that closed is not that.</summary>
     public bool IsCutOff
     {
         get
@@ -46,14 +47,18 @@ internal sealed class UpstreamWatch : IDisposable
         }
     }
 
-    /// <summary>A wait for the server begins.</summary>
-    public void Arm()
+    /// <summary>A wait for the server begins; its token is cancelled when the route closes or the wait lasts the limit.</summary>
+    public CancellationToken Arm()
     {
         lock (_gate)
         {
+            Retire();
+            _wait = CancellationTokenSource.CreateLinkedTokenSource(_closing);
+            _cut = false;
             _armedAt = _time.GetTimestamp();
+            _timer.Change(_limit, Timeout.InfiniteTimeSpan);
+            return _wait.Token;
         }
-        _timer.Change(_limit, Timeout.InfiniteTimeSpan);
     }
 
     /// <summary>The wait ended, however it did: the time until the next one does not count.</summary>
@@ -62,8 +67,8 @@ internal sealed class UpstreamWatch : IDisposable
         lock (_gate)
         {
             _armedAt = null;
+            _timer.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         }
-        _timer.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
     }
 
     /// <summary>The failure of a wait that <see cref="IsCutOff"/> ended; it names neither the URL nor a header.</summary>
@@ -73,29 +78,44 @@ internal sealed class UpstreamWatch : IDisposable
     public void Dispose()
     {
         _timer.Dispose();
-        _waits.Dispose();
+        lock (_gate)
+        {
+            Retire();
+            _wait = null;
+            _armedAt = null;
+        }
     }
 
-    // On the timer's thread, where a callback can run late: after the wait it was for ended, or once a younger one began.
-    // Only a wait that is still timed and has lasted the limit is cut. The wait's own cancellation (closing the
-    // connection) runs off this thread.
+    // On the timer's thread, where a callback can come late (after its wait ended, or once a younger one began) or a
+    // little early (the timer counts in coarser ticks than GetTimestamp). Only the wait that is timed is looked at: cut
+    // once it has lasted the limit, and otherwise looked at again when the rest has passed.
     private void Expire()
     {
         lock (_gate)
         {
-            if (_cut || _armedAt is not { } armed || _time.GetElapsedTime(armed) < _limit)
+            if (_cut || _armedAt is not { } armed || _wait is not { } wait)
             {
                 return;
             }
+            var elapsed = _time.GetElapsedTime(armed);
+            if (elapsed < _limit)
+            {
+                _timer.Change(_limit - elapsed, Timeout.InfiniteTimeSpan);
+                return;
+            }
             _cut = true;
-            try
-            {
-                _ = _waits.CancelAsync();
-            }
-            catch (ObjectDisposedException)
-            {
-                // The request ended meanwhile.
-            }
+            // Off this thread: the wait's cancellation closes its connection. The source goes once that has run.
+            _ = wait.CancelAsync().ContinueWith(static (_, source) => ((CancellationTokenSource)source!).Dispose(), wait,
+                CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+        }
+    }
+
+    // Under _gate: the latest wait's source is done with. One a cut cancels is disposed by that cut once it has run.
+    private void Retire()
+    {
+        if (_wait is { } wait && !_cut)
+        {
+            wait.Dispose();
         }
     }
 }
