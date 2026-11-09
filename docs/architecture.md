@@ -570,7 +570,8 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   Mute without a kept volume keeps the level the engine plays at. A change is saved once it has settled for 500 ms on
   the player's `TimeProvider`, and at once by `Leave`, which closing the player, the window and `Dispose` all go
   through. Set after mpv read the viewer's mpv.conf, a kept volume and mute win over a `volume=` or `mute=` there;
-  without a kept one nothing is set, so mpv.conf keeps its say.
+  without a kept one nothing is set, so mpv.conf keeps its say. A `volume` that is not a number or a `muted` that is not
+  true or false in the file only loses itself.
 - **Sleep timer** (`PlayerViewModel.SleepTimer.cs`; the apps' `SleepTimer` and `SleepTimerController`, the web's
   `SleepTimerMenu`): a duration counts on the player's `TimeProvider` once a second, whatever plays, pauses or loads
   meanwhile, so it runs on into the next episode, and then pauses what plays, with no fade (a title already paused is left

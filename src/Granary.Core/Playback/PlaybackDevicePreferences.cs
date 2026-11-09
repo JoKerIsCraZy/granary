@@ -101,10 +101,11 @@ public sealed record PlayerVolume(double Percent, bool IsMuted);
 /// that cannot be read, direct play needs the GPU, Up and Down show the controls and menus, the player's time shows the
 /// duration, the player waits after three episodes, a resume lands on the saved point, Discord's status stays as it is and
 /// the player keeps mpv's own volume, as by default; a value it does not know, or one an older file lacks, is the default.
-/// A volume out of range is brought into it, and with only one of volume and mute the other is full or not muted. A choice
-/// that cannot be written is logged, and still holds for this run. Files are written off the caller's thread, which is the
-/// UI's. The Sleep timer switch from before the player buttons editor (<c>"sleep_timer_button": false</c>) is read and
-/// written back as it was, until the editor has taken it over.
+/// A volume out of range is brought into it; one that is not a number, or a mute that is not true or false, is as if it were
+/// not there, and with only one of volume and mute the other is full or not muted. A choice that cannot be written is
+/// logged, and still holds for this run. Files are written off the caller's thread, which is the UI's. The Sleep timer
+/// switch from before the player buttons editor (<c>"sleep_timer_button": false</c>) is read and written back as it was,
+/// until the editor has taken it over.
 /// </summary>
 public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
 {
@@ -320,11 +321,13 @@ internal sealed record PlaybackDeviceFile(bool? DecodesInSoftware, string? UpDow
 
     public bool? DiscordStatus { get; init; }
 
-    // Only once the viewer changed the volume or the mute; read leniently, as ResumeRewindSeconds is.
+    // Only once the viewer changed the volume or the mute. Both read leniently, as ResumeRewindSeconds is: a value typed
+    // into the file that is not one only loses itself, not the file's other choices.
     [JsonConverter(typeof(AnyNumberConverter))]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public double? Volume { get; init; }
 
+    [JsonConverter(typeof(AnyFlagConverter))]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? Muted { get; init; }
 
@@ -353,6 +356,34 @@ internal sealed class AnyNumberConverter : JsonConverter<double?>
         if (value is { } number)
         {
             writer.WriteNumberValue(number);
+        }
+        else
+        {
+            writer.WriteNullValue();
+        }
+    }
+}
+
+/// <summary>A JSON true or false as itself; any other value, a string, a number, an object or a list included, as none.</summary>
+internal sealed class AnyFlagConverter : JsonConverter<bool?>
+{
+    public override bool? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        if (reader.TokenType is JsonTokenType.True or JsonTokenType.False)
+        {
+            return reader.GetBoolean();
+        }
+        // Past the whole value, so the next member reads as it should.
+        reader.Skip();
+        return null;
+    }
+
+    public override void Write(Utf8JsonWriter writer, bool? value, JsonSerializerOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(writer);
+        if (value is { } flag)
+        {
+            writer.WriteBooleanValue(flag);
         }
         else
         {

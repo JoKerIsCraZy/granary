@@ -213,6 +213,24 @@ public sealed class JsonPlaybackDevicePreferencesTests : IDisposable
     }
 
     [Theory]
+    [InlineData("{ \"volume\": 40, \"muted\": \"yes\", \"up_down\": \"volume\" }")]
+    [InlineData("{ \"volume\": 40, \"muted\": 1, \"up_down\": \"volume\" }")]
+    [InlineData("{ \"volume\": 40, \"muted\": { \"on\": true, \"more\": [{ \"up_down\": \"controls\" }] }, \"up_down\": \"volume\" }")]
+    [InlineData("{ \"volume\": 40, \"muted\": [true, [false], { \"up_down\": \"controls\" }], \"up_down\": \"volume\" }")]
+    public async Task AMuteNeitherTrueNorFalse_IsNotMuted_AndKeepsTheVolumeAndTheOtherChoices(string file)
+    {
+        Directory.CreateDirectory(_directory);
+        await File.WriteAllTextAsync(FilePath, file, TestContext.Current.CancellationToken);
+
+        var preferences = Create();
+
+        Assert.Equal(new PlayerVolume(40, IsMuted: false), preferences.Volume);
+        Assert.Equal(PlayerUpDown.Volume, preferences.UpDown);
+        Assert.DoesNotContain(_logs.Lines, line => line.StartsWith("Warning ", StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData("{ \"muted\": \"yes\", \"decodes_in_software\": true, \"up_down\": \"volume\" }")]
     [InlineData("{ \"decodes_in_software\": true, \"up_down\": \"volume\" }")]
     [InlineData("{ \"volume\": \"loud\", \"decodes_in_software\": true, \"up_down\": \"volume\" }")]
     [InlineData("{ \"volume\": \"40\", \"decodes_in_software\": true, \"up_down\": \"volume\" }")]
