@@ -96,6 +96,58 @@ public sealed class WindowPlaceFileTests : IDisposable
     }
 
     [Fact]
+    public void ThePlaceTheFileHolds_IsNotWrittenAgain()
+    {
+        var file = Create();
+        file.Save(Place);
+
+        // Held so that a write would fail: none is tried.
+        using (new FileStream(FilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+        {
+            Assert.True(file.Save(Place));
+        }
+
+        Assert.Empty(_logs.Lines);
+    }
+
+    [Fact]
+    public void APlaceReadAtStart_IsNotWrittenAgainUnchanged()
+    {
+        Create().Save(Place);
+        var file = Create();
+        Assert.Equal(Place, file.Load());
+
+        using (new FileStream(FilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+        {
+            Assert.True(file.Save(Place));
+        }
+
+        Assert.Empty(_logs.Lines);
+    }
+
+    [Fact]
+    public async Task ASaveAsTheWindowSettles_WritesThePlace()
+    {
+        await Create().SaveAsync(Place);
+
+        Assert.Equal(Place, Create().Load());
+    }
+
+    [Fact]
+    public async Task TheSaveAsTheWindowCloses_IsTheOneThatStays()
+    {
+        var file = Create();
+        var closed = Place with { Bounds = new WindowBounds(400, 250, 1300, 760) };
+
+        // Whether the settled place is written before or not at all, the place at closing is the one on disk.
+        var settled = file.SaveAsync(Place);
+        file.Save(closed);
+        await settled;
+
+        Assert.Equal(closed, Create().Load());
+    }
+
+    [Fact]
     public void AFileHeldOpenForAMoment_IsStillReplaced()
     {
         var file = Create();

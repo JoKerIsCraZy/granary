@@ -41,6 +41,14 @@ public readonly record struct WindowBounds(int X, int Y, int Width, int Height)
     }
 
     /// <summary>
+    /// These bounds, in workspace coordinates as Windows gives a maximized window's restore place (GetWindowPlacement), on
+    /// the screen: workspace coordinates leave out the taskbar and other app bars of the display the window is on, here
+    /// <paramref name="monitor"/> with <paramref name="workArea"/>.
+    /// </summary>
+    public WindowBounds FromWorkspace(WindowBounds monitor, WindowBounds workArea) =>
+        this with { X = X + workArea.X - monitor.X, Y = Y + workArea.Y - monitor.Y };
+
+    /// <summary>
     /// These bounds within <paramref name="area"/>, a display's work area: moved, and made smaller if they must, to lie wholly
     /// on it.
     /// </summary>

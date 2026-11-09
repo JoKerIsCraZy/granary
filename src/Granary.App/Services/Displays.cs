@@ -29,11 +29,17 @@ internal static partial class Displays
     /// <summary>The display the bounds lie on most, or the nearest one when they lie on none.</summary>
     public static DisplayArea At(WindowBounds bounds) => DisplayArea.GetFromRect(ToRect(bounds), DisplayAreaFallback.Nearest);
 
-    /// <summary>The display's scale, 1 at 100 %; 1 when Windows does not say.</summary>
-    public static double ScaleOf(DisplayArea display)
+    /// <summary>
+    /// The display's scale, 1 at 100 %: false with the HRESULT when Windows does not say, and <paramref name="scale"/> is
+    /// then 1.
+    /// </summary>
+    public static bool TryScaleOf(DisplayArea display, out double scale, out int result)
     {
         nint monitor = Win32Interop.GetMonitorFromDisplayId(display.DisplayId);
-        return GetDpiForMonitor(monitor, EffectiveDpi, out uint dpi, out _) == 0 && dpi > 0 ? dpi / BaseDpi : 1;
+        result = GetDpiForMonitor(monitor, EffectiveDpi, out uint dpi, out _);
+        bool said = result == 0 && dpi > 0;
+        scale = said ? dpi / BaseDpi : 1;
+        return said;
     }
 
     public static WindowBounds Of(RectInt32 rect) => new(rect.X, rect.Y, rect.Width, rect.Height);
@@ -41,5 +47,6 @@ internal static partial class Displays
     public static RectInt32 ToRect(WindowBounds bounds) => new(bounds.X, bounds.Y, bounds.Width, bounds.Height);
 
     [LibraryImport("shcore.dll")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static partial int GetDpiForMonitor(nint monitor, int dpiType, out uint dpiX, out uint dpiY);
 }

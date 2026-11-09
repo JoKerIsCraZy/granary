@@ -78,7 +78,8 @@ public partial class App : Application
         _window = Services.GetRequiredService<MainWindow>();
         var started = new TaskCompletionSource();
         _window.ShowStartup(started.Task);
-        _window.Activate();
+        // Activated, and maximized at once if it was closed so.
+        Services.GetRequiredService<WindowModeService>().Show();
 #if DEBUG
         // Developer shortcut: --remote shows a TV remote on screen beside the window (Debugging/RemoteWindow.cs).
         if (Environment.GetCommandLineArgs().Contains("--remote"))

@@ -135,6 +135,63 @@ public sealed class WindowPlaceTests
     }
 
     [Fact]
+    public void AMaximizedWindowMovedToAnotherDisplay_KeepsThePlaceWindowsRestoresItToThere()
+    {
+        // Win+Shift+Left takes a maximized window to the display on the left, and its restore place with it.
+        var keeper = new WindowPlaceKeeper();
+        keeper.Keep(WindowState.Restored, new WindowBounds(312, 140, 1440, 900));
+        keeper.Keep(WindowState.Maximized, new WindowBounds(-7, -7, 1934, 1054), new WindowBounds(312, 140, 1440, 900));
+
+        keeper.Keep(WindowState.Maximized, new WindowBounds(-1927, 315, 1934, 1046), new WindowBounds(-1608, 462, 1440, 900));
+
+        Assert.Equal(new WindowPlace(new WindowBounds(-1608, 462, 1440, 900), 1, IsMaximized: true), keeper.ToPlace(1));
+    }
+
+    [Fact]
+    public void AMaximizedWindowWhoseRestorePlaceIsUnknown_KeepsThePlaceItHadBefore()
+    {
+        var keeper = new WindowPlaceKeeper();
+        keeper.Keep(WindowState.Restored, new WindowBounds(312, 140, 1440, 900));
+
+        keeper.Keep(WindowState.Maximized, new WindowBounds(-7, -7, 1934, 1054), new WindowBounds(0, 0, 0, 0));
+
+        Assert.Equal(new WindowPlace(new WindowBounds(312, 140, 1440, 900), 1, IsMaximized: true), keeper.ToPlace(1));
+    }
+
+    [Theory]
+    [InlineData(0, 0, 0, 0)]
+    [InlineData(312, 140, 1440, 0)]
+    [InlineData(312, 140, -5, 900)]
+    [InlineData(-32000, -32000, 160, 28)]
+    [InlineData(-32000, 140, 1440, 900)]
+    [InlineData(312, -32000, 1440, 900)]
+    public void AWindowThatSaysNoRealPlace_KeepsTheLastGoodOne(int x, int y, int width, int height)
+    {
+        // As a window being destroyed may say it is restored at 0 × 0, or parked where a minimized one goes.
+        var keeper = new WindowPlaceKeeper();
+        keeper.Keep(WindowState.Restored, new WindowBounds(312, 140, 1440, 900));
+
+        keeper.Keep(WindowState.Restored, new WindowBounds(x, y, width, height));
+
+        Assert.Equal(new WindowPlace(new WindowBounds(312, 140, 1440, 900), 1, IsMaximized: false), keeper.ToPlace(1));
+    }
+
+    [Fact]
+    public void AWorkspacePlace_OnADisplayWithTheTaskbarBelow_IsTheSameOnScreen() =>
+        Assert.Equal(new WindowBounds(100, 80, 800, 600),
+            new WindowBounds(100, 80, 800, 600).FromWorkspace(new WindowBounds(0, 0, 1920, 1080), Primary));
+
+    [Fact]
+    public void AWorkspacePlace_OnADisplayWithTheTaskbarOnTheLeft_MovesRightByIt() =>
+        Assert.Equal(new WindowBounds(148, 80, 800, 600),
+            new WindowBounds(100, 80, 800, 600).FromWorkspace(new WindowBounds(0, 0, 1920, 1080), new WindowBounds(48, 0, 1872, 1080)));
+
+    [Fact]
+    public void AWorkspacePlace_OnADisplayLeftOfThePrimary_WithTheTaskbarOnTop_MovesDownByIt() =>
+        Assert.Equal(new WindowBounds(-1700, 448, 1300, 760),
+            new WindowBounds(-1700, 400, 1300, 760).FromWorkspace(new WindowBounds(-1920, 322, 1920, 1080), new WindowBounds(-1920, 370, 1920, 1032)));
+
+    [Fact]
     public void AWindowThatNeverHadAPlaceOfItsOwn_HasNoneToSave()
     {
         var keeper = new WindowPlaceKeeper();

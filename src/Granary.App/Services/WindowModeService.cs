@@ -12,13 +12,13 @@ namespace Granary.App.Services;
 /// its AppWindow presenters and keeps the window as it was to go back to (<see cref="WindowedPlacement"/>), and to open
 /// there at the next start (<see cref="WindowPlaceFile"/>).
 /// </summary>
-public sealed class WindowModeService(ILogger<WindowModeService> logger, WindowPlaceFile placeFile)
+public sealed partial class WindowModeService(ILogger<WindowModeService> logger, WindowPlaceFile placeFile)
 {
     // The mini view's width in view pixels; 16:9, as the web's picture-in-picture window starts.
     private const double MiniViewWidth = 480;
 
     private readonly WindowModes _modes = new();
-    private readonly WindowedPlacement _windowed = new();
+    private readonly WindowedPlacement _windowed = new(logger);
     private Window? _window;
 
     /// <summary>The mode changed, or a trailer's full screen began or ended.</summary>
@@ -38,59 +38,7 @@ public sealed class WindowModeService(ILogger<WindowModeService> logger, WindowP
     {
         _window = window;
         window.AppWindow.Changed += OnAppWindowChanged;
-        // However it closes: the window's Close, full screen's Close, Windows' own, or a restart into an update.
-        window.Closed += (_, _) => SavePlace();
-    }
-
-    /// <summary>
-    /// Puts the window, before it shows, where it was closed last, as it was: false the first time, or when that could not
-    /// be read, and Windows places it.
-    /// </summary>
-    public bool OpenAtLastPlace()
-    {
-        if (_window?.AppWindow is not { } window || placeFile.Load() is not { } place)
-        {
-            return false;
-        }
-        try
-        {
-            _windowed.Open(window, place);
-            return true;
-        }
-        catch (Exception ex)
-        {
-            logger.LogWarning(ex, "The window could not open where it was closed; Windows places it");
-            return false;
-        }
-    }
-
-    // The window as it would come back from full screen or the mini view: so closing in either opens as the window next
-    // time, and a minimized one where it was before.
-    private void SavePlace()
-    {
-        try
-        {
-            if (_modes.Mode == WindowMode.Window && _window?.AppWindow is { } window)
-            {
-                _windowed.Keep(window);
-            }
-        }
-        catch (Exception ex)
-        {
-            // A window that is closing may not say any more; it was kept as it changed.
-            logger.LogDebug(ex, "The closing window was not kept once more");
-        }
-        try
-        {
-            if (_windowed.Place is { } place)
-            {
-                placeFile.Save(place);
-            }
-        }
-        catch (Exception ex)
-        {
-            logger.LogWarning(ex, "The window's place was not saved");
-        }
+        AttachPlace(window);
     }
 
     public void ToggleFullScreen() => Change(_modes.ToggleFullScreen);
@@ -131,7 +79,7 @@ public sealed class WindowModeService(ILogger<WindowModeService> logger, WindowP
         {
             // Kept to go back to: maximized, or restored with its place and size. Full screen and the mini view go to each
             // other without it, so leaving either still finds the window as it was before both.
-            _windowed.Keep(window);
+            KeepPlace(window);
         }
         switch (to)
         {
@@ -159,7 +107,7 @@ public sealed class WindowModeService(ILogger<WindowModeService> logger, WindowP
             && (args.DidPositionChange || args.DidSizeChange || args.DidPresenterChange))
         {
             // Kept as it goes, so a full screen or mini view the window takes by itself still returns to it.
-            _windowed.Keep(sender);
+            KeepPlace(sender);
         }
         // A presenter the window took by itself; the ones set here match the state already.
         if (args.DidPresenterChange && mode != _modes.Mode)

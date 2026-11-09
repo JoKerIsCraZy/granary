@@ -6,9 +6,10 @@ namespace Granary.Core.ViewModels;
 
 /// <summary>
 /// <c>window.json</c> in the data directory: where the main window was as Granary closed (<see cref="WindowPlace"/>), this
-/// PC's alone. Read once at start and written once as the window closes, on the UI thread: the file is a few lines. No
-/// file, or one that cannot be read, opens the window where Windows places it, as before Granary kept it. One that cannot
-/// be written is logged, and the next start opens where the file last said.
+/// PC's alone. Read once at start; written off the UI thread as the window settles, so a crash or Windows shutting down
+/// keeps it too, and once more as the window closes. A place the file holds already is not written again. No file, or one
+/// that cannot be read, opens the window where Windows places it, as before Granary kept it. One that cannot be written is
+/// logged, and the next start opens where the file last said.
 /// </summary>
 public sealed class WindowPlaceFile
 {
@@ -23,6 +24,12 @@ public sealed class WindowPlaceFile
 
     private readonly string _filePath;
     private readonly ILogger<WindowPlaceFile> _logger;
+    // Writes one at a time, and keeps the two below.
+    private readonly Lock _gate = new();
+    // The place a save as the window settled is to write, until it is written or a later save takes its place.
+    private WindowPlace? _pending;
+    // The place the file holds, as read or written here.
+    private WindowPlace? _written;
 
     public WindowPlaceFile(string filePath, ILogger<WindowPlaceFile> logger)
     {
@@ -48,6 +55,10 @@ public sealed class WindowPlaceFile
             var file = JsonSerializer.Deserialize(File.ReadAllText(_filePath), WindowJsonContext.Default.WindowFile);
             if (ToPlace(file) is { } place)
             {
+                lock (_gate)
+                {
+                    _written = place;
+                }
                 return place;
             }
             _logger.LogWarning("The window's place names no usable place and size; Windows places the window");
@@ -61,10 +72,53 @@ public sealed class WindowPlaceFile
         }
     }
 
-    /// <summary>Saves the place to open at next time. Never throws: a save that does not work is logged, and false.</summary>
+    /// <summary>
+    /// Saves the place off the caller's thread, as the window settles. A later save, or the one as the window closes, takes
+    /// its place if it has not been written yet. Never fails: a save that does not work is logged.
+    /// </summary>
+    public Task SaveAsync(WindowPlace place)
+    {
+        ArgumentNullException.ThrowIfNull(place);
+        lock (_gate)
+        {
+            _pending = place;
+        }
+        return Task.Run(WritePending);
+    }
+
+    /// <summary>
+    /// Saves the place to open at next time, as the window closes: after a save in flight, and in place of one still waiting.
+    /// Never throws: a save that does not work is logged, and false.
+    /// </summary>
     public bool Save(WindowPlace place)
     {
         ArgumentNullException.ThrowIfNull(place);
+        lock (_gate)
+        {
+            _pending = null;
+            return Write(place);
+        }
+    }
+
+    private void WritePending()
+    {
+        lock (_gate)
+        {
+            if (_pending is { } place)
+            {
+                _pending = null;
+                Write(place);
+            }
+        }
+    }
+
+    // Under the gate.
+    private bool Write(WindowPlace place)
+    {
+        if (place == _written)
+        {
+            return true;
+        }
         // Its own temporary file: a second Granary on the same data folder closing at the same moment cannot write into it.
         string temp = $"{_filePath}.{Guid.NewGuid():N}.tmp";
         try
@@ -77,6 +131,7 @@ public sealed class WindowPlaceFile
                 JsonSerializer.Serialize(stream, file, WindowJsonContext.Default.WindowFile);
             }
             MoveOver(temp);
+            _written = place;
             return true;
         }
         catch (Exception ex)

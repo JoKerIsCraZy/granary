@@ -835,11 +835,13 @@ takes clicks. Like the caption buttons it takes no keyboard focus, so it is neve
 F11 is the keyboard's way, and screen readers still reach it.
 
 The window opens where it was closed (Granary's own; Silo's clients have no desktop window): on the same display, at the
-same place and size, and maximized if it was, with un-maximizing going back to the size it had before. Closed in full
+same place and size, and maximized if it was, with un-maximizing going back to the size it had before. A maximized
+window moved to another display (Win+Shift+Arrow) opens maximized there, and un-maximizes on that display. Closed in full
 screen or the mini view, it opens as the window those would have gone back to; closed minimized, where it was before.
 On a display of another scale it keeps its size as the scale shows it, and fits onto that display; a display that is gone
 or moved never leaves it off-screen: it opens on the nearest one, as after full screen. Kept for this PC
-(`window.json` in the data directory); the first time Windows places it, 1440 × 900 px.
+(`window.json` in the data directory), a second after the window last moved, changed size or was maximized, and as it
+closes, so a crash or Windows shutting down keeps it too; the first time Windows places it, 1440 × 900 px.
 
 The mark moves (2026-10-26; drafts as SVG in `Assets/Logo`: `granary-mark-intro.svg`, `-loading.svg`, `-ambient.svg`).
 `GranaryMark` draws it on the compositor, so it stays smooth while the UI thread is busy: the ring is a circle trimmed
