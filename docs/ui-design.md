@@ -1246,9 +1246,10 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   a change of the volume ends a mute. As the web player keeps both for its browser, this PC keeps them (`volume` and
   `muted` in `playback-device.json`): every title starts with the viewer's last, the next episode, the player after a
   restart and a file played with `--play` alike. A change is kept once it settles, or at once when the player closes.
-  Only the viewer's own changes are kept: a volume an administrator sends plays for that title only, and a Watch Party
-  leaves both alone. Until the viewer first changes either, the player starts at mpv's own volume, full unless their
-  mpv.conf says otherwise.
+  Only the viewer's own changes are kept: a volume an administrator sends plays for that title only. A Watch Party's
+  title starts with the kept volume and mute too, and the room never changes them. Until the viewer first changes
+  either, the player starts at mpv's own volume, full unless their mpv.conf says otherwise; from then on the kept volume
+  and mute win over a `volume=` or `mute=` in mpv.conf.
 - **Sleep timer** (`SleepTimerOption`, the look and words of the web's `SleepTimerMenu`, which only its audiobook player
   has): by default right of the volume slider, as the web's audiobook bar puts it after the volume (Player buttons can
   move it), a 40 px pill without a background,

@@ -40,8 +40,9 @@ public interface IPlaybackDevicePreferences
     event EventHandler? DiscordStatusChanged;
 
     /// <summary>
-    /// The player's volume and mute as the viewer last left them on this PC, which every title starts with; null until the
-    /// viewer first changes either, so mpv's own hold (full and not muted, unless the viewer's mpv.conf says otherwise).
+    /// The player's volume and mute as the viewer last left them on this PC, which every title starts with, over a volume or
+    /// mute in the viewer's mpv.conf; null until the viewer first changes either, so mpv's own hold (full and not muted,
+    /// unless that mpv.conf says otherwise).
     /// </summary>
     PlayerVolume? Volume { get; }
 

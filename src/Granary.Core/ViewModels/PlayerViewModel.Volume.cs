@@ -6,9 +6,10 @@ namespace Granary.Core.ViewModels;
 
 // The volume and mute: the slider, M, Up and Down when they set the volume, and the minimized bar's Mute and volume keys.
 // As the web player keeps them for its browser (player-volume and player-muted in localStorage), this PC keeps the viewer's
-// (IPlaybackDevicePreferences.Volume), and every title starts with them, a file played with --play too. Only the viewer's
-// own changes are kept: a volume the engine reports by itself, a new mpv's own or one an administrator set (set_volume),
-// plays but is not kept. A Watch Party sets neither.
+// (IPlaybackDevicePreferences.Volume), and every title starts with them (PlayAsync), a Watch Party's and a file played with
+// --play too; from the first change on they win over a volume or mute in the viewer's mpv.conf. Only the viewer's own
+// changes are kept: a volume the engine reports by itself, a new mpv's own or one an administrator set (set_volume), plays
+// but is not kept. The room of a Watch Party never changes either.
 public sealed partial class PlayerViewModel
 {
     // A drag along the slider or a held volume key passes many values: the one they settle on is saved.
