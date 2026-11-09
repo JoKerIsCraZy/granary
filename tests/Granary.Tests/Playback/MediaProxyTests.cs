@@ -228,17 +228,43 @@ public sealed class MediaProxyTests : IDisposable
         var stream = await response.Content.ReadAsStreamAsync(Cancellation);
         Assert.Equal("first", await ReadTextAsync(stream, 5));
         await _time.WaitForTimerAsync(Cancellation);
+        Assert.Equal(TimeSpan.FromSeconds(60), _time.NextDue);
 
-        var next = stream.ReadAsync(new byte[16], Cancellation).AsTask();
         _time.Advance(TimeSpan.FromSeconds(59));
-        await Task.Delay(50, Cancellation);
-        Assert.False(next.IsCompleted);
+        Assert.Equal(TimeSpan.FromSeconds(1), _time.NextDue);
         _time.Advance(TimeSpan.FromSeconds(1));
 
-        await Assert.ThrowsAnyAsync<IOException>(() => next);
+        await Assert.ThrowsAnyAsync<IOException>(() => stream.ReadAsync(new byte[16], Cancellation).AsTask());
         await body.Cancelled.Task.WaitAsync(TimeSpan.FromSeconds(5), Cancellation);
         await ServerPlaybackFixture.Until(() => _logs.All.Contains(
             "Information MediaProxy: A media request ended: the server sent nothing for 60 s", StringComparison.Ordinal), "the cut is logged");
+    }
+
+    [Fact]
+    public async Task AfterACut_ThePlayersRetryFromItsOffset_GoesThrough()
+    {
+        // curl asks again from the byte it had reached; the range goes upstream and the server's answer reaches it.
+        int answers = 0;
+        _server = _ => answers++ == 0
+            ? new HttpResponseMessage(HttpStatusCode.OK) { Content = new StreamContent(new SilentAfter("first")) }
+            : Partial("rest", "bytes 5-8/9");
+        using var route = Open(Stream);
+        using (var cut = await _player.GetAsync(route.LocalUrl, HttpCompletionOption.ResponseHeadersRead, Cancellation))
+        {
+            var stream = await cut.Content.ReadAsStreamAsync(Cancellation);
+            Assert.Equal("first", await ReadTextAsync(stream, 5));
+            await _time.WaitForTimerAsync(Cancellation);
+            _time.Advance(MediaRoute.UpstreamIdleTimeout);
+            await Assert.ThrowsAnyAsync<IOException>(() => stream.ReadAsync(new byte[16], Cancellation).AsTask());
+        }
+
+        using var retry = new HttpRequestMessage(HttpMethod.Get, route.LocalUrl);
+        retry.Headers.Range = new RangeHeaderValue(5, null);
+        using var response = await _player.SendAsync(retry, Cancellation);
+
+        Assert.Equal(HttpStatusCode.PartialContent, response.StatusCode);
+        Assert.Equal("rest", await response.Content.ReadAsStringAsync(Cancellation));
+        Assert.Equal("bytes=5-", _sent[^1].Headers.Range!.ToString());
     }
 
     [Fact]

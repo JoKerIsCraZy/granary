@@ -174,8 +174,21 @@ internal sealed class MediaRoute : IMediaRoute
             {
                 request.Headers.TryAddWithoutValidation(name, value);
             }
-            using var response = await watch.WaitAsync(waits => new ValueTask<HttpResponseMessage>(client.SendAsync(request, waits)))
-                .ConfigureAwait(false);
+            HttpResponseMessage answer;
+            watch.Arm();
+            try
+            {
+                answer = await client.SendAsync(request, watch.Token).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (watch.IsCutOff)
+            {
+                throw watch.CutOff(ex);
+            }
+            finally
+            {
+                watch.Disarm();
+            }
+            using var response = answer;
             if (response.StatusCode == HttpStatusCode.Unauthorized && refused is null)
             {
                 logger.LogInformation("The server refused the media headers for {Path}; renewing them", upstream.AbsolutePath);
@@ -303,14 +316,22 @@ internal sealed class MediaRoute : IMediaRoute
             while (true)
             {
                 int read;
+                watch.Arm();
                 try
                 {
-                    read = await watch.WaitAsync(waits => body.ReadAsync(buffer, waits)).ConfigureAwait(false);
+                    read = await body.ReadAsync(buffer, watch.Token).ConfigureAwait(false);
                 }
-                catch (Exception ex) when (ex is IOException or HttpRequestException && ex is not MediaUpstreamException
-                    && !cancellationToken.IsCancellationRequested)
+                catch (Exception ex) when (watch.IsCutOff)
+                {
+                    throw watch.CutOff(ex);
+                }
+                catch (Exception ex) when (ex is IOException or HttpRequestException && !cancellationToken.IsCancellationRequested)
                 {
                     throw new MediaUpstreamException($"broke off ({Kind(ex)})", ex);
+                }
+                finally
+                {
+                    watch.Disarm();
                 }
                 if (read == 0)
                 {
