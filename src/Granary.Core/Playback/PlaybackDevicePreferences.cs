@@ -40,6 +40,13 @@ public interface IPlaybackDevicePreferences
     event EventHandler? DiscordStatusChanged;
 
     /// <summary>
+    /// The player's volume and mute as the viewer last left them on this PC, which every title starts with, over a volume or
+    /// mute in the viewer's mpv.conf; null until the viewer first changes either, so mpv's own hold (full and not muted,
+    /// unless that mpv.conf says otherwise).
+    /// </summary>
+    PlayerVolume? Volume { get; }
+
+    /// <summary>
     /// This PC's Sleep timer switch, from before Settings → Playback → Player buttons, was turned off: the editor takes it
     /// over once (<see cref="PlayerButtonsLayout"/>), which then drops it (<see cref="ForgetSleepTimerSwitchAsync"/>).
     /// </summary>
@@ -61,6 +68,9 @@ public interface IPlaybackDevicePreferences
 
     Task SetDiscordStatusAsync(bool enabled);
 
+    /// <summary>Saves <see cref="Volume"/>, its level brought into 0 to 100 first (full when it is not a number).</summary>
+    Task SetVolumeAsync(PlayerVolume volume);
+
     /// <summary>The player buttons editor has taken the Sleep timer switch over: it goes from the file.</summary>
     Task ForgetSleepTimerSwitchAsync();
 }
@@ -79,15 +89,23 @@ public enum PlayerUpDown
 }
 
 /// <summary>
+/// The player's volume, 0 to 100 as mpv counts it, and whether it is muted. A mute keeps the level, so Unmute goes back to
+/// it; a volume of 0 is not a mute (as the web player's <c>player-volume</c> and <c>player-muted</c>).
+/// </summary>
+public sealed record PlayerVolume(double Percent, bool IsMuted);
+
+/// <summary>
 /// <see cref="IPlaybackDevicePreferences"/> in <c>playback-device.json</c> in the data directory
 /// (<c>{ "decodes_in_software": true, "up_down": "volume", "time_left": true, "passout_threshold": 5,
-/// "resume_rewind_seconds": 7, "discord_status": true }</c>). Without the file, or with one that cannot be read, direct play
-/// needs the GPU, Up and Down show the controls and menus, the player's time shows the duration, the player waits after
-/// three episodes, a resume lands on the saved point and Discord's status stays as it is, as by default; a value it does
-/// not know, or one an older file lacks, is the default. One that cannot be written is logged, and the choice still holds
-/// for this run. Files are written off the caller's thread, which is the UI's. The Sleep timer switch from before the
-/// player buttons editor (<c>"sleep_timer_button": false</c>) is read and written back as it was, until the editor has
-/// taken it over.
+/// "resume_rewind_seconds": 7, "discord_status": true, "volume": 40, "muted": false }</c>). Without the file, or with one
+/// that cannot be read, direct play needs the GPU, Up and Down show the controls and menus, the player's time shows the
+/// duration, the player waits after three episodes, a resume lands on the saved point, Discord's status stays as it is and
+/// the player keeps mpv's own volume, as by default; a value it does not know, or one an older file lacks, is the default.
+/// A volume out of range is brought into it; one that is not a number, or a mute that is not true or false, is as if it were
+/// not there, and with only one of volume and mute the other is full or not muted. A choice that cannot be written is
+/// logged, and still holds for this run. Files are written off the caller's thread, which is the UI's. The Sleep timer
+/// switch from before the player buttons editor (<c>"sleep_timer_button": false</c>) is read and written back as it was,
+/// until the editor has taken it over.
 /// </summary>
 public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
 {
@@ -95,6 +113,7 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
     private readonly ILogger<JsonPlaybackDevicePreferences> _logger;
     private const string VolumeValue = "volume";
     private const string ControlsValue = "controls";
+    private const double FullVolume = 100;
 
     // Each save runs after the one before it on the thread pool, writing the choices as they are when its turn comes, so
     // the last one written is the latest and the latest save ends after every earlier one.
@@ -105,6 +124,7 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
     private volatile int _passoutThreshold;
     private volatile int _resumeRewindSeconds;
     private volatile bool _discordStatus;
+    private volatile PlayerVolume? _volume;
     // The file had the Sleep timer switch turned off, and the player buttons editor has not taken it over yet.
     private volatile bool _sleepTimerSwitchOff;
     private Task _latestSave = Task.CompletedTask;
@@ -125,6 +145,9 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
             ? (int)seconds
             : ResumeRewind.DefaultSeconds;
         _discordStatus = file?.DiscordStatus == true;
+        _volume = file is { Volume: not null } or { Muted: not null }
+            ? new PlayerVolume(VolumeLevel(file.Volume ?? FullVolume), file.Muted == true)
+            : null;
         // Off only when turned off: a file from before the switch, or without it, shows the button.
         _sleepTimerSwitchOff = file?.SleepTimerButton == false;
     }
@@ -144,6 +167,8 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
     public bool DiscordStatus => _discordStatus;
 
     public event EventHandler? DiscordStatusChanged;
+
+    public PlayerVolume? Volume => _volume;
 
     public bool SleepTimerSwitchOff => _sleepTimerSwitchOff;
 
@@ -198,6 +223,16 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
         return QueueSave();
     }
 
+    public Task SetVolumeAsync(PlayerVolume volume)
+    {
+        ArgumentNullException.ThrowIfNull(volume);
+        _volume = volume with { Percent = VolumeLevel(volume.Percent) };
+        return QueueSave();
+    }
+
+    // mpv's volume runs to 100 here, as the player's slider does; a level that is no number is full, mpv's own.
+    private static double VolumeLevel(double percent) => double.IsNaN(percent) ? FullVolume : Math.Clamp(percent, 0, FullVolume);
+
     public Task ForgetSleepTimerSwitchAsync()
     {
         if (!_sleepTimerSwitchOff)
@@ -250,6 +285,8 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
                     TimeLeft = _timeLeft,
                     ResumeRewindSeconds = _resumeRewindSeconds,
                     DiscordStatus = _discordStatus,
+                    Volume = _volume?.Percent,
+                    Muted = _volume?.IsMuted,
                     SleepTimerButton = _sleepTimerSwitchOff ? false : null,
                 };
                 await JsonSerializer.SerializeAsync(stream, file, PlaybackDeviceJsonContext.Default.PlaybackDeviceFile).ConfigureAwait(false);
@@ -284,6 +321,16 @@ internal sealed record PlaybackDeviceFile(bool? DecodesInSoftware, string? UpDow
 
     public bool? DiscordStatus { get; init; }
 
+    // Only once the viewer changed the volume or the mute. Both read leniently, as ResumeRewindSeconds is: a value typed
+    // into the file that is not one only loses itself, not the file's other choices.
+    [JsonConverter(typeof(AnyNumberConverter))]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public double? Volume { get; init; }
+
+    [JsonConverter(typeof(AnyFlagConverter))]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Muted { get; init; }
+
     // Only in a file that had it: Settings no longer sets it.
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? SleepTimerButton { get; init; }
@@ -309,6 +356,34 @@ internal sealed class AnyNumberConverter : JsonConverter<double?>
         if (value is { } number)
         {
             writer.WriteNumberValue(number);
+        }
+        else
+        {
+            writer.WriteNullValue();
+        }
+    }
+}
+
+/// <summary>A JSON true or false as itself; any other value, a string, a number, an object or a list included, as none.</summary>
+internal sealed class AnyFlagConverter : JsonConverter<bool?>
+{
+    public override bool? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        if (reader.TokenType is JsonTokenType.True or JsonTokenType.False)
+        {
+            return reader.GetBoolean();
+        }
+        // Past the whole value, so the next member reads as it should.
+        reader.Skip();
+        return null;
+    }
+
+    public override void Write(Utf8JsonWriter writer, bool? value, JsonSerializerOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(writer);
+        if (value is { } flag)
+        {
+            writer.WriteBooleanValue(flag);
         }
         else
         {

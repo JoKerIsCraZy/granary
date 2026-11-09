@@ -94,9 +94,35 @@ internal sealed class FakePlaybackEngine : IPlaybackEngine
 
     public void Seek(TimeSpan position) => Seeks.Add(position);
 
-    public void SetVolume(double percent) => Current = Current with { Volume = Math.Clamp(percent, 0, 100) };
+    /// <summary>
+    /// The volume and mute change only once a state says so (<see cref="RaiseState"/>), as mpv reports them a moment after
+    /// they were set; until then <see cref="Current"/> has the ones before.
+    /// </summary>
+    public bool ReportsVolumeLater { get; set; }
 
-    public void SetMuted(bool muted) => Current = Current with { IsMuted = muted };
+    /// <summary>Every volume asked for, in order.</summary>
+    public List<double> VolumeRequests { get; } = [];
+
+    /// <summary>Every mute or unmute asked for, in order (true mutes).</summary>
+    public List<bool> MuteRequests { get; } = [];
+
+    public void SetVolume(double percent)
+    {
+        VolumeRequests.Add(percent);
+        if (!ReportsVolumeLater)
+        {
+            Current = Current with { Volume = Math.Clamp(percent, 0, 100) };
+        }
+    }
+
+    public void SetMuted(bool muted)
+    {
+        MuteRequests.Add(muted);
+        if (!ReportsVolumeLater)
+        {
+            Current = Current with { IsMuted = muted };
+        }
+    }
 
     public double Speed { get; private set; } = 1;
 

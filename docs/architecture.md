@@ -130,6 +130,11 @@ value holds, 0 included.
   (`KeepsOwn`), comparing the value as mpv writes it without regard to case. Between the profile and the set-back, mpv plays a moment with the
   file's value; it never holds server credentials, only the loopback address with the media proxy's secret (Server
   playback, "Media proxy"). `d3d11-composition-size` is kept at the start only, as the engine changes it itself.
+- The viewer's kept volume and mute (Server playback, "Volume") are set back the same way once Granary has set them
+  (`KeepsViewersSound`, `MpvPlaybackEngine.Volume.cs`): a profile's `volume=` or `mute=` as a file opens or while it
+  plays gives way to them. That is the viewer's choice, not a protection: after `SetBackLimit` set-backs within a title
+  the profile has its way for the rest of it, and the file stays in use. A notice older than Granary's latest value
+  (what mpv holds now is Granary's) is passed over rather than set back. Before Granary sets either, a profile's stands.
 - The protection fails closed (`MpvPlaybackEngine.FailClosed.cs`). A profile whose condition follows the option itself
   would set it again after every set-back; after five set-backs of one option within one title (`SetBackLimit`; the
   count starts again with each load, so a profile that changes it once per title never gets there), at the next change, or
@@ -556,6 +561,23 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   theirs from the resume point, as the web player does for the viewer, and exactly there, never rewound, as Android
   changes episode (`PlayRequest.ResumeWithoutRewind`); the previous one is the largest episode before
   this one in the current season that has a readable file, as the web finds it, none before the season's first.
+- **Volume** (`PlayerViewModel.Volume.cs`; the web's `player-volume` and `player-muted` in localStorage): this PC keeps the
+  viewer's volume and mute (`IPlaybackDevicePreferences.Volume`, `volume` and `muted` in `playback-device.json`), and
+  `PlayAsync` sets both on the engine as each title starts, a Watch Party's and a direct file included, since mpv keeps
+  them across files but not past a start of Granary. Only the viewer's changes count (the slider, M, the volume keys, the
+  minimized bar's): a volume the engine reports by itself, a new mpv's own or an administrator's `set_volume`
+  (`ServerPlayback.Control.cs`), plays but is not kept, and Mute keeps the viewer's own level with it. The room of a Watch
+  Party never changes either. Who set the value decides, not a comparison with the engine's: a value shown from an engine
+  snapshot (`ShowVolume`) is the engine's, any other the viewer's, and it always goes to the engine, with an unmute when
+  a mute shows or the engine has one, unless an unmute is on its way. mpv reports a volume or mute a moment after it was
+  set, so what was asked of it (a change, a title's start) shows until mpv reports it, or for a second at most after it
+  was asked (`RequestHolds`, for the volume and the mute each, so the slider moving keeps no mute waiting): a snapshot
+  taken meanwhile does not move the slider back, and the next Mute toggles what shows, so quick presses take turns. A first
+  Mute without a kept volume keeps the level the engine plays at. A change is saved once it has settled for 500 ms on
+  the player's `TimeProvider`, and at once by `Leave`, which closing the player, the window and `Dispose` all go
+  through. Set after mpv read the viewer's mpv.conf, and kept against its profiles ("Your own mpv.conf"), a kept volume
+  and mute win over a `volume=` or `mute=` there; without a kept one nothing is set, so mpv.conf keeps its say. A
+  `volume` that is not a number or a `muted` that is not true or false in the file only loses itself.
 - **Sleep timer** (`PlayerViewModel.SleepTimer.cs`; the apps' `SleepTimer` and `SleepTimerController`, the web's
   `SleepTimerMenu`): a duration counts on the player's `TimeProvider` once a second, whatever plays, pauses or loads
   meanwhile, so it runs on into the next episode, and then pauses what plays, with no fade (a title already paused is left
