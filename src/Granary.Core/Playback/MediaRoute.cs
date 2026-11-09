@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Net;
 using Microsoft.Extensions.Logging;
 
@@ -39,6 +40,18 @@ internal sealed class MediaRoute : IMediaRoute
 
     // mpv opens a few connections at a time (a seek, the next segments); more than this is not a player.
     private const int MaxConcurrentRequests = 16;
+
+    // As Stream.CopyToAsync reads.
+    private const int CopyBufferSize = 81920;
+
+    /// <summary>
+    /// How long a request waits for the server's next bytes (the answer, or more of its body) before it is cut off. The
+    /// server may hold a playlist 30 s and a segment about 12 s, up to 30 s more after a seek restarts the transcode
+    /// (docs/api-contract.md, 9.5: client timeouts above about 45 s); a minute clears that with room to spare. Longer
+    /// is a server gone silent, such as a connection it closed during a pause whose end never arrived: mpv's HTTP reader
+    /// would wait for it for good.
+    /// </summary>
+    internal static readonly TimeSpan UpstreamIdleTimeout = TimeSpan.FromSeconds(60);
 
     // Sent exactly as written: no unescaping (%41 stays %41) and no resolving of dot segments, which IsPlainRelative
     // has already refused. Plan URLs are replayed byte for byte (docs/api-contract.md, 9.2).
@@ -132,6 +145,7 @@ internal sealed class MediaRoute : IMediaRoute
     {
         bool head = context.Request.HttpMethod == "HEAD";
         MediaCredentials? refused = null;
+        using var watch = new UpstreamWatch(UpstreamIdleTimeout, _time, token);
         while (true)
         {
             MediaCredentials credentials;
@@ -160,7 +174,8 @@ internal sealed class MediaRoute : IMediaRoute
             {
                 request.Headers.TryAddWithoutValidation(name, value);
             }
-            using var response = await client.SendAsync(request, token).ConfigureAwait(false);
+            using var response = await watch.WaitAsync(waits => new ValueTask<HttpResponseMessage>(client.SendAsync(request, waits)))
+                .ConfigureAwait(false);
             if (response.StatusCode == HttpStatusCode.Unauthorized && refused is null)
             {
                 logger.LogInformation("The server refused the media headers for {Path}; renewing them", upstream.AbsolutePath);
@@ -168,7 +183,7 @@ internal sealed class MediaRoute : IMediaRoute
                 continue;
             }
             logger.LogDebug("Media {Method} {Path}: {Status}", request.Method, upstream.AbsolutePath, (int)response.StatusCode);
-            await RelayAsync(response, context.Response, head, token).ConfigureAwait(false);
+            await RelayAsync(response, context.Response, head, watch, token).ConfigureAwait(false);
             return;
         }
     }
@@ -214,7 +229,8 @@ internal sealed class MediaRoute : IMediaRoute
         }
     }
 
-    private static async Task RelayAsync(HttpResponseMessage upstream, HttpListenerResponse response, bool head, CancellationToken cancellationToken)
+    private static async Task RelayAsync(HttpResponseMessage upstream, HttpListenerResponse response, bool head, UpstreamWatch watch,
+        CancellationToken cancellationToken)
     {
         int status = (int)upstream.StatusCode;
         if (status is >= 300 and < 400 && status != (int)HttpStatusCode.NotModified)
@@ -262,14 +278,58 @@ internal sealed class MediaRoute : IMediaRoute
         {
             try
             {
-                await body.CopyToAsync(response.OutputStream, cancellationToken).ConfigureAwait(false);
+                await CopyAsync(body, response.OutputStream, watch, cancellationToken).ConfigureAwait(false);
             }
             catch
             {
                 // A body that breaks off must not read as complete: the player has to see a lost connection, not an end.
+                // curl then asks again from where it was, if the stream can seek; a remux ends, and the playback
+                // reconnects.
                 response.Abort();
                 throw;
             }
         }
     }
+
+    /// <summary>
+    /// Copies the server's <paramref name="body"/> to the <paramref name="player"/>. Only the reads wait on the server and
+    /// are timed; a write waits as long as the player does not read, which a paused player does not.
+    /// </summary>
+    internal static async Task CopyAsync(Stream body, Stream player, UpstreamWatch watch, CancellationToken cancellationToken)
+    {
+        byte[] buffer = ArrayPool<byte>.Shared.Rent(CopyBufferSize);
+        try
+        {
+            while (true)
+            {
+                int read;
+                try
+                {
+                    read = await watch.WaitAsync(waits => body.ReadAsync(buffer, waits)).ConfigureAwait(false);
+                }
+                catch (Exception ex) when (ex is IOException or HttpRequestException && ex is not MediaUpstreamException
+                    && !cancellationToken.IsCancellationRequested)
+                {
+                    throw new MediaUpstreamException($"broke off ({Kind(ex)})", ex);
+                }
+                if (read == 0)
+                {
+                    return;
+                }
+                await player.WriteAsync(buffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
+            }
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(buffer);
+        }
+    }
+
+    // What went wrong, never the message: some carry the address.
+    private static string Kind(Exception ex) => ex switch
+    {
+        HttpIOException io => io.HttpRequestError.ToString(),
+        HttpRequestException request => request.HttpRequestError.ToString(),
+        _ => ex.GetType().Name,
+    };
 }

@@ -1947,6 +1947,13 @@ no write progress for 180 s by default (operator-configurable via `SILO_STREAM_W
 a paused player that stops reading), so a long pause forces a new request; do not depend on the
 exact value.
 
+Granary does not wait for word of that close, which may never arrive (a connection that died
+silently): its media proxy ends a request whose server sends nothing for 60 s, timing only its waits
+for the server (the answer, then each read of the body), never the time a paused player does not
+read (§9.5). mpv's HTTP reader (libcurl) then asks again from its byte offset where the stream can
+seek; a progressive remux ends, and the playback reconnects with the no-op `track_change` replan
+([8.7](#87-replan)).
+
 ### 9.4 Token lifetime during long playback
 
 - Access token default lifetime **8 h** (`auth.access_token_expiry`,
@@ -2004,7 +2011,8 @@ v2 media routes collapse error codes to the HTTP status before the first byte (a
 | `422 validation_failed` on manifest/segment with `X-Silo-Tone-Map-Execution-Error` | Server tone-map recipe can no longer run (`source_revision_changed`, `source_preflight_rejected`) | Do not retry the URL; replan with `failure_recovery`. |
 
 Client network timeouts must exceed ~45 s: the server may hold a manifest for up to 30 s and a
-segment for ~12 s (plus up to 30 s after a seek restart).
+segment for ~12 s (plus up to 30 s after a seek restart). Granary's media proxy waits 60 s for the
+server's next bytes (§9.3).
 
 ### 9.6 Subtitle delivery
 

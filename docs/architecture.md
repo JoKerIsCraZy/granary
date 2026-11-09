@@ -669,7 +669,12 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   only (a progressive stream: its exact URL; HLS: the playlist and what lies beside it, no dot segments), adds
   the headers per request, renews a token within 60 s of its end, and on a 401 renews it once and repeats the
   request, so mpv never sees an expiry. Redirects are not followed, cookies and the upstream's other headers
-  stay behind, and a body that breaks off aborts the response so mpv sees a lost connection, not an end. The
+  stay behind, and a body that breaks off aborts the response so mpv sees a lost connection, not an end. A
+  server that sends nothing for 60 s, before its answer or within its body (`UpstreamWatch`), is cut off and the
+  response aborted the same way: the server closes a stream a paused player stopped reading after 180 s, and
+  word of that close may never arrive. Only waits for the server are timed, never a write the player is not
+  taking. mpv's curl reader then asks again from its offset where the stream can seek; a remux ends and the
+  playback reconnects. Cuts and bodies that broke off are logged without URL or headers. The
   secret keeps other programs on the machine out; the log redactor masks it. A new load, the stop and a failure
   close the route and its requests. Before the proxy, mpv kept the headers for the whole load and would have
   sent them wherever a redirect or a playlist pointed.

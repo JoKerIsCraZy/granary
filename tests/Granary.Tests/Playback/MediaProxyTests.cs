@@ -18,14 +18,17 @@ public sealed class MediaProxyTests : IDisposable
     private readonly HttpClient _player = new();
     private readonly List<bool> _asked = [];
     private Func<HttpRequestMessage, HttpResponseMessage> _server = _ => Text(HttpStatusCode.OK, "media");
+
+    // An answer that takes its time, in place of _server.
+    private Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>>? _answer;
     private int _tokens;
 
     public MediaProxyTests()
     {
-        Proxy = new MediaProxy(new FakeHttpMessageHandler((request, _) =>
+        Proxy = new MediaProxy(new FakeHttpMessageHandler((request, cancellationToken) =>
         {
             _sent.Add(request);
-            return Task.FromResult(_server(request));
+            return _answer?.Invoke(request, cancellationToken) ?? Task.FromResult(_server(request));
         }), _time, _logs.For<MediaProxy>());
     }
 
@@ -214,6 +217,71 @@ public sealed class MediaProxyTests : IDisposable
     }
 
     [Fact]
+    public async Task AServerThatFallsSilent_IsCutOffAfterAMinute_OnBothSides()
+    {
+        // A connection the server closed while the player was paused, whose end never arrived: the player has to see the
+        // request fail, so it asks again from where it was, instead of waiting for good.
+        var body = new SilentAfter("first");
+        _server = _ => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StreamContent(body) };
+        using var route = Open(Stream);
+        using var response = await _player.GetAsync(route.LocalUrl, HttpCompletionOption.ResponseHeadersRead, Cancellation);
+        var stream = await response.Content.ReadAsStreamAsync(Cancellation);
+        Assert.Equal("first", await ReadTextAsync(stream, 5));
+        await _time.WaitForTimerAsync(Cancellation);
+
+        var next = stream.ReadAsync(new byte[16], Cancellation).AsTask();
+        _time.Advance(TimeSpan.FromSeconds(59));
+        await Task.Delay(50, Cancellation);
+        Assert.False(next.IsCompleted);
+        _time.Advance(TimeSpan.FromSeconds(1));
+
+        await Assert.ThrowsAnyAsync<IOException>(() => next);
+        await body.Cancelled.Task.WaitAsync(TimeSpan.FromSeconds(5), Cancellation);
+        await ServerPlaybackFixture.Until(() => _logs.All.Contains(
+            "Information MediaProxy: A media request ended: the server sent nothing for 60 s", StringComparison.Ordinal), "the cut is logged");
+    }
+
+    [Fact]
+    public async Task AServerThatNeverAnswers_IsCutOffAfterAMinute()
+    {
+        var cancelled = new TaskCompletionSource();
+        _answer = async (_, cancellationToken) =>
+        {
+            using var registration = cancellationToken.Register(() => cancelled.TrySetResult());
+            await Task.Delay(Timeout.Infinite, cancellationToken);
+            return Text(HttpStatusCode.OK, "too late");
+        };
+        using var route = Open(Stream);
+        var request = _player.GetAsync(route.LocalUrl, Cancellation);
+        await _time.WaitForTimerAsync(Cancellation);
+
+        _time.Advance(TimeSpan.FromSeconds(60));
+
+        // No answer at all rather than an error status: curl takes that for a lost connection and tries again.
+        await Assert.ThrowsAnyAsync<HttpRequestException>(() => request);
+        await cancelled.Task.WaitAsync(TimeSpan.FromSeconds(5), Cancellation);
+    }
+
+    [Fact]
+    public async Task APlayerThatStopsReading_IsWaitedFor_HoweverLong()
+    {
+        // A paused player fills its cache and stops reading. That wait is the player's, not the server's: the stream goes
+        // on once the player reads again.
+        using var closing = new CancellationTokenSource();
+        using var watch = new UpstreamWatch(MediaRoute.UpstreamIdleTimeout, _time, closing.Token);
+        var player = new PausedPlayer();
+        var copy = MediaRoute.CopyAsync(new ChunkedStream("abc", "def"), player, watch, closing.Token);
+        await player.Writing.Task.WaitAsync(TimeSpan.FromSeconds(5), Cancellation);
+        Assert.Null(_time.NextDue);
+
+        _time.Advance(TimeSpan.FromMinutes(10));
+        player.Resume();
+        await copy.WaitAsync(TimeSpan.FromSeconds(5), Cancellation);
+
+        Assert.Equal("abcdef", player.Text);
+    }
+
+    [Fact]
     public async Task AClosedRoute_FindsNothing()
     {
         var route = Open(Stream);
@@ -323,9 +391,108 @@ public sealed class MediaProxyTests : IDisposable
         return response;
     }
 
+    private static async Task<string> ReadTextAsync(Stream stream, int length)
+    {
+        var buffer = new byte[length];
+        await stream.ReadExactlyAsync(buffer, Cancellation);
+        return Encoding.UTF8.GetString(buffer);
+    }
+
     // A body whose length is unknown, as a progressive remux streams it.
     private sealed class UnknownLengthStream(string text) : MemoryStream(Encoding.UTF8.GetBytes(text))
     {
         public override bool CanSeek => false;
+    }
+
+    // A body that sends its first bytes and then nothing, until the reader gives up.
+    private sealed class SilentAfter(string first) : Stream
+    {
+        private bool _sent;
+
+        public TaskCompletionSource Cancelled { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public override bool CanRead => true;
+
+        public override bool CanSeek => false;
+
+        public override bool CanWrite => false;
+
+        public override long Length => throw new NotSupportedException();
+
+        public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
+
+        public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+        {
+            if (!_sent)
+            {
+                _sent = true;
+                return Encoding.UTF8.GetBytes(first, buffer.Span);
+            }
+            using var registration = cancellationToken.Register(() => Cancelled.TrySetResult());
+            await Task.Delay(Timeout.Infinite, cancellationToken);
+            return 0;
+        }
+
+        public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+
+        public override void Flush()
+        {
+        }
+
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+
+        public override void SetLength(long value) => throw new NotSupportedException();
+
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+    }
+
+    // A body that hands out one piece per read, at once.
+    private sealed class ChunkedStream(params string[] chunks) : Stream
+    {
+        private int _next;
+
+        public override bool CanRead => true;
+
+        public override bool CanSeek => false;
+
+        public override bool CanWrite => false;
+
+        public override long Length => throw new NotSupportedException();
+
+        public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
+
+        public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default) =>
+            ValueTask.FromResult(_next < chunks.Length ? Encoding.UTF8.GetBytes(chunks[_next++], buffer.Span) : 0);
+
+        public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+
+        public override void Flush()
+        {
+        }
+
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+
+        public override void SetLength(long value) => throw new NotSupportedException();
+
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+    }
+
+    // The player's side: its writes wait until Resume, as a paused player's full buffers hold the proxy's writes.
+    private sealed class PausedPlayer : MemoryStream
+    {
+        private readonly TaskCompletionSource _resumed = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public TaskCompletionSource Writing { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public string Text => Encoding.UTF8.GetString(ToArray());
+
+        public void Resume() => _resumed.TrySetResult();
+
+        public override async ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
+        {
+            Writing.TrySetResult();
+            await _resumed.Task.WaitAsync(cancellationToken);
+            Write(buffer.Span);
+        }
     }
 }

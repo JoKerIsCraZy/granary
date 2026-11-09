@@ -6,6 +6,10 @@ release's section is what its update says it changes (docs/release.md).
 
 ## [Unreleased]
 
+### Fixed
+
+- Playback no longer buffers without end when you press Play after a long pause.
+
 ## [0.3.0] - 2026-11-08
 
 ### Added
