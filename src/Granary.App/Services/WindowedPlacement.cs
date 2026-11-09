@@ -92,18 +92,27 @@ internal sealed partial class WindowedPlacement(ILogger logger)
 
     /// <summary>
     /// A window that should be maximized but shows minimized (a shortcut's "Run: Minimized" took its first show): it comes
-    /// back maximized from the taskbar, and counts as maximized meanwhile, also when it closes from there.
+    /// back maximized from the taskbar, and counts as maximized meanwhile, also when it closes from there. When Windows does
+    /// not take that, it stays as it is: restored from the taskbar, it is kept as a restored window.
     /// </summary>
     public void RestoreToMaximized(AppWindow window)
     {
         var placement = new NativePlacement { Length = (uint)Marshal.SizeOf<NativePlacement>() };
         nint handle = Win32Interop.GetWindowFromWindowId(window.Id);
-        if (GetWindowPlacement(handle, ref placement))
+        if (!GetWindowPlacement(handle, ref placement))
         {
-            // Windows takes the flag only with the minimized show command, and only for the next restore.
-            placement.Flags |= RestoreToMaximizedFlag;
-            placement.ShowCommand = ShowMinimized;
-            SetWindowPlacement(handle, ref placement);
+            logger.LogDebug("Windows did not say the minimized window's placement (error {Error}); it comes back as Windows restores it",
+                Marshal.GetLastPInvokeError());
+            return;
+        }
+        // Windows takes the flag only with the minimized show command, and only for the next restore.
+        placement.Flags |= RestoreToMaximizedFlag;
+        placement.ShowCommand = ShowMinimized;
+        if (!SetWindowPlacement(handle, ref placement))
+        {
+            logger.LogDebug("Windows did not take the minimized window's restore to maximized (error {Error})",
+                Marshal.GetLastPInvokeError());
+            return;
         }
         _place.Keep(WindowState.Maximized, default);
     }
@@ -180,12 +189,12 @@ internal sealed partial class WindowedPlacement(ILogger logger)
         public int Bottom;
     }
 
-    [LibraryImport("user32.dll")]
+    [LibraryImport("user32.dll", SetLastError = true)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static partial bool GetWindowPlacement(nint window, ref NativePlacement placement);
 
-    [LibraryImport("user32.dll")]
+    [LibraryImport("user32.dll", SetLastError = true)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static partial bool SetWindowPlacement(nint window, ref NativePlacement placement);

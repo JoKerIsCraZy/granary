@@ -94,6 +94,10 @@ public sealed class WindowPlaceFileTests : IDisposable
     [InlineData("""{ "x": 10, "y": 20, "width": 0, "height": 900, "scale": 1 }""")]
     [InlineData("""{ "x": 10, "y": 20, "width": 1440, "height": 900 }""")]
     [InlineData("""{ "x": 10, "y": 20, "width": 1440, "height": 900, "scale": 0 }""")]
+    [InlineData("""{ "x": 10, "y": 20, "width": 1440, "height": 900, "scale": 1E-300 }""")]
+    [InlineData("""{ "x": 10, "y": 20, "width": 1440, "height": 900, "scale": 0.49 }""")]
+    [InlineData("""{ "x": 10, "y": 20, "width": 1440, "height": 900, "scale": 5.01 }""")]
+    [InlineData("""{ "x": -2147483648, "y": 20, "width": 1440, "height": 900, "scale": 1 }""")]
     [InlineData("""{ "y": 20, "width": 1440, "height": 900, "scale": 1 }""")]
     [InlineData("""{ "x": 2147483000, "y": 20, "width": 1440, "height": 900, "scale": 1 }""")]
     [InlineData("""{ "x": 10, "y": 20, "width": 2147483000, "height": 900, "scale": 1 }""")]
@@ -230,6 +234,77 @@ public sealed class WindowPlaceFileTests : IDisposable
         Create().Load();
 
         Assert.True(File.Exists(other));
+    }
+
+    [Theory]
+    [InlineData(0.5)]
+    [InlineData(5.0)]
+    public void ScalesWindowsCanHave_AreRead_UpToTheirEdges(double scale)
+    {
+        var place = Place with { Scale = scale };
+        Assert.True(Create().Save(place));
+
+        Assert.Equal(place, Create().Load());
+    }
+
+    [Fact]
+    public void AFileOverItsSmallLimit_IsNotRead()
+    {
+        // A window's place is a few lines; something else, or a damaged file, may be anything.
+        Write("""{ "x": 10, "y": 20, "width": 1440, "height": 900, "scale": 1 }""" + new string(' ', 64 * 1024));
+
+        Assert.Null(Create().Load());
+        Assert.Contains(_logs.Lines, line => line.StartsWith("Warning", StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData(10, 20, 0, 900, 1.5)]
+    [InlineData(10, 20, 1440, -1, 1.5)]
+    [InlineData(70000, 20, 1440, 900, 1.5)]
+    [InlineData(int.MinValue, 20, 1440, 900, 1.5)]
+    [InlineData(10, 20, 1440, 70000, 1.5)]
+    [InlineData(10, 20, 1440, 900, 0.49)]
+    [InlineData(10, 20, 1440, 900, 5.01)]
+    [InlineData(10, 20, 1440, 900, double.NaN)]
+    public async Task APlaceTheReaderWouldReject_IsNotWritten(int x, int y, int width, int height, double scale)
+    {
+        var file = Create();
+        var place = new WindowPlace(new WindowBounds(x, y, width, height), scale, IsMaximized: false);
+
+        await file.SaveAsync(place);
+        Assert.False(file.Save(place));
+
+        Assert.False(File.Exists(FilePath));
+        Assert.Contains(_logs.Lines, line => line.StartsWith("Warning", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task TheSaveAsTheWindowCloses_GivesUpOnAWriteHeldTooLong()
+    {
+        // A settle write stalled on a slow or network data folder must not keep the window from closing.
+        Create().Save(Place with { IsMaximized = false });
+        var file = Create();
+        file.CloseWait = TimeSpan.Zero;
+        var read = new FileStream(FilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+        bool? closed = null;
+        file.BeforeMoveRetry = () =>
+        {
+            if (closed is null)
+            {
+                // From another thread while this one writes, as the UI thread closes the window.
+                bool saved = true;
+                var closing = Task.Run(() => { saved = file.Save(Place with { Bounds = new WindowBounds(400, 250, 1300, 760) }); },
+                    TestContext.Current.CancellationToken);
+                closed = !closing.Wait(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken) || saved;
+                read.Dispose();
+            }
+        };
+
+        await file.SaveAsync(Place);
+
+        Assert.False(closed);
+        Assert.Equal(Place, Create().Load());
+        Assert.Contains(_logs.Lines, line => line.StartsWith("Warning", StringComparison.Ordinal) && line.Contains("closing", StringComparison.Ordinal));
     }
 
     [Fact]

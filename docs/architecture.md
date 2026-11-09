@@ -838,8 +838,9 @@ screen all go through `WindowModeService` (App, a singleton that MainWindow atta
   settles, 1 s after the last change it kept (a `DispatcherQueueTimer` through `WeakTick`), off the UI thread, so a crash,
   a kill or Windows shutting down keeps it too: asking for it swaps the place to write in (`Interlocked`) and never waits
   for a write in flight, which alone holds the file's lock. And as the window closes (`Window.Closed`, so also full
-  screen's Close and a restart into an update), on the UI thread, after a write in flight and in place of one not yet
-  written; that save is the last word: the service keeps nothing the closing window still reports (the presenter it
+  screen's Close and a restart into an update), on the UI thread, after a write in flight (waited for at most 2 s,
+  `AppUpdatesViewModel.SaveWaitAtExit`, as closing waits for the other saves; a write held longer, on a slow or network
+  data folder, is logged and the close's save given up) and in place of one not yet written; that save is the last word: the service keeps nothing the closing window still reports (the presenter it
   leaves full screen for) and starts no settle save, and the file writes none that comes after it. A place the file
   holds already is not written again. Temporary files a Granary killed mid-save left (`window.json.<guid>.tmp`, older
   than a minute) are removed as the file is read at start. Closed in full screen or the mini view, that is the window it would have gone
@@ -854,7 +855,9 @@ screen all go through `WindowModeService` (App, a singleton that MainWindow atta
   at Debug; with `Start-Process -WindowStyle Normal` or `Minimized` the first show stayed maximized). Files
   are written as other small files are (a temporary file, then `File.Move`, tried again for a moment while something has
   the file open); a write that fails is logged. No file, or one that cannot be read (logged), and Windows places the
-  window at 1440 × 900 px.
+  window at 1440 × 900 px. Unreadable counts a file over 64 KiB, which is not read at all, and a place out of range:
+  more than 65,536 px out or across, or a scale outside 0.5 to 5 (Windows' 100 % to 500 %, with room). The same check
+  keeps such a place from being written.
 - **Changed** tells MainWindow (its title bar buttons), the player (its `IsFullScreen` and `IsMiniView`) and the trailer.
 - **Drag area**: the title bar's own buttons lie outside `SetTitleBar`'s element, so they take clicks. In full screen the
   window has no drag area at all (`InputNonClientPointerSource`'s caption region cleared); WinUI does not set it again

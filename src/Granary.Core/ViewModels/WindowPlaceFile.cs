@@ -18,9 +18,14 @@ public sealed class WindowPlaceFile
     private const int MoveTries = 4;
     private static readonly TimeSpan MoveRetryDelay = TimeSpan.FromMilliseconds(40);
 
-    // Further than any desktop reaches: a file edited or damaged into such numbers says no place.
+    // Further than any desktop reaches, or scales Windows does not have (100 % to 500 %, with room on both sides): a file
+    // edited or damaged into such numbers says no place, and none such is written.
     private const int MaxPixels = 1 << 16;
-    private const double MaxScale = 10;
+    private const double MinScale = 0.5;
+    private const double MaxScale = 5;
+
+    // A window's place is a few lines; a larger file is something else, or damaged, and is not read.
+    private const long MaxFileBytes = 64 * 1024;
 
     // A save's temporary file is written and moved over within moments; one older than this was left by a Granary that
     // ended mid-save.
@@ -52,14 +57,26 @@ public sealed class WindowPlaceFile
     /// <summary>For tests: runs before a write that the file being open got in the way of tries again.</summary>
     internal Action? BeforeMoveRetry { get; set; }
 
+    /// <summary>
+    /// How long the save as the window closes waits for a write in flight, as closing waits for the other saves; a write
+    /// stalled on a slow or network data folder does not keep the window from closing.
+    /// </summary>
+    internal TimeSpan CloseWait { get; set; } = AppUpdatesViewModel.SaveWaitAtExit;
+
     /// <summary>The place the window was closed at; none the first time, or when the file cannot be read. Never throws.</summary>
     public WindowPlace? Load()
     {
         RemoveOrphans();
         try
         {
-            if (!File.Exists(_filePath))
+            var info = new FileInfo(_filePath);
+            if (!info.Exists)
             {
+                return null;
+            }
+            if (info.Length > MaxFileBytes)
+            {
+                _logger.LogWarning("The window's place file is {Length} bytes, too large to be one; Windows places the window", info.Length);
                 return null;
             }
             var file = JsonSerializer.Deserialize(File.ReadAllText(_filePath), WindowJsonContext.Default.WindowFile);
@@ -99,17 +116,27 @@ public sealed class WindowPlaceFile
     }
 
     /// <summary>
-    /// Saves the place to open at next time, as the window closes: after a write in flight, in place of one still waiting,
-    /// and as the last word. Never throws: a save that does not work is logged, and false.
+    /// Saves the place to open at next time, as the window closes: after a write in flight, waited for at most
+    /// <see cref="CloseWait"/>, in place of one still waiting, and as the last word. Never throws: a save that does not
+    /// work is logged, and false.
     /// </summary>
     public bool Save(WindowPlace place)
     {
         ArgumentNullException.ThrowIfNull(place);
         _isClosed = true;
         Interlocked.Exchange(ref _pending, null);
-        lock (_gate)
+        if (!_gate.TryEnter(CloseWait))
+        {
+            _logger.LogWarning("The window's place was not saved as Granary was closing: the write before it took too long");
+            return false;
+        }
+        try
         {
             return Write(place);
+        }
+        finally
+        {
+            _gate.Exit();
         }
     }
 
@@ -129,6 +156,12 @@ public sealed class WindowPlaceFile
     // Under the gate.
     private bool Write(WindowPlace place)
     {
+        if (!IsUsable(place))
+        {
+            // The next start would not read it, and would open where Windows places the window: the file keeps what it has.
+            _logger.LogWarning("The window's place is not one the next start could use; it is not saved");
+            return false;
+        }
         if (place == _written)
         {
             return true;
@@ -162,10 +195,17 @@ public sealed class WindowPlaceFile
         {
             return null;
         }
-        bool usable = Math.Abs(x) <= MaxPixels && Math.Abs(y) <= MaxPixels
-            && width is > 0 and <= MaxPixels && height is > 0 and <= MaxPixels
-            && double.IsFinite(scale) && scale is > 0 and <= MaxScale;
-        return usable ? new WindowPlace(new WindowBounds(x, y, width, height), scale, file.Maximized ?? false) : null;
+        var place = new WindowPlace(new WindowBounds(x, y, width, height), scale, file.Maximized ?? false);
+        return IsUsable(place) ? place : null;
+    }
+
+    // One check for what is read and what is written.
+    private static bool IsUsable(WindowPlace place)
+    {
+        var bounds = place.Bounds;
+        return bounds.X is >= -MaxPixels and <= MaxPixels && bounds.Y is >= -MaxPixels and <= MaxPixels
+            && bounds.Width is > 0 and <= MaxPixels && bounds.Height is > 0 and <= MaxPixels
+            && place.Scale is >= MinScale and <= MaxScale;
     }
 
     private void MoveOver(string temp)
