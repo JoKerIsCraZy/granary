@@ -3,6 +3,19 @@ namespace Granary.Core.ViewModels;
 /// <summary>A window's place and size on the desktop, in pixels.</summary>
 public readonly record struct WindowBounds(int X, int Y, int Width, int Height)
 {
+    /// <summary>The main window's title bar's height in view pixels: MainWindow's top row.</summary>
+    public const double TitleBarHeight = 32;
+
+    /// <summary>How much of the title bar has to show on a display for the window to stay where it was, in view pixels.</summary>
+    public const double MinimumVisibleTitleBar = 120;
+
+    /// <summary>
+    /// <see cref="OnDisplays(IReadOnlyList{WindowBounds}, WindowBounds, int, int)"/> for the main window's title bar, on
+    /// displays at <paramref name="scale"/>.
+    /// </summary>
+    public WindowBounds OnDisplays(IReadOnlyList<WindowBounds> workAreas, WindowBounds nearest, double scale) =>
+        OnDisplays(workAreas, nearest, (int)Math.Round(TitleBarHeight * scale), (int)Math.Round(MinimumVisibleTitleBar * scale));
+
     /// <summary>
     /// Where a window that comes back from full screen or the mini view goes: where it was, as long as its title bar can be
     /// reached on one of <paramref name="workAreas"/> (the displays' work areas as they are now), so a window spanning two

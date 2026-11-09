@@ -104,7 +104,11 @@ public sealed partial class MainWindow : Window
         InitializeRemote();
         // The exe carries the icon too (ApplicationIcon); an unpackaged window still has to be given it.
         AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets", "Logo", "granary.ico"));
-        AppWindow.Resize(new Windows.Graphics.SizeInt32(1440, 900));
+        // Where it was closed last, as it was; the first time where Windows places it.
+        if (!_modes.OpenAtLastPlace())
+        {
+            AppWindow.Resize(new Windows.Graphics.SizeInt32(1440, 900));
+        }
         AppWindow.Closing += OnClosing;
 
         _navigation.Attach(ContentFrame);

@@ -816,13 +816,25 @@ screen all go through `WindowModeService` (App, a singleton that MainWindow atta
   full screen ends a trailer's.
 - **The window**: the service applies a change through the AppWindow presenters. It keeps the window as it is while it is
   a window, on every move and resize, and once more as it leaves (`WindowedPlacement`: the presenter, so a maximized
-  window comes back maximized, and its place and size, but never a minimized window's); full screen and the mini view go
-  to each other without it, so either returns to the window as it was before both. Coming back, a restored window keeps
+  window comes back maximized, and Core's `WindowPlaceKeeper`: the place and size it last had restored, which a
+  maximized window keeps, and nothing of a minimized one); full screen and the mini view go to each other without it,
+  so either returns to the window as it was before both. Coming back, a restored window keeps
   its place and size as long as its title bar (32 view px high, at least 120 wide) shows on some display's work area
   (`WindowBounds.OnDisplays` over `DisplayArea.FindAll`): across two displays, on one left of or above the primary, or
   flush with an edge. Only one whose title bar shows on none, its display unplugged or moved meanwhile, is moved onto
   the nearest display and made smaller only if it does not fit. A presenter the window took by itself is followed, and
-  so is the window's real presenter when setting one fails (logged). Nothing is saved: each start begins as a window.
+  so is the window's real presenter when setting one fails (logged). Each start begins as a window.
+- **Across starts**: as the window closes (`Window.Closed`, so also full screen's Close and a restart into an update),
+  the service saves that same windowed place to `window.json` in the data directory (Core's `WindowPlaceFile`): the
+  restored bounds in pixels, the scale of the display they lie on (its effective DPI through `GetDpiForMonitor`), and
+  whether it was maximized: `{ "x": 312, "y": 140, "width": 1440, "height": 900, "scale": 1.5, "maximized": false }`.
+  Closed in full screen or the mini view, that is the window it would have gone back to; closed minimized, the last place
+  it had. MainWindow's constructor opens the window there before it shows (`WindowModeService.OpenAtLastPlace`, Core's
+  `WindowPlace.OpenOn`): on a display of another scale it keeps its size in view pixels, as Windows resizes a window
+  moved between displays, and is fitted onto that display if it then does not fit; otherwise the rule above. A
+  maximized one is maximized after it is placed, so un-maximizing goes back to its bounds. Written once, as other small
+  files are (a temporary file, then `File.Move`, tried again for a moment while something has the file open); a write
+  that fails is logged. No file, or one that cannot be read (logged), and Windows places the window at 1440 × 900 px.
 - **Changed** tells MainWindow (its title bar buttons), the player (its `IsFullScreen` and `IsMiniView`) and the trailer.
 - **Drag area**: the title bar's own buttons lie outside `SetTitleBar`'s element, so they take clicks. In full screen the
   window has no drag area at all (`InputNonClientPointerSource`'s caption region cleared); WinUI does not set it again
