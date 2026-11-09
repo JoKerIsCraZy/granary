@@ -648,10 +648,12 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   seek outside a remux or transcode window → `seek_reanchor`. Replans that meet a busy or unreachable server
   are resent unchanged (1, 2, 4, 8 s). A start answered after the stop has its new session stopped at once.
 - **Stalls** (`ServerPlayback.Stall.cs`): a stream that waits for data (mpv's `paused-for-cache`) for 90 s at
-  one position while the viewer wants to play is stopped and reconnected like a lost connection, as Android
-  gives a stalled load 90 s. Not while the viewer (or a Watch Party's room) has paused; the 90 s are above the
-  server's longest hold of a request and the media proxy's 60 s, after which mpv asks again by itself. Buffering's
-  start and end are logged with the position and what mpv holds ahead.
+  one position, with what mpv holds ahead growing by no more than half a second of the title, while the viewer
+  wants to play is stopped and reconnected like a lost connection, as Android gives a stalled load 90 s. A slow
+  link whose cache still grows is left to fill it (Apple's detector counts bytes, not time). Not while the viewer
+  (or a Watch Party's room) has paused; the 90 s are above the server's longest hold of a request and the media
+  proxy's 60 s, after which mpv asks again by itself. Buffering's start and end are logged with the position and
+  what mpv holds ahead.
 - **Play intent across reloads**: mpv keeps its pause across loads, which keeps a viewer's pause through a
   replan or reconnect. A stream that broke off plays to the end of the data mpv had and mpv pauses itself there
   (keep-open, `PlaybackSnapshot.IsAtEnd`); only a playing player gets there, so the reload after it plays on, as

@@ -11,7 +11,48 @@ public sealed class ServerPlaybackStallTests
 {
     private readonly ServerPlaybackFixture _fixture = new();
 
-    private static PlaybackSnapshot Buffering(double playerSeconds, bool paused = false) => Frame(playerSeconds, paused) with { IsBuffering = true };
+    // Waiting for data at playerSeconds; heldTo: where what mpv holds from there ends, none when not past the position.
+    private static PlaybackSnapshot Buffering(double playerSeconds, bool paused = false, double heldTo = 0) => Frame(playerSeconds, paused) with
+    {
+        IsBuffering = true,
+        Buffered = heldTo > playerSeconds ? BufferedRanges.Of([new BufferedRange(playerSeconds - 10, heldTo)]) : BufferedRanges.None,
+    };
+
+    [Fact]
+    public async Task BufferingWhileDataStillArrives_IsNoStall()
+    {
+        // A slow but live link (a remote server, a high bitrate) can take longer than the limit to fill mpv's cache: what
+        // mpv holds still grows, a second of the title every 30 s here, so the stream is not lost.
+        await _fixture.PlayingAsync();
+
+        for (int step = 0; step < 6; step++)
+        {
+            _fixture.Engine.RaiseState(Buffering(700, heldTo: 700 + step));
+            await _fixture.AdvanceAsync(TimeSpan.FromSeconds(30));
+        }
+
+        Assert.Equal(0, _fixture.Engine.Stops);
+    }
+
+    [Fact]
+    public async Task AFlatBuffer_IsAStall_HoweverOftenMpvReportsIt()
+    {
+        _fixture.Silo.On(HttpMethod.Post, ReplanPath, Ok(PlaybackPayloads.StartOpaqueIds));
+        await _fixture.PlayingAsync();
+        _fixture.Engine.RaiseState(Buffering(700, heldTo: 702));
+
+        // Reports of what mpv holds that say nothing new (less than half a second more) keep the count going.
+        await _fixture.AdvanceAsync(TimeSpan.FromSeconds(30));
+        _fixture.Engine.RaiseState(Buffering(700, heldTo: 702.2));
+        await _fixture.AdvanceAsync(TimeSpan.FromSeconds(30));
+        _fixture.Engine.RaiseState(Buffering(700, heldTo: 702.4));
+        await _fixture.AdvanceAsync(TimeSpan.FromSeconds(29));
+        Assert.Equal(0, _fixture.Engine.Stops);
+        await _fixture.AdvanceAsync(TimeSpan.FromSeconds(1));
+
+        Assert.Equal(1, _fixture.Engine.Stops);
+        Assert.Contains(_fixture.Logs.Lines, line => line.StartsWith("Information ServerPlayback: Buffering at 700.0 s, 2.0 s held ahead", StringComparison.Ordinal));
+    }
 
     [Fact]
     public async Task BufferingForAMinuteAndAHalf_WhileTheViewerPlays_Reconnects()

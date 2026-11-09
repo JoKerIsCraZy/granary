@@ -12,17 +12,28 @@ public sealed partial class ServerPlayback
     // its own and usually recovers in place. Android's retry window, and the time a load gets for its first picture.
     private static readonly TimeSpan StallTimeout = TimeSpan.FromSeconds(90);
 
+    // Data still arrives while what mpv holds grows by more than this, in seconds of the title: a slow link (a remote
+    // server, a high bitrate, a long cache-pause-wait) can wait longer than the limit and is not lost, as Apple's
+    // detector counts bytes, not time. mpv reports what it holds at most four times a second, in steps of a frame.
+    private const double StallGrowth = 0.5;
+
     // mpv waits for data (paused-for-cache) in the load that plays, since _bufferingSince.
     private bool _buffering;
     private long _bufferingSince;
 
-    // The wait for data while the viewer wants to play, timed from where it began; each new one has its number.
+    // Where what mpv holds from the position ends, in player time, by the latest state.
+    private double _heldTo;
+
+    // The wait for data while the viewer wants to play, timed from where it began and from what mpv held then; each new
+    // one has its number.
     private ITimer? _stallWatch;
     private int _stallWatches;
     private double _stallAt;
+    private double _stallHeldTo;
 
     private void FollowBuffering(PlaybackSnapshot state)
     {
+        _heldTo = state.Position.TotalSeconds + HeldAhead(state);
         bool buffering = state is { IsBuffering: true, IsLoaded: true };
         if (buffering != _buffering)
         {
@@ -42,7 +53,7 @@ public sealed partial class ServerPlayback
     }
 
     // A wait counts while the viewer wants the picture: not while they paused, nor before the stream's first frame (the
-    // first-frame watch has that). A new position, as a seek during the wait, starts it again.
+    // first-frame watch has that). A new position, as a seek during the wait, or data that arrived starts it again.
     private void WatchStall()
     {
         if (!_buffering || !_started || _paused || _stopping || _loadId == 0)
@@ -50,12 +61,15 @@ public sealed partial class ServerPlayback
             StopStallWatch();
             return;
         }
-        if (_stallWatch is not null && Math.Abs(_playerPosition - _stallAt) < 1)
+        if (_stallWatch is not null && Math.Abs(_playerPosition - _stallAt) < 1 && _heldTo - _stallHeldTo <= StallGrowth)
         {
+            // Nothing new. Less held than before (mpv let go of some) is no data either, and what arrives counts from there.
+            _stallHeldTo = Math.Min(_stallHeldTo, _heldTo);
             return;
         }
         StopStallWatch();
         _stallAt = _playerPosition;
+        _stallHeldTo = _heldTo;
         long loadId = _loadId;
         int watch = ++_stallWatches;
         _stallWatch = _time.CreateTimer(_ => _dispatcher.Post(() => OnStalled(loadId, watch)), null, StallTimeout, Timeout.InfiniteTimeSpan);
