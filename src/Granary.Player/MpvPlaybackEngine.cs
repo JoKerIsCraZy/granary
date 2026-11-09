@@ -38,6 +38,9 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
     // The audio stream the latest load asked for; checked once mpv opened the file.
     private int? _loadAudio;
 
+    // The latest pause or play asked (IsPauseAsked); mpv's own pauses leave it.
+    private bool _pauseAsked;
+
     private SubtitlePosition _subtitlePosition = SubtitlePosition.Bottom;
     private double _subtitleLift;
 
@@ -163,10 +166,22 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
         && value.All(c => c is >= ' ' and <= '~' and not ',' and not '\\')
         && (value.Length == 0 || value[0] is not ('"' or '\'' or '[' or '{' or '%'));
 
+    public bool IsPauseAsked
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _pauseAsked;
+            }
+        }
+    }
+
     public void SetPaused(bool paused)
     {
         lock (_gate)
         {
+            _pauseAsked = paused;
             if (_pauseWaits)
             {
                 _pauseOnOpen = paused;

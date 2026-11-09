@@ -1953,8 +1953,9 @@ for the server (the answer, then each read of the body), never the time a paused
 read (§9.5). mpv's HTTP reader (libcurl) then asks again from its byte offset where the stream can
 seek; a progressive remux ends, and the playback reconnects with the no-op `track_change` replan
 ([8.7](#87-replan)). A stream that waits 90 s for data while the viewer plays, with nothing new
-arriving, is given up and reconnected the same way. A reconnect plays on unless the viewer had
-paused; mpv's own pause at the end of the data it had (keep-open) is not taken for theirs.
+arriving, is given up and reconnected the same way. A reconnect plays on unless the viewer (or a
+Watch Party's room) had paused; mpv's own pause at the end of the data it had (keep-open) is not
+taken for theirs.
 
 ### 9.4 Token lifetime during long playback
 

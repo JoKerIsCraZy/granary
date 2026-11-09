@@ -129,6 +129,43 @@ public sealed class ServerPlaybackStallTests
     }
 
     [Fact]
+    public async Task AnEndLeftBehind_DoesNotUndoALaterPause()
+    {
+        // Held at the end of its data, then the viewer seeks back and pauses: a reload after that keeps the pause.
+        var playback = await _fixture.PlayingAsync();
+        _fixture.Engine.RaiseState(Frame(1500, paused: true) with { IsAtEnd = true });
+        _fixture.Engine.RaiseState(Frame(300));
+        _fixture.Engine.SetPaused(true);
+        _fixture.Engine.RaiseState(Frame(300, paused: true));
+
+        _fixture.Engine.RaiseEnded(new PlaybackEnded(PlaybackEndReason.AuthenticationFailed, null));
+        await playback.Recovery;
+
+        Assert.Equal(2, _fixture.Engine.Loaded.Count);
+        Assert.True(_fixture.Engine.Current.IsPaused);
+    }
+
+    [Fact]
+    public async Task ARoomThatPausedWhileTheStreamWasDown_StaysPaused()
+    {
+        // In a Watch Party the room's pause reaches the engine while mpv holds the end of the data, already paused: the
+        // stream the reconnect brings keeps the room's pause.
+        _fixture.Silo.On(HttpMethod.Post, ReplanPath, Ok(PlaybackPayloads.StartOpaqueIds));
+        var playback = await _fixture.StartAsync(PlayRequest.WatchParty(MovieId, "42", selectionRevision: 1));
+        _fixture.Engine.RaiseState(Frame(700));
+        _fixture.Engine.RaiseState(Frame(1500, paused: true));
+        _fixture.Engine.RaiseState(Frame(1500, paused: true) with { IsAtEnd = true });
+        _fixture.Engine.RaiseEnded(new PlaybackEnded(PlaybackEndReason.EndOfFile, null));
+
+        _fixture.Engine.SetPaused(true);
+        await _fixture.AdvanceAsync(TimeSpan.FromSeconds(1));
+        await playback.Recovery;
+
+        Assert.Equal(2, _fixture.Engine.Loaded.Count);
+        Assert.True(_fixture.Engine.Current.IsPaused);
+    }
+
+    [Fact]
     public async Task AReconnect_KeepsTheViewersPause()
     {
         _fixture.Silo.On(HttpMethod.Post, ReplanPath, Ok(PlaybackPayloads.StartOpaqueIds));

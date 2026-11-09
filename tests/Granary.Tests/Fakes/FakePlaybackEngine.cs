@@ -50,8 +50,12 @@ internal sealed class FakePlaybackEngine : IPlaybackEngine
     public void SetPaused(bool paused)
     {
         PauseRequests.Add(paused);
+        IsPauseAsked = paused;
         Current = Current with { IsPaused = paused };
     }
+
+    /// <summary>The latest pause asked; a state a test raises (mpv's own pause at the end, say) leaves it.</summary>
+    public bool IsPauseAsked { get; private set; }
 
     public void Seek(TimeSpan position) => Seeks.Add(position);
 
