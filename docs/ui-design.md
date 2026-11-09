@@ -834,6 +834,15 @@ window is inactive): Full screen ("Full screen (F11)"; see Full screen, below). 
 takes clicks. Like the caption buttons it takes no keyboard focus, so it is never a page's first focus nor a Tab stop:
 F11 is the keyboard's way, and screen readers still reach it.
 
+The window opens where it was closed (Granary's own; Silo's clients have no desktop window): on the same display, at the
+same place and size, and maximized if it was, with un-maximizing going back to the size it had before. A maximized
+window moved to another display (Win+Shift+Arrow) opens maximized there, and un-maximizes on that display. Closed in full
+screen or the mini view, it opens as the window those would have gone back to; closed minimized, where it was before.
+On a display of another scale it keeps its size as the scale shows it, and fits onto that display; a display that is gone
+or moved never leaves it off-screen: it opens on the nearest one, as after full screen. Kept for this PC
+(`window.json` in the data directory), a second after the window last moved, changed size or was maximized, and as it
+closes, so a crash or Windows shutting down keeps it too; the first time Windows places it, 1440 × 900 px.
+
 The mark moves (2026-10-26; drafts as SVG in `Assets/Logo`: `granary-mark-intro.svg`, `-loading.svg`, `-ambient.svg`).
 `GranaryMark` draws it on the compositor, so it stays smooth while the UI thread is busy: the ring is a circle trimmed
 to the G (composition's circles start at 12 o'clock, so the trimming is offset to the G's lower end). At start the
@@ -1165,7 +1174,8 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   with a menu open (a key pressed in a flyout reaches the window; the menu closes as the window changes size); in the
   player also F, its own full-screen button and a double click on the picture. A held F11 toggles once. Leaving full
   screen returns to the window as it was: maximized stays maximized, a restored window gets its place and size back.
-  Each start begins in a window; full screen is not remembered.
+  Each start begins in a window; full screen is not remembered. Closed in full screen or the mini view, Granary opens
+  as the window it would have gone back to.
 - **Look**: the title bar keeps its 32 px, the title on the left, so the pages keep their place under it. Windows shows
   no caption buttons in full screen: in their corner the title bar shows Exit full screen ("Exit full screen (F11)", the
   BackToWindow glyph) and Close (✕, "Close"; red under the pointer, as Windows' own). Close closes the window through the

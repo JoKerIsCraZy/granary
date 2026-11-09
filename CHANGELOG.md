@@ -6,6 +6,10 @@ release's section is what its update says it changes (docs/release.md).
 
 ## [Unreleased]
 
+### Added
+
+- **Window place:** Granary opens where you closed it, at the same size, maximized if it was.
+
 ### Fixed
 
 - Playback no longer buffers without end when you press Play after a long pause.
