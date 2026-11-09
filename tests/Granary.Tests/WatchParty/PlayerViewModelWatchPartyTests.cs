@@ -50,7 +50,7 @@ public sealed class PlayerViewModelWatchPartyTests : IAsyncDisposable
     }
 
     // In the room, with a player that has not started yet.
-    private async Task<PlayerViewModel> JoinedAsync(string room, MarkerSettings? markers = null)
+    private async Task<PlayerViewModel> JoinedAsync(string room, MarkerSettings? markers = null, IPlaybackDevicePreferences? devicePreferences = null)
     {
         _silo.On(HttpMethod.Post, "api/v2/watch-together/join", ScriptedSilo.Json(HttpStatusCode.OK, WatchPartyPayloads.Answer(room)));
         await _party.JoinAsync("ABCD1234", TestContext.Current.CancellationToken);
@@ -64,7 +64,7 @@ public sealed class PlayerViewModelWatchPartyTests : IAsyncDisposable
             };
             _playbacks.Add(playback);
             return playback;
-        }, new PlaybackStops(), _time, watchParty: _party, confirmation: _confirmation);
+        }, new PlaybackStops(), _time, watchParty: _party, confirmation: _confirmation, devicePreferences: devicePreferences);
     }
 
     private Task Marked() => ServerPlaybackFixture.Until(
@@ -138,6 +138,28 @@ public sealed class PlayerViewModelWatchPartyTests : IAsyncDisposable
         Assert.True(viewModel.HasLeft);
         Assert.Equal(1, _navigation.PlayerLeaves);
         Assert.DoesNotContain(Socket.Sent, f => f.Contains("\"transport_request\"", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ARoomsTitle_StartsWithThisPcsVolume_AndOnlyTheViewersOwnChangeIsKept()
+    {
+        var preferences = new InMemoryPlaybackDevicePreferences { Volume = new PlayerVolume(40, IsMuted: true) };
+        var viewModel = await JoinedAsync(WatchPartyPayloads.Room("playing", "playing", generation: 3, revision: 1, role: "guest", selected: "movie:heat"),
+            devicePreferences: preferences);
+
+        await viewModel.StartAsync(PlayRequest.WatchParty("movie:heat", "77", 1));
+        Assert.Equal((40.0, true), (_engine.Current.Volume, _engine.Current.IsMuted));
+        // The room plays the title: what the engine reports meanwhile is not the viewer's.
+        Playback.Raise(new ServerPlaybackStatus(ServerPlaybackPhase.Playing));
+        At(30);
+        At(31);
+        _time.Advance(TimeSpan.FromSeconds(1));
+        Assert.Empty(preferences.SavedVolume);
+
+        viewModel.Volume = 55;
+        _time.Advance(TimeSpan.FromSeconds(1));
+
+        Assert.Equal([new PlayerVolume(55, IsMuted: false)], preferences.SavedVolume);
     }
 
     [Fact]

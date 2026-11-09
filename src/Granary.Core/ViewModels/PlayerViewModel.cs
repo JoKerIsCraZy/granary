@@ -43,8 +43,8 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     private readonly ILogger _logger;
     private readonly global::Granary.Core.WatchParty.WatchPartySession? _watchParty;
     private readonly EpisodeSpoilerSettings? _spoilers;
-    // This PC's own player choices, such as the Sleep button and the time left; without them, as in tests that leave them
-    // out, the defaults hold (the button shows, the duration) and nothing is kept.
+    // This PC's own player choices, such as the Sleep button, the time left and the volume; without them, as in tests that
+    // leave them out, the defaults hold (the button shows, the duration, mpv's volume) and nothing is kept.
     private readonly IPlaybackDevicePreferences? _devicePreferences;
     // A seek's target counts as the position for this long, until the engine reports it: quick skips add up.
     private const long SeekTargetMilliseconds = 3000;
@@ -100,6 +100,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         FollowButtons();
         _devicePreferences = devicePreferences;
         ShowsTimeLeft = devicePreferences?.TimeLeft == true;
+        TakeKeptVolume();
         _engine.StateChanged += OnStateChanged;
         _engine.Ended += OnEnded;
     }
@@ -162,13 +163,6 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     /// <summary>Whether the seek bar and skip buttons work right now.</summary>
     [ObservableProperty]
     public partial bool CanSeek { get; private set; }
-
-    /// <summary>0 to 100.</summary>
-    [ObservableProperty]
-    public partial double Volume { get; set; } = 100;
-
-    [ObservableProperty]
-    public partial bool IsMuted { get; private set; }
 
     /// <summary>Seconds the back skip (button, Left key) jumps; the profile's <c>player.video_skip_back_seconds</c>.</summary>
     [ObservableProperty]
@@ -252,6 +246,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         ResetEndsAt();
         ShowSleepTimer();
         ShowAudioDelay();
+        StartWithChosenVolume();
         if (request.DirectSource is { } direct)
         {
             _engine.SetAudioDelay(AudioDelayMs / 1000.0);
@@ -337,6 +332,8 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     /// </summary>
     public void Leave()
     {
+        // A volume changed just before is kept, though it had no time to settle.
+        SaveVolumeNow();
         if (HasLeft)
         {
             return;
@@ -348,9 +345,6 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         // As Apple's player ends its timer with the player.
         StopSleepTimer();
     }
-
-    /// <summary>Raises or lowers the volume by <paramref name="delta"/> percentage points (Up and Down keys).</summary>
-    public void ChangeVolume(double delta) => Volume = Math.Clamp(Volume + delta, 0, 100);
 
     // Only what plays pauses: a pause set while preparing or after a failure would hold the next load at its start.
     [RelayCommand]
@@ -409,9 +403,6 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     private double? PendingSeek =>
         _seekTarget is { } target && Environment.TickCount64 - _seekTargetAt < SeekTargetMilliseconds ? target : null;
 
-    [RelayCommand]
-    private void ToggleMute() => _engine.SetMuted(!IsMuted);
-
     [RelayCommand(CanExecute = nameof(CanRetry))]
     private Task RetryAsync() => _request is { } request ? StartAsync(request) : Task.CompletedTask;
 
@@ -421,20 +412,6 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
     {
         Leave();
         _navigation.LeavePlayer();
-    }
-
-    // A value the engine does not have yet is the viewer's change: it also ends a mute, as on the web player. One the engine
-    // reported is not, even when the engine has moved on since: a new mpv says its own volume before it gets the viewer's.
-    partial void OnVolumeChanged(double value)
-    {
-        if (!_showingEngineState && Math.Abs(_engine.Current.Volume - value) > 0.01)
-        {
-            if (_engine.Current.IsMuted)
-            {
-                _engine.SetMuted(false);
-            }
-            _engine.SetVolume(value);
-        }
     }
 
     // Ends the server playback, if any. Its stop reads the final position before the engine stops; closing the app
@@ -585,9 +562,6 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
         }
     });
 
-    // Set while the volume shown follows the engine's (OnVolumeChanged). On the UI thread.
-    private bool _showingEngineState;
-
     // Server titles are shown in their own time: the stream may start later than the title (8.6).
     private void ShowEngineState()
     {
@@ -602,10 +576,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
             _seekTarget = null;
         }
         DurationSeconds = _playback?.DurationSeconds ?? (state.Duration is { } duration ? duration.TotalSeconds + offset : 0);
-        IsMuted = state.IsMuted;
-        _showingEngineState = true;
-        Volume = state.Volume;
-        _showingEngineState = false;
+        ShowEngineVolume(state);
         CanSeek = state.IsLoaded && state.HasStarted && (_playback is null || _playback.Status.Phase == ServerPlaybackPhase.Playing);
         FollowBuffered(state, offset);
         FollowMarkers(state);
