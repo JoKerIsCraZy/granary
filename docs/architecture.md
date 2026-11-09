@@ -647,13 +647,15 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   on → a new attempt at the position, and the old session is stopped; an administrator's stop (410) → leave; a
   seek outside a remux or transcode window → `seek_reanchor`. Replans that meet a busy or unreachable server
   are resent unchanged (1, 2, 4, 8 s). A start answered after the stop has its new session stopped at once.
-- **Stalls** (`ServerPlayback.Stall.cs`): a stream that waits for data (mpv's `paused-for-cache`) for 90 s at
-  one position, with what mpv holds ahead growing by no more than half a second of the title, while the viewer
-  wants to play is stopped and reconnected like a lost connection, as Android gives a stalled load 90 s. A slow
-  link whose cache still grows is left to fill it (Apple's detector counts bytes, not time). Not while the viewer
-  (or a Watch Party's room) has paused; the 90 s are above the server's longest hold of a request and the media
-  proxy's 60 s, after which mpv asks again by itself. Buffering's start and end are logged with the position and
-  what mpv holds ahead.
+- **Stalls** (`ServerPlayback.Stall.cs`): a stream that waits for data (mpv's `paused-for-cache`) for 90 s at one
+  position, with what mpv holds ahead growing by no more than half a second of the title, while the viewer wants to
+  play is stopped and reconnected like a lost connection, as Android gives a stalled load 90 s. A slow link whose
+  cache still grows (a remote server, a high bitrate, a long `cache-pause-wait`) is left to fill it, as Apple's
+  detector counts bytes, not time. Not while the viewer (or a Watch Party's room) has paused, also with a pause
+  asked that mpv has not shown yet. The 90 s are above the server's longest hold of a request (a playlist 30 s, a
+  segment 12 s plus 30 s after a seek; docs/api-contract.md, 9.5) and the media proxy's 60 s, after which mpv asks
+  again by itself and usually recovers in place. Buffering's start and end are logged with the position and what mpv
+  holds ahead.
 - **Play intent across reloads**: a reload (a replan, a reconnect) plays or pauses as last asked of the engine
   (`IPlaybackEngine.IsPauseAsked`: the viewer, a Watch Party's room, the control lane), as Apple's reconnect
   carries the viewer's play intent. A stream that broke off plays to the end of the data mpv had and mpv pauses

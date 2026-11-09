@@ -2,19 +2,14 @@ using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.Playback;
 
-// A stream that stops delivering while the viewer plays (docs/api-contract.md, 9.3). The media proxy cuts off a server
-// gone silent, so mpv asks again by itself; a wait for data that still holds after that is given up and the stream
-// reconnected, as Android gives a stalled load 90 s before it gives up.
+// A stream that waits for data while the viewer plays is given up and reconnected, as Android gives a stalled load 90 s
+// (docs/architecture.md, Stalls).
 public sealed partial class ServerPlayback
 {
-    // Above the server's longest hold of a request (a playlist 30 s, a segment 12 s and 30 s more after a seek, 9.5),
-    // and above the proxy's minute without data (MediaRoute.UpstreamIdleTimeout), after which mpv's reader asks again on
-    // its own and usually recovers in place. Android's retry window, and the time a load gets for its first picture.
+    // Above the server's longest hold of a request and the media proxy's 60 s, after which mpv asks again by itself.
     private static readonly TimeSpan StallTimeout = TimeSpan.FromSeconds(90);
 
-    // Data still arrives while what mpv holds grows by more than this, in seconds of the title: a slow link (a remote
-    // server, a high bitrate, a long cache-pause-wait) can wait longer than the limit and is not lost, as Apple's
-    // detector counts bytes, not time. mpv reports what it holds at most four times a second, in steps of a frame.
+    // Seconds of the title mpv must gain for data to count as still arriving: a slow link is not a lost one.
     private const double StallGrowth = 0.5;
 
     // mpv waits for data (paused-for-cache) in the load that plays, since _bufferingSince.
@@ -52,8 +47,7 @@ public sealed partial class ServerPlayback
         WatchStall();
     }
 
-    // A wait counts while the viewer wants the picture: not while they paused, nor before the stream's first frame (the
-    // first-frame watch has that). A new position, as a seek during the wait, or data that arrived starts it again.
+    // Counts while the viewer wants the picture after the first frame; a new position or new data starts it again.
     private void WatchStall()
     {
         if (!_buffering || !_started || WantsPause || _stopping || _loadId == 0)
@@ -63,7 +57,7 @@ public sealed partial class ServerPlayback
         }
         if (_stallWatch is not null && Math.Abs(_playerPosition - _stallAt) < 1 && _heldTo - _stallHeldTo <= StallGrowth)
         {
-            // Nothing new. Less held than before (mpv let go of some) is no data either, and what arrives counts from there.
+            // Nothing new; data counts from the least mpv held.
             _stallHeldTo = Math.Min(_stallHeldTo, _heldTo);
             return;
         }
@@ -93,8 +87,7 @@ public sealed partial class ServerPlayback
             return;
         }
         _logger.LogWarning("The stream waited {Seconds:F0} s for data at {Position:F1} s; giving it up", StallTimeout.TotalSeconds, SourcePosition);
-        // Whatever mpv still waits for must not start playing behind the reload. The reconnect asks the session for the
-        // stream again where the viewer is, as after any connection lost once the stream played.
+        // What mpv still waits for must not play behind the reload; the reconnect is a lost connection's.
         _engine.Stop();
         OnLoadEnded(new PlaybackEnded(PlaybackEndReason.Error, "No data within the stall timeout.", loadId));
     }
