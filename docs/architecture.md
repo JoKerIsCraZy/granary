@@ -556,6 +556,14 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   theirs from the resume point, as the web player does for the viewer, and exactly there, never rewound, as Android
   changes episode (`PlayRequest.ResumeWithoutRewind`); the previous one is the largest episode before
   this one in the current season that has a readable file, as the web finds it, none before the season's first.
+- **Volume** (`PlayerViewModel.Volume.cs`; the web's `player-volume` and `player-muted` in localStorage): this PC keeps the
+  viewer's volume and mute (`IPlaybackDevicePreferences.Volume`, `volume` and `muted` in `playback-device.json`), and
+  `PlayAsync` sets both on the engine as each title starts, a direct file included, since mpv keeps them across files but
+  not past a start of Granary. Only the viewer's changes count (the slider, M, the volume keys, the minimized bar's): a
+  volume the engine reports by itself, a new mpv's own or an administrator's `set_volume` (`ServerPlayback.Control.cs`),
+  plays but is not kept, and Mute keeps the viewer's own level with it. A Watch Party sets neither. A change is saved
+  once it has settled for 500 ms on the player's `TimeProvider`, and at once by `Leave`, which closing the player, the
+  window and `Dispose` all go through. Without a kept volume nothing is set, so the viewer's mpv.conf keeps its say.
 - **Sleep timer** (`PlayerViewModel.SleepTimer.cs`; the apps' `SleepTimer` and `SleepTimerController`, the web's
   `SleepTimerMenu`): a duration counts on the player's `TimeProvider` once a second, whatever plays, pauses or loads
   meanwhile, so it runs on into the next episode, and then pauses what plays, with no fade (a title already paused is left

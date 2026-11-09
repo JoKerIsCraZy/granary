@@ -71,6 +71,17 @@ internal sealed class InMemoryPlaybackDevicePreferences : IPlaybackDevicePrefere
         return Task.CompletedTask;
     }
 
+    public PlayerVolume? Volume { get; set; }
+
+    public List<PlayerVolume> SavedVolume { get; } = [];
+
+    public Task SetVolumeAsync(PlayerVolume volume)
+    {
+        Volume = volume;
+        SavedVolume.Add(volume);
+        return Task.CompletedTask;
+    }
+
     public bool SleepTimerSwitchOff { get; set; }
 
     /// <summary>How often the Sleep timer switch was dropped from the file.</summary>
