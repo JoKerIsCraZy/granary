@@ -4,7 +4,8 @@ using static Granary.Tests.Playback.ServerPlaybackFixture;
 namespace Granary.Tests.Playback;
 
 /// <summary>
-/// A stream that stops delivering while the viewer plays (docs/api-contract.md, 9.3; Android gives a stalled load 90 s).
+/// A stream that stops delivering while the viewer plays, and the reconnect that brings it back playing or paused as the
+/// viewer left it (docs/api-contract.md, 9.3; Android gives a stalled load 90 s, Apple's reconnect carries the play intent).
 /// </summary>
 public sealed class ServerPlaybackStallTests
 {
@@ -64,5 +65,41 @@ public sealed class ServerPlaybackStallTests
 
         Assert.Equal(0, _fixture.Engine.Stops);
         Assert.Contains(_fixture.Logs.Lines, line => line.StartsWith("Information ServerPlayback: Buffering ended at 704.0 s after 60.0 s", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task AStreamThatRanOutOfData_ComesBackPlaying()
+    {
+        // A remux the server ended plays to the end of what mpv holds, where mpv pauses itself (keep-open). The viewer
+        // paused nothing, so the stream the reconnect brings plays on.
+        _fixture.Silo.On(HttpMethod.Post, ReplanPath, Ok(PlaybackPayloads.StartOpaqueIds));
+        var playback = await _fixture.PlayingAsync();
+        _fixture.Engine.RaiseState(Frame(700));
+
+        _fixture.Engine.RaiseState(Frame(1500, paused: true));
+        _fixture.Engine.RaiseState(Frame(1500, paused: true) with { IsAtEnd = true });
+        _fixture.Engine.RaiseEnded(new PlaybackEnded(PlaybackEndReason.EndOfFile, null));
+        await _fixture.AdvanceAsync(TimeSpan.FromSeconds(1));
+        await playback.Recovery;
+
+        Assert.Equal(2, _fixture.Engine.Loaded.Count);
+        Assert.Equal(TimeSpan.FromSeconds(1500), _fixture.Engine.Loaded[^1].Start);
+        Assert.False(_fixture.Engine.Current.IsPaused);
+    }
+
+    [Fact]
+    public async Task AReconnect_KeepsTheViewersPause()
+    {
+        _fixture.Silo.On(HttpMethod.Post, ReplanPath, Ok(PlaybackPayloads.StartOpaqueIds));
+        var playback = await _fixture.PlayingAsync();
+        _fixture.Engine.SetPaused(true);
+        _fixture.Engine.RaiseState(Frame(700, paused: true));
+
+        _fixture.Engine.RaiseEnded(new PlaybackEnded(PlaybackEndReason.Error, "connection reset"));
+        await _fixture.AdvanceAsync(TimeSpan.FromSeconds(1));
+        await playback.Recovery;
+
+        Assert.Equal(2, _fixture.Engine.Loaded.Count);
+        Assert.True(_fixture.Engine.Current.IsPaused);
     }
 }

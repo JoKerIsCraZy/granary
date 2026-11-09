@@ -652,6 +652,10 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   gives a stalled load 90 s. Not while the viewer (or a Watch Party's room) has paused; the 90 s are above the
   server's longest hold of a request and the media proxy's 60 s, after which mpv asks again by itself. Buffering's
   start and end are logged with the position and what mpv holds ahead.
+- **Play intent across reloads**: mpv keeps its pause across loads, which keeps a viewer's pause through a
+  replan or reconnect. A stream that broke off plays to the end of the data mpv had and mpv pauses itself there
+  (keep-open, `PlaybackSnapshot.IsAtEnd`); only a playing player gets there, so the reload after it plays on, as
+  Apple's reconnect carries the viewer's play intent.
 - **One recovery at a time**: the server refuses a second replan while one is open, so what happens meanwhile
   (the replaced stream's end, a progress answer) is dropped or comes up again once the new stream plays, and a
   seek waits for that stream. Engine states and ends carry the id of their load (`PlaybackSnapshot.LoadId`):

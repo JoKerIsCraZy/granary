@@ -92,6 +92,10 @@ public sealed partial class ServerPlayback : IServerPlayback
     // The title was handed to the engine once: a later load (a replan, a reconnect) keeps whether it is paused.
     private bool _titleLoaded;
 
+    // The load reached the end of the data it had and mpv holds it there, paused (keep-open): that pause is mpv's, not
+    // the viewer's. Only a playing player gets there.
+    private bool _heldAtEnd;
+
     // The plan showed a first frame in one of its loads: a later failure is a lost connection, not a failed route.
     private bool _planPlayed;
 
@@ -481,13 +485,16 @@ public sealed partial class ServerPlayback : IServerPlayback
         // The player took this plan's stream (a load it refuses throws): the playback info and the settings gear's dot
         // describe it from here.
         _loaded = (_plan, _streamUrl!);
-        if (!_titleLoaded)
+        if (!_titleLoaded || _heldAtEnd)
         {
             // The title plays, however the one before was left: mpv keeps a pause across files, and pauses itself
-            // at a file's end (keep-open), which is where the next episode starts from.
+            // at a file's end (keep-open), which is where the next episode starts from. The same pause holds a stream
+            // that broke off at the end of its data, which the viewer was watching, so the reconnect plays on, as
+            // Apple's carries the viewer's play intent. A pause of the viewer's own stays across reloads.
             _titleLoaded = true;
             _engine.SetPaused(false);
         }
+        _heldAtEnd = false;
         WatchFirstFrame(_loadId);
     }
 
@@ -527,9 +534,10 @@ public sealed partial class ServerPlayback : IServerPlayback
             return;
         }
         // A load held at the end of a stream that broke off reads as the end of the data, paused: only a stream that
-        // plays on says where the viewer is.
+        // plays on says where the viewer is, and whether they paused.
         if (state.IsAtEnd)
         {
+            _heldAtEnd = true;
             ForgetBuffering();
             return;
         }
