@@ -647,6 +647,11 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   on → a new attempt at the position, and the old session is stopped; an administrator's stop (410) → leave; a
   seek outside a remux or transcode window → `seek_reanchor`. Replans that meet a busy or unreachable server
   are resent unchanged (1, 2, 4, 8 s). A start answered after the stop has its new session stopped at once.
+- **Stalls** (`ServerPlayback.Stall.cs`): a stream that waits for data (mpv's `paused-for-cache`) for 90 s at
+  one position while the viewer wants to play is stopped and reconnected like a lost connection, as Android
+  gives a stalled load 90 s. Not while the viewer (or a Watch Party's room) has paused; the 90 s are above the
+  server's longest hold of a request and the media proxy's 60 s, after which mpv asks again by itself. Buffering's
+  start and end are logged with the position and what mpv holds ahead.
 - **One recovery at a time**: the server refuses a second replan while one is open, so what happens meanwhile
   (the replaced stream's end, a progress answer) is dropped or comes up again once the new stream plays, and a
   seek waits for that stream. Engine states and ends carry the id of their load (`PlaybackSnapshot.LoadId`):

@@ -1952,7 +1952,8 @@ silently): its media proxy ends a request whose server sends nothing for 60 s, t
 for the server (the answer, then each read of the body), never the time a paused player does not
 read (§9.5). mpv's HTTP reader (libcurl) then asks again from its byte offset where the stream can
 seek; a progressive remux ends, and the playback reconnects with the no-op `track_change` replan
-([8.7](#87-replan)).
+([8.7](#87-replan)). A stream that waits for data for 90 s while the viewer plays is given up and
+reconnected the same way.
 
 ### 9.4 Token lifetime during long playback
 

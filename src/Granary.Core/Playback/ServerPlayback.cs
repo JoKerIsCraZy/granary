@@ -462,6 +462,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         _generation++;
         _started = false;
         _endedDuringRecovery = null;
+        ForgetBuffering();
         // Until its first frame the viewer is at the load's start, in this plan's time.
         _playerPosition = Math.Max(0, playerStart);
         _loadedAt = _time.GetTimestamp();
@@ -529,6 +530,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         // plays on says where the viewer is.
         if (state.IsAtEnd)
         {
+            ForgetBuffering();
             return;
         }
         bool playing = state is { IsLoaded: true, HasStarted: true };
@@ -548,6 +550,7 @@ public sealed partial class ServerPlayback : IServerPlayback
             // The server learns about a pause only from a sample, and a paused session lives 30 minutes, not 45 s.
             SchedulePauseReport();
         }
+        FollowBuffering(state);
     }
 
     private void OnStreamStarted(PlaybackSnapshot state)
@@ -599,6 +602,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         _loadId = 0;
         _started = false;
         StopFirstFrameWatch();
+        ForgetBuffering();
         if (_recovering)
         {
             _endedDuringRecovery = (ended, played);
@@ -830,6 +834,7 @@ public sealed partial class ServerPlayback : IServerPlayback
         _pauseReport?.Dispose();
         _pauseReport = null;
         StopFirstFrameWatch();
+        StopStallWatch();
     }
 
     // Work started from an event or a timer has no caller to report to: log what it did not expect.
