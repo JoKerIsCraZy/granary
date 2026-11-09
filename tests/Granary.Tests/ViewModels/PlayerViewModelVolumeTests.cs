@@ -242,6 +242,21 @@ public sealed class PlayerViewModelVolumeTests
     }
 
     [Fact]
+    public async Task AFirstMute_WithoutAKeptVolume_KeepsTheLevelThatPlays()
+    {
+        // The viewer's own mpv.conf set 70: muting keeps that level to come back to, as the viewer's own from then on.
+        _engine.Current = PlaybackSnapshot.Idle with { Volume = 70 };
+        using var viewModel = Create();
+        await PlayFileAsync(viewModel);
+        _engine.RaiseState(Playing() with { Volume = 70 });
+
+        viewModel.ToggleMuteCommand.Execute(null);
+        _time.Advance(Settled);
+
+        Assert.Equal([new PlayerVolume(70, IsMuted: true)], _preferences.SavedVolume);
+    }
+
+    [Fact]
     public async Task AServerTitle_AndTheNextOne_StartWithTheViewersVolume()
     {
         _preferences.Volume = new PlayerVolume(40, IsMuted: false);

@@ -183,6 +183,8 @@ public sealed class JsonPlaybackDevicePreferencesTests : IDisposable
     [InlineData("{ \"volume\": -3 }", 0.0, false)]
     [InlineData("{ \"volume\": 37.5 }", 37.5, false)]
     [InlineData("{ \"volume\": 40, \"muted\": null }", 40.0, false)]
+    [InlineData("{ \"volume\": 40 }", 40.0, false)]
+    [InlineData("{ \"volume\": 0, \"up_down\": \"volume\" }", 0.0, false)]
     public async Task AVolumeInTheFile_IsBroughtIntoRange_AndAMissingMuteIsNone(string file, double percent, bool muted)
     {
         Directory.CreateDirectory(_directory);
@@ -193,6 +195,7 @@ public sealed class JsonPlaybackDevicePreferencesTests : IDisposable
 
     [Theory]
     [InlineData("{ \"volume\": \"loud\", \"muted\": true, \"up_down\": \"volume\" }")]
+    [InlineData("{ \"volume\": \"40\", \"muted\": true, \"up_down\": \"volume\" }")]
     [InlineData("{ \"volume\": true, \"muted\": true, \"up_down\": \"volume\" }")]
     [InlineData("{ \"volume\": [40, [50]], \"muted\": true, \"up_down\": \"volume\" }")]
     [InlineData("{ \"volume\": { \"level\": 40, \"more\": [{ \"up_down\": \"controls\" }] }, \"muted\": true, \"up_down\": \"volume\" }")]
@@ -212,6 +215,8 @@ public sealed class JsonPlaybackDevicePreferencesTests : IDisposable
     [Theory]
     [InlineData("{ \"decodes_in_software\": true, \"up_down\": \"volume\" }")]
     [InlineData("{ \"volume\": \"loud\", \"decodes_in_software\": true, \"up_down\": \"volume\" }")]
+    [InlineData("{ \"volume\": \"40\", \"decodes_in_software\": true, \"up_down\": \"volume\" }")]
+    [InlineData("{ \"volume\": null, \"decodes_in_software\": true, \"up_down\": \"volume\" }")]
     [InlineData("{ \"volume\": null, \"muted\": null, \"decodes_in_software\": true, \"up_down\": \"volume\" }")]
     public async Task AnOlderFile_OrOneWithoutAReadableVolumeOrMute_KeepsNone_AndKeepsTheOtherChoices(string file)
     {
