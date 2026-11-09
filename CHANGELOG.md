@@ -6,6 +6,8 @@ release's section is what its update says it changes (docs/release.md).
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-11-09
+
 ### Added
 
 - **Volume stays:** the player remembers its volume and mute on this PC, for the next title and after a restart.
