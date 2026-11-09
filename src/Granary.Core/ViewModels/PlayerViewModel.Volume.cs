@@ -15,6 +15,10 @@ public sealed partial class PlayerViewModel
     // A drag along the slider or a held volume key passes many values: the one they settle on is saved.
     private static readonly TimeSpan VolumeSettles = TimeSpan.FromMilliseconds(500);
 
+    // How long a request waits for the engine to report it: mpv answers within milliseconds, so one it never answers, or a
+    // volume set from elsewhere meanwhile, shows after this at the latest.
+    private static readonly TimeSpan RequestHolds = TimeSpan.FromSeconds(1);
+
     // The viewer's volume and mute: this PC's at first, then the viewer's latest change; null before either, while the
     // engine's own hold. On the UI thread, as everything here.
     private PlayerVolume? _chosenVolume;
@@ -24,6 +28,14 @@ public sealed partial class PlayerViewModel
     private long _volumeChanges;
     // Set while the volume shown follows the engine's (OnVolumeChanged).
     private bool _showingEngineState;
+
+    // What was last asked of the engine (the viewer's change, a title's start), until the engine reports it or RequestHolds
+    // has passed. mpv reports a volume or mute a moment after it was set, so a snapshot taken meanwhile still has the one
+    // before: the request shows instead, so the slider does not jump back for a moment, and a second Mute pressed before
+    // mpv reported the first unmutes.
+    private double? _askedVolume;
+    private bool? _askedMute;
+    private long _askedAt;
 
     /// <summary>0 to 100; muted, it keeps the level that Unmute goes back to.</summary>
     [ObservableProperty]
@@ -35,28 +47,36 @@ public sealed partial class PlayerViewModel
     /// <summary>Raises or lowers the volume by <paramref name="delta"/> percentage points (Up and Down keys).</summary>
     public void ChangeVolume(double delta) => Volume = Math.Clamp(Volume + delta, 0, 100);
 
-    // Kept with the viewer's own level, also after a volume set from elsewhere: that one was the title's alone.
+    // Kept with the viewer's own level, also after a volume set from elsewhere: that one was the title's alone. Without one,
+    // the level the engine plays at, which this player may not have been told of yet.
     [RelayCommand]
     private void ToggleMute()
     {
         bool muted = !IsMuted;
         _engine.SetMuted(muted);
-        Choose(new PlayerVolume(_chosenVolume?.Percent ?? Volume, muted));
+        Ask(null, muted);
+        IsMuted = muted;
+        Choose(new PlayerVolume(_chosenVolume?.Percent ?? _engine.Current.Volume, muted));
     }
 
     // A value shown from the engine is not the viewer's change, even when the engine has moved on since: a new mpv says its
     // own volume before it gets the viewer's. Any other is (the slider, the volume keys), and goes to the engine even when
     // the engine seems to have it: mpv says a volume a moment after it was set, so what it said last may be older than
     // the viewer's last change, as when a drag goes away and back before mpv answers. It also ends a mute, as on the web
-    // player, likewise even when none seems on: a Mute just pressed may not be reported yet.
+    // player: one shown, a Mute still on its way included, or one the engine has.
     partial void OnVolumeChanged(double value)
     {
         if (_showingEngineState)
         {
             return;
         }
-        _engine.SetMuted(false);
+        if (IsMuted || _engine.Current.IsMuted)
+        {
+            _engine.SetMuted(false);
+        }
         _engine.SetVolume(value);
+        Ask(value, false);
+        IsMuted = false;
         Choose(new PlayerVolume(value, IsMuted: false));
     }
 
@@ -80,7 +100,31 @@ public sealed partial class PlayerViewModel
         }
         _engine.SetVolume(chosen.Percent);
         _engine.SetMuted(chosen.IsMuted);
+        Ask(chosen.Percent, chosen.IsMuted);
         ShowVolume(chosen.Percent, chosen.IsMuted);
+    }
+
+    // A null leaves what was asked before.
+    private void Ask(double? volume, bool? muted)
+    {
+        _askedVolume = volume ?? _askedVolume;
+        _askedMute = muted ?? _askedMute;
+        _askedAt = _time.GetTimestamp();
+    }
+
+    // The engine's volume and mute, unless it has yet to report what was asked of it.
+    private void ShowEngineVolume(PlaybackSnapshot state)
+    {
+        bool held = _time.GetElapsedTime(_askedAt) < RequestHolds;
+        if (_askedVolume is { } volume && (!held || Math.Abs(state.Volume - volume) < 0.01))
+        {
+            _askedVolume = null;
+        }
+        if (_askedMute is { } muted && (!held || state.IsMuted == muted))
+        {
+            _askedMute = null;
+        }
+        ShowVolume(_askedVolume ?? state.Volume, _askedMute ?? state.IsMuted);
     }
 
     private void ShowVolume(double volume, bool muted)

@@ -104,6 +104,7 @@ public sealed class PlayerViewModelVolumeTests
         viewModel.ToggleMuteCommand.Execute(null);
         _time.Advance(Settled);
 
+        Assert.Equal([true], _engine.MuteRequests);
         Assert.True(_engine.Current.IsMuted);
         Assert.Equal(40, _engine.Current.Volume);
         Assert.Equal([new PlayerVolume(40, IsMuted: true)], _preferences.SavedVolume);
@@ -149,14 +150,16 @@ public sealed class PlayerViewModelVolumeTests
         using var viewModel = Create();
         await PlayFileAsync(viewModel);
 
-        foreach (double volume in new[] { 90.0, 75, 60, 45 })
+        foreach (double volume in new[] { 90.0, 75, 60 })
         {
             viewModel.Volume = volume;
             _time.Advance(TimeSpan.FromMilliseconds(100));
         }
-        Assert.Empty(_preferences.SavedVolume);
+        viewModel.Volume = 45;
 
-        _time.Advance(Settled);
+        _time.Advance(Settled - TimeSpan.FromMilliseconds(1));
+        Assert.Empty(_preferences.SavedVolume);
+        _time.Advance(TimeSpan.FromMilliseconds(1));
 
         Assert.Equal([new PlayerVolume(45, IsMuted: false)], _preferences.SavedVolume);
     }
@@ -169,6 +172,7 @@ public sealed class PlayerViewModelVolumeTests
         viewModel.Volume = 40;
 
         viewModel.CloseCommand.Execute(null);
+        Assert.Equal([new PlayerVolume(40, IsMuted: false)], _preferences.SavedVolume);
         _time.Advance(Settled);
 
         Assert.Equal([new PlayerVolume(40, IsMuted: false)], _preferences.SavedVolume);
@@ -181,6 +185,7 @@ public sealed class PlayerViewModelVolumeTests
         _preferences.Volume = new PlayerVolume(40, IsMuted: false);
         using var viewModel = Create();
         await PlayFileAsync(viewModel);
+        _engine.RaiseState(Playing() with { Volume = 40 });
 
         _engine.RaiseState(Playing() with { Volume = 60 });
         _time.Advance(Settled);
@@ -200,7 +205,9 @@ public sealed class PlayerViewModelVolumeTests
         _preferences.Volume = new PlayerVolume(40, IsMuted: false);
         using var viewModel = Create();
         await PlayFileAsync(viewModel);
+        _engine.RaiseState(Playing() with { Volume = 40 });
         _engine.RaiseState(Playing() with { Volume = 60 });
+        Assert.Equal(60, viewModel.Volume);
 
         viewModel.ToggleMuteCommand.Execute(null);
         _time.Advance(Settled);
@@ -238,7 +245,66 @@ public sealed class PlayerViewModelVolumeTests
         _time.Advance(Settled);
 
         Assert.Equal([true, false], _engine.MuteRequests);
+        Assert.Equal([50.0], _engine.VolumeRequests);
         Assert.Equal([new PlayerVolume(50, IsMuted: false)], _preferences.SavedVolume);
+    }
+
+    [Fact]
+    public async Task QuickMutePresses_BeforeTheEngineAnswers_TakeTurns()
+    {
+        using var viewModel = Create();
+        await PlayFileAsync(viewModel);
+        _engine.RaiseState(Playing());
+        _engine.ReportsVolumeLater = true;
+
+        viewModel.ToggleMuteCommand.Execute(null);
+        viewModel.ToggleMuteCommand.Execute(null);
+        viewModel.ToggleMuteCommand.Execute(null);
+        _time.Advance(Settled);
+
+        Assert.Equal([true, false, true], _engine.MuteRequests);
+        Assert.True(viewModel.IsMuted);
+        Assert.Equal([new PlayerVolume(100, IsMuted: true)], _preferences.SavedVolume);
+    }
+
+    [Fact]
+    public async Task ASnapshotFromBeforeTheViewersChange_DoesNotMoveTheSliderOrTheMuteBack()
+    {
+        using var viewModel = Create();
+        await PlayFileAsync(viewModel);
+        _engine.RaiseState(Playing());
+        _engine.ReportsVolumeLater = true;
+
+        viewModel.Volume = 60;
+        viewModel.ToggleMuteCommand.Execute(null);
+        // A position mpv sent before it took the change.
+        _engine.RaiseState(Playing());
+        Assert.Equal((60.0, true), (viewModel.Volume, viewModel.IsMuted));
+
+        // mpv took it; what it reports from then on shows, a volume set from elsewhere too.
+        _engine.RaiseState(Playing() with { Volume = 60, IsMuted = true });
+        _engine.RaiseState(Playing() with { Volume = 80, IsMuted = true });
+
+        Assert.Equal((80.0, true), (viewModel.Volume, viewModel.IsMuted));
+    }
+
+    [Fact]
+    public async Task AChangeTheEngineNeverReports_GivesWayToWhatItSays_AfterASecond()
+    {
+        using var viewModel = Create();
+        await PlayFileAsync(viewModel);
+        _engine.RaiseState(Playing());
+        _engine.ReportsVolumeLater = true;
+
+        viewModel.Volume = 60;
+        _time.Advance(TimeSpan.FromMilliseconds(999));
+        _engine.RaiseState(Playing());
+        Assert.Equal(60, viewModel.Volume);
+        _time.Advance(TimeSpan.FromMilliseconds(1));
+        _engine.RaiseState(Playing());
+
+        Assert.Equal(100, viewModel.Volume);
+        Assert.Equal([60.0], _engine.VolumeRequests);
     }
 
     [Fact]
@@ -253,6 +319,23 @@ public sealed class PlayerViewModelVolumeTests
         viewModel.ToggleMuteCommand.Execute(null);
         _time.Advance(Settled);
 
+        Assert.Equal([true], _engine.MuteRequests);
+        Assert.True(_engine.Current.IsMuted);
+        Assert.Equal([new PlayerVolume(70, IsMuted: true)], _preferences.SavedVolume);
+    }
+
+    [Fact]
+    public async Task AFirstMute_BeforeTheEngineSaysAnything_KeepsTheEnginesLevel()
+    {
+        // mpv runs at 70 from the viewer's mpv.conf; this player has not been told so yet, and still shows its 100.
+        _engine.Current = PlaybackSnapshot.Idle with { Volume = 70 };
+        using var viewModel = Create();
+        await PlayFileAsync(viewModel);
+
+        viewModel.ToggleMuteCommand.Execute(null);
+        _time.Advance(Settled);
+
+        Assert.Equal([true], _engine.MuteRequests);
         Assert.Equal([new PlayerVolume(70, IsMuted: true)], _preferences.SavedVolume);
     }
 

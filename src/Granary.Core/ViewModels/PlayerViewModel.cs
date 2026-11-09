@@ -576,7 +576,7 @@ public sealed partial class PlayerViewModel : ObservableObject, IDisposable
             _seekTarget = null;
         }
         DurationSeconds = _playback?.DurationSeconds ?? (state.Duration is { } duration ? duration.TotalSeconds + offset : 0);
-        ShowVolume(state.Volume, state.IsMuted);
+        ShowEngineVolume(state);
         CanSeek = state.IsLoaded && state.HasStarted && (_playback is null || _playback.Status.Phase == ServerPlaybackPhase.Playing);
         FollowBuffered(state, offset);
         FollowMarkers(state);
