@@ -13,6 +13,10 @@ namespace Granary.App.Services;
 internal sealed partial class WindowedPlacement(ILogger logger)
 {
     private readonly WindowPlaceKeeper _place = new();
+    // WINDOWPLACEMENT's WPF_RESTORETOMAXIMIZED, and SW_SHOWMINIMIZED.
+    private const uint RestoreToMaximizedFlag = 0x2;
+    private const uint ShowMinimized = 2;
+
     private AppWindowPresenter? _presenter;
     private bool _isScaleFailureLogged;
 
@@ -25,8 +29,14 @@ internal sealed partial class WindowedPlacement(ILogger logger)
     {
         _presenter = window.Presenter;
         var state = StateOf(window.Presenter);
-        var bounds = new WindowBounds(window.Position.X, window.Position.Y, window.Size.Width, window.Size.Height);
-        _place.Keep(state, bounds, state == WindowState.Maximized ? RestoreBounds(window) : null);
+        if (state == WindowState.Maximized)
+        {
+            // Checked against the display the maximized window is on.
+            var display = DisplayArea.GetFromWindowId(window.Id, DisplayAreaFallback.Nearest);
+            _place.KeepMaximized(RestoreBounds(window), Displays.Of(display.WorkArea), ScaleOf(display));
+            return;
+        }
+        _place.Keep(state, new WindowBounds(window.Position.X, window.Position.Y, window.Size.Width, window.Size.Height));
     }
 
     /// <summary>Back to the window as it was kept, on a display as the displays are now; <paramref name="scale"/> is the window's.</summary>
@@ -80,6 +90,24 @@ internal sealed partial class WindowedPlacement(ILogger logger)
         }
     }
 
+    /// <summary>
+    /// A window that should be maximized but shows minimized (a shortcut's "Run: Minimized" took its first show): it comes
+    /// back maximized from the taskbar, and counts as maximized meanwhile, also when it closes from there.
+    /// </summary>
+    public void RestoreToMaximized(AppWindow window)
+    {
+        var placement = new NativePlacement { Length = (uint)Marshal.SizeOf<NativePlacement>() };
+        nint handle = Win32Interop.GetWindowFromWindowId(window.Id);
+        if (GetWindowPlacement(handle, ref placement))
+        {
+            // Windows takes the flag only with the minimized show command, and only for the next restore.
+            placement.Flags |= RestoreToMaximizedFlag;
+            placement.ShowCommand = ShowMinimized;
+            SetWindowPlacement(handle, ref placement);
+        }
+        _place.Keep(WindowState.Maximized, default);
+    }
+
     // A display unplugged or moved during full screen must not leave the window off-screen; one whose title bar still shows
     // on a display stays as it was, across two displays too.
     private static WindowBounds OnDisplay(WindowBounds bounds, double scale) =>
@@ -96,8 +124,10 @@ internal sealed partial class WindowedPlacement(ILogger logger)
     }
 
     // Where Windows restores the maximized window to. It follows the window to another display (Win+Shift+Arrow), which the
-    // window's own bounds while restored do not see. Windows gives it in workspace coordinates, off by the app bars of the
-    // window's display; none when it does not say.
+    // window's own bounds while restored do not see. Windows gives it in workspace coordinates, off by the app bars of a
+    // display: here those of the display the rect itself lies on (DisplayArea.GetFromRect, MonitorFromRect's nearest), as
+    // Chromium turns them. A taskbar at the bottom, as on most PCs, makes no difference; should that be the wrong display,
+    // WindowPlaceKeeper.KeepMaximized does not trust a rect off the window's own. None when Windows does not say.
     private static WindowBounds? RestoreBounds(AppWindow window)
     {
         var placement = new NativePlacement { Length = (uint)Marshal.SizeOf<NativePlacement>() };
@@ -106,9 +136,13 @@ internal sealed partial class WindowedPlacement(ILogger logger)
             return null;
         }
         var normal = placement.NormalPosition;
-        var display = DisplayArea.GetFromWindowId(window.Id, DisplayAreaFallback.Nearest);
-        return new WindowBounds(normal.Left, normal.Top, normal.Right - normal.Left, normal.Bottom - normal.Top)
-            .FromWorkspace(Displays.Of(display.OuterBounds), Displays.Of(display.WorkArea));
+        var workspace = new WindowBounds(normal.Left, normal.Top, normal.Right - normal.Left, normal.Bottom - normal.Top);
+        if (workspace.Width <= 0 || workspace.Height <= 0)
+        {
+            return null;
+        }
+        var display = Displays.At(workspace);
+        return workspace.FromWorkspace(Displays.Of(display.OuterBounds), Displays.Of(display.WorkArea));
     }
 
     private static WindowState StateOf(AppWindowPresenter presenter) => presenter switch
@@ -150,4 +184,9 @@ internal sealed partial class WindowedPlacement(ILogger logger)
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static partial bool GetWindowPlacement(nint window, ref NativePlacement placement);
+
+    [LibraryImport("user32.dll")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static partial bool SetWindowPlacement(nint window, ref NativePlacement placement);
 }

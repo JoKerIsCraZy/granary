@@ -7,9 +7,9 @@ namespace Granary.Core.ViewModels;
 /// <summary>
 /// <c>window.json</c> in the data directory: where the main window was as Granary closed (<see cref="WindowPlace"/>), this
 /// PC's alone. Read once at start; written off the UI thread as the window settles, so a crash or Windows shutting down
-/// keeps it too, and once more as the window closes. A place the file holds already is not written again. No file, or one
-/// that cannot be read, opens the window where Windows places it, as before Granary kept it. One that cannot be written is
-/// logged, and the next start opens where the file last said.
+/// keeps it too, and once more as the window closes, which is the last word. A place the file holds already is not written
+/// again. No file, or one that cannot be read, opens the window where Windows places it, as before Granary kept it. One
+/// that cannot be written is logged, and the next start opens where the file last said.
 /// </summary>
 public sealed class WindowPlaceFile
 {
@@ -22,20 +22,29 @@ public sealed class WindowPlaceFile
     private const int MaxPixels = 1 << 16;
     private const double MaxScale = 10;
 
+    // A save's temporary file is written and moved over within moments; one older than this was left by a Granary that
+    // ended mid-save.
+    private static readonly TimeSpan OrphanAge = TimeSpan.FromMinutes(1);
+
     private readonly string _filePath;
     private readonly ILogger<WindowPlaceFile> _logger;
-    // Writes one at a time, and keeps the two below.
+    private readonly TimeProvider _time;
+    // Writes one at a time, and keeps the place the file holds. Only the writes take it: asking for a save never waits.
     private readonly Lock _gate = new();
-    // The place a save as the window settled is to write, until it is written or a later save takes its place.
+    // The place a save as the window settled is to write, until it is written or a later save takes its place; swapped,
+    // never locked.
     private WindowPlace? _pending;
     // The place the file holds, as read or written here.
     private WindowPlace? _written;
+    // The save as the window closed has begun: the settle saves still to come are too late.
+    private volatile bool _isClosed;
 
-    public WindowPlaceFile(string filePath, ILogger<WindowPlaceFile> logger)
+    public WindowPlaceFile(string filePath, ILogger<WindowPlaceFile> logger, TimeProvider? time = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
         _filePath = Path.GetFullPath(filePath);
         _logger = logger;
+        _time = time ?? TimeProvider.System;
     }
 
     public static string DefaultPath => Path.Combine(AppPaths.DataDirectory, "window.json");
@@ -46,6 +55,7 @@ public sealed class WindowPlaceFile
     /// <summary>The place the window was closed at; none the first time, or when the file cannot be read. Never throws.</summary>
     public WindowPlace? Load()
     {
+        RemoveOrphans();
         try
         {
             if (!File.Exists(_filePath))
@@ -73,29 +83,32 @@ public sealed class WindowPlaceFile
     }
 
     /// <summary>
-    /// Saves the place off the caller's thread, as the window settles. A later save, or the one as the window closes, takes
-    /// its place if it has not been written yet. Never fails: a save that does not work is logged.
+    /// Saves the place off the caller's thread, as the window settles, without waiting for a write in flight. A later save,
+    /// or the one as the window closes, takes its place if it has not been written yet; after that one it writes nothing.
+    /// Never fails: a save that does not work is logged.
     /// </summary>
     public Task SaveAsync(WindowPlace place)
     {
         ArgumentNullException.ThrowIfNull(place);
-        lock (_gate)
+        if (_isClosed)
         {
-            _pending = place;
+            return Task.CompletedTask;
         }
+        Interlocked.Exchange(ref _pending, place);
         return Task.Run(WritePending);
     }
 
     /// <summary>
-    /// Saves the place to open at next time, as the window closes: after a save in flight, and in place of one still waiting.
-    /// Never throws: a save that does not work is logged, and false.
+    /// Saves the place to open at next time, as the window closes: after a write in flight, in place of one still waiting,
+    /// and as the last word. Never throws: a save that does not work is logged, and false.
     /// </summary>
     public bool Save(WindowPlace place)
     {
         ArgumentNullException.ThrowIfNull(place);
+        _isClosed = true;
+        Interlocked.Exchange(ref _pending, null);
         lock (_gate)
         {
-            _pending = null;
             return Write(place);
         }
     }
@@ -104,9 +117,10 @@ public sealed class WindowPlaceFile
     {
         lock (_gate)
         {
-            if (_pending is { } place)
+            // Taken under the gate, so a settle save never writes after the close's; checked there for one asked for as
+            // the close began.
+            if (Interlocked.Exchange(ref _pending, null) is { } place && !_isClosed)
             {
-                _pending = null;
                 Write(place);
             }
         }
@@ -169,6 +183,45 @@ public sealed class WindowPlaceFile
                 Thread.Sleep(MoveRetryDelay);
             }
         }
+    }
+
+    // Temporary files of saves that never ended, as a Granary killed mid-save leaves them; never the file itself, nor one
+    // another Granary on the same data folder is writing now.
+    private void RemoveOrphans()
+    {
+        try
+        {
+            string? directory = Path.GetDirectoryName(_filePath);
+            if (directory is null || !Directory.Exists(directory))
+            {
+                return;
+            }
+            string prefix = Path.GetFileName(_filePath) + ".";
+            var before = _time.GetUtcNow().UtcDateTime - OrphanAge;
+            foreach (string path in Directory.EnumerateFiles(directory, prefix + "*.tmp"))
+            {
+                if (IsTemporaryName(Path.GetFileName(path), prefix) && File.GetLastWriteTimeUtc(path) < before)
+                {
+                    TryDelete(path);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Half-written window place files were not looked for");
+        }
+    }
+
+    // "window.json.<32 hex digits>.tmp", as Write names them.
+    private static bool IsTemporaryName(string name, string prefix)
+    {
+        const string Suffix = ".tmp";
+        if (!name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) || !name.EndsWith(Suffix, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+        var id = name.AsSpan(prefix.Length, name.Length - prefix.Length - Suffix.Length);
+        return id.Length == 32 && Guid.TryParseExact(id, "N", out _);
     }
 
     private void TryDelete(string path)

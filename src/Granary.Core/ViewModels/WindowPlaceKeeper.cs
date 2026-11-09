@@ -11,8 +11,9 @@ public enum WindowState
 /// <summary>
 /// The main window's place as a window, followed through its changes: to go back to after full screen or the mini view, and
 /// to open at the next start. A restored window's place and size are kept as they are. A maximized window keeps the place
-/// Windows restores it to, which follows it to another display, or else the one it had before; a minimized one (Windows
-/// parks it at -32000) changes nothing, so the place stays the last one it really had, maximized or not.
+/// Windows restores it to, which follows it to another display (<see cref="KeepMaximized"/>), or else the one it had
+/// before; a minimized one (Windows parks it at -32000) changes nothing, so the place stays the last one it really had,
+/// maximized or not.
 /// </summary>
 public sealed class WindowPlaceKeeper
 {
@@ -26,11 +27,10 @@ public sealed class WindowPlaceKeeper
     public bool IsMaximized { get; private set; }
 
     /// <summary>
-    /// The window as it is now, at <paramref name="bounds"/>; <paramref name="restoreBounds"/> is where Windows restores a
-    /// maximized one to, when it says. Bounds that are no real place (empty, or parked as a minimized window's, as a window
-    /// being destroyed may say) leave the last good place.
+    /// The window as it is now, at <paramref name="bounds"/>. Bounds that are no real place (empty, or parked as a minimized
+    /// window's, as a window being destroyed may say) leave the last good place.
     /// </summary>
-    public void Keep(WindowState state, WindowBounds bounds, WindowBounds? restoreBounds = null)
+    public void Keep(WindowState state, WindowBounds bounds)
     {
         switch (state)
         {
@@ -39,12 +39,27 @@ public sealed class WindowPlaceKeeper
                 IsMaximized = false;
                 break;
             case WindowState.Maximized:
-                if (restoreBounds is { } restore && IsReal(restore))
-                {
-                    Bounds = restore;
-                }
                 IsMaximized = true;
                 break;
+        }
+    }
+
+    /// <summary>
+    /// The window maximized on the display with <paramref name="workArea"/>, at <paramref name="scale"/>.
+    /// <paramref name="restoreBounds"/> is where Windows restores it to, when it says: kept while its title bar lies on that
+    /// display. One elsewhere was read wrong (its coordinates turned the wrong way), and is not trusted: the last place
+    /// stays, moved onto that display if it is not there, its size kept as far as the display allows.
+    /// </summary>
+    public void KeepMaximized(WindowBounds? restoreBounds, WindowBounds workArea, double scale)
+    {
+        IsMaximized = true;
+        if (restoreBounds is { } restore && IsReal(restore) && restore.ShowsTitleBarOn(workArea, scale))
+        {
+            Bounds = restore;
+        }
+        else if (Bounds is { } last)
+        {
+            Bounds = last.OnDisplays([workArea], workArea, scale);
         }
     }
 

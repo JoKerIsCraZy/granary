@@ -14,7 +14,14 @@ public readonly record struct WindowBounds(int X, int Y, int Width, int Height)
     /// displays at <paramref name="scale"/>.
     /// </summary>
     public WindowBounds OnDisplays(IReadOnlyList<WindowBounds> workAreas, WindowBounds nearest, double scale) =>
-        OnDisplays(workAreas, nearest, (int)Math.Round(TitleBarHeight * scale), (int)Math.Round(MinimumVisibleTitleBar * scale));
+        OnDisplays(workAreas, nearest, TitleBarPixels(scale), MinimumVisiblePixels(scale));
+
+    /// <summary>
+    /// Whether enough of the main window's title bar lies on <paramref name="area"/>, a display's work area at
+    /// <paramref name="scale"/>, to take hold of it there.
+    /// </summary>
+    public bool ShowsTitleBarOn(WindowBounds area, double scale) =>
+        ShowsTitleBarOn(area, TitleBarPixels(scale), MinimumVisiblePixels(scale));
 
     /// <summary>
     /// Where a window that comes back from full screen or the mini view goes: where it was, as long as its title bar can be
@@ -28,11 +35,9 @@ public readonly record struct WindowBounds(int X, int Y, int Width, int Height)
     public WindowBounds OnDisplays(IReadOnlyList<WindowBounds> workAreas, WindowBounds nearest, int titleBarHeight, int minimumVisibleWidth)
     {
         ArgumentNullException.ThrowIfNull(workAreas);
-        var titleBar = this with { Height = titleBarHeight };
         foreach (var area in workAreas)
         {
-            var shown = titleBar.Overlap(area);
-            if (shown.Width >= minimumVisibleWidth && shown.Height * 2 >= titleBarHeight)
+            if (ShowsTitleBarOn(area, titleBarHeight, minimumVisibleWidth))
             {
                 return this;
             }
@@ -42,8 +47,8 @@ public readonly record struct WindowBounds(int X, int Y, int Width, int Height)
 
     /// <summary>
     /// These bounds, in workspace coordinates as Windows gives a maximized window's restore place (GetWindowPlacement), on
-    /// the screen: workspace coordinates leave out the taskbar and other app bars of the display the window is on, here
-    /// <paramref name="monitor"/> with <paramref name="workArea"/>.
+    /// the screen: workspace coordinates leave out the taskbar and other app bars of a display, here
+    /// <paramref name="monitor"/> with <paramref name="workArea"/>, the display the bounds lie on.
     /// </summary>
     public WindowBounds FromWorkspace(WindowBounds monitor, WindowBounds workArea) =>
         this with { X = X + workArea.X - monitor.X, Y = Y + workArea.Y - monitor.Y };
@@ -65,6 +70,16 @@ public readonly record struct WindowBounds(int X, int Y, int Width, int Height)
             Math.Clamp(Y, area.Y, area.Y + area.Height - height),
             width,
             height);
+    }
+
+    private static int TitleBarPixels(double scale) => (int)Math.Round(TitleBarHeight * scale);
+
+    private static int MinimumVisiblePixels(double scale) => (int)Math.Round(MinimumVisibleTitleBar * scale);
+
+    private bool ShowsTitleBarOn(WindowBounds area, int titleBarHeight, int minimumVisibleWidth)
+    {
+        var shown = (this with { Height = titleBarHeight }).Overlap(area);
+        return shown.Width >= minimumVisibleWidth && shown.Height * 2 >= titleBarHeight;
     }
 
     // The part of these bounds that lies on other; empty (zero wide or high) when none does.

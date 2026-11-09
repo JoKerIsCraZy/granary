@@ -11,6 +11,7 @@ public sealed class WindowPlaceFileTests : IDisposable
 
     private readonly string _directory = Path.Combine(Path.GetTempPath(), "granary-tests", Guid.NewGuid().ToString("N"));
     private readonly LogSink _logs = new();
+    private readonly ManualTimeProvider _time = new();
 
     private string FilePath => Path.Combine(_directory, "window.json");
 
@@ -22,7 +23,17 @@ public sealed class WindowPlaceFileTests : IDisposable
         }
     }
 
-    private WindowPlaceFile Create() => new(FilePath, _logs.For<WindowPlaceFile>());
+    private WindowPlaceFile Create() => new(FilePath, _logs.For<WindowPlaceFile>(), _time);
+
+    // A temporary file as a save leaves it, written the given time ago.
+    private string LeftBehind(string name, TimeSpan ago)
+    {
+        Directory.CreateDirectory(_directory);
+        string path = Path.Combine(_directory, name);
+        File.WriteAllText(path, "{");
+        File.SetLastWriteTimeUtc(path, (_time.GetUtcNow() - ago).UtcDateTime);
+        return path;
+    }
 
     private void Write(string json)
     {
@@ -145,6 +156,80 @@ public sealed class WindowPlaceFileTests : IDisposable
         await settled;
 
         Assert.Equal(closed, Create().Load());
+    }
+
+    [Fact]
+    public async Task ASettleSave_DoesNotWaitForAWriteInFlight()
+    {
+        // The settle save is asked for on the UI thread: a write held up by a slow disk or a virus scanner must not block it.
+        Create().Save(Place with { IsMaximized = false });
+        var file = Create();
+        var read = new FileStream(FilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+        var later = Place with { Bounds = new WindowBounds(400, 250, 1300, 760) };
+        Task? second = null;
+        bool askedAtOnce = false;
+        file.BeforeMoveRetry = () =>
+        {
+            if (second is null)
+            {
+                // From another thread while this one writes: asking must return before this write ends.
+                var asking = Task.Run(() => { second = file.SaveAsync(later); }, TestContext.Current.CancellationToken);
+                askedAtOnce = asking.Wait(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+                second ??= Task.CompletedTask;
+                read.Dispose();
+            }
+        };
+
+        await file.SaveAsync(Place);
+        await second!;
+
+        Assert.True(askedAtOnce);
+        Assert.Equal(later, Create().Load());
+    }
+
+    [Fact]
+    public async Task ASettleSaveAfterTheClose_WritesNothing()
+    {
+        var file = Create();
+        file.Save(Place);
+
+        await file.SaveAsync(Place with { Bounds = new WindowBounds(400, 250, 1300, 760) });
+
+        Assert.Equal(Place, Create().Load());
+    }
+
+    [Fact]
+    public void ATemporaryFileLeftByAKilledGranary_IsRemovedAtStart()
+    {
+        string orphan = LeftBehind($"window.json.{Guid.NewGuid():N}.tmp", TimeSpan.FromMinutes(5));
+
+        Create().Load();
+
+        Assert.False(File.Exists(orphan));
+    }
+
+    [Fact]
+    public void ATemporaryFileJustWritten_StaysForTheGranaryWritingIt()
+    {
+        string fresh = LeftBehind($"window.json.{Guid.NewGuid():N}.tmp", TimeSpan.FromSeconds(10));
+
+        Create().Load();
+
+        Assert.True(File.Exists(fresh));
+    }
+
+    [Theory]
+    [InlineData("window.json.notes.tmp")]
+    [InlineData("window.json.tmp")]
+    [InlineData("sidebar.json.0123456789abcdef0123456789abcdef.tmp")]
+    [InlineData("window.json.0123456789abcdef0123456789abcdef.bak")]
+    public void OtherFiles_StayAtStart(string name)
+    {
+        string other = LeftBehind(name, TimeSpan.FromMinutes(5));
+
+        Create().Load();
+
+        Assert.True(File.Exists(other));
     }
 
     [Fact]

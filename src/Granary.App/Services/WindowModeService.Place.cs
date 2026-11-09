@@ -16,6 +16,9 @@ public sealed partial class WindowModeService
 
     private DispatcherQueueTimer? _settle;
     private bool _maximizeAtShow;
+    // The place was saved as the window closed: changes the closing window still reports, such as the presenter it leaves
+    // full screen for, are not its place, and no settle save follows.
+    private bool _isClosed;
 
     /// <summary>
     /// Puts the window, before it shows, where it was closed last: false the first time, or when that could not be read,
@@ -54,11 +57,33 @@ public sealed partial class WindowModeService
             Maximize(window.AppWindow);
         }
         window.Activate();
-        // A launcher's own show command (a shortcut's "Run: Normal window") can take the place of a process's first one.
-        if (maximize && window.AppWindow.Presenter is OverlappedPresenter { State: OverlappedPresenterState.Restored })
+        if (maximize)
         {
-            logger.LogDebug("The window showed restored at first; it is maximized now");
-            Maximize(window.AppWindow);
+            FollowFirstShow(window.AppWindow);
+        }
+    }
+
+    // A launcher's own show command (a shortcut's "Run") can take the place of a process's first one: shown restored, the
+    // window is maximized now; shown minimized, as the shortcut asks, it comes back maximized.
+    private void FollowFirstShow(AppWindow window)
+    {
+        try
+        {
+            switch (window.Presenter)
+            {
+                case OverlappedPresenter { State: OverlappedPresenterState.Restored }:
+                    logger.LogDebug("The window showed restored at first; it is maximized now");
+                    _windowed.Maximize(window);
+                    break;
+                case OverlappedPresenter { State: OverlappedPresenterState.Minimized }:
+                    logger.LogDebug("The window showed minimized at first; it comes back maximized");
+                    _windowed.RestoreToMaximized(window);
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "The window was not maximized as it was closed");
         }
     }
 
@@ -75,6 +100,10 @@ public sealed partial class WindowModeService
     // The window as a window changed: kept, and saved once it stays so.
     private void KeepPlace(AppWindow window)
     {
+        if (_isClosed)
+        {
+            return;
+        }
         _windowed.Keep(window);
         _settle?.Stop();
         _settle?.Start();
@@ -95,6 +124,10 @@ public sealed partial class WindowModeService
     // Off the UI thread; a place the file holds already is not written again.
     private void SaveSettledPlace()
     {
+        if (_isClosed)
+        {
+            return;
+        }
         try
         {
             if (_windowed.Place is { } place)
@@ -112,6 +145,7 @@ public sealed partial class WindowModeService
     // time, and a minimized one where it was before. Written here, after a save in flight.
     private void SaveClosingPlace()
     {
+        _isClosed = true;
         _settle?.Stop();
         try
         {

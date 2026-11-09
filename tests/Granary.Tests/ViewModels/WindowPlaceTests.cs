@@ -140,9 +140,9 @@ public sealed class WindowPlaceTests
         // Win+Shift+Left takes a maximized window to the display on the left, and its restore place with it.
         var keeper = new WindowPlaceKeeper();
         keeper.Keep(WindowState.Restored, new WindowBounds(312, 140, 1440, 900));
-        keeper.Keep(WindowState.Maximized, new WindowBounds(-7, -7, 1934, 1054), new WindowBounds(312, 140, 1440, 900));
+        keeper.KeepMaximized(new WindowBounds(312, 140, 1440, 900), Primary, 1);
 
-        keeper.Keep(WindowState.Maximized, new WindowBounds(-1927, 315, 1934, 1046), new WindowBounds(-1608, 462, 1440, 900));
+        keeper.KeepMaximized(new WindowBounds(-1608, 462, 1440, 900), LeftOfIt, 1);
 
         Assert.Equal(new WindowPlace(new WindowBounds(-1608, 462, 1440, 900), 1, IsMaximized: true), keeper.ToPlace(1));
     }
@@ -153,9 +153,59 @@ public sealed class WindowPlaceTests
         var keeper = new WindowPlaceKeeper();
         keeper.Keep(WindowState.Restored, new WindowBounds(312, 140, 1440, 900));
 
-        keeper.Keep(WindowState.Maximized, new WindowBounds(-7, -7, 1934, 1054), new WindowBounds(0, 0, 0, 0));
+        keeper.KeepMaximized(new WindowBounds(0, 0, 0, 0), Primary, 1);
+        keeper.KeepMaximized(null, Primary, 1);
 
         Assert.Equal(new WindowPlace(new WindowBounds(312, 140, 1440, 900), 1, IsMaximized: true), keeper.ToPlace(1));
+    }
+
+    [Fact]
+    public void ARestorePlaceOffTheDisplayTheWindowIsMaximizedOn_IsNotTrusted_ItsLastPlaceMovesThere()
+    {
+        // Maximized on the left display, Windows' restore place read as lying on the primary: the coordinates were taken
+        // the wrong way. Its last place keeps its size, on the display it is maximized on.
+        var keeper = new WindowPlaceKeeper();
+        keeper.Keep(WindowState.Restored, new WindowBounds(312, 140, 1440, 900));
+
+        keeper.KeepMaximized(new WindowBounds(500, 400, 1440, 900), LeftOfIt, 1);
+
+        Assert.Equal(new WindowPlace(new WindowBounds(-1440, 322, 1440, 900), 1, IsMaximized: true), keeper.ToPlace(1));
+    }
+
+    [Fact]
+    public void ARestorePlaceNotTrusted_LeavesALastPlaceOnThatDisplayAsItWas()
+    {
+        var keeper = new WindowPlaceKeeper();
+        keeper.Keep(WindowState.Restored, new WindowBounds(312, 140, 1440, 900));
+
+        keeper.KeepMaximized(new WindowBounds(-1700, 420, 1300, 760), Primary, 1);
+
+        Assert.Equal(new WindowPlace(new WindowBounds(312, 140, 1440, 900), 1, IsMaximized: true), keeper.ToPlace(1));
+    }
+
+    [Fact]
+    public void ARestorePlaceNotTrusted_WithoutALastPlace_LeavesNone()
+    {
+        var keeper = new WindowPlaceKeeper();
+
+        keeper.KeepMaximized(new WindowBounds(500, 400, 1440, 900), LeftOfIt, 1);
+
+        Assert.Null(keeper.ToPlace(1));
+    }
+
+    [Fact]
+    public void ARestorePlace_CountsAsOnTheDisplayByItsTitleBar_AtTheDisplaysScale()
+    {
+        // 200 pixels of its title bar on the display: enough at 100 % (120), too few at 200 % (240).
+        var keeper = new WindowPlaceKeeper();
+        keeper.Keep(WindowState.Restored, new WindowBounds(312, 140, 800, 500));
+        var restore = new WindowBounds(1720, 100, 800, 500);
+
+        keeper.KeepMaximized(restore, Primary, 1);
+        Assert.Equal(restore, keeper.Bounds);
+
+        keeper.KeepMaximized(restore, Primary, 2);
+        Assert.Equal(new WindowBounds(1120, 100, 800, 500), keeper.Bounds);
     }
 
     [Theory]
