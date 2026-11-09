@@ -92,6 +92,31 @@ public sealed class ServerPlaybackStallTests
         Assert.Equal(ServerPlaybackPhase.Playing, playback.Status.Phase);
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task APauseAskedButNotYetShown_IsNoStall(bool askedDuringTheWait)
+    {
+        // The viewer paused and mpv has not said so yet: nobody waits for the picture, so the stream is not given up.
+        _fixture.Silo.On(HttpMethod.Post, ReplanPath, Ok(PlaybackPayloads.StartOpaqueIds));
+        await _fixture.PlayingAsync();
+        if (!askedDuringTheWait)
+        {
+            _fixture.Engine.SetPaused(true);
+        }
+        _fixture.Engine.RaiseState(Buffering(700));
+        await _fixture.AdvanceAsync(TimeSpan.FromSeconds(80));
+        if (askedDuringTheWait)
+        {
+            _fixture.Engine.SetPaused(true);
+        }
+
+        await _fixture.AdvanceAsync(TimeSpan.FromSeconds(10));
+
+        Assert.Equal(0, _fixture.Engine.Stops);
+        Assert.Empty(_fixture.Silo.SentTo(HttpMethod.Post, ReplanPath));
+    }
+
     [Fact]
     public async Task BufferingThatMovesOn_IsNoStall()
     {

@@ -56,7 +56,7 @@ public sealed partial class ServerPlayback
     // first-frame watch has that). A new position, as a seek during the wait, or data that arrived starts it again.
     private void WatchStall()
     {
-        if (!_buffering || !_started || _paused || _stopping || _loadId == 0)
+        if (!_buffering || !_started || WantsPause || _stopping || _loadId == 0)
         {
             StopStallWatch();
             return;
@@ -82,6 +82,10 @@ public sealed partial class ServerPlayback
             return;
         }
         StopStallWatch();
+        if (WantsPause)
+        {
+            return;
+        }
         if (_recovering)
         {
             // The recovery replaces the stream, or plays on with it: then the wait starts again.
@@ -94,6 +98,9 @@ public sealed partial class ServerPlayback
         _engine.Stop();
         OnLoadEnded(new PlaybackEnded(PlaybackEndReason.Error, "No data within the stall timeout.", loadId));
     }
+
+    // A pause mpv shows, or one asked that it has not shown yet.
+    private bool WantsPause => _paused || _engine.IsPauseAsked;
 
     // A new load, the end of one, or the end of the playback: the wait is over without a verdict.
     private void ForgetBuffering()
