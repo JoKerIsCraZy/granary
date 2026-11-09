@@ -658,7 +658,8 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   (`IPlaybackEngine.IsPauseAsked`: the viewer, a Watch Party's room, the control lane), as Apple's reconnect
   carries the viewer's play intent. A stream that broke off plays to the end of the data mpv had and mpv pauses
   itself there (keep-open, `PlaybackSnapshot.IsAtEnd`). Nobody asked for that pause, so the stream comes back
-  playing; a pause asked meanwhile, also by a room while the stream was down, stays.
+  playing; a pause asked meanwhile, also by a room while the stream was down, stays. The engine applies the last
+  ask in one step with the asks (`ApplyAskedPause`), so one made in that moment is never undone by an older one.
 - **One recovery at a time**: the server refuses a second replan while one is open, so what happens meanwhile
   (the replaced stream's end, a progress answer) is dropped or comes up again once the new stream plays, and a
   seek waits for that stream. Engine states and ends carry the id of their load (`PlaybackSnapshot.LoadId`):

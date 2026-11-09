@@ -41,6 +41,10 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
     // The latest pause or play asked (IsPauseAsked); mpv's own pauses leave it.
     private bool _pauseAsked;
 
+    // Held from a pause's ask, or from reading the asks, until mpv has it: a newer ask is never overtaken by an older one.
+    // Taken before _gate, never inside it; mpv's event thread never takes it.
+    private readonly Lock _pauseGate = new();
+
     private SubtitlePosition _subtitlePosition = SubtitlePosition.Bottom;
     private double _subtitleLift;
 
@@ -177,18 +181,28 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
         }
     }
 
-    public void SetPaused(bool paused)
+    public void SetPaused(bool paused) => ApplyPause(paused);
+
+    public void ApplyAskedPause() => ApplyPause(asked: null);
+
+    // Under _pauseGate from the ask to mpv: the latest ask is the one mpv keeps. A load's pause waits for its file.
+    private void ApplyPause(bool? asked)
     {
-        lock (_gate)
+        lock (_pauseGate)
         {
-            _pauseAsked = paused;
-            if (_pauseWaits)
+            bool paused;
+            lock (_gate)
             {
-                _pauseOnOpen = paused;
-                return;
+                _pauseAsked = asked ?? _pauseAsked;
+                paused = _pauseAsked;
+                if (_pauseWaits)
+                {
+                    _pauseOnOpen = paused;
+                    return;
+                }
             }
+            _mpv.SetProperty("pause", paused ? "yes" : "no");
         }
-        _mpv.SetProperty("pause", paused ? "yes" : "no");
     }
 
     public void Seek(TimeSpan position) =>

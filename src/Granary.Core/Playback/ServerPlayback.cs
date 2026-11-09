@@ -492,8 +492,9 @@ public sealed partial class ServerPlayback : IServerPlayback
         {
             // A reload plays or pauses as last asked, by the viewer, a Watch Party's room or the control lane, as
             // Apple's reconnect carries the viewer's play intent. mpv's own pause where a stream that broke off ran
-            // out of data (keep-open) was never asked, so that stream comes back playing.
-            _engine.SetPaused(_engine.IsPauseAsked);
+            // out of data (keep-open) was never asked, so that stream comes back playing. The engine applies the asks in
+            // one step, so one made in that moment is not undone.
+            _engine.ApplyAskedPause();
         }
         WatchFirstFrame(_loadId);
     }

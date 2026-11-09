@@ -166,6 +166,21 @@ public sealed class ServerPlaybackStallTests
     }
 
     [Fact]
+    public async Task APauseAskedAsAReloadSetsThePause_IsNotUndone()
+    {
+        // The viewer pauses in the very moment the reload applies the last ask: the newer ask stands.
+        var playback = await _fixture.PlayingAsync();
+        _fixture.Engine.RaiseState(Frame(700));
+        _fixture.Engine.WhilePauseIsApplied = () => _fixture.Engine.SetPaused(true);
+
+        _fixture.Engine.RaiseEnded(new PlaybackEnded(PlaybackEndReason.AuthenticationFailed, null));
+        await playback.Recovery;
+
+        Assert.Equal(2, _fixture.Engine.Loaded.Count);
+        Assert.True(_fixture.Engine.Current.IsPaused);
+    }
+
+    [Fact]
     public async Task AReconnect_KeepsTheViewersPause()
     {
         _fixture.Silo.On(HttpMethod.Post, ReplanPath, Ok(PlaybackPayloads.StartOpaqueIds));

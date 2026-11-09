@@ -116,6 +116,12 @@ public interface IPlaybackEngine : IDisposable
     /// </summary>
     bool IsPauseAsked { get; }
 
+    /// <summary>
+    /// Pauses or plays as last asked (<see cref="IsPauseAsked"/>), in one step with the asks: a pause or play asked at the
+    /// same moment is never undone by the older ask. A load's pause waits for its file, as with <see cref="SetPaused"/>.
+    /// </summary>
+    void ApplyAskedPause();
+
     void Seek(TimeSpan position);
 
     /// <summary>Sets the volume in percent; values outside 0 to 100 are clamped.</summary>
