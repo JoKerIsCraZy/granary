@@ -23,10 +23,13 @@ public sealed partial class MpvPlaybackEngine
         {
             return false;
         }
+        long title = TitleNow();
+        int times;
         lock (_globalsGate)
         {
-            // Under the gate, so a change of the viewer's cannot come between: what mpv holds now is weighed against the
-            // latest, and a notice older than that is no profile's.
+            // All under the gate, which the viewer's own changes take too: what mpv holds now is weighed against the
+            // latest, a notice older than that is no profile's, and only a set-back that is still needed is counted and
+            // made, so a change of the viewer's in between never uses up one of SetBackLimit.
             if (!_globals.TryGetValue(name, out string? own) || SameSound(name, value, own))
             {
                 return false;
@@ -40,29 +43,21 @@ public sealed partial class MpvPlaybackEngine
             {
                 return true;
             }
-        }
-        int times = CountSetBack(name);
-        if (times > SetBackLimit)
-        {
-            if (times == SetBackLimit + 1)
+            times = CountSetBack(name, title);
+            if (times <= SetBackLimit)
             {
-                _logger.LogWarning("mpv.conf keeps changing {Option}; it stays as the file sets it for this title", name);
+                _mpv.SetProperty(name, own);
             }
-            return false;
         }
         if (times == 1)
         {
             _logger.LogWarning("mpv.conf set {Option}; Granary keeps the viewer's", name);
         }
-        lock (_globalsGate)
+        else if (times == SetBackLimit + 1)
         {
-            // The latest the viewer chose, should it have changed since.
-            if (_globals.TryGetValue(name, out string? latest))
-            {
-                _mpv.SetProperty(name, latest);
-            }
+            _logger.LogWarning("mpv.conf keeps changing {Option}; it stays as the file sets it for this title", name);
         }
-        return true;
+        return times <= SetBackLimit;
     }
 
     // mpv reports the volume as a number and the mute as a flag, and gives both as text when read; Granary sets text.

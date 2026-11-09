@@ -333,13 +333,20 @@ public sealed partial class MpvPlaybackEngine
     // notice of the title before that arrives after a new load is counted for the new one: at most the one in flight, as
     // each set-back waits for the one before, so a profile that changes the option once per title stays far below the
     // limit, and one that loops still reaches it within the title.
-    private int CountSetBack(string name)
+    private int CountSetBack(string name) => CountSetBack(name, TitleNow());
+
+    // The load whose set-backs count; read apart from counting, so a caller can count under another lock without taking
+    // _gate inside it.
+    private long TitleNow()
     {
-        long title;
         lock (_gate)
         {
-            title = _loads;
+            return _loads;
         }
+    }
+
+    private int CountSetBack(string name, long title)
+    {
         if (title != _setBacksTitle)
         {
             _setBacks.Clear();
