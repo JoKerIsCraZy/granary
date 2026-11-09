@@ -78,7 +78,8 @@ public partial class App : Application
         _window = Services.GetRequiredService<MainWindow>();
         var started = new TaskCompletionSource();
         _window.ShowStartup(started.Task);
-        _window.Activate();
+        // Activated, and maximized at once if it was closed so.
+        Services.GetRequiredService<WindowModeService>().Show();
 #if DEBUG
         // Developer shortcut: --remote shows a TV remote on screen beside the window (Debugging/RemoteWindow.cs).
         if (Environment.GetCommandLineArgs().Contains("--remote"))
@@ -168,7 +169,9 @@ public partial class App : Application
         services.AddSingleton<DiscordStatus>();
         services.AddSingleton<IRichPresence>(sp => sp.GetRequiredService<DiscordStatus>());
         services.AddSingleton<IFileLauncher, ShellFileLauncher>();
-        // The main window's full screen and mini view, shared by the app, the player and a trailer.
+        // The main window's full screen and mini view, shared by the app, the player and a trailer; and where the window
+        // opens, where it was closed (window.json).
+        services.AddSingleton(sp => new WindowPlaceFile(WindowPlaceFile.DefaultPath, sp.GetRequiredService<ILogger<WindowPlaceFile>>()));
         services.AddSingleton<WindowModeService>();
         // Previous episode, Play/Pause and Next episode in the main window's taskbar preview while a title plays.
         services.AddSingleton<ITaskbarToolbar, WindowsTaskbarToolbar>();
