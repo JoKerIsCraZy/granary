@@ -14,11 +14,20 @@ public sealed class MpvOwnOptionsTests
         [
             new("keep-open", "yes"), new("idle", "yes"), new("input-default-bindings", "no"), new("input-vo-keyboard", "no"),
             new("osc", "no"), new("ytdl", "no"), new("sub-auto", "no"), new("rebase-start-time", "yes"), new("media-controls", "no"),
-            new("resume-playback", "no"), new("save-position-on-quit", "no"), new("vo", "gpu-next"), new("gpu-api", "d3d11"),
+            new("resume-playback", "no"), new("save-position-on-quit", "no"), new("curl-max-retries", "100"), new("vo", "gpu-next"),
+            new("gpu-api", "d3d11"),
             new("gpu-context", "d3d11"), new("d3d11-output-mode", "composition"), new("d3d11-composition-size", "1920x1080"),
             new("force-window", "yes"),
         ], core);
         Assert.Equal([new("vo", "null"), new("ao", "null")], MpvOwnOptions.Core(VideoOutputKind.None, (1280, 720)).TakeLast(2));
+    }
+
+    [Fact]
+    public void MpvsHttpReader_AsksAgainAsOftenAsMpvAllows()
+    {
+        // It counts every retry since the last seek, one that brought data too: its default of 5 ended a stream after five
+        // breaks that the media proxy could not resume.
+        Assert.Contains(new KeyValuePair<string, string>("curl-max-retries", "100"), MpvOwnOptions.Core(VideoOutputKind.None, (1280, 720)));
     }
 
     [Fact]

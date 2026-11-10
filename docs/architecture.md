@@ -160,7 +160,8 @@ value holds, 0 included.
 **Granary's own options.** Always, and kept over the file: the video in Granary's window (`vo=gpu-next`, `gpu-api` and
 `gpu-context` `d3d11`, `d3d11-output-mode=composition`, `d3d11-composition-size`, `force-window`), the player Granary
 drives (`keep-open`, `idle`, `input-default-bindings`, `input-vo-keyboard`, `osc`, `ytdl`, `sub-auto`,
-`rebase-start-time`, `media-controls`), and no watch-later files (`resume-playback`, `save-position-on-quit`). With a
+`rebase-start-time`, `media-controls`), no watch-later files (`resume-playback`, `save-position-on-quit`), and a stream
+that breaks off asked again as often as mpv allows (`curl-max-retries=100`; Server playback, "Media proxy"). With a
 file also (`MpvOwnOptions.Guarded`; they are mpv's defaults, so without a file nothing could change them), behind the
 refusal above: the stream's address stays out of mpv's own files and programs (`save-watch-history`, `watch-later-dir`,
 `write-filename-in-watch-later-config`, `log-file`, `dump-stats`, `stream-record`, `stream-dump`, `input-ipc-server`),
