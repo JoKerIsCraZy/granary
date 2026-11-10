@@ -35,6 +35,12 @@ public sealed record MediaCard(string Id, string Type, string Title)
     /// <summary>The caption warns, in amber: a watchlist title TMDB no longer lists as saved.</summary>
     public bool IsCaptionAttention { get; init; }
 
+    /// <summary>
+    /// A pill in the accent after the caption: "NEW SEASON" on a Continue Watching or Next Up card for the first episode of a
+    /// season that has just begun, as the web's <c>ContinueWatchingCard</c>. Null on every other card.
+    /// </summary>
+    public string? CaptionBadge { get; init; }
+
     public Uri? ImageUrl { get; init; }
 
     /// <summary>The ThumbHash of <see cref="ImageUrl"/>'s picture: shown blurred at once, until the picture itself is.</summary>
@@ -97,7 +103,7 @@ public sealed record MediaCard(string Id, string Type, string Title)
 
     /// <summary>The name screen readers announce for the whole card.</summary>
     public string AccessibleName => string.Join(", ",
-        new[] { Title, BoxSetFilms is { } films ? $"box set of {films}" : null, EpisodeTitle, Subtitle, CurrentName }
+        new[] { Title, BoxSetFilms is { } films ? $"box set of {films}" : null, EpisodeTitle, Subtitle, CaptionBadge?.ToLowerInvariant(), CurrentName }
             .Where(text => !string.IsNullOrEmpty(text)));
 
     private string? CurrentName => CurrentMark switch

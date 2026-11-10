@@ -155,6 +155,7 @@
     <SolidColorBrush x:Key="SiloPrimaryPressedBrush" Color="{StaticResource SiloPrimaryPressedColor}" />
     <SolidColorBrush x:Key="SiloPrimaryTint15Brush" Color="#26E8E8EC" />
     <SolidColorBrush x:Key="SiloPrimaryTint20Brush" Color="#33E8E8EC" />
+    <SolidColorBrush x:Key="SiloPrimaryTint40Brush" Color="#66E8E8EC" />
     <SolidColorBrush x:Key="SiloPrimaryTint60Brush" Color="#99E8E8EC" />
     <SolidColorBrush x:Key="SiloPrimaryTint75Brush" Color="#BFE8E8EC" />
     <!--

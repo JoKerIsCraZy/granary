@@ -761,7 +761,9 @@ open string. Useful optional members: `series_id`, `series_title`, `season_numbe
 `duration_seconds`, `progress_updated_at`, `item_source`, `play_content_id` (episode to play for a
 series/season card), `poster_is_episode_still`, `backdrop_is_episode_still` ([6.6.3](#663-episode-spoilers)),
 `user_state { played, is_favorite, in_watchlist, not_interested }`,
-`overlay_summary` (resolution, hdr, codecs, audio channels, …), `badges[]`, `rating_imdb`,
+`overlay_summary` (resolution, hdr, codecs, audio channels, …), `badges[]` (`new`; on a Continue Watching or Next Up
+episode `season_premiere`: the first episode of a season after the first, aired in the last 14 days,
+`internal/sections/fetcher.go` `recentSeasonPremiereBadges`), `rating_imdb`,
 `rating_tmdb`, `added_at`. There is no subtitle field: compose "S1 · E5" or the year on the client
 (`silo-server/internal/apiv2/catalog_types.go:19-90`).
 

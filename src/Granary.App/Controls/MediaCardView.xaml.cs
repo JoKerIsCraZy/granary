@@ -708,6 +708,7 @@ public sealed partial class MediaCardView : UserControl
         ShowEpisodeTitle(card);
         SetText(SubtitleText, details ? card?.Subtitle : null);
         SetText(CaptionText, details ? card?.Caption : null);
+        ShowCaptionBadge(details ? card?.CaptionBadge : null);
     }
 
     private void ShowEpisodeTitle(MediaCard? card)

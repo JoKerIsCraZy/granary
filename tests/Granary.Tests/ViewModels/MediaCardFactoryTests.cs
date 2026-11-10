@@ -20,6 +20,14 @@ public sealed class MediaCardFactoryTests
         UserState = new CatalogItemUserState(false, false, false, false),
     };
 
+    // The first episode of a season that began in the last 14 days, as Silo's sections mark it (internal/sections/fetcher.go,
+    // recentSeasonPremiereBadges).
+    private static CatalogItem SeasonPremiere(string? source) => new()
+    {
+        ContentId = "ep-21", Type = CatalogItemTypes.Episode, Title = "Homecoming", SeriesTitle = "Harbor Lights",
+        SeasonNumber = 2, EpisodeNumber = 1, ItemSource = source, Badges = ["season_premiere"],
+    };
+
     [Fact]
     public void MoviePoster_ShowsYear_AndCarriesWhatItsBadgesSay()
     {
@@ -124,6 +132,7 @@ public sealed class MediaCardFactoryTests
         Assert.Equal("ted", card.Title);
         Assert.Equal("Season 1 Episode 1 • Schulanfang", card.Subtitle);
         Assert.Equal("18 min left", card.Caption);
+        Assert.Null(card.CaptionBadge);
         Assert.Equal(600.0 / 1680, card.Progress!.Value, 3);
         Assert.Equal(new Uri("https://cdn.test/still.webp"), card.ImageUrl);
     }
@@ -140,7 +149,48 @@ public sealed class MediaCardFactoryTests
         var card = MediaCardFactory.Landscape(next, Server);
 
         Assert.Equal("Next episode", card.Caption);
+        Assert.Null(card.CaptionBadge);
         Assert.Null(card.Progress);
+    }
+
+    [Fact]
+    public void ContinueWatchingCard_OfANewSeasonsFirstEpisode_SaysNewSeasonAfterItsTimeLeft()
+    {
+        var premiere = SeasonPremiere(ItemSources.InProgress) with { PositionSeconds = 600, DurationSeconds = 1680 };
+        var section = new Section { Id = "cw", SectionType = SectionTypes.ContinueWatching, Title = "Continue Watching" };
+
+        var card = MediaCardFactory.ForSection(section, premiere, Server);
+
+        Assert.Equal("18 min left", card.Caption);
+        Assert.Equal("NEW SEASON", card.CaptionBadge);
+    }
+
+    [Fact]
+    public void NextUpCard_OfANewSeasonsFirstEpisode_SaysNewSeasonInsteadOfNextEpisode()
+    {
+        var card = MediaCardFactory.ForSection(SectionTypes.NextUp, SeasonPremiere(ItemSources.NextUp), Server);
+
+        Assert.Null(card.Caption);
+        Assert.Equal("NEW SEASON", card.CaptionBadge);
+    }
+
+    [Fact]
+    public void NewSeasonCard_IsAnnouncedAsANewSeason()
+    {
+        var card = MediaCardFactory.Landscape(SeasonPremiere(ItemSources.NextUp), Server);
+
+        Assert.Equal("Harbor Lights, Season 2 Episode 1 • Homecoming, new season", card.AccessibleName);
+    }
+
+    [Fact]
+    public void PosterCards_ShowNoNewSeason_AsTheWebsOtherSectionCards()
+    {
+        // The web's SectionItemCard shows an upcoming event's badges only; a section item's season_premiere shows on its
+        // Continue Watching card alone.
+        var section = new Section { Id = "ra", SectionType = SectionTypes.RecentlyAdded, Title = "Recently Added Episodes" };
+
+        Assert.Null(MediaCardFactory.ForSection(section, SeasonPremiere(null), Server).CaptionBadge);
+        Assert.Null(MediaCardFactory.Poster(SeasonPremiere(ItemSources.NextUp), Server).CaptionBadge);
     }
 
     [Fact]
