@@ -80,6 +80,10 @@ internal sealed class MediaRoute : IMediaRoute
     private readonly SemaphoreSlim _renewing = new(1, 1);
     private readonly SemaphoreSlim _requests = new(MaxConcurrentRequests, MaxConcurrentRequests);
     private readonly CancellationTokenSource _closing = new();
+
+    // Per upstream URL, the latest GET's own source (Supersede).
+    private readonly Dictionary<string, CancellationTokenSource> _latest = new(StringComparer.Ordinal);
+    private readonly Lock _gate = new();
     private readonly string _origin;
     private readonly string _pathAndQuery;
     private readonly string _allowedPrefix;
@@ -117,6 +121,9 @@ internal sealed class MediaRoute : IMediaRoute
 
     internal CancellationToken Closing => _closing.Token;
 
+    /// <summary>The requests that hold one of the route's places now.</summary>
+    internal int RequestsUnderway => MaxConcurrentRequests - _requests.CurrentCount;
+
     /// <summary>The upstream URL for <paramref name="pathAndQuery"/> as the player asked it, if the route reaches it.</summary>
     internal Uri? Map(string pathAndQuery)
     {
@@ -138,17 +145,54 @@ internal sealed class MediaRoute : IMediaRoute
             context.Response.StatusCode = (int)HttpStatusCode.ServiceUnavailable;
             return;
         }
+        // Only a GET reads a body that a resume may take up again.
+        string? url = context.Request.HttpMethod == "GET" ? upstream.OriginalString : null;
+        var superseded = url is null ? null : Supersede(url);
         try
         {
-            await ForwardOnceAsync(context, upstream, client, logger, token).ConfigureAwait(false);
+            await ForwardOnceAsync(context, upstream, client, logger, superseded?.Token ?? CancellationToken.None, token).ConfigureAwait(false);
         }
         finally
         {
+            if (url is not null)
+            {
+                Retire(url, superseded!);
+            }
             _requests.Release();
         }
     }
 
-    private async Task ForwardOnceAsync(HttpListenerContext context, Uri upstream, HttpMessageInvoker client, ILogger logger, CancellationToken token)
+    // mpv reads a direct play file through one request at a time and cannot say when it left one (a seek): a newer GET of
+    // the same URL says it, and ends the resume of an older one, which would otherwise hold its place up to the resume's
+    // budget. HLS segments have URLs of their own, so segments read side by side are left alone. The sources hold no
+    // timer and are not disposed: a newer request may cancel one at any time.
+    private CancellationTokenSource Supersede(string url)
+    {
+        var mine = new CancellationTokenSource();
+        CancellationTokenSource? older;
+        lock (_gate)
+        {
+            _latest.Remove(url, out older);
+            _latest[url] = mine;
+        }
+        // Not inline: the older request gives up on its own thread, not on this one's way.
+        _ = older?.CancelAsync();
+        return mine;
+    }
+
+    private void Retire(string url, CancellationTokenSource mine)
+    {
+        lock (_gate)
+        {
+            if (_latest.TryGetValue(url, out var latest) && ReferenceEquals(latest, mine))
+            {
+                _latest.Remove(url);
+            }
+        }
+    }
+
+    private async Task ForwardOnceAsync(HttpListenerContext context, Uri upstream, HttpMessageInvoker client, ILogger logger,
+        CancellationToken superseded, CancellationToken token)
     {
         bool head = context.Request.HttpMethod == "HEAD";
         var player = context.Request.Headers;
@@ -171,7 +215,7 @@ internal sealed class MediaRoute : IMediaRoute
         using var response = answer;
         logger.LogDebug("Media {Method} {Path}: {Status}", context.Request.HttpMethod, upstream.AbsolutePath, (int)response.StatusCode);
         // A direct play body the server breaks off goes on from its next byte, asked as the first was.
-        using var resume = head ? null : UpstreamResume.For(response, Resend, _time, logger);
+        using var resume = head ? null : UpstreamResume.For(response, Resend, superseded, _time, logger);
         await RelayAsync(response, context.Response, head, watch, resume, token).ConfigureAwait(false);
 
         Task<HttpResponseMessage> Resend(RangeHeaderValue range, string? condition, CancellationToken limit) => SendAsync(() =>

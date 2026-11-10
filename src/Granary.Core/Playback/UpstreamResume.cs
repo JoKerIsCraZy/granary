@@ -38,6 +38,9 @@ internal sealed class UpstreamResume : IDisposable
     private readonly TimeProvider _time;
     private readonly ILogger _logger;
 
+    // A newer request for the same stream: the player left this one.
+    private readonly CancellationToken _superseded;
+
     // The last byte of the answer the player gets, and the file's size when the server named it.
     private readonly long _end;
     private readonly long? _total;
@@ -67,9 +70,11 @@ internal sealed class UpstreamResume : IDisposable
     private int _tries;
 
     private UpstreamResume(HttpResponseMessage first, long start, long end, long? total, string ifRange,
-        Func<RangeHeaderValue, string?, CancellationToken, Task<HttpResponseMessage>> send, TimeProvider time, ILogger logger)
+        Func<RangeHeaderValue, string?, CancellationToken, Task<HttpResponseMessage>> send, CancellationToken superseded,
+        TimeProvider time, ILogger logger)
     {
         _send = send;
+        _superseded = superseded;
         _time = time;
         _logger = logger;
         _current = first;
@@ -88,10 +93,11 @@ internal sealed class UpstreamResume : IDisposable
     /// <summary>
     /// The resume of <paramref name="first"/>'s body, or null when it cannot be asked again from a byte: no length, an
     /// encoded body, no ranges (a remux), or nothing to check a resumed answer by. <paramref name="send"/> asks the server
-    /// for a range, under an If-Range, until its token ends the try.
+    /// for a range, under an If-Range, until its token ends the try; <paramref name="superseded"/> says the player left.
     /// </summary>
     public static UpstreamResume? For(HttpResponseMessage first,
-        Func<RangeHeaderValue, string?, CancellationToken, Task<HttpResponseMessage>> send, TimeProvider time, ILogger logger)
+        Func<RangeHeaderValue, string?, CancellationToken, Task<HttpResponseMessage>> send, CancellationToken superseded,
+        TimeProvider time, ILogger logger)
     {
         var content = first.Content.Headers;
         if (content.ContentLength is not { } length || length <= 0 || content.ContentEncoding.Count > 0)
@@ -106,12 +112,12 @@ internal sealed class UpstreamResume : IDisposable
         if (first.StatusCode == HttpStatusCode.PartialContent)
         {
             return content.ContentRange is { From: { } from, To: { } to } range && IsBytes(range) && to - from + 1 == length
-                ? new UpstreamResume(first, from, to, range.Length, ifRange, send, time, logger)
+                ? new UpstreamResume(first, from, to, range.Length, ifRange, send, superseded, time, logger)
                 : null;
         }
         return first.StatusCode == HttpStatusCode.OK
             && first.Headers.AcceptRanges.Any(unit => unit.Equals("bytes", StringComparison.OrdinalIgnoreCase))
-            ? new UpstreamResume(first, 0, length - 1, length, ifRange, send, time, logger)
+            ? new UpstreamResume(first, 0, length - 1, length, ifRange, send, superseded, time, logger)
             : null;
     }
 
@@ -159,10 +165,14 @@ internal sealed class UpstreamResume : IDisposable
             throw GiveUp(failure, at, BudgetSpent);
         }
         using var deadline = new CancellationTokenSource(left, _time);
-        using var limit = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, deadline.Token);
+        using var limit = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _superseded, deadline.Token);
         try
         {
             return await ResumeWithinAsync(failure, at, limit.Token, cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (_superseded.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
+        {
+            throw GiveUp(failure, at, "a newer request took its place");
         }
         catch (OperationCanceledException) when (deadline.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
         {
@@ -177,7 +187,8 @@ internal sealed class UpstreamResume : IDisposable
     // The answer runs to the file's end: the resume asks the rest, as the player asked it.
     private bool RunsToTheEnd => _total is { } total && _end == total - 1;
 
-    // Tries until one goes on, each in its turn; limit ends a wait or a try once the break's budget is spent.
+    // Tries until one goes on, each in its turn; limit ends a wait or a try once the break's budget is spent or the player
+    // left.
     private async Task<Stream> ResumeWithinAsync(MediaUpstreamException failure, long at, CancellationToken limit, CancellationToken closing)
     {
         var retryAfter = TimeSpan.Zero;

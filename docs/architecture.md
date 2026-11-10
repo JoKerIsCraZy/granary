@@ -730,8 +730,10 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   data (a resume whose connection delivers starts that count again, as the Apple app's does), once a break has gone
   90 s without data whatever each try waits (Silo's Android app retries a load within 90 s, and the stall watch gives a
   stream as long), or after more than 30 resumes within 60 s, which a server that cuts every few kilobytes would have
-  go on unpaced. The route's closing ends a resume at once, its waits too. Resumes and give-ups are logged with the
-  byte, never the URL or headers.
+  go on unpaced. The route's closing ends a resume at once, its waits too, and so does a newer GET of the same URL on
+  the route: mpv reads a direct play file through one request at a time and cannot say when it left one for a seek, so
+  an abandoned resume would hold one of the route's 16 places up to its 90 s. HLS segments have URLs of their own and
+  are read side by side, untouched by this. Resumes and give-ups are logged with the byte, never the URL or headers.
 - What cannot be resumed aborts the response, so mpv sees a lost connection, not an end. Its curl reader then asks
   again from its offset where the stream can seek, at once; mpv counts those retries since the last seek, so Granary
   allows 20 (`curl-max-retries=20`, its own option): room for the proxy's give-ups across a long title, but not for

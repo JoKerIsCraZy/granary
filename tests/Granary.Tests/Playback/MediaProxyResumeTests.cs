@@ -465,6 +465,57 @@ public sealed class MediaProxyResumeTests : IDisposable
     }
 
     [Fact]
+    public async Task ANewerRequestForTheSamePath_EndsAResumeThatWaits_AndFreesItsPlace()
+    {
+        // mpv reads a direct play file through one request at a time: a new one is a seek, and the old one is gone.
+        _answer = request => Sent.Count switch
+        {
+            1 => Part(100, breakAfter: 300),
+            2 => Busy(503, null),
+            _ => Part(From(request)),
+        };
+        using var route = Open();
+        var abandoned = PlayAsync(route, from: 100);
+        await _time.WaitUntilAsync(() => _time.NextDue == TimeSpan.FromSeconds(1), Cancellation);
+
+        byte[] seek = await PlayAsync(route, from: 2000);
+
+        Assert.Equal(Movie[2000..], seek);
+        await Assert.ThrowsAnyAsync<HttpRequestException>(() => abandoned);
+        await ServerPlaybackFixture.Until(() => ((MediaRoute)route).RequestsUnderway == 0 && _time.NextDue is null, "its place is free");
+        Assert.Equal(3, Sent.Count);
+        Assert.Contains("resuming failed (a newer request took its place), giving up", _logs.All, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ARequestForAnotherPath_LeavesAResumeAlone()
+    {
+        // HLS segments are read side by side.
+        using var route = Proxy.Open(new Uri("https://nas.example/silo/api/v2/playback/transcode/s1/master.m3u8"),
+            MediaRouteScope.Directory, Credentials);
+        string local = route.LocalUrl.OriginalString;
+        var segmentA = new Uri(local[..(local.LastIndexOf('/') + 1)] + "segment/a.ts");
+        var segmentB = new Uri(local[..(local.LastIndexOf('/') + 1)] + "segment/b.ts");
+        int askedForA = 0;
+        _answer = request => !request.RequestUri!.AbsolutePath.EndsWith("/a.ts", StringComparison.Ordinal)
+            ? Part(From(request))
+            : Interlocked.Increment(ref askedForA) switch
+            {
+                1 => Part(100, breakAfter: 300),
+                2 => Busy(503, null),
+                _ => Part(From(request)),
+            };
+        var playingA = PlayAsync(segmentA, from: 100);
+        await _time.WaitUntilAsync(() => _time.NextDue == TimeSpan.FromSeconds(1), Cancellation);
+
+        Assert.Equal(Movie, await PlayAsync(segmentB, from: 0));
+
+        await _time.WaitUntilAsync(() => _time.NextDue == TimeSpan.FromSeconds(1), Cancellation);
+        _time.Advance(TimeSpan.FromSeconds(1));
+        Assert.Equal(Movie[100..], await playingA);
+    }
+
+    [Fact]
     public async Task ARemuxThatBreaksOff_IsNotResumed()
     {
         // No length and no ranges: it cannot be asked again from a byte, and the playback reconnects instead.
@@ -531,16 +582,20 @@ public sealed class MediaProxyResumeTests : IDisposable
     }
 
     // The player reads the whole answer, as mpv would; an answer that breaks off fails.
-    private async Task<byte[]> PlayAsync(IMediaRoute route, long? from, long? to = null)
+    private Task<byte[]> PlayAsync(IMediaRoute route, long? from, long? to = null) => PlayAsync(route.LocalUrl, from, to);
+
+    private async Task<byte[]> PlayAsync(Uri local, long? from, long? to = null)
     {
-        using var request = Ask(route, from, to);
+        using var request = Ask(local, from, to);
         using var response = await _player.SendAsync(request, Cancellation).WaitAsync(HangLimit, Cancellation);
         return await response.Content.ReadAsByteArrayAsync(Cancellation);
     }
 
-    private static HttpRequestMessage Ask(IMediaRoute route, long? from, long? to)
+    private static HttpRequestMessage Ask(IMediaRoute route, long? from, long? to) => Ask(route.LocalUrl, from, to);
+
+    private static HttpRequestMessage Ask(Uri local, long? from, long? to)
     {
-        var request = new HttpRequestMessage(HttpMethod.Get, route.LocalUrl);
+        var request = new HttpRequestMessage(HttpMethod.Get, local);
         if (from is not null)
         {
             request.Headers.Range = new RangeHeaderValue(from, to);
