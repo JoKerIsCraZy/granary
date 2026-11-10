@@ -9,8 +9,7 @@ release's section is what its update says it changes (docs/release.md).
 ### Fixed
 
 - Playback no longer stops to buffer when your server or a proxy in front of it cuts the video connection now and then.
-- An episode's or movie's page shows where you stopped when you come back from the player, where Resume from kept the
-  old time.
+- A title's page shows where you stopped when you come back from the player, where Resume from kept the old time.
 
 ## [0.3.1] - 2026-11-09
 

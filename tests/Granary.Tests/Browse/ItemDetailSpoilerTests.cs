@@ -314,7 +314,7 @@ public sealed class ItemDetailSpoilerTests
     }
 
     [Fact]
-    public async Task WhileTheProfileHidesNothing_AChangeElsewhereIsReadAllTheSame_SoTurningTheSwitchesOnShowsIt()
+    public async Task WithNothingHidden_AChangeIsStillRead()
     {
         var detail = await SeasonAsync(images: false, overviews: false, lists: [SpoilerSeason, SecondStarted]);
         detail.Activate();

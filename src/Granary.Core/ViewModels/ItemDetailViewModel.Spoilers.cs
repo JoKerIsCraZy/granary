@@ -2,6 +2,7 @@ using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Api.Catalog;
+using Granary.Core.Playback;
 using Granary.Core.Settings;
 using Granary.Core.ViewModels.Cards;
 using Granary.Core.ViewModels.Detail;
@@ -27,7 +28,7 @@ public sealed partial class ItemDetailViewModel
     private bool _isReportingOwnChange;
     // Counts the page's own watched changes: a read of the state that began before one does not put the old state back.
     private int _watchEdits;
-    // A change elsewhere not read yet: it came while the page marked watched.
+    // A change not read yet: it came while the page marked watched, or lay under the player.
     private bool _watchStateStale;
     private ITimer? _refreshTimer;
     private CancellationTokenSource? _refresh;
@@ -164,11 +165,11 @@ public sealed partial class ItemDetailViewModel
         }
     }
 
-    // The Play pill and the progress follow the state whatever the switches hide. A change while the page marks watched is
-    // read once that is done.
-    private void OnViewerStateChanged(object? sender, EventArgs e) => OnUiThread(() =>
+    // The Play pill and the progress follow the viewer's state whatever the switches hide; the catalog's news alone (a scan)
+    // changes neither. A change while the page marks watched is read once that is done.
+    private void OnViewerStateChanged(object? sender, ViewerStateChangedEventArgs e) => OnUiThread(() =>
     {
-        if (!_isActive || _isReportingOwnChange)
+        if (!_isActive || _isReportingOwnChange || e.IsCatalogOnly)
         {
             return;
         }
@@ -197,7 +198,7 @@ public sealed partial class ItemDetailViewModel
         }
     });
 
-    // After the page's own watched change: what changed elsewhere meanwhile.
+    // After the page's own watched change: what changed meanwhile.
     private void RefreshIfStale()
     {
         if (_watchStateStale && _isActive)
@@ -226,10 +227,18 @@ public sealed partial class ItemDetailViewModel
     // with, so their stills stay the ones shown. A read that fails keeps what the page shows.
     private async Task RefreshWatchStateAsync()
     {
+        // Read once the player is gone, as Silo's apps read their page after it: its stop is a change of its own, reported
+        // once it ended.
+        if (_changes?.IsPlaying == true)
+        {
+            _watchStateStale = true;
+            return;
+        }
         if (State != ItemDetailState.Ready || _item is not { } item || _serverBase is not { } server)
         {
             return;
         }
+        _watchStateStale = false;
         _refresh?.Cancel();
         _refresh?.Dispose();
         var run = new CancellationTokenSource();
@@ -265,7 +274,8 @@ public sealed partial class ItemDetailViewModel
             }
             if (fresh is not null)
             {
-                // Only what the viewer's state moves; the rest stays as the page read it.
+                // Only what the viewer's state moves; the rest stays as the page read it. UserState keeps the first read
+                // on purpose: the heart, the watchlist and the stars live outside _item and follow their own writes.
                 _item = item with { UserData = fresh.UserData, PlayContentId = fresh.PlayContentId, PlaySeasonNumber = fresh.PlaySeasonNumber };
                 _watch = fresh.UserData;
                 IsWatched = fresh.UserData?.Played ?? fresh.UserState?.Played ?? false;

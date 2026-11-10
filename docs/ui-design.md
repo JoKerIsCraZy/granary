@@ -493,12 +493,17 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     "Mark Watched", "Info", the heart, the stars and ⋮ (Watchlist, Add to Collection, then Start a Watch Party below a
     line). Pills 50 high with 17 px labels, round buttons 50, 14 apart. An episode or a season has ⋮ with Start a Watch
     Party alone. Under a single file's buttons "Available version: 1080P · H264 · EAC3 · 6.6 GB" in 14 at 45 % white.
-  - While the page shows, it follows the viewer's state, as Silo's apps read their page again once the player is gone:
-    when the player above it stopped (left full or from the minimized bar), an episode was marked watched on a card, or
-    another device played or marked something, the page reads the title's state again 400 ms after the last such change
-    (marking several cards reads once). The Play pill then says where the viewer left off ("Resume from" the new point, a
-    series' or season's next episode, Mark Watched), and the episode rows, a series' season cards and More Episodes show
-    the new progress. A read that fails keeps what the page shows; a page left meanwhile reads it all when it opens again.
+  - While the page shows, it follows the viewer's state, as Silo's apps read their page again once the player is gone.
+    It reads the title's state again 400 ms after the last of these (marking several cards reads once): the player's
+    playback stopped (left full or from the minimized bar, or moved on to the next title), a card's watched mark, heart or
+    Watchlist changed, a rating was saved, or the server's events tell of the profile's own state changed on another
+    device (a mark once its burst has been quiet for 2 s, progress at most every 30 s, a connection back after a gap).
+    The catalog's news alone (titles added or changed during a scan, the profile's access) reads nothing. While the
+    player is up, full or minimized, a change only marks the page, which reads once when the playback's stop has reached
+    the server. The page's own Mark Watched, heart and Watchlist read nothing. The read then shows where the viewer left
+    off: the Play pill ("Resume from" the new point, a series' or season's next episode), Mark Watched, the episode rows,
+    a series' season cards and More Episodes. A read that fails keeps what the page shows; a page left meanwhile reads it
+    all when it opens again.
   - Start a Watch Party (the web's `DetailWatchTogether.tsx` and `StartPartySheet.tsx`, the people icon) is on a movie
     with a file, a series, an episode, and a season once its episodes are listed, while the server hosts rooms that
     stage a title and the profile is in no room, as Android's detail page offers hosting; in a room it is not there,

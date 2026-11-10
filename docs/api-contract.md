@@ -2468,8 +2468,10 @@ A server answering the ticket with 404 or 501 gets no lane until the next sign-i
 What it does:
 - `user_state.changed` for the profile (`progress` aside), any `catalog` event, `access_changed`, and a
   later connection back after more than 5 s without one (the lane's first has no gap): one
-  `ViewerStateChanges.Report()` once the burst has been quiet for 2 s, at most 30 s after its first change.
-  Home reloads in place while shown; other pages compare the version on their next visit.
+  `ViewerStateChanges.Report()` once the burst has been quiet for 2 s, at most 30 s after its first change. A
+  burst of only `catalog` events and `access_changed` is reported as the catalog's alone (`ReportCatalog()`):
+  Home reloads for it as for any, while a title's page that shows reads nothing for it (its Play pill and progress
+  are the viewer's state). Home reloads in place while shown; other pages compare the version on their next visit.
 - `user_state.changed` with `progress`: one report per 30 s window, none while this app plays.
 - Echoes: the events name no device, so Granary's own changes come back. News of the profile's state within
   5 s of a change the app reported itself is dropped, and a reload waiting only for such news is dropped
