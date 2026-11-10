@@ -500,10 +500,10 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     device (a mark once its burst has been quiet for 2 s, progress at most every 30 s, a connection back after a gap).
     The catalog's news alone (titles added or changed during a scan, the profile's access) reads nothing. While the
     player is up, full or minimized, a change only marks the page, which reads once when the playback's stop has reached
-    the server. The page's own Mark Watched, heart and Watchlist read nothing. The read then shows where the viewer left
-    off: the Play pill ("Resume from" the new point, a series' or season's next episode), Mark Watched, the episode rows,
-    a series' season cards and More Episodes. A read that fails keeps what the page shows; a page left meanwhile reads it
-    all when it opens again.
+    the server; a change during the page's own load is read once the load, its rows included, is done. The page's own
+    Mark Watched, heart and Watchlist read nothing. The read then shows where the viewer left off: the Play pill ("Resume
+    from" the new point, a series' or season's next episode), Mark Watched, the episode rows, a series' season cards and
+    More Episodes. A read that fails keeps what the page shows; a page left meanwhile reads it all when it opens again.
   - Start a Watch Party (the web's `DetailWatchTogether.tsx` and `StartPartySheet.tsx`, the people icon) is on a movie
     with a file, a series, an episode, and a season once its episodes are listed, while the server hosts rooms that
     stage a title and the profile is in no room, as Android's detail page offers hosting; in a room it is not there,

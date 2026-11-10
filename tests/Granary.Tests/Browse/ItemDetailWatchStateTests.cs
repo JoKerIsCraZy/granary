@@ -211,6 +211,48 @@ public sealed class ItemDetailWatchStateTests
     }
 
     [Fact]
+    public async Task AStopDuringTheLoad_IsReadOnceTheLoadIsDone()
+    {
+        var (held, gate) = Held();
+        _fixture.Episode().Get(ItemPath(EpisodeId), held, Ok(EpisodeAt(1500)));
+        var detail = _fixture.Create();
+        detail.Activate();
+        var loading = detail.LoadCommand.ExecuteAsync(EpisodeId);
+
+        _fixture.Stops.Track(Task.CompletedTask);
+        _fixture.Clock.Advance(ItemDetailViewModel.RefreshDelay);
+        // The load's answer was read before the stop reached the server.
+        gate.SetResult(await Ok(EpisodeAt(600))());
+        await loading;
+        await detail.Refreshing;
+
+        Assert.Equal(2, _fixture.Silo.SentTo(HttpMethod.Get, ItemPath(EpisodeId)).Count);
+        Assert.Equal("Resume from 25:00", detail.PlayButtonText);
+    }
+
+    [Fact]
+    public async Task AStopWhileASeriesSectionsLoad_IsReadAfterThem_SoTheirOlderAnswerDoesNotStay()
+    {
+        var (held, gate) = Held();
+        _fixture.Series().Get(SeasonsPath(SeriesId), held, Ok(SeasonsNext)).Get(ItemPath(SeriesId), Ok(Series), Ok(SeriesNext));
+        var detail = _fixture.Create();
+        detail.Activate();
+        var loading = detail.LoadCommand.ExecuteAsync(SeriesId);
+        await Playback.ServerPlaybackFixture.Until(() => detail.IsReady, "the series");
+
+        _fixture.Stops.Track(Task.CompletedTask);
+        _fixture.Clock.Advance(ItemDetailViewModel.RefreshDelay);
+        await detail.Refreshing;
+        gate.SetResult(await Ok(SeriesSeasons)());
+        await loading;
+        await detail.Refreshing;
+
+        Assert.Equal(2, _fixture.Silo.SentTo(HttpMethod.Get, SeasonsPath(SeriesId)).Count);
+        Assert.Equal("5 of 8 episodes", detail.Seasons.Single(s => s.Id == Season3Id).Caption);
+        Assert.Equal("Play Next", detail.PlayLabel);
+    }
+
+    [Fact]
     public async Task ARefresh_LeavesAFavoriteAndAWatchlistChangeOnTheirWayAlone()
     {
         _fixture.Movie();

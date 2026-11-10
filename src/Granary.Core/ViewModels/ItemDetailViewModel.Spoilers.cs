@@ -28,8 +28,10 @@ public sealed partial class ItemDetailViewModel
     private bool _isReportingOwnChange;
     // Counts the page's own watched changes: a read of the state that began before one does not put the old state back.
     private int _watchEdits;
-    // A change not read yet: it came while the page marked watched, or lay under the player.
+    // A change not read yet: it came while the page loaded, marked watched, or lay under the player.
     private bool _watchStateStale;
+    // The load is done, its sections too: a read of the viewer's state may follow.
+    private bool _isLoaded;
     private ITimer? _refreshTimer;
     private CancellationTokenSource? _refresh;
 
@@ -198,7 +200,7 @@ public sealed partial class ItemDetailViewModel
         }
     });
 
-    // After the page's own watched change: what changed meanwhile.
+    // After the load, or the page's own watched change: what changed meanwhile.
     private void RefreshIfStale()
     {
         if (_watchStateStale && _isActive)
@@ -227,9 +229,9 @@ public sealed partial class ItemDetailViewModel
     // with, so their stills stay the ones shown. A read that fails keeps what the page shows.
     private async Task RefreshWatchStateAsync()
     {
-        // Read once the player is gone, as Silo's apps read their page after it: its stop is a change of its own, reported
-        // once it ended.
-        if (_changes?.IsPlaying == true)
+        // Read once the load is done, its sections too, so their older answers do not land over this one; and once the
+        // player is gone, as Silo's apps read their page after it: its stop is a change of its own, reported once it ended.
+        if (!_isLoaded || _changes?.IsPlaying == true)
         {
             _watchStateStale = true;
             return;
