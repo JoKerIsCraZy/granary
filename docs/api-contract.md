@@ -1957,12 +1957,14 @@ a long download) or is cut that way is asked again from its next byte and splice
 answer to mpv, as Silo's Apple app reconnects its reader at the byte it had reached. Granary relies
 on the direct play route's range handling (§9.2): the request carries `Range: bytes=<next>-` and, as
 `If-Range`, the first answer's `ETag` (strong: `"<version>-<sha256>"`,
-`silo-server/internal/playback/directplay_etag.go`) or else its `Last-Modified`. A changed file fails
-the `If-Range` and is answered with the whole file (`200`, Go's `http.ServeContent`), which Granary
-never splices: only a `206` whose `Content-Range` starts at that byte with the same total and
-validator goes on. `429`, `5xx` (`503`, `509` among them) and lost connections are asked again, at
-once after a break, then 1, 2, 4 and 8 s apart (a `Retry-After` up to 15 s), until 12 resumes in a
-row brought no data; a `401` gets its one renewal (§9.4), and any other answer ends the request. A
+`silo-server/internal/playback/directplay_etag.go`) or else its `Last-Modified`, as the server wrote
+it. A changed file fails the `If-Range` and is answered with the whole file (`200`, Go's
+`http.ServeContent`), which Granary never splices: only a `206` whose `Content-Range` starts at that
+byte with the same total and the first answer's validators goes on. `429`, `500`, `502`, `503`,
+`504`, `509`, lost connections and a token refresh the server cannot serve right now are asked again,
+at once after a break, then 1, 2, 4 and 8 s apart (a `Retry-After` up to 15 s). The proxy gives up
+after 12 resumes in a row that brought no data, 90 s after the break without data, or past 30
+resumes within 60 s; a `401` gets its one renewal (§9.4), and any other answer ends the request. A
 progressive remux (no length, no ranges) is never resumed.
 
 A request the proxy cannot resume is ended. mpv's HTTP reader (libcurl) then asks again from its

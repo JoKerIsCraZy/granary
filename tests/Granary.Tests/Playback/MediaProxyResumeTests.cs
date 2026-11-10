@@ -18,6 +18,8 @@ public sealed class MediaProxyResumeTests : IDisposable
     // A file whose bytes repeat only every 251, so a byte sent twice or left out shows.
     private static readonly byte[] Movie = [.. Enumerable.Range(0, Size).Select(i => (byte)(i % 251))];
 
+    private static readonly DateTimeOffset Modified = new(2026, 9, 1, 8, 0, 0, TimeSpan.Zero);
+
     // A test whose proxy waits for a clock nobody moves fails instead of hanging.
     private static readonly TimeSpan HangLimit = TimeSpan.FromSeconds(10);
 
@@ -27,11 +29,24 @@ public sealed class MediaProxyResumeTests : IDisposable
     private readonly List<bool> _asked = [];
     private readonly FakeHttpMessageHandler _server;
     private Func<HttpRequestMessage, HttpResponseMessage> _answer = _ => throw new InvalidOperationException("No answer scripted.");
+
+    // Requests the server takes and never answers.
+    private Func<HttpRequestMessage, bool> _hangs = _ => false;
+
+    // Renewing the headers fails so, when set.
+    private MediaAuthorizationFailure? _renewalFails;
     private int _tokens;
 
     public MediaProxyResumeTests()
     {
-        _server = new FakeHttpMessageHandler((request, _) => Task.FromResult(_answer(request)));
+        _server = new FakeHttpMessageHandler(async (request, cancellationToken) =>
+        {
+            if (_hangs(request))
+            {
+                await Task.Delay(Timeout.Infinite, cancellationToken);
+            }
+            return _answer(request);
+        });
         Proxy = new MediaProxy(_server, _time, _logs.For<MediaProxy>());
     }
 
@@ -61,21 +76,63 @@ public sealed class MediaProxyResumeTests : IDisposable
     }
 
     [Fact]
-    public async Task AWholeFileThatTakesRanges_GoesOnUnderItsDate_WhenItsTagIsWeak()
+    public async Task ThePlayer_KeepsTheFirstAnswersStatusAndHeaders()
     {
-        var modified = new DateTimeOffset(2026, 9, 1, 8, 0, 0, TimeSpan.Zero);
-        _answer = request => Sent.Count == 1
-            ? Whole(breakAfter: 1234, modified)
-            : Part(From(request), etag: "W/\"v1\"", modified: modified);
+        _answer = request => Sent.Count == 1 ? Part(100, breakAfter: 300) : Part(From(request));
+        using var route = Open();
+        using var request = Ask(route, from: 100, to: null);
+
+        using var response = await _player.SendAsync(request, Cancellation).WaitAsync(HangLimit, Cancellation);
+
+        Assert.Equal(HttpStatusCode.PartialContent, response.StatusCode);
+        Assert.Equal("bytes 100-4999/5000", response.Content.Headers.ContentRange!.ToString());
+        Assert.Equal(Size - 100, response.Content.Headers.ContentLength);
+        Assert.Equal(Movie[100..], await response.Content.ReadAsByteArrayAsync(Cancellation));
+    }
+
+    [Fact]
+    public async Task AResume_AsksItsOwnCondition_NotThePlayers()
+    {
+        // The player's conditions could answer a 304 or a 412 in the middle of a body.
+        _answer = request => Sent.Count == 1 ? Part(100, breakAfter: 300) : Part(From(request));
+        using var route = Open();
+        using var request = Ask(route, from: 100, to: null);
+        request.Headers.IfRange = new RangeConditionHeaderValue(Modified);
+        request.Headers.IfNoneMatch.Add(new EntityTagHeaderValue("\"v0\""));
+        request.Headers.UserAgent.ParseAdd("mpv/0.41");
+
+        using var response = await _player.SendAsync(request, Cancellation).WaitAsync(HangLimit, Cancellation);
+
+        Assert.Equal(Movie[100..], await response.Content.ReadAsByteArrayAsync(Cancellation));
+        Assert.Equal(Modified, Sent[0].Headers.IfRange!.Date);
+        var resume = Sent[1];
+        Assert.Equal("\"v1\"", resume.Headers.IfRange!.ToString());
+        Assert.Empty(resume.Headers.IfNoneMatch);
+        Assert.Equal("mpv/0.41", resume.Headers.UserAgent.ToString());
+    }
+
+    [Fact]
+    public async Task AWholeFileThatTakesRanges_GoesOnUnderItsDate_AsTheServerWroteIt()
+    {
+        // A weak tag never matches in If-Range: the date guards instead, sent back as it came.
+        const string Written = "Tuesday, 01-Sep-26 08:00:00 GMT";
+        _answer = request =>
+        {
+            if (Sent.Count > 1)
+            {
+                return Part(From(request), etag: "W/\"v1\"", modified: Modified);
+            }
+            var whole = Whole(breakAfter: 1234);
+            whole.Content.Headers.TryAddWithoutValidation("Last-Modified", Written);
+            return whole;
+        };
         using var route = Open();
 
         byte[] got = await PlayAsync(route, from: null);
 
         Assert.Equal(Movie, got);
-        var resume = Sent[1];
-        Assert.Equal("bytes=1234-", resume.Headers.Range!.ToString());
-        // A weak tag never matches in If-Range; the date guards instead.
-        Assert.Equal(modified, resume.Headers.IfRange!.Date);
+        Assert.Equal("bytes=1234-", Sent[1].Headers.Range!.ToString());
+        Assert.Equal(Written, Sent[1].Headers.NonValidated["If-Range"].ToString());
     }
 
     [Fact]
@@ -91,6 +148,46 @@ public sealed class MediaProxyResumeTests : IDisposable
     }
 
     [Fact]
+    public async Task AResumedAnswerThatEndsBeforeItsRange_IsResumedAgain()
+    {
+        // Servers cap their answers: the rest is asked from where the capped one ended.
+        _answer = request => Sent.Count switch
+        {
+            1 => Part(100, breakAfter: 300),
+            2 => Part(400, to: 999),
+            _ => Part(From(request)),
+        };
+        using var route = Open();
+
+        byte[] got = await PlayAsync(route, from: 100);
+
+        Assert.Equal(Movie[100..], got);
+        Assert.Equal(["bytes=400-", "bytes=1000-"], Sent.Skip(1).Select(r => r.Headers.Range!.ToString()));
+        Assert.Contains("The server ended early at byte 1000; resumed", _logs.All, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task TheBrokenAnswer_IsLetGo_OnceAResumeReplacesIt()
+    {
+        var broken = new Body(Movie.AsMemory(100), breakAfter: 300, silent: false);
+        bool? letGoBeforeTheResume = null;
+        _answer = request =>
+        {
+            if (Sent.Count == 1)
+            {
+                return Partial(broken, 100, Size - 1, Size, "\"v1\"", modified: null);
+            }
+            letGoBeforeTheResume = broken.Disposed;
+            return Part(From(request));
+        };
+        using var route = Open();
+
+        await PlayAsync(route, from: 100);
+
+        Assert.True(letGoBeforeTheResume);
+    }
+
+    [Fact]
     public async Task EveryBreakOfOneAnswer_IsPickedUp_AsLongAsEachResumeBringsData()
     {
         // More breaks than the resumes allowed in a row: each resume that delivers starts the count again.
@@ -102,6 +199,19 @@ public sealed class MediaProxyResumeTests : IDisposable
         Assert.Equal(Movie[100..], got);
         Assert.Equal(21, Sent.Count);
         Assert.Equal(Enumerable.Range(1, 20).Select(n => 100 + (100L * n)), Sent.Skip(1).Select(From));
+    }
+
+    [Fact]
+    public async Task MoreThanThirtyResumesWithinAMinute_GiveUp()
+    {
+        // A server that cuts every few bytes would have every resume deliver, unpaced, for good.
+        _answer = request => Part(From(request), breakAfter: 10);
+        using var route = Open();
+
+        await Assert.ThrowsAnyAsync<HttpRequestException>(() => PlayAsync(route, from: 100));
+
+        Assert.Equal(1 + UpstreamResume.MaxPerWindow, Sent.Count);
+        Assert.Contains("resuming failed (30 tries within 60 s), giving up", _logs.All, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -125,8 +235,47 @@ public sealed class MediaProxyResumeTests : IDisposable
             _logs.All, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task AServerThatAnswersNoResume_IsGivenUp_90SecondsAfterTheBreak()
+    {
+        // Each try could wait the idle limit: the break as a whole gets 90 s, as long as the stall watch gives a stream.
+        _answer = _ => Part(100, breakAfter: 300);
+        _hangs = _ => Sent.Count > 1;
+        using var route = Open();
+        var playing = PlayAsync(route, from: 100);
+
+        await ServerPlaybackFixture.Until(() => Sent.Count == 2 && _time.NextDue == MediaRoute.UpstreamIdleTimeout, "the first resume waits");
+        _time.Advance(MediaRoute.UpstreamIdleTimeout);
+        await ServerPlaybackFixture.Until(() => _time.NextDue == TimeSpan.FromSeconds(1), "the next resume waits its turn");
+        _time.Advance(TimeSpan.FromSeconds(1));
+        await ServerPlaybackFixture.Until(() => Sent.Count == 3 && _time.NextDue == TimeSpan.FromSeconds(29), "the second resume waits");
+        _time.Advance(TimeSpan.FromSeconds(29));
+
+        await Assert.ThrowsAnyAsync<HttpRequestException>(() => playing);
+        Assert.Equal(3, Sent.Count);
+        Assert.Contains("at byte 400; resuming failed (90 s brought nothing), giving up", _logs.All, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ClosingTheRoute_EndsAResumeThatWaits_AtOnce()
+    {
+        _answer = _ => Sent.Count == 1 ? Part(100, breakAfter: 300) : new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+        var route = Open();
+        var playing = PlayAsync(route, from: 100);
+        await _time.WaitUntilAsync(() => _time.NextDue == TimeSpan.FromSeconds(1), Cancellation);
+
+        route.Dispose();
+
+        await Assert.ThrowsAnyAsync<HttpRequestException>(() => playing);
+        await ServerPlaybackFixture.Until(() => _time.NextDue is null, "no wait is left");
+        Assert.Equal(2, Sent.Count);
+    }
+
     [Theory]
     [InlineData(503, null, 1)]
+    [InlineData(500, null, 1)]
+    [InlineData(502, null, 1)]
+    [InlineData(504, null, 1)]
     [InlineData(429, 5, 5)]
     [InlineData(509, 60, 15)]
     public async Task ABusyServer_IsAskedAgain_AfterItsRetryAfter_UpTo15Seconds(int status, int? retryAfter, int waitSeconds)
@@ -134,7 +283,7 @@ public sealed class MediaProxyResumeTests : IDisposable
         _answer = request => Sent.Count switch
         {
             1 => Part(100, breakAfter: 300),
-            2 => Busy(status, retryAfter),
+            2 => Busy(status, retryAfter is { } seconds ? new RetryConditionHeaderValue(TimeSpan.FromSeconds(seconds)) : null),
             _ => Part(From(request)),
         };
         using var route = Open();
@@ -149,28 +298,103 @@ public sealed class MediaProxyResumeTests : IDisposable
     }
 
     [Theory]
+    [InlineData(-600, 1)]
+    [InlineData(5, 5)]
+    public async Task ARetryAfterDate_CountsFromNow(int fromNow, int waitSeconds)
+    {
+        _answer = request => Sent.Count switch
+        {
+            1 => Part(100, breakAfter: 300),
+            2 => Busy(503, new RetryConditionHeaderValue(_time.GetUtcNow().AddSeconds(fromNow))),
+            _ => Part(From(request)),
+        };
+        using var route = Open();
+        var playing = PlayAsync(route, from: 100);
+
+        var wait = TimeSpan.FromSeconds(waitSeconds);
+        await _time.WaitUntilAsync(() => _time.NextDue == wait, Cancellation);
+        _time.Advance(wait);
+
+        Assert.Equal(Movie[100..], await playing);
+    }
+
+    [Theory]
     [InlineData("the whole file")]
     [InlineData("another start")]
     [InlineData("another size")]
+    [InlineData("no size")]
+    [InlineData("past its end")]
+    [InlineData("an unsatisfied range")]
+    [InlineData("several ranges")]
     [InlineData("another tag")]
+    [InlineData("no tag")]
+    [InlineData("another date")]
+    [InlineData("no date")]
     [InlineData("no such range")]
+    [InlineData("gone")]
+    [InlineData("not implemented")]
     public async Task AnAnswerThatIsNotTheNextBytesOfTheSameFile_IsNotSplicedIn(string answer)
     {
-        // A 200 is the server saying the file changed (If-Range); the player has to see the break and load again.
-        _answer = request => Sent.Count == 1 ? Part(100, breakAfter: 300) : answer switch
+        // A 200 is the server saying the file changed (If-Range): the player has to see the break and load again.
+        _answer = request => Sent.Count == 1 ? Part(100, to: 3999, breakAfter: 300, modified: Modified) : answer switch
         {
             "the whole file" => Whole(),
-            "another start" => Part(From(request) + 50),
-            "another size" => Part(From(request), to: Size - 1, total: Size + 1000),
-            "another tag" => Part(From(request), etag: "\"v2\""),
-            _ => new HttpResponseMessage(HttpStatusCode.RequestedRangeNotSatisfiable),
+            "another start" => Part(From(request) + 50, to: 3999, modified: Modified),
+            "another size" => Part(From(request), to: 3999, total: Size + 1000, modified: Modified),
+            "no size" => Part(From(request), to: 3999, total: null, modified: Modified),
+            "past its end" => Part(From(request), modified: Modified),
+            "an unsatisfied range" => Unsatisfied(),
+            "several ranges" => SeveralRanges(),
+            "another tag" => Part(From(request), to: 3999, etag: "\"v2\"", modified: Modified),
+            "no tag" => Part(From(request), to: 3999, etag: null, modified: Modified),
+            "another date" => Part(From(request), to: 3999, modified: Modified.AddHours(1)),
+            "no date" => Part(From(request), to: 3999),
+            "no such range" => new HttpResponseMessage(HttpStatusCode.RequestedRangeNotSatisfiable),
+            "gone" => new HttpResponseMessage(HttpStatusCode.NotFound),
+            _ => new HttpResponseMessage(HttpStatusCode.NotImplemented),
         };
+        using var route = Open();
+
+        await Assert.ThrowsAnyAsync<HttpRequestException>(() => PlayAsync(route, from: 100, to: 3999));
+
+        Assert.Equal(2, Sent.Count);
+        Assert.Equal("bytes=400-3999", Sent[1].Headers.Range!.ToString());
+        Assert.Contains("at byte 400; resuming failed", _logs.All, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task NoHeadersForNow_IsAskedAgainOnTheLadder()
+    {
+        // The server could not issue a token at that moment: a busy server, not a refusal.
+        _renewalFails = MediaAuthorizationFailure.Unavailable;
+        _answer = request => Sent.Count switch
+        {
+            1 => Part(100, breakAfter: 300),
+            2 => new HttpResponseMessage(HttpStatusCode.Unauthorized),
+            _ => Part(From(request)),
+        };
+        using var route = Open();
+        var playing = PlayAsync(route, from: 100);
+
+        await _time.WaitUntilAsync(() => _time.NextDue == TimeSpan.FromSeconds(1), Cancellation);
+        _time.Advance(TimeSpan.FromSeconds(1));
+
+        Assert.Equal(Movie[100..], await playing);
+        Assert.Equal(3, Sent.Count);
+        Assert.Equal([false, true], _asked);
+    }
+
+    [Fact]
+    public async Task AResumeWithoutALogin_GivesUpAtOnce()
+    {
+        _renewalFails = MediaAuthorizationFailure.SignedOut;
+        _answer = _ => Sent.Count == 1 ? Part(100, breakAfter: 300) : new HttpResponseMessage(HttpStatusCode.Unauthorized);
         using var route = Open();
 
         await Assert.ThrowsAnyAsync<HttpRequestException>(() => PlayAsync(route, from: 100));
 
         Assert.Equal(2, Sent.Count);
-        Assert.Contains("at byte 400; resuming failed", _logs.All, StringComparison.Ordinal);
+        Assert.Contains("resuming failed (no media headers: SignedOut), giving up", _logs.All, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -242,10 +466,14 @@ public sealed class MediaProxyResumeTests : IDisposable
 
     private IMediaRoute Open() => Proxy.Open(Stream, MediaRouteScope.File, Credentials);
 
-    // Each renewal hands out the next token: t1, t2, ...
+    // Each renewal hands out the next token: t1, t2, ...; or fails, when the test says so.
     private Task<MediaCredentials> Credentials(bool rejected, CancellationToken cancellationToken)
     {
         _asked.Add(rejected);
+        if (rejected && _renewalFails is { } failure)
+        {
+            return Task.FromException<MediaCredentials>(new MediaAuthorizationException(failure, "No headers."));
+        }
         return Task.FromResult(new MediaCredentials(
             [new("Authorization", "Bearer t" + ++_tokens), new("X-Profile-Id", "7")], _time.GetUtcNow().AddHours(8)));
     }
@@ -272,11 +500,19 @@ public sealed class MediaProxyResumeTests : IDisposable
 
     // The movie from one byte to another (its end unless named), as direct play answers a range.
     private static HttpResponseMessage Part(long from, int? breakAfter = null, bool silent = false, string? etag = "\"v1\"",
-        long? to = null, long total = Size, DateTimeOffset? modified = null)
+        long? to = null, long? total = Size, DateTimeOffset? modified = null)
     {
-        long end = to ?? total - 1;
-        var response = Answer(HttpStatusCode.PartialContent, Movie.AsMemory((int)from, (int)(end - from + 1)), breakAfter, silent);
-        response.Content.Headers.ContentRange = new ContentRangeHeaderValue(from, end, total);
+        long end = to ?? total!.Value - 1;
+        var body = new Body(Movie.AsMemory((int)from, (int)(end - from + 1)), breakAfter, silent);
+        return Partial(body, from, end, total, etag, modified);
+    }
+
+    private static HttpResponseMessage Partial(Body body, long from, long end, long? total, string? etag, DateTimeOffset? modified)
+    {
+        var response = Answer(HttpStatusCode.PartialContent, body, end - from + 1);
+        response.Content.Headers.ContentRange = total is { } length
+            ? new ContentRangeHeaderValue(from, end, length)
+            : new ContentRangeHeaderValue(from, end);
         response.Content.Headers.LastModified = modified;
         if (etag is not null)
         {
@@ -286,12 +522,29 @@ public sealed class MediaProxyResumeTests : IDisposable
     }
 
     // The whole movie, as direct play answers a request without a range.
-    private static HttpResponseMessage Whole(int? breakAfter = null, DateTimeOffset? modified = null)
+    private static HttpResponseMessage Whole(int? breakAfter = null)
     {
-        var response = Answer(HttpStatusCode.OK, Movie, breakAfter, silent: false);
+        var response = Answer(HttpStatusCode.OK, new Body(Movie, breakAfter, silent: false), Size);
         response.Headers.AcceptRanges.Add("bytes");
         response.Headers.ETag = EntityTagHeaderValue.Parse("W/\"v1\"");
-        response.Content.Headers.LastModified = modified;
+        return response;
+    }
+
+    // A 206 that names no range of its own, only the size: "bytes */5000".
+    private static HttpResponseMessage Unsatisfied()
+    {
+        var response = Answer(HttpStatusCode.PartialContent, new Body(Movie.AsMemory(0, 10), null, silent: false), 10);
+        response.Content.Headers.ContentRange = new ContentRangeHeaderValue(Size);
+        response.Headers.ETag = EntityTagHeaderValue.Parse("\"v1\"");
+        return response;
+    }
+
+    // A multipart answer of several ranges, whose ranges are inside the body.
+    private static HttpResponseMessage SeveralRanges()
+    {
+        var response = Answer(HttpStatusCode.PartialContent, new Body(Movie.AsMemory(400, 100), null, silent: false), 100);
+        response.Content.Headers.ContentType = MediaTypeHeaderValue.Parse("multipart/byteranges; boundary=x");
+        response.Headers.ETag = EntityTagHeaderValue.Parse("\"v1\"");
         return response;
     }
 
@@ -301,21 +554,18 @@ public sealed class MediaProxyResumeTests : IDisposable
         Content = new StreamContent(new Body(Movie, breakAfter, silent: false)),
     };
 
-    private static HttpResponseMessage Answer(HttpStatusCode status, ReadOnlyMemory<byte> bytes, int? breakAfter, bool silent)
+    private static HttpResponseMessage Answer(HttpStatusCode status, Body body, long length)
     {
-        var response = new HttpResponseMessage(status) { Content = new StreamContent(new Body(bytes, breakAfter, silent)) };
-        response.Content.Headers.ContentLength = bytes.Length;
+        var response = new HttpResponseMessage(status) { Content = new StreamContent(body) };
+        response.Content.Headers.ContentLength = length;
         response.Content.Headers.ContentType = new MediaTypeHeaderValue("video/x-matroska");
         return response;
     }
 
-    private static HttpResponseMessage Busy(int status, int? retryAfter)
+    private static HttpResponseMessage Busy(int status, RetryConditionHeaderValue? retryAfter)
     {
         var response = new HttpResponseMessage((HttpStatusCode)status);
-        if (retryAfter is { } seconds)
-        {
-            response.Headers.RetryAfter = new RetryConditionHeaderValue(TimeSpan.FromSeconds(seconds));
-        }
+        response.Headers.RetryAfter = retryAfter;
         return response;
     }
 
@@ -323,6 +573,8 @@ public sealed class MediaProxyResumeTests : IDisposable
     private sealed class Body(ReadOnlyMemory<byte> bytes, int? breakAfter, bool silent) : System.IO.Stream
     {
         private int _sent;
+
+        public bool Disposed { get; private set; }
 
         public override bool CanRead => true;
 
@@ -362,5 +614,11 @@ public sealed class MediaProxyResumeTests : IDisposable
         public override void SetLength(long value) => throw new NotSupportedException();
 
         public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+
+        protected override void Dispose(bool disposing)
+        {
+            Disposed = true;
+            base.Dispose(disposing);
+        }
     }
 }

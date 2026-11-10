@@ -174,21 +174,26 @@ internal sealed class MediaRoute : IMediaRoute
         using var resume = head ? null : UpstreamResume.For(response, Resend, _time, logger);
         await RelayAsync(response, context.Response, head, watch, resume, token).ConfigureAwait(false);
 
-        Task<HttpResponseMessage> Resend(RangeHeaderValue range, RangeConditionHeaderValue? condition) => SendAsync(() =>
+        Task<HttpResponseMessage> Resend(RangeHeaderValue range, string? condition, CancellationToken limit) => SendAsync(() =>
         {
             var request = Request(HttpMethod.Get, upstream, player, ResumedRequestHeaders);
             request.Headers.Range = range;
-            request.Headers.IfRange = condition;
+            if (condition is not null)
+            {
+                request.Headers.TryAddWithoutValidation("If-Range", condition);
+            }
             return request;
-        }, client, logger, watch);
+        }, client, logger, watch, limit);
     }
 
     /// <summary>
     /// One request to the server with the headers of the moment, timed whole by the watch: the headers (a token refresh
-    /// among them), then the answer. A refusal renews the headers once and repeats the request, so the player never sees
-    /// an expiry. The answer is the caller's; the request, a GET or HEAD without content, holds nothing to free.
+    /// among them), then the answer; <paramref name="limit"/> may end it sooner. A refusal renews the headers once and
+    /// repeats the request, so the player never sees an expiry. The answer is the caller's; the request, a GET or HEAD
+    /// without content, holds nothing to free.
     /// </summary>
-    private async Task<HttpResponseMessage> SendAsync(Func<HttpRequestMessage> build, HttpMessageInvoker client, ILogger logger, UpstreamWatch watch)
+    private async Task<HttpResponseMessage> SendAsync(Func<HttpRequestMessage> build, HttpMessageInvoker client, ILogger logger, UpstreamWatch watch,
+        CancellationToken limit = default)
     {
         MediaCredentials? refused = null;
         while (true)
@@ -197,14 +202,16 @@ internal sealed class MediaRoute : IMediaRoute
             MediaCredentials credentials;
             HttpResponseMessage answer;
             var waiting = watch.Arm();
+            var bounded = limit.CanBeCanceled ? CancellationTokenSource.CreateLinkedTokenSource(waiting, limit) : null;
             try
             {
-                credentials = await CredentialsAsync(refused, waiting).ConfigureAwait(false);
+                var token = bounded?.Token ?? waiting;
+                credentials = await CredentialsAsync(refused, token).ConfigureAwait(false);
                 foreach (var (name, value) in credentials.Headers)
                 {
                     request.Headers.TryAddWithoutValidation(name, value);
                 }
-                answer = await client.SendAsync(request, waiting).ConfigureAwait(false);
+                answer = await client.SendAsync(request, token).ConfigureAwait(false);
             }
             catch (Exception ex) when (watch.IsCutOff)
             {
@@ -212,6 +219,7 @@ internal sealed class MediaRoute : IMediaRoute
             }
             finally
             {
+                bounded?.Dispose();
                 watch.Disarm();
             }
             if (answer.StatusCode == HttpStatusCode.Unauthorized && refused is null)
