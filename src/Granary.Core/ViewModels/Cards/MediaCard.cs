@@ -29,7 +29,7 @@ public sealed record MediaCard(string Id, string Type, string Title)
     /// <summary>An episode's poster card: the episode's own title under the series', "Safe Harbor", as on the web.</summary>
     public string? EpisodeTitle { get; init; }
 
-    /// <summary>A third line: "18 min left", "Next episode" on landscape cards; a watchlist title's status on its poster card.</summary>
+    /// <summary>A third line: "18 min left", "Next Episode" on landscape cards; a watchlist title's status on its poster card.</summary>
     public string? Caption { get; init; }
 
     /// <summary>The caption warns, in amber: a watchlist title TMDB no longer lists as saved.</summary>

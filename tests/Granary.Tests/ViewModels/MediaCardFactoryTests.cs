@@ -148,7 +148,7 @@ public sealed class MediaCardFactoryTests
 
         var card = MediaCardFactory.Landscape(next, Server);
 
-        Assert.Equal("Next episode", card.Caption);
+        Assert.Equal("Next Episode", card.Caption);
         Assert.Null(card.CaptionBadge);
         Assert.Null(card.Progress);
     }
@@ -179,7 +179,7 @@ public sealed class MediaCardFactoryTests
     {
         var card = MediaCardFactory.Landscape(SeasonPremiere(ItemSources.NextUp) with { Badges = ["new"] }, Server);
 
-        Assert.Equal("Next episode", card.Caption);
+        Assert.Equal("Next Episode", card.Caption);
         Assert.Null(card.CaptionBadge);
         Assert.Null(card.CaptionBadgeName);
         Assert.Equal("NEW", card.StatusBadge);

@@ -44,7 +44,7 @@ public static class MediaCardFactory
 
     /// <summary>
     /// "ted" / "Season 1 Episode 1 • Schulanfang" / "18 min left", as on the web's Continue Watching row. The first episode of
-    /// a season that has just begun says "NEW SEASON" after its time left, and in place of "Next episode" on a Next Up card,
+    /// a season that has just begun says "NEW SEASON" after its time left, and in place of "Next Episode" on a Next Up card,
     /// as the web's <c>ContinueWatchingCard</c>.
     /// </summary>
     public static MediaCard Landscape(CatalogItemBase item, Uri serverBase, EpisodeSpoilers spoilers = default)
@@ -58,7 +58,7 @@ public static class MediaCardFactory
             Shape = MediaCardShape.Landscape,
             Subtitle = isEpisode ? EpisodeLine(item.SeasonNumber, item.EpisodeNumber, item.Title) : YearText(item.Year),
             Caption = item.ItemSource == ItemSources.NextUp
-                ? (premiere ? null : "Next episode")
+                ? (premiere ? null : "Next Episode")
                 : TimeLeft(item.PositionSeconds, item.DurationSeconds),
             CaptionBadge = premiere ? "NEW SEASON" : null,
             CaptionBadgeName = premiere ? "new season" : null,

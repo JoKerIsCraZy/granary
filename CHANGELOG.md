@@ -12,6 +12,7 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Fixed
 
+- A Next Up card says Next Episode, as on Silo's web.
 - Playback no longer stops to buffer when your server or a proxy in front of it cuts the video connection now and then.
 
 ## [0.3.1] - 2026-11-09

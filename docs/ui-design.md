@@ -63,7 +63,7 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
   episode on a title's page) keeps them all, as the web's. A Continue Watching or Next Up card for the first episode of a
   season that has just begun (`season_premiere` in its `badges`, api-contract 7.2) says "NEW SEASON" after its time left,
   as the web's `ContinueWatchingCard`: a pill 6 px after the text, 10 px semibold capitals in the accent on the accent at
-  20 %, edged with it at 40 % (`MediaCard.CaptionBadge`). On a Next Up card it takes the place of "Next episode". It is
+  20 %, edged with it at 40 % (`MediaCard.CaptionBadge`). On a Next Up card it takes the place of "Next Episode" (the web's text). It is
   one of the caption's details, so the title-only and no-caption choices hide it with the time left. Poster cards never
   show it, as the web's `SectionItemCard` and catalog pages; the player's On Deck shows Continue Watching's own cards, so
   it says it there too. The badges are
