@@ -187,6 +187,9 @@ internal sealed class UpstreamResume : IDisposable
             {
                 throw GiveUp(failure, at, string.Create(CultureInfo.InvariantCulture, $"{MaxUnproductive} tries brought nothing"));
             }
+            // The broken or busy answer goes before the wait, not after: its connection is of no more use.
+            _current?.Dispose();
+            _current = null;
             var wait = Backoff(_unproductive, retryAfter);
             if (wait > TimeSpan.Zero)
             {
@@ -197,7 +200,6 @@ internal sealed class UpstreamResume : IDisposable
                 throw GiveUp(failure, at, string.Create(CultureInfo.InvariantCulture, $"{MaxPerWindow} tries within {RateWindow.TotalSeconds:F0} s"));
             }
             _unproductive++;
-            _current?.Dispose();
             _current = await TrySendAsync(failure, at, limit, closing).ConfigureAwait(false);
             retryAfter = TimeSpan.Zero;
             if (_current is not { } answer)

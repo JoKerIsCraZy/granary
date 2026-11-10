@@ -445,6 +445,26 @@ public sealed class MediaProxyResumeTests : IDisposable
     }
 
     [Fact]
+    public async Task ABusyAnswer_IsLetGo_BeforeTheWait()
+    {
+        var busy = new Body(Movie.AsMemory(0, 10), null, silent: false);
+        _answer = request => Sent.Count switch
+        {
+            1 => Part(100, breakAfter: 300),
+            2 => new HttpResponseMessage(HttpStatusCode.ServiceUnavailable) { Content = new StreamContent(busy) },
+            _ => Part(From(request)),
+        };
+        using var route = Open();
+        var playing = PlayAsync(route, from: 100);
+        await _time.WaitUntilAsync(() => _time.NextDue == TimeSpan.FromSeconds(1), Cancellation);
+
+        Assert.True(busy.Disposed);
+
+        _time.Advance(TimeSpan.FromSeconds(1));
+        Assert.Equal(Movie[100..], await playing);
+    }
+
+    [Fact]
     public async Task ARemuxThatBreaksOff_IsNotResumed()
     {
         // No length and no ranges: it cannot be asked again from a byte, and the playback reconnects instead.

@@ -726,12 +726,12 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   ladder; here the player's own request meets the refusal and the playback reloads), or any other answer (a 404, a
   501) gives up at once. A busy or failing server (429, 500, 502, 503, 504, 509), a lost connection, a cut, or no token
   for now is asked again: at once after a break, then 1, 2, 4 and 8 s apart, longer for a `Retry-After` up to 15 s.
-  It gives up after 12 resumes in a row that brought no data (a resume whose connection delivers starts that count
-  again, as the Apple app's does), once a break has gone 90 s without data whatever each try waits (Silo's Android app
-  retries a load within 90 s, and the stall watch gives a stream as long), or after more than 30 resumes within 60 s,
-  which a server that cuts every few kilobytes would have go on unpaced. A broken answer is let go as its resume
-  starts, and the route's closing ends a resume at once, its waits too. Resumes and give-ups are logged with the byte,
-  never the URL or headers.
+  Each broken or busy answer is let go before the next wait. It gives up after 12 resumes in a row that brought no
+  data (a resume whose connection delivers starts that count again, as the Apple app's does), once a break has gone
+  90 s without data whatever each try waits (Silo's Android app retries a load within 90 s, and the stall watch gives a
+  stream as long), or after more than 30 resumes within 60 s, which a server that cuts every few kilobytes would have
+  go on unpaced. The route's closing ends a resume at once, its waits too. Resumes and give-ups are logged with the
+  byte, never the URL or headers.
 - What cannot be resumed aborts the response, so mpv sees a lost connection, not an end. Its curl reader then asks
   again from its offset where the stream can seek, at once; mpv counts those retries since the last seek, so Granary
   allows 20 (`curl-max-retries=20`, its own option): room for the proxy's give-ups across a long title, but not for
