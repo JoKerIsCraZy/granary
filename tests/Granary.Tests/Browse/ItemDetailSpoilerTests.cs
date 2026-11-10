@@ -295,19 +295,6 @@ public sealed class ItemDetailSpoilerTests
     }
 
     [Fact]
-    public async Task WhileTheProfileHidesNothing_AChangeElsewhereAsksNothing()
-    {
-        var detail = await SeasonAsync(images: false, overviews: false, lists: [SpoilerSeason, SecondStarted]);
-        detail.Activate();
-
-        _fixture.Changes.Report();
-        _fixture.Clock.Advance(ItemDetailViewModel.RefreshDelay);
-        await detail.Refreshing;
-
-        Assert.Single(_fixture.Silo.SentTo(HttpMethod.Get, SeasonItemEpisodesPath(Season3Id)));
-    }
-
-    [Fact]
     public async Task ABurstOfChangesElsewhere_IsReadOnce()
     {
         var detail = await SeasonAsync(lists: [SpoilerSeason, SecondStarted]);
@@ -327,20 +314,21 @@ public sealed class ItemDetailSpoilerTests
     }
 
     [Fact]
-    public async Task TurningTheSwitchesOn_ReadsWhatChangedWhileTheyWereOff()
+    public async Task WhileTheProfileHidesNothing_AChangeElsewhereIsReadAllTheSame_SoTurningTheSwitchesOnShowsIt()
     {
         var detail = await SeasonAsync(images: false, overviews: false, lists: [SpoilerSeason, SecondStarted]);
         detail.Activate();
+
         _fixture.Changes.Report();
         _fixture.Clock.Advance(ItemDetailViewModel.RefreshDelay);
+        await detail.Refreshing;
+        Assert.Equal(2, _fixture.Silo.SentTo(HttpMethod.Get, SeasonItemEpisodesPath(Season3Id)).Count);
 
         await _fixture.Spoilers!.SetHidesImagesAsync(true);
-        _fixture.Clock.Advance(ItemDetailViewModel.RefreshDelay);
-        await detail.Refreshing;
 
-        // The second episode was started elsewhere meanwhile: its still shows.
-        Assert.Equal(2, _fixture.Silo.SentTo(HttpMethod.Get, SeasonItemEpisodesPath(Season3Id)).Count);
+        // The second episode was started elsewhere: its still shows, and nothing more is asked.
         Assert.False(detail.Episodes[1].Card.BlursImage);
+        Assert.Equal(2, _fixture.Silo.SentTo(HttpMethod.Get, SeasonItemEpisodesPath(Season3Id)).Count);
     }
 
     [Fact]
