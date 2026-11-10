@@ -226,12 +226,14 @@ public sealed partial class ItemDetailViewModel
 
     // A watched mark, a start or a stop: the item's own state (where Play resumes, a series' or season's next episode), its
     // listed episodes, a series' season cards and an episode's siblings, read again with the image sizes the page loaded
-    // with, so their stills stay the ones shown. A read that fails keeps what the page shows.
+    // with, so their stills stay the ones shown. The reads count as one: if any fails, the page keeps what it shows and
+    // stays stale, so a row never sits beside an older Play.
     private async Task RefreshWatchStateAsync()
     {
-        // Read once the load is done, its sections too, so their older answers do not land over this one; and once the
-        // player is gone, as Silo's apps read their page after it: its stop is a change of its own, reported once it ended.
-        if (!_isLoaded || _changes?.IsPlaying == true)
+        // Read once the load is done, its sections too, so their older answers do not land over this one; once the page's
+        // own watched mark is done, so a read begun under it cannot pass for newer; and once the player is gone, as Silo's
+        // apps read their page after it: its stop is a change of its own, reported once it ended.
+        if (!_isLoaded || _isChangingWatched || _changes?.IsPlaying == true)
         {
             _watchStateStale = true;
             return;
@@ -256,12 +258,18 @@ public sealed partial class ItemDetailViewModel
             var listRead = ListToRefresh(server, item, images, cancellationToken);
             var seasonsRead = SeasonsToRefresh(server, item, images, cancellationToken);
             // All are awaited, so a cancelled one does not leave the others unobserved.
-            await Task.WhenAll(itemRead, listRead, seasonsRead);
+            await Task.WhenAll(new Task?[] { itemRead, listRead, seasonsRead }.OfType<Task>());
             var fresh = await itemRead;
-            var list = await listRead;
-            var seasons = await seasonsRead;
+            var list = listRead is null ? null : await listRead;
+            var seasons = seasonsRead is null ? null : await seasonsRead;
             if (cancellationToken.IsCancellationRequested || generation != _generation)
             {
+                return;
+            }
+            if (fresh is null || (listRead is not null && list is null) || (seasonsRead is not null && seasons is null))
+            {
+                // A read failed (and said so in the log): the next change reads it all again.
+                _watchStateStale = true;
                 return;
             }
             if (edits != _watchEdits || _isChangingWatched)
@@ -274,14 +282,11 @@ public sealed partial class ItemDetailViewModel
                 }
                 return;
             }
-            if (fresh is not null)
-            {
-                // Only what the viewer's state moves; the rest stays as the page read it. UserState keeps the first read
-                // on purpose: the heart, the watchlist and the stars live outside _item and follow their own writes.
-                _item = item with { UserData = fresh.UserData, PlayContentId = fresh.PlayContentId, PlaySeasonNumber = fresh.PlaySeasonNumber };
-                _watch = fresh.UserData;
-                IsWatched = fresh.UserData?.Played ?? fresh.UserState?.Played ?? false;
-            }
+            // Only what the viewer's state moves; the rest stays as the page read it. UserState keeps the first read on
+            // purpose: the heart, the watchlist and the stars live outside _item and follow their own writes.
+            _item = item with { UserData = fresh.UserData, PlayContentId = fresh.PlayContentId, PlaySeasonNumber = fresh.PlaySeasonNumber };
+            _watch = fresh.UserData;
+            IsWatched = fresh.UserData?.Played ?? fresh.UserState?.Played ?? false;
             if (list is not null && _listsEpisodes)
             {
                 _episodes = list.Items;
@@ -301,11 +306,34 @@ public sealed partial class ItemDetailViewModel
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            // The page left, or a newer change is read instead.
+            // The page left, the page's own mark began, or a newer change is read instead.
+        }
+        finally
+        {
+            // Done: a mark that begins now has no read on its way to drop.
+            if (ReferenceEquals(_refresh, run))
+            {
+                _refresh = null;
+                run.Dispose();
+            }
         }
     }
 
-    private Task<EpisodeCollection?> ListToRefresh(Uri server, CatalogItemDetail item, Api.Images.ImageParameters images, CancellationToken cancellationToken)
+    // The page's own watched mark begins: a read on its way may hold the state from before it, so it is dropped and read
+    // again once the mark is done.
+    private void DropRefreshOnItsWay()
+    {
+        if (_refresh is { } run)
+        {
+            _refresh = null;
+            run.Cancel();
+            run.Dispose();
+            _watchStateStale = true;
+        }
+    }
+
+    // The list the page shows, or null when it shows none.
+    private Task<EpisodeCollection?>? ListToRefresh(Uri server, CatalogItemDetail item, Api.Images.ImageParameters images, CancellationToken cancellationToken)
     {
         if (_listsEpisodes && _episodesSeasonId is { } seasonId)
         {
@@ -318,15 +346,15 @@ public sealed partial class ItemDetailViewModel
             return TryLoadAsync("episodes", () => _catalog.ListEpisodesAsync(server, seriesId, number, images: images, cancellationToken: cancellationToken),
                 cancellationToken);
         }
-        return Task.FromResult<EpisodeCollection?>(null);
+        return null;
     }
 
-    // A series' season cards count its watched episodes; a single-season series lists its episodes instead.
-    private Task<SeasonCollection?> SeasonsToRefresh(Uri server, CatalogItemDetail item, Api.Images.ImageParameters images, CancellationToken cancellationToken)
+    // A series' season cards count its watched episodes; a single-season series lists its episodes instead. Null when none show.
+    private Task<SeasonCollection?>? SeasonsToRefresh(Uri server, CatalogItemDetail item, Api.Images.ImageParameters images, CancellationToken cancellationToken)
     {
         if (item.Type != CatalogItemTypes.Series || _listsEpisodes || _seasons.Count == 0)
         {
-            return Task.FromResult<SeasonCollection?>(null);
+            return null;
         }
         string seriesId = _contentId;
         return TryLoadAsync("seasons", () => _catalog.ListSeasonsAsync(server, seriesId, images: images, cancellationToken: cancellationToken), cancellationToken);

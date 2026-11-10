@@ -503,7 +503,9 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     the server; a change during the page's own load is read once the load, its rows included, is done. The page's own
     Mark Watched, heart and Watchlist read nothing. The read then shows where the viewer left off: the Play pill ("Resume
     from" the new point, a series' or season's next episode), Mark Watched, the episode rows, a series' season cards and
-    More Episodes. A read that fails keeps what the page shows; a page left meanwhile reads it all when it opens again.
+    More Episodes, all from one reading: if any of its reads fails, the page keeps all it shows and the next change reads
+    again. A change that comes while the page's own Mark Watched is on its way is read once that is done. A page left
+    meanwhile reads it all when it opens again.
   - Start a Watch Party (the web's `DetailWatchTogether.tsx` and `StartPartySheet.tsx`, the people icon) is on a movie
     with a file, a series, an episode, and a season once its episodes are listed, while the server hosts rooms that
     stage a title and the profile is in no room, as Android's detail page offers hosting; in a room it is not there,

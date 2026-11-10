@@ -38,6 +38,10 @@ public sealed class ItemDetailWatchStateTests
         .Replace("\"watched_count\": 0, \"unplayed_count\": 8, \"in_progress_count\": 0", "\"watched_count\": 1, \"unplayed_count\": 7, \"in_progress_count\": 1", StringComparison.Ordinal)
         .Replace("\"play_content_id\": \"episode-tmdb-96677-3-1\"", "\"play_content_id\": \"episode-tmdb-96677-3-2\"", StringComparison.Ordinal);
 
+    /// <summary><see cref="ItemDetailPayloads.Season"/> marked watched.</summary>
+    private static readonly string SeasonWatched = Season.Replace(
+        "\"played\": false, \"watched_count\": 0, \"unplayed_count\": 8", "\"played\": true, \"watched_count\": 8, \"unplayed_count\": 0", StringComparison.Ordinal);
+
     /// <summary><see cref="SeasonEpisodes"/> with the second episode watched on to three quarters.</summary>
     private static readonly string SeasonEpisodesOn = SeasonEpisodes.Replace("\"position_seconds\": 1440", "\"position_seconds\": 2160", StringComparison.Ordinal);
 
@@ -278,6 +282,52 @@ public sealed class ItemDetailWatchStateTests
 
         Assert.True(detail.IsFavorite);
         Assert.True(detail.IsInWatchlist);
+    }
+
+    [Fact]
+    public async Task AReadDueWhileThePageMarksWatched_WaitsForTheMark_ThenReadsOnce()
+    {
+        _fixture.Season();
+        var detail = await _fixture.LoadAsync(Season3Id);
+        detail.Activate();
+        // A change elsewhere, its read due only once the mark has begun.
+        _fixture.Changes.Report();
+        var (held, gate) = Held();
+        _fixture.Silo.On(HttpMethod.Post, "api/v2/watched/" + Season3Id, held);
+        var marking = detail.ToggleWatchedCommand.ExecuteAsync(null);
+
+        _fixture.Clock.Advance(ItemDetailViewModel.RefreshDelay);
+        await detail.Refreshing;
+        Assert.Single(_fixture.Silo.SentTo(HttpMethod.Get, ItemPath(Season3Id)));
+
+        _fixture.Get(ItemPath(Season3Id), Ok(SeasonWatched));
+        gate.SetResult(NoContentResponse());
+        await marking;
+        await detail.Refreshing;
+
+        Assert.Equal(2, _fixture.Silo.SentTo(HttpMethod.Get, ItemPath(Season3Id)).Count);
+        Assert.True(detail.IsWatched);
+    }
+
+    [Fact]
+    public async Task ARefreshWithAFailedRead_ChangesNothing_AndTheNextChangeReadsAgain()
+    {
+        _fixture.Season();
+        var detail = await _fixture.LoadAsync(Season3Id);
+        detail.Activate();
+        // The season's own state comes, its episodes do not.
+        _fixture.Get(ItemPath(Season3Id), Ok(SeasonStarted)).Get(SeasonItemEpisodesPath(Season3Id), Busy());
+
+        await StopPlaybackAsync(detail);
+
+        Assert.Equal("Play First Episode", detail.PlayLabel);
+        Assert.Equal(0.5, detail.Episodes[1].Card.Progress);
+
+        _fixture.Get(SeasonItemEpisodesPath(Season3Id), Ok(SeasonEpisodesOn));
+        await StopPlaybackAsync(detail);
+
+        Assert.Equal("Resume", detail.PlayLabel);
+        Assert.Equal(0.75, detail.Episodes[1].Card.Progress);
     }
 
     [Fact]
