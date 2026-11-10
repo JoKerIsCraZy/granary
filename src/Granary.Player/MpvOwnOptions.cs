@@ -41,10 +41,11 @@ internal static class MpvOwnOptions
             // the media proxy's secret among them.
             new("resume-playback", "no"),
             new("save-position-on-quit", "no"),
-            // A break of the stream that still reaches mpv past the media proxy's own resume: mpv's HTTP reader asks again
-            // from its byte, but counts every retry since the last seek against this limit, one that brought data too, so
-            // its default of 5 ended a direct play stream after five breaks anywhere in it. 100 is mpv's highest.
-            new("curl-max-retries", "100"),
+            // The media proxy resumes a stream the server breaks off itself; mpv's HTTP reader sees a break only when the
+            // proxy gave up or a first request was cut, and asks again from its byte, at once. It counts every retry since
+            // the last seek against this limit, one that brought data too, so across a long title its default of 5 ended a
+            // stream after five such breaks. 20 leaves room for those without keeping mpv busy with a server that is gone.
+            new("curl-max-retries", "20"),
         };
         switch (output)
         {

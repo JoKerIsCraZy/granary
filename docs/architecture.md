@@ -160,8 +160,8 @@ value holds, 0 included.
 **Granary's own options.** Always, and kept over the file: the video in Granary's window (`vo=gpu-next`, `gpu-api` and
 `gpu-context` `d3d11`, `d3d11-output-mode=composition`, `d3d11-composition-size`, `force-window`), the player Granary
 drives (`keep-open`, `idle`, `input-default-bindings`, `input-vo-keyboard`, `osc`, `ytdl`, `sub-auto`,
-`rebase-start-time`, `media-controls`), no watch-later files (`resume-playback`, `save-position-on-quit`), and a stream
-that breaks off asked again as often as mpv allows (`curl-max-retries=100`; Server playback, "Media proxy"). With a
+`rebase-start-time`, `media-controls`), no watch-later files (`resume-playback`, `save-position-on-quit`), and room for
+the breaks of a long title that the media proxy gives up on (`curl-max-retries=20`; Server playback, "Media proxy"). With a
 file also (`MpvOwnOptions.Guarded`; they are mpv's defaults, so without a file nothing could change them), behind the
 refusal above: the stream's address stays out of mpv's own files and programs (`save-watch-history`, `watch-later-dir`,
 `write-filename-in-watch-later-config`, `log-file`, `dump-stats`, `stream-record`, `stream-dump`, `input-ipc-server`),
@@ -725,8 +725,10 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   resumes in a row brought no data; a resume whose connection delivers starts that count again, as the Apple app's
   does. Resumes and give-ups are logged with the byte, never the URL or headers.
 - What cannot be resumed aborts the response, so mpv sees a lost connection, not an end. Its curl reader then asks
-  again from its offset where the stream can seek, as often as mpv allows (`curl-max-retries=100`, Granary's own
-  option); a remux ends and the playback reconnects. Cuts and bodies that broke off are logged without URL or headers.
+  again from its offset where the stream can seek, at once; mpv counts those retries since the last seek, so Granary
+  allows 20 (`curl-max-retries=20`, its own option): room for the proxy's give-ups across a long title, but not for
+  long on a server that is gone. A remux ends and the playback reconnects. Cuts and bodies that broke off are logged
+  without URL or headers.
   The secret keeps other programs on the machine out; the log redactor masks it. A new load, the stop and a failure
   close the route and its requests. Before the proxy, mpv kept the headers for the whole load and would have sent them
   wherever a redirect or a playlist pointed.

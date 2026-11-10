@@ -1966,8 +1966,8 @@ row brought no data; a `401` gets its one renewal (§9.4), and any other answer 
 progressive remux (no length, no ranges) is never resumed.
 
 A request the proxy cannot resume is ended. mpv's HTTP reader (libcurl) then asks again from its
-byte offset where the stream can seek (Granary sets `curl-max-retries=100`: mpv counts every retry
-since the last seek, ones that brought data too); a progressive remux ends, and the playback
+byte offset where the stream can seek, at once (Granary sets `curl-max-retries=20`: mpv counts every
+retry since the last seek, ones that brought data too); a progressive remux ends, and the playback
 reconnects with the no-op `track_change` replan ([8.7](#87-replan)). A stream that waits 90 s for data while the
 viewer plays, with nothing new arriving, is given up and reconnected the same way. A reconnect plays
 on unless the viewer (or a Watch Party's room) had paused; mpv's own pause at the end of the data it
