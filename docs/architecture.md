@@ -160,7 +160,8 @@ value holds, 0 included.
 **Granary's own options.** Always, and kept over the file: the video in Granary's window (`vo=gpu-next`, `gpu-api` and
 `gpu-context` `d3d11`, `d3d11-output-mode=composition`, `d3d11-composition-size`, `force-window`), the player Granary
 drives (`keep-open`, `idle`, `input-default-bindings`, `input-vo-keyboard`, `osc`, `ytdl`, `sub-auto`,
-`rebase-start-time`, `media-controls`), and no watch-later files (`resume-playback`, `save-position-on-quit`). With a
+`rebase-start-time`, `media-controls`), no watch-later files (`resume-playback`, `save-position-on-quit`), and room for
+the breaks of a long title that the media proxy gives up on (`curl-max-retries=20`; Server playback, "Media proxy"). With a
 file also (`MpvOwnOptions.Guarded`; they are mpv's defaults, so without a file nothing could change them), behind the
 refusal above: the stream's address stays out of mpv's own files and programs (`save-watch-history`, `watch-later-dir`,
 `write-filename-in-watch-later-config`, `log-file`, `dump-stats`, `stream-record`, `stream-dump`, `input-ipc-server`),
@@ -675,9 +676,9 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   cache still grows (a remote server, a high bitrate, a long `cache-pause-wait`) is left to fill it, as Apple's
   detector counts bytes, not time. Not while the viewer (or a Watch Party's room) has paused, also with a pause
   asked that mpv has not shown yet. The 90 s are above the server's longest hold of a request (a playlist 30 s, a
-  segment 12 s plus 30 s after a seek; docs/api-contract.md, 9.5) and the media proxy's 60 s, after which mpv asks
-  again by itself and usually recovers in place. Buffering's start and end are logged with the position and what mpv
-  holds ahead.
+  segment 12 s plus 30 s after a seek; docs/api-contract.md, 9.5) and the media proxy's 60 s, after which the proxy
+  resumes the body, or mpv asks again by itself, and the stream usually recovers in place. Buffering's start and end
+  are logged with the position and what mpv holds ahead.
 - **Play intent across reloads**: a reload (a replan, a reconnect) plays or pauses as last asked of the engine
   (`IPlaybackEngine.IsPauseAsked`: the viewer, a Watch Party's room, the control lane), as Apple's reconnect
   carries the viewer's play intent. A stream that broke off plays to the end of the data mpv had and mpv pauses
@@ -705,15 +706,42 @@ A title plays through one `ServerPlayback` (Granary.Core) per start of the playe
   path and query, byte for byte}`. The route forwards GET and HEAD with the range headers to its own stream only (a
   progressive stream: its exact URL; HLS: the playlist and what lies beside it, no dot segments), adds the headers per
   request, renews a token within 60 s of its end, and on a 401 renews it once and repeats the request, so mpv never
-  sees an expiry. Redirects are not followed, cookies and the upstream's other headers stay behind, and a body that
-  breaks off aborts the response so mpv sees a lost connection, not an end. A server that sends nothing for 60 s,
-  before its answer (a token refresh included) or within its body (`UpstreamWatch`), is cut off and the response
-  aborted the same way: the server closes a stream a paused player stopped reading after 180 s, and word of that close
-  may never arrive. Only waits for the server are timed, never a write the player is not taking. mpv's curl reader
-  then asks again from its offset where the stream can seek; a remux ends and the playback reconnects. Cuts and bodies
-  that broke off are logged without URL or headers. The secret keeps other programs on the machine out; the log
-  redactor masks it. A new load, the stop and a failure close the route and its requests. Before the proxy, mpv kept
-  the headers for the whole load and would have sent them wherever a redirect or a playlist pointed.
+  sees an expiry. Redirects are not followed, and cookies and the upstream's other headers stay behind. A server that
+  sends nothing for 60 s, before its answer (a token refresh included) or within its body (`UpstreamWatch`), is cut
+  off: the server closes a stream a paused player stopped reading after 180 s, and word of that close may never
+  arrive. Only waits for the server are timed, never a write the player is not taking.
+- **Resume** (`UpstreamResume`, as Silo's Apple app reconnects its reader at the byte it had reached): a body that
+  breaks off, is cut or ends early goes on from its next byte in the same answer, so mpv never sees the break. A
+  server, or a proxy or firewall in front of it, that drops long downloads now and then otherwise ended the stream:
+  mpv's reader counts every retry since the last seek against `curl-max-retries`, ones that brought data too, so five
+  breaks anywhere in an episode made it give up, play out its cache and buffer. Only an answer that can be asked again
+  from any byte, and checked, is resumed: a 206 with its `Content-Range`, or a 200 with `Accept-Ranges: bytes`, each
+  with a length, not encoded, and with a strong `ETag` or a `Last-Modified` (with neither, a changed file of the same
+  size would pass); a remux is not. The resume asks `Range: bytes=<next>-` (to the answer's own end when it ended
+  before the file's) with the headers of the moment, none of the player's conditions, and the first answer's strong
+  `ETag`, or else its `Last-Modified`, as `If-Range`, each sent back as the server wrote it. Only a 206 whose range
+  starts at that byte and ends within the answer, with the same total and the validators the first answer had, is
+  spliced in, and only up to the last byte it names, whatever its body sends past it. A 200 (the file changed),
+  another range, a 416, no login, a refusal its one renewal did not cure (the Apple app's reader gives those a short
+  ladder; here the player's own request meets the refusal and the playback reloads), or any other answer (a 404, a
+  501) gives up at once. A busy or failing server (429, 500, 502, 503, 504, 509), a lost connection, a cut, or no token
+  for now is asked again: at once after a break, then 1, 2, 4 and 8 s apart, longer for a `Retry-After` up to 15 s.
+  Each broken or busy answer is let go before the next wait. It gives up after 12 resumes in a row that brought no
+  data (a resume whose connection delivers starts that count again, as the Apple app's does), once a break has gone
+  90 s without data whatever each try waits (Silo's Android app retries a load within 90 s, and the stall watch gives a
+  stream as long), or after more than 30 resumes within 60 s, which a server that cuts every few kilobytes would have
+  go on unpaced. The route's closing ends a resume at once, its waits too, and so does a newer GET of the same URL on
+  the route: mpv reads a direct play file through one request at a time and cannot say when it left one for a seek, so
+  an abandoned resume would hold one of the route's 16 places up to its 90 s. HLS segments have URLs of their own and
+  are read side by side, untouched by this. Resumes and give-ups are logged with the byte, never the URL or headers.
+- What cannot be resumed aborts the response, so mpv sees a lost connection, not an end. Its curl reader then asks
+  again from its offset where the stream can seek, at once; mpv counts those retries since the last seek, so Granary
+  allows 20 (`curl-max-retries=20`, its own option): room for the proxy's give-ups across a long title, but not for
+  long on a server that is gone. A remux ends and the playback reconnects. Cuts and bodies that broke off are logged
+  without URL or headers.
+  The secret keeps other programs on the machine out; the log redactor masks it. A new load, the stop and a failure
+  close the route and its requests. Before the proxy, mpv kept the headers for the whole load and would have sent them
+  wherever a redirect or a playlist pointed.
 - `--play <file or URL>` plays without the server and `--play-item <content id>` plays a title of the
   signed-in server, for development.
 

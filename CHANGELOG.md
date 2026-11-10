@@ -6,6 +6,10 @@ release's section is what its update says it changes (docs/release.md).
 
 ## [Unreleased]
 
+### Fixed
+
+- Playback no longer stops to buffer when your server or a proxy in front of it cuts the video connection now and then.
+
 ## [0.3.1] - 2026-11-09
 
 ### Added
