@@ -42,17 +42,26 @@ public static class MediaCardFactory
         }, item);
     }
 
-    /// <summary>"ted" / "Season 1 Episode 1 • Schulanfang" / "18 min left", as on the web's Continue Watching row.</summary>
+    /// <summary>
+    /// "ted" / "Season 1 Episode 1 • Schulanfang" / "18 min left", as on the web's Continue Watching row. The first episode of
+    /// a season that has just begun says "NEW SEASON" after its time left, and in place of "Next Episode" on a Next Up card,
+    /// as the web's <c>ContinueWatchingCard</c>.
+    /// </summary>
     public static MediaCard Landscape(CatalogItemBase item, Uri serverBase, EpisodeSpoilers spoilers = default)
     {
         ArgumentNullException.ThrowIfNull(item);
         bool isEpisode = item.Type == CatalogItemTypes.Episode;
         bool showsBackdrop = ArtworkUrl.Resolve(serverBase, item.BackdropUrl) is not null;
+        bool premiere = item.Badges.Contains(ItemBadges.SeasonPremiere);
         return Decorate(new MediaCard(item.ContentId, item.Type, isEpisode ? item.SeriesTitle ?? item.Title : item.Title)
         {
             Shape = MediaCardShape.Landscape,
             Subtitle = isEpisode ? EpisodeLine(item.SeasonNumber, item.EpisodeNumber, item.Title) : YearText(item.Year),
-            Caption = item.ItemSource == ItemSources.NextUp ? "Next episode" : TimeLeft(item.PositionSeconds, item.DurationSeconds),
+            Caption = item.ItemSource == ItemSources.NextUp
+                ? (premiere ? null : "Next Episode")
+                : TimeLeft(item.PositionSeconds, item.DurationSeconds),
+            CaptionBadge = premiere ? "NEW SEASON" : null,
+            CaptionBadgeName = premiere ? "new season" : null,
             ImageUrl = ArtworkUrl.Resolve(serverBase, item.BackdropUrl) ?? ArtworkUrl.Resolve(serverBase, item.PosterUrl),
             ImageThumbhash = showsBackdrop ? item.BackdropThumbhash : item.PosterThumbhash,
             BlursImage = spoilers.HidesImage(item, showsBackdrop),
@@ -186,7 +195,7 @@ public static class MediaCardFactory
     private static MediaCard Decorate(MediaCard card, CatalogItemBase item) => card with
     {
         Overlay = OverlayOf(item),
-        StatusBadge = item.Badges.Contains("new") ? "NEW" : null,
+        StatusBadge = item.Badges.Contains(ItemBadges.New) ? "NEW" : null,
         Progress = ProgressOf(item.PositionSeconds, item.DurationSeconds, item.UserState?.Played == true),
         // Like the web, rows and grids mark no watched titles (season and episode cards do); the state shows on hover.
         IsWatched = item.UserState?.Played == true,

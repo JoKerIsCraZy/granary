@@ -29,11 +29,20 @@ public sealed record MediaCard(string Id, string Type, string Title)
     /// <summary>An episode's poster card: the episode's own title under the series', "Safe Harbor", as on the web.</summary>
     public string? EpisodeTitle { get; init; }
 
-    /// <summary>A third line: "18 min left", "Next episode" on landscape cards; a watchlist title's status on its poster card.</summary>
+    /// <summary>A third line: "18 min left", "Next Episode" on landscape cards; a watchlist title's status on its poster card.</summary>
     public string? Caption { get; init; }
 
     /// <summary>The caption warns, in amber: a watchlist title TMDB no longer lists as saved.</summary>
     public bool IsCaptionAttention { get; init; }
+
+    /// <summary>
+    /// A pill in the accent after the caption: "NEW SEASON" on a Continue Watching or Next Up card for the first episode of a
+    /// season that has just begun, as the web's <c>ContinueWatchingCard</c>. Null on every other card.
+    /// </summary>
+    public string? CaptionBadge { get; init; }
+
+    /// <summary>What screen readers hear for <see cref="CaptionBadge"/> in the card's name: "new season".</summary>
+    public string? CaptionBadgeName { get; init; }
 
     public Uri? ImageUrl { get; init; }
 
@@ -97,7 +106,7 @@ public sealed record MediaCard(string Id, string Type, string Title)
 
     /// <summary>The name screen readers announce for the whole card.</summary>
     public string AccessibleName => string.Join(", ",
-        new[] { Title, BoxSetFilms is { } films ? $"box set of {films}" : null, EpisodeTitle, Subtitle, CurrentName }
+        new[] { Title, BoxSetFilms is { } films ? $"box set of {films}" : null, EpisodeTitle, Subtitle, CaptionBadgeName, CurrentName }
             .Where(text => !string.IsNullOrEmpty(text)));
 
     private string? CurrentName => CurrentMark switch
