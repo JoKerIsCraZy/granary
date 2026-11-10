@@ -213,7 +213,7 @@ internal sealed class MediaRoute : IMediaRoute
             return;
         }
         using var response = answer;
-        logger.LogDebug("Media {Method} {Path}: {Status}", context.Request.HttpMethod, upstream.AbsolutePath, (int)response.StatusCode);
+        logger.LogDebug("Media {Method} {Path}: {Status}", head ? "HEAD" : "GET", upstream.AbsolutePath, (int)response.StatusCode);
         // A direct play body the server breaks off goes on from its next byte, asked as the first was.
         using var resume = head ? null : UpstreamResume.For(response, Resend, superseded, _time, logger);
         await RelayAsync(response, context.Response, head, watch, resume, token).ConfigureAwait(false);
