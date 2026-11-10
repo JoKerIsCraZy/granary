@@ -1948,11 +1948,27 @@ a paused player that stops reading), so a long pause forces a new request; do no
 exact value.
 
 Granary does not wait for word of that close, which may never arrive (a connection that died
-silently): its media proxy ends a request whose server sends nothing for 60 s, timing only its waits
-for the server (the answer, a token refresh before it included, then each read of the body), never
-the time a paused player does not read (§9.5). mpv's HTTP reader (libcurl) then asks again from its
-byte offset where the stream can seek; a progressive remux ends, and the playback reconnects with
-the no-op `track_change` replan ([8.7](#87-replan)). A stream that waits 90 s for data while the
+silently): its media proxy cuts a wait in which the server sends nothing for 60 s, timing only its
+waits for the server (the answer, a token refresh before it included, then each read of the body),
+never the time a paused player does not read (§9.5).
+
+A direct play body that breaks off (the server, or a reverse proxy or firewall in front of it, closing
+a long download) or is cut that way is asked again from its next byte and spliced into the same
+answer to mpv, as Silo's Apple app reconnects its reader at the byte it had reached. Granary relies
+on the direct play route's range handling (§9.2): the request carries `Range: bytes=<next>-` and, as
+`If-Range`, the first answer's `ETag` (strong: `"<version>-<sha256>"`,
+`silo-server/internal/playback/directplay_etag.go`) or else its `Last-Modified`. A changed file fails
+the `If-Range` and is answered with the whole file (`200`, Go's `http.ServeContent`), which Granary
+never splices: only a `206` whose `Content-Range` starts at that byte with the same total and
+validator goes on. `429`, `5xx` (`503`, `509` among them) and lost connections are asked again, at
+once after a break, then 1, 2, 4 and 8 s apart (a `Retry-After` up to 15 s), until 12 resumes in a
+row brought no data; a `401` gets its one renewal (§9.4), and any other answer ends the request. A
+progressive remux (no length, no ranges) is never resumed.
+
+A request the proxy cannot resume is ended. mpv's HTTP reader (libcurl) then asks again from its
+byte offset where the stream can seek (Granary sets `curl-max-retries=100`: mpv counts every retry
+since the last seek, ones that brought data too); a progressive remux ends, and the playback
+reconnects with the no-op `track_change` replan ([8.7](#87-replan)). A stream that waits 90 s for data while the
 viewer plays, with nothing new arriving, is given up and reconnected the same way. A reconnect plays
 on unless the viewer (or a Watch Party's room) had paused; mpv's own pause at the end of the data it
 had (keep-open) is not taken for theirs.
