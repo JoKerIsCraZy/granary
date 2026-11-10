@@ -45,10 +45,13 @@ internal sealed class UpstreamResume : IDisposable
     private readonly DateTimeOffset? _lastModified;
 
     // The validator a resume sends as If-Range, as the server wrote it.
-    private readonly string? _ifRange;
+    private readonly string _ifRange;
 
     // The answer whose body is read: the first, then each resumed one. A break ends it, and the next try lets it go.
     private HttpResponseMessage? _current;
+
+    // The last byte the current answer names; whatever its body sends past it is not read.
+    private long _answerEnd;
 
     // The byte the player gets next.
     private long _next;
@@ -63,7 +66,7 @@ internal sealed class UpstreamResume : IDisposable
     private long[]? _recent;
     private int _tries;
 
-    private UpstreamResume(HttpResponseMessage first, long start, long end, long? total,
+    private UpstreamResume(HttpResponseMessage first, long start, long end, long? total, string ifRange,
         Func<RangeHeaderValue, string?, CancellationToken, Task<HttpResponseMessage>> send, TimeProvider time, ILogger logger)
     {
         _send = send;
@@ -72,14 +75,11 @@ internal sealed class UpstreamResume : IDisposable
         _current = first;
         _next = start;
         _end = end;
+        _answerEnd = end;
         _total = total;
-        // As written, read before anything parses them.
-        string? writtenTag = Written(first.Headers.NonValidated, "ETag");
-        string? writtenDate = Written(first.Content.Headers.NonValidated, "Last-Modified");
+        _ifRange = ifRange;
         _etag = first.Headers.ETag;
         _lastModified = first.Content.Headers.LastModified;
-        // A weak tag never matches in If-Range (RFC 9110, 13.1.5): the date is the guard then.
-        _ifRange = _etag is { IsWeak: false } ? writtenTag : writtenDate;
     }
 
     /// <summary>Bytes of the answer remain: an end before them is a break too.</summary>
@@ -87,8 +87,8 @@ internal sealed class UpstreamResume : IDisposable
 
     /// <summary>
     /// The resume of <paramref name="first"/>'s body, or null when it cannot be asked again from a byte: no length, an
-    /// encoded body, or no ranges (a remux). <paramref name="send"/> asks the server for a range, under an If-Range, until
-    /// its token ends the try.
+    /// encoded body, no ranges (a remux), or nothing to check a resumed answer by. <paramref name="send"/> asks the server
+    /// for a range, under an If-Range, until its token ends the try.
     /// </summary>
     public static UpstreamResume? For(HttpResponseMessage first,
         Func<RangeHeaderValue, string?, CancellationToken, Task<HttpResponseMessage>> send, TimeProvider time, ILogger logger)
@@ -98,16 +98,31 @@ internal sealed class UpstreamResume : IDisposable
         {
             return null;
         }
+        // Without a validator a changed file of the same size would pass every check of the resumed answer.
+        if (IfRange(first) is not { } ifRange)
+        {
+            return null;
+        }
         if (first.StatusCode == HttpStatusCode.PartialContent)
         {
             return content.ContentRange is { From: { } from, To: { } to } range && IsBytes(range) && to - from + 1 == length
-                ? new UpstreamResume(first, from, to, range.Length, send, time, logger)
+                ? new UpstreamResume(first, from, to, range.Length, ifRange, send, time, logger)
                 : null;
         }
         return first.StatusCode == HttpStatusCode.OK
             && first.Headers.AcceptRanges.Any(unit => unit.Equals("bytes", StringComparison.OrdinalIgnoreCase))
-            ? new UpstreamResume(first, 0, length - 1, length, send, time, logger)
+            ? new UpstreamResume(first, 0, length - 1, length, ifRange, send, time, logger)
             : null;
+    }
+
+    /// <summary>
+    /// How much of a read of <paramref name="size"/> bytes the current answer may fill: none once the bytes it names are
+    /// in, whatever its body sends past them.
+    /// </summary>
+    public int Room(int size)
+    {
+        long left = _answerEnd - _next + 1;
+        return left >= size ? size : (int)Math.Max(left, 0);
     }
 
     /// <summary>
@@ -195,6 +210,7 @@ internal sealed class UpstreamResume : IDisposable
                 {
                     throw GiveUp(failure, at, mismatch);
                 }
+                _answerEnd = answer.Content.Headers.ContentRange!.To!.Value;
                 _logger.LogInformation("The server {Failure} at byte {Offset}; resumed", failure.Message, at);
                 return await answer.Content.ReadAsStreamAsync(closing).ConfigureAwait(false);
             }
@@ -283,6 +299,15 @@ internal sealed class UpstreamResume : IDisposable
     private static bool IsPassing(int status) => status is 429 or 500 or 502 or 503 or 504 or 509;
 
     private static bool IsBytes(ContentRangeHeaderValue range) => range.Unit.Equals("bytes", StringComparison.OrdinalIgnoreCase);
+
+    // The first answer's validator for If-Range, as the server wrote it, read before anything parses it: its strong tag,
+    // or else its date, as a weak tag never matches there (RFC 9110, 13.1.5). Null when it has neither.
+    private static string? IfRange(HttpResponseMessage first)
+    {
+        string? writtenTag = Written(first.Headers.NonValidated, "ETag");
+        string? writtenDate = Written(first.Content.Headers.NonValidated, "Last-Modified");
+        return first.Headers.ETag is { IsWeak: false } ? writtenTag : writtenDate;
+    }
 
     private static string? Written(HttpHeadersNonValidated headers, string name) =>
         headers.TryGetValues(name, out var values) ? values.ToString() : null;

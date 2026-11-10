@@ -412,6 +412,38 @@ public sealed class MediaProxyResumeTests : IDisposable
         Assert.Contains("resuming failed (answered 401), giving up", _logs.All, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("W/\"v1\"")]
+    [InlineData(null)]
+    public async Task AnAnswerWithNothingToCheckAResumeBy_IsNotResumed(string? etag)
+    {
+        // No strong tag and no date: a changed file of the same size would pass every check, so the player sees the break.
+        _answer = _ => Part(100, breakAfter: 300, etag: etag);
+        using var route = Open();
+
+        await Assert.ThrowsAnyAsync<HttpRequestException>(() => PlayAsync(route, from: 100));
+
+        Assert.Single(Sent);
+    }
+
+    [Fact]
+    public async Task AResumedAnswerThatRunsPastItsRange_IsCutAtItsEnd_AndTheRestAskedAgain()
+    {
+        // No length to stop it: the bytes past its range are not the next ones of the player's answer.
+        _answer = request => Sent.Count switch
+        {
+            1 => Part(100, breakAfter: 300),
+            2 => Unbounded(400, declaredTo: 999, sentTo: 1499),
+            _ => Part(From(request)),
+        };
+        using var route = Open();
+
+        byte[] got = await PlayAsync(route, from: 100);
+
+        Assert.Equal(Movie[100..], got);
+        Assert.Equal(["bytes=400-", "bytes=1000-"], Sent.Skip(1).Select(r => r.Headers.Range!.ToString()));
+    }
+
     [Fact]
     public async Task ARemuxThatBreaksOff_IsNotResumed()
     {
@@ -544,6 +576,19 @@ public sealed class MediaProxyResumeTests : IDisposable
     {
         var response = Answer(HttpStatusCode.PartialContent, new Body(Movie.AsMemory(400, 100), null, silent: false), 100);
         response.Content.Headers.ContentType = MediaTypeHeaderValue.Parse("multipart/byteranges; boundary=x");
+        response.Headers.ETag = EntityTagHeaderValue.Parse("\"v1\"");
+        return response;
+    }
+
+    // A 206 that names a range but no length, whose body runs on with other bytes, up to another one.
+    private static HttpResponseMessage Unbounded(long from, long declaredTo, long sentTo)
+    {
+        byte[] sent = [.. Movie.AsSpan((int)from, (int)(declaredTo - from + 1)), .. new byte[sentTo - declaredTo]];
+        var response = new HttpResponseMessage(HttpStatusCode.PartialContent)
+        {
+            Content = new StreamContent(new Body(sent, null, silent: false)),
+        };
+        response.Content.Headers.ContentRange = new ContentRangeHeaderValue(from, declaredTo, Size);
         response.Headers.ETag = EntityTagHeaderValue.Parse("\"v1\"");
         return response;
     }

@@ -1960,9 +1960,10 @@ on the direct play route's range handling (§9.2): the request carries `Range: b
 `silo-server/internal/playback/directplay_etag.go`) or else its `Last-Modified`, as the server wrote
 it. A changed file fails the `If-Range` and is answered with the whole file (`200`, Go's
 `http.ServeContent`), which Granary never splices: only a `206` whose `Content-Range` starts at that
-byte with the same total and the first answer's validators goes on. `429`, `500`, `502`, `503`,
-`504`, `509`, lost connections and a token refresh the server cannot serve right now are asked again,
-at once after a break, then 1, 2, 4 and 8 s apart (a `Retry-After` up to 15 s). The proxy gives up
+byte with the same total and the first answer's validators goes on, read only up to the last byte
+it names. An answer with neither a strong `ETag` nor a `Last-Modified` is not resumed, as nothing
+would tell a changed file of the same size. `429`, `500`, `502`, `503`, `504`, `509`, lost
+connections and a token refresh the server cannot serve right now are asked again, at once after a break, then 1, 2, 4 and 8 s apart (a `Retry-After` up to 15 s). The proxy gives up
 after 12 resumes in a row that brought no data, 90 s after the break without data, or past 30
 resumes within 60 s; a `401` gets its one renewal (§9.4), and any other answer ends the request. A
 progressive remux (no length, no ranges) is never resumed.

@@ -364,24 +364,29 @@ internal sealed class MediaRoute : IMediaRoute
         {
             while (true)
             {
-                int read;
+                // With a resume, an answer is read up to the last byte it names, never past it into the player's answer.
+                int room = resume?.Room(buffer.Length) ?? buffer.Length;
+                int read = 0;
                 MediaUpstreamException? failure = null;
-                var waiting = watch.Arm();
-                try
+                if (room > 0)
                 {
-                    read = await body.ReadAsync(buffer, waiting).ConfigureAwait(false);
-                }
-                catch (Exception ex) when (watch.IsCutOff)
-                {
-                    (read, failure) = (0, watch.CutOff(ex));
-                }
-                catch (Exception ex) when (ex is IOException or HttpRequestException && !cancellationToken.IsCancellationRequested)
-                {
-                    (read, failure) = (0, new MediaUpstreamException($"broke off ({Kind(ex)})", ex));
-                }
-                finally
-                {
-                    watch.Disarm();
+                    var waiting = watch.Arm();
+                    try
+                    {
+                        read = await body.ReadAsync(buffer.AsMemory(0, room), waiting).ConfigureAwait(false);
+                    }
+                    catch (Exception ex) when (watch.IsCutOff)
+                    {
+                        failure = watch.CutOff(ex);
+                    }
+                    catch (Exception ex) when (ex is IOException or HttpRequestException && !cancellationToken.IsCancellationRequested)
+                    {
+                        failure = new MediaUpstreamException($"broke off ({Kind(ex)})", ex);
+                    }
+                    finally
+                    {
+                        watch.Disarm();
+                    }
                 }
                 if (read > 0)
                 {
@@ -398,7 +403,8 @@ internal sealed class MediaRoute : IMediaRoute
                     // The end; with every byte at the player, a break after the last one is the end too.
                     return;
                 }
-                // A resumed answer may also end before its range does, as servers cap their answers: asked again from there.
+                // A resumed answer may also end before the player's range does, as servers cap their answers: asked again
+                // from there.
                 failure ??= new MediaUpstreamException("ended early");
                 body = await resume.ResumeAsync(failure, cancellationToken).ConfigureAwait(false);
             }
