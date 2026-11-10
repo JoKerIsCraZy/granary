@@ -22,6 +22,32 @@ public sealed class ViewerStateChangesTests
     }
 
     [Fact]
+    public void ACatalogReport_CountsToo_AndSaysItIsTheCatalogsOnly()
+    {
+        var changes = new ViewerStateChanges(_stops);
+        List<bool> catalogOnly = [];
+        changes.Changed += (_, change) => catalogOnly.Add(change.IsCatalogOnly);
+
+        changes.ReportCatalog();
+        changes.Report();
+
+        Assert.Equal(2, changes.Version);
+        Assert.Equal([true, false], catalogOnly);
+    }
+
+    [Fact]
+    public void IsPlaying_LastsFromAPlaybacksStartUntilItsStopEnded()
+    {
+        var changes = new ViewerStateChanges(_stops);
+
+        var playing = _stops.Playing();
+        Assert.True(changes.IsPlaying);
+        playing.Dispose();
+
+        Assert.False(changes.IsPlaying);
+    }
+
+    [Fact]
     public async Task APlaybackStop_IsAChange_OnceItEnded()
     {
         // The stop carries where the viewer left off: Continue Watching knows it only after the server has it.

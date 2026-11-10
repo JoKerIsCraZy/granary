@@ -49,6 +49,7 @@ public sealed partial class ItemDetailViewModel
         }
         _isChangingWatched = true;
         _watchEdits++;
+        DropRefreshOnItsWay();
         int generation = _generation;
         bool watched = !IsWatched;
         var before = (Watch: _watch, IsWatched, Seasons: _seasons, Episodes: _episodes, Siblings: _siblings);

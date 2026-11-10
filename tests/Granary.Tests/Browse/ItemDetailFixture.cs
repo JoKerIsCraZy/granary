@@ -23,6 +23,7 @@ internal sealed class ItemDetailFixture
 {
     public ItemDetailFixture()
     {
+        Changes = new(Stops);
         Silo.On(HttpMethod.Get, "api/v2/images/capabilities", ScriptedSilo.Json(HttpStatusCode.OK, CatalogPayloads.ImageCapabilities));
     }
 
@@ -41,8 +42,11 @@ internal sealed class ItemDetailFixture
 
     public RecordingArtworkPrefetcher Artwork { get; } = new();
 
+    /// <summary>The stops of the app's playbacks: one that ended is a change of the viewer's state (<see cref="Changes"/>).</summary>
+    public PlaybackStops Stops { get; } = new();
+
     /// <summary>The app's count of the viewer's changes, which a write the server kept adds to.</summary>
-    public ViewerStateChanges Changes { get; } = new(new PlaybackStops());
+    public ViewerStateChanges Changes { get; }
 
     public static string ItemPath(string id) => $"api/v2/catalog/items/{id}";
 

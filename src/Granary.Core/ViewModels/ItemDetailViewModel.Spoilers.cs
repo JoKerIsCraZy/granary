@@ -2,6 +2,7 @@ using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Granary.Core.Api.Catalog;
+using Granary.Core.Playback;
 using Granary.Core.Settings;
 using Granary.Core.ViewModels.Cards;
 using Granary.Core.ViewModels.Detail;
@@ -10,14 +11,15 @@ namespace Granary.Core.ViewModels;
 
 // Spoiler protection on the page, as the web's SeasonEpisodeGrid, EpisodeCarousel and EpisodeContent apply the profile's
 // switches (EpisodeSpoilerSettings): an unwatched episode's still blurred and its description left out, the page's own
-// episode's description behind "Show it". While the page shows it follows the switches, and while they hide something the
-// viewer's state too, so starting or watching an episode elsewhere lifts its blur here.
+// episode's description behind "Show it". While the page shows it follows the switches, and the viewer's state: a stop of
+// the player above it, as Silo's apps read their page again once the player is gone (Android's refreshOnReturn, Apple's
+// reload after the player's cleanup), or a start or a watched mark elsewhere moves the Play pill, the progress and the blur.
 public sealed partial class ItemDetailViewModel
 {
     /// <summary>The web's words in place of a hidden description (<c>DetailOverview.tsx</c>).</summary>
     public const string OverviewHiddenText = "Description hidden until you watch. Show it";
 
-    /// <summary>How long the page waits after a change elsewhere before it reads its episodes again: a burst is read once.</summary>
+    /// <summary>How long the page waits after a change elsewhere before it reads the viewer's state again: a burst is read once.</summary>
     public static readonly TimeSpan RefreshDelay = TimeSpan.FromMilliseconds(400);
 
     // The episode whose description the viewer asked to see: a reveal lasts for that episode, not the next one.
@@ -26,8 +28,10 @@ public sealed partial class ItemDetailViewModel
     private bool _isReportingOwnChange;
     // Counts the page's own watched changes: a read of the state that began before one does not put the old state back.
     private int _watchEdits;
-    // A change elsewhere not read yet: it came while the page marked watched, or while the switches hid nothing.
+    // A change not read yet: it came while the page loaded, marked watched, or lay under the player.
     private bool _watchStateStale;
+    // The load is done, its sections too: a read of the viewer's state may follow.
+    private bool _isLoaded;
     private ITimer? _refreshTimer;
     private CancellationTokenSource? _refresh;
 
@@ -155,29 +159,23 @@ public sealed partial class ItemDetailViewModel
         {
             OnUiThread(() =>
             {
-                if (!_isActive)
+                if (_isActive)
                 {
-                    return;
-                }
-                ShowSpoilers();
-                // The switches hide something again: what changed meanwhile shows.
-                if (_watchStateStale && Spoilers != EpisodeSpoilers.Off && !_isChangingWatched)
-                {
-                    _watchStateStale = false;
-                    ScheduleRefresh();
+                    ShowSpoilers();
                 }
             });
         }
     }
 
-    // Nothing hidden: nothing on the page follows the state, so nothing is asked until the switches hide something again.
-    private void OnViewerStateChanged(object? sender, EventArgs e) => OnUiThread(() =>
+    // The Play pill and the progress follow the viewer's state whatever the switches hide; the catalog's news alone (a scan)
+    // changes neither. A change while the page marks watched is read once that is done.
+    private void OnViewerStateChanged(object? sender, ViewerStateChangedEventArgs e) => OnUiThread(() =>
     {
-        if (!_isActive || _isReportingOwnChange)
+        if (!_isActive || _isReportingOwnChange || e.IsCatalogOnly)
         {
             return;
         }
-        if (_isChangingWatched || Spoilers == EpisodeSpoilers.Off)
+        if (_isChangingWatched)
         {
             _watchStateStale = true;
             return;
@@ -202,10 +200,10 @@ public sealed partial class ItemDetailViewModel
         }
     });
 
-    // After the page's own watched change: what changed elsewhere meanwhile.
+    // After the load, or the page's own watched change: what changed meanwhile.
     private void RefreshIfStale()
     {
-        if (_watchStateStale && _isActive && Spoilers != EpisodeSpoilers.Off)
+        if (_watchStateStale && _isActive)
         {
             _watchStateStale = false;
             Refreshing = RefreshWatchStateAsync();
@@ -226,19 +224,25 @@ public sealed partial class ItemDetailViewModel
         }
     }
 
-    // A watched mark, a start or a stop elsewhere: the listed episodes, and an episode's own state and its siblings, read
-    // again with the image sizes the page loaded with, so their stills stay the ones shown.
+    // A watched mark, a start or a stop: the item's own state (where Play resumes, a series' or season's next episode), its
+    // listed episodes, a series' season cards and an episode's siblings, read again with the image sizes the page loaded
+    // with, so their stills stay the ones shown. The reads count as one: if any fails, the page keeps what it shows and
+    // stays stale, so a row never sits beside an older Play.
     private async Task RefreshWatchStateAsync()
     {
+        // Read once the load is done, its sections too, so their older answers do not land over this one; once the page's
+        // own watched mark is done, so a read begun under it cannot pass for newer; and once the player is gone, as Silo's
+        // apps read their page after it: its stop is a change of its own, reported once it ended.
+        if (!_isLoaded || _isChangingWatched || _changes?.IsPlaying == true)
+        {
+            _watchStateStale = true;
+            return;
+        }
         if (State != ItemDetailState.Ready || _item is not { } item || _serverBase is not { } server)
         {
             return;
         }
-        bool isEpisode = item.Type == CatalogItemTypes.Episode;
-        if (!_listsEpisodes && !isEpisode)
-        {
-            return;
-        }
+        _watchStateStale = false;
         _refresh?.Cancel();
         _refresh?.Dispose();
         var run = new CancellationTokenSource();
@@ -249,16 +253,23 @@ public sealed partial class ItemDetailViewModel
         var images = _imageParameters;
         try
         {
-            var itemRead = isEpisode
-                ? TryLoadAsync("watch state", () => _catalog.GetItemAsync(server, _contentId, images: images, cancellationToken: cancellationToken), cancellationToken)
-                : Task.FromResult<CatalogItemDetail?>(null);
+            var itemRead = TryLoadAsync("watch state", () => _catalog.GetItemAsync(server, _contentId, images: images, cancellationToken: cancellationToken),
+                cancellationToken);
             var listRead = ListToRefresh(server, item, images, cancellationToken);
-            // Both are awaited, so a cancelled one does not leave the other unobserved.
-            await Task.WhenAll(itemRead, listRead);
+            var seasonsRead = SeasonsToRefresh(server, item, images, cancellationToken);
+            // All are awaited, so a cancelled one does not leave the others unobserved.
+            await Task.WhenAll(new Task?[] { itemRead, listRead, seasonsRead }.OfType<Task>());
             var fresh = await itemRead;
-            var list = await listRead;
+            var list = listRead is null ? null : await listRead;
+            var seasons = seasonsRead is null ? null : await seasonsRead;
             if (cancellationToken.IsCancellationRequested || generation != _generation)
             {
+                return;
+            }
+            if (fresh is null || (listRead is not null && list is null) || (seasonsRead is not null && seasons is null))
+            {
+                // A read failed (and said so in the log): the next change reads it all again.
+                _watchStateStale = true;
                 return;
             }
             if (edits != _watchEdits || _isChangingWatched)
@@ -271,11 +282,11 @@ public sealed partial class ItemDetailViewModel
                 }
                 return;
             }
-            if (fresh is not null)
-            {
-                _watch = fresh.UserData;
-                IsWatched = fresh.UserData?.Played ?? fresh.UserState?.Played ?? false;
-            }
+            // Only what the viewer's state moves; the rest stays as the page read it. UserState keeps the first read on
+            // purpose: the heart, the watchlist and the stars live outside _item and follow their own writes.
+            _item = item with { UserData = fresh.UserData, PlayContentId = fresh.PlayContentId, PlaySeasonNumber = fresh.PlaySeasonNumber };
+            _watch = fresh.UserData;
+            IsWatched = fresh.UserData?.Played ?? fresh.UserState?.Played ?? false;
             if (list is not null && _listsEpisodes)
             {
                 _episodes = list.Items;
@@ -285,16 +296,44 @@ public sealed partial class ItemDetailViewModel
             {
                 ShowSiblings(list.Items);
             }
+            if (seasons is not null)
+            {
+                _seasons = OrderSeasons(seasons.Items);
+                ShowSeasonCards();
+            }
             ShowPlayAction();
             ShowOverview();
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            // The page left, or a newer change is read instead.
+            // The page left, the page's own mark began, or a newer change is read instead.
+        }
+        finally
+        {
+            // Done: a mark that begins now has no read on its way to drop.
+            if (ReferenceEquals(_refresh, run))
+            {
+                _refresh = null;
+                run.Dispose();
+            }
         }
     }
 
-    private Task<EpisodeCollection?> ListToRefresh(Uri server, CatalogItemDetail item, Api.Images.ImageParameters images, CancellationToken cancellationToken)
+    // The page's own watched mark begins: a read on its way may hold the state from before it, so it is dropped and read
+    // again once the mark is done.
+    private void DropRefreshOnItsWay()
+    {
+        if (_refresh is { } run)
+        {
+            _refresh = null;
+            run.Cancel();
+            run.Dispose();
+            _watchStateStale = true;
+        }
+    }
+
+    // The list the page shows, or null when it shows none.
+    private Task<EpisodeCollection?>? ListToRefresh(Uri server, CatalogItemDetail item, Api.Images.ImageParameters images, CancellationToken cancellationToken)
     {
         if (_listsEpisodes && _episodesSeasonId is { } seasonId)
         {
@@ -307,6 +346,17 @@ public sealed partial class ItemDetailViewModel
             return TryLoadAsync("episodes", () => _catalog.ListEpisodesAsync(server, seriesId, number, images: images, cancellationToken: cancellationToken),
                 cancellationToken);
         }
-        return Task.FromResult<EpisodeCollection?>(null);
+        return null;
+    }
+
+    // A series' season cards count its watched episodes; a single-season series lists its episodes instead. Null when none show.
+    private Task<SeasonCollection?>? SeasonsToRefresh(Uri server, CatalogItemDetail item, Api.Images.ImageParameters images, CancellationToken cancellationToken)
+    {
+        if (item.Type != CatalogItemTypes.Series || _listsEpisodes || _seasons.Count == 0)
+        {
+            return null;
+        }
+        string seriesId = _contentId;
+        return TryLoadAsync("seasons", () => _catalog.ListSeasonsAsync(server, seriesId, images: images, cancellationToken: cancellationToken), cancellationToken);
     }
 }

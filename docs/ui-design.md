@@ -499,6 +499,19 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     "Mark Watched", "Info", the heart, the stars and ⋮ (Watchlist, Add to Collection, then Start a Watch Party below a
     line). Pills 50 high with 17 px labels, round buttons 50, 14 apart. An episode or a season has ⋮ with Start a Watch
     Party alone. Under a single file's buttons "Available version: 1080P · H264 · EAC3 · 6.6 GB" in 14 at 45 % white.
+  - While the page shows, it follows the viewer's state, as Silo's apps read their page again once the player is gone.
+    It reads the title's state again 400 ms after the last of these (marking several cards reads once): the player's
+    playback stopped (left full or from the minimized bar, or moved on to the next title), a card's watched mark, heart or
+    Watchlist changed, a rating was saved, or the server's events tell of the profile's own state changed on another
+    device (a mark once its burst has been quiet for 2 s, progress at most every 30 s, a connection back after a gap).
+    The catalog's news alone (titles added or changed during a scan, the profile's access) reads nothing. While the
+    player is up, full or minimized, a change only marks the page, which reads once when the playback's stop has reached
+    the server; a change during the page's own load is read once the load, its rows included, is done. The page's own
+    Mark Watched, heart and Watchlist read nothing. The read then shows where the viewer left off: the Play pill ("Resume
+    from" the new point, a series' or season's next episode), Mark Watched, the episode rows, a series' season cards and
+    More Episodes, all from one reading: if any of its reads fails, the page keeps all it shows and the next change reads
+    again. A change that comes while the page's own Mark Watched is on its way is read once that is done. A page left
+    meanwhile reads it all when it opens again.
   - Start a Watch Party (the web's `DetailWatchTogether.tsx` and `StartPartySheet.tsx`, the people icon) is on a movie
     with a file, a series, an episode, and a season once its episodes are listed, while the server hosts rooms that
     stage a title and the profile is in no room, as Android's detail page offers hosting; in a room it is not there,
@@ -591,11 +604,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     On an unwatched episode's own page the description gives way to the web's link, a struck-through eye and
     "Description hidden until you watch. Show it" in 14 px muted text; it shows the description until another episode's
     page opens, and keyboard focus moves on to Play. The Info dialog leaves the overview out meanwhile. The backdrop and
-    the title stay, as on the web. While the page shows, a change of the switches shows at once, and while they hide
-    something so does one of the viewer's state (marking an episode watched on a card, playing one in the minimized
-    player, another device): 400 ms after the last such change the page reads its episode lists, and an episode its own
-    state, again, so marking several cards reads them once. While the switches hide nothing it asks nothing, and reads
-    what changed meanwhile when they are turned on.
+    the title stay, as on the web. While the page shows, a change of the switches shows at once, and a change of the
+    viewer's state lifts a blur with the page's next reading of that state (above).
   - Missing and upcoming episodes, Granary's own (no Silo client shows them): a season's episode grid, and a
     single-season series', also holds the places of episodes the library does not have, named by the calendar
     ([7.13](api-contract.md#713-calendar)): one missing between the episodes it lists or aired in the 31 days after its

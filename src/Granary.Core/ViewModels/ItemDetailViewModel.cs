@@ -390,6 +390,12 @@ public sealed partial class ItemDetailViewModel : ObservableObject
             Show(item, server.BaseUri, profileId, ratingMark);
             State = ItemDetailState.Ready;
             await LoadSectionsAsync(item, server.BaseUri, profileId, images, generation, cancellationToken);
+            if (generation == _generation)
+            {
+                // A stop or a mark that came while the page loaded may be newer than what it read.
+                _isLoaded = true;
+                RefreshIfStale();
+            }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -464,6 +470,9 @@ public sealed partial class ItemDetailViewModel : ObservableObject
         _siblings = [];
         _listsEpisodes = false;
         _logoFailed = false;
+        // What changed before this load is in what it reads.
+        _isLoaded = false;
+        _watchStateStale = false;
         State = ItemDetailState.Loading;
         LoadErrorText = "";
         ActionError = "";
