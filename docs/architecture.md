@@ -398,6 +398,9 @@ also walks all live XAML that .NET holds (the reference tracker), so its pause g
   reaches it (`RowCentring`), following layout for at most 20 passes, so a row that stays hidden stops listening. A
   movie's This film mark in its box set's row (`MediaCard.CurrentMark`) is made the same way, by its own `x:Load` element,
   and does not ping.
+- A Continue Watching card's New Season pill (`MediaCard.CaptionBadge`) costs the other cards nothing: its line, a caption
+  text of its own with the pill after it, is made (`x:Load`) for the first card that has one and stands in for the plain
+  caption while it shows; a recycled card without one shows the plain caption again.
 - A hidden episode still (`MediaCard.BlursImage`, the profile's spoiler switches) costs the other cards nothing and itself
   less than a picture: its image is made (`x:Load`) for the first card that shows one, and it is a pre-blurred decode
   rather than an effect (Win2D, which a `GaussianBlurEffect` brush needs, is not in the app). `SpoilerArtwork` decodes the

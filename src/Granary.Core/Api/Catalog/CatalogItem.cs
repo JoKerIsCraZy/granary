@@ -167,3 +167,16 @@ public static class ItemSources
     public const string InProgress = "in_progress";
     public const string NextUp = "next_up";
 }
+
+/// <summary>Known values of <see cref="CatalogItemBase.Badges"/>; the set is open.</summary>
+public static class ItemBadges
+{
+    /// <summary>A title new to the library.</summary>
+    public const string New = "new";
+
+    /// <summary>
+    /// On a Continue Watching or Next Up episode: the first episode of a season (after the first) that aired in the last
+    /// 14 days (the server's <c>recentSeasonPremiereBadges</c>).
+    /// </summary>
+    public const string SeasonPremiere = "season_premiere";
+}

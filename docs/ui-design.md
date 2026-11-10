@@ -17,7 +17,7 @@ The greys are a step darker than the web's (`#141417`, `#1C1C20`, `#232328`, `#2
 app; the steps between them stay the web's. Gradients that fade to the page name `SiloBackgroundColor` rather than repeat it.
 | `SiloForegroundBrush` | `#E8E8EC` | Text |
 | `SiloMutedBrush` | `#A4A4AE` | Secondary text, overlines, section labels |
-| `SiloPrimaryBrush` | The server's accent, or without one `#E8E8EC` | The only accent: Play, progress, selection, focus, as the web's `primary`, `ring` and `sidebar-primary`. The server's branding accent replaces it, as on the web (`ServerAccent`, `AccentPainter`); without one it is Cinema Dark's own near-white primary, as the web's. Its shades (`SiloPrimaryHoverBrush` at 90 % over the page, as the web's `hover:bg-primary/90`, `SiloPrimaryPressedBrush` at 80 %), tints (`SiloPrimaryTint15/20/60/75Brush`), labels (`SiloOnPrimaryBrush`, `SiloOnPrimaryBadgeBrush`: `#141417` on a light accent, white on a dark one) and the sign-in glow follow it. |
+| `SiloPrimaryBrush` | The server's accent, or without one `#E8E8EC` | The only accent: Play, progress, selection, focus, as the web's `primary`, `ring` and `sidebar-primary`. The server's branding accent replaces it, as on the web (`ServerAccent`, `AccentPainter`); without one it is Cinema Dark's own near-white primary, as the web's. Its shades (`SiloPrimaryHoverBrush` at 90 % over the page, as the web's `hover:bg-primary/90`, `SiloPrimaryPressedBrush` at 80 %), tints (`SiloPrimaryTint15/20/40/60/75Brush`), labels (`SiloOnPrimaryBrush`, `SiloOnPrimaryBadgeBrush`: `#141417` on a light accent, white on a dark one) and the sign-in glow follow it. |
 | `SiloDestructiveBrush` | `#EF4444` | The web's `destructive`: errors, and actions that delete or end something. Never the accent: it stays red whatever the server's accent. |
 | `SiloBadgeBackgroundBrush` / `SiloBadgeBorderBrush` | `#14141E` at 70 % / white at 15 % | Pills on artwork |
 | `SiloAttentionBrush` / `SiloAttentionDotBrush` | `#FCD34D` / `#FBBF24` | A watchlist title TMDB lost: its caption, the tab's dot |
@@ -60,7 +60,13 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
   and a watched mark top right, a 3 px progress bar in the accent, then title, subtitle and an optional caption. In a row or grid
   the lines under the artwork follow the profile's caption choice ([poster size and caption](api-contract.md#662-poster-size-and-caption)):
   all of them, the title only, or none (then nothing under the artwork, not even its 11 px gap); a card elsewhere (an
-  episode on a title's page) keeps them all, as the web's. The badges are
+  episode on a title's page) keeps them all, as the web's. A Continue Watching or Next Up card for the first episode of a
+  season that has just begun (`season_premiere` in its `badges`, api-contract 7.2) says "NEW SEASON" after its time left,
+  as the web's `ContinueWatchingCard`: a pill 6 px after the text, 10 px semibold capitals in the accent on the accent at
+  20 %, edged with it at 40 % (`MediaCard.CaptionBadge`). On a Next Up card it takes the place of "Next Episode" (the web's text). It is
+  one of the caption's details, so the title-only and no-caption choices hide it with the time left. Poster cards never
+  show it, as the web's `SectionItemCard` and catalog pages; the player's On Deck shows Continue Watching's own cards, so
+  it says it there too. The badges are
   the web's CardOverlays (`Granary.Core.Overlays`): which ones, their corner, colour, icon and style come from the
   profile's `ui.card_overlays` (or the server's defaults), at most three a corner (`CardBadges`), drawn by
   `CardBadgeViews` in the five styles (Minimal, Classic, Vibrant, Pill, Square; colours mixed as CSS `color-mix`). An
