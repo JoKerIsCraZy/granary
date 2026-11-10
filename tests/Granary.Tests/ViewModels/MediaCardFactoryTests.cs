@@ -175,6 +175,17 @@ public sealed class MediaCardFactoryTests
     }
 
     [Fact]
+    public void NextUpCard_WithAnotherBadge_KeepsItsUsualText()
+    {
+        var card = MediaCardFactory.Landscape(SeasonPremiere(ItemSources.NextUp) with { Badges = ["new"] }, Server);
+
+        Assert.Equal("Next episode", card.Caption);
+        Assert.Null(card.CaptionBadge);
+        Assert.Null(card.CaptionBadgeName);
+        Assert.Equal("NEW", card.StatusBadge);
+    }
+
+    [Fact]
     public void NewSeasonCard_IsAnnouncedAsANewSeason()
     {
         var card = MediaCardFactory.Landscape(SeasonPremiere(ItemSources.NextUp), Server);

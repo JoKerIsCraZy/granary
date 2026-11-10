@@ -707,8 +707,7 @@ public sealed partial class MediaCardView : UserControl
         LayoutRoot.RowSpacing = _caption == CardCaption.Artwork ? 0 : CaptionGap;
         ShowEpisodeTitle(card);
         SetText(SubtitleText, details ? card?.Subtitle : null);
-        SetText(CaptionText, details ? card?.Caption : null);
-        ShowCaptionBadge(details ? card?.CaptionBadge : null);
+        ShowCaptionText(details ? card?.Caption : null, details ? card?.CaptionBadge : null);
     }
 
     private void ShowEpisodeTitle(MediaCard? card)

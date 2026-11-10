@@ -52,15 +52,16 @@ public static class MediaCardFactory
         ArgumentNullException.ThrowIfNull(item);
         bool isEpisode = item.Type == CatalogItemTypes.Episode;
         bool showsBackdrop = ArtworkUrl.Resolve(serverBase, item.BackdropUrl) is not null;
-        string? premiere = item.Badges.Contains(ItemBadges.SeasonPremiere) ? "NEW SEASON" : null;
+        bool premiere = item.Badges.Contains(ItemBadges.SeasonPremiere);
         return Decorate(new MediaCard(item.ContentId, item.Type, isEpisode ? item.SeriesTitle ?? item.Title : item.Title)
         {
             Shape = MediaCardShape.Landscape,
             Subtitle = isEpisode ? EpisodeLine(item.SeasonNumber, item.EpisodeNumber, item.Title) : YearText(item.Year),
             Caption = item.ItemSource == ItemSources.NextUp
-                ? (premiere is null ? "Next episode" : null)
+                ? (premiere ? null : "Next episode")
                 : TimeLeft(item.PositionSeconds, item.DurationSeconds),
-            CaptionBadge = premiere,
+            CaptionBadge = premiere ? "NEW SEASON" : null,
+            CaptionBadgeName = premiere ? "new season" : null,
             ImageUrl = ArtworkUrl.Resolve(serverBase, item.BackdropUrl) ?? ArtworkUrl.Resolve(serverBase, item.PosterUrl),
             ImageThumbhash = showsBackdrop ? item.BackdropThumbhash : item.PosterThumbhash,
             BlursImage = spoilers.HidesImage(item, showsBackdrop),

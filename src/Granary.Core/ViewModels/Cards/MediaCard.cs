@@ -41,6 +41,9 @@ public sealed record MediaCard(string Id, string Type, string Title)
     /// </summary>
     public string? CaptionBadge { get; init; }
 
+    /// <summary>What screen readers hear for <see cref="CaptionBadge"/> in the card's name: "new season".</summary>
+    public string? CaptionBadgeName { get; init; }
+
     public Uri? ImageUrl { get; init; }
 
     /// <summary>The ThumbHash of <see cref="ImageUrl"/>'s picture: shown blurred at once, until the picture itself is.</summary>
@@ -103,7 +106,7 @@ public sealed record MediaCard(string Id, string Type, string Title)
 
     /// <summary>The name screen readers announce for the whole card.</summary>
     public string AccessibleName => string.Join(", ",
-        new[] { Title, BoxSetFilms is { } films ? $"box set of {films}" : null, EpisodeTitle, Subtitle, CaptionBadge?.ToLowerInvariant(), CurrentName }
+        new[] { Title, BoxSetFilms is { } films ? $"box set of {films}" : null, EpisodeTitle, Subtitle, CaptionBadgeName, CurrentName }
             .Where(text => !string.IsNullOrEmpty(text)));
 
     private string? CurrentName => CurrentMark switch

@@ -4,28 +4,31 @@ namespace Granary.App.Controls;
 
 // A Continue Watching card's "NEW SEASON" after its caption (MediaCard.CaptionBadge), as the web's ContinueWatchingCard. It is
 // one of the caption's details, so the profile's "Title" and "Nothing" leave it out with the time left. Only a card that has
-// one makes the pill; a recycled card hides it.
+// one makes its line, which then stands in for CaptionText; a recycled card without one shows CaptionText again.
 public sealed partial class MediaCardView
 {
     // The web's gap-1.5 between the time left and the pill.
     private const double CaptionBadgeGap = 6;
 
-    private void ShowCaptionBadge(string? badge)
+    private void ShowCaptionText(string? caption, string? badge)
     {
-        bool shows = !string.IsNullOrEmpty(badge);
-        bool hasText = CaptionText.Visibility == Visibility.Visible;
-        if (shows && CaptionBadge is null)
+        bool badged = !string.IsNullOrEmpty(badge);
+        SetText(CaptionText, badged ? null : caption);
+        if (badged && BadgedCaption is null)
         {
-            FindName(nameof(CaptionBadge));
+            FindName(nameof(BadgedCaption));
         }
-        if (CaptionBadge is { } pill)
+        if (BadgedCaption is not { } line)
         {
-            CaptionBadgeText.Text = badge ?? "";
-            pill.Visibility = Visible(shows);
+            return;
+        }
+        line.Visibility = Visible(badged);
+        if (badged)
+        {
+            SetText(BadgedCaptionText, caption);
+            CaptionBadgeText.Text = badge;
             // Alone, as on a Next Up card, it starts where the text would.
-            pill.Margin = new Thickness(hasText ? CaptionBadgeGap : 0, 0, 0, 0);
+            CaptionBadge.Margin = new Thickness(string.IsNullOrEmpty(caption) ? 0 : CaptionBadgeGap, 0, 0, 0);
         }
-        // An empty line would still take the caption panel's spacing.
-        CaptionLine.Visibility = Visible(shows || hasText);
     }
 }

@@ -261,24 +261,22 @@
             <TextBlock x:Name="TitleText" Style="{StaticResource SiloCardTitleTextStyle}" />
             <TextBlock x:Name="EpisodeTitleText" Style="{StaticResource SiloCaptionTextStyle}" TextTrimming="CharacterEllipsis" />
             <TextBlock x:Name="SubtitleText" />
+            <TextBlock x:Name="CaptionText" Style="{StaticResource SiloCaptionTextStyle}" />
             <!--
-                The caption, and after it a Continue Watching card's "NEW SEASON" (MediaCard.CaptionBadge), as the web's
-                ContinueWatchingCard: centred on each other 6 px apart, the text trimming first. Aligned left, the grid is only
-                as wide as the two, so the pill follows the text. Shown while either is (MediaCardView.CaptionBadge.cs).
+                A Continue Watching card's caption with "NEW SEASON" after it (MediaCard.CaptionBadge), as the web's
+                ContinueWatchingCard, in place of CaptionText: centred on each other 6 px apart, the text trimming first. Aligned
+                left, the grid is only as wide as the two, so the pill follows the text. The pill is the accent at 40 % round the
+                accent at 20 %, 10 px semibold capitals in the accent, 8 px in, and 16 high as the web's leading-none (the
+                capitals' own height with the rest around them). Made for the first card that has one (MediaCardView.CaptionBadge.cs).
             -->
-            <Grid x:Name="CaptionLine" HorizontalAlignment="Left">
+            <Grid x:Name="BadgedCaption" x:Load="False" HorizontalAlignment="Left">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <TextBlock x:Name="CaptionText" Style="{StaticResource SiloCaptionTextStyle}" VerticalAlignment="Center" />
-                <!--
-                    The web's pill: the accent at 40 % round the accent at 20 %, 10 px semibold capitals in the accent, 8 px in,
-                    and 16 high as its leading-none (the capitals' own height with the rest around them). Made for the first card
-                    that has one.
-                -->
-                <Border x:Name="CaptionBadge" x:Load="False" Grid.Column="1" Padding="8,3.5" VerticalAlignment="Center" BorderThickness="1"
-                        CornerRadius="{StaticResource SiloPillCornerRadius}" controls:Pill.IsEnabled="True"
+                <TextBlock x:Name="BadgedCaptionText" Style="{StaticResource SiloCaptionTextStyle}" VerticalAlignment="Center" />
+                <Border x:Name="CaptionBadge" Grid.Column="1" Padding="8,3.5" VerticalAlignment="Center" BorderThickness="1"
+                        CornerRadius="{StaticResource SiloPillCornerRadius}"
                         Background="{StaticResource SiloPrimaryTint20Brush}" BorderBrush="{StaticResource SiloPrimaryTint40Brush}">
                     <!-- The card's name says it already ("…, new season"). -->
                     <TextBlock x:Name="CaptionBadgeText" Style="{StaticResource SiloBadgeTextStyle}" TextLineBounds="Tight"
