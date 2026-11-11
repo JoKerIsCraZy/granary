@@ -268,7 +268,7 @@ public sealed class DevicesViewModelTests
             return ScriptedSilo.NoContent()();
         });
         var credentials = new CredentialStore(new InMemorySecretStore(), downloads.Logs.For<CredentialStore>());
-        var signOut = new DownloadSignOut(downloads.Store, new DownloadsApi(_silo.Http, new FakeHttpClients(downloads.Hop), _time), _session,
+        var signOut = new DownloadSignOut(downloads.Store, new DownloadsApi(_silo.Http, _time), _session,
             credentials, _confirm, _time, downloads.Logs.For<DownloadSignOut>());
         var page = Page(signOut);
         await page.LoadAsync(ct);
@@ -294,7 +294,7 @@ public sealed class DevicesViewModelTests
         var kept = await downloads.AddAsync("dl_1", DownloadState.Completed);
         _session.Account = null;
         var credentials = new CredentialStore(new InMemorySecretStore(), downloads.Logs.For<CredentialStore>());
-        var signOut = new DownloadSignOut(downloads.Store, new DownloadsApi(_silo.Http, new FakeHttpClients(downloads.Hop), _time), _session,
+        var signOut = new DownloadSignOut(downloads.Store, new DownloadsApi(_silo.Http, _time), _session,
             credentials, _confirm, _time, downloads.Logs.For<DownloadSignOut>());
         var page = Page(signOut);
         await page.LoadAsync(ct);

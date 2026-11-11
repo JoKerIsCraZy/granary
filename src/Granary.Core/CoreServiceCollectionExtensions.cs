@@ -303,21 +303,10 @@ public static class CoreServiceCollectionExtensions
         services.TryAddSingleton<INetworkLink, UnknownNetworkLink>();
     }
 
-    // Offline downloads (docs/api-contract.md, 14). A download through /file-proxy may be redirected to a proxy node's
-    // short-lived address with a token of its own: that hop goes without credentials, redirects or cookies, and stays out of
-    // the log.
+    // Offline downloads (docs/api-contract.md, 14). Their files come from the server itself through SiloHttp, as Silo's apps
+    // take them: over the local route on the local network, never through a proxy node.
     private static void AddDownloads(IServiceCollection services)
     {
-        services.AddHttpClient(DownloadsApi.HopClientName, client => client.Timeout = Timeout.InfiniteTimeSpan)
-            .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
-            {
-                AllowAutoRedirect = false,
-                UseCookies = false,
-                AutomaticDecompression = System.Net.DecompressionMethods.None,
-                ConnectTimeout = TimeSpan.FromSeconds(15),
-                PooledConnectionLifetime = TimeSpan.FromMinutes(5),
-            })
-            .RemoveAllLoggers();
         services.AddTransient<DownloadsApi>();
         // This PC's download settings, in the data directory; the downloads themselves, each in its own folder.
         services.AddSingleton<IDownloadPreferences>(sp =>

@@ -62,25 +62,6 @@ public static class PlaybackUrl
     }
 
     /// <summary>
-    /// Where a download's <c>/file-proxy</c> redirects to (downloads-api.md, 4.11), as <see cref="ResolveStream"/> checks a proxy
-    /// node: HTTPS unless the server itself is plain HTTP, no user info or fragment, written as it will be sent, and never
-    /// this machine or a link-local address. The hop carries a short-lived token of its own and none of the client's
-    /// credentials. Answers the URL in its canonical form, or null when it is refused.
-    /// </summary>
-    public static Uri? ResolveProxyHop(Uri server, Uri target)
-    {
-        ArgumentNullException.ThrowIfNull(server);
-        ArgumentNullException.ThrowIfNull(target);
-        if (!target.IsAbsoluteUri)
-        {
-            return null;
-        }
-        bool secure = target.Scheme == Uri.UriSchemeHttps || (target.Scheme == Uri.UriSchemeHttp && server.Scheme == Uri.UriSchemeHttp);
-        bool valid = secure && target.UserInfo.Length == 0 && target.Fragment.Length == 0 && IsPlain(target.OriginalString) && IsRemote(target);
-        return valid ? new Uri(target.AbsoluteUri) : null;
-    }
-
-    /// <summary>
     /// A theme grant's audio URL (docs/api-contract.md 7.19): on the saved server as <see cref="Resolve"/> takes it, or, while
     /// <paramref name="origins"/> lets one, on a proxy node's origin, decided as a video stream's is
     /// (<c>authorized_media_origins_v1</c>, <see cref="ResolveStream"/>): HTTPS (or HTTP beside an HTTP server), no user info,

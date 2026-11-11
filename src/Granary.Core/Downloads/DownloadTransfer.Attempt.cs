@@ -29,17 +29,12 @@ public sealed partial class DownloadTransfer
             HttpResponseMessage response;
             try
             {
-                response = await owner._api.OpenFileAsync(job.Server, job.Scope.ProfileId, job.DownloadId, range, job.ViaProxy, token)
+                response = await owner._api.OpenFileAsync(job.Server, job.Scope.ProfileId, job.DownloadId, range, token)
                     .ConfigureAwait(false);
             }
             catch (ProfileChangedException)
             {
                 return Outcome(TransferResult.ProfileChanged);
-            }
-            catch (DownloadRedirectRefusedException)
-            {
-                owner._logger.LogInformation("Download {DownloadId} was sent to an address Granary does not follow", job.DownloadId);
-                return Outcome(TransferResult.Refused);
             }
             catch (HttpRequestException ex)
             {

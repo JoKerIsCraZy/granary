@@ -13,20 +13,10 @@ public sealed class DownloadsApiTests
 {
     private const string Profile = "7";
     private const string FilePath = "api/v2/downloads/dl_1/file";
-    private const string ProxyPath = "api/v2/downloads/dl_1/file-proxy";
 
     private readonly ScriptedSilo _silo = new();
-    private readonly FakeHttpMessageHandler _hop;
-    private readonly FakeHttpClients _clients;
-    private Func<Task<HttpResponseMessage>> _hopAnswer = () => throw new InvalidOperationException("No hop was expected");
 
-    public DownloadsApiTests()
-    {
-        _hop = new FakeHttpMessageHandler((_, _) => _hopAnswer());
-        _clients = new FakeHttpClients(_hop);
-    }
-
-    private DownloadsApi Api => new(_silo.Http, _clients);
+    private DownloadsApi Api => new(_silo.Http);
 
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
@@ -46,7 +36,6 @@ public sealed class DownloadsApiTests
         Assert.False(disabled.IsUsable);
         Assert.True(usable.IsUsable);
         Assert.True(usable.RevokedRemovesLocal);
-        Assert.False(usable.ProxyDelivery);
     }
 
     [Fact]
@@ -117,7 +106,7 @@ public sealed class DownloadsApiTests
         await Api.DeleteAsync(server, Profile, "dl_1", Token);
         await Api.GetManifestAsync(server, Profile, "dl_1", Token);
         (await Api.OpenAssetAsync(server, Profile, "api/v2/downloads/dl_1/artwork/poster", "\"a0\"", Token)).Dispose();
-        (await Api.OpenFileAsync(server, Profile, "dl_1", null, viaProxy: false, Token)).Dispose();
+        (await Api.OpenFileAsync(server, Profile, "dl_1", null, Token)).Dispose();
 
         Assert.Equal(9, _silo.Sent.Count);
         Assert.All(_silo.Sent, sent => Assert.Equal((SiloAuth.Profile, Profile), (sent.Auth, sent.AsProfile)));
@@ -145,7 +134,7 @@ public sealed class DownloadsApiTests
         _silo.On(HttpMethod.Get, FilePath,
             DownloadPayloads.Bytes(HttpStatusCode.PartialContent, DownloadPayloads.Source(10), "\"v1\"", 5_000_000_000, 5_000_000_010));
 
-        using var response = await Api.OpenFileAsync(ScriptedSilo.Base, Profile, "dl_1", new ByteRange(5_000_000_000, "\"v1\""), viaProxy: false, Token);
+        using var response = await Api.OpenFileAsync(ScriptedSilo.Base, Profile, "dl_1", new ByteRange(5_000_000_000, "\"v1\""), Token);
 
         var sent = Assert.Single(_silo.Sent);
         Assert.Equal("bytes=5000000000-", sent.Range);
@@ -166,49 +155,6 @@ public sealed class DownloadsApiTests
         Assert.Equal(8_589_934_592L, Assert.Single(page.Items).FileSize);
     }
 
-    [Fact]
-    public async Task OpenFile_ThroughTheProxy_FollowsOneRedirectWithoutCredentials()
-    {
-        _silo.On(HttpMethod.Get, ProxyPath, DownloadPayloads.Redirect("https://node.example/dl?t=abc"));
-        _hopAnswer = DownloadPayloads.Bytes(HttpStatusCode.PartialContent, DownloadPayloads.Source(10), "\"v1\"", 1000, 1010);
-
-        using (var response = await Api.OpenFileAsync(ScriptedSilo.Base, Profile, "dl_1", new ByteRange(1000, "\"v1\""), viaProxy: true, Token))
-        {
-            Assert.Equal(HttpStatusCode.PartialContent, response.StatusCode);
-        }
-
-        Assert.Equal("bytes=1000-", Assert.Single(_silo.Sent).Range);
-        Assert.Equal([DownloadsApi.HopClientName], _clients.Names);
-        var hop = Assert.Single(_hop.Requests);
-        Assert.Equal(HttpMethod.Get, hop.Method);
-        Assert.Equal(new Uri("https://node.example/dl?t=abc"), hop.RequestUri);
-        Assert.Equal("bytes=1000-", hop.Headers.Range?.ToString());
-        Assert.Equal("\"v1\"", hop.Headers.IfRange?.ToString());
-        Assert.Null(hop.Headers.Authorization);
-        Assert.DoesNotContain(hop.Headers, header => header.Key.StartsWith("X-", StringComparison.OrdinalIgnoreCase));
-        Assert.Equal(SiloAuth.Anonymous, hop.GetAuth());
-        Assert.Null(hop.GetServer());
-
-        _hopAnswer = DownloadPayloads.Redirect("https://other.example/dl");
-        using var second = await Api.OpenFileAsync(ScriptedSilo.Base, Profile, "dl_1", null, viaProxy: true, Token);
-
-        Assert.Equal(HttpStatusCode.TemporaryRedirect, second.StatusCode);
-        Assert.Equal(2, _hop.Requests.Count);
-    }
-
-    [Fact]
-    public async Task OpenFile_ARedirectToThisMachine_IsRefused()
-    {
-        _silo.On(HttpMethod.Get, ProxyPath, DownloadPayloads.Redirect("http://127.0.0.1/x"));
-
-        var error = await Assert.ThrowsAsync<DownloadRedirectRefusedException>(() =>
-            Api.OpenFileAsync(ScriptedSilo.Base, Profile, "dl_1", null, viaProxy: true, Token));
-
-        Assert.Equal(HttpRequestError.InvalidResponse, error.HttpRequestError);
-        Assert.DoesNotContain("127.0.0.1", error.Message, StringComparison.Ordinal);
-        Assert.Empty(_hop.Requests);
-    }
-
     [Theory]
     [InlineData("\"v1\"", true)]
     [InlineData("Thu, 01 Oct 2026 12:00:00 GMT", true)]
@@ -225,7 +171,7 @@ public sealed class DownloadsApiTests
     public async Task OpenFile_WithAnUnreadableValidator_IsRefusedUnsent()
     {
         var error = await Assert.ThrowsAsync<ArgumentException>(() =>
-            Api.OpenFileAsync(ScriptedSilo.Base, Profile, "dl_1", new ByteRange(1000, "garbage"), viaProxy: false, Token));
+            Api.OpenFileAsync(ScriptedSilo.Base, Profile, "dl_1", new ByteRange(1000, "garbage"), Token));
 
         Assert.Equal("range", error.ParamName);
         Assert.Empty(_silo.Sent);
@@ -238,7 +184,7 @@ public sealed class DownloadsApiTests
         var body = new StallingBody(DownloadPayloads.Utf8("""{ "download_id": "dl_1", """));
         _silo.On(HttpMethod.Get, "api/v2/downloads/dl_1/manifest",
             () => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StreamContent(body) }));
-        var api = new DownloadsApi(_silo.Http, _clients, time);
+        var api = new DownloadsApi(_silo.Http, time);
 
         var read = api.GetManifestAsync(ScriptedSilo.Base, Profile, "dl_1", Token);
         await body.Stalling.WaitAsync(Token);
@@ -334,16 +280,4 @@ public sealed class DownloadsApiTests
 
         Assert.Equal(503, error.Status);
     }
-
-    [Theory]
-    [InlineData("https://nas.example/silo", "https://node.example/dl?t=abc", "https://node.example/dl?t=abc")]
-    [InlineData("http://nas.local:8080", "http://node.local/dl?t=abc", "http://node.local/dl?t=abc")]
-    [InlineData("https://nas.example/silo", "http://node.example/dl?t=abc", null)]
-    [InlineData("https://nas.example/silo", "https://user:pass@node.example/dl", null)]
-    [InlineData("https://nas.example/silo", "https://localhost/dl", null)]
-    [InlineData("https://nas.example/silo", "https://169.254.169.254/latest", null)]
-    [InlineData("https://nas.example/silo", "https://node.example/a/%2e%2e/b", null)]
-    [InlineData("https://nas.example/silo", "ftp://node.example/dl", null)]
-    public void TheProxyHop_IsOnlyASecureRemoteAddress(string server, string target, string? expected) =>
-        Assert.Equal(expected is null ? null : new Uri(expected), PlaybackUrl.ResolveProxyHop(new Uri(server), new Uri(target)));
 }

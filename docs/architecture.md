@@ -1187,7 +1187,7 @@ deleted here; every result but Completed keeps what was written.
 - **Stall.** Every read, and the wait for the answer, has `StallTimeout` (60 s) on a `CancellationTokenSource` on the
   `TimeProvider`: a connection that brings nothing for a minute is given up to be tried again.
 - **Answers.** 200 and 206 bring bytes. 409 `prepared_file_expired` is Expired (the queue prepares it again); another 409,
-  a 403 or another 4xx, a redirect Granary does not follow (`DownloadRedirectRefusedException`, or a second one), and a
+  a 403 or another 4xx, and a
   request that cannot be made (an id or validator the API refuses) are Refused, since asking again gets the same answer;
   404 Gone; 429 and 503 Busy, with their `Retry-After` when they name one; 401, or 403 `profile_verification_required`, Signed out; a
   5xx, a lost connection or a body that ended before the file did is Unreachable, to try again later; a request the server
@@ -1263,8 +1263,9 @@ The queue keeps the PC's downloads in line with the server's registry (`Download
 client guide.
 
 - **Scope activation.** When a profile's downloads become the active ones (a start, a profile switch, a sign-in that
-  came back), the queue reads the capability once: `proxy_delivery` has transfers ask `/file-proxy`, and
-  `revoked_removes_local` lets a revoked download's files go. A capability that cannot be read leaves both off. Then it
+  came back), the queue reads the capability once: `revoked_removes_local` lets a revoked download's files go, and one
+  that cannot be read leaves it off. Files always come from `/file`, as Silo's apps take them, never through a proxy
+  node. Then it
   reconciles, both before the scope's first transfer starts, and the server work reads completed downloads' manifests again
   that are a day old (`ManifestRefresh`). The scope counts as active only once that went through: an activation that
   failed is done again a minute later, or at once for another profile or a new session; a wake before then does not ask

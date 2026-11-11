@@ -12,7 +12,6 @@ namespace Granary.Tests.Downloads;
 public sealed class DownloadTransferTests : IDisposable
 {
     private const string FilePath = "api/v2/downloads/dl_1/file";
-    private const string ProxyPath = "api/v2/downloads/dl_1/file-proxy";
     private const string ModifiedText = "Thu, 01 Oct 2026 12:00:00 GMT";
     private static readonly DownloadScope Scope = new("srv1", "1", "7");
     private static readonly byte[] Source = DownloadPayloads.Source(3000);
@@ -23,14 +22,11 @@ public sealed class DownloadTransferTests : IDisposable
     private readonly LogSink _logs = new();
     private readonly List<long> _progress = [];
     private readonly List<(string? Validator, long PartLength)> _told = [];
-    private readonly FakeHttpMessageHandler _hop;
-    private Func<Task<HttpResponseMessage>> _hopAnswer = () => throw new InvalidOperationException("No hop was expected");
     private FakeDiskSpace _disk = new();
 
     public DownloadTransferTests()
     {
         Directory.CreateDirectory(_folder);
-        _hop = new FakeHttpMessageHandler((_, _) => _hopAnswer());
     }
 
     private string PartPath => Path.Combine(_folder, DownloadPaths.MediaPart);
@@ -46,14 +42,14 @@ public sealed class DownloadTransferTests : IDisposable
     }
 
     private DownloadTransfer Transfer(long spaceCheckBytes = 64L * 1024 * 1024, Action<long>? flushed = null) =>
-        new(new DownloadsApi(_silo.Http, new FakeHttpClients(_hop)), _disk, _time, _logs.For<DownloadTransfer>())
+        new(new DownloadsApi(_silo.Http), _disk, _time, _logs.For<DownloadTransfer>())
         {
             SpaceCheckBytes = spaceCheckBytes,
             Flushed = flushed,
         };
 
-    private TransferJob Job(long expectedBytes = 3000, long resumeFrom = 0, string? validator = null, bool viaProxy = false, string id = "dl_1") =>
-        new(ScriptedSilo.Base, Scope, id, _folder, expectedBytes, resumeFrom, validator, viaProxy);
+    private TransferJob Job(long expectedBytes = 3000, long resumeFrom = 0, string? validator = null, string id = "dl_1") =>
+        new(ScriptedSilo.Base, Scope, id, _folder, expectedBytes, resumeFrom, validator);
 
     private Task<TransferOutcome> RunAsync(TransferJob job, DownloadTransfer? transfer = null, CancellationToken? cancellation = null) =>
         (transfer ?? Transfer()).RunAsync(job, _progress.Add, TellAsync, cancellation ?? Token);
@@ -409,25 +405,6 @@ public sealed class DownloadTransferTests : IDisposable
 
         Assert.Equal(expected, outcome.Result);
         Assert.Equal(waitSeconds is { } wait ? TimeSpan.FromSeconds(wait) : null, outcome.RetryAfter);
-    }
-
-    [Fact]
-    public async Task ARedirectGranaryDoesNotFollow_IsRefused()
-    {
-        _silo.On(HttpMethod.Get, ProxyPath, DownloadPayloads.Redirect("http://127.0.0.1/x"));
-
-        Assert.Equal(TransferResult.Refused, (await RunAsync(Job(viaProxy: true))).Result);
-        Assert.Empty(_hop.Requests);
-    }
-
-    [Fact]
-    public async Task ASecondRedirect_IsRefused()
-    {
-        _silo.On(HttpMethod.Get, ProxyPath, DownloadPayloads.Redirect("https://node.example/dl?t=abc"));
-        _hopAnswer = DownloadPayloads.Redirect("https://other.example/dl");
-
-        Assert.Equal(TransferResult.Refused, (await RunAsync(Job(viaProxy: true))).Result);
-        Assert.Single(_hop.Requests);
     }
 
     [Fact]

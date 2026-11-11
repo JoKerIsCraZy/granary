@@ -128,16 +128,8 @@ public sealed partial class DownloadQueue
         }
     }
 
-    private TransferJob JobOf(Running run, StoredDownload download, long from)
-    {
-        bool viaProxy;
-        lock (_gate)
-        {
-            viaProxy = _capability is { ViaProxy: true } capability && capability.Scope == run.Key.Scope;
-        }
-        return new TransferJob(run.Server, run.Key.Scope, run.Key.Id, download.Folder, download.Record.ExpectedBytes, from, download.Record.Validator,
-            viaProxy);
-    }
+    private static TransferJob JobOf(Running run, StoredDownload download, long from) =>
+        new(run.Server, run.Key.Scope, run.Key.Id, download.Folder, download.Record.ExpectedBytes, from, download.Record.Validator);
 
     // Before its first transfer a download gets its manifest, which says the file's exact length, and its artwork and subtitles.
     // A manifest that does not come ends the attempt as the file's request would have.

@@ -308,18 +308,20 @@ public sealed class DownloadQueueServerTests : IAsyncDisposable
         Assert.Equal((3000L, DownloadFailure.None), (record.ExpectedBytes, record.Failure));
     }
 
+    // Silo's apps take a download's file from the server itself (DownloadWorker.kt, APIv2Client+Downloads.swift), also when
+    // the server could send it through a proxy node: on the local network that is the local route, never a node elsewhere.
     [Fact]
-    public async Task AServerThatSendsFilesThroughProxies_IsAskedThroughFileProxy()
+    public async Task AServerThatOffersProxyNodes_StillSendsTheFileItself()
     {
         await _h.AddAsync("dl_1");
         _h.Silo.On(HttpMethod.Get, CapabilityPath, ScriptedSilo.Json(HttpStatusCode.OK, DownloadPayloads.CapabilityWith(proxyDelivery: true)));
-        _h.Silo.On(HttpMethod.Get, "api/v2/downloads/dl_1/file-proxy", DownloadPayloads.Bytes(HttpStatusCode.OK, Source, "\"v1\""));
+        _h.ServeFile("dl_1", DownloadPayloads.Bytes(HttpStatusCode.OK, Source, "\"v1\""));
 
         _h.StartQueue();
         await CompletedAsync("dl_1");
 
-        Assert.Empty(_h.FileRequests("dl_1"));
-        Assert.Single(_h.Silo.SentTo(HttpMethod.Get, "api/v2/downloads/dl_1/file-proxy"));
+        Assert.Single(_h.FileRequests("dl_1"));
+        Assert.Empty(_h.Silo.SentTo(HttpMethod.Get, "api/v2/downloads/dl_1/file-proxy"));
     }
 
     [Fact]
@@ -393,7 +395,7 @@ public sealed class DownloadQueueServerTests : IAsyncDisposable
         await _h.AddAsync("dl_1");
         _h.Silo.On(HttpMethod.Get, CapabilityPath, () => throw new InvalidOperationException("The test's server broke."),
             ScriptedSilo.Json(HttpStatusCode.OK, DownloadPayloads.CapabilityWith(proxyDelivery: true)));
-        _h.Silo.On(HttpMethod.Get, "api/v2/downloads/dl_1/file-proxy", DownloadPayloads.Bytes(HttpStatusCode.OK, Source, "\"v1\""));
+        _h.ServeFile("dl_1", DownloadPayloads.Bytes(HttpStatusCode.OK, Source, "\"v1\""));
         var queue = _h.StartQueue();
         await Until(() => _h.Logs.All.Contains("A pass of the download queue failed", StringComparison.Ordinal), "the activation failed");
 
@@ -403,8 +405,7 @@ public sealed class DownloadQueueServerTests : IAsyncDisposable
         await CompletedAsync("dl_1");
         Assert.Equal(2, _h.Silo.SentTo(HttpMethod.Get, CapabilityPath).Count);
         Assert.Single(_h.Silo.SentTo(HttpMethod.Get, ListPath));
-        Assert.Single(_h.Silo.SentTo(HttpMethod.Get, "api/v2/downloads/dl_1/file-proxy"));
-        Assert.Empty(_h.FileRequests("dl_1"));
+        Assert.Single(_h.FileRequests("dl_1"));
     }
 
     [Fact]

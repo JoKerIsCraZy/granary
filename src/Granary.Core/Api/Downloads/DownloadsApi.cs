@@ -10,18 +10,12 @@ namespace Granary.Core.Api.Downloads;
 /// belongs to: while the server acts as another one, it throws <see cref="ProfileChangedException"/> unsent.
 /// </summary>
 /// <param name="time">The clock of <see cref="ManifestStallTimeout"/>; the system's when not given.</param>
-public sealed class DownloadsApi(SiloHttp http, IHttpClientFactory clients, TimeProvider? time = null)
+public sealed class DownloadsApi(SiloHttp http, TimeProvider? time = null)
 {
     /// <summary>A manifest that brings no byte for this long is given up.</summary>
     public static readonly TimeSpan ManifestStallTimeout = TimeSpan.FromSeconds(60);
 
     private readonly TimeProvider _time = time ?? TimeProvider.System;
-
-    /// <summary>
-    /// The client of <c>/file-proxy</c>'s one hop, to a proxy node's short-lived address that carries its own token: no
-    /// credentials, no identity headers, no redirects and no log of the address.
-    /// </summary>
-    public const string HopClientName = "Granary.DownloadHop";
 
     /// <summary>The largest manifest the server sends (it answers 413 above it); a longer answer is refused the same way.</summary>
     public const int MaxManifestBytes = 1 << 20;
@@ -126,47 +120,13 @@ public sealed class DownloadsApi(SiloHttp http, IHttpClientFactory clients, Time
 
     /// <summary>
     /// The media file, whatever its status: from <paramref name="range"/>'s offset to the end with <c>If-Range</c>, or whole.
-    /// <paramref name="viaProxy"/> asks <c>/file-proxy</c>, whose 307 to a proxy node is followed once, with the same range and
-    /// none of the client's credentials; a second redirect comes back as it is. The caller reads and disposes the answer.
+    /// Always from the server itself, as Silo's apps take it (<c>/file</c>, never <c>/file-proxy</c> and its proxy nodes): on the
+    /// local network that is the local route. The caller reads and disposes the answer.
     /// </summary>
-    /// <exception cref="DownloadRedirectRefusedException">
-    /// The redirect named an address Granary does not follow (<see cref="PlaybackUrl.ResolveProxyHop"/>).
-    /// </exception>
-    /// <exception cref="HttpRequestException">The hop failed. Neither its message nor the refusal's names the address.</exception>
     /// <exception cref="ArgumentException"><paramref name="range"/>'s validator is not one <c>If-Range</c> takes.</exception>
-    public async Task<HttpResponseMessage> OpenFileAsync(Uri server, string profileId, string downloadId, ByteRange? range, bool viaProxy,
-        CancellationToken cancellationToken)
-    {
-        string path = Entry(downloadId) + (viaProxy ? "/file-proxy" : "/file");
-        var response = await http.OpenAsProfileAsync(server, path, profileId, range, null, cancellationToken).ConfigureAwait(false);
-        if (response.StatusCode != HttpStatusCode.TemporaryRedirect)
-        {
-            return response;
-        }
-        var from = response.RequestMessage?.RequestUri ?? SiloHttp.BuildUri(server, path);
-        var location = response.Headers.Location;
-        response.Dispose();
-        var target = location is null ? null : location.IsAbsoluteUri ? location : new Uri(from, location);
-        var hop = target is null ? null : PlaybackUrl.ResolveProxyHop(server, target);
-        if (hop is null)
-        {
-            throw new DownloadRedirectRefusedException();
-        }
-        using var request = new HttpRequestMessage(HttpMethod.Get, hop);
-        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("*/*"));
-        request.Headers.CacheControl = new CacheControlHeaderValue { NoStore = true };
-        range?.ApplyTo(request.Headers);
-        try
-        {
-            return await clients.CreateClient(HopClientName).SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
-                .ConfigureAwait(false);
-        }
-        catch (HttpRequestException ex)
-        {
-            // The handler's message names the node's host; the address stays out of every log.
-            throw new HttpRequestException(ex.HttpRequestError, "The download's proxy node did not answer.", null, ex.StatusCode);
-        }
-    }
+    public Task<HttpResponseMessage> OpenFileAsync(Uri server, string profileId, string downloadId, ByteRange? range,
+        CancellationToken cancellationToken) =>
+        http.OpenAsProfileAsync(server, Entry(downloadId) + "/file", profileId, range, null, cancellationToken);
 
     /// <summary>
     /// A manifest's <c>artwork_urls</c> or <c>subtitles[].fetch_url</c> as a path under the saved address, or null when it is
@@ -213,26 +173,4 @@ public sealed class DownloadsApi(SiloHttp http, IHttpClientFactory clients, Time
 
     private static SiloApiException TooLarge() =>
         new((int)HttpStatusCode.RequestEntityTooLarge, ApiProblem.FromStatus((int)HttpStatusCode.RequestEntityTooLarge));
-}
-
-/// <summary>
-/// <c>/file-proxy</c> redirected to an address Granary does not follow (<see cref="PlaybackUrl.ResolveProxyHop"/>): asking again
-/// gets the same answer, so a transfer takes it as refused. The message never names the address.
-/// </summary>
-public sealed class DownloadRedirectRefusedException : HttpRequestException
-{
-    public DownloadRedirectRefusedException()
-        : base(HttpRequestError.InvalidResponse, "The server sent the download to an address Granary does not follow.")
-    {
-    }
-
-    public DownloadRedirectRefusedException(string message)
-        : base(HttpRequestError.InvalidResponse, message)
-    {
-    }
-
-    public DownloadRedirectRefusedException(string message, Exception innerException)
-        : base(HttpRequestError.InvalidResponse, message, innerException)
-    {
-    }
 }

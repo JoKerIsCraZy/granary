@@ -483,8 +483,8 @@ public sealed partial class DownloadQueue : IDisposable
     /// <summary>An activation of a scope in a session's generation that did not go through, and when it is done again.</summary>
     private sealed record ActivationRetry(DownloadScope Scope, long Generation, DateTimeOffset At);
 
-    /// <summary>What the capability of the active scope says the queue does: ask <c>/file-proxy</c>, delete revoked copies.</summary>
-    private sealed record Capability(DownloadScope Scope, bool ViaProxy, bool RevokedRemovesLocal);
+    /// <summary>What the capability of the active scope says the queue does: delete revoked copies.</summary>
+    private sealed record Capability(DownloadScope Scope, bool RevokedRemovesLocal);
 
     /// <summary>
     /// One transfer under way, for the revision of the download it started with, in the session's generation at its start: a

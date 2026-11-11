@@ -2800,9 +2800,8 @@ branches on are `prepared_file_expired` and `capability_unsupported` (`ProblemCo
   max_height? }]`, one per preset, both numbers absent for `original`), `proxy_delivery`, `preparation_progress`,
   `prepare_again`, `revoked_removes_local`. Granary reads it at sign-in and profile switch (the guide's 9.3) and offers
   downloads only when `enabled && allowed` (`DownloadCapability.IsUsable`). It does not send `If-None-Match`. The download
-  queue reads it again whenever a profile's downloads become the active ones: `proxy_delivery` has transfers ask
-  `/file-proxy` (14.4), `revoked_removes_local` lets a revoked download's files go (14.6); a read that fails leaves both
-  off.
+  queue reads it again whenever a profile's downloads become the active ones: `revoked_removes_local` lets a revoked
+  download's files go (14.6); a read that fails leaves it off. `proxy_delivery` is not used: see `/file-proxy` in 14.4.
 
 ### 14.2 Create
 
@@ -2865,13 +2864,10 @@ branches on are `prepared_file_expired` and `capability_unsupported` (`ProblemCo
   (1 s to 5 minutes; without one, or below a second, after 1, 2, 4 ... 60 s, longer with each busy answer in a row); `401`
   or `403 profile_verification_required` → the profile's downloads wait for the sign-in; `5xx`, no answer or a body that
   broke off → asked again after 1, 2, 4 ... 60 s with `Range` from the bytes kept.
-- `GET /api/v2/downloads/{id}/file-proxy`, when the capability has `proxy_delivery`: the same, or `307` to a proxy node.
-  Granary follows one 307 on a client of its own (`DownloadsApi.HopClientName`: no credentials, identity headers, redirects,
-  cookies or log), with the same method, `Range` and `If-Range`. The target must be HTTPS (HTTP only when the server itself
-  is), without user info, written as it will be sent and not this machine or a link-local address
-  (`PlaybackUrl.ResolveProxyHop`); anything else is refused (`DownloadRedirectRefusedException`, an invalid answer that asking
-  again does not change). A second redirect comes back as it is. The hop's address, which carries its token, never reaches a
-  log or an error message.
+- Not used: `GET /api/v2/downloads/{id}/file-proxy`, which can answer `307` to a proxy node when the capability has
+  `proxy_delivery`. Silo's apps take the file from `/file` only (Android `DownloadWorker.kt`, Apple
+  `APIv2Client+Downloads.swift`), and so does Granary: on the local network that request takes the local route (9.7)
+  straight to the server, where a proxy node's address would not.
 
 ### 14.5 Manifest and assets
 

@@ -14,9 +14,6 @@ public sealed record DownloadCapability
     /// <summary>This user may download, demo mode aside.</summary>
     public bool Allowed { get; init; }
 
-    /// <summary><c>/file-proxy</c> may answer 307 to a proxy node.</summary>
-    public bool ProxyDelivery { get; init; }
-
     /// <summary>Listed preparing entries carry <see cref="DownloadEntry.Preparation"/>.</summary>
     public bool PreparationProgress { get; init; }
 

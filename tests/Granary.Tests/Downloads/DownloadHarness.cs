@@ -31,8 +31,7 @@ internal sealed class DownloadHarness : IAsyncDisposable
             Account = new Account("1", "elena", "", "user", [], true, false, null),
             ProfileId = "7",
         };
-        Hop = new FakeHttpMessageHandler((_, _) => throw new InvalidOperationException("No hop was expected"));
-        Api = new DownloadsApi(Silo.Http, new FakeHttpClients(Hop), Time);
+        Api = new DownloadsApi(Silo.Http, Time);
         Store = NewStore();
         Silo.On(HttpMethod.Get, CapabilityPath, ScriptedSilo.Json(HttpStatusCode.OK, DownloadPayloads.Capability()));
         // Until a test lists entries of its own, the server lists every download of the acting profile as the PC keeps it.
@@ -66,8 +65,6 @@ internal sealed class DownloadHarness : IAsyncDisposable
     public FakeDiskSpace Disk { get; } = new();
 
     public InMemoryDownloadPreferences Preferences { get; }
-
-    public FakeHttpMessageHandler Hop { get; }
 
     public DownloadsApi Api { get; }
 

@@ -57,19 +57,19 @@ public sealed partial class DownloadQueue
         }
     }
 
-    // A capability that cannot be read asks /file and never deletes a revoked copy.
+    // A capability that cannot be read never deletes a revoked copy.
     private async Task ReadCapabilityAsync(DownloadScope scope, Uri server, CancellationToken stop)
     {
         Capability capability;
         try
         {
             var read = await _api.GetCapabilityAsync(server, scope.ProfileId, stop).ConfigureAwait(false);
-            capability = new Capability(scope, read.ProxyDelivery, read.RevokedRemovesLocal);
+            capability = new Capability(scope, read.RevokedRemovesLocal);
         }
         catch (Exception ex) when (IsServerFailure(ex, stop))
         {
             _logger.LogInformation("The downloads capability could not be read ({Failure})", Describe(ex));
-            capability = new Capability(scope, ViaProxy: false, RevokedRemovesLocal: false);
+            capability = new Capability(scope, RevokedRemovesLocal: false);
         }
         lock (_gate)
         {

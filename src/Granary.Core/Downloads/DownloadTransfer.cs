@@ -9,14 +9,13 @@ namespace Granary.Core.Downloads;
 /// <summary>
 /// What a transfer is to do: download <see cref="DownloadId"/> of <see cref="Scope"/> into <see cref="DownloadPaths.MediaPart"/>
 /// in <see cref="Folder"/>, carrying on from <see cref="ResumeFrom"/> with the <see cref="Validator"/> those bytes came with.
-/// <see cref="ViaProxy"/> asks <c>/file-proxy</c>, which may send it on to a proxy node.
 /// </summary>
 /// <param name="ExpectedBytes">
 /// The file's exact length: the manifest's <c>integrity.expected_bytes</c>, or the size of the entry once it is ready. Never the
 /// size a preparing entry lists, which is an estimate: a transfer against it ends as an integrity failure.
 /// </param>
 public sealed record TransferJob(Uri Server, DownloadScope Scope, string DownloadId, string Folder, long ExpectedBytes, long ResumeFrom,
-    string? Validator, bool ViaProxy);
+    string? Validator);
 
 /// <summary>How a transfer ended. Every result but <see cref="Completed"/> keeps the bytes it wrote.</summary>
 public enum TransferResult

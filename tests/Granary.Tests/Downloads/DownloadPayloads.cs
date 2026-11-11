@@ -164,14 +164,6 @@ internal static class DownloadPayloads
         return Task.FromResult(response);
     };
 
-    /// <summary>A redirect to <paramref name="location"/>, as <c>/file-proxy</c> answers when a proxy node serves the file.</summary>
-    public static Func<Task<HttpResponseMessage>> Redirect(string location) => () =>
-    {
-        var response = new HttpResponseMessage(HttpStatusCode.TemporaryRedirect);
-        response.Headers.Location = new Uri(location, UriKind.RelativeOrAbsolute);
-        return Task.FromResult(response);
-    };
-
     /// <summary>Bytes of <paramref name="length"/> that differ from one position to the next.</summary>
     public static byte[] Source(int length, int seed = 1) =>
         [.. Enumerable.Range(0, length).Select(i => (byte)((i * 31 + seed * 7) % 251))];
