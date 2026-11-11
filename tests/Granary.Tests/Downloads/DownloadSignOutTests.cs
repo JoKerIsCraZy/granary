@@ -602,7 +602,7 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
         await Until(() => !Directory.Exists(kept.Folder), "its folder went once the downloads were read");
         await store.FolderWork;
 
-        Assert.Equal("Its downloads on this PC are deleted with it.", DownloadSignOut.Note(summary));
+        Assert.Equal("Any downloads on this PC are deleted with it.", DownloadSignOut.Note(summary));
         Assert.Empty(store.All);
         Assert.Empty(DeletesSent);
     }

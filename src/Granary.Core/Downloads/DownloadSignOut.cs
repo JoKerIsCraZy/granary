@@ -86,7 +86,7 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
 
     /// <summary>
     /// What a question before signing out or removing a server says of the downloads: "2 downloads (3.0 GB) on this PC are
-    /// deleted with it.", without the size when it is not known, and "Its downloads on this PC are deleted with it." when not
+    /// deleted with it.", without the size when it is not known, and "Any downloads on this PC are deleted with it." when not
     /// even the count is; null when there are none.
     /// </summary>
     public static string? Note(DownloadSummary summary)
@@ -94,7 +94,7 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
         ArgumentNullException.ThrowIfNull(summary);
         if (summary.Count is not { } count)
         {
-            return "Its downloads on this PC are deleted with it.";
+            return "Any downloads on this PC are deleted with it.";
         }
         if (count <= 0)
         {
