@@ -15,6 +15,10 @@ public sealed class DownloadQueueServerTests : IAsyncDisposable
 {
     private static readonly byte[] Source = DownloadPayloads.Source(3000);
 
+    // A callback held until another part of the queue got somewhere waits for that, not for a time: this limit only keeps a
+    // broken run from hanging, and the test fails then.
+    private static readonly TimeSpan HangLimit = TimeSpan.FromSeconds(30);
+
     private readonly DownloadHarness _h = new();
 
     public ValueTask DisposeAsync() => _h.DisposeAsync();
@@ -582,15 +586,18 @@ public sealed class DownloadQueueServerTests : IAsyncDisposable
         await IdleAsync(queue);
         // The folder goes only once the queue has found it still there and waits: nothing else wakes it then.
         int held = 0;
+        bool idleMeanwhile = false;
+        // The result is checked after the call, not in the callback, which would throw into the store's delete.
         _h.Store.IndexWritten = () =>
         {
             if (Interlocked.Exchange(ref held, 1) == 0)
             {
-                Assert.True(SpinWait.SpinUntil(() => queue.Idle.IsCompleted, TimeSpan.FromSeconds(5)));
+                idleMeanwhile = SpinWait.SpinUntil(() => queue.Idle.IsCompleted, HangLimit);
             }
         };
 
         await _h.Store.RemoveAsync(Scope7, "dl_1", queueServerDelete: true, Token);
+        Assert.True(idleMeanwhile);
 
         Assert.False(Directory.Exists(stored.Folder));
         await Until(() => _h.Store.PendingDeletes(Scope7).Count == 0, "the delete went");
