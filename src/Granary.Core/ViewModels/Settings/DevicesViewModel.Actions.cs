@@ -87,11 +87,11 @@ public sealed partial class DevicesViewModel
         {
             if (row.IsCurrent)
             {
-                // An account that is not known takes no downloads along: the question said they stay.
-                if (_downloads is not null && accountId is not null)
-                {
-                    await _downloads.ClearAsync(server.Id, accountId, CancellationToken.None);
-                }
+                // An account that is not known takes no downloads along: the question said they stay. The clear holds until
+                // the sign-out was tried; after one that failed, the account's new downloads run.
+                using var clear = _downloads is not null && accountId is not null
+                    ? await _downloads.ClearAsync(server.Id, accountId, CancellationToken.None)
+                    : null;
                 await _session.SignOutAsync(server.Id);
                 return;
             }

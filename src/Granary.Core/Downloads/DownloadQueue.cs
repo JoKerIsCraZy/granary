@@ -103,7 +103,7 @@ public sealed partial class DownloadQueue : IDisposable
     private (DownloadScope? Scope, Uri? Server) _current;
 
     // The store's clear generation when the current scope became the current one: a sign-out's clear after it stops that scope
-    // (IsClearedLocked) until another scope, or none, is the current one.
+    // (IsClearedLocked) until another scope, or none, is the current one, or the sign-out ends with that scope still signed in.
     private long _scopeClears;
     private TaskCompletionSource _wake = NewSignal();
     private TaskCompletionSource _parked = NewSignal();
@@ -207,6 +207,7 @@ public sealed partial class DownloadQueue : IDisposable
         _network.Changed += OnConditionsChanged;
         _preferences.Changed += OnConditionsChanged;
         _store.Changed += OnStoreChanged;
+        _store.ClearEnded += OnClearEnded;
         var scope = DownloadScope.Of(_session);
         var server = _session.ActiveServer?.BaseUri;
         lock (_gate)
@@ -322,6 +323,7 @@ public sealed partial class DownloadQueue : IDisposable
         _network.Changed -= OnConditionsChanged;
         _preferences.Changed -= OnConditionsChanged;
         _store.Changed -= OnStoreChanged;
+        _store.ClearEnded -= OnClearEnded;
     }
 
     // Raised on the UI thread: the new scope is taken here, and the other scopes' transfers stop. A scope that comes back after
@@ -341,6 +343,23 @@ public sealed partial class DownloadQueue : IDisposable
             foreach (var run in _running.Values.Where(r => r.Key.Scope != scope))
             {
                 CancelLocked(run);
+            }
+            WakeLocked();
+        }
+    }
+
+    // A sign-out ended. One that left the current scope signed in (it failed) holds it no longer: the downloads it took are
+    // gone, and new ones run. One that signed out leaves the hold to the session's change. The generation is read before the
+    // pending clears, so a clear marked meanwhile still holds the scope.
+    private void OnClearEnded(object? sender, EventArgs e)
+    {
+        long clears = _store.ClearGeneration;
+        var scope = DownloadScope.Of(_session);
+        lock (_gate)
+        {
+            if (scope is not null && scope == _current.Scope && !_store.IsClearPending(scope))
+            {
+                _scopeClears = Math.Max(_scopeClears, clears);
             }
             WakeLocked();
         }

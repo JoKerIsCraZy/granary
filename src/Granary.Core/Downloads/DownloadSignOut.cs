@@ -153,12 +153,31 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
     /// <see cref="StoreBudget"/>, and their folders go after that. When the downloads cannot even be read within
     /// <see cref="StoreBudget"/>, the server hears nothing and they go once they are read.
     /// </summary>
-    public async Task ClearAsync(string serverEntryId, string? accountId, CancellationToken cancellationToken)
+    /// <returns>
+    /// The clear, to dispose once the sign-out was tried, whatever came of it (<see cref="DownloadStore.EndClear"/>): after
+    /// a sign-out that failed, the account's new downloads run again.
+    /// </returns>
+    public async Task<IDisposable> ClearAsync(string serverEntryId, string? accountId, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrEmpty(serverEntryId);
         // First of all: a create that answers from now on keeps nothing, and the queue starts nothing more for these downloads,
-        // until their account is signed in again.
-        store.MarkCleared(serverEntryId, accountId);
+        // until their account is signed in again or the sign-out ends without signing it out.
+        var clear = new PendingClear(store, store.MarkCleared(serverEntryId, accountId));
+        try
+        {
+            await TakeOffAsync(serverEntryId, accountId, cancellationToken).ConfigureAwait(false);
+            return clear;
+        }
+        catch
+        {
+            clear.Dispose();
+            throw;
+        }
+    }
+
+    // ClearAsync's work once the clear is marked.
+    private async Task TakeOffAsync(string serverEntryId, string? accountId, CancellationToken cancellationToken)
+    {
         bool loaded = await LoadWithinAsync(StoreBudget, cancellationToken).ConfigureAwait(false);
         // What the server is to hear is taken before the rows go: the queue then has no delete of them to send twice.
         var deletes = loaded ? DeletesToSend(serverEntryId, accountId) : null;
@@ -178,8 +197,9 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
     /// <summary>
     /// A sign-out the viewer asked for: asks when the account has downloads here (<see cref="ConfirmSignOutAsync"/>), takes
     /// them along (<see cref="ClearAsync"/>), then signs out of <paramref name="server"/>. A sign-in whose account is not known
-    /// takes none along: those on that server are other accounts', as one whose sign-in expired. False when the viewer said
-    /// no, and nothing changed. Call it on the UI thread.
+    /// takes none along: those on that server are other accounts', as one whose sign-in expired. A sign-out that fails leaves
+    /// the account's downloads gone, and its new ones run. False when the viewer said no, and nothing changed. Call it on the
+    /// UI thread.
     /// </summary>
     public async Task<bool> SignOutAsync(ServerEntry server, CancellationToken cancellationToken)
     {
@@ -190,15 +210,16 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
         {
             return false;
         }
-        if (accountId is not null)
-        {
-            await ClearAsync(server.Id, accountId, cancellationToken);
-        }
-        else
+        if (accountId is null)
         {
             logger.LogInformation("The account signed in on server {ServerEntryId} is not known; the downloads there stay", server.Id);
+            await session.SignOutAsync(server.Id, cancellationToken);
+            return true;
         }
-        await session.SignOutAsync(server.Id, cancellationToken);
+        using (await ClearAsync(server.Id, accountId, cancellationToken))
+        {
+            await session.SignOutAsync(server.Id, cancellationToken);
+        }
         return true;
     }
 
@@ -309,6 +330,12 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
 
     /// <summary>The deletes a sign-out sends: the server, the profile they go as, and the entries.</summary>
     private sealed record ServerDeletes(Uri Server, string ProfileId, IReadOnlyList<string> Ids);
+
+    /// <summary>A sign-out's clear while the sign-out is under way; disposing it ends the clear. Twice is no change.</summary>
+    private sealed class PendingClear(DownloadStore store, long generation) : IDisposable
+    {
+        public void Dispose() => store.EndClear(generation);
+    }
 
     private static bool Matches(DownloadScope scope, string serverEntryId, string? accountId) =>
         scope.ServerEntryId == serverEntryId && (accountId is null || scope.AccountId == accountId);

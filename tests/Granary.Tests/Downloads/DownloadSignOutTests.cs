@@ -25,6 +25,9 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
     private static readonly Uri LanBase = new("https://lan.example/silo");
     private static readonly DownloadScope OtherServer = new("srv2", "1", "7");
 
+    // A title none of the tests keeps before it is asked for.
+    private static readonly DownloadRequest NextEpisode = new("ep_5", "sr_1", null, "original", "Chapter Five", "Example Series", 1, 5);
+
     private readonly DownloadHarness _h = new();
     private readonly FakeConfirmation _confirm = new();
     private readonly InMemoryServerRegistry _registry = new();
@@ -458,6 +461,30 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AFailedSignOut_LetsTheAccountsNewDownloadsRun()
+    {
+        await KeptAsync("dl_1");
+        var queue = _h.StartQueue();
+        await SettleAsync(queue);
+        var manager = _h.NewManager(queue);
+        using var servers = await ServersAsync();
+        _h.Session.FailWith = new IOException("The sign-in data could not be saved.");
+
+        await servers.SignOutCommand.ExecuteAsync(Item(servers, "srv1"));
+        _h.Session.FailWith = null;
+        _h.Silo.On(HttpMethod.Post, ListPath, ScriptedSilo.Json(HttpStatusCode.Accepted,
+            DownloadPayloads.Page(null, DownloadPayloads.Entry("dl_2", "ready", episodeId: "ep_5"))));
+        _h.ServeAssets("dl_2");
+        _h.ServeFile("dl_2", DownloadPayloads.Source(3000));
+        var started = await manager.StartAsync(NextEpisode, Token);
+        await Until(() => _h.Find("dl_2")?.Record.State == DownloadState.Completed, "the new download ran");
+
+        Assert.Equal("Granary could not save its settings on this computer. Try again.", servers.Status);
+        Assert.Equal(DownloadStartResult.Started, started);
+        Assert.Equal(["dl_2"], Kept);
+    }
+
+    [Fact]
     public async Task AShareThatDoesNotAnswer_GetsTheQuestionWithoutTheSize()
     {
         await KeptAsync("dl_1");
@@ -490,7 +517,7 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
         var clearing = signOut.ClearAsync("srv1", "1", Token);
         await _h.Time.WaitUntilAsync(() => _h.Time.NextDue == DownloadSignOut.StoreBudget, Token);
         _h.Time.Advance(DownloadSignOut.StoreBudget);
-        await clearing.WaitAsync(TimeSpan.FromSeconds(5), Token);
+        (await clearing.WaitAsync(TimeSpan.FromSeconds(5), Token)).Dispose();
         share.Release();
         await Until(() => !Directory.Exists(kept.Folder), "its folder went once the downloads were read");
         await store.FolderWork;

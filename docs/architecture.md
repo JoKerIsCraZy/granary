@@ -1171,7 +1171,10 @@ missing their folder.
 - **A sign-out under way.** Once a sign-out has marked its account's downloads cleared (`DownloadStore.MarkCleared`), the
   queue starts nothing more for that scope while it is still the current one: no activation, transfer, registry read,
   delete or report, and server work under way stops between two requests. The queue takes the store's `ClearGeneration`
-  whenever another scope (or none) becomes the current one, so the same account signed in again runs as before.
+  whenever another scope (or none) becomes the current one, so the same account signed in again runs as before. The
+  sign-out ends its clear once it was tried, whatever came of it (`EndClear`, raising `ClearEnded`). When the session is
+  still that scope then (the sign-out failed), the queue takes the `ClearGeneration` too, unless another clear of the scope
+  is under way, and runs its downloads again: the ones the sign-out took stay gone, new ones start.
 - **Resume.** Within one run a transfer carries on from its whole part. One found Downloading at the start (Granary or
   Windows stopped in the middle) gives up `ResumeMargin` (4 MiB) of its part: the transfer flushes every 3 MiB of 1 MiB
   writes, so no more was written but not on the disk. The validator is in the record before the bytes it belongs to are
@@ -1332,7 +1335,10 @@ The view models of the sign-out paths take it (optional, so they work without it
   Settings → Devices' question then ends with "Downloads on this PC are kept." while the server has any here
   (`SignOutNoteAsync`). Only removing a server takes every account's downloads there.
 - **Order.** First the account's downloads are marked cleared (`MarkCleared`): a create that answers from then on keeps
-  nothing, and the queue starts nothing more for them (see "The queue" and "Starting and deleting"). Then every matching
+  nothing, and the queue starts nothing more for them (see "The queue" and "Starting and deleting"). `ClearAsync` answers
+  the clear, and each sign-out path disposes it once its sign-out was tried, which ends the clear (`EndClear`); removing a
+  server ends it once the server is gone. A sign-out that fails leaves the account signed in with its downloads gone, and
+  its new downloads run. Then every matching
   download of every profile goes from this PC, whatever the server answers later: its row, index entry and deletes still
   to send at once (`RemoveWhereAsync`), and the queue stops its transfer, so no byte is written that is deleted a moment
   later and no transfer asks the server for an entry it is deleting. The server hears next, while the session can still

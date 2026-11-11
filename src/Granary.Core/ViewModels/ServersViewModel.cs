@@ -83,10 +83,8 @@ public sealed partial class ServersViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private Task RemoveAsync(ServerItemViewModel? server) => RunAsync(server, async s =>
     {
-        if (_downloads is not null)
-        {
-            await _downloads.ClearAsync(s.Id, null, CancellationToken.None);
-        }
+        // Until the server is gone, nothing is kept or started for its accounts.
+        using var clear = _downloads is null ? null : await _downloads.ClearAsync(s.Id, null, CancellationToken.None);
         bool signedOut = true;
         try
         {
