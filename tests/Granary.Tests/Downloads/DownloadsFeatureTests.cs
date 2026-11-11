@@ -104,6 +104,32 @@ public sealed class DownloadsFeatureTests : IAsyncDisposable
         Assert.Equal(2, _h.Silo.SentTo(HttpMethod.Get, CapabilityPath).Count);
     }
 
+    // Profile 7, then 8, then 7 again: the first read for 7 answers last, and failing, it must not take the newer answer away.
+    [Fact]
+    public async Task ALateFailureOfAnEarlierRead_DoesNotUndoTheNewerAnswer()
+    {
+        var late = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _h.Silo.On(HttpMethod.Get, CapabilityPath, () => late.Task,
+            ScriptedSilo.Json(HttpStatusCode.OK, DownloadPayloads.Capability(enabled: true, allowed: false)),
+            ScriptedSilo.Json(HttpStatusCode.OK, DownloadPayloads.Capability()));
+        var feature = Feature();
+        var first = feature.RefreshAsync(Token);
+        await Until(() => _h.Silo.SentTo(HttpMethod.Get, CapabilityPath).Count == 1, "profile 7's capability was asked for");
+        _h.Session.ProfileId = "8";
+        await feature.RefreshAsync(Token);
+        _h.Session.ProfileId = "7";
+        await feature.RefreshAsync(Token);
+        Assert.True(feature.CanDownload);
+
+        late.SetException(new HttpRequestException(HttpRequestError.ConnectionError));
+        await first;
+
+        Assert.Equal((true, true), (feature.CanDownload, feature.IsOffered));
+        Assert.Equal(3, _h.Silo.SentTo(HttpMethod.Get, CapabilityPath).Count);
+        await feature.RefreshAsync(Token);
+        Assert.Equal(3, _h.Silo.SentTo(HttpMethod.Get, CapabilityPath).Count);
+    }
+
     [Fact]
     public async Task AnOldProfilesLateAnswer_IsDropped()
     {

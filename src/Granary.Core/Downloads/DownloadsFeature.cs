@@ -23,6 +23,8 @@ public sealed partial class DownloadsFeature : ObservableObject
     private readonly TimeProvider _time;
     private readonly ILogger<DownloadsFeature> _logger;
     private DownloadScope? _readFor;
+    // Which read is the latest: an earlier one answering or failing late changes nothing.
+    private int _reads;
     private (DownloadScope Scope, DateTimeOffset At)? _failed;
 
     public DownloadsFeature(ISessionManager session, DownloadsApi api, DownloadStore store, TimeProvider time, ILogger<DownloadsFeature> logger)
@@ -69,7 +71,8 @@ public sealed partial class DownloadsFeature : ObservableObject
 
     // A refresh while this one is under way does not read again. One that does not end with an answer (a failure, a
     // cancellation, the profile changing meanwhile) leaves the next refresh to read again; a slow answer for a profile that is
-    // no longer the active one is dropped.
+    // no longer the active one is dropped, and so is any read a newer one started after: only the latest one counts, also
+    // when the profile changed and came back meanwhile.
     private async Task ReadAsync(DownloadScope scope, Uri server, CancellationToken cancellationToken)
     {
         // Another profile's answer is never shown for this one.
@@ -78,11 +81,12 @@ public sealed partial class DownloadsFeature : ObservableObject
             Capability = null;
         }
         _readFor = scope;
+        int read = ++_reads;
         bool answered = false;
         try
         {
             var capability = await _api.GetCapabilityAsync(server, scope.ProfileId, cancellationToken);
-            if (DownloadScope.Of(_session) == scope)
+            if (read == _reads && DownloadScope.Of(_session) == scope)
             {
                 Capability = capability;
                 _failed = null;
@@ -93,15 +97,15 @@ public sealed partial class DownloadsFeature : ObservableObject
         {
             _logger.LogWarning("Could not read whether the server offers downloads ({Failure})",
                 ex is SiloApiException api ? api.Status.ToString(System.Globalization.CultureInfo.InvariantCulture) : ex.GetType().Name);
-            _failed = (scope, _time.GetUtcNow());
-            if (_readFor == scope)
+            if (read == _reads)
             {
+                _failed = (scope, _time.GetUtcNow());
                 Capability = null;
             }
         }
         finally
         {
-            if (!answered && _readFor == scope)
+            if (!answered && read == _reads)
             {
                 _readFor = null;
             }
