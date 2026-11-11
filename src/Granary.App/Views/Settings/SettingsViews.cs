@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using Granary.Core;
+using Granary.Core.Downloads;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Downloads;
 using Granary.Core.ViewModels.Settings;
@@ -594,23 +595,52 @@ internal static class ServerDialogs
         _ => null,
     };
 
+    /// <summary>
+    /// "Remove NAS?": Granary signs out and forgets the server, and its downloads on this PC, of every account there, go with
+    /// it, which the question says with their count and size as far as they could be read in time.
+    /// </summary>
     public static async Task<bool> ConfirmRemoveAsync(XamlRoot? root, ServerItemViewModel server)
     {
         if (root is null)
         {
             return false;
         }
+        string message = "Granary signs out of this server and forgets it. You can add it again later.";
+        if (await DownloadsNoteAsync(server.Id) is { } note)
+        {
+            message += Environment.NewLine + Environment.NewLine + note;
+        }
         var dialog = new ContentDialog
         {
             XamlRoot = root,
             Style = (Style)Application.Current.Resources["DefaultContentDialogStyle"],
             Title = $"Remove {server.Name}?",
-            Content = "Granary signs out of this server and forgets it. You can add it again later.",
+            Content = message,
             PrimaryButtonText = "Remove",
             CloseButtonText = "Cancel",
             DefaultButton = ContentDialogButton.Close,
         };
         return await dialog.ShowAsync() == ContentDialogResult.Primary;
+    }
+
+    // "2 downloads (3.0 GB) on this PC are deleted with it.", null for none. The removal takes them whatever the read gave, so
+    // a read that failed says they go without a count.
+    private static async Task<string?> DownloadsNoteAsync(string serverId)
+    {
+        if (App.Services.GetService<DownloadSignOut>() is not { } downloads)
+        {
+            return null;
+        }
+        try
+        {
+            return DownloadSignOut.Note(await downloads.SummarizeAsync(serverId, null, CancellationToken.None));
+        }
+        catch (Exception ex)
+        {
+            App.Services.GetRequiredService<ILoggerFactory>().CreateLogger(typeof(ServerDialogs))
+                .LogWarning("The downloads of a server to remove could not be read ({Failure})", ex.GetType().Name);
+            return DownloadSignOut.Note(new DownloadSummary(null, null));
+        }
     }
 }
 

@@ -1144,7 +1144,10 @@ says why above the sections.
   name (15 px semibold) and "https://silo.example · Signed in as alex" (13 px muted, trimmed), the Active pill in the accent or
   Switch, and More (…) with Sign out and Remove… (asks first). Sign out, as the profile menu's and Change password's,
   asks first only when the account has downloads on this PC, which go with it: "Sign out of NAS?", "2 downloads
-  (3.0 GB) on this PC are deleted with it.", Sign out and Cancel. The sign-in screen's "Use another server" still opens the
+  (3.0 GB) on this PC are deleted with it.", Sign out and Cancel. Remove asks "Remove NAS?", "Granary signs out of this
+  server and forgets it. You can add it again later." and, when downloads of any account there are on this PC, a blank
+  line and "2 downloads (3.0 GB) on this PC are deleted with it." (without the size when it does not come within 5 s,
+  "Its downloads on this PC are deleted with it." when not even they can be read in time), Remove and Cancel. The sign-in screen's "Use another server" still opens the
   standalone servers page, which shares the question before removing.
 - **Downloads** (`DownloadsSettingsView` on `DownloadSettingsViewModel`, Granary's own: the web has no downloads, and the apps
   keep these on the device): "Where downloads go and when they run, on this PC.", then This PC ("Kept on this PC, not in
