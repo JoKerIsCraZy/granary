@@ -150,7 +150,10 @@ public sealed class JsonPlaybackDevicePreferencesTests : IDisposable
     [InlineData(false)]
     public async Task ThePlayersFullScreen_StaysAtTheNextStart_WithTheOtherChoices(bool fullScreen)
     {
+        // From the other value, saved, so a save that left it as it was cannot pass.
         var preferences = Create();
+        await preferences.SetPlayerFullScreenAsync(!fullScreen);
+        Assert.Equal(!fullScreen, Create().PlayerFullScreen);
 
         await preferences.SetUpDownAsync(PlayerUpDown.Volume);
         await preferences.SetPlayerFullScreenAsync(fullScreen);
