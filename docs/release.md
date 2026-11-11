@@ -261,6 +261,48 @@ By hand, from the repository's root, signed in to the GitHub CLI:
 - `./scripts/update-libmpv.ps1 -Publish` also creates the mirror release and updates the two files. The commit and
   the pull request are then yours to make.
 
+## Translations
+
+Granary reuses the translations of Silo's web client by key. The web's catalogs are `web/src/locales/<tag>.json` in
+silo-server: one compiled message per key, in English (`en`) and seven translations (`de`, `es`, `fr`, `pt-BR`, `ja`,
+`zh-Hans`, `ar`). Granary takes only the keys it uses:
+
+- `texts.lock.json` pins them. Its `web` entry names the `repository`, the full `commit`, the `path` of the catalogs in
+  it, and in `sha256` the SHA-256 of each language's whole file, by language tag. Its `note` says the same in short.
+- `src/Granary.Core/Texts/Catalogs/web-keys.txt` lists the keys: one per line, in ordinal order, with `#` comments
+  naming the Granary code each group is for.
+- `scripts/sync-web-texts.ps1` gets each pinned file, checks its SHA-256 and writes the listed keys to
+  `src/Granary.Core/Texts/Catalogs/web/<tag>.json`, each message byte for byte as upstream. Nothing changes until
+  every file is checked, and a second run changes nothing. The catalogs are committed, so a build fetches nothing.
+
+`WebCatalogFilesTests` checks the result: every listed key has an English message, each catalog holds only listed keys,
+every message has a known shape of the web's compiled messages, and the lock and `THIRD_PARTY_NOTICES.md` name the
+same commit.
+
+**A new key.** Find the web's key for the text: its English must be the same, and where several keys have it, take the
+one the web uses for the same purpose (search `web/src` for it). Add it to `web-keys.txt` in its place, run
+`./scripts/sync-web-texts.ps1`, and commit the list with the catalogs. The script stops when English has no message for
+a listed key. A key another language lacks is only reported: that language shows the English text there.
+
+**A newer Silo.** From the repository's root:
+
+1. `./scripts/sync-web-texts.ps1 -Commit <full silo-server commit>` takes the files of that commit, writes the commit
+   and their SHA-256 into `texts.lock.json`, and rewrites the catalogs. With a clone of silo-server,
+   `-SourceDir <clone> -Commit <commit>` reads them from the clone with git instead (a short commit will do there), as
+   committed, whatever is checked out.
+2. If the script stops on a key English no longer has, Silo renamed or removed it: find the web's new key, and change
+   the list and the code that uses it.
+3. Name the new commit in the "Translations of Silo's web client" table of `THIRD_PARTY_NOTICES.md`.
+4. Read the diff of the catalogs. A re-sync can change English texts too: they come from the web, as every text of
+   Granary's interface does (AGENTS.md). Tests that expect the old English then fail; check the new wording on the web
+   and change the tests to it.
+
+To add a language, add its tag to `sha256` in `texts.lock.json` with an empty value and run the script with `-Commit`
+(the pinned commit will do). The web's pseudo-locales `en-XA` and `ar-XB`, made for testing the web, are not taken.
+
+The source catalog that Silo translates in, `Silo-Server/silo-translations`, is private; the web's generated files in
+silo-server are public, under the AGPL with Silo's platform exception (`THIRD_PARTY_NOTICES.md`).
+
 ## Before the first public release
 
 - The repository must be public: installed copies read its releases without credentials.

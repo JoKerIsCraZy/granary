@@ -1,3 +1,5 @@
+using System.Collections.ObjectModel;
+
 namespace Granary.Core.Api.Catalog;
 
 /// <summary><c>{ "sections": [...] }</c> of <c>GET /api/v2/home/sections</c> and <c>GET /api/v2/library/{id}/sections</c>.</summary>
@@ -16,6 +18,20 @@ public sealed record Section
     public string SectionType { get; init => field = value ?? ""; } = "";
 
     public string Title { get; init => field = value ?? ""; } = "";
+
+    /// <summary>
+    /// The shared translation catalog's key for <see cref="Title"/>, such as <c>home.section.continueWatching</c>, while
+    /// the title is Silo's own wording; null when someone typed it. Not shown yet: a translated interface shows the
+    /// key's message, else <see cref="Title"/>. An empty key counts as none, as the web's <c>lib/sectionTitle.ts</c>.
+    /// </summary>
+    public string? TitleKey { get; init => field = string.IsNullOrEmpty(value) ? null : value; }
+
+    /// <summary>The values of <see cref="TitleKey"/>'s placeholders by name, such as <c>library</c>; empty when it has none.</summary>
+    public IReadOnlyDictionary<string, string> TitleArgs
+    {
+        get;
+        init => field = value ?? ReadOnlyDictionary<string, string>.Empty;
+    } = ReadOnlyDictionary<string, string>.Empty;
 
     public bool Featured { get; init; }
 

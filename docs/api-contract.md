@@ -718,7 +718,8 @@ has a PIN or access limits), and `getArtwork` (public, signed URL).
 | `dismissHomeItem` / `undismissHomeItem` | `PUT` / `DELETE /api/v2/home/dismissals/{surface}/{item_id}` | `204` |
 
 `Section`: `id` (opaque), `section_type` (open string set), `title`, `featured`, `item_limit`,
-`is_custom`, `customized`, `total_count` (lower bound), `items: CatalogItem[]`. Section rows take no
+`is_custom`, `customized`, `total_count` (lower bound), `items: CatalogItem[]`, and optionally `title_key` and
+`title_args` (below). Section rows take no
 `limit`/`cursor`; a row returns up to `item_limit` cards (Home default 100). "See all" is
 `GET /api/v2/catalog?source=section&scope=home&section_id=<id>` (cursor-paged; a library row uses
 `scope=library&library_id=<id>`, and `scope` defaults to `library`). A section listing keeps the
@@ -736,6 +737,23 @@ filters are `422`, so a "See all" grid hides the browse grid's sort, filter and 
   "Recently Added TV"; TV groups arrivals by show, returning an `episode` card for a single episode
   and a `series` card otherwise).
 - Never key logic on a section `id`; admins can rename and add rows.
+- **Title keys**: `title_key` (string) and `title_args` (object, string values by placeholder name) name the message of
+  Silo's shared translation catalog whose English is `title`. They are present only while `title` is Silo's own
+  wording:
+  - a built-in row, such as `home.section.continueWatching`;
+  - a generated library row, such as `home.section.recentlyAddedIn` with `{"library": "Movies"}`;
+  - Next Up, and Because You Watched (`home.section.becauseYouWatchedTitle` with `title`);
+  - a For You or taste-match row that shows another row, such as `home.section.topGenre` with `genre`;
+  - a seasonal row's built-in title, `home.section.seasonal.<theme>.<vibe>`.
+
+  Both are absent when someone typed the title, and `title_args` is absent when the message has no placeholders. A
+  translated interface shows the message filled from `title_args`, else `title`; English shows `title` as sent. An
+  empty key counts as none (`silo-server/web/src/lib/sectionTitle.ts`). Granary reads them into `Section.TitleKey`
+  and `TitleArgs` but shows neither yet; the messages come from the web's catalogs (docs/release.md,
+  "Translations"). `default_title_key` and `default_title_args` come only with a profile's section settings
+  (`getProfileSectionSettings`), which Granary does not read. `getHomeCapabilities` reports `section_title_keys`,
+  which is informational. Sources: `silo-server/internal/apiv2/library_views.go` (`SectionTitleKey`),
+  `internal/sections/title_keys.go` and `docs/catalog-api.md`, "Section titles", at `0e95e55b6`.
 - **Hero banner**: `featured` marks the page's hero banner, set in Silo's web by an administrator or for one profile
   ("Use as hero banner"). The server keeps one per page, but a profile's own featured row can follow an administrator's,
   so the first one counts: Home shows it as its banner instead of as a row, as the web does

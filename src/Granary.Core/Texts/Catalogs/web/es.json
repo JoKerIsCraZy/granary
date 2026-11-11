@@ -1,0 +1,506 @@
+{
+  "common.back": [
+    {
+      "type": 0,
+      "value": "Atrás"
+    }
+  ],
+  "common.cancel": [
+    {
+      "type": 0,
+      "value": "Cancelar"
+    }
+  ],
+  "common.done": [
+    {
+      "type": 0,
+      "value": "Listo"
+    }
+  ],
+  "common.retry": [
+    {
+      "type": 0,
+      "value": "Reintentar"
+    }
+  ],
+  "common.save": [
+    {
+      "type": 0,
+      "value": "Guardar"
+    }
+  ],
+  "common.tryAgain": [
+    {
+      "type": 0,
+      "value": "Reintentar"
+    }
+  ],
+  "home.section.becauseYouEnjoy": [
+    {
+      "type": 0,
+      "value": "Porque disfrutas de "
+    },
+    {
+      "type": 1,
+      "value": "genres"
+    }
+  ],
+  "home.section.becauseYouWatched": [
+    {
+      "type": 0,
+      "value": "Porque viste"
+    }
+  ],
+  "home.section.becauseYouWatchedTitle": [
+    {
+      "type": 0,
+      "value": "Porque viste "
+    },
+    {
+      "type": 1,
+      "value": "title"
+    }
+  ],
+  "home.section.continueListening": [
+    {
+      "type": 0,
+      "value": "Seguir escuchando"
+    }
+  ],
+  "home.section.continueReading": [
+    {
+      "type": 0,
+      "value": "Seguir leyendo"
+    }
+  ],
+  "home.section.continueWatching": [
+    {
+      "type": 0,
+      "value": "Seguir viendo"
+    }
+  ],
+  "home.section.forYou": [
+    {
+      "type": 0,
+      "value": "Para ti"
+    }
+  ],
+  "home.section.hiddenGems": [
+    {
+      "type": 0,
+      "value": "Joyas ocultas"
+    }
+  ],
+  "home.section.highlyRatedInLibrary": [
+    {
+      "type": 0,
+      "value": "Mejor calificados en tu biblioteca"
+    }
+  ],
+  "home.section.nextInYourSeries": [
+    {
+      "type": 0,
+      "value": "Lo siguiente de tus series"
+    }
+  ],
+  "home.section.nextUp": [
+    {
+      "type": 0,
+      "value": "Próximos"
+    }
+  ],
+  "home.section.pickedFromYourHistory": [
+    {
+      "type": 0,
+      "value": "Elegidos según tu historial"
+    }
+  ],
+  "home.section.popularOnServer": [
+    {
+      "type": 0,
+      "value": "Popular en este servidor"
+    }
+  ],
+  "home.section.profilesLikeYouEnjoyed": [
+    {
+      "type": 0,
+      "value": "Lo que gustó a perfiles como el tuyo"
+    }
+  ],
+  "home.section.randomPicks": [
+    {
+      "type": 0,
+      "value": "Selección aleatoria"
+    }
+  ],
+  "home.section.recentlyAdded": [
+    {
+      "type": 0,
+      "value": "Añadidos recientemente"
+    }
+  ],
+  "home.section.recentlyAddedAudiobooks": [
+    {
+      "type": 0,
+      "value": "Audiolibros añadidos recientemente"
+    }
+  ],
+  "home.section.recentlyAddedEbooks": [
+    {
+      "type": 0,
+      "value": "Libros electrónicos añadidos recientemente"
+    }
+  ],
+  "home.section.recentlyAddedIn": [
+    {
+      "type": 0,
+      "value": "Añadidos recientemente en "
+    },
+    {
+      "type": 1,
+      "value": "library"
+    }
+  ],
+  "home.section.recentlyAddedManga": [
+    {
+      "type": 0,
+      "value": "Manga añadido recientemente"
+    }
+  ],
+  "home.section.recentlyAddedMovies": [
+    {
+      "type": 0,
+      "value": "Películas añadidas recientemente"
+    }
+  ],
+  "home.section.recentlyAddedTv": [
+    {
+      "type": 0,
+      "value": "Series añadidas recientemente"
+    }
+  ],
+  "home.section.recentlyReleased": [
+    {
+      "type": 0,
+      "value": "Estrenos recientes"
+    }
+  ],
+  "home.section.recentlyReleasedAudiobooks": [
+    {
+      "type": 0,
+      "value": "Audiolibros publicados recientemente"
+    }
+  ],
+  "home.section.recentlyReleasedEbooks": [
+    {
+      "type": 0,
+      "value": "Libros electrónicos publicados recientemente"
+    }
+  ],
+  "home.section.recentlyReleasedEpisodes": [
+    {
+      "type": 0,
+      "value": "Episodios estrenados recientemente"
+    }
+  ],
+  "home.section.recentlyReleasedEpisodesIn": [
+    {
+      "type": 0,
+      "value": "Episodios estrenados recientemente en "
+    },
+    {
+      "type": 1,
+      "value": "library"
+    }
+  ],
+  "home.section.recentlyReleasedIn": [
+    {
+      "type": 0,
+      "value": "Estrenos recientes en "
+    },
+    {
+      "type": 1,
+      "value": "library"
+    }
+  ],
+  "home.section.recentlyReleasedManga": [
+    {
+      "type": 0,
+      "value": "Manga publicado recientemente"
+    }
+  ],
+  "home.section.recentlyReleasedMovies": [
+    {
+      "type": 0,
+      "value": "Películas estrenadas recientemente"
+    }
+  ],
+  "home.section.recommendedForYou": [
+    {
+      "type": 0,
+      "value": "Recomendado para ti"
+    }
+  ],
+  "home.section.returningShows": [
+    {
+      "type": 0,
+      "value": "Series que regresan"
+    }
+  ],
+  "home.section.seasonal.christmas.classics": [
+    {
+      "type": 0,
+      "value": "Clásicos de Navidad"
+    }
+  ],
+  "home.section.seasonal.christmas.comedies": [
+    {
+      "type": 0,
+      "value": "Comedias navideñas"
+    }
+  ],
+  "home.section.seasonal.christmas.family": [
+    {
+      "type": 0,
+      "value": "Navidad en familia"
+    }
+  ],
+  "home.section.seasonal.christmas.favorites": [
+    {
+      "type": 0,
+      "value": "Favoritos de Navidad"
+    }
+  ],
+  "home.section.seasonal.christmas.hallmark": [
+    {
+      "type": 0,
+      "value": "Navidad de Hallmark"
+    }
+  ],
+  "home.section.seasonal.christmas.romcoms": [
+    {
+      "type": 0,
+      "value": "Comedias románticas navideñas"
+    }
+  ],
+  "home.section.seasonal.easter.faith": [
+    {
+      "type": 0,
+      "value": "Historias de Pascua"
+    }
+  ],
+  "home.section.seasonal.easter.family": [
+    {
+      "type": 0,
+      "value": "Películas de Pascua"
+    }
+  ],
+  "home.section.seasonal.familyMovieNight.favorites": [
+    {
+      "type": 0,
+      "value": "Favoritos en familia"
+    }
+  ],
+  "home.section.seasonal.familyMovieNight.liveAction": [
+    {
+      "type": 0,
+      "value": "Noche de cine en familia"
+    }
+  ],
+  "home.section.seasonal.familyMovieNight.new": [
+    {
+      "type": 0,
+      "value": "Noche de cine en familia"
+    }
+  ],
+  "home.section.seasonal.halloween.animated": [
+    {
+      "type": 0,
+      "value": "Halloween animado"
+    }
+  ],
+  "home.section.seasonal.halloween.family": [
+    {
+      "type": 0,
+      "value": "Halloween en familia"
+    }
+  ],
+  "home.section.seasonal.halloween.favorites": [
+    {
+      "type": 0,
+      "value": "Favoritos de Halloween"
+    }
+  ],
+  "home.section.seasonal.halloween.horror": [
+    {
+      "type": 0,
+      "value": "Terror de Halloween"
+    }
+  ],
+  "home.section.seasonal.halloween.tv": [
+    {
+      "type": 0,
+      "value": "Series de Halloween"
+    }
+  ],
+  "home.section.seasonal.newYear.favorites": [
+    {
+      "type": 0,
+      "value": "Películas de Año Nuevo"
+    }
+  ],
+  "home.section.seasonal.saturdayMorning.cartoons": [
+    {
+      "type": 0,
+      "value": "Dibujos animados del sábado por la mañana"
+    }
+  ],
+  "home.section.seasonal.saturdayMorning.modern": [
+    {
+      "type": 0,
+      "value": "Favoritos del sábado por la mañana"
+    }
+  ],
+  "home.section.seasonal.saturdayMorning.nineties": [
+    {
+      "type": 0,
+      "value": "Sábados por la mañana de los 90"
+    }
+  ],
+  "home.section.seasonal.stPatricks.irishFilm": [
+    {
+      "type": 0,
+      "value": "Cine irlandés"
+    }
+  ],
+  "home.section.seasonal.stPatricks.irishTv": [
+    {
+      "type": 0,
+      "value": "Series irlandesas"
+    }
+  ],
+  "home.section.seasonal.summer.blockbusters": [
+    {
+      "type": 0,
+      "value": "Éxitos de taquilla del verano"
+    }
+  ],
+  "home.section.seasonal.summer.classicSummer": [
+    {
+      "type": 0,
+      "value": "Películas clásicas de verano"
+    }
+  ],
+  "home.section.seasonal.summer.nostalgia": [
+    {
+      "type": 0,
+      "value": "Nostalgia de verano"
+    }
+  ],
+  "home.section.seasonal.summerBlockbuster.blockbusters": [
+    {
+      "type": 0,
+      "value": "Éxitos de taquilla del verano"
+    }
+  ],
+  "home.section.seasonal.summerBlockbuster.classicSummer": [
+    {
+      "type": 0,
+      "value": "Películas clásicas de verano"
+    }
+  ],
+  "home.section.seasonal.summerBlockbuster.nostalgia": [
+    {
+      "type": 0,
+      "value": "Nostalgia de verano"
+    }
+  ],
+  "home.section.seasonal.thanksgiving.favorites": [
+    {
+      "type": 0,
+      "value": "Películas de Acción de Gracias"
+    }
+  ],
+  "home.section.seasonal.thanksgiving.feelGood": [
+    {
+      "type": 0,
+      "value": "Favoritos para sentirse bien"
+    }
+  ],
+  "home.section.seasonal.valentines.favorites": [
+    {
+      "type": 0,
+      "value": "Favoritos de San Valentín"
+    }
+  ],
+  "home.section.seasonal.valentines.loveStories": [
+    {
+      "type": 0,
+      "value": "Historias de amor clásicas"
+    }
+  ],
+  "home.section.seasonal.valentines.romanticDramas": [
+    {
+      "type": 0,
+      "value": "Dramas románticos"
+    }
+  ],
+  "home.section.seasonal.valentines.romcoms": [
+    {
+      "type": 0,
+      "value": "Comedias románticas de San Valentín"
+    }
+  ],
+  "home.section.seasonalPicks": [
+    {
+      "type": 0,
+      "value": "Selección de temporada"
+    }
+  ],
+  "home.section.topGenre": [
+    {
+      "type": 0,
+      "value": "Lo mejor de "
+    },
+    {
+      "type": 1,
+      "value": "genre"
+    }
+  ],
+  "home.section.topPicksToday": [
+    {
+      "type": 0,
+      "value": "Mejores selecciones de hoy"
+    }
+  ],
+  "home.section.topRated": [
+    {
+      "type": 0,
+      "value": "Mejor calificados"
+    }
+  ],
+  "home.section.topRatedMovies": [
+    {
+      "type": 0,
+      "value": "Películas mejor calificadas"
+    }
+  ],
+  "home.section.topRatedTv": [
+    {
+      "type": 0,
+      "value": "Series mejor calificadas"
+    }
+  ],
+  "home.section.trendingOnServer": [
+    {
+      "type": 0,
+      "value": "Tendencias en el servidor"
+    }
+  ],
+  "home.section.trendingThisWeek": [
+    {
+      "type": 0,
+      "value": "Tendencias de esta semana"
+    }
+  ]
+}

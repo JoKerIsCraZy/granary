@@ -1,0 +1,93 @@
+# The keys of Silo's web catalog that Granary uses: one per line, in ordinal order. Blank lines and lines starting
+# with # are left out. scripts/sync-web-texts.ps1 keeps these keys of the catalogs texts.lock.json pins, in web/
+# (docs/release.md, "Translations").
+#
+# The texts of LibraryErrors (src/Granary.Core/ViewModels/LibraryLoadState.cs) and BrowseFailureText
+# (src/Granary.Core/ViewModels/BrowseFailureText.cs) have no web message with the same English, so they need
+# Granary's own keys.
+
+# Buttons on many pages: Back, Cancel, Done, Retry, Save, Try again (for example
+# src/Granary.App/Views/AddServerPage.xaml and src/Granary.App/Services/DialogConfirmation.cs).
+common.back
+common.cancel
+common.done
+common.retry
+common.save
+common.tryAgain
+
+# The titles Silo writes for Home and library rows, sent as title_key with title_args (library, title, genre, genres):
+# Section.TitleKey and Section.TitleArgs in src/Granary.Core/Api/Catalog/HomeModels.cs.
+home.section.becauseYouEnjoy
+home.section.becauseYouWatched
+home.section.becauseYouWatchedTitle
+home.section.continueListening
+home.section.continueReading
+home.section.continueWatching
+home.section.forYou
+home.section.hiddenGems
+home.section.highlyRatedInLibrary
+home.section.nextInYourSeries
+home.section.nextUp
+home.section.pickedFromYourHistory
+home.section.popularOnServer
+home.section.profilesLikeYouEnjoyed
+home.section.randomPicks
+home.section.recentlyAdded
+home.section.recentlyAddedAudiobooks
+home.section.recentlyAddedEbooks
+home.section.recentlyAddedIn
+home.section.recentlyAddedManga
+home.section.recentlyAddedMovies
+home.section.recentlyAddedTv
+home.section.recentlyReleased
+home.section.recentlyReleasedAudiobooks
+home.section.recentlyReleasedEbooks
+home.section.recentlyReleasedEpisodes
+home.section.recentlyReleasedEpisodesIn
+home.section.recentlyReleasedIn
+home.section.recentlyReleasedManga
+home.section.recentlyReleasedMovies
+home.section.recommendedForYou
+home.section.returningShows
+home.section.seasonal.christmas.classics
+home.section.seasonal.christmas.comedies
+home.section.seasonal.christmas.family
+home.section.seasonal.christmas.favorites
+home.section.seasonal.christmas.hallmark
+home.section.seasonal.christmas.romcoms
+home.section.seasonal.easter.faith
+home.section.seasonal.easter.family
+home.section.seasonal.familyMovieNight.favorites
+home.section.seasonal.familyMovieNight.liveAction
+home.section.seasonal.familyMovieNight.new
+home.section.seasonal.halloween.animated
+home.section.seasonal.halloween.family
+home.section.seasonal.halloween.favorites
+home.section.seasonal.halloween.horror
+home.section.seasonal.halloween.tv
+home.section.seasonal.newYear.favorites
+home.section.seasonal.saturdayMorning.cartoons
+home.section.seasonal.saturdayMorning.modern
+home.section.seasonal.saturdayMorning.nineties
+home.section.seasonal.stPatricks.irishFilm
+home.section.seasonal.stPatricks.irishTv
+home.section.seasonal.summer.blockbusters
+home.section.seasonal.summer.classicSummer
+home.section.seasonal.summer.nostalgia
+home.section.seasonal.summerBlockbuster.blockbusters
+home.section.seasonal.summerBlockbuster.classicSummer
+home.section.seasonal.summerBlockbuster.nostalgia
+home.section.seasonal.thanksgiving.favorites
+home.section.seasonal.thanksgiving.feelGood
+home.section.seasonal.valentines.favorites
+home.section.seasonal.valentines.loveStories
+home.section.seasonal.valentines.romanticDramas
+home.section.seasonal.valentines.romcoms
+home.section.seasonalPicks
+home.section.topGenre
+home.section.topPicksToday
+home.section.topRated
+home.section.topRatedMovies
+home.section.topRatedTv
+home.section.trendingOnServer
+home.section.trendingThisWeek
