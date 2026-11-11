@@ -200,8 +200,16 @@ public sealed partial class MainWindow : Window
     /// <summary>Granary's own updates: the notice of one that is ready (docs/release.md).</summary>
     public AppUpdatesViewModel Updates { get; }
 
-    // Instance method because x:Bind function bindings call it on the window.
-    public string ProfileMenuName(string profileName) => $"Profile menu: {profileName}";
+    // Instance methods because x:Bind function bindings call them on the window.
+    public string ProfileMenuName(string profileName, bool signingOut, string signOutError) =>
+        signingOut ? "Signing out" : string.IsNullOrEmpty(signOutError) ? $"Profile menu: {profileName}" : $"Profile menu: {profileName}. {signOutError}";
+
+    /// <summary>The profile's name, or "Signing out…" while a sign-out runs.</summary>
+    public string ProfileLabel(string profileName, bool signingOut) => signingOut ? "Signing out…" : profileName;
+
+    public bool IsIdle(bool running) => !running;
+
+    public Visibility HasText(string text) => string.IsNullOrEmpty(text) ? Visibility.Collapsed : Visibility.Visible;
 
     public string NotificationsName(int unread) => unread > 0 ? $"Notifications, {unread} unread" : "Notifications";
 

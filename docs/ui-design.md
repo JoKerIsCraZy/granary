@@ -170,7 +170,11 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   ones left out, in its library order: the web's Settings → Libraries), "DISCOVER" (For
   You, Requests while the server takes them, Calendar, Notifications with the unread count in the accent), "YOUR STUFF" (Favorites, Watchlist, Watch
   Party while the server offers rooms, Collections, History, Downloads while the server lets the profile download or the profile
-  has downloads on this PC); Admin (an administrator's only, a shield), Settings and the profile menu at the bottom (the servers are in Settings → Servers). Favorites, Watchlist and History are one page (`PersonalListPage`, the web's `pages/Catalog.tsx` for those
+  has downloads on this PC); Admin (an administrator's only, a shield), Settings and the profile menu at the bottom (the servers are in Settings → Servers). The profile menu holds Switch
+  profile and Sign out. While a sign-out runs, which can take about 20 s when a drive or the server does not answer, the
+  profile's entry reads "Signing out…" with a 16 px ring at its right and takes no clicks, as Granary's busy buttons do
+  ("Signing in…"); one that failed says "Couldn't sign out. Try again." in red under the name until the next Sign out. The
+  web's menu has neither. Favorites, Watchlist and History are one page (`PersonalListPage`, the web's `pages/Catalog.tsx` for those
   sources): the list's name, what it holds and its count, the media menu (All Media, Movies & Series, Movies, Series,
   Episodes), the list's own order ("List Order", History's "Watch History") or one of six sorts (Title, Date Added,
   Release Date, Year, Duration, IMDb Rating), Filters (the library page's `CatalogFiltersButton`, every section of it,

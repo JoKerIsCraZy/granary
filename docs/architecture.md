@@ -1361,7 +1361,10 @@ The view models of the sign-out paths take it (optional, so they work without it
   keeps the question from coming: a size that does not come in time is left out ("2 downloads on this PC are deleted with
   it."), and so is the count when the downloads themselves cannot be read in time ("Its downloads on this PC are deleted
   with it."). Removing a server takes every account's downloads there (`ClearAsync(server, null)`); the app asks before it
-  removes one.
+  removes one. With the question, the deletes and the index, a confirmed sign-out can take up to `SummaryBudget` +
+  `DeleteBudget` + `StoreBudget` (about 20 s) when a drive and the server do not answer, so the profile menu shows it as
+  under way while `SidebarViewModel.SignOutCommand` runs (`IsRunning`; the command does not run twice at once) and shows
+  `SignOutError` once it failed.
 - **The account.** On the active server it is the session's; on another, the one its saved sign-in names
   (`AccountOfAsync`). A sign-out reads it once, so the downloads it asked about are the ones that go. When none is known
   (a sign-in whose account the server did not name), the sign-out takes no downloads along and asks nothing about them:

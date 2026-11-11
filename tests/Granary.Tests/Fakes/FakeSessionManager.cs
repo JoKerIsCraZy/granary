@@ -74,8 +74,18 @@ internal sealed class FakeSessionManager : ISessionManager
 
     public Task RefreshAccountAsync(CancellationToken cancellationToken = default) => Record("refresh-account");
 
-    public Task SignOutAsync(string? serverEntryId = null, CancellationToken cancellationToken = default) =>
-        Record($"sign-out:{serverEntryId ?? "active"}");
+    /// <summary>When set, a sign-out is recorded at once but ends only when this does, as one that waits for a slow server.</summary>
+    public Task? SignOutHeld { get; set; }
+
+    public async Task SignOutAsync(string? serverEntryId = null, CancellationToken cancellationToken = default)
+    {
+        var recorded = Record($"sign-out:{serverEntryId ?? "active"}");
+        if (SignOutHeld is { } held)
+        {
+            await held;
+        }
+        await recorded;
+    }
 
     public void RaiseChanged() => Changed?.Invoke(this, EventArgs.Empty);
 

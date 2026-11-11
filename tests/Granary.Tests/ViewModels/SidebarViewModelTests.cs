@@ -366,6 +366,25 @@ public sealed class SidebarViewModelTests
         Assert.Equal("", sidebar.SignOutError);
     }
 
+    // The profile menu shows the sign-out as under way while the command runs, and offers it once at a time.
+    [Fact]
+    public async Task ASignOutUnderWay_IsRunning_AndCannotBeStartedAgain()
+    {
+        using var sidebar = Create();
+        var held = new TaskCompletionSource();
+        _session.SignOutHeld = held.Task;
+
+        var signingOut = sidebar.SignOutCommand.ExecuteAsync(null);
+
+        Assert.True(sidebar.SignOutCommand.IsRunning);
+        Assert.False(sidebar.SignOutCommand.CanExecute(null));
+        held.SetResult();
+        await signingOut;
+        Assert.False(sidebar.SignOutCommand.IsRunning);
+        Assert.True(sidebar.SignOutCommand.CanExecute(null));
+        Assert.Equal(["sign-out:active"], _session.Calls);
+    }
+
     [Fact]
     public async Task AnAudioDelaySaveThatDoesNotAnswer_HoldsSwitchProfileTwoSecondsAtMost()
     {
