@@ -503,6 +503,12 @@
       "value": "今週のトレンド"
     }
   ],
+  "web.catalog.page.doneSelecting": [
+    {
+      "type": 0,
+      "value": "完了"
+    }
+  ],
   "web.common.ui.loadError.generic": [
     {
       "type": 0,
@@ -513,6 +519,12 @@
     {
       "type": 0,
       "value": "サーバーが応答していません。しばらくしてからもう一度お試しください。"
+    }
+  ],
+  "web.markers.save": [
+    {
+      "type": 0,
+      "value": "保存"
     }
   ]
 }

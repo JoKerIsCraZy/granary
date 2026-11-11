@@ -511,6 +511,12 @@
       "value": "Diese Woche im Trend"
     }
   ],
+  "web.catalog.page.doneSelecting": [
+    {
+      "type": 0,
+      "value": "Fertig"
+    }
+  ],
   "web.common.ui.loadError.generic": [
     {
       "type": 0,
@@ -521,6 +527,12 @@
     {
       "type": 0,
       "value": "Der Server antwortet nicht. Versuche es gleich erneut."
+    }
+  ],
+  "web.markers.save": [
+    {
+      "type": 0,
+      "value": "Speichern"
     }
   ]
 }

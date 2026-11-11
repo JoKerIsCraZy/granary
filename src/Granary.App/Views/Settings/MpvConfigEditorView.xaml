@@ -7,7 +7,8 @@
     x:Class="Granary.App.Views.Settings.MpvConfigEditorView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:controls="using:Granary.App.Controls">
+    xmlns:controls="using:Granary.App.Controls"
+    xmlns:t="using:Granary.Core.Texts">
 
     <!-- Its own copy: the view is made in code, outside the page's resources. -->
     <UserControl.Resources>
@@ -50,8 +51,8 @@
         </StackPanel>
 
         <StackPanel Margin="0,24,0,0" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
-            <Button x:Name="CancelButton" Content="Cancel" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Click="OnCancelClick" />
-            <Button x:Name="SaveButton" Content="Save" Style="{StaticResource SiloPrimaryButtonStyle}" controls:Pill.IsEnabled="False" CornerRadius="8"
+            <Button x:Name="CancelButton" Content="{x:Bind t:AppText.Get('common.cancel')}" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Click="OnCancelClick" />
+            <Button x:Name="SaveButton" Content="{x:Bind t:AppText.Get('common.save')}" Style="{StaticResource SiloPrimaryButtonStyle}" controls:Pill.IsEnabled="False" CornerRadius="8"
                     MinHeight="36" Padding="20,0" FontSize="14" Click="OnSaveClick" AutomationProperties.Name="Save mpv.conf"
                     IsEnabled="{x:Bind ViewModel.CanSave, Mode=OneWay}" />
         </StackPanel>

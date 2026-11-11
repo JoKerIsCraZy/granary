@@ -13,6 +13,7 @@
     xmlns:controls="using:Granary.App.Controls"
     xmlns:player="using:Granary.Core.ViewModels.Player"
     xmlns:wp="using:Granary.Core.ViewModels.WatchParty"
+    xmlns:t="using:Granary.Core.Texts"
     IsTabStop="True"
     AutomationProperties.Name="Player">
 
@@ -49,9 +50,9 @@
                 <TextBlock x:Name="ErrorText" Text="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}" Style="{StaticResource SiloRowTitleTextStyle}"
                            TextWrapping="Wrap" TextAlignment="Center" AutomationProperties.LiveSetting="Assertive" />
                 <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Center">
-                    <Button x:Name="RetryButton" Content="Retry" Style="{StaticResource SiloPrimaryButtonStyle}"
+                    <Button x:Name="RetryButton" Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource SiloPrimaryButtonStyle}"
                             Command="{x:Bind ViewModel.RetryCommand}" Visibility="{x:Bind ViewModel.CanRetry, Mode=OneWay}" />
-                    <Button x:Name="FailedBackButton" Content="Back" Style="{StaticResource SiloSecondaryButtonStyle}"
+                    <Button x:Name="FailedBackButton" Content="{x:Bind t:AppText.Get('common.back')}" Style="{StaticResource SiloSecondaryButtonStyle}"
                             Command="{x:Bind ViewModel.CloseCommand}" />
                 </StackPanel>
             </StackPanel>
@@ -986,7 +987,7 @@
                     </Grid.ColumnDefinitions>
                     <Button Content="Play Now" Style="{StaticResource SiloPlayerCardButtonStyle}" HorizontalAlignment="Stretch"
                             Command="{x:Bind ViewModel.PlayNextNowCommand}" />
-                    <Button Grid.Column="1" Content="Cancel" Style="{StaticResource SiloPlayerCardOutlineButtonStyle}"
+                    <Button Grid.Column="1" Content="{x:Bind t:AppText.Get('common.cancel')}" Style="{StaticResource SiloPlayerCardOutlineButtonStyle}"
                             Command="{x:Bind ViewModel.CancelNextUpCommand}" />
                 </Grid>
             </StackPanel>
@@ -1084,7 +1085,7 @@
                                    Foreground="{StaticResource SiloPlayerForegroundBrush}" AutomationProperties.HeadingLevel="Level1" />
                         <TextBlock Text="There are no more episodes available. Pick something else from On Deck below." MaxWidth="448"
                                    HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" FontSize="14" Foreground="#80FFFFFF" />
-                        <Button x:Name="FinishedBackButton" Content="Back" Style="{StaticResource SiloPlayerPillButtonStyle}" Height="44" Padding="28,0"
+                        <Button x:Name="FinishedBackButton" Content="{x:Bind t:AppText.Get('common.back')}" Style="{StaticResource SiloPlayerPillButtonStyle}" Height="44" Padding="28,0"
                                 Background="#1AFFFFFF" Margin="0,12,0,0" HorizontalAlignment="Center" Command="{x:Bind ViewModel.CloseCommand}" />
                     </StackPanel>
                 </StackPanel>

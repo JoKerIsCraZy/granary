@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using Granary.App.Services;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Collections;
 using Granary.Core.ViewModels.Detail;
@@ -270,7 +271,7 @@ public sealed partial class DetailHero : UserControl
             {
                 XamlRoot = root,
                 Content = panel,
-                CloseButtonText = "Cancel",
+                CloseButtonText = AppText.Get("common.cancel"),
                 DefaultButton = ContentDialogButton.None,
             };
             AutomationProperties.SetName(dialog, "Start a party with this");
@@ -308,7 +309,7 @@ public sealed partial class DetailHero : UserControl
                 XamlRoot = XamlRoot,
                 Title = "Add to a collection",
                 Content = new AddToCollectionPanel(collections),
-                CloseButtonText = "Done",
+                CloseButtonText = AppText.Get("common.done"),
                 DefaultButton = ContentDialogButton.Close,
             };
             var shown = dialog.ShowAsync();

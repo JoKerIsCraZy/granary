@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using Granary.App.Controls;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Admin;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -173,7 +174,7 @@ public sealed partial class AdminActivityView : UserControl
             Title = "Terminate playback?",
             Content = $"{row.Username} stops watching {row.Title}. The session's playback is revoked for good; the player is told to stop as soon as it can be reached.",
             PrimaryButtonText = "Terminate",
-            CloseButtonText = "Cancel",
+            CloseButtonText = AppText.Get("common.cancel"),
             DefaultButton = ContentDialogButton.Close,
         };
         await Guard(async () =>
@@ -210,7 +211,7 @@ public sealed partial class AdminActivityView : UserControl
             Title = "Send Message",
             Content = content,
             PrimaryButtonText = "Send Message",
-            CloseButtonText = "Cancel",
+            CloseButtonText = AppText.Get("common.cancel"),
             DefaultButton = ContentDialogButton.Primary,
             // Nothing to send until there is text: the dialog stays open with what was typed.
             IsPrimaryButtonEnabled = false,

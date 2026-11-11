@@ -503,6 +503,12 @@
       "value": "Trending This Week"
     }
   ],
+  "web.catalog.page.doneSelecting": [
+    {
+      "type": 0,
+      "value": "Done"
+    }
+  ],
   "web.common.ui.loadError.generic": [
     {
       "type": 0,
@@ -513,6 +519,12 @@
     {
       "type": 0,
       "value": "The server isn't responding. Try again in a moment."
+    }
+  ],
+  "web.markers.save": [
+    {
+      "type": 0,
+      "value": "Save"
     }
   ]
 }

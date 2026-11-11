@@ -1,4 +1,5 @@
 using Granary.App.Controls;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Settings;
 using Microsoft.Extensions.DependencyInjection;
@@ -48,7 +49,7 @@ public sealed partial class CollectionsPage : Page
                 XamlRoot = XamlRoot,
                 Title = "New collection",
                 Content = picker,
-                CloseButtonText = "Cancel",
+                CloseButtonText = AppText.Get("common.cancel"),
                 DefaultButton = ContentDialogButton.Close,
             };
             string? kind = null;

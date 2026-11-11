@@ -12,7 +12,8 @@
     xmlns:views="using:Granary.App.Views"
     xmlns:controls="using:Granary.App.Controls"
     xmlns:wp="using:Granary.Core.ViewModels.WatchParty"
-    xmlns:settings="using:Granary.Core.ViewModels.Settings">
+    xmlns:settings="using:Granary.Core.ViewModels.Settings"
+    xmlns:t="using:Granary.Core.Texts">
 
     <Page.Resources>
         <Style x:Key="PanelStyle" TargetType="Border">
@@ -517,7 +518,7 @@
                                     <TextBlock Text="{x:Bind views:WatchPartyRoomPage.Upper(ViewModel.Shelf.ResultsHeading), Mode=OneWay}" Style="{StaticResource EyebrowStyle}" />
                                     <StackPanel Orientation="Horizontal" Spacing="10" Visibility="{x:Bind ViewModel.Shelf.HasSearchState, Mode=OneWay}">
                                         <TextBlock Text="{x:Bind ViewModel.Shelf.SearchState, Mode=OneWay}" Style="{StaticResource MutedStyle}" VerticalAlignment="Center" />
-                                        <Button Content="Retry" Style="{StaticResource SmallButtonStyle}" Command="{x:Bind ViewModel.Shelf.RetrySearchCommand}"
+                                        <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource SmallButtonStyle}" Command="{x:Bind ViewModel.Shelf.RetrySearchCommand}"
                                                 Visibility="{x:Bind ViewModel.Shelf.SearchFailed, Mode=OneWay}" />
                                     </StackPanel>
                                     <TextBlock Text="{x:Bind ViewModel.Shelf.NoResultsText, Mode=OneWay}" Style="{StaticResource MutedStyle}"

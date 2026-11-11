@@ -13,6 +13,7 @@
     xmlns:controls="using:Granary.App.Controls"
     xmlns:views="using:Granary.App.Views"
     xmlns:vm="using:Granary.Core.ViewModels"
+    xmlns:t="using:Granary.Core.Texts"
     NavigationCacheMode="Enabled">
 
     <Grid>
@@ -57,7 +58,7 @@
                 <StackPanel Visibility="{x:Bind ViewModel.HasDiscoverError, Mode=OneWay}" Spacing="16" Margin="0,48" HorizontalAlignment="Center">
                     <TextBlock Text="TMDB couldn’t be reached, so there is nothing to discover right now." Style="{StaticResource SiloBodyTextStyle}"
                                Foreground="{StaticResource SiloMutedBrush}" TextAlignment="Center" />
-                    <Button Content="Retry" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
+                    <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
                             Command="{x:Bind ViewModel.RetryDiscoverCommand}" />
                 </StackPanel>
                 <TextBlock Visibility="{x:Bind ViewModel.IsDiscoverEmpty, Mode=OneWay}" Text="Nothing to discover right now." Margin="0,48"
@@ -147,7 +148,7 @@
                 <StackPanel Visibility="{x:Bind ViewModel.HasYoursError, Mode=OneWay}" Spacing="16" Margin="0,48" HorizontalAlignment="Center">
                     <TextBlock Text="Couldn’t load your requests." Style="{StaticResource SiloBodyTextStyle}" Foreground="{StaticResource SiloMutedBrush}"
                                TextAlignment="Center" />
-                    <Button Content="Retry" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
+                    <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource SiloSecondaryButtonStyle}" HorizontalAlignment="Center"
                             Command="{x:Bind ViewModel.RetryYoursCommand}" />
                 </StackPanel>
                 <StackPanel Visibility="{x:Bind ViewModel.IsYoursEmpty, Mode=OneWay}" Spacing="10" Margin="0,48" HorizontalAlignment="Center">

@@ -10,7 +10,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:Granary.App.Controls"
     xmlns:views="using:Granary.App.Views.Settings"
-    xmlns:settings="using:Granary.Core.ViewModels.Settings">
+    xmlns:settings="using:Granary.Core.ViewModels.Settings"
+    xmlns:t="using:Granary.Core.Texts">
 
     <UserControl.Resources>
         <ResourceDictionary>
@@ -119,9 +120,9 @@
                         <StackPanel Orientation="Horizontal" Spacing="8" Visibility="{x:Bind IsRenaming, Mode=OneWay}">
                             <TextBox Text="{x:Bind EditName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="260" MaxLength="120"
                                      PlaceholderText="{x:Bind Device.DeviceName, Mode=OneWay}" AutomationProperties.Name="Device name" />
-                            <Button Content="Save" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Tag="{x:Bind}" Click="OnSaveRenameClick"
+                            <Button Content="{x:Bind t:AppText.Get('common.save')}" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Tag="{x:Bind}" Click="OnSaveRenameClick"
                                     IsEnabled="{x:Bind controls:SettingsText.Not(IsBusy), Mode=OneWay}" />
-                            <Button Content="Cancel" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Command="{x:Bind CancelRenameCommand}"
+                            <Button Content="{x:Bind t:AppText.Get('common.cancel')}" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Command="{x:Bind CancelRenameCommand}"
                                     IsEnabled="{x:Bind controls:SettingsText.Not(IsBusy), Mode=OneWay}" />
                         </StackPanel>
                         <TextBlock Text="{x:Bind ReportedName, Mode=OneWay}" Visibility="{x:Bind HasReportedName, Mode=OneWay}" FontSize="13"
@@ -186,7 +187,7 @@
             <StackPanel Margin="0,16,0,0" Orientation="Horizontal" Spacing="16" Visibility="{x:Bind ViewModel.HasSessionsMessage, Mode=OneWay}">
                 <TextBlock Text="{x:Bind ViewModel.SessionsMessage, Mode=OneWay}" Style="{StaticResource SiloSettingsMutedTextStyle}"
                            VerticalAlignment="Center" AutomationProperties.LiveSetting="Polite" />
-                <Button Content="Retry" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Command="{x:Bind ViewModel.RefreshCommand}"
+                <Button Content="{x:Bind t:AppText.Get('common.retry')}" Style="{StaticResource SiloSettingsOutlineButtonStyle}" Command="{x:Bind ViewModel.RefreshCommand}"
                         Visibility="{x:Bind ViewModel.CanRetrySessions, Mode=OneWay}" />
             </StackPanel>
 

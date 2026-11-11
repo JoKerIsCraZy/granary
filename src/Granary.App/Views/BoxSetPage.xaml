@@ -13,6 +13,7 @@
     xmlns:detail="using:Granary.Core.ViewModels.Detail"
     xmlns:views="using:Granary.App.Views"
     xmlns:vm="using:Granary.Core.ViewModels"
+    xmlns:t="using:Granary.Core.Texts"
     Background="{StaticResource SiloBackgroundBrush}">
 
     <Page.Resources>
@@ -128,7 +129,7 @@
                        AutomationProperties.HeadingLevel="Level1" />
             <TextBlock Text="{x:Bind vm:BoxSetViewModel.FailedText}" Style="{StaticResource SiloBodyTextStyle}"
                        Foreground="{StaticResource SiloMutedBrush}" TextAlignment="Center" TextWrapping="Wrap" />
-            <Button HorizontalAlignment="Center" Content="Try again" Style="{StaticResource SiloPrimaryButtonStyle}" Command="{x:Bind ViewModel.RetryCommand}" />
+            <Button HorizontalAlignment="Center" Content="{x:Bind t:AppText.Get('common.tryAgain')}" Style="{StaticResource SiloPrimaryButtonStyle}" Command="{x:Bind ViewModel.RetryCommand}" />
         </StackPanel>
 
         <StackPanel MaxWidth="520" Padding="48,0" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="14"

@@ -2,6 +2,7 @@ using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
 using Granary.App.Controls;
 using Granary.Core.Abstractions;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.Collections;
 using Granary.Core.ViewModels.Settings;
 using Microsoft.Extensions.DependencyInjection;
@@ -104,7 +105,7 @@ public sealed partial class CollectionEditorPage : Page, ILeaveGuard
                 Title = "Discard unsaved changes?",
                 Content = new TextBlock { Text = "This page has edits that were never saved. Leaving now throws them away.", TextWrapping = TextWrapping.Wrap },
                 PrimaryButtonText = "Discard",
-                CloseButtonText = "Cancel",
+                CloseButtonText = AppText.Get("common.cancel"),
                 DefaultButton = ContentDialogButton.Close,
             };
             _released = await dialog.ShowAsync() == ContentDialogResult.Primary;
@@ -138,7 +139,7 @@ public sealed partial class CollectionEditorPage : Page, ILeaveGuard
                 Title = $"Delete “{ViewModel.HeaderTitle}”?",
                 Content = new TextBlock { Text = CollectionEditorText.DeleteDescription(ViewModel.IsSavedShared), TextWrapping = TextWrapping.Wrap },
                 PrimaryButtonText = "Delete",
-                CloseButtonText = "Cancel",
+                CloseButtonText = AppText.Get("common.cancel"),
                 DefaultButton = ContentDialogButton.Close,
             };
             // A deleted collection has nothing left to lose: the editor lets go of it by itself.

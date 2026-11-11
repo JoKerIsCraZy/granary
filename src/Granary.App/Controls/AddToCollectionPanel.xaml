@@ -8,7 +8,8 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:Granary.App.Controls"
-    xmlns:vm="using:Granary.Core.ViewModels.Collections">
+    xmlns:vm="using:Granary.Core.ViewModels.Collections"
+    xmlns:t="using:Granary.Core.Texts">
 
     <StackPanel Width="420" Spacing="14">
         <Border HorizontalAlignment="Left" Background="#1FFFFFFF" CornerRadius="9" Padding="10,3,10,4">
@@ -19,7 +20,7 @@
                       Width="24" Height="24" HorizontalAlignment="Center" AutomationProperties.Name="Loading collections" />
         <StackPanel Visibility="{x:Bind ViewModel.HasError, Mode=OneWay}" Spacing="10">
             <TextBlock Text="Couldn't load your collections" FontSize="14" Foreground="{StaticResource SiloForegroundBrush}" />
-            <Button Content="Try again" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.LoadCommand}" />
+            <Button Content="{x:Bind t:AppText.Get('common.tryAgain')}" Style="{StaticResource SiloSecondaryButtonStyle}" Command="{x:Bind ViewModel.LoadCommand}" />
         </StackPanel>
 
         <!-- None yet: the first one, named here. -->

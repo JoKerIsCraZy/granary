@@ -503,6 +503,12 @@
       "value": "Em alta nesta semana"
     }
   ],
+  "web.catalog.page.doneSelecting": [
+    {
+      "type": 0,
+      "value": "Concluir"
+    }
+  ],
   "web.common.ui.loadError.generic": [
     {
       "type": 0,
@@ -513,6 +519,12 @@
     {
       "type": 0,
       "value": "O servidor não está respondendo. Tente novamente em instantes."
+    }
+  ],
+  "web.markers.save": [
+    {
+      "type": 0,
+      "value": "Salvar"
     }
   ]
 }

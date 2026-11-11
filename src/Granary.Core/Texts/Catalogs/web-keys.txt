@@ -3,7 +3,8 @@
 # (docs/release.md, "Translations").
 
 # Buttons on many pages: Back, Cancel, Done, Retry, Save, Try again (for example
-# src/Granary.App/Views/AddServerPage.xaml and src/Granary.App/Services/DialogConfirmation.cs).
+# src/Granary.App/Views/AddServerPage.xaml, src/Granary.App/Services/DialogConfirmation.cs and SaveLabel in
+# src/Granary.Core/ViewModels/Collections/CollectionEditorViewModel.cs).
 common.back
 common.cancel
 common.done
@@ -88,8 +89,14 @@ home.section.topRatedTv
 home.section.trendingOnServer
 home.section.trendingThisWeek
 
+# Done in the history's select mode, as on the web's Catalog page: src/Granary.App/Views/PersonalListPage.xaml.
+web.catalog.page.doneSelecting
+
 # What a failed load says, in the web's words for the same failure (components/loadErrorDescription.ts): LibraryErrors
 # in src/Granary.Core/ViewModels/LibraryLoadState.cs and BrowseFailureText in
 # src/Granary.Core/ViewModels/BrowseFailureText.cs. Denied and Gone have no web text and are Granary's own.
 web.common.ui.loadError.generic
 web.common.ui.loadError.timeout
+
+# Save in the player's marker editor, as the web's MarkerEditPanel: src/Granary.App/Controls/MarkerEditPanel.xaml.
+web.markers.save

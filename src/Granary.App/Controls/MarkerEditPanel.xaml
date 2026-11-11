@@ -11,6 +11,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:Granary.App.Controls"
     xmlns:player="using:Granary.Core.ViewModels.Player"
+    xmlns:t="using:Granary.Core.Texts"
     RequestedTheme="Dark">
 
     <UserControl.Resources>
@@ -158,7 +159,7 @@
                         <TextBlock Text="Reset all" />
                     </StackPanel>
                 </Button>
-                <Button Grid.Column="2" Content="Cancel" Style="{StaticResource FooterButtonStyle}" Command="{x:Bind ViewModel.MarkerEditor.CancelCommand, Mode=OneWay}" />
+                <Button Grid.Column="2" Content="{x:Bind t:AppText.Get('common.cancel')}" Style="{StaticResource FooterButtonStyle}" Command="{x:Bind ViewModel.MarkerEditor.CancelCommand, Mode=OneWay}" />
                 <Button x:Name="SaveButton" Grid.Column="3" Style="{StaticResource FooterButtonStyle}" Background="White" Foreground="#FF171717" Padding="14,6"
                         FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" Command="{x:Bind ViewModel.MarkerEditor.SaveCommand, Mode=OneWay}"
                         AutomationProperties.Name="Save markers">
@@ -167,7 +168,7 @@
                             <FontIcon Glyph="&#xE73E;" FontSize="12" Visibility="{x:Bind Hides(ViewModel.MarkerEditor.IsSaving), Mode=OneWay}" />
                             <ProgressRing Width="12" Height="12" Foreground="#FF171717" IsActive="{x:Bind ViewModel.MarkerEditor.IsSaving, Mode=OneWay}" />
                         </Grid>
-                        <TextBlock Text="Save" />
+                        <TextBlock Text="{x:Bind t:AppText.Get('web.markers.save')}" />
                     </StackPanel>
                 </Button>
             </Grid>

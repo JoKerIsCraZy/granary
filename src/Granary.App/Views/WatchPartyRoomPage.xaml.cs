@@ -1,5 +1,6 @@
 using Granary.App.Controls;
 using Granary.App.Services;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels.WatchParty;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -182,7 +183,7 @@ public sealed partial class WatchPartyRoomPage : Page
             Title = "End this watch party?",
             Content = new TextBlock { Text = "Everyone leaves the room and playback stops for all of them.", TextWrapping = TextWrapping.Wrap },
             PrimaryButtonText = "End room",
-            CloseButtonText = "Cancel",
+            CloseButtonText = AppText.Get("common.cancel"),
             DefaultButton = ContentDialogButton.Close,
         };
         try
