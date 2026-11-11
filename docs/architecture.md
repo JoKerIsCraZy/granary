@@ -902,11 +902,14 @@ screen all go through `WindowModeService` (App, a singleton that MainWindow atta
   (`WindowBounds.OnDisplays` over `DisplayArea.FindAll`): across two displays, on one left of or above the primary, or
   flush with an edge. Only one whose title bar shows on none, its display unplugged or moved meanwhile, is moved onto
   the nearest display and made smaller only if it does not fit. A presenter the window took by itself is followed, and
-  so is the window's real presenter when setting one fails (logged). Each start begins as a window.
+  so is the window's real presenter when setting one fails (logged). Each start begins as a window, or in full screen
+  when Granary closed in it (below).
 - **Across starts**: the service saves that same windowed place to `window.json` in the data directory (Core's
   `WindowPlaceFile`): the restored bounds in pixels, the scale of the display they lie on (its effective DPI through
-  `GetDpiForMonitor`), and whether it was maximized:
-  `{ "x": 312, "y": 140, "width": 1440, "height": 900, "scale": 1.5, "maximized": false }`. It saves once the window
+  `GetDpiForMonitor`), whether it was maximized, and whether it is full screen (`WindowModes.ReopensInFullScreen`: the
+  viewer's own full screen, not a trailer's own, not the mini view, and not while minimized, `IsIconic`; read leniently,
+  so a missing or odd value is a window and the place still holds):
+  `{ "x": 312, "y": 140, "width": 1440, "height": 900, "scale": 1.5, "maximized": false, "full_screen": false }`. It saves once the window
   settles, 1 s after the last change it kept (a `DispatcherQueueTimer` through `WeakTick`), off the UI thread, so a crash,
   a kill or Windows shutting down keeps it too: asking for it swaps the place to write in (`Interlocked`) and never waits
   for a write in flight, which alone holds the file's lock. And as the window closes (`Window.Closed`, so also full
@@ -924,7 +927,13 @@ screen all go through `WindowModeService` (App, a singleton that MainWindow atta
   already maximized, and un-maximizing goes back to its bounds. Should the launcher's show command (a shortcut's) take
   the place of that first show, a window shown restored is maximized after the activation, and one shown minimized gets
   `WPF_RESTORETOMAXIMIZED`, so it comes back maximized from the taskbar and counts as maximized meanwhile (both logged
-  at Debug; with `Start-Process -WindowStyle Normal` or `Minimized` the first show stayed maximized). Files
+  at Debug; with `Start-Process -WindowStyle Normal` or `Minimized` the first show stayed maximized). One closed in full
+  screen goes full screen in `Show` too, before the activation, so its first frame is full screen; it is placed at its
+  windowed place first, which leaving full screen goes back to, and one also closed maximized is not maximized then
+  (that would show it as a window) but on its way out of full screen (`WindowedPlacement.MaximizeOnRestore`), counting as
+  maximized meanwhile. Should a launcher's show command take full screen from it, a window shown as a window goes full
+  screen after the activation, and one shown minimized as it comes back from the taskbar (logged at Debug; with
+  `Start-Process -WindowStyle Minimized` it opened in full screen, not minimized). Files
   are written as other small files are (a temporary file, then `File.Move`, tried again for a moment while something has
   the file open); a write that fails is logged. No file, or one that cannot be read (logged), and Windows places the
   window at 1440 × 900 px. Unreadable counts a file over 64 KiB, which is not read at all, and a place out of range:

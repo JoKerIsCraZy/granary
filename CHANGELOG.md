@@ -10,7 +10,7 @@ release's section is what its update says it changes (docs/release.md).
 
 - **New Season:** a Continue Watching card for the first episode of a new season says New Season, as on Silo's web.
 - **Full screen stays:** leave the player in full screen, and the next title opens in full screen again, also after a
-  restart.
+  restart. Granary opens in full screen when you closed it in full screen.
 
 ### Fixed
 

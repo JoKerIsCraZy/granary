@@ -275,6 +275,65 @@ public sealed class WindowModesTests
     }
 
     [Fact]
+    public void ClosedAsAWindow_TheNextStartIsAWindow() => Assert.False(new WindowModes().ReopensInFullScreen(isMinimized: false));
+
+    [Fact]
+    public void ClosedInFullScreen_TheNextStartIsFullScreen()
+    {
+        var modes = new WindowModes();
+        modes.SetFullScreen(true);
+
+        Assert.True(modes.ReopensInFullScreen(isMinimized: false));
+    }
+
+    [Fact]
+    public void ClosedMinimized_TheNextStartIsAWindow_EvenFromFullScreen()
+    {
+        var modes = new WindowModes();
+        modes.SetFullScreen(true);
+
+        Assert.False(modes.ReopensInFullScreen(isMinimized: true));
+    }
+
+    [Fact]
+    public void ClosedInTheMiniView_TheNextStartIsAWindow_EvenFromFullScreen()
+    {
+        var modes = new WindowModes();
+        modes.SetFullScreen(true);
+        modes.SetMiniView(true);
+
+        Assert.False(modes.ReopensInFullScreen(isMinimized: false));
+    }
+
+    [Fact]
+    public void ClosedInATrailersOwnFullScreen_TheNextStartIsTheWindowItWouldGoBackTo()
+    {
+        var modes = new WindowModes();
+        modes.SetTrailerFullScreen(true);
+
+        Assert.False(modes.ReopensInFullScreen(isMinimized: false));
+    }
+
+    [Fact]
+    public void ClosedInFullScreenWithATrailerInIt_TheNextStartIsFullScreen()
+    {
+        var modes = new WindowModes();
+        modes.SetFullScreen(true);
+        modes.SetTrailerFullScreen(true);
+
+        Assert.True(modes.ReopensInFullScreen(isMinimized: false));
+    }
+
+    [Fact]
+    public void ClosedInAFullScreenTheWindowTookItself_TheNextStartIsFullScreen()
+    {
+        var modes = new WindowModes();
+        modes.Follow(WindowMode.FullScreen);
+
+        Assert.True(modes.ReopensInFullScreen(isMinimized: false));
+    }
+
+    [Fact]
     public void FullScreenAskedWhileATrailerHoldsIt_KeepsTheTrailersFullScreen()
     {
         var modes = new WindowModes();

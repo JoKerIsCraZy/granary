@@ -171,7 +171,10 @@ public sealed class WindowPlaceFile
         try
         {
             var bounds = place.Bounds;
-            var file = new WindowFile(bounds.X, bounds.Y, bounds.Width, bounds.Height, place.Scale, place.IsMaximized);
+            var file = new WindowFile(bounds.X, bounds.Y, bounds.Width, bounds.Height, place.Scale, place.IsMaximized)
+            {
+                FullScreen = place.IsFullScreen,
+            };
             Directory.CreateDirectory(Path.GetDirectoryName(_filePath)!);
             using (var stream = File.Create(temp))
             {
@@ -195,7 +198,10 @@ public sealed class WindowPlaceFile
         {
             return null;
         }
-        var place = new WindowPlace(new WindowBounds(x, y, width, height), scale, file.Maximized ?? false);
+        var place = new WindowPlace(new WindowBounds(x, y, width, height), scale, file.Maximized ?? false)
+        {
+            IsFullScreen = file.FullScreen == true,
+        };
         return IsUsable(place) ? place : null;
     }
 
@@ -277,8 +283,16 @@ public sealed class WindowPlaceFile
     }
 }
 
-/// <summary><c>window.json</c>: the window's place and size in pixels, the scale of their display, and whether it was maximized.</summary>
-internal sealed record WindowFile(int? X, int? Y, int? Width, int? Height, double? Scale, bool? Maximized);
+/// <summary>
+/// <c>window.json</c>: the window's place and size in pixels, the scale of their display, whether it was maximized, and
+/// whether it was full screen.
+/// </summary>
+internal sealed record WindowFile(int? X, int? Y, int? Width, int? Height, double? Scale, bool? Maximized)
+{
+    // Read leniently: missing, or anything but true or false, opens as the window, and the place still holds.
+    [JsonConverter(typeof(Playback.AnyFlagConverter))]
+    public bool? FullScreen { get; init; }
+}
 
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower, WriteIndented = true)]
 [JsonSerializable(typeof(WindowFile))]

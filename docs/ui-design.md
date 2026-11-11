@@ -853,7 +853,9 @@ F11 is the keyboard's way, and screen readers still reach it.
 The window opens where it was closed (Granary's own; Silo's clients have no desktop window): on the same display, at the
 same place and size, and maximized if it was, with un-maximizing going back to the size it had before. A maximized
 window moved to another display (Win+Shift+Arrow) opens maximized there, and un-maximizes on that display. Closed in full
-screen or the mini view, it opens as the window those would have gone back to; closed minimized, where it was before.
+screen, it opens in full screen again, already in its first frame, and leaving full screen goes back to the window it
+would have gone back to, maximized if it was. Closed in the mini view, it opens as the window that would have gone back
+to; closed minimized, where it was before, as a window.
 On a display of another scale it keeps its size as the scale shows it, and fits onto that display; a display that is gone
 or moved never leaves it off-screen: it opens on the nearest one, as after full screen. Kept for this PC
 (`window.json` in the data directory), a second after the window last moved, changed size or was maximized, and as it
@@ -1190,8 +1192,9 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   with a menu open (a key pressed in a flyout reaches the window; the menu closes as the window changes size); in the
   player also F, its own full-screen button and a double click on the picture. A held F11 toggles once. Leaving full
   screen returns to the window as it was: maximized stays maximized, a restored window gets its place and size back.
-  Each start begins in a window; the app's full screen is not remembered, only the player's (below). Closed in full
-  screen or the mini view, Granary opens as the window it would have gone back to.
+  Closed in full screen, Granary opens in full screen again, and leaving it then returns to the window it would have
+  gone back to; a trailer's own full screen does not count. Closed in the mini view or minimized, it opens as a window
+  (see the main window's place, above). The player also keeps its full screen for the next title (below).
 - **Look**: the title bar keeps its 32 px, the title on the left, so the pages keep their place under it. Windows shows
   no caption buttons in full screen: in their corner the title bar shows Exit full screen ("Exit full screen (F11)", the
   BackToWindow glyph) and Close (✕, "Close"; red under the pointer, as Windows' own). Close closes the window through the

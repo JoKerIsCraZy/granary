@@ -10,7 +10,7 @@ namespace Granary.App.Services;
 /// The window's one full-screen state, shared by the app (the title bar's button, F11), the player (F, its button, the
 /// mini view) and a trailer's own full screen. Core's <see cref="WindowModes"/> decides; this puts it on the window through
 /// its AppWindow presenters and keeps the window as it was to go back to (<see cref="WindowedPlacement"/>), and to open
-/// there at the next start (<see cref="WindowPlaceFile"/>).
+/// there at the next start, in full screen when it closed so (<see cref="WindowPlaceFile"/>).
 /// </summary>
 public sealed partial class WindowModeService(ILogger<WindowModeService> logger, WindowPlaceFile placeFile)
 {
@@ -115,6 +115,7 @@ public sealed partial class WindowModeService(ILogger<WindowModeService> logger,
             _modes.Follow(mode);
             Changed?.Invoke(this, EventArgs.Empty);
         }
+        FollowRestoreToFullScreen(sender);
     }
 
     // What the window shows; a window that is closing may not say any more, and counts as a window.

@@ -73,6 +73,51 @@ public sealed class WindowPlaceFileTests : IDisposable
     }
 
     [Fact]
+    public void APlaceClosedInFullScreen_IsReadSoAtTheNextStart_WithTheWindowItGoesBackTo()
+    {
+        var closed = Place with { IsFullScreen = true };
+
+        Assert.True(Create().Save(closed));
+
+        Assert.Equal(closed, Create().Load());
+        using var json = JsonDocument.Parse(File.ReadAllText(FilePath));
+        var root = json.RootElement;
+        Assert.True(root.GetProperty("full_screen").GetBoolean());
+        Assert.Equal(-1700, root.GetProperty("x").GetInt32());
+        Assert.Equal(1440, root.GetProperty("width").GetInt32());
+        Assert.True(root.GetProperty("maximized").GetBoolean());
+    }
+
+    [Fact]
+    public void LeavingFullScreen_IsWritten_ThoughTheWindowsPlaceIsTheSame()
+    {
+        var file = Create();
+        file.Save(Place with { IsFullScreen = true });
+
+        Assert.True(file.Save(Place));
+
+        Assert.Equal(Place, Create().Load());
+        using var json = JsonDocument.Parse(File.ReadAllText(FilePath));
+        Assert.False(json.RootElement.GetProperty("full_screen").GetBoolean());
+    }
+
+    [Theory]
+    [InlineData("""{ "x": 10, "y": 20, "width": 1440, "height": 900, "scale": 1 }""")]
+    [InlineData("""{ "x": 10, "y": 20, "width": 1440, "height": 900, "scale": 1, "full_screen": false }""")]
+    [InlineData("""{ "x": 10, "y": 20, "width": 1440, "height": 900, "scale": 1, "full_screen": "yes" }""")]
+    [InlineData("""{ "x": 10, "y": 20, "width": 1440, "height": 900, "scale": 1, "full_screen": 1 }""")]
+    [InlineData("""{ "x": 10, "y": 20, "width": 1440, "height": 900, "scale": 1, "full_screen": null }""")]
+    [InlineData("""{ "full_screen": { "on": true, "x": 99 }, "x": 10, "y": 20, "width": 1440, "height": 900, "scale": 1 }""")]
+    [InlineData("""{ "full_screen": [true, [true], { "x": 99 }], "x": 10, "y": 20, "width": 1440, "height": 900, "scale": 1 }""")]
+    public void AFullScreenNeitherTrueNorFalse_OrMissing_OpensAsAWindow_WhereItWas(string json)
+    {
+        Write(json);
+
+        Assert.Equal(new WindowPlace(new WindowBounds(10, 20, 1440, 900), 1, IsMaximized: false), Create().Load());
+        Assert.Empty(_logs.Lines);
+    }
+
+    [Fact]
     public void AFileWithoutMaximized_IsARestoredWindow()
     {
         Write("""{ "x": 10, "y": 20, "width": 1440, "height": 900, "scale": 1 }""");
