@@ -292,6 +292,68 @@ public sealed class DownloadStoreTests : IDisposable
     }
 
     [Fact]
+    public async Task AClearWhileTheFolderIsMade_KeepsNothing()
+    {
+        var store = await LoadedAsync();
+        long began = store.ClearGeneration;
+        string? folder = null;
+        // The clear comes after the add's first look, while its folder is made.
+        store.FolderMade = made =>
+        {
+            folder = made;
+            store.MarkCleared("srv1", "1");
+        };
+
+        var added = await store.AddUnlessClearedAsync(Record("dl_1"), began, Token);
+
+        Assert.Null(added);
+        Assert.NotNull(folder);
+        Assert.False(Directory.Exists(folder));
+        Assert.Empty(store.All);
+        Assert.Empty((await LoadedAsync()).All);
+    }
+
+    [Fact]
+    public async Task ANewFolderThatCannotGoAgain_WaitsAsAFolderDelete()
+    {
+        var store = await LoadedAsync();
+        long began = store.ClearGeneration;
+        string? folder = null;
+        FileStream? held = null;
+        store.FolderMade = made =>
+        {
+            folder = made;
+            store.MarkCleared("srv1", "1");
+            held = new FileStream(Path.Combine(made, "held.bin"), FileMode.Create, FileAccess.Write, FileShare.None);
+        };
+        StoredDownload? added;
+        string index;
+        try
+        {
+            added = await store.AddUnlessClearedAsync(Record("dl_1"), began, Token);
+            index = await File.ReadAllTextAsync(IndexPath, Token);
+        }
+        finally
+        {
+            if (held is not null)
+            {
+                await held.DisposeAsync();
+            }
+        }
+        bool folderWhileHeld = Directory.Exists(folder);
+
+        store.RecheckFolders();
+        await store.FolderWork;
+
+        Assert.Null(added);
+        Assert.True(folderWhileHeld);
+        Assert.Contains("folder_deletes", index, StringComparison.Ordinal);
+        Assert.Contains("The new folder of download dl_1 could not be deleted yet", _logs.All, StringComparison.Ordinal);
+        Assert.False(Directory.Exists(folder));
+        Assert.Empty(store.All);
+    }
+
+    [Fact]
     public async Task FolderWorkThatFails_IsLogged_AndTheFoldersAreTriedAgain()
     {
         var store = await LoadedAsync();

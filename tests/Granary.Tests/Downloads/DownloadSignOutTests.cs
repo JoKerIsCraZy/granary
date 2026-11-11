@@ -489,6 +489,37 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task SigningInAgainQuickly_KeepsTheNewCreate_AndNotTheOneFromBefore()
+    {
+        var answer = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _h.Silo.On(HttpMethod.Post, ListPath,
+            async () =>
+            {
+                await answer.Task;
+                return await ScriptedSilo.Json(HttpStatusCode.Accepted, DownloadPayloads.Page(null, DownloadPayloads.Entry("dl_1", "ready")))();
+            },
+            ScriptedSilo.Json(HttpStatusCode.Accepted, DownloadPayloads.Page(null, DownloadPayloads.Entry("dl_2", "ready", episodeId: "ep_5"))));
+        var manager = _h.NewManager();
+        using var servers = await ServersAsync();
+
+        var before = manager.StartAsync(new DownloadRequest("mv_1", null, null, "original", "Example Movie", null, null, null), Token);
+        await Until(() => _h.Silo.SentTo(HttpMethod.Post, ListPath).Count == 1, "the first create went");
+        await servers.SignOutCommand.ExecuteAsync(Item(servers, "srv1"));
+        // The same account signs in again on the same profile.
+        _h.SignOut();
+        _h.Session.State = SessionState.Ready;
+        _h.Session.ProfileId = "7";
+        _h.Session.RaiseChanged();
+        var after = await manager.StartAsync(NextEpisode, Token);
+        answer.SetResult();
+
+        Assert.Equal(DownloadStartResult.Started, after);
+        Assert.Equal(DownloadStartResult.Failed, await before);
+        Assert.Equal(["dl_2"], Kept);
+        Assert.False(Directory.Exists(DownloadPaths.Folder(_h.Root, Scope7, "dl_1")));
+    }
+
+    [Fact]
     public async Task AFailedSignOut_LetsTheAccountsNewDownloadsRun()
     {
         await KeptAsync("dl_1");
