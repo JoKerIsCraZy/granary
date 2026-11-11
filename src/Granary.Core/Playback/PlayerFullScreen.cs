@@ -24,26 +24,27 @@ public sealed class PlayerFullScreen(IPlaybackDevicePreferences preferences, Tim
     public bool OpensInFullScreen => preferences.PlayerFullScreen;
 
     /// <summary>
-    /// Esc in the full player left full screen, the first step of its way out: leaving the player within
-    /// <see cref="EscapeWindow"/> (the next Esc) still counts as leaving it in full screen.
+    /// Esc in the full player left full screen, the first step of its way out: an Esc that leaves the player within
+    /// <see cref="EscapeWindow"/> still counts as leaving it in full screen.
     /// </summary>
     public void EscapedFullScreen() => _escapedAt = time.GetTimestamp();
 
     /// <summary>
-    /// The viewer did something else after an Esc (another key or click in the player, a change of the window, the bar):
-    /// the window is their choice again.
+    /// The viewer did something else after an Esc (another key or click in the player, an Esc that something else took,
+    /// a change of the window, the bar): the window is their choice again.
     /// </summary>
     public void ForgetEscape() => _escapedAt = null;
 
     /// <summary>
     /// The player was left, from the full player or the bar, as the window closes too, with the window in the viewer's full
-    /// screen or not; kept for the next title only when it changed. Hands back that save, which never fails (one that does
-    /// not work is logged, and the choice holds for this run), so closing Granary can wait for it; done at once when
-    /// nothing changed.
+    /// screen or not; <paramref name="byEsc"/> when an Esc left it, the only leave an Esc before it counts for (not Back,
+    /// the title's end, another page or closing). Kept for the next title only when it changed. Hands back that save,
+    /// which never fails (one that does not work is logged, and the choice holds for this run), so closing Granary can
+    /// wait for it; done at once when nothing changed.
     /// </summary>
-    public Task Left(bool isFullScreen)
+    public Task Left(bool isFullScreen, bool byEsc)
     {
-        bool escaping = _escapedAt is { } at && time.GetElapsedTime(at) <= EscapeWindow;
+        bool escaping = byEsc && _escapedAt is { } at && time.GetElapsedTime(at) <= EscapeWindow;
         _escapedAt = null;
         bool fullScreen = isFullScreen || escaping;
         return fullScreen == preferences.PlayerFullScreen ? Task.CompletedTask : preferences.SetPlayerFullScreenAsync(fullScreen);

@@ -31,6 +31,9 @@ public sealed partial class PlayerPage
     // Whether the viewer last pressed a key rather than a mouse button: focus given back to a button shows then.
     private bool _lastInputWasKey;
 
+    // Esc is leaving the player right now (CloseByKey).
+    private bool _isLeavingByEsc;
+
     private void InitializeInput()
     {
         _clickTimer = DispatcherQueue.CreateTimer();
@@ -136,6 +139,11 @@ public sealed partial class PlayerPage
     {
         if (!AcceptsShortcut())
         {
+            if (e.Key == VirtualKey.Escape)
+            {
+                // An Esc a menu or panel takes is not on the way out of the player.
+                _fullScreen.ForgetEscape();
+            }
             return;
         }
         bool isRepeat = e.KeyStatus.WasKeyDown;
@@ -151,7 +159,7 @@ public sealed partial class PlayerPage
             if (IsBack(e.Key) && !isRepeat)
             {
                 e.Handled = true;
-                ViewModel.CloseCommand.Execute(null);
+                CloseByKey(e.Key);
             }
             else if (e.Key == VirtualKey.Enter && !isRepeat && ViewModel.HasNextEpisode)
             {
@@ -196,11 +204,14 @@ public sealed partial class PlayerPage
                 // remote's Back (Browser Back) and Backspace do as Esc does.
                 if (ViewModel.DismissSkipPrompt())
                 {
+                    // An Esc the pill took is not on the way out of the player.
+                    _fullScreen.ForgetEscape();
                     break;
                 }
                 if (ViewModel.MarkerEditor.IsEditing)
                 {
                     ViewModel.MarkerEditor.Cancel();
+                    _fullScreen.ForgetEscape();
                     break;
                 }
                 // Full screen is the whole window's: Esc leaves it for the app too. A remote's Back closes the player and
@@ -219,7 +230,7 @@ public sealed partial class PlayerPage
                 }
                 else
                 {
-                    ViewModel.CloseCommand.Execute(null);
+                    CloseByKey(e.Key);
                 }
                 break;
             case VirtualKey.Left when ViewModel.CanSeek:
@@ -398,6 +409,21 @@ public sealed partial class PlayerPage
 
     // Esc, a remote's Back (Browser Back) and Backspace. Typing never gets here (AcceptsShortcut).
     private static bool IsBack(VirtualKey key) => key is VirtualKey.Escape or VirtualKey.GoBack or VirtualKey.Back;
+
+    // Leaves the player with a back key. Esc is the one leave an Esc out of full screen just before counts for
+    // (PlayerFullScreen): the close runs within this call, down to Leave, which reads _isLeavingByEsc.
+    private void CloseByKey(VirtualKey key)
+    {
+        _isLeavingByEsc = key == VirtualKey.Escape;
+        try
+        {
+            ViewModel.CloseCommand.Execute(null);
+        }
+        finally
+        {
+            _isLeavingByEsc = false;
+        }
+    }
 
     // Modifier combinations belong to the app (Alt+Left, Ctrl+K), all but the chapter keys (JumpsChapter, the only caller
     // that passes a key); text fields, open menus and the subtitle panels keep their keys.

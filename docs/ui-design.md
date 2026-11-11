@@ -1214,8 +1214,9 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   in `playback-device.json`, Core's `PlayerFullScreen`); left in a window, the next title opens in the window as it is.
   Bringing the bar back, leaving the mini view and the next episode in the same player keep the window as it is. Esc in
   full screen still leaves full screen first; an Esc that then leaves the player within 5 seconds counts as leaving in
-  full screen, unless anything came in between (another key, a click, a change of the window, minimizing). An Esc to
-  watch on in the window does not.
+  full screen, unless anything came in between (another key, a click, an Esc a skip pill, the marker panel or a menu
+  took, a change of the window, minimizing). Only that Esc does: leaving another way soon after (Back, the title's end,
+  another page, closing Granary) counts as the window it is in, and an Esc to watch on in the window does not count.
 - **A trailer**: YouTube's full-screen button in a window takes the window full screen with the video and back with it.
   In the app's full screen the window stays as it is either way, and leaving the trailer's full screen leaves the app
   in full screen. While a trailer fills the screen the title bar's buttons are away (YouTube's button and Esc leave it);

@@ -949,8 +949,10 @@ screen all go through `WindowModeService` (App, a singleton that MainWindow atta
   (`player_full_screen`, `IPlaybackDevicePreferences.PlayerFullScreen`, written only when it changes), and
   `PlayerPage.Start`, which only a title opened from the app reaches (`MainWindow.Open`: not the bar brought back, the
   mini view left or the next episode), asks `WindowModeService` for full screen when it is set. An Esc that took the full
-  player out of full screen counts as full screen for a leave within `PlayerFullScreen.EscapeWindow` (5 s, on the
-  injected `TimeProvider`); any other key or click in the player, a window change or minimizing forgets it. The Esc is
+  player out of full screen counts as full screen only for a leave by Esc (`PlayerPage.CloseByKey`, which the close
+  runs within, down to `Leave`; `Left`'s `byEsc`) within `PlayerFullScreen.EscapeWindow` (5 s, on the injected
+  `TimeProvider`); any other key or click in the player, an Esc something else took (a skip pill, the marker panel, a
+  menu or panel), a window change or minimizing forgets it, and other leaves ignore it. The Esc is
   marked after `SetFullScreen(false)`, whose `Changed` (raised within the call) forgets it. Leaving changes nothing about
   the window.
 - **Changed** tells MainWindow (its title bar buttons), the player (its `IsFullScreen` and `IsMiniView`) and the trailer.

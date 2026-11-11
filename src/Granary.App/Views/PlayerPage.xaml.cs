@@ -119,7 +119,7 @@ public sealed partial class PlayerPage : Page
     {
         SetMiniView(false);
         // Saved as Granary goes on; closing it later waits for this PC's choices anyway.
-        _ = _fullScreen.Left(_modes.IsViewersFullScreen);
+        _ = _fullScreen.Left(_modes.IsViewersFullScreen, _isLeavingByEsc);
         ViewModel.Leave();
     }
 
@@ -130,7 +130,7 @@ public sealed partial class PlayerPage : Page
     /// </summary>
     public Task LeaveWithWindow()
     {
-        var save = _fullScreen.Left(_modes.IsViewersFullScreen);
+        var save = _fullScreen.Left(_modes.IsViewersFullScreen, byEsc: false);
         ViewModel.Leave();
         return save;
     }

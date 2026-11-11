@@ -19,7 +19,7 @@ public sealed class PlayerFullScreenTests
     {
         var fullScreen = Create();
 
-        fullScreen.Left(isFullScreen: true);
+        fullScreen.Left(isFullScreen: true, byEsc: false);
 
         Assert.True(fullScreen.OpensInFullScreen);
         Assert.Equal([true], _preferences.SavedPlayerFullScreen);
@@ -31,7 +31,7 @@ public sealed class PlayerFullScreenTests
         _preferences.PlayerFullScreen = true;
         var fullScreen = Create();
 
-        fullScreen.Left(isFullScreen: false);
+        fullScreen.Left(isFullScreen: false, byEsc: false);
 
         Assert.False(fullScreen.OpensInFullScreen);
         Assert.Equal([false], _preferences.SavedPlayerFullScreen);
@@ -45,7 +45,7 @@ public sealed class PlayerFullScreenTests
         _preferences.PlayerFullScreen = isFullScreen;
         var fullScreen = Create();
 
-        var save = fullScreen.Left(isFullScreen);
+        var save = fullScreen.Left(isFullScreen, byEsc: false);
 
         Assert.Equal(isFullScreen, fullScreen.OpensInFullScreen);
         Assert.Empty(_preferences.SavedPlayerFullScreen);
@@ -59,7 +59,7 @@ public sealed class PlayerFullScreenTests
         _preferences.PlayerFullScreenSave = written.Task;
         var fullScreen = Create();
 
-        var save = fullScreen.Left(isFullScreen: true);
+        var save = fullScreen.Left(isFullScreen: true, byEsc: false);
 
         Assert.False(save.IsCompleted);
         written.SetResult();
@@ -69,7 +69,7 @@ public sealed class PlayerFullScreenTests
     [Fact]
     public void KeptOnThisPC_ItHoldsForTheNextStartToo()
     {
-        Create().Left(isFullScreen: true);
+        Create().Left(isFullScreen: true, byEsc: false);
 
         Assert.True(Create().OpensInFullScreen);
     }
@@ -81,7 +81,7 @@ public sealed class PlayerFullScreenTests
         var fullScreen = Create();
 
         fullScreen.EscapedFullScreen();
-        fullScreen.Left(isFullScreen: false);
+        fullScreen.Left(isFullScreen: false, byEsc: true);
 
         Assert.True(fullScreen.OpensInFullScreen);
     }
@@ -93,9 +93,23 @@ public sealed class PlayerFullScreenTests
         fullScreen.EscapedFullScreen();
 
         _time.Advance(PlayerFullScreen.EscapeWindow);
-        fullScreen.Left(isFullScreen: false);
+        fullScreen.Left(isFullScreen: false, byEsc: true);
 
         Assert.True(fullScreen.OpensInFullScreen);
+    }
+
+    [Fact]
+    public void ALeaveThatIsNotAnEsc_ShortlyAfterAnEsc_IsLeftInAWindow()
+    {
+        // Esc out of full screen near the end, then the title ends, Back, another page or closing Granary: not the way out.
+        _preferences.PlayerFullScreen = true;
+        var fullScreen = Create();
+        fullScreen.EscapedFullScreen();
+
+        _time.Advance(TimeSpan.FromSeconds(1));
+        fullScreen.Left(isFullScreen: false, byEsc: false);
+
+        Assert.False(fullScreen.OpensInFullScreen);
     }
 
     [Theory]
@@ -103,13 +117,13 @@ public sealed class PlayerFullScreenTests
     [InlineData(3600)]
     public void AnEscLongerAgo_WasToWatchInAWindow(int secondsPastTheWindow)
     {
-        // Esc once to watch in the window, the title playing on, then Exit: the window is the viewer's choice.
+        // Esc once to watch in the window, the title playing on, then Esc again: the window is the viewer's choice.
         _preferences.PlayerFullScreen = true;
         var fullScreen = Create();
         fullScreen.EscapedFullScreen();
 
         _time.Advance(PlayerFullScreen.EscapeWindow + TimeSpan.FromSeconds(secondsPastTheWindow));
-        fullScreen.Left(isFullScreen: false);
+        fullScreen.Left(isFullScreen: false, byEsc: true);
 
         Assert.False(fullScreen.OpensInFullScreen);
     }
@@ -123,7 +137,7 @@ public sealed class PlayerFullScreenTests
         fullScreen.EscapedFullScreen();
 
         fullScreen.ForgetEscape();
-        fullScreen.Left(isFullScreen: false);
+        fullScreen.Left(isFullScreen: false, byEsc: true);
 
         Assert.False(fullScreen.OpensInFullScreen);
     }
@@ -133,10 +147,10 @@ public sealed class PlayerFullScreenTests
     {
         var fullScreen = Create();
         fullScreen.EscapedFullScreen();
-        fullScreen.Left(isFullScreen: false);
+        fullScreen.Left(isFullScreen: false, byEsc: true);
 
-        // The next title's player, left in a window.
-        fullScreen.Left(isFullScreen: false);
+        // The next title's player, left with Esc in a window.
+        fullScreen.Left(isFullScreen: false, byEsc: true);
 
         Assert.False(fullScreen.OpensInFullScreen);
     }
