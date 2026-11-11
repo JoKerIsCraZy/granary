@@ -187,6 +187,8 @@ public partial class App : Application
         services.AddSingleton<IThemeAudioOutput, WindowsThemeAudio>();
         // The free space where downloads go, as Windows counts it, network shares included; Core's own count knows only drives.
         services.AddSingleton<IDiskSpace, WindowsDiskSpace>();
+        // Settings → Downloads' Change: Windows' folder picker over the main window.
+        services.AddSingleton<IFolderPicker, WindowsFolderPicker>();
         services.AddGranaryCore();
         // mpv reads the viewer's own mpv.conf from its folder when it starts (Settings → Playback → This PC).
         services.AddGranaryPlayer(new MpvEngineOptions { ConfigDirectory = MpvConfigFolder.DefaultDirectory });

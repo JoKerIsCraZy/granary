@@ -36,7 +36,8 @@ Dependencies point inward only: `App → Player → Core`, and `App → Core`.
   `GetDiskFreeSpaceExW` on the folder or its nearest parent that exists, network shares included (Core's own
   `DriveInfoDiskSpace` knows only lettered drives); and `INetworkLink.Changed`, which the App's `WindowsNetworkLink` raises
   with Windows' `NetworkStatusChanged`, joined with the first handler and left with the last, so the queue hears when the
-  connection turns metered.
+  connection turns metered; and `IFolderPicker` for Settings → Downloads' Change, which the App's `WindowsFolderPicker`
+  answers with the Windows App SDK's `FolderPicker` over the main window (null when cancelled, or when it could not open).
   `IReleaseFiles` gives `SignedReleaseVerifier` a release's SHA256SUMS and its signature, and the package on disk to
   hash and read; Core's own `HttpReleaseFiles` implements it, and the tests fake it (docs/release.md, "Signed
   releases").
@@ -1342,7 +1343,9 @@ client guide.
   which the window refreshes with the sidebar's other features on every page change and shows through `IUiDispatcher`,
   since a refresh can end on another thread.
 - **Settings → Downloads.** `DownloadSettingsViewModel` takes a folder only below a drive's or a share's root and once it
-  made the folder and wrote and deleted `.granary-write-check` there, on the thread pool; Open makes the folder first.
+  made the folder and wrote and deleted `.granary-write-check` there, on the thread pool; Open makes the folder first. The
+  App's `DownloadsSettingsView` makes it with `ActivatorUtilities` and loads it once through `SettingsViewLoad.RunAsync`,
+  which reads the capability for the quality labels.
 
 ### Signing out
 

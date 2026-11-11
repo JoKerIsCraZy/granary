@@ -912,7 +912,7 @@ off the mark stands still.
 
 Opened from the sidebar's Settings; as on Silo's web the app's sidebar gives way to the settings' own (260 px, a shade
 darker, a hairline at its edge): "← Back to App", "Settings", the current profile (its initial in a 32 px disc), then
-the pages by group: PLAYBACK (the profile's), APPEARANCE (Navigation & Cards, Title Pages), ACCOUNT (Devices) and APP (Servers, About). The page open is white 6 % with text and a
+the pages by group: PLAYBACK (the profile's), APPEARANCE (Navigation & Cards, Title Pages), ACCOUNT (Devices) and APP (Servers, Downloads, About). The page open is white 6 % with text and a
 mark in the accent. Pages scroll on the right in a centred column of at most 1120 px, padded 50 px (a column, not MaxWidth on the
 host, which pushed a page of short lines off the right edge): the title (32 px bold) and its line, then sections between hairlines (`SettingsGroup`), their title
 (15 px semibold) and description (13 px muted) in a 256 px column and their rows (`SettingsRow`: label 14 px medium,
@@ -1140,6 +1140,17 @@ says why above the sections.
   asks first only when the account has downloads on this PC, which go with it: "Sign out of NAS?", "2 downloads
   (3.0 GB) on this PC are deleted with it.", Sign out and Cancel. The sign-in screen's "Use another server" still opens the
   standalone servers page, which shares the question before removing.
+- **Downloads** (`DownloadsSettingsView` on `DownloadSettingsViewModel`, Granary's own: the web has no downloads, and the apps
+  keep these on the device): "Where downloads go and when they run, on this PC.", then This PC ("Kept on this PC, not in
+  your profile."): Folder ("New downloads go here. Downloads you have stay where they are."), the full path in 13 px
+  (selectable, wrapping at 360 px) over Open, a link that shows the folder in File Explorer (made first when nothing went
+  there yet), and Change (outline), Windows' folder picker starting in Downloads; a folder Granary can't write to, or a
+  drive's or a share's root, is refused with "Granary can't save downloads in that folder. Choose another one." in the
+  error bar above the sections, and a folder that would not open says "Couldn't open <folder>." there. Download on metered
+  connections, a switch, off by default ("Off: downloads wait while Windows says the connection is metered, such as a
+  phone's hotspot."). Default quality, a select of Original and the presets labelled as the apps label them ("10 Mbps · up
+  to 1080p", with the tallest output your server names, else the server guide's), "The quality a download starts on when
+  your Silo server offers it, else Original.". Each saves on this PC at once (`download-settings.json`).
 - **About** (`AboutSettingsView` on `AboutViewModel`, as the apps' About with Version and Acknowledgements): Granary's
   mark (64 px), name and "Version 0.2.0", what it is and that it is not an official Silo app. Updates: the state in one
   line ("Granary is up to date.", "Downloading Granary 0.3.0… 43%", "Granary 0.3.0 is ready. It installs when you

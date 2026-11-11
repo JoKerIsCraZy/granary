@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using Granary.Core;
 using Granary.Core.ViewModels;
+using Granary.Core.ViewModels.Downloads;
 using Granary.Core.ViewModels.Settings;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
@@ -378,6 +379,29 @@ public sealed partial class ServersSettingsView : UserControl, IDisposable
         {
             await ViewModel.RemoveCommand.ExecuteAsync(server);
         }
+    }
+}
+
+/// <summary>
+/// Settings → Downloads, this PC's own: the folder new downloads go to, downloads on metered connections and the quality the
+/// download dialog starts on. It reads what the server offers the profile once it is shown, for the quality labels.
+/// </summary>
+public sealed partial class DownloadsSettingsView : UserControl
+{
+    public DownloadsSettingsView()
+    {
+        ViewModel = ActivatorUtilities.CreateInstance<DownloadSettingsViewModel>(App.Services);
+        InitializeComponent();
+        // Once: the page keeps the view.
+        Loaded += OnFirstLoaded;
+    }
+
+    public DownloadSettingsViewModel ViewModel { get; }
+
+    private async void OnFirstLoaded(object sender, RoutedEventArgs e)
+    {
+        Loaded -= OnFirstLoaded;
+        await SettingsViewLoad.RunAsync(ViewModel.LoadAsync);
     }
 }
 
