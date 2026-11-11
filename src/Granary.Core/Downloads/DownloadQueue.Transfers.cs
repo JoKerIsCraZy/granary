@@ -506,6 +506,10 @@ public sealed partial class DownloadQueue
     {
         foreach (var download in _store.In(scope).Where(d => d.Record.PendingReport is not null))
         {
+            if (!IsStillActive(scope))
+            {
+                return;
+            }
             var key = Key.Of(download.Record);
             bool due;
             lock (_gate)

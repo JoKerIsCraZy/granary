@@ -18,9 +18,15 @@ public sealed partial class DownloadStore
     // A new download on disk, then in the state and the index. A delete still waiting for this very folder leaves the index
     // first: a crash after the folder is made cannot delete it at the next start. A server delete not yet sent for this very
     // download goes with it: the entry is this download's again, and the next index write, this one's, no longer names it.
-    private void AddToDisk(StoredDownload download)
+    // False, and nothing kept, when the scope's downloads were cleared since clearGeneration: before the folder is made, none
+    // is made; while it is made, it goes again.
+    private bool AddToDisk(StoredDownload download, long clearGeneration)
     {
         var record = download.Record;
+        if (IsClearedSince(record.Scope, clearGeneration))
+        {
+            return false;
+        }
         var waiting = Current.FolderDeletes.Where(d => IsSameFolder(d.Folder, download.Folder)).ToList();
         var unsent = Current.PendingDeletes.Where(d => d.Scope == record.Scope && d.DownloadId == record.DownloadId).ToList();
         Change(state => state with
@@ -42,8 +48,20 @@ public sealed partial class DownloadStore
             Change(state => state with { FolderDeletes = [.. state.FolderDeletes, .. waiting], PendingDeletes = [.. state.PendingDeletes, .. unsent] });
             throw;
         }
-        Change(state => state with { Downloads = [.. state.Downloads, download] });
+        // Checked with the change itself: a clear either comes first and keeps the row out, or after and takes it with the rest.
+        bool kept = false;
+        Change(state =>
+        {
+            kept = !IsClearedSinceLocked(record.Scope, clearGeneration);
+            return kept ? state with { Downloads = [.. state.Downloads, download] } : state;
+        });
+        if (!kept)
+        {
+            Unmake(download);
+            return false;
+        }
         WriteIndex(Current);
+        return true;
     }
 
     // A new download's folder starts empty: what a download before it under the same id left there is not its bytes. A folder

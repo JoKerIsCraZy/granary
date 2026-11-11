@@ -115,6 +115,7 @@ public sealed partial class DownloadQueue
         Uri? server;
         long generation;
         bool stopped;
+        bool cleared = false;
         bool resumed = false;
         lock (_gate)
         {
@@ -122,11 +123,27 @@ public sealed partial class DownloadQueue
             (scope, server) = _current;
             generation = _sessionGeneration;
             stopped = scope is not null && IsStoppedLocked(scope, out resumed);
+            if (scope is not null && !stopped && IsClearedLocked(scope))
+            {
+                cleared = true;
+                foreach (var run in _running.Values.Where(r => r.Key.Scope == scope))
+                {
+                    CancelLocked(run);
+                }
+            }
         }
         bool activated = scope != _activeScope || resumed;
         if (scope is null || server is null || stopped)
         {
             _activeScope = scope;
+            _runnable = false;
+            return;
+        }
+        if (cleared)
+        {
+            // A sign-out took its downloads off this PC a moment ago: nothing more starts for it, not even an activation, and it
+            // is activated anew once it is the current scope again after the sign-out.
+            _activeScope = null;
             _runnable = false;
             return;
         }
@@ -256,7 +273,7 @@ public sealed partial class DownloadQueue
             var key = Key.Of(download.Record);
             lock (_gate)
             {
-                if (_stopping || _running.Count >= MaxConcurrent || _current.Scope != scope || _current.Server != server)
+                if (_stopping || _running.Count >= MaxConcurrent || _current.Scope != scope || _current.Server != server || IsClearedLocked(scope))
                 {
                     return;
                 }
@@ -313,8 +330,8 @@ public sealed partial class DownloadQueue
     private bool IsReportDueLocked(Key key, DateTimeOffset now, bool sending = false) =>
         (sending || !_reporting.ContainsKey(key)) && (!_reportRetries.TryGetValue(key, out var retry) || retry.At <= now);
 
-    // Each part for the scope it was started for, while that scope is still the active one. One that fails unexpectedly holds
-    // the work back for a minute, so it does not come back at once.
+    // Each part for the scope it was started for, while that scope is still the active one and no sign-out took its downloads.
+    // One that fails unexpectedly holds the work back for a minute, so it does not come back at once.
     private async Task RunChoresAsync(DownloadScope scope, Uri server, CancellationToken stop)
     {
         try
@@ -364,11 +381,12 @@ public sealed partial class DownloadQueue
         }
     }
 
+    // The current scope still, and no sign-out took its downloads since it became so.
     private bool IsStillActive(DownloadScope scope)
     {
         lock (_gate)
         {
-            return _current.Scope == scope;
+            return _current.Scope == scope && !IsClearedLocked(scope);
         }
     }
 

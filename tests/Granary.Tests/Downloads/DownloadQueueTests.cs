@@ -173,6 +173,33 @@ public sealed class DownloadQueueTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AnAccountBeingSignedOut_GetsNoTransferNorServerWork_UntilItSignsInAgain()
+    {
+        await _h.AddAsync("dl_1", change: r => r with { IsPausedByViewer = true });
+        _h.ServeFile("dl_1", Source);
+        await _h.AddAsync("dl_2", DownloadState.Completed, mediaItemId: "mv_2");
+        var queue = _h.StartQueue();
+        await IdleAsync(queue);
+        int sentBefore = _h.Silo.Sent.Count;
+
+        // Between a sign-out's clear and the sign-out itself, the account's downloads ask for a transfer and a delete.
+        _h.Store.MarkCleared("srv1", "1");
+        await _h.Store.UpdateAsync(Scope7, "dl_1", r => r with { IsPausedByViewer = false }, Token);
+        await _h.Store.RemoveAsync(Scope7, "dl_2", queueServerDelete: true, Token);
+        await IdleAsync(queue);
+        int sentWhileCleared = _h.Silo.Sent.Count;
+        _h.SignOut();
+        await IdleAsync(queue);
+        _h.Session.State = Granary.Core.Auth.SessionState.Ready;
+        _h.Session.ProfileId = "7";
+        _h.Session.RaiseChanged();
+
+        Assert.Equal(sentBefore, sentWhileCleared);
+        await CompletedAsync("dl_1");
+        await Until(() => _h.Store.PendingDeletes(Scope7).Count == 0, "the delete went once signed in again");
+    }
+
+    [Fact]
     public async Task ARefusedSignIn_StopsTheProfilesDownloads_UntilTheSessionChanges()
     {
         await _h.AddAsync("dl_1");

@@ -1166,8 +1166,12 @@ missing their folder.
   `Changed` comes before the folder is deleted, so the part is let go first), paused by the viewer or no longer to be
   fetched, when the connection turns metered without Settings → Downloads allowing it (`IsWaitingForUnmetered`; nothing
   starts then either), when the session's profile changes (only the active profile's downloads run; another profile's
-  carry on when it is active again), and when the queue stops. A stopped transfer is queued again; one the queue's own stop
-  ended stays Downloading.
+  carry on when it is active again), when a sign-out took its account's downloads off this PC (below), and when the queue
+  stops. A stopped transfer is queued again; one the queue's own stop ended stays Downloading.
+- **A sign-out under way.** Once a sign-out has marked its account's downloads cleared (`DownloadStore.MarkCleared`), the
+  queue starts nothing more for that scope while it is still the current one: no activation, transfer, registry read,
+  delete or report, and server work under way stops between two requests. The queue takes the store's `ClearGeneration`
+  whenever another scope (or none) becomes the current one, so the same account signed in again runs as before.
 - **Resume.** Within one run a transfer carries on from its whole part. One found Downloading at the start (Granary or
   Windows stopped in the middle) gives up `ResumeMargin` (4 MiB) of its part: the transfer flushes every 3 MiB of 1 MiB
   writes, so no more was written but not on the disk. The validator is in the record before the bytes it belongs to are
@@ -1265,7 +1269,10 @@ client guide.
   that start fails, and works once the queue has sent the delete. An answer for another title is a failure too. 403, 404 and 501, or a title the server passed over, are `Unavailable`. The entry is
   kept with the request's title, series, season and episode, queued, or Preparing while the server prepares a copy, and the
   queue is woken. Once the server made it, a cancel does not keep it from being kept. A download kept again takes its unsent
-  server delete off the index in the same write.
+  server delete off the index in the same write. A create takes the store's `ClearGeneration` before anything else, and its
+  entry is not kept when a sign-out cleared the account's downloads since (`AddUnlessClearedAsync`, checked in the same
+  change that adds the row, so a sign-out either keeps it out or takes it with the rest): the start fails, nothing goes on
+  the disk, and the server's entry stays, as any entry of an account that signed out.
 - **Seasons.** `StartSeasonAsync` sends one create per episode, in order, passing over the episodes this PC has or is
   fetching, and counts what started, what was there and what failed. It stops, with those counts, when it is cancelled or
   the profile it started for is no longer the active one.
@@ -1321,7 +1328,9 @@ The view models of the sign-out paths take it (optional, so they work without it
 - **The account.** On the active server it is the session's; on another, the one its saved sign-in names
   (`AccountOfAsync`). None known stands for every account there. A sign-out reads it once, so the downloads it asked
   about are the ones that go.
-- **Order.** The server hears first, while the session can still send: `DELETE` for each of the active profile's
+- **Order.** First the account's downloads are marked cleared (`MarkCleared`): a create that answers from then on keeps
+  nothing, and the queue starts nothing more for them (see "The queue" and "Starting and deleting"). The server hears
+  next, while the session can still send: `DELETE` for each of the active profile's
   entries on that server and account (its downloads and the deletes still to send), bound to that profile, one at a time,
   for at most `DeleteBudget` (10 s of the `TimeProvider`). An entry the server refuses does not stop the others; no
   answer, a profile switch or the end of the budget stops them all. Then every matching download of every profile goes

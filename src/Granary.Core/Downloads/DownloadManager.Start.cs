@@ -17,11 +17,14 @@ public sealed partial class DownloadManager
 
     /// <summary>
     /// Creates the server's entry for a film or an episode and keeps it, queued, or preparing while the server prepares a copy.
-    /// A film's <c>content_id</c> is its own id; an episode's is its series, with the episode as <c>episode_id</c>.
+    /// A film's <c>content_id</c> is its own id; an episode's is its series, with the episode as <c>episode_id</c>. An entry
+    /// that comes after a sign-out took the account's downloads off this PC is not kept (<see cref="DownloadStartResult.Failed"/>).
     /// </summary>
     public async Task<DownloadStartResult> StartAsync(DownloadRequest request, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
+        // Taken before the scope: a sign-out from here on keeps whatever this create makes off this PC.
+        long clears = _store.ClearGeneration;
         if (DownloadScope.Of(_session) is not { } scope || _session.ActiveServer is not { } server)
         {
             return DownloadStartResult.Unavailable;
@@ -42,7 +45,7 @@ public sealed partial class DownloadManager
                 return DownloadStartResult.AlreadyDownloading;
             }
             var (entry, result) = await CreateAsync(server.BaseUri, scope, BodyOf(request), cancellationToken).ConfigureAwait(false);
-            return entry is null ? result : await KeepAsync(scope, request, entry).ConfigureAwait(false);
+            return entry is null ? result : await KeepAsync(scope, request, entry, clears).ConfigureAwait(false);
         }
         finally
         {
@@ -257,8 +260,9 @@ public sealed partial class DownloadManager
         entry.Status is not (DownloadStatuses.Revoked or DownloadStatuses.Failed or DownloadStatuses.Cancelled);
 
     // The entry kept with the request's title fields, and the queue told. Once the server made it, a cancel does not stop it
-    // from being kept: a create is not sent again.
-    private async Task<DownloadStartResult> KeepAsync(DownloadScope scope, DownloadRequest request, DownloadEntry entry)
+    // from being kept: a create is not sent again. A sign-out since the create began (clears) keeps it off this PC; the
+    // server's entry stays, as for any download whose account signed out.
+    private async Task<DownloadStartResult> KeepAsync(DownloadScope scope, DownloadRequest request, DownloadEntry entry, long clears)
     {
         var record = new DownloadRecord
         {
@@ -280,7 +284,10 @@ public sealed partial class DownloadManager
         };
         try
         {
-            await _store.AddAsync(record, CancellationToken.None).ConfigureAwait(false);
+            if (await _store.AddUnlessClearedAsync(record, clears, CancellationToken.None).ConfigureAwait(false) is null)
+            {
+                return DownloadStartResult.Failed;
+            }
         }
         catch (InvalidOperationException)
         {

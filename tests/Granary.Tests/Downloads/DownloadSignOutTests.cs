@@ -372,6 +372,29 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task ACreateThatAnswersAfterTheSignOut_KeepsNothing()
+    {
+        var answer = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _h.Silo.On(HttpMethod.Post, ListPath, async () =>
+        {
+            await answer.Task;
+            return await ScriptedSilo.Json(HttpStatusCode.Accepted, DownloadPayloads.Page(null, DownloadPayloads.Entry("dl_1", "ready")))();
+        });
+        var manager = _h.NewManager();
+        using var servers = await ServersAsync();
+
+        var starting = manager.StartAsync(new DownloadRequest("mv_1", null, null, "original", "Example Movie", null, null, null), Token);
+        await Until(() => _h.Silo.SentTo(HttpMethod.Post, ListPath).Count == 1, "the create went");
+        await servers.SignOutCommand.ExecuteAsync(Item(servers, "srv1"));
+        answer.SetResult();
+
+        Assert.Equal(DownloadStartResult.Failed, await starting);
+        Assert.Empty(_h.Store.All);
+        Assert.False(Directory.Exists(DownloadPaths.Folder(_h.Root, Scope7, "dl_1")));
+        Assert.Equal(["sign-out:srv1"], _h.Session.Calls);
+    }
+
+    [Fact]
     public async Task AShareThatDoesNotAnswer_GetsTheQuestionWithoutTheSize()
     {
         await KeptAsync("dl_1");

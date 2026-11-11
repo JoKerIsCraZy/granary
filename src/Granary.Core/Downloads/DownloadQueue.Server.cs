@@ -33,6 +33,10 @@ public sealed partial class DownloadQueue
         lock (_gate)
         {
             (scope, server) = _current;
+            if (scope is not null && IsClearedLocked(scope))
+            {
+                return;
+            }
         }
         if (scope is not null && server is not null)
         {
@@ -464,6 +468,10 @@ public sealed partial class DownloadQueue
         }
         foreach (var delete in _store.PendingDeletes(scope).Where(d => IsSendable(scope, d)))
         {
+            if (!IsStillActive(scope))
+            {
+                return;
+            }
             if (IsFolderStillThere(scope, delete))
             {
                 continue;

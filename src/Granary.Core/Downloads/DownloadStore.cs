@@ -161,14 +161,28 @@ public sealed partial class DownloadStore
     /// Keeps a new download in its folder under the downloads folder chosen now, which starts empty. Throws, and keeps nothing,
     /// when the folder cannot be made or the record not written.
     /// </summary>
+    /// <exception cref="InvalidOperationException">
+    /// The scope already has a download with this id, or its downloads were cleared (<see cref="MarkCleared"/>) while it was added.
+    /// </exception>
+    /// <exception cref="IOException">The folder or the record could not be written, or the index not before the folder was made.</exception>
+    public async Task<StoredDownload> AddAsync(DownloadRecord record, CancellationToken cancellationToken) =>
+        await AddUnlessClearedAsync(record, ClearGeneration, cancellationToken)
+        ?? throw new InvalidOperationException("The downloads of this account were cleared while it was added.");
+
+    /// <summary>
+    /// As <see cref="AddAsync"/> for a download whose create began at <paramref name="clearGeneration"/> (the
+    /// <see cref="ClearGeneration"/> then): null, and nothing kept, when its scope's downloads were cleared since, as by a sign-out
+    /// while the server made it.
+    /// </summary>
     /// <exception cref="InvalidOperationException">The scope already has a download with this id.</exception>
     /// <exception cref="IOException">The folder or the record could not be written, or the index not before the folder was made.</exception>
-    public async Task<StoredDownload> AddAsync(DownloadRecord record, CancellationToken cancellationToken)
+    public async Task<StoredDownload?> AddUnlessClearedAsync(DownloadRecord record, long clearGeneration, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(record);
         await LoadAsync(cancellationToken);
         string folder = DownloadPaths.Folder(_preferences.Folder, record.Scope, record.DownloadId);
         var stored = new StoredDownload(record, folder, FilesMissing: false);
+        bool kept;
         await _writes.WaitAsync(cancellationToken);
         try
         {
@@ -176,11 +190,16 @@ public sealed partial class DownloadStore
             {
                 throw new InvalidOperationException("This download is kept already.");
             }
-            await Task.Run(() => AddToDisk(stored), CancellationToken.None);
+            kept = await Task.Run(() => AddToDisk(stored, clearGeneration), CancellationToken.None);
         }
         finally
         {
             _writes.Release();
+        }
+        if (!kept)
+        {
+            _logger.LogInformation("Download {DownloadId} is not kept: its account's downloads were cleared meanwhile", record.DownloadId);
+            return null;
         }
         Changed?.Invoke(this, EventArgs.Empty);
         return stored;

@@ -101,6 +101,10 @@ public sealed partial class DownloadQueue : IDisposable
     private readonly Dictionary<DownloadScope, long> _stoppedScopes = [];
     private long _sessionGeneration;
     private (DownloadScope? Scope, Uri? Server) _current;
+
+    // The store's clear generation when the current scope became the current one: a sign-out's clear after it stops that scope
+    // (IsClearedLocked) until another scope, or none, is the current one.
+    private long _scopeClears;
     private TaskCompletionSource _wake = NewSignal();
     private TaskCompletionSource _parked = NewSignal();
     private TaskCompletionSource _idle = NewSignal();
@@ -208,6 +212,7 @@ public sealed partial class DownloadQueue : IDisposable
         lock (_gate)
         {
             _current = (scope, server);
+            _scopeClears = _store.ClearGeneration;
             _loop = Task.Run(() => LoopAsync(_stopToken));
         }
     }
@@ -319,7 +324,8 @@ public sealed partial class DownloadQueue : IDisposable
         _store.Changed -= OnStoreChanged;
     }
 
-    // Raised on the UI thread: the new scope is taken here, and the other scopes' transfers stop.
+    // Raised on the UI thread: the new scope is taken here, and the other scopes' transfers stop. A scope that comes back after
+    // a sign-out (signed in again) is no longer held by that sign-out's clear.
     private void OnSessionChanged(object? sender, EventArgs e)
     {
         var scope = DownloadScope.Of(_session);
@@ -327,6 +333,10 @@ public sealed partial class DownloadQueue : IDisposable
         lock (_gate)
         {
             _sessionGeneration++;
+            if (scope != _current.Scope)
+            {
+                _scopeClears = _store.ClearGeneration;
+            }
             _current = (scope, server);
             foreach (var run in _running.Values.Where(r => r.Key.Scope != scope))
             {
@@ -423,6 +433,9 @@ public sealed partial class DownloadQueue : IDisposable
                 _logger, CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
         }
     }
+
+    // A sign-out took the scope's downloads off this PC since it became the current one: nothing more starts for it.
+    private bool IsClearedLocked(DownloadScope scope) => _store.IsClearedSince(scope, _scopeClears);
 
     private static long PartLength(StoredDownload download)
     {

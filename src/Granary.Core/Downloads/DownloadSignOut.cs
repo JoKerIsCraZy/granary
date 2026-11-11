@@ -128,7 +128,9 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
     }
 
     /// <summary>
-    /// Takes the downloads of a server's account (null: of every account there) off this PC. The server first hears the
+    /// Takes the downloads of a server's account (null: of every account there) off this PC. First nothing more is kept or
+    /// started for them (<see cref="DownloadStore.MarkCleared"/>): a create that answers later keeps nothing, and the queue
+    /// starts no transfer and no server work for them until the account is signed in again. The server then hears the
     /// deletes of the active profile's entries there, its downloads and the deletes still to send, for at most
     /// <see cref="DeleteBudget"/>; other profiles' entries cannot be deleted without their profile, so they stay on the server.
     /// Then every matching row, index entry and delete still to send goes, whether the server answered or not; it returns once
@@ -138,6 +140,9 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
     public async Task ClearAsync(string serverEntryId, string? accountId, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrEmpty(serverEntryId);
+        // First of all: a create that answers from now on keeps nothing, and the queue starts nothing more for these downloads,
+        // until their account is signed in again.
+        store.MarkCleared(serverEntryId, accountId);
         bool loaded = await LoadWithinAsync(StoreBudget, cancellationToken).ConfigureAwait(false);
         if (loaded)
         {
