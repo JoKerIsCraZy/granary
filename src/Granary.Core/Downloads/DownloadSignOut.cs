@@ -250,8 +250,9 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
         return ids.Count == 0 ? null : new ServerDeletes(server.BaseUri, scope.ProfileId, ids);
     }
 
-    // The server's deletes, one at a time, as that profile: one the server refuses does not stop the others; no answer, a
-    // profile switch or the end of the budget stops them all.
+    // The server's deletes, one at a time, as that profile: one the server refuses for itself does not stop the others; no
+    // answer, a sign-in it no longer takes, a busy server, a profile switch or the end of the budget stops them all, since the
+    // next ones would fare no better.
     private async Task TellTheServerAsync(ServerDeletes deletes, CancellationToken cancellationToken)
     {
         using var budget = new CancellationTokenSource(DeleteBudget, time);
@@ -261,6 +262,12 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
             try
             {
                 await api.DeleteAsync(deletes.Server, deletes.ProfileId, id, linked.Token).ConfigureAwait(false);
+            }
+            catch (SiloApiException ex) when (ex.Status is 401 or 429)
+            {
+                logger.LogInformation("The server took no more deletes before the sign-out ({Status}); the downloads are off this PC all the same",
+                    ex.Status);
+                return;
             }
             catch (SiloApiException ex)
             {

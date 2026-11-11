@@ -319,6 +319,23 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
         Assert.Equal(["sign-out:srv1"], _h.Session.Calls);
     }
 
+    [Theory]
+    [InlineData(401, "session_expired")]
+    [InlineData(429, "rate_limited")]
+    public async Task ARefusedSignInOrABusyServer_StopsTheDeletesAtTheFirst(int status, string code)
+    {
+        await KeptAsync("dl_1");
+        await KeptAsync("dl_2");
+        _h.Silo.On(HttpMethod.Delete, EntryPath("dl_1"), ScriptedSilo.Problem(status, code));
+        using var servers = await ServersAsync();
+
+        await servers.SignOutCommand.ExecuteAsync(Item(servers, "srv1"));
+
+        Assert.Single(DeletesSent);
+        Assert.Empty(_h.Store.All);
+        Assert.Equal(["sign-out:srv1"], _h.Session.Calls);
+    }
+
     [Fact]
     public async Task TheProfileMenusSignOut_AsksAndTakesTheDownloadsAlong()
     {

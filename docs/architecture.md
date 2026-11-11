@@ -1335,8 +1335,9 @@ The view models of the sign-out paths take it (optional, so they work without it
   later and no transfer asks the server for an entry it is deleting. The server hears next, while the session can still
   send: `DELETE` for each of the active profile's entries on that server and account (its downloads and the deletes still
   to send, as listed before they went), bound to that profile, one at a time, for at most `DeleteBudget` (10 s of the
-  `TimeProvider`). The queue has none of those deletes left to send a second time. An entry the server refuses does not
-  stop the others; no answer, a profile switch or the end of the budget stops them all. Then the sign-out, once the index
+  `TimeProvider`). The queue has none of those deletes left to send a second time. An entry the server refuses for itself
+  (403, 404, …) does not stop the others; no answer, a sign-in the server no longer takes (401), a busy server (429), a
+  profile switch or the end of the budget stops them all, since the next ones would fare no better. Then the sign-out, once the index
   without them is written or after `StoreBudget` (5 s) at most: an index that is not written in time (a disk or a write before it that does not answer) is
   logged and written once it can be, and the sign-out goes on. The folders go after the index, beside the sign-out
   (`DownloadStore.FolderWork`), so a share that does not answer holds nothing up; a folder that cannot go yet is tried again
