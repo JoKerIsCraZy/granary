@@ -211,6 +211,35 @@ public sealed class DevicesViewModelTests
     }
 
     [Fact]
+    public async Task ASignOutThatFailsOnThisPC_SaysSo_AndThePageStaysUsable()
+    {
+        Everything();
+        var page = Page();
+        await page.LoadAsync(TestContext.Current.CancellationToken);
+        var current = page.CurrentSession!;
+        _session.FailWith = new InvalidOperationException("secret detail");
+
+        await page.SignOutSessionCommand.ExecuteAsync(current);
+
+        Assert.Equal("Couldn't sign out the session. Try again.", page.Status);
+        Assert.False(current.IsBusy);
+    }
+
+    [Fact]
+    public async Task AQuestionThatCannotBeShown_SaysSo_AndSignsNothingOut()
+    {
+        Everything();
+        var page = Page();
+        await page.LoadAsync(TestContext.Current.CancellationToken);
+        _confirm.WhileAsking = () => throw new InvalidOperationException("secret detail");
+
+        await page.SignOutSessionCommand.ExecuteAsync(page.CurrentSession);
+
+        Assert.Equal("Couldn't sign out the session. Try again.", page.Status);
+        Assert.Empty(_session.Calls);
+    }
+
+    [Fact]
     public async Task SigningOutThisDevice_SignsGranaryOutOfTheServer()
     {
         Everything();

@@ -333,6 +333,24 @@ public sealed class SidebarViewModelTests
     }
 
     [Fact]
+    public async Task ASignOutThatFails_SaysSo_WithoutTheErrorsOwnText()
+    {
+        using var sidebar = Create();
+        _session.FailWith = new InvalidOperationException(@"C:\Users\elena\AppData secret detail");
+
+        await sidebar.SignOutCommand.ExecuteAsync(null);
+
+        Assert.Equal("Couldn't sign out. Try again.", sidebar.SignOutError);
+        Assert.DoesNotContain("secret detail", _logs.All, StringComparison.Ordinal);
+        Assert.Contains("Signing out failed", _logs.All, StringComparison.Ordinal);
+
+        _session.FailWith = null;
+        await sidebar.SignOutCommand.ExecuteAsync(null);
+
+        Assert.Equal("", sidebar.SignOutError);
+    }
+
+    [Fact]
     public async Task AnAudioDelaySaveThatDoesNotAnswer_HoldsSwitchProfileTwoSecondsAtMost()
     {
         var silo = new Profiles.ScriptedSilo();

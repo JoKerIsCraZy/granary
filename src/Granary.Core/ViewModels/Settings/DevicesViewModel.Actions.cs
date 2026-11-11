@@ -11,6 +11,8 @@ public sealed partial class DevicesViewModel
 {
     private const string SignOutNote = "A video already playing may continue until its next request. Saved device settings are kept.";
 
+    private const string SignOutFailed = "Couldn't sign out the session. Try again.";
+
     [RelayCommand]
     private async Task LoadMoreSessionsAsync()
     {
@@ -42,10 +44,25 @@ public sealed partial class DevicesViewModel
     /// <summary>
     /// Signs a sign-in out after asking. Another one loses access on its next request; Granary's own signs Granary out
     /// of the server, back to the sign-in screen, as the web's own does for its browser, and takes the account's downloads
-    /// on this PC along, which the question names.
+    /// on this PC along, which the question names. Whatever fails on the way, the server's refusal or this PC's own (the
+    /// question, its sign-in data, the downloads), the page says so and stays usable.
     /// </summary>
     [RelayCommand(AllowConcurrentExecutions = true)]
     private async Task SignOutSessionAsync(SignedInSessionRow? row)
+    {
+        try
+        {
+            await AskAndSignOutAsync(row);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning("A sign-in could not be signed out: {Failure}", ApiFailureText.Describe(ex));
+            Status = SignOutFailed;
+        }
+    }
+
+    // The question, then the sign-out; a failure other than a sign-in that is gone already is the command's to show.
+    private async Task AskAndSignOutAsync(SignedInSessionRow? row)
     {
         if (row is null || row.IsBusy || await TargetAsync() is not { } target || !Listed(row))
         {
@@ -86,11 +103,6 @@ public sealed partial class DevicesViewModel
             // Already gone: signed out elsewhere, or expired.
             OtherSessions.Remove(row);
             Status = "Session signed out";
-        }
-        catch (Exception ex) when (LibraryErrors.IsExpected(ex))
-        {
-            _logger.LogWarning("A sign-in could not be signed out: {Failure}", ApiFailureText.Describe(ex));
-            Status = "Couldn't sign out the session. Try again.";
         }
         finally
         {

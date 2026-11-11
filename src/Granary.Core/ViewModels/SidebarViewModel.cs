@@ -29,6 +29,9 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
     /// <summary>As the web's staleTime for the library list and its preferences.</summary>
     public static readonly TimeSpan StaleAfter = TimeSpan.FromMinutes(5);
 
+    /// <summary>What the profile menu says when Sign out failed.</summary>
+    public const string SignOutFailed = "Couldn't sign out. Try again.";
+
     // How long Switch profile and Sign out wait for an audio delay changed a moment before to be saved.
     private static readonly TimeSpan AudioDelayWait = TimeSpan.FromSeconds(2);
 
@@ -71,6 +74,10 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
 
     [ObservableProperty]
     public partial string ServerName { get; private set; } = "";
+
+    /// <summary>"Couldn't sign out. Try again." once Sign out failed; empty otherwise, and again at the next Sign out.</summary>
+    [ObservableProperty]
+    public partial string SignOutError { get; private set; } = "";
 
     /// <summary>The acting profile; null until it is loaded, or when the list could not be read.</summary>
     [ObservableProperty]
@@ -209,17 +216,30 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
         await _session.ClearProfileAsync();
     }
 
-    /// <summary>Signs out of the active server; when its account has downloads on this PC, after asking, and they go first.</summary>
+    /// <summary>
+    /// Signs out of the active server; when its account has downloads on this PC, after asking, and they go first. Whatever
+    /// fails on the way (the question, this PC's sign-in data, the downloads) shows as <see cref="SignOutError"/>, never as the
+    /// error's own text.
+    /// </summary>
     [RelayCommand]
     private async Task SignOutAsync()
     {
-        await SaveAudioDelayAsync();
-        if (_downloads is not null && _session.ActiveServer is { } server)
+        SignOutError = "";
+        try
         {
-            await _downloads.SignOutAsync(server, CancellationToken.None);
-            return;
+            await SaveAudioDelayAsync();
+            if (_downloads is not null && _session.ActiveServer is { } server)
+            {
+                await _downloads.SignOutAsync(server, CancellationToken.None);
+                return;
+            }
+            await _session.SignOutAsync();
         }
-        await _session.SignOutAsync();
+        catch (Exception ex)
+        {
+            _logger.LogWarning("Signing out failed: {Failure}", ApiFailureText.Describe(ex));
+            SignOutError = SignOutFailed;
+        }
     }
 
     // An audio delay changed a moment ago is this profile's, and could not be saved as it once another acts: it goes out
