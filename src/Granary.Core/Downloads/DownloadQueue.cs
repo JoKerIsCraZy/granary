@@ -385,20 +385,30 @@ public sealed partial class DownloadQueue : IDisposable
         return waits;
     }
 
-    // The link or the settings: on a metered link without the setting, everything stops.
-    private void OnConditionsChanged(object? sender, EventArgs e)
+    // The link or the settings: on a metered link without the setting, everything stops. Windows' answer about the link can
+    // take a moment, and the settings change on the UI thread, so it is read on the thread pool.
+    private void OnConditionsChanged(object? sender, EventArgs e) => _ = Task.Run(ApplyConditions);
+
+    private void ApplyConditions()
     {
-        bool waits = ReadWaitsForUnmetered();
-        lock (_gate)
+        try
         {
-            if (waits)
+            bool waits = ReadWaitsForUnmetered();
+            lock (_gate)
             {
-                foreach (var run in _running.Values)
+                if (waits)
                 {
-                    CancelLocked(run);
+                    foreach (var run in _running.Values)
+                    {
+                        CancelLocked(run);
+                    }
                 }
+                WakeLocked();
             }
-            WakeLocked();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning("The downloads' conditions could not be read ({Failure})", DownloadLog.Failure(ex));
         }
     }
 

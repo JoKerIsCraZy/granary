@@ -391,12 +391,14 @@ public sealed class DownloadManagerTests : IAsyncDisposable
         int changes = 0;
         manager.Changed += (_, _) => Interlocked.Increment(ref changes);
 
+        // The link is read on the thread pool, never on the caller's thread, which can be the UI's.
         _h.Network.SetMetered(true);
-        Assert.True(Interlocked.Exchange(ref changes, 0) > 0);
+        await Until(() => Volatile.Read(ref changes) > 0, "the pages heard of the metered link");
+        Interlocked.Exchange(ref changes, 0);
         Assert.True(manager.ForItem("mv_1")!.WaitsForUnmetered);
 
         await _h.Preferences.SetDownloadsOnMeteredAsync(true);
-        Assert.True(changes > 0);
+        await Until(() => Volatile.Read(ref changes) > 0, "the pages heard of the setting");
         Assert.False(manager.ForItem("mv_1")!.WaitsForUnmetered);
     }
 
