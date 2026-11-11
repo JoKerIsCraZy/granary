@@ -1093,8 +1093,9 @@ Films and episodes kept on this PC as the server's managed downloads (docs/api-c
   gets `-` and 16 hex digits of the value's SHA-256. So no id the server sends names another path, and two ids never share
   a folder, also where Windows ignores case. The folder holds `download.json` (the `DownloadRecord`, so the folder
   describes itself), `manifest.json` as the server sent it, `media.part` while the file arrives, then `media.<container>`,
-  the artwork as `<kind>.<ext>` and the subtitles as `sub-<n>.<format>`; extensions are short plain names or a fallback,
-  never what the server sent unchecked. A record's media file is used only when it is such a `media.<ext>` name.
+  the artwork as `<kind>.<ext>` and the subtitles as `sub-<reference>.<format>` (the reference made a name as a folder is
+  from an id, so a file holds the same subtitle whatever its place in the manifest); extensions are short plain names or a
+  fallback, never what the server sent unchecked. A record's media file is used only when it is such a `media.<ext>` name.
 - **Root.** `<root>` is the downloads folder chosen when the download started (`IDownloadPreferences.Folder`, in
   `download-settings.json`; `downloads` in the data folder by default). Choosing another applies to new downloads only:
   the ones there keep their folders. It is a full path below a drive's or a share's root, never the root itself.

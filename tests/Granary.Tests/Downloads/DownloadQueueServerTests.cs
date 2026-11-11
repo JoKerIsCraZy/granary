@@ -232,7 +232,7 @@ public sealed class DownloadQueueServerTests : IAsyncDisposable
         {
             Assert.Equal(PosterBytes, await System.IO.File.ReadAllBytesAsync(File(stored, name), Token));
         }
-        Assert.Equal(SubtitleBytes, await System.IO.File.ReadAllBytesAsync(File(stored, "sub-0.srt"), Token));
+        Assert.Equal(SubtitleBytes, await System.IO.File.ReadAllBytesAsync(File(stored, DownloadPaths.SubtitleName("external:0", "srt")), Token));
         var record = _h.Find("dl_1")!.Record;
         Assert.Equal("media.mkv", record.MediaFile);
         Assert.Equal(Source, await System.IO.File.ReadAllBytesAsync(File(stored, "media.mkv"), Token));
@@ -283,7 +283,7 @@ public sealed class DownloadQueueServerTests : IAsyncDisposable
         await Until(() => _h.Find("dl_1")!.Record.SubtitleRevisions.GetValueOrDefault("external:0") == "r2", "the new subtitle was kept");
         await IdleAsync(queue);
         Assert.Equal(2, _h.Silo.SentTo(HttpMethod.Get, SubtitlePath("dl_1")).Count);
-        Assert.Equal(synced, await System.IO.File.ReadAllBytesAsync(File(stored, "sub-0.srt"), Token));
+        Assert.Equal(synced, await System.IO.File.ReadAllBytesAsync(File(stored, DownloadPaths.SubtitleName("external:0", "srt")), Token));
 
         _h.Time.Advance(TimeSpan.FromHours(24));
         await _h.RestartAsync();

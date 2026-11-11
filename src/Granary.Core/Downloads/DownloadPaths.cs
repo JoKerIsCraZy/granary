@@ -133,11 +133,15 @@ public static class DownloadPaths
         !string.IsNullOrEmpty(kind) && name is not null
         && ImageExtensions.Values.Append("img").Any(extension => name == Segment(kind) + "." + extension);
 
-    /// <summary>The manifest's subtitle <paramref name="index"/>, <c>sub-0.srt</c>, after its format (<c>sub</c> when unknown).</summary>
-    public static string SubtitleName(int index, string? format)
+    /// <summary>
+    /// The file of the subtitle with <paramref name="reference"/> (<c>external:0</c>), <c>sub-external_0-….srt</c>: named after the
+    /// reference as a folder is after an id (<see cref="Segment"/>), so a file holds the same subtitle wherever a manifest lists
+    /// it; after its format (<c>sub</c> when unknown).
+    /// </summary>
+    public static string SubtitleName(string reference, string? format)
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(index);
-        return $"sub-{index}.{Extension(format?.Trim().ToLowerInvariant(), "sub")}";
+        ArgumentException.ThrowIfNullOrEmpty(reference);
+        return $"sub-{Segment(reference)}.{Extension(format?.Trim().ToLowerInvariant(), "sub")}";
     }
 
     // A plain short extension, or the fallback: nothing from the server reaches a file name unchecked.

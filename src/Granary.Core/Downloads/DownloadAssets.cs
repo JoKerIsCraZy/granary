@@ -92,6 +92,7 @@ public sealed class DownloadAssets(DownloadsApi api, TimeProvider time, ILogger<
     }
 
     // A subtitle is fetched when it is new, its file is gone, or its revision changed; one that does not come keeps what it was.
+    // Its file is named after its reference, so a manifest listing the subtitles in another order changes nothing.
     private async Task<IReadOnlyDictionary<string, string>> FetchSubtitlesAsync(Uri server, StoredDownload download, OfflineManifest manifest,
         CancellationToken cancellationToken)
     {
@@ -106,7 +107,7 @@ public sealed class DownloadAssets(DownloadsApi api, TimeProvider time, ILogger<
                 continue;
             }
             string reference = Uri.UnescapeDataString(path[(path.LastIndexOf('/') + 1)..]);
-            string name = DownloadPaths.SubtitleName(index, subtitle.Format);
+            string name = DownloadPaths.SubtitleName(reference, subtitle.Format);
             string? known = record.SubtitleRevisions.GetValueOrDefault(reference);
             bool there = File.Exists(Path.Combine(download.Folder, name));
             if (there && (subtitle.Revision is null || subtitle.Revision == known))

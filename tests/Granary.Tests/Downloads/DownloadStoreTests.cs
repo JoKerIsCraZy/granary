@@ -966,8 +966,19 @@ public sealed class DownloadStoreTests : IDisposable
         Assert.Equal("series_poster.webp", DownloadPaths.ArtworkName("series_poster", "image/webp"));
         Assert.Equal("backdrop.png", DownloadPaths.ArtworkName("backdrop", "image/png"));
         Assert.Equal("logo.img", DownloadPaths.ArtworkName("logo", null));
-        Assert.Equal("sub-0.srt", DownloadPaths.SubtitleName(0, "srt"));
-        Assert.Equal("sub-3.ass", DownloadPaths.SubtitleName(3, "ASS"));
-        Assert.Equal("sub-1.sub", DownloadPaths.SubtitleName(1, "../x"));
+        Assert.Equal("sub-en.srt", DownloadPaths.SubtitleName("en", "srt"));
+        Assert.Equal("sub-forced.ass", DownloadPaths.SubtitleName("forced", "ASS"));
+        Assert.Equal("sub-en.sub", DownloadPaths.SubtitleName("en", "../x"));
+        Assert.Equal("sub-" + DownloadPaths.Segment("external:0") + ".srt", DownloadPaths.SubtitleName("external:0", "srt"));
+    }
+
+    // A file always holds the same subtitle, wherever the manifest lists it: a manifest that lists them in another order no
+    // longer finds one subtitle's file under another's place and keeps it.
+    [Fact]
+    public void ASubtitlesFile_IsNamedByItsReference_NotItsPlace()
+    {
+        Assert.NotEqual(DownloadPaths.SubtitleName("external:0", "srt"), DownloadPaths.SubtitleName("external:1", "srt"));
+        Assert.NotEqual(DownloadPaths.SubtitleName("External", "srt"), DownloadPaths.SubtitleName("external", "srt"));
+        Assert.DoesNotContain(':', DownloadPaths.SubtitleName("external:0", "srt"));
     }
 }
