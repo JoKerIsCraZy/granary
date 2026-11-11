@@ -502,8 +502,9 @@ public sealed partial class MediaCardView : UserControl
         var row = card is null ? null : RowOf(this);
         if (!_menuHostFound && row is null && card is not null && VisualTreeHelper.GetParent(this) is not null)
         {
+            // Only a host found is kept: a card asked before it reached its place looks again next time.
             _menuHost = MenuHostOf(this);
-            _menuHostFound = true;
+            _menuHostFound = _menuHost is not null;
         }
         var host = row is null ? _menuHost : null;
         bool canRemove = card is not null && row?.CardRemoveCommand is { } remove && remove.CanExecute(card);
@@ -530,13 +531,13 @@ public sealed partial class MediaCardView : UserControl
         return null;
     }
 
-    // The nearest grid or page above a card adds its list's own entries: a collection's Edit and Delete, a season's
-    // episodes' Download (ItemDetailPage).
+    // The nearest grid or page above a card with entries of its own adds them: a collection's Edit and Delete, a season's
+    // episodes' Download (ItemDetailPage). A grid without any does not hide the page's.
     private static ICardMenuHost? MenuHostOf(DependencyObject element)
     {
         for (var parent = VisualTreeHelper.GetParent(element); parent is not null; parent = VisualTreeHelper.GetParent(parent))
         {
-            if (parent is ICardMenuHost host)
+            if (parent is ICardMenuHost { CardMenu: not null } host)
             {
                 return host;
             }

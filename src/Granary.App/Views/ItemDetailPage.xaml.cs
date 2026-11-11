@@ -23,6 +23,7 @@ public sealed partial class ItemDetailPage : Page, IArrivalFocus, ICardMenuHost
         // Transient and not disposable: the root provider does not keep it alive.
         ViewModel = App.Services.GetRequiredService<ItemDetailViewModel>();
         InitializeComponent();
+        Loaded += OnLoaded;
         Unloaded += OnUnloaded;
     }
 
@@ -69,12 +70,15 @@ public sealed partial class ItemDetailPage : Page, IArrivalFocus, ICardMenuHost
         ViewModel.StopFollowingDownloads();
     }
 
-    // Also when the page goes without being navigated from. One shown again before its Unloaded came keeps following.
-    private void OnUnloaded(object sender, RoutedEventArgs e)
+    // Also when the page goes without being navigated from, its frame taken out of the window for a while: it follows
+    // again once it is back and still the frame's page (following twice is harmless).
+    private void OnUnloaded(object sender, RoutedEventArgs e) => ViewModel.StopFollowingDownloads();
+
+    private void OnLoaded(object sender, RoutedEventArgs e)
     {
-        if (!ReferenceEquals(Frame?.Content, this))
+        if (ReferenceEquals(Frame?.Content, this))
         {
-            ViewModel.StopFollowingDownloads();
+            ViewModel.FollowDownloads();
         }
     }
 
