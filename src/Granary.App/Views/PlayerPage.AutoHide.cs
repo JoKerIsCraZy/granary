@@ -10,6 +10,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Windows.Foundation;
+using DispatcherQueuePriority = Microsoft.UI.Dispatching.DispatcherQueuePriority;
 using DispatcherQueueTimer = Microsoft.UI.Dispatching.DispatcherQueueTimer;
 
 namespace Granary.App.Views;
@@ -397,6 +398,7 @@ public sealed partial class PlayerPage
                 _isCursorHidden = false;
                 // The arrow, not null: null leaves the shown cursor as it is until the pointer reaches another element.
                 ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Arrow);
+                ShowCursorNow(hidden: false);
             }
             return;
         }
@@ -415,5 +417,41 @@ public sealed partial class PlayerPage
         }
         _isCursorHidden = true;
         ProtectedCursor = blank;
+        ShowCursorNow(hidden: true);
+    }
+
+    // WinUI hands the page's new cursor to the window at once, but Windows draws it only when it next asks the window under
+    // the pointer which cursor to draw, as the mouse moves or a button goes down. A mouse resting on the picture kept the
+    // arrow until then, for as long as nobody touched it. So the window is asked now, as a move would ask it, once this
+    // change is through and only while the pointer is still over it.
+    private void ShowCursorNow(bool hidden)
+    {
+        DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, () =>
+        {
+            bool asked = AskForCursor(OwnWindowUnderPointer());
+            _autoHideLog.LogDebug("The player's cursor is {Cursor} (shown at once: {Asked})", hidden ? "hidden" : "the arrow", asked);
+        });
+    }
+
+    // The window right under the pointer while it is part of this one, else 0: the question goes to no other app's window,
+    // which could be one that does not answer.
+    private nint OwnWindowUnderPointer()
+    {
+        if (_appWindow is null || !GetCursorPos(out var cursor))
+        {
+            return 0;
+        }
+        nint under = WindowFromPoint(cursor);
+        return under != 0 && GetAncestor(under, GaRoot) == Win32Interop.GetWindowFromWindowId(_appWindow.Id) ? under : 0;
+    }
+
+    private static bool AskForCursor(nint window)
+    {
+        if (window == 0)
+        {
+            return false;
+        }
+        _ = SendMessageW(window, WmSetCursor, window, CursorRequestForMove);
+        return true;
     }
 }
