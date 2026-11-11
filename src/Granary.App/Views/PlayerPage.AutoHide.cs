@@ -314,7 +314,8 @@ public sealed partial class PlayerPage
 
     // While the controls are hidden: a cursor they left showing, because another window was under the pointer as they hid,
     // goes once the pointer is over the picture. Windows is asked where the pointer is only while the cursor waits for
-    // that. With reassert, on the window's own rare changes, a hidden cursor is set again too.
+    // that. With reassert, on the window's own rare changes, a hidden cursor is set again too, also while the controls
+    // show after a key (F, P): a mode change can leave the page's cursor reset.
     private void LookAtCursorAgain(string occasion, bool reassert)
     {
         if (!IsLoaded)
@@ -322,11 +323,7 @@ public sealed partial class PlayerPage
             _cursorTimer.Stop();
             return;
         }
-        if (_areControlsVisible)
-        {
-            return;
-        }
-        bool hidNow = _cursor.WaitsForPicture
+        bool hidNow = !_areControlsVisible && _cursor.WaitsForPicture
             && _cursor.LooksAgain(isOverPicture: BlankCursor.Instance is not null && PointerInPage() is not null);
         if (hidNow)
         {
