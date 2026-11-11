@@ -99,16 +99,16 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task Confirmed_TellsTheServer_ThenDeletesTheFiles_ThenSignsOut()
+    public async Task Confirmed_TakesTheDownloadsOff_TellsTheServer_ThenSignsOut()
     {
         var mine = await KeptAsync("dl_1");
         var otherProfile = await KeptAsync("dl_8", Scope8);
         var otherServer = await KeptAsync("dl_x", OtherServer);
-        bool filesThereAtDelete = false;
+        List<string>? keptAtDelete = null;
         bool signedOutAtDelete = true;
         _h.Silo.On(HttpMethod.Delete, EntryPath("dl_1"), () =>
         {
-            filesThereAtDelete = File.Exists(mine.PartPath);
+            keptAtDelete = [.. Kept];
             signedOutAtDelete = _h.Session.Calls.Count > 0;
             return ScriptedSilo.NoContent()();
         });
@@ -119,7 +119,7 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
 
         Assert.Equal("7", Assert.Single(DeletesSent).AsProfile);
         Assert.Single(_h.Silo.SentTo(HttpMethod.Delete, EntryPath("dl_1")));
-        Assert.True(filesThereAtDelete);
+        Assert.Equal(["dl_x"], keptAtDelete);
         Assert.False(signedOutAtDelete);
         Assert.False(Directory.Exists(mine.Folder));
         Assert.False(Directory.Exists(otherProfile.Folder));
@@ -267,13 +267,13 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
 
         var signingOut = servers.SignOutCommand.ExecuteAsync(Item(servers, "srv1"));
         await Until(() => DeletesSent.Count == 1, "the delete went out");
-        bool filesWhileWaiting = File.Exists(kept.PartPath);
+        int keptWhileWaiting = Kept.Count();
         int callsWhileWaiting = _h.Session.Calls.Count;
         _h.Time.Advance(DownloadSignOut.DeleteBudget);
         await signingOut.WaitAsync(TimeSpan.FromSeconds(5), Token);
         await _h.Store.FolderWork;
 
-        Assert.True(filesWhileWaiting);
+        Assert.Equal(0, keptWhileWaiting);
         Assert.Equal(0, callsWhileWaiting);
         Assert.False(Directory.Exists(kept.Folder));
         Assert.Equal(["sign-out:srv1"], _h.Session.Calls);
@@ -369,6 +369,36 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
 
         Assert.Empty(_h.Session.Calls);
         Assert.True(File.Exists(kept.PartPath));
+    }
+
+    [Fact]
+    public async Task ATransferUnderWay_StopsBeforeTheServerHearsTheDeletes()
+    {
+        var stored = await _h.AddAsync("dl_1");
+        var stream = _h.ServeGated("dl_1", DownloadPayloads.Source(3000));
+        var queue = _h.StartQueue();
+        stream.Release(1000);
+        await Until(() => stream.Delivered == 1000, "the transfer is under way");
+        int rowsAtDelete = -1;
+        _h.Silo.On(HttpMethod.Delete, EntryPath("dl_1"), () =>
+        {
+            rowsAtDelete = _h.Store.All.Count;
+            return ScriptedSilo.NoContent()();
+        });
+        using var servers = await ServersAsync();
+
+        await servers.SignOutCommand.ExecuteAsync(Item(servers, "srv1"));
+        await SettleAsync(queue);
+        stream.ReleaseAll();
+        await SettleAsync(queue);
+        await _h.Store.FolderWork;
+
+        Assert.Equal(0, rowsAtDelete);
+        Assert.Single(_h.Silo.SentTo(HttpMethod.Delete, EntryPath("dl_1")));
+        Assert.Single(_h.FileRequests("dl_1"));
+        Assert.Equal(1000, stream.Delivered);
+        Assert.False(Directory.Exists(stored.Folder));
+        Assert.Equal(["sign-out:srv1"], _h.Session.Calls);
     }
 
     [Fact]

@@ -19,9 +19,9 @@ public sealed record DownloadSummary(int? Count, long? Bytes);
 
 /// <summary>
 /// Signing out of a server or removing it takes its downloads along (docs/architecture.md, "Signing out"). The viewer is
-/// asked first, with how many go and the space they take, as the Apple app's sign-out asks; the server hears the deletes
-/// of the active profile's entries, within <see cref="DeleteBudget"/>; then the rows, the index entries and the deletes still
-/// to send go; then the sign-out, while the folders go beside it. A drive or a share that does not answer holds the question
+/// asked first, with how many go and the space they take, as the Apple app's sign-out asks; the rows, the index entries and
+/// the deletes still to send go, and their transfers stop; the server hears the deletes of the active profile's entries, within
+/// <see cref="DeleteBudget"/>; then the sign-out, while the folders go beside it. A drive or a share that does not answer holds the question
 /// up for at most <see cref="SummaryBudget"/>, and the sign-out for at most <see cref="StoreBudget"/> more. Only a sign-out the
 /// viewer asks for comes here: a sign-in that expired, which the authentication handler ends by itself, keeps the downloads,
 /// as the Android app does.
@@ -130,12 +130,13 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
     /// <summary>
     /// Takes the downloads of a server's account (null: of every account there) off this PC. First nothing more is kept or
     /// started for them (<see cref="DownloadStore.MarkCleared"/>): a create that answers later keeps nothing, and the queue
-    /// starts no transfer and no server work for them until the account is signed in again. The server then hears the
-    /// deletes of the active profile's entries there, its downloads and the deletes still to send, for at most
-    /// <see cref="DeleteBudget"/>; other profiles' entries cannot be deleted without their profile, so they stay on the server.
-    /// Then every matching row, index entry and delete still to send goes, whether the server answered or not; it returns once
-    /// the index without them is written, or after <see cref="StoreBudget"/>, and their folders go after that. When the
-    /// downloads cannot even be read within <see cref="StoreBudget"/>, the server hears nothing and they go once they are read.
+    /// starts no transfer and no server work for them until the account is signed in again. Then every matching row, index
+    /// entry and delete still to send goes at once, and the queue stops their transfers, so nothing more is written for them.
+    /// Then the server hears the deletes of the active profile's entries there, its downloads and the deletes still to send as
+    /// they were before, for at most <see cref="DeleteBudget"/>; other profiles' entries cannot be deleted without their
+    /// profile, so they stay on the server. It returns once the index without them is written, or after
+    /// <see cref="StoreBudget"/>, and their folders go after that. When the downloads cannot even be read within
+    /// <see cref="StoreBudget"/>, the server hears nothing and they go once they are read.
     /// </summary>
     public async Task ClearAsync(string serverEntryId, string? accountId, CancellationToken cancellationToken)
     {
@@ -144,15 +145,17 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
         // until their account is signed in again.
         store.MarkCleared(serverEntryId, accountId);
         bool loaded = await LoadWithinAsync(StoreBudget, cancellationToken).ConfigureAwait(false);
-        if (loaded)
-        {
-            await TellTheServerAsync(serverEntryId, accountId, cancellationToken).ConfigureAwait(false);
-        }
+        // What the server is to hear is taken before the rows go: the queue then has no delete of them to send twice.
+        var deletes = loaded ? DeletesToSend(serverEntryId, accountId) : null;
         var removal = store.RemoveWhereAsync(scope => Matches(scope, serverEntryId, accountId), CancellationToken.None);
         if (!loaded)
         {
             Observe(removal);
             return;
+        }
+        if (deletes is not null)
+        {
+            await TellTheServerAsync(deletes, cancellationToken).ConfigureAwait(false);
         }
         await WaitForIndexAsync(removal, cancellationToken).ConfigureAwait(false);
     }
@@ -234,27 +237,30 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
                 DownloadLog.Failure(task.Exception!.GetBaseException())),
             logger, CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
 
-    // The server's deletes of the active profile's entries of that server and account, one at a time: one the server
-    // refuses does not stop the others; no answer, a profile switch or the end of the budget stops them all.
-    private async Task TellTheServerAsync(string serverEntryId, string? accountId, CancellationToken cancellationToken)
+    // The active profile's entries of that server and account the server is to hear of, its downloads and the deletes still to
+    // send; null when there are none, or the active profile is not of that server and account.
+    private ServerDeletes? DeletesToSend(string serverEntryId, string? accountId)
     {
         if (DownloadScope.Of(session) is not { } scope || !Matches(scope, serverEntryId, accountId) || session.ActiveServer is not { } server)
         {
-            return;
+            return null;
         }
         var ids = store.In(scope).Select(d => d.Record.DownloadId).Concat(store.PendingDeletes(scope).Select(d => d.DownloadId))
             .Distinct(StringComparer.Ordinal).ToList();
-        if (ids.Count == 0)
-        {
-            return;
-        }
+        return ids.Count == 0 ? null : new ServerDeletes(server.BaseUri, scope.ProfileId, ids);
+    }
+
+    // The server's deletes, one at a time, as that profile: one the server refuses does not stop the others; no answer, a
+    // profile switch or the end of the budget stops them all.
+    private async Task TellTheServerAsync(ServerDeletes deletes, CancellationToken cancellationToken)
+    {
         using var budget = new CancellationTokenSource(DeleteBudget, time);
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, budget.Token);
-        foreach (string id in ids)
+        foreach (string id in deletes.Ids)
         {
             try
             {
-                await api.DeleteAsync(server.BaseUri, scope.ProfileId, id, linked.Token).ConfigureAwait(false);
+                await api.DeleteAsync(deletes.Server, deletes.ProfileId, id, linked.Token).ConfigureAwait(false);
             }
             catch (SiloApiException ex)
             {
@@ -263,12 +269,15 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
             catch (Exception ex) when (ex is HttpRequestException or ProfileChangedException or JsonException
                 || (ex is OperationCanceledException && !cancellationToken.IsCancellationRequested))
             {
-                logger.LogInformation("The server could not be told of the deletes before the sign-out ({Failure}); the files go all the same",
+                logger.LogInformation("The server could not be told of the deletes before the sign-out ({Failure}); the downloads are off this PC all the same",
                     Describe(ex));
                 return;
             }
         }
     }
+
+    /// <summary>The deletes a sign-out sends: the server, the profile they go as, and the entries.</summary>
+    private sealed record ServerDeletes(Uri Server, string ProfileId, IReadOnlyList<string> Ids);
 
     private static bool Matches(DownloadScope scope, string serverEntryId, string? accountId) =>
         scope.ServerEntryId == serverEntryId && (accountId is null || scope.AccountId == accountId);

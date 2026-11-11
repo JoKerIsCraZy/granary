@@ -1329,14 +1329,15 @@ The view models of the sign-out paths take it (optional, so they work without it
   (`AccountOfAsync`). None known stands for every account there. A sign-out reads it once, so the downloads it asked
   about are the ones that go.
 - **Order.** First the account's downloads are marked cleared (`MarkCleared`): a create that answers from then on keeps
-  nothing, and the queue starts nothing more for them (see "The queue" and "Starting and deleting"). The server hears
-  next, while the session can still send: `DELETE` for each of the active profile's
-  entries on that server and account (its downloads and the deletes still to send), bound to that profile, one at a time,
-  for at most `DeleteBudget` (10 s of the `TimeProvider`). An entry the server refuses does not stop the others; no
-  answer, a profile switch or the end of the budget stops them all. Then every matching download of every profile goes
-  from this PC, whether the server answered or not: its row, index entry and deletes still to send at once, and the queue
-  stops its transfer (`RemoveWhereAsync`). Then the sign-out, once the index without them is written or after
-  `StoreBudget` (5 s) at most: an index that is not written in time (a disk or a write before it that does not answer) is
+  nothing, and the queue starts nothing more for them (see "The queue" and "Starting and deleting"). Then every matching
+  download of every profile goes from this PC, whatever the server answers later: its row, index entry and deletes still
+  to send at once (`RemoveWhereAsync`), and the queue stops its transfer, so no byte is written that is deleted a moment
+  later and no transfer asks the server for an entry it is deleting. The server hears next, while the session can still
+  send: `DELETE` for each of the active profile's entries on that server and account (its downloads and the deletes still
+  to send, as listed before they went), bound to that profile, one at a time, for at most `DeleteBudget` (10 s of the
+  `TimeProvider`). The queue has none of those deletes left to send a second time. An entry the server refuses does not
+  stop the others; no answer, a profile switch or the end of the budget stops them all. Then the sign-out, once the index
+  without them is written or after `StoreBudget` (5 s) at most: an index that is not written in time (a disk or a write before it that does not answer) is
   logged and written once it can be, and the sign-out goes on. The folders go after the index, beside the sign-out
   (`DownloadStore.FolderWork`), so a share that does not answer holds nothing up; a folder that cannot go yet is tried again
   as any removed download's. Downloads that cannot even be read within `StoreBudget` go once they are read; the server hears
