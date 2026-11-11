@@ -60,8 +60,8 @@ public sealed class PlayerCursor(TimeProvider time)
         _last = seen;
         if (_from is { } from && time.GetElapsedTime(from.At, seen.At) > MoveWindow)
         {
-            // Too long ago to add up: from here on, small moves count from where the pointer was seen last.
-            _from = last ?? from;
+            // Too long ago to add up: from now on, small moves count from where the pointer was seen last.
+            _from = (last ?? from) with { At = seen.At };
         }
         // The way travelled, so a diagonal move counts as much as a straight one.
         double threshold = MoveThreshold * scale;

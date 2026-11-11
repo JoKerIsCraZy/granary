@@ -145,6 +145,20 @@ public sealed class PlayerCursorTests
     }
 
     [Fact]
+    public void QuickSmallMoves_AfterALongRest_AddUp()
+    {
+        // The wait for small moves to add up starts with the first one after the rest, not where the pointer last rested.
+        _cursor.Moves(100, 100, Scale);
+        _cursor.ControlsHidden(isOverPicture: true);
+        _time.Advance(TimeSpan.FromMinutes(5));
+
+        Assert.False(_cursor.Moves(101, 100, Scale));
+        _time.Advance(TimeSpan.FromMilliseconds(16));
+        Assert.True(_cursor.Moves(102, 100, Scale));
+        Assert.False(_cursor.IsHidden);
+    }
+
+    [Fact]
     public void AtAHigherScale_AMoveNeedsMorePixels()
     {
         // Positions are the screen's pixels, the threshold the page's: at 150 % a move needs 3 of them.
