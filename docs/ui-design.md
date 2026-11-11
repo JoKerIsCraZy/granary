@@ -1504,7 +1504,7 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   a new title shows its whole picture again.
 - **Mini view** (the web's Picture in Picture, P): the window becomes small (480 by 270), stays above the others
   (CompactOverlay) and shows only the picture, with play/pause in the middle and the way back top left, fading as the
-  controls do; the pills, the playback info and the Playing Next screen wait for the full window, the countdown runs
+  controls do once the mouse leaves it (a tap shows and hides them); the pills, the playback info and the Playing Next screen wait for the full window, the countdown runs
   on. Esc or P returns to where it was opened from: full screen, or the window as it was; full screen (F, F11) goes
   there from the mini view, and leaving the page returns first.
 - **Subtitle look**: text subtitles follow the profile's `playback.subtitle_appearance` as the Android and Apple
@@ -1564,17 +1564,19 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   `waiting` event, so a picture that still moves has none). It goes as soon as the picture moves. Failed shows the
   message, Retry when it can help and Back; keyboard focus moves to them. Ended keeps the controls up.
 - **Auto-hide**: during playback the controls fade (and slide a few pixels) after 3 s without pointer
-  movement or a key, wherever the pointer rests, on them or at the edge of the screen, as on the web; the cursor goes
-  with them while it is over the picture, however they hide (the wait, a remote's Back, a tap). They stay while
-  paused, preparing, buffering, failed or ended, during a seek drag, while a flyout or a subtitle panel is open, the
-  markers are edited or a control in them has keyboard focus (`PlayerControlsIdle`; the log names the hold once). Any
-  pointer movement or key brings them back. The cursor follows the mouse only (`PlayerCursor`): it comes back with a
-  real move (2 px or more within 300 ms, measured on the screen: not the framework testing a still pointer again, not
-  slow drift, not the page moving under a still pointer as the window goes full screen or changes scale) and when the
-  player closes, never with a key or the player's own changes, so a remote does not put it back over the picture;
-  paused, it too stays away until the mouse moves. A cursor the controls left showing because another window was
-  under the pointer as they hid (a notification, the volume flyout) goes once it is over the picture again: on a
-  pointer event that is no move, when the window is activated or changes, and on a look every second while it waits.
+  movement or a key, wherever the pointer rests in the full player, on them or at the edge of the screen, as on the
+  web; the cursor goes with them while it is over the picture, however they hide (the wait, a remote's Back, a tap).
+  They stay while paused, preparing, buffering, failed or ended, during a seek drag, while a flyout or a subtitle
+  panel is open, the markers are edited, a control in them has keyboard focus, or the mouse is over the mini view
+  (`PlayerControlsIdle`; the log names the hold once). Any pointer movement or key brings them back. The cursor
+  follows the pointer only (`PlayerCursor`): it comes back with a real move of the mouse (2 px or more within 300 ms,
+  measured on the screen: not the framework testing a still pointer again, not slow drift, not the page moving under a
+  still pointer as the window goes full screen or changes scale), any move of a finger or a pen, and when the player
+  closes, never with a key or the player's own changes, so a remote does not put it back over the picture; paused,
+  it too stays away until the mouse moves. A cursor the controls left showing because another window was under the
+  pointer as they hid (a notification, the volume flyout) goes once it is over the picture again: on a pointer event
+  that is no move (looked at no more than every 250 ms), when the window is activated or changes, and on a look every
+  second while it waits.
   Hidden controls take no clicks. The cursor goes as the page's `ProtectedCursor`, a blank one made at run time (`BlankCursor`):
   `ShowCursor` does not reach WinUI content, whose cursor WinUI's input stack sets per element.
 - **Mouse**: a click on the picture plays or pauses (after 250 ms, so a double click does not), a double

@@ -145,6 +145,19 @@ public sealed class PlayerCursorTests
     }
 
     [Fact]
+    public void ATouchOrPenMove_IsAlwaysARealOne()
+    {
+        // Only the mouse's place is measured on the screen: a finger or a pen dragged over the picture shows the controls.
+        _cursor.Moves(100, 100, Scale);
+        _cursor.ControlsHidden(isOverPicture: true);
+
+        _cursor.TouchOrPenMoves();
+
+        Assert.False(_cursor.IsHidden);
+        Assert.False(_cursor.LooksAgain(isOverPicture: true));
+    }
+
+    [Fact]
     public void HidingTheControlsAgain_OffThePicture_KeepsItHidden()
     {
         _cursor.ControlsHidden(isOverPicture: true);
@@ -220,6 +233,33 @@ public sealed class PlayerCursorTests
 
         Assert.False(_cursor.LooksAgain(isOverPicture: true));
         Assert.False(_cursor.IsHidden);
+    }
+
+    [Fact]
+    public void ALook_IsDueOnlyWhileTheCursorWaitsForThePicture()
+    {
+        // Pointer events that are no move come at the mouse's report rate: a hidden cursor needs no look at all.
+        Assert.False(_cursor.IsLookDue);
+
+        _cursor.ControlsHidden(isOverPicture: true);
+        Assert.False(_cursor.IsLookDue);
+
+        _cursor.Show();
+        _cursor.ControlsHidden(isOverPicture: false);
+        Assert.True(_cursor.IsLookDue);
+    }
+
+    [Fact]
+    public void AfterALook_TheNextIsDueOnlyAWhileLater()
+    {
+        _cursor.ControlsHidden(isOverPicture: false);
+        _cursor.LooksAgain(isOverPicture: false);
+
+        Assert.False(_cursor.IsLookDue);
+        _time.Advance(PlayerCursor.LookInterval - TimeSpan.FromMilliseconds(1));
+        Assert.False(_cursor.IsLookDue);
+        _time.Advance(TimeSpan.FromMilliseconds(1));
+        Assert.True(_cursor.IsLookDue);
     }
 
     [Fact]

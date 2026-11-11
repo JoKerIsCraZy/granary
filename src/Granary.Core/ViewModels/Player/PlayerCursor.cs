@@ -1,8 +1,9 @@
 namespace Granary.Core.ViewModels.Player;
 
 /// <summary>
-/// The mouse cursor over the player's picture (PlayerPage.AutoHide.cs): it follows the mouse only. A real move shows it,
-/// and it hides with the controls while it is over the picture, whatever hid them: the idle wait, a remote's Back, a tap.
+/// The mouse cursor over the player's picture (PlayerPage.AutoHide.cs): it follows the pointer only. A real move of the
+/// mouse, or any move of a finger or a pen, shows it, and it hides with the controls while it is over the picture,
+/// whatever hid them: the idle wait, a remote's Back, a tap.
 /// Keys and the player's own changes show the controls and leave the cursor as it is, so a remote never brings it back
 /// over the picture. While the controls are hidden, a cursor that was off the picture as they hid (another window over
 /// it) hides once it is seen over the picture again.
@@ -18,15 +19,28 @@ public sealed class PlayerCursor(TimeProvider time)
     /// </summary>
     public static readonly TimeSpan MoveWindow = TimeSpan.FromMilliseconds(300);
 
+    /// <summary>
+    /// How often pointer events that are no move may have the cursor looked at again: they come at the mouse's report
+    /// rate, and each look asks Windows where the pointer is.
+    /// </summary>
+    public static readonly TimeSpan LookInterval = TimeSpan.FromMilliseconds(250);
+
     // Where the pointer was when the moves now adding up started, and where it was seen last.
     private Sample? _from;
     private Sample? _last;
     private bool _areControlsHidden;
+    private long? _lookedAt;
 
     public bool IsHidden { get; private set; }
 
     /// <summary>The controls are hidden and the cursor was left showing off the picture: it hides once seen over it.</summary>
     public bool WaitsForPicture => _areControlsHidden && !IsHidden;
+
+    /// <summary>
+    /// Whether a pointer event that is no move should have the cursor looked at again: only while it waits for the
+    /// picture, and at most every <see cref="LookInterval"/>.
+    /// </summary>
+    public bool IsLookDue => WaitsForPicture && (_lookedAt is not { } at || time.GetElapsedTime(at) >= LookInterval);
 
     /// <summary>The pointer rests at <paramref name="x"/>, <paramref name="y"/> on the screen as the player opens: no move.</summary>
     public void RestsAt(double x, double y)
@@ -55,10 +69,15 @@ public sealed class PlayerCursor(TimeProvider time)
             return false;
         }
         _from = seen;
-        IsHidden = false;
-        _areControlsHidden = false;
+        Shows();
         return true;
     }
+
+    /// <summary>
+    /// A finger or a pen moved over the page: always a real move, as the page measures only the mouse's place on the
+    /// screen. It shows the cursor (and the page the controls).
+    /// </summary>
+    public void TouchOrPenMoves() => Shows();
 
     /// <summary>The controls hid; a cursor over the picture goes with them.</summary>
     public void ControlsHidden(bool isOverPicture)
@@ -76,6 +95,7 @@ public sealed class PlayerCursor(TimeProvider time)
     /// </summary>
     public bool LooksAgain(bool isOverPicture)
     {
+        _lookedAt = time.GetTimestamp();
         if (!WaitsForPicture || !isOverPicture)
         {
             return false;
@@ -90,9 +110,15 @@ public sealed class PlayerCursor(TimeProvider time)
     /// </summary>
     public void Show()
     {
+        Shows();
+        _from = _last = null;
+        _lookedAt = null;
+    }
+
+    private void Shows()
+    {
         IsHidden = false;
         _areControlsHidden = false;
-        _from = _last = null;
     }
 
     private readonly record struct Sample(double X, double Y, long At);

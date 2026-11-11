@@ -18,6 +18,25 @@ public sealed class PlayerControlsIdleTests
     }
 
     [Fact]
+    public void ThePointerOverTheFullPlayer_KeepsNothing()
+    {
+        Assert.Equal(ControlsHold.None, (Playing with { IsPointerOverWindow = true }).Hold);
+    }
+
+    [Fact]
+    public void TheMiniView_WithThePointerOverIt_KeepsThem()
+    {
+        // Its play button and its way back fill the small window: hidden, a click on them would go to the picture.
+        Assert.Equal(ControlsHold.MiniView, (Playing with { IsMiniView = true, IsPointerOverWindow = true }).Hold);
+    }
+
+    [Fact]
+    public void TheMiniView_WithThePointerAway_KeepsNothing()
+    {
+        Assert.Equal(ControlsHold.None, (Playing with { IsMiniView = true }).Hold);
+    }
+
+    [Fact]
     public void Paused_KeepsThem()
     {
         Assert.Equal(ControlsHold.Paused, (Playing with { IsPaused = true }).Hold);
