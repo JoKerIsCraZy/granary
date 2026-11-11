@@ -10,6 +10,7 @@ using Granary.Core.Playback.Themes;
 using Granary.Core.Realtime;
 using Granary.Core.Servers;
 using Granary.Core.Settings;
+using Granary.Core.Texts;
 using Granary.Core.Theme;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Cards;
@@ -75,6 +76,8 @@ public partial class App : Application
         Services = ConfigureServices(DispatcherQueue.GetForCurrentThread());
         _logger = Services.GetRequiredService<ILogger<App>>();
         _logger.LogInformation("Granary {Version} starting", typeof(App).Assembly.GetName().Version);
+        // The language texts come in, before the first window shows any (docs/architecture.md, "Texts").
+        ApplyLanguage();
         _window = Services.GetRequiredService<MainWindow>();
         var started = new TaskCompletionSource();
         _window.ShowStartup(started.Task);
@@ -119,6 +122,52 @@ public partial class App : Application
         // title of the signed-in server.
         StartShell(_window.Shell, DeveloperPlayRequest() is null ? null : AppRoute.Player, DeveloperPlayRequest(), started);
     }
+
+    // The profile's own language is not read yet and only English is enabled, so this is English for everyone until the
+    // other languages are.
+    private void ApplyLanguage()
+    {
+        string language = AppLanguage.Resolve(stored: null, WindowsLanguages(), AppLanguage.Enabled);
+#if DEBUG
+        language = DeveloperLanguage() ?? language;
+#endif
+        AppText.Apply(TextLanguage.Load(language, Services.GetRequiredService<ILogger<TextLanguage>>()));
+        _logger?.LogInformation("Texts in {Language}", AppText.Language.Tag);
+    }
+
+    // Windows' preferred languages, in the order the user put them.
+    private IReadOnlyList<string> WindowsLanguages()
+    {
+        try
+        {
+            return [.. global::Windows.System.UserProfile.GlobalizationPreferences.Languages];
+        }
+        catch (Exception ex)
+        {
+            // Without them Granary shows English, as it would for a language it does not ship.
+            _logger?.LogWarning(ex, "Windows' languages could not be read");
+            return [];
+        }
+    }
+
+#if DEBUG
+    // Developer shortcut: --language <tag> shows the texts in that shipped language, enabled or not, to check converted texts.
+    private string? DeveloperLanguage()
+    {
+        string[] arguments = Environment.GetCommandLineArgs();
+        int index = Array.IndexOf(arguments, "--language");
+        if (index < 0 || index + 1 >= arguments.Length)
+        {
+            return null;
+        }
+        string? language = AppLanguage.Match(arguments[index + 1]);
+        if (language is null)
+        {
+            _logger?.LogWarning("--language {Tag} is not a language Granary ships", arguments[index + 1]);
+        }
+        return language;
+    }
+#endif
 
     private static PlayRequest? DeveloperPlayRequest()
     {

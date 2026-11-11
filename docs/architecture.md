@@ -347,6 +347,10 @@ half-translated Granary. All of it is in `src/Granary.Core/Texts`.
   es, de, fr, pt-BR, ja, zh-Hans, ar) with the same language and likely script, so `es-MX` is `es`, `pt` and `pt-PT` are
   `pt-BR`, `zh`, `zh-CN` and `zh-SG` are `zh-Hans`, and `zh-TW`, `zh-HK` and `zh-Hant` match nothing; English found in
   Windows' list ends the search. Granary does not read or write the profile's setting yet.
+- **At start-up** the app resolves the language with Windows' list (`GlobalizationPreferences.Languages`) and applies it
+  before its first window (`App.ApplyLanguage`); the log says which. A debug build takes `--language <tag>` to show a
+  shipped language, enabled or not, for checking converted texts. WinUI's own control texts (a text box's menu, for
+  example) still follow Windows' display language.
 - **`Accept-Language`**: `ClientIdentityHandler` puts the language on screen on every request to a Silo server
   (docs/api-contract.md, 6.4).
 
