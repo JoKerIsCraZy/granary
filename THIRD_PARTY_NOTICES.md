@@ -130,3 +130,17 @@ shipped.
 the AGPL (their `TRADEMARK.md`). Granary uses its own name and logo; the one Silo asset it includes, the
 unmodified Silo mark, only refers to Silo (`src/Granary.App/Assets/Brand/NOTICE.txt`). Granary is an
 independent client and not an official Silo product.
+
+### Translations of Silo's web client
+
+`src/Granary.Core/Texts/Catalogs/web/<tag>.json` hold interface texts of Silo's web client in English and seven
+translations, as Silo publishes them for its web client. They are not translations Silo made for Granary.
+
+| | |
+|---|---|
+| Source | `web/src/locales/<tag>.json` of <https://github.com/Silo-Server/silo-server> |
+| Commit | `0e95e55b605b38477a130ae26c88e760bbe7a302` (2026-11-11), with each file's SHA-256 pinned in `texts.lock.json` |
+| Languages | `en`, `de`, `es`, `fr`, `pt-BR`, `ja`, `zh-Hans`, `ar` |
+| Changes | Trimmed to the keys Granary uses (`src/Granary.Core/Texts/Catalogs/web-keys.txt`); each message is unchanged |
+| Copyright | Copyright (C) 2026 Silo Media L.L.C. and contributors |
+| License | AGPL-3.0-or-later with Silo's platform library exception (`PLATFORM-EXCEPTION.md` of silo-server), as Granary is |
