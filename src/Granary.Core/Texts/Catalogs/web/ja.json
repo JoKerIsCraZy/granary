@@ -502,5 +502,17 @@
       "type": 0,
       "value": "今週のトレンド"
     }
+  ],
+  "web.common.ui.loadError.generic": [
+    {
+      "type": 0,
+      "value": "読み込み中に問題が発生しました。しばらくしてからもう一度お試しください。"
+    }
+  ],
+  "web.common.ui.loadError.timeout": [
+    {
+      "type": 0,
+      "value": "サーバーが応答していません。しばらくしてからもう一度お試しください。"
+    }
   ]
 }

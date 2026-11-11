@@ -140,7 +140,7 @@ public sealed class PersonViewModelTests
         _silo.Map(PersonPath, _ => BrowseFakeSilo.Problem(503, "dependency_unavailable"));
         var person = await ShownAsync();
         Assert.Equal("Couldn't load this person", person.ErrorTitle);
-        Assert.Equal("The server is busy. Try again in a moment.", person.ErrorText);
+        Assert.Equal("The server isn't responding. Try again in a moment.", person.ErrorText);
         Assert.True(person.CanRetry);
 
         _silo.Map(PersonPath, AlPacino);
@@ -307,7 +307,7 @@ public sealed class PersonViewModelTests
         var person = await ShownAsync();
 
         await person.LoadMoreCommand.ExecuteAsync(null);
-        Assert.Equal("The server is busy. Try again in a moment.", person.LoadMoreError);
+        Assert.Equal("The server isn't responding. Try again in a moment.", person.LoadMoreError);
         Assert.False(person.HasFilmographyError);
         int asked = _silo.To(CatalogPath).Count;
 

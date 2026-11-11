@@ -260,7 +260,7 @@ public sealed class HomeViewModelTests
 
         Assert.True(home.HasError);
         Assert.Empty(home.Rows);
-        Assert.Equal("The server is busy. Try again in a moment.", home.ErrorText);
+        Assert.Equal("The server isn't responding. Try again in a moment.", home.ErrorText);
         Assert.Equal(home.ErrorText, home.StatusText);
         Assert.DoesNotContain("Silo", home.ErrorText, StringComparison.Ordinal);
 

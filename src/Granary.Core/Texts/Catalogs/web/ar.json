@@ -502,5 +502,17 @@
       "type": 0,
       "value": "الرائج هذا الأسبوع"
     }
+  ],
+  "web.common.ui.loadError.generic": [
+    {
+      "type": 0,
+      "value": "حدث خطأ أثناء التحميل. حاول مرة أخرى بعد قليل."
+    }
+  ],
+  "web.common.ui.loadError.timeout": [
+    {
+      "type": 0,
+      "value": "الخادم لا يستجيب. حاول مرة أخرى بعد قليل."
+    }
   ]
 }

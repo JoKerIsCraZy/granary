@@ -502,5 +502,17 @@
       "type": 0,
       "value": "Em alta nesta semana"
     }
+  ],
+  "web.common.ui.loadError.generic": [
+    {
+      "type": 0,
+      "value": "Algo deu errado ao carregar o conteúdo. Tente novamente em instantes."
+    }
+  ],
+  "web.common.ui.loadError.timeout": [
+    {
+      "type": 0,
+      "value": "O servidor não está respondendo. Tente novamente em instantes."
+    }
   ]
 }

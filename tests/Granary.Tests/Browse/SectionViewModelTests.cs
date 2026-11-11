@@ -105,7 +105,7 @@ public sealed class SectionViewModelTests
         await section.OpenAsync(HomeRow);
 
         Assert.True(section.HasError);
-        Assert.Equal("The server is busy. Try again in a moment.", section.StatusText);
+        Assert.Equal("The server isn't responding. Try again in a moment.", section.StatusText);
 
         Pages((null, Page(null, Item("m1"))));
         await section.RetryCommand.ExecuteAsync(null);

@@ -502,5 +502,17 @@
       "type": 0,
       "value": "Tendances de la semaine"
     }
+  ],
+  "web.common.ui.loadError.generic": [
+    {
+      "type": 0,
+      "value": "Une erreur s’est produite lors du chargement. Réessayez dans un instant."
+    }
+  ],
+  "web.common.ui.loadError.timeout": [
+    {
+      "type": 0,
+      "value": "Le serveur ne répond pas. Réessayez dans un instant."
+    }
   ]
 }
