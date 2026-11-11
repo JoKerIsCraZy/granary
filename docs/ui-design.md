@@ -1631,8 +1631,8 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   (also while the title loads or after it failed, where they otherwise always set it); the minimized bar keeps its own
   Mute, and there M and the volume keys still work. Subtitles hidden: C does nothing; a subtitle that shows stays.
   Chapters hidden: Ctrl+Left and Ctrl+Right do nothing. Mini view hidden: P does nothing, so in the mini view P no
-  longer leaves it; Esc and its own button still do. Full screen hidden: F and a double click
-  on the picture do nothing; F11, the window's, still switches. Playback info hidden: its panel closes and does not
+  longer leaves it; Esc and its own button still do. Full screen hidden: F does nothing; a double
+  click on the picture and F11, the window's, still switch. Playback info hidden: its panel closes and does not
   open. Fill screen hidden: the whole picture shows again. Edit markers hidden: the marker panel does not open; one that
   is open stays, with its draft, until it is saved or closed. Sleep timer hidden: a running timer ends. Audio, Subtitles
   and Playback settings hidden: Down never opens their menu. Playback settings hidden: speed, audio delay, version and

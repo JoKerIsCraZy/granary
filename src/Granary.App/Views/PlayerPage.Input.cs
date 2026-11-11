@@ -16,7 +16,7 @@ namespace Granary.App.Views;
 
 // The keyboard map of the web player (docs/api-contract.md, 13.5), the chapter keys of Silo's macOS app, and clicks on the
 // picture. A key that belongs to a button Settings → Playback → Player buttons hides does nothing (Allows); F11 is the
-// window's and always works.
+// window's and always works, and so does a double click on the picture, which is no key of the button's.
 public sealed partial class PlayerPage
 {
     // A second click within this time makes a double click, so the first click's play or pause waits for it.
@@ -481,9 +481,7 @@ public sealed partial class PlayerPage
             TogglePause();
         }
         _clickToggled = false;
-        if (Allows(PlayerKey.FullScreen))
-        {
-            ToggleFullScreen();
-        }
+        // Also with the Full screen button hidden in Settings: hiding it takes its key F, not the way into full screen.
+        ToggleFullScreen();
     }
 }
