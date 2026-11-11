@@ -6,6 +6,8 @@ release's section is what its update says it changes (docs/release.md).
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-11-11
+
 ### Added
 
 - **New Season:** a Continue Watching card for the first episode of a new season says New Season, as on Silo's web.
