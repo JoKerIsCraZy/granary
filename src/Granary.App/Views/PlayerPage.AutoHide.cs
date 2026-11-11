@@ -227,11 +227,17 @@ public sealed partial class PlayerPage
         }
         else
         {
-            bool isOverPicture = PointerInPage() is not null;
-            _cursor.ControlsHidden(isOverPicture: isOverPicture && BlankCursor.Instance is not null, restsAt: ScreenPointer());
+            // How far the mouse went while the cursor showed tells a hand (hundreds of pixels) from a knock (a few).
+            double travelled = _cursor.Travelled;
+            // The cursor hides only where Windows says where the pointer is: moves then count from there, never from a
+            // place the page saw it at earlier. Else it is left showing and looked at again.
+            var rests = ScreenPointer();
+            bool isOverPicture = rests is not null && PointerInPage() is not null;
+            _cursor.ControlsHidden(isOverPicture: isOverPicture && BlankCursor.Instance is not null, restsAt: rests);
             ApplyCursor();
-            _autoHideLog.LogDebug("The player's controls hid (pointer over the picture: {OverPicture}, cursor hidden: {CursorHidden})",
-                isOverPicture, _cursor.IsHidden);
+            _autoHideLog.LogDebug(
+                "The player's controls hid (pointer over the picture: {OverPicture}, cursor hidden: {CursorHidden}, the mouse went {Travelled:0} px while it showed)",
+                isOverPicture, _cursor.IsHidden, travelled);
         }
         WatchCursor();
     }
@@ -348,8 +354,9 @@ public sealed partial class PlayerPage
             _cursorTimer.Stop();
             return;
         }
+        var rests = ScreenPointer();
         bool hidNow = !_areControlsVisible && _cursor.WaitsForPicture
-            && _cursor.LooksAgain(isOverPicture: BlankCursor.Instance is not null && PointerInPage() is not null, restsAt: ScreenPointer());
+            && _cursor.LooksAgain(isOverPicture: BlankCursor.Instance is not null && rests is not null && PointerInPage() is not null, restsAt: rests);
         if (hidNow)
         {
             _autoHideLog.LogDebug("The cursor the player's controls left showing hid: {Occasion}", occasion);
@@ -371,8 +378,10 @@ public sealed partial class PlayerPage
     // window is asked again, and the log says so once for each time the cursor hid.
     private void CheckShownCursor()
     {
-        // Over the picture only: over the title bar's drag area Windows draws the arrow itself.
-        if (!_isCursorHidden || PointerInPage() is null || OwnWindowUnderPointer() is not (var under and not 0) || !ShowsArrow())
+        // Over the picture only: over the title bar's drag area Windows draws the arrow itself. Which window is under the
+        // pointer is asked last, right before it is asked for its cursor. Should the mouse leave in the instant between,
+        // the next window sets its own cursor with the move that took the mouse there.
+        if (!_isCursorHidden || !ShowsArrow() || PointerInPage() is null || OwnWindowUnderPointer() is not (var under and not 0))
         {
             return;
         }
@@ -469,8 +478,12 @@ public sealed partial class PlayerPage
             // The same cursor set again could count as no change; null on the way leaves the shown one as it is.
             ProtectedCursor = null;
         }
+        else
+        {
+            // A new hide: Windows drawing its arrow is logged once for it, not again for the hidden cursor set anew.
+            _loggedArrowWhileHidden = false;
+        }
         _isCursorHidden = true;
-        _loggedArrowWhileHidden = false;
         ProtectedCursor = blank;
         ShowCursorNow(hidden: true);
     }

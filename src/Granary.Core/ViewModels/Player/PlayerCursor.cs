@@ -31,14 +31,23 @@ public sealed class PlayerCursor(TimeProvider time)
     private bool _areControlsHidden;
     private long? _lookedAt;
 
+    // How long the mouse had lain still before the moves now adding up started.
+    private TimeSpan _stillFor;
+
     public bool IsHidden { get; private set; }
 
     /// <summary>
-    /// The last real move: how far the mouse went, in screen pixels, from where its moves started to add up, and how long
-    /// before it the mouse was seen last. For the log: a few pixels are a knock or the sensor's noise, a long way after a
-    /// long time is a hand.
+    /// The last real move, for the log: how far the mouse went, in screen pixels, from where its moves started to add up,
+    /// and how long it had lain still before they started (not the moment between two events of one move).
     /// </summary>
     public (double Distance, TimeSpan SinceSeen) LastMove { get; private set; }
+
+    /// <summary>
+    /// How far the mouse went, in screen pixels, since the move that brought the cursor back, that move included. For the
+    /// log, where it tells a hand from a knock on the desk: a hand goes on for hundreds of pixels, a knock or the
+    /// sensor's noise stops after a few.
+    /// </summary>
+    public double Travelled { get; private set; }
 
     /// <summary>The controls are hidden and the cursor was left showing off the picture: it hides once seen over it.</summary>
     public bool WaitsForPicture => _areControlsHidden && !IsHidden;
@@ -53,6 +62,7 @@ public sealed class PlayerCursor(TimeProvider time)
     public void RestsAt(double x, double y)
     {
         _from = _last = new Sample(x, y, time.GetTimestamp());
+        _stillFor = TimeSpan.Zero;
     }
 
     /// <summary>
@@ -65,10 +75,16 @@ public sealed class PlayerCursor(TimeProvider time)
         var seen = new Sample(x, y, time.GetTimestamp());
         var last = _last;
         _last = seen;
+        if (!IsHidden && last is { } previous)
+        {
+            Travelled += Math.Sqrt(((x - previous.X) * (x - previous.X)) + ((y - previous.Y) * (y - previous.Y)));
+        }
         if (_from is { } from && time.GetElapsedTime(from.At, seen.At) > MoveWindow)
         {
             // Too long ago to add up: from now on, small moves count from where the pointer was seen last.
-            _from = (last ?? from) with { At = seen.At };
+            var rested = last ?? from;
+            _stillFor = time.GetElapsedTime(rested.At, seen.At);
+            _from = rested with { At = seen.At };
         }
         // The way travelled, so a diagonal move counts as much as a straight one.
         double threshold = MoveThreshold * scale;
@@ -77,7 +93,13 @@ public sealed class PlayerCursor(TimeProvider time)
         {
             return false;
         }
-        LastMove = (Math.Sqrt(squared), last is { } before ? time.GetElapsedTime(before.At, seen.At) : TimeSpan.Zero);
+        double distance = Math.Sqrt(squared);
+        LastMove = (distance, _stillFor);
+        if (IsHidden)
+        {
+            Travelled = distance;
+        }
+        _stillFor = TimeSpan.Zero;
         _from = seen;
         Shows();
         return true;

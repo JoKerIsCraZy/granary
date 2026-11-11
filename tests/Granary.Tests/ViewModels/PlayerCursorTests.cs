@@ -108,6 +108,41 @@ public sealed class PlayerCursorTests
         Assert.Equal((5.0, TimeSpan.FromSeconds(42)), (_cursor.LastMove.Distance, _cursor.LastMove.SinceSeen));
     }
 
+    // A hand's move comes as several events: the time the mouse lay still is the time before the first of them, not the
+    // few milliseconds between the last two.
+    [Fact]
+    public void AMoveInSeveralSteps_SaysHowLongTheMouseLayStillBeforeIt()
+    {
+        _cursor.RestsAt(100, 100);
+        _cursor.ControlsHidden(isOverPicture: true);
+        _time.Advance(TimeSpan.FromSeconds(42));
+
+        Assert.False(_cursor.Moves(101, 100, Scale));
+        _time.Advance(TimeSpan.FromMilliseconds(8));
+        Assert.True(_cursor.Moves(102, 100, Scale));
+
+        Assert.Equal(TimeSpan.FromSeconds(42), _cursor.LastMove.SinceSeen);
+    }
+
+    // What tells a hand from a knock on the desk: how far the mouse went on while the cursor showed.
+    [Fact]
+    public void WhileTheCursorShows_TheWayTheMouseWent_AddsUp_FromTheMoveThatBroughtItBack()
+    {
+        _cursor.RestsAt(100, 100);
+        Assert.True(_cursor.Moves(400, 100, Scale));
+        _cursor.ControlsHidden(isOverPicture: true, restsAt: (400, 100));
+        _time.Advance(TimeSpan.FromSeconds(10));
+
+        Assert.True(_cursor.Moves(403, 100, Scale));
+        Assert.Equal(3, _cursor.Travelled);
+        _time.Advance(TimeSpan.FromMilliseconds(8));
+        _cursor.Moves(403, 140, Scale);
+        _time.Advance(TimeSpan.FromMilliseconds(8));
+        _cursor.Moves(433, 140, Scale);
+
+        Assert.Equal(73, _cursor.Travelled);
+    }
+
     [Fact]
     public void AMove_AfterThePlayerOpens_IsARealOne()
     {

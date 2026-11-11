@@ -1598,7 +1598,8 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   moves over an open menu or a window in front, and a pointer event without a move would else bring the cursor back.
   While the cursor is hidden, a look every second checks that Windows still draws the hidden one over the picture and
   asks again if it draws its arrow. The log says what brought a hidden cursor back (how far the mouse moved and how
-  long it had not been seen, or a finger or pen), and when Windows drew its arrow by itself.
+  long it had lain still, or a finger or pen), how far the mouse went while the cursor showed (a hand goes hundreds of
+  pixels, a knock on the desk a few), and when Windows drew its arrow by itself.
 - **Mouse**: a click on the picture plays or pauses (after 250 ms, so a double click does not), a double
   click toggles full screen. On touch a tap shows or hides the controls.
 - **Keyboard** (the web player's map, docs/api-contract.md 13.5): Space and K play/pause, F full screen (the window's,
