@@ -122,6 +122,26 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
         Assert.Empty(DeletesSent);
     }
 
+    // The downloads asked about go, but another account signed in while they went stays signed in.
+    [Fact]
+    public async Task AnotherAccountSignedInWhileTheDownloadsGo_StaysSignedIn()
+    {
+        await KeptAsync("dl_1");
+        _h.Silo.On(HttpMethod.Delete, EntryPath("dl_1"), () =>
+        {
+            _h.Session.Account = new Account("2", "elena2", "", "user", [], true, false, null);
+            return ScriptedSilo.NoContent()();
+        });
+        using var servers = await ServersAsync();
+
+        await servers.SignOutCommand.ExecuteAsync(Item(servers, "srv1"));
+        await _h.Store.FolderWork;
+
+        Assert.Single(DeletesSent);
+        Assert.Empty(Kept);
+        Assert.DoesNotContain("sign-out:srv1", _h.Session.Calls);
+    }
+
     [Fact]
     public async Task Confirmed_TakesTheDownloadsOff_TellsTheServer_ThenSignsOut()
     {

@@ -212,7 +212,8 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
     /// them along (<see cref="ClearAsync"/>), then signs out of <paramref name="server"/>. A sign-in whose account is not known
     /// takes none along: those on that server are other accounts', as one whose sign-in expired. A sign-out that fails leaves
     /// the account's downloads gone, and its new ones run. False when the viewer said no, or another account was signed in
-    /// there while the question was open, and nothing changed. Call it on the UI thread.
+    /// there while the question was open, and nothing changed; false too when another account was signed in while the
+    /// downloads went: they are gone, and that account stays signed in. Call it on the UI thread.
     /// </summary>
     public async Task<bool> SignOutAsync(ServerEntry server, CancellationToken cancellationToken)
     {
@@ -237,6 +238,13 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
         }
         using (await ClearAsync(server.Id, accountId, cancellationToken))
         {
+            // The downloads can take a while to go: an account signed in there meanwhile is not the one to sign out.
+            if (await AccountOfAsync(server.Id, cancellationToken) != accountId)
+            {
+                logger.LogInformation("Another account was signed in on server {ServerEntryId} while its downloads went; it stays signed in",
+                    server.Id);
+                return false;
+            }
             await session.SignOutAsync(server.Id, cancellationToken);
         }
         return true;

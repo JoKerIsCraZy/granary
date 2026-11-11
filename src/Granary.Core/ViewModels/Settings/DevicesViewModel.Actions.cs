@@ -93,6 +93,11 @@ public sealed partial class DevicesViewModel
                 using var clear = _downloads is not null && accountId is not null
                     ? await _downloads.ClearAsync(server.Id, accountId, CancellationToken.None)
                     : null;
+                // The downloads can take a while to go: an account signed in there meanwhile is not the one to sign out.
+                if (clear is not null && await _downloads!.AccountOfAsync(server.Id, CancellationToken.None) != accountId)
+                {
+                    return;
+                }
                 await _session.SignOutAsync(server.Id);
                 return;
             }
