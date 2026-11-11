@@ -428,9 +428,21 @@ public sealed partial class PlayerPage
     {
         DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, () =>
         {
-            bool asked = PointerOverWindow(out var cursor, out _) && AskForCursor(WindowFromPoint(cursor));
+            bool asked = AskForCursor(OwnWindowUnderPointer());
             _autoHideLog.LogDebug("The player's cursor is {Cursor} (shown at once: {Asked})", hidden ? "hidden" : "the arrow", asked);
         });
+    }
+
+    // The window right under the pointer while it is part of this one, else 0: the question goes to no other app's window,
+    // which could be one that does not answer.
+    private nint OwnWindowUnderPointer()
+    {
+        if (_appWindow is null || !GetCursorPos(out var cursor))
+        {
+            return 0;
+        }
+        nint under = WindowFromPoint(cursor);
+        return under != 0 && GetAncestor(under, GaRoot) == Win32Interop.GetWindowFromWindowId(_appWindow.Id) ? under : 0;
     }
 
     private static bool AskForCursor(nint window)
