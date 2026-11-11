@@ -18,14 +18,14 @@ public sealed partial class DownloadStore
     // A new download on disk, then in the state and the index. A delete still waiting for this very folder leaves the index
     // first: a crash after the folder is made cannot delete it at the next start. A server delete not yet sent for this very
     // download goes with it: the entry is this download's again, and the next index write, this one's, no longer names it.
-    // False, and nothing kept, when the scope's downloads were cleared since clearGeneration: before the folder is made, none
-    // is made; while it is made, it goes again.
-    private bool AddToDisk(StoredDownload download, long clearGeneration)
+    // Null, and nothing kept, when the scope's downloads were cleared since clearGeneration: before the folder is made, none
+    // is made; while it is made, it goes again. The row kept carries the clears seen as it was added.
+    private StoredDownload? AddToDisk(StoredDownload download, long clearGeneration)
     {
         var record = download.Record;
         if (IsClearedSince(record.Scope, clearGeneration))
         {
-            return false;
+            return null;
         }
         var waiting = Current.FolderDeletes.Where(d => IsSameFolder(d.Folder, download.Folder)).ToList();
         var unsent = Current.PendingDeletes.Where(d => d.Scope == record.Scope && d.DownloadId == record.DownloadId).ToList();
@@ -49,19 +49,23 @@ public sealed partial class DownloadStore
             throw;
         }
         // Checked with the change itself: a clear either comes first and keeps the row out, or after and takes it with the rest.
-        bool kept = false;
+        StoredDownload? kept = null;
         Change(state =>
         {
-            kept = !IsClearedSinceLocked(record.Scope, clearGeneration);
-            return kept ? state with { Downloads = [.. state.Downloads, download] } : state;
+            if (IsClearedSinceLocked(record.Scope, clearGeneration))
+            {
+                return state;
+            }
+            kept = download with { ClearsSeen = _clearGeneration };
+            return state with { Downloads = [.. state.Downloads, kept] };
         });
-        if (!kept)
+        if (kept is null)
         {
             Unmake(download);
-            return false;
+            return null;
         }
         WriteIndex(Current);
-        return true;
+        return kept;
     }
 
     // A new download's folder starts empty: what a download before it under the same id left there is not its bytes. A folder

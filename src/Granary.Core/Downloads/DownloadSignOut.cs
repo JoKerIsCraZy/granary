@@ -151,7 +151,8 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
     /// they were before, for at most <see cref="DeleteBudget"/>; other profiles' entries cannot be deleted without their
     /// profile, so they stay on the server. It returns once the index without them is written, or after
     /// <see cref="StoreBudget"/>, and their folders go after that. When the downloads cannot even be read within
-    /// <see cref="StoreBudget"/>, the server hears nothing and they go once they are read.
+    /// <see cref="StoreBudget"/>, the server hears nothing and they go once they are read; one added after the clear, as by
+    /// the same account signed in again meanwhile, stays.
     /// </summary>
     /// <returns>
     /// The clear, to dispose once the sign-out was tried, whatever came of it (<see cref="DownloadStore.EndClear"/>): after
@@ -165,7 +166,7 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
         var clear = new PendingClear(store, store.MarkCleared(serverEntryId, accountId));
         try
         {
-            await TakeOffAsync(serverEntryId, accountId, cancellationToken).ConfigureAwait(false);
+            await TakeOffAsync(clear.Generation, serverEntryId, accountId, cancellationToken).ConfigureAwait(false);
             return clear;
         }
         catch
@@ -176,12 +177,12 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
     }
 
     // ClearAsync's work once the clear is marked.
-    private async Task TakeOffAsync(string serverEntryId, string? accountId, CancellationToken cancellationToken)
+    private async Task TakeOffAsync(long generation, string serverEntryId, string? accountId, CancellationToken cancellationToken)
     {
         bool loaded = await LoadWithinAsync(StoreBudget, cancellationToken).ConfigureAwait(false);
         // What the server is to hear is taken before the rows go: the queue then has no delete of them to send twice.
         var deletes = loaded ? DeletesToSend(serverEntryId, accountId) : null;
-        var removal = store.RemoveWhereAsync(scope => Matches(scope, serverEntryId, accountId), CancellationToken.None);
+        var removal = store.RemoveWhereAsync(scope => Matches(scope, serverEntryId, accountId), generation, CancellationToken.None);
         if (!loaded)
         {
             Observe(removal);
@@ -334,7 +335,9 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
     /// <summary>A sign-out's clear while the sign-out is under way; disposing it ends the clear. Twice is no change.</summary>
     private sealed class PendingClear(DownloadStore store, long generation) : IDisposable
     {
-        public void Dispose() => store.EndClear(generation);
+        public long Generation { get; } = generation;
+
+        public void Dispose() => store.EndClear(Generation);
     }
 
     private static bool Matches(DownloadScope scope, string serverEntryId, string? accountId) =>

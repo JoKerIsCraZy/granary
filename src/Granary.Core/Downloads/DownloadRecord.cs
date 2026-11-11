@@ -126,6 +126,12 @@ public sealed record StoredDownload(DownloadRecord Record, string Folder, bool F
     /// <summary>The folder is there, but its record cannot be read: it can only be deleted.</summary>
     public bool IsDamaged { get; init; }
 
+    /// <summary>
+    /// The store's <see cref="DownloadStore.ClearGeneration"/> when this run added the download; 0 for one read from the disk,
+    /// which came before any clear. A sign-out's removal takes only the downloads added before its clear.
+    /// </summary>
+    internal long ClearsSeen { get; init; }
+
     /// <summary>The media file while it arrives.</summary>
     public string PartPath => Path.Combine(Folder, DownloadPaths.MediaPart);
 

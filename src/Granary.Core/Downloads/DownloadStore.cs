@@ -182,7 +182,7 @@ public sealed partial class DownloadStore
         await LoadAsync(cancellationToken);
         string folder = DownloadPaths.Folder(_preferences.Folder, record.Scope, record.DownloadId);
         var stored = new StoredDownload(record, folder, FilesMissing: false);
-        bool kept;
+        StoredDownload? kept;
         await _writes.WaitAsync(cancellationToken);
         try
         {
@@ -196,13 +196,13 @@ public sealed partial class DownloadStore
         {
             _writes.Release();
         }
-        if (!kept)
+        if (kept is null)
         {
             _logger.LogInformation("Download {DownloadId} is not kept: its account's downloads were cleared meanwhile", record.DownloadId);
             return null;
         }
         Changed?.Invoke(this, EventArgs.Empty);
-        return stored;
+        return kept;
     }
 
     /// <summary>
@@ -278,19 +278,21 @@ public sealed partial class DownloadStore
     }
 
     /// <summary>
-    /// Takes every download and pending delete of the scopes <paramref name="match"/> picks off this PC (a sign-out). The rows go
-    /// at once, and the call ends once the index without them is written, or could not be (it is written again with the next
-    /// change). Their folders go after that, beside the caller (<see cref="FolderWork"/>), and are tried again as any removed
-    /// download's: a drive or a share that does not answer holds no sign-out up.
+    /// Takes every download and pending delete of the scopes <paramref name="match"/> picks off this PC (a sign-out whose clear
+    /// is <paramref name="clearGeneration"/>, from <see cref="MarkCleared"/>). Only downloads added before that clear go, those
+    /// read from the disk included: a removal that waits for a slow drive to be read takes no download of the same account
+    /// signed in again since. The rows go at once, and the call ends once the index without them is written, or could not be
+    /// (it is written again with the next change). Their folders go after that, beside the caller (<see cref="FolderWork"/>),
+    /// and are tried again as any removed download's: a drive or a share that does not answer holds no sign-out up.
     /// </summary>
-    public async Task RemoveWhereAsync(Func<DownloadScope, bool> match, CancellationToken cancellationToken)
+    public async Task RemoveWhereAsync(Func<DownloadScope, bool> match, long clearGeneration, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(match);
         await LoadAsync(cancellationToken);
         bool changed = false;
         Change(state =>
         {
-            var removed = state.Downloads.Where(d => match(d.Record.Scope)).ToList();
+            var removed = state.Downloads.Where(d => match(d.Record.Scope) && d.ClearsSeen < clearGeneration).ToList();
             var deletes = state.PendingDeletes.Where(d => !match(d.Scope)).ToList();
             changed = removed.Count > 0 || deletes.Count != state.PendingDeletes.Count;
             return changed
@@ -471,7 +473,7 @@ public sealed partial class DownloadStore
         var (record, problem) = ReadRecord(download.Folder, download.Record.Scope, download.Record.DownloadId);
         if (record is not null)
         {
-            return new StoredDownload(record, download.Folder, FilesMissing: false);
+            return download with { Record = record, FilesMissing = false, IsDamaged = false };
         }
         SayDamaged(download, problem);
         return download with { IsDamaged = true };

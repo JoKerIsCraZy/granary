@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Granary.Core.Api.Downloads;
@@ -247,12 +248,47 @@ public sealed class DownloadStoreTests : IDisposable
         await store.AddAsync(Record("dl_3", Scope8), Token);
         await store.RemoveAsync(Scope8, "dl_3", queueServerDelete: true, Token);
 
-        await store.RemoveWhereAsync(scope => scope.ProfileId == "8", Token);
+        await store.RemoveWhereAsync(scope => scope.ProfileId == "8", store.MarkCleared("srv1", null), Token);
         await store.FolderWork;
 
         Assert.Equal([kept], store.All);
         Assert.False(Directory.Exists(gone.Folder));
         Assert.Empty(store.PendingDeletes(Scope8));
+    }
+
+    [Fact]
+    public async Task AClearThatWaitedForTheDownloads_KeepsOneAddedAfterIt()
+    {
+        var old = await (await LoadedAsync()).AddAsync(Record("dl_1"), Token);
+        using var drive = new ManualResetEventSlim();
+        var reached = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var store = Create();
+        store.Loading = () =>
+        {
+            reached.TrySetResult();
+            drive.Wait(TimeSpan.FromSeconds(30));
+        };
+        var loading = store.LoadAsync(Token);
+        await reached.Task.WaitAsync(TimeSpan.FromSeconds(5), Token);
+        // A sign-out that could not read the downloads in time went on without them, and the account signed in again.
+        long cleared = store.MarkCleared("srv1", "1");
+        store.EndClear(cleared);
+        var ui = new BusyContext();
+        var removal = ui.Run(() => store.RemoveWhereAsync(scope => scope.AccountId == "1", cleared, Token));
+        var adding = store.AddUnlessClearedAsync(Record("dl_2"), store.ClearGeneration, Token);
+
+        drive.Set();
+        await loading.WaitAsync(TimeSpan.FromSeconds(5), Token);
+        var added = await adding.WaitAsync(TimeSpan.FromSeconds(5), Token);
+        // The removal goes on only now, as after a UI thread that was busy.
+        await ui.RunPostedAsync();
+        await removal.WaitAsync(TimeSpan.FromSeconds(5), Token);
+        await store.FolderWork;
+
+        Assert.NotNull(added);
+        Assert.Equal(["dl_2"], store.All.Select(d => d.Record.DownloadId));
+        Assert.False(Directory.Exists(old.Folder));
+        Assert.True(Directory.Exists(added.Folder));
     }
 
     [Fact]
@@ -290,7 +326,7 @@ public sealed class DownloadStoreTests : IDisposable
         Assert.Equal([kept.Folder], store.All.Select(d => d.Folder));
         Assert.Empty(store.PendingDeletes(Scope7));
         Assert.Contains("damaged", _logs.All, StringComparison.Ordinal);
-        await store.RemoveWhereAsync(_ => true, Token);
+        await store.RemoveWhereAsync(_ => true, store.MarkCleared("srv1", null), Token);
         await store.FolderWork;
         Assert.True(Directory.Exists(elsewhere));
     }
@@ -675,6 +711,46 @@ public sealed class DownloadStoreTests : IDisposable
         var entry = valid.DeepClone().AsObject();
         change(entry);
         return entry;
+    }
+
+    /// <summary>A UI thread that is busy: what is posted to it waits until the test runs it.</summary>
+    private sealed class BusyContext : SynchronizationContext
+    {
+        private readonly ConcurrentQueue<(SendOrPostCallback Callback, object? State)> _posted = new();
+        private readonly TaskCompletionSource _first = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        /// <summary>Calls <paramref name="work"/> as from this thread, so what it awaits comes back here.</summary>
+        public T Run<T>(Func<T> work)
+        {
+            var previous = Current;
+            SetSynchronizationContext(this);
+            try
+            {
+                return work();
+            }
+            finally
+            {
+                SetSynchronizationContext(previous);
+            }
+        }
+
+        public override void Post(SendOrPostCallback d, object? state)
+        {
+            _posted.Enqueue((d, state));
+            _first.TrySetResult();
+        }
+
+        public override void Send(SendOrPostCallback d, object? state) => throw new NotSupportedException();
+
+        /// <summary>Once something was posted, runs what waits.</summary>
+        public async Task RunPostedAsync()
+        {
+            await _first.Task.WaitAsync(TimeSpan.FromSeconds(5), Token);
+            while (_posted.TryDequeue(out var posted))
+            {
+                posted.Callback(posted.State);
+            }
+        }
     }
 
     // Its first reading of the time fails, as a load that throws once.
