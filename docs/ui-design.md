@@ -1564,14 +1564,18 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   `waiting` event, so a picture that still moves has none). It goes as soon as the picture moves. Failed shows the
   message, Retry when it can help and Back; keyboard focus moves to them. Ended keeps the controls up.
 - **Auto-hide**: during playback the controls fade (and slide a few pixels) after 3 s without pointer
-  movement or a key, and the cursor goes with them while it is over the picture, however they hide (the wait, a
-  remote's Back, a tap). They stay while paused, preparing, buffering, failed or ended, while the pointer rests on
-  them (only while it shows: a hidden one there keeps nothing up), during a seek drag, while a flyout is open or
-  a control in them has keyboard focus. Any pointer movement or key brings them back. The cursor follows the mouse
-  only (`PlayerCursor`): it comes back with a real move (2 px or more, not the framework testing a still pointer
-  again) and when the player closes, never with a key or the player's own changes, so a remote does not put it back
-  over the picture; paused, it too stays away until the mouse moves. Hidden controls take no
-  clicks. The cursor goes as the page's `ProtectedCursor`, a blank one made at run time (`BlankCursor`):
+  movement or a key, wherever the pointer rests, on them or at the edge of the screen, as on the web; the cursor goes
+  with them while it is over the picture, however they hide (the wait, a remote's Back, a tap). They stay while
+  paused, preparing, buffering, failed or ended, during a seek drag, while a flyout or a subtitle panel is open, the
+  markers are edited or a control in them has keyboard focus (`PlayerControlsIdle`; the log names the hold once). Any
+  pointer movement or key brings them back. The cursor follows the mouse only (`PlayerCursor`): it comes back with a
+  real move (2 px or more within 300 ms, measured on the screen: not the framework testing a still pointer again, not
+  slow drift, not the page moving under a still pointer as the window goes full screen or changes scale) and when the
+  player closes, never with a key or the player's own changes, so a remote does not put it back over the picture;
+  paused, it too stays away until the mouse moves. A cursor the controls left showing because another window was
+  under the pointer as they hid (a notification, the volume flyout) goes once it is over the picture again: on a
+  pointer event that is no move, when the window is activated or changes, and on a look every second while it waits.
+  Hidden controls take no clicks. The cursor goes as the page's `ProtectedCursor`, a blank one made at run time (`BlankCursor`):
   `ShowCursor` does not reach WinUI content, whose cursor WinUI's input stack sets per element.
 - **Mouse**: a click on the picture plays or pauses (after 250 ms, so a double click does not), a double
   click toggles full screen. On touch a tap shows or hides the controls.

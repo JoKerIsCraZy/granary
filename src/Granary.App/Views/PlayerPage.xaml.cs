@@ -124,6 +124,7 @@ public sealed partial class PlayerPage : Page
         ShowSkipIntervals();
         QueueNextUpStill();
         Focus(FocusState.Programmatic);
+        StartAutoHide();
         ShowControls();
         // StartAsync runs on navigation, before this: it can have failed already.
         if (ViewModel.IsFailed)

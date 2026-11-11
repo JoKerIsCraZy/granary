@@ -1,6 +1,8 @@
 using System.Numerics;
 using Granary.App.Controls;
 using Granary.Core.ViewModels.Player;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.UI;
 using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
@@ -12,9 +14,9 @@ using DispatcherQueueTimer = Microsoft.UI.Dispatching.DispatcherQueueTimer;
 
 namespace Granary.App.Views;
 
-// The controls fade out after a few seconds of playback without pointer movement or a key, and stay while there is
-// something to read or do in them. The cursor goes with them over the picture and comes back only with the mouse
-// (PlayerCursor).
+// The controls fade out after a few seconds of playback without pointer movement or a key, wherever the pointer rests, and
+// stay while there is something open or under way in them (PlayerControlsIdle). The cursor goes with them over the picture
+// and comes back only with the mouse (PlayerCursor).
 public sealed partial class PlayerPage
 {
     private static readonly TimeSpan HideDelay = TimeSpan.FromSeconds(3);
@@ -22,17 +24,29 @@ public sealed partial class PlayerPage
     // With a remote's focus in the controls they wait as long as Silo's TV app's (CONTROLS_AUTO_HIDE_MS).
     private static readonly TimeSpan RemoteHideDelay = TimeSpan.FromSeconds(5);
 
+    // How often a cursor the hidden controls left showing off the picture is looked at again.
+    private static readonly TimeSpan CursorLookInterval = TimeSpan.FromSeconds(1);
+
     private const float ChromeSlide = 8;
 
     // Between the skip pill and the seek bar's row, while the controls show.
     private const double SkipPromptGap = 12;
 
     private DispatcherQueueTimer _hideTimer = null!;
+    private DispatcherQueueTimer _cursorTimer = null!;
     private bool _areControlsVisible = true;
 
     // Whether the cursor shows, and whether the page's cursor is the blank one now.
-    private readonly PlayerCursor _cursor = new();
+    private readonly PlayerCursor _cursor = new(TimeProvider.System);
     private bool _isCursorHidden;
+
+    // What tells the page to look at the cursor again, from its load until it is left.
+    private MainWindow? _cursorWindow;
+    private XamlRoot? _cursorRoot;
+
+    // The hold last written to the log: a pause would otherwise write one every 3 s.
+    private ControlsHold _loggedHold;
+    private readonly ILogger _autoHideLog = App.Services.GetRequiredService<ILogger<PlayerPage>>();
 
     // Whether the controls were shown before the key now being handled showed them, and whether a remote's OK showed
     // them, so the arrows move between them until they hide (PlayerPage.Input.cs).
@@ -56,12 +70,43 @@ public sealed partial class PlayerPage
         _hideTimer.Interval = HideDelay;
         _hideTimer.IsRepeating = false;
         WeakTick.Subscribe(_hideTimer, this, static page => page.HideControlsWhenIdle());
+        _cursorTimer = DispatcherQueue.CreateTimer();
+        _cursorTimer.Interval = CursorLookInterval;
+        _cursorTimer.IsRepeating = true;
+        WeakTick.Subscribe(_cursorTimer, this, static page => page.LookAtCursorAgain("a while later"));
         PointerMoved += OnPagePointerMoved;
+    }
+
+    // As the page loads: the pointer resting where it is does not count as a move, and the window's changes have the
+    // cursor looked at again.
+    private void StartAutoHide()
+    {
+        if (GetCursorPos(out var at))
+        {
+            _cursor.RestsAt(at.X, at.Y);
+        }
+        _cursorWindow = App.Services.GetRequiredService<MainWindow>();
+        _cursorWindow.Activated += OnWindowActivatedForCursor;
+        _cursorRoot = XamlRoot;
+        _cursorRoot.Changed += OnXamlRootChangedForCursor;
+        _modes.Changed += OnWindowModeChangedForCursor;
     }
 
     private void StopAutoHide()
     {
         _hideTimer.Stop();
+        _cursorTimer.Stop();
+        if (_cursorWindow is not null)
+        {
+            _cursorWindow.Activated -= OnWindowActivatedForCursor;
+            _cursorWindow = null;
+        }
+        if (_cursorRoot is not null)
+        {
+            _cursorRoot.Changed -= OnXamlRootChangedForCursor;
+            _cursorRoot = null;
+        }
+        _modes.Changed -= OnWindowModeChangedForCursor;
         _cursor.Show();
         ApplyCursor();
     }
@@ -83,7 +128,7 @@ public sealed partial class PlayerPage
 
     private void ToggleControls()
     {
-        if (_areControlsVisible && !KeepsControls())
+        if (_areControlsVisible && Hold() == ControlsHold.None)
         {
             _hideTimer.Stop();
             SetControlsVisible(false);
@@ -96,12 +141,19 @@ public sealed partial class PlayerPage
 
     private void HideControlsWhenIdle()
     {
-        if (KeepsControls())
+        var hold = Hold();
+        if (hold != ControlsHold.None)
         {
+            if (hold != _loggedHold)
+            {
+                _loggedHold = hold;
+                _autoHideLog.LogDebug("The player's controls stay up: {Hold}", hold);
+            }
             // Asked again a little later, until nothing holds them any more.
             _hideTimer.Start();
             return;
         }
+        _loggedHold = ControlsHold.None;
         // A remote's focus goes back to the picture, as on Silo's TV app: the arrows skip and change the volume again,
         // and OK brings the controls back with focus on Play/Pause.
         if (_movesThroughControls && HasFocusInControls())
@@ -111,23 +163,22 @@ public sealed partial class PlayerPage
         SetControlsVisible(false);
     }
 
-    // The bar always shows its controls, and the pointer over the pages stays. A control reached with Tab keeps them, as
-    // on the web; a remote's focus does not: Silo's TV app hides them after a while without a key, focus or not. The
-    // pointer resting on them keeps them only while it shows.
-    private bool KeepsControls() =>
-        IsDocked || !ViewModel.IsPlaying || ViewModel.IsPaused || ViewModel.IsBuffering
-        || SeekBar.IsDragging || _cursor.HoldsControls(IsPointerOverControls()) || HasOpenMenu()
-        || (HasKeyboardFocusInControls() && !_movesThroughControls) || IsPanelOpen || ViewModel.MarkerEditor.IsEditing;
-
-    private bool IsPointerOverControls() =>
-        PointerInPage() is { } point && (Contains(BottomBar, point) || Contains(ExitButton, point) || Contains(MinimizeButton, point)
-            || Contains(CornerFullScreenButton, point)
-            || (PartyPanel is { Visibility: Visibility.Visible, IsHitTestVisible: true } && Contains(PartyPanel, point))
-            || (IsMiniView && (Contains(MiniPlayPauseButton, point) || Contains(LeaveMiniViewButton, point))));
-
-    private bool Contains(FrameworkElement element, Point point) =>
-        element.ActualWidth > 0
-        && element.TransformToVisual(this).TransformBounds(new Rect(0, 0, element.ActualWidth, element.ActualHeight)).Contains(point);
+    // The bar always shows its controls. A control reached with Tab keeps them, as on the web; a remote's focus does not:
+    // Silo's TV app hides them after a while without a key, focus or not. Where the pointer rests keeps nothing up, as on
+    // the web: resting on the bar or at the screen's edge held them, and the cursor with them, for good.
+    private ControlsHold Hold() => new PlayerControlsIdle
+    {
+        IsDocked = IsDocked,
+        IsPlaying = ViewModel.IsPlaying,
+        IsPaused = ViewModel.IsPaused,
+        IsBuffering = ViewModel.IsBuffering,
+        IsDraggingSeekBar = SeekBar.IsDragging,
+        HasOpenMenu = HasOpenMenu(),
+        HasKeyboardFocus = HasKeyboardFocusInControls(),
+        MovesThroughControls = _movesThroughControls,
+        IsPanelOpen = IsPanelOpen,
+        IsEditingMarkers = ViewModel.MarkerEditor.IsEditing,
+    }.Hold;
 
     private bool HasKeyboardFocusInControls() =>
         FocusManager.GetFocusedElement(XamlRoot) is Control { FocusState: FocusState.Keyboard } control && IsInControls(control);
@@ -164,11 +215,19 @@ public sealed partial class PlayerPage
         ShowCornerButton();
         LiftSubtitles();
         PlaceSkipPrompt();
-        if (!visible)
+        if (visible)
         {
-            _cursor.ControlsHidden(isOverPicture: BlankCursor.Instance is not null && PointerInPage() is not null);
-            ApplyCursor();
+            _cursor.ControlsShown();
         }
+        else
+        {
+            bool isOverPicture = PointerInPage() is not null;
+            _cursor.ControlsHidden(isOverPicture: isOverPicture && BlankCursor.Instance is not null);
+            ApplyCursor();
+            _autoHideLog.LogDebug("The player's controls hid (pointer over the picture: {OverPicture}, cursor hidden: {CursorHidden})",
+                isOverPicture, _cursor.IsHidden);
+        }
+        WatchCursor();
     }
 
     // The window's Exit full screen fades with the controls, but stays on the Playing Next screen, as its Close does.
@@ -196,16 +255,69 @@ public sealed partial class PlayerPage
             : 0);
 
     // Only a real move shows the cursor and the controls: not the framework testing a still pointer again as the
-    // controls come back under it after a key.
+    // controls come back under it after a key, nor the page moving under a still pointer as the window changes. It is
+    // measured on the screen for that. Where Windows does not say, the event counts as a move.
     private void OnPagePointerMoved(object sender, PointerRoutedEventArgs e)
     {
-        var position = e.GetCurrentPoint(this).Position;
-        if (!_cursor.Moves(position.X, position.Y))
+        if (!GetCursorPos(out var at))
         {
+            _cursor.Show();
+        }
+        else if (!_cursor.Moves(at.X, at.Y, XamlRoot?.RasterizationScale ?? 1))
+        {
+            // Seen again without moving, for one as a window over it went.
+            LookAtCursorAgain("the pointer was seen without moving");
             return;
         }
         ApplyCursor();
         ShowControls();
+    }
+
+    private void OnWindowActivatedForCursor(object sender, WindowActivatedEventArgs e)
+    {
+        if (e.WindowActivationState != WindowActivationState.Deactivated)
+        {
+            LookAtCursorAgain("the window was activated");
+        }
+    }
+
+    private void OnXamlRootChangedForCursor(XamlRoot sender, XamlRootChangedEventArgs e) => LookAtCursorAgain("the window changed");
+
+    private void OnWindowModeChangedForCursor(object? sender, EventArgs e) => LookAtCursorAgain("the window's mode changed");
+
+    // While the controls are hidden: a cursor they left showing, because another window was under the pointer as they hid,
+    // goes once the pointer is over the picture; a hidden one is set again.
+    private void LookAtCursorAgain(string occasion)
+    {
+        if (!IsLoaded)
+        {
+            _cursorTimer.Stop();
+            return;
+        }
+        if (_areControlsVisible)
+        {
+            return;
+        }
+        if (_cursor.LooksAgain(isOverPicture: BlankCursor.Instance is not null && PointerInPage() is not null))
+        {
+            _autoHideLog.LogDebug("The cursor the player's controls left showing hid: {Occasion}", occasion);
+        }
+        ApplyCursor();
+        WatchCursor();
+    }
+
+    // Nothing needs to tell the page that a window over the pointer went, so while the hidden controls leave the cursor
+    // showing off the picture, it is looked at again now and then. Only then: the rest of the time events are enough.
+    private void WatchCursor()
+    {
+        if (!_cursor.WaitsForPicture || BlankCursor.Instance is null)
+        {
+            _cursorTimer.Stop();
+        }
+        else if (!_cursorTimer.IsRunning)
+        {
+            _cursorTimer.Start();
+        }
     }
 
     /// <summary>
@@ -234,23 +346,30 @@ public sealed partial class PlayerPage
     // Over WinUI content the cursor is the one of the element under the pointer, which WinUI's input stack sets:
     // ShowCursor does not reach it. The page's cursor goes blank instead; the elements on the picture have none of
     // their own and take it. It is only the page's, so the title bar and other windows keep theirs, and the pointer
-    // coming back moves, which shows the controls and the arrow again. Set only when the rule's answer changes.
+    // coming back moves, which shows the controls and the arrow again. The arrow is set when the rule's answer changes;
+    // the blank one each time it is asked for, rather than trusting that it is still the one shown.
     private void ApplyCursor()
     {
-        if (_cursor.IsHidden == _isCursorHidden)
+        if (!_cursor.IsHidden)
+        {
+            if (_isCursorHidden)
+            {
+                _isCursorHidden = false;
+                // The arrow, not null: null leaves the shown cursor as it is until the pointer reaches another element.
+                ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Arrow);
+            }
+            return;
+        }
+        if (BlankCursor.Instance is not { } blank)
         {
             return;
         }
-        if (!_cursor.IsHidden)
+        if (_isCursorHidden)
         {
-            _isCursorHidden = false;
-            // The arrow, not null: null leaves the shown cursor as it is until the pointer reaches another element.
-            ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Arrow);
+            // The same cursor set again could count as no change; null on the way leaves the shown one as it is.
+            ProtectedCursor = null;
         }
-        else if (BlankCursor.Instance is { } blank)
-        {
-            _isCursorHidden = true;
-            ProtectedCursor = blank;
-        }
+        _isCursorHidden = true;
+        ProtectedCursor = blank;
     }
 }
