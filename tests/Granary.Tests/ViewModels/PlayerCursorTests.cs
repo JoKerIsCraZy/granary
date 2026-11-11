@@ -95,6 +95,17 @@ public sealed class PlayerCursorTests
     }
 
     [Fact]
+    public void ADiagonalMove_CountsByItsLength()
+    {
+        // 1.5 px across and 1.5 px down is over 2 px of travel.
+        _cursor.Moves(100, 100, Scale);
+        _cursor.ControlsHidden(isOverPicture: true);
+
+        Assert.True(_cursor.Moves(101.5, 101.5, Scale));
+        Assert.False(_cursor.IsHidden);
+    }
+
+    [Fact]
     public void SmallMoves_CountOnceTheyAddUpQuickly()
     {
         _cursor.Moves(100, 100, Scale);

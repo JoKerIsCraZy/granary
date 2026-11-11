@@ -10,7 +10,7 @@ namespace Granary.Core.ViewModels.Player;
 /// </summary>
 public sealed class PlayerCursor(TimeProvider time)
 {
-    /// <summary>Moves smaller than this, in view pixels, are jitter, or the framework testing a still pointer again.</summary>
+    /// <summary>Moves shorter than this, in view pixels, are jitter, or the framework testing a still pointer again.</summary>
     public const double MoveThreshold = 2;
 
     /// <summary>
@@ -63,8 +63,9 @@ public sealed class PlayerCursor(TimeProvider time)
             // Too long ago to add up: from here on, small moves count from where the pointer was seen last.
             _from = last ?? from;
         }
+        // The way travelled, so a diagonal move counts as much as a straight one.
         double threshold = MoveThreshold * scale;
-        if (_from is { } start && Math.Abs(x - start.X) < threshold && Math.Abs(y - start.Y) < threshold)
+        if (_from is { } start && ((x - start.X) * (x - start.X)) + ((y - start.Y) * (y - start.Y)) < threshold * threshold)
         {
             return false;
         }
