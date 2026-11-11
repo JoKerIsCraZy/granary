@@ -77,6 +77,7 @@ public interface IPlaybackDevicePreferences
     /// <summary>Saves <see cref="Volume"/>, its level brought into 0 to 100 first (full when it is not a number).</summary>
     Task SetVolumeAsync(PlayerVolume volume);
 
+    /// <summary>Saves <see cref="PlayerFullScreen"/>, as the player is left (<see cref="Playback.PlayerFullScreen.Left"/>).</summary>
     Task SetPlayerFullScreenAsync(bool fullScreen);
 
     /// <summary>The player buttons editor has taken the Sleep timer switch over: it goes from the file.</summary>

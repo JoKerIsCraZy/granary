@@ -275,6 +275,50 @@ public sealed class WindowModesTests
     }
 
     [Fact]
+    public void AWindow_IsNotTheViewersFullScreen() => Assert.False(new WindowModes().IsViewersFullScreen);
+
+    [Fact]
+    public void FullScreen_IsTheViewersFullScreen()
+    {
+        var modes = new WindowModes();
+        modes.SetFullScreen(true);
+
+        Assert.True(modes.IsViewersFullScreen);
+    }
+
+    [Fact]
+    public void TheMiniViewFromFullScreen_CountsAsTheFullScreenItGoesBackTo()
+    {
+        var modes = new WindowModes();
+        modes.SetFullScreen(true);
+        modes.SetMiniView(true);
+
+        Assert.True(modes.IsViewersFullScreen);
+    }
+
+    [Fact]
+    public void TheMiniViewFromAWindow_IsNotTheViewersFullScreen()
+    {
+        var modes = new WindowModes();
+        modes.SetMiniView(true);
+
+        Assert.False(modes.IsViewersFullScreen);
+    }
+
+    [Fact]
+    public void ATrailersOwnFullScreen_IsNotTheViewers_ButOneInsideTheViewersIs()
+    {
+        var modes = new WindowModes();
+        modes.SetTrailerFullScreen(true);
+        Assert.False(modes.IsViewersFullScreen);
+
+        modes.SetTrailerFullScreen(false);
+        modes.SetFullScreen(true);
+        modes.SetTrailerFullScreen(true);
+        Assert.True(modes.IsViewersFullScreen);
+    }
+
+    [Fact]
     public void ClosedAsAWindow_TheNextStartIsAWindow() => Assert.False(new WindowModes().ReopensInFullScreen(isMinimized: false));
 
     [Fact]

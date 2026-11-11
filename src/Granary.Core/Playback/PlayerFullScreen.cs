@@ -6,11 +6,16 @@ namespace Granary.Core.Playback;
 /// (<see cref="IPlaybackDevicePreferences.PlayerFullScreen"/>). Leaving it changes nothing about the window itself, whose
 /// full screen is the whole app's (<c>WindowModeService</c> over <see cref="ViewModels.WindowModes"/>).
 /// </summary>
-public sealed class PlayerFullScreen(IPlaybackDevicePreferences preferences)
+public sealed class PlayerFullScreen(IPlaybackDevicePreferences preferences, TimeProvider time)
 {
-    // Esc took the full player out of full screen, and nothing else changed since: as Esc is the way out of the player,
-    // leaving it now still counts as leaving it in full screen.
-    private bool _isEscaping;
+    /// <summary>
+    /// How soon after an Esc out of full screen the player must be left for that to count as leaving in full screen: the
+    /// second Esc of the way out, not an Esc to watch on in the window.
+    /// </summary>
+    internal static readonly TimeSpan EscapeWindow = TimeSpan.FromSeconds(5);
+
+    // When Esc took the full player out of full screen, while nothing else has happened since.
+    private long? _escapedAt;
 
     /// <summary>
     /// A title opens the player: Play, Resume, a card's play, Continue Watching, a Watch Party, <c>--play</c>. Not the bar
@@ -18,23 +23,27 @@ public sealed class PlayerFullScreen(IPlaybackDevicePreferences preferences)
     /// </summary>
     public bool OpensInFullScreen => preferences.PlayerFullScreen;
 
-    /// <summary>Esc in the full player left full screen, the first step of its way out (the next Esc leaves the player).</summary>
-    public void EscapedFullScreen() => _isEscaping = true;
-
     /// <summary>
-    /// The window changed some other way after an Esc (back into full screen, the mini view) or the player became the bar:
-    /// the window is the viewer's choice again.
+    /// Esc in the full player left full screen, the first step of its way out: leaving the player within
+    /// <see cref="EscapeWindow"/> (the next Esc) still counts as leaving it in full screen.
     /// </summary>
-    public void ForgetEscape() => _isEscaping = false;
+    public void EscapedFullScreen() => _escapedAt = time.GetTimestamp();
 
     /// <summary>
-    /// The player was left, from the full player or the bar, with the window in full screen or not (the mini view ended
-    /// first, so it is where that went back to); kept for the next title only when it changed.
+    /// The viewer did something else after an Esc (another key or click in the player, a change of the window, the bar):
+    /// the window is their choice again.
+    /// </summary>
+    public void ForgetEscape() => _escapedAt = null;
+
+    /// <summary>
+    /// The player was left, from the full player or the bar, as the window closes too, with the window in the viewer's full
+    /// screen or not; kept for the next title only when it changed.
     /// </summary>
     public void Left(bool isFullScreen)
     {
-        bool fullScreen = isFullScreen || _isEscaping;
-        _isEscaping = false;
+        bool escaping = _escapedAt is { } at && time.GetElapsedTime(at) <= EscapeWindow;
+        _escapedAt = null;
+        bool fullScreen = isFullScreen || escaping;
         if (fullScreen != preferences.PlayerFullScreen)
         {
             // Never fails: a save that does not work is logged, and the choice holds for this run.

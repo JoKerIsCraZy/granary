@@ -32,6 +32,12 @@ public sealed class WindowModes
     /// <summary>A trailer's page fills the screen; the window is full screen meanwhile.</summary>
     public bool IsTrailerFullScreen { get; private set; }
 
+    /// <summary>
+    /// The viewer's own full screen, or the mini view opened from it, which goes back there; not a trailer's own. What the
+    /// player is left in, also as the window closes (<see cref="Playback.PlayerFullScreen.Left"/>).
+    /// </summary>
+    public bool IsViewersFullScreen => (IsFullScreen && !_fullScreenForTrailer) || (IsMiniView && _miniViewFromFullScreen);
+
     /// <summary>Full screen, or back to the window; from the mini view straight to full screen.</summary>
     public void ToggleFullScreen() => SetFullScreen(!IsFullScreen);
 

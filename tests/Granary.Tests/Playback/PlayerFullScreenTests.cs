@@ -7,8 +7,9 @@ namespace Granary.Tests.Playback;
 public sealed class PlayerFullScreenTests
 {
     private readonly InMemoryPlaybackDevicePreferences _preferences = new();
+    private readonly ManualTimeProvider _time = new();
 
-    private PlayerFullScreen Create() => new(_preferences);
+    private PlayerFullScreen Create() => new(_preferences, _time);
 
     [Fact]
     public void AtFirst_ATitleOpensThePlayerInAWindow() => Assert.False(Create().OpensInFullScreen);
@@ -68,6 +69,34 @@ public sealed class PlayerFullScreenTests
         fullScreen.Left(isFullScreen: false);
 
         Assert.True(fullScreen.OpensInFullScreen);
+    }
+
+    [Fact]
+    public void TheSecondEsc_ShortlyAfterTheFirst_StillLeavesItInFullScreen()
+    {
+        var fullScreen = Create();
+        fullScreen.EscapedFullScreen();
+
+        _time.Advance(PlayerFullScreen.EscapeWindow);
+        fullScreen.Left(isFullScreen: false);
+
+        Assert.True(fullScreen.OpensInFullScreen);
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(3600)]
+    public void AnEscLongerAgo_WasToWatchInAWindow(int secondsPastTheWindow)
+    {
+        // Esc once to watch in the window, the title playing on, then Exit: the window is the viewer's choice.
+        _preferences.PlayerFullScreen = true;
+        var fullScreen = Create();
+        fullScreen.EscapedFullScreen();
+
+        _time.Advance(PlayerFullScreen.EscapeWindow + TimeSpan.FromSeconds(secondsPastTheWindow));
+        fullScreen.Left(isFullScreen: false);
+
+        Assert.False(fullScreen.OpensInFullScreen);
     }
 
     [Fact]

@@ -31,6 +31,9 @@ public sealed partial class WindowModeService(ILogger<WindowModeService> logger,
     /// <summary>A trailer's page fills the screen.</summary>
     public bool IsTrailerFullScreen => _modes.IsTrailerFullScreen;
 
+    /// <summary>The viewer's own full screen, or the mini view opened from it (<see cref="WindowModes.IsViewersFullScreen"/>).</summary>
+    public bool IsViewersFullScreen => _modes.IsViewersFullScreen;
+
     private double Scale => _window?.Content?.XamlRoot?.RasterizationScale ?? 1;
 
     /// <summary>The main window, whose modes these are; MainWindow attaches itself as it is made.</summary>
@@ -64,13 +67,28 @@ public sealed partial class WindowModeService(ILogger<WindowModeService> logger,
             {
                 // The state must not say what the window does not show: it follows what the window shows instead.
                 logger.LogWarning(ex, "The window did not go from {From} to {To}", from, _modes.Mode);
-                _modes.Follow(ShownMode(window));
+                FollowShown(ShownMode(window));
             }
         }
+        // Saved again soon after any change, so a kill keeps whether the window is full screen (window.json) too; a place the
+        // file holds already is not written again.
+        SettleSoon();
         if (_modes.Mode != from || _modes.IsTrailerFullScreen != trailer)
         {
             Changed?.Invoke(this, EventArgs.Empty);
         }
+    }
+
+    // The mode the window shows by itself, taken over. Back as a window that way, it is no longer one to maximize on its way
+    // out of full screen (WindowedPlacement.MaximizeOnRestore).
+    private void FollowShown(WindowMode mode)
+    {
+        _modes.Follow(mode);
+        if (mode == WindowMode.Window)
+        {
+            _windowed.ForgetMaximizeOnRestore();
+        }
+        SettleSoon();
     }
 
     private void Present(AppWindow window, WindowMode from, WindowMode to)
@@ -112,7 +130,7 @@ public sealed partial class WindowModeService(ILogger<WindowModeService> logger,
         // A presenter the window took by itself; the ones set here match the state already.
         if (args.DidPresenterChange && mode != _modes.Mode)
         {
-            _modes.Follow(mode);
+            FollowShown(mode);
             Changed?.Invoke(this, EventArgs.Empty);
         }
         FollowRestoreToFullScreen(sender);

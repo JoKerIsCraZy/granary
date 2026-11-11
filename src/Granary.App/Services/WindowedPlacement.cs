@@ -31,6 +31,11 @@ internal sealed partial class WindowedPlacement(ILogger logger)
     {
         _presenter = window.Presenter;
         var state = StateOf(window.Presenter);
+        if (state == WindowState.Restored)
+        {
+            // Restored as a window since: no longer one to maximize on its way out of full screen.
+            _maximizeOnRestore = false;
+        }
         if (state == WindowState.Maximized)
         {
             // Checked against the display the maximized window is on.
@@ -76,6 +81,9 @@ internal sealed partial class WindowedPlacement(ILogger logger)
         _maximizeOnRestore = true;
         _place.Keep(WindowState.Maximized, default);
     }
+
+    /// <summary>The window left full screen some other way, by itself: <see cref="MaximizeOnRestore"/> no longer holds.</summary>
+    public void ForgetMaximizeOnRestore() => _maximizeOnRestore = false;
 
     /// <summary>
     /// Where the window opens at the next start: the place kept, with its display's scale, and in full screen when

@@ -44,7 +44,12 @@ public sealed partial class PlayerPage
         PreviewKeyDown += OnPagePreviewKeyDown;
         KeyDown += OnPageKeyDown;
         PointerPressed += OnPagePointerPressed;
-        AddHandler(PointerPressedEvent, new PointerEventHandler((_, _) => _lastInputWasKey = _movesThroughControls = false), handledEventsToo: true);
+        AddHandler(PointerPressedEvent, new PointerEventHandler((_, _) =>
+        {
+            _lastInputWasKey = _movesThroughControls = false;
+            // Only Esc, Esc is the way out that keeps full screen for the next title (PlayerFullScreen).
+            _fullScreen.ForgetEscape();
+        }), handledEventsToo: true);
     }
 
     // A press on the picture, or anything else that does not take focus, would bubble up to the window's root
@@ -80,6 +85,11 @@ public sealed partial class PlayerPage
     private void OnPagePreviewKeyDown(object sender, KeyRoutedEventArgs e)
     {
         _lastInputWasKey = true;
+        if (e.Key != VirtualKey.Escape)
+        {
+            // Only Esc, Esc is the way out that keeps full screen for the next title (PlayerFullScreen).
+            _fullScreen.ForgetEscape();
+        }
         if (e.Key == VirtualKey.Enter && e.KeyStatus.WasKeyDown)
         {
             e.Handled = true;
@@ -195,7 +205,9 @@ public sealed partial class PlayerPage
                 }
                 // Full screen is the whole window's: Esc leaves it for the app too. A remote's Back closes the player and
                 // keeps full screen, as a media PC on a TV runs in it. Esc on its way out of the player: the next title
-                // still opens in full screen once the next Esc leaves the player (PlayerFullScreen).
+                // still opens in full screen when the next Esc leaves the player soon after (PlayerFullScreen). Marked
+                // after the change: WindowModeService raises Changed within SetFullScreen, and OnWindowModeChanged
+                // forgets an Esc, so marking first would be undone at once.
                 if (_modes.IsFullScreen && e.Key == VirtualKey.Escape)
                 {
                     _modes.SetFullScreen(false);

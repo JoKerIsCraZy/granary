@@ -910,7 +910,8 @@ screen all go through `WindowModeService` (App, a singleton that MainWindow atta
   viewer's own full screen, not a trailer's own, not the mini view, and not while minimized, `IsIconic`; read leniently,
   so a missing or odd value is a window and the place still holds):
   `{ "x": 312, "y": 140, "width": 1440, "height": 900, "scale": 1.5, "maximized": false, "full_screen": false }`. It saves once the window
-  settles, 1 s after the last change it kept (a `DispatcherQueueTimer` through `WeakTick`), off the UI thread, so a crash,
+  settles, 1 s after the last change it kept or the last change of mode, one the window made by itself included (a
+  `DispatcherQueueTimer` through `WeakTick`), off the UI thread, so a crash,
   a kill or Windows shutting down keeps it too: asking for it swaps the place to write in (`Interlocked`) and never waits
   for a write in flight, which alone holds the file's lock. And as the window closes (`Window.Closed`, so also full
   screen's Close and a restart into an update), on the UI thread, after a write in flight (waited for at most 2 s,
@@ -931,7 +932,8 @@ screen all go through `WindowModeService` (App, a singleton that MainWindow atta
   screen goes full screen in `Show` too, before the activation, so its first frame is full screen; it is placed at its
   windowed place first, which leaving full screen goes back to, and one also closed maximized is not maximized then
   (that would show it as a window) but on its way out of full screen (`WindowedPlacement.MaximizeOnRestore`), counting as
-  maximized meanwhile. Should a launcher's show command take full screen from it, a window shown as a window goes full
+  maximized meanwhile; a window that is a restored window again before (kept so, or taken out of full screen by Windows
+  itself) is not maximized later. Should a launcher's show command take full screen from it, a window shown as a window goes full
   screen after the activation, and one shown minimized as it comes back from the taskbar (logged at Debug; with
   `Start-Process -WindowStyle Minimized` it opened in full screen, not minimized). Files
   are written as other small files are (a temporary file, then `File.Move`, tried again for a moment while something has
@@ -940,12 +942,16 @@ screen all go through `WindowModeService` (App, a singleton that MainWindow atta
   more than 65,536 px out or across, or a scale outside 0.5 to 5 (Windows' 100 % to 500 %, with room). The same check
   keeps such a place from being written.
 - **The player's full screen** across titles (Core's `PlayerFullScreen`, unit-tested): as the player is left
-  (`PlayerPage.Leave`, after the mini view ended) it keeps whether the window is full screen, in `playback-device.json`
+  (`PlayerPage.Leave`, after the mini view ended, and `PlayerPage.LeaveWithWindow` as the window closes, which leaves the
+  mini view as it is) it keeps whether the window is in the viewer's full screen (`WindowModes.IsViewersFullScreen`: the
+  mini view opened from full screen counts, a trailer's own full screen does not), in `playback-device.json`
   (`player_full_screen`, `IPlaybackDevicePreferences.PlayerFullScreen`, written only when it changes), and
   `PlayerPage.Start`, which only a title opened from the app reaches (`MainWindow.Open`: not the bar brought back, the
   mini view left or the next episode), asks `WindowModeService` for full screen when it is set. An Esc that took the full
-  player out of full screen counts as full screen for the leave right after it; any other window change, or minimizing,
-  forgets it. Leaving changes nothing about the window.
+  player out of full screen counts as full screen for a leave within `PlayerFullScreen.EscapeWindow` (5 s, on the
+  injected `TimeProvider`); any other key or click in the player, a window change or minimizing forgets it. The Esc is
+  marked after `SetFullScreen(false)`, whose `Changed` (raised within the call) forgets it. Leaving changes nothing about
+  the window.
 - **Changed** tells MainWindow (its title bar buttons), the player (its `IsFullScreen` and `IsMiniView`) and the trailer.
 - **Drag area**: the title bar's own buttons lie outside `SetTitleBar`'s element, so they take clicks. In full screen the
   window has no drag area at all (`InputNonClientPointerSource`'s caption region cleared); WinUI does not set it again

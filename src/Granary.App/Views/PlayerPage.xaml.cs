@@ -118,7 +118,17 @@ public sealed partial class PlayerPage : Page
     public void Leave()
     {
         SetMiniView(false);
-        _fullScreen.Left(_modes.IsFullScreen);
+        _fullScreen.Left(_modes.IsViewersFullScreen);
+        ViewModel.Leave();
+    }
+
+    /// <summary>
+    /// Ends playback as the window closes: the window stays as it is, the mini view included, and the next title opens as
+    /// the player is left here (the mini view counting as the full screen it goes back to).
+    /// </summary>
+    public void LeaveWithWindow()
+    {
+        _fullScreen.Left(_modes.IsViewersFullScreen);
         ViewModel.Leave();
     }
 

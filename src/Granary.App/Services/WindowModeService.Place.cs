@@ -17,6 +17,8 @@ public sealed partial class WindowModeService
     private DispatcherQueueTimer? _settle;
     private bool _maximizeAtShow;
     private bool _fullScreenAtShow;
+    // Closed in full screen while maximized: the launcher's fallbacks below go full screen again later, maximized under it.
+    private bool _closedMaximizedInFullScreen;
     // A launcher showed the window minimized in place of full screen: full screen once it comes back from the taskbar.
     private bool _fullScreenOnRestore;
     // The place was saved as the window closed: changes the closing window still reports, such as the presenter it leaves
@@ -63,13 +65,10 @@ public sealed partial class WindowModeService
         _fullScreenAtShow = false;
         if (fullScreen)
         {
-            SetFullScreen(true);
+            _closedMaximizedInFullScreen = maximize;
+            GoFullScreenAsClosed();
         }
-        if (maximize && IsFullScreen)
-        {
-            _windowed.MaximizeOnRestore();
-        }
-        else if (maximize)
+        if (maximize && !IsFullScreen)
         {
             Maximize(window.AppWindow);
         }
@@ -81,6 +80,17 @@ public sealed partial class WindowModeService
         else if (maximize)
         {
             FollowFirstShow(window.AppWindow);
+        }
+    }
+
+    // Full screen, as Granary closed in it. One closed maximized too is not maximized first, which would show it as a window,
+    // but on its way out of full screen.
+    private void GoFullScreenAsClosed()
+    {
+        SetFullScreen(true);
+        if (_closedMaximizedInFullScreen && IsFullScreen)
+        {
+            _windowed.MaximizeOnRestore();
         }
     }
 
@@ -98,7 +108,7 @@ public sealed partial class WindowModeService
             }
             if (shown != _modes.Mode)
             {
-                _modes.Follow(shown);
+                FollowShown(shown);
                 Changed?.Invoke(this, EventArgs.Empty);
             }
             if (WindowedPlacement.IsMinimized(window))
@@ -108,7 +118,7 @@ public sealed partial class WindowModeService
                 return;
             }
             logger.LogDebug("The window showed as a window at first; it goes full screen now");
-            SetFullScreen(true);
+            GoFullScreenAsClosed();
         }
         catch (Exception ex)
         {
@@ -116,15 +126,26 @@ public sealed partial class WindowModeService
         }
     }
 
-    // The window shown minimized at first (FollowFirstFullScreenShow) is back: full screen, once this change is through.
+    // The window shown minimized at first (FollowFirstFullScreenShow) is back: full screen, once this change is through, if
+    // it is still the window it came back as; whatever the viewer did meanwhile ends the wait either way.
     private void FollowRestoreToFullScreen(AppWindow window)
     {
         if (!_fullScreenOnRestore || window.Presenter is not OverlappedPresenter { State: not OverlappedPresenterState.Minimized })
         {
             return;
         }
-        _fullScreenOnRestore = false;
-        _window?.DispatcherQueue.TryEnqueue(() => SetFullScreen(true));
+        _window?.DispatcherQueue.TryEnqueue(() =>
+        {
+            if (!_fullScreenOnRestore)
+            {
+                return;
+            }
+            _fullScreenOnRestore = false;
+            if (_modes.Mode == WindowMode.Window)
+            {
+                GoFullScreenAsClosed();
+            }
+        });
     }
 
     // Whether the next start opens in full screen, were the window to close now; a window that no longer says counts as
@@ -184,6 +205,16 @@ public sealed partial class WindowModeService
             return;
         }
         _windowed.Keep(window);
+        SettleSoon();
+    }
+
+    // Saved once the window stays as it is for a moment: its place, and whether it is full screen.
+    private void SettleSoon()
+    {
+        if (_isClosed)
+        {
+            return;
+        }
         _settle?.Stop();
         _settle?.Start();
     }

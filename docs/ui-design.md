@@ -1209,11 +1209,13 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   keep the place below the 32 px strip in full screen too. The mini view (P) from full screen goes back to full screen, from a window back to that window.
 - **The next title** (Granary's own; Silo's web ends full screen with its player): a title that opens the player (Play,
   Resume, a card's play, Continue Watching, a Watch Party, `--play` and `--play-item`) opens it in full screen when the
-  player was in full screen as it was last left on this PC, by any way (Exit, Back, Stop, the title's end, another page),
-  also after a restart (`player_full_screen` in `playback-device.json`, Core's `PlayerFullScreen`); left in a window, the
-  next title opens in the window as it is. Bringing the bar back, leaving the mini view and the next episode in the same
-  player keep the window as it is. Esc in full screen still leaves full screen first; the Esc after it leaves the player,
-  and that counts as leaving in full screen, unless the window changed or the player was minimized in between.
+  player was in full screen as it was last left on this PC, by any way (Exit, Back, Stop, the title's end, another page,
+  closing Granary; the mini view counts as the full screen it goes back to), also after a restart (`player_full_screen`
+  in `playback-device.json`, Core's `PlayerFullScreen`); left in a window, the next title opens in the window as it is.
+  Bringing the bar back, leaving the mini view and the next episode in the same player keep the window as it is. Esc in
+  full screen still leaves full screen first; an Esc that then leaves the player within 5 seconds counts as leaving in
+  full screen, unless anything came in between (another key, a click, a change of the window, minimizing). An Esc to
+  watch on in the window does not.
 - **A trailer**: YouTube's full-screen button in a window takes the window full screen with the video and back with it.
   In the app's full screen the window stays as it is either way, and leaving the trailer's full screen leaves the app
   in full screen. While a trailer fills the screen the title bar's buttons are away (YouTube's button and Esc leave it);
