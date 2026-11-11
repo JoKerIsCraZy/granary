@@ -120,6 +120,9 @@ public sealed partial class DownloadQueue : IDisposable
     // What the link and the settings last said (ReadWaitsForUnmetered): 1 when downloads wait.
     private int _waitsForUnmetered;
 
+    // The reads of the link and the settings, one after another (OnConditionsChanged).
+    private Task _conditions = Task.CompletedTask;
+
     // The loop's own: whether the store was read, the scope it last ran, whether that scope's downloads can run, when a pass
     // that failed is tried again, and the activation under way or failed.
     private bool _loaded;
@@ -270,7 +273,7 @@ public sealed partial class DownloadQueue : IDisposable
             {
                 CancelLocked(run);
             }
-            tasks = [_loop, _chores, _rechecking, .. _running.Values.Select(r => r.Task)];
+            tasks = [_loop, _chores, _rechecking, _conditions, .. _running.Values.Select(r => r.Task)];
         }
         Unsubscribe();
         try
@@ -386,11 +389,30 @@ public sealed partial class DownloadQueue : IDisposable
     }
 
     // The link or the settings: on a metered link without the setting, everything stops. Windows' answer about the link can
-    // take a moment, and the settings change on the UI thread, so it is read on the thread pool.
-    private void OnConditionsChanged(object? sender, EventArgs e) => _ = Task.Run(ApplyConditions);
+    // take a moment, and the settings change on the UI thread, so it is read on the thread pool: one read after another, so
+    // the latest answer is always the last one applied, and StopAsync waits for them, so none is applied after the stop.
+    private void OnConditionsChanged(object? sender, EventArgs e)
+    {
+        lock (_gate)
+        {
+            if (_stopping)
+            {
+                return;
+            }
+            _conditions = _conditions.ContinueWith(static (_, state) => ((DownloadQueue)state!).ApplyConditions(), this,
+                CancellationToken.None, TaskContinuationOptions.DenyChildAttach, TaskScheduler.Default);
+        }
+    }
 
     private void ApplyConditions()
     {
+        lock (_gate)
+        {
+            if (_stopping)
+            {
+                return;
+            }
+        }
         try
         {
             bool waits = ReadWaitsForUnmetered();

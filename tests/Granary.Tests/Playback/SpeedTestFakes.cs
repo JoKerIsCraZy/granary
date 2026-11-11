@@ -150,6 +150,9 @@ internal sealed class FakeNetworkLink : INetworkLink
     /// <summary>When set, reading <see cref="Current"/> throws it, as a system call that failed.</summary>
     public Exception? Fails { get; set; }
 
+    /// <summary>Runs as <see cref="Current"/> is read, before it answers: a test holds a read there.</summary>
+    public Action? Reading { get; set; }
+
     /// <summary>How often <see cref="Current"/> was read: each read is a system call in the app.</summary>
     public int Reads => Volatile.Read(ref _reads);
 
@@ -158,6 +161,7 @@ internal sealed class FakeNetworkLink : INetworkLink
         get
         {
             Interlocked.Increment(ref _reads);
+            Reading?.Invoke();
             return Fails is { } failure ? throw failure : _current;
         }
         set => _current = value;

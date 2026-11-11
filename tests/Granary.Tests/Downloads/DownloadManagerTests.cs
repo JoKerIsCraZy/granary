@@ -402,6 +402,32 @@ public sealed class DownloadManagerTests : IAsyncDisposable
         Assert.False(manager.ForItem("mv_1")!.WaitsForUnmetered);
     }
 
+    // A read of the link that is under way as the queue stops does not keep it from stopping once it answers, and its answer
+    // still counts. (That the stop waits for it, and that reads come one after another, the queue holds by construction.)
+    [Fact]
+    public async Task AConditionReadUnderWay_AsTheQueueStops_EndsWithItsAnswer()
+    {
+        await _h.AddAsync("dl_1", change: r => r with { IsPausedByViewer = true });
+        var queue = _h.StartQueue();
+        await SettleAsync(queue);
+        using var held = new ManualResetEventSlim();
+        var reading = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _h.Network.Reading = () =>
+        {
+            reading.TrySetResult();
+            held.Wait(TimeSpan.FromSeconds(10));
+        };
+        _h.Network.SetMetered(true);
+        await reading.Task.WaitAsync(TimeSpan.FromSeconds(5), Token);
+
+        var stopping = queue.StopAsync();
+        Assert.False(stopping.IsCompleted);
+        held.Set();
+        await stopping.WaitAsync(TimeSpan.FromSeconds(5), Token);
+
+        Assert.True(queue.IsWaitingForUnmetered);
+    }
+
     [Fact]
     public async Task WithoutAProfile_NothingStarts()
     {
