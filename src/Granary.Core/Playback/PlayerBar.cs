@@ -43,7 +43,7 @@ public enum PlayerKey
     /// <summary>P.</summary>
     MiniView,
 
-    /// <summary>F, and a double click on the picture.</summary>
+    /// <summary>F. Not a double click on the picture, nor F11, the window's: both switch full screen with the button hidden too.</summary>
     FullScreen,
 }
 

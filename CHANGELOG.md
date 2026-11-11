@@ -12,6 +12,11 @@ release's section is what its update says it changes (docs/release.md).
 - **Full screen stays:** leave the player in full screen, and the next title opens in full screen again, also after a
   restart. Granary opens in full screen when you closed it in full screen.
 
+### Changed
+
+- A double click on the picture switches full screen also when the Full screen button is hidden in Settings → Playback →
+  Player buttons, as F11 does.
+
 ### Fixed
 
 - A Next Up card says Next Episode, as on Silo's web.
