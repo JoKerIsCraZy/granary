@@ -1312,9 +1312,12 @@ The view models of the sign-out paths take it (optional, so they work without it
   (`DownloadSignOut.SignOutAsync`) ask first when the account has downloads on this PC: "Sign out of NAS?" and "2
   downloads (3.0 GB) on this PC are deleted with it." (`Note`). Without any they sign out at once. Settings → Devices'
   Sign out this device asks already; its question adds the same line. The count covers every profile of the account on
-  that server, and the size is what their folders take on the disk (`Summarize` reads the disk, so the view models use
-  `SummarizeAsync`, which loads the store and reads on the thread pool). Removing a server takes every account's
-  downloads there (`ClearAsync(server, null)`); the app asks before it removes one.
+  that server, and the size is what their folders take on the disk. `SummarizeAsync` reads both on the thread pool within
+  `SummaryBudget` (5 s of the `TimeProvider`, as the pages wait for the free space), so a share that does not answer never
+  keeps the question from coming: a size that does not come in time is left out ("2 downloads on this PC are deleted with
+  it."), and so is the count when the downloads themselves cannot be read in time ("Its downloads on this PC are deleted
+  with it."). Removing a server takes every account's downloads there (`ClearAsync(server, null)`); the app asks before it
+  removes one.
 - **The account.** On the active server it is the session's; on another, the one its saved sign-in names
   (`AccountOfAsync`). None known stands for every account there. A sign-out reads it once, so the downloads it asked
   about are the ones that go.
@@ -1322,9 +1325,13 @@ The view models of the sign-out paths take it (optional, so they work without it
   entries on that server and account (its downloads and the deletes still to send), bound to that profile, one at a time,
   for at most `DeleteBudget` (10 s of the `TimeProvider`). An entry the server refuses does not stop the others; no
   answer, a profile switch or the end of the budget stops them all. Then every matching download of every profile goes
-  from this PC, whether the server answered or not: rows, index entries, deletes still to send, and the folders once the
-  index without them is written (`RemoveWhereAsync`; the queue stops their transfers, and a folder something still holds is
-  tried again as any removed download's). Then the sign-out.
+  from this PC, whether the server answered or not: its row, index entry and deletes still to send at once, and the queue
+  stops its transfer (`RemoveWhereAsync`). Then the sign-out, once the index without them is written or after
+  `StoreBudget` (5 s) at most: an index that is not written in time (a disk or a write before it that does not answer) is
+  logged and written once it can be, and the sign-out goes on. The folders go after the index, beside the sign-out
+  (`DownloadStore.FolderWork`), so a share that does not answer holds nothing up; a folder that cannot go yet is tried again
+  as any removed download's. Downloads that cannot even be read within `StoreBudget` go once they are read; the server hears
+  nothing of them.
 - **Other profiles' entries stay on the server.** A delete goes only as the profile its entry belongs to, and only the
   active profile can be sent as. So the entries of the account's other profiles, and all of a server that is not the
   active one, stay in the server's registry; only their files go.

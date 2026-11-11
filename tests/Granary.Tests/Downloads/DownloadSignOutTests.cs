@@ -115,6 +115,7 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
         using var servers = await ServersAsync();
 
         await servers.SignOutCommand.ExecuteAsync(Item(servers, "srv1"));
+        await _h.Store.FolderWork;
 
         Assert.Equal("7", Assert.Single(DeletesSent).AsProfile);
         Assert.Single(_h.Silo.SentTo(HttpMethod.Delete, EntryPath("dl_1")));
@@ -167,6 +168,7 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
         await _credentials.SetAsync("srv2", SignedIn("2"), Token);
 
         await servers.SignOutCommand.ExecuteAsync(Item(servers, "srv2"));
+        await _h.Store.FolderWork;
 
         Assert.Equal(("Sign out of Basement?", "1 download (1.5 MB) on this PC is deleted with it.", "Sign out"), Assert.Single(_confirm.Asked));
         // Its profile is not the active one: the server cannot be told.
@@ -204,6 +206,7 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
         using var servers = await ServersAsync();
 
         await servers.RemoveCommand.ExecuteAsync(Item(servers, "srv1"));
+        await _h.Store.FolderWork;
 
         // The question before removing is the app's own.
         Assert.Empty(_confirm.Asked);
@@ -268,6 +271,7 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
         int callsWhileWaiting = _h.Session.Calls.Count;
         _h.Time.Advance(DownloadSignOut.DeleteBudget);
         await signingOut.WaitAsync(TimeSpan.FromSeconds(5), Token);
+        await _h.Store.FolderWork;
 
         Assert.True(filesWhileWaiting);
         Assert.Equal(0, callsWhileWaiting);
@@ -288,6 +292,7 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
         using var servers = await ServersAsync();
 
         await servers.SignOutCommand.ExecuteAsync(Item(servers, "srv1"));
+        await _h.Store.FolderWork;
 
         // The first one that cannot go says the server cannot be reached now; the rest are not tried.
         Assert.Single(DeletesSent);
@@ -324,6 +329,7 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
             new ImmediateDispatcher(), _h.Time, _h.Logs.For<SidebarViewModel>(), downloads: NewSignOut());
 
         await sidebar.SignOutCommand.ExecuteAsync(null);
+        await _h.Store.FolderWork;
 
         Assert.Equal("Sign out of NAS?", Assert.Single(_confirm.Asked).Title);
         Assert.Single(_h.Silo.SentTo(HttpMethod.Delete, EntryPath("dl_1")));
@@ -342,6 +348,7 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
             NewSignOut());
 
         await viewModel.SignOutCommand.ExecuteAsync(null);
+        await _h.Store.FolderWork;
 
         Assert.Equal("Sign out of NAS?", Assert.Single(_confirm.Asked).Title);
         Assert.Empty(DeletesSent);
@@ -362,5 +369,116 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
 
         Assert.Empty(_h.Session.Calls);
         Assert.True(File.Exists(kept.PartPath));
+    }
+
+    [Fact]
+    public async Task AShareThatDoesNotAnswer_GetsTheQuestionWithoutTheSize()
+    {
+        await KeptAsync("dl_1");
+        using var share = new StalledDisk();
+        _h.Store.MeasuringFolder = _ => share.Hold();
+        _confirm.Answer = false;
+        using var servers = await ServersAsync();
+
+        var signingOut = servers.SignOutCommand.ExecuteAsync(Item(servers, "srv1"));
+        await share.Reached.WaitAsync(TimeSpan.FromSeconds(5), Token);
+        _h.Time.Advance(DownloadSignOut.SummaryBudget);
+        await signingOut.WaitAsync(TimeSpan.FromSeconds(5), Token);
+
+        Assert.Equal(("Sign out of NAS?", "1 download on this PC is deleted with it.", "Sign out"), Assert.Single(_confirm.Asked));
+        Assert.Contains("did not come within 5 s", _h.Logs.All, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task DownloadsThatCannotBeReadInTime_StillGetTheQuestion_AndGoOnceTheyAreRead()
+    {
+        var kept = await KeptAsync("dl_1");
+        using var share = new StalledDisk();
+        var store = new DownloadStore(_h.IndexPath, _h.Preferences, _h.Time, _h.Logs.For<DownloadStore>()) { Loading = share.Hold };
+        var signOut = new DownloadSignOut(store, _h.Api, _h.Session, _credentials, _confirm, _h.Time, _h.Logs.For<DownloadSignOut>());
+
+        var summarizing = signOut.SummarizeAsync("srv1", "1", Token);
+        await share.Reached.WaitAsync(TimeSpan.FromSeconds(5), Token);
+        _h.Time.Advance(DownloadSignOut.SummaryBudget);
+        var summary = await summarizing.WaitAsync(TimeSpan.FromSeconds(5), Token);
+        var clearing = signOut.ClearAsync("srv1", "1", Token);
+        await _h.Time.WaitUntilAsync(() => _h.Time.NextDue == DownloadSignOut.StoreBudget, Token);
+        _h.Time.Advance(DownloadSignOut.StoreBudget);
+        await clearing.WaitAsync(TimeSpan.FromSeconds(5), Token);
+        share.Release();
+        await Until(() => !Directory.Exists(kept.Folder), "its folder went once the downloads were read");
+        await store.FolderWork;
+
+        Assert.Equal("Its downloads on this PC are deleted with it.", DownloadSignOut.Note(summary));
+        Assert.Empty(store.All);
+        Assert.Empty(DeletesSent);
+    }
+
+    [Fact]
+    public async Task AnIndexThatCannotBeWrittenInTime_DoesNotHoldTheSignOutUp()
+    {
+        var kept = await KeptAsync("dl_1");
+        using var disk = new StalledDisk();
+        _h.Store.WritingIndex = disk.Hold;
+        using var servers = await ServersAsync();
+
+        var signingOut = servers.SignOutCommand.ExecuteAsync(Item(servers, "srv1"));
+        await disk.Reached.WaitAsync(TimeSpan.FromSeconds(5), Token);
+        await _h.Time.WaitUntilAsync(() => _h.Time.NextDue == DownloadSignOut.StoreBudget, Token);
+        _h.Time.Advance(DownloadSignOut.StoreBudget);
+        await signingOut.WaitAsync(TimeSpan.FromSeconds(5), Token);
+        var calls = _h.Session.Calls.ToList();
+        var keptAtSignOut = Kept.ToList();
+        _h.Store.WritingIndex = null;
+        disk.Release();
+        await Until(() => !Directory.Exists(kept.Folder), "its folder went once the index was written");
+
+        Assert.Equal(["sign-out:srv1"], calls);
+        Assert.Empty(keptAtSignOut);
+        Assert.Contains("was not written within 5 s", _h.Logs.All, StringComparison.Ordinal);
+        await _h.RestartAsync();
+        Assert.Empty(_h.Store.All);
+    }
+
+    [Fact]
+    public async Task TheFoldersGoAfterTheSignOut_SoAShareThatDoesNotAnswerHoldsNothingUp()
+    {
+        var kept = await KeptAsync("dl_1");
+        using var share = new StalledDisk();
+        _h.Store.IndexWritten = share.Hold;
+        using var servers = await ServersAsync();
+
+        await servers.SignOutCommand.ExecuteAsync(Item(servers, "srv1")).WaitAsync(TimeSpan.FromSeconds(5), Token);
+        bool folderAtSignOut = Directory.Exists(kept.Folder);
+        _h.Store.IndexWritten = null;
+        share.Release();
+        await _h.Store.FolderWork;
+
+        Assert.Equal(["sign-out:srv1"], _h.Session.Calls);
+        Assert.True(folderAtSignOut);
+        Assert.False(Directory.Exists(kept.Folder));
+    }
+
+    /// <summary>
+    /// A drive or a share that does not answer: what reaches it waits until the test lets it go (at most half a minute, so a
+    /// failed test leaves no thread behind for long).
+    /// </summary>
+    private sealed class StalledDisk : IDisposable
+    {
+        private readonly TaskCompletionSource _reached = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly ManualResetEventSlim _released = new();
+
+        public Task Reached => _reached.Task;
+
+        public void Hold()
+        {
+            _reached.TrySetResult();
+            _released.Wait(TimeSpan.FromSeconds(30));
+        }
+
+        public void Release() => _released.Set();
+
+        // The event stays: a thread may still be waking from it.
+        public void Dispose() => _released.Set();
     }
 }

@@ -132,6 +132,7 @@ public sealed partial class DownloadStore
             {
                 return true;
             }
+            WritingIndex?.Invoke();
             Directory.CreateDirectory(Path.GetDirectoryName(_indexPath)!);
             SafeFile.WriteWhole(_indexPath, temp => File.WriteAllBytes(temp, json));
             _writtenIndex = json;
@@ -240,6 +241,7 @@ public sealed partial class DownloadStore
     // that did not get through, an index that was lost) taken in. Answers whether the index needs writing.
     private (Snapshot State, bool Write) ReadAll()
     {
+        Loading?.Invoke();
         var index = ReadIndexFile();
         bool write = false;
         var downloads = new List<StoredDownload>();

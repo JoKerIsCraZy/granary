@@ -245,6 +245,7 @@ public sealed class DevicesViewModelTests
         await page.LoadAsync(ct);
 
         await page.SignOutSessionCommand.ExecuteAsync(page.CurrentSession);
+        await downloads.Store.FolderWork;
 
         Assert.Equal("You'll return to the sign-in screen. You can sign in again with the same password or sign-in provider.\n\n"
             + "A video already playing may continue until its next request. Saved device settings are kept.\n\n"

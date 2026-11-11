@@ -248,6 +248,7 @@ public sealed class DownloadStoreTests : IDisposable
         await store.RemoveAsync(Scope8, "dl_3", queueServerDelete: true, Token);
 
         await store.RemoveWhereAsync(scope => scope.ProfileId == "8", Token);
+        await store.FolderWork;
 
         Assert.Equal([kept], store.All);
         Assert.False(Directory.Exists(gone.Folder));
@@ -290,6 +291,7 @@ public sealed class DownloadStoreTests : IDisposable
         Assert.Empty(store.PendingDeletes(Scope7));
         Assert.Contains("damaged", _logs.All, StringComparison.Ordinal);
         await store.RemoveWhereAsync(_ => true, Token);
+        await store.FolderWork;
         Assert.True(Directory.Exists(elsewhere));
     }
 

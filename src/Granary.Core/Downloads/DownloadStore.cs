@@ -67,7 +67,10 @@ public sealed partial class DownloadStore
     /// <summary>Every download of every scope on this PC.</summary>
     public IReadOnlyList<StoredDownload> All => Current.Downloads;
 
-    /// <summary>The folders' deletes and index write a <see cref="RecheckFolders"/> started; the queue waits for them.</summary>
+    /// <summary>
+    /// The folders' deletes and index write a <see cref="RecheckFolders"/> or a <see cref="RemoveWhereAsync"/> started; the queue
+    /// waits for them.
+    /// </summary>
     internal Task FolderWork { get; private set; } = Task.CompletedTask;
 
     /// <summary>For tests: runs once a delete pass has written its index, before it deletes that index's folders.</summary>
@@ -78,6 +81,15 @@ public sealed partial class DownloadStore
 
     /// <summary>For tests: runs once a new download's folder is made, before its record is written there.</summary>
     internal Action<string>? FolderMade { get; set; }
+
+    /// <summary>For tests: runs on the load's thread before the index is read, as a drive that does not answer holds it.</summary>
+    internal Action? Loading { get; set; }
+
+    /// <summary>For tests: runs on the write's thread before a changed index is written.</summary>
+    internal Action? WritingIndex { get; set; }
+
+    /// <summary>For tests: runs with a download's folder before <see cref="BytesOnDisk"/> reads its files.</summary>
+    internal Action<string>? MeasuringFolder { get; set; }
 
     /// <summary>The most folders a load's look for download folders lists; it says so in the log when it stops there.</summary>
     internal int ScanLimit { get; init; } = 2000;
@@ -246,7 +258,12 @@ public sealed partial class DownloadStore
         await RaiseThenPersistAsync();
     }
 
-    /// <summary>Takes every download and pending delete of the scopes <paramref name="match"/> picks off this PC (a sign-out).</summary>
+    /// <summary>
+    /// Takes every download and pending delete of the scopes <paramref name="match"/> picks off this PC (a sign-out). The rows go
+    /// at once, and the call ends once the index without them is written, or could not be (it is written again with the next
+    /// change). Their folders go after that, beside the caller (<see cref="FolderWork"/>), and are tried again as any removed
+    /// download's: a drive or a share that does not answer holds no sign-out up.
+    /// </summary>
     public async Task RemoveWhereAsync(Func<DownloadScope, bool> match, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(match);
@@ -266,7 +283,17 @@ public sealed partial class DownloadStore
         {
             return;
         }
-        await RaiseThenPersistAsync();
+        // The queue hears first and stops the rows' transfers. A handler that throws does not keep the change from being
+        // written; its exception comes after.
+        try
+        {
+            Changed?.Invoke(this, EventArgs.Empty);
+        }
+        finally
+        {
+            await PersistAsync(() => WriteIndex(Current));
+            DeleteFoldersBeside();
+        }
     }
 
     /// <summary>The server took the delete, or never needs it: it is not sent again.</summary>
@@ -336,6 +363,7 @@ public sealed partial class DownloadStore
         {
             try
             {
+                MeasuringFolder?.Invoke(download.Folder);
                 total += new DirectoryInfo(download.Folder).EnumerateFiles("*", SearchOption.AllDirectories).Sum(f => f.Length);
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
@@ -374,6 +402,20 @@ public sealed partial class DownloadStore
         finally
         {
             await WriteIndexThenDeleteFoldersAsync();
+        }
+    }
+
+    // The removed downloads' folders, on the thread pool, after the folder work under way: that one deletes only the folders
+    // of the index it wrote.
+    private void DeleteFoldersBeside()
+    {
+        lock (_gate)
+        {
+            var before = FolderWork;
+            FolderWork = before.IsCompleted
+                ? Task.Run(WriteIndexThenDeleteFoldersAsync, CancellationToken.None)
+                : before.ContinueWith(_ => WriteIndexThenDeleteFoldersAsync(), CancellationToken.None, TaskContinuationOptions.None,
+                    TaskScheduler.Default).Unwrap();
         }
     }
 
