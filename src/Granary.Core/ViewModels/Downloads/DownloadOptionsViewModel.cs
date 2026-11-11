@@ -179,7 +179,17 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
             {
                 return false;
             }
-            bool started = await StartSelectionAsync();
+            bool started;
+            try
+            {
+                started = await StartSelectionAsync();
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                // Whatever went wrong, the dialog says it did not start, and Download can be pressed again.
+                _logger.LogWarning("A download could not be started ({Failure})", DownloadLog.Failure(ex));
+                started = false;
+            }
             await _dispatcher.ResumeOnUi();
             if (!started)
             {
@@ -193,9 +203,18 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
         }
     }
 
-    partial void OnSelectedVersionChanged(DownloadVersionRow? value) => ShowSize();
+    // Another choice is another start: the last one's error no longer says anything about it.
+    partial void OnSelectedVersionChanged(DownloadVersionRow? value)
+    {
+        ErrorText = "";
+        ShowSize();
+    }
 
-    partial void OnSelectedQualityChanged(DownloadQualityRow? value) => ShowSize();
+    partial void OnSelectedQualityChanged(DownloadQualityRow? value)
+    {
+        ErrorText = "";
+        ShowSize();
+    }
 
     // The rows as the dialog opens: the server's qualities with the viewer's default chosen, the size, and a fresh read of the space.
     private void Open(DownloadVersionRow? version)

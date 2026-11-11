@@ -287,6 +287,33 @@ public sealed class DownloadOptionsViewModelTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AStartThatFailsUnexpectedly_SaysSo_AndCanBeTriedAgain()
+    {
+        Creates(() => throw new InvalidOperationException("unexpected"), Created(DownloadPayloads.Entry("dl_1", "ready")));
+        var options = await ForTitleAsync(Movie, [OneFile]);
+
+        Assert.False(await options.StartAsync());
+        Assert.Equal(DownloadOptionsViewModel.StartFailed, options.ErrorText);
+        Assert.True(options.CanStart);
+
+        Assert.True(await options.StartAsync());
+        Assert.Equal("", options.ErrorText);
+    }
+
+    [Fact]
+    public async Task AnotherChoice_ClearsTheLastStartsError()
+    {
+        Creates(ScriptedSilo.Problem(403, ProblemCodes.PermissionDenied));
+        var options = await ForTitleAsync(Movie, [OneFile], presets: ["original", "10mbps"]);
+        Assert.False(await options.StartAsync());
+        Assert.Equal(DownloadOptionsViewModel.StartFailed, options.ErrorText);
+
+        options.SelectedQuality = options.Qualities[1];
+
+        Assert.Equal("", options.ErrorText);
+    }
+
+    [Fact]
     public async Task AFailedStart_ShowsTheWebsError()
     {
         Creates(ScriptedSilo.Problem(403, ProblemCodes.PermissionDenied));

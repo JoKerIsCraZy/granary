@@ -589,8 +589,9 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     which keeps Download off. The space is read once as the dialog opens, for 5 s at most; unknown, it holds nothing back.
     Download (the primary button, also Enter) starts it and closes the dialog; while it starts, a 16 px ring turns beside
     the size and Download waits. A start that fails keeps the dialog open with the web's "Download could not be started.
-    Check access and try again." in an error bar; a season pressed again sends only the episodes not started yet. Cancel
-    closes it.
+    Check access and try again." in an error bar, until another version or quality is picked; a season pressed again
+    sends only the episodes not started yet. Cancel closes it; while a start runs, Cancel and Esc wait for it, so a
+    download never starts after the dialog was closed on it.
   - The stars, the web's `StarRating` after the heart (ActionBar.tsx), on movies and series only, as on the web: five
     20 px stars (16 below 1400 px) 2 apart in a dark pill as high as the buttons (82 % of the surface colour, a 30 %
     border, a faint light along its top). The profile's rating is yellow and filled (`#FACC15`), the other stars a
@@ -1176,7 +1177,7 @@ says why above the sections.
   (3.0 GB) on this PC are deleted with it.", Sign out and Cancel. Remove asks "Remove NAS?", "Granary signs out of this
   server and forgets it. You can add it again later." and, when downloads of any account there are on this PC, a blank
   line and "2 downloads (3.0 GB) on this PC are deleted with it." (without the size when it does not come within 5 s,
-  "Its downloads on this PC are deleted with it." when not even they can be read in time), Remove and Cancel. The sign-in screen's "Use another server" still opens the
+  "Any downloads on this PC are deleted with it." when not even they can be read in time), Remove and Cancel. The sign-in screen's "Use another server" still opens the
   standalone servers page, which shares the question before removing.
 - **Downloads** (`DownloadsSettingsView` on `DownloadSettingsViewModel`, Granary's own: the web has no downloads, and the apps
   keep these on the device): "Where downloads go and when they run, on this PC.", then This PC ("Kept on this PC, not in

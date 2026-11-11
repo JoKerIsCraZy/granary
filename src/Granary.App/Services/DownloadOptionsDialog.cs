@@ -40,19 +40,34 @@ internal sealed class DownloadOptionsDialog(IServiceProvider services, ILogger<D
         async void OnDownloadClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
         {
             var deferral = args.GetDeferral();
+            bool keepOpen = true;
             try
             {
-                args.Cancel = !await options.StartAsync();
+                keepOpen = !await options.StartAsync();
             }
             catch (Exception ex)
             {
                 // async void: nothing may escape. The dialog stays, so Download can be pressed again.
                 logger.LogError("The download could not be started ({Failure})", ex.GetType().Name);
-                args.Cancel = true;
             }
-            finally
+            try
             {
+                args.Cancel = keepOpen;
                 deferral.Complete();
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or COMException)
+            {
+                // The dialog went meanwhile, with the window: there is nothing left to keep open.
+                logger.LogDebug("The download dialog was gone as its start ended ({Failure})", ex.GetType().Name);
+            }
+        }
+        // A start under way finishes before the dialog goes: Cancel or Esc then would close it with the download starting
+        // all the same, and nothing saying so.
+        void HoldWhileStarting(ContentDialog sender, ContentDialogClosingEventArgs args)
+        {
+            if (options.IsStarting && args.Result == ContentDialogResult.None)
+            {
+                args.Cancel = true;
             }
         }
         options.PropertyChanged += FollowCanStart;
@@ -69,12 +84,13 @@ internal sealed class DownloadOptionsDialog(IServiceProvider services, ILogger<D
                 IsPrimaryButtonEnabled = options.CanStart,
             };
             dialog.PrimaryButtonClick += OnDownloadClick;
+            dialog.Closing += HoldWhileStarting;
             await dialog.ShowAsync();
         }
         catch (Exception ex) when (ex is InvalidOperationException or COMException)
         {
-            // Another dialog is open (a PIN, a question): nothing starts.
-            logger.LogWarning("The download dialog could not be shown: another dialog is open ({Failure})", ex.GetType().Name);
+            // Most often another dialog is open (a PIN, a question); nothing starts either way.
+            logger.LogWarning("The download dialog could not be shown ({Failure})", ex.GetType().Name);
         }
         finally
         {
@@ -82,6 +98,7 @@ internal sealed class DownloadOptionsDialog(IServiceProvider services, ILogger<D
             if (dialog is not null)
             {
                 dialog.PrimaryButtonClick -= OnDownloadClick;
+                dialog.Closing -= HoldWhileStarting;
             }
             _showing = false;
         }
