@@ -10,9 +10,11 @@ namespace Granary.Tests.Profiles;
 /// <summary>
 /// What the client sent; the body is read at send time because SiloHttp disposes the request.
 /// <paramref name="SavedAddressOnly"/>: it may not take a local route. <paramref name="AsProfile"/>: the one profile it may be sent as.
+/// <paramref name="Range"/>, <paramref name="IfRange"/> and <paramref name="IfNoneMatch"/>: a ranged or conditional read's headers.
 /// </summary>
 internal sealed record SentRequest(HttpMethod Method, Uri Uri, string? Body, SiloAuth Auth, bool SavedAddressOnly = false, string? IfMatch = null,
-    string? RoomToken = null, string? DeviceId = null, string? AsProfile = null);
+    string? RoomToken = null, string? DeviceId = null, string? AsProfile = null, string? Range = null, string? IfRange = null,
+    string? IfNoneMatch = null);
 
 /// <summary>
 /// A Silo server behind a reverse-proxy path prefix, scripted per method and URL. Each route answers
@@ -139,7 +141,10 @@ internal sealed class ScriptedSilo
         string? ifMatch = request.Headers.TryGetValues("If-Match", out var versions) ? string.Join(",", versions) : null;
         string? roomToken = request.Headers.TryGetValues("X-Room-Token", out var proofs) ? string.Join(",", proofs) : null;
         string? deviceId = request.Headers.TryGetValues("X-Silo-Device-Id", out var devices) ? string.Join(",", devices) : null;
-        var answer = Record(new SentRequest(request.Method, uri, body, request.GetAuth(), savedOnly, ifMatch, roomToken, deviceId, request.GetProfile()));
+        var headers = request.Headers;
+        string? ifNoneMatch = headers.IfNoneMatch.Count == 0 ? null : headers.IfNoneMatch.ToString();
+        var answer = Record(new SentRequest(request.Method, uri, body, request.GetAuth(), savedOnly, ifMatch, roomToken, deviceId, request.GetProfile(),
+            headers.Range?.ToString(), headers.IfRange?.ToString(), ifNoneMatch));
         return await answer(cancellationToken);
     }
 

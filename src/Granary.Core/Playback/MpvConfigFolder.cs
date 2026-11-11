@@ -1,4 +1,5 @@
 using System.Text;
+using Granary.Core.IO;
 using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.Playback;
@@ -31,10 +32,6 @@ public sealed class MpvConfigFolder
         # scale=ewa_lanczossharp
 
         """;
-
-    // Enough for a read of these small files to end; about 200 ms in all. All writes run off the UI thread.
-    private const int MoveTries = 6;
-    private static readonly TimeSpan MoveRetryDelay = TimeSpan.FromMilliseconds(40);
 
     private static readonly UTF8Encoding StrictUtf8 = new(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
 
@@ -228,56 +225,19 @@ public sealed class MpvConfigFolder
     /// <summary>As <see cref="WriteWhole(string, string)"/>, byte for byte.</summary>
     internal bool WriteWhole(string path, byte[] bytes) => WriteWhole(path, temp => File.WriteAllBytes(temp, bytes));
 
+    // Through SafeFile: a read Granary started by itself is waited for a moment, another program's save stays.
     private bool WriteWhole(string path, Action<string> write)
     {
-        // Its own temporary name, in the same folder so the move replaces the file at once: a leftover of an earlier write, or
-        // a second Granary on this data folder writing now, cannot get in its way.
-        string temp = $"{path}.{Guid.NewGuid():N}.tmp";
         try
         {
-            write(temp);
-            MoveOver(temp, path);
+            SafeFile.WriteWhole(path, write, BeforeMoveRetry);
             return true;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             _logger.LogWarning(ex, "{File} could not be written", Path.GetFileName(path));
-            Delete(temp);
             return false;
         }
-    }
-
-    // Windows refuses to replace a file while anything has it open, whatever that shares: a read Granary started by itself
-    // (the settings row, the player's check) or a virus scanner's. Those end in a moment; a file held for good still fails.
-    // So does one whose last write or size changed while it waited: that is another program's save, and it stays.
-    private void MoveOver(string temp, string path)
-    {
-        var before = Stamp(path);
-        for (int tries = 1; ; tries++)
-        {
-            try
-            {
-                File.Move(temp, path, overwrite: true);
-                return;
-            }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException && tries < MoveTries)
-            {
-                BeforeMoveRetry?.Invoke();
-                Thread.Sleep(MoveRetryDelay);
-            }
-            if (Stamp(path) != before)
-            {
-                throw new IOException("The file changed while the write waited for it.");
-            }
-        }
-    }
-
-    // A file's last write and size, which a read leaves alone and a save does not. Readable while another program has it
-    // open, though Windows may only show a change once that program lets go.
-    private static (DateTime LastWrite, long Length) Stamp(string path)
-    {
-        var file = new FileInfo(path);
-        return file.Exists ? (file.LastWriteTimeUtc, file.Length) : default;
     }
 
     private void Delete(string temp)

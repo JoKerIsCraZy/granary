@@ -4,6 +4,7 @@ using Granary.App.Themes;
 using Granary.Core;
 using Granary.Core.Abstractions;
 using Granary.Core.Diagnostics;
+using Granary.Core.Downloads;
 using Granary.Core.Overlays;
 using Granary.Core.Playback;
 using Granary.Core.Playback.Themes;
@@ -89,6 +90,11 @@ public partial class App : Application
 #endif
         // A server on this network is reached directly, once its key is verified (docs/api-contract.md, 9.7).
         Services.GetRequiredService<LocalRouteMonitor>().Start();
+        // Downloads carry on where they stopped, for the profile in use (docs/architecture.md, "The queue"). Closing stops
+        // them and waits a moment for their files to be let go; a part file is resumed at the next start.
+        var downloads = Services.GetRequiredService<DownloadQueue>();
+        downloads.Start();
+        _window.Closed += (_, _) => downloads.StopAsync().Wait(DownloadQueue.StopBudget);
         // The server's accent recolours Granary as it arrives, and with every other server.
         var accent = Services.GetRequiredService<ServerAccent>();
         accent.PropertyChanged += (_, e) =>
@@ -179,6 +185,12 @@ public partial class App : Application
         services.AddSingleton<IKeepAwake, WindowsKeepAwake>();
         // Title pages' theme music, through Windows' own media player beside mpv.
         services.AddSingleton<IThemeAudioOutput, WindowsThemeAudio>();
+        // The free space where downloads go, as Windows counts it, network shares included; Core's own count knows only drives.
+        services.AddSingleton<IDiskSpace, WindowsDiskSpace>();
+        // Settings → Downloads' Change: Windows' folder picker over the main window.
+        services.AddSingleton<IFolderPicker, WindowsFolderPicker>();
+        // A title's Download: the web's download dialog over the main window. Core's own shows nothing.
+        services.AddSingleton<IDownloadOptionsDialog, DownloadOptionsDialog>();
         services.AddGranaryCore();
         // mpv reads the viewer's own mpv.conf from its folder when it starts (Settings → Playback → This PC).
         services.AddGranaryPlayer(new MpvEngineOptions { ConfigDirectory = MpvConfigFolder.DefaultDirectory });

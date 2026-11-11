@@ -280,6 +280,24 @@ public sealed class SessionManagerTests
     }
 
     [Fact]
+    public async Task ALogoutThatFails_LogsItsKind_NeverTheErrorsText()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var server = await _pipeline.AddServerAsync();
+        using var session = _pipeline.CreateSessionManager();
+        await session.SignInWithPasswordAsync(server, "alex", "pw", ct);
+        _pipeline.Server.Intercept = r => r.Path == "/api/v2/auth/logout"
+            ? throw new HttpRequestException(HttpRequestError.ConnectionError, "No answer from nas.example:8096")
+            : (HttpResponseMessage?)null;
+
+        await session.SignOutAsync(server.Id, ct);
+
+        Assert.Contains("could not be told about the sign-out", _pipeline.Logs.All, StringComparison.Ordinal);
+        Assert.Contains("ConnectionError", _pipeline.Logs.All, StringComparison.Ordinal);
+        Assert.DoesNotContain("nas.example", _pipeline.Logs.All, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task SignOutOfAnotherServer_KeepsTheActiveSession()
     {
         var ct = TestContext.Current.CancellationToken;

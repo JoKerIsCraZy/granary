@@ -92,7 +92,7 @@
                         </StackPanel>
                     </ListViewItem>
                 </ListView>
-                <!-- The app's own: its servers, and what it is. One page is open across all the lists. -->
+                <!-- The app's own: its servers, its downloads on this PC, and what it is. One page is open across all the lists. -->
                 <TextBlock Text="APP" Margin="8,20,0,6" FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="11"
                            CharacterSpacing="150" Foreground="{StaticResource SiloMutedBrush}" AutomationProperties.HeadingLevel="Level2" />
                 <ListView x:Name="AppPages" SelectionMode="Single" SelectionChanged="OnPageSelected" IsItemClickEnabled="False"
@@ -101,6 +101,12 @@
                         <StackPanel Orientation="Horizontal" Spacing="12">
                             <FontIcon Glyph="&#xE968;" FontSize="14" />
                             <TextBlock Text="Servers" FontSize="14" />
+                        </StackPanel>
+                    </ListViewItem>
+                    <ListViewItem Tag="downloads" AutomationProperties.Name="Downloads">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <FontIcon Glyph="&#xE896;" FontSize="14" />
+                            <TextBlock Text="Downloads" FontSize="14" />
                         </StackPanel>
                     </ListViewItem>
                     <ListViewItem Tag="about" AutomationProperties.Name="About">

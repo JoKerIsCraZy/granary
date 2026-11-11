@@ -32,6 +32,14 @@ Dependencies point inward only: `App → Player → Core`, and `App → Core`.
   thread; a lock keeps the state whole if a call came from another thread. Should Windows make no request object, it
   falls back on `SetThreadExecutionState` (`ExecutionStateFlags`), which belongs to the calling thread, the UI's.
   `IThemeAudioOutput` plays title pages' theme music (see Theme music).
+  For downloads (see Downloads): `IDiskSpace`, the free space where they go, which the App's `WindowsDiskSpace` reads with
+  `GetDiskFreeSpaceExW` on the folder or its nearest parent that exists, network shares included (Core's own
+  `DriveInfoDiskSpace` knows only lettered drives); and `INetworkLink.Changed`, which the App's `WindowsNetworkLink` raises
+  with Windows' `NetworkStatusChanged`, joined with the first handler and left with the last, so the queue hears when the
+  connection turns metered; `IFolderPicker` for Settings → Downloads' Change, which the App's `WindowsFolderPicker`
+  answers with the Windows App SDK's `FolderPicker` over the main window (null when cancelled, or when it could not open);
+  and `IDownloadOptionsDialog`, a title's download dialog, which the App's `DownloadOptionsDialog` shows as a
+  `ContentDialog` over the main window, one at a time.
   `IReleaseFiles` gives `SignedReleaseVerifier` a release's SHA256SUMS and its signature, and the package on disk to
   hash and read; Core's own `HttpReleaseFiles` implements it, and the tests fake it (docs/release.md, "Signed
   releases").
@@ -186,7 +194,8 @@ stream address and no folder beyond the mpv folder. Settings → Playback → Th
 **Granary's editor** (Settings → Playback → This PC → Edit, `MpvConfigEditorViewModel`) edits the real file: it reads
 `mpv.conf` as it is (or the template, written only on Save) and writes the text back whole through
 `MpvConfigFolder.WriteConfig`, beside the file first under a name of its own and then moved over it, so a failed write
-leaves the old file. Only a file that is not there counts as new: one that cannot be read (`File.Exists` says false for a
+leaves the old file. Every write of the mpv folder goes through `IO/SafeFile`, which Granary's other JSON files use too:
+a move that something reading the file holds up is tried again for a moment, and one whose file changed meanwhile is given up. Only a file that is not there counts as new: one that cannot be read (`File.Exists` says false for a
 file Windows does not let Granary look at) leaves nothing to edit, so Save can never replace it. So does one that is not
 strictly UTF-8, or that holds a NUL, as UTF-16 without a byte order mark does: decoded and saved, it would come back
 damaged, so the editor sends the viewer to Open mpv.conf. The text is read-only while a save runs. A
@@ -1066,6 +1075,366 @@ An opt-in status in Discord while a title plays (Settings → Playback → This 
   Discord connects or restarts. Without Discord the library keeps trying in the background, which the log says once; a
   clear while Discord is not there stops it. It is disposed when the window closes. The library raises its events on its
   own thread, under the same lock as the UI thread's calls; a client is let go under the lock and disposed outside it.
+
+## Downloads
+
+Films and episodes kept on this PC as the server's managed downloads (docs/api-contract.md, 14). Everything lives in Core's
+`Downloads` area; `Api/Downloads/DownloadsApi` speaks to the server, bound to the profile each download belongs to.
+
+### The store
+
+- **Scope.** A download belongs to a saved server's entry, the account signed in there and a profile (`DownloadScope`),
+  as the server keeps it for one account, profile and PC. `DownloadScope.Of(session)` is the active one, none unless the
+  session is ready.
+- **Layout.** Each download has its own folder, `<root>\<server>\acct-<account>\<profile>\<download>\`
+  (`DownloadPaths.Folder`). Every part is one folder name made by `DownloadPaths.Segment`: letters, digits, `.`, `_` and
+  `-` stay, anything else becomes `_`, and a name that changed, ran over 40 characters, has a capital letter, is a device
+  name (`CON`, `COM1`; set apart with a leading `_`), ends in a dot or ends as a hashed name does is cut to 40 characters and
+  gets `-` and 16 hex digits of the value's SHA-256. So no id the server sends names another path, and two ids never share
+  a folder, also where Windows ignores case. The folder holds `download.json` (the `DownloadRecord`, so the folder
+  describes itself), `manifest.json` as the server sent it, `media.part` while the file arrives, then `media.<container>`,
+  the artwork as `<kind>.<ext>` and the subtitles as `sub-<reference>.<format>` (the reference made a name as a folder is
+  from an id, so a file holds the same subtitle whatever its place in the manifest); extensions are short plain names or a
+  fallback, never what the server sent unchecked. A record's media file is used only when it is such a `media.<ext>` name.
+- **Root.** `<root>` is the downloads folder chosen when the download started (`IDownloadPreferences.Folder`, in
+  `download-settings.json`; `downloads` in the data folder by default). Choosing another applies to new downloads only:
+  the ones there keep their folders. It is a full path below a drive's or a share's root, never the root itself.
+- **Index.** `downloads.json` in the data folder lists each download's scope, id and folder, with its row's description
+  (`media_item_id`, `title`, series, season and episode), the server deletes still to be sent (`pending_deletes`) and the
+  removed downloads' folders still to be deleted (`folder_deletes`). At every start the `download.json` files four folders
+  under the downloads folder and the data folder's own `downloads` are looked for, and one the index lacks (a write that did
+  not get through, an index that was lost) is taken in. An index that cannot be read is set aside and made again from them.
+  The downloads folder can be any folder, a media library too, so that look goes only into names the layout makes (a
+  `Segment`'s, and `acct-` and one at the second level), skips the folders the index loaded, and lists at most 2000
+  folders, saying so in the log when it stops there.
+- **What files say.** JSON can say null or anything for every member, so each is checked (`DownloadRecords`). An index
+  entry without its scope, id or title, or whose folder is not laid out as above for its scope and id, is left out and
+  logged; such a folder is never read, written or deleted. A record with a member missing or impossible (a negative size,
+  an unknown state) is damaged; a validator `If-Range` does not take, or a media or artwork file name the store does not
+  make, is dropped. A load that fails is tried again by the next call.
+- **Missing folders.** A folder that is not there at the start, as on a drive that is not plugged in, keeps its row from
+  the index as missing files (`StoredDownload.FilesMissing`), and its record is not written over meanwhile.
+  `RecheckFolders` reads it again from its own record once it is back, and turns a folder that went into missing files; it
+  reads the disk on the caller's thread, so the queue's loop calls it, never the UI thread. A folder that is there with a
+  record that cannot be read is damaged (`StoredDownload.IsDamaged`, said in the log once): its row stays until it is
+  deleted. Deleting such a row takes it off the index and queues the server's delete.
+- **Writes.** A change holds at once for `In`, `All` and `Find`, which answer snapshots, and `Changed` follows on the
+  caller's thread. The files are written one at a time behind a `SemaphoreSlim`, off the caller's thread, each with the
+  latest state, so the last write is the latest, and each is on the disk before it replaces the file. A new download starts
+  in an empty folder; a delete still waiting for that very folder leaves the index before the folder is made, so a crash
+  cannot delete it at the next start, and a folder whose record cannot be written goes again. A server delete not yet sent
+  for that very download leaves with the same index write that keeps it (and a load drops one for a download it keeps), so
+  the entry it now belongs to is never deleted under it. A record that cannot be
+  written is logged; an index that cannot be written is written again with every following change. Either way the change
+  holds for the run, so a full drive still shows a download as failed. A removed row goes first, so the queue lets go of its
+  part; its folder goes once the index without it is on disk (each pass deletes only the folders of the index it wrote), and
+  a folder something still holds, or whose drive is away, stays in `folder_deletes`, tried again at the next start and at a
+  recheck a minute later, then twice as long each time up to `MaxFolderDeleteWait` (10 minutes), unless a row lives in
+  that very folder again. An index the same as the one last written is not written again. A `Changed` handler that throws does not keep a change from being written. Only a folder laid out
+  as above is ever deleted. The log names downloads by id: a file system error's message holds the full path, with the
+  Windows user name, so only its kind and code are logged.
+- **`SafeFile`** (`IO/SafeFile`) writes every one of these files, the settings and the mpv folder's: whole beside the
+  file under a name of its own, then moved over it, tried again for a moment while a read holds the file, and given up
+  when the file changed meanwhile. Nothing is written outside the data folder and the downloads folders.
+
+### Long paths
+
+A download's folder is the downloads folder and four names: the server entry's id (16 characters), `acct-` and the account,
+the profile and the download, each at most 57 characters (`DownloadPaths.Segment`), then a file name such as `media.mkv`;
+a file written whole goes first under its name with 37 more characters (`SafeFile`). Under the default downloads folder
+(`%LOCALAPPDATA%\Granary\downloads`, about 45 characters) a usual path stays near 200 characters and the longest one the
+names allow is near 300; a longer chosen folder adds its own length. So a path can pass Windows' usual 260.
+
+- .NET's own file calls take such paths, which covers the store, the transfer and the page's artwork. `WindowsDiskSpace`
+  asks Windows in the extended form (`\\?\`) for a path that long.
+- `app.manifest` declares `longPathAware`: it costs nothing, and once the system's `LongPathsEnabled` is on, libmpv's and
+  Windows' own calls in Granary take long paths too. Without that setting, playing a download whose path passes 260 may
+  fail in libmpv (Part 2 plays the local file), and File Explorer or a Windows dialog may not open such a folder: a shorter
+  downloads folder avoids both.
+- The names are not made shorter: the layout keeps every id apart and is already on disk, and a long downloads folder
+  could pass 260 whatever the names.
+
+### The transfer
+
+`DownloadTransfer.RunAsync` brings one media file into `media.part` and answers a `TransferOutcome`: its result, the
+validator the bytes on disk came with, how long to wait when the server is busy, and the bytes on disk. The part is never
+deleted here; every result but Completed keeps what was written.
+
+- **Resume.** The part is cut back to the resume point (the queue's, kept within the part and the file), then written
+  through one `FileStream` (shared for reading, asynchronous, 1 MiB reads). A resume asks `Range: bytes=<offset>-` with
+  `If-Range` and the validator: the strong `ETag`, else `Last-Modified` in its HTTP form (`ByteRange.IsValidator`).
+  Without a validator `If-Range` takes, a resume starts over, so two versions' bytes are never joined. A 206 must start
+  exactly at the offset and end within the file, and its `ETag`, or else its `Last-Modified`, must be the validator's when
+  it names one: the rest of another version empties the part (an integrity failure). A 200 means the file changed on the
+  server (or there was nothing to resume): the part starts over from its first byte. A 416 on a part of exactly the file's
+  length, when that length is known, is done. A part that cannot be cut back (another program has it mapped) is a local
+  failure like a write that fails, never an exception. Offsets, `Content-Range` and sizes are `long` throughout, for files
+  over 4 GB.
+- **The validator first.** `RunAsync`'s `onValidator` is told the validator of the bytes in the part whenever it changes,
+  as the answer arrives and before any of its bytes are written, and the queue keeps it in the record. So a transfer that
+  is cancelled (a pause, a metered connection, a profile switch, Granary closing) or killed resumes with `If-Range` from
+  its bytes. A part that starts over is emptied before the new validator is told: no crash pairs a new validator with old
+  bytes.
+- **Length.** `TransferJob.ExpectedBytes` is the file's exact length: the manifest's `integrity.expected_bytes` or the
+  ready entry's size, never a preparing entry's estimate. A total from the server that is not it, a body that runs past it,
+  or no known length at all is an integrity failure; nothing past the file's end is written.
+- **On the disk.** The part is flushed to the disk (`FlushFileBuffers`) every 3 MiB, so with 1 MiB reads at most 4 MiB,
+  the queue's resume margin after a restart, are ever written but not on the disk, and once more before it counts as done.
+- **Space.** Nothing is sent when the folder's drive is not there (`IDiskSpace.FreeBytes` null: missing folder) or, the
+  size known, the rest from the offset actually used does not fit beside `SpaceReserve` (256 MB). Every 64 MB written the
+  free space is looked at again, and below the reserve the transfer stops; Windows' "disk full" errors stop it the same
+  way, and a folder or drive that goes away on the way is a missing folder. Core's own `DriveInfoDiskSpace` measures
+  lettered drives; the app's counts network shares too.
+- **Stall.** Every read, and the wait for the answer, has `StallTimeout` (60 s) on a `CancellationTokenSource` on the
+  `TimeProvider`: a connection that brings nothing for a minute is given up to be tried again.
+- **Answers.** 200 and 206 bring bytes. 409 `prepared_file_expired` is Expired (the queue prepares it again); another 409,
+  a 403 or another 4xx, and a
+  request that cannot be made (an id or validator the API refuses) are Refused, since asking again gets the same answer;
+  404 Gone; 429 and 503 Busy, with their `Retry-After` when they name one; 401, or 403 `profile_verification_required`, Signed out; a
+  5xx, a lost connection or a body that ended before the file did is Unreachable, to try again later; a request the server
+  would get as another profile is not sent (Profile changed). The log names the download and the status, and a problem
+  code only when it is one Granary knows, never an address or a local path: a network error's message can name the
+  server and a file error's the Windows user's folder, so only their kinds are logged.
+
+### The queue
+
+`DownloadQueue` (a singleton the app starts in `App.Launch`, after the local route, and stops when the window closes,
+waiting `StopBudget` for it) runs the active profile's downloads, at most two at once (`MaxConcurrent`, as
+Silo's Apple app), oldest first: those queued or under way, not paused by the viewer, not gone from the server and not
+missing their folder.
+
+- **One loop.** It decides what starts, on a wake: `Wake()`, a session change, `INetworkLink.Changed`, the download
+  settings changing, the store changing, a transfer ending, the server work ending, or a timer at the earliest time
+  something waits for (a retry, a status report, a delete or a registry read to try again, the next look at preparing
+  copies, a folder recheck). Each pass starts a folder recheck when that is due, `FolderRecheck` (60 s) after the last one
+  ended or when a transfer found its folder gone; it runs beside the loop, one at a time (none is due while one runs), since `RecheckFolders` reads the disk for
+  every download, a slow drive's included, and wakes the loop when it ends. The pass then activates the scope with the server when it becomes the active one (below), starts transfers, and hands what the server is
+  to hear to the server work. Work that fell due while a pass ran gets the next pass at once; nothing else does, so the loop
+  never spins. An iteration that fails, the wait after the pass included, is logged and the loop carries on. The event
+  handlers only cancel and wake, so nothing of a transfer ever runs on the UI thread; cancelling goes through `CancelAsync`.
+- **The server work.** Reading the registry, refreshing manifests and sending deletes and status reports run in one task
+  beside the loop, one at a time, which the loop does not wait for: a server slow to answer never holds a transfer back. It
+  wakes the loop when it ends; one that fails unexpectedly waits a minute.
+- **Stopping a transfer.** A transfer stops at once, keeping its bytes, when its download is deleted (the store's
+  `Changed` comes before the folder is deleted, so the part is let go first), paused by the viewer or no longer to be
+  fetched, when the connection turns metered without Settings → Downloads allowing it (`IsWaitingForUnmetered`; nothing
+  starts then either), when the session's profile changes (only the active profile's downloads run; another profile's
+  carry on when it is active again), when a sign-out took its account's downloads off this PC (below), and when the queue
+  stops. A stopped transfer is queued again; one the queue's own stop ended stays Downloading.
+- **A sign-out under way.** Once a sign-out has marked its account's downloads cleared (`DownloadStore.MarkCleared`), the
+  queue starts nothing more for that scope while it is still the current one: no activation, transfer, registry read,
+  delete or report, and server work under way stops between two requests. The queue takes the store's `ClearGeneration`
+  whenever another scope (or none) becomes the current one, so the same account signed in again runs as before. The
+  sign-out ends its clear once it was tried, whatever came of it (`EndClear`, raising `ClearEnded`). When the session is
+  still that scope then (the sign-out failed), the queue takes the `ClearGeneration` too, unless another clear of the scope
+  is under way, and runs its downloads again: the ones the sign-out took stay gone, new ones start.
+- **Resume.** Within one run a transfer carries on from its whole part. One found Downloading at the start (Granary or
+  Windows stopped in the middle) gives up `ResumeMargin` (4 MiB) of its part: the transfer flushes every 3 MiB of 1 MiB
+  writes, so no more was written but not on the disk. The validator is in the record before the bytes it belongs to are
+  written (`onValidator`, written with `UpdateAsync`), so a stop or a kill resumes with `If-Range`; a download deleted
+  meanwhile ends its transfer as a stopped one.
+- **Outcomes.** A lost connection, a server error or a folder whose drive does not answer is tried again after 1, 2, 4,
+  8, 16, 32 and then every 60 s (`RetryDelays`), from the start again once a transfer got further. A busy server's
+  `Retry-After` is waited for, from 1 s up to 5 minutes (`MaxBusyWait`); one that names no wait, or less than a second, gets
+  the retry delays, longer with each busy answer in a row. 401, or a profile that wants its PIN again, stops the profile's
+  downloads until the session changes from the one the transfer started in (a session that changed meanwhile has them run
+  again at once); a request that would have gone as another profile does the same. A full drive fails the download as "not
+  enough space", its bytes kept for Resume. A file of another length starts over from its first byte once, and fails the
+  second time in a row. Refusals go to what the server says (below). A missing folder waits until a recheck finds it.
+- **Status reports.** Turning Downloading or Completed records a `DownloadStatusEvent` with the time of the change in the
+  record (`PendingReport`). The transfer takes the place of its download's report sender before it writes "downloading",
+  then sends it itself before it asks for the file, waiting at most `ReportBudget` (15 s), and no longer once the transfer
+  stops (a pause, a new revision, a delete). When the server work's send held
+  the place first, the transfer waits for that one and then sends what it left, since it may have looked before
+  "downloading" was written. "completed" goes with the server work, so a finished transfer frees its slot at once; while a
+  "downloading" is still unsent, "completed" waits behind it (`NextReport`) and follows once it went or was refused. One
+  that does not go is sent again as it is, time included, after the retry delays, whoever sends it; the loop is woken to
+  know when, also when the transfer's own send ran out of time. A new report (a new transfer's "downloading", or none after
+  a new revision) does not wait out the delay of the one it replaces. One the server will not take (another revision, an entry
+  preparing again, a time it refuses) is dropped. A completed transfer renames `media.part` to its media name before the
+  record says Completed.
+- **Stop.** `StopAsync` stops the loop, the transfers and the server work and waits up to `StopBudget` (2 s) for them to let
+  go of their files, logging when they did not or when one failed; it never throws, also when a request was cancelled
+  under way or `Dispose` came first. `Dispose` stops everything without waiting and lets go of the queue's cancellation
+  source and its reconcile gate; twice is no change, and what still runs ends quietly.
+
+### What the server says
+
+The queue keeps the PC's downloads in line with the server's registry (`DownloadQueue.Server`), following the server's
+client guide.
+
+- **Scope activation.** When a profile's downloads become the active ones (a start, a profile switch, a sign-in that
+  came back), the queue reads the capability once: `revoked_removes_local` lets a revoked download's files go, and one
+  that cannot be read leaves it off. Files always come from `/file`, as Silo's apps take them, never through a proxy
+  node. Then it
+  reconciles, both before the scope's first transfer starts, and the server work reads completed downloads' manifests again
+  that are a day old (`ManifestRefresh`). The scope counts as active only once that went through: an activation that
+  failed is done again a minute later, or at once for another profile or a new session; a wake before then does not ask
+  the server again. A pass takes the scope, its server and the session's
+  generation together, and starts no transfer once another scope is the active one.
+- **Reconcile.** `ReconcileAsync` reads every page of the registry (the cursor until `has_more` is false) before anything
+  counts as gone, and judges only the downloads kept before it started reading, so one created meanwhile is never taken
+  for gone. A registry that does not end (no cursor, a cursor that comes back, over 1000 pages) is not whole: nothing
+  counts as gone from it. Per entry: `preparing` makes a download that is under way Preparing, with the server's progress;
+  `ready`, `downloading` or `completed` queues a preparing one, and takes the entry's size, which is exact once it is
+  ready (a preparing entry's is an estimate, and a transfer against it would fail its integrity); a larger `revision`
+  stops the transfer, deletes the media, the part and the manifest and queues the download again for the new bytes, with
+  its subtitles fetched again, and wakes the loop once that is done; `revoked` with `revoked_removes_local` deletes the
+  files, then the entry, and otherwise, like `cancelled`, keeps a completed download playable and fails one still to fetch,
+  both "no longer available" and never fetched again; `failed` fails one under way. A larger revision that is `revoked`,
+  `failed` or `cancelled` replaces nothing: the copy on this PC takes the status as it is. A download the whole registry no
+  longer lists is no longer available unless it is completed: that one stays as it is. A registry that cannot be read
+  changes nothing; a read that was asked for (a refusal, a report the server did not take) is asked for again after the
+  retry delays. Failed downloads stay failed: only Resume tries them again, so a refusal never turns into a loop.
+- **Preparing.** While a download of the scope is Preparing, the registry is read every `PreparingPoll` (10 s).
+- **Refusals.** `409 prepared_file_expired` from the file route asks `POST /prepare` once for that answer and waits as
+  Preparing until the registry says ready. A revoked entry, another 409 or a 404 fails the download and reconciles, which
+  tells revoked, replaced and gone apart. A status report the server refuses for another revision reconciles too.
+- **Assets.** Before a download's first transfer, `DownloadAssets.FetchAsync` reads the manifest and keeps it as sent
+  (`manifest.json`; its `integrity.expected_bytes` becomes the file's exact length), then the `poster`, `backdrop` and
+  `series_poster` artwork (`<kind>.<ext>`, named after the image type) and every subtitle (`sub-<n>.<format>`). Only paths
+  that are this download's own artwork or subtitles are asked for (`DownloadsApi.AssetPath`), since they carry the
+  profile's credentials. Artwork or a subtitle that does not come (404, a busy store's 503, a stall of 60 s, over 512 MiB)
+  is logged and left out, to be tried at the next refresh; a manifest that does not come ends the attempt as the file
+  would have. The record keeps the artwork's file names and each subtitle's revision; a refresh fetches the artwork the
+  folder lacks and the subtitles whose revision changed. The finished file is named after the manifest's container.
+- **Deletes.** The deletes still to send (`pending_deletes`) go out for the active scope, bound to its profile, each once
+  its folder is gone (`DownloadStore.FolderBeingDeleted`; a folder on a drive that is not there does not hold it back): the
+  files go first. The server work looks at the folder when it is about to send, and remembers one still there until the
+  next folder recheck, so the loop never reads the disk for a delete. A removed download's folder that goes raises the
+  store's `Changed`, so the delete it held back goes at once. While any removed download's folder is still there,
+  with a delete to send or without (a sign-out), a recheck tries it again when its next try is due
+  (`DownloadStore.NextFolderDeleteAt`): a minute after the first, then longer, up to ten minutes. One the server takes, or will
+  never take (a client error), is forgotten; after one that cannot go now, they wait for the retry delays.
+
+### Starting and deleting
+
+`DownloadManager` is what the view models use; `DownloadsFeature` says whether downloads are offered.
+
+- **Offered.** `DownloadsFeature` reads the capability once per server, account and profile (a failed read again after a
+  minute, a cancelled one at the next refresh; a late answer for a profile that is no longer the active one is dropped): `CanDownload` when it is `enabled && allowed`, as Silo's Apple app gates it, and `IsOffered` (the sidebar's
+  entry) then or while the profile has downloads on this PC, which stay playable and deletable whatever the server says.
+- **One create.** `StartAsync` creates the server's entry for one film or episode: a film's `content_id` is its own id,
+  an episode's its series with the episode as `episode_id`, the version the viewer chose, the preset, `caps` from this PC's
+  playback report and `expected_revision: 0`. A second press while a create for the same title runs, or for a title the
+  PC keeps, creates nothing (`AlreadyDownloading`). A create is never sent again: when its answer did not come, or was a
+  conflict or a server error, the registry is read and the newest entry for that film or episode that is not over and not
+  kept here is taken over; none is a failure. When the create was refused as a conflict and the title's entry ended
+  (revoked, failed or cancelled), one explicit second create revives it: `expected_revision` the registry's revision of that
+  entry and `expected_download_id` its id. Whatever that answers, nothing is sent again; a second conflict fails. An entry
+  whose delete this PC still has to send is never taken over or revived (the delete would end it under the new download):
+  that start fails, and works once the queue has sent the delete. An answer for another title is a failure too. 403, 404 and 501, or a title the server passed over, are `Unavailable`. The entry is
+  kept with the request's title, series, season and episode, queued, or Preparing while the server prepares a copy, and the
+  queue is woken. Once the server made it, a cancel does not keep it from being kept. A download kept again takes its unsent
+  server delete off the index in the same write. A create takes the store's `ClearGeneration` before anything else, and its
+  entry is not kept when a sign-out cleared the account's downloads since (`AddUnlessClearedAsync`, checked in the same
+  change that adds the row, so a sign-out either keeps it out or takes it with the rest): the start fails, nothing goes on
+  the disk, and the server's entry stays, as any entry of an account that signed out. While a sign-out of the account is
+  under way (`IsClearPending`, checked after the generation is taken), a start creates nothing and is `Unavailable`: its
+  download would be kept after the sign-out took the account's along, and stay behind as a row of a signed-out account.
+- **Seasons.** `StartSeasonAsync` sends one create per episode, in order, passing over the episodes this PC has or is
+  fetching, and counts what started, what was there and what failed. It stops, with those counts, when it is cancelled or
+  the profile it started for is no longer the active one.
+- **Pause and resume.** Pause marks a download paused by the viewer (it stays paused across starts), and the queue stops
+  its transfer. Resume clears that, queues a failed download again from the bytes it has, unless the server no longer has
+  it, and has one that waited out a retry delay tried at once.
+- **Delete.** The files go first: the row leaves the store, the queue stops its transfer, the folder is deleted once the
+  index without it is written; then the queue sends `DELETE`, bound to the download's profile, kept in `pending_deletes`
+  while the server cannot be reached and sent while that profile is the active one. A row whose files are missing is taken
+  off the index the same way, and the server still hears it.
+- **Items.** `Items` lists the active profile's downloads newest first as `DownloadItem`s: the record, the bytes so far
+  (the queue's count, the whole file once downloaded), whether the connection holds it back, and the poster's and the
+  series poster's files as the record names them, so a page never reads the disk for them. `DownloadText` words their
+  status, as the apps do. `Changed` follows the store, the queue's progress and the feature, on any thread; progress alone
+  comes as `DownloadProgressedEventArgs` naming its download, whose bytes `BytesDone(id)` gives.
+- **The title page.** `DownloadActions` gives a title its Download item from `ForItem` and the feature; a page follows it
+  while it shows (`Follow`), which reads the capability and posts one refresh to the UI thread per burst of `Changed`; a
+  transfer's progress (`DownloadProgressedEventArgs`) counts only for the title and the episodes the page lists, also
+  once the page read them again after a playback (`ItemDetailViewModel.Spoilers.cs`). The
+  download dialog's `DownloadOptionsViewModel` reads the free space once per dialog on the thread pool (`SpaceRead`) and
+  shows it on the UI thread; Download waits for that read and does not start what would reach the transfer's reserve. A
+  read that fails or takes longer than `SpaceReadTimeout` (5 s, a share that does not answer) leaves the space unknown,
+  which holds nothing back: the transfer checks it again.
+  The app shows the dialog through `IDownloadOptionsDialog`; until it registers its own, Core's `NoDownloadOptionsDialog`
+  shows nothing, so the services resolve without it. The App's `DownloadOptionsDialog` keeps it open while Download's
+  `StartAsync` runs (a deferral of the button's click) and when it answers false. `ItemDetailPage` follows from
+  `OnNavigatedTo` and stops in `OnNavigatedFrom` and as it unloads, so the downloads never hold a page that left
+  (`ItemDetailDownloadsTests`). A season's episode cards get their entries from the page: a `MediaCardView` asks the
+  nearest `ICardMenuHost` above it (a `MediaGrid`, or `ItemDetailPage`, whose list is its view model) as its menu opens,
+  except in a `MediaRow`.
+- **The Downloads page.** `DownloadsViewModel` follows `Changed` between `Attach` and `Detach` and posts one refresh to the
+  UI thread per burst. Progress alone updates its rows from `BytesDone(id)` and the space used from `BytesUsed()`, without
+  reading every download again through `Items`. Anything else reads `Items` again: the rows stay the same objects and follow
+  their download's state themselves, and the sections (films, then each series by season, Specials last) are made again
+  only when downloads come, go or move or a series' poster arrives. So pausing a row never makes the page anew: Pause,
+  Resume and Retry are one button per row (`PrimaryAction`), pressable while its press runs, and the focused button stays
+  put as its action changes. The free space is read on the thread pool when the page shows and when a download comes,
+  goes or finishes, through `DiskSpaceReads.FreeBytesAsync` as the dialog reads it: a read that fails or takes longer than
+  `DiskSpaceReads.Timeout` (5 s) leaves it unknown, and the top says only the space used. The App's `DownloadsPage` is
+  cached; it attaches in `OnNavigatedTo` and detaches in `OnNavigatedFrom` and as it unloads, and makes its view model with
+  `ActivatorUtilities`, since the root provider would keep a disposable transient, and the page with it, until exit. So
+  `DownloadManager`, a singleton, never holds a page that left (`DownloadsViewModelTests`). A row's artwork is read from its
+  file on the thread pool (`LocalArtwork`), never through a URI. The sidebar's entry follows `DownloadsFeature.IsOffered`,
+  which the window refreshes with the sidebar's other features on every page change and shows through `IUiDispatcher`,
+  since a refresh can end on another thread.
+- **Settings → Downloads.** `DownloadSettingsViewModel` takes a folder only below a drive's or a share's root and once it
+  made the folder and wrote and deleted `.granary-write-check` there, on the thread pool; Open makes the folder first. The
+  App's `DownloadsSettingsView` makes it with `ActivatorUtilities` and loads it once through `SettingsViewLoad.RunAsync`,
+  which reads the capability for the quality labels.
+
+### Signing out
+
+`DownloadSignOut` takes a server's downloads along when the viewer signs out of it or removes it, as Silo's Apple app does.
+The view models of the sign-out paths take it (optional, so they work without it).
+
+- **Asking.** The profile menu's Sign out, Settings → Servers' Sign out and Change password's Sign out
+  (`DownloadSignOut.SignOutAsync`) ask first when the account has downloads on this PC: "Sign out of NAS?" and "2
+  downloads (3.0 GB) on this PC are deleted with it." (`Note`). Without any they sign out at once. Settings → Devices'
+  Sign out this device asks already; its question adds the same line. The count covers every profile of the account on
+  that server, and the size is what their folders take on the disk. `SummarizeAsync` reads both on the thread pool within
+  `SummaryBudget` (5 s of the `TimeProvider`, as the pages wait for the free space), so a share that does not answer never
+  keeps the question from coming: a size that does not come in time is left out ("2 downloads on this PC are deleted with
+  it."), and so is the count when the downloads themselves cannot be read in time ("Its downloads on this PC are deleted
+  with it."). Removing a server takes every account's downloads there (`ClearAsync(server, null)`); the app asks before it
+  removes one. With the question, the deletes and the index, a confirmed sign-out can take up to `SummaryBudget` +
+  `DeleteBudget` + `StoreBudget` (about 20 s) when a drive and the server do not answer, so the profile menu shows it as
+  under way while `SidebarViewModel.SignOutCommand` runs (`IsRunning`; the command does not run twice at once) and shows
+  `SignOutError` once it failed.
+- **The account.** On the active server it is the session's; on another, the one its saved sign-in names
+  (`AccountOfAsync`). A sign-out reads it once, so the downloads it asked about are the ones that go. When none is known
+  (a sign-in whose account the server did not name), the sign-out takes no downloads along and asks nothing about them:
+  a session without an account keeps none, so those on that server are other accounts', as one whose sign-in expired.
+  Settings → Devices' question then ends with "Downloads on this PC are kept." while the server has any here
+  (`SignOutNoteAsync`). Only removing a server takes every account's downloads there.
+- **Order.** First the account's downloads are marked cleared (`MarkCleared`): a create that answers from then on keeps
+  nothing, and the queue starts nothing more for them (see "The queue" and "Starting and deleting"). `ClearAsync` answers
+  the clear, and each sign-out path disposes it once its sign-out was tried, which ends the clear (`EndClear`); removing a
+  server ends it once the server is gone. A sign-out that fails leaves the account signed in with its downloads gone, and
+  its new downloads run. Then every matching
+  download of every profile goes from this PC, whatever the server answers later: its row, index entry and deletes still
+  to send at once (`RemoveWhereAsync`), and the queue stops its transfer, so no byte is written that is deleted a moment
+  later and no transfer asks the server for an entry it is deleting. The server hears next, while the session can still
+  send: `DELETE` for each of the active profile's entries on that server and account (its downloads and the deletes still
+  to send, as listed before they went), bound to that profile, one at a time, for at most `DeleteBudget` (10 s of the
+  `TimeProvider`). The queue has none of those deletes left to send a second time. An entry the server refuses for itself
+  (403, 404, …) does not stop the others; no answer, a sign-in the server no longer takes (401), a busy server (429), a
+  profile switch or the end of the budget stops them all, since the next ones would fare no better. Then the sign-out, once the index
+  without them is written or after `StoreBudget` (5 s) at most: an index that is not written in time (a disk or a write before it that does not answer) is
+  logged and written once it can be, and the sign-out goes on. If Granary closes before that write gets through, the index
+  on disk still names the downloads, and they are back at the next start: clears hold only for the run. This is accepted;
+  the next sign-out of that account takes them along. The folders go after the index, beside the sign-out
+  (`DownloadStore.FolderWork`), so a share that does not answer holds nothing up; a folder that cannot go yet is tried again
+  as any removed download's. What the sign-out does not wait for, the removal after a failure on the way and the folders'
+  work, logs its own failure. Downloads that cannot even be read within `StoreBudget` go once they are read; the server hears
+  nothing of them. The removal takes only downloads added before its clear (`RemoveWhereAsync` takes the clear's
+  generation, and each row the `ClearGeneration` it was added at; rows read from the disk count as older than any clear),
+  so a download the same account started after signing in again, while the drive was still being read, stays.
+- **Other profiles' entries stay on the server.** A delete goes only as the profile its entry belongs to, and only the
+  active profile can be sent as. So the entries of the account's other profiles, and all of a server that is not the
+  active one, stay in the server's registry; only their files go.
+- **An expired sign-in.** When the server no longer takes the session, the authentication handler signs out by itself,
+  without the viewer's command. Nothing comes here and the downloads stay, as the Android app keeps them: they show again
+  when that account signs in there, and its next sign-out or the server's removal takes them along.
 
 ## Windows App SDK
 

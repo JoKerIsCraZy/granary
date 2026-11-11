@@ -171,6 +171,12 @@
                         <FontIcon Glyph="&#xE81C;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
+                <!-- Only while the server lets the profile download, or while the profile has downloads on this PC. -->
+                <NavigationViewItem Content="Downloads" Tag="Downloads">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE896;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
             </NavigationView.MenuItems>
 
             <NavigationView.FooterMenuItems>
@@ -185,12 +191,34 @@
                         <FontIcon Glyph="&#xE713;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
+                <!--
+                    The profile and its menu. A sign-out can wait up to about 20 s for a drive or a server that does not answer:
+                    meanwhile the entry reads "Signing out…" with a ring and takes no clicks, as Granary's busy buttons do
+                    ("Signing in…"), also while the question about this PC's downloads is open over it. One that failed says so
+                    under the name until the next Sign out or another profile. The web's menu has neither.
+                -->
                 <NavigationViewItem x:Name="ProfileItem" Tag="Profile" SelectsOnInvoked="False"
-                                    Content="{x:Bind Sidebar.ProfileName, Mode=OneWay}"
-                                    AutomationProperties.Name="{x:Bind ProfileMenuName(Sidebar.ProfileName), Mode=OneWay}">
+                                    IsEnabled="{x:Bind IsIdle(Sidebar.SignOutCommand.IsRunning), Mode=OneWay}"
+                                    ToolTipService.ToolTip="{x:Bind Sidebar.ProfileName, Mode=OneWay}"
+                                    AutomationProperties.Name="{x:Bind ProfileMenuName(Sidebar.ProfileName, Sidebar.SignOutCommand.IsRunning, Sidebar.SignOutError), Mode=OneWay}">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE77B;" />
                     </NavigationViewItem.Icon>
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="{x:Bind ProfileLabel(Sidebar.ProfileName, Sidebar.SignOutCommand.IsRunning), Mode=OneWay}"
+                                       TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{x:Bind Sidebar.SignOutError, Mode=OneWay}" Visibility="{x:Bind HasText(Sidebar.SignOutError), Mode=OneWay}"
+                                       FontSize="12" TextWrapping="Wrap" Foreground="{StaticResource SiloDestructiveBrush}"
+                                       AutomationProperties.LiveSetting="Assertive" />
+                        </StackPanel>
+                        <ProgressRing Grid.Column="1" Width="16" Height="16" Margin="0,0,8,0" IsActive="{x:Bind Sidebar.SignOutCommand.IsRunning, Mode=OneWay}"
+                                      Visibility="{x:Bind Sidebar.SignOutCommand.IsRunning, Mode=OneWay}" AutomationProperties.AccessibilityView="Raw" />
+                    </Grid>
                     <FlyoutBase.AttachedFlyout>
                         <MenuFlyout Placement="TopEdgeAlignedLeft">
                             <MenuFlyoutItem Text="Switch profile" Command="{x:Bind Sidebar.SwitchProfileCommand}">

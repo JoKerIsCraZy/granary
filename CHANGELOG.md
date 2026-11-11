@@ -8,6 +8,11 @@ release's section is what its update says it changes (docs/release.md).
 
 ### Added
 
+- **Downloads:** download a film, an episode or a whole season from its ⋯ menu, in the original quality or a smaller one
+  your Silo server offers, and manage them on the new Downloads page: progress, pause and resume, delete and the space
+  they take. Downloads wait on a metered connection unless Settings → Downloads allows them, and carry on where they
+  stopped when Granary starts again. Signing out of a server or removing it deletes its downloads after asking. Your Silo
+  server has to allow downloads.
 - **New Season:** a Continue Watching card for the first episode of a new season says New Season, as on Silo's web.
 - **Full screen stays:** leave the player in full screen, and the next title opens in full screen again, also after a
   restart. Granary opens in full screen when you closed it in full screen.

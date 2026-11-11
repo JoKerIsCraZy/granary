@@ -1,7 +1,9 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using Granary.Core;
+using Granary.Core.Downloads;
 using Granary.Core.ViewModels;
+using Granary.Core.ViewModels.Downloads;
 using Granary.Core.ViewModels.Settings;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
@@ -382,6 +384,41 @@ public sealed partial class ServersSettingsView : UserControl, IDisposable
 }
 
 /// <summary>
+/// Settings → Downloads, this PC's own: the folder new downloads go to, downloads on metered connections and the quality the
+/// download dialog starts on. It reads what the server offers the profile once it is shown, for the quality labels.
+/// </summary>
+public sealed partial class DownloadsSettingsView : UserControl
+{
+    public DownloadsSettingsView()
+    {
+        ViewModel = ActivatorUtilities.CreateInstance<DownloadSettingsViewModel>(App.Services);
+        InitializeComponent();
+        // Once: the page keeps the view.
+        Loaded += OnFirstLoaded;
+    }
+
+    public DownloadSettingsViewModel ViewModel { get; }
+
+    // A file error reading the downloads names the folder, the Windows user's name in it: only its kind goes into the log.
+    private async void OnFirstLoaded(object sender, RoutedEventArgs e)
+    {
+        Loaded -= OnFirstLoaded;
+        await SettingsViewLoad.RunAsync(async cancellationToken =>
+        {
+            try
+            {
+                await ViewModel.LoadAsync(cancellationToken);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                App.Services.GetRequiredService<ILogger<DownloadsSettingsView>>()
+                    .LogWarning("Settings → Downloads could not read this PC's downloads ({Failure})", ex.GetType().Name);
+            }
+        });
+    }
+}
+
+/// <summary>
 /// Settings → Devices; it reads the account's sign-ins and the profile's devices when it is shown, and the page disposes it
 /// as it leaves, so it stops following the server and profile in use.
 /// </summary>
@@ -558,23 +595,52 @@ internal static class ServerDialogs
         _ => null,
     };
 
+    /// <summary>
+    /// "Remove NAS?": Granary signs out and forgets the server, and its downloads on this PC, of every account there, go with
+    /// it, which the question says with their count and size as far as they could be read in time.
+    /// </summary>
     public static async Task<bool> ConfirmRemoveAsync(XamlRoot? root, ServerItemViewModel server)
     {
         if (root is null)
         {
             return false;
         }
+        string message = "Granary signs out of this server and forgets it. You can add it again later.";
+        if (await DownloadsNoteAsync(server.Id) is { } note)
+        {
+            message += Environment.NewLine + Environment.NewLine + note;
+        }
         var dialog = new ContentDialog
         {
             XamlRoot = root,
             Style = (Style)Application.Current.Resources["DefaultContentDialogStyle"],
             Title = $"Remove {server.Name}?",
-            Content = "Granary signs out of this server and forgets it. You can add it again later.",
+            Content = message,
             PrimaryButtonText = "Remove",
             CloseButtonText = "Cancel",
             DefaultButton = ContentDialogButton.Close,
         };
         return await dialog.ShowAsync() == ContentDialogResult.Primary;
+    }
+
+    // "2 downloads (3.0 GB) on this PC are deleted with it.", null for none. The removal takes them whatever the read gave, so
+    // a read that failed says they go without a count.
+    private static async Task<string?> DownloadsNoteAsync(string serverId)
+    {
+        if (App.Services.GetService<DownloadSignOut>() is not { } downloads)
+        {
+            return null;
+        }
+        try
+        {
+            return DownloadSignOut.Note(await downloads.SummarizeAsync(serverId, null, CancellationToken.None));
+        }
+        catch (Exception ex)
+        {
+            App.Services.GetRequiredService<ILoggerFactory>().CreateLogger(typeof(ServerDialogs))
+                .LogWarning("The downloads of a server to remove could not be read ({Failure})", ex.GetType().Name);
+            return DownloadSignOut.Note(new DownloadSummary(null, null));
+        }
     }
 }
 

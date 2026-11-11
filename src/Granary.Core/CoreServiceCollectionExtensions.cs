@@ -6,6 +6,7 @@ using Granary.Core.Api.Admin;
 using Granary.Core.Api.Auth;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Discovery;
+using Granary.Core.Api.Downloads;
 using Granary.Core.Api.Events;
 using Granary.Core.Api.Images;
 using Granary.Core.Api.Notifications;
@@ -20,6 +21,7 @@ using Granary.Core.Api.Theme;
 using Granary.Core.Api.WatchParty;
 using Granary.Core.Artwork;
 using Granary.Core.Auth;
+using Granary.Core.Downloads;
 using Granary.Core.Http;
 using Granary.Core.Overlays;
 using Granary.Core.Playback;
@@ -116,6 +118,7 @@ public static class CoreServiceCollectionExtensions
 
         services.AddSingleton(_ => ClientIdentity.Load(ClientIdentity.DefaultDeviceIdFile));
         AddPlayback(services);
+        AddDownloads(services);
         AddRealtimeEvents(services);
 
         if (OperatingSystem.IsWindows())
@@ -298,6 +301,36 @@ public static class CoreServiceCollectionExtensions
         services.AddSingleton<ConnectionSpeedTest>();
         // The app puts the system's view of the network in first.
         services.TryAddSingleton<INetworkLink, UnknownNetworkLink>();
+    }
+
+    // Offline downloads (docs/api-contract.md, 14). Their files come from the server itself through SiloHttp, as Silo's apps
+    // take them: over the local route on the local network, never through a proxy node.
+    private static void AddDownloads(IServiceCollection services)
+    {
+        services.AddTransient<DownloadsApi>();
+        // This PC's download settings, in the data directory; the downloads themselves, each in its own folder.
+        services.AddSingleton<IDownloadPreferences>(sp =>
+            new JsonDownloadPreferences(JsonDownloadPreferences.DefaultPath, sp.GetRequiredService<ILogger<JsonDownloadPreferences>>()));
+        services.AddSingleton(sp => new DownloadStore(DownloadStore.DefaultIndexPath, sp.GetRequiredService<IDownloadPreferences>(),
+            sp.GetRequiredService<TimeProvider>(), sp.GetRequiredService<ILogger<DownloadStore>>()));
+        // The app puts Windows' own count of free space in first, which also measures network shares.
+        services.TryAddSingleton<IDiskSpace, DriveInfoDiskSpace>();
+        services.AddTransient<DownloadTransfer>();
+        services.AddTransient<DownloadAssets>();
+        // One queue runs the active profile's transfers; the app starts it and stops it when the window closes.
+        services.AddSingleton<DownloadQueue>();
+        services.AddSingleton<DownloadsFeature>();
+        services.AddSingleton<DownloadManager>();
+        // The title pages' Download items, and a download dialog's view model per offer, which the app's dialog shows
+        // (IDownloadOptionsDialog; one that shows nothing until the app registers its own).
+        services.TryAddSingleton<IDownloadOptionsDialog, NoDownloadOptionsDialog>();
+        services.AddSingleton<Func<ViewModels.Downloads.DownloadOptionsViewModel>>(sp =>
+            () => ActivatorUtilities.CreateInstance<ViewModels.Downloads.DownloadOptionsViewModel>(sp));
+        services.AddSingleton<DownloadActions>();
+        // The Downloads page's view model, one per page. Settings → Downloads makes its own with the app's folder picker.
+        services.AddTransient<ViewModels.Downloads.DownloadsViewModel>();
+        // What a sign-out or a server's removal does with the downloads; the sign-out paths' view models take it.
+        services.AddSingleton<DownloadSignOut>();
     }
 
     // Title pages' theme music, one player for the app. Its audio URL carries its own token: fetched without credentials,

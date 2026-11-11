@@ -6,6 +6,7 @@ using Granary.Core.Api;
 using Granary.Core.Api.Catalog;
 using Granary.Core.Api.Profiles;
 using Granary.Core.Auth;
+using Granary.Core.Downloads;
 using Granary.Core.Playback;
 using Microsoft.Extensions.Logging;
 
@@ -28,6 +29,9 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
     /// <summary>As the web's staleTime for the library list and its preferences.</summary>
     public static readonly TimeSpan StaleAfter = TimeSpan.FromMinutes(5);
 
+    /// <summary>What the profile menu says when Sign out failed.</summary>
+    public const string SignOutFailed = "Couldn't sign out. Try again.";
+
     // How long Switch profile and Sign out wait for an audio delay changed a moment before to be saved.
     private static readonly TimeSpan AudioDelayWait = TimeSpan.FromSeconds(2);
 
@@ -39,6 +43,7 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
     private readonly TimeProvider _time;
     private readonly ILogger<SidebarViewModel> _logger;
     private readonly AudioDelay? _audioDelay;
+    private readonly DownloadSignOut? _downloads;
     private (string? ServerId, string? ProfileId)? _loaded;
     private (string? ServerId, string? ProfileId)? _shown;
     private int _generation;
@@ -52,7 +57,8 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
         IUiDispatcher dispatcher,
         TimeProvider time,
         ILogger<SidebarViewModel> logger,
-        AudioDelay? audioDelay = null)
+        AudioDelay? audioDelay = null,
+        DownloadSignOut? downloads = null)
     {
         _session = session;
         _profiles = profiles;
@@ -62,11 +68,19 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
         _time = time;
         _logger = logger;
         _audioDelay = audioDelay;
+        _downloads = downloads;
         _session.Changed += OnSessionChanged;
     }
 
     [ObservableProperty]
     public partial string ServerName { get; private set; } = "";
+
+    /// <summary>
+    /// "Couldn't sign out. Try again." once Sign out failed; empty otherwise, and again at the next Sign out or once another
+    /// server or profile shows.
+    /// </summary>
+    [ObservableProperty]
+    public partial string SignOutError { get; private set; } = "";
 
     /// <summary>The acting profile; null until it is loaded, or when the list could not be read.</summary>
     [ObservableProperty]
@@ -105,6 +119,7 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
         {
             // Another server or profile: nothing of the last one stays while this one's is read.
             _shown = key;
+            SignOutError = "";
             Profile = null;
             Libraries.Clear();
             AreLibrariesLoaded = false;
@@ -151,7 +166,7 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
         catch (Exception ex) when (IsFailedRead(ex, cancellationToken))
         {
             // The account name stands in.
-            _logger.LogWarning(ex, "Could not load the acting profile for the sidebar");
+            _logger.LogWarning("Could not load the acting profile for the sidebar ({Failure})", ApiFailureText.Describe(ex));
             return false;
         }
     }
@@ -177,7 +192,7 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
         }
         catch (Exception ex) when (IsFailedRead(ex, cancellationToken))
         {
-            _logger.LogWarning(ex, "Could not load the libraries for the sidebar");
+            _logger.LogWarning("Could not load the libraries for the sidebar ({Failure})", ApiFailureText.Describe(ex));
             return false;
         }
     }
@@ -205,11 +220,30 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
         await _session.ClearProfileAsync();
     }
 
+    /// <summary>
+    /// Signs out of the active server; when its account has downloads on this PC, after asking, and they go first. Whatever
+    /// fails on the way (the question, this PC's sign-in data, the downloads) shows as <see cref="SignOutError"/>, never as the
+    /// error's own text.
+    /// </summary>
     [RelayCommand]
     private async Task SignOutAsync()
     {
-        await SaveAudioDelayAsync();
-        await _session.SignOutAsync();
+        SignOutError = "";
+        try
+        {
+            await SaveAudioDelayAsync();
+            if (_downloads is not null && _session.ActiveServer is { } server)
+            {
+                await _downloads.SignOutAsync(server, CancellationToken.None);
+                return;
+            }
+            await _session.SignOutAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning("Signing out failed: {Failure}", ApiFailureText.Describe(ex));
+            SignOutError = SignOutFailed;
+        }
     }
 
     // An audio delay changed a moment ago is this profile's, and could not be saved as it once another acts: it goes out
@@ -242,7 +276,7 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Could not refresh the sidebar");
+            _logger.LogError("Could not refresh the sidebar ({Failure})", ApiFailureText.Describe(ex));
         }
     }
 }

@@ -144,7 +144,37 @@ internal sealed class FakeHttpClients(HttpMessageHandler handler) : IHttpClientF
 
 internal sealed class FakeNetworkLink : INetworkLink
 {
-    public NetworkLink Current { get; set; } = new(NetworkTransports.Ethernet, false);
+    private NetworkLink _current = new(NetworkTransports.Ethernet, false);
+    private int _reads;
+
+    /// <summary>When set, reading <see cref="Current"/> throws it, as a system call that failed.</summary>
+    public Exception? Fails { get; set; }
+
+    /// <summary>Runs as <see cref="Current"/> is read, before it answers: a test holds a read there.</summary>
+    public Action? Reading { get; set; }
+
+    /// <summary>How often <see cref="Current"/> was read: each read is a system call in the app.</summary>
+    public int Reads => Volatile.Read(ref _reads);
+
+    public NetworkLink Current
+    {
+        get
+        {
+            Interlocked.Increment(ref _reads);
+            Reading?.Invoke();
+            return Fails is { } failure ? throw failure : _current;
+        }
+        set => _current = value;
+    }
+
+    public event EventHandler? Changed;
+
+    /// <summary>The link turns metered or unmetered, as a hotspot does, and says so.</summary>
+    public void SetMetered(bool metered)
+    {
+        _current = _current with { IsMetered = metered };
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
 }
 
 internal static class ProbeAnswers

@@ -7,12 +7,42 @@ namespace Granary.App.Services;
 /// <summary>
 /// The link Windows reaches the internet over: Wi-Fi, mobile broadband, or Ethernet by its adapter's type; metered when
 /// Windows says the user pays for it (a fixed or variable plan, roaming, or over the data limit), as a metered connection
-/// set in Settings does.
+/// set in Settings does. <see cref="Changed"/> follows Windows' network status, which also changes with the cost.
 /// </summary>
-public sealed class WindowsNetworkLink(ILogger<WindowsNetworkLink> logger) : INetworkLink
+public sealed class WindowsNetworkLink(ILogger<WindowsNetworkLink> logger) : INetworkLink, IDisposable
 {
     // IANA ifType ethernetCsmacd.
     private const uint EthernetInterfaceType = 6;
+
+    private readonly Lock _gate = new();
+    private EventHandler? _changed;
+
+    /// <summary>Windows' own event is joined with the first handler and left with the last, as the local route's is.</summary>
+    public event EventHandler? Changed
+    {
+        add
+        {
+            lock (_gate)
+            {
+                if (_changed is null)
+                {
+                    NetworkInformation.NetworkStatusChanged += OnStatusChanged;
+                }
+                _changed += value;
+            }
+        }
+        remove
+        {
+            lock (_gate)
+            {
+                _changed -= value;
+                if (_changed is null)
+                {
+                    NetworkInformation.NetworkStatusChanged -= OnStatusChanged;
+                }
+            }
+        }
+    }
 
     public NetworkLink Current
     {
@@ -39,4 +69,15 @@ public sealed class WindowsNetworkLink(ILogger<WindowsNetworkLink> logger) : INe
             }
         }
     }
+
+    public void Dispose()
+    {
+        lock (_gate)
+        {
+            _changed = null;
+            NetworkInformation.NetworkStatusChanged -= OnStatusChanged;
+        }
+    }
+
+    private void OnStatusChanged(object sender) => _changed?.Invoke(this, EventArgs.Empty);
 }

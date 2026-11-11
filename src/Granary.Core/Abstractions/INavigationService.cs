@@ -82,6 +82,9 @@ public enum AppRoute
 
     /// <summary>A movie box set's films; the parameter is a <see cref="BoxSetRouteParameter"/>.</summary>
     BoxSet,
+
+    /// <summary>The active profile's downloads on this PC.</summary>
+    Downloads,
 }
 
 /// <summary>A movie box set, by its TMDB collection id in one library; the title names the page while it loads.</summary>

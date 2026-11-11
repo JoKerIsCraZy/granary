@@ -10,9 +10,10 @@ using Microsoft.UI.Xaml.Navigation;
 namespace Granary.App.Views;
 
 /// <summary>
-/// The settings (docs/ui-design.md, Settings): the profile's, the account's devices, and the app's own servers and About. The
-/// parameter names the page to open first (<c>playback</c>, <c>subtitles</c>, <c>interface</c>, <c>title-pages</c>, <c>devices</c>,
-/// <c>servers</c>, <c>about</c>). The mpv.conf editor opens in Playback's place; leaving with unsaved edits in it asks first.
+/// The settings (docs/ui-design.md, Settings): the profile's, the account's devices, and the app's own servers, downloads and
+/// About. The parameter names the page to open first (<c>playback</c>, <c>subtitles</c>, <c>interface</c>, <c>title-pages</c>,
+/// <c>devices</c>, <c>servers</c>, <c>downloads</c>, <c>about</c>). The mpv.conf editor opens in Playback's place; leaving with
+/// unsaved edits in it asks first.
 /// </summary>
 public sealed partial class SettingsPage : Page, IDockSpace, ILeaveGuard
 {
@@ -125,6 +126,7 @@ public sealed partial class SettingsPage : Page, IDockSpace, ILeaveGuard
                 "title-pages" => new TitlePagesSettingsView(),
                 "devices" => new DevicesSettingsView(),
                 "servers" => new ServersSettingsView(),
+                "downloads" => new DownloadsSettingsView(),
                 "about" => new AboutSettingsView(),
                 _ => new PlaybackSettingsView(),
             };

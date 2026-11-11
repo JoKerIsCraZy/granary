@@ -100,9 +100,9 @@ public sealed partial class MediaCardView : UserControl
     private IReadOnlyList<CardMenuEntry> _entries = [];
     private readonly List<MenuFlyoutItemBase> _entryItems = [];
     private bool _hasOwnEntries;
-    // The grid the card sits in, found once: a card stays in its grid while it is reused.
-    private MediaGrid? _grid;
-    private bool _gridFound;
+    // The grid or page whose list adds entries to the card's menu, found once: a card stays where it is while it is reused.
+    private ICardMenuHost? _menuHost;
+    private bool _menuHostFound;
 
     public MediaCardView()
     {
@@ -500,19 +500,20 @@ public sealed partial class MediaCardView : UserControl
         MenuNotInterested.Text = state.IsNotInterested ? "Show in Recommendations" : "Not Interested";
         MenuNotInterested.Visibility = Visible(notInterested);
         var row = card is null ? null : RowOf(this);
-        if (!_gridFound && row is null && card is not null && VisualTreeHelper.GetParent(this) is not null)
+        if (!_menuHostFound && row is null && card is not null && VisualTreeHelper.GetParent(this) is not null)
         {
-            _grid = GridOf(this);
-            _gridFound = true;
+            // Only a host found is kept: a card asked before it reached its place looks again next time.
+            _menuHost = MenuHostOf(this);
+            _menuHostFound = _menuHost is not null;
         }
-        var grid = row is null ? _grid : null;
+        var host = row is null ? _menuHost : null;
         bool canRemove = card is not null && row?.CardRemoveCommand is { } remove && remove.CanExecute(card);
         MenuRemove.Text = row?.CardRemoveLabel ?? "";
         MenuRemove.Visibility = Visible(canRemove);
         bool others = canWatch || canCollect || fromBeginning || resetProgress || notInterested;
         MenuRemoveSeparator.Visibility = Visible(canRemove && others);
-        // Only a grid with entries of its own asks for them; every other card skips this.
-        _entries = card is not null && grid?.CardMenu is { } source ? source.EntriesFor(card) : [];
+        // Only a grid or page with entries of its own asks for them; every other card skips this.
+        _entries = card is not null && host?.CardMenu is { } source ? source.EntriesFor(card) : [];
         _hasOwnEntries = others || canRemove;
         MoreButton.Visibility = Visible(others || canRemove || _entries.Count > 0);
     }
@@ -530,14 +531,15 @@ public sealed partial class MediaCardView : UserControl
         return null;
     }
 
-    // The grid a card sits in adds its list's own entries (a collection's Edit and Delete).
-    private static MediaGrid? GridOf(DependencyObject element)
+    // The nearest grid or page above a card with entries of its own adds them: a collection's Edit and Delete, a season's
+    // episodes' Download (ItemDetailPage). A grid without any does not hide the page's.
+    private static ICardMenuHost? MenuHostOf(DependencyObject element)
     {
         for (var parent = VisualTreeHelper.GetParent(element); parent is not null; parent = VisualTreeHelper.GetParent(parent))
         {
-            if (parent is MediaGrid grid)
+            if (parent is ICardMenuHost { CardMenu: not null } host)
             {
-                return grid;
+                return host;
             }
         }
         return null;

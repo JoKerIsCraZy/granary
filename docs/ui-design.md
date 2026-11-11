@@ -134,7 +134,9 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
   (`MediaItemMenu.buildMediaItemMenuModel`), in its order: Play from Beginning (a movie or episode with a resume
   point, or watched), Mark Watched/Unwatched, Reset Progress (`DELETE /api/v2/progress/{id}/position`), Favorites,
   Watchlist, Not Interested (`PUT`/`DELETE /api/v2/not-interested/{id}`, movies and series), then "Remove from
-  Continue Watching" / "Next Up" when its `MediaRow` offers removal. Right-click, Shift+F10 and the menu key open the
+  Continue Watching" / "Next Up" when its `MediaRow` offers removal. Below a line come the entries of the list a card is
+  in, from the nearest grid or page above it (`ICardMenuHost`; none in a `MediaRow`), asked as the menu opens: a
+  collection's own, a season's episodes' Download (Detail pages). Right-click, Shift+F10 and the menu key open the
   same menu. The web's admin entries (play history, metadata) are not there yet.
 - Page-specific pieces: `PersonCard` (search people, opening the person's page), `AlphabetJumpBar` (library A–Z: "#" and A–Z on a
   26 px round panel, letters without titles at 35 %, the top row's letter in the accent with its label; a letter
@@ -169,7 +171,12 @@ View models build `MediaCard`s with the texts already worded; the controls only 
 - Sidebar (260 px): the server's wordmark at 112 x 48 px (`wordmark_url`, as the web's `SiloBrand`), else or with Server logo off its name, Home, Search (`Ctrl+K`), "LIBRARIES" with the libraries the profile browses (its hidden
   ones left out, in its library order: the web's Settings → Libraries), "DISCOVER" (For
   You, Requests while the server takes them, Calendar, Notifications with the unread count in the accent), "YOUR STUFF" (Favorites, Watchlist, Watch
-  Party while the server offers rooms, Collections, History); Admin (an administrator's only, a shield), Settings and the profile menu at the bottom (the servers are in Settings → Servers). Favorites, Watchlist and History are one page (`PersonalListPage`, the web's `pages/Catalog.tsx` for those
+  Party while the server offers rooms, Collections, History, Downloads while the server lets the profile download or the profile
+  has downloads on this PC); Admin (an administrator's only, a shield), Settings and the profile menu at the bottom (the servers are in Settings → Servers). The profile menu holds Switch
+  profile and Sign out. While a sign-out runs, which can take about 20 s when a drive or the server does not answer, the
+  profile's entry reads "Signing out…" with a 16 px ring at its right and takes no clicks, as Granary's busy buttons do
+  ("Signing in…"); one that failed says "Couldn't sign out. Try again." in red under the name until the next Sign out or another profile shows. The
+  web's menu has neither. Favorites, Watchlist and History are one page (`PersonalListPage`, the web's `pages/Catalog.tsx` for those
   sources): the list's name, what it holds and its count, the media menu (All Media, Movies & Series, Movies, Series,
   Episodes), the list's own order ("List Order", History's "Watch History") or one of six sorts (Title, Date Added,
   Release Date, Year, Duration, IMDb Rating), Filters (the library page's `CatalogFiltersButton`, every section of it,
@@ -209,6 +216,22 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   Between a title's page and any other the sidebar changes its width with the page; the old page then goes at once,
   the pane moves over the empty page, and the new page fades in (160 ms) once the pane stands, instead of the old page
   squeezing while the pane moved and the new one sliding in after it.
+- Downloads (`DownloadsPage`, Granary's own after the list pages, since the web has no such page; the apps' words): the
+  active profile's downloads on this PC. The padding of the list pages (48, 32, 48, 48); "Downloads" in the display style
+  and under it, muted, the space they use and the space left on the drive of the downloads folder ("12.0 GB used · 200.0 GB
+  free"; only the space used while the drive does not answer within 5 s). With none, the watchlist tab's dashed box: the
+  download icon, "No downloads yet" and "Choose Download in a film's or episode's ⋯ menu to keep it on this PC and watch it
+  without your Silo server.". Then Films, and each series by title with its 40 x 60 poster beside its name (20 px
+  semibold), its seasons by number under muted 14 px titles ("Season 1"; "Specials" last). A row: a film's poster (60 x 90)
+  or an episode's still (96 x 54), rounded 8 px, from the files on this PC (a film or television icon until there is one);
+  the title (15 px semibold; an episode's series), an episode's "E5 · Chapter Five", the status in the apps' words
+  ("Preparing…", "Queued", "Downloading · 42%", "Paused", "Paused · metered connection", "Downloaded", "Failed", "Failed ·
+  not enough space", "No longer available", "Missing file"),
+  and a 3 px bar in the accent while it downloads; the size on the right (13 px muted), then two 34 px round outline
+  buttons (History's look): Pause, Resume or Retry, one button that stays while its action changes and goes only when
+  there is nothing left to do, and Delete, which asks first as the title page does. Each has a tooltip and its name for
+  screen readers. A click on the row opens the film's or the episode's page. After a Delete, and when the transfer button
+  goes, the focus moves to the row (after a Delete, the one now in its place). The sidebar's page has no Back disc.
 - Sideways rows (`MediaRow`, `BrandRow`, the detail pages' `DetailShelf`) reach the window's right edge as the web's
   carousels do: the track takes the page's 48 px right gutter and keeps it inside, so the next card shows in the gutter
   rather than stopping at an invisible wall (`RowBleed`; the player's On Deck row has a 32 px gutter). On the left a row
@@ -496,9 +519,10 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   - Granary's own buttons one size up: the Play pill in the accent ("Resume from 1:02:33" for a movie or episode: the saved
     point, as the web's "Resume at" names it, which is also where playback starts unless Settings → Playback → This PC
     → Rewind on resume sets a lead-in), Start over,
-    "Mark Watched", "Info", the heart, the stars and ⋮ (Watchlist, Add to Collection, then Start a Watch Party below a
-    line). Pills 50 high with 17 px labels, round buttons 50, 14 apart. An episode or a season has ⋮ with Start a Watch
-    Party alone. Under a single file's buttons "Available version: 1080P · H264 · EAC3 · 6.6 GB" in 14 at 45 % white.
+    "Mark Watched", "Info", the heart, the stars and ⋮ (Watchlist, Add to Collection, Download and Delete download, then
+    Start a Watch Party below a line). Pills 50 high with 17 px labels, round buttons 50, 14 apart. An episode has ⋮ with
+    Download and Start a Watch Party, a season with Download season and Start a Watch Party; ⋮ shows while any of its items
+    does. Under a single file's buttons "Available version: 1080P · H264 · EAC3 · 6.6 GB" in 14 at 45 % white.
   - While the page shows, it follows the viewer's state, as Silo's apps read their page again once the player is gone.
     It reads the title's state again 400 ms after the last of these (marking several cards reads once): the player's
     playback stopped (left full or from the minimized bar, or moved on to the next title), a card's watched mark, heart or
@@ -541,6 +565,33 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     word, and nothing more is sent. A title playing in the minimized
     player plays on in the lobby until the host starts the room's, which takes its place, as from the hub. Keyboard
     focus moves into the chooser (the chosen season) as it opens and back to Change as it closes; Cancel returns it to ⋮.
+  - Download, the web's overflow item (ActionBar.tsx, its download arrow), in ⋮ after Add to Collection: on a movie or an
+    episode with a file while your Silo server lets the profile download (downloads on and allowed). A season has
+    "Download season" instead, for its episodes with a file that are not on this PC yet, and none once all are. A title on
+    this PC shows its status in the Downloads page's words instead ("Downloading · 42%", "Paused", "Downloaded", "No longer
+    available"), which opens the Downloads page, and "Delete download" (the bin) under it, which asks first as the Downloads
+    page does ("Delete download?", "This removes the downloaded copy from this PC. Nothing is deleted from your Silo
+    server.", Delete and Cancel); both stay whatever the server says now. While the page shows, the items follow the
+    downloads: the title's progress, and its episodes' on a season's page. The episode cards of a season's grid (and of a
+    single-season series') carry the same entries at the foot of their ⋮ menu, below a line: Download, or the status,
+    which opens the Downloads page, and Delete download.
+  - The download dialog, the web's `DownloadVersionPicker.tsx` with its texts, 400 wide: the title "Download: Example
+    Movie" ("Download: Example Series · S1 · E5" for an episode, "Download: Example Series · Season 1" for a season), "Choose
+    a file to download. Make sure you have enough disk space." in 14 px muted; with more than one file, VERSION over the
+    files as the web's rows (radius 12, a hairline, a faint fill, 8 apart; a 36 px disc of the accent at a tenth with the
+    download arrow, the quality line in 14 px medium and the size in 12 px muted), the highest resolution first, the one
+    picked under the buttons chosen (from an episode card, the episode's first file), and the web's "Larger files require
+    more storage space." at the foot. Granary's own: QUALITY as pills, when your Silo server offers the profile more than
+    Original, labelled as Settings → Downloads labels them, its Default quality chosen when offered, else Original; the
+    size of what starts in 14 px medium ("8.0 GB"; "About 2.1 GB" for a preset, its bitrate over the runtime and a tenth
+    more, never above the file; "10 episodes · 21.4 GB" for a season in Original) and under it the free space where
+    downloads go, "200.0 GB free on this PC.", or in red "Not enough free space on this PC: 8.0 GB needed, 1.0 GB free.",
+    which keeps Download off. The space is read once as the dialog opens, for 5 s at most; unknown, it holds nothing back.
+    Download (the primary button, also Enter) starts it and closes the dialog; while it starts, a 16 px ring turns beside
+    the size and Download waits. A start that fails keeps the dialog open with the web's "Download could not be started.
+    Check access and try again." in an error bar, until another version or quality is picked; a season pressed again
+    sends only the episodes not started yet. Cancel closes it; while a start runs, Cancel and Esc wait for it, so a
+    download never starts after the dialog was closed on it.
   - The stars, the web's `StarRating` after the heart (ActionBar.tsx), on movies and series only, as on the web: five
     20 px stars (16 below 1400 px) 2 apart in a dark pill as high as the buttons (82 % of the surface colour, a 30 %
     border, a faint light along its top). The profile's rating is yellow and filled (`#FACC15`), the other stars a
@@ -897,7 +948,7 @@ off the mark stands still.
 
 Opened from the sidebar's Settings; as on Silo's web the app's sidebar gives way to the settings' own (260 px, a shade
 darker, a hairline at its edge): "← Back to App", "Settings", the current profile (its initial in a 32 px disc), then
-the pages by group: PLAYBACK (the profile's), APPEARANCE (Navigation & Cards, Title Pages), ACCOUNT (Devices) and APP (Servers, About). The page open is white 6 % with text and a
+the pages by group: PLAYBACK (the profile's), APPEARANCE (Navigation & Cards, Title Pages), ACCOUNT (Devices) and APP (Servers, Downloads, About). The page open is white 6 % with text and a
 mark in the accent. Pages scroll on the right in a centred column of at most 1120 px, padded 50 px (a column, not MaxWidth on the
 host, which pushed a page of short lines off the right edge): the title (32 px bold) and its line, then sections between hairlines (`SettingsGroup`), their title
 (15 px semibold) and description (13 px muted) in a 256 px column and their rows (`SettingsRow`: label 14 px medium,
@@ -1067,7 +1118,7 @@ says why above the sections.
   this PC at once and taken by each page the next time it shows (Home's hero, above). Then Sidebar, with
   Reset beside the title while something is hidden or moved: Server logo ("Shows the logo your Silo server's admin set in
   place of the server's name. A server without one shows its name."), then Libraries, Discover and Your Stuff, each a list between
-  hairlines of the entry's icon and name (Requests and Notifications: "Shows while your server offers it."), up and down
+  hairlines of the entry's icon and name (Requests, Notifications, Watch Party and Downloads: "Shows while your server offers it."), up and down
   as 32 px ghost buttons (off at the ends), and the switch; a hidden entry is dimmed. Changes show in the sidebar at
   once.
 - **Title Pages** (`TitlePagesSettingsView` on `TitlePagesSettingsViewModel`, the web's page of that name and its groups
@@ -1104,7 +1155,8 @@ says why above the sections.
   on the right Sign out (outline; "Sign out this device" on Granary's own) and Details with a chevron, which opens the
   last seen, signed in, IP address at sign-in, expiry and User-Agent below. Sign out asks first in the web's words
   ("Sign out Chrome on Windows?" … "This client will lose access on its next authenticated request."); on Granary's own
-  it signs Granary out of the server and back to sign-in. "No other signed-in sessions." when there are none, "Load more
+  it signs Granary out of the server and back to sign-in, and the question ends with the downloads that go along when the
+  account has some on this PC ("1 download (1.5 GB) on this PC is deleted with it."). "No other signed-in sessions." when there are none, "Load more
   sessions" while the server has more, and the web's line on what Last seen records. The server without session
   management says "Signed-in session management is unavailable on this server."; a failed read "Couldn't load sessions.
   Try again." with Retry. **Your Devices**: grouped as the web's list, USING NOW, THIS WEEK and EARLIER, a line per device:
@@ -1120,8 +1172,24 @@ says why above the sections.
 - **Servers** (`ServersSettingsView` on `ServersViewModel`; the apps keep the server under Settings too): the title and
   its line with Add server (outline) on the right; then a line per saved server between hairlines: a 40 px disc, the
   name (15 px semibold) and "https://silo.example · Signed in as alex" (13 px muted, trimmed), the Active pill in the accent or
-  Switch, and More (…) with Sign out and Remove… (asks first). The sign-in screen's "Use another server" still opens the
+  Switch, and More (…) with Sign out and Remove… (asks first). Sign out, as the profile menu's and Change password's,
+  asks first only when the account has downloads on this PC, which go with it: "Sign out of NAS?", "2 downloads
+  (3.0 GB) on this PC are deleted with it.", Sign out and Cancel. Remove asks "Remove NAS?", "Granary signs out of this
+  server and forgets it. You can add it again later." and, when downloads of any account there are on this PC, a blank
+  line and "2 downloads (3.0 GB) on this PC are deleted with it." (without the size when it does not come within 5 s,
+  "Any downloads on this PC are deleted with it." when not even they can be read in time), Remove and Cancel. The sign-in screen's "Use another server" still opens the
   standalone servers page, which shares the question before removing.
+- **Downloads** (`DownloadsSettingsView` on `DownloadSettingsViewModel`, Granary's own: the web has no downloads, and the apps
+  keep these on the device): "Where downloads go and when they run, on this PC.", then This PC ("Kept on this PC, not in
+  your profile."): Folder ("New downloads go here. Downloads you have stay where they are."), the full path in 13 px
+  (selectable, wrapping at 360 px) over Open, a link that shows the folder in File Explorer (made first when nothing went
+  there yet), and Change (outline), Windows' folder picker starting in Downloads; a folder Granary can't write to, or a
+  drive's or a share's root, is refused with "Granary can't save downloads in that folder. Choose another one." in the
+  error bar above the sections, and a folder that would not open says "Couldn't open <folder>." there. Download on metered
+  connections, a switch, off by default ("Off: downloads wait while Windows says the connection is metered, such as a
+  phone's hotspot."). Default quality, a select of Original and the presets labelled as the apps label them ("10 Mbps · up
+  to 1080p", with the tallest output your server names, else the server guide's), "The quality a download starts on when
+  your Silo server offers it, else Original.". Each saves on this PC at once (`download-settings.json`).
 - **About** (`AboutSettingsView` on `AboutViewModel`, as the apps' About with Version and Acknowledgements): Granary's
   mark (64 px), name and "Version 0.2.0", what it is and that it is not an official Silo app. Updates: the state in one
   line ("Granary is up to date.", "Downloading Granary 0.3.0… 43%", "Granary 0.3.0 is ready. It installs when you
