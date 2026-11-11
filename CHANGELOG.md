@@ -18,7 +18,7 @@ release's section is what its update says it changes (docs/release.md).
 - Playback no longer stops to buffer when your server or a proxy in front of it cuts the video connection now and then.
 - A title's page shows where you stopped when you come back from the player, where Resume from kept the old time.
 - In full screen the mouse cursor hides again after a few seconds, also where it rests at the edge of the screen, and
-  also when the mouse lies still.
+  also when the mouse lies still. It no longer comes back by itself when the mouse did not move.
 
 ## [0.3.1] - 2026-11-09
 
