@@ -170,13 +170,17 @@ public sealed class MpvUserConfigTests : IDisposable
         engine.SetMuted(false);
         await PlaysAWav(engine);
 
-        // Set back five times; the sixth stays, and the protection of Granary's own options is not stopped for it.
+        // Set back five times; the sixth stays, and the protection of Granary's own options is not stopped for it. mpv reports
+        // a change only against the value it reported last, so the profile is applied again only once the notice of the set-back
+        // came (the profile's value and the set-back: two notices); before it, both would cancel out unseen.
         for (int applied = 1; applied <= 6; applied++)
         {
+            long seen = engine.SoundNotices(option);
             Assert.Equal(0, engine.Command("apply-profile", "loud"));
             string expected = applied <= 5 ? viewers : profiles;
-            await Until(() => engine.Option(option) == expected && Shows(engine, option, expected),
-                () => $"after {applied}: {option} {engine.Option(option)}; {_logs.All}");
+            long notices = applied <= 5 ? 2 : 1;
+            await Until(() => engine.Option(option) == expected && Shows(engine, option, expected) && engine.SoundNotices(option) >= seen + notices,
+                () => $"after {applied}: {option} {engine.Option(option)}, {engine.SoundNotices(option) - seen} notices; {_logs.All}");
         }
 
         await Until(() => Logged($"mpv.conf keeps changing {option}; it stays as the file sets it for this title"), () => _logs.All);

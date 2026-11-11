@@ -14,6 +14,26 @@ public sealed partial class MpvPlaybackEngine
     private const string VolumeOption = "volume";
     private const string MuteOption = "mute";
 
+    // How many notices of the volume and of the mute mpv sent, for tests: mpv reports a change only against the value it
+    // reported last, so a set-back and a profile's next change that both come before its notice cancel out unseen.
+    private long _volumeNotices;
+    private long _muteNotices;
+
+    /// <summary>How many notices of <paramref name="name"/> (the volume or the mute) mpv sent so far, for tests.</summary>
+    internal long SoundNotices(string name) => name == VolumeOption ? Interlocked.Read(ref _volumeNotices) : Interlocked.Read(ref _muteNotices);
+
+    private void CountSoundNotice(string name)
+    {
+        if (name == VolumeOption)
+        {
+            Interlocked.Increment(ref _volumeNotices);
+        }
+        else if (name == MuteOption)
+        {
+            Interlocked.Increment(ref _muteNotices);
+        }
+    }
+
     // On mpv's event thread, for a notice of the volume or the mute while mpv runs with a mpv.conf. True when it is not to
     // be shown: a profile's value, being set back, or one older than Granary's latest, which a newer notice follows. A
     // notice without a value, or a value mpv cannot give, leaves nothing to set back.
