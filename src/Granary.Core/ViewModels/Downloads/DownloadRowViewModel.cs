@@ -65,9 +65,12 @@ public sealed partial class DownloadRowViewModel : ObservableObject
     [ObservableProperty]
     public partial string SizeText { get; private set; } = "";
 
-    /// <summary>A film's poster or an episode's still on this PC; null until fetched.</summary>
+    /// <summary>
+    /// A film's poster or an episode's still on this PC; empty until fetched, never null: an x:Bind function skips a null
+    /// argument, and a recycled row would keep the last one's picture.
+    /// </summary>
     [ObservableProperty]
-    public partial string? PosterPath { get; private set; }
+    public partial string PosterPath { get; private set; } = "";
 
     /// <summary>"Downloading · 42%", "Paused", "Downloaded" (<see cref="DownloadText.Status"/>).</summary>
     [ObservableProperty]
@@ -115,7 +118,7 @@ public sealed partial class DownloadRowViewModel : ObservableObject
         Title = IsEpisode ? SeriesTitleOf(item) : item.Title;
         Detail = IsEpisode ? EpisodeLine(item) : "";
         SizeText = PrePlayText.FileSize(item.ExpectedBytes);
-        PosterPath = item.PosterPath;
+        PosterPath = item.PosterPath ?? "";
         StatusText = DownloadText.Status(item);
         Progress = item.Progress;
         // A download whose files are gone, or that the server no longer has, can only be deleted.

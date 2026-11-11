@@ -75,7 +75,9 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
 
         Assert.Equal(["Films", "A Series", "Example Series"], page.Sections.Select(s => s.Title));
         var films = page.Sections[0];
-        Assert.Null(films.PosterPath);
+        // Never null: an x:Bind function skips a null argument, and a recycled element would keep the last picture.
+        Assert.Equal("", films.PosterPath);
+        Assert.All(films.Groups.SelectMany(g => g.Rows), row => Assert.Equal("", row.PosterPath));
         var filmGroup = Assert.Single(films.Groups);
         Assert.Equal("", filmGroup.Title);
         Assert.Equal(["Another Movie", "Example Movie"], filmGroup.Rows.Select(r => r.Title));

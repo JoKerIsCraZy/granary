@@ -7,8 +7,11 @@ using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.ViewModels.Downloads;
 
-/// <summary>A part of the Downloads page: the films, or one series with its poster.</summary>
-public sealed record DownloadSection(string Title, string? PosterPath, IReadOnlyList<DownloadGroup> Groups);
+/// <summary>
+/// A part of the Downloads page: the films, or one series with its poster (empty when there is none, never null, as an
+/// x:Bind function skips a null argument).
+/// </summary>
+public sealed record DownloadSection(string Title, string PosterPath, IReadOnlyList<DownloadGroup> Groups);
 
 /// <summary>A season of a series ("Season 1", "Specials"), or the films, whose one group has no title.</summary>
 public sealed record DownloadGroup(string Title, IReadOnlyList<DownloadRowViewModel> Rows);
@@ -233,7 +236,7 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
             .Select(i => _rows[i.DownloadId]).ToList();
         if (films.Count > 0)
         {
-            sections.Add(new DownloadSection(FilmsTitle, null, [new DownloadGroup("", films)]));
+            sections.Add(new DownloadSection(FilmsTitle, "", [new DownloadGroup("", films)]));
         }
         var series = items.Where(i => i.SeriesId is not null).GroupBy(i => i.SeriesId!, StringComparer.Ordinal)
             .Select(g => (Id: g.Key, Title: DownloadRowViewModel.SeriesTitleOf(g.First()), Episodes: g.ToList()))
@@ -245,7 +248,7 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
                 .Select(g => new DownloadGroup(g.Key == 0 ? SpecialsTitle : "Season " + g.Key.ToString(CultureInfo.InvariantCulture),
                     [.. g.OrderBy(i => i.EpisodeNumber ?? int.MaxValue).ThenBy(i => i.Title, TitleOrder).Select(i => _rows[i.DownloadId])]))
                 .ToList();
-            sections.Add(new DownloadSection(title, episodes.Select(i => i.SeriesPosterPath).FirstOrDefault(p => p is not null), seasons));
+            sections.Add(new DownloadSection(title, episodes.Select(i => i.SeriesPosterPath).FirstOrDefault(p => p is not null) ?? "", seasons));
         }
         return sections;
     }
