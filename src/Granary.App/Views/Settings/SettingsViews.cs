@@ -398,10 +398,22 @@ public sealed partial class DownloadsSettingsView : UserControl
 
     public DownloadSettingsViewModel ViewModel { get; }
 
+    // A file error reading the downloads names the folder, the Windows user's name in it: only its kind goes into the log.
     private async void OnFirstLoaded(object sender, RoutedEventArgs e)
     {
         Loaded -= OnFirstLoaded;
-        await SettingsViewLoad.RunAsync(ViewModel.LoadAsync);
+        await SettingsViewLoad.RunAsync(async cancellationToken =>
+        {
+            try
+            {
+                await ViewModel.LoadAsync(cancellationToken);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                App.Services.GetRequiredService<ILogger<DownloadsSettingsView>>()
+                    .LogWarning("Settings → Downloads could not read this PC's downloads ({Failure})", ex.GetType().Name);
+            }
+        });
     }
 }
 

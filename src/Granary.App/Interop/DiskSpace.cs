@@ -29,10 +29,10 @@ internal static partial class DiskSpace
         Path.EndsInDirectorySeparator(directory) ? directory : directory + Path.DirectorySeparatorChar;
 
     // A download's folder can be deeper than Windows' usual 260 characters: such a path goes in the extended form, which
-    // Windows takes whatever the system's long path setting is.
+    // Windows takes whatever the system's long path setting is. One already in a device form (\\?\, \\.\) stays as it is.
     private static string Extended(string path)
     {
-        if (path.Length < MaxPath || path.StartsWith(@"\\?\", StringComparison.Ordinal))
+        if (path.Length < MaxPath || path.StartsWith(@"\\?\", StringComparison.Ordinal) || path.StartsWith(@"\\.\", StringComparison.Ordinal))
         {
             return path;
         }
