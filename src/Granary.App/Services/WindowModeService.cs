@@ -54,6 +54,9 @@ public sealed partial class WindowModeService(ILogger<WindowModeService> logger,
 
     private void Change(Action decide)
     {
+        // Asked for by the app (a title, F11, the mini view, a trailer): a window shown minimized at first no longer waits to
+        // go full screen as it comes back (FollowRestoreToFullScreen), whatever this change is.
+        _fullScreenOnRestore = false;
         var from = _modes.Mode;
         bool trailer = _modes.IsTrailerFullScreen;
         decide();

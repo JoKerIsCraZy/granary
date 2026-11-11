@@ -934,7 +934,8 @@ screen all go through `WindowModeService` (App, a singleton that MainWindow atta
   (that would show it as a window) but on its way out of full screen (`WindowedPlacement.MaximizeOnRestore`), counting as
   maximized meanwhile; a window that is a restored window again before (kept so, or taken out of full screen by Windows
   itself) is not maximized later. Should a launcher's show command take full screen from it, a window shown as a window goes full
-  screen after the activation, and one shown minimized as it comes back from the taskbar (logged at Debug; with
+  screen after the activation, and one shown minimized as it comes back from the taskbar, as a window that is not
+  minimized again, unless a mode change the app asks for (a title, F11, the mini view) came first (logged at Debug; with
   `Start-Process -WindowStyle Minimized` it opened in full screen, not minimized). Files
   are written as other small files are (a temporary file, then `File.Move`, tried again for a moment while something has
   the file open); a write that fails is logged. No file, or one that cannot be read (logged), and Windows places the

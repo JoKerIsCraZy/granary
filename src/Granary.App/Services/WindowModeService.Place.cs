@@ -127,10 +127,11 @@ public sealed partial class WindowModeService
     }
 
     // The window shown minimized at first (FollowFirstFullScreenShow) is back: full screen, once this change is through, if
-    // it is still the window it came back as; whatever the viewer did meanwhile ends the wait either way.
+    // it is still the window it came back as, a window and not minimized again. Any change the app asks for meanwhile ends
+    // the wait (Change), and so does this, whatever it finds.
     private void FollowRestoreToFullScreen(AppWindow window)
     {
-        if (!_fullScreenOnRestore || window.Presenter is not OverlappedPresenter { State: not OverlappedPresenterState.Minimized })
+        if (!_fullScreenOnRestore || !IsBackAsAWindow(window))
         {
             return;
         }
@@ -141,12 +142,16 @@ public sealed partial class WindowModeService
                 return;
             }
             _fullScreenOnRestore = false;
-            if (_modes.Mode == WindowMode.Window)
+            if (_modes.Mode == WindowMode.Window && _window?.AppWindow is { } current && IsBackAsAWindow(current))
             {
                 GoFullScreenAsClosed();
             }
         });
     }
+
+    // Shown as a window, neither minimized nor full screen or the mini view.
+    private static bool IsBackAsAWindow(AppWindow window) =>
+        window.Presenter is OverlappedPresenter { State: not OverlappedPresenterState.Minimized } && !WindowedPlacement.IsMinimized(window);
 
     // Whether the next start opens in full screen, were the window to close now; a window that no longer says counts as
     // not minimized.
