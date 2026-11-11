@@ -1591,7 +1591,9 @@ for the window that the app, the player and a trailer share; `AppWindow`'s full-
   that is no move (looked at no more than every 250 ms), when the window is activated or changes, and on a look every
   second while it waits.
   Hidden controls take no clicks. The cursor goes as the page's `ProtectedCursor`, a blank one made at run time (`BlankCursor`):
-  `ShowCursor` does not reach WinUI content, whose cursor WinUI's input stack sets per element.
+  `ShowCursor` does not reach WinUI content, whose cursor WinUI's input stack sets per element. Windows draws a new
+  cursor only when it asks the window under the pointer for one, as the mouse moves or clicks, so after each change
+  the window is asked at once (`WM_SETCURSOR`, as a move sends it): a mouse lying still loses the arrow too.
 - **Mouse**: a click on the picture plays or pauses (after 250 ms, so a double click does not), a double
   click toggles full screen. On touch a tap shows or hides the controls.
 - **Keyboard** (the web player's map, docs/api-contract.md 13.5): Space and K play/pause, F full screen (the window's,
