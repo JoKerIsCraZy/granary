@@ -588,6 +588,7 @@ public sealed partial class MpvPlaybackEngine : IPlaybackEngine, ICompositionVid
 
     private void OnPropertyChanged(string name, object? value)
     {
+        CountSoundNotice(name);
         if (KeepsOwn(name, value) || KeepsViewersSound(name, value) || (name is "time-pos" or "eof-reached" && FileBeforePlays))
         {
             return;
