@@ -76,8 +76,9 @@ public sealed partial class DevicesViewModel
             : await _confirmation.AskAsync($"Sign out {row.Name}?",
                 "This client will lose access on its next authenticated request. Its other sessions and password stay unchanged.\n\n" + SignOutNote,
                 "Sign out");
-        // The server or profile may have changed while the question was open.
-        if (!asked || await TargetAsync() is not { } server || !Listed(row))
+        // The server, profile or account may have changed while the question was open: its downloads were the ones asked about.
+        if (!asked || await TargetAsync() is not { } server || !Listed(row)
+            || (row.IsCurrent && _downloads is not null && await _downloads.AccountOfAsync(server.Id, CancellationToken.None) != accountId))
         {
             return;
         }

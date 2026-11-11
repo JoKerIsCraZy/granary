@@ -101,6 +101,27 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
         Assert.Equal("", servers.Status);
     }
 
+    // The question was about this account's downloads: another account signed in while it was open gets nothing done to it.
+    [Fact]
+    public async Task AnotherAccountSignedInWhileAsking_KeepsEverything_AndDoesNotSignOut()
+    {
+        var kept = await KeptAsync("dl_1");
+        _confirm.WhileAsking = () =>
+        {
+            _h.Session.Account = new Account("2", "elena2", "", "user", [], true, false, null);
+            return Task.CompletedTask;
+        };
+        using var servers = await ServersAsync();
+
+        await servers.SignOutCommand.ExecuteAsync(Item(servers, "srv1"));
+
+        Assert.Single(_confirm.Asked);
+        Assert.DoesNotContain("sign-out:srv1", _h.Session.Calls);
+        Assert.Equal(["dl_1"], Kept);
+        Assert.True(File.Exists(kept.PartPath));
+        Assert.Empty(DeletesSent);
+    }
+
     [Fact]
     public async Task Confirmed_TakesTheDownloadsOff_TellsTheServer_ThenSignsOut()
     {

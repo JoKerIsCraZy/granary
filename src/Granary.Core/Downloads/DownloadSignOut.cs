@@ -211,8 +211,8 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
     /// A sign-out the viewer asked for: asks when the account has downloads here (<see cref="ConfirmSignOutAsync"/>), takes
     /// them along (<see cref="ClearAsync"/>), then signs out of <paramref name="server"/>. A sign-in whose account is not known
     /// takes none along: those on that server are other accounts', as one whose sign-in expired. A sign-out that fails leaves
-    /// the account's downloads gone, and its new ones run. False when the viewer said no, and nothing changed. Call it on the
-    /// UI thread.
+    /// the account's downloads gone, and its new ones run. False when the viewer said no, or another account was signed in
+    /// there while the question was open, and nothing changed. Call it on the UI thread.
     /// </summary>
     public async Task<bool> SignOutAsync(ServerEntry server, CancellationToken cancellationToken)
     {
@@ -221,6 +221,12 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
         string? accountId = await AccountOfAsync(server.Id, cancellationToken);
         if (!await ConfirmAsync(server, accountId, cancellationToken))
         {
+            return false;
+        }
+        // The question was about this account's downloads: another account signed in there while it was open is left alone.
+        if (await AccountOfAsync(server.Id, cancellationToken) != accountId)
+        {
+            logger.LogInformation("Another account was signed in on server {ServerEntryId} while the sign-out asked; nothing was done", server.Id);
             return false;
         }
         if (accountId is null)
@@ -296,10 +302,12 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
             logger, CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
 
     // The active profile's entries of that server and account the server is to hear of, its downloads and the deletes still to
-    // send; null when there are none, or the active profile is not of that server and account.
+    // send; null when there are none, or the active profile is not of that server and account. The server is read once, and
+    // the scope must be that server's: the deletes never go to another server than the one whose downloads they are.
     private ServerDeletes? DeletesToSend(string serverEntryId, string? accountId)
     {
-        if (DownloadScope.Of(session) is not { } scope || !Matches(scope, serverEntryId, accountId) || session.ActiveServer is not { } server)
+        if (session.ActiveServer is not { } server || server.Id != serverEntryId
+            || DownloadScope.Of(session) is not { } scope || scope.ServerEntryId != server.Id || !Matches(scope, serverEntryId, accountId))
         {
             return null;
         }
