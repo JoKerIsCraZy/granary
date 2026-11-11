@@ -53,6 +53,13 @@ public static class AppText
     public static IReadOnlyList<TextRun> Runs(string key, params ReadOnlySpan<(string Name, object? Value)> values) =>
         Language.Runs(key, values);
 
+    /// <summary>
+    /// Text a Silo server sent in English with its catalog key, such as a row's title: translated where the language on
+    /// screen has the key, else as sent (<see cref="TextLanguage.ServerText"/>; the web's <c>serverText</c>).
+    /// </summary>
+    public static string ServerText(string? key, IReadOnlyDictionary<string, string>? values, string serverText) =>
+        Language.ServerText(key, values, serverText);
+
     private sealed class Restore(TextLanguage? before) : IDisposable
     {
         public void Dispose() => InThisFlow.Value = before;

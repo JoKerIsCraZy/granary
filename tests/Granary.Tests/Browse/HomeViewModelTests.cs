@@ -3,6 +3,7 @@ using Granary.Core.Abstractions;
 using Granary.Core.Api;
 using Granary.Core.Auth;
 using Granary.Core.Playback;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Cards;
 using Granary.Tests.Fakes;
@@ -218,6 +219,34 @@ public sealed class HomeViewModelTests
             (AppRoute.Section, new SectionRouteParameter("tv", "Row tv", null, "recently_added")),
             (AppRoute.Section, new SectionRouteParameter("all", "Row all", null, "genre")),
         ], _navigation.Navigations.Select(n => (n.Route, n.Parameter)).ToList<(AppRoute, object?)>());
+    }
+
+    [Fact]
+    public async Task ARowSiloTitled_ShowsItsTitleInTheLanguageOnScreen_AndExploreAllTakesIt()
+    {
+        using var _ = AppText.Use(TextLanguage.Load("de"));
+        _silo.Map(SectionsPath, Serialize(new
+        {
+            sections = new object[]
+            {
+                new
+                {
+                    id = "films", section_type = "recently_added", title = "Recently Added in Filme", title_key = "home.section.recentlyAddedIn",
+                    title_args = new { library = "Filme" }, featured = false, item_limit = 20, is_custom = false, customized = false,
+                    total_count = 1, items = new[] { Item("m1") },
+                },
+                Section("typed", "genre", 1, Item("m2")),
+            },
+        }));
+        var home = Create();
+        await home.ActivateAsync();
+
+        home.Rows[0].ExploreAllCommand!.Execute(null);
+
+        string german = AppText.Get("home.section.recentlyAddedIn", "library", "Filme");
+        Assert.NotEqual("Recently Added in Filme", german);
+        Assert.Equal([german, "Row typed"], home.Rows.Select(row => row.Title));
+        Assert.Equal(new SectionRouteParameter("films", german, null, "recently_added"), _navigation.Navigations[^1].Parameter);
     }
 
     [Fact]

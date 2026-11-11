@@ -1,6 +1,7 @@
 using System.Net;
 using Granary.Core.Abstractions;
 using Granary.Core.Api;
+using Granary.Core.Texts;
 using Granary.Core.ViewModels;
 using Granary.Core.ViewModels.Cards;
 using Granary.Tests.Profiles;
@@ -82,6 +83,24 @@ public sealed class LibraryRowsTests
         var (route, parameter) = _harness.Navigation.Navigations[^1];
         Assert.Equal(AppRoute.Section, route);
         Assert.Equal(new SectionRouteParameter("recently_added", "Recently Added", "1"), parameter);
+    }
+
+    [Fact]
+    public async Task RowsSiloTitled_ShowTheirTitlesInTheLanguageOnScreen_AndExploreAllTakesThem()
+    {
+        using var _ = AppText.Use(TextLanguage.Load("de"));
+        _harness.Answer(SectionsPath, LibraryPayloads.Sections
+            .Replace("\"title\": \"Continue Watching\",", "\"title\": \"Continue Watching\", \"title_key\": \"home.section.continueWatching\",", StringComparison.Ordinal)
+            .Replace("\"title\": \"Recently Added\",", "\"title\": \"Recently Added\", \"title_key\": \"home.section.recentlyAdded\",", StringComparison.Ordinal));
+        var library = _harness.Create();
+        await library.ActivateAsync("1");
+
+        library.Recommended.Rows[1].ExploreAllCommand.Execute(null);
+
+        string[] german = [AppText.Get("home.section.continueWatching"), AppText.Get("home.section.recentlyAdded")];
+        Assert.DoesNotContain("Recently Added", german);
+        Assert.Equal(german, library.Recommended.Rows.Select(row => row.Title));
+        Assert.Equal(new SectionRouteParameter("recently_added", german[1], "1"), _harness.Navigation.Navigations[^1].Parameter);
     }
 
     [Fact]

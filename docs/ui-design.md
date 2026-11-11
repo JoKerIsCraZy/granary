@@ -101,7 +101,8 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
   its years ("2019 – 2028"), else its films; the watched share is its bar. It has no play disc, buttons or menu. Screen
   readers hear "Masterplan Box Set, box set of 3 films, 1 / 3 WATCHED". The sleeves and marks are made (`x:Load`) for the
   first box set card only.
-- `MediaRow`: row title, optional "EXPLORE ALL" (on every Home and library row, as on the web, also when the row
+- `MediaRow`: row title (a title Silo wrote in the language on screen, from its `title_key`, as the web's
+  `lib/sectionTitle.ts`; a typed one as typed), optional "EXPLORE ALL" (on every Home and library row, as on the web, also when the row
   already holds all of it; For You and Requests rows only when a page lists more), horizontally scrolling cards 20 px apart
   as wide as the web's for the profile's poster size at the window's breakpoint (posters 120 to 220 px, standard 185 from
   1024 px; wide cards 260 px, 315 from 640), arrows for mouse users. Sideways rows (`MediaRow`, `DetailShelf`, search's

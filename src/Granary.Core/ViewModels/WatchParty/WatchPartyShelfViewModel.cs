@@ -366,7 +366,7 @@ public sealed partial class WatchPartyShelfViewModel : ObservableObject
         return
         [
             .. sections.Sections.Where(s => !SkippedSections.Contains(s.SectionType)).Take(MaxHomeRows)
-                .Select(s => (s.Title, (IReadOnlyList<CatalogItem>)[.. s.Items.Where(Pickable)]))
+                .Select(s => (SectionTitle.Shown(s), (IReadOnlyList<CatalogItem>)[.. s.Items.Where(Pickable)]))
                 .Where(row => row.Item2.Count > 0),
         ];
     }

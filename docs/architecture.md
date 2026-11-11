@@ -339,6 +339,11 @@ half-translated Granary. All of it is in `src/Granary.Core/Texts`.
   in tests, it is English. A test that needs another language calls `AppText.Use(language)`, which holds for its own
   async flow only, so the tests xUnit runs beside it keep English; `AppTextTests` keeps `AppText.Apply` out of
   everything but the app. Text that is stored, sent or compared stays English, as Silo's rule is.
+- **Text the server words** (`AppText.ServerText`, the web's `serverText`): a server text in English with the key of
+  its catalog message, such as a row's `title` with `title_key` and `title_args`, shows the language's message when its
+  own catalog has the key and the server's values fill every value the message uses; otherwise, and always in English,
+  it shows as the server sent it. Home, library and Watch Party shelf rows take their titles this way (`SectionTitle`,
+  as the web's `lib/sectionTitle.ts`).
 - **Keys** (`TextKeysTests`): every key `src` gives `AppText.Get` or `AppText.Runs` as a literal, in C# or in an x:Bind,
   must be in the English catalog, the web's or Granary's, as the web's typecheck holds its keys to `en.json`.
 - **Choosing the language** (`AppLanguage.Resolve`): the profile's `ui.app_language`, then Windows' preferred languages,
