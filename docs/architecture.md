@@ -32,6 +32,11 @@ Dependencies point inward only: `App → Player → Core`, and `App → Core`.
   thread; a lock keeps the state whole if a call came from another thread. Should Windows make no request object, it
   falls back on `SetThreadExecutionState` (`ExecutionStateFlags`), which belongs to the calling thread, the UI's.
   `IThemeAudioOutput` plays title pages' theme music (see Theme music).
+  For downloads (see Downloads): `IDiskSpace`, the free space where they go, which the App's `WindowsDiskSpace` reads with
+  `GetDiskFreeSpaceExW` on the folder or its nearest parent that exists, network shares included (Core's own
+  `DriveInfoDiskSpace` knows only lettered drives); and `INetworkLink.Changed`, which the App's `WindowsNetworkLink` raises
+  with Windows' `NetworkStatusChanged`, joined with the first handler and left with the last, so the queue hears when the
+  connection turns metered.
   `IReleaseFiles` gives `SignedReleaseVerifier` a release's SHA256SUMS and its signature, and the package on disk to
   hash and read; Core's own `HttpReleaseFiles` implements it, and the tests fake it (docs/release.md, "Signed
   releases").
@@ -1102,6 +1107,23 @@ Films and episodes kept on this PC as the server's managed downloads (docs/api-c
   file under a name of its own, then moved over it, tried again for a moment while a read holds the file, and given up
   when the file changed meanwhile. Nothing is written outside the data folder and the downloads folders.
 
+### Long paths
+
+A download's folder is the downloads folder and four names: the server entry's id (16 characters), `acct-` and the account,
+the profile and the download, each at most 57 characters (`DownloadPaths.Segment`), then a file name such as `media.mkv`;
+a file written whole goes first under its name with 37 more characters (`SafeFile`). Under the default downloads folder
+(`%LOCALAPPDATA%\Granary\downloads`, about 45 characters) a usual path stays near 200 characters and the longest one the
+names allow is near 300; a longer chosen folder adds its own length. So a path can pass Windows' usual 260.
+
+- .NET's own file calls take such paths, which covers the store, the transfer and the page's artwork. `WindowsDiskSpace`
+  asks Windows in the extended form (`\\?\`) for a path that long.
+- `app.manifest` declares `longPathAware`: it costs nothing, and once the system's `LongPathsEnabled` is on, libmpv's and
+  Windows' own calls in Granary take long paths too. Without that setting, playing a download whose path passes 260 may
+  fail in libmpv (Part 2 plays the local file), and File Explorer or a Windows dialog may not open such a folder: a shorter
+  downloads folder avoids both.
+- The names are not made shorter: the layout keeps every id apart and is already on disk, and a long downloads folder
+  could pass 260 whatever the names.
+
 ### The transfer
 
 `DownloadTransfer.RunAsync` brings one media file into `media.part` and answers a `TransferOutcome`: its result, the
@@ -1146,7 +1168,8 @@ deleted here; every result but Completed keeps what was written.
 
 ### The queue
 
-`DownloadQueue` (a singleton the app starts) runs the active profile's downloads, at most two at once (`MaxConcurrent`, as
+`DownloadQueue` (a singleton the app starts in `App.Launch`, after the local route, and stops when the window closes,
+waiting `StopBudget` for it) runs the active profile's downloads, at most two at once (`MaxConcurrent`, as
 Silo's Apple app), oldest first: those queued or under way, not paused by the viewer, not gone from the server and not
 missing their folder.
 
@@ -1311,7 +1334,13 @@ client guide.
   Resume and Retry are one button per row (`PrimaryAction`), pressable while its press runs, and the focused button stays
   put as its action changes. The free space is read on the thread pool when the page shows and when a download comes,
   goes or finishes, through `DiskSpaceReads.FreeBytesAsync` as the dialog reads it: a read that fails or takes longer than
-  `DiskSpaceReads.Timeout` (5 s) leaves it unknown, and the top says only the space used.
+  `DiskSpaceReads.Timeout` (5 s) leaves it unknown, and the top says only the space used. The App's `DownloadsPage` is
+  cached; it attaches in `OnNavigatedTo` and detaches in `OnNavigatedFrom` and as it unloads, and makes its view model with
+  `ActivatorUtilities`, since the root provider would keep a disposable transient, and the page with it, until exit. So
+  `DownloadManager`, a singleton, never holds a page that left (`DownloadsViewModelTests`). A row's artwork is read from its
+  file on the thread pool (`LocalArtwork`), never through a URI. The sidebar's entry follows `DownloadsFeature.IsOffered`,
+  which the window refreshes with the sidebar's other features on every page change and shows through `IUiDispatcher`,
+  since a refresh can end on another thread.
 - **Settings → Downloads.** `DownloadSettingsViewModel` takes a folder only below a drive's or a share's root and once it
   made the folder and wrote and deleted `.granary-write-check` there, on the thread pool; Open makes the folder first.
 

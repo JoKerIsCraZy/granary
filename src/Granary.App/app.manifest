@@ -11,6 +11,11 @@
     <windowsSettings>
       <dpiAware xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">true/PM</dpiAware>
       <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">PerMonitorV2, PerMonitor</dpiAwareness>
+      <!--
+        Paths over 260 characters, such as a download's folder under a long downloads folder, also for libmpv's and Windows'
+        own calls in this process, once the system's LongPathsEnabled is on (docs/architecture.md, "Long paths").
+      -->
+      <longPathAware xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">true</longPathAware>
     </windowsSettings>
   </application>
 </assembly>

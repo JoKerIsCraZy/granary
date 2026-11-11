@@ -3,10 +3,12 @@ using Granary.Core.Abstractions;
 using Granary.Core.Api;
 using Granary.Core.Artwork;
 using Granary.Core.Auth;
+using Granary.Core.Downloads;
 using Granary.Core.Playback;
 using Granary.Core.Realtime;
 using Granary.Core.Servers;
 using Granary.Core.ViewModels;
+using Granary.Core.ViewModels.Downloads;
 using Granary.Core.ViewModels.Settings;
 using Granary.Player;
 using Granary.Tests.Fakes;
@@ -28,6 +30,7 @@ public sealed class CompositionRootTests
         services.AddSingleton<IConfirmation, FakeConfirmation>();
         services.AddSingleton<IFileLauncher, RecordingFileLauncher>();
         services.AddSingleton<IDownloadOptionsDialog, FakeDownloadOptionsDialog>();
+        services.AddSingleton<IFolderPicker, FakeFolderPicker>();
         services.AddGranaryCore();
         services.AddGranaryPlayer(new MpvEngineOptions { VideoOutput = VideoOutputKind.None });
 
@@ -57,6 +60,12 @@ public sealed class CompositionRootTests
         using var presets = ActivatorUtilities.CreateInstance<MpvSettingsViewModel>(provider);
         using var buttons = ActivatorUtilities.CreateInstance<PlayerButtonsSettingsViewModel>(provider);
         Assert.Same(provider.GetRequiredService<PlayerButtonsLayout>(), provider.GetRequiredService<IPlayerButtonsLayout>());
+        // One queue runs every transfer, and the pages and the title pages share one manager.
+        Assert.Same(provider.GetRequiredService<DownloadQueue>(), provider.GetRequiredService<DownloadQueue>());
+        Assert.Same(provider.GetRequiredService<DownloadManager>(), provider.GetRequiredService<DownloadManager>());
+        // The Downloads page and Settings → Downloads make theirs outside the container, which would keep a disposable one.
+        using var downloads = ActivatorUtilities.CreateInstance<DownloadsViewModel>(provider);
+        Assert.NotNull(ActivatorUtilities.CreateInstance<DownloadSettingsViewModel>(provider));
     }
 
     [Fact]
@@ -75,10 +84,10 @@ public sealed class CompositionRootTests
 
         using var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });
 
-        Assert.NotNull(provider.GetRequiredService<Granary.Core.Downloads.DownloadActions>());
-        Assert.IsType<Granary.Core.Downloads.NoDownloadOptionsDialog>(provider.GetRequiredService<IDownloadOptionsDialog>());
+        Assert.NotNull(provider.GetRequiredService<DownloadActions>());
+        Assert.IsType<NoDownloadOptionsDialog>(provider.GetRequiredService<IDownloadOptionsDialog>());
         // The sign-out paths' view models take it, so a sign-out asks about the downloads and takes them along.
-        Assert.Same(provider.GetRequiredService<Granary.Core.Downloads.DownloadSignOut>(), provider.GetRequiredService<Granary.Core.Downloads.DownloadSignOut>());
+        Assert.Same(provider.GetRequiredService<DownloadSignOut>(), provider.GetRequiredService<DownloadSignOut>());
     }
 
     [Fact]

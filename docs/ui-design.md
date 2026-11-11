@@ -169,7 +169,8 @@ View models build `MediaCard`s with the texts already worded; the controls only 
 - Sidebar (260 px): the server's wordmark at 112 x 48 px (`wordmark_url`, as the web's `SiloBrand`), else or with Server logo off its name, Home, Search (`Ctrl+K`), "LIBRARIES" with the libraries the profile browses (its hidden
   ones left out, in its library order: the web's Settings → Libraries), "DISCOVER" (For
   You, Requests while the server takes them, Calendar, Notifications with the unread count in the accent), "YOUR STUFF" (Favorites, Watchlist, Watch
-  Party while the server offers rooms, Collections, History); Admin (an administrator's only, a shield), Settings and the profile menu at the bottom (the servers are in Settings → Servers). Favorites, Watchlist and History are one page (`PersonalListPage`, the web's `pages/Catalog.tsx` for those
+  Party while the server offers rooms, Collections, History, Downloads while the server lets the profile download or the profile
+  has downloads on this PC); Admin (an administrator's only, a shield), Settings and the profile menu at the bottom (the servers are in Settings → Servers). Favorites, Watchlist and History are one page (`PersonalListPage`, the web's `pages/Catalog.tsx` for those
   sources): the list's name, what it holds and its count, the media menu (All Media, Movies & Series, Movies, Series,
   Episodes), the list's own order ("List Order", History's "Watch History") or one of six sorts (Title, Date Added,
   Release Date, Year, Duration, IMDb Rating), Filters (the library page's `CatalogFiltersButton`, every section of it,
@@ -209,6 +210,22 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   Between a title's page and any other the sidebar changes its width with the page; the old page then goes at once,
   the pane moves over the empty page, and the new page fades in (160 ms) once the pane stands, instead of the old page
   squeezing while the pane moved and the new one sliding in after it.
+- Downloads (`DownloadsPage`, Granary's own after the list pages, since the web has no such page; the apps' words): the
+  active profile's downloads on this PC. The padding of the list pages (48, 32, 48, 48); "Downloads" in the display style
+  and under it, muted, the space they use and the space left on the drive of the downloads folder ("12.0 GB used · 200.0 GB
+  free"; only the space used while the drive does not answer within 5 s). With none, the watchlist tab's dashed box: the
+  download icon, "No downloads yet" and "Choose Download in a film's or episode's ⋯ menu to keep it on this PC and watch it
+  without your Silo server.". Then Films, and each series by title with its 40 x 60 poster beside its name (20 px
+  semibold), its seasons by number under muted 14 px titles ("Season 1"; "Specials" last). A row: a film's poster (60 x 90)
+  or an episode's still (96 x 54), rounded 8 px, from the files on this PC (a film or television icon until there is one);
+  the title (15 px semibold; an episode's series), an episode's "E5 · Chapter Five", the status in the apps' words
+  ("Preparing…", "Queued", "Downloading · 42%", "Paused", "Paused · metered connection", "Downloaded", "Failed", "Failed ·
+  not enough space", "No longer available", "Missing file"),
+  and a 3 px bar in the accent while it downloads; the size on the right (13 px muted), then two 34 px round outline
+  buttons (History's look): Pause, Resume or Retry, one button that stays while its action changes and goes only when
+  there is nothing left to do, and Delete, which asks first as the title page does. Each has a tooltip and its name for
+  screen readers. A click on the row opens the film's or the episode's page. After a Delete, and when the transfer button
+  goes, the focus moves to the row (after a Delete, the one now in its place). The sidebar's page has no Back disc.
 - Sideways rows (`MediaRow`, `BrandRow`, the detail pages' `DetailShelf`) reach the window's right edge as the web's
   carousels do: the track takes the page's 48 px right gutter and keeps it inside, so the next card shows in the gutter
   rather than stopping at an invisible wall (`RowBleed`; the player's On Deck row has a 32 px gutter). On the left a row

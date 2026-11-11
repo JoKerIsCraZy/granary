@@ -1,3 +1,5 @@
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using Granary.Core.Abstractions;
 using Granary.Core.Downloads;
 using Granary.Core.ViewModels;
@@ -373,6 +375,91 @@ public sealed class DownloadsViewModelTests : IAsyncDisposable
         Assert.True(page.IsEmpty);
         page.Attach();
         Assert.Single(Rows(page));
+    }
+
+    // The app's downloads live as long as the app. The page listens to its view model and the rows, as x:Bind does, so a view
+    // model they still held would keep the page in memory for good, cached or not: once it left, nothing of it is held.
+    [Fact]
+    public async Task APageThatWasLeft_IsNotKeptByTheDownloads()
+    {
+        await AddFilmAsync("dl_1", "Example Movie");
+        var downloads = _h.NewManager();
+        var (page, spaceRead) = ShowPage(downloads);
+        await spaceRead;
+
+        Leave(page);
+        Collect();
+
+        Assert.False(page.TryGetTarget(out _));
+        GC.KeepAlive(downloads);
+    }
+
+    // What the test above relies on: while the page shows, the downloads do hold it.
+    [Fact]
+    public async Task APageThatShows_IsKeptByTheDownloads()
+    {
+        await AddFilmAsync("dl_1", "Example Movie");
+        var downloads = _h.NewManager();
+        var (page, spaceRead) = ShowPage(downloads);
+        await spaceRead;
+
+        Collect();
+
+        Assert.True(page.TryGetTarget(out _));
+        GC.KeepAlive(downloads);
+    }
+
+    // Made in a method of its own, so no local of the test keeps the page.
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private (WeakReference<ShownPage> Page, Task SpaceRead) ShowPage(DownloadManager downloads)
+    {
+        var model = new DownloadsViewModel(downloads, _h.Disk, _h.Preferences, _navigation, _confirmation, new ImmediateDispatcher(), _h.Time,
+            _h.Logs.For<DownloadsViewModel>());
+        var page = new ShownPage(model);
+        model.Attach();
+        page.FollowRows();
+        Assert.NotEmpty(Rows(model));
+        return (new WeakReference<ShownPage>(page), model.SpaceRead);
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void Leave(WeakReference<ShownPage> page)
+    {
+        if (page.TryGetTarget(out var shown))
+        {
+            shown.ViewModel.Detach();
+        }
+    }
+
+    private static void Collect()
+    {
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+    }
+
+    // Stands in for DownloadsPage: it holds its view model and listens to it and to its rows, as the page's bindings do.
+    private sealed class ShownPage
+    {
+        public ShownPage(DownloadsViewModel viewModel)
+        {
+            ViewModel = viewModel;
+            viewModel.PropertyChanged += OnChanged;
+        }
+
+        public DownloadsViewModel ViewModel { get; }
+
+        public int Changes { get; private set; }
+
+        public void FollowRows()
+        {
+            foreach (var row in Rows(ViewModel))
+            {
+                row.PropertyChanged += OnChanged;
+            }
+        }
+
+        private void OnChanged(object? sender, PropertyChangedEventArgs e) => Changes++;
     }
 
     [Fact]

@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The active profile's downloads on this PC. The web has no such page: it is laid out as Granary's list pages
+    (PersonalListPage), in the apps' words. The space they use and the space left; then the films, and each series with its
+    poster by season, a row per download: its artwork, title, status and size, a bar while it comes, one Pause, Resume or
+    Retry button and Delete. The page is cached and follows the downloads only while it shows.
+-->
+<Page
+    x:Class="Granary.App.Views.DownloadsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:views="using:Granary.App.Views"
+    xmlns:downloads="using:Granary.Core.ViewModels.Downloads"
+    NavigationCacheMode="Enabled">
+
+    <Page.Resources>
+        <!-- History's small outline buttons (PersonalListPage's HistoryButtonStyle), as round icon buttons. -->
+        <Style x:Key="DownloadIconButtonStyle" TargetType="Button" BasedOn="{StaticResource SiloSecondaryButtonStyle}">
+            <Setter Property="Width" Value="34" />
+            <Setter Property="Height" Value="34" />
+            <Setter Property="MinHeight" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="FontSize" Value="13" />
+        </Style>
+    </Page.Resources>
+
+    <ScrollViewer x:Name="Scroller" XYFocusKeyboardNavigation="Enabled">
+        <StackPanel Padding="48,32,48,48" Spacing="24">
+            <StackPanel Spacing="6">
+                <TextBlock Text="Downloads" Style="{StaticResource SiloDisplayTextStyle}" AutomationProperties.HeadingLevel="Level1" />
+                <!-- "12.0 GB used · 200.0 GB free"; only the space used while the drive's free space is not known. -->
+                <TextBlock Text="{x:Bind ViewModel.SpaceText, Mode=OneWay}" Style="{StaticResource SiloBodyTextStyle}"
+                           Foreground="{StaticResource SiloMutedBrush}" />
+            </StackPanel>
+
+            <!-- Nothing here yet: a dashed box, as the list pages' empty watchlist tab. -->
+            <Grid Visibility="{x:Bind ViewModel.IsEmpty, Mode=OneWay}">
+                <Rectangle RadiusX="20" RadiusY="20" Stroke="{StaticResource SiloBorderBrush}" StrokeThickness="1" StrokeDashArray="4,3" />
+                <StackPanel Spacing="12" Padding="16,64" HorizontalAlignment="Center">
+                    <FontIcon Glyph="&#xE896;" FontSize="32" HorizontalAlignment="Center" Foreground="{StaticResource SiloMutedBrush}"
+                              AutomationProperties.AccessibilityView="Raw" />
+                    <TextBlock Text="{x:Bind EmptyTitle}" Style="{StaticResource SiloBodyTextStyle}" FontSize="16"
+                               FontFamily="{StaticResource SiloFontMedium}" FontWeight="Medium" HorizontalAlignment="Center" />
+                    <TextBlock Text="{x:Bind EmptyText}" Style="{StaticResource SiloBodyTextStyle}" FontSize="14" Foreground="{StaticResource SiloMutedBrush}"
+                               MaxWidth="448" TextWrapping="Wrap" TextAlignment="Center" HorizontalAlignment="Center" />
+                </StackPanel>
+            </Grid>
+
+            <!-- The films, then each series by title. Every template's root is a plain Grid (AGENTS.md, ItemsRepeater templates). -->
+            <ItemsRepeater x:Name="SectionsRepeater" ItemsSource="{x:Bind ViewModel.Sections, Mode=OneWay}">
+                <ItemsRepeater.Layout>
+                    <StackLayout Spacing="40" />
+                </ItemsRepeater.Layout>
+                <ItemsRepeater.ItemTemplate>
+                    <DataTemplate x:DataType="downloads:DownloadSection">
+                        <Grid>
+                            <StackPanel Spacing="16">
+                                <!-- A series' title with its poster beside it; the films' title alone. -->
+                                <StackPanel Orientation="Horizontal" Spacing="14">
+                                    <Border Width="40" Height="60" CornerRadius="6" Background="{StaticResource SiloSurfaceRaisedBrush}"
+                                            Visibility="{x:Bind views:DownloadsPage.HasPath(PosterPath)}">
+                                        <Image Source="{x:Bind views:DownloadsPage.SeriesPoster(PosterPath)}" Stretch="UniformToFill"
+                                               AutomationProperties.AccessibilityView="Raw" />
+                                    </Border>
+                                    <TextBlock Text="{x:Bind Title}" Style="{StaticResource SiloRowTitleTextStyle}" VerticalAlignment="Center"
+                                               TextTrimming="CharacterEllipsis" AutomationProperties.HeadingLevel="Level2" />
+                                </StackPanel>
+                                <ItemsRepeater ItemsSource="{x:Bind Groups}">
+                                    <ItemsRepeater.Layout>
+                                        <StackLayout Spacing="20" />
+                                    </ItemsRepeater.Layout>
+                                    <ItemsRepeater.ItemTemplate>
+                                        <!-- "Season 1", "Specials"; the films' one group has no title. -->
+                                        <DataTemplate x:DataType="downloads:DownloadGroup">
+                                            <Grid>
+                                                <StackPanel Spacing="12">
+                                                    <TextBlock Text="{x:Bind Title}" Visibility="{x:Bind views:DownloadsPage.HasText(Title)}"
+                                                               FontFamily="{StaticResource SiloFontSemiBold}" FontWeight="SemiBold" FontSize="14"
+                                                               Foreground="{StaticResource SiloMutedBrush}" AutomationProperties.HeadingLevel="Level3" />
+                                                    <ItemsRepeater ItemsSource="{x:Bind Rows}">
+                                                        <ItemsRepeater.Layout>
+                                                            <StackLayout Spacing="12" />
+                                                        </ItemsRepeater.Layout>
+                                                        <ItemsRepeater.ItemTemplate>
+                                                            <DataTemplate x:DataType="downloads:DownloadRowViewModel">
+                                                                <Grid ColumnSpacing="16">
+                                                                    <Grid.ColumnDefinitions>
+                                                                        <ColumnDefinition Width="*" />
+                                                                        <ColumnDefinition Width="80" />
+                                                                        <ColumnDefinition Width="34" />
+                                                                        <ColumnDefinition Width="34" />
+                                                                    </Grid.ColumnDefinitions>
+                                                                    <!-- The row opens the film's or the episode's page. -->
+                                                                    <Button x:Name="OpenButton" Style="{StaticResource SiloCardButtonStyle}" FocusVisualMargin="-4"
+                                                                            Command="{x:Bind OpenCommand}"
+                                                                            AutomationProperties.Name="{x:Bind views:DownloadsPage.RowName(Title, Detail, StatusText), Mode=OneWay}">
+                                                                        <Grid ColumnSpacing="16">
+                                                                            <Grid.ColumnDefinitions>
+                                                                                <ColumnDefinition Width="Auto" />
+                                                                                <ColumnDefinition Width="*" />
+                                                                            </Grid.ColumnDefinitions>
+                                                                            <!-- A film's poster (60 x 90) or an episode's still (96 x 54), from this PC. -->
+                                                                            <Border Width="{x:Bind views:DownloadsPage.ArtWidth(IsEpisode), Mode=OneWay}"
+                                                                                    Height="{x:Bind views:DownloadsPage.ArtHeight(IsEpisode), Mode=OneWay}"
+                                                                                    CornerRadius="8" Background="{StaticResource SiloSurfaceRaisedBrush}" VerticalAlignment="Center">
+                                                                                <Grid>
+                                                                                    <FontIcon Glyph="{x:Bind views:DownloadsPage.ArtGlyph(IsEpisode), Mode=OneWay}" FontSize="18"
+                                                                                              Foreground="{StaticResource SiloMutedBrush}" AutomationProperties.AccessibilityView="Raw" />
+                                                                                    <Image Source="{x:Bind views:DownloadsPage.Art(PosterPath, IsEpisode), Mode=OneWay}"
+                                                                                           Stretch="UniformToFill" AutomationProperties.AccessibilityView="Raw" />
+                                                                                </Grid>
+                                                                            </Border>
+                                                                            <StackPanel Grid.Column="1" Spacing="3" VerticalAlignment="Center">
+                                                                                <TextBlock Text="{x:Bind Title, Mode=OneWay}" FontFamily="{StaticResource SiloFontSemiBold}"
+                                                                                           FontWeight="SemiBold" FontSize="15" Foreground="{StaticResource SiloForegroundBrush}"
+                                                                                           TextTrimming="CharacterEllipsis" />
+                                                                                <TextBlock Text="{x:Bind Detail, Mode=OneWay}" Visibility="{x:Bind views:DownloadsPage.HasText(Detail), Mode=OneWay}"
+                                                                                           FontSize="13" Foreground="{StaticResource SiloForegroundBrush}" TextTrimming="CharacterEllipsis" />
+                                                                                <TextBlock Text="{x:Bind StatusText, Mode=OneWay}" FontSize="13" Foreground="{StaticResource SiloMutedBrush}"
+                                                                                           TextTrimming="CharacterEllipsis" />
+                                                                                <ProgressBar Margin="0,5,0,0" MaxWidth="320" HorizontalAlignment="Stretch" Height="3" MinHeight="3"
+                                                                                             CornerRadius="2" Maximum="1" Value="{x:Bind Progress, Mode=OneWay}"
+                                                                                             Foreground="{StaticResource SiloPrimaryBrush}" Background="#33FFFFFF"
+                                                                                             Visibility="{x:Bind ShowsProgress, Mode=OneWay}" AutomationProperties.Name="Progress" />
+                                                                            </StackPanel>
+                                                                        </Grid>
+                                                                    </Button>
+                                                                    <TextBlock Grid.Column="1" Text="{x:Bind SizeText, Mode=OneWay}" FontSize="13" Foreground="{StaticResource SiloMutedBrush}"
+                                                                               HorizontalAlignment="Right" VerticalAlignment="Center" />
+                                                                    <!-- Pause, Resume or Retry: one button that stays while its action changes. -->
+                                                                    <Button Grid.Column="2" Style="{StaticResource DownloadIconButtonStyle}" VerticalAlignment="Center"
+                                                                            Command="{x:Bind PrimaryActionCommand}" Visibility="{x:Bind HasPrimaryAction, Mode=OneWay}"
+                                                                            ToolTipService.ToolTip="{x:Bind PrimaryActionLabel, Mode=OneWay}"
+                                                                            AutomationProperties.Name="{x:Bind PrimaryActionLabel, Mode=OneWay}" Loaded="OnPrimaryButtonLoaded">
+                                                                        <FontIcon Glyph="{x:Bind views:DownloadsPage.ActionGlyph(PrimaryAction), Mode=OneWay}" FontSize="13" />
+                                                                    </Button>
+                                                                    <Button Grid.Column="3" Style="{StaticResource DownloadIconButtonStyle}" VerticalAlignment="Center"
+                                                                            Tag="{x:Bind}" Click="OnDeleteClick" ToolTipService.ToolTip="Delete" AutomationProperties.Name="Delete">
+                                                                        <FontIcon Glyph="&#xE74D;" FontSize="13" />
+                                                                    </Button>
+                                                                </Grid>
+                                                            </DataTemplate>
+                                                        </ItemsRepeater.ItemTemplate>
+                                                    </ItemsRepeater>
+                                                </StackPanel>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsRepeater.ItemTemplate>
+                                </ItemsRepeater>
+                            </StackPanel>
+                        </Grid>
+                    </DataTemplate>
+                </ItemsRepeater.ItemTemplate>
+            </ItemsRepeater>
+        </StackPanel>
+    </ScrollViewer>
+</Page>
