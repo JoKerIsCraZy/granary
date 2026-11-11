@@ -47,6 +47,12 @@ public interface IPlaybackDevicePreferences
     PlayerVolume? Volume { get; }
 
     /// <summary>
+    /// The player was in full screen when it was last left on this PC, so the next title opens there again
+    /// (<see cref="Playback.PlayerFullScreen"/>); off by default.
+    /// </summary>
+    bool PlayerFullScreen { get; }
+
+    /// <summary>
     /// This PC's Sleep timer switch, from before Settings → Playback → Player buttons, was turned off: the editor takes it
     /// over once (<see cref="PlayerButtonsLayout"/>), which then drops it (<see cref="ForgetSleepTimerSwitchAsync"/>).
     /// </summary>
@@ -70,6 +76,8 @@ public interface IPlaybackDevicePreferences
 
     /// <summary>Saves <see cref="Volume"/>, its level brought into 0 to 100 first (full when it is not a number).</summary>
     Task SetVolumeAsync(PlayerVolume volume);
+
+    Task SetPlayerFullScreenAsync(bool fullScreen);
 
     /// <summary>The player buttons editor has taken the Sleep timer switch over: it goes from the file.</summary>
     Task ForgetSleepTimerSwitchAsync();
@@ -97,12 +105,13 @@ public sealed record PlayerVolume(double Percent, bool IsMuted);
 /// <summary>
 /// <see cref="IPlaybackDevicePreferences"/> in <c>playback-device.json</c> in the data directory
 /// (<c>{ "decodes_in_software": true, "up_down": "volume", "time_left": true, "passout_threshold": 5,
-/// "resume_rewind_seconds": 7, "discord_status": true, "volume": 40, "muted": false }</c>). Without the file, or with one
-/// that cannot be read, direct play needs the GPU, Up and Down show the controls and menus, the player's time shows the
-/// duration, the player waits after three episodes, a resume lands on the saved point, Discord's status stays as it is and
-/// the player keeps mpv's own volume, as by default; a value it does not know, or one an older file lacks, is the default.
-/// A volume out of range is brought into it; one that is not a number, or a mute that is not true or false, is as if it were
-/// not there, and with only one of volume and mute the other is full or not muted. A choice that cannot be written is
+/// "resume_rewind_seconds": 7, "discord_status": true, "volume": 40, "muted": false, "player_full_screen": true }</c>).
+/// Without the file, or with one that cannot be read, direct play needs the GPU, Up and Down show the controls and menus,
+/// the player's time shows the duration, the player waits after three episodes, a resume lands on the saved point,
+/// Discord's status stays as it is, the player keeps mpv's own volume and opens in a window, as by default; a value it does
+/// not know, or one an older file lacks, is the default. A volume out of range is brought into it; one that is not a
+/// number, or a mute or full screen that is not true or false, is as if it were not there, and with only one of volume and
+/// mute the other is full or not muted. A choice that cannot be written is
 /// logged, and still holds for this run. Files are written off the caller's thread, which is the UI's. The Sleep timer
 /// switch from before the player buttons editor (<c>"sleep_timer_button": false</c>) is read and written back as it was,
 /// until the editor has taken it over.
@@ -125,6 +134,7 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
     private volatile int _resumeRewindSeconds;
     private volatile bool _discordStatus;
     private volatile PlayerVolume? _volume;
+    private volatile bool _playerFullScreen;
     // The file had the Sleep timer switch turned off, and the player buttons editor has not taken it over yet.
     private volatile bool _sleepTimerSwitchOff;
     private Task _latestSave = Task.CompletedTask;
@@ -148,6 +158,7 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
         _volume = file is { Volume: not null } or { Muted: not null }
             ? new PlayerVolume(VolumeLevel(file.Volume ?? FullVolume), file.Muted == true)
             : null;
+        _playerFullScreen = file?.PlayerFullScreen == true;
         // Off only when turned off: a file from before the switch, or without it, shows the button.
         _sleepTimerSwitchOff = file?.SleepTimerButton == false;
     }
@@ -169,6 +180,8 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
     public event EventHandler? DiscordStatusChanged;
 
     public PlayerVolume? Volume => _volume;
+
+    public bool PlayerFullScreen => _playerFullScreen;
 
     public bool SleepTimerSwitchOff => _sleepTimerSwitchOff;
 
@@ -230,6 +243,12 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
         return QueueSave();
     }
 
+    public Task SetPlayerFullScreenAsync(bool fullScreen)
+    {
+        _playerFullScreen = fullScreen;
+        return QueueSave();
+    }
+
     // mpv's volume runs to 100 here, as the player's slider does; a level that is no number is full, mpv's own.
     private static double VolumeLevel(double percent) => double.IsNaN(percent) ? FullVolume : Math.Clamp(percent, 0, FullVolume);
 
@@ -287,6 +306,7 @@ public sealed class JsonPlaybackDevicePreferences : IPlaybackDevicePreferences
                     DiscordStatus = _discordStatus,
                     Volume = _volume?.Percent,
                     Muted = _volume?.IsMuted,
+                    PlayerFullScreen = _playerFullScreen,
                     SleepTimerButton = _sleepTimerSwitchOff ? false : null,
                 };
                 await JsonSerializer.SerializeAsync(stream, file, PlaybackDeviceJsonContext.Default.PlaybackDeviceFile).ConfigureAwait(false);
@@ -330,6 +350,10 @@ internal sealed record PlaybackDeviceFile(bool? DecodesInSoftware, string? UpDow
     [JsonConverter(typeof(AnyFlagConverter))]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? Muted { get; init; }
+
+    // Read leniently too: missing, or anything but true or false, opens the player in a window.
+    [JsonConverter(typeof(AnyFlagConverter))]
+    public bool? PlayerFullScreen { get; init; }
 
     // Only in a file that had it: Settings no longer sets it.
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

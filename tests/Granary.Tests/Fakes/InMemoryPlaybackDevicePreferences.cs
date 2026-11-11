@@ -82,6 +82,17 @@ internal sealed class InMemoryPlaybackDevicePreferences : IPlaybackDevicePrefere
         return Task.CompletedTask;
     }
 
+    public bool PlayerFullScreen { get; set; }
+
+    public List<bool> SavedPlayerFullScreen { get; } = [];
+
+    public Task SetPlayerFullScreenAsync(bool fullScreen)
+    {
+        PlayerFullScreen = fullScreen;
+        SavedPlayerFullScreen.Add(fullScreen);
+        return Task.CompletedTask;
+    }
+
     public bool SleepTimerSwitchOff { get; set; }
 
     /// <summary>How often the Sleep timer switch was dropped from the file.</summary>

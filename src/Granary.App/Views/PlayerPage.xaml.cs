@@ -47,6 +47,8 @@ public sealed partial class PlayerPage : Page
     private PlayerKeepAwake? _keepAwake;
     // The window's full screen and mini view, the app's too: the player toggles them, and the window keeps them.
     private readonly WindowModeService _modes;
+    // Whether a title opens the player in full screen, as it was last left on this PC.
+    private readonly PlayerFullScreen _fullScreen;
     private readonly IPlaybackDevicePreferences _devicePreferences;
 
     public PlayerPage()
@@ -54,6 +56,7 @@ public sealed partial class PlayerPage : Page
         // Made outside the container: a disposable transient from the root provider would be kept until the app exits.
         ViewModel = ActivatorUtilities.CreateInstance<PlayerViewModel>(App.Services);
         _modes = App.Services.GetRequiredService<WindowModeService>();
+        _fullScreen = App.Services.GetRequiredService<PlayerFullScreen>();
         _devicePreferences = App.Services.GetRequiredService<IPlaybackDevicePreferences>();
         InitializeComponent();
         VideoHost.VideoOutput = App.Services.GetRequiredService<ICompositionVideoOutput>();
@@ -94,17 +97,28 @@ public sealed partial class PlayerPage : Page
 
     private bool HasTransport => ViewModel.Phase is PlayerPhase.Playing or PlayerPhase.Ended;
 
-    /// <summary>Plays <paramref name="request"/>; the window shows the page over everything first.</summary>
-    public void Start(PlayRequest request) => _ = ViewModel.StartAsync(request);
+    /// <summary>
+    /// Plays <paramref name="request"/>, a title opened from the app (a page, a Watch Party, <c>--play</c>); the window shows
+    /// the page over everything first, and goes full screen when the player was in full screen as it was last left.
+    /// </summary>
+    public void Start(PlayRequest request)
+    {
+        if (_fullScreen.OpensInFullScreen)
+        {
+            _modes.SetFullScreen(true);
+        }
+        _ = ViewModel.StartAsync(request);
+    }
 
     /// <summary>
     /// Ends playback as the window takes the player away: Exit, Stop, Alt+Left, the mouse back button, Ctrl+K or a session
     /// change; the sound must not go on behind another page nor the server session stay open. The mini view ends with
-    /// it; full screen is the window's and stays as the viewer set it.
+    /// it; full screen is the window's and stays as the viewer set it, and the next title opens as the player is left.
     /// </summary>
     public void Leave()
     {
         SetMiniView(false);
+        _fullScreen.Left(_modes.IsFullScreen);
         ViewModel.Leave();
     }
 
@@ -481,7 +495,12 @@ public sealed partial class PlayerPage : Page
     // returns to full screen or to the window, wherever it was opened from.
     private void SetMiniView(bool mini) => _modes.SetMiniView(mini);
 
-    private void OnWindowModeChanged(object? sender, EventArgs e) => ShowWindowMode();
+    // A change after an Esc out of full screen is the viewer's choice for the next title.
+    private void OnWindowModeChanged(object? sender, EventArgs e)
+    {
+        _fullScreen.ForgetEscape();
+        ShowWindowMode();
+    }
 
     private void ShowWindowMode()
     {

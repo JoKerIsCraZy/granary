@@ -194,10 +194,12 @@ public sealed partial class PlayerPage
                     break;
                 }
                 // Full screen is the whole window's: Esc leaves it for the app too. A remote's Back closes the player and
-                // keeps full screen, as a media PC on a TV runs in it.
+                // keeps full screen, as a media PC on a TV runs in it. Esc on its way out of the player: the next title
+                // still opens in full screen once the next Esc leaves the player (PlayerFullScreen).
                 if (_modes.IsFullScreen && e.Key == VirtualKey.Escape)
                 {
                     _modes.SetFullScreen(false);
+                    _fullScreen.EscapedFullScreen();
                 }
                 else if (_modes.IsMiniView)
                 {

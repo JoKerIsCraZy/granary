@@ -930,6 +930,13 @@ screen all go through `WindowModeService` (App, a singleton that MainWindow atta
   window at 1440 × 900 px. Unreadable counts a file over 64 KiB, which is not read at all, and a place out of range:
   more than 65,536 px out or across, or a scale outside 0.5 to 5 (Windows' 100 % to 500 %, with room). The same check
   keeps such a place from being written.
+- **The player's full screen** across titles (Core's `PlayerFullScreen`, unit-tested): as the player is left
+  (`PlayerPage.Leave`, after the mini view ended) it keeps whether the window is full screen, in `playback-device.json`
+  (`player_full_screen`, `IPlaybackDevicePreferences.PlayerFullScreen`, written only when it changes), and
+  `PlayerPage.Start`, which only a title opened from the app reaches (`MainWindow.Open`: not the bar brought back, the
+  mini view left or the next episode), asks `WindowModeService` for full screen when it is set. An Esc that took the full
+  player out of full screen counts as full screen for the leave right after it; any other window change, or minimizing,
+  forgets it. Leaving changes nothing about the window.
 - **Changed** tells MainWindow (its title bar buttons), the player (its `IsFullScreen` and `IsMiniView`) and the trailer.
 - **Drag area**: the title bar's own buttons lie outside `SetTitleBar`'s element, so they take clicks. In full screen the
   window has no drag area at all (`InputNonClientPointerSource`'s caption region cleared); WinUI does not set it again
