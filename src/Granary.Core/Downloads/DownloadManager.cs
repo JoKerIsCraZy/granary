@@ -33,7 +33,8 @@ public enum DownloadStartResult
 /// <summary>A season to download, one episode at a time.</summary>
 public sealed record SeasonDownloadRequest(string SeriesId, string SeriesTitle, int SeasonNumber, IReadOnlyList<SeasonEpisode> Episodes, string Quality);
 
-public sealed record SeasonEpisode(string EpisodeId, int EpisodeNumber, string Title);
+/// <param name="MediaFileId">The file to download, the one the dialog's size counted; null lets the server choose.</param>
+public sealed record SeasonEpisode(string EpisodeId, int EpisodeNumber, string Title, string? MediaFileId = null);
 
 /// <summary>How many episodes of a season started, were there already, or could not start.</summary>
 public sealed record SeasonStartResult(int Started, int AlreadyThere, int Failed);

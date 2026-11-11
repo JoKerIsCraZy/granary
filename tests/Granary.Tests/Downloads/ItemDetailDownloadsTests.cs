@@ -202,6 +202,8 @@ public sealed class ItemDetailDownloadsTests : IAsyncDisposable
         var bodies = CreateBodies();
         Assert.Equal(["ep_1", EpisodeId], bodies.Select(b => b.GetProperty("episode_id").GetString()));
         Assert.All(bodies, b => Assert.Equal("sr_1", b.GetProperty("content_id").GetString()));
+        // The files the size counted are the ones asked for: each episode's first file (1 GB and 2 GB).
+        Assert.Equal(["4570", "4575"], bodies.Select(b => b.GetProperty("media_file_id").GetString()));
         Assert.Equal("Chapter One", _h.Find("dl_1")!.Record.Title);
     }
 

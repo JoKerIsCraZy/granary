@@ -85,7 +85,7 @@ public sealed partial class DownloadManager
             DownloadStartResult result;
             try
             {
-                result = await StartAsync(new DownloadRequest(episode.EpisodeId, request.SeriesId, null, request.Quality, episode.Title,
+                result = await StartAsync(new DownloadRequest(episode.EpisodeId, request.SeriesId, episode.MediaFileId, request.Quality, episode.Title,
                     request.SeriesTitle, request.SeasonNumber, episode.EpisodeNumber), cancellationToken).ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)

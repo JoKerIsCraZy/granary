@@ -203,7 +203,8 @@ public sealed partial class ItemDetailViewModel : ICardMenuSource
         item.Runtime is { } minutes && minutes > 0 ? minutes * 60 : (int)Math.Clamp(Pickers.Version?.Duration ?? 0, 0, int.MaxValue);
 
     // The season's episodes that have a file the server can read and are not on this PC yet, each one download, so the dialog
-    // counts and sizes what starts; the size is their first files'. None left: no Download season.
+    // counts and sizes what starts: each one asks for its first file, the one its size counts, as an episode's own Download
+    // does. None left: no Download season.
     private (SeasonDownloadRequest Request, string Title, long KnownBytes)? SeasonOffer(DownloadActions downloads, CatalogItemDetail item)
     {
         if (item.SeriesId is not { Length: > 0 } seriesId || item.SeasonNumber is not { } number)
@@ -218,7 +219,7 @@ public sealed partial class ItemDetailViewModel : ICardMenuSource
         }
         string seriesTitle = !string.IsNullOrWhiteSpace(item.SeriesTitle) ? item.SeriesTitle : item.Title;
         var request = new SeasonDownloadRequest(seriesId, seriesTitle, number,
-            [.. episodes.Select(e => new SeasonEpisode(e.ContentId, e.EpisodeNumber, e.Title))], DownloadQualities.Original);
+            [.. episodes.Select(e => new SeasonEpisode(e.ContentId, e.EpisodeNumber, e.Title, UsableFiles(e)[0].FileId))], DownloadQualities.Original);
         return (request, item.Title, episodes.Sum(e => Math.Max(0, UsableFiles(e)[0].FileSize)));
     }
 
