@@ -314,6 +314,31 @@ Granary is moving its texts into Silo's translation catalogs, used by key as Sil
 by one with their English unchanged, and the other languages come on once every area has, so nobody sees a
 half-translated Granary. All of it is in `src/Granary.Core/Texts`.
 
+- **Catalogs** (`Catalogs/`, embedded in Granary.Core, one file per language tag; `TextCatalog`):
+  - `web/<tag>.json` holds the web's compiled catalogs (`web/src/locales/<tag>.json`), unchanged per key and trimmed
+    to the keys Granary uses (`web-keys.txt`): each key maps to formatjs' compiled message, an array of elements.
+  - `granary/<tag>.json` holds Granary's own texts: `granary.<area>.<thing>` keys with ICU MessageFormat source, parsed
+    by formatjs' rules into the same elements (`IcuMessageParser`). English is their source; `@`-keys, as in an ARB
+    file, are notes for translators and are skipped. A Granary key never takes the place of a web key.
+  - A missing file is an empty catalog. A message that cannot be read, such as an ordinal plural or a number with a
+    style, which no upstream message has needed, is left out and logged when the language is loaded.
+- **Formatting** (`MessageFormatter`, `PluralRules`) gives what react-intl gives for the same message: `{name}`; a
+  number in the language's culture, without grouping in `{n}` and grouped in `#` and `{n, number}` (in Spanish from five
+  digits on, as CLDR and the web have it); `select`; `plural`
+  with CLDR's cardinal rules for the eight languages, an exact value (`=0`) first and the offset applied; and rich-text
+  tags, whose children show as plain text (`AppText.Runs` keeps the tags, for inlines). In Arabic, printed values are
+  wrapped in Unicode isolates as on the web, and numbers keep Latin digits and marks for now.
+- **Fallback** (`TextLanguage`): a message the language lacks comes in English with English rules. A key English lacks
+  too shows as `[key]` in debug builds and as nothing in release, and each problem is logged once. A lookup never
+  throws.
+- **The API** (`AppText`): in XAML a static function with a constant key,
+  `Text="{x:Bind t:AppText.Get('common.cancel')}"` with `xmlns:t="using:Granary.Core.Texts"`, and with up to two values
+  `AppText.Get('key', 'name', ViewModel.Value)` (x:Bind tells overloads apart only by their number of arguments); in C#
+  `AppText.Get(key, ("count", n), …)` and `AppText.Runs(…)`. The class is not called `Texts`: inside `Granary.Core`
+  that name is the namespace. The process has one language, which the app applies (`AppText.Apply`); until then, and
+  in tests, it is English. A test that needs another language calls `AppText.Use(language)`, which holds for its own
+  async flow only, so the tests xUnit runs beside it keep English; `AppTextTests` keeps `AppText.Apply` out of
+  everything but the app. Text that is stored, sent or compared stays English, as Silo's rule is.
 - **Choosing the language** (`AppLanguage.Resolve`): the profile's `ui.app_language`, then Windows' preferred languages,
   then English, each matched only against the enabled languages (`AppLanguage.Enabled`, English for now), as in Silo's
   apps. Matching follows the web's `lib/appLocale.ts`: a tag selects the shipped language (`AppLanguage.Shipped`: en,
