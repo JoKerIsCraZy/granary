@@ -37,17 +37,15 @@ public sealed class PlayerFullScreen(IPlaybackDevicePreferences preferences, Tim
 
     /// <summary>
     /// The player was left, from the full player or the bar, as the window closes too, with the window in the viewer's full
-    /// screen or not; kept for the next title only when it changed.
+    /// screen or not; kept for the next title only when it changed. Hands back that save, which never fails (one that does
+    /// not work is logged, and the choice holds for this run), so closing Granary can wait for it; done at once when
+    /// nothing changed.
     /// </summary>
-    public void Left(bool isFullScreen)
+    public Task Left(bool isFullScreen)
     {
         bool escaping = _escapedAt is { } at && time.GetElapsedTime(at) <= EscapeWindow;
         _escapedAt = null;
         bool fullScreen = isFullScreen || escaping;
-        if (fullScreen != preferences.PlayerFullScreen)
-        {
-            // Never fails: a save that does not work is logged, and the choice holds for this run.
-            _ = preferences.SetPlayerFullScreenAsync(fullScreen);
-        }
+        return fullScreen == preferences.PlayerFullScreen ? Task.CompletedTask : preferences.SetPlayerFullScreenAsync(fullScreen);
     }
 }

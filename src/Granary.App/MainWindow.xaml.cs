@@ -633,8 +633,12 @@ public sealed partial class MainWindow : Window
         {
             return;
         }
-        // Only playback ends: the window closes as it is, full screen or not, which the next title opens in.
-        _player?.LeaveWithWindow();
+        // Only playback ends: the window closes as it is, full screen or not, which the next title opens in; that choice's
+        // save is waited for with the stops.
+        if (_player is { } player)
+        {
+            _stops.Track(player.LeaveWithWindow());
+        }
         // So does a Watch Party's socket, with a close the room sees at once rather than a connection that times out.
         _stops.Track(_room.LeaveAsync());
         // And an audio delay changed just before, which would otherwise be saved once it settled, with every profile's saves

@@ -40,15 +40,30 @@ public sealed class PlayerFullScreenTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void LeftAsBefore_WritesNothing(bool isFullScreen)
+    public void LeftAsBefore_WritesNothing_AndHasNothingToWaitFor(bool isFullScreen)
     {
         _preferences.PlayerFullScreen = isFullScreen;
         var fullScreen = Create();
 
-        fullScreen.Left(isFullScreen);
+        var save = fullScreen.Left(isFullScreen);
 
         Assert.Equal(isFullScreen, fullScreen.OpensInFullScreen);
         Assert.Empty(_preferences.SavedPlayerFullScreen);
+        Assert.True(save.IsCompleted);
+    }
+
+    [Fact]
+    public void AChangedChoice_HandsBackItsSave_SoClosingGranaryCanWaitForIt()
+    {
+        var written = new TaskCompletionSource();
+        _preferences.PlayerFullScreenSave = written.Task;
+        var fullScreen = Create();
+
+        var save = fullScreen.Left(isFullScreen: true);
+
+        Assert.False(save.IsCompleted);
+        written.SetResult();
+        Assert.True(save.IsCompleted);
     }
 
     [Fact]

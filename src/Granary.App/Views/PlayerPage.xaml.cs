@@ -118,18 +118,21 @@ public sealed partial class PlayerPage : Page
     public void Leave()
     {
         SetMiniView(false);
-        _fullScreen.Left(_modes.IsViewersFullScreen);
+        // Saved as Granary goes on; closing it later waits for this PC's choices anyway.
+        _ = _fullScreen.Left(_modes.IsViewersFullScreen);
         ViewModel.Leave();
     }
 
     /// <summary>
     /// Ends playback as the window closes: the window stays as it is, the mini view included, and the next title opens as
-    /// the player is left here (the mini view counting as the full screen it goes back to).
+    /// the player is left here (the mini view counting as the full screen it goes back to). Hands back that choice's save,
+    /// for the window to wait for with the stops.
     /// </summary>
-    public void LeaveWithWindow()
+    public Task LeaveWithWindow()
     {
-        _fullScreen.Left(_modes.IsViewersFullScreen);
+        var save = _fullScreen.Left(_modes.IsViewersFullScreen);
         ViewModel.Leave();
+        return save;
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)

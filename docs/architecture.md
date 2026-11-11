@@ -943,7 +943,8 @@ screen all go through `WindowModeService` (App, a singleton that MainWindow atta
   keeps such a place from being written.
 - **The player's full screen** across titles (Core's `PlayerFullScreen`, unit-tested): as the player is left
   (`PlayerPage.Leave`, after the mini view ended, and `PlayerPage.LeaveWithWindow` as the window closes, which leaves the
-  mini view as it is) it keeps whether the window is in the viewer's full screen (`WindowModes.IsViewersFullScreen`: the
+  mini view as it is and hands back the save, which `MainWindow.OnClosing` waits for with the playback stops,
+  `PlaybackStops.Track`) it keeps whether the window is in the viewer's full screen (`WindowModes.IsViewersFullScreen`: the
   mini view opened from full screen counts, a trailer's own full screen does not), in `playback-device.json`
   (`player_full_screen`, `IPlaybackDevicePreferences.PlayerFullScreen`, written only when it changes), and
   `PlayerPage.Start`, which only a title opened from the app reaches (`MainWindow.Open`: not the bar brought back, the
