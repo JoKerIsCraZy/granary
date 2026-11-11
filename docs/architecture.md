@@ -1350,7 +1350,9 @@ The view models of the sign-out paths take it (optional, so they work without it
   (403, 404, …) does not stop the others; no answer, a sign-in the server no longer takes (401), a busy server (429), a
   profile switch or the end of the budget stops them all, since the next ones would fare no better. Then the sign-out, once the index
   without them is written or after `StoreBudget` (5 s) at most: an index that is not written in time (a disk or a write before it that does not answer) is
-  logged and written once it can be, and the sign-out goes on. The folders go after the index, beside the sign-out
+  logged and written once it can be, and the sign-out goes on. If Granary closes before that write gets through, the index
+  on disk still names the downloads, and they are back at the next start: clears hold only for the run. This is accepted;
+  the next sign-out of that account takes them along. The folders go after the index, beside the sign-out
   (`DownloadStore.FolderWork`), so a share that does not answer holds nothing up; a folder that cannot go yet is tried again
   as any removed download's. What the sign-out does not wait for, the removal after a failure on the way and the folders'
   work, logs its own failure. Downloads that cannot even be read within `StoreBudget` go once they are read; the server hears
