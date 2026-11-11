@@ -29,6 +29,9 @@ public sealed record DownloadSummary(int? Count, long? Bytes);
 public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISessionManager session, ICredentialStore credentials,
     IConfirmation confirmation, TimeProvider time, ILogger<DownloadSignOut> logger)
 {
+    /// <summary>What a question before signing out says when the account signed in is not known: its downloads stay.</summary>
+    public const string KeptNote = "Downloads on this PC are kept.";
+
     /// <summary>The longest the server's deletes may hold a sign-out up; the files go whether it answered or not.</summary>
     public static readonly TimeSpan DeleteBudget = TimeSpan.FromSeconds(10);
 
@@ -105,7 +108,7 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
 
     /// <summary>
     /// The account signed in on a server: the session's on the active one, else the one its saved sign-in names; null when
-    /// none is known, which stands for every account there.
+    /// none is known. A sign-out then takes no downloads along (removing the server still takes every account's).
     /// </summary>
     public async Task<string?> AccountOfAsync(string serverEntryId, CancellationToken cancellationToken)
     {
@@ -118,8 +121,20 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
     }
 
     /// <summary>
+    /// What a question before signing out of a server says of the downloads, for the account signed in there
+    /// (<see cref="AccountOfAsync"/>): the <see cref="Note"/> of that account's, or, when the account is not known,
+    /// <see cref="KeptNote"/> while the server has any here; null when there is nothing to say.
+    /// </summary>
+    public async Task<string?> SignOutNoteAsync(string serverEntryId, string? accountId, CancellationToken cancellationToken)
+    {
+        var summary = await SummarizeAsync(serverEntryId, accountId, cancellationToken).ConfigureAwait(false);
+        return accountId is not null ? Note(summary) : summary.Count is 0 ? null : KeptNote;
+    }
+
+    /// <summary>
     /// Asks before signing out of <paramref name="server"/> when its account has downloads on this PC ("Sign out of NAS?");
-    /// true without asking when it has none. Call it on the UI thread: the question is shown from there.
+    /// true without asking when it has none, or when the account is not known (none go then). Call it on the UI thread: the
+    /// question is shown from there.
     /// </summary>
     public async Task<bool> ConfirmSignOutAsync(ServerEntry server, CancellationToken cancellationToken)
     {
@@ -162,8 +177,9 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
 
     /// <summary>
     /// A sign-out the viewer asked for: asks when the account has downloads here (<see cref="ConfirmSignOutAsync"/>), takes
-    /// them along (<see cref="ClearAsync"/>), then signs out of <paramref name="server"/>. False when the viewer said no, and
-    /// nothing changed. Call it on the UI thread.
+    /// them along (<see cref="ClearAsync"/>), then signs out of <paramref name="server"/>. A sign-in whose account is not known
+    /// takes none along: those on that server are other accounts', as one whose sign-in expired. False when the viewer said
+    /// no, and nothing changed. Call it on the UI thread.
     /// </summary>
     public async Task<bool> SignOutAsync(ServerEntry server, CancellationToken cancellationToken)
     {
@@ -174,13 +190,21 @@ public sealed class DownloadSignOut(DownloadStore store, DownloadsApi api, ISess
         {
             return false;
         }
-        await ClearAsync(server.Id, accountId, cancellationToken);
+        if (accountId is not null)
+        {
+            await ClearAsync(server.Id, accountId, cancellationToken);
+        }
+        else
+        {
+            logger.LogInformation("The account signed in on server {ServerEntryId} is not known; the downloads there stay", server.Id);
+        }
         await session.SignOutAsync(server.Id, cancellationToken);
         return true;
     }
 
     private async Task<bool> ConfirmAsync(ServerEntry server, string? accountId, CancellationToken cancellationToken) =>
-        Note(await SummarizeAsync(server.Id, accountId, cancellationToken)) is not { } note
+        accountId is null
+        || Note(await SummarizeAsync(server.Id, accountId, cancellationToken)) is not { } note
         || await confirmation.AskAsync($"Sign out of {server.Name}?", note, "Sign out");
 
     private async Task<bool> LoadWithinAsync(TimeSpan budget, CancellationToken cancellationToken)

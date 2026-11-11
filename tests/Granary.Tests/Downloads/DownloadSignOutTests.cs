@@ -180,6 +180,22 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task SigningOutWhereTheAccountIsNotKnown_KeepsEveryAccountsDownloadsThere()
+    {
+        var expired = await KeptAsync("dl_b", new DownloadScope("srv2", "3", "7"));
+        using var servers = await ServersAsync();
+        await _credentials.SetAsync("srv2", SignedIn("2") with { Account = null }, Token);
+
+        await servers.SignOutCommand.ExecuteAsync(Item(servers, "srv2"));
+        await _h.Store.FolderWork;
+
+        Assert.Empty(_confirm.Asked);
+        Assert.True(File.Exists(expired.PartPath));
+        Assert.Equal(["dl_b"], Kept);
+        Assert.Equal(["sign-out:srv2"], _h.Session.Calls);
+    }
+
+    [Fact]
     public async Task TheAccount_IsTheSessionsOrTheSavedSignIns()
     {
         var signOut = NewSignOut();

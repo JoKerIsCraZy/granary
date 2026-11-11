@@ -285,6 +285,33 @@ public sealed class DevicesViewModelTests
     }
 
     [Fact]
+    public async Task SigningOutThisDevice_ForAnAccountNotKnown_KeepsTheDownloads_AndSaysSo()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        Everything();
+        await using var downloads = new DownloadHarness();
+        // Account 1's, kept from a sign-in that expired; this sign-in's account the server never named.
+        var kept = await downloads.AddAsync("dl_1", DownloadState.Completed);
+        _session.Account = null;
+        var credentials = new CredentialStore(new InMemorySecretStore(), downloads.Logs.For<CredentialStore>());
+        var signOut = new DownloadSignOut(downloads.Store, new DownloadsApi(_silo.Http, new FakeHttpClients(downloads.Hop), _time), _session,
+            credentials, _confirm, _time, downloads.Logs.For<DownloadSignOut>());
+        var page = Page(signOut);
+        await page.LoadAsync(ct);
+
+        await page.SignOutSessionCommand.ExecuteAsync(page.CurrentSession);
+        await downloads.Store.FolderWork;
+
+        Assert.Equal("You'll return to the sign-in screen. You can sign in again with the same password or sign-in provider.\n\n"
+            + "A video already playing may continue until its next request. Saved device settings are kept.\n\n"
+            + "Downloads on this PC are kept.", Assert.Single(_confirm.Asked).Message);
+        Assert.Single(downloads.Store.All);
+        Assert.True(Directory.Exists(kept.Folder));
+        Assert.Empty(_silo.SentTo(HttpMethod.Delete, "api/v2/downloads/dl_1"));
+        Assert.Equal(["sign-out:srv1"], _session.Calls);
+    }
+
+    [Fact]
     public async Task AfterAnotherServerIsPicked_SignOutSignsNothingOut_AndTheListsAreReadAgain()
     {
         Everything();

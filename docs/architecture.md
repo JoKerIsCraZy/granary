@@ -1326,8 +1326,11 @@ The view models of the sign-out paths take it (optional, so they work without it
   with it."). Removing a server takes every account's downloads there (`ClearAsync(server, null)`); the app asks before it
   removes one.
 - **The account.** On the active server it is the session's; on another, the one its saved sign-in names
-  (`AccountOfAsync`). None known stands for every account there. A sign-out reads it once, so the downloads it asked
-  about are the ones that go.
+  (`AccountOfAsync`). A sign-out reads it once, so the downloads it asked about are the ones that go. When none is known
+  (a sign-in whose account the server did not name), the sign-out takes no downloads along and asks nothing about them:
+  a session without an account keeps none, so those on that server are other accounts', as one whose sign-in expired.
+  Settings → Devices' question then ends with "Downloads on this PC are kept." while the server has any here
+  (`SignOutNoteAsync`). Only removing a server takes every account's downloads there.
 - **Order.** First the account's downloads are marked cleared (`MarkCleared`): a create that answers from then on keeps
   nothing, and the queue starts nothing more for them (see "The queue" and "Starting and deleting"). Then every matching
   download of every profile goes from this PC, whatever the server answers later: its row, index entry and deletes still

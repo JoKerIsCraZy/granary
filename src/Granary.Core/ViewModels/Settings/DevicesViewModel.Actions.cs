@@ -87,7 +87,8 @@ public sealed partial class DevicesViewModel
         {
             if (row.IsCurrent)
             {
-                if (_downloads is not null)
+                // An account that is not known takes no downloads along: the question said they stay.
+                if (_downloads is not null && accountId is not null)
                 {
                     await _downloads.ClearAsync(server.Id, accountId, CancellationToken.None);
                 }
@@ -244,7 +245,7 @@ public sealed partial class DevicesViewModel
     }
 
     // The account signed in on this PC and what the question adds of its downloads here ("\n\n1 download (1.5 GB) on this PC
-    // is deleted with it."); nothing without any.
+    // is deleted with it.", or that they are kept when the account is not known); nothing without any.
     private async Task<(string? AccountId, string Note)> DownloadsOfAsync(ServerEntry server)
     {
         if (_downloads is null)
@@ -252,7 +253,7 @@ public sealed partial class DevicesViewModel
             return (null, "");
         }
         string? accountId = await _downloads.AccountOfAsync(server.Id, CancellationToken.None);
-        string? note = DownloadSignOut.Note(await _downloads.SummarizeAsync(server.Id, accountId, CancellationToken.None));
+        string? note = await _downloads.SignOutNoteAsync(server.Id, accountId, CancellationToken.None);
         return (accountId, note is null ? "" : "\n\n" + note);
     }
 
