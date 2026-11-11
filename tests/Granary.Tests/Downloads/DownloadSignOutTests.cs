@@ -461,6 +461,34 @@ public sealed class DownloadSignOutTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task ACreateStartedWhileSigningOut_IsRefused_WithoutAskingTheServer()
+    {
+        await KeptAsync("dl_1");
+        var deleted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _h.Silo.On(HttpMethod.Delete, EntryPath("dl_1"), async () =>
+        {
+            await deleted.Task;
+            return await ScriptedSilo.NoContent()();
+        });
+        _h.Silo.On(HttpMethod.Post, ListPath, ScriptedSilo.Json(HttpStatusCode.Accepted,
+            DownloadPayloads.Page(null, DownloadPayloads.Entry("dl_2", "ready", episodeId: "ep_5"))));
+        var manager = _h.NewManager();
+        using var servers = await ServersAsync();
+
+        var signingOut = servers.SignOutCommand.ExecuteAsync(Item(servers, "srv1"));
+        await Until(() => DeletesSent.Count == 1, "the sign-out tells the server");
+        var started = await manager.StartAsync(NextEpisode, Token);
+        deleted.SetResult();
+        await signingOut;
+
+        Assert.Equal(DownloadStartResult.Unavailable, started);
+        Assert.Empty(_h.Silo.SentTo(HttpMethod.Post, ListPath));
+        Assert.Empty(_h.Store.All);
+        Assert.False(Directory.Exists(DownloadPaths.Folder(_h.Root, Scope7, "dl_2")));
+        Assert.Equal(["sign-out:srv1"], _h.Session.Calls);
+    }
+
+    [Fact]
     public async Task AFailedSignOut_LetsTheAccountsNewDownloadsRun()
     {
         await KeptAsync("dl_1");

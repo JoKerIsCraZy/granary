@@ -19,14 +19,21 @@ public sealed partial class DownloadManager
     /// Creates the server's entry for a film or an episode and keeps it, queued, or preparing while the server prepares a copy.
     /// A film's <c>content_id</c> is its own id; an episode's is its series, with the episode as <c>episode_id</c>. An entry
     /// that comes after a sign-out took the account's downloads off this PC is not kept (<see cref="DownloadStartResult.Failed"/>).
+    /// While the account is being signed out, nothing is created (<see cref="DownloadStartResult.Unavailable"/>).
     /// </summary>
     public async Task<DownloadStartResult> StartAsync(DownloadRequest request, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
-        // Taken before the scope: a sign-out from here on keeps whatever this create makes off this PC.
+        // Taken before the scope and the sign-out check: a sign-out from here on keeps whatever this create makes off this PC.
         long clears = _store.ClearGeneration;
         if (DownloadScope.Of(_session) is not { } scope || _session.ActiveServer is not { } server)
         {
+            return DownloadStartResult.Unavailable;
+        }
+        if (_store.IsClearPending(scope))
+        {
+            // Its download would be kept after the sign-out took the account's along, and stay behind it.
+            _logger.LogInformation("A download is not started while its account is being signed out");
             return DownloadStartResult.Unavailable;
         }
         var key = (scope, request.MediaItemId);

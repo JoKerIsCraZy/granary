@@ -1275,7 +1275,9 @@ client guide.
   server delete off the index in the same write. A create takes the store's `ClearGeneration` before anything else, and its
   entry is not kept when a sign-out cleared the account's downloads since (`AddUnlessClearedAsync`, checked in the same
   change that adds the row, so a sign-out either keeps it out or takes it with the rest): the start fails, nothing goes on
-  the disk, and the server's entry stays, as any entry of an account that signed out.
+  the disk, and the server's entry stays, as any entry of an account that signed out. While a sign-out of the account is
+  under way (`IsClearPending`, checked after the generation is taken), a start creates nothing and is `Unavailable`: its
+  download would be kept after the sign-out took the account's along, and stay behind as a row of a signed-out account.
 - **Seasons.** `StartSeasonAsync` sends one create per episode, in order, passing over the episodes this PC has or is
   fetching, and counts what started, what was there and what failed. It stops, with those counts, when it is cancelled or
   the profile it started for is no longer the active one.

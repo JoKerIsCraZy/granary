@@ -20,7 +20,10 @@ public enum DownloadStartResult
     /// <summary>It is on this PC or on its way already, or a press before this one is still creating it.</summary>
     AlreadyDownloading,
 
-    /// <summary>The server will not let this profile download it (403, 404, 501, or passed over).</summary>
+    /// <summary>
+    /// The server will not let this profile download it (403, 404, 501, or passed over), or no profile can download now: none
+    /// is signed in, or its account is being signed out.
+    /// </summary>
     Unavailable,
 
     /// <summary>The server could not be asked, or did not say what it made.</summary>
