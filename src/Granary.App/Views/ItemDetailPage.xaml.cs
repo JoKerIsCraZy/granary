@@ -11,19 +11,27 @@ using Microsoft.UI.Xaml.Navigation;
 
 namespace Granary.App.Views;
 
-/// <summary>Any catalog item; the navigation parameter is its content id (<see cref="Core.Abstractions.AppRoute.Item"/>).</summary>
-public sealed partial class ItemDetailPage : Page, IArrivalFocus
+/// <summary>
+/// Any catalog item; the navigation parameter is its content id (<see cref="Core.Abstractions.AppRoute.Item"/>). Its Download
+/// items follow the app's downloads only while it shows: from <see cref="OnNavigatedTo"/> until it is left or unloads, so the
+/// downloads, which live as long as the app, never hold it (<c>ItemDetailDownloadsTests</c>).
+/// </summary>
+public sealed partial class ItemDetailPage : Page, IArrivalFocus, ICardMenuHost
 {
     public ItemDetailPage()
     {
         // Transient and not disposable: the root provider does not keep it alive.
         ViewModel = App.Services.GetRequiredService<ItemDetailViewModel>();
         InitializeComponent();
+        Unloaded += OnUnloaded;
     }
 
     public ItemDetailViewModel ViewModel { get; }
 
     Control? IArrivalFocus.ArrivalFocus => Hero.ArrivalFocus;
+
+    // A season's episode cards get Download, or their download's status and Delete download, in their ⋯ menu.
+    ICardMenuSource? ICardMenuHost.CardMenu => ViewModel;
 
     /// <summary>A remote's Play anywhere on the page plays the title as its Play does; false while it cannot.</summary>
     internal bool PlayFromKey()
@@ -50,6 +58,7 @@ public sealed partial class ItemDetailPage : Page, IArrivalFocus
         ViewModel.LoadCommand.Execute(e.Parameter as string);
         // The spoiler switches and the viewer's state from elsewhere, while the page shows.
         ViewModel.Activate();
+        ViewModel.FollowDownloads();
     }
 
     protected override void OnNavigatedFrom(NavigationEventArgs e)
@@ -57,6 +66,16 @@ public sealed partial class ItemDetailPage : Page, IArrivalFocus
         base.OnNavigatedFrom(e);
         ViewModel.LoadCommand.Cancel();
         ViewModel.Deactivate();
+        ViewModel.StopFollowingDownloads();
+    }
+
+    // Also when the page goes without being navigated from. One shown again before its Unloaded came keeps following.
+    private void OnUnloaded(object sender, RoutedEventArgs e)
+    {
+        if (!ReferenceEquals(Frame?.Content, this))
+        {
+            ViewModel.StopFollowingDownloads();
+        }
     }
 
     private void OnBackdropOpened(object sender, RoutedEventArgs e) => Backdrop.Opacity = 1;

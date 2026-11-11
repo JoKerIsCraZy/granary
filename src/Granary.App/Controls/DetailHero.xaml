@@ -231,9 +231,12 @@
                 <!-- The profile's stars after the heart, as in the web's action bar; movies and series only. -->
                 <controls:StarRating x:Name="RatingStars" Height="50" FontSize="20" Visibility="{x:Bind ViewModel.CanRate, Mode=OneWay}"
                                      Value="{x:Bind ViewModel.UserRating, Mode=OneWay}" RateCommand="{x:Bind ViewModel.RateCommand}" />
-                <!-- Movies and series have the watchlist and collections; an episode or a season only a Watch Party to start. -->
+                <!--
+                    Movies and series have the watchlist and collections; a film or an episode Download, a season Download season;
+                    and each a Watch Party to start.
+                -->
                 <Button x:Name="MoreButton" Style="{StaticResource HeroIconButtonStyle}"
-                        Visibility="{x:Bind controls:DetailHero.Either(ViewModel.CanFavorite, Party.IsOffered), Mode=OneWay}"
+                        Visibility="{x:Bind controls:DetailHero.Either(ViewModel.ShowsMoreMenu, Party.IsOffered), Mode=OneWay}"
                         AutomationProperties.Name="More actions" ToolTipService.ToolTip="More actions">
                     <FontIcon x:Name="MoreIcon" Glyph="&#xE712;" FontSize="19" RenderTransformOrigin="0.5,0.5">
                         <FontIcon.RenderTransform>
@@ -253,8 +256,25 @@
                                     <FontIcon Glyph="&#xE8F4;" />
                                 </MenuFlyoutItem.Icon>
                             </MenuFlyoutItem>
+                            <!--
+                                Download in the web's library group, after Add to Collection (ActionBar.tsx). A title on this PC
+                                reads its status instead ("Downloading · 42%", "Downloaded"), opens the Downloads page, and has
+                                Delete download, Granary's own, under it.
+                            -->
+                            <MenuFlyoutItem Text="{x:Bind ViewModel.DownloadLabel, Mode=OneWay}" Command="{x:Bind ViewModel.OpenDownloadCommand}"
+                                            Visibility="{x:Bind ViewModel.ShowsDownload, Mode=OneWay}">
+                                <MenuFlyoutItem.Icon>
+                                    <FontIcon Glyph="&#xE896;" />
+                                </MenuFlyoutItem.Icon>
+                            </MenuFlyoutItem>
+                            <MenuFlyoutItem Text="Delete download" Command="{x:Bind ViewModel.DeleteDownloadCommand}"
+                                            Visibility="{x:Bind ViewModel.CanDeleteDownload, Mode=OneWay}">
+                                <MenuFlyoutItem.Icon>
+                                    <FontIcon Glyph="&#xE74D;" />
+                                </MenuFlyoutItem.Icon>
+                            </MenuFlyoutItem>
                             <!-- The web's Watch Together group in its overflow menu (ActionBar.tsx), after the others. -->
-                            <MenuFlyoutSeparator Visibility="{x:Bind controls:DetailHero.Both(ViewModel.CanFavorite, Party.IsOffered), Mode=OneWay}" />
+                            <MenuFlyoutSeparator Visibility="{x:Bind controls:DetailHero.Both(ViewModel.ShowsMoreMenu, Party.IsOffered), Mode=OneWay}" />
                             <MenuFlyoutItem Text="Start a Watch Party" Click="OnStartWatchPartyClick" Visibility="{x:Bind Party.IsOffered, Mode=OneWay}">
                                 <MenuFlyoutItem.Icon>
                                     <FontIcon Glyph="&#xE716;" />

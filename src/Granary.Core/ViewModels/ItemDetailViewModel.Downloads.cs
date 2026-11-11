@@ -34,7 +34,11 @@ public sealed partial class ItemDetailViewModel : ICardMenuSource
     [ObservableProperty]
     public partial bool CanDeleteDownload { get; private set; }
 
-    /// <summary>The ⋯ button shows when its menu has something: the watchlist and collections, or a Download item.</summary>
+    /// <summary>
+    /// The page's own items of the ⋯ menu are there: the watchlist and collections, or a Download item. The hero shows ⋯ also
+    /// for Start a Watch Party alone (<c>StartPartyViewModel.IsOffered</c>), which depends on the server's rooms and this
+    /// profile's room, which only the party's view model follows.
+    /// </summary>
     public bool ShowsMoreMenu => CanFavorite || ShowsDownload;
 
     /// <summary>The page shows: its Download items follow the downloads and what the server offers until <see cref="StopFollowingDownloads"/>.</summary>

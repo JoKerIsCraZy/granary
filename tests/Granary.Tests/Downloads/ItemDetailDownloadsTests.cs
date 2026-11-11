@@ -1,5 +1,7 @@
 using System.Collections.Concurrent;
+using System.ComponentModel;
 using System.Net;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
@@ -348,6 +350,84 @@ public sealed class ItemDetailDownloadsTests : IAsyncDisposable
         Assert.All(changes, e => Assert.IsType<DownloadProgressedEventArgs>(e));
         ui.RunAll();
         return (otherPosts, ownPosts, page);
+    }
+
+    // The app's downloads live as long as the app, and the title page listens to its view model, as x:Bind does: a view model
+    // the downloads still held would keep the page in memory for good. ItemDetailPage stops following as it is left and as it
+    // unloads; once it did, nothing of it is held.
+    [Fact]
+    public async Task ATitlePageThatWasLeft_IsNotKeptByTheDownloads()
+    {
+        var (page, loading) = ShowTitlePage();
+        await loading;
+        await Until(() => ShowsDownload(page), "Download showed");
+
+        LeaveTitlePage(page);
+        Collect();
+
+        Assert.False(page.TryGetTarget(out _));
+        GC.KeepAlive(Manager);
+    }
+
+    // What the test above relies on: while the title page shows, the downloads do hold it.
+    [Fact]
+    public async Task ATitlePageThatShows_IsKeptByTheDownloads()
+    {
+        var (page, loading) = ShowTitlePage();
+        await loading;
+        await Until(() => ShowsDownload(page), "Download showed");
+
+        Collect();
+
+        Assert.True(page.TryGetTarget(out _));
+        GC.KeepAlive(Manager);
+    }
+
+    // Made in a method of its own, so no local of the test keeps the page; it loads and follows as ItemDetailPage's
+    // OnNavigatedTo does.
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private (WeakReference<ShownTitlePage> Page, Task Loading) ShowTitlePage()
+    {
+        var model = Page();
+        var page = new ShownTitlePage(model);
+        var loading = model.LoadCommand.ExecuteAsync(MovieId);
+        model.FollowDownloads();
+        return (new WeakReference<ShownTitlePage>(page), loading);
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static bool ShowsDownload(WeakReference<ShownTitlePage> page) => page.TryGetTarget(out var shown) && shown.ViewModel.ShowsDownload;
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void LeaveTitlePage(WeakReference<ShownTitlePage> page)
+    {
+        if (page.TryGetTarget(out var shown))
+        {
+            shown.ViewModel.StopFollowingDownloads();
+        }
+    }
+
+    private static void Collect()
+    {
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+    }
+
+    // Stands in for ItemDetailPage: it holds its view model and listens to it, as the page's bindings do.
+    private sealed class ShownTitlePage
+    {
+        public ShownTitlePage(ItemDetailViewModel viewModel)
+        {
+            ViewModel = viewModel;
+            viewModel.PropertyChanged += OnChanged;
+        }
+
+        public ItemDetailViewModel ViewModel { get; }
+
+        public int Changes { get; private set; }
+
+        private void OnChanged(object? sender, PropertyChangedEventArgs e) => Changes++;
     }
 
     private static bool Progressed(IEnumerable<EventArgs> changes, string downloadId) =>

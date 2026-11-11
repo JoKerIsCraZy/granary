@@ -189,6 +189,8 @@ public partial class App : Application
         services.AddSingleton<IDiskSpace, WindowsDiskSpace>();
         // Settings → Downloads' Change: Windows' folder picker over the main window.
         services.AddSingleton<IFolderPicker, WindowsFolderPicker>();
+        // A title's Download: the web's download dialog over the main window. Core's own shows nothing.
+        services.AddSingleton<IDownloadOptionsDialog, DownloadOptionsDialog>();
         services.AddGranaryCore();
         // mpv reads the viewer's own mpv.conf from its folder when it starts (Settings → Playback → This PC).
         services.AddGranaryPlayer(new MpvEngineOptions { ConfigDirectory = MpvConfigFolder.DefaultDirectory });

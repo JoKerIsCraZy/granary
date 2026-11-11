@@ -36,8 +36,10 @@ Dependencies point inward only: `App → Player → Core`, and `App → Core`.
   `GetDiskFreeSpaceExW` on the folder or its nearest parent that exists, network shares included (Core's own
   `DriveInfoDiskSpace` knows only lettered drives); and `INetworkLink.Changed`, which the App's `WindowsNetworkLink` raises
   with Windows' `NetworkStatusChanged`, joined with the first handler and left with the last, so the queue hears when the
-  connection turns metered; and `IFolderPicker` for Settings → Downloads' Change, which the App's `WindowsFolderPicker`
-  answers with the Windows App SDK's `FolderPicker` over the main window (null when cancelled, or when it could not open).
+  connection turns metered; `IFolderPicker` for Settings → Downloads' Change, which the App's `WindowsFolderPicker`
+  answers with the Windows App SDK's `FolderPicker` over the main window (null when cancelled, or when it could not open);
+  and `IDownloadOptionsDialog`, a title's download dialog, which the App's `DownloadOptionsDialog` shows as a
+  `ContentDialog` over the main window, one at a time.
   `IReleaseFiles` gives `SignedReleaseVerifier` a release's SHA256SUMS and its signature, and the package on disk to
   hash and read; Core's own `HttpReleaseFiles` implements it, and the tests fake it (docs/release.md, "Signed
   releases").
@@ -1352,7 +1354,12 @@ client guide.
   read that fails or takes longer than `SpaceReadTimeout` (5 s, a share that does not answer) leaves the space unknown,
   which holds nothing back: the transfer checks it again.
   The app shows the dialog through `IDownloadOptionsDialog`; until it registers its own, Core's `NoDownloadOptionsDialog`
-  shows nothing, so the services resolve without it.
+  shows nothing, so the services resolve without it. The App's `DownloadOptionsDialog` keeps it open while Download's
+  `StartAsync` runs (a deferral of the button's click) and when it answers false. `ItemDetailPage` follows from
+  `OnNavigatedTo` and stops in `OnNavigatedFrom` and as it unloads, so the downloads never hold a page that left
+  (`ItemDetailDownloadsTests`). A season's episode cards get their entries from the page: a `MediaCardView` asks the
+  nearest `ICardMenuHost` above it (a `MediaGrid`, or `ItemDetailPage`, whose list is its view model) as its menu opens,
+  except in a `MediaRow`.
 - **The Downloads page.** `DownloadsViewModel` follows `Changed` between `Attach` and `Detach` and posts one refresh to the
   UI thread per burst. Progress alone updates its rows from `BytesDone(id)` and the space used from `BytesUsed()`, without
   reading every download again through `Items`. Anything else reads `Items` again: the rows stay the same objects and follow

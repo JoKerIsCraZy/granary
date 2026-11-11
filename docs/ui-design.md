@@ -134,7 +134,9 @@ skips), `SiloPlayerIconButtonStyle` (bare icon: mute, full screen) and `SiloPlay
   (`MediaItemMenu.buildMediaItemMenuModel`), in its order: Play from Beginning (a movie or episode with a resume
   point, or watched), Mark Watched/Unwatched, Reset Progress (`DELETE /api/v2/progress/{id}/position`), Favorites,
   Watchlist, Not Interested (`PUT`/`DELETE /api/v2/not-interested/{id}`, movies and series), then "Remove from
-  Continue Watching" / "Next Up" when its `MediaRow` offers removal. Right-click, Shift+F10 and the menu key open the
+  Continue Watching" / "Next Up" when its `MediaRow` offers removal. Below a line come the entries of the list a card is
+  in, from the nearest grid or page above it (`ICardMenuHost`; none in a `MediaRow`), asked as the menu opens: a
+  collection's own, a season's episodes' Download (Detail pages). Right-click, Shift+F10 and the menu key open the
   same menu. The web's admin entries (play history, metadata) are not there yet.
 - Page-specific pieces: `PersonCard` (search people, opening the person's page), `AlphabetJumpBar` (library A–Z: "#" and A–Z on a
   26 px round panel, letters without titles at 35 %, the top row's letter in the accent with its label; a letter
@@ -517,9 +519,10 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   - Granary's own buttons one size up: the Play pill in the accent ("Resume from 1:02:33" for a movie or episode: the saved
     point, as the web's "Resume at" names it, which is also where playback starts unless Settings → Playback → This PC
     → Rewind on resume sets a lead-in), Start over,
-    "Mark Watched", "Info", the heart, the stars and ⋮ (Watchlist, Add to Collection, then Start a Watch Party below a
-    line). Pills 50 high with 17 px labels, round buttons 50, 14 apart. An episode or a season has ⋮ with Start a Watch
-    Party alone. Under a single file's buttons "Available version: 1080P · H264 · EAC3 · 6.6 GB" in 14 at 45 % white.
+    "Mark Watched", "Info", the heart, the stars and ⋮ (Watchlist, Add to Collection, Download and Delete download, then
+    Start a Watch Party below a line). Pills 50 high with 17 px labels, round buttons 50, 14 apart. An episode has ⋮ with
+    Download and Start a Watch Party, a season with Download season and Start a Watch Party; ⋮ shows while any of its items
+    does. Under a single file's buttons "Available version: 1080P · H264 · EAC3 · 6.6 GB" in 14 at 45 % white.
   - While the page shows, it follows the viewer's state, as Silo's apps read their page again once the player is gone.
     It reads the title's state again 400 ms after the last of these (marking several cards reads once): the player's
     playback stopped (left full or from the minimized bar, or moved on to the next title), a card's watched mark, heart or
@@ -562,6 +565,32 @@ View models build `MediaCard`s with the texts already worded; the controls only 
     word, and nothing more is sent. A title playing in the minimized
     player plays on in the lobby until the host starts the room's, which takes its place, as from the hub. Keyboard
     focus moves into the chooser (the chosen season) as it opens and back to Change as it closes; Cancel returns it to ⋮.
+  - Download, the web's overflow item (ActionBar.tsx, its download arrow), in ⋮ after Add to Collection: on a movie or an
+    episode with a file while your Silo server lets the profile download (downloads on and allowed). A season has
+    "Download season" instead, for its episodes with a file that are not on this PC yet, and none once all are. A title on
+    this PC shows its status in the Downloads page's words instead ("Downloading · 42%", "Paused", "Downloaded", "No longer
+    available"), which opens the Downloads page, and "Delete download" (the bin) under it, which asks first as the Downloads
+    page does ("Delete download?", "This removes the downloaded copy from this PC. Nothing is deleted from your Silo
+    server.", Delete and Cancel); both stay whatever the server says now. While the page shows, the items follow the
+    downloads: the title's progress, and its episodes' on a season's page. The episode cards of a season's grid (and of a
+    single-season series') carry the same entries at the foot of their ⋮ menu, below a line: Download, or the status,
+    which opens the Downloads page, and Delete download.
+  - The download dialog, the web's `DownloadVersionPicker.tsx` with its texts, 400 wide: the title "Download: Example
+    Movie" ("Download: Example Series · S1 · E5" for an episode, "Download: Example Series · Season 1" for a season), "Choose
+    a file to download. Make sure you have enough disk space." in 14 px muted; with more than one file, VERSION over the
+    files as the web's rows (radius 12, a hairline, a faint fill, 8 apart; a 36 px disc of the accent at a tenth with the
+    download arrow, the quality line in 14 px medium and the size in 12 px muted), the highest resolution first, the one
+    picked under the buttons chosen (from an episode card, the episode's first file), and the web's "Larger files require
+    more storage space." at the foot. Granary's own: QUALITY as pills, when your Silo server offers the profile more than
+    Original, labelled as Settings → Downloads labels them, its Default quality chosen when offered, else Original; the
+    size of what starts in 14 px medium ("8.0 GB"; "About 2.1 GB" for a preset, its bitrate over the runtime and a tenth
+    more, never above the file; "10 episodes · 21.4 GB" for a season in Original) and under it the free space where
+    downloads go, "200.0 GB free on this PC.", or in red "Not enough free space on this PC: 8.0 GB needed, 1.0 GB free.",
+    which keeps Download off. The space is read once as the dialog opens, for 5 s at most; unknown, it holds nothing back.
+    Download (the primary button, also Enter) starts it and closes the dialog; while it starts, a 16 px ring turns beside
+    the size and Download waits. A start that fails keeps the dialog open with the web's "Download could not be started.
+    Check access and try again." in an error bar; a season pressed again sends only the episodes not started yet. Cancel
+    closes it.
   - The stars, the web's `StarRating` after the heart (ActionBar.tsx), on movies and series only, as on the web: five
     20 px stars (16 below 1400 px) 2 apart in a dark pill as high as the buttons (82 % of the surface colour, a 30 %
     border, a faint light along its top). The profile's rating is yellow and filled (`#FACC15`), the other stars a

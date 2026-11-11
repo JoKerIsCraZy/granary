@@ -18,7 +18,7 @@ namespace Granary.App.Controls;
 /// card's row to the top. The cards' artwork is prefetched as they arrive. Once an episode's poster is among them, every
 /// card keeps the line of its episode title: the grid sizes all cards by its first one.
 /// </summary>
-public sealed partial class MediaGrid : UserControl
+public sealed partial class MediaGrid : UserControl, ICardMenuHost
 {
     public static readonly DependencyProperty ItemsSourceProperty =
         DependencyProperty.Register(nameof(ItemsSource), typeof(object), typeof(MediaGrid),
