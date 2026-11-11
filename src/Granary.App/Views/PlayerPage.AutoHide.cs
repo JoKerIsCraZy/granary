@@ -40,6 +40,7 @@ public sealed partial class PlayerPage
     // Whether the cursor shows, and whether the page's cursor is the blank one now.
     private readonly PlayerCursor _cursor = new(TimeProvider.System);
     private bool _isCursorHidden;
+    private bool _loggedArrowWhileHidden;
 
     // What tells the page to look at the cursor again, from its load until it is left.
     private MainWindow? _cursorWindow;
@@ -227,7 +228,7 @@ public sealed partial class PlayerPage
         else
         {
             bool isOverPicture = PointerInPage() is not null;
-            _cursor.ControlsHidden(isOverPicture: isOverPicture && BlankCursor.Instance is not null);
+            _cursor.ControlsHidden(isOverPicture: isOverPicture && BlankCursor.Instance is not null, restsAt: ScreenPointer());
             ApplyCursor();
             _autoHideLog.LogDebug("The player's controls hid (pointer over the picture: {OverPicture}, cursor hidden: {CursorHidden})",
                 isOverPicture, _cursor.IsHidden);
@@ -279,20 +280,43 @@ public sealed partial class PlayerPage
         ShowControls();
     }
 
+    // The log says what brought a hidden cursor back: how far the mouse went and how long it had not been seen (a few
+    // pixels are a knock or the sensor's noise, a long way is a hand), or that it was no mouse at all.
     private bool IsRealMove(PointerDeviceType device)
     {
+        bool wasHidden = _cursor.IsHidden;
         if (device != PointerDeviceType.Mouse)
         {
             _cursor.TouchOrPenMoves();
+            if (wasHidden)
+            {
+                _autoHideLog.LogDebug("The player's cursor came back: a {Device} moved", device);
+            }
             return true;
         }
         if (!GetCursorPos(out var at))
         {
             _cursor.Show();
+            if (wasHidden)
+            {
+                _autoHideLog.LogDebug("The player's cursor came back: Windows did not say where the mouse is");
+            }
             return true;
         }
-        return _cursor.Moves(at.X, at.Y, XamlRoot?.RasterizationScale ?? 1);
+        if (!_cursor.Moves(at.X, at.Y, XamlRoot?.RasterizationScale ?? 1))
+        {
+            return false;
+        }
+        if (wasHidden)
+        {
+            _autoHideLog.LogDebug("The player's cursor came back: the mouse moved {Distance:0.#} px, seen {Seconds:0.#} s before",
+                _cursor.LastMove.Distance, _cursor.LastMove.SinceSeen.TotalSeconds);
+        }
+        return true;
     }
+
+    // Where the pointer is on the screen, when Windows says.
+    private static (double X, double Y)? ScreenPointer() => GetCursorPos(out var at) ? (at.X, at.Y) : null;
 
     private void OnWindowActivatedForCursor(object sender, WindowActivatedEventArgs e)
     {
@@ -325,7 +349,7 @@ public sealed partial class PlayerPage
             return;
         }
         bool hidNow = !_areControlsVisible && _cursor.WaitsForPicture
-            && _cursor.LooksAgain(isOverPicture: BlankCursor.Instance is not null && PointerInPage() is not null);
+            && _cursor.LooksAgain(isOverPicture: BlankCursor.Instance is not null && PointerInPage() is not null, restsAt: ScreenPointer());
         if (hidNow)
         {
             _autoHideLog.LogDebug("The cursor the player's controls left showing hid: {Occasion}", occasion);
@@ -334,14 +358,44 @@ public sealed partial class PlayerPage
         {
             ApplyCursor(reassert);
         }
+        // Not in the look that hid it: Windows is asked for the hidden one only after this.
+        if (!hidNow)
+        {
+            CheckShownCursor();
+        }
         WatchCursor();
     }
 
+    // While the player's cursor is hidden, Windows should draw the blank one over the picture. Should it draw its arrow
+    // there all the same (it draws what the window answered last, and something else can have asked meanwhile), the
+    // window is asked again, and the log says so once for each time the cursor hid.
+    private void CheckShownCursor()
+    {
+        // Over the picture only: over the title bar's drag area Windows draws the arrow itself.
+        if (!_isCursorHidden || PointerInPage() is null || OwnWindowUnderPointer() is not (var under and not 0) || !ShowsArrow())
+        {
+            return;
+        }
+        AskForCursor(under);
+        if (!_loggedArrowWhileHidden)
+        {
+            _loggedArrowWhileHidden = true;
+            _autoHideLog.LogDebug("Windows drew its arrow over the picture while the player's cursor is hidden; asked for the hidden one again");
+        }
+    }
+
+    private static bool ShowsArrow()
+    {
+        var info = new CursorInfo { Size = System.Runtime.InteropServices.Marshal.SizeOf<CursorInfo>() };
+        return GetCursorInfo(ref info) && (info.Flags & CursorShowing) != 0 && info.Cursor != 0 && info.Cursor == LoadCursorW(0, ArrowCursorId);
+    }
+
     // Nothing needs to tell the page that a window over the pointer went, so while the hidden controls leave the cursor
-    // showing off the picture, it is looked at again now and then. Only then: the rest of the time events are enough.
+    // showing off the picture, it is looked at again now and then; and while it is hidden, that Windows still draws the
+    // hidden one (CheckShownCursor). The rest of the time events are enough.
     private void WatchCursor()
     {
-        if (!_cursor.WaitsForPicture || BlankCursor.Instance is null)
+        if (!(_cursor.WaitsForPicture || _isCursorHidden) || BlankCursor.Instance is null)
         {
             _cursorTimer.Stop();
         }
@@ -416,6 +470,7 @@ public sealed partial class PlayerPage
             ProtectedCursor = null;
         }
         _isCursorHidden = true;
+        _loggedArrowWhileHidden = false;
         ProtectedCursor = blank;
         ShowCursorNow(hidden: true);
     }

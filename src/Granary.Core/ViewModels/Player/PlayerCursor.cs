@@ -33,6 +33,13 @@ public sealed class PlayerCursor(TimeProvider time)
 
     public bool IsHidden { get; private set; }
 
+    /// <summary>
+    /// The last real move: how far the mouse went, in screen pixels, from where its moves started to add up, and how long
+    /// before it the mouse was seen last. For the log: a few pixels are a knock or the sensor's noise, a long way after a
+    /// long time is a hand.
+    /// </summary>
+    public (double Distance, TimeSpan SinceSeen) LastMove { get; private set; }
+
     /// <summary>The controls are hidden and the cursor was left showing off the picture: it hides once seen over it.</summary>
     public bool WaitsForPicture => _areControlsHidden && !IsHidden;
 
@@ -65,10 +72,12 @@ public sealed class PlayerCursor(TimeProvider time)
         }
         // The way travelled, so a diagonal move counts as much as a straight one.
         double threshold = MoveThreshold * scale;
-        if (_from is { } start && ((x - start.X) * (x - start.X)) + ((y - start.Y) * (y - start.Y)) < threshold * threshold)
+        double squared = _from is { } start ? ((x - start.X) * (x - start.X)) + ((y - start.Y) * (y - start.Y)) : 0;
+        if (_from is not null && squared < threshold * threshold)
         {
             return false;
         }
+        LastMove = (Math.Sqrt(squared), last is { } before ? time.GetElapsedTime(before.At, seen.At) : TimeSpan.Zero);
         _from = seen;
         Shows();
         return true;
@@ -80,11 +89,17 @@ public sealed class PlayerCursor(TimeProvider time)
     /// </summary>
     public void TouchOrPenMoves() => Shows();
 
-    /// <summary>The controls hid; a cursor over the picture goes with them.</summary>
-    public void ControlsHidden(bool isOverPicture)
+    /// <summary>
+    /// The controls hid; a cursor over the picture goes with them. <paramref name="restsAt"/> is where the pointer is on
+    /// the screen now, when Windows says: moves count from there. The page sees the mouse only where its moves reach it
+    /// (not over an open menu, a window in front or off the window), so the place it saw it last can be an old one, and
+    /// a pointer event without a move would be measured against that and bring the cursor back.
+    /// </summary>
+    public void ControlsHidden(bool isOverPicture, (double X, double Y)? restsAt = null)
     {
         _areControlsHidden = true;
         IsHidden |= isOverPicture;
+        Rests(restsAt);
     }
 
     /// <summary>The controls show again, after a key or the player's own change: the cursor stays as it is.</summary>
@@ -94,7 +109,7 @@ public sealed class PlayerCursor(TimeProvider time)
     /// The cursor is looked at again without a move: the pointer seen still, the window activated or changed. While the
     /// controls are hidden, a cursor over the picture hides; true when it hid now.
     /// </summary>
-    public bool LooksAgain(bool isOverPicture)
+    public bool LooksAgain(bool isOverPicture, (double X, double Y)? restsAt = null)
     {
         _lookedAt = time.GetTimestamp();
         if (!WaitsForPicture || !isOverPicture)
@@ -102,7 +117,17 @@ public sealed class PlayerCursor(TimeProvider time)
             return false;
         }
         IsHidden = true;
+        Rests(restsAt);
         return true;
+    }
+
+    // As the cursor hides: moves count from where the pointer is now.
+    private void Rests((double X, double Y)? at)
+    {
+        if (IsHidden && at is { } place)
+        {
+            RestsAt(place.X, place.Y);
+        }
     }
 
     /// <summary>
