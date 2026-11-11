@@ -173,7 +173,7 @@ View models build `MediaCard`s with the texts already worded; the controls only 
   has downloads on this PC); Admin (an administrator's only, a shield), Settings and the profile menu at the bottom (the servers are in Settings → Servers). The profile menu holds Switch
   profile and Sign out. While a sign-out runs, which can take about 20 s when a drive or the server does not answer, the
   profile's entry reads "Signing out…" with a 16 px ring at its right and takes no clicks, as Granary's busy buttons do
-  ("Signing in…"); one that failed says "Couldn't sign out. Try again." in red under the name until the next Sign out. The
+  ("Signing in…"); one that failed says "Couldn't sign out. Try again." in red under the name until the next Sign out or another profile shows. The
   web's menu has neither. Favorites, Watchlist and History are one page (`PersonalListPage`, the web's `pages/Catalog.tsx` for those
   sources): the list's name, what it holds and its count, the media menu (All Media, Movies & Series, Movies, Series,
   Episodes), the list's own order ("List Order", History's "Watch History") or one of six sorts (Title, Date Added,

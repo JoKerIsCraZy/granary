@@ -194,7 +194,8 @@
                 <!--
                     The profile and its menu. A sign-out can wait up to about 20 s for a drive or a server that does not answer:
                     meanwhile the entry reads "Signing out…" with a ring and takes no clicks, as Granary's busy buttons do
-                    ("Signing in…"). One that failed says so under the name until the next Sign out. The web's menu has neither.
+                    ("Signing in…"), also while the question about this PC's downloads is open over it. One that failed says so
+                    under the name until the next Sign out or another profile. The web's menu has neither.
                 -->
                 <NavigationViewItem x:Name="ProfileItem" Tag="Profile" SelectsOnInvoked="False"
                                     IsEnabled="{x:Bind IsIdle(Sidebar.SignOutCommand.IsRunning), Mode=OneWay}"

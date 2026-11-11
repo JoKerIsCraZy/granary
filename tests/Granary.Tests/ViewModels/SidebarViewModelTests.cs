@@ -366,6 +366,22 @@ public sealed class SidebarViewModelTests
         Assert.Equal("", sidebar.SignOutError);
     }
 
+    [Fact]
+    public async Task AFailedSignOut_IsNotShownUnderTheNextProfile()
+    {
+        Ready();
+        using var sidebar = Create();
+        await sidebar.RefreshAsync(TestContext.Current.CancellationToken);
+        _session.FailWith = new InvalidOperationException("no");
+        await sidebar.SignOutCommand.ExecuteAsync(null);
+        Assert.Equal("Couldn't sign out. Try again.", sidebar.SignOutError);
+
+        _session.ProfileId = "8";
+        await sidebar.RefreshAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal("", sidebar.SignOutError);
+    }
+
     // The profile menu shows the sign-out as under way while the command runs, and offers it once at a time.
     [Fact]
     public async Task ASignOutUnderWay_IsRunning_AndCannotBeStartedAgain()

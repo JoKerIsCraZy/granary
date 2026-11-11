@@ -75,7 +75,10 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     public partial string ServerName { get; private set; } = "";
 
-    /// <summary>"Couldn't sign out. Try again." once Sign out failed; empty otherwise, and again at the next Sign out.</summary>
+    /// <summary>
+    /// "Couldn't sign out. Try again." once Sign out failed; empty otherwise, and again at the next Sign out or once another
+    /// server or profile shows.
+    /// </summary>
     [ObservableProperty]
     public partial string SignOutError { get; private set; } = "";
 
@@ -116,6 +119,7 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
         {
             // Another server or profile: nothing of the last one stays while this one's is read.
             _shown = key;
+            SignOutError = "";
             Profile = null;
             Libraries.Clear();
             AreLibrariesLoaded = false;
