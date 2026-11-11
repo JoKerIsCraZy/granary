@@ -331,7 +331,8 @@ public sealed partial class DownloadOptionsViewModel : ObservableObject
         if (_season is { } season)
         {
             var result = await _downloads.StartSeasonAsync(season with { Quality = quality }, CancellationToken.None).ConfigureAwait(false);
-            return result.Failed == 0;
+            // A season cut short (another profile took over) counts none of the episodes after that: it did not all start.
+            return result.Failed == 0 && result.Started + result.AlreadyThere == season.Episodes.Count;
         }
         var request = _title! with { MediaFileId = SelectedVersion?.FileId ?? _title.MediaFileId, Quality = quality };
         return await _downloads.StartAsync(request, CancellationToken.None).ConfigureAwait(false)

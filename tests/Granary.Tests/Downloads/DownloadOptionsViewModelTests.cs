@@ -287,6 +287,24 @@ public sealed class DownloadOptionsViewModelTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task ASeasonCutShortByAProfileSwitch_IsNotTakenAsStarted()
+    {
+        Creates(() =>
+        {
+            _h.Session.ProfileId = "8";
+            return Created(DownloadPayloads.Entry("dl_1", "ready", episodeId: "ep_1"))();
+        });
+        _h.List();
+        var options = await OptionsAsync();
+        options.ForSeason(Season, "Season 1", 6 * GB);
+
+        Assert.False(await options.StartAsync());
+
+        Assert.Equal(DownloadOptionsViewModel.StartFailed, options.ErrorText);
+        Assert.Single(CreateBodies());
+    }
+
+    [Fact]
     public async Task AStartThatFailsUnexpectedly_SaysSo_AndCanBeTriedAgain()
     {
         Creates(() => throw new InvalidOperationException("unexpected"), Created(DownloadPayloads.Entry("dl_1", "ready")));
