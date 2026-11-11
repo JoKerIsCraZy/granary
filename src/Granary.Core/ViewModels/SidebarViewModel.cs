@@ -162,7 +162,7 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
         catch (Exception ex) when (IsFailedRead(ex, cancellationToken))
         {
             // The account name stands in.
-            _logger.LogWarning(ex, "Could not load the acting profile for the sidebar");
+            _logger.LogWarning("Could not load the acting profile for the sidebar ({Failure})", ApiFailureText.Describe(ex));
             return false;
         }
     }
@@ -188,7 +188,7 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
         }
         catch (Exception ex) when (IsFailedRead(ex, cancellationToken))
         {
-            _logger.LogWarning(ex, "Could not load the libraries for the sidebar");
+            _logger.LogWarning("Could not load the libraries for the sidebar ({Failure})", ApiFailureText.Describe(ex));
             return false;
         }
     }
@@ -272,7 +272,7 @@ public sealed partial class SidebarViewModel : ObservableObject, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Could not refresh the sidebar");
+            _logger.LogError("Could not refresh the sidebar ({Failure})", ApiFailureText.Describe(ex));
         }
     }
 }

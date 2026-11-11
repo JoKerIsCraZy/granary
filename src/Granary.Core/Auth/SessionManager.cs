@@ -2,6 +2,7 @@ using Granary.Core.Api;
 using Granary.Core.Api.Accounts;
 using Granary.Core.Api.Auth;
 using Granary.Core.Servers;
+using Granary.Core.ViewModels;
 using Microsoft.Extensions.Logging;
 
 namespace Granary.Core.Auth;
@@ -213,7 +214,8 @@ public sealed class SessionManager : ISessionManager, IDisposable
         catch (Exception ex) when (ex is HttpRequestException or SiloApiException
             || (ex is OperationCanceledException && !cancellationToken.IsCancellationRequested))
         {
-            _logger.LogWarning(ex, "Server {ServerEntryId} could not be told about the sign-out", server.Id);
+            // The kind of failure only: a network error's text names the server's address.
+            _logger.LogWarning("Server {ServerEntryId} could not be told about the sign-out ({Failure})", server.Id, ApiFailureText.Describe(ex));
         }
     }
 

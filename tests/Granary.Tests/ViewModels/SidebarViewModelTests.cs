@@ -333,6 +333,22 @@ public sealed class SidebarViewModelTests
     }
 
     [Fact]
+    public async Task ReadsThatFail_LogTheirKind_NeverTheErrorsText()
+    {
+        Ready();
+        _profiles = () => throw new HttpRequestException(HttpRequestError.ConnectionError, "No answer from nas.example:8096");
+        _libraries = () => throw new HttpRequestException(HttpRequestError.ConnectionError, "No answer from nas.example:8096");
+        using var sidebar = Create();
+
+        await sidebar.RefreshAsync(TestContext.Current.CancellationToken);
+
+        Assert.Contains("Could not load the acting profile for the sidebar", _logs.All, StringComparison.Ordinal);
+        Assert.Contains("Could not load the libraries for the sidebar", _logs.All, StringComparison.Ordinal);
+        Assert.Contains("ConnectionError", _logs.All, StringComparison.Ordinal);
+        Assert.DoesNotContain("nas.example", _logs.All, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task ASignOutThatFails_SaysSo_WithoutTheErrorsOwnText()
     {
         using var sidebar = Create();
