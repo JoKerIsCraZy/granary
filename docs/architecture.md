@@ -1283,7 +1283,8 @@ client guide.
   comes as `DownloadProgressedEventArgs` naming its download, whose bytes `BytesDone(id)` gives.
 - **The title page.** `DownloadActions` gives a title its Download item from `ForItem` and the feature; a page follows it
   while it shows (`Follow`), which reads the capability and posts one refresh to the UI thread per burst of `Changed`; a
-  transfer's progress (`DownloadProgressedEventArgs`) counts only for the title and the episodes the page lists. The
+  transfer's progress (`DownloadProgressedEventArgs`) counts only for the title and the episodes the page lists, also
+  once the page read them again after a playback (`ItemDetailViewModel.Spoilers.cs`). The
   download dialog's `DownloadOptionsViewModel` reads the free space once per dialog on the thread pool (`SpaceRead`) and
   shows it on the UI thread; Download waits for that read and does not start what would reach the transfer's reserve. A
   read that fails or takes longer than `SpaceReadTimeout` (5 s, a share that does not answer) leaves the space unknown,

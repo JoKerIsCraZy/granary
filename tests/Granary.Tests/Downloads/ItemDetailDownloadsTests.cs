@@ -222,6 +222,26 @@ public sealed class ItemDetailDownloadsTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task ASeasonReadAgainAfterAPlayback_OffersTheEpisodesItNowLists()
+    {
+        await _h.AddAsync("dl_1", DownloadState.Completed, mediaItemId: "ep_1");
+        await _h.AddAsync("dl_5", DownloadState.Completed, mediaItemId: EpisodeId);
+        var page = await FollowedAsync(SeasonId);
+        page.Activate();
+        Assert.False(page.ShowsDownload);
+        // The sixth episode got its file meanwhile; a playback that stopped reads the season's episodes again.
+        _detail.Get(ItemDetailFixture.SeasonItemEpisodesPath(SeasonId), ItemDetailFixture.Ok(TitlePayloads.SeasonEpisodes.Replace(
+            "\"title\": \"Chapter Six\", \"runtime\": 50, \"files\": []",
+            "\"title\": \"Chapter Six\", \"runtime\": 50, \"files\": [{ \"file_id\": \"4576\", \"hdr\": false, \"file_size\": 1073741824 }]",
+            StringComparison.Ordinal)));
+        _detail.Stops.Track(Task.CompletedTask);
+        _detail.Clock.Advance(ItemDetailViewModel.RefreshDelay);
+        await page.Refreshing;
+
+        Assert.Equal((true, "Download season"), (page.ShowsDownload, page.DownloadLabel));
+    }
+
+    [Fact]
     public async Task TheSeasonsEpisodeCards_GetDownloadEntries()
     {
         var page = await FollowedAsync(SeasonId);
